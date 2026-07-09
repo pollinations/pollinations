@@ -1,10 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { VendorPlanes } from "../lib/insights";
-import {
-    planeRank,
-    problemsFirst,
-    visiblePlaneRows,
-} from "./ReconciliationTab";
+import { planeRank, problemsFirst, visiblePlaneRows } from "./DataQualityTab";
 
 const plane = (
     month: string,

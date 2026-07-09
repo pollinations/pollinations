@@ -19,11 +19,7 @@ import {
 } from "../components/DataTable";
 import { StatCards } from "../components/StatCards";
 import { fmtPeriod, fmtUnsignedPct, fmtUsd } from "../lib/format";
-import {
-    creditRunway,
-    type RunwayRow,
-    ungrantedCreditBurn,
-} from "../lib/insights";
+import { creditRunway, type RunwayRow } from "../lib/insights";
 import type { Data } from "../types";
 
 export function visibleRunwayRows(rows: RunwayRow[], vendor: string) {
@@ -52,6 +48,10 @@ function depletionStatTone(
 
 function remainingTone(value: number) {
     return value < 0 ? "text-intent-danger-text" : "";
+}
+
+function optionalBurn(value: number) {
+    return value > 0.005 ? fmtUsd(value) : "–";
 }
 
 export function burnedPct(row: Pick<RunwayRow, "burnedUsd" | "grantedUsd">) {
@@ -116,14 +116,6 @@ export function CreditsTab({
         () => visibleRunwayRows(allRows, vendor),
         [allRows, vendor],
     );
-    const ungranted = useMemo(
-        () =>
-            ungrantedCreditBurn(data, now).filter(
-                (row) => vendor === "all" || row.vendor === vendor,
-            ),
-        [data, now, vendor],
-    );
-
     const totals = useMemo(() => {
         let granted = 0;
         let burned = 0;
@@ -162,6 +154,7 @@ export function CreditsTab({
             { key: "vendor", value: (row) => row.vendor },
             { key: "grantedUsd", value: (row) => row.grantedUsd },
             { key: "burnedPct", value: (row) => burnedPct(row) },
+            { key: "preWindowBurnUsd", value: (row) => row.preWindowBurnUsd },
             { key: "remainingUsd", value: (row) => row.remainingUsd },
             {
                 key: "currentMonthBurnUsd",
@@ -237,8 +230,8 @@ export function CreditsTab({
                                     hint={{
                                         meaning:
                                             "Total grants for the vendor (hover the vendor for the per-grant split). EUR converted at the grant's start month.",
-                                        tables: "grants_api",
-                                        sources: "HC",
+                                        tables: "op_cloud_api",
+                                        sources: "API, CLI, BQ, HC",
                                     }}
                                 >
                                     Granted
@@ -252,11 +245,26 @@ export function CreditsTab({
                                     hint={{
                                         meaning:
                                             "Credit used as a share of granted credit.",
-                                        tables: "provider_monthly_api + grants_api",
+                                        tables: "op_cloud_api",
                                         formula: "burned ÷ granted",
                                     }}
                                 >
                                     Burned %
+                                </HeaderHint>
+                            </TableHeaderCell>
+                            <TableHeaderCell
+                                {...headerProps("preWindowBurnUsd")}
+                                align="right"
+                            >
+                                <HeaderHint
+                                    hint={{
+                                        meaning:
+                                            "Opening credit burn before the 2026 window. Stored as OP Cloud rows named pre-2026 grant burn, hidden from the Cloud OP raw table.",
+                                        tables: "op_cloud_api",
+                                        formula: "-credit",
+                                    }}
+                                >
+                                    2025
                                 </HeaderHint>
                             </TableHeaderCell>
                             <TableHeaderCell
@@ -266,7 +274,7 @@ export function CreditsTab({
                                 <HeaderHint
                                     hint={{
                                         meaning:
-                                            "Granted minus credit used. Upper bound for grants that started before 2026 (pre-window burn is unrecorded).",
+                                            "Granted minus credit used. Includes 2025 opening burn when that balance is recorded.",
                                         formula: "granted − burned",
                                     }}
                                 >
@@ -282,7 +290,7 @@ export function CreditsTab({
                                     hint={{
                                         meaning:
                                             "Credit burn so far in the running month.",
-                                        tables: "provider_monthly_api",
+                                        tables: "op_cloud_api",
                                     }}
                                 >
                                     This Month
@@ -296,7 +304,7 @@ export function CreditsTab({
                                     hint={{
                                         meaning:
                                             "Credit burn in the last complete month.",
-                                        tables: "provider_monthly_api",
+                                        tables: "op_cloud_api",
                                     }}
                                 >
                                     Last Month
@@ -345,6 +353,9 @@ export function CreditsTab({
                                     <TableCell className="text-right">
                                         {fmtUnsignedPct(burnedPct(row))}
                                     </TableCell>
+                                    <TableCell className="text-right text-theme-text-soft">
+                                        {optionalBurn(row.preWindowBurnUsd)}
+                                    </TableCell>
                                     <TableCell
                                         className={cn(
                                             "text-right",
@@ -387,51 +398,6 @@ export function CreditsTab({
                     </TableBody>
                 </DataTable>
             </TableScroller>
-            {ungranted.length > 0 && (
-                <div className="flex flex-col gap-2">
-                    <TableScroller>
-                        <DataTable>
-                            <TableHead>
-                                <TableRow>
-                                    <TableHeaderCell>vendor</TableHeaderCell>
-                                    <TableHeaderCell>
-                                        <HeaderHint
-                                            hint={{
-                                                meaning:
-                                                    "Credit burn with no grant on file — add a grant, or reclassify the discount as paid/net cost.",
-                                            }}
-                                        >
-                                            Unregistered Burn
-                                        </HeaderHint>
-                                    </TableHeaderCell>
-                                    <TableHeaderCell>
-                                        this month
-                                    </TableHeaderCell>
-                                    <TableHeaderCell>
-                                        last month
-                                    </TableHeaderCell>
-                                </TableRow>
-                            </TableHead>
-                            <TableBody>
-                                {ungranted.map((row) => (
-                                    <TableRow key={row.vendor}>
-                                        <TableCell>{row.vendor}</TableCell>
-                                        <TableCell>
-                                            {fmtUsd(row.burnedUsd)}
-                                        </TableCell>
-                                        <TableCell className="text-theme-text-soft">
-                                            {fmtUsd(row.currentMonthBurnUsd)}
-                                        </TableCell>
-                                        <TableCell className="text-theme-text-soft">
-                                            {fmtUsd(row.lastMonthBurnUsd)}
-                                        </TableCell>
-                                    </TableRow>
-                                ))}
-                            </TableBody>
-                        </DataTable>
-                    </TableScroller>
-                </div>
-            )}
         </div>
     );
 }

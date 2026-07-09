@@ -130,6 +130,7 @@ const opCloud = (over: Partial<OpCloudRow>): OpCloudRow => ({
     resource_id: "",
     resource_name: "",
     resource_sku: "",
+    resource_count: 1,
     model: "",
     evidence: "",
     recorded_at: "2026-07-09 00:00:00",
@@ -792,7 +793,7 @@ describe("data quality status", () => {
 });
 
 describe("insightVendorOptions", () => {
-    it("unions vendors across legacy and OP planes, cloud transactions only", () => {
+    it("unions vendors across OP planes only, cloud transactions only", () => {
         const data = emptyData({
             transactions: [
                 txn({ vendor: "aws", category: "compute" }),
@@ -809,10 +810,7 @@ describe("insightVendorOptions", () => {
         });
         expect(insightVendorOptions(data)).toEqual([
             "all",
-            "aws",
             "azure",
-            "google",
-            "ovhcloud",
             "replicate",
             "runpod",
         ]);
@@ -1279,24 +1277,54 @@ describe("modelEconomics", () => {
     });
 });
 
-const grant = (
-    over: Partial<Data["grants"][number]>,
-): Data["grants"][number] => ({
-    vendor: "lambda",
-    label: "",
-    granted: 0,
-    currency: "USD",
-    start_date: "2026-03-01",
-    expires: "1970-01-01",
-    ...over,
-});
+const grant = (over: Partial<Data["grants"][number]>): OpCloudRow => {
+    const row = {
+        vendor: "lambda",
+        label: "",
+        granted: 0,
+        currency: "USD",
+        start_date: "2026-03-01",
+        expires: "1970-01-01",
+        ...over,
+    };
+    return opCloud({
+        source: "manual",
+        vendor: row.vendor,
+        type: "inference",
+        start: `${row.start_date} 00:00:00`,
+        end: row.expires === "1970-01-01" ? "" : `${row.expires} 00:00:00`,
+        credit: row.granted,
+        paid: 0,
+        currency: row.currency,
+        resource_name: row.label,
+        evidence: `test grant ${row.label}`.trim(),
+    });
+};
+
+const opCreditBurn = ({
+    month = "2026-05",
+    credit = 0,
+    paid = 0,
+    ...over
+}: Partial<Omit<OpCloudRow, "credit" | "paid">> & {
+    month?: string;
+    credit?: number;
+    paid?: number;
+}): OpCloudRow =>
+    opCloud({
+        start: `${month}-01 00:00:00`,
+        end: `${month}-28 00:00:00`,
+        credit: -credit,
+        paid: -paid,
+        ...over,
+    });
 
 describe("creditRunway", () => {
     const NOW = new Date("2026-07-08T12:00:00Z"); // day 8 of July
 
     it("pools grants per vendor, converts EUR at the start month, and nets naive remaining", () => {
         const data = emptyData({
-            grants: [
+            opCloud: [
                 grant({ vendor: "fireworks", label: "a", granted: 700 }),
                 grant({ vendor: "fireworks", label: "b", granted: 300 }),
                 grant({
@@ -1305,10 +1333,16 @@ describe("creditRunway", () => {
                     currency: "EUR",
                     start_date: "2026-03-09",
                 }),
-            ],
-            providerMonthly: [
-                provider({ month: "2026-04", vendor: "fireworks", credit: 80 }),
-                provider({ month: "2026-05", vendor: "fireworks", credit: 20 }),
+                opCreditBurn({
+                    month: "2026-04",
+                    vendor: "fireworks",
+                    credit: 80,
+                }),
+                opCreditBurn({
+                    month: "2026-05",
+                    vendor: "fireworks",
+                    credit: 20,
+                }),
             ],
         });
         const rows = creditRunway(data, NOW);
@@ -1323,12 +1357,86 @@ describe("creditRunway", () => {
         expect(ovh.grantedUsd).toBeCloseTo(1155.8, 5); // 1000 × 1.1558 (Mar)
     });
 
+    it("uses OP Cloud grant and burn rows instead of legacy provider rows", () => {
+        const data = emptyData({
+            providerMonthly: [
+                provider({ month: "2026-06", vendor: "lambda", credit: 999 }),
+            ],
+            opCloud: [
+                grant({ vendor: "lambda", granted: 1000 }),
+                opCreditBurn({
+                    month: "2026-06",
+                    vendor: "lambda",
+                    credit: 100,
+                }),
+            ],
+        });
+        const [row] = creditRunway(data, NOW);
+        expect(row.burnedUsd).toBe(100);
+        expect(row.remainingUsd).toBe(900);
+    });
+
+    it("keeps OpenAI grant-funded usage in the main runway table", () => {
+        const data = emptyData({
+            opCloud: [
+                grant({
+                    vendor: "openai",
+                    label: "credit grant",
+                    granted: 1565.58,
+                    start_date: "2026-01-01",
+                    expires: "2026-08-01",
+                }),
+                opCreditBurn({
+                    month: "2026-06",
+                    vendor: "openai",
+                    credit: 531.25,
+                }),
+            ],
+        });
+        const [row] = creditRunway(data, NOW);
+        expect(row.vendor).toBe("openai");
+        expect(row.grantedUsd).toBe(1565.58);
+        expect(row.burnedUsd).toBe(531.25);
+        expect(row.remainingUsd).toBeCloseTo(1034.33, 2);
+    });
+
+    it("tracks pre-2026 opening burn on the main runway row", () => {
+        const data = emptyData({
+            opCloud: [
+                grant({
+                    vendor: "google",
+                    granted: 100000,
+                    start_date: "2026-01-01",
+                }),
+                opCreditBurn({
+                    month: "2025-01",
+                    vendor: "google",
+                    credit: 63899.8,
+                    resource_name: "pre-2026 grant burn",
+                    evidence: "pre-2026 opening grant burn",
+                }),
+            ],
+        });
+        const [runway] = creditRunway(data, NOW);
+        expect(runway.preWindowBurnUsd).toBe(63899.8);
+        expect(runway.burnedUsd).toBe(63899.8);
+        expect(runway.remainingUsd).toBeCloseTo(36100.2, 2);
+    });
+
     it("projects depletion from last full-month base and current-month intensity", () => {
         const data = emptyData({
-            grants: [grant({ vendor: "lambda", granted: 1000 })],
-            providerMonthly: [
-                provider({ month: "2026-06", vendor: "lambda", credit: 100 }),
-                provider({ month: "2026-07", vendor: "lambda", credit: 80 }),
+            opCloud: [
+                grant({ vendor: "lambda", granted: 1000 }),
+                opCreditBurn({
+                    month: "2026-06",
+                    vendor: "lambda",
+                    credit: 100,
+                }),
+                opCreditBurn({
+                    month: "2026-07",
+                    vendor: "lambda",
+                    credit: 80,
+                }),
             ],
         });
         const [row] = creditRunway(data, NOW);
@@ -1347,9 +1455,13 @@ describe("creditRunway", () => {
         // aws shape: Automat-it deducts credits at invoice time (~the 10th of
         // the next month), so June/July read zero until the invoice lands.
         const data = emptyData({
-            grants: [grant({ vendor: "aws", granted: 10000 })],
-            providerMonthly: [
-                provider({ month: "2026-05", vendor: "aws", credit: 3000 }),
+            opCloud: [
+                grant({ vendor: "aws", granted: 10000 }),
+                opCreditBurn({
+                    month: "2026-05",
+                    vendor: "aws",
+                    credit: 3000,
+                }),
             ],
         });
         const [row] = creditRunway(data, NOW);
@@ -1361,16 +1473,20 @@ describe("creditRunway", () => {
 
     it("falls back to the last complete month when the running month is silent", () => {
         const data = emptyData({
-            grants: [grant({ vendor: "lambda", granted: 1000 })],
-            providerMonthly: [
-                provider({ month: "2026-06", vendor: "lambda", credit: 50 }),
+            opCloud: [
+                grant({ vendor: "lambda", granted: 1000 }),
+                opCreditBurn({
+                    month: "2026-06",
+                    vendor: "lambda",
+                    credit: 50,
+                }),
             ],
         });
         const [row] = creditRunway(data, NOW);
         expect(row.rateBasis).toBe("last");
         expect(row.monthlyRateUsd).toBe(50);
         const dormant = creditRunway(
-            emptyData({ grants: [grant({ vendor: "lambda", granted: 10 })] }),
+            emptyData({ opCloud: [grant({ vendor: "lambda", granted: 10 })] }),
             NOW,
         );
         expect(dormant[0].monthlyRateUsd).toBeNull();
@@ -1379,15 +1495,13 @@ describe("creditRunway", () => {
 
     it("lets an upcoming expiry beat a later burn date", () => {
         const data = emptyData({
-            grants: [
+            opCloud: [
                 grant({
                     vendor: "digitalocean",
                     granted: 1000,
                     expires: "2026-07-22",
                 }),
-            ],
-            providerMonthly: [
-                provider({
+                opCreditBurn({
                     month: "2026-07",
                     vendor: "digitalocean",
                     credit: 80,
@@ -1401,7 +1515,7 @@ describe("creditRunway", () => {
 
     it("flags pre-window grants, lapsed remainders, and unallocated burn", () => {
         const data = emptyData({
-            grants: [
+            opCloud: [
                 grant({
                     vendor: "google",
                     granted: 100,
@@ -1415,14 +1529,16 @@ describe("creditRunway", () => {
                 }),
                 grant({ vendor: "elevenlabs", granted: 100 }),
                 grant({ vendor: "runpod", granted: 100 }),
-            ],
-            providerMonthly: [
-                provider({
+                opCreditBurn({
                     month: "2026-04",
                     vendor: "elevenlabs",
                     credit: 120,
                 }),
-                provider({ month: "2026-04", vendor: "runpod", credit: 100 }),
+                opCreditBurn({
+                    month: "2026-04",
+                    vendor: "runpod",
+                    credit: 100,
+                }),
             ],
         });
         const byVendor = new Map(
@@ -1453,7 +1569,7 @@ describe("creditRunway", () => {
         // that had not started yet (vendor-pooled burn cannot be attributed
         // per-grant more precisely).
         const data = emptyData({
-            grants: [
+            opCloud: [
                 grant({
                     vendor: "aws",
                     label: "early",
@@ -1467,9 +1583,11 @@ describe("creditRunway", () => {
                     granted: 200,
                     start_date: "2026-04-01",
                 }),
-            ],
-            providerMonthly: [
-                provider({ month: "2026-01", vendor: "aws", credit: 130 }),
+                opCreditBurn({
+                    month: "2026-01",
+                    vendor: "aws",
+                    credit: 130,
+                }),
             ],
         });
         const [row] = creditRunway(data, NOW);
@@ -1481,9 +1599,9 @@ describe("creditRunway", () => {
         expect(row.flags).not.toContain("unallocated burn 30");
     });
 
-    it("reports grant statuses for the raw Grants tab", () => {
+    it("reports grant statuses from positive OP Cloud credit rows", () => {
         const data = emptyData({
-            grants: [
+            opCloud: [
                 grant({ vendor: "lambda", label: "live", granted: 100 }),
                 grant({
                     vendor: "runpod",
@@ -1496,9 +1614,11 @@ describe("creditRunway", () => {
                     granted: 100,
                     expires: "2026-01-31",
                 }),
-            ],
-            providerMonthly: [
-                provider({ month: "2026-04", vendor: "runpod", credit: 50 }),
+                opCreditBurn({
+                    month: "2026-04",
+                    vendor: "runpod",
+                    credit: 50,
+                }),
             ],
         });
         const { grants } = allocateGrants(data, NOW);
@@ -1512,16 +1632,22 @@ describe("creditRunway", () => {
 
     it("includes pre-window burn rows that every other lens excludes", () => {
         const data = emptyData({
-            grants: [
+            opCloud: [
                 grant({
                     vendor: "aws",
                     granted: 100000,
                     start_date: "2025-09-01",
                 }),
-            ],
-            providerMonthly: [
-                provider({ month: "2025-12", vendor: "aws", credit: 35000 }),
-                provider({ month: "2026-01", vendor: "aws", credit: 45000 }),
+                opCreditBurn({
+                    month: "2025-12",
+                    vendor: "aws",
+                    credit: 35000,
+                }),
+                opCreditBurn({
+                    month: "2026-01",
+                    vendor: "aws",
+                    credit: 45000,
+                }),
             ],
         });
         const [row] = creditRunway(data, NOW);
@@ -1535,7 +1661,7 @@ describe("creditRunway", () => {
 
     it("sorts soonest depletion first", () => {
         const data = emptyData({
-            grants: [
+            opCloud: [
                 grant({ vendor: "lambda", granted: 100 }),
                 grant({
                     vendor: "digitalocean",
@@ -1543,10 +1669,12 @@ describe("creditRunway", () => {
                     expires: "2026-07-22",
                 }),
                 grant({ vendor: "fireworks", granted: 50 }), // dormant, no depletion
-            ],
-            providerMonthly: [
-                provider({ month: "2026-07", vendor: "lambda", credit: 90 }),
-                provider({
+                opCreditBurn({
+                    month: "2026-07",
+                    vendor: "lambda",
+                    credit: 90,
+                }),
+                opCreditBurn({
                     month: "2026-07",
                     vendor: "digitalocean",
                     credit: 10,
@@ -1563,7 +1691,7 @@ describe("creditRunway", () => {
 
     it("features a pollen-priced gift pool as finished credits (pointsflyer)", () => {
         const data = emptyData({
-            grants: [
+            opCloud: [
                 grant({
                     vendor: "pointsflyer",
                     label: "gifted compute",
@@ -1571,14 +1699,12 @@ describe("creditRunway", () => {
                     start_date: "2025-12-01",
                     expires: "2026-04-30",
                 }),
-            ],
-            providerMonthly: [
-                provider({
+                opCreditBurn({
                     month: "2026-01",
                     vendor: "pointsflyer",
                     credit: 60,
                 }),
-                provider({
+                opCreditBurn({
                     month: "2026-02",
                     vendor: "pointsflyer",
                     credit: 40,
@@ -1597,13 +1723,33 @@ describe("ungrantedCreditBurn", () => {
     it("lists credit burners without grants, excluding pollen-priced vendors", () => {
         const NOW = new Date("2026-07-08T12:00:00Z");
         const data = emptyData({
-            grants: [grant({ vendor: "lambda", granted: 100 })],
-            providerMonthly: [
-                provider({ month: "2026-06", vendor: "alibaba", credit: 87 }),
-                provider({ month: "2026-07", vendor: "alibaba", credit: 5 }),
-                provider({ month: "2026-06", vendor: "airforce", credit: 50 }),
-                provider({ month: "2026-06", vendor: "lambda", credit: 10 }),
-                provider({ month: "2026-06", vendor: "deepinfra", paid: 10 }),
+            opCloud: [
+                grant({ vendor: "lambda", granted: 100 }),
+                opCreditBurn({
+                    month: "2026-06",
+                    vendor: "alibaba",
+                    credit: 87,
+                }),
+                opCreditBurn({
+                    month: "2026-07",
+                    vendor: "alibaba",
+                    credit: 5,
+                }),
+                opCreditBurn({
+                    month: "2026-06",
+                    vendor: "airforce",
+                    credit: 50,
+                }),
+                opCreditBurn({
+                    month: "2026-06",
+                    vendor: "lambda",
+                    credit: 10,
+                }),
+                opCreditBurn({
+                    month: "2026-06",
+                    vendor: "deepinfra",
+                    paid: 10,
+                }),
             ],
         });
         const rows = ungrantedCreditBurn(data, NOW);

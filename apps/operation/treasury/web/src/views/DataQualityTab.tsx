@@ -9,10 +9,10 @@ import {
 import { useMemo } from "react";
 import {
     DataTable,
+    GROUP_BORDER,
     HeaderHint,
-    RAW_OP_STICKY_HEADER,
-    RawOpTableScroller,
     type SortColumn,
+    TableScroller,
     useSortableRows,
     withUniqueRowKeys,
 } from "../components/DataTable";
@@ -25,9 +25,6 @@ import {
 } from "../lib/insights";
 import { matchesMonth, monthLabel } from "../lib/months";
 import type { Data } from "../types";
-
-const DATA_QUALITY_STICKY_HEADER = `${RAW_OP_STICKY_HEADER} [&_thead_tr:first-child_th]:!top-0 [&_thead_tr:first-child_th]:!z-30 [&_thead_tr:first-child_th]:h-7 [&_thead_tr:first-child_th]:py-1 [&_thead_tr:nth-child(2)_th]:!top-7`;
-const SECTION_SPLIT = "shadow-[inset_-1px_0_0_var(--polli-color-border)]";
 
 const STATUS_LABELS: Record<DataQualityStatus, string> = {
     ok: "ok",
@@ -97,18 +94,6 @@ function StatusCell({ row }: { row: VendorPlanes }) {
     );
 }
 
-function GroupHeader({ children }: { children: string }) {
-    return (
-        <span className="block min-w-max text-center text-[10px] uppercase tracking-wide text-theme-text-soft">
-            {children}
-        </span>
-    );
-}
-
-function MetricHeader({ children }: { children: string }) {
-    return <span className="block min-w-max">{children}</span>;
-}
-
 export function visiblePlaneRows({
     month,
     rows,
@@ -153,7 +138,7 @@ function rowKey(row: VendorPlanes) {
     return `${row.month}|${row.vendor}`;
 }
 
-export function ReconciliationTab({
+export function DataQualityTab({
     data,
     month = "",
     vendor = "all",
@@ -193,34 +178,11 @@ export function ReconciliationTab({
     const { headerProps, rows } = useSortableRows(baseRows, sortColumns, null);
 
     return (
-        <RawOpTableScroller>
-            <DataTable className={DATA_QUALITY_STICKY_HEADER}>
+        <TableScroller>
+            <DataTable>
                 <TableHead>
                     <TableRow>
-                        <TableHeaderCell align="center">
-                            <span className="sr-only">Quality</span>
-                        </TableHeaderCell>
-                        <TableHeaderCell align="center">
-                            <span className="sr-only">Period</span>
-                        </TableHeaderCell>
-                        <TableHeaderCell align="center">
-                            <span className="sr-only">Vendor</span>
-                        </TableHeaderCell>
-                        <TableHeaderCell align="center">
-                            <span className="sr-only">Transactions</span>
-                        </TableHeaderCell>
-                        <TableHeaderCell colSpan={3} align="center">
-                            <GroupHeader>Cloud</GroupHeader>
-                        </TableHeaderCell>
-                        <TableHeaderCell colSpan={3} align="center">
-                            <GroupHeader>Pollen</GroupHeader>
-                        </TableHeaderCell>
-                        <TableHeaderCell colSpan={1} align="center">
-                            <GroupHeader>Checks</GroupHeader>
-                        </TableHeaderCell>
-                    </TableRow>
-                    <TableRow>
-                        <TableHeaderCell {...headerProps("status")}>
+                        <TableHeaderCell rowSpan={2} {...headerProps("status")}>
                             <HeaderHint
                                 hint={{
                                     meaning:
@@ -228,18 +190,18 @@ export function ReconciliationTab({
                                     tables: "op_transactions_api + op_cloud_api + op_pollen_api",
                                 }}
                             >
-                                <MetricHeader>Status</MetricHeader>
+                                Status
                             </HeaderHint>
                         </TableHeaderCell>
-                        <TableHeaderCell {...headerProps("month")}>
-                            <MetricHeader>Month</MetricHeader>
+                        <TableHeaderCell rowSpan={2} {...headerProps("month")}>
+                            Month
                         </TableHeaderCell>
-                        <TableHeaderCell {...headerProps("vendor")}>
-                            <MetricHeader>Vendor</MetricHeader>
+                        <TableHeaderCell rowSpan={2} {...headerProps("vendor")}>
+                            Vendor
                         </TableHeaderCell>
                         <TableHeaderCell
+                            rowSpan={2}
                             {...headerProps("cashUsd")}
-                            className={SECTION_SPLIT}
                             align="right"
                         >
                             <HeaderHint
@@ -250,11 +212,35 @@ export function ReconciliationTab({
                                     formula: "-sum(amount)",
                                 }}
                             >
-                                <MetricHeader>Transactions</MetricHeader>
+                                Transactions
                             </HeaderHint>
                         </TableHeaderCell>
                         <TableHeaderCell
+                            colSpan={3}
+                            align="center"
+                            className={GROUP_BORDER}
+                        >
+                            Cloud
+                        </TableHeaderCell>
+                        <TableHeaderCell
+                            colSpan={3}
+                            align="center"
+                            className={GROUP_BORDER}
+                        >
+                            Pollen
+                        </TableHeaderCell>
+                        <TableHeaderCell
+                            colSpan={1}
+                            align="center"
+                            className={GROUP_BORDER}
+                        >
+                            Checks
+                        </TableHeaderCell>
+                    </TableRow>
+                    <TableRow>
+                        <TableHeaderCell
                             {...headerProps("cloudPaidUsd")}
+                            className={GROUP_BORDER}
                             align="right"
                         >
                             <HeaderHint
@@ -265,7 +251,7 @@ export function ReconciliationTab({
                                     formula: "-sum(paid)",
                                 }}
                             >
-                                <MetricHeader>Paid</MetricHeader>
+                                Paid
                             </HeaderHint>
                         </TableHeaderCell>
                         <TableHeaderCell
@@ -280,12 +266,11 @@ export function ReconciliationTab({
                                     formula: "sum(max(0, -credit))",
                                 }}
                             >
-                                <MetricHeader>Credit</MetricHeader>
+                                Credit
                             </HeaderHint>
                         </TableHeaderCell>
                         <TableHeaderCell
                             {...headerProps("cloudUsd")}
-                            className={SECTION_SPLIT}
                             align="right"
                         >
                             <HeaderHint
@@ -297,11 +282,12 @@ export function ReconciliationTab({
                                         "cloud_paid_usd + cloud_credit_usd",
                                 }}
                             >
-                                <MetricHeader>Total</MetricHeader>
+                                Total
                             </HeaderHint>
                         </TableHeaderCell>
                         <TableHeaderCell
                             {...headerProps("pollenPaidCostUsd")}
+                            className={GROUP_BORDER}
                             align="right"
                         >
                             <HeaderHint
@@ -312,7 +298,7 @@ export function ReconciliationTab({
                                     formula: "cost_paid",
                                 }}
                             >
-                                <MetricHeader>Paid</MetricHeader>
+                                Paid
                             </HeaderHint>
                         </TableHeaderCell>
                         <TableHeaderCell
@@ -327,12 +313,11 @@ export function ReconciliationTab({
                                     formula: "cost_quests",
                                 }}
                             >
-                                <MetricHeader>Quest</MetricHeader>
+                                Quest
                             </HeaderHint>
                         </TableHeaderCell>
                         <TableHeaderCell
                             {...headerProps("pollenCostUsd")}
-                            className={SECTION_SPLIT}
                             align="right"
                         >
                             <HeaderHint
@@ -344,11 +329,12 @@ export function ReconciliationTab({
                                         "pollen_paid_cost_usd + pollen_quest_cost_usd",
                                 }}
                             >
-                                <MetricHeader>Total</MetricHeader>
+                                Total
                             </HeaderHint>
                         </TableHeaderCell>
                         <TableHeaderCell
                             {...headerProps("calibX")}
+                            className={GROUP_BORDER}
                             align="right"
                         >
                             <HeaderHint
@@ -359,7 +345,7 @@ export function ReconciliationTab({
                                         "meter_cloud_usd / pollen_cost_usd",
                                 }}
                             >
-                                <MetricHeader>Calib x</MetricHeader>
+                                Calib x
                             </HeaderHint>
                         </TableHeaderCell>
                     </TableRow>
@@ -372,35 +358,29 @@ export function ReconciliationTab({
                             </TableCell>
                             <TableCell>{monthLabel(row.month)}</TableCell>
                             <TableCell>{row.vendor}</TableCell>
-                            <TableCell
-                                className={`text-right ${SECTION_SPLIT}`}
-                            >
+                            <TableCell className="text-right">
                                 {fmtUsd(row.cashUsd)}
                             </TableCell>
-                            <TableCell className="text-right">
+                            <TableCell className={`text-right ${GROUP_BORDER}`}>
                                 {fmtUsd(row.cloudPaidUsd)}
                             </TableCell>
                             <TableCell className="text-right text-theme-text-soft">
                                 {fmtUsd(row.cloudCreditUsd)}
                             </TableCell>
-                            <TableCell
-                                className={`text-right ${SECTION_SPLIT}`}
-                            >
+                            <TableCell className="text-right">
                                 {fmtUsd(row.cloudUsd)}
                             </TableCell>
-                            <TableCell className="text-right">
+                            <TableCell className={`text-right ${GROUP_BORDER}`}>
                                 {fmtUsd(row.pollenPaidCostUsd)}
                             </TableCell>
                             <TableCell className="text-right text-theme-text-soft">
                                 {fmtUsd(row.pollenQuestCostUsd)}
                             </TableCell>
-                            <TableCell
-                                className={`text-right ${SECTION_SPLIT}`}
-                            >
+                            <TableCell className="text-right">
                                 {fmtUsd(row.pollenCostUsd)}
                             </TableCell>
                             <TableCell
-                                className={`text-right ${
+                                className={`text-right ${GROUP_BORDER} ${
                                     row.calibX != null &&
                                     Math.abs(row.calibX - 1) > CALIB_DRIFT_ALARM
                                         ? "text-intent-danger-text"
@@ -413,6 +393,6 @@ export function ReconciliationTab({
                     ))}
                 </TableBody>
             </DataTable>
-        </RawOpTableScroller>
+        </TableScroller>
     );
 }

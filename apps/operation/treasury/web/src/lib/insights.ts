@@ -517,7 +517,7 @@ const PREPAID_EPS_USD = 50;
 
 // Infra rows (Cloudflare, the EC2/CloudFront share of AWS) fund pools and
 // cash flow, but they have no pollen plane — they stay out of the compute
-// lenses (reconciliation, calibration).
+// lenses (data quality, calibration).
 export function isInfraRow(row: { category?: string }): boolean {
     return row.category === "infra";
 }
@@ -901,17 +901,6 @@ export function vendorPlanes(data: Data): VendorPlanes[] {
 
 export function insightVendorOptions(data: Data): string[] {
     const vendors = new Set<string>();
-    for (const row of data.transactions) {
-        if (row.category === "compute" && row.vendor.trim()) {
-            vendors.add(row.vendor.trim());
-        }
-    }
-    for (const row of data.providerMonthly) {
-        if (row.vendor.trim()) vendors.add(row.vendor.trim());
-    }
-    for (const row of data.pollenMonthly) {
-        if (row.vendor.trim()) vendors.add(row.vendor.trim());
-    }
     for (const row of data.opTransactions ?? []) {
         if (row.category === "cloud" && row.vendor.trim()) {
             vendors.add(row.vendor.trim());
@@ -1416,6 +1405,7 @@ export type RunwayRow = {
     remainingUsd: number;
     lapsedUsd: number;
     unallocatedUsd: number; // burn no grant could absorb
+    preWindowBurnUsd: number;
     lastMonthBurnUsd: number;
     currentMonthBurnUsd: number;
     cashLastMonthUsd: number;
@@ -1430,9 +1420,74 @@ export type RunwayRow = {
     grants: GrantStatus[];
 };
 
-const NO_EXPIRY = "1970-01-01";
+export const PRE_WINDOW_GRANT_BURN_RESOURCE = "pre-2026 grant burn";
+
 const AVG_DAYS_PER_MONTH = 30.44;
 const POOL_EPS_USD = 0.5;
+
+function opCloudDate(value: string): string {
+    return value.slice(0, 10);
+}
+
+export function isPreWindowGrantBurnRow(
+    row: Pick<OpCloudRow, "credit" | "resource_name" | "start">,
+): boolean {
+    return (
+        row.resource_name === PRE_WINDOW_GRANT_BURN_RESOURCE &&
+        row.credit < 0 &&
+        row.start.slice(0, 7) < WINDOW_START
+    );
+}
+
+function opCloudGrantStatuses(data: Data): GrantStatus[] {
+    const grants: GrantStatus[] = [];
+    for (const row of data.opCloud ?? []) {
+        const grantedUsd = Math.max(
+            0,
+            toUsd(row.credit, row.currency, row.start),
+        );
+        if (grantedUsd <= 0) continue;
+        grants.push({
+            vendor: row.vendor,
+            label: row.resource_name,
+            grantedUsd,
+            startDate: opCloudDate(row.start),
+            expires: row.end ? opCloudDate(row.end) : null,
+            allocatedUsd: 0,
+            lapsedUsd: 0,
+            active: true,
+            finishedDate: null,
+        });
+    }
+    grants.sort(
+        (a, b) =>
+            a.vendor.localeCompare(b.vendor) ||
+            a.startDate.localeCompare(b.startDate) ||
+            a.label.localeCompare(b.label),
+    );
+    return grants;
+}
+
+function opCloudBurnByVendorMonth(data: Data) {
+    const byVendor = new Map<
+        string,
+        Map<string, { creditUsd: number; paidUsd: number }>
+    >();
+    for (const row of data.opCloud ?? []) {
+        const month = opCloudMonth(row);
+        if (!MONTH_KEY_RE.test(month)) continue;
+        const creditUsd = opCloudCreditBurnUsd(row);
+        const paidUsd = opCloudPaidBurnUsd(row);
+        if (creditUsd <= 0 && paidUsd <= 0) continue;
+        const months = byVendor.get(row.vendor) ?? new Map();
+        const entry = months.get(month) ?? { creditUsd: 0, paidUsd: 0 };
+        entry.creditUsd += creditUsd;
+        entry.paidUsd += paidUsd;
+        months.set(month, entry);
+        byVendor.set(row.vendor, months);
+    }
+    return byVendor;
+}
 
 // Allocate each vendor's monthly credit burn to its grants. Pass 1 respects
 // each grant's active window (start month ≤ burn month ≤ expiry month),
@@ -1448,23 +1503,10 @@ export function allocateGrants(
 ): { grants: GrantStatus[]; unallocated: Map<string, number> } {
     const today = now.toISOString().slice(0, 10);
 
-    // Pollen-priced vendors' grants participate too (pointsflyer's gift):
-    // the pool is valued at our registry prices rather than a vendor-stated
-    // balance, but a finished gift belongs in the credits history.
     const byVendor = new Map<string, GrantStatus[]>();
-    for (const grant of data.grants) {
+    for (const grant of opCloudGrantStatuses(data)) {
         const list = byVendor.get(grant.vendor) ?? [];
-        list.push({
-            vendor: grant.vendor,
-            label: grant.label,
-            grantedUsd: toUsd(grant.granted, grant.currency, grant.start_date),
-            startDate: grant.start_date,
-            expires: grant.expires === NO_EXPIRY ? null : grant.expires,
-            allocatedUsd: 0,
-            lapsedUsd: 0,
-            active: true,
-            finishedDate: null,
-        });
+        list.push(grant);
         byVendor.set(grant.vendor, list);
     }
     for (const list of byVendor.values()) {
@@ -1475,25 +1517,17 @@ export function allocateGrants(
         );
     }
 
-    const burnByMonth = new Map<string, Map<string, number>>();
-    for (const row of data.providerMonthly) {
-        if (!byVendor.has(row.vendor)) continue;
-        const credit = toUsd(row.credit, row.currency, row.month);
-        if (credit <= 0) continue;
-        const months = burnByMonth.get(row.vendor) ?? new Map();
-        months.set(row.month, (months.get(row.month) ?? 0) + credit);
-        burnByMonth.set(row.vendor, months);
-    }
+    const burnByVendorMonth = opCloudBurnByVendorMonth(data);
 
     const fillMonth = new Map<GrantStatus, string>();
     const unallocated = new Map<string, number>();
     for (const [vendor, grants] of byVendor) {
         const months = [
-            ...(burnByMonth.get(vendor) ?? new Map()).entries(),
+            ...(burnByVendorMonth.get(vendor) ?? new Map()).entries(),
         ].sort((a, b) => a[0].localeCompare(b[0]));
         let overflow = 0;
         for (const [month, burn] of months) {
-            let left = burn;
+            let left = burn.creditUsd;
             for (const grant of grants) {
                 if (left <= 0) break;
                 if (grant.startDate.slice(0, 7) > month) continue;
@@ -1573,6 +1607,7 @@ export function creditRunway(data: Data, now: Date): RunwayRow[] {
             remainingUsd: 0,
             lapsedUsd: 0,
             unallocatedUsd: unallocated.get(grant.vendor) ?? 0,
+            preWindowBurnUsd: 0,
             lastMonthBurnUsd: 0,
             currentMonthBurnUsd: 0,
             cashLastMonthUsd: 0,
@@ -1598,25 +1633,29 @@ export function creditRunway(data: Data, now: Date): RunwayRow[] {
         byVendor.set(grant.vendor, row);
     }
 
-    const burnMonths = new Map<string, Map<string, number>>();
-    for (const row of data.providerMonthly) {
-        const entry = byVendor.get(row.vendor);
+    const burnByVendorMonth = opCloudBurnByVendorMonth(data);
+    for (const [vendor, months] of burnByVendorMonth) {
+        const entry = byVendor.get(vendor);
         if (!entry) continue;
-        const credit = toUsd(row.credit, row.currency, row.month);
-        const paid = toUsd(row.paid, row.currency, row.month);
-        if (credit > 0) {
-            entry.burnedUsd += credit;
-            if (row.month === lastMonth) entry.lastMonthBurnUsd += credit;
-            if (row.month === currentMonth) {
-                entry.currentMonthBurnUsd += credit;
+        for (const [month, burn] of months) {
+            if (burn.creditUsd > 0) {
+                entry.burnedUsd += burn.creditUsd;
+                if (month < WINDOW_START) {
+                    entry.preWindowBurnUsd += burn.creditUsd;
+                }
+                if (month === lastMonth) {
+                    entry.lastMonthBurnUsd += burn.creditUsd;
+                }
+                if (month === currentMonth) {
+                    entry.currentMonthBurnUsd += burn.creditUsd;
+                }
             }
-            const months = burnMonths.get(row.vendor) ?? new Map();
-            months.set(row.month, (months.get(row.month) ?? 0) + credit);
-            burnMonths.set(row.vendor, months);
-        }
-        if (paid > 0) {
-            if (row.month === lastMonth) entry.cashLastMonthUsd += paid;
-            if (row.month === currentMonth) entry.cashCurrentMonthUsd += paid;
+            if (burn.paidUsd > 0) {
+                if (month === lastMonth) entry.cashLastMonthUsd += burn.paidUsd;
+                if (month === currentMonth) {
+                    entry.cashCurrentMonthUsd += burn.paidUsd;
+                }
+            }
         }
     }
 
@@ -1637,8 +1676,10 @@ export function creditRunway(data: Data, now: Date): RunwayRow[] {
         // stopped burning. Fall back to the latest witnessed month, marked
         // stale and flagged, rather than showing a dead pool.
         const latestBurnMonth = [
-            ...(burnMonths.get(row.vendor) ?? new Map()),
-        ].sort((a, b) => b[0].localeCompare(a[0]))[0];
+            ...(burnByVendorMonth.get(row.vendor) ?? new Map()).entries(),
+        ]
+            .filter((entry) => entry[1].creditUsd > 0)
+            .sort((a, b) => b[0].localeCompare(a[0]))[0];
         if (row.currentMonthBurnUsd > 0) {
             const elapsedDays = Math.max(1, now.getUTCDate());
             row.monthlyRateUsd =
@@ -1648,7 +1689,7 @@ export function creditRunway(data: Data, now: Date): RunwayRow[] {
             row.monthlyRateUsd = row.lastMonthBurnUsd;
             row.rateBasis = "last";
         } else if (!row.finished && latestBurnMonth) {
-            row.monthlyRateUsd = latestBurnMonth[1];
+            row.monthlyRateUsd = latestBurnMonth[1].creditUsd;
             row.rateBasis = "stale";
             row.flags.push(
                 `no burn data since ${monthLabel(latestBurnMonth[0])}`,
@@ -1728,24 +1769,29 @@ export type UngrantedBurnRow = {
 export function ungrantedCreditBurn(data: Data, now: Date): UngrantedBurnRow[] {
     const currentMonth = now.toISOString().slice(0, 7);
     const lastMonth = monthShift(currentMonth, -1);
-    const granted = new Set(data.grants.map((grant) => grant.vendor));
+    const granted = new Set(
+        opCloudGrantStatuses(data).map((grant) => grant.vendor),
+    );
 
     const byVendor = new Map<string, UngrantedBurnRow>();
-    for (const row of data.providerMonthly) {
-        if (granted.has(row.vendor)) continue;
-        if (POLLEN_PRICED_VENDORS.has(row.vendor)) continue;
-        const credit = toUsd(row.credit, row.currency, row.month);
-        if (credit <= 0) continue;
-        const entry = byVendor.get(row.vendor) ?? {
-            vendor: row.vendor,
+    for (const [vendor, months] of opCloudBurnByVendorMonth(data)) {
+        if (granted.has(vendor)) continue;
+        if (POLLEN_PRICED_VENDORS.has(vendor)) continue;
+        const entry = byVendor.get(vendor) ?? {
+            vendor,
             burnedUsd: 0,
             lastMonthBurnUsd: 0,
             currentMonthBurnUsd: 0,
         };
-        entry.burnedUsd += credit;
-        if (row.month === lastMonth) entry.lastMonthBurnUsd += credit;
-        if (row.month === currentMonth) entry.currentMonthBurnUsd += credit;
-        byVendor.set(row.vendor, entry);
+        for (const [month, burn] of months) {
+            if (burn.creditUsd <= 0) continue;
+            entry.burnedUsd += burn.creditUsd;
+            if (month === lastMonth) entry.lastMonthBurnUsd += burn.creditUsd;
+            if (month === currentMonth) {
+                entry.currentMonthBurnUsd += burn.creditUsd;
+            }
+        }
+        if (entry.burnedUsd > 0) byVendor.set(vendor, entry);
     }
     return [...byVendor.values()].sort((a, b) => b.burnedUsd - a.burnedUsd);
 }

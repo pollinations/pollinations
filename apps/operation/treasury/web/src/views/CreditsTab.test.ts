@@ -14,6 +14,7 @@ const row = (vendor: string): RunwayRow => ({
     remainingUsd: 0,
     lapsedUsd: 0,
     unallocatedUsd: 0,
+    preWindowBurnUsd: 0,
     lastMonthBurnUsd: 0,
     currentMonthBurnUsd: 0,
     cashLastMonthUsd: 0,

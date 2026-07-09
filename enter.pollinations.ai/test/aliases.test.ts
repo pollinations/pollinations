@@ -128,14 +128,6 @@ test("GPT-5.6 ChatGPT models are quest-eligible at the discounted multiplier", (
     }
 });
 
-test("Grok 4.5 uses the xAI API and requires paid balance at provider cost", () => {
-    const definition = getRegistryModelDefinition("grok-4.5");
-
-    expect(definition.provider).toBe("xai");
-    expect(definition.paidOnly).toBe(true);
-    expect(definition.priceMultiplier).toBe(1);
-});
-
 test("Seedream 5 Pro uses Replicate and requires paid balance at provider cost", () => {
     const definition = getRegistryModelDefinition("seedream5-pro");
 

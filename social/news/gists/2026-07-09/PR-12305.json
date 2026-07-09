@@ -1,0 +1,34 @@
+{
+  "pr_number": 12305,
+  "title": "fix: restore gen production edge rate limiter",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/12305",
+  "merged_at": "2026-07-09T13:54:24Z",
+  "labels": [
+    "DEV-INFRA"
+  ],
+  "pr_body_excerpt": "- Restores the production `EDGE_RATE_LIMITER` binding removed during the incident.\n- Keeps staging/test rate limiter config unchanged.\n- Leaves custom-domain routing changes untouched.",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Restoring the speed limits",
+    "blurb": "We've restored the edge rate limiter for our text generation API to keep the hive running smoothly and protect against traffic spikes.",
+    "summary": "Restored the production EDGE_RATE_LIMITER binding in the gen.pollinations.ai Cloudflare Worker configuration following a recent incident.",
+    "impact": "This ensures the text generation API remains stable and protected from excessive traffic spikes without affecting custom-domain routing.",
+    "keywords": [
+      "infrastructure",
+      "rate-limiting",
+      "cloudflare-worker",
+      "stability"
+    ],
+    "visual_concept": "Polly the bee and the Monitor Robot setting up a glowing speed limit sign or toll booth next to a stream of data, representing the restored edge rate limiter.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot and a chunky monitor-headed robot setting up a glowing lime green (#ecf874) speed limit sign next to a flowing stream of digital data. Soft pastel gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-09/PR-12305.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot and a chunky monitor-headed robot setting up a glowing lime green (#ecf874) speed limit sign next to a flowing stream of digital data. Soft pastel gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-07-09T13:55:32.323936+00:00"
+}

@@ -114,3 +114,6 @@ Document Your Changes Well: Add comments to your code where needed to explain ho
 Test Your Work: If you can, write and run tests to check that your changes work correctly and do not break anything else.
 
 Thank You! Thank you for contributing! Your help makes the pollinations.ai project stronger and more useful for the community. Happy coding!
+> [!NOTE]
+> **Contributed Note for Guest Sessions:** When inspecting the repository pages while logged out (or in Incognito mode), you may notice localized `400 Bad Request` or `404 Not Found` network responses on generic GitHub interface hooks (such as `/marketplace` or `/projects`). These are native platform session artifacts and safely resolve automatically upon active user authentication.
+

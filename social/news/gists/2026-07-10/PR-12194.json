@@ -1,0 +1,34 @@
+{
+  "pr_number": 12194,
+  "title": "feat: version control community-model monitor deploy configs",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/12194",
+  "merged_at": "2026-07-10T15:48:00Z",
+  "labels": [
+    "DEV-INFRA"
+  ],
+  "pr_body_excerpt": "## Summary\n- Adds `scripts/community-monitor/` — CYCLE.md, probe.mjs, watchdog.sh (actual deploy path), loop.sh + systemd unit (intended fast-follow), README, .env.example. Previously these only lived ad-hoc on the EC2 box with no history.\n- Pins the monitor agent to `--model sonnet --effort low` (was unpinned/default) — a 15-min mechanical health-check loop doesn't need frontier reasoning.\n- Adds a cycle-counted self-`/compact` every 20 cycles (~5h) to CYCLE.md so the long-lived `--remote-control` session doesn't grow context forever.\n\nDeployed live to the box already; this PR just brings the source under version control.\n\n## Test plan\n- [x] Verified `sonnet`/`low effort` pin active on the running remote-control session\n- [x] Verified a full cycle completes correctly with `cyclesSinceCompact` incrementing per CYCLE.md's new duty 0\n- [x] `.env`/`state.json`/`people_mapping.json`/logs correctly gitignored (secrets + PII stay off git)",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Taming the Watchdog",
+    "blurb": "We've brought our community model monitor under version control. Now our health-check agent runs leaner on Sonnet and cleans up its own context history.",
+    "summary": "Moved the community-monitor deployment scripts into version control, pinned the agent to Sonnet with low effort, and added a self-compaction cycle every 5 hours to prevent context bloat.",
+    "impact": "This ensures the monitoring agent runs reliably without consuming excessive context or requiring manual restarts on the EC2 instance.",
+    "keywords": [
+      "infrastructure",
+      "monitoring",
+      "version-control",
+      "agent"
+    ],
+    "visual_concept": "Polly the bee organizing files or putting a leash on a cute robotic watchdog near a retro server rack.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot organizing glowing code files into a neat folder, while a small friendly robotic watchdog sits nearby. A retro server rack with blinking lights stands in the background. Soft lime green (#ecf874) and pastel lavender gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-10/PR-12194.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot organizing glowing code files into a neat folder, while a small friendly robotic watchdog sits nearby. A retro server rack with blinking lights stands in the background. Soft lime green (#ecf874) and pastel lavender gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-07-10T15:49:07.863484+00:00"
+}

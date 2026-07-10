@@ -1,0 +1,35 @@
+{
+  "pr_number": 12319,
+  "title": "fix: remove Myceli proxy routing",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/12319",
+  "merged_at": "2026-07-10T18:25:32Z",
+  "labels": [
+    "DEV-INFRA"
+  ],
+  "pr_body_excerpt": "- Deletes the obsolete `pollinations-myceli-proxy` Worker package and stale proxy migration docs.\n- Updates app deploy cutover to attach `<sub>.pollinations.ai` directly to the Myceli Pages project using Myceli credentials only.\n- Removes old-account deploy secrets from the app deploy workflow.\n- Adds direct `kpi.pollinations.ai` routing to the KPI Worker and removes proxy wording from the old economics dashboard docs.\n- Updates forwarded-header comments/tests to describe a generic trusted edge hop instead of the deleted proxy Worker.\n\nValidation:\n- `node --check apps/_scripts/deploy-app.js`\n- `bash -n apps/_scripts/deploy.sh`\n- `biome check --write apps/_scripts/deploy-app.js shared/public-origin.ts shared/client-ip.ts gen.pollinations.ai/test/proxy-client-ip.test.ts`\n- `prettier --check .github/workflows/app-deploy-automatic.yml`\n- `npx vitest run test/proxy-client-ip.test.ts` in `gen.pollinations.ai`\n- `npm run build` and `npx wrangler deploy --dry-run` in `apps/operation/kpi`\n\nNotes:\n- `gh` is not installed on this machine, so the PR was created through the GitHub connector.\n- Lefthook was not available in PATH during commit; the targeted checks above were run manually.",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Spring cleaning the proxy",
+    "blurb": "We've retired the old Myceli proxy worker and streamlined our app deployment routing. Fewer hops, cleaner code!",
+    "summary": "Removed the obsolete `pollinations-myceli-proxy` Worker and updated deployment scripts to attach subdomains directly to the Myceli Pages project.",
+    "impact": "Internal routing is now simpler and more direct, reducing infrastructure complexity for app deployments.",
+    "keywords": [
+      "infrastructure",
+      "proxy",
+      "deployment",
+      "myceli",
+      "cleanup"
+    ],
+    "visual_concept": "The bee mascot acting as an electrician/engineer, bypassing old tangled wires (the proxy) to connect a direct, glowing wire between two servers. The robot helper carrying away a box of old parts.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny tool belt, connecting a glowing lime green (#ecf874) wire directly between two retro servers. A chunky monitor-head robot happily carries away a cardboard box labeled 'PROXY'. Soft pastel lavender and cream gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-10/PR-12319.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny tool belt, connecting a glowing lime green (#ecf874) wire directly between two retro servers. A chunky monitor-head robot happily carries away a cardboard box labeled 'PROXY'. Soft pastel lavender and cream gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley."
+  },
+  "generated_at": "2026-07-10T18:26:36.941535+00:00"
+}

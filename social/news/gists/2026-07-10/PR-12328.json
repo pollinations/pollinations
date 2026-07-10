@@ -1,0 +1,35 @@
+{
+  "pr_number": 12328,
+  "title": "feat: move observability Grafana to Cloudflare",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/12328",
+  "merged_at": "2026-07-10T16:31:58Z",
+  "labels": [
+    "DEV-INFRA"
+  ],
+  "pr_body_excerpt": "## Summary\n- Renames the operation Grafana app from `economics` to `observability`.\n- Adds the Cloudflare Worker + Container deployment for Grafana at `observability.pollinations.ai` and `observability.myceli.ai`.\n- Extends the operation Cloudflare deployment workflow to include observability.\n- Updates Tinybird rotation references for the renamed operation app.\n\n## Notes\n- This PR intentionally excludes KPI and Quest Dashboard shared branding cleanup; that will be a separate cleanup PR.\n- Workflow-file changes now deploy all supported operation apps, avoiding partial deployment when the workflow and app files change in the same production push.\n\n## Validation\n- Parsed workflow YAML locally.\n- `git diff --check` and staged diff check passed.\n- `npm ci` in `apps/operation/observability`.\n- `npm run check` in `apps/operation/observability`.\n- Local Docker build for the Grafana image passed.\n- Live manual deployment already verified `https://observability.pollinations.ai/api/health` with Grafana `11.4.0` and database `ok`.",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Eyes in the clouds",
+    "blurb": "We've moved our internal observability dashboards to Cloudflare. Better monitoring means a healthier hive!",
+    "summary": "Migrated the internal Grafana observability app to a Cloudflare Worker and Container deployment at observability.pollinations.ai.",
+    "impact": "This improves the reliability of our internal monitoring tools, helping us keep the platform running smoothly.",
+    "keywords": [
+      "infrastructure",
+      "grafana",
+      "cloudflare",
+      "observability",
+      "monitoring"
+    ],
+    "visual_concept": "The bee mascot looking at glowing charts/graphs on a retro monitor, floating in the clouds (Cloudflare metaphor).",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing tiny aviator goggles, looking at a retro CRT monitor displaying glowing lime green (#ecf874) bar charts. The monitor is resting on a fluffy white cloud against a soft pastel lavender sky. Chunky pixels, warm lighting, lo-fi 8-bit aesthetic like A Short Hike."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-10/PR-12328.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing tiny aviator goggles, looking at a retro CRT monitor displaying glowing lime green (#ecf874) bar charts. The monitor is resting on a fluffy white cloud against a soft pastel lavender sky. Chunky pixels, warm lighting, lo-fi 8-bit aesthetic like A Short Hike."
+  },
+  "generated_at": "2026-07-10T16:32:53.838486+00:00"
+}

@@ -424,6 +424,9 @@ fixtureTest(
         const ownerUserId = await createTestUser({
             githubId: COMMUNITY_ENDPOINT_ALLOWED_TEST_GITHUB_ID,
             githubUsername: ownerGithubUsername,
+            // The owner is billed the base cost of their private model, so the
+            // account needs a balance to call it.
+            tierBalance: 1000,
         });
         // A key belonging to the endpoint owner — its calls are owner calls.
         const { key: ownerApiKey } = await createTestApiKey({

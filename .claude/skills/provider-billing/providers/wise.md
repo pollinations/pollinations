@@ -2,7 +2,7 @@
 
 Validated: **2026-04-11** — profiles and balances endpoints queried live with a read-only token against the Myceli.AI OÜ business profile. Statement / transactions endpoints require SCA signing (documented below) and are not working from this skill yet.
 
-This is the **cash position** piece of runway tracking: Stripe tells us what customers paid, Wise tells us what actually landed in our bank and what we still have available to spend. Pair with [stripe.md](stripe.md) / [polar.md](polar.md) on the revenue side and [aws.md](aws.md) / [azure.md](azure.md) / [gcp.md](gcp.md) / [umbrella-cost.md](umbrella-cost.md) on the cost side.
+This is the **cash position** piece of runway tracking: Stripe tells us what customers paid, Wise tells us what actually landed in our bank and what we still have available to spend. Pair with [stripe.md](stripe.md) on the revenue side and [aws.md](aws.md) / [azure.md](azure.md) / [gcp.md](gcp.md) / [umbrella-cost.md](umbrella-cost.md) on the cost side.
 
 ---
 
@@ -271,7 +271,7 @@ Each transfer has `id`, `user`, `targetAccount`, `sourceCurrency`, `sourceValue`
 ## Gotchas
 
 - **SCA is mandatory for transactions / statements.** Profile and balance endpoints work with just Bearer token. Anything that touches individual transaction records requires the public/private keypair flow. Do not rely on `/statement.json` until SCA is set up.
-- **Tokens are UUIDs**, not `sk_*` or `polar_oat_*` prefixes. You can't pattern-match them in a secret scanner as easily — be strict about where they're stored.
+- **Tokens are UUIDs**, not `sk_*` prefixes. You can't pattern-match them in a secret scanner as easily — be strict about where they're stored.
 - **Rate limit**: 100 requests per 10 seconds per token. Plenty for runway queries; don't build a polling dashboard against it.
 - **Business vs personal profile**: a Wise login often has both. Always verify `type == "BUSINESS"` before querying balances — querying the personal profile returns personal finances which are NOT what you want.
 - **Currency object shape**: balances return `{currency: "EUR", amount: {value: 58594.32, currency: "EUR"}}`. The amount has its own nested currency field (same as outer). Don't trip on that.

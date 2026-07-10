@@ -106,12 +106,34 @@ test("calculatePrice derives the total from cost via priceMultiplier", () => {
     expect(price.totalPrice).toBeCloseTo(cost.totalCost * priceMultiplier, 8);
 });
 
-test("GPT-5.5 is available on the free tier", () => {
+test("GPT-5.5 is available without paid-only gating", () => {
     // GPT-5.5 is the flagship behind the `openai-large` clean slug; `gpt-5.5`
     // remains a back-compat alias. Resolve before the direct registry lookup.
     const definition = getRegistryModelDefinition(resolveModelName("gpt-5.5"));
 
     expect(definition.paidOnly).toBeUndefined();
+});
+
+test("GPT-5.6 ChatGPT models are quest-eligible at the Azure multiplier", () => {
+    for (const model of [
+        "gpt-5.6-sol",
+        "gpt-5.6-terra",
+        "gpt-5.6-luna",
+    ] as const) {
+        const definition = getRegistryModelDefinition(model);
+
+        expect(definition.provider).toBe("azure");
+        expect(definition.paidOnly).toBeUndefined();
+        expect(definition.priceMultiplier).toBe(0.75);
+    }
+});
+
+test("Seedream 5 Pro uses Replicate and requires paid balance at provider cost", () => {
+    const definition = getRegistryModelDefinition("seedream5-pro");
+
+    expect(definition.provider).toBe("replicate");
+    expect(definition.paidOnly).toBe(true);
+    expect(definition.priceMultiplier).toBe(1);
 });
 
 test("DeepSeek V4 models are billed at provider cost", () => {

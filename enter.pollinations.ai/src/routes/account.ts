@@ -11,7 +11,6 @@ import {
     user as userTable,
 } from "@shared/db/better-auth.ts";
 import { validator } from "@shared/middleware/validator.ts";
-import { getTierCadence, tierNames } from "@shared/tier-config.ts";
 import { and, desc, eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import type { Context } from "hono";
@@ -33,17 +32,6 @@ import {
 } from "./account-permissions.ts";
 import { communityEndpointsRoutes } from "./community-endpoints.ts";
 import { parseMetadata } from "./metadata-utils.ts";
-
-// Calculate next tier refill time (null for tiers with no refill).
-// Matches the `0 * * * *` cron in wrangler.toml — top of the next UTC hour.
-function getNextRefillAt(tier?: string | null): string | null {
-    const cadence = tier ? getTierCadence(tier) : "none";
-    if (cadence === "none") return null;
-    const next = new Date();
-    next.setUTCMinutes(0, 0, 0);
-    next.setUTCHours(next.getUTCHours() + 1);
-    return next.toISOString();
-}
 
 // Cache TTL in seconds
 const CACHE_TTL = 60 * 60; // 1 hour
@@ -480,7 +468,7 @@ const dailyUsageRecordSchema = z.object({
         .string()
         .nullable()
         .describe(
-            "Billing source: 'tier' = tier balance, 'pack' = paid balance",
+            "Billing source: 'tier' = Quest Pollen balance, 'pack' = paid balance",
         ),
     requests: z.number().describe("Number of requests"),
     cost_usd: z.number().describe("Total cost in USD"),
@@ -569,7 +557,7 @@ const developerEarningsRowSchema = z.object({
         .describe("Developer credit earned from paid-balance spend"),
     tier_earned: z
         .number()
-        .describe("Developer credit earned from tier-balance spend"),
+        .describe("Developer credit earned from Quest Pollen spend"),
     cost_usd: z
         .number()
         .describe(
@@ -592,7 +580,7 @@ const developerEarningsTotalSchema = z.object({
         .describe("Total developer credit earned from paid-balance spend"),
     tier_earned: z
         .number()
-        .describe("Total developer credit earned from tier-balance spend"),
+        .describe("Total developer credit earned from Quest Pollen spend"),
 });
 
 const developerEarningsResponseSchema = z.object({
@@ -739,15 +727,6 @@ const profileResponseSchema = z.object({
         .string()
         .nullable()
         .describe("Profile picture URL (e.g. GitHub avatar)"),
-    tier: z
-        .enum(["anonymous", ...tierNames])
-        .describe("User's current tier level"),
-    nextResetAt: z.iso
-        .datetime()
-        .nullable()
-        .describe(
-            "Next pollen refill timestamp (ISO 8601). `null` for tiers with no refill.",
-        ),
     communityEndpointsAllowed: z
         .boolean()
         .describe(
@@ -773,7 +752,7 @@ const balanceResponseSchema = z.object({
     balance: z
         .number()
         .describe(
-            "Remaining pollen balance (sum of tier balance + paid balance)",
+            "Remaining pollen balance (sum of Quest Pollen + paid balance)",
         ),
 });
 
@@ -834,7 +813,7 @@ const usageRecordSchema = z.object({
         .string()
         .nullable()
         .describe(
-            "Billing source: 'tier' = tier balance, 'pack' = paid balance",
+            "Billing source: 'tier' = Quest Pollen balance, 'pack' = paid balance",
         ),
     input_text_tokens: z.number().describe("Number of input text tokens"),
     input_cached_tokens: z.number().describe("Number of cached input tokens"),
@@ -886,7 +865,7 @@ export const accountRoutes = new Hono<Env>()
             tags: ["👤 Account"],
             summary: "Get Profile",
             description:
-                "Returns your account profile. GitHub username, profile image, current tier, next pollen refill timestamp, and community model access are always returned. Name and email are returned only when the API key has `account:profile`.",
+                "Returns your account profile. GitHub username, profile image, and community model access are always returned. Name and email are returned only when the API key has `account:profile`.",
             responses: {
                 200: {
                     description: "User profile",
@@ -912,7 +891,6 @@ export const accountRoutes = new Hono<Env>()
                     githubId: userTable.githubId,
                     githubUsername: userTable.githubUsername,
                     image: userTable.image,
-                    tier: userTable.tier,
                     name: userTable.name,
                     email: userTable.email,
                 })
@@ -928,8 +906,6 @@ export const accountRoutes = new Hono<Env>()
             return c.json({
                 githubUsername: profile.githubUsername ?? null,
                 image: profile.image ?? null,
-                tier: profile.tier,
-                nextResetAt: getNextRefillAt(profile.tier),
                 communityEndpointsAllowed:
                     isCommunityEndpointOwnerAllowed(profile),
                 ...(includeProfilePII && {

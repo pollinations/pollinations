@@ -431,7 +431,7 @@ export const TEXT_SERVICES = {
             "gemini-3.1-flash-lite-preview",
             "gemini-flash-lite",
         ],
-        modelId: "gemini-3.1-flash-lite-preview",
+        modelId: "gemini-3.1-flash-lite",
         provider: "google",
         brand: "Google",
         category: "text",
@@ -684,14 +684,14 @@ export const TEXT_SERVICES = {
     },
     "gemini-search-fast": {
         aliases: ["gemini-3.1-flash-lite-search"],
-        modelId: "gemini-3.1-flash-lite-preview",
+        modelId: "gemini-3.1-flash-lite",
         provider: "google",
         brand: "Google",
         category: "text",
         addedDate: new Date("2026-05-26").getTime(),
         paidOnly: true,
         priceMultiplier: 1,
-        // Vertex base rates for gemini-3.1-flash-lite-preview. Grounding fee
+        // Vertex base rates for gemini-3.1-flash-lite. Grounding fee
         // dropped to $14/1K queries on Gemini 3 (vs $35/1K on 2.x), with 5K
         // free queries/month shared across all Gemini 3 models; absorbed by
         // Pollinations.

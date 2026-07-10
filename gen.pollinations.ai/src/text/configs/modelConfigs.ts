@@ -240,8 +240,10 @@ export const portkeyConfig: PortkeyConfigMap = {
         "gemini-2.5-flash-lite",
         "global",
     ),
-    "gemini-3.1-flash-lite-preview": createVertexGeminiConfig(
-        "gemini-3.1-flash-lite-preview",
+    // The gemini-3.1-flash-lite-preview publisher model was retired by Google
+    // (404 as of 2026-07); only the GA id resolves.
+    "gemini-3.1-flash-lite": createVertexGeminiConfig(
+        "gemini-3.1-flash-lite",
         "global",
     ),
     "gemini-3.5-flash": createVertexGeminiConfig("gemini-3.5-flash", "global"),

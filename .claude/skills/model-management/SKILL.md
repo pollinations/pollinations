@@ -28,7 +28,7 @@ This skill is self-contained for the model lifecycle. Hand off to a dedicated sk
 |---|---|---|
 | Adding/modifying a Tinybird **pipe or datasource schema** | `tinybird-deploy` | Querying existing pipes/SQL to verify billing rows |
 | Investigating a live model error in prod (logs, error patterns, affected users) | `model-debugging` | Pre-merge empirical testing |
-| Verifying provider invoice ↔ our cost block math, monthly spend rollups | `provider-billing` | Setting the cost block from provider's posted rates |
+| Verifying provider invoice ↔ our cost block math, monthly spend rollups | Treasury `apps/operation/treasury/ingest/connectors/<provider>.md` | Setting the cost block from provider's posted rates |
 | Deploying gen/enter workers themselves | `enter-services` | Local-only testing before merge |
 
 **Things kept inline (not extracted into their own skills) on purpose:**
@@ -584,4 +584,3 @@ Format: `<Model Name> - <what it does or what makes it distinct>`. ≤ ~70 chars
 ## 11.3 Wrapper models (e.g. persona-prompted Claude)
 
 For specialized wrappers, the underlying model's capabilities are NOT the same as the product's. Mark `inputModalities` to reflect the **product intent**, not what the underlying model technically supports. Add a one-line comment explaining the discrepancy.
-

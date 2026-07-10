@@ -4,10 +4,10 @@ This folder contains the committed ingest machinery for Treasury OP data.
 
 Committed:
 
+- `agent.system.txt` - the single Treasury ingest agent prompt.
+- `entry.schema.json` - structured entry output schema and vocabulary.
+- `example-entry.json` - example structured entry.
 - `connectors/` - provider and source collection guides.
-- `prompts/` - agent prompts for collection, extraction, and reconciliation.
-- `schemas/` - structured output schemas and controlled vocabularies.
-- `scripts/` - small processing helpers.
 - `secrets/` - SOPS-encrypted connector credentials and examples.
 
 Local-only:

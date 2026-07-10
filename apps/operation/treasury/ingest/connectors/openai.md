@@ -31,9 +31,7 @@ Collection steps:
 3. Use UTC Unix seconds. `start_time` is inclusive; `end_time` is exclusive. For a calendar month, use the first day of the month through the first day of the next month.
 4. If the response has `has_more: true`, repeat with `page=<next_page>` and append all buckets before extraction.
 5. For dashboard evidence, save screenshots or exports to `data/inbox/`.
-6. Run:
-   - invoices: `prompts/invoice.system.txt`
-   - API/dashboard usage: `prompts/usage.system.txt`
+6. Use `agent.system.txt` with `mode: extract` for saved raw evidence.
 
 Expected entry:
 

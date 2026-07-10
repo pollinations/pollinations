@@ -27,9 +27,7 @@ Collection steps:
    Save stdout to `data/inbox/vast-ai-<period>.json`.
 
 3. If using dashboard screenshots, save them under `data/inbox/`.
-4. Run:
-   - invoices: `prompts/invoice.system.txt`
-   - CLI/dashboard usage: `prompts/usage.system.txt`
+4. Use `agent.system.txt` with `mode: extract` for saved raw evidence.
 
 Expected entry:
 
@@ -45,6 +43,7 @@ Known traps:
 - Wise charges may be EUR while the invoice or Vast usage is USD.
 - Vast.ai CLI invoice rows can be posting-time rollups. A charge may cover usage before its posting date.
 - For usage attribution, charge rows with `quantity` hours cover `[timestamp - quantity hours, timestamp]`.
+- When a charge window crosses calendar months, split the amount by overlap across those months. If `quantity` is missing or unusable, fall back to the posting month and explain that caveat.
 - Always pass explicit `-s` and `-e`; the CLI can otherwise default to too narrow a window.
 
 Reconciliation notes:

@@ -20,7 +20,7 @@ Collection steps:
 
 1. Use Wise activities for the requested period only.
 2. Save any exported CSV/JSON/screenshots to `data/inbox/`.
-3. Run `prompts/usage.system.txt` for exported transaction evidence when it needs to become an entry.
+3. Use `agent.system.txt` with `mode: extract` when exported transaction evidence needs to become an entry.
 4. For reconciliation, compare against invoice entries and `op_transactions`.
 
 Expected entry:

@@ -13,6 +13,8 @@ Primary evidence sources:
 - Invoice/payment: monthly Azure/Microsoft invoice, usually issued around day 9 for the previous calendar month.
 - Dashboard/usage: Azure billing profile and sponsorship/credit pages.
 - API: Microsoft Billing invoices API through ARM.
+- Detailed usage: Azure cost/usage CSV or dashboard export when service, SKU, or
+  model/inference classification matters.
 - Transaction context: `op_transactions` vendor `azure`.
 
 Collection steps:
@@ -55,9 +57,7 @@ Collection steps:
    ```
 
 6. Save raw API JSON to `data/inbox/azure-<period>-billing-invoices.json`.
-7. Run:
-   - invoices: `prompts/invoice.system.txt`
-   - API/dashboard usage: `prompts/usage.system.txt`
+7. Use `agent.system.txt` with `mode: extract` for saved raw evidence.
 
 Expected entry:
 
@@ -75,6 +75,12 @@ Known traps:
 - Use `payments[].amount.value` when present for actual cash payment evidence.
 - Use `freeAzureCreditApplied.value` and `azurePrepaymentApplied.value` for Azure credit/prepayment burn.
 - Do not treat `creditAmount` as sponsorship credit; Azure documents it as refunds, returns, or cancellations.
+- Exception: if a full-month invoice has `billedAmount.value > 0`,
+  `totalAmount.value == 0`, `amountDue.value == 0`, no payments, and
+  `creditAmount.value == -billedAmount.value`, the invoice is evidence that the
+  billed usage was fully offset by credit. Record this explicitly in
+  `reconciliation_notes` because Azure may still show
+  `freeAzureCreditApplied.value == 0` and `azurePrepaymentApplied.value == 0`.
 - The running month has no full invoice until the next invoice is issued.
 - Local historical note: startup lot runs 2026-04-06 to 2028-04-06; Jan-Mar 2026 invoices had no sponsorship credit and were card-charged in full.
 - Currency is usually EUR in the local billing profile.
@@ -84,4 +90,7 @@ Reconciliation notes:
 
 - Invoice/API billing evidence can explain both paid transaction rows and cloud usage rows.
 - Sponsorship-credit months should not be forced to match cash transactions.
-- If the invoice lacks service breakdown, classify as `infra` or `unknown` and leave detailed model/GPU attribution to dashboard/export evidence.
+- If the invoice lacks service breakdown, use it for the ledger-level cash/credit
+  amount only. Use Azure usage exports or dashboard evidence for detailed
+  service/model/GPU attribution; if those are unavailable, classify cautiously
+  and explain the limitation in `reconciliation_notes`.

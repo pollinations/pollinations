@@ -56,9 +56,7 @@ Collection steps:
    After the dry run succeeds, run the same query without `--dry_run` and save stdout.
 
 7. Save raw query output to `data/inbox/google-<period>-billing-export.json`.
-8. Run:
-   - invoices: `prompts/invoice.system.txt`
-   - BigQuery/dashboard usage: `prompts/usage.system.txt`
+8. Use `agent.system.txt` with `mode: extract` for saved raw evidence.
 
 Suggested bounded query shape:
 

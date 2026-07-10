@@ -12,19 +12,21 @@ Treasury ingest entries.
 - Never write Tinybird from collection. Reconciliation is a dry-run proposal
   unless the user explicitly approves a write.
 
-## Prompts
+## Prompt
 
-- `prompts/invoice.system.txt`: invoices, receipts, payment statements, billing
-  PDFs, and invoice screenshots.
-- `prompts/usage.system.txt`: dashboards, APIs, CLIs, BigQuery exports, CSV/JSON
-  exports, cost reports, and usage screenshots.
-- `prompts/reconcile.system.txt`: dry-run matching of existing entries against
-  `op_transactions` and `op_cloud`.
+Always use `agent.system.txt`.
+
+The prompt has three modes:
+
+- `collect`: gather raw evidence from local files, connector guides, or Gmail.
+- `extract`: turn one raw source into one `ingest_entry.v1`.
+- `reconcile`: dry-run matching of existing entries against `op_transactions`
+  and `op_cloud`.
 
 ## Schema
 
 Every extracted source becomes one `ingest_entry.v1` object matching
-`schemas/entry.schema.json`.
+`entry.schema.json`.
 
 Use `entry_id` as the stable source ID. Use `source_file` as the exact local
 path to the raw source. The schema enum values are the vocabulary source of
@@ -37,10 +39,15 @@ Provider-specific live collection notes live in:
 - `aws.md`
 - `azure.md`
 - `cloudflare.md`
+- `deepinfra.md`
 - `google.md`
 - `openai.md`
+- `openrouter.md`
+- `ovhcloud.md`
+- `runpod.md`
 - `vast-ai.md`
 - `wise.md`
+- `xai.md`
 
 Only use a live connector for the provider and period requested. Prefer existing
 files in `data/inbox/` when they already contain the needed evidence.

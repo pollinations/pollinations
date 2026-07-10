@@ -69,9 +69,7 @@ Collection steps:
    ```
 
 7. Save raw API JSON to `data/inbox/aws-umbrella-<period>-cost-and-usage.json`.
-8. Run:
-   - invoices: `prompts/invoice.system.txt`
-   - API/dashboard usage: `prompts/usage.system.txt`
+8. Use `agent.system.txt` with `mode: extract` for saved raw evidence.
 
 Expected entry:
 

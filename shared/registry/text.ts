@@ -503,7 +503,7 @@ export const TEXT_SERVICES = {
         priceMultiplier: 1,
         cost: {
             promptTextTokens: perMillion(0.14),
-            promptCachedTokens: perMillion(0.014),
+            promptCachedTokens: perMillion(0.03),
             completionTextTokens: perMillion(0.28),
         },
         title: "DeepSeek V4 Flash (Lite)",
@@ -847,13 +847,11 @@ export const TEXT_SERVICES = {
         paidOnly: true,
         priceMultiplier: 1,
         cost: {
-            // Bedrock anthropic.claude-sonnet-5 standard rates.
-            // Intro $2/$10 through 2026-08-31; use standard $3/$15 to match
-            // siblings and avoid a price bump when the intro period ends.
-            promptTextTokens: perMillion(3),
-            promptCachedTokens: perMillion(0.3),
-            promptCacheWriteTokens: perMillion(3.75),
-            completionTextTokens: perMillion(15),
+            // Bedrock anthropic.claude-sonnet-5 promo rates through 2026-08-31.
+            promptTextTokens: perMillion(2),
+            promptCachedTokens: perMillion(0.2),
+            promptCacheWriteTokens: perMillion(2.5),
+            completionTextTokens: perMillion(10),
         },
         title: "Claude Sonnet 5",
         description: "Claude Sonnet 5 - Best balance of speed & intelligence",
@@ -1205,7 +1203,7 @@ export const TEXT_SERVICES = {
         priceMultiplier: 1,
         cost: {
             promptTextTokens: perMillion(1.4),
-            promptCachedTokens: perMillion(0.26),
+            promptCachedTokens: perMillion(0.14),
             completionTextTokens: perMillion(4.4),
         },
         title: "Z.ai GLM-5.2",

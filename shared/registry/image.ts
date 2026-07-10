@@ -584,7 +584,12 @@ export const IMAGE_SERVICES = {
         maxReferenceImages: 1, // xAI image edit route forwards one input image.
     },
     "grok-imagine-pro": {
-        aliases: ["grok-aurora", "aurora", "grok-imagine-image-pro"],
+        aliases: [
+            "grok-aurora",
+            "aurora",
+            "grok-imagine-image-quality",
+            "grok-imagine-image-pro",
+        ],
         modelId: "grok-imagine-pro",
         provider: "xai",
         brand: "xAI",

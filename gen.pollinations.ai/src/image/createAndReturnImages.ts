@@ -747,7 +747,7 @@ const generateImage = async (
             return await callXaiImageAPI(
                 prompt,
                 safeParams,
-                "grok-imagine-image-pro",
+                "grok-imagine-image-quality",
             );
 
         case "p-image-edit":

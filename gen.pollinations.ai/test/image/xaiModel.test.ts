@@ -105,12 +105,12 @@ describe("xaiModel usage accounting", () => {
         const result = await callXaiImageAPI(
             "test prompt",
             { ...baseParams, model: "grok-imagine-pro" },
-            "grok-imagine-image-pro",
+            "grok-imagine-image-quality",
         );
 
         expect(requests[0].url).toBe(XAI_GENERATE_URL);
         expect(requests[0].body).toMatchObject({
-            model: "grok-imagine-image-pro",
+            model: "grok-imagine-image-quality",
             prompt: "test prompt",
             n: 1,
             response_format: "url",

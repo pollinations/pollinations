@@ -147,13 +147,8 @@ export const AUDIO_SERVICES = {
         addedDate: new Date("2026-06-22").getTime(),
         priceMultiplier: 1,
         cost: {
-            // ElevenLabs Sound Effects v2: billed per second of output audio.
-            // Measured empirically (5s=120cr, 10s=241cr => 24.0 credits/sec, linear).
-            // Scale plan $0.166/1k credits => 24 * 0.166/1000 ≈ $0.004/sec.
-            // Duration caps at 30s, so max per generation = 30 * $0.004 = $0.12,
-            // matching ElevenLabs' "$0.12 per generation" public price; shorter
-            // effects cost proportionally less. One exact per-second rate.
-            completionAudioSeconds: 0.004,
+            // ElevenLabs Sound Effects: $0.12/minute.
+            completionAudioSeconds: 0.002,
         },
         title: "ElevenLabs Sound Effects",
         description:

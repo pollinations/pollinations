@@ -147,7 +147,7 @@ export const IMAGE_SERVICES = {
             completionImageTokens: 0.09, // per 2K image
         },
         title: "Seedream 5.0 Pro",
-        description: "Seedream 5.0 Pro - Premium multimodal image generation",
+        description: "Premium multimodal image generation and editing",
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
         maxReferenceImages: 10,

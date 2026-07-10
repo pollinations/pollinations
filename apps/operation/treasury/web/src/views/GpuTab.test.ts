@@ -88,7 +88,8 @@ describe("gpuEconomics", () => {
             paidUsd: 160,
             questUsd: 40,
             retainedUsd: 130,
-            coverage: 1.3,
+            marginUsd: 30,
+            marginPct: (30 / 130) * 100,
             effUsdPerReq: 1,
             flags: [],
         });
@@ -180,7 +181,7 @@ describe("gpuSummary", () => {
             creditRentUsd: 0,
             retainedUsd: 130,
             marginUsd: 30,
-            coverage: 1.3,
+            marginPct: (30 / 130) * 100,
             flaggedRows: 0,
         });
     });

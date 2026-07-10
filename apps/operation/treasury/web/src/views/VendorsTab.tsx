@@ -1,14 +1,14 @@
 import { useMemo } from "react";
-import {
-    EconTable,
-    Gauge,
-    trueXStatTone,
-    visibleEconRows,
-} from "../components/EconTable";
+import { EconTable, Gauge, visibleEconRows } from "../components/EconTable";
 import { StatCards } from "../components/StatCards";
-import { fmtMultiplier, fmtUnsignedPct, fmtUsd } from "../lib/format";
+import { fmtPct, fmtUnsignedPct, fmtUsd } from "../lib/format";
 import { econSummary, providerEconomics } from "../lib/insights";
+import type { MonthFilterValue, ValueFilter } from "../lib/months";
 import type { Data } from "../types";
+
+function fmtMarginPct(value: number | null): string {
+    return fmtPct(value).replace(/^\+/, "");
+}
 
 export function VendorsTab({
     data,
@@ -16,8 +16,8 @@ export function VendorsTab({
     vendor = "all",
 }: {
     data: Data;
-    month?: string;
-    vendor?: string;
+    month?: MonthFilterValue;
+    vendor?: ValueFilter;
 }) {
     const econRows = useMemo(
         () => visibleEconRows(providerEconomics(data, month), vendor),
@@ -30,7 +30,7 @@ export function VendorsTab({
             <StatCards
                 items={[
                     {
-                        label: "Paid",
+                        label: "Paid Pollen",
                         value: fmtUsd(stats.soldPaidUsd),
                         detail: (
                             <Gauge
@@ -40,36 +40,44 @@ export function VendorsTab({
                         ),
                     },
                     {
-                        label: "Costs",
-                        value: fmtUsd(stats.trueCostPaidUsd),
+                        label: "Provider Cash",
+                        value: fmtUsd(stats.providerCashCostUsd),
                         detail:
-                            stats.creditFundedPct != null
-                                ? `${fmtUnsignedPct(stats.creditFundedPct)} credit-funded`
-                                : "provider actual",
+                            stats.providerGrantFundedUsd > 0
+                                ? `usage ${fmtUsd(stats.providerUsageUsd)}`
+                                : "cash",
                     },
                     {
-                        label: "Margin",
-                        value: fmtUsd(stats.marginUsd),
-                        tone: stats.marginUsd >= 0 ? "pos" : "neg",
+                        label: "Provider Credit",
+                        value: fmtUsd(stats.providerGrantFundedUsd),
+                        detail:
+                            stats.creditFundedPct != null
+                                ? `${fmtUnsignedPct(stats.creditFundedPct)} of provider usage`
+                                : "credit applied",
+                    },
+                    {
+                        label: "Cash Margin",
+                        value: fmtUsd(stats.cashMarginUsd),
+                        tone: stats.cashMarginUsd >= 0 ? "pos" : "neg",
                         detail:
                             stats.underwaterCount > 0
                                 ? `${stats.underwaterCount} underwater`
                                 : "all profitable",
                     },
                     {
-                        label: "Coverage ×",
-                        value: fmtMultiplier(stats.trueMultiplier),
-                        tone: trueXStatTone(stats.trueMultiplier, null),
-                        detail: "retained ÷ costs",
+                        label: "Cash Margin %",
+                        value: fmtMarginPct(stats.cashMarginPct),
+                        tone: (stats.cashMarginPct ?? 0) >= 0 ? "pos" : "neg",
+                        detail: "margin ÷ retained",
                     },
                     {
-                        label: "Quests",
+                        label: "Quest",
                         value: fmtUsd(stats.questBurnUsd),
-                        detail: "free-tier subsidy",
+                        detail: "free-tier usage",
                     },
                 ]}
             />
-            <EconTable netRatio={null} rows={econRows} />
+            <EconTable rows={econRows} />
         </div>
     );
 }

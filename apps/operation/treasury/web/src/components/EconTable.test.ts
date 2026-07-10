@@ -4,6 +4,7 @@ import {
     driftFlag,
     gaugeParts,
     hasEconActivity,
+    usageMatchPct,
     visibleEconRows,
 } from "./EconTable";
 
@@ -49,6 +50,16 @@ describe("hasEconActivity", () => {
             }),
         ).toBe(true);
     });
+
+    it("keeps quest-only provider-funded rows", () => {
+        expect(
+            hasEconActivity({
+                ...row("perplexity", "sonar"),
+                questBurnUsd: 100,
+                creditSharePct: 100,
+            }),
+        ).toBe(true);
+    });
 });
 
 describe("driftFlag", () => {
@@ -73,5 +84,25 @@ describe("gaugeParts", () => {
 
     it("returns null when there is nothing to draw", () => {
         expect(gaugeParts(0, 0)).toBeNull();
+    });
+});
+
+describe("usageMatchPct", () => {
+    it("returns 100 when both sides match", () => {
+        expect(usageMatchPct(100, 100)).toBe(100);
+    });
+
+    it("uses the smaller side over the larger side", () => {
+        expect(usageMatchPct(75, 100)).toBe(75);
+        expect(usageMatchPct(100, 25)).toBe(25);
+    });
+
+    it("returns zero when only one side exists", () => {
+        expect(usageMatchPct(0, 100)).toBe(0);
+        expect(usageMatchPct(100, 0)).toBe(0);
+    });
+
+    it("returns null when neither side exists", () => {
+        expect(usageMatchPct(0, 0)).toBeNull();
     });
 });

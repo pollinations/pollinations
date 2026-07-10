@@ -9,8 +9,17 @@ import {
     Tooltip,
 } from "@pollinations/ui";
 import { useMemo } from "react";
-import { fmtMultiplier, fmtUnsignedPct, fmtUsd } from "../lib/format";
-import { breakEvenMultiplier, type EconRow } from "../lib/insights";
+import { fmtMultiplier, fmtPct, fmtUnsignedPct, fmtUsd } from "../lib/format";
+import {
+    cashMarginPct,
+    cashMarginUsd,
+    type EconRow,
+    providerCashCostUsd,
+    providerGrantFundedUsd,
+    providerUsageUsd,
+    trueMarginPct,
+} from "../lib/insights";
+import { matchesValue, type ValueFilter } from "../lib/months";
 import {
     DataTable,
     GROUP_BORDER,
@@ -21,17 +30,21 @@ import {
     withUniqueRowKeys,
 } from "./DataTable";
 
-export function visibleEconRows(rows: EconRow[], vendor: string): EconRow[] {
-    return rows.filter((row) => vendor === "all" || row.vendor === vendor);
+export function visibleEconRows(
+    rows: EconRow[],
+    vendor: ValueFilter,
+): EconRow[] {
+    return rows.filter((row) => matchesValue(row.vendor, vendor));
 }
 
 export function hasEconActivity(row: EconRow): boolean {
     return [
         row.soldPaidUsd,
         row.soldQuestsUsd,
-        row.trueCostPaidUsd,
+        providerCashCostUsd(row),
+        providerGrantFundedUsd(row),
         row.questBurnUsd,
-        row.marginUsd,
+        cashMarginUsd(row),
     ].some((value) => value !== 0);
 }
 
@@ -58,10 +71,21 @@ export function gaugeParts(paid: number, quests: number) {
     };
 }
 
+export function usageMatchPct(
+    pollenUsageUsd: number,
+    providerUsageUsd: number,
+): number | null {
+    const pollen = Math.max(0, pollenUsageUsd);
+    const provider = Math.max(0, providerUsageUsd);
+    const total = Math.max(pollen, provider);
+    if (total <= 0) return null;
+    return (Math.min(pollen, provider) / total) * 100;
+}
+
 export function Gauge({
     paid,
     quests,
-    questLabel = "quests",
+    questLabel = "quest",
 }: {
     paid: number;
     quests: number;
@@ -89,17 +113,26 @@ export function Gauge({
     );
 }
 
-function trueXTone(value: number | null, cashBreakEven: number | null) {
-    if (value == null) return "text-theme-text-soft";
-    if (value < 1) return "text-intent-danger-text";
-    if (cashBreakEven != null && value < cashBreakEven) {
-        return "text-intent-warning-text";
-    }
-    return "text-intent-success-text";
+function marginTone(value: number) {
+    return value >= 0 ? "text-intent-success-text" : "text-intent-danger-text";
 }
 
-// Same thresholds as the true × cell above, mapped to a stat-card tone: red
-// loses cash on compute, amber loses after Stripe fees, green clears both.
+function marginPctText(value: number | null) {
+    return fmtPct(value).replace(/^\+/, "");
+}
+
+function marginPctTone(value: number | null) {
+    if (value == null) return "text-theme-text-soft";
+    return marginTone(value);
+}
+
+function usageMatchTone(value: number | null) {
+    if (value == null) return "text-theme-text-soft";
+    if (value >= 95) return "text-intent-success-text";
+    if (value >= 80) return "text-intent-warning-text";
+    return "text-intent-danger-text";
+}
+
 export function trueXStatTone(
     value: number | null,
     cashBreakEven: number | null,
@@ -110,18 +143,13 @@ export function trueXStatTone(
     return "pos";
 }
 
-function marginTone(value: number) {
-    return value >= 0 ? "text-intent-success-text" : "text-intent-danger-text";
-}
-
 function providerFunding(
     row: EconRow,
 ): { paid: number; grants: number } | null {
-    if (row.trueCostPaidUsd <= 0) return null;
-    const grants = row.trueCostPaidUsd * ((row.creditSharePct ?? 0) / 100);
+    if (providerUsageUsd(row) <= 0) return null;
     return {
-        paid: row.trueCostPaidUsd - grants,
-        grants,
+        paid: providerCashCostUsd(row),
+        grants: providerGrantFundedUsd(row),
     };
 }
 
@@ -137,17 +165,14 @@ const ECON_SOURCE_HINTS = {
 // exactly the Models table (grain "model") rolled up — same columns, same
 // math, same thresholds — so the two tabs can never drift apart.
 export function EconTable({
-    netRatio,
     rows,
     showFlags = false,
     showModel = false,
 }: {
-    netRatio: number | null;
     rows: EconRow[];
     showFlags?: boolean;
     showModel?: boolean;
 }) {
-    const cashBreakEven = breakEvenMultiplier(netRatio);
     const sourceHints = ECON_SOURCE_HINTS;
     const sortColumns = useMemo<SortColumn<EconRow>[]>(
         () => [
@@ -163,7 +188,10 @@ export function EconTable({
                 },
             },
             { key: "questBurnUsd", value: (row) => row.questBurnUsd },
-            { key: "trueCostPaidUsd", value: (row) => row.trueCostPaidUsd },
+            {
+                key: "cashCostPaidUsd",
+                value: (row) => providerCashCostUsd(row),
+            },
             {
                 key: "providerFundingMix",
                 value: (row) => {
@@ -175,9 +203,19 @@ export function EconTable({
             },
             {
                 key: "grantFundedUsd",
-                value: (row) => providerFunding(row)?.grants ?? null,
+                value: (row) => providerGrantFundedUsd(row),
             },
-            { key: "trueMultiplier", value: (row) => row.trueMultiplier },
+            {
+                key: "usageMatchPct",
+                value: (row) =>
+                    usageMatchPct(
+                        row.soldPaidUsd + row.questBurnUsd,
+                        providerUsageUsd(row),
+                    ),
+            },
+            { key: "cashMarginPct", value: (row) => cashMarginPct(row) },
+            { key: "trueMarginPct", value: (row) => trueMarginPct(row) },
+            { key: "cashMarginUsd", value: (row) => cashMarginUsd(row) },
             { key: "marginUsd", value: (row) => row.marginUsd },
             { key: "flags", value: (row) => row.flags.join(", ") },
         ],
@@ -221,6 +259,23 @@ export function EconTable({
                                 Pollen
                             </TableHeaderCell>
                             <TableHeaderCell
+                                rowSpan={2}
+                                align="right"
+                                className={GROUP_BORDER}
+                                {...headerProps("usageMatchPct")}
+                            >
+                                <HeaderHint
+                                    hint={{
+                                        meaning:
+                                            "Reconciliation between visible Pollen usage and provider usage.",
+                                        formula:
+                                            "min(Pollen Paid + Quest, Provider Cash + Credit) ÷ max(Pollen Paid + Quest, Provider Cash + Credit)",
+                                    }}
+                                >
+                                    Match %
+                                </HeaderHint>
+                            </TableHeaderCell>
+                            <TableHeaderCell
                                 colSpan={3}
                                 align="center"
                                 className={GROUP_BORDER}
@@ -232,7 +287,14 @@ export function EconTable({
                                 align="center"
                                 className={GROUP_BORDER}
                             >
-                                Economics
+                                With Credit
+                            </TableHeaderCell>
+                            <TableHeaderCell
+                                colSpan={2}
+                                align="center"
+                                className={GROUP_BORDER}
+                            >
+                                Without Credit
                             </TableHeaderCell>
                             {showFlags && (
                                 <TableHeaderCell
@@ -275,12 +337,12 @@ export function EconTable({
                                 <HeaderHint
                                     hint={{
                                         meaning:
-                                            "Usage mix — green is paid, amber is free quests.",
+                                            "Usage mix — green is paid, amber is free quest.",
                                         tables: sourceHints.pollenTables,
                                         sources: "TB",
                                     }}
                                 >
-                                    Paid / Quests
+                                    Paid / Quest
                                 </HeaderHint>
                             </TableHeaderCell>
                             <TableHeaderCell
@@ -290,29 +352,30 @@ export function EconTable({
                                 <HeaderHint
                                     hint={{
                                         meaning:
-                                            "What free quest usage cost us — pure subsidy, earns nothing.",
+                                            "What free quest usage consumes — pure subsidy, earns nothing.",
                                         tables: sourceHints.pollenTables,
                                         sources: "TB",
                                     }}
                                 >
-                                    Quests
+                                    Quest
                                 </HeaderHint>
                             </TableHeaderCell>
                             <TableHeaderCell
                                 align="right"
                                 className={GROUP_BORDER}
-                                {...headerProps("trueCostPaidUsd")}
+                                {...headerProps("cashCostPaidUsd")}
                             >
                                 <HeaderHint
                                     hint={{
                                         meaning:
-                                            "Provider-rate cost of paid-user usage. Grants can fund this cost, but they do not reduce the underlying cost.",
+                                            "Provider usage paid with real money. Includes paid-user and quest usage.",
                                         tables: sourceHints.providerTables,
                                         sources: sourceHints.providerSources,
-                                        formula: "cost_paid × calibration",
+                                        formula:
+                                            "provider usage − provider Credit",
                                     }}
                                 >
-                                    Costs
+                                    Cash
                                 </HeaderHint>
                             </TableHeaderCell>
                             <TableHeaderCell
@@ -322,14 +385,14 @@ export function EconTable({
                                 <HeaderHint
                                     hint={{
                                         meaning:
-                                            "Provider funding mix — green is cash/prepaid paid, amber is grants.",
+                                            "Provider funding mix — green is cash, amber is credit.",
                                         tables: sourceHints.fundingTables,
                                         sources: sourceHints.fundingSources,
                                         formula:
                                             "paid ÷ (paid + credit), credit ÷ (paid + credit)",
                                     }}
                                 >
-                                    Paid / Grants
+                                    Cash / Credit
                                 </HeaderHint>
                             </TableHeaderCell>
                             <TableHeaderCell
@@ -339,28 +402,60 @@ export function EconTable({
                                 <HeaderHint
                                     hint={{
                                         meaning:
-                                            "The part of Costs funded by grants or credits. $0 means costs are paid/prepaid, not grant-funded.",
+                                            "Provider usage paid with provider credit. Includes paid-user and quest usage.",
                                         tables: sourceHints.fundingTables,
                                         sources: sourceHints.fundingSources,
-                                        formula: "Costs × grant-funded share",
+                                        formula:
+                                            "provider usage × credit-funded share",
                                     }}
                                 >
-                                    Grants
+                                    Credit
                                 </HeaderHint>
                             </TableHeaderCell>
                             <TableHeaderCell
                                 align="right"
                                 className={GROUP_BORDER}
-                                {...headerProps("trueMultiplier")}
+                                {...headerProps("cashMarginPct")}
                             >
                                 <HeaderHint
                                     hint={{
                                         meaning:
-                                            "Retained paid revenue divided by Costs. Quests are excluded from coverage and shown separately as subsidy.",
-                                        formula: "retained paid ÷ Costs",
+                                            "Margin after provider credit as a percentage of retained paid revenue.",
+                                        formula:
+                                            "(retained paid − cash) ÷ retained paid",
                                     }}
                                 >
-                                    Coverage ×
+                                    Margin %
+                                </HeaderHint>
+                            </TableHeaderCell>
+                            <TableHeaderCell
+                                align="right"
+                                {...headerProps("cashMarginUsd")}
+                            >
+                                <HeaderHint
+                                    hint={{
+                                        meaning:
+                                            "Retained paid revenue minus total provider cash after credit.",
+                                        formula: "retained paid − cash",
+                                    }}
+                                >
+                                    Margin
+                                </HeaderHint>
+                            </TableHeaderCell>
+                            <TableHeaderCell
+                                align="right"
+                                className={GROUP_BORDER}
+                                {...headerProps("trueMarginPct")}
+                            >
+                                <HeaderHint
+                                    hint={{
+                                        meaning:
+                                            "Margin before provider credit as a percentage of retained paid revenue.",
+                                        formula:
+                                            "(retained paid − provider usage) ÷ retained paid",
+                                    }}
+                                >
+                                    Margin %
                                 </HeaderHint>
                             </TableHeaderCell>
                             <TableHeaderCell
@@ -370,8 +465,9 @@ export function EconTable({
                                 <HeaderHint
                                     hint={{
                                         meaning:
-                                            "Retained paid revenue minus Costs. Grants explain funding mix; they do not make margin higher. Quests are shown separately.",
-                                        formula: "retained paid − Costs",
+                                            "Retained paid revenue minus provider usage before credit. This shows margin if credit ended.",
+                                        formula:
+                                            "retained paid − provider usage",
                                     }}
                                 >
                                     Margin
@@ -386,6 +482,16 @@ export function EconTable({
                                 : `${row.vendor}|${row.model}`,
                         ).map(({ key, row }) => {
                             const funding = providerFunding(row);
+                            const rowCashMarginUsd = cashMarginUsd(row);
+                            const rowCashMarginPct = cashMarginPct(row);
+                            const rowTrueMarginPct = trueMarginPct(row);
+                            const rowPollenUsageUsd =
+                                row.soldPaidUsd + row.questBurnUsd;
+                            const rowProviderUsageUsd = providerUsageUsd(row);
+                            const rowUsageMatchPct = usageMatchPct(
+                                rowPollenUsageUsd,
+                                rowProviderUsageUsd,
+                            );
                             const drift = driftFlag(row.calib);
                             const flags = drift
                                 ? [drift, ...row.flags]
@@ -434,12 +540,64 @@ export function EconTable({
                                         {fmtUsd(row.questBurnUsd)}
                                     </TableCell>
                                     <TableCell
+                                        align="right"
+                                        className={cn(
+                                            GROUP_BORDER,
+                                            usageMatchTone(rowUsageMatchPct),
+                                        )}
+                                    >
+                                        <Tooltip
+                                            triggerAs="span"
+                                            content={
+                                                <span className="block max-w-72">
+                                                    Pollen usage{" "}
+                                                    {fmtUsd(rowPollenUsageUsd)}{" "}
+                                                    · provider usage{" "}
+                                                    {fmtUsd(
+                                                        rowProviderUsageUsd,
+                                                    )}{" "}
+                                                    · delta{" "}
+                                                    {fmtUsd(
+                                                        rowProviderUsageUsd -
+                                                            rowPollenUsageUsd,
+                                                    )}
+                                                </span>
+                                            }
+                                        >
+                                            <span>
+                                                {fmtUnsignedPct(
+                                                    rowUsageMatchPct,
+                                                )}
+                                            </span>
+                                        </Tooltip>
+                                    </TableCell>
+                                    <TableCell
                                         className={cn(
                                             "text-right",
                                             GROUP_BORDER,
                                         )}
                                     >
-                                        {fmtUsd(row.trueCostPaidUsd)}
+                                        <Tooltip
+                                            triggerAs="span"
+                                            content={
+                                                <span className="block max-w-72">
+                                                    provider usage before credit{" "}
+                                                    {fmtUsd(
+                                                        providerUsageUsd(row),
+                                                    )}{" "}
+                                                    = cash{" "}
+                                                    {fmtUsd(funding?.paid ?? 0)}{" "}
+                                                    + credit{" "}
+                                                    {fmtUsd(
+                                                        funding?.grants ?? 0,
+                                                    )}
+                                                </span>
+                                            }
+                                        >
+                                            <span>
+                                                {fmtUsd(funding?.paid ?? 0)}
+                                            </span>
+                                        </Tooltip>
                                     </TableCell>
                                     <TableCell>
                                         <div className="flex justify-center">
@@ -447,7 +605,7 @@ export function EconTable({
                                                 <Gauge
                                                     paid={funding.paid}
                                                     quests={funding.grants}
-                                                    questLabel="grants"
+                                                    questLabel="credit"
                                                 />
                                             ) : (
                                                 <span className="text-theme-text-soft">
@@ -462,14 +620,28 @@ export function EconTable({
                                     <TableCell
                                         className={cn(
                                             "text-right",
-                                            trueXTone(
-                                                row.trueMultiplier,
-                                                cashBreakEven,
-                                            ),
+                                            marginPctTone(rowCashMarginPct),
                                             GROUP_BORDER,
                                         )}
                                     >
-                                        {fmtMultiplier(row.trueMultiplier)}
+                                        {marginPctText(rowCashMarginPct)}
+                                    </TableCell>
+                                    <TableCell
+                                        className={cn(
+                                            "text-right",
+                                            marginTone(rowCashMarginUsd),
+                                        )}
+                                    >
+                                        {fmtUsd(rowCashMarginUsd)}
+                                    </TableCell>
+                                    <TableCell
+                                        className={cn(
+                                            "text-right",
+                                            GROUP_BORDER,
+                                            marginPctTone(rowTrueMarginPct),
+                                        )}
+                                    >
+                                        {marginPctText(rowTrueMarginPct)}
                                     </TableCell>
                                     <TableCell
                                         className={cn(

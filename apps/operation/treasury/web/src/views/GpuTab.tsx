@@ -6,6 +6,7 @@ import {
     TableHead,
     TableHeaderCell,
     TableRow,
+    Tooltip,
 } from "@pollinations/ui";
 import { useMemo } from "react";
 import {
@@ -17,17 +18,23 @@ import {
     useSortableRows,
     withUniqueRowKeys,
 } from "../components/DataTable";
-import { Gauge, trueXStatTone } from "../components/EconTable";
+import { Gauge, usageMatchPct } from "../components/EconTable";
 import { StatCards } from "../components/StatCards";
 import {
-    fmtMultiplier,
     fmtNumber,
+    fmtPct,
     fmtUnsignedPct,
     fmtUsd,
     fmtUsd4,
 } from "../lib/format";
 import { toUsd } from "../lib/fx";
-import { matchesMonth, WINDOW_START } from "../lib/months";
+import {
+    type MonthFilterValue,
+    matchesMonth,
+    matchesValue,
+    type ValueFilter,
+    WINDOW_START,
+} from "../lib/months";
 import type { Data, OpCloudRow } from "../types";
 
 const REGISTRY_UNIT_PRICES: Record<string, { price: number; unit: string }> = {
@@ -48,7 +55,8 @@ export type GpuEconomicsRow = {
     paidUsd: number;
     questUsd: number;
     retainedUsd: number;
-    coverage: number | null;
+    marginUsd: number;
+    marginPct: number | null;
     effUsdPerReq: number | null;
     breakEven: { model: string; unit: string; volume: number }[];
     flags: string[];
@@ -61,7 +69,7 @@ type GpuSummary = {
     creditRentUsd: number;
     retainedUsd: number;
     marginUsd: number;
-    coverage: number | null;
+    marginPct: number | null;
     flaggedRows: number;
 };
 
@@ -110,7 +118,7 @@ function computeBreakEven(
     return result;
 }
 
-export function gpuEconomics(data: Data, monthFilter: string) {
+export function gpuEconomics(data: Data, monthFilter: MonthFilterValue) {
     type Acc = GpuEconomicsRow & {
         modelSet: Set<string>;
         rawModel: string;
@@ -143,7 +151,8 @@ export function gpuEconomics(data: Data, monthFilter: string) {
             paidUsd: 0,
             questUsd: 0,
             retainedUsd: 0,
-            coverage: null,
+            marginUsd: 0,
+            marginPct: null,
             effUsdPerReq: null,
             breakEven: [],
             flags: [],
@@ -211,10 +220,14 @@ export function gpuEconomics(data: Data, monthFilter: string) {
             if (models.length > 0 && row.requests <= 0) {
                 flags.push("no Pollen match");
             }
+            const marginUsd = row.retainedUsd - row.rentUsd;
             return {
                 ...row,
-                coverage:
-                    row.rentUsd > 0 ? row.retainedUsd / row.rentUsd : null,
+                marginUsd,
+                marginPct:
+                    row.retainedUsd > 0
+                        ? (marginUsd / row.retainedUsd) * 100
+                        : null,
                 effUsdPerReq:
                     row.requests > 0 ? row.rentUsd / row.requests : null,
                 breakEven: computeBreakEven(models, row.rentUsd),
@@ -222,17 +235,17 @@ export function gpuEconomics(data: Data, monthFilter: string) {
             };
         })
         .sort((a, b) => {
-            if (a.coverage == null && b.coverage == null) {
-                return b.rentUsd - a.rentUsd;
+            if (a.marginPct == null && b.marginPct == null) {
+                return a.marginUsd - b.marginUsd || b.rentUsd - a.rentUsd;
             }
-            if (a.coverage == null) return 1;
-            if (b.coverage == null) return -1;
-            return a.coverage - b.coverage || b.rentUsd - a.rentUsd;
+            if (a.marginPct == null) return 1;
+            if (b.marginPct == null) return -1;
+            return a.marginPct - b.marginPct || b.rentUsd - a.rentUsd;
         });
 }
 
-export function visibleGpuRows(rows: GpuEconomicsRow[], vendor: string) {
-    return rows.filter((row) => vendor === "all" || row.vendor === vendor);
+export function visibleGpuRows(rows: GpuEconomicsRow[], vendor: ValueFilter) {
+    return rows.filter((row) => matchesValue(row.vendor, vendor));
 }
 
 export function gpuSummary(rows: GpuEconomicsRow[]): GpuSummary {
@@ -243,7 +256,7 @@ export function gpuSummary(rows: GpuEconomicsRow[]): GpuSummary {
         creditRentUsd: 0,
         retainedUsd: 0,
         marginUsd: 0,
-        coverage: null,
+        marginPct: null,
         flaggedRows: 0,
     };
     for (const row of rows) {
@@ -255,15 +268,27 @@ export function gpuSummary(rows: GpuEconomicsRow[]): GpuSummary {
         if (row.flags.length > 0) summary.flaggedRows += 1;
     }
     summary.marginUsd = summary.retainedUsd - summary.rentUsd;
-    summary.coverage =
-        summary.rentUsd > 0 ? summary.retainedUsd / summary.rentUsd : null;
+    summary.marginPct =
+        summary.retainedUsd > 0
+            ? (summary.marginUsd / summary.retainedUsd) * 100
+            : null;
     return summary;
 }
 
-function rowCoverageTone(value: number | null) {
+function marginPctText(value: number | null) {
+    return fmtPct(value).replace(/^\+/, "");
+}
+
+function rowMarginPctTone(value: number | null) {
     if (value == null) return "text-theme-text-soft";
-    if (value < 1) return "text-intent-danger-text";
-    return "text-intent-success-text";
+    return value >= 0 ? "text-intent-success-text" : "text-intent-danger-text";
+}
+
+function usageMatchTone(value: number | null) {
+    if (value == null) return "text-theme-text-soft";
+    if (value >= 95) return "text-intent-success-text";
+    if (value >= 80) return "text-intent-warning-text";
+    return "text-intent-danger-text";
 }
 
 function marginTone(value: number) {
@@ -276,8 +301,8 @@ export function GpuTab({
     vendor = "all",
 }: {
     data: Data;
-    month?: string;
-    vendor?: string;
+    month?: MonthFilterValue;
+    vendor?: ValueFilter;
 }) {
     const rows = useMemo(
         () => visibleGpuRows(gpuEconomics(data, month), vendor),
@@ -290,6 +315,11 @@ export function GpuTab({
             { key: "vendor", value: (row) => row.vendor },
             { key: "model", value: (row) => row.model },
             { key: "rentUsd", value: (row) => row.rentUsd },
+            {
+                key: "usageMatchPct",
+                value: (row) =>
+                    usageMatchPct(row.paidUsd + row.questUsd, row.rentUsd),
+            },
             { key: "requests", value: (row) => row.requests },
             { key: "paidUsd", value: (row) => row.paidUsd },
             {
@@ -300,7 +330,7 @@ export function GpuTab({
                 },
             },
             { key: "questUsd", value: (row) => row.questUsd },
-            { key: "coverage", value: (row) => row.coverage },
+            { key: "marginPct", value: (row) => row.marginPct },
             { key: "effUsdPerReq", value: (row) => row.effUsdPerReq },
             {
                 key: "breakEven",
@@ -317,7 +347,7 @@ export function GpuTab({
             <StatCards
                 items={[
                     {
-                        label: "Paid",
+                        label: "Paid Pollen",
                         value: fmtUsd(stats.paidUsd),
                         detail: (
                             <Gauge
@@ -327,7 +357,7 @@ export function GpuTab({
                         ),
                     },
                     {
-                        label: "Rent",
+                        label: "GPU Rent",
                         value: fmtUsd(stats.rentUsd),
                         detail:
                             stats.rentUsd > 0
@@ -335,7 +365,7 @@ export function GpuTab({
                                 : "Cloud OP GPU burn",
                     },
                     {
-                        label: "Margin",
+                        label: "GPU Margin",
                         value: fmtUsd(stats.marginUsd),
                         tone: marginTone(stats.marginUsd),
                         detail:
@@ -344,13 +374,13 @@ export function GpuTab({
                                 : "all mapped",
                     },
                     {
-                        label: "Coverage ×",
-                        value: fmtMultiplier(stats.coverage),
-                        tone: trueXStatTone(stats.coverage, null),
-                        detail: "retained ÷ rent",
+                        label: "GPU Margin %",
+                        value: marginPctText(stats.marginPct),
+                        tone: marginTone(stats.marginPct ?? stats.marginUsd),
+                        detail: "margin ÷ retained",
                     },
                     {
-                        label: "Quests",
+                        label: "Quest",
                         value: fmtUsd(stats.questUsd),
                         detail: "free-tier demand",
                     },
@@ -386,6 +416,23 @@ export function GpuTab({
                                 Cloud
                             </TableHeaderCell>
                             <TableHeaderCell
+                                rowSpan={2}
+                                align="right"
+                                className={GROUP_BORDER}
+                                {...headerProps("usageMatchPct")}
+                            >
+                                <HeaderHint
+                                    hint={{
+                                        meaning:
+                                            "Reconciliation between cloud GPU rent and visible Pollen usage.",
+                                        formula:
+                                            "min(Pollen Paid + Quest, GPU Rent) ÷ max(Pollen Paid + Quest, GPU Rent)",
+                                    }}
+                                >
+                                    Match %
+                                </HeaderHint>
+                            </TableHeaderCell>
+                            <TableHeaderCell
                                 colSpan={4}
                                 align="center"
                                 className={GROUP_BORDER}
@@ -416,7 +463,7 @@ export function GpuTab({
                                 <HeaderHint
                                     hint={{
                                         meaning:
-                                            "Cloud OP GPU burn: paid burn plus credit burn. Positive grant-received rows are excluded.",
+                                            "Cloud OP GPU burn: paid burn plus credit burn. Positive credit-received rows are excluded.",
                                         tables: "op_cloud_api",
                                         sources: "API/CLI/BQ/HC",
                                     }}
@@ -450,27 +497,28 @@ export function GpuTab({
                                 align="center"
                                 {...headerProps("mix")}
                             >
-                                Paid / Quests
+                                Paid / Quest
                             </TableHeaderCell>
                             <TableHeaderCell
                                 align="left"
                                 {...headerProps("questUsd")}
                             >
-                                Quests
+                                Quest
                             </TableHeaderCell>
                             <TableHeaderCell
                                 align="right"
                                 className={GROUP_BORDER}
-                                {...headerProps("coverage")}
+                                {...headerProps("marginPct")}
                             >
                                 <HeaderHint
                                     hint={{
                                         meaning:
-                                            "Retained paid Pollen divided by GPU rent. Quests are demand, not revenue.",
-                                        formula: "retained paid ÷ rent",
+                                            "GPU margin as a percentage of retained paid Pollen. Quest is demand, not revenue.",
+                                        formula:
+                                            "(retained paid − rent) ÷ retained paid",
                                     }}
                                 >
-                                    Coverage ×
+                                    Margin %
                                 </HeaderHint>
                             </TableHeaderCell>
                             <TableHeaderCell
@@ -500,89 +548,124 @@ export function GpuTab({
                             sorted,
                             (row) =>
                                 `${row.month}|${row.vendor}|${row.gpu}|${row.model}`,
-                        ).map(({ key, row }) => (
-                            <TableRow key={key}>
-                                <TableCell>{row.gpu}</TableCell>
-                                <TableCell>{row.vendor}</TableCell>
-                                <TableCell>{row.model}</TableCell>
-                                <TableCell
-                                    align="right"
-                                    className={GROUP_BORDER}
-                                >
-                                    {fmtUsd(row.rentUsd)}
-                                </TableCell>
-                                <TableCell
-                                    align="right"
-                                    className={GROUP_BORDER}
-                                >
-                                    {fmtNumber(row.requests)}
-                                </TableCell>
-                                <TableCell
-                                    align="right"
-                                    className="text-intent-success-text"
-                                >
-                                    {fmtUsd(row.paidUsd)}
-                                </TableCell>
-                                <TableCell>
-                                    <div className="flex justify-center">
-                                        <Gauge
-                                            paid={row.paidUsd}
-                                            quests={row.questUsd}
-                                        />
-                                    </div>
-                                </TableCell>
-                                <TableCell className="text-left text-intent-warning-text">
-                                    {fmtUsd(row.questUsd)}
-                                </TableCell>
-                                <TableCell
-                                    align="right"
-                                    className={cn(
-                                        rowCoverageTone(row.coverage),
-                                        GROUP_BORDER,
-                                    )}
-                                >
-                                    {fmtMultiplier(row.coverage)}
-                                </TableCell>
-                                <TableCell align="right">
-                                    {fmtUsd4(row.effUsdPerReq)}
-                                </TableCell>
-                                <TableCell>
-                                    {row.breakEven.length === 0 ? (
-                                        <span className="text-theme-text-soft">
-                                            -
-                                        </span>
-                                    ) : (
-                                        <div className="flex flex-col gap-0.5">
-                                            {row.breakEven.map((item) => (
-                                                <span key={item.model}>
-                                                    {fmtNumber(item.volume)}{" "}
-                                                    {item.unit}
+                        ).map(({ key, row }) => {
+                            const pollenUsageUsd = row.paidUsd + row.questUsd;
+                            const matchPct = usageMatchPct(
+                                pollenUsageUsd,
+                                row.rentUsd,
+                            );
+                            return (
+                                <TableRow key={key}>
+                                    <TableCell>{row.gpu}</TableCell>
+                                    <TableCell>{row.vendor}</TableCell>
+                                    <TableCell>{row.model}</TableCell>
+                                    <TableCell
+                                        align="right"
+                                        className={GROUP_BORDER}
+                                    >
+                                        {fmtUsd(row.rentUsd)}
+                                    </TableCell>
+                                    <TableCell
+                                        align="right"
+                                        className={cn(
+                                            GROUP_BORDER,
+                                            usageMatchTone(matchPct),
+                                        )}
+                                    >
+                                        <Tooltip
+                                            triggerAs="span"
+                                            content={
+                                                <span className="block max-w-72">
+                                                    Pollen usage{" "}
+                                                    {fmtUsd(pollenUsageUsd)} ·
+                                                    GPU rent{" "}
+                                                    {fmtUsd(row.rentUsd)} ·
+                                                    delta{" "}
+                                                    {fmtUsd(
+                                                        row.rentUsd -
+                                                            pollenUsageUsd,
+                                                    )}
                                                 </span>
-                                            ))}
+                                            }
+                                        >
+                                            <span>
+                                                {fmtUnsignedPct(matchPct)}
+                                            </span>
+                                        </Tooltip>
+                                    </TableCell>
+                                    <TableCell
+                                        align="right"
+                                        className={GROUP_BORDER}
+                                    >
+                                        {fmtNumber(row.requests)}
+                                    </TableCell>
+                                    <TableCell
+                                        align="right"
+                                        className="text-intent-success-text"
+                                    >
+                                        {fmtUsd(row.paidUsd)}
+                                    </TableCell>
+                                    <TableCell>
+                                        <div className="flex justify-center">
+                                            <Gauge
+                                                paid={row.paidUsd}
+                                                quests={row.questUsd}
+                                            />
                                         </div>
-                                    )}
-                                </TableCell>
-                                <TableCell className={GROUP_BORDER}>
-                                    {row.flags.length === 0 ? (
-                                        <span className="text-theme-text-soft">
-                                            -
-                                        </span>
-                                    ) : (
-                                        <div className="flex flex-wrap gap-1">
-                                            {row.flags.map((flag) => (
-                                                <Chip
-                                                    key={flag}
-                                                    intent="warning"
-                                                    size="sm"
-                                                >
-                                                    {flag}
-                                                </Chip>
-                                            ))}
-                                        </div>
-                                    )}
-                                </TableCell>
-                            </TableRow>
-                        ))}
+                                    </TableCell>
+                                    <TableCell className="text-left text-intent-warning-text">
+                                        {fmtUsd(row.questUsd)}
+                                    </TableCell>
+                                    <TableCell
+                                        align="right"
+                                        className={cn(
+                                            rowMarginPctTone(row.marginPct),
+                                            GROUP_BORDER,
+                                        )}
+                                    >
+                                        {marginPctText(row.marginPct)}
+                                    </TableCell>
+                                    <TableCell align="right">
+                                        {fmtUsd4(row.effUsdPerReq)}
+                                    </TableCell>
+                                    <TableCell>
+                                        {row.breakEven.length === 0 ? (
+                                            <span className="text-theme-text-soft">
+                                                -
+                                            </span>
+                                        ) : (
+                                            <div className="flex flex-col gap-0.5">
+                                                {row.breakEven.map((item) => (
+                                                    <span key={item.model}>
+                                                        {fmtNumber(item.volume)}{" "}
+                                                        {item.unit}
+                                                    </span>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </TableCell>
+                                    <TableCell className={GROUP_BORDER}>
+                                        {row.flags.length === 0 ? (
+                                            <span className="text-theme-text-soft">
+                                                -
+                                            </span>
+                                        ) : (
+                                            <div className="flex flex-wrap gap-1">
+                                                {row.flags.map((flag) => (
+                                                    <Chip
+                                                        key={flag}
+                                                        intent="warning"
+                                                        size="sm"
+                                                    >
+                                                        {flag}
+                                                    </Chip>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </TableCell>
+                                </TableRow>
+                            );
+                        })}
                     </TableBody>
                 </DataTable>
             </TableScroller>

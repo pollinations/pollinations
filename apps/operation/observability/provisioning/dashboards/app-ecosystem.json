@@ -1794,7 +1794,7 @@
     "schemaVersion": 40,
     "tags": [
         "apps",
-        "economics",
+        "observability",
         "ecosystem"
     ],
     "templating": {

@@ -7,9 +7,8 @@
 // with the declared tools, executes any tool calls (built-in tools hit our own
 // gen/image endpoints; MCP tools go to the owner's MCP server over HTTP), feeds
 // results back, and repeats until the model answers. It returns the standard
-// chat.completion shape with summed usage plus `usage.tool_call_counts`, so the
-// owner's declared per-call `toolPrices` bill exactly as for any community
-// endpoint (readReportedToolCallCount in shared/registry/community-billing.ts).
+// chat.completion shape with summed usage plus `usage.tool_call_counts` for
+// observability (a future pricing PR will consume the reported counts).
 //
 // Unlike queen-bee this runs directly in the Worker — there is no user code to
 // isolate, so no sandbox. The source below is the deployed artifact verbatim;
@@ -337,8 +336,8 @@ async function runAgent(env, userMessages) {
     };
 }
 
-// MCP tools bill under a single "mcp_call" line; built-ins bill under their own
-// name. Owners declare matching toolPrices to charge for either.
+// MCP tools count under a single "mcp_call" line; built-ins count under their
+// own name in usage.tool_call_counts.
 function billedToolName(name) {
     return name.startsWith("mcp__") ? "mcp_call" : name;
 }

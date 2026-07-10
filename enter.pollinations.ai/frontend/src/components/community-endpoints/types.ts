@@ -4,12 +4,9 @@ import {
     type CommunityEndpointPrices,
     type CommunityEndpointVisibility,
 } from "@shared/community-endpoints.ts";
-import { COMMUNITY_TOOL_NAME_PATTERN } from "@shared/registry/community-billing.ts";
 import type { Usage } from "@shared/registry/registry.ts";
 
 type EndpointFormPrices = Record<CommunityEndpointPriceKey, string>;
-
-export type ToolFeeRow = { name: string; price: string };
 
 // The two ways to register: point at a self-hosted OpenAI-compatible endpoint
 // (external), or have the platform deploy and run a no-code prompt agent.
@@ -43,7 +40,6 @@ export type CommunityEndpoint = {
     // private → owner-only, shown only to the owner, no owner-set price;
     // public → globally listed + billed to callers.
     visibility: CommunityEndpointVisibility;
-    toolPrices: Record<string, number>;
     disabled: boolean;
     disabledReason: string | null;
     disabledAt: string | null;
@@ -65,7 +61,6 @@ export type EndpointFormState = {
     baseModel: string;
     builtinTools: PromptAgentBuiltinTool[];
     mcpServers: McpServerRow[];
-    toolFees: ToolFeeRow[];
 } & EndpointFormPrices;
 
 export type EndpointPayload = {
@@ -76,7 +71,6 @@ export type EndpointPayload = {
     promptAgent?: PromptAgentConfig;
     upstreamModel: string;
     visibility: CommunityEndpointVisibility;
-    toolPrices: Record<string, number>;
 } & CommunityEndpointPrices;
 
 export type CommunityEndpointUsage = Record<string, unknown>;
@@ -111,7 +105,6 @@ export const emptyForm: EndpointFormState = {
     baseModel: "",
     builtinTools: [],
     mcpServers: [],
-    toolFees: [],
     ...emptyPriceForm,
 };
 
@@ -162,9 +155,6 @@ export function endpointToForm(endpoint: CommunityEndpoint): EndpointFormState {
             url: server.url,
             auth: server.auth ?? "",
         })),
-        toolFees: Object.entries(endpoint.toolPrices)
-            .sort(([a], [b]) => a.localeCompare(b))
-            .map(([name, price]) => ({ name, price: String(price) })),
         ...(Object.fromEntries(
             COMMUNITY_ENDPOINT_PRICE_FIELDS.map((field) => [
                 field.key,
@@ -221,28 +211,6 @@ export function observedUsageValue(
         : null;
 }
 
-// Whole-map semantics: the API replaces toolPrices with what we send, so an
-// empty map (all rows removed) clears saved fees.
-function toolFeesToPayload(rows: ToolFeeRow[]): Record<string, number> {
-    const toolPrices: Record<string, number> = {};
-    for (const row of rows) {
-        const name = row.name.trim();
-        const price = Number(row.price.trim());
-        if (!COMMUNITY_TOOL_NAME_PATTERN.test(name)) {
-            throw new Error(
-                `Tool name "${name}" must be lowercase alphanumeric with _ or - (max 40 chars)`,
-            );
-        }
-        if (!Number.isFinite(price) || price <= 0) {
-            throw new Error(
-                `Tool fee for "${name}" must be a positive Pollen amount per call`,
-            );
-        }
-        toolPrices[name] = price;
-    }
-    return toolPrices;
-}
-
 // Mirrors the backend McpServerSchema name pattern (lowercase alphanumeric with
 // _ or -, max 40 chars) so client and server reject the same names.
 export const MCP_SERVER_NAME_PATTERN = /^[a-z0-9][a-z0-9_-]{0,39}$/;
@@ -297,10 +265,6 @@ export function toEndpointPayload(form: EndpointFormState): EndpointPayload {
         name: modelName,
         description: form.description.trim(),
         visibility: form.visibility,
-        toolPrices:
-            form.visibility === "public"
-                ? toolFeesToPayload(form.toolFees)
-                : {},
         ...formPricesToPayload(form),
     };
     if (form.mode === "prompt-agent") {

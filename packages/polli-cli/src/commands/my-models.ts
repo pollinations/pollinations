@@ -54,12 +54,7 @@ function addPriceOptions(command: Command): Command {
     for (const [flag, description] of PRICE_FLAGS) {
         command.option(flag, description);
     }
-    return command.option(
-        "--tool-price <name=price>",
-        "Per-call tool fee in Pollen, repeatable (e.g. --tool-price web_search=0.005). On update, replaces the whole map.",
-        (value: string, previous: string[]) => [...previous, value],
-        [] as string[],
-    );
+    return command;
 }
 
 function readPriceOptions(opts: Record<string, unknown>) {
@@ -113,24 +108,6 @@ function modelBody(opts: Record<string, unknown>, includeRequired: boolean) {
             );
             process.exit(1);
         }
-    }
-
-    const toolPriceEntries = opts.toolPrice as string[] | undefined;
-    if (toolPriceEntries && toolPriceEntries.length > 0) {
-        const toolPrices: Record<string, number> = {};
-        for (const entry of toolPriceEntries) {
-            const separator = entry.indexOf("=");
-            const name = separator > 0 ? entry.slice(0, separator) : "";
-            const price = Number(entry.slice(separator + 1));
-            if (!name || !Number.isFinite(price) || price <= 0) {
-                printError(
-                    `--tool-price must be <name>=<positive number>, got '${entry}'`,
-                );
-                process.exit(1);
-            }
-            toolPrices[name] = price;
-        }
-        body.toolPrices = toolPrices;
     }
 
     if (includeRequired) {

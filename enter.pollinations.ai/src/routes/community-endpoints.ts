@@ -8,11 +8,9 @@ import {
     isCommunityEndpointOwnerAllowed,
     normalizeCommunityEndpointBaseUrl,
     normalizeCommunityEndpointBearerToken,
-    parseCommunityToolPrices,
 } from "@shared/community-endpoints.ts";
 import * as schema from "@shared/db/better-auth.ts";
 import { validator } from "@shared/middleware/validator.ts";
-import { COMMUNITY_TOOL_NAME_PATTERN } from "@shared/registry/community-billing.ts";
 import { encryptSecret } from "@shared/secret-encryption.ts";
 import { and, eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
@@ -56,20 +54,6 @@ const VisibilitySchema = z
     .describe(
         '"private": owner-only, shown only to the owner, with no owner-set price. "public": anyone, listed in the catalog, priced. Publishing requires an allowlisted account and pricing.',
     );
-// Whole-map semantics on update: sending toolPrices replaces the map; {} clears it.
-const ToolPricesSchema = z
-    .record(
-        z
-            .string()
-            .regex(
-                COMMUNITY_TOOL_NAME_PATTERN,
-                "Tool names must be lowercase alphanumeric with _ or - (max 40 chars)",
-            ),
-        z.number().finite().positive().describe("Pollen per call."),
-    )
-    .describe(
-        "Per-call tool fees, keyed by tool name (e.g. web_search). Each request is billed `fee × usage.tool_call_counts.<name>` as reported by the endpoint in its response usage object (on the final usage-bearing event for streams). On update the map is replaced whole; send {} to clear.",
-    );
 const EndpointFieldsSchema = {
     // No "/": the public model id is `<owner>/<name>`, so a slash in the name
     // would inject a second separator and let one model spoof another's id.
@@ -94,7 +78,6 @@ const CreateEndpointSchema = z
         // prompt-agent deploys mint and manage their own worker token.
         bearerToken: EndpointFieldsSchema.bearerToken.optional(),
         visibility: VisibilitySchema.optional().default("private"),
-        toolPrices: ToolPricesSchema.optional(),
         ...UpdatePriceFieldsSchema,
     })
     .refine(
@@ -119,7 +102,6 @@ const UpdateEndpointSchema = z
         upstreamModel: EndpointFieldsSchema.upstreamModel,
         bearerToken: EndpointFieldsSchema.bearerToken.optional(),
         visibility: VisibilitySchema.optional(),
-        toolPrices: ToolPricesSchema.optional(),
         ...UpdatePriceFieldsSchema,
     })
     .refine(
@@ -150,7 +132,6 @@ const CommunityEndpointResponseSchema = z.object({
     ),
     upstreamModel: z.string(),
     visibility: VisibilitySchema,
-    toolPrices: ToolPricesSchema,
     ...ResponsePriceFieldsSchema,
     disabled: z.boolean(),
     disabledReason: z.string().nullable(),
@@ -176,13 +157,6 @@ const CommunityEndpointDeleteResponseSchema = z.object({
 const ENDPOINT_PROBE_THROTTLE_SECONDS = 30;
 type Db = ReturnType<typeof drizzle<typeof schema>>;
 type CommunityEndpointRow = typeof schema.communityEndpoint.$inferSelect;
-
-function serializeToolPrices(
-    toolPrices: Record<string, number> | undefined,
-): string | null {
-    if (!toolPrices || Object.keys(toolPrices).length === 0) return null;
-    return JSON.stringify(toolPrices);
-}
 
 function normalizeInputBaseUrl(value: string): string {
     try {
@@ -257,7 +231,6 @@ function toResponse(row: CommunityEndpointRow, ownerGithubUsername: string) {
         promptAgent: storedPromptAgent?.promptAgent ?? null,
         upstreamModel: row.upstreamModel,
         visibility: row.visibility,
-        toolPrices: parseCommunityToolPrices(row.toolPrices),
         ...communityEndpointPrices(row),
         disabled: row.disabledAt !== null,
         disabledReason: row.disabledReason,
@@ -462,13 +435,11 @@ export const communityEndpointsRoutes = new Hono<Env>()
             );
             await ensureModelNameAvailable(db, user.id, input.name);
             // A private model is owner-only and free, so owner-declared public
-            // pricing (token prices and tool fees) only applies when public.
+            // pricing only applies when public.
             const prices =
                 input.visibility === "public"
                     ? communityEndpointPrices(input)
                     : communityEndpointPrices({});
-            const toolPrices =
-                input.visibility === "public" ? input.toolPrices : undefined;
             await enforceSharingRules(db, user.id, input.visibility, prices);
             const id = crypto.randomUUID();
             // A prompt agent deploys the platform template to a managed worker:
@@ -528,7 +499,6 @@ export const communityEndpointsRoutes = new Hono<Env>()
                             c.env.BETTER_AUTH_SECRET,
                         ),
                         visibility: input.visibility,
-                        toolPrices: serializeToolPrices(toolPrices),
                         ...prices,
                         createdAt: new Date(),
                         updatedAt: new Date(),
@@ -728,9 +698,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
                         (c.env as { GEN_BASE_URL?: string }).GEN_BASE_URL ??
                         "https://gen.pollinations.ai",
                 });
-                const workerAuthToken = crypto
-                    .randomUUID()
-                    .replaceAll("-", "");
+                const workerAuthToken = crypto.randomUUID().replaceAll("-", "");
                 update.baseUrl = await deployCommunityWorker(
                     deployConfig,
                     communityWorkerScriptName(endpoint.id),
@@ -761,9 +729,6 @@ export const communityEndpointsRoutes = new Hono<Env>()
             if (input.visibility !== undefined) {
                 update.visibility = input.visibility;
             }
-            if (input.toolPrices !== undefined) {
-                update.toolPrices = serializeToolPrices(input.toolPrices);
-            }
             for (const field of COMMUNITY_ENDPOINT_PRICE_FIELDS) {
                 if (input[field.key] !== undefined) {
                     update[field.key] = input[field.key];
@@ -775,10 +740,9 @@ export const communityEndpointsRoutes = new Hono<Env>()
             const effectiveVisibility = input.visibility ?? endpoint.visibility;
             if (effectiveVisibility === "private") {
                 // A private model is owner-only, so owner-declared public
-                // pricing does not apply. This also clears prices (and tool
-                // fees) when a published model is made private again.
+                // pricing does not apply. This also clears prices when a
+                // published model is made private again.
                 Object.assign(update, communityEndpointPrices({}));
-                update.toolPrices = null;
             }
             const effectivePrices = communityEndpointPrices({
                 ...endpoint,

@@ -107,7 +107,6 @@ function createCommunityEndpoint(
         upstreamModel: "upstream-test-model",
         bearerTokenCiphertext: "encrypted",
         visibility: "public",
-        toolPrices: {},
         disabledAt: null,
         disabledReason: null,
         ...communityEndpointPrices({

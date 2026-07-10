@@ -17,7 +17,6 @@ import {
     COMMUNITY_ENDPOINT_PRICE_FIELDS,
     type CommunityEndpointVisibility,
 } from "@shared/community-endpoints.ts";
-import { COMMUNITY_TOOL_NAME_PATTERN } from "@shared/registry/community-billing.ts";
 import type { FormEvent, ReactNode } from "react";
 import { useEffect, useState } from "react";
 import { apiClient } from "../../api.ts";
@@ -48,7 +47,6 @@ import {
     type PromptAgentBuiltinTool,
     providerModelHelper,
     readError,
-    type ToolFeeRow,
     toEndpointPayload,
 } from "./types.ts";
 
@@ -68,15 +66,6 @@ function isValidMcpRow(row: McpServerRow): boolean {
         return false;
     }
     return MCP_SERVER_NAME_PATTERN.test(name);
-}
-
-function isValidToolFeeRow(row: ToolFeeRow): boolean {
-    const price = Number(row.price.trim());
-    return (
-        COMMUNITY_TOOL_NAME_PATTERN.test(row.name.trim()) &&
-        Number.isFinite(price) &&
-        price > 0
-    );
 }
 
 function ToggleButton({
@@ -225,33 +214,6 @@ export function CommunityEndpointDialog({
         setForm((current) => ({
             ...current,
             mcpServers: current.mcpServers.filter((_, i) => i !== index),
-        }));
-    }
-
-    function updateToolFee(
-        index: number,
-        key: keyof ToolFeeRow,
-        value: string,
-    ): void {
-        setForm((current) => ({
-            ...current,
-            toolFees: current.toolFees.map((row, i) =>
-                i === index ? { ...row, [key]: value } : row,
-            ),
-        }));
-    }
-
-    function addToolFee(): void {
-        setForm((current) => ({
-            ...current,
-            toolFees: [...current.toolFees, { name: "", price: "" }],
-        }));
-    }
-
-    function removeToolFee(index: number): void {
-        setForm((current) => ({
-            ...current,
-            toolFees: current.toolFees.filter((_, i) => i !== index),
         }));
     }
 
@@ -417,8 +379,6 @@ export function CommunityEndpointDialog({
             : modelOptions.filter((model) =>
                   model.toLowerCase().includes(providerModelQuery),
               );
-    const hasValidToolFees =
-        !isShared || form.toolFees.every(isValidToolFeeRow);
     const hasValidMcpServers = form.mcpServers.every(isValidMcpRow);
     const modeRequirementsMet = isPromptAgent
         ? form.systemPrompt.trim() !== "" &&
@@ -431,7 +391,6 @@ export function CommunityEndpointDialog({
         modeRequirementsMet &&
         hasValidVisiblePrices &&
         hasRequiredSharedPrices &&
-        hasValidToolFees &&
         saveRequirementMet;
 
     return (
@@ -806,83 +765,6 @@ export function CommunityEndpointDialog({
                             visiblePriceKeys={visiblePriceKeys}
                             onChange={updateForm}
                         />
-                    )}
-
-                    {isShared && (
-                        <FieldStack
-                            label="Tool fees"
-                            helper={
-                                isPromptAgent
-                                    ? "Pollen charged per tool call the agent makes. Use the built-in tool names (web_search, image) or mcp_call for MCP tools."
-                                    : "Pollen charged per tool call, billed from the usage.tool_call_counts your endpoint reports (e.g. web_search)."
-                            }
-                            alignLabelRow
-                            action={
-                                <Button
-                                    type="button"
-                                    size="sm"
-                                    intent="info"
-                                    className="shrink-0 text-sm"
-                                    onClick={addToolFee}
-                                >
-                                    Add tool fee
-                                </Button>
-                            }
-                        >
-                            {form.toolFees.length > 0 && (
-                                <div className="grid gap-2">
-                                    {form.toolFees.map((row, index) => (
-                                        <div
-                                            // biome-ignore lint/suspicious/noArrayIndexKey: rows have no stable id until named
-                                            key={index}
-                                            className="flex items-center gap-2"
-                                        >
-                                            <Input
-                                                name={`community-tool-fee-name-${index}`}
-                                                value={row.name}
-                                                placeholder="web_search"
-                                                autoComplete="off"
-                                                autoCapitalize="none"
-                                                spellCheck={false}
-                                                className="flex-1"
-                                                onChange={(e) =>
-                                                    updateToolFee(
-                                                        index,
-                                                        "name",
-                                                        e.target.value,
-                                                    )
-                                                }
-                                            />
-                                            <Input
-                                                name={`community-tool-fee-price-${index}`}
-                                                value={row.price}
-                                                placeholder="0.005"
-                                                inputMode="decimal"
-                                                autoComplete="off"
-                                                className="w-32"
-                                                onChange={(e) =>
-                                                    updateToolFee(
-                                                        index,
-                                                        "price",
-                                                        e.target.value,
-                                                    )
-                                                }
-                                            />
-                                            <IconButton
-                                                intent="danger"
-                                                title="Remove tool fee"
-                                                tooltip="Remove tool fee"
-                                                onClick={() =>
-                                                    removeToolFee(index)
-                                                }
-                                            >
-                                                <XIcon className="h-4 w-4" />
-                                            </IconButton>
-                                        </div>
-                                    ))}
-                                </div>
-                            )}
-                        </FieldStack>
                     )}
                 </ScrollArea>
 

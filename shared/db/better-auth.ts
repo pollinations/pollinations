@@ -211,8 +211,6 @@ export const communityEndpoint = sqliteTable("community_endpoint", {
   visibility: text("visibility", { enum: ["private", "public"] })
     .default("private")
     .notNull(),
-  // JSON map of per-call tool fees ({"web_search": 0.01}); null = none.
-  toolPrices: text("tool_prices"),
   promptTextPrice: real("prompt_text_price").notNull(),
   promptCachedPrice: real("prompt_cached_price").default(0).notNull(),
   promptCacheWritePrice: real("prompt_cache_write_price").default(0).notNull(),

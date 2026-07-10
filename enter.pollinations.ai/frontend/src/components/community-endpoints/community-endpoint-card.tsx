@@ -134,30 +134,6 @@ export function CommunityEndpointCard({
                         value={<CommunityPriceBadges group={group} />}
                     />
                 ))}
-                {Object.keys(endpoint.toolPrices).length > 0 && (
-                    <CommunityDetailRow
-                        icon={<CardIcon className="h-3.5 w-3.5" />}
-                        label="Tool fees"
-                        value={
-                            <span className="flex min-w-0 flex-wrap items-center gap-1">
-                                {Object.entries(endpoint.toolPrices)
-                                    .sort(([a], [b]) => a.localeCompare(b))
-                                    .map(([name, price]) => (
-                                        <Chip
-                                            key={name}
-                                            intent="neutral"
-                                            size="sm"
-                                        >
-                                            <span className="font-mono">
-                                                {name}
-                                            </span>
-                                            {price} / call
-                                        </Chip>
-                                    ))}
-                            </span>
-                        }
-                    />
-                )}
             </div>
         </Surface>
     );

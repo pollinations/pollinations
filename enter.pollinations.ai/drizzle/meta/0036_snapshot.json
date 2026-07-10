@@ -414,13 +414,6 @@
           "autoincrement": false,
           "default": "'private'"
         },
-        "tool_prices": {
-          "name": "tool_prices",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
         "prompt_text_price": {
           "name": "prompt_text_price",
           "type": "real",

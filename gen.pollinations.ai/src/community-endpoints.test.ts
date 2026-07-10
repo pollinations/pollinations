@@ -19,8 +19,6 @@ import {
 } from "@shared/db/better-auth.ts";
 import { handleError } from "@shared/error.ts";
 import { IMMUTABLE_CACHE_CONTROL } from "@shared/http/cache-control.ts";
-import { modelInfoFromDefinition } from "@shared/registry/model-info.ts";
-import { calculateUsageBilling } from "@shared/registry/registry.ts";
 import { encryptSecret } from "@shared/secret-encryption.ts";
 import {
     createTestApiKey,
@@ -241,149 +239,6 @@ describe("community endpoint helpers", () => {
         );
     });
 
-    it("bills owner-declared tool fees from reported tool_call_counts", () => {
-        const definition = communityModelDefinition({
-            modelId: "voodoohop/deep-research",
-            description: null,
-            toolPrices: { web_search: 0.005, code_exec: 0.03 },
-            ...communityEndpointPrices({ completionTextPrice: 0.000001 }),
-        });
-        expect(definition.billing?.adjustments?.map((a) => a.id)).toEqual([
-            "community.tool.code_exec.v1",
-            "community.tool.web_search.v1",
-        ]);
-
-        // Non-stream: counts read from the response usage object; undeclared
-        // tools in the report are ignored.
-        const billing = calculateUsageBilling(
-            "voodoohop/deep-research",
-            { completionTextTokens: 10 },
-            definition,
-            {
-                usage: {
-                    tool_call_counts: {
-                        web_search: 3,
-                        code_exec: 1,
-                        undeclared: 5,
-                    },
-                },
-            },
-        );
-        expect(billing.adjustments).toHaveLength(2);
-        expect(billing.price.totalPrice).toBeCloseTo(
-            10 * 0.000001 + 3 * 0.005 + 1 * 0.03,
-            10,
-        );
-
-        // Stream: counts read from the last usage-bearing stream event.
-        const streamed = calculateUsageBilling(
-            "voodoohop/deep-research",
-            { completionTextTokens: 10 },
-            definition,
-            {
-                streamEvents: [
-                    { choices: [{ delta: { content: "ok" } }] },
-                    { usage: { tool_call_counts: { web_search: 2 } } },
-                ],
-            },
-        );
-        expect(streamed.adjustments).toEqual([
-            expect.objectContaining({
-                ruleId: "community.tool.web_search.v1",
-                units: 2,
-                cost: 0.01,
-            }),
-        ]);
-
-        // Malformed counts bill as 0 and never throw.
-        const malformed = calculateUsageBilling(
-            "voodoohop/deep-research",
-            { completionTextTokens: 10 },
-            definition,
-            { usage: { tool_call_counts: { web_search: "three" } } },
-        );
-        expect(malformed.adjustments).toHaveLength(0);
-
-        // No declared tools → no billing rules at all.
-        const plain = communityModelDefinition({
-            modelId: "voodoohop/openai",
-            description: null,
-            toolPrices: {},
-            ...communityEndpointPrices({}),
-        });
-        expect(plain.billing).toBeUndefined();
-    });
-
-    it("surfaces billing adjustments as fees in catalog model info", () => {
-        const definition = communityModelDefinition({
-            modelId: "voodoohop/deep-research",
-            description: null,
-            toolPrices: { web_search: 0.005 },
-            ...communityEndpointPrices({ completionTextPrice: 0.000001 }),
-        });
-        const info = modelInfoFromDefinition(
-            "voodoohop/deep-research",
-            definition,
-            { community: true },
-        );
-        expect(info.fees).toEqual([
-            {
-                id: "community.tool.web_search.v1",
-                kind: "tool_call",
-                unit: "call",
-                price: "0.005",
-                description: expect.stringContaining("web_search"),
-            },
-        ]);
-
-        const plain = communityModelDefinition({
-            modelId: "voodoohop/openai",
-            description: null,
-            ...communityEndpointPrices({}),
-        });
-        expect(
-            modelInfoFromDefinition("voodoohop/openai", plain).fees,
-        ).toBeUndefined();
-    });
-
-    it("marks resolver-priced fees dynamic and omits their static price", () => {
-        const definition = communityModelDefinition({
-            modelId: "voodoohop/deep-research",
-            description: null,
-            ...communityEndpointPrices({}),
-        });
-        // A rule whose per-unit cost is read from the response at runtime
-        // (as Perplexity's request fee is) must not advertise a static price.
-        definition.billing = {
-            adjustments: [
-                {
-                    id: "provider.request.v1",
-                    description: "Provider-reported request cost",
-                    kind: "search_request",
-                    unit: "request",
-                    unitCost: 0.005,
-                    countUnits: () => 1,
-                    resolveUnitCost: () => 0.02,
-                },
-            ],
-        };
-        const info = modelInfoFromDefinition(
-            "voodoohop/deep-research",
-            definition,
-            { community: true },
-        );
-        expect(info.fees).toEqual([
-            {
-                id: "provider.request.v1",
-                kind: "search_request",
-                unit: "request",
-                dynamic: true,
-                description: "Provider-reported request cost",
-            },
-        ]);
-        expect(info.fees?.[0]).not.toHaveProperty("price");
-    });
-
     it("builds Portkey gateway context with the saved token", async () => {
         const secret = "test-secret";
         const endpoint: CommunityEndpointRuntime = {
@@ -395,7 +250,6 @@ describe("community endpoint helpers", () => {
             baseUrl: "https://api.example.com/v1",
             upstreamModel: "gpt-4.1-mini",
             visibility: "public",
-            toolPrices: {},
             disabledAt: null,
             disabledReason: null,
             bearerTokenCiphertext: await encryptSecret(
@@ -1774,8 +1628,7 @@ fixtureTest(
             tools: ["web_search"],
             mcpServers: [{ name: "docs", url: "https://mcp.example.com/rpc" }],
         };
-        // No baseUrl, no bearerToken — a prompt agent manages its own. Created
-        // public with pricing so the declared tool fees are stored.
+        // No baseUrl, no bearerToken — a prompt agent manages its own.
         const createResponse = await fetchEnterApi(
             enterApi,
             new Request("http://localhost:3000/api/community-endpoints", {
@@ -1790,7 +1643,6 @@ fixtureTest(
                     visibility: "public",
                     promptTextPrice: 0.1,
                     completionTextPrice: 0.1,
-                    toolPrices: { web_search: 0.002 },
                 }),
             }),
             deployEnv,
@@ -1799,7 +1651,6 @@ fixtureTest(
         const created = (await createResponse.json()) as {
             id: string;
             baseUrl: string;
-            toolPrices: Record<string, number>;
             promptAgent: typeof promptAgent | null;
         };
         // The config is surfaced as a nested promptAgent object; the internal
@@ -1811,7 +1662,6 @@ fixtureTest(
         });
         expect(created.promptAgent).not.toHaveProperty("keyId");
         expect(created).not.toHaveProperty("source");
-        expect(created.toolPrices).toEqual({ web_search: 0.002 });
         expect(created.baseUrl).toBe(
             `https://bee-${created.id}.staging-sub.workers.dev/v1`,
         );

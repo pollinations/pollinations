@@ -1,0 +1,943 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="A projector-friendly human judge version of Forehead Detective.">
+    <title>Forehead Detective Live | pollinations.ai</title>
+    <style>
+        :root {
+            --ink: #10131a;
+            --cream: #fff5ca;
+            --paper: #ffe66b;
+            --blue: #215cff;
+            --green: #15a66a;
+            --red: #ec4e39;
+            --purple: #7c3aed;
+            --muted: rgba(16, 19, 26, 0.68);
+            --line: rgba(16, 19, 26, 0.18);
+            --shadow: 0 26px 70px rgba(16, 19, 26, 0.2);
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            color: var(--ink);
+            font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            background:
+                radial-gradient(circle at 16% 18%, rgba(255, 230, 107, 0.58), transparent 24rem),
+                radial-gradient(circle at 86% 18%, rgba(33, 92, 255, 0.2), transparent 28rem),
+                linear-gradient(135deg, #fffaf0 0%, #dff7ff 100%);
+        }
+
+        button,
+        input,
+        select {
+            font: inherit;
+        }
+
+        button {
+            border: 0;
+            border-radius: 14px;
+            background: var(--ink);
+            color: #fff;
+            cursor: pointer;
+            font-weight: 900;
+            letter-spacing: 0;
+            box-shadow: 0 10px 0 rgba(16, 19, 26, 0.16);
+            transition: transform 0.12s ease, box-shadow 0.12s ease, opacity 0.12s ease;
+        }
+
+        button:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 14px 0 rgba(16, 19, 26, 0.14);
+        }
+
+        button:active:not(:disabled) {
+            transform: translateY(4px);
+            box-shadow: 0 6px 0 rgba(16, 19, 26, 0.16);
+        }
+
+        button:disabled {
+            cursor: not-allowed;
+            opacity: 0.44;
+        }
+
+        input,
+        select {
+            width: 100%;
+            border: 3px solid var(--ink);
+            border-radius: 14px;
+            background: rgba(255, 255, 255, 0.78);
+            color: var(--ink);
+            padding: 16px 18px;
+            font-weight: 850;
+        }
+
+        input::placeholder {
+            color: rgba(16, 19, 26, 0.38);
+        }
+
+        .app {
+            display: grid;
+            min-height: 100vh;
+            padding: clamp(18px, 3vw, 42px);
+        }
+
+        .top {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) auto;
+            gap: 18px;
+            align-items: start;
+        }
+
+        h1 {
+            margin: 0;
+            font-size: clamp(3.6rem, 9vw, 9rem);
+            line-height: 0.84;
+        }
+
+        .status {
+            min-width: 190px;
+            padding: 14px 18px;
+            border: 3px solid var(--ink);
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.74);
+            text-align: center;
+            font-weight: 950;
+        }
+
+        .panel {
+            align-self: center;
+            width: min(1120px, 100%);
+            margin: 32px auto 0;
+            padding: clamp(18px, 4vw, 44px);
+            border: 4px solid var(--ink);
+            border-radius: 24px;
+            background: rgba(255, 255, 255, 0.82);
+            box-shadow: var(--shadow);
+        }
+
+        .setup-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 18px;
+        }
+
+        .field {
+            display: grid;
+            gap: 9px;
+        }
+
+        label {
+            font-size: clamp(1rem, 1.5vw, 1.25rem);
+            font-weight: 950;
+            text-transform: uppercase;
+        }
+
+        .button-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 14px;
+            margin-top: 18px;
+        }
+
+        .big-button {
+            min-height: 86px;
+            padding: 18px;
+            font-size: clamp(1.4rem, 3vw, 2.7rem);
+        }
+
+        .start {
+            background: var(--purple);
+        }
+
+        .connect {
+            background: var(--blue);
+        }
+
+        .secondary {
+            background: #fff;
+            color: var(--ink);
+        }
+
+        .game {
+            display: none;
+            grid-template-rows: auto minmax(0, 1fr) auto;
+            gap: 20px;
+            min-height: calc(100vh - clamp(36px, 6vw, 84px));
+        }
+
+        .game.active,
+        .setup.active {
+            display: grid;
+        }
+
+        .setup {
+            display: none;
+        }
+
+        .score-strip {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 12px;
+        }
+
+        .score-box {
+            padding: 14px;
+            border: 3px solid var(--ink);
+            border-radius: 16px;
+            background: rgba(255, 255, 255, 0.78);
+            text-align: center;
+            font-weight: 950;
+        }
+
+        .score-box span {
+            display: block;
+            color: var(--muted);
+            font-size: clamp(0.8rem, 1.5vw, 1.2rem);
+            text-transform: uppercase;
+        }
+
+        .score-box strong {
+            display: block;
+            margin-top: 4px;
+            font-size: clamp(1.8rem, 4vw, 4.6rem);
+            line-height: 0.92;
+        }
+
+        .card {
+            display: grid;
+            place-items: center;
+            min-height: 42vh;
+            padding: clamp(20px, 5vw, 68px);
+            border: 5px solid var(--ink);
+            border-radius: 30px;
+            background: var(--paper);
+            box-shadow: 0 18px 0 rgba(16, 19, 26, 0.16);
+            transform: rotate(-1deg);
+            text-align: center;
+        }
+
+        .move-type {
+            margin-bottom: 14px;
+            color: var(--muted);
+            font-size: clamp(1rem, 2vw, 1.8rem);
+            font-weight: 950;
+            text-transform: uppercase;
+        }
+
+        .move-text {
+            max-width: 100%;
+            font-size: clamp(3rem, 8vw, 9rem);
+            font-weight: 1000;
+            line-height: 0.94;
+            overflow-wrap: anywhere;
+        }
+
+        .judge-buttons {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 18px;
+        }
+
+        .judge-buttons.guess-mode {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .judge-buttons button {
+            min-height: clamp(92px, 16vh, 160px);
+            font-size: clamp(2rem, 6vw, 6rem);
+        }
+
+        .yes,
+        .correct {
+            background: var(--green);
+        }
+
+        .no,
+        .wrong {
+            background: var(--red);
+        }
+
+        .unsure {
+            background: var(--paper);
+            color: var(--ink);
+        }
+
+        .control-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 14px;
+        }
+
+        .history {
+            display: grid;
+            gap: 8px;
+            max-height: 18vh;
+            overflow: auto;
+        }
+
+        .history-item {
+            display: grid;
+            grid-template-columns: 52px minmax(0, 1fr) auto;
+            gap: 12px;
+            align-items: center;
+            padding: 10px 12px;
+            border: 2px solid var(--line);
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.68);
+            font-weight: 850;
+        }
+
+        .answer-pill {
+            padding: 8px 12px;
+            border-radius: 999px;
+            color: #fff;
+            font-weight: 950;
+            text-transform: uppercase;
+        }
+
+        .answer-pill.positive {
+            background: var(--green);
+        }
+
+        .answer-pill.negative {
+            background: var(--red);
+        }
+
+        .answer-pill.neutral {
+            background: var(--paper);
+            color: var(--ink);
+        }
+
+        .error {
+            display: none;
+            margin-top: 16px;
+            padding: 14px 16px;
+            border: 3px solid var(--red);
+            border-radius: 14px;
+            background: rgba(236, 78, 57, 0.12);
+            color: #871e14;
+            font-weight: 900;
+        }
+
+        .error.visible {
+            display: block;
+        }
+
+        @media (max-width: 780px) {
+            .top,
+            .setup-grid,
+            .button-grid,
+            .score-strip,
+            .judge-buttons,
+            .judge-buttons.guess-mode,
+            .control-row {
+                grid-template-columns: 1fr;
+            }
+
+            .status {
+                width: fit-content;
+            }
+
+            .move-text {
+                font-size: clamp(2.4rem, 14vw, 5.4rem);
+            }
+
+            .history {
+                max-height: 24vh;
+            }
+        }
+    </style>
+</head>
+<body>
+    <main class="app">
+        <section id="setupScreen" class="setup active">
+            <div class="top">
+                <h1>Live<br>Detective</h1>
+                <div id="connectionStatus" class="status">Not connected</div>
+            </div>
+
+            <div class="panel">
+                <div class="setup-grid">
+                    <div class="field">
+                        <label for="modelSelect">Detective model</label>
+                        <select id="modelSelect"></select>
+                    </div>
+
+                    <div class="field">
+                        <label for="questionLimit">Question limit</label>
+                        <select id="questionLimit">
+                            <option value="8">8</option>
+                            <option value="12" selected>12</option>
+                            <option value="20">20</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="button-grid">
+                    <button id="startButton" class="big-button start" type="button">Start</button>
+                    <button id="askButton" class="big-button connect" type="button">Connect Key</button>
+                </div>
+
+                <div class="field" style="margin-top: 18px;">
+                    <label for="apiKeyInput">Or paste key</label>
+                    <input id="apiKeyInput" type="password" autocomplete="off" placeholder="sk_...">
+                </div>
+                <div class="button-grid">
+                    <button id="saveKeyButton" class="big-button secondary" type="button">Use Key</button>
+                    <button id="openClassicButton" class="big-button secondary" type="button">AI vs AI</button>
+                </div>
+                <div id="setupError" class="error"></div>
+            </div>
+        </section>
+
+        <section id="gameScreen" class="game">
+            <div class="score-strip">
+                <div class="score-box"><span>Status</span><strong id="statusBadge">Ready</strong></div>
+                <div class="score-box"><span>Questions</span><strong id="questionCount">0</strong></div>
+                <div class="score-box"><span>Limit</span><strong id="limitBadge">12</strong></div>
+                <div class="score-box"><span>Score</span><strong id="scoreBadge">100</strong></div>
+            </div>
+
+            <div class="card">
+                <div>
+                    <div id="moveType" class="move-type">Ready</div>
+                    <div id="moveText" class="move-text">AI is getting ready</div>
+                </div>
+            </div>
+
+            <div id="judgeButtons" class="judge-buttons" hidden>
+                <button id="yesButton" class="yes" type="button">YES</button>
+                <button id="noButton" class="no" type="button">NO</button>
+                <button id="unsureButton" class="unsure" type="button">UNSURE</button>
+                <button id="correctButton" class="correct" type="button" hidden>EXACT</button>
+                <button id="wrongButton" class="wrong" type="button" hidden>WRONG</button>
+            </div>
+
+            <div class="control-row">
+                <button id="nextButton" class="big-button connect" type="button" hidden>Retry AI</button>
+                <button id="newGameButton" class="big-button secondary" type="button">New Round</button>
+            </div>
+
+            <div id="gameError" class="error"></div>
+            <div id="historyList" class="history"></div>
+        </section>
+    </main>
+
+    <script>
+        const ENTER_URL = "https://enter.pollinations.ai";
+        const GEN_URL = "https://gen.pollinations.ai";
+        const KEY_STORAGE = "forehead_detective_api_key";
+        const STATE_STORAGE = "forehead_projector_auth_state";
+        const CONFIG_STORAGE = "forehead_projector_config";
+        const FALLBACK_MODELS = ["openai-fast", "openai", "gemini-fast", "mistral", "deepseek"];
+
+        const els = {};
+        const state = {
+            apiKey: null,
+            modelIds: [...FALLBACK_MODELS],
+            history: [],
+            currentMove: null,
+            running: false,
+            finished: false,
+            finishReason: null,
+            awaitingRetry: false,
+            roundId: 0,
+        };
+
+        document.addEventListener("DOMContentLoaded", () => {
+            [
+                "setupScreen",
+                "gameScreen",
+                "connectionStatus",
+                "modelSelect",
+                "questionLimit",
+                "startButton",
+                "askButton",
+                "apiKeyInput",
+                "saveKeyButton",
+                "openClassicButton",
+                "setupError",
+                "statusBadge",
+                "questionCount",
+                "limitBadge",
+                "scoreBadge",
+                "moveType",
+                "moveText",
+                "judgeButtons",
+                "yesButton",
+                "noButton",
+                "unsureButton",
+                "correctButton",
+                "wrongButton",
+                "nextButton",
+                "newGameButton",
+                "gameError",
+                "historyList",
+            ].forEach((id) => {
+                els[id] = document.getElementById(id);
+            });
+
+            consumeAuthCallback();
+            state.apiKey = sessionStorage.getItem(KEY_STORAGE);
+            restoreConfig();
+            wireEvents();
+            populateModels(FALLBACK_MODELS);
+            renderConnection();
+            loadModels();
+        });
+
+        function wireEvents() {
+            els.startButton.addEventListener("click", startGame);
+            els.askButton.addEventListener("click", connectKey);
+            els.saveKeyButton.addEventListener("click", saveEnteredKey);
+            els.openClassicButton.addEventListener("click", () => {
+                window.location.href = "./";
+            });
+            els.nextButton.addEventListener("click", askAi);
+            els.newGameButton.addEventListener("click", newGame);
+            els.yesButton.addEventListener("click", () => answer("yes"));
+            els.noButton.addEventListener("click", () => answer("no"));
+            els.unsureButton.addEventListener("click", () => answer("unsure"));
+            els.correctButton.addEventListener("click", () => answer("correct"));
+            els.wrongButton.addEventListener("click", () => answer("incorrect"));
+            els.modelSelect.addEventListener("change", saveConfig);
+            els.questionLimit.addEventListener("change", saveConfig);
+            els.apiKeyInput.addEventListener("keydown", (event) => {
+                if (event.key === "Enter") saveEnteredKey();
+            });
+        }
+
+        function consumeAuthCallback() {
+            const hash = window.location.hash.startsWith("#")
+                ? window.location.hash.slice(1)
+                : window.location.hash;
+            if (!hash) return;
+
+            const params = new URLSearchParams(hash);
+            const apiKey = params.get("api_key");
+            const error = params.get("error");
+            if (!apiKey && !error) return;
+
+            window.history.replaceState({}, "", window.location.pathname + window.location.search);
+
+            if (error) {
+                showSetupError(`Pollinations authorization failed: ${error}`);
+                return;
+            }
+
+            const expectedState = sessionStorage.getItem(STATE_STORAGE);
+            if (expectedState && params.get("state") !== expectedState) {
+                showSetupError("Authorization state did not match. Key was not saved.");
+                return;
+            }
+
+            sessionStorage.removeItem(STATE_STORAGE);
+            saveKey(apiKey);
+        }
+
+        function connectKey() {
+            if (window.location.protocol === "file:") {
+                showSetupError("Open this page through localhost before connecting.");
+                return;
+            }
+            const authState = randomId();
+            sessionStorage.setItem(STATE_STORAGE, authState);
+            const params = new URLSearchParams({
+                redirect_url: window.location.href.split("#")[0],
+                permissions: "usage",
+                state: authState,
+                models: els.modelSelect.value || FALLBACK_MODELS[0],
+                budget: "5",
+                expiry: "7",
+            });
+            window.location.href = `${ENTER_URL}/authorize?${params.toString()}`;
+        }
+
+        function saveEnteredKey() {
+            const key = els.apiKeyInput.value.trim();
+            if (!/^(sk_|pk_|plln_pk_)[A-Za-z0-9_-]+/.test(key)) {
+                showSetupError("Enter a Pollinations key beginning with sk_, pk_, or plln_pk_.");
+                return;
+            }
+            saveKey(key);
+        }
+
+        function saveKey(key) {
+            state.apiKey = key;
+            sessionStorage.setItem(KEY_STORAGE, key);
+            els.apiKeyInput.value = "";
+            showSetupError("");
+            renderConnection();
+            loadModels();
+        }
+
+        function restoreConfig() {
+            const config = readConfig();
+            setSelectValue(els.questionLimit, config.questionLimit);
+        }
+
+        function saveConfig() {
+            localStorage.setItem(
+                CONFIG_STORAGE,
+                JSON.stringify({
+                    model: els.modelSelect.value,
+                    questionLimit: els.questionLimit.value,
+                }),
+            );
+        }
+
+        function readConfig() {
+            try {
+                return JSON.parse(localStorage.getItem(CONFIG_STORAGE) || "{}") || {};
+            } catch {
+                return {};
+            }
+        }
+
+        async function loadModels() {
+            try {
+                const headers = state.apiKey ? { Authorization: `Bearer ${state.apiKey}` } : {};
+                const response = await fetch(`${GEN_URL}/v1/models`, { headers });
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                const data = await response.json();
+                const ids = (data.data || [])
+                    .filter((model) => {
+                        const endpoints = model.supported_endpoints || [];
+                        const outputs = model.output_modalities || [];
+                        return endpoints.includes("/v1/chat/completions") && outputs.includes("text");
+                    })
+                    .map((model) => model.id)
+                    .filter(Boolean);
+                state.modelIds = unique([...ids, ...FALLBACK_MODELS]);
+                populateModels(state.modelIds);
+            } catch {
+                state.modelIds = [...FALLBACK_MODELS];
+                populateModels(state.modelIds);
+            }
+        }
+
+        function populateModels(modelIds) {
+            const config = readConfig();
+            const current = els.modelSelect.value || config.model || "openai-fast";
+            els.modelSelect.innerHTML = modelIds
+                .map((id) => `<option value="${escapeHtml(id)}">${escapeHtml(id)}</option>`)
+                .join("");
+            els.modelSelect.value = modelIds.includes(current) ? current : modelIds[0];
+        }
+
+        function startGame() {
+            if (!state.apiKey) {
+                showSetupError("Connect or paste a Pollinations key first.");
+                return;
+            }
+            saveConfig();
+            state.roundId += 1;
+            state.history = [];
+            state.currentMove = null;
+            state.running = false;
+            state.finished = false;
+            state.finishReason = null;
+            state.awaitingRetry = false;
+            els.setupScreen.classList.remove("active");
+            els.gameScreen.classList.add("active");
+            renderGame();
+            askAi();
+        }
+
+        function newGame() {
+            els.gameScreen.classList.remove("active");
+            els.setupScreen.classList.add("active");
+            state.roundId += 1;
+            state.currentMove = null;
+            state.history = [];
+            state.finished = false;
+            state.finishReason = null;
+            state.awaitingRetry = false;
+            showGameError("");
+            renderGame();
+        }
+
+        async function askAi() {
+            if (state.running || state.finished || state.currentMove) return;
+            if (!state.apiKey) {
+                showGameError("Missing API key.");
+                return;
+            }
+            state.running = true;
+            state.currentMove = null;
+            state.awaitingRetry = false;
+            showGameError("");
+            renderGame();
+
+            try {
+                const text = await chatCompletion(els.modelSelect.value, [
+                    {
+                        role: "system",
+                        content: [
+                            "You are playing a live projector version of a forehead guessing game.",
+                            "A human judge chose a secret topic off-screen. The app never receives it. You cannot see it.",
+                            "Ask one yes/no question, or make one final guess when confident.",
+                            "A final guess must be the exact topic name, never a category or yes/no question.",
+                            "Use {\"type\":\"guess\",\"text\":\"SpongeBob SquarePants\"}, not {\"type\":\"guess\",\"text\":\"Is it a fictional character?\"}.",
+                            "The judge may answer yes, no, or unsure. Treat unsure as inconclusive and ask a simpler follow-up.",
+                            "Use the history only. Do not ask multiple questions at once.",
+                            "Return JSON only: {\"type\":\"question\",\"text\":\"...\"} or {\"type\":\"guess\",\"text\":\"...\"}.",
+                        ].join(" "),
+                    },
+                    {
+                        role: "user",
+                        content: `History:\n${formatHistory() || "No answers yet."}`,
+                    },
+                ]);
+                state.currentMove = normalizeMove(parseJson(text, { type: "question", text }));
+            } catch (error) {
+                state.awaitingRetry = true;
+                showGameError(error.message);
+            } finally {
+                state.running = false;
+                renderGame();
+            }
+        }
+
+        function answer(value) {
+            if (!state.currentMove || state.finished) return;
+            const isGuess = state.currentMove.type === "guess";
+            if (isGuess && value !== "correct" && value !== "incorrect") return;
+            if (!isGuess && !["yes", "no", "unsure"].includes(value)) return;
+            state.history.push({
+                type: state.currentMove.type,
+                text: state.currentMove.text,
+                answer: value,
+            });
+            if (value === "correct") {
+                state.finished = true;
+                state.finishReason = "solved";
+                state.currentMove = null;
+            } else {
+                state.currentMove = null;
+            }
+            renderGame();
+            queueNextAi();
+        }
+
+        function queueNextAi() {
+            const roundId = state.roundId;
+            window.setTimeout(() => {
+                if (
+                    state.roundId !== roundId ||
+                    state.running ||
+                    state.finished ||
+                    state.currentMove ||
+                    !els.gameScreen.classList.contains("active")
+                ) {
+                    return;
+                }
+                askAi();
+            }, 450);
+        }
+
+        async function chatCompletion(model, messages) {
+            const payload = {
+                model,
+                messages,
+                reasoning_effort: "none",
+            };
+            let { response, data } = await postChatCompletion(payload);
+
+            if (!response.ok && /reasoning_effort|thinking|reasoning/i.test(String(data.error?.message || data.message || ""))) {
+                const retryPayload = { ...payload };
+                delete retryPayload.reasoning_effort;
+                ({ response, data } = await postChatCompletion(retryPayload));
+            }
+
+            if (!response.ok) {
+                throw new Error(data.error?.message || data.message || `Pollinations request failed with HTTP ${response.status}`);
+            }
+
+            const content = data.choices?.[0]?.message?.content;
+            if (!content) throw new Error("Pollinations returned an empty response.");
+            return content;
+        }
+
+        async function postChatCompletion(payload) {
+            const response = await fetch(`${GEN_URL}/v1/chat/completions`, {
+                method: "POST",
+                headers: {
+                    Authorization: `Bearer ${state.apiKey}`,
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify(payload),
+            });
+            const rawBody = await response.text();
+            let data = {};
+            try {
+                data = rawBody ? JSON.parse(rawBody) : {};
+            } catch {
+                data = { error: { message: rawBody } };
+            }
+            return { response, data };
+        }
+
+        function renderConnection() {
+            els.connectionStatus.textContent = state.apiKey ? `Connected ${redactKey(state.apiKey)}` : "Not connected";
+        }
+
+        function renderGame() {
+            const questions = state.history.length;
+            const limit = Number(els.questionLimit.value);
+            if (!state.finished && questions >= limit && !state.currentMove) {
+                state.finished = true;
+                state.finishReason = "limit";
+            }
+            const score = state.finished ? Math.max(1, 100 - Math.max(0, questions - 1) * 7) : Math.max(0, 100 - questions * 4);
+            els.statusBadge.textContent = renderStatus();
+            els.questionCount.textContent = String(questions);
+            els.limitBadge.textContent = String(limit);
+            els.scoreBadge.textContent = String(score);
+
+            if (state.finished && state.finishReason === "limit") {
+                els.moveType.textContent = "Out of questions";
+                els.moveText.textContent = "Round over";
+            } else if (state.finished) {
+                els.moveType.textContent = "Exact";
+                els.moveText.textContent = "The AI got it";
+            } else if (state.running) {
+                els.moveType.textContent = "Thinking";
+                els.moveText.textContent = "...";
+            } else if (state.currentMove) {
+                els.moveType.textContent = state.currentMove.type === "guess" ? "Final guess" : "Question";
+                els.moveText.textContent = state.currentMove.text;
+            } else {
+                els.moveType.textContent = "Next up";
+                els.moveText.textContent = "AI is getting ready";
+            }
+
+            const showingQuestion = state.currentMove?.type === "question" && !state.finished;
+            const showingGuess = state.currentMove?.type === "guess" && !state.finished;
+            els.judgeButtons.hidden = !state.currentMove || state.finished;
+            els.judgeButtons.classList.toggle("guess-mode", showingGuess);
+            els.yesButton.hidden = !showingQuestion;
+            els.noButton.hidden = !showingQuestion;
+            els.unsureButton.hidden = !showingQuestion;
+            els.correctButton.hidden = !showingGuess;
+            els.wrongButton.hidden = !showingGuess;
+            els.nextButton.hidden = !state.awaitingRetry;
+            els.nextButton.disabled = state.running || state.finished || Boolean(state.currentMove);
+            els.nextButton.textContent = state.running ? "Thinking" : "Retry AI";
+
+            els.historyList.innerHTML = state.history
+                .map(
+                    (entry, index) => `
+                        <div class="history-item">
+                            <strong>${index + 1}</strong>
+                            <span>${escapeHtml(entry.type === "guess" ? `Guess: ${entry.text}` : entry.text)}</span>
+                            <span class="answer-pill ${answerTone(entry.answer)}">${escapeHtml(displayAnswer(entry.answer))}</span>
+                        </div>
+                    `,
+                )
+                .join("");
+        }
+
+        function renderStatus() {
+            if (state.finished) return state.finishReason === "solved" ? "Exact" : "Done";
+            if (state.running) return "Thinking";
+            if (state.currentMove) return state.currentMove.type === "guess" ? "Guess" : "Question";
+            return "Ready";
+        }
+
+        function normalizeMove(move) {
+            let type = String(move.type || "")
+                .toLowerCase()
+                .includes("guess")
+                ? "guess"
+                : "question";
+            let text = String(move.text || move.question || move.guess || "").trim();
+            if (!text) text = "Is it a living thing?";
+            if (type === "guess" && isQuestionLike(text)) type = "question";
+            if (type === "question" && !text.endsWith("?")) text += "?";
+            return { type, text };
+        }
+
+        function isQuestionLike(text) {
+            return /[?]$/.test(text) || /^(is|are|was|were|do|does|did|can|could|would|will|has|have|had|am|should|who|what|where|when|why|how)\b/i.test(text);
+        }
+
+        function formatHistory() {
+            return state.history
+                .map((entry, index) => {
+                    const prefix = entry.type === "guess" ? "Guess" : "Q";
+                    return `${prefix}${index + 1}: ${entry.text}\nA${index + 1}: ${entry.answer}`;
+                })
+                .join("\n");
+        }
+
+        function parseJson(text, fallback) {
+            const trimmed = String(text).trim();
+            const withoutFence = trimmed.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/i, "");
+            const jsonMatch = withoutFence.match(/\{[\s\S]*\}/);
+            try {
+                return JSON.parse(jsonMatch ? jsonMatch[0] : withoutFence);
+            } catch {
+                return fallback;
+            }
+        }
+
+        function showSetupError(message) {
+            els.setupError.textContent = message;
+            els.setupError.classList.toggle("visible", Boolean(message));
+        }
+
+        function showGameError(message) {
+            els.gameError.textContent = message;
+            els.gameError.classList.toggle("visible", Boolean(message));
+        }
+
+        function setSelectValue(select, value) {
+            if (!value) return;
+            if ([...select.options].some((option) => option.value === value)) {
+                select.value = value;
+            }
+        }
+
+        function answerTone(answer) {
+            if (answer === "unsure") return "neutral";
+            return answer === "yes" || answer === "correct" ? "positive" : "negative";
+        }
+
+        function displayAnswer(answer) {
+            if (answer === "correct") return "exact";
+            if (answer === "incorrect") return "wrong";
+            return answer;
+        }
+
+        function unique(values) {
+            return [...new Set(values.filter(Boolean))];
+        }
+
+        function escapeHtml(value) {
+            return String(value)
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#39;");
+        }
+
+        function redactKey(key) {
+            return key ? `${key.slice(0, 3)}...${key.slice(-4)}` : "";
+        }
+
+        function randomId() {
+            if (crypto.randomUUID) return crypto.randomUUID();
+            return `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+        }
+    </script>
+</body>
+</html>

@@ -5,8 +5,8 @@ After=network.target
 [Service]
 Type=simple
 User=ubuntu
-WorkingDirectory=/home/ubuntu/pollinations/scripts/community-monitor
-EnvironmentFile=/home/ubuntu/pollinations/scripts/community-monitor/.env
+WorkingDirectory=/home/ubuntu/pollinations/community-monitor
+EnvironmentFile=/home/ubuntu/pollinations/community-monitor/.env
 # Runs one cycle (fresh probe traffic + a headless Claude Code diagnosis
 # pass) inside a detached screen session, so `screen -r community-monitor`
 # gives live interactive access to the running Claude Code transcript at any
@@ -18,7 +18,7 @@ EnvironmentFile=/home/ubuntu/pollinations/scripts/community-monitor/.env
 # watchdog.sh via cron against a single long-lived --remote-control session.
 # Kept here as the intended systemd-supervised path once that migration
 # happens.
-ExecStart=/usr/bin/screen -DmS community-monitor /home/ubuntu/pollinations/scripts/community-monitor/loop.sh
+ExecStart=/usr/bin/screen -DmS community-monitor /home/ubuntu/pollinations/community-monitor/loop.sh
 Restart=always
 RestartSec=300
 

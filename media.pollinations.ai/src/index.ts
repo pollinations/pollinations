@@ -1,5 +1,4 @@
 import { refreshR2ObjectTtl } from "@shared/r2-storage.ts";
-import type { Context } from "hono";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import {
@@ -9,26 +8,19 @@ import {
     validator,
 } from "hono-openapi";
 import { z } from "zod";
-import type { CatalogDb, CatalogItem, CatalogPage } from "./catalog.ts";
+import type { CatalogItem, CatalogPage } from "./catalog.ts";
 import {
-    addReaction,
+    catalogItemOwner,
     DEFAULT_LIMIT,
     decodeCursor,
+    deleteCatalogItem,
     getDb,
-    InvalidReactionError,
     insertUploadCatalogItem,
-    isItemReactable,
     listMedia,
     MAX_LIMIT,
-    MAX_REACTION_KINDS_PER_ITEM,
-    normalizeReaction,
     normalizeTags,
-    reactionCountForItem,
-    reactionCountsForItems,
-    removeReaction,
     TagError,
     tagsForItems,
-    userReactionsForItems,
 } from "./catalog.ts";
 
 const DOMAIN = "media.pollinations.ai";
@@ -124,9 +116,6 @@ function validateTags(rawTags: string[]): string[] {
     }
 }
 
-const REACTION_PATTERN_DESCRIPTION =
-    "lowercase letters, digits, and _- (not leading), max 32 chars";
-
 // Item shape returned by GET /media — never exposes ownerUserId/appKeyId.
 interface MediaItemResponse {
     id: string;
@@ -135,15 +124,11 @@ interface MediaItemResponse {
     size: number | null;
     tags: string[];
     createdAt: string;
-    reactions: Record<string, number>;
-    myReactions?: string[];
 }
 
 function toItemResponse(
     item: CatalogItem,
     tagsByItem: Map<string, string[]>,
-    reactionsByItem: Map<string, Record<string, number>>,
-    myReactionsByItem: Map<string, string[]> | null,
 ): MediaItemResponse {
     return {
         id: item.id,
@@ -152,42 +137,21 @@ function toItemResponse(
         size: item.size,
         tags: tagsByItem.get(item.id) ?? [],
         createdAt: item.createdAt.toISOString(),
-        reactions: reactionsByItem.get(item.id) ?? {},
-        ...(myReactionsByItem
-            ? { myReactions: myReactionsByItem.get(item.id) ?? [] }
-            : {}),
     };
 }
 
-// `myReactionsUserId` is the authenticated user's id when myReactions should
-// be computed and included, or null when it should be omitted entirely (no
-// key, or a valid key with no attached user).
 async function toPageResponse(
     db: ReturnType<typeof getDb>,
     page: CatalogPage,
-    myReactionsUserId: string | null,
 ): Promise<{
     items: MediaItemResponse[];
     nextCursor: string | null;
     hasMore: boolean;
 }> {
     const itemIds = page.items.map((item) => item.id);
-    const [tagsByItem, reactionsByItem, myReactionsByItem] = await Promise.all([
-        tagsForItems(db, itemIds),
-        reactionCountsForItems(db, itemIds),
-        myReactionsUserId
-            ? userReactionsForItems(db, itemIds, myReactionsUserId)
-            : Promise.resolve(null),
-    ]);
+    const tagsByItem = await tagsForItems(db, itemIds);
     return {
-        items: page.items.map((item) =>
-            toItemResponse(
-                item,
-                tagsByItem,
-                reactionsByItem,
-                myReactionsByItem,
-            ),
-        ),
+        items: page.items.map((item) => toItemResponse(item, tagsByItem)),
         nextCursor: page.nextCursor,
         hasMore: page.hasMore,
     };
@@ -201,7 +165,9 @@ const UploadResponseSchema = z.object({
     tags: z
         .array(z.string())
         .optional()
-        .describe("Tags stored for this upload, present only when tagged"),
+        .describe(
+            "Tags the upload was published with; present only when tagged",
+        ),
 });
 
 const ErrorSchema = z.object({
@@ -225,17 +191,6 @@ const MediaItemResponseSchema = z.object({
     size: z.number().int().nullable().describe("File size in bytes"),
     tags: z.array(z.string()),
     createdAt: z.string().describe("ISO-8601 timestamp"),
-    reactions: z
-        .record(z.string(), z.number().int())
-        .describe(
-            "Reaction counts by kind (e.g. {like: 3}). {} when the item has no reactions.",
-        ),
-    myReactions: z
-        .array(z.string())
-        .optional()
-        .describe(
-            "Reaction kinds the authenticated caller gave this item. Present only when computable: always in your own library (no `tag`), and in a public tag gallery only when an API key with an attached user was supplied.",
-        ),
 });
 
 const MediaPageResponseSchema = z.object({
@@ -253,30 +208,21 @@ const MediaPageResponseSchema = z.object({
         ),
 });
 
-const ReactionResponseSchema = z.object({
-    reaction: z.string().describe("Normalized reaction kind"),
-    reacted: z
-        .boolean()
-        .describe("true after adding the reaction, false after removing it"),
-    count: z
-        .number()
-        .int()
-        .describe(
-            "Total reactions of this kind on this item after the mutation",
-        ),
+const DeleteResponseSchema = z.object({
+    deleted: z.literal(true),
+    id: z.string().describe("Id of the deleted media item"),
 });
 
 // Query-param schema for GET /media, used with validator("query", …): one
 // schema that both validates and documents. `limit` is a coerced integer
 // (query values arrive as strings) bounded to [1, MAX_LIMIT]; non-numeric,
 // out-of-range, or repeated values are rejected with a 400 — the standard
-// behavior for a scalar param. `cursor` and `tag` are plain optional strings.
+// behavior for a scalar param. `cursor` is a plain optional string.
 const MediaListQuerySchema = z.object({
     tag: z
         .string()
-        .optional()
         .describe(
-            "Filter by tag. Present → public gallery for that tag (any owner, auth optional). Absent → your own library (auth required).",
+            "Required. The public gallery to list: items carrying this tag, any owner.",
         ),
     limit: z.coerce
         .number()
@@ -293,79 +239,7 @@ const MediaListQuerySchema = z.object({
         ),
 });
 
-// Path params for the reaction routes, described for the docs. hono derives
-// the params from the route path, but supplying `parameters` attaches prose.
-const REACTION_PATH_PARAMS = [
-    {
-        name: "id",
-        in: "path",
-        required: true,
-        description: "Media id (from the upload response or GET /media).",
-        schema: { type: "string" },
-    },
-    {
-        name: "reaction",
-        in: "path",
-        required: true,
-        description: "Reaction kind, e.g. `like`, `heart`, `bookmark`.",
-        schema: { type: "string" },
-    },
-] as const;
-
 const api = new Hono<{ Bindings: Env }>();
-
-// Shared preamble for the reaction routes: authenticate, validate the
-// reaction slug, and check the item is reactable (own or publicly tagged).
-// Returns the resolved context, or an early error Response the caller should
-// return as-is.
-async function resolveReactionRequest(
-    c: Context<{ Bindings: Env }>,
-): Promise<
-    { db: CatalogDb; id: string; userId: string; reaction: string } | Response
-> {
-    const apiKey = extractApiKey(c.req.raw);
-    if (!apiKey) {
-        return c.json(
-            {
-                error: "API key required. Pass via Authorization: Bearer <key> or ?key=<key>",
-            },
-            401,
-        );
-    }
-    const authResult = await verifyApiKey(apiKey);
-    if (!authResult) {
-        return c.json({ error: "Invalid or expired API key" }, 401);
-    }
-    if (authResult.userId === null) {
-        return c.json(
-            { error: "This API key is not attached to a user account" },
-            403,
-        );
-    }
-
-    let reaction: string;
-    try {
-        reaction = normalizeReaction(c.req.param("reaction"));
-    } catch (error) {
-        if (error instanceof InvalidReactionError) {
-            return c.json(
-                {
-                    error: `Invalid reaction: "${error.reaction}". Reactions must match ${REACTION_PATTERN_DESCRIPTION}.`,
-                },
-                400,
-            );
-        }
-        throw error;
-    }
-
-    const id = c.req.param("id");
-    const db = getDb(c.env.DB);
-    if (!(await isItemReactable(db, id, authResult.userId))) {
-        return c.json({ error: "Media item not found" }, 404);
-    }
-
-    return { db, id, userId: authResult.userId, reaction };
-}
 
 api.post(
     "/upload",
@@ -373,7 +247,7 @@ api.post(
         tags: ["media.pollinations.ai"],
         summary: "Upload media",
         description:
-            "Upload an image, audio, or video file via multipart/form-data (field `file`) or application/json (base64 `data`). Returns a unique id and its retrieval URL; each upload gets its own id (re-uploading the same bytes yields a new one). Files are retained for 30 days. An optional `tags` field catalogs the upload to your media library and makes it publicly visible in that tag's gallery (GET /media?tag=). **Alpha:** the catalog tagging is new and may still change.",
+            "Upload an image, audio, or video file via multipart/form-data (field `file`) or application/json (base64 `data`). Returns a unique id and its retrieval URL; each upload gets its own id (re-uploading the same bytes yields a new one). Files are retained for 30 days.\n\n**Tags publish.** An optional `tags` field publishes the upload into each tag's public gallery (GET /media?tag=…), where anyone can see it. Untagged uploads stay unlisted: reachable only by their unguessable id URL, never listed anywhere. **Alpha:** the publish tagging is new and may still change.",
         requestBody: {
             content: {
                 "multipart/form-data": {
@@ -389,7 +263,7 @@ api.post(
                             tags: {
                                 type: "string",
                                 description:
-                                    "Comma-separated catalog tags (makes the item public).",
+                                    "Comma-separated tags. Tagging publishes the upload to those tags' public galleries.",
                             },
                         },
                     },
@@ -423,7 +297,7 @@ api.post(
                                     },
                                 ],
                                 description:
-                                    "Catalog tags (makes the item public): a comma-separated string or an array of strings.",
+                                    "Tags (publish the upload to those tags' public galleries): a comma-separated string or an array of strings.",
                             },
                         },
                     },
@@ -583,7 +457,9 @@ api.post(
 
             if (authResult.userId === null && tags.length > 0) {
                 return c.json(
-                    { error: "cataloging requires a user-owned API key" },
+                    {
+                        error: "publishing (tags) requires a user-owned API key",
+                    },
                     400,
                 );
             }
@@ -605,13 +481,14 @@ api.post(
                 },
             });
 
-            // Catalog write is awaited inline (not waitUntil): a D1 failure
-            // must surface as a 500, not be silently swallowed. Every upload
-            // by a user-owned key is cataloged (personal media library);
-            // keys with no user never catalog — tags on them were rejected
-            // above, and without one there's no owner to attribute a row to.
+            // Tags are the publish action: only tagged uploads get catalog
+            // rows (untagged uploads stay uncataloged blobs behind their
+            // unguessable id). The write is awaited inline (not waitUntil):
+            // a D1 failure must surface as a 500, not be silently swallowed.
+            // `tags` non-empty implies a user-attached key (rejected above
+            // otherwise), so ownerUserId is always real here.
             let storedTags: string[] | undefined;
-            if (authResult.userId !== null) {
+            if (tags.length > 0 && authResult.userId !== null) {
                 const db = getDb(c.env.DB);
                 await insertUploadCatalogItem(db, {
                     id,
@@ -640,9 +517,7 @@ api.post(
                 url: mediaUrl(id),
                 contentType,
                 size: fileBuffer.byteLength,
-                ...(storedTags && storedTags.length > 0
-                    ? { tags: storedTags }
-                    : {}),
+                ...(storedTags ? { tags: storedTags } : {}),
             });
         } catch (error) {
             console.error("Upload error:", error);
@@ -655,9 +530,9 @@ api.get(
     "/media",
     describeRoute({
         tags: ["media.pollinations.ai"],
-        summary: "List media",
+        summary: "List a public tag gallery",
         description:
-            "List cataloged media, newest first. Two modes, selected by the `tag` query param:\n\n- **No `tag`** → your own library: every item you own, including untagged/private ones. Requires a **secret (`sk_`)** API key attached to a user account; a key minted through a BYOP app lists only items created through that app.\n- **`tag` present** → the public gallery for that tag: any item carrying it, regardless of owner. Auth is optional; pass a key to get `myReactions` on each item.\n\nUpload-backed items reference storage that expires 30 days after last access — an expired item keeps its catalog entry, but its url 404s. **Alpha:** this endpoint is new and its API may still change.",
+            "List the public gallery for a tag: every published item carrying that tag, any owner, newest first. Tagging an upload is what publishes it, so galleries are fully public — no API key needed. `tag` is required.\n\nItems reference storage that expires 30 days after last access — an expired item keeps its catalog entry, but its url 404s. **Alpha:** this endpoint is new and its API may still change.",
         security: [],
         responses: {
             200: {
@@ -669,28 +544,31 @@ api.get(
                 },
             },
             400: {
-                description: "Invalid cursor or limit",
-                content: {
-                    "application/json": { schema: resolver(ErrorSchema) },
-                },
-            },
-            401: {
-                description:
-                    "Missing/invalid API key (required without `tag`; must be valid if supplied with `tag`)",
-                content: {
-                    "application/json": { schema: resolver(ErrorSchema) },
-                },
-            },
-            403: {
-                description:
-                    "API key is not attached to a user account, or is not a secret (`sk_`) key — library listing is secret-key only",
+                description: "Missing/empty tag, or invalid cursor or limit",
                 content: {
                     "application/json": { schema: resolver(ErrorSchema) },
                 },
             },
         },
     }),
-    validator("query", MediaListQuerySchema),
+    validator("query", MediaListQuerySchema, (result, c) => {
+        // Emit validation failures in the same {error} shape as every other
+        // error response instead of the validator's default body.
+        if (!result.success) {
+            const issue = result.error[0];
+            const path = issue?.path
+                ?.map((p) =>
+                    typeof p === "object" ? String(p.key) : String(p),
+                )
+                .join(".");
+            return c.json(
+                {
+                    error: `Invalid query${path ? ` (${path})` : ""}: ${issue?.message ?? "validation failed"}`,
+                },
+                400,
+            );
+        }
+    }),
     async (c) => {
         const query = c.req.valid("query");
         const limit = query.limit ?? DEFAULT_LIMIT;
@@ -703,160 +581,46 @@ api.get(
             }
         }
 
-        const apiKey = extractApiKey(c.req.raw);
-        // Resolve the caller once. Without a tag we're listing the owner's
-        // own library, so a valid user-attached key is mandatory. With a tag
-        // we're browsing a public gallery, so auth is optional — but a key
-        // that IS supplied must be valid (fail fast rather than silently
-        // downgrading to anonymous).
-        let auth: AuthResult | null = null;
-        if (apiKey) {
-            auth = await verifyApiKey(apiKey);
-            if (!auth) {
-                return c.json({ error: "Invalid or expired API key" }, 401);
-            }
-        }
-
         // Stored tags are trimmed + lowercased (normalizeTags), so the
         // lookup must match or exact-case queries silently return nothing.
-        const tag = query.tag?.trim().toLowerCase() || undefined;
-
-        if (!tag) {
-            if (!auth) {
-                return c.json(
-                    {
-                        error: "API key required. Pass via Authorization: Bearer <key> or ?key=<key>",
-                    },
-                    401,
-                );
-            }
-            if (auth.userId === null) {
-                return c.json(
-                    { error: "This API key is not attached to a user account" },
-                    403,
-                );
-            }
-            // Publishable keys ship inside public clients — anyone holding
-            // one could read the owner's private library, so listing is
-            // secret-key only.
-            if (auth.type !== "secret") {
-                return c.json(
-                    {
-                        error: "Listing your library requires a secret (sk_) API key",
-                    },
-                    403,
-                );
-            }
+        const tag = query.tag.trim().toLowerCase();
+        if (tag === "") {
+            return c.json(
+                { error: "Invalid query (tag): must not be empty" },
+                400,
+            );
         }
 
         const db = getDb(c.env.DB);
-        const page = await listMedia(db, {
-            // No tag → scope to the owner's library; a BYOP-minted key sees
-            // only items created through its app. Tag → public gallery (any
-            // owner), so leave both unset.
-            ownerUserId: tag ? undefined : (auth?.userId ?? undefined),
-            appKeyId: tag ? undefined : (auth?.byopClientKeyId ?? undefined),
-            tag,
-            limit,
-            cursor,
-        });
-
-        return c.json(await toPageResponse(db, page, auth?.userId ?? null));
-    },
-);
-
-api.put(
-    "/media/:id/reactions/:reaction",
-    describeRoute({
-        tags: ["media.pollinations.ai"],
-        summary: "React to a media item",
-        description:
-            "Add a reaction (e.g. `like`, `heart`, `bookmark`) to a media item by its id (from the upload response or GET /media). Reactable items are your own plus anything publicly tagged; others answer 404. Idempotent: repeating the same reaction is a no-op. At most 8 distinct reaction kinds per user per item. **Alpha:** this endpoint is new and its API may still change.",
-        parameters: [...REACTION_PATH_PARAMS],
-        responses: {
-            200: {
-                description:
-                    "Current reaction state and total count for this kind",
-                content: {
-                    "application/json": {
-                        schema: resolver(ReactionResponseSchema),
-                    },
-                },
-            },
-            400: {
-                description: "Invalid reaction kind",
-                content: {
-                    "application/json": { schema: resolver(ErrorSchema) },
-                },
-            },
-            401: {
-                description: "Missing or invalid API key",
-                content: {
-                    "application/json": { schema: resolver(ErrorSchema) },
-                },
-            },
-            403: {
-                description: "API key is not attached to a user account",
-                content: {
-                    "application/json": { schema: resolver(ErrorSchema) },
-                },
-            },
-            404: {
-                description: "Media item not found",
-                content: {
-                    "application/json": { schema: resolver(ErrorSchema) },
-                },
-            },
-        },
-    }),
-    async (c) => {
-        const resolved = await resolveReactionRequest(c);
-        if (resolved instanceof Response) return resolved;
-        const { db, id, userId, reaction } = resolved;
-
-        const added = await addReaction(db, id, userId, reaction);
-        if (!added) {
-            // Zero rows written: either an idempotent repeat of a kind this
-            // user already holds, or the atomic kind cap inside addReaction
-            // refused a new kind. Only the second is an error.
-            const existingKinds =
-                (await userReactionsForItems(db, [id], userId)).get(id) ?? [];
-            if (!existingKinds.includes(reaction)) {
-                return c.json(
-                    {
-                        error: `Too many distinct reactions on this item (max ${MAX_REACTION_KINDS_PER_ITEM} kinds per user).`,
-                    },
-                    400,
-                );
-            }
-        }
-        const count = await reactionCountForItem(db, id, reaction);
-        return c.json({ reaction, reacted: true, count });
+        const page = await listMedia(db, { tag, limit, cursor });
+        return c.json(await toPageResponse(db, page));
     },
 );
 
 api.delete(
-    "/media/:id/reactions/:reaction",
+    "/media/:id",
     describeRoute({
         tags: ["media.pollinations.ai"],
-        summary: "Remove a reaction from a media item",
+        summary: "Delete media",
         description:
-            "Remove your reaction of one kind from a media item by its id (from the upload response or GET /media). Reactable items are your own plus anything publicly tagged; others answer 404. Idempotent: removing a reaction you haven't given is a no-op. **Alpha:** this endpoint is new and its API may still change.",
-        parameters: [...REACTION_PATH_PARAMS],
+            "Delete a published media item you own: the file, its catalog entry, and all its tags are removed, so it disappears from galleries and its URL 404s. Requires your **secret (`sk_`)** API key. Untagged uploads were never published, have no catalog entry, and can't be deleted — they expire on their own 30 days after last access. **Alpha:** this endpoint is new and its API may still change.",
+        parameters: [
+            {
+                name: "id",
+                in: "path",
+                required: true,
+                description:
+                    "Media id (from the upload response or GET /media).",
+                schema: { type: "string" },
+            },
+        ],
         responses: {
             200: {
-                description:
-                    "Current reaction state and total count for this kind",
+                description: "Item deleted",
                 content: {
                     "application/json": {
-                        schema: resolver(ReactionResponseSchema),
+                        schema: resolver(DeleteResponseSchema),
                     },
-                },
-            },
-            400: {
-                description: "Invalid reaction kind",
-                content: {
-                    "application/json": { schema: resolver(ErrorSchema) },
                 },
             },
             401: {
@@ -866,13 +630,14 @@ api.delete(
                 },
             },
             403: {
-                description: "API key is not attached to a user account",
+                description:
+                    "Key is not a secret (`sk_`) key, is not attached to a user account, or the item belongs to someone else",
                 content: {
                     "application/json": { schema: resolver(ErrorSchema) },
                 },
             },
             404: {
-                description: "Media item not found",
+                description: "No published media item with this id",
                 content: {
                     "application/json": { schema: resolver(ErrorSchema) },
                 },
@@ -880,13 +645,64 @@ api.delete(
         },
     }),
     async (c) => {
-        const resolved = await resolveReactionRequest(c);
-        if (resolved instanceof Response) return resolved;
-        const { db, id, userId, reaction } = resolved;
+        const apiKey = extractApiKey(c.req.raw);
+        if (!apiKey) {
+            return c.json(
+                {
+                    error: "API key required. Pass via Authorization: Bearer <key> or ?key=<key>",
+                },
+                401,
+            );
+        }
+        const auth = await verifyApiKey(apiKey);
+        if (!auth) {
+            return c.json({ error: "Invalid or expired API key" }, 401);
+        }
+        if (auth.userId === null) {
+            return c.json(
+                { error: "This API key is not attached to a user account" },
+                403,
+            );
+        }
+        // Publishable keys ship inside public clients — anyone holding one
+        // could delete the owner's published media, so deletion is
+        // secret-key only.
+        if (auth.type !== "secret") {
+            return c.json(
+                { error: "Deleting media requires a secret (sk_) API key" },
+                403,
+            );
+        }
 
-        await removeReaction(db, id, userId, reaction);
-        const count = await reactionCountForItem(db, id, reaction);
-        return c.json({ reaction, reacted: false, count });
+        const id = c.req.param("id");
+        const db = getDb(c.env.DB);
+        // Only cataloged (published) items are deletable: an uncataloged id
+        // has no owner record to authorize against, so it answers 404 just
+        // like an unknown id.
+        const owner = await catalogItemOwner(db, id);
+        if (owner === undefined) {
+            return c.json({ error: "Media item not found" }, 404);
+        }
+        if (owner !== auth.userId) {
+            return c.json({ error: "You do not own this media item" }, 403);
+        }
+
+        // Catalog rows first (atomic batch), then the blob. If the R2 delete
+        // fails the item is already unpublished and the orphaned blob expires
+        // via the bucket's 30-day lifecycle.
+        await deleteCatalogItem(db, id);
+        await c.env.MEDIA_BUCKET.delete(id);
+
+        console.log(
+            JSON.stringify({
+                event: "delete",
+                id,
+                keyType: auth.type,
+                deletedBy: auth.name || "unknown",
+            }),
+        );
+
+        return c.json({ deleted: true, id });
     },
 );
 
@@ -1060,7 +876,7 @@ app.use(
     "*",
     cors({
         origin: "*",
-        allowMethods: ["GET", "POST", "PUT", "DELETE", "HEAD", "OPTIONS"],
+        allowMethods: ["GET", "POST", "DELETE", "HEAD", "OPTIONS"],
         allowHeaders: ["Content-Type", "Authorization"],
         exposeHeaders: ["X-Content-Id", "X-Content-Size"],
     }),
@@ -1071,14 +887,12 @@ app.get("/", (c) => {
         service: DOMAIN,
         version: "1.0.0",
         endpoints: {
-            upload: "POST /upload (requires API key; optional tags)",
+            upload: "POST /upload (requires API key; optional tags — tags publish to public galleries)",
             retrieve: "GET /:id",
             metadata: "GET /:id/metadata",
-            listMedia:
-                "GET /media (your library; requires user-owned API key) or GET /media?tag=<tag> (public gallery; optional API key for myReactions)",
-            react: "PUT /media/:id/reactions/:reaction (requires user-owned API key)",
-            unreact:
-                "DELETE /media/:id/reactions/:reaction (requires user-owned API key)",
+            listMedia: "GET /media?tag=<tag> (public tag gallery; no auth)",
+            deleteMedia:
+                "DELETE /media/:id (owner's secret sk_ API key required)",
             docs: "GET /openapi.json",
         },
         limits: {
@@ -1094,7 +908,7 @@ app.get("/openapi.json", async (c, next) => {
                 title: "media.pollinations.ai",
                 version: "1.0.0",
                 description:
-                    "Media storage for Pollinations. Upload images, audio, and video and get back a unique id and URL. Uploads require a pollinations.ai API key (`pk_` or `sk_`). Retrieval is public. The catalog features (tags, galleries, reactions) are **alpha** — their API may still change.",
+                    "Media storage for Pollinations. Upload images, audio, and video and get back a unique id and URL. Uploads require a pollinations.ai API key (`pk_` or `sk_`). Retrieval is public. Tagging an upload publishes it to that tag's public gallery; the gallery features (tags, listing, delete) are **alpha** — their API may still change.",
             },
             servers: [{ url: `https://${DOMAIN}` }],
             components: {

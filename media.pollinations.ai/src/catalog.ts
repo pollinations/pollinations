@@ -1,15 +1,12 @@
-// Media catalog: D1-backed metadata for stored media (tags, reactions,
-// galleries). Blobs stay in R2 — this module only indexes them. Writes are
-// awaited inline on the upload path (no waitUntil): a D1 failure surfaces as
-// a 500 rather than silently dropping catalog data.
+// Media catalog: D1-backed metadata for published (tagged) media. Blobs stay
+// in R2 — this module only indexes them. Tags are the publish action: only
+// tagged uploads get catalog rows. Writes are awaited inline on the upload
+// path (no waitUntil): a D1 failure surfaces as a 500 rather than silently
+// dropping catalog data.
 
-import {
-    mediaItem,
-    mediaReaction,
-    mediaTag,
-} from "@shared/db/media-catalog.ts";
+import { mediaItem, mediaTag } from "@shared/db/media-catalog.ts";
 import type { SQL } from "drizzle-orm";
-import { and, count, desc, eq, inArray, lt, or, sql } from "drizzle-orm";
+import { and, desc, eq, inArray, lt, or, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 
 export type CatalogDb = ReturnType<typeof drizzle>;
@@ -32,32 +29,6 @@ export class TagError extends Error {
         super(message);
         this.name = "TagError";
     }
-}
-
-// Reaction kinds are an open slug vocabulary ("like", "heart", "bookmark",
-// ...): lowercase letters/digits, then `_-` allowed after the first char,
-// max 32 chars.
-export const REACTION_PATTERN = /^[a-z0-9][a-z0-9_-]{0,31}$/;
-
-export class InvalidReactionError extends Error {
-    constructor(public readonly reaction: string) {
-        super(`Invalid reaction: "${reaction}"`);
-        this.name = "InvalidReactionError";
-    }
-}
-
-/**
- * Normalize (trim + lowercase) and validate a reaction kind. Throws
- * InvalidReactionError naming the submitted value on mismatch.
- */
-export function normalizeReaction(raw: string): string {
-    const reaction = raw.trim().toLowerCase();
-    if (!REACTION_PATTERN.test(reaction)) {
-        // Name the value as submitted (pre-lowercase) so the error is
-        // unambiguous about which input was rejected.
-        throw new InvalidReactionError(raw.trim());
-    }
-    return reaction;
 }
 
 /**
@@ -95,39 +66,73 @@ export interface InsertUploadParams {
     appKeyId: string | null;
     contentType: string;
     size: number;
+    // Non-empty: tags are what publish an upload, so an untagged upload
+    // never reaches the catalog at all.
     tags: string[];
 }
 
 /**
- * Insert a catalog row for an upload, then add any tags. Each upload is its
- * own row (re-uploading the same bytes is a new item, not an upsert). Returns
- * the item id.
+ * Insert a catalog row for a published upload together with its tags. Each
+ * upload is its own row (re-uploading the same bytes is a new item, not an
+ * upsert). Returns the item id.
  */
 export async function insertUploadCatalogItem(
     db: CatalogDb,
     params: InsertUploadParams,
 ): Promise<string> {
-    const now = new Date();
-    await db.insert(mediaItem).values({
-        id: params.id,
-        ownerUserId: params.ownerUserId,
-        appKeyId: params.appKeyId,
-        contentType: params.contentType,
-        size: params.size,
-        createdAt: now,
-    });
-
-    if (params.tags.length > 0) {
-        await db.insert(mediaTag).values(
+    // One atomic batch: the item row and its tags land together or not at
+    // all — a tagless catalog row would be invisible (galleries are
+    // tag-scoped) yet undeletable by its owner via unpublish.
+    await db.batch([
+        db.insert(mediaItem).values({
+            id: params.id,
+            ownerUserId: params.ownerUserId,
+            appKeyId: params.appKeyId,
+            contentType: params.contentType,
+            size: params.size,
+            createdAt: new Date(),
+        }),
+        db.insert(mediaTag).values(
             params.tags.map((tag) => ({
                 itemId: params.id,
                 tag,
-                createdAt: now,
             })),
-        );
-    }
+        ),
+    ]);
 
     return params.id;
+}
+
+/**
+ * The owner user id of a catalog item: null for an ownerless row, or
+ * undefined when the id has no catalog row at all (unknown or uncataloged).
+ */
+export async function catalogItemOwner(
+    db: CatalogDb,
+    itemId: string,
+): Promise<string | null | undefined> {
+    const [row] = await db
+        .select({ ownerUserId: mediaItem.ownerUserId })
+        .from(mediaItem)
+        .where(eq(mediaItem.id, itemId))
+        .limit(1);
+    return row ? row.ownerUserId : undefined;
+}
+
+/**
+ * Delete a catalog item and its tags. Deleting the R2 blob is the caller's
+ * responsibility.
+ */
+export async function deleteCatalogItem(
+    db: CatalogDb,
+    itemId: string,
+): Promise<void> {
+    // Explicit tag delete in the same atomic batch — doesn't depend on the
+    // runtime enforcing ON DELETE CASCADE.
+    await db.batch([
+        db.delete(mediaTag).where(eq(mediaTag.itemId, itemId)),
+        db.delete(mediaItem).where(eq(mediaItem.id, itemId)),
+    ]);
 }
 
 export interface CatalogItem {
@@ -187,65 +192,36 @@ export const DEFAULT_LIMIT = 20;
 export const MAX_LIMIT = 100;
 
 /**
- * List catalog items, newest first by upload time (createdAt). One of two
- * modes, set by the caller:
- *
- *  - ownerUserId set, tag unset → the owner's whole library (all their items,
- *    including untagged/private ones). This is the authenticated "my media"
- *    listing.
- *  - tag set, ownerUserId unset → the public gallery for a tag: any item
- *    carrying that tag, regardless of owner. A tag is what makes an item
- *    public, so this needs no auth.
- *  - both set → the owner's items carrying that tag.
- *
- * appKeyId narrows an owner listing to items created through that BYOP app —
- * a BYOP-minted key must not see the rest of the owner's library.
- *
- * Ordering is always (createdAt DESC, id DESC) — a single keyset cursor over
- * the item table covers every mode.
+ * List the public gallery for a tag: any item carrying that tag, regardless
+ * of owner, newest first by upload time. A tag is what publishes an item,
+ * so this needs no auth. Ordering is (createdAt DESC, id DESC) with a keyset
+ * cursor over the item table.
  */
 export async function listMedia(
     db: CatalogDb,
     params: {
-        ownerUserId?: string;
-        appKeyId?: string;
-        tag?: string;
+        tag: string;
         limit: number;
         cursor?: { createdAt: Date; id: string };
     },
 ): Promise<CatalogPage> {
-    const conditions: SQL[] = [];
-    if (params.ownerUserId) {
-        conditions.push(eq(mediaItem.ownerUserId, params.ownerUserId));
-    }
-    if (params.appKeyId) {
-        conditions.push(eq(mediaItem.appKeyId, params.appKeyId));
-    }
+    const conditions: SQL[] = [eq(mediaTag.tag, params.tag)];
     if (params.cursor) {
         conditions.push(beforeCursor(params.cursor));
     }
 
-    const columns = {
-        id: mediaItem.id,
-        contentType: mediaItem.contentType,
-        size: mediaItem.size,
-        createdAt: mediaItem.createdAt,
-    };
-
-    const rows = params.tag
-        ? await db
-              .select(columns)
-              .from(mediaItem)
-              .innerJoin(mediaTag, eq(mediaTag.itemId, mediaItem.id))
-              .where(and(eq(mediaTag.tag, params.tag), ...conditions))
-              .orderBy(desc(mediaItem.createdAt), desc(mediaItem.id))
-              .limit(params.limit + 1)
-        : await db
-              .select(columns)
-              .from(mediaItem)
-              .where(and(...conditions))
-              .orderBy(desc(mediaItem.createdAt), desc(mediaItem.id))
-              .limit(params.limit + 1);
+    const rows = await db
+        .select({
+            id: mediaItem.id,
+            contentType: mediaItem.contentType,
+            size: mediaItem.size,
+            createdAt: mediaItem.createdAt,
+        })
+        .from(mediaItem)
+        .innerJoin(mediaTag, eq(mediaTag.itemId, mediaItem.id))
+        .where(and(...conditions))
+        .orderBy(desc(mediaItem.createdAt), desc(mediaItem.id))
+        .limit(params.limit + 1);
 
     return paginate(rows, params.limit);
 }
@@ -281,168 +257,6 @@ export async function tagsForItems(
                 existing.push(row.tag);
             } else {
                 byItem.set(row.itemId, [row.tag]);
-            }
-        }
-    }
-    return byItem;
-}
-
-// A user may hold at most this many distinct reaction kinds on one item —
-// the vocabulary is open, so without a cap one user could grow D1 unbounded
-// by inventing kinds. Mirrors MAX_TAGS.
-export const MAX_REACTION_KINDS_PER_ITEM = 8;
-
-/**
- * Whether a user may react to an item: it must be their own, or publicly
- * discoverable (carries at least one tag). Untagged items owned by someone
- * else are private — callers should answer 404 (not 403) so a leaked item
- * id isn't confirmed to exist.
- */
-export async function isItemReactable(
-    db: CatalogDb,
-    itemId: string,
-    userId: string,
-): Promise<boolean> {
-    const [row] = await db
-        .select({ ownerUserId: mediaItem.ownerUserId })
-        .from(mediaItem)
-        .where(eq(mediaItem.id, itemId))
-        .limit(1);
-    if (!row) return false;
-    if (row.ownerUserId === userId) return true;
-    const [tagged] = await db
-        .select({ itemId: mediaTag.itemId })
-        .from(mediaTag)
-        .where(eq(mediaTag.itemId, itemId))
-        .limit(1);
-    return tagged !== undefined;
-}
-
-/**
- * React to an item on behalf of a user. Idempotent: repeating the same
- * reaction kind is a no-op. The per-user kind cap is enforced inside the
- * INSERT itself (not check-then-insert) so concurrent requests can't race
- * past it — each D1 statement is atomic. Returns true if a row was written;
- * false means either an idempotent repeat or a refused over-cap kind
- * (callers disambiguate by reading the user's kinds).
- */
-export async function addReaction(
-    db: CatalogDb,
-    itemId: string,
-    userId: string,
-    reaction: string,
-): Promise<boolean> {
-    // created_at matches the column's { mode: "timestamp" } storage (seconds).
-    const result = await db.run(sql`
-        insert into ${mediaReaction} (item_id, user_id, reaction, created_at)
-        select ${itemId}, ${userId}, ${reaction}, ${Math.floor(Date.now() / 1000)}
-        where (
-            select count(*) from ${mediaReaction}
-            where item_id = ${itemId} and user_id = ${userId}
-        ) < ${MAX_REACTION_KINDS_PER_ITEM}
-        on conflict (item_id, user_id, reaction) do nothing
-    `);
-    return result.meta.changes > 0;
-}
-
-/**
- * Remove a user's reaction of one kind from an item. Idempotent: removing
- * a reaction that isn't there is a no-op.
- */
-export async function removeReaction(
-    db: CatalogDb,
-    itemId: string,
-    userId: string,
-    reaction: string,
-): Promise<void> {
-    await db
-        .delete(mediaReaction)
-        .where(
-            and(
-                eq(mediaReaction.itemId, itemId),
-                eq(mediaReaction.userId, userId),
-                eq(mediaReaction.reaction, reaction),
-            ),
-        );
-}
-
-/** Count reactions of one kind for a single item. */
-export async function reactionCountForItem(
-    db: CatalogDb,
-    itemId: string,
-    reaction: string,
-): Promise<number> {
-    const [row] = await db
-        .select({ count: count() })
-        .from(mediaReaction)
-        .where(
-            and(
-                eq(mediaReaction.itemId, itemId),
-                eq(mediaReaction.reaction, reaction),
-            ),
-        );
-    return row?.count ?? 0;
-}
-
-/**
- * Count reactions for a page of item ids in one grouped query, keyed by
- * item id, then by reaction kind.
- */
-export async function reactionCountsForItems(
-    db: CatalogDb,
-    itemIds: string[],
-): Promise<Map<string, Record<string, number>>> {
-    const byItem = new Map<string, Record<string, number>>();
-    for (const ids of chunkIds(itemIds)) {
-        const rows = await db
-            .select({
-                itemId: mediaReaction.itemId,
-                reaction: mediaReaction.reaction,
-                count: count(),
-            })
-            .from(mediaReaction)
-            .where(inArray(mediaReaction.itemId, ids))
-            .groupBy(mediaReaction.itemId, mediaReaction.reaction);
-
-        for (const row of rows) {
-            const existing = byItem.get(row.itemId);
-            if (existing) {
-                existing[row.reaction] = row.count;
-            } else {
-                byItem.set(row.itemId, { [row.reaction]: row.count });
-            }
-        }
-    }
-    return byItem;
-}
-
-/** A user's reaction kinds for a page of item ids, grouped by item id. */
-export async function userReactionsForItems(
-    db: CatalogDb,
-    itemIds: string[],
-    userId: string,
-): Promise<Map<string, string[]>> {
-    const byItem = new Map<string, string[]>();
-    for (const ids of chunkIds(itemIds)) {
-        const rows = await db
-            .select({
-                itemId: mediaReaction.itemId,
-                reaction: mediaReaction.reaction,
-            })
-            .from(mediaReaction)
-            .where(
-                and(
-                    inArray(mediaReaction.itemId, ids),
-                    eq(mediaReaction.userId, userId),
-                ),
-            );
-
-        for (const row of rows) {
-            const existing = byItem.get(row.itemId);
-            if (existing) {
-                existing.push(row.reaction);
-            } else {
-                byItem.set(row.itemId, [row.reaction]);
             }
         }
     }

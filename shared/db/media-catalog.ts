@@ -1,7 +1,8 @@
-// Media catalog: queryable metadata for uploaded media. Blobs stay in R2 —
-// these tables only index them. One row per upload; the row id is the R2
-// storage key and the public retrieval id. Public discovery is strictly
-// opt-in via tags. (Generations are not cataloged yet; see the
+// Media catalog: queryable metadata for published (tagged) uploads. Blobs
+// stay in R2 — these tables only index them. Tags are the publish action:
+// only tagged uploads get a catalog row (untagged uploads stay uncataloged
+// blobs behind their UUID). The row id is the R2 storage key and the public
+// retrieval id. (Generations are not cataloged yet; see the
 // generation-tagging followup.)
 
 import {
@@ -42,37 +43,12 @@ export const mediaTag = sqliteTable(
             .notNull()
             .references(() => mediaItem.id, { onDelete: "cascade" }),
         tag: text("tag").notNull(),
-        // Denormalized from media_item for newest-first tag listings.
-        createdAt: integer("created_at", { mode: "timestamp" }).notNull(),
     },
     (table) => [
         uniqueIndex("idx_media_tag_item_tag").on(table.itemId, table.tag),
-        index("idx_media_tag_tag_created").on(table.tag, table.createdAt),
-    ],
-);
-
-export const mediaReaction = sqliteTable(
-    "media_reaction",
-    {
-        itemId: text("item_id")
-            .notNull()
-            .references(() => mediaItem.id, { onDelete: "cascade" }),
-        userId: text("user_id")
-            .notNull()
-            .references(() => user.id, { onDelete: "cascade" }),
-        // Open slug vocabulary ("like", "heart", "bookmark", ...) —
-        // validated at the API layer.
-        reaction: text("reaction").notNull(),
-        createdAt: integer("created_at", { mode: "timestamp" }).notNull(),
-    },
-    (table) => [
-        // A user can give multiple different reactions to one item, but each
-        // kind at most once. Leading column (itemId) also serves
-        // count-by-item queries.
-        uniqueIndex("idx_media_reaction_item_user_reaction").on(
-            table.itemId,
-            table.userId,
-            table.reaction,
-        ),
+        // Covering index for gallery lookups: resolve a tag to its item ids
+        // without touching the row; ordering comes from media_item.created_at
+        // via the join.
+        index("idx_media_tag_tag_item").on(table.tag, table.itemId),
     ],
 );

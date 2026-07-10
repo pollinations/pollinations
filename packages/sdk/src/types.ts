@@ -529,7 +529,7 @@ export interface UploadOptions extends RequestOptions {
 
 /** Response from media upload */
 export interface UploadResponse {
-    /** Content-addressed hash ID */
+    /** Unique media id (also the retrieval id) */
     id: string;
     /** Public URL for the uploaded media */
     url: string;
@@ -537,8 +537,8 @@ export interface UploadResponse {
     contentType: string;
     /** File size in bytes */
     size: number;
-    /** Whether the file was already uploaded (dedup) */
-    duplicate: boolean;
+    /** Tags the upload was published with; present only when tagged */
+    tags?: string[];
 }
 
 // ============================================================================

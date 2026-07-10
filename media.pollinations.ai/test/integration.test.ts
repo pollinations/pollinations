@@ -6,7 +6,7 @@ import {
     waitOnExecutionContext,
 } from "cloudflare:test";
 import { user as userTable } from "@shared/db/better-auth.ts";
-import { mediaItem } from "@shared/db/media-catalog.ts";
+import { mediaItem, mediaTag } from "@shared/db/media-catalog.ts";
 import { createTestR2Bucket } from "@shared/test/mocks/r2.ts";
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
@@ -38,20 +38,12 @@ interface MediaItemResponse {
     size: number | null;
     tags: string[];
     createdAt: string;
-    reactions: Record<string, number>;
-    myReactions?: string[];
 }
 
 interface MediaPageResponse {
     items: MediaItemResponse[];
     nextCursor: string | null;
     hasMore: boolean;
-}
-
-interface ReactionResponse {
-    reaction: string;
-    reacted: boolean;
-    count: number;
 }
 
 // Kept for the pre-existing tests that don't care about identity.
@@ -88,7 +80,7 @@ const KEY_IDENTITIES: Record<
         userId: null,
         byopClientKeyId: null,
     },
-    // Library listing is secret-key only, so listing tests use these.
+    // Deleting media is secret-key only, so delete tests use these.
     sk_alice: {
         valid: true,
         type: "secret",
@@ -102,15 +94,6 @@ const KEY_IDENTITIES: Record<
         name: "bob-secret",
         userId: "user_bob",
         byopClientKeyId: null,
-    },
-    // Minted for user_alice through the same BYOP app pk_alice belongs to —
-    // must only see items created through that app.
-    sk_alice_app: {
-        valid: true,
-        type: "secret",
-        name: "alice-app-key",
-        userId: "user_alice",
-        byopClientKeyId: "pk_app_1",
     },
     // The response shape of an enter deployment that predates the identity
     // fields — userId/byopClientKeyId entirely absent, not null.
@@ -182,8 +165,7 @@ function pngFile(name: string, bytes: Uint8Array = TINY_PNG): File {
     return new File([bytes], name, { type: "image/png" });
 }
 
-// Distinct byte content per upload so hashes (and therefore catalog rows)
-// differ even when reusing the same base PNG.
+// Distinct byte content per upload, varying the same base PNG per seed.
 function variant(seed: number): Uint8Array {
     const bytes = new Uint8Array(TINY_PNG);
     bytes[bytes.length - 1] = seed & 0xff;
@@ -457,7 +439,7 @@ describe("media.pollinations.ai", () => {
         expect(body.length).toBe(TINY_PNG.length);
     });
 
-    it("tagged upload is visible in public tag gallery and in your own library, without owner fields", async () => {
+    it("tagged upload is published to the tag gallery, without owner fields", async () => {
         const { status, body } = await uploadViaForm("pk_alice", {
             fileName: "gallery-a.png",
             bytes: variant(1),
@@ -485,20 +467,9 @@ describe("media.pollinations.ai", () => {
         expect(upperRes.status).toBe(200);
         const upperGallery = (await upperRes.json()) as MediaPageResponse;
         expect(upperGallery.items.map((i) => i.url)).toContain(upload.url);
-
-        const meRes = await SELF.fetch("https://media.pollinations.ai/media", {
-            headers: { Authorization: "Bearer sk_alice" },
-        });
-        expect(meRes.status).toBe(200);
-        const me = (await meRes.json()) as MediaPageResponse;
-        expect(me.items.map((i) => i.url)).toContain(upload.url);
-        for (const item of me.items) {
-            expect(item).not.toHaveProperty("ownerUserId");
-            expect(item).not.toHaveProperty("appKeyId");
-        }
     });
 
-    it("untagged upload appears in your own library but not in an unrelated tag gallery", async () => {
+    it("untagged upload is not cataloged: unlisted but retrievable", async () => {
         const { status, body } = await uploadViaForm("pk_alice", {
             fileName: "untagged.png",
             bytes: variant(2),
@@ -507,20 +478,32 @@ describe("media.pollinations.ai", () => {
         const upload = body as UploadResponse;
         expect(upload.tags).toBeUndefined();
 
-        const meRes = await SELF.fetch("https://media.pollinations.ai/media", {
-            headers: { Authorization: "Bearer sk_alice" },
-        });
-        const me = (await meRes.json()) as MediaPageResponse;
-        expect(me.items.map((i) => i.url)).toContain(upload.url);
+        // No catalog row at all — untagged means unpublished, not "cataloged
+        // but hidden".
+        const db = drizzle(env.DB);
+        const rows = await db
+            .select({ id: mediaItem.id })
+            .from(mediaItem)
+            .where(eq(mediaItem.id, upload.id));
+        expect(rows).toHaveLength(0);
 
         const galleryRes = await SELF.fetch(
             "https://media.pollinations.ai/media?tag=some-other-tag",
         );
         const gallery = (await galleryRes.json()) as MediaPageResponse;
         expect(gallery.items.map((i) => i.url)).not.toContain(upload.url);
+
+        // The blob itself is still retrievable by its unguessable id.
+        // (Consume the body: an unread R2 stream keeps storage handles open
+        // and trips vitest-pool-workers' isolated-storage stacking.)
+        const getRes = await SELF.fetch(
+            `https://media.pollinations.ai/${upload.id}`,
+        );
+        expect(getRes.status).toBe(200);
+        await getRes.arrayBuffer();
     });
 
-    it("ignores spoofed identity fields in the upload form", async () => {
+    it("stamps owner and app from the verified key, ignoring spoofed form fields", async () => {
         const alice = await uploadViaForm("pk_alice", {
             fileName: "spoof-alice.png",
             bytes: variant(3),
@@ -534,31 +517,20 @@ describe("media.pollinations.ai", () => {
         expect(alice.status).toBe(200);
         const aliceUpload = alice.body as UploadResponse;
 
-        const bob = await uploadViaForm("pk_bob", {
-            fileName: "spoof-bob.png",
-            bytes: variant(4),
-            tags: ["spoof-test"],
+        // The catalog row carries the identity attested by /account/key —
+        // pk_alice → user_alice via app pk_app_1 — not the form fields.
+        const db = drizzle(env.DB);
+        const [row] = await db
+            .select({
+                ownerUserId: mediaItem.ownerUserId,
+                appKeyId: mediaItem.appKeyId,
+            })
+            .from(mediaItem)
+            .where(eq(mediaItem.id, aliceUpload.id));
+        expect(row).toEqual({
+            ownerUserId: "user_alice",
+            appKeyId: "pk_app_1",
         });
-        expect(bob.status).toBe(200);
-        const bobUpload = bob.body as UploadResponse;
-
-        const aliceMediaRes = await SELF.fetch(
-            "https://media.pollinations.ai/media",
-            { headers: { Authorization: "Bearer sk_alice" } },
-        );
-        const aliceMedia = (await aliceMediaRes.json()) as MediaPageResponse;
-        const aliceUrls = aliceMedia.items.map((i) => i.url);
-        expect(aliceUrls).toContain(aliceUpload.url);
-        expect(aliceUrls).not.toContain(bobUpload.url);
-
-        const bobMediaRes = await SELF.fetch(
-            "https://media.pollinations.ai/media",
-            { headers: { Authorization: "Bearer sk_bob" } },
-        );
-        const bobMedia = (await bobMediaRes.json()) as MediaPageResponse;
-        const bobUrls = bobMedia.items.map((i) => i.url);
-        expect(bobUrls).toContain(bobUpload.url);
-        expect(bobUrls).not.toContain(aliceUpload.url);
     });
 
     it("rejects invalid tags with 400", async () => {
@@ -610,7 +582,7 @@ describe("media.pollinations.ai", () => {
         expect(res.status).toBe(400);
     });
 
-    it("service key without a user is rejected when metadata is supplied, but plain uploads still work", async () => {
+    it("keys without a user can't publish, but plain uploads still work", async () => {
         const withTag = await uploadViaForm("pk_nouser", {
             fileName: "nouser-tagged.png",
             bytes: variant(8),
@@ -618,7 +590,7 @@ describe("media.pollinations.ai", () => {
         });
         expect(withTag.status).toBe(400);
         expect((withTag.body as { error: string }).error).toMatch(
-            /cataloging requires a user-owned API key/,
+            /requires a user-owned API key/,
         );
 
         const plain = await uploadViaForm("pk_nouser", {
@@ -628,6 +600,28 @@ describe("media.pollinations.ai", () => {
         expect(plain.status).toBe(200);
         const upload = plain.body as UploadResponse;
         expect(upload.tags).toBeUndefined();
+
+        // An /account/key response predating the identity fields (userId
+        // absent, not null) must read as not-user-attached: same behavior.
+        const legacyTagged = await uploadViaForm("sk_legacy", {
+            fileName: "legacy-tagged.png",
+            bytes: variant(11),
+            tags: ["should-fail"],
+        });
+        expect(legacyTagged.status).toBe(400);
+
+        const legacyPlain = await uploadViaForm("sk_legacy", {
+            fileName: "legacy-plain.png",
+            bytes: variant(12),
+        });
+        expect(legacyPlain.status).toBe(200);
+        const legacyUpload = legacyPlain.body as UploadResponse;
+        const db = drizzle(env.DB);
+        const rows = await db
+            .select({ id: mediaItem.id })
+            .from(mediaItem)
+            .where(eq(mediaItem.id, legacyUpload.id));
+        expect(rows).toHaveLength(0);
     });
 
     it("re-uploading the same bytes creates a distinct item, not a merge", async () => {
@@ -649,14 +643,28 @@ describe("media.pollinations.ai", () => {
         // Each upload is its own item now (no content dedup).
         expect(secondUpload.id).not.toBe(firstUpload.id);
 
-        const meRes = await SELF.fetch("https://media.pollinations.ai/media", {
-            headers: { Authorization: "Bearer sk_alice" },
-        });
-        const me = (await meRes.json()) as MediaPageResponse;
-        const firstItem = me.items.find((i) => i.url === firstUpload.url);
-        const secondItem = me.items.find((i) => i.url === secondUpload.url);
-        expect(firstItem?.tags).toEqual(["first-tag"]);
-        expect(secondItem?.tags).toEqual(["second-tag"]);
+        // Each item lands only in its own tag's gallery.
+        const firstGallery = (await (
+            await SELF.fetch(
+                "https://media.pollinations.ai/media?tag=first-tag",
+            )
+        ).json()) as MediaPageResponse;
+        expect(firstGallery.items.map((i) => i.url)).toContain(firstUpload.url);
+        expect(firstGallery.items.map((i) => i.url)).not.toContain(
+            secondUpload.url,
+        );
+
+        const secondGallery = (await (
+            await SELF.fetch(
+                "https://media.pollinations.ai/media?tag=second-tag",
+            )
+        ).json()) as MediaPageResponse;
+        expect(secondGallery.items.map((i) => i.url)).toContain(
+            secondUpload.url,
+        );
+        expect(secondGallery.items.map((i) => i.url)).not.toContain(
+            firstUpload.url,
+        );
     });
 
     it("galleries order by upload time (createdAt)", async () => {
@@ -753,13 +761,12 @@ describe("media.pollinations.ai", () => {
     it("validates the limit query param: valid passes, malformed 400s", async () => {
         // A well-formed integer limit is accepted.
         const ok = await SELF.fetch(
-            "https://media.pollinations.ai/media?limit=10",
-            { headers: { Authorization: "Bearer sk_alice" } },
+            "https://media.pollinations.ai/media?tag=sunset&limit=10",
         );
         expect(ok.status).toBe(200);
 
         // Non-numeric, out-of-range, and repeated (hono flattens repeats to an
-        // array) limits are malformed scalar params → 400.
+        // array) limits are malformed scalar params → 400 in {error} shape.
         for (const q of [
             "limit=abc",
             "limit=0",
@@ -767,93 +774,169 @@ describe("media.pollinations.ai", () => {
             "limit=1&limit=2",
         ]) {
             const res = await SELF.fetch(
-                `https://media.pollinations.ai/media?${q}`,
-                { headers: { Authorization: "Bearer sk_alice" } },
+                `https://media.pollinations.ai/media?tag=sunset&${q}`,
             );
             expect(res.status, q).toBe(400);
+            const body = (await res.json()) as { error: string };
+            expect(body.error, q).toContain("limit");
         }
-
-        // The public tag gallery validates limit the same way.
-        const tagBad = await SELF.fetch(
-            "https://media.pollinations.ai/media?tag=sunset&limit=abc",
-        );
-        expect(tagBad.status).toBe(400);
     });
 
-    it("GET /media without a tag requires a user-attached key; with a tag it is public", async () => {
-        // No tag → listing your own library, which must be authenticated.
-        const noKey = await SELF.fetch("https://media.pollinations.ai/media");
-        expect(noKey.status).toBe(401);
+    it("GET /media requires a tag; galleries need no auth at all", async () => {
+        // No tag → 400 in the same {error} shape as every other error.
+        const noTag = await SELF.fetch("https://media.pollinations.ai/media");
+        expect(noTag.status).toBe(400);
+        const noTagBody = (await noTag.json()) as { error: string };
+        expect(noTagBody.error).toContain("tag");
 
-        const unknownKey = await SELF.fetch(
-            "https://media.pollinations.ai/media",
-            { headers: { Authorization: "Bearer pk_unknown" } },
+        // A whitespace-only tag normalizes to empty → also 400.
+        const emptyTag = await SELF.fetch(
+            "https://media.pollinations.ai/media?tag=%20",
         );
-        expect(unknownKey.status).toBe(401);
+        expect(emptyTag.status).toBe(400);
 
-        // A valid key with no attached user can't have a "library" → 403.
-        const noUser = await SELF.fetch("https://media.pollinations.ai/media", {
-            headers: { Authorization: "Bearer pk_nouser" },
-        });
-        expect(noUser.status).toBe(403);
-
-        // Publishable keys ship inside public clients — anyone holding one
-        // must not be able to read the owner's private library.
-        const publishable = await SELF.fetch(
-            "https://media.pollinations.ai/media",
-            { headers: { Authorization: "Bearer pk_alice" } },
-        );
-        expect(publishable.status).toBe(403);
-
-        // An /account/key response predating the identity fields (userId
-        // absent, not null) must read as not-user-attached — never as an
-        // unscoped listing.
-        const legacy = await SELF.fetch("https://media.pollinations.ai/media", {
-            headers: { Authorization: "Bearer sk_legacy" },
-        });
-        expect(legacy.status).toBe(403);
-
-        // A tag gallery, by contrast, is browsable with no key at all.
+        // A tag gallery is browsable with no key at all.
         const publicGallery = await SELF.fetch(
             "https://media.pollinations.ai/media?tag=sunset",
         );
         expect(publicGallery.status).toBe(200);
     });
 
-    it("a BYOP-minted key lists only items created through its app", async () => {
-        // pk_alice carries byopClientKeyId pk_app_1 → this upload is stamped
-        // with that app; the sk_alice upload is direct (no app).
-        const viaApp = await uploadViaForm("pk_alice", {
-            fileName: "byop-app.png",
-            bytes: variant(80),
-        });
-        expect(viaApp.status).toBe(200);
-        const appUpload = viaApp.body as UploadResponse;
+    describe("DELETE /media/:id", () => {
+        it("owner deletes with a secret key: unpublished and gone", async () => {
+            const { status, body } = await uploadViaForm("pk_alice", {
+                fileName: "delete-me.png",
+                bytes: variant(40),
+                tags: ["delete-flow-tag"],
+            });
+            expect(status).toBe(200);
+            const upload = body as UploadResponse;
 
-        const direct = await uploadViaForm("sk_alice", {
-            fileName: "byop-direct.png",
-            bytes: variant(81),
-        });
-        expect(direct.status).toBe(200);
-        const directUpload = direct.body as UploadResponse;
+            const delRes = await SELF.fetch(
+                `https://media.pollinations.ai/media/${upload.id}`,
+                {
+                    method: "DELETE",
+                    headers: { Authorization: "Bearer sk_alice" },
+                },
+            );
+            expect(delRes.status).toBe(200);
+            expect(await delRes.json()).toEqual({
+                deleted: true,
+                id: upload.id,
+            });
 
-        const appRes = await SELF.fetch("https://media.pollinations.ai/media", {
-            headers: { Authorization: "Bearer sk_alice_app" },
-        });
-        expect(appRes.status).toBe(200);
-        const appMedia = (await appRes.json()) as MediaPageResponse;
-        const appUrls = appMedia.items.map((i) => i.url);
-        expect(appUrls).toContain(appUpload.url);
-        expect(appUrls).not.toContain(directUpload.url);
+            // Gone from the gallery…
+            const galleryRes = await SELF.fetch(
+                "https://media.pollinations.ai/media?tag=delete-flow-tag",
+            );
+            const gallery = (await galleryRes.json()) as MediaPageResponse;
+            expect(gallery.items.map((i) => i.url)).not.toContain(upload.url);
 
-        // The owner's plain secret key still sees the whole library.
-        const ownRes = await SELF.fetch("https://media.pollinations.ai/media", {
-            headers: { Authorization: "Bearer sk_alice" },
+            // …its URL 404s…
+            const getRes = await SELF.fetch(
+                `https://media.pollinations.ai/${upload.id}`,
+            );
+            expect(getRes.status).toBe(404);
+
+            // …and the catalog rows (item + tags) are gone.
+            const db = drizzle(env.DB);
+            const itemRows = await db
+                .select({ id: mediaItem.id })
+                .from(mediaItem)
+                .where(eq(mediaItem.id, upload.id));
+            expect(itemRows).toHaveLength(0);
+            const tagRows = await db
+                .select({ tag: mediaTag.tag })
+                .from(mediaTag)
+                .where(eq(mediaTag.itemId, upload.id));
+            expect(tagRows).toHaveLength(0);
+
+            // Repeat delete: the item no longer exists → 404.
+            const again = await SELF.fetch(
+                `https://media.pollinations.ai/media/${upload.id}`,
+                {
+                    method: "DELETE",
+                    headers: { Authorization: "Bearer sk_alice" },
+                },
+            );
+            expect(again.status).toBe(404);
         });
-        const ownMedia = (await ownRes.json()) as MediaPageResponse;
-        const ownUrls = ownMedia.items.map((i) => i.url);
-        expect(ownUrls).toContain(appUpload.url);
-        expect(ownUrls).toContain(directUpload.url);
+
+        it("rejects non-owners, publishable keys, and missing/invalid keys", async () => {
+            const { status, body } = await uploadViaForm("pk_alice", {
+                fileName: "delete-authz.png",
+                bytes: variant(41),
+                tags: ["delete-authz-tag"],
+            });
+            expect(status).toBe(200);
+            const upload = body as UploadResponse;
+            const url = `https://media.pollinations.ai/media/${upload.id}`;
+
+            const noKey = await SELF.fetch(url, { method: "DELETE" });
+            expect(noKey.status).toBe(401);
+
+            const unknownKey = await SELF.fetch(url, {
+                method: "DELETE",
+                headers: { Authorization: "Bearer pk_unknown" },
+            });
+            expect(unknownKey.status).toBe(401);
+
+            // Publishable keys ship inside public clients — anyone holding
+            // one must not be able to delete the owner's published media.
+            const publishable = await SELF.fetch(url, {
+                method: "DELETE",
+                headers: { Authorization: "Bearer pk_alice" },
+            });
+            expect(publishable.status).toBe(403);
+
+            const nonOwner = await SELF.fetch(url, {
+                method: "DELETE",
+                headers: { Authorization: "Bearer sk_bob" },
+            });
+            expect(nonOwner.status).toBe(403);
+
+            // None of the failed attempts deleted anything.
+            const getRes = await SELF.fetch(
+                `https://media.pollinations.ai/${upload.id}`,
+            );
+            expect(getRes.status).toBe(200);
+            await getRes.arrayBuffer();
+        });
+
+        it("unknown and uncataloged (untagged) ids answer 404", async () => {
+            const unknown = await SELF.fetch(
+                `https://media.pollinations.ai/media/${crypto.randomUUID()}`,
+                {
+                    method: "DELETE",
+                    headers: { Authorization: "Bearer sk_alice" },
+                },
+            );
+            expect(unknown.status).toBe(404);
+
+            // An untagged upload was never published: no catalog row, no
+            // owner record to authorize a delete against → 404, blob stays.
+            const { status, body } = await uploadViaForm("pk_alice", {
+                fileName: "delete-untagged.png",
+                bytes: variant(42),
+            });
+            expect(status).toBe(200);
+            const upload = body as UploadResponse;
+
+            const res = await SELF.fetch(
+                `https://media.pollinations.ai/media/${upload.id}`,
+                {
+                    method: "DELETE",
+                    headers: { Authorization: "Bearer sk_alice" },
+                },
+            );
+            expect(res.status).toBe(404);
+
+            const getRes = await SELF.fetch(
+                `https://media.pollinations.ai/${upload.id}`,
+            );
+            expect(getRes.status).toBe(200);
+            await getRes.arrayBuffer();
+        });
     });
 
     it("serves a full page at limit=100 (D1 bound-parameter cap regression)", async () => {
@@ -871,336 +954,21 @@ describe("media.pollinations.ai", () => {
         // 100-bound-parameter cap this test guards against.
         for (let i = 0; i < rows.length; i += 10) {
             await db.insert(mediaItem).values(rows.slice(i, i + 10));
+            await db
+                .insert(mediaTag)
+                .values(
+                    rows
+                        .slice(i, i + 10)
+                        .map((row) => ({ itemId: row.id, tag: "bulk" })),
+                );
         }
 
         const res = await SELF.fetch(
-            "https://media.pollinations.ai/media?limit=100",
-            { headers: { Authorization: "Bearer sk_bob" } },
+            "https://media.pollinations.ai/media?tag=bulk&limit=100",
         );
         expect(res.status).toBe(200);
         const page = (await res.json()) as MediaPageResponse;
         expect(page.items).toHaveLength(100);
         expect(page.hasMore).toBe(true);
-    });
-
-    describe("reactions", () => {
-        // The upload response `id` is the media item id — react to it directly.
-        function reactionUrl(itemId: string, reaction: string): string {
-            return `https://media.pollinations.ai/media/${itemId}/reactions/${reaction}`;
-        }
-
-        it("like, repeat like, and visibility via tag gallery (anonymous vs authenticated)", async () => {
-            const { status, body } = await uploadViaForm("pk_alice", {
-                fileName: "like-flow.png",
-                bytes: variant(30),
-                tags: ["like-flow-tag"],
-            });
-            expect(status).toBe(200);
-            const upload = body as UploadResponse;
-            const itemId = upload.id;
-
-            const likeRes = await SELF.fetch(reactionUrl(itemId, "like"), {
-                method: "PUT",
-                headers: { Authorization: "Bearer pk_bob" },
-            });
-            expect(likeRes.status).toBe(200);
-            expect((await likeRes.json()) as ReactionResponse).toEqual({
-                reaction: "like",
-                reacted: true,
-                count: 1,
-            });
-
-            // Repeat like is idempotent.
-            const likeAgainRes = await SELF.fetch(reactionUrl(itemId, "like"), {
-                method: "PUT",
-                headers: { Authorization: "Bearer pk_bob" },
-            });
-            expect(likeAgainRes.status).toBe(200);
-            expect((await likeAgainRes.json()) as ReactionResponse).toEqual({
-                reaction: "like",
-                reacted: true,
-                count: 1,
-            });
-
-            // Anonymous tag browsing: reaction counts present, no myReactions.
-            const anonRes = await SELF.fetch(
-                "https://media.pollinations.ai/media?tag=like-flow-tag",
-            );
-            expect(anonRes.status).toBe(200);
-            const anon = (await anonRes.json()) as MediaPageResponse;
-            const anonItem = anon.items.find((i) => i.id === itemId);
-            expect(anonItem?.reactions).toEqual({ like: 1 });
-            expect(anonItem).not.toHaveProperty("myReactions");
-
-            // Bob (the reactor) sees "like" in myReactions.
-            const bobRes = await SELF.fetch(
-                "https://media.pollinations.ai/media?tag=like-flow-tag",
-                { headers: { Authorization: "Bearer pk_bob" } },
-            );
-            const bobPage = (await bobRes.json()) as MediaPageResponse;
-            expect(
-                bobPage.items.find((i) => i.id === itemId)?.myReactions,
-            ).toEqual(["like"]);
-
-            // Alice (no reactions) gets an empty myReactions.
-            const aliceRes = await SELF.fetch(
-                "https://media.pollinations.ai/media?tag=like-flow-tag",
-                { headers: { Authorization: "Bearer pk_alice" } },
-            );
-            const alicePage = (await aliceRes.json()) as MediaPageResponse;
-            expect(
-                alicePage.items.find((i) => i.id === itemId)?.myReactions,
-            ).toEqual([]);
-        });
-
-        it("unlike and repeat unlike are idempotent", async () => {
-            const { status, body } = await uploadViaForm("pk_alice", {
-                fileName: "unlike-flow.png",
-                bytes: variant(31),
-                tags: ["unlike-flow-tag"],
-            });
-            expect(status).toBe(200);
-            const upload = body as UploadResponse;
-            const itemId = upload.id;
-
-            await SELF.fetch(reactionUrl(itemId, "like"), {
-                method: "PUT",
-                headers: { Authorization: "Bearer pk_bob" },
-            });
-
-            const unlikeRes = await SELF.fetch(reactionUrl(itemId, "like"), {
-                method: "DELETE",
-                headers: { Authorization: "Bearer pk_bob" },
-            });
-            expect(unlikeRes.status).toBe(200);
-            expect((await unlikeRes.json()) as ReactionResponse).toEqual({
-                reaction: "like",
-                reacted: false,
-                count: 0,
-            });
-
-            // Repeat unlike is idempotent.
-            const unlikeAgainRes = await SELF.fetch(
-                reactionUrl(itemId, "like"),
-                {
-                    method: "DELETE",
-                    headers: { Authorization: "Bearer pk_bob" },
-                },
-            );
-            expect(unlikeAgainRes.status).toBe(200);
-            expect((await unlikeAgainRes.json()) as ReactionResponse).toEqual({
-                reaction: "like",
-                reacted: false,
-                count: 0,
-            });
-        });
-
-        it("two different likers accumulate to 2, reflected in owner's library", async () => {
-            const { status, body } = await uploadViaForm("pk_alice", {
-                fileName: "two-likers.png",
-                bytes: variant(32),
-                tags: ["two-likers-tag"],
-            });
-            expect(status).toBe(200);
-            const upload = body as UploadResponse;
-            const itemId = upload.id;
-
-            const aliceLike = await SELF.fetch(reactionUrl(itemId, "like"), {
-                method: "PUT",
-                headers: { Authorization: "Bearer pk_alice" },
-            });
-            expect((await aliceLike.json()) as ReactionResponse).toEqual({
-                reaction: "like",
-                reacted: true,
-                count: 1,
-            });
-
-            const bobLike = await SELF.fetch(reactionUrl(itemId, "like"), {
-                method: "PUT",
-                headers: { Authorization: "Bearer pk_bob" },
-            });
-            expect((await bobLike.json()) as ReactionResponse).toEqual({
-                reaction: "like",
-                reacted: true,
-                count: 2,
-            });
-
-            const meRes = await SELF.fetch(
-                "https://media.pollinations.ai/media",
-                { headers: { Authorization: "Bearer sk_alice" } },
-            );
-            const me = (await meRes.json()) as MediaPageResponse;
-            const meItem = me.items.find((i) => i.id === itemId);
-            expect(meItem?.reactions).toEqual({ like: 2 });
-            expect(meItem?.myReactions).toEqual(["like"]);
-        });
-
-        it("multiple reaction kinds from one user coexist on an item", async () => {
-            const { status, body } = await uploadViaForm("pk_alice", {
-                fileName: "multi-kind.png",
-                bytes: variant(34),
-                tags: ["multi-kind-tag"],
-            });
-            expect(status).toBe(200);
-            const upload = body as UploadResponse;
-            const itemId = upload.id;
-
-            for (const kind of ["like", "bookmark"]) {
-                const res = await SELF.fetch(reactionUrl(itemId, kind), {
-                    method: "PUT",
-                    headers: { Authorization: "Bearer pk_bob" },
-                });
-                expect((await res.json()) as ReactionResponse).toEqual({
-                    reaction: kind,
-                    reacted: true,
-                    count: 1,
-                });
-            }
-            await SELF.fetch(reactionUrl(itemId, "like"), {
-                method: "PUT",
-                headers: { Authorization: "Bearer pk_alice" },
-            });
-
-            const bobRes = await SELF.fetch(
-                "https://media.pollinations.ai/media?tag=multi-kind-tag",
-                { headers: { Authorization: "Bearer pk_bob" } },
-            );
-            const bobPage = (await bobRes.json()) as MediaPageResponse;
-            const bobItem = bobPage.items.find((i) => i.id === itemId);
-            expect(bobItem?.reactions).toEqual({ like: 2, bookmark: 1 });
-            expect(bobItem?.myReactions?.sort()).toEqual(["bookmark", "like"]);
-        });
-
-        it("PUT /media/:id/reactions/like with a nonexistent item id returns 404", async () => {
-            const randomId = crypto.randomUUID();
-            const res = await SELF.fetch(reactionUrl(randomId, "like"), {
-                method: "PUT",
-                headers: { Authorization: "Bearer pk_alice" },
-            });
-            expect(res.status).toBe(404);
-            expect((await res.json()) as { error: string }).toEqual({
-                error: "Media item not found",
-            });
-        });
-
-        it("rejects an invalid reaction kind with 400, naming it", async () => {
-            const { status, body } = await uploadViaForm("pk_alice", {
-                fileName: "bad-kind.png",
-                bytes: variant(35),
-                tags: ["bad-kind-tag"],
-            });
-            expect(status).toBe(200);
-            const upload = body as UploadResponse;
-            const itemId = upload.id;
-
-            const res = await SELF.fetch(
-                reactionUrl(itemId, encodeURIComponent("UPPER!")),
-                {
-                    method: "PUT",
-                    headers: { Authorization: "Bearer pk_alice" },
-                },
-            );
-            expect(res.status).toBe(400);
-            expect(((await res.json()) as { error: string }).error).toMatch(
-                /UPPER!/,
-            );
-        });
-
-        it("cannot react to another user's untagged (private) item, but the owner can", async () => {
-            const { status, body } = await uploadViaForm("pk_alice", {
-                fileName: "private-react.png",
-                bytes: variant(36),
-            });
-            expect(status).toBe(200);
-            const upload = body as UploadResponse;
-            const itemId = upload.id;
-
-            // 404 (not 403) so the leaked id isn't confirmed to exist.
-            const bobRes = await SELF.fetch(reactionUrl(itemId, "like"), {
-                method: "PUT",
-                headers: { Authorization: "Bearer pk_bob" },
-            });
-            expect(bobRes.status).toBe(404);
-
-            const aliceRes = await SELF.fetch(reactionUrl(itemId, "like"), {
-                method: "PUT",
-                headers: { Authorization: "Bearer pk_alice" },
-            });
-            expect(aliceRes.status).toBe(200);
-            expect((await aliceRes.json()) as ReactionResponse).toEqual({
-                reaction: "like",
-                reacted: true,
-                count: 1,
-            });
-        });
-
-        it("caps distinct reaction kinds per user per item at 8", async () => {
-            const { status, body } = await uploadViaForm("pk_alice", {
-                fileName: "cap-kinds.png",
-                bytes: variant(37),
-                tags: ["cap-kinds-tag"],
-            });
-            expect(status).toBe(200);
-            const upload = body as UploadResponse;
-            const itemId = upload.id;
-
-            for (let i = 0; i < 8; i++) {
-                const res = await SELF.fetch(reactionUrl(itemId, `kind-${i}`), {
-                    method: "PUT",
-                    headers: { Authorization: "Bearer pk_bob" },
-                });
-                expect(res.status).toBe(200);
-            }
-
-            const overCap = await SELF.fetch(reactionUrl(itemId, "kind-8"), {
-                method: "PUT",
-                headers: { Authorization: "Bearer pk_bob" },
-            });
-            expect(overCap.status).toBe(400);
-
-            // Repeating an existing kind is not a new kind — still idempotent.
-            const repeat = await SELF.fetch(reactionUrl(itemId, "kind-0"), {
-                method: "PUT",
-                headers: { Authorization: "Bearer pk_bob" },
-            });
-            expect(repeat.status).toBe(200);
-        });
-
-        it("auth failures: missing/unknown/no-user keys on react, and unknown key on tag gallery", async () => {
-            const { status, body } = await uploadViaForm("pk_alice", {
-                fileName: "auth-fail.png",
-                bytes: variant(33),
-                tags: ["auth-fail-tag"],
-            });
-            expect(status).toBe(200);
-            const upload = body as UploadResponse;
-            const itemId = upload.id;
-
-            const noKeyRes = await SELF.fetch(reactionUrl(itemId, "like"), {
-                method: "PUT",
-            });
-            expect(noKeyRes.status).toBe(401);
-
-            const unknownKeyRes = await SELF.fetch(
-                reactionUrl(itemId, "like"),
-                {
-                    method: "PUT",
-                    headers: { Authorization: "Bearer pk_unknown" },
-                },
-            );
-            expect(unknownKeyRes.status).toBe(401);
-
-            const noUserRes = await SELF.fetch(reactionUrl(itemId, "like"), {
-                method: "PUT",
-                headers: { Authorization: "Bearer pk_nouser" },
-            });
-            expect(noUserRes.status).toBe(403);
-
-            const tagUnknownKeyRes = await SELF.fetch(
-                "https://media.pollinations.ai/media?tag=auth-fail-tag",
-                { headers: { Authorization: "Bearer pk_unknown" } },
-            );
-            expect(tagUnknownKeyRes.status).toBe(401);
-        });
     });
 });

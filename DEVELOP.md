@@ -239,12 +239,10 @@ graph TD
 
     subgraph PAY["💳 Payments"]
         STRIPE["Stripe · packs"]:::payment
-        POLAR["Polar · subs"]:::payment
         NOWPAY["NOWPay · crypto"]:::payment
     end
 
     STRIPE -.->|"webhooks"| ENTER
-    POLAR -.->|"webhooks"| ENTER
     NOWPAY -.->|"IPN"| ENTER
 
     subgraph SOCIAL["📢 Social Automation"]
@@ -285,3 +283,9 @@ graph TD
     classDef social fill:#713F12,color:#FEFCE8,stroke:#FACC15,stroke-width:1px
     classDef cicd fill:#374151,color:#F3F4F6,stroke:#9CA3AF,stroke-width:1px
 ```
+
+Billing history: Polar handled pack billing and free daily tier subscriptions
+before the Stripe/D1 migration at the end of January 2026. The remaining Polar
+runtime and webhook integration was removed on May 2, 2026. Read-only historical
+query notes remain in
+`.claude/skills/provider-billing/providers/polar.md`.

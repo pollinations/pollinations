@@ -1,6 +1,6 @@
 # 🔆 App Greenhouse
 
-> **829** community apps powered by [pollinations.ai](https://pollinations.ai)
+> **826** community apps powered by [pollinations.ai](https://pollinations.ai)
 
 🐝 **Buzz** = 100+ requests/24h · 🏵️ **Pollen** = Sign in with Pollinations · 🫧 **Fresh** = Added in the last 30 days
 
@@ -157,7 +157,7 @@ Users pay with their own balance — developers pay $0. [Learn more →](../BRIN
 | [🖼️ YSOAI IMAGE GENERATOR](https://huggingface.co/spaces/yassinovich/YSOAI) | Generate images with YSOAI using pollinations.ai, for free and quickly. | [@gumbynews24](https://github.com/gumbynews24) |  |  |
 | [🖼️ Frieze](https://github.com/peterjaric/frieze) | Generate and display AI-generated banner images and slogans in your terminal using Frieze, a mostly silly shell tool. | [@peterjaric](https://github.com/peterjaric) |  |  |
 | [🖼️ Frieze](https://github.com/peterjaric/frieze) | Generate and display AI-generated banner images and slogans in your terminal using Frieze, a mostly silly shell tool. | [@peterjaric](https://github.com/peterjaric) |  |  |
-| [🧠 Insight Engine](https://erbharatmalhotra.github.io/Insight_Engine/) | Requests re-approval for Insight Engine after temporary removal during endpoint migration and update to current gen.pollinations.ai endpoints; previously approved as Flower tier. | [@ErBharatMalhotra](https://github.com/ErBharatMalhotra) |  |  |
+| [🧠 Insight Engine](https://erbharatmalhotra.github.io/Insight_Engine/) | Requests re-approval for Insight Engine after temporary removal during endpoint migration and update to current gen.pollinations.ai endpoints. | [@ErBharatMalhotra](https://github.com/ErBharatMalhotra) |  |  |
 | [🌙 DREAMMELD](https://dreammeld-1.vercel.app/) | AI dream interpretation with visual imagery and ambient soundscapes, powered by Pollinations. | [@newsister](https://github.com/newsister) |  |  |
 | [🖼️ Multimodal Image Generator](https://mowenyun.github.io/multimodal-image-generator/) | Generates images via the pollinations.ai API using httpsgen.pollinations.aiimage... from an open-source CLI GitHub Pages demo with configurable parameters and model size in Multimodal Image Generator. | [@mowenyun](https://github.com/mowenyun) |  |  |
 | [🎨 Polli-com](https://polli-com.vercel.app/) | Generate images on mobile with Polli-com, a client-side PWA built on Pollinations.ai with a Prompt Builder, optional local ComfyUI bridge, and role-based access control. | [@abhi5hek1979](https://github.com/abhi5hek1979) |  |  |
@@ -268,7 +268,6 @@ Users pay with their own balance — developers pay $0. [Learn more →](../BRIN
 | [🖼️ Zelos AI image generator](https://websim.ai/@ISWEARIAMNOTADDICTEDTOPILLOW/ai-image-prompt-generator) | Generates images using Pollinations for prompt enhancement and image synthesis. | [@RandomGuy-nobody](https://github.com/RandomGuy-nobody) |  |  |
 
 </details>
-
 ---
 
 ## 🎬 Video & Audio
@@ -586,7 +585,7 @@ Users pay with their own balance — developers pay $0. [Learn more →](../BRIN
 | [🦸‍♂️ Isekai Character Generator](https://isekai-character-generator.pages.dev) | Generate fully realized multiversal heroes with Isekai Character Generator using Seeded Entropy Logic Mulberry32 PRNG to produce identity, stats, backstory, and visual appearance. | [@garciamoonshine](https://github.com/garciamoonshine) |  | 🏵️ |
 | [🧩 Puzzle Hexagonal Simétrico](https://proyectodescartes.org/IATools/146_Puzles_hexagonales/) | Play Puzzle Hexagonal Simétrico. | [@Juanrivera126](https://github.com/Juanrivera126) |  | 🏵️ |
 
-<details><summary>Show all 59 apps</summary>
+<details><summary>Show all 56 apps</summary>
 
 | App | Description | Author | ⭐ | |
 |-----|-------------|--------|---:|---|
@@ -596,7 +595,6 @@ Users pay with their own balance — developers pay $0. [Learn more →](../BRIN
 | [🎲 AI Dungeon Master](https://github.com/pollinations/pollinations/tree/main/apps/ai-dungeon-master) | AI-run text RPG that improvises stories, quests, and character dialogue | [@codevector-2003](https://github.com/codevector-2003) | 4.8k |  |
 | [🎮 Nikke-DB Story/Roleplaying Generator](https://nikke-db.pages.dev/) | Interactive story and roleplay generator for Goddess of Victory: NIKKE. Features... | [@rhystic1](https://github.com/rhystic1) | 122 |  |
 | [🐾 SpiritPet World — Feature Overview](https://spiritworldfeatureoverview.netlify.app/) | SpiritPet World — Feature Overview. Provides a quick overview of the app’s features. | [@aumnuay2494-svg](https://github.com/aumnuay2494-svg) | 41 |  |
-| [🎮 AI Character RP (Roblox)](https://github.com/snipcola/Roblox-AI) | Roblox roleplay with AI characters, dynamic chats, and quests. | [@snipcola](https://github.com/snipcola) | 16 |  |
 | [🎮 AI · RPG Engine](https://yuuki8763.github.io/en/index.html) | Visit AI · RPG Engine at https://yuuki8763.github.io/en/index.html | [@Yuuki8763](https://github.com/Yuuki8763) | 11 |  |
 | [🎮 AI · RPG Engine](https://yuuki8763.github.io/en/index.html) | Visit AI · RPG Engine at https://yuuki8763.github.io/en/index.html | [@Yuuki8763](https://github.com/Yuuki8763) | 11 |  |
 | [🎮 云渺仙途：凡尘篇](https://ai-game.jkai.de/) | 《云渺仙途：凡尘篇》是一个由 AI 驱动的文字修仙沙盒游戏 (An AI-driven text cultivation sandbox game featurin... | [@ZhjGo](https://github.com/ZhjGo) | 11 |  |
@@ -622,7 +620,6 @@ Users pay with their own balance — developers pay $0. [Learn more →](../BRIN
 | [🤖 Genhub - AI Social Media](https://genhub.id) | AI-driven social platform where autonomous AI characters create and engage. | [@taufik7000](https://github.com/taufik7000) |  |  |
 | [⚽ FM Creator](https://fm.sanne.gay/) | Create custom clubs & players for Football Manager 26 with AI portraits | [@kamakaxi](https://github.com/kamakaxi) |  |  |
 | [💬 ChatPUA](https://apps.apple.com/au/app/chatpua/id6753729837) | AI roleplay chat for PUA training with avatars, GIFs, groups & scenes | [@Libre-Connect](https://github.com/Libre-Connect) |  |  |
-| [🎮 The Mita](https://www.roblox.com/games/98105867888961/The-Mita) | Roblox game with AI-powered interactive character dialogue | [@MoronDe](https://github.com/MoronDe) |  |  |
 | [🎮 gAmI](https://aimcg.vercel.app) | AI tools to design and power gamification experiences | [@juantoman](https://github.com/juantoman) |  |  |
 | [💬 BuddyLine](https://github.com/titanxl888/BuddyLine) | AI companion chat with multi-persona system & emotionally rich conversations | [@titanxl888](https://github.com/titanxl888) |  |  |
 | [🤖 TeleChars AI](https://extras.marcosfrg.x10.mx) | Plataforma para crear personajes IA personalizados en Telegram. Mirror: telecharsai.byethost14.com | [@MarcosFRG](https://github.com/MarcosFRG) |  |  |
@@ -634,7 +631,6 @@ Users pay with their own balance — developers pay $0. [Learn more →](../BRIN
 | [💬 AI Dream Girl Studio](https://www.tiktok.com/@herinyourhead) | AI companion image generator based on user preferences | [@Brandondizzy](https://github.com/Brandondizzy) |  |  |
 | [🎮 Favorite Puzzles](https://radbrothers.com/games/favorite-puzzles/) | Offer jigsaw puzzles with HD images, adjustable difficulty from 6 to 1200 pieces, classic and realistic modes, photo-based puzzle creation, and neural-network generated puzzles. | [@radbrothers](https://github.com/radbrothers) |  |  |
 | [🎮 Pollinations AI Game](https://github.com/ednsinf/pollinations-ai) | Demonstrates how a basic LLM can become an autonomous agent on low-end phones and educates users on agentic AI behavior. | [@ednsinf](https://github.com/ednsinf) |  |  |
-| [🐾 Watch TV with neko (Roblox)](https://www.roblox.com/games/15087497266/UPD-Watch-TV-with-neko-AI) | Cozy Roblox hangout: chat with AI catgirls and meet players in rooms | [@mangofoxplay](https://github.com/mangofoxplay) |  |  |
 | [🎭 Jenny AI](https://jenny-two.vercel.app/) | Chatbot + character creator with TTS/STT, image gen, and vision features | [@HiiiiiPritam](https://github.com/HiiiiiPritam) |  |  |
 | [🔥 RoastMaster AI](https://roastmaster-ai.vercel.app/) | AI roast generator for playful, creative insults and banter | [@sugamdeol](https://github.com/sugamdeol) |  |  |
 | [🎮 roastmyselfie.app](https://storyai-wizard.vercel.app) | Analyzes a selfie to generate a humorous roast and personality-style commentary based on the image. | [@andres_11](https://github.com/andres_11) |  |  |
@@ -1009,4 +1005,3 @@ Users pay with their own balance — developers pay $0. [Learn more →](../BRIN
 | [🥗 CalcuBite AI](https://calcubite.vercel.app/) | Snap food photos to estimate calories and nutrients; ads unlock more scans | [@sugamdeol](https://github.com/sugamdeol) |  |  |
 
 </details>
-

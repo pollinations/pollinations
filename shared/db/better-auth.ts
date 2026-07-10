@@ -203,10 +203,9 @@ export const communityEndpoint = sqliteTable("community_endpoint", {
   baseUrl: text("base_url").notNull(),
   upstreamModel: text("upstream_model").notNull(),
   bearerTokenCiphertext: text("bearer_token_ciphertext").notNull(),
-  // private (default) → owner-only, unlisted, free; app → owner+app users,
-  // unlisted, priced; public → anyone, listed, priced. Sharing (app/public) is
-  // allowlist-gated and requires pricing.
-  visibility: text("visibility", { enum: ["private", "app", "public"] })
+  // Models are created private (owner-only and free). Publishing is a separate,
+  // allowlist-gated update that requires pricing.
+  visibility: text("visibility", { enum: ["private", "public"] })
     .default("private")
     .notNull(),
   promptTextPrice: real("prompt_text_price").notNull(),

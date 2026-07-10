@@ -242,9 +242,7 @@ export const track = (eventType: EventType) =>
                         modelPaidOnly: c.var.model?.definition.paidOnly,
                         // Only public endpoints pay their owner a reward: a
                         // private endpoint is owner-called (base cost billed to
-                        // the owner, no markup, no self-credit). (`app`
-                        // visibility bills its callers too and is staged for a
-                        // follow-up.)
+                        // the owner, no markup, no self-credit).
                         communityModelReward:
                             communityEndpoint?.visibility === "public"
                                 ? {

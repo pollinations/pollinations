@@ -356,13 +356,13 @@ export function CommunityEndpointDialog({
                         </FieldStack>
                     </div>
 
-                    {canPublish && (
+                    {isEdit && canPublish && (
                         <FieldStack
                             label="Visibility"
                             helper={
                                 isShared
                                     ? "Public: listed in /models and callable by anyone. Set your per-1M-token pricing below."
-                                    : "Private: callable only by you with your API key, and never listed."
+                                    : "Private: callable only by you and shown only in model lists authenticated with your API key."
                             }
                             alignLabelRow
                         >

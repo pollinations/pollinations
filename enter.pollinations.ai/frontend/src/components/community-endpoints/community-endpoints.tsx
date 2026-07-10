@@ -57,7 +57,15 @@ export function CommunityEndpoints({
         bearerToken: string,
     ): Promise<void> {
         const response = await apiClient.account["my-models"].$post({
-            json: { ...payload, bearerToken },
+            // Creation is intentionally private and unpriced. Visibility and
+            // pricing are only sent by the later edit/publish action.
+            json: {
+                name: payload.name,
+                description: payload.description,
+                baseUrl: payload.baseUrl,
+                upstreamModel: payload.upstreamModel,
+                bearerToken,
+            },
         });
         if (!response.ok) throw new Error(await readError(response));
         await loadEndpoints();
@@ -142,8 +150,8 @@ export function CommunityEndpoints({
                             </p>
                             <p className="text-sm text-theme-text-muted">
                                 {canPublish
-                                    ? "Register an OpenAI-compatible endpoint, worker, or prompt agent — private to you, or public with your own per-1M-token pricing."
-                                    : "Register an OpenAI-compatible endpoint, worker, or prompt agent as a private model callable only by you."}
+                                    ? "Register an OpenAI-compatible endpoint privately, test it with your key, then make it public with your own per-1M-token pricing."
+                                    : "Register an OpenAI-compatible endpoint as a private model callable only by you."}
                             </p>
                         </Surface>
                     ) : (
@@ -163,15 +171,16 @@ export function CommunityEndpoints({
                         {canPublish ? (
                             <>
                                 Private models are callable only by you and
-                                billed at cost. Make one public to list it in{" "}
+                                shown only when model lists use your API key.
+                                Make one public to list it for everyone in{" "}
                                 <strong>/models</strong> and bill callers at
                                 your per-1M-token pricing.
                             </>
                         ) : (
                             <>
                                 Your models are private — callable only by you
-                                with your API key, and never listed in{" "}
-                                <strong>/models</strong>.
+                                and shown only when <strong>/models</strong> is
+                                authenticated with your API key.
                             </>
                         )}
                     </span>

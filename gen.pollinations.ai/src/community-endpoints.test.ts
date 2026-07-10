@@ -424,8 +424,8 @@ fixtureTest(
         const ownerUserId = await createTestUser({
             githubId: COMMUNITY_ENDPOINT_ALLOWED_TEST_GITHUB_ID,
             githubUsername: ownerGithubUsername,
-            // The owner is billed the base cost of their private model, so the
-            // account needs a balance to call it.
+            // Generation preflight requires an account balance even though
+            // private models have no owner-set usage price.
             tierBalance: 1000,
         });
         // A key belonging to the endpoint owner — its calls are owner calls.
@@ -514,12 +514,24 @@ fixtureTest(
             choices: [{ message: { content: "ok" } }],
         });
 
-        // And it never appears in the public catalog.
-        const modelsResponse = await SELF.fetch(
-            "https://gen.pollinations.ai/text/models",
-        );
-        const models = (await modelsResponse.json()) as { name: string }[];
-        expect(models.some((model) => model.name === modelId)).toBe(false);
+        const catalogIncludesModel = async (authorization?: string) => {
+            const modelsResponse = await SELF.fetch(
+                new Request("https://gen.pollinations.ai/text/models", {
+                    headers: authorization
+                        ? { Authorization: `Bearer ${authorization}` }
+                        : undefined,
+                }),
+            );
+            expect(modelsResponse.status).toBe(200);
+            const models = (await modelsResponse.json()) as { name: string }[];
+            return models.some((model) => model.name === modelId);
+        };
+
+        // The owner's authenticated catalog includes the private model, while
+        // anonymous and other authenticated callers cannot discover it.
+        await expect(catalogIncludesModel(ownerApiKey)).resolves.toBe(true);
+        await expect(catalogIncludesModel(apiKey)).resolves.toBe(false);
+        await expect(catalogIncludesModel()).resolves.toBe(false);
     },
 );
 
@@ -941,6 +953,7 @@ fixtureTest(
     async ({ apiKey }) => {
         const ownerGithubUsername = `owner-${crypto.randomUUID().slice(0, 8)}`;
         const modelName = `denied-${crypto.randomUUID().slice(0, 8)}`;
+        const privateModelName = `${modelName}-private`;
         const modelId = communityModelId(ownerGithubUsername, modelName);
         const ownerUserId = await createTestUser({
             githubId: COMMUNITY_ENDPOINT_DENIED_TEST_GITHUB_ID,
@@ -968,7 +981,7 @@ fixtureTest(
                     Cookie: await signedSessionCookie(sessionToken),
                 },
                 body: JSON.stringify({
-                    name: `${modelName}-private`,
+                    name: privateModelName,
                     description: "Private community endpoint",
                     baseUrl: "https://api.example.com/v1",
                     upstreamModel: "gpt-4.1-mini",
@@ -977,28 +990,36 @@ fixtureTest(
             }),
         );
         expect(registerResponse.status).toBe(200);
+        const registered = (await registerResponse.json()) as {
+            id: string;
+            visibility: string;
+            promptTextPrice: number;
+            completionTextPrice: number;
+        };
+        expect(registered).toMatchObject({
+            visibility: "private",
+            promptTextPrice: 0,
+            completionTextPrice: 0,
+        });
 
-        // But sharing (public) is allowlist-gated: the same denied user is
-        // rejected when they try to register a public model.
+        // Publishing is a separate, allowlist-gated action.
         const publishResponse = await fetchEnterApi(
             enterApi,
-            new Request("http://localhost:3000/api/community-endpoints", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    Cookie: await signedSessionCookie(sessionToken),
+            new Request(
+                `http://localhost:3000/api/community-endpoints/${registered.id}/update`,
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Cookie: await signedSessionCookie(sessionToken),
+                    },
+                    body: JSON.stringify({
+                        visibility: "public",
+                        promptTextPrice: 0.1,
+                        completionTextPrice: 0.1,
+                    }),
                 },
-                body: JSON.stringify({
-                    name: modelName,
-                    description: "Denied community endpoint",
-                    baseUrl: "https://api.example.com/v1",
-                    upstreamModel: "gpt-4.1-mini",
-                    bearerToken: "sk_saved_token",
-                    visibility: "public",
-                    promptTextPrice: 0.1,
-                    completionTextPrice: 0.1,
-                }),
-            }),
+            ),
         );
         expect(publishResponse.status).toBe(403);
 
@@ -1198,9 +1219,6 @@ fixtureTest(
                     baseUrl: "https://gen.pollinations.ai/v1",
                     upstreamModel: "openai",
                     bearerToken: "Bearer sk_pollinations_upstream",
-                    visibility: "public",
-                    promptTextPrice: 0.1,
-                    completionTextPrice: 0.1,
                 }),
             }),
         );
@@ -1216,6 +1234,31 @@ fixtureTest(
             modelId: communityModelId(ownerGithubUsername, modelName),
             baseUrl: "https://gen.pollinations.ai/v1",
             upstreamModel: "openai",
+        });
+
+        const publishResponse = await fetchEnterApi(
+            enterApi,
+            new Request(
+                `http://localhost:3000/api/community-endpoints/${registered.id}/update`,
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Cookie: await signedSessionCookie(sessionToken),
+                    },
+                    body: JSON.stringify({
+                        visibility: "public",
+                        promptTextPrice: 0.1,
+                        completionTextPrice: 0.1,
+                    }),
+                },
+            ),
+        );
+        expect(publishResponse.status).toBe(200);
+        await expect(publishResponse.json()).resolves.toMatchObject({
+            visibility: "public",
+            promptTextPrice: 0.1,
+            completionTextPrice: 0.1,
         });
 
         const testResponse = await fetchEnterApi(
@@ -1356,8 +1399,6 @@ fixtureTest(
                     baseUrl: "https://api.example.com/v1",
                     upstreamModel: "gpt-4.1-mini",
                     bearerToken: "sk_saved_token",
-                    promptTextPrice: 0.1,
-                    completionTextPrice: 0.2,
                 }),
             }),
         );
@@ -1371,8 +1412,9 @@ fixtureTest(
             name: "my-test-model",
             baseUrl: "https://api.example.com/v1",
             upstreamModel: "gpt-4.1-mini",
-            promptTextPrice: 0.1,
-            completionTextPrice: 0.2,
+            visibility: "private",
+            promptTextPrice: 0,
+            completionTextPrice: 0,
             disabled: false,
             disabledReason: null,
             disabledAt: null,
@@ -1402,6 +1444,9 @@ fixtureTest(
                     },
                     body: JSON.stringify({
                         description: "Updated description",
+                        visibility: "public",
+                        promptTextPrice: 0.1,
+                        completionTextPrice: 0.2,
                     }),
                 },
             ),
@@ -1409,6 +1454,7 @@ fixtureTest(
         expect(updateResponse.status).toBe(200);
         await expect(updateResponse.json()).resolves.toMatchObject({
             description: "Updated description",
+            visibility: "public",
             promptTextPrice: 0.1,
             completionTextPrice: 0.2,
             disabled: true,

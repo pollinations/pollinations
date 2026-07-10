@@ -65,30 +65,17 @@ export function communityEndpointPrices(
     ) as CommunityEndpointPrices;
 }
 
-// Access/visibility of a registered endpoint. Owner-declared, but the jump out
-// of `private` (i.e. exposing to any other caller) is allowlist-gated.
-//   private → owner-only callable, unlisted, free (base cost billed to owner)
-//   app     → owner + owner's app users callable, unlisted, priced [staged]
+// Access/visibility of a registered endpoint. Models are created private;
+// exposing one to any other caller is a separate, allowlist-gated update.
+//   private → owner-only callable, shown only to the owner, no owner-set price
 //   public  → anyone callable, listed in the model catalog, priced
-export const COMMUNITY_ENDPOINT_VISIBILITIES = [
-    "private",
-    "app",
-    "public",
-] as const;
+export const COMMUNITY_ENDPOINT_VISIBILITIES = ["private", "public"] as const;
 
 export type CommunityEndpointVisibility =
     (typeof COMMUNITY_ENDPOINT_VISIBILITIES)[number];
 
 export const DEFAULT_COMMUNITY_ENDPOINT_VISIBILITY: CommunityEndpointVisibility =
     "private";
-
-// Sharing an endpoint with any caller other than its owner requires the
-// allowlist and mandatory pricing; only `private` stays free and ungated.
-export function isSharedCommunityVisibility(
-    visibility: CommunityEndpointVisibility,
-): boolean {
-    return visibility !== "private";
-}
 
 export type CommunityEndpointRuntime = {
     id: string;

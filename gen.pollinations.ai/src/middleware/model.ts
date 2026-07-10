@@ -66,9 +66,7 @@ export async function resolveModelDefinition(
 
     // A private community endpoint is owner-only: to everyone else it doesn't
     // exist. Reuse the same "invalid model" response as an unknown name so
-    // private models aren't discoverable by probing. (`app` visibility — owner
-    // plus the owner's app users — is staged for a follow-up; treated as
-    // owner-only here.)
+    // private models aren't discoverable by probing.
     const community = entry.communityEndpoint;
     if (
         community &&

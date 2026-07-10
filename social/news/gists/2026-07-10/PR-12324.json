@@ -1,0 +1,34 @@
+{
+  "pr_number": 12324,
+  "title": "feat: allowlist JustScriptzz + riofndev + solarnode-developement for community models",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/12324",
+  "merged_at": "2026-07-10T15:36:28Z",
+  "labels": [
+    "DEV-CHORE"
+  ],
+  "pr_body_excerpt": "- Adds JustScriptzz (195966113), riofndev (113566110), solarnode-developement (188266626) to COMMUNITY_MODEL_ALLOWED_GITHUB_IDS\n- Next batch from the Community models whitelist Discord thread (the three marked waiting on 2026-07-03)\n- solarnode-developement spelling verified via GitHub API (display name xyzprojectz = archary.dev; the -development spelling 404s)\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Three new bees in the hive",
+    "blurb": "We just handed the keys to the community models garden to JustScriptzz, riofndev, and solarnode-developement. Can't wait to see what you build!",
+    "summary": "Added GitHub users JustScriptzz, riofndev, and solarnode-developement to the community models allowlist.",
+    "impact": "These three developers can now access and deploy community models on the pollinations.ai platform.",
+    "keywords": [
+      "community",
+      "allowlist",
+      "models",
+      "developers"
+    ],
+    "visual_concept": "Polly the bee welcoming three new friends (representing the developers) into a digital garden. She holds a VIP list or clipboard. The scene should feel welcoming and celebratory.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee mascot wearing a tiny security guard hat, holding a glowing lime green (#ecf874) VIP clipboard and welcoming three cute little pixelated developer avatars into a lush digital garden. Soft pastel gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-10/PR-12324.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee mascot wearing a tiny security guard hat, holding a glowing lime green (#ecf874) VIP clipboard and welcoming three cute little pixelated developer avatars into a lush digital garden. Soft pastel gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-07-10T15:37:29.693947+00:00"
+}

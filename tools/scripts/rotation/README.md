@@ -379,7 +379,6 @@ Or revert the SOPS commit on `main`, push `main` to `production`, and redeploy.
 |--------|-------------|
 | `BETTER_AUTH_SECRET` | Needs `secrets: []` multi-secret array in Better Auth config — rotating now would invalidate all user sessions |
 | `STRIPE_WEBHOOK_SECRET` | Needs dual-secret verifier in `stripe-webhooks.ts` |
-| Polar (`POLAR_ACCESS_TOKEN`, `POLAR_WEBHOOK_SECRET`) | Third-party payment platform; rotation managed through Polar dashboard |
 
 ## GPU workers
 

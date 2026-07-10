@@ -126,13 +126,13 @@ we been cooking fr fr 🔥 keep the votes coming!
 |  ────────────────                                  ──────                     |
 |  🎉 ADS EARN    ██████████████████████████████ 38  ⏳ exploring               |
 |  👍 CRYPTO      ████████████████████ 24            ⏳ researching             |
-|  😄 PAYPAL      █████████████████ 21               ⏳ polar integration?      |
+|  😄 PAYPAL      █████████████████ 21               ✓ available via Stripe    |
 |  😕 HOST GPUs   █████████████ 16                   ⏳ get in touch!           |
 |  👀 PIX 🇧🇷     ██████████ 13                      ⏳ researching             |
 |  🚀 UPI 🇮🇳     █████████ 11                       ⏳ researching             |
 |  ❤️ ALIPAY 🇨🇳  ██████ 9                           ⏳ researching             |
 |                                                                               |
-|  ✅ SHIPPED: Credit Card via Polar.sh                                        |
+|  ✅ SHIPPED: Credit Card via Stripe                                          |
 |  🏆 LEADER: Display ads to earn (38 votes)                                   |
 '-------------------------------------------------------------------------------'
 \`\`\`

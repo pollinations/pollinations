@@ -2,7 +2,9 @@
 
 Validated: **2026-04-11** — all commands executed live against production account `acct_1SrY3q7rcjS3l7tr` (Myceli.AI OÜ). Real March 2026 numbers captured inline.
 
-Pair with [polar.md](polar.md) for the subscription/MRR side, and with [aws.md](aws.md) / [azure.md](azure.md) / [gcp.md](gcp.md) on the cost side for runway math.
+Pair with [aws.md](aws.md) / [azure.md](azure.md) / [gcp.md](gcp.md) on the cost side for runway math.
+For revenue before the end-of-January 2026 migration, see the read-only
+[Polar history](polar.md).
 
 ---
 
@@ -277,16 +279,9 @@ For automation, **prefer raw curl** with the env-loaded secret. The CLI is usefu
 
 ## Known unknowns
 
-- **Stripe → Polar link**: does Stripe charge `metadata` include a `polar_order_id` or similar? Would prove that Stripe payments are actually flowing through Polar. Run:
-  ```bash
-  curl -sS "https://api.stripe.com/v1/charges?limit=5" -u "$STRIPE_API_KEY:" \
-    | python3 -c "import sys, json; [print(c.get('id'), c.get('metadata')) for c in json.load(sys.stdin).get('data', [])]"
-  ```
-  If `metadata` is empty on most charges, Stripe is processing payments NOT coming from Polar.
 - **PayPal integration**: PayPal fees appear in `fee_details[].description == "PayPal fees"` inside Stripe balance transactions. Does this mean we have PayPal payments flowing through Stripe Connect, or is there a separate PayPal integration worth documenting?
 - **Test account `acct_1SrYSy6O03AauPe8`**: exists separately from live. Confirm whether it has any useful data or is just the CLI default.
 - **Tinybird pipes**: `TINYBIRD_STRIPE_INGEST_TOKEN` in SOPS implies there's already a Tinybird Stripe ingest somewhere. Check `enter.pollinations.ai/observability` — if an aggregation pipe exists it's likely MUCH faster than paginating `balance_transactions`.
-- **Reconciliation with Polar**: Stripe reports €7,303/mo in March. Polar `/metrics` reports $0 for the same period. See [polar.md](polar.md) for full context — do not trust either number in isolation.
 
 ---
 

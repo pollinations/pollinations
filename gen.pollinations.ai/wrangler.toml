@@ -68,6 +68,11 @@ pattern = "gen.myceli.ai"
 zone_name = "myceli.ai"
 custom_domain = true
 
+[[env.production.routes]]
+pattern = "gen.pollinations.ai"
+zone_name = "pollinations.ai"
+custom_domain = true
+
 [[env.production.services]]
 binding = "ENTER"
 service = "pollinations-enter-production"
@@ -90,6 +95,11 @@ bucket_name = "pollinations-images"
 [[env.production.r2_buckets]]
 binding = "TEXT_BUCKET"
 bucket_name = "pollinations-text-enter"
+
+[[env.production.ratelimits]]
+name = "EDGE_RATE_LIMITER"
+namespace_id = "1001"
+simple = { limit = 10000, period = 10 }
 
 [[env.production.durable_objects.bindings]]
 name = "POLLEN_RATE_LIMITER"
@@ -118,6 +128,11 @@ binding = "IMAGES"
 [[env.staging.routes]]
 pattern = "staging.gen.myceli.ai"
 zone_name = "myceli.ai"
+custom_domain = true
+
+[[env.staging.routes]]
+pattern = "staging.gen.pollinations.ai"
+zone_name = "pollinations.ai"
 custom_domain = true
 
 [[env.staging.services]]

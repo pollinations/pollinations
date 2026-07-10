@@ -1,0 +1,33 @@
+TOKEN "economics_web" READ
+
+NODE endpoint
+SQL >
+    SELECT
+        t.source,
+        formatDateTime(t.date, '%F') AS date,
+        t.vendor,
+        t.category,
+        t.amount,
+        t.currency,
+        t.description,
+        t.evidence,
+        formatDateTime(t.latest_recorded_at, '%F %T') AS recorded_at
+    FROM
+    (
+        SELECT
+            entry_id,
+            argMax(source, recorded_at) AS source,
+            argMax(date, recorded_at) AS date,
+            argMax(vendor, recorded_at) AS vendor,
+            argMax(category, recorded_at) AS category,
+            argMax(amount, recorded_at) AS amount,
+            argMax(currency, recorded_at) AS currency,
+            argMax(description, recorded_at) AS description,
+            argMax(evidence, recorded_at) AS evidence,
+            max(recorded_at) AS latest_recorded_at
+        FROM op_transactions
+        GROUP BY entry_id
+    ) AS t
+    ORDER BY date DESC, vendor, category
+
+TYPE ENDPOINT

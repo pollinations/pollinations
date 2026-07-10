@@ -379,7 +379,7 @@ export const IMAGE_SERVICES = {
         addedDate: new Date("2026-05-07").getTime(),
         priceMultiplier: 1,
         paidOnly: true,
-        // non_video_in tier @ 720p; see Treasury's replicate connector guide
+        // non_video_in tier @ 720p; see Economics' replicate connector guide
         cost: {
             completionVideoSeconds: 0.18,
         },

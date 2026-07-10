@@ -2,6 +2,14 @@
 
 All notable changes to `@pollinations/sdk` will be documented in this file.
 
+## [5.1.0-alpha.3] - 2026-07-10
+
+### Removed (Breaking)
+- Removed retired user and model tier fields from the SDK types, including
+  `AccountProfile.tier`, `AccountProfile.nextResetAt`, `UserInfo.tier`,
+  `AccountKey.permissions.tier`, `ModelInfo.tier`, and `ModelTier`. This release
+  must ship with the Enter and Gen deployment that removes tier/drip behavior.
+
 ## [5.1.0-alpha.2] - 2026-07-02
 
 ### Changed

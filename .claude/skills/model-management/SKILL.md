@@ -574,11 +574,12 @@ If `-a "$USER"` doesn't match, try without `-a` (`security find-generic-password
 
 ## 11.2 Description style
 
-Format: `<Model Name> - <what it does or what makes it distinct>`. ≤ ~70 chars when possible.
+Format: `<what it does or what makes it distinct>`. ≤ ~70 chars when possible.
 
 - Say what the model **does** or what makes it **different** ("Fast & affordable image generation", "Long-context MoE for retrieval"). Capability over branding.
+- **Do not repeat the model name/title** in the description. The model manager renders the display name separately, so descriptions like "Seedream 5.0 Pro - Premium image generation" are redundant.
 - **No provider/inference attribution** in the description — no "(OpenRouter)", "via DashScope", "OpenAI's", etc. `provider` and `brand` fields carry that.
-- **No filler.** "X - Image Generation Model" tells the reader nothing. "FLUX.2 Klein 4B - Fast image generation and editing" > "FLUX.2 Klein 4B - Advanced Model".
+- **No filler.** "Image generation model" tells the reader nothing. "Fast image generation and editing" > "Advanced model".
 
 ## 11.3 Wrapper models (e.g. persona-prompted Claude)
 

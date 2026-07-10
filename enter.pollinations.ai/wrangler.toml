@@ -87,6 +87,11 @@ pattern = "enter.myceli.ai"
 zone_name = "myceli.ai"
 custom_domain = true
 
+[[env.production.routes]]
+pattern = "enter.pollinations.ai"
+zone_name = "pollinations.ai"
+custom_domain = true
+
 [[env.production.d1_databases]]
 remote = true
 binding = "DB"
@@ -122,6 +127,11 @@ crons = []
 [[env.staging.routes]]
 pattern = "staging.enter.myceli.ai"
 zone_name = "myceli.ai"
+custom_domain = true
+
+[[env.staging.routes]]
+pattern = "staging.enter.pollinations.ai"
+zone_name = "pollinations.ai"
 custom_domain = true
 
 [[env.staging.d1_databases]]

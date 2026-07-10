@@ -7,6 +7,7 @@ on:
     paths:
       - "apps/operation/kpi/**"
       - "apps/operation/quest-dashboard/**"
+      - "apps/operation/observability/**"
       - ".github/workflows/deploy-operation-cloudflare.yml"
   workflow_dispatch:
     inputs:
@@ -19,6 +20,7 @@ on:
           - all
           - kpi
           - quest-dashboard
+          - observability
 
 permissions:
   contents: read
@@ -45,7 +47,7 @@ jobs:
         run: |
           set -euo pipefail
 
-          SUPPORTED_APPS="kpi quest-dashboard"
+          SUPPORTED_APPS="kpi quest-dashboard observability"
 
           if [ "$EVENT_NAME" = "workflow_dispatch" ]; then
             if [ "$SELECTED_APP" = "all" ]; then
@@ -60,15 +62,15 @@ jobs:
               git diff --name-only HEAD~1 HEAD > changed.txt
             fi
 
-            APPS=$(
-              sed -n 's|^apps/operation/\([^/]*\)/.*|\1|p' changed.txt \
-                | sort -u \
-                | grep -E '^(kpi|quest-dashboard)$' \
-                | xargs || true
-            )
-
-            if [ -z "$APPS" ] && grep -qx ".github/workflows/deploy-operation-cloudflare.yml" changed.txt; then
+            if grep -qx ".github/workflows/deploy-operation-cloudflare.yml" changed.txt; then
               APPS="$SUPPORTED_APPS"
+            else
+              APPS=$(
+                sed -n 's|^apps/operation/\([^/]*\)/.*|\1|p' changed.txt \
+                  | sort -u \
+                  | grep -E '^(kpi|quest-dashboard|observability)$' \
+                  | xargs || true
+              )
             fi
           fi
 
@@ -108,8 +110,12 @@ jobs:
           node-version: "24"
 
       - name: Setup SOPS
-        if: matrix.app == 'kpi'
+        if: matrix.app == 'kpi' || matrix.app == 'observability'
         uses: nhedger/setup-sops@v2
+
+      - name: Verify Docker
+        if: matrix.app == 'observability'
+        run: docker info
 
       - name: Install dependencies
         run: npm ci
@@ -131,3 +137,32 @@ jobs:
         if: matrix.app == 'quest-dashboard'
         run: npm run deploy
         working-directory: ./apps/operation/quest-dashboard
+
+      - name: Validate Observability Worker configuration
+        if: matrix.app == 'observability'
+        run: npm run check
+        working-directory: ./apps/operation/observability
+
+      - name: Deploy Observability Grafana container Worker
+        if: matrix.app == 'observability'
+        run: npm run deploy
+        working-directory: ./apps/operation/observability
+
+      - name: Push Observability Grafana secrets
+        if: matrix.app == 'observability'
+        env:
+          SOPS_AGE_KEY: ${{ secrets.SOPS_AGE_KEY }}
+        run: npm run push-secrets
+        working-directory: ./apps/operation/observability
+
+      - name: Verify Observability Myceli origin health
+        if: matrix.app == 'observability'
+        run: |
+          curl --fail --retry 12 --retry-delay 10 --retry-all-errors \
+            https://observability.myceli.ai/api/health
+
+      - name: Verify Observability Pollinations public URL
+        if: matrix.app == 'observability'
+        run: |
+          curl --fail --retry 12 --retry-delay 10 --retry-all-errors \
+            https://observability.pollinations.ai/api/health

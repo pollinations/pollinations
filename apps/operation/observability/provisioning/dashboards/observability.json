@@ -15,7 +15,7 @@
       }
     ]
   },
-  "description": "Economic observability — pack vs tier consumption, model economics, developer value",
+  "description": "Platform observability — pack vs tier consumption, model economics, developer value",
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 1,
@@ -181,10 +181,7 @@
       "id": 1,
       "options": {
         "legend": {
-          "calcs": [
-            "sum",
-            "mean"
-          ],
+          "calcs": ["sum", "mean"],
           "displayMode": "table",
           "placement": "bottom",
           "showLegend": true
@@ -464,10 +461,7 @@
         "barWidth": 0.8,
         "groupWidth": 0.7,
         "legend": {
-          "calcs": [
-            "sum",
-            "mean"
-          ],
+          "calcs": ["sum", "mean"],
           "displayMode": "table",
           "placement": "bottom",
           "showLegend": true
@@ -550,9 +544,7 @@
         "justifyMode": "auto",
         "orientation": "auto",
         "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
+          "calcs": ["lastNotNull"],
           "fields": "",
           "values": false
         },
@@ -614,9 +606,7 @@
         "justifyMode": "auto",
         "orientation": "auto",
         "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
+          "calcs": ["lastNotNull"],
           "fields": "",
           "values": false
         },
@@ -678,9 +668,7 @@
         "justifyMode": "auto",
         "orientation": "auto",
         "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
+          "calcs": ["lastNotNull"],
           "fields": "",
           "values": false
         },
@@ -742,9 +730,7 @@
         "justifyMode": "auto",
         "orientation": "auto",
         "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
+          "calcs": ["lastNotNull"],
           "fields": "",
           "values": false
         },
@@ -1003,9 +989,7 @@
           "countRows": false,
           "enablePagination": true,
           "fields": "",
-          "reducer": [
-            "sum"
-          ],
+          "reducer": ["sum"],
           "show": false
         },
         "showHeader": true,
@@ -1178,9 +1162,7 @@
           "countRows": false,
           "enablePagination": false,
           "fields": "",
-          "reducer": [
-            "sum"
-          ],
+          "reducer": ["sum"],
           "show": false
         },
         "showHeader": true,
@@ -1353,9 +1335,7 @@
           "countRows": false,
           "enablePagination": false,
           "fields": "",
-          "reducer": [
-            "sum"
-          ],
+          "reducer": ["sum"],
           "show": false
         },
         "showHeader": true,
@@ -1636,9 +1616,7 @@
           "countRows": false,
           "enablePagination": false,
           "fields": "",
-          "reducer": [
-            "sum"
-          ],
+          "reducer": ["sum"],
           "show": false
         },
         "showHeader": true,
@@ -1844,9 +1822,7 @@
           "countRows": false,
           "enablePagination": false,
           "fields": "",
-          "reducer": [
-            "sum"
-          ],
+          "reducer": ["sum"],
           "show": false
         },
         "showHeader": true,
@@ -2052,9 +2028,7 @@
           "countRows": false,
           "enablePagination": false,
           "fields": "",
-          "reducer": [
-            "sum"
-          ],
+          "reducer": ["sum"],
           "show": false
         },
         "showHeader": true,
@@ -2224,11 +2198,7 @@
       "id": 8,
       "options": {
         "legend": {
-          "calcs": [
-            "mean",
-            "max",
-            "last"
-          ],
+          "calcs": ["mean", "max", "last"],
           "displayMode": "table",
           "placement": "bottom",
           "showLegend": true
@@ -2304,9 +2274,7 @@
         "justifyMode": "auto",
         "orientation": "auto",
         "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
+          "calcs": ["lastNotNull"],
           "fields": "",
           "values": false
         },
@@ -2330,10 +2298,7 @@
     }
   ],
   "schemaVersion": 40,
-  "tags": [
-    "economics",
-    "pollen"
-  ],
+  "tags": ["observability", "pollen"],
   "templating": {
     "list": []
   },
@@ -2368,7 +2333,7 @@
     ]
   },
   "timezone": "browser",
-  "title": "Economics Dashboard",
-  "uid": "economics-v1",
+  "title": "Observability Dashboard",
+  "uid": "observability-v1",
   "version": 1
 }

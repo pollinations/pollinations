@@ -729,12 +729,12 @@ exports[`effective cost and price per model — snapshot 1`] = `
   "mistral": {
     "cost": {
       "completionTextTokens": 0.0000006,
-      "promptCachedTokens": 0.00000015,
+      "promptCachedTokens": 0.000000015,
       "promptTextTokens": 0.00000015,
     },
     "price": {
       "completionTextTokens": 0.0000006,
-      "promptCachedTokens": 0.00000015,
+      "promptCachedTokens": 0.000000015,
       "promptTextTokens": 0.00000015,
     },
   },
@@ -753,12 +753,10 @@ exports[`effective cost and price per model — snapshot 1`] = `
   "mistral-small-3.2": {
     "cost": {
       "completionTextTokens": 0.0000002,
-      "promptCachedTokens": 0.000000075,
       "promptTextTokens": 0.000000075,
     },
     "price": {
       "completionTextTokens": 0.0000002,
-      "promptCachedTokens": 0.000000075,
       "promptTextTokens": 0.000000075,
     },
   },
@@ -1037,10 +1035,12 @@ exports[`effective cost and price per model — snapshot 1`] = `
   "qwen-coder-large": {
     "cost": {
       "completionTextTokens": 0.0000008,
+      "promptCachedTokens": 0.00000007,
       "promptTextTokens": 0.00000011,
     },
     "price": {
       "completionTextTokens": 0.0000008,
+      "promptCachedTokens": 0.00000007,
       "promptTextTokens": 0.00000011,
     },
   },
@@ -1195,12 +1195,10 @@ exports[`effective cost and price per model — snapshot 1`] = `
   "step-3.5-flash": {
     "cost": {
       "completionTextTokens": 0.0000003,
-      "promptCachedTokens": 0.00000002,
       "promptTextTokens": 0.0000001,
     },
     "price": {
       "completionTextTokens": 0.0000003,
-      "promptCachedTokens": 0.00000002,
       "promptTextTokens": 0.0000001,
     },
   },

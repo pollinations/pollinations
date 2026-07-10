@@ -360,6 +360,19 @@ test("updated provider prices are reflected for xAI media and OpenRouter text", 
         0.0000001,
         12,
     );
+    expect(getCostDefinition("mistral").promptCachedTokens).toBeCloseTo(
+        0.000000015,
+        12,
+    );
+    expect(
+        getCostDefinition("qwen-coder-large").promptCachedTokens,
+    ).toBeCloseTo(0.00000007, 12);
+    expect(
+        getCostDefinition("mistral-small-3.2").promptCachedTokens,
+    ).toBeUndefined();
+    expect(
+        getCostDefinition("step-3.5-flash").promptCachedTokens,
+    ).toBeUndefined();
 
     expect(
         calculateCost("grok-imagine", {

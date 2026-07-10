@@ -274,7 +274,6 @@ export const TEXT_SERVICES = {
         priceMultiplier: 1,
         cost: {
             promptTextTokens: perMillion(0.075),
-            promptCachedTokens: perMillion(0.075),
             completionTextTokens: perMillion(0.2),
         },
         title: "Mistral Small 3.2",
@@ -302,7 +301,7 @@ export const TEXT_SERVICES = {
         priceMultiplier: 1,
         cost: {
             promptTextTokens: perMillion(0.15),
-            promptCachedTokens: perMillion(0.15),
+            promptCachedTokens: perMillion(0.015),
             completionTextTokens: perMillion(0.6),
         },
         title: "Mistral Small 4",
@@ -1401,6 +1400,7 @@ export const TEXT_SERVICES = {
         // ~2.5x cheaper. OpenRouter routes to the cheapest live endpoint.
         cost: {
             promptTextTokens: perMillion(0.11), // per 1M tokens
+            promptCachedTokens: perMillion(0.07), // per 1M cached input tokens
             completionTextTokens: perMillion(0.8), // per 1M tokens
         },
         title: "Qwen3 Coder Next",
@@ -1533,9 +1533,8 @@ export const TEXT_SERVICES = {
         priceMultiplier: 1,
         cost: {
             // OpenRouter stepfun/step-3.5-flash posted rates (2026-07-10):
-            // prompt $0.10/M, completion $0.30/M, cache read $0.02/M
+            // prompt $0.10/M, completion $0.30/M
             promptTextTokens: perMillion(0.1),
-            promptCachedTokens: perMillion(0.02),
             completionTextTokens: perMillion(0.3),
         },
         title: "StepFun Step 3.5 Flash",

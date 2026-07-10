@@ -28,7 +28,7 @@ const GenerateImageRequestQueryParamsBaseSchema = z.object({
         )
         .meta({
             description:
-                "Model to use. **Image:** flux, zimage, gptimage, kontext, seedream5, nanobanana, nanobanana-pro, klein. **Video:** veo, seedance, seedance-pro, wan, nova-reel. See /image/models for full list.",
+                "Model to use. **Image:** flux, zimage, gptimage, kontext, seedream5, seedream5-pro, nanobanana, nanobanana-pro, klein. **Video:** veo, seedance, seedance-pro, wan, nova-reel. See /image/models for full list.",
         }),
     width: z.coerce.number().int().nonnegative().optional().default(1024).meta({
         description:

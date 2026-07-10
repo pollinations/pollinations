@@ -1,9 +1,9 @@
-# Sign in with Pollinations — demo client
+# Connect Pollinations — demo client
 
 Minimal OAuth 2.1 client (authorization code + PKCE S256, public client, no
 client secret) against `enter.pollinations.ai`. Zero dependencies, Node ≥ 18.
-This is the reference for third-party sites integrating "Log in with
-Pollinations" — the same shape alp.anondrop.net-style clients use.
+This is the reference for third-party sites connecting a Pollinations account
+for delegated API access.
 
 ## Register a client
 
@@ -32,8 +32,10 @@ Env vars: `CLIENT_ID` (required), `ISSUER` (default
   `code_verifier`; the access token is an opaque `sk_` key.
 - **Userinfo**: `Bearer` call to the advertised `userinfo_endpoint`.
 - **Delegated API access**: a chat completion against `gen.pollinations.ai`
-  paid from the signed-in user's pollen, within the budget/expiry they
+  paid from the connected user's pollen, within the budget/expiry they
   approved on the consent screen.
+- **Disconnect**: revokes the delegated key through the advertised RFC 7009
+  endpoint instead of only clearing the app's local session.
 
 Sessions and pending logins are in-memory — restart logs everyone out. That is
 intentional; this is a protocol demo, not a production template.

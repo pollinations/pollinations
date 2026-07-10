@@ -1444,6 +1444,79 @@ describe("API Key Management", () => {
         });
     });
 
+    describe("DELETE /api/api-keys/connections/:clientId", () => {
+        test("revokes only the current user's keys for that app", async ({
+            sessionToken,
+        }) => {
+            const create = async (body: Record<string, unknown>) => {
+                const response = await SELF.fetch(
+                    "http://localhost:3000/api/api-keys",
+                    {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
+                            Cookie: `better-auth.session_token=${sessionToken}`,
+                        },
+                        body: JSON.stringify(body),
+                    },
+                );
+                expect(response.status).toBe(200);
+                return response.json();
+            };
+
+            const app = await create({
+                name: "connected-app",
+                type: "publishable",
+                metadata: {
+                    redirectUris: ["https://connected.example/callback"],
+                },
+            });
+            const connectionInput = {
+                name: "connected-app",
+                type: "secret",
+                metadata: {
+                    requestedClientId: app.key,
+                    redirectUri: "https://connected.example/callback",
+                    redirectOrigin: "https://connected.example",
+                },
+            };
+            const first = await create(connectionInput);
+            const second = await create(connectionInput);
+            const unrelated = await create({
+                name: "unrelated",
+                type: "secret",
+            });
+
+            const disconnect = await SELF.fetch(
+                `http://localhost:3000/api/api-keys/connections/${app.id}`,
+                {
+                    method: "DELETE",
+                    headers: {
+                        Cookie: `better-auth.session_token=${sessionToken}`,
+                    },
+                },
+            );
+            expect(disconnect.status).toBe(200);
+            expect(await disconnect.json()).toEqual({ revoked: 2 });
+
+            const list = await SELF.fetch(
+                "http://localhost:3000/api/api-keys",
+                {
+                    headers: {
+                        Cookie: `better-auth.session_token=${sessionToken}`,
+                    },
+                },
+            );
+            const ids = (
+                (await list.json()) as { data: Array<{ id: string }> }
+            ).data.map((key) => key.id);
+            expect(ids).not.toContain(first.id);
+            expect(ids).not.toContain(second.id);
+            expect(ids).toContain(app.id);
+            expect(ids).toContain(unrelated.id);
+        }, 30000);
+    });
+
     describe("Permission enforcement", () => {
         test("should reject expired keys", async ({ auth, sessionToken }) => {
             // Create a key that expires immediately

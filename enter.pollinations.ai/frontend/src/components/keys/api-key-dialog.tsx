@@ -208,7 +208,8 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
                                 use after consent.
                             </li>
                             <li>
-                                We return a scoped API key in the URL fragment.
+                                Pollinations returns a short-lived code that
+                                your app exchanges using PKCE.
                             </li>
                             <li>
                                 Use that key for API requests paid with the

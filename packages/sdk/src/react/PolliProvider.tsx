@@ -68,11 +68,15 @@ function buildAuthorizeUrl(args: {
     models?: readonly string[];
     budget?: number;
     expiry?: number;
+    codeChallenge: string;
 }): string {
     const params = new URLSearchParams();
     params.set("redirect_uri", args.redirectUrl);
     params.set("client_id", args.appKey);
     params.set("state", args.state);
+    params.set("response_type", "code");
+    params.set("code_challenge", args.codeChallenge);
+    params.set("code_challenge_method", "S256");
     if (args.permissions.length > 0) {
         params.set("scope", args.permissions.join(" "));
     }
@@ -86,6 +90,25 @@ function buildAuthorizeUrl(args: {
         params.set("expiry", String(args.expiry));
     }
     return `${args.enterUrl}/authorize?${params.toString()}`;
+}
+
+function base64Url(bytes: Uint8Array): string {
+    return btoa(String.fromCharCode(...bytes))
+        .replace(/\+/g, "-")
+        .replace(/\//g, "_")
+        .replace(/=+$/, "");
+}
+
+async function createPkce(): Promise<{
+    verifier: string;
+    challenge: string;
+}> {
+    const verifier = base64Url(crypto.getRandomValues(new Uint8Array(32)));
+    const digest = await crypto.subtle.digest(
+        "SHA-256",
+        new TextEncoder().encode(verifier),
+    );
+    return { verifier, challenge: base64Url(new Uint8Array(digest)) };
 }
 
 function currentRedirectUrl(): string | null {
@@ -143,8 +166,8 @@ function warnAuthSetup(appKey: string, redirectUrl: string | null): void {
 /**
  * Provides Pollinations auth state to descendants. Wrap your app once at the
  * root. Holds the delegated API key, handles the OAuth callback, and exposes
- * login/logout. Account data is fetched by opt-in hooks so apps only request
- * the data they render.
+ * connect, local logout, and revocation actions. Account data is fetched by
+ * opt-in hooks so apps only request the data they render.
  */
 export function PolliProvider({
     appKey,
@@ -163,7 +186,7 @@ export function PolliProvider({
     );
     const resolvedApiBaseUrl = apiBaseUrl ?? `${enterUrl}/api`;
     const storageKey = `polli:${appKey}:token`;
-    const stateStorageKey = `polli:${appKey}:oauth_state`;
+    const pendingStorageKey = `polli:${appKey}:oauth_pending`;
 
     const defaultPermissions = useMemo<readonly AccountPermission[]>(
         () => permissions ?? [],
@@ -192,49 +215,103 @@ export function PolliProvider({
         [storage, storageKey],
     );
 
-    // Hydrate API key from storage + capture URL fragment after redirect.
+    // Hydrate API key from storage or exchange an OAuth code after redirect.
     useEffect(() => {
-        if (typeof window === "undefined") {
-            setIsHydrated(true);
-            return;
+        let cancelled = false;
+        async function hydrate() {
+            if (typeof window === "undefined") {
+                setIsHydrated(true);
+                return;
+            }
+
+            const result = consumeOAuthCallback(
+                window.location,
+                storage,
+                pendingStorageKey,
+            );
+            if (result.cleanedUrl) {
+                window.history.replaceState({}, "", result.cleanedUrl);
+            }
+            if (result.invalidState) {
+                console.warn(
+                    "[PolliProvider] dropping auth response with missing or mismatched state",
+                );
+                setError(new Error("Invalid OAuth state"));
+            } else if (result.error) {
+                console.warn(
+                    `[PolliProvider] auth error: ${result.error}${
+                        result.errorDescription
+                            ? ` — ${result.errorDescription}`
+                            : ""
+                    }`,
+                );
+                setError(new Error(result.errorDescription ?? result.error));
+            } else if (
+                result.code &&
+                result.codeVerifier &&
+                result.redirectUri
+            ) {
+                try {
+                    const response = await fetch(
+                        `${enterUrl.replace(/\/+$/, "")}/api/oauth/token`,
+                        {
+                            method: "POST",
+                            headers: {
+                                "Content-Type":
+                                    "application/x-www-form-urlencoded",
+                            },
+                            body: new URLSearchParams({
+                                grant_type: "authorization_code",
+                                code: result.code,
+                                client_id: appKey,
+                                redirect_uri: result.redirectUri,
+                                code_verifier: result.codeVerifier,
+                            }),
+                        },
+                    );
+                    storage.removeItem(pendingStorageKey);
+                    const token = (await response.json().catch(() => ({}))) as {
+                        access_token?: string;
+                        error?: string;
+                        error_description?: string;
+                    };
+                    if (!response.ok || !token.access_token) {
+                        throw new Error(
+                            token.error_description ||
+                                token.error ||
+                                "OAuth token exchange failed",
+                        );
+                    }
+                    if (!cancelled) updateApiKey(token.access_token);
+                } catch (err) {
+                    if (!cancelled) {
+                        setError(
+                            err instanceof Error ? err : new Error(String(err)),
+                        );
+                    }
+                }
+            } else {
+                const stored = storage.getItem(storageKey);
+                if (stored) setApiKey(stored);
+            }
+            if (!cancelled) setIsHydrated(true);
         }
 
-        const result = consumeOAuthCallback(
-            window.location,
-            storage,
-            stateStorageKey,
-        );
-        if (result.cleanedUrl) {
-            window.history.replaceState({}, "", result.cleanedUrl);
-        }
-        if (result.invalidState) {
-            console.warn(
-                "[PolliProvider] dropping auth response with missing or mismatched state",
-            );
-            setError(new Error("Invalid OAuth state"));
-        }
-        if (result.error) {
-            console.warn(
-                `[PolliProvider] auth error: ${result.error}${
-                    result.errorDescription
-                        ? ` — ${result.errorDescription}`
-                        : ""
-                }`,
-            );
-            setError(new Error(result.errorDescription ?? result.error));
-        }
-        if (result.apiKey) {
-            updateApiKey(result.apiKey);
-            setIsHydrated(true);
-            return;
-        }
-        const stored = storage.getItem(storageKey);
-        if (stored) setApiKey(stored);
-        setIsHydrated(true);
-    }, [stateStorageKey, storage, updateApiKey, storageKey]);
+        void hydrate();
+        return () => {
+            cancelled = true;
+        };
+    }, [
+        appKey,
+        enterUrl,
+        pendingStorageKey,
+        storage,
+        updateApiKey,
+        storageKey,
+    ]);
 
     const login = useCallback(
-        (request?: AuthorizeRequest) => {
+        async (request?: AuthorizeRequest) => {
             if (typeof window === "undefined") return;
             const currentUrl = currentRedirectUrl();
             if (!currentUrl) return;
@@ -246,7 +323,15 @@ export function PolliProvider({
                       )
                     : [...defaultPermissions];
             const state = crypto.randomUUID();
-            storage.setItem(stateStorageKey, state);
+            const pkce = await createPkce();
+            storage.setItem(
+                pendingStorageKey,
+                JSON.stringify({
+                    state,
+                    codeVerifier: pkce.verifier,
+                    redirectUri: currentUrl,
+                }),
+            );
             window.location.href = buildAuthorizeUrl({
                 enterUrl,
                 appKey,
@@ -256,6 +341,7 @@ export function PolliProvider({
                 models: request?.models ?? defaultModels,
                 budget: request?.budget ?? defaultBudget,
                 expiry: request?.expiry ?? defaultExpiry,
+                codeChallenge: pkce.challenge,
             });
         },
         [
@@ -263,7 +349,7 @@ export function PolliProvider({
             appKey,
             defaultPermissions,
             storage,
-            stateStorageKey,
+            pendingStorageKey,
             defaultModels,
             defaultBudget,
             defaultExpiry,
@@ -274,6 +360,24 @@ export function PolliProvider({
         updateApiKey(null);
     }, [updateApiKey]);
 
+    const disconnect = useCallback(async () => {
+        if (!apiKey) return;
+        const response = await fetch(
+            `${enterUrl.replace(/\/+$/, "")}/api/oauth/revoke`,
+            {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/x-www-form-urlencoded",
+                },
+                body: new URLSearchParams({ token: apiKey }),
+            },
+        );
+        if (!response.ok) {
+            throw new Error("Failed to disconnect Pollinations account");
+        }
+        updateApiKey(null);
+    }, [apiKey, enterUrl, updateApiKey]);
+
     const authValue = useMemo<AuthContextValue>(
         () => ({
             apiKey,
@@ -282,6 +386,7 @@ export function PolliProvider({
             error,
             login,
             logout,
+            disconnect,
             setApiKey: updateApiKey,
             enterUrl,
             apiBaseUrl: resolvedApiBaseUrl,
@@ -292,6 +397,7 @@ export function PolliProvider({
             error,
             login,
             logout,
+            disconnect,
             updateApiKey,
             enterUrl,
             resolvedApiBaseUrl,

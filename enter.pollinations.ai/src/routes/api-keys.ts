@@ -288,6 +288,23 @@ export const apiKeysRoutes = new Hono<Env>()
             });
         },
     )
+    .delete("/connections/:clientId", async (c) => {
+        const user = c.var.auth.requireUser();
+        const clientId = c.req.param("clientId");
+        const db = drizzle(c.env.DB, { schema });
+        const revoked = await db
+            .delete(schema.apikey)
+            .where(
+                and(
+                    eq(schema.apikey.userId, user.id),
+                    eq(schema.apikey.byopClientKeyId, clientId),
+                ),
+            )
+            .returning({ id: schema.apikey.id });
+
+        setPrivateNoStoreHeaders(c);
+        return c.json({ revoked: revoked.length });
+    })
     /**
      * Update an API key's permissions.
      * Uses auth.api.updateApiKey() which supports server-only fields like permissions.

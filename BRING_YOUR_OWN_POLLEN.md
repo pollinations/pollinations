@@ -109,7 +109,7 @@ curl -X POST https://enter.pollinations.ai/api/oauth/token \
 
 The authorization code is single-use and expires after 10 minutes. Token responses use RFC 6749 error objects such as `invalid_grant`, `invalid_request`, and `unsupported_grant_type`.
 
-Scopes: `profile` (name + email), `usage` (account balance + usage), `keys` (account admin — create/list/revoke keys). The response's `scope` echoes what the user actually granted, which may be narrower than requested. Generation needs no scope — spending is bounded by the budget and expiry the user approved. There are no refresh tokens; re-run the flow when the key expires. Issued keys appear in the user's dashboard like any other API key and can be edited or revoked there at any time — revocation is immediate.
+Scopes: `profile` (name + email), `usage` (account balance + usage), `keys` (account admin — create/list/revoke keys). The response's `scope` echoes what the user actually granted, which may be narrower than requested. Generation needs no scope — spending is bounded by the budget and expiry the user approved. There are no refresh tokens; re-run the flow when the key expires. Issued keys appear under **Connected Apps** in the user's dashboard and can be disconnected there at any time.
 
 ### 3. Call Pollinations
 
@@ -124,6 +124,17 @@ fetch('https://gen.pollinations.ai/v1/chat/completions', {
 ```
 
 See `apps/oauth-client-demo/` for a zero-dependency reference client.
+
+### 4. Disconnect
+
+Revoke the delegated key when the user disconnects your app. The endpoint
+returns success even when the token was already invalid or revoked.
+
+```bash
+curl -X POST https://enter.pollinations.ai/api/oauth/revoke \
+  -H 'Content-Type: application/x-www-form-urlencoded' \
+  -d 'token=sk_user_authorized_key'
+```
 
 ## ⚙️ Legacy Web Apps (Fragment Flow)
 

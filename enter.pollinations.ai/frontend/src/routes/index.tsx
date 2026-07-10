@@ -200,6 +200,16 @@ function RouteComponent() {
         router.invalidate();
     }
 
+    async function handleDisconnectApp(clientId: string): Promise<void> {
+        const response = await apiClient["api-keys"].connections[
+            ":clientId"
+        ].$delete({ param: { clientId } });
+        if (!response.ok) {
+            throw new Error("Failed to disconnect app");
+        }
+        router.invalidate();
+    }
+
     async function handleUpdateApiKey(
         id: string,
         updates: {
@@ -307,6 +317,7 @@ function RouteComponent() {
                     onCreate={handleCreateApiKey}
                     onUpdate={handleUpdateApiKey}
                     onDelete={handleDeleteApiKey}
+                    onDisconnect={handleDisconnectApp}
                 />
             )}
             {activePage === "models" && (

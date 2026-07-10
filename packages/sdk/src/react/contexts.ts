@@ -25,8 +25,10 @@ export interface AuthorizeRequest {
 }
 
 export interface AuthActionsValue {
-    login: (request?: AuthorizeRequest) => void;
+    login: (request?: AuthorizeRequest) => Promise<void>;
     logout: () => void;
+    /** Revoke the delegated key and clear the local connection. */
+    disconnect: () => Promise<void>;
     setApiKey: (apiKey: string | null) => void;
     /** Resolved enter URL, useful for top-up / dashboard links. */
     enterUrl: string;

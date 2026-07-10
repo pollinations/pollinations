@@ -48,14 +48,25 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
     onCreate,
     onUpdate,
     onDelete,
+    onDisconnect,
 }) => {
     const [deleteId, setDeleteId] = useState<string | null>(null);
+    const [disconnectClientId, setDisconnectClientId] = useState<string | null>(
+        null,
+    );
     const [editingKey, setEditingKey] = useState<ApiKey | null>(null);
 
     async function handleDelete(): Promise<void> {
         if (deleteId) {
             await onDelete(deleteId);
             setDeleteId(null);
+        }
+    }
+
+    async function handleDisconnect(): Promise<void> {
+        if (disconnectClientId) {
+            await onDisconnect(disconnectClientId);
+            setDisconnectClientId(null);
         }
     }
 
@@ -67,8 +78,20 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
         (a, b) =>
             new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
     );
-    const sortedApiKeys = sortedKeys.filter((apiKey) => !isAppKey(apiKey));
+    const connectedKeys = sortedKeys.filter((apiKey) => apiKey.byopClientKeyId);
+    const sortedApiKeys = sortedKeys.filter(
+        (apiKey) => !isAppKey(apiKey) && !apiKey.byopClientKeyId,
+    );
     const sortedAppKeys = sortedKeys.filter(isAppKey);
+    const connectedApps = Array.from(
+        connectedKeys.reduce((groups, key) => {
+            const clientId = key.byopClientKeyId as string;
+            const group = groups.get(clientId) ?? [];
+            group.push(key);
+            groups.set(clientId, group);
+            return groups;
+        }, new Map<string, ApiKey[]>()),
+    );
 
     function renderKeyCard(apiKey: ApiKey) {
         const isPublishable = isPublishableKey(apiKey);
@@ -285,6 +308,59 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                         </span>
                     </p>
                 </Section>
+                <Section title="Connected Apps" framed>
+                    <div className="flex flex-col gap-4">
+                        {!connectedApps.length && (
+                            <Surface className="p-6 text-center">
+                                <AppIcon className="mx-auto mb-2 h-8 w-8 text-theme-text-muted" />
+                                <p className="font-semibold text-ink-900 text-lg mb-2">
+                                    No connected apps
+                                </p>
+                                <p className="text-sm text-theme-text-muted">
+                                    Apps you authorize to use your Pollinations
+                                    account will appear here.
+                                </p>
+                            </Surface>
+                        )}
+                        {connectedApps.map(([clientId, keys]) => (
+                            <div
+                                key={clientId}
+                                className="rounded-xl border border-divider p-3"
+                            >
+                                <div className="mb-3 flex items-center gap-2 px-1">
+                                    <AppIcon className="h-4 w-4 text-theme-text-muted" />
+                                    <span className="font-medium">
+                                        {keys[0]?.name || "Connected app"}
+                                    </span>
+                                    <Chip size="sm">
+                                        {keys.length} access key
+                                        {keys.length === 1 ? "" : "s"}
+                                    </Chip>
+                                    <span className="flex-1" />
+                                    <IconButton
+                                        intent="danger"
+                                        title="Disconnect app"
+                                        tooltip="Disconnect app"
+                                        tooltipAlign="center"
+                                        tooltipClampToViewport={false}
+                                        onClick={() =>
+                                            setDisconnectClientId(clientId)
+                                        }
+                                    >
+                                        <XIcon className="h-4 w-4" />
+                                    </IconButton>
+                                </div>
+                                <div className="flex flex-col gap-3">
+                                    {keys.map(renderKeyCard)}
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                    <p className="mt-4 border-t border-divider pt-4 text-[13px] leading-snug text-theme-text-muted">
+                        Disconnecting an app immediately revokes every access
+                        key you granted to it.
+                    </p>
+                </Section>
                 <Section
                     title="App"
                     framed
@@ -321,8 +397,8 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                         <p className="flex items-start gap-1.5">
                             <GlobeIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                             <span>
-                                For apps where users sign in with their own
-                                Pollinations account and spend their own Pollen.
+                                For apps where users connect their Pollinations
+                                account and spend their own Pollen.
                             </span>
                         </p>
                         <p className="flex items-start gap-1.5">
@@ -346,6 +422,14 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                 deleteId={deleteId}
                 onConfirm={handleDelete}
                 onCancel={() => setDeleteId(null)}
+            />
+            <DeleteConfirmation
+                deleteId={disconnectClientId}
+                title="Disconnect App"
+                message="Disconnect this app and revoke every access key you granted to it?"
+                confirmLabel="Disconnect"
+                onConfirm={handleDisconnect}
+                onCancel={() => setDisconnectClientId(null)}
             />
             {editingKey && (
                 <EditApiKeyDialog

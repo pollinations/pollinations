@@ -22,7 +22,7 @@ async function s256(verifier: string): Promise<string> {
         .replace(/=+$/, "");
 }
 
-/** Park an authorization code in KV the way POST /api/oauth/code does. */
+/** Store an authorization code the way POST /api/oauth/code does. */
 async function putCode(
     code: string,
     overrides: Record<string, unknown> = {},
@@ -36,8 +36,13 @@ async function putCode(
         expiresIn: 604800,
         ...overrides,
     };
-    await env.KV.put(`oauth-code:${code}`, JSON.stringify(stored), {
-        expirationTtl: 600,
+    const db = drizzle(env.DB, { schema });
+    const codeId = `oauth-code:${code}`;
+    await db.insert(schema.verification).values({
+        id: codeId,
+        identifier: codeId,
+        value: JSON.stringify(stored),
+        expiresAt: new Date(Date.now() + 600_000),
     });
 }
 
@@ -69,6 +74,7 @@ describe("OAuth authorization server metadata", () => {
         expect(meta.issuer).toBe(BASE);
         expect(meta.authorization_endpoint).toBe(`${BASE}/authorize`);
         expect(meta.token_endpoint).toBe(`${BASE}/api/oauth/token`);
+        expect(meta.revocation_endpoint).toBe(`${BASE}/api/oauth/revoke`);
         expect(meta.userinfo_endpoint).toBe(`${BASE}/api/oauth/userinfo`);
         expect(meta.device_authorization_endpoint).toBe(
             `${BASE}/api/device/code`,
@@ -121,6 +127,23 @@ describe("POST /api/oauth/token (authorization_code + PKCE)", () => {
         expect(res.status).toBe(200);
         const body = (await res.json()) as { access_token: string };
         expect(body.access_token).toBe("sk_test_access_token");
+    });
+
+    test("concurrent exchanges consume a code exactly once", async () => {
+        const code = crypto.randomUUID();
+        await putCode(code);
+        const [first, second] = await Promise.all([
+            SELF.fetch(
+                `${BASE}/api/oauth/token`,
+                formPost(validTokenParams(code)),
+            ),
+            SELF.fetch(
+                `${BASE}/api/oauth/token`,
+                formPost(validTokenParams(code)),
+            ),
+        ]);
+
+        expect([first.status, second.status].sort()).toEqual([200, 400]);
     });
 
     test("omitting redirect_uri is rejected (RFC 6749 §4.1.3)", async () => {
@@ -269,6 +292,71 @@ describe("POST /api/oauth/token (authorization_code + PKCE)", () => {
         expect(res.status).toBe(200);
         const body = (await res.json()) as { scope?: string };
         expect(body.scope).toBe("");
+    });
+});
+
+describe("POST /api/oauth/revoke", () => {
+    test("revokes a delegated secret key", async ({ sessionToken, mocks }) => {
+        await mocks.enable("tinybird", "github");
+        const createRes = await SELF.fetch(`${BASE}/api/api-keys`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                Cookie: `better-auth.session_token=${sessionToken}`,
+            },
+            body: JSON.stringify({ name: "revoke-me", type: "secret" }),
+        });
+        const created = (await createRes.json()) as { key: string };
+
+        const revokeRes = await SELF.fetch(`${BASE}/api/oauth/revoke`, {
+            method: "POST",
+            headers: { "Content-Type": "application/x-www-form-urlencoded" },
+            body: new URLSearchParams({ token: created.key }),
+        });
+        expect(revokeRes.status).toBe(200);
+        expect(revokeRes.headers.get("Cache-Control")).toBe("no-store");
+
+        const userinfo = await SELF.fetch(`${BASE}/api/oauth/userinfo`, {
+            headers: { Authorization: `Bearer ${created.key}` },
+        });
+        expect(userinfo.status).toBe(401);
+    }, 30000);
+
+    test("does not revoke public app keys", async ({ sessionToken, mocks }) => {
+        await mocks.enable("tinybird", "github");
+        const createRes = await SELF.fetch(`${BASE}/api/api-keys`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                Cookie: `better-auth.session_token=${sessionToken}`,
+            },
+            body: JSON.stringify({
+                name: "public-client",
+                type: "publishable",
+            }),
+        });
+        const created = (await createRes.json()) as { key: string };
+
+        const revokeRes = await SELF.fetch(`${BASE}/api/oauth/revoke`, {
+            method: "POST",
+            headers: { "Content-Type": "application/x-www-form-urlencoded" },
+            body: new URLSearchParams({ token: created.key }),
+        });
+        expect(revokeRes.status).toBe(200);
+
+        const userinfo = await SELF.fetch(`${BASE}/api/oauth/userinfo`, {
+            headers: { Authorization: `Bearer ${created.key}` },
+        });
+        expect(userinfo.status).toBe(200);
+    }, 30000);
+
+    test("returns success for an unknown token", async () => {
+        const response = await SELF.fetch(`${BASE}/api/oauth/revoke`, {
+            method: "POST",
+            headers: { "Content-Type": "application/x-www-form-urlencoded" },
+            body: new URLSearchParams({ token: "sk_unknown" }),
+        });
+        expect(response.status).toBe(200);
     });
 });
 

@@ -1,10 +1,14 @@
 import { PKCE_S256_CHALLENGE_REGEX } from "@shared/auth/authorize-config.ts";
 import { redirectUriMatchesAllowlistExact } from "@shared/auth/redirect-uri.ts";
+import * as schema from "@shared/db/better-auth.ts";
 import { validator } from "@shared/middleware/validator.ts";
+import { and, eq, gt, like, lt } from "drizzle-orm";
+import { drizzle } from "drizzle-orm/d1";
 import type { Context } from "hono";
 import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
 import { z } from "zod";
+import { createAuth } from "../auth.ts";
 import type { Env } from "../env.ts";
 import { auth } from "../middleware/auth.ts";
 import {
@@ -16,7 +20,7 @@ import {
 } from "./device.ts";
 import { getRedirectUris } from "./metadata-utils.ts";
 
-const KV_TTL = 600; // 10 minutes — codes are single-use and short-lived
+const CODE_TTL_MS = 10 * 60 * 1000;
 const CODE_LENGTH = 40;
 export const DEVICE_CODE_GRANT = "urn:ietf:params:oauth:grant-type:device_code";
 
@@ -70,12 +74,13 @@ const CreateCodeSchema = z.object({
 /**
  * OAuth 2.1 authorization-code grant with PKCE (S256 only), layered on the
  * same trust model as the device flow: the consent page mints the sk_ in the
- * browser and hands it to the server, which parks it in KV behind a
+ * browser and hands it to the server, which parks it in D1 behind a
  * single-use authorization code. The legacy fragment (#api_key=) flow is
  * untouched — this is an additional issuance path, not a replacement.
  *
  * POST /code     — called by the consent page after the user approves
  * POST /token    — code+PKCE (and device_code) exchange, RFC 6749 §3.2
+ * POST /revoke   — revoke a delegated secret key, RFC 7009
  * GET  /userinfo — alias of /api/device/userinfo for discovery metadata
  */
 export const oauthRoutes = new Hono<Env>()
@@ -123,8 +128,22 @@ export const oauthRoutes = new Hono<Env>()
                 codeChallenge: body.codeChallenge,
                 expiresIn: body.expiresIn ?? null,
             };
-            await c.env.KV.put(`oauth-code:${code}`, JSON.stringify(stored), {
-                expirationTtl: KV_TTL,
+            const db = drizzle(c.env.DB, { schema });
+            const now = new Date();
+            await db
+                .delete(schema.verification)
+                .where(
+                    and(
+                        like(schema.verification.identifier, "oauth-code:%"),
+                        lt(schema.verification.expiresAt, now),
+                    ),
+                );
+            const codeId = `oauth-code:${code}`;
+            await db.insert(schema.verification).values({
+                id: codeId,
+                identifier: codeId,
+                value: JSON.stringify(stored),
+                expiresAt: new Date(now.getTime() + CODE_TTL_MS),
             });
 
             return c.json({ code });
@@ -164,18 +183,33 @@ export const oauthRoutes = new Hono<Env>()
             );
         }
 
-        const kvKey = `oauth-code:${body.code}`;
-        const stored = (await c.env.KV.get(kvKey, "json")) as StoredCode | null;
-        if (!stored) {
+        const db = drizzle(c.env.DB, { schema });
+        const [consumed] = await db
+            .delete(schema.verification)
+            .where(
+                and(
+                    eq(schema.verification.id, `oauth-code:${body.code}`),
+                    gt(schema.verification.expiresAt, new Date()),
+                ),
+            )
+            .returning({ payload: schema.verification.value });
+        if (!consumed) {
             return tokenError(
                 c,
                 "invalid_grant",
                 "Code unknown, expired, or already used.",
             );
         }
-        // Single use (OAuth 2.1 §4.1.3): burn the code before validating so a
-        // failed attempt can't be retried against the same code.
-        await c.env.KV.delete(kvKey);
+        let stored: StoredCode;
+        try {
+            stored = JSON.parse(consumed.payload) as StoredCode;
+        } catch {
+            return tokenError(
+                c,
+                "invalid_grant",
+                "Malformed authorization code",
+            );
+        }
 
         if (body.client_id !== stored.clientId) {
             // Public clients never authenticate here (token auth "none"), so
@@ -200,6 +234,33 @@ export const oauthRoutes = new Hono<Env>()
             ...(stored.expiresIn != null && { expires_in: stored.expiresIn }),
             ...(stored.scope != null && { scope: stored.scope }),
         });
+    })
+    .post("/revoke", async (c) => {
+        c.header("Cache-Control", "no-store");
+        const body = await parseFormOrJsonBody(c);
+        if (body.token?.startsWith("sk_")) {
+            const result = await createAuth(c.env).api.verifyApiKey({
+                body: { key: body.token },
+            });
+            const keyId =
+                result.valid && typeof result.key?.id === "string"
+                    ? result.key.id
+                    : null;
+            if (keyId) {
+                const db = drizzle(c.env.DB, { schema });
+                await db
+                    .delete(schema.apikey)
+                    .where(
+                        and(
+                            eq(schema.apikey.id, keyId),
+                            eq(schema.apikey.prefix, "sk"),
+                        ),
+                    );
+            }
+        }
+
+        // RFC 7009 deliberately does not reveal whether the token existed.
+        return c.body(null, 200);
     })
     .get(
         "/userinfo",

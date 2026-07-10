@@ -19,6 +19,7 @@ export const wellKnownRoutes = new Hono<Env>().get(
             issuer: origin,
             authorization_endpoint: `${origin}/authorize`,
             token_endpoint: `${origin}/api/oauth/token`,
+            revocation_endpoint: `${origin}/api/oauth/revoke`,
             userinfo_endpoint: `${origin}/api/oauth/userinfo`,
             device_authorization_endpoint: `${origin}/api/device/code`,
             scopes_supported: [...CONSENT_PERMISSIONS],

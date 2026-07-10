@@ -156,8 +156,8 @@ console.log(`Logged in as ${me.name} (${me.tier})`);
 
 ### React auth provider
 
-React apps can use the `@pollinations/sdk/react` subpath for shared login
-state. The provider only owns the session token and OAuth flow; account data is
+React apps can use the `@pollinations/sdk/react` subpath for shared connection
+state. The provider only owns the delegated token and OAuth flow; account data is
 loaded by opt-in hooks.
 
 ```tsx
@@ -168,16 +168,16 @@ import {
 } from '@pollinations/sdk/react';
 
 function AccountStatus() {
-  const { isLoggedIn, login, logout } = useAuth();
+  const { isLoggedIn, login, disconnect } = useAuth();
   const { data: profile } = useAccountProfile({ enabled: isLoggedIn });
 
   if (!isLoggedIn) {
-    return <button onClick={() => login()}>Log in</button>;
+    return <button onClick={() => void login()}>Connect Pollinations</button>;
   }
 
   return (
-    <button onClick={logout}>
-      Log out{profile?.name ? ` ${profile.name}` : ''}
+    <button onClick={() => void disconnect()}>
+      Disconnect{profile?.name ? ` ${profile.name}` : ''}
     </button>
   );
 }
@@ -200,7 +200,8 @@ SDK response shapes plus `{ isLoading, error, refresh }`.
 `PolliProvider` is **SSR-safe** but is a **client component** (it uses `useState` / `useEffect` and reads from `window.localStorage`):
 
 - **First paint contract**: state starts `null` on both server and client, so initial HTML always renders as logged-out. No hydration mismatch.
-- **Hydration**: after mount, the provider reads the session token from storage (default `localStorage`) and parses any `#api_key=…&state=…` fragment from an OAuth redirect. No account data is fetched until an account hook is mounted.
+- **Hydration**: after mount, the provider reads the delegated token from storage (default `localStorage`) or exchanges an OAuth authorization code using its saved PKCE verifier. No account data is fetched until an account hook is mounted.
+- **Disconnect vs. logout**: `disconnect()` revokes the delegated token and clears it locally. `logout()` only clears local state.
 - **Next.js App Router**: mount the provider inside a client component. Either put it in a file with `"use client"` at the top, or wrap a small client subtree from a server component:
 
   ```tsx

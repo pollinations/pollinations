@@ -4,136 +4,109 @@ import { consumeOAuthCallback } from "./oauth.js";
 function makeStorage(initial: Record<string, string> = {}) {
     const data = new Map(Object.entries(initial));
     return {
-        getItem: (k: string) => data.get(k) ?? null,
-        setItem: (k: string, v: string) => {
-            data.set(k, v);
-        },
-        removeItem: (k: string) => {
-            data.delete(k);
-        },
+        getItem: (key: string) => data.get(key) ?? null,
+        setItem: (key: string, value: string) => data.set(key, value),
+        removeItem: (key: string) => data.delete(key),
         snapshot: () => Object.fromEntries(data),
     };
 }
 
-const STATE_KEY = "polli:test:oauth_state";
-const baseLoc = { pathname: "/", search: "", hash: "" };
+const PENDING_KEY = "polli:test:oauth_pending";
+const pending = JSON.stringify({
+    state: "abc",
+    codeVerifier: "verifier",
+    redirectUri: "https://app.example/callback?keep=1",
+});
+const baseLocation = { pathname: "/callback", search: "", hash: "#route" };
 
 describe("consumeOAuthCallback", () => {
-    it("returns empty when hash is missing", () => {
-        const r = consumeOAuthCallback(baseLoc, makeStorage(), STATE_KEY);
-        expect(r).toEqual({
+    it("returns empty when query has no OAuth response", () => {
+        const result = consumeOAuthCallback(
+            { ...baseLocation, search: "?keep=1" },
+            makeStorage(),
+            PENDING_KEY,
+        );
+        expect(result).toEqual({
             cleanedUrl: null,
-            apiKey: null,
+            code: null,
+            codeVerifier: null,
+            redirectUri: null,
             error: null,
             errorDescription: null,
             invalidState: false,
         });
     });
 
-    it("returns empty when hash has no auth params", () => {
-        const r = consumeOAuthCallback(
-            { ...baseLoc, hash: "#/route?foo=bar" },
+    it("accepts a code when state matches and returns the PKCE exchange data", () => {
+        const storage = makeStorage({ [PENDING_KEY]: pending });
+        const result = consumeOAuthCallback(
+            {
+                ...baseLocation,
+                search: "?keep=1&code=oauth-code&state=abc",
+            },
+            storage,
+            PENDING_KEY,
+        );
+
+        expect(result.code).toBe("oauth-code");
+        expect(result.codeVerifier).toBe("verifier");
+        expect(result.redirectUri).toBe("https://app.example/callback?keep=1");
+        expect(result.cleanedUrl).toBe("/callback?keep=1#route");
+        expect(storage.snapshot()).toEqual({ [PENDING_KEY]: pending });
+    });
+
+    it("rejects a code when state mismatches and preserves pending state", () => {
+        const storage = makeStorage({ [PENDING_KEY]: pending });
+        const result = consumeOAuthCallback(
+            { ...baseLocation, search: "?code=oauth-code&state=wrong" },
+            storage,
+            PENDING_KEY,
+        );
+
+        expect(result.code).toBeNull();
+        expect(result.invalidState).toBe(true);
+        expect(storage.snapshot()).toEqual({ [PENDING_KEY]: pending });
+    });
+
+    it("rejects a planted code when no authorization is pending", () => {
+        const result = consumeOAuthCallback(
+            { ...baseLocation, search: "?code=oauth-code&state=abc" },
             makeStorage(),
-            STATE_KEY,
+            PENDING_KEY,
         );
-        expect(r.apiKey).toBeNull();
-        expect(r.cleanedUrl).toBeNull();
+        expect(result.invalidState).toBe(true);
     });
 
-    it("accepts api_key when state matches", () => {
-        const storage = makeStorage({ [STATE_KEY]: "abc" });
-        const r = consumeOAuthCallback(
-            { ...baseLoc, hash: "#api_key=pk_123&state=abc" },
+    it("returns an error and clears matching pending state", () => {
+        const storage = makeStorage({ [PENDING_KEY]: pending });
+        const result = consumeOAuthCallback(
+            {
+                ...baseLocation,
+                search: "?error=access_denied&error_description=user+denied&state=abc",
+            },
             storage,
-            STATE_KEY,
+            PENDING_KEY,
         );
-        expect(r.apiKey).toBe("pk_123");
-        expect(r.invalidState).toBe(false);
-        expect(r.cleanedUrl).toBe("/");
+
+        expect(result.error).toBe("access_denied");
+        expect(result.errorDescription).toBe("user denied");
+        expect(result.cleanedUrl).toBe("/callback#route");
         expect(storage.snapshot()).toEqual({});
     });
 
-    it("rejects api_key when state mismatches (and preserves stored state)", () => {
-        const storage = makeStorage({ [STATE_KEY]: "abc" });
-        const r = consumeOAuthCallback(
-            { ...baseLoc, hash: "#api_key=pk_123&state=BOGUS" },
-            storage,
-            STATE_KEY,
-        );
-        expect(r.apiKey).toBeNull();
-        expect(r.invalidState).toBe(true);
-        expect(storage.snapshot()).toEqual({ [STATE_KEY]: "abc" });
-    });
-
-    it("rejects api_key when no state is stored (planted URL)", () => {
-        const storage = makeStorage();
-        const r = consumeOAuthCallback(
-            { ...baseLoc, hash: "#api_key=pk_123&state=anything" },
-            storage,
-            STATE_KEY,
-        );
-        expect(r.apiKey).toBeNull();
-        expect(r.invalidState).toBe(true);
-    });
-
-    it("preserves hash-router route prefix on cleanup", () => {
-        const storage = makeStorage({ [STATE_KEY]: "abc" });
-        const r = consumeOAuthCallback(
-            { ...baseLoc, hash: "#/dashboard?api_key=pk_123&state=abc" },
-            storage,
-            STATE_KEY,
-        );
-        expect(r.apiKey).toBe("pk_123");
-        expect(r.cleanedUrl).toBe("/#/dashboard");
-    });
-
-    it("preserves non-auth hash params on cleanup", () => {
-        const storage = makeStorage({ [STATE_KEY]: "abc" });
-        const r = consumeOAuthCallback(
-            { ...baseLoc, hash: "#api_key=pk_123&state=abc&foo=bar" },
-            storage,
-            STATE_KEY,
-        );
-        expect(r.cleanedUrl).toBe("/#foo=bar");
-    });
-
-    it("preserves pathname and search on cleanup", () => {
-        const storage = makeStorage({ [STATE_KEY]: "abc" });
-        const r = consumeOAuthCallback(
+    it("rejects an error when state mismatches and preserves pending state", () => {
+        const storage = makeStorage({ [PENDING_KEY]: pending });
+        const result = consumeOAuthCallback(
             {
-                pathname: "/app",
-                search: "?x=1",
-                hash: "#api_key=pk_123&state=abc",
+                ...baseLocation,
+                search: "?error=access_denied&state=wrong",
             },
             storage,
-            STATE_KEY,
+            PENDING_KEY,
         );
-        expect(r.cleanedUrl).toBe("/app?x=1");
-    });
 
-    it("returns error and clears state when error callback state matches", () => {
-        const storage = makeStorage({ [STATE_KEY]: "abc" });
-        const r = consumeOAuthCallback(
-            {
-                ...baseLoc,
-                hash: "#error=denied&error_description=user+denied&state=abc",
-            },
-            storage,
-            STATE_KEY,
-        );
-        expect(r.error).toBe("denied");
-        expect(r.errorDescription).toBe("user denied");
-        expect(storage.snapshot()).toEqual({});
-    });
-
-    it("returns error but preserves stored state when error state mismatches", () => {
-        const storage = makeStorage({ [STATE_KEY]: "abc" });
-        const r = consumeOAuthCallback(
-            { ...baseLoc, hash: "#error=denied&state=BOGUS" },
-            storage,
-            STATE_KEY,
-        );
-        expect(r.error).toBe("denied");
-        expect(storage.snapshot()).toEqual({ [STATE_KEY]: "abc" });
+        expect(result.error).toBeNull();
+        expect(result.invalidState).toBe(true);
+        expect(storage.snapshot()).toEqual({ [PENDING_KEY]: pending });
     });
 });

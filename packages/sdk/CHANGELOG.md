@@ -2,6 +2,14 @@
 
 All notable changes to `@pollinations/sdk` will be documented in this file.
 
+## [5.1.0-alpha.3] - 2026-07-10
+
+### Changed
+- `PolliProvider` now uses authorization code + PKCE instead of receiving a
+  delegated key in the callback fragment.
+- Adds `disconnect()` to revoke the delegated key; `logout()` remains a local
+  sign-out.
+
 ## [5.1.0-alpha.2] - 2026-07-02
 
 ### Changed

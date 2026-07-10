@@ -1,5 +1,5 @@
 /**
- * "Sign in with Pollinations" demo client.
+ * "Connect Pollinations" demo client.
  *
  * A minimal OAuth 2.1 client (authorization-code + PKCE S256, public client)
  * against enter.pollinations.ai — the same integration shape a third-party
@@ -44,7 +44,7 @@ function escapeHtml(value) {
 
 function page(body) {
     return `<!doctype html><html><head><meta charset="utf-8">
-<title>Sign in with Pollinations — demo client</title>
+<title>Connect Pollinations — demo client</title>
 <style>
   body{font-family:system-ui,sans-serif;max-width:640px;margin:3rem auto;padding:0 1rem;line-height:1.5}
   a.button,button{display:inline-block;background:#111;color:#fff;border:0;border-radius:8px;
@@ -76,7 +76,7 @@ function getSession(req) {
         : { sid: null, session: null };
 }
 
-async function handleLogin(res) {
+async function handleConnect(res) {
     const meta = await discover();
     // Drop abandoned logins so the map can't grow unbounded.
     for (const [state, login] of pending) {
@@ -105,22 +105,22 @@ async function handleCallback(res, query) {
     const login = pending.get(state);
     pending.delete(state);
 
+    if (!login) {
+        return send(
+            res,
+            400,
+            page(
+                `<p class="err">Unknown or reused <code>state</code> — possible CSRF, connection aborted.</p>
+             <a class="button" href="/">Back</a>`,
+            ),
+        );
+    }
     if (query.get("error")) {
         return send(
             res,
             400,
             page(
                 `<p class="err">Authorization failed: <b>${escapeHtml(query.get("error"))}</b></p>
-             <a class="button" href="/">Back</a>`,
-            ),
-        );
-    }
-    if (!login) {
-        return send(
-            res,
-            400,
-            page(
-                `<p class="err">Unknown or reused <code>state</code> — possible CSRF, login aborted.</p>
              <a class="button" href="/">Back</a>`,
             ),
         );
@@ -207,14 +207,14 @@ function handleHome(res, session) {
     if (!session) {
         const configured = CLIENT_ID
             ? ""
-            : `<p class="err">Set <code>CLIENT_ID=pk_...</code> before logging in (see README).</p>`;
+            : `<p class="err">Set <code>CLIENT_ID=pk_...</code> before connecting (see README).</p>`;
         return send(
             res,
             200,
             page(
-                `<p>This app signs you in with your Pollinations account via
-             OAuth 2.1 (authorization code + PKCE).</p>${configured}
-             <a class="button" href="/login">Sign in with Pollinations</a>`,
+                `<p>This app connects your Pollinations account for delegated
+             API access via OAuth 2.1 (authorization code + PKCE).</p>${configured}
+             <a class="button" href="/connect">Connect Pollinations</a>`,
             ),
         );
     }
@@ -222,7 +222,7 @@ function handleHome(res, session) {
         res,
         200,
         page(
-            `<p>Signed in as <b>${escapeHtml(
+            `<p>Connected as <b>${escapeHtml(
                 session.profile?.preferred_username ||
                     session.profile?.name ||
                     session.profile?.sub ||
@@ -237,9 +237,27 @@ function handleHome(res, session) {
              ),
          )}</pre>
          <form method="post" action="/generate"><button type="submit">Generate a greeting (spends pollen)</button></form>
-         <p><a href="/logout">Log out</a></p>`,
+         <form method="post" action="/disconnect"><button type="submit">Disconnect Pollinations</button></form>
+         <p><a href="/logout">Forget local session</a></p>`,
         ),
     );
+}
+
+async function handleDisconnect(res, sid, session) {
+    if (!session) return redirect(res, "/");
+    const meta = await discover();
+    const revokeRes = await fetch(meta.revocation_endpoint, {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: new URLSearchParams({ token: session.accessToken }),
+    });
+    if (!revokeRes.ok) {
+        throw new Error(`Disconnect failed: HTTP ${revokeRes.status}`);
+    }
+    if (sid) sessions.delete(sid);
+    redirect(res, "/", {
+        "Set-Cookie": "sid=; Max-Age=0; Path=/",
+    });
 }
 
 const server = createServer(async (req, res) => {
@@ -249,8 +267,8 @@ const server = createServer(async (req, res) => {
         if (url.pathname === "/" && req.method === "GET") {
             return handleHome(res, session);
         }
-        if (url.pathname === "/login" && req.method === "GET") {
-            return await handleLogin(res);
+        if (url.pathname === "/connect" && req.method === "GET") {
+            return await handleConnect(res);
         }
         if (url.pathname === "/callback" && req.method === "GET") {
             return await handleCallback(res, url.searchParams);
@@ -258,6 +276,9 @@ const server = createServer(async (req, res) => {
         if (url.pathname === "/generate" && req.method === "POST") {
             if (!session) return redirect(res, "/");
             return await handleGenerate(res, session);
+        }
+        if (url.pathname === "/disconnect" && req.method === "POST") {
+            return await handleDisconnect(res, sid, session);
         }
         if (url.pathname === "/logout" && req.method === "GET") {
             if (sid) sessions.delete(sid);

@@ -1,38 +1,25 @@
 /**
- * Pure OAuth callback parser. Extracted from PolliProvider so it can be
- * unit-tested without React.
+ * Pure OAuth authorization-code callback parser for PolliProvider.
  *
- * Reads `window.location.hash` for the `api_key` / `error` / `state`
- * fragment params that `enter.pollinations.ai/authorize` redirects back
- * with. Validates the `state` parameter against the value the client
- * persisted at login() time (CSRF protection), then signals to the caller
- * what to do.
- *
- * Validate-then-clear semantics: state is only cleared from storage when
- * the callback genuinely matches a pending login. A spoofed callback with
- * a wrong state must NOT clear stored state — otherwise an attacker could
- * DoS the real callback by planting a bad URL.
+ * The pending PKCE verifier stays in the configured storage while Pollinations
+ * handles consent. On return, this validates state, removes OAuth query
+ * parameters from the URL, and gives the provider the values needed for the
+ * token exchange.
  */
 
+export interface PendingAuthorization {
+    state: string;
+    codeVerifier: string;
+    redirectUri: string;
+}
+
 export interface OAuthCallbackResult {
-    /**
-     * If auth params were present in the hash, the URL to replace
-     * `window.location` with via `history.replaceState`. Strips the auth
-     * params but preserves the route prefix (`#/dashboard`), any non-auth
-     * hash params, pathname, and search.
-     *
-     * `null` when no auth params were present (no rewrite needed).
-     */
     cleanedUrl: string | null;
-    /** Valid api_key from a callback whose `state` matched. */
-    apiKey: string | null;
-    /** OAuth error code, if the callback was an error response. */
+    code: string | null;
+    codeVerifier: string | null;
+    redirectUri: string | null;
     error: string | null;
     errorDescription: string | null;
-    /**
-     * `true` when an `api_key` was present but `state` did not match.
-     * Callers should warn but otherwise ignore (do NOT clear stored state).
-     */
     invalidState: boolean;
 }
 
@@ -49,62 +36,71 @@ interface OAuthStorage {
 
 const EMPTY: OAuthCallbackResult = {
     cleanedUrl: null,
-    apiKey: null,
+    code: null,
+    codeVerifier: null,
+    redirectUri: null,
     error: null,
     errorDescription: null,
     invalidState: false,
 };
 
+function readPendingAuthorization(
+    storage: OAuthStorage,
+    pendingStorageKey: string,
+): PendingAuthorization | null {
+    const raw = storage.getItem(pendingStorageKey);
+    if (!raw) return null;
+    try {
+        const pending = JSON.parse(raw) as Partial<PendingAuthorization>;
+        if (
+            typeof pending.state !== "string" ||
+            typeof pending.codeVerifier !== "string" ||
+            typeof pending.redirectUri !== "string"
+        ) {
+            return null;
+        }
+        return pending as PendingAuthorization;
+    } catch {
+        return null;
+    }
+}
+
 export function consumeOAuthCallback(
     location: ReadOnlyLocation,
     storage: OAuthStorage,
-    stateStorageKey: string,
+    pendingStorageKey: string,
 ): OAuthCallbackResult {
-    const rawHash = location.hash.startsWith("#")
-        ? location.hash.slice(1)
-        : location.hash;
-    if (!rawHash) return EMPTY;
-
-    // Hash-router apps use `#/route?param=…` — the route prefix sits before
-    // the `?`, params after. Treating the whole hash as params would
-    // mis-parse the route and the cleanup step below would strip it.
-    const queryIdx = rawHash.indexOf("?");
-    const routePrefix = queryIdx === -1 ? "" : rawHash.slice(0, queryIdx);
-    const paramString = queryIdx === -1 ? rawHash : rawHash.slice(queryIdx + 1);
-    const params = new URLSearchParams(paramString);
-
-    const key = params.get("api_key");
+    const params = new URLSearchParams(location.search);
+    const code = params.get("code");
     const error = params.get("error");
+    if (!code && !error) return EMPTY;
+
     const receivedState = params.get("state");
     const errorDescription = params.get("error_description");
-
-    if (!key && !error) return EMPTY;
-
-    for (const p of ["api_key", "state", "error", "error_description"]) {
-        params.delete(p);
+    for (const param of ["code", "state", "error", "error_description"]) {
+        params.delete(param);
     }
     const remaining = params.toString();
-    const newHash = remaining
-        ? routePrefix
-            ? `${routePrefix}?${remaining}`
-            : remaining
-        : routePrefix;
     const cleanedUrl =
-        location.pathname + location.search + (newHash ? `#${newHash}` : "");
+        location.pathname + (remaining ? `?${remaining}` : "") + location.hash;
+    const pending = readPendingAuthorization(storage, pendingStorageKey);
 
-    if (key) {
-        const expectedState = storage.getItem(stateStorageKey);
-        if (!expectedState || receivedState !== expectedState) {
+    if (code) {
+        if (!pending || receivedState !== pending.state) {
             return { ...EMPTY, cleanedUrl, invalidState: true };
         }
-        storage.removeItem(stateStorageKey);
-        return { ...EMPTY, cleanedUrl, apiKey: key };
+        return {
+            ...EMPTY,
+            cleanedUrl,
+            code,
+            codeVerifier: pending.codeVerifier,
+            redirectUri: pending.redirectUri,
+        };
     }
 
-    // error branch
-    const expectedState = storage.getItem(stateStorageKey);
-    if (expectedState && receivedState === expectedState) {
-        storage.removeItem(stateStorageKey);
+    if (!pending || receivedState !== pending.state) {
+        return { ...EMPTY, cleanedUrl, invalidState: true };
     }
+    storage.removeItem(pendingStorageKey);
     return { ...EMPTY, cleanedUrl, error, errorDescription };
 }

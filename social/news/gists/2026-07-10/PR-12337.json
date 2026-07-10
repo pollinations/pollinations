@@ -1,0 +1,35 @@
+{
+  "pr_number": 12337,
+  "title": "fix: switch flux provider from fireworks to vast.ai",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/12337",
+  "merged_at": "2026-07-10T22:34:50Z",
+  "labels": [
+    "DEV-CHORE"
+  ],
+  "pr_body_excerpt": "Flux has run primarily on Vast.ai RTX 5090s since 2026-07-02 (#12171), with Fireworks now only a fallback path. The registry still listed fireworks as the provider.\n\n- registry \\`provider\\` field: fireworks -> vast\n- drop the stale \"(Fireworks)\" attribution from the description",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Registry Reality Check",
+    "blurb": "Updated our internal registry to reflect that Flux is now primarily running on Vast.ai's RTX 5090s instead of Fireworks.",
+    "summary": "Updated the image registry metadata to correctly list Vast.ai as the primary provider for Flux models instead of Fireworks.",
+    "impact": "The API and documentation will now correctly attribute Flux generation to Vast.ai, matching our actual infrastructure routing.",
+    "keywords": [
+      "flux",
+      "vast.ai",
+      "fireworks",
+      "registry",
+      "infrastructure"
+    ],
+    "visual_concept": "The bee (Polly) updating a label or sign on a giant, glowing server rack (representing Vast.ai RTX 5090s), peeling off an old sticker to reveal the new provider.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot peeling an old sticker off a massive, glowing retro server rack and replacing it with a new one. The server rack emits a soft lime green (#ecf874) glow. Soft pastel gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-10/PR-12337.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot peeling an old sticker off a massive, glowing retro server rack and replacing it with a new one. The server rack emits a soft lime green (#ecf874) glow. Soft pastel gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-07-10T22:35:49.190488+00:00"
+}

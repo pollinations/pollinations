@@ -157,7 +157,7 @@ Users pay with their own balance — developers pay $0. [Learn more →](../BRIN
 | [🖼️ YSOAI IMAGE GENERATOR](https://huggingface.co/spaces/yassinovich/YSOAI) | Generate images with YSOAI using pollinations.ai, for free and quickly. | [@gumbynews24](https://github.com/gumbynews24) |  |  |
 | [🖼️ Frieze](https://github.com/peterjaric/frieze) | Generate and display AI-generated banner images and slogans in your terminal using Frieze, a mostly silly shell tool. | [@peterjaric](https://github.com/peterjaric) |  |  |
 | [🖼️ Frieze](https://github.com/peterjaric/frieze) | Generate and display AI-generated banner images and slogans in your terminal using Frieze, a mostly silly shell tool. | [@peterjaric](https://github.com/peterjaric) |  |  |
-| [🧠 Insight Engine](https://erbharatmalhotra.github.io/Insight_Engine/) | Requests re-approval for Insight Engine after temporary removal during endpoint migration and update to current gen.pollinations.ai endpoints; previously approved as Flower tier. | [@ErBharatMalhotra](https://github.com/ErBharatMalhotra) |  |  |
+| [🧠 Insight Engine](https://erbharatmalhotra.github.io/Insight_Engine/) | Requests re-approval for Insight Engine after temporary removal during endpoint migration and update to current gen.pollinations.ai endpoints. | [@ErBharatMalhotra](https://github.com/ErBharatMalhotra) |  |  |
 | [🌙 DREAMMELD](https://dreammeld-1.vercel.app/) | AI dream interpretation with visual imagery and ambient soundscapes, powered by Pollinations. | [@newsister](https://github.com/newsister) |  |  |
 | [🖼️ Multimodal Image Generator](https://mowenyun.github.io/multimodal-image-generator/) | Generates images via the pollinations.ai API using httpsgen.pollinations.aiimage... from an open-source CLI GitHub Pages demo with configurable parameters and model size in Multimodal Image Generator. | [@mowenyun](https://github.com/mowenyun) |  |  |
 | [🎨 Polli-com](https://polli-com.vercel.app/) | Generate images on mobile with Polli-com, a client-side PWA built on Pollinations.ai with a Prompt Builder, optional local ComfyUI bridge, and role-based access control. | [@abhi5hek1979](https://github.com/abhi5hek1979) |  |  |
@@ -268,7 +268,6 @@ Users pay with their own balance — developers pay $0. [Learn more →](../BRIN
 | [🖼️ Zelos AI image generator](https://websim.ai/@ISWEARIAMNOTADDICTEDTOPILLOW/ai-image-prompt-generator) | Generates images using Pollinations for prompt enhancement and image synthesis. | [@RandomGuy-nobody](https://github.com/RandomGuy-nobody) |  |  |
 
 </details>
-
 ---
 
 ## 🎬 Video & Audio
@@ -1006,4 +1005,3 @@ Users pay with their own balance — developers pay $0. [Learn more →](../BRIN
 | [🥗 CalcuBite AI](https://calcubite.vercel.app/) | Snap food photos to estimate calories and nutrients; ads unlock more scans | [@sugamdeol](https://github.com/sugamdeol) |  |  |
 
 </details>
-

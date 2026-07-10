@@ -1,25 +1,18 @@
 import { SELF } from "cloudflare:test";
 import { describe, expect } from "vitest";
-import { test } from "./fixtures.ts";
+import { createApiKeyViaApi, test } from "./fixtures.ts";
 
 describe("GET /api/account/key/usage", () => {
     test("forwards the calling key's id to the usage pipe (no scope needed)", async ({
-        auth,
         sessionToken,
         mocks,
     }) => {
         await mocks.enable("tinybird");
 
-        const created = await auth.apiKey.create({
+        const created = await createApiKeyViaApi(sessionToken, {
             name: "my-key",
-            fetchOptions: {
-                headers: {
-                    Cookie: `better-auth.session_token=${sessionToken}`,
-                },
-            },
         });
-        if (!created.data) throw new Error("Failed to create key");
-        const myKeyId = created.data.id;
+        const myKeyId = created.id;
 
         mocks.tinybird.state.usageResponse = [
             {
@@ -49,7 +42,7 @@ describe("GET /api/account/key/usage", () => {
 
         const res = await SELF.fetch(
             "http://localhost:3000/api/account/key/usage",
-            { headers: { Authorization: `Bearer ${created.data.key}` } },
+            { headers: { Authorization: `Bearer ${created.key}` } },
         );
         expect(res.status).toBe(200);
         const data = (await res.json()) as {

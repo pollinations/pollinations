@@ -153,7 +153,7 @@ ads to earn pollen is winning! 🗳️
 
 ## ⚡ pollen update
 
-hourly grants are ending. existing balances remain spendable, and paid pollen packs keep working.
+hourly grants have ended. existing balances remain spendable, and paid pollen packs keep working.
 
 ## 🛠️ app showcase
 

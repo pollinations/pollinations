@@ -206,15 +206,6 @@ app.get("/api/kpi/total-users", async (c) => {
     return c.json({ total: row?.total || 0 });
 });
 
-// Tinybird: Tier distribution (from Oct 1, 2025)
-app.get("/api/kpi/tiers", async (c) => {
-    const result = await fetchTinybird(c.env, "kpi_tier_distribution", {
-        min_created_at: DATA_START_TIMESTAMP_SEC,
-    });
-    if (result.error) return c.json({ error: result.error, data: [] }, 500);
-    return c.json({ data: result.data });
-});
-
 // D7 Activations: users who made their first API request within 7 days of registration
 // Fully computed in Tinybird by joining d1_user with generation_event
 app.get("/api/kpi/activations", async (c) => {

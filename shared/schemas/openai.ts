@@ -305,13 +305,7 @@ export const CreateChatCompletionRequestSchema = z
             .optional()
             .default(0),
         response_format: ResponseFormatUnionSchema.optional(),
-        seed: z
-            .number()
-            .int()
-            .min(-1)
-            .max(Number.MAX_SAFE_INTEGER)
-            .nullable()
-            .optional(),
+        seed: z.number().int().min(-1).max(2147483647).nullable().optional(),
         stop: z
             .union([z.string().nullable(), z.array(z.string()).min(1).max(4)])
             .optional(),

@@ -970,6 +970,28 @@ fixtureTest(
         });
 
         const enterApi = await createEnterCommunityApi();
+        const directPublishResponse = await fetchEnterApi(
+            enterApi,
+            new Request("http://localhost:3000/api/community-endpoints", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Cookie: await signedSessionCookie(sessionToken),
+                },
+                body: JSON.stringify({
+                    name: `${modelName}-direct-public`,
+                    description: "Denied public community endpoint",
+                    baseUrl: "https://api.example.com/v1",
+                    upstreamModel: "gpt-4.1-mini",
+                    bearerToken: "sk_saved_token",
+                    visibility: "public",
+                    promptTextPrice: 0.1,
+                    completionTextPrice: 0.1,
+                }),
+            }),
+        );
+        expect(directPublishResponse.status).toBe(403);
+
         // Creation is open to everyone: a non-allowlisted user can register a
         // private model for their own use.
         const registerResponse = await fetchEnterApi(
@@ -1219,6 +1241,9 @@ fixtureTest(
                     baseUrl: "https://gen.pollinations.ai/v1",
                     upstreamModel: "openai",
                     bearerToken: "Bearer sk_pollinations_upstream",
+                    visibility: "public",
+                    promptTextPrice: 0.1,
+                    completionTextPrice: 0.1,
                 }),
             }),
         );
@@ -1229,33 +1254,14 @@ fixtureTest(
             modelId: string;
             baseUrl: string;
             upstreamModel: string;
+            visibility: string;
+            promptTextPrice: number;
+            completionTextPrice: number;
         };
         expect(registered).toMatchObject({
             modelId: communityModelId(ownerGithubUsername, modelName),
             baseUrl: "https://gen.pollinations.ai/v1",
             upstreamModel: "openai",
-        });
-
-        const publishResponse = await fetchEnterApi(
-            enterApi,
-            new Request(
-                `http://localhost:3000/api/community-endpoints/${registered.id}/update`,
-                {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                        Cookie: await signedSessionCookie(sessionToken),
-                    },
-                    body: JSON.stringify({
-                        visibility: "public",
-                        promptTextPrice: 0.1,
-                        completionTextPrice: 0.1,
-                    }),
-                },
-            ),
-        );
-        expect(publishResponse.status).toBe(200);
-        await expect(publishResponse.json()).resolves.toMatchObject({
             visibility: "public",
             promptTextPrice: 0.1,
             completionTextPrice: 0.1,

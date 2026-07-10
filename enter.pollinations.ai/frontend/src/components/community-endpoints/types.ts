@@ -28,7 +28,7 @@ export type EndpointFormState = {
     description: string;
     // private → owner-only, shown only to the owner, no owner-set price;
     // public → globally listed + billed to callers.
-    // Only editable by allowlisted owners; defaults private for everyone else.
+    // Public is selectable only by allowlisted owners; defaults private.
     visibility: CommunityEndpointVisibility;
     baseUrl: string;
     upstreamModel: string;
@@ -40,8 +40,7 @@ export type EndpointPayload = {
     description: string;
     baseUrl: string;
     upstreamModel: string;
-    // Omitted on create (defaults private server-side); set by the publish flow.
-    visibility?: CommunityEndpointVisibility;
+    visibility: CommunityEndpointVisibility;
 } & CommunityEndpointPrices;
 
 export type CommunityEndpointUsage = Record<string, unknown>;

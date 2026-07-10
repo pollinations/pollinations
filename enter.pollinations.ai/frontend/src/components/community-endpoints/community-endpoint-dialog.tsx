@@ -44,10 +44,12 @@ import {
 
 function ToggleButton({
     active,
+    disabled = false,
     onClick,
     children,
 }: {
     active: boolean;
+    disabled?: boolean;
     onClick: () => void;
     children: ReactNode;
 }) {
@@ -57,7 +59,14 @@ function ToggleButton({
             size="sm"
             intent={active ? "info" : undefined}
             aria-pressed={active}
-            className={active ? "text-sm" : "text-sm opacity-70"}
+            className={
+                active
+                    ? "text-sm"
+                    : disabled
+                      ? "text-sm opacity-40"
+                      : "text-sm opacity-70"
+            }
+            disabled={disabled}
             onClick={onClick}
         >
             {children}
@@ -68,8 +77,8 @@ function ToggleButton({
 type CommunityEndpointDialogProps = {
     /** Present in edit mode (prefills the form); omit to create. */
     endpoint?: CommunityEndpoint;
-    // Allowlisted owners see the Visibility control; everyone else creates and
-    // edits private-only models.
+    // Allowlisted owners can choose Public. Everyone else sees the same
+    // lifecycle control with Public disabled.
     canPublish: boolean;
     open: boolean;
     onOpenChange: (open: boolean) => void;
@@ -356,32 +365,33 @@ export function CommunityEndpointDialog({
                         </FieldStack>
                     </div>
 
-                    {isEdit && canPublish && (
-                        <FieldStack
-                            label="Visibility"
-                            helper={
-                                isShared
-                                    ? "Public: listed in /models and callable by anyone. Set your per-1M-token pricing below."
-                                    : "Private: callable only by you and shown only in model lists authenticated with your API key."
-                            }
-                            alignLabelRow
-                        >
-                            <div className="flex gap-2">
-                                <ToggleButton
-                                    active={form.visibility === "private"}
-                                    onClick={() => updateVisibility("private")}
-                                >
-                                    Private
-                                </ToggleButton>
-                                <ToggleButton
-                                    active={form.visibility === "public"}
-                                    onClick={() => updateVisibility("public")}
-                                >
-                                    Public
-                                </ToggleButton>
-                            </div>
-                        </FieldStack>
-                    )}
+                    <FieldStack
+                        label="Visibility"
+                        helper={
+                            isShared
+                                ? "Public: listed in /models and callable by anyone. Test the endpoint and set your per-1M-token pricing below."
+                                : canPublish
+                                  ? "Private: callable only by you and shown only in model lists authenticated with your API key."
+                                  : "Private: callable only by you. Publishing publicly requires approval."
+                        }
+                        alignLabelRow
+                    >
+                        <div className="flex gap-2">
+                            <ToggleButton
+                                active={form.visibility === "private"}
+                                onClick={() => updateVisibility("private")}
+                            >
+                                Private
+                            </ToggleButton>
+                            <ToggleButton
+                                active={form.visibility === "public"}
+                                disabled={!canPublish}
+                                onClick={() => updateVisibility("public")}
+                            >
+                                Public
+                            </ToggleButton>
+                        </div>
+                    </FieldStack>
 
                     <div className="grid gap-4 sm:grid-cols-2">
                         <FieldStack
@@ -603,7 +613,9 @@ export function CommunityEndpointDialog({
                             ? "Saving…"
                             : isEdit
                               ? "Save Model"
-                              : "Add Model"}
+                              : isShared
+                                ? "Publish Model"
+                                : "Add Private Model"}
                     </Button>
                 </div>
             </form>

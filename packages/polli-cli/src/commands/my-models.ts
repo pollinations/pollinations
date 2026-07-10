@@ -145,33 +145,38 @@ const list = new Command("list")
         }
     });
 
-const create = new Command("create")
-    .description("Register a private OpenAI-compatible model endpoint")
-    .requiredOption("--name <name>", "Model name")
-    .option("--description <text>", "Model description")
-    .requiredOption("--base-url <url>", "OpenAI-compatible base URL")
-    .option("--upstream-model <model>", "Upstream model id")
-    .requiredOption("--bearer-token <token>", "Upstream bearer token")
-    .action(async (opts) => {
-        const key = requireKey();
-        try {
-            const created = await gen<MyModel>("/account/my-models", {
-                apiKey: key,
-                method: "POST",
-                body: modelBody(opts, true),
-            });
-            if (getOutputMode() === "json") printResult(created);
-            else {
-                printSuccess(`Model registered: ${created.modelId}`);
-                printModels([created]);
-            }
-        } catch (err) {
-            printError(
-                `Failed to create model: ${err instanceof Error ? err.message : "unknown"}`,
-            );
-            process.exit(1);
+const create = addPriceOptions(
+    new Command("create")
+        .description("Register an OpenAI-compatible model endpoint")
+        .requiredOption("--name <name>", "Model name")
+        .option("--description <text>", "Model description")
+        .requiredOption("--base-url <url>", "OpenAI-compatible base URL")
+        .option("--upstream-model <model>", "Upstream model id")
+        .requiredOption("--bearer-token <token>", "Upstream bearer token")
+        .option(
+            "--visibility <visibility>",
+            "Model visibility: private (default) or public",
+        ),
+).action(async (opts) => {
+    const key = requireKey();
+    try {
+        const created = await gen<MyModel>("/account/my-models", {
+            apiKey: key,
+            method: "POST",
+            body: modelBody(opts, true),
+        });
+        if (getOutputMode() === "json") printResult(created);
+        else {
+            printSuccess(`Model registered: ${created.modelId}`);
+            printModels([created]);
         }
-    });
+    } catch (err) {
+        printError(
+            `Failed to create model: ${err instanceof Error ? err.message : "unknown"}`,
+        );
+        process.exit(1);
+    }
+});
 
 const update = addPriceOptions(
     new Command("update")

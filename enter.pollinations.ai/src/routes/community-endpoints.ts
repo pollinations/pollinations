@@ -60,9 +60,8 @@ const EndpointFieldsSchema = {
 
 const CreateEndpointSchema = z.object({
     ...EndpointFieldsSchema,
-    // Creation and publishing are deliberately separate. An explicit public
-    // value is rejected; publish later through the update endpoint.
-    visibility: z.literal("private").optional().default("private"),
+    visibility: VisibilitySchema.optional().default("private"),
+    ...UpdatePriceFieldsSchema,
 });
 const UpdateEndpointSchema = z.object({
     name: EndpointFieldsSchema.name.optional(),
@@ -364,7 +363,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
             tags: ["👤 Account"],
             summary: "Create My Model",
             description:
-                "Register a private community text model. Publishing is a separate update available to allowlisted accounts. API keys require `account:keys`. The upstream bearer token is encrypted and never returned.",
+                "Register a private or public community text model. Private is the default. Public models require an allowlisted account with positive text pricing. API keys require `account:keys`. The upstream bearer token is encrypted and never returned.",
             responses: {
                 200: {
                     description: "Created community text model",
@@ -390,6 +389,11 @@ export const communityEndpointsRoutes = new Hono<Env>()
                 user.id,
             );
             await ensureModelNameAvailable(db, user.id, input.name);
+            const prices =
+                input.visibility === "public"
+                    ? communityEndpointPrices(input)
+                    : communityEndpointPrices({});
+            await enforceSharingRules(db, user.id, input.visibility, prices);
             const id = crypto.randomUUID();
             const [row] = await db
                 .insert(schema.communityEndpoint)
@@ -405,7 +409,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
                         c.env.BETTER_AUTH_SECRET,
                     ),
                     visibility: input.visibility,
-                    ...communityEndpointPrices({}),
+                    ...prices,
                     createdAt: new Date(),
                     updatedAt: new Date(),
                 })

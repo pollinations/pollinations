@@ -57,15 +57,7 @@ export function CommunityEndpoints({
         bearerToken: string,
     ): Promise<void> {
         const response = await apiClient.account["my-models"].$post({
-            // Creation is intentionally private and unpriced. Visibility and
-            // pricing are only sent by the later edit/publish action.
-            json: {
-                name: payload.name,
-                description: payload.description,
-                baseUrl: payload.baseUrl,
-                upstreamModel: payload.upstreamModel,
-                bearerToken,
-            },
+            json: { ...payload, bearerToken },
         });
         if (!response.ok) throw new Error(await readError(response));
         await loadEndpoints();
@@ -150,7 +142,7 @@ export function CommunityEndpoints({
                             </p>
                             <p className="text-sm text-theme-text-muted">
                                 {canPublish
-                                    ? "Register an OpenAI-compatible endpoint privately, test it with your key, then make it public with your own per-1M-token pricing."
+                                    ? "Register an OpenAI-compatible endpoint for yourself, or test and publish it immediately with your own per-1M-token pricing."
                                     : "Register an OpenAI-compatible endpoint as a private model callable only by you."}
                             </p>
                         </Surface>

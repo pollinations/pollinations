@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import chalk from "chalk";
 import { Command } from "commander";
 import { gen, requireKey } from "../lib/api.js";
@@ -53,7 +54,12 @@ function addPriceOptions(command: Command): Command {
     for (const [flag, description] of PRICE_FLAGS) {
         command.option(flag, description);
     }
-    return command;
+    return command.option(
+        "--tool-price <name=price>",
+        "Per-call tool fee in Pollen, repeatable (e.g. --tool-price web_search=0.005). On update, replaces the whole map.",
+        (value: string, previous: string[]) => [...previous, value],
+        [] as string[],
+    );
 }
 
 function readPriceOptions(opts: Record<string, unknown>) {
@@ -96,14 +102,54 @@ function modelBody(opts: Record<string, unknown>, includeRequired: boolean) {
         body.visibility = opts.visibility;
     }
 
-    if (includeRequired) {
-        for (const required of ["name", "baseUrl", "bearerToken"]) {
-            if (!body[required]) {
+    if (opts.promptAgent !== undefined) {
+        try {
+            body.promptAgent = JSON.parse(
+                readFileSync(String(opts.promptAgent), "utf8"),
+            );
+        } catch (err) {
+            printError(
+                `Failed to read/parse --prompt-agent JSON file: ${err instanceof Error ? err.message : "unknown"}`,
+            );
+            process.exit(1);
+        }
+    }
+
+    const toolPriceEntries = opts.toolPrice as string[] | undefined;
+    if (toolPriceEntries && toolPriceEntries.length > 0) {
+        const toolPrices: Record<string, number> = {};
+        for (const entry of toolPriceEntries) {
+            const separator = entry.indexOf("=");
+            const name = separator > 0 ? entry.slice(0, separator) : "";
+            const price = Number(entry.slice(separator + 1));
+            if (!name || !Number.isFinite(price) || price <= 0) {
                 printError(
-                    `--${required.replace(/[A-Z]/g, (c) => `-${c.toLowerCase()}`)} is required`,
+                    `--tool-price must be <name>=<positive number>, got '${entry}'`,
                 );
                 process.exit(1);
             }
+            toolPrices[name] = price;
+        }
+        body.toolPrices = toolPrices;
+    }
+
+    if (includeRequired) {
+        if (!body.name) {
+            printError("--name is required");
+            process.exit(1);
+        }
+        const modeCount = [body.baseUrl, body.promptAgent].filter(
+            (value) => value !== undefined,
+        ).length;
+        if (modeCount !== 1) {
+            printError("Provide exactly one of --base-url or --prompt-agent");
+            process.exit(1);
+        }
+        // A bearer token is only meaningful for a self-hosted --base-url
+        // endpoint; a prompt agent mints and manages its own.
+        if (body.baseUrl !== undefined && !body.bearerToken) {
+            printError("--bearer-token is required with --base-url");
+            process.exit(1);
         }
     }
 
@@ -150,9 +196,13 @@ const create = addPriceOptions(
         .description("Register an OpenAI-compatible model endpoint")
         .requiredOption("--name <name>", "Model name")
         .option("--description <text>", "Model description")
-        .requiredOption("--base-url <url>", "OpenAI-compatible base URL")
+        .option("--base-url <url>", "OpenAI-compatible base URL")
+        .option(
+            "--prompt-agent <file>",
+            "JSON config file for a no-code prompt agent: { systemPrompt, baseModel, tools?, mcpServers? }",
+        )
         .option("--upstream-model <model>", "Upstream model id")
-        .requiredOption("--bearer-token <token>", "Upstream bearer token")
+        .option("--bearer-token <token>", "Upstream bearer token")
         .option(
             "--visibility <visibility>",
             "Model visibility: private (default) or public",
@@ -185,6 +235,10 @@ const update = addPriceOptions(
         .option("--name <name>", "Model name")
         .option("--description <text>", "Model description")
         .option("--base-url <url>", "OpenAI-compatible base URL")
+        .option(
+            "--prompt-agent <file>",
+            "JSON config file to redeploy the prompt agent from",
+        )
         .option("--upstream-model <model>", "Upstream model id")
         .option("--bearer-token <token>", "Upstream bearer token")
         .option(

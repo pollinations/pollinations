@@ -201,6 +201,9 @@ export const communityEndpoint = sqliteTable("community_endpoint", {
   name: text("name").notNull(),
   description: text("description"),
   baseUrl: text("base_url").notNull(),
+  // Prompt agents store their config JSON (+ minted key id) here; null when
+  // the owner hosts the endpoint themselves (baseUrl-only registration).
+  promptAgent: text("prompt_agent"),
   upstreamModel: text("upstream_model").notNull(),
   bearerTokenCiphertext: text("bearer_token_ciphertext").notNull(),
   // Models are created private (owner-only and free). Publishing is a separate,
@@ -208,6 +211,8 @@ export const communityEndpoint = sqliteTable("community_endpoint", {
   visibility: text("visibility", { enum: ["private", "public"] })
     .default("private")
     .notNull(),
+  // JSON map of per-call tool fees ({"web_search": 0.01}); null = none.
+  toolPrices: text("tool_prices"),
   promptTextPrice: real("prompt_text_price").notNull(),
   promptCachedPrice: real("prompt_cached_price").default(0).notNull(),
   promptCacheWritePrice: real("prompt_cache_write_price").default(0).notNull(),

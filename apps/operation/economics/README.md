@@ -3,7 +3,7 @@
 Economics is Pollinations' private cash, runway, provider-cost, credit, and unit
 economics app. Its canonical public hostname is `economics.pollinations.ai`.
 
-Run locally from the web package:
+Run locally from this directory:
 
 ```bash
 npm run dev

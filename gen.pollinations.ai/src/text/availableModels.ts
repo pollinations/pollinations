@@ -54,6 +54,18 @@ const models: ModelDefinition[] = [
         config: portkeyConfig["gpt-5.5"],
     },
     {
+        name: "gpt-5.6-sol",
+        config: portkeyConfig["gpt-5.6-sol"],
+    },
+    {
+        name: "gpt-5.6-terra",
+        config: portkeyConfig["gpt-5.6-terra"],
+    },
+    {
+        name: "gpt-5.6-luna",
+        config: portkeyConfig["gpt-5.6-luna"],
+    },
+    {
         name: "mercury",
         config: portkeyConfig["mercury-2"],
         transform: stripReasoning,

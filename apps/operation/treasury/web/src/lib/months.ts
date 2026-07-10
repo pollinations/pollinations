@@ -4,6 +4,9 @@ import { fmtMonthYear } from "./format";
 const MONTH_RE = /^\d{4}-\d{2}$/;
 const YEAR_RE = /^\d{4}$/;
 
+export type MonthFilterValue = string | readonly string[];
+export type ValueFilter = string | readonly string[];
+
 export function isYearFilter(value: string): boolean {
     return YEAR_RE.test(value);
 }
@@ -16,10 +19,23 @@ export function monthLabel(month: string): string {
 // filter is "" (everything), "YYYY" (whole year) or "YYYY-MM"; value may be a
 // month or a full date. Undated rows stay visible in all/year views, but not
 // when drilling into one specific month.
-export function matchesMonth(value: string, filter: string): boolean {
+export function matchesMonth(value: string, filter: MonthFilterValue): boolean {
+    if (typeof filter !== "string") {
+        return (
+            filter.length === 0 ||
+            filter.some((item) => matchesMonth(value, item))
+        );
+    }
     if (!filter) return true;
     if (!value) return filter.length === 4;
     return value.startsWith(filter);
+}
+
+export function matchesValue(value: string, filter: ValueFilter): boolean {
+    if (typeof filter !== "string") {
+        return filter.length === 0 || filter.includes(value);
+    }
+    return filter === "" || filter === "all" || value === filter;
 }
 
 // The analysis window starts 2026-01 (the December hard rule).

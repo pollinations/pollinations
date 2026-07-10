@@ -1,44 +1,15 @@
-import {
-    Button,
-    ChevronIcon,
-    Dropdown,
-    DropdownItem,
-    TabButton,
-} from "@pollinations/ui";
+import { MultiSelect, TabButton } from "@pollinations/ui";
 import type { ReactNode } from "react";
 import { monthLabel, yearsOf } from "../lib/months";
 
-// One filter language for every tab: pill buttons for months, a labeled
-// select for enums, a switch for boolean views.
+// Date uses visible month tabs; other filters use dropdown multi-selects.
+// Empty selection means "all".
 
 export function FilterBar({ children }: { children: ReactNode }) {
     return (
-        <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+        <div className="flex w-full flex-wrap items-center gap-x-4 gap-y-2">
             {children}
         </div>
-    );
-}
-
-function Pill({
-    active,
-    children,
-    onClick,
-    size = "month",
-}: {
-    active: boolean;
-    children: ReactNode;
-    onClick: () => void;
-    size?: "month" | "year";
-}) {
-    return (
-        <TabButton
-            active={active}
-            onClick={onClick}
-            size={size === "year" ? "md" : "sm"}
-            variant="soft"
-        >
-            {children}
-        </TabButton>
     );
 }
 
@@ -48,37 +19,49 @@ export function MonthFilter({
     value,
 }: {
     months: string[];
-    onChange: (value: string) => void;
-    value: string;
+    onChange: (value: string[]) => void;
+    value: string[];
 }) {
     if (months.length === 0) return null;
+
+    const toggleMonth = (month: string) => {
+        const next = value.includes(month)
+            ? value.filter((item) => item !== month)
+            : [...value, month];
+        onChange(months.filter((item) => next.includes(item)));
+    };
+
     return (
         <fieldset
             className="flex min-w-0 flex-wrap items-center gap-1.5 text-sm text-theme-text-soft"
-            aria-label="month filter"
+            aria-label="date filter"
         >
+            <span className="mr-1 font-medium">date</span>
             {yearsOf(months).map((year) => (
                 <span
                     key={year}
                     className="inline-flex flex-wrap items-center gap-1.5"
                 >
-                    <Pill
-                        active={value === year || value === ""}
-                        onClick={() => onChange(year)}
-                        size="year"
+                    <TabButton
+                        active={value.length === 0}
+                        onClick={() => onChange([])}
+                        size="md"
+                        variant="soft"
                     >
                         {year}
-                    </Pill>
+                    </TabButton>
                     {months
                         .filter((month) => month.startsWith(year))
                         .map((month) => (
-                            <Pill
+                            <TabButton
                                 key={month}
-                                active={value === month}
-                                onClick={() => onChange(month)}
+                                active={value.includes(month)}
+                                onClick={() => toggleMonth(month)}
+                                size="sm"
+                                variant="soft"
                             >
                                 {monthLabel(month)}
-                            </Pill>
+                            </TabButton>
                         ))}
                 </span>
             ))}
@@ -86,57 +69,29 @@ export function MonthFilter({
     );
 }
 
-function filterOptionLabel(option: string, label: string) {
-    if (option === "all") {
-        if (label === "vendor") return "All Vendor";
-        if (label === "category") return "All Category";
-        if (label === "type") return "All Type";
-    }
-    return option || "(blank)";
-}
-
-export function FilterSelect({
+export function FilterMultiSelect({
     label,
     onChange,
     options,
+    placeholder,
     value,
 }: {
     label: string;
-    onChange: (value: string) => void;
+    onChange: (value: string[]) => void;
     options: string[];
-    value: string;
+    placeholder: string;
+    value: string[];
 }) {
     return (
-        <div className="inline-flex w-fit items-center gap-2 text-sm text-theme-text-soft">
-            <Dropdown
-                trigger={(open) => (
-                    <Button
-                        aria-label={`${label} filter`}
-                        className="max-w-56 gap-2"
-                    >
-                        <span className="truncate">
-                            {filterOptionLabel(value, label)}
-                        </span>
-                        <ChevronIcon expanded={open} />
-                    </Button>
-                )}
-            >
-                {(close) => (
-                    <div className="max-h-72 w-56 overflow-y-auto p-1">
-                        {options.map((option) => (
-                            <DropdownItem
-                                key={option}
-                                onClick={() => {
-                                    onChange(option);
-                                    close();
-                                }}
-                            >
-                                {filterOptionLabel(option, label)}
-                            </DropdownItem>
-                        ))}
-                    </div>
-                )}
-            </Dropdown>
-        </div>
+        <MultiSelect
+            label={label}
+            placeholder={placeholder}
+            selected={value}
+            onChange={onChange}
+            options={options.map((option) => ({
+                value: option,
+                label: option || "(blank)",
+            }))}
+        />
     );
 }

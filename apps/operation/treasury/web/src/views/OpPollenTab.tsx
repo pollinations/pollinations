@@ -8,21 +8,24 @@ import {
 import { useMemo } from "react";
 import {
     DataTable,
-    RAW_OP_STICKY_HEADER,
-    RawOpTableScroller,
+    GROUP_BORDER,
+    HeaderHint,
     type SortColumn,
+    TableScroller,
     useSortableRows,
     withUniqueRowKeys,
 } from "../components/DataTable";
-import { SourceCell } from "../components/Provenance";
 import { fmtNumber, fmtPeriod } from "../lib/format";
-import { matchesMonth } from "../lib/months";
+import {
+    type MonthFilterValue,
+    matchesMonth,
+    matchesValue,
+    type ValueFilter,
+} from "../lib/months";
 import type { Data, OpPollenRow } from "../types";
 
 function opPollenKey(row: OpPollenRow) {
-    return [row.month, row.source, row.vendor, row.model, row.currency].join(
-        "|",
-    );
+    return [row.month, row.vendor, row.model, row.currency].join("|");
 }
 
 export function OpPollenTab({
@@ -31,19 +34,18 @@ export function OpPollenTab({
     vendor = "all",
 }: {
     data: Data;
-    month?: string;
-    vendor?: string;
+    month?: MonthFilterValue;
+    vendor?: ValueFilter;
 }) {
     const baseRows = useMemo(() => {
         return (data.opPollen ?? []).filter(
             (row) =>
                 matchesMonth(row.month, month) &&
-                (vendor === "all" || row.vendor === vendor),
+                matchesValue(row.vendor, vendor),
         );
     }, [data.opPollen, month, vendor]);
     const sortColumns = useMemo<SortColumn<OpPollenRow>[]>(
         () => [
-            { key: "source", value: (row) => row.source },
             { key: "month", value: (row) => row.month },
             { key: "vendor", value: (row) => row.vendor },
             { key: "model", value: (row) => row.model },
@@ -67,54 +69,162 @@ export function OpPollenTab({
     });
 
     return (
-        <RawOpTableScroller>
-            <DataTable className={RAW_OP_STICKY_HEADER}>
+        <TableScroller>
+            <DataTable>
                 <TableHead>
                     <TableRow>
-                        <TableHeaderCell {...headerProps("source")}>
-                            source
+                        <TableHeaderCell rowSpan={2} {...headerProps("month")}>
+                            Month
                         </TableHeaderCell>
-                        <TableHeaderCell {...headerProps("month")}>
-                            month
+                        <TableHeaderCell rowSpan={2} {...headerProps("vendor")}>
+                            Vendor
                         </TableHeaderCell>
-                        <TableHeaderCell {...headerProps("vendor")}>
-                            vendor
+                        <TableHeaderCell rowSpan={2} {...headerProps("model")}>
+                            Model
                         </TableHeaderCell>
-                        <TableHeaderCell {...headerProps("model")}>
-                            model
+                        <TableHeaderCell
+                            rowSpan={2}
+                            {...headerProps("currency")}
+                        >
+                            Currency
                         </TableHeaderCell>
-                        <TableHeaderCell {...headerProps("currency")}>
-                            currency
+                        <TableHeaderCell
+                            colSpan={2}
+                            align="center"
+                            className={GROUP_BORDER}
+                        >
+                            Cost
                         </TableHeaderCell>
-                        <TableHeaderCell {...headerProps("cost_paid")}>
-                            cost_paid
+                        <TableHeaderCell
+                            colSpan={2}
+                            align="center"
+                            className={GROUP_BORDER}
+                        >
+                            Price
                         </TableHeaderCell>
-                        <TableHeaderCell {...headerProps("cost_quests")}>
-                            cost_quests
+                        <TableHeaderCell
+                            colSpan={2}
+                            align="center"
+                            className={GROUP_BORDER}
+                        >
+                            BYOP
                         </TableHeaderCell>
-                        <TableHeaderCell {...headerProps("price_paid")}>
-                            price_paid
+                        <TableHeaderCell
+                            colSpan={2}
+                            align="center"
+                            className={GROUP_BORDER}
+                        >
+                            Model
                         </TableHeaderCell>
-                        <TableHeaderCell {...headerProps("price_quests")}>
-                            price_quests
+                        <TableHeaderCell
+                            colSpan={2}
+                            align="center"
+                            className={GROUP_BORDER}
+                        >
+                            Requests
                         </TableHeaderCell>
-                        <TableHeaderCell {...headerProps("byop_paid")}>
-                            byop_paid
+                    </TableRow>
+                    <TableRow>
+                        <TableHeaderCell
+                            align="right"
+                            className={GROUP_BORDER}
+                            {...headerProps("cost_paid")}
+                        >
+                            <HeaderHint
+                                hint={{
+                                    meaning:
+                                        "Provider cost for usage served through paid Pollen.",
+                                    tables: "op_pollen_api",
+                                    sources: "TB",
+                                }}
+                            >
+                                Paid
+                            </HeaderHint>
                         </TableHeaderCell>
-                        <TableHeaderCell {...headerProps("byop_quests")}>
-                            byop_quests
+                        <TableHeaderCell
+                            align="right"
+                            {...headerProps("cost_quests")}
+                        >
+                            <HeaderHint
+                                hint={{
+                                    meaning:
+                                        "Provider cost for usage served through quest Pollen.",
+                                    tables: "op_pollen_api",
+                                    sources: "TB",
+                                }}
+                            >
+                                Quest
+                            </HeaderHint>
                         </TableHeaderCell>
-                        <TableHeaderCell {...headerProps("model_paid")}>
-                            model_paid
+                        <TableHeaderCell
+                            align="right"
+                            className={GROUP_BORDER}
+                            {...headerProps("price_paid")}
+                        >
+                            <HeaderHint
+                                hint={{
+                                    meaning:
+                                        "Pollen charged to paid balances before ecosystem shares.",
+                                    tables: "op_pollen_api",
+                                    sources: "TB",
+                                }}
+                            >
+                                Paid
+                            </HeaderHint>
                         </TableHeaderCell>
-                        <TableHeaderCell {...headerProps("model_quests")}>
-                            model_quests
+                        <TableHeaderCell
+                            align="right"
+                            {...headerProps("price_quests")}
+                        >
+                            <HeaderHint
+                                hint={{
+                                    meaning:
+                                        "Pollen value consumed from quest balances.",
+                                    tables: "op_pollen_api",
+                                    sources: "TB",
+                                }}
+                            >
+                                Quest
+                            </HeaderHint>
                         </TableHeaderCell>
-                        <TableHeaderCell {...headerProps("requests_paid")}>
-                            requests_paid
+                        <TableHeaderCell
+                            align="right"
+                            className={GROUP_BORDER}
+                            {...headerProps("byop_paid")}
+                        >
+                            Paid
                         </TableHeaderCell>
-                        <TableHeaderCell {...headerProps("requests_quests")}>
-                            requests_quests
+                        <TableHeaderCell
+                            align="right"
+                            {...headerProps("byop_quests")}
+                        >
+                            Quest
+                        </TableHeaderCell>
+                        <TableHeaderCell
+                            align="right"
+                            className={GROUP_BORDER}
+                            {...headerProps("model_paid")}
+                        >
+                            Paid
+                        </TableHeaderCell>
+                        <TableHeaderCell
+                            align="right"
+                            {...headerProps("model_quests")}
+                        >
+                            Quest
+                        </TableHeaderCell>
+                        <TableHeaderCell
+                            align="right"
+                            className={GROUP_BORDER}
+                            {...headerProps("requests_paid")}
+                        >
+                            Paid
+                        </TableHeaderCell>
+                        <TableHeaderCell
+                            align="right"
+                            {...headerProps("requests_quests")}
+                        >
+                            Quest
                         </TableHeaderCell>
                     </TableRow>
                 </TableHead>
@@ -122,41 +232,53 @@ export function OpPollenTab({
                     {withUniqueRowKeys(rows, opPollenKey).map(
                         ({ key, row }) => (
                             <TableRow key={key}>
-                                <TableCell>
-                                    <SourceCell sources={[row.source]} />
-                                </TableCell>
                                 <TableCell>{fmtPeriod(row.month)}</TableCell>
                                 <TableCell>{row.vendor}</TableCell>
                                 <TableCell>{row.model}</TableCell>
                                 <TableCell>{row.currency}</TableCell>
-                                <TableCell>
+                                <TableCell
+                                    align="right"
+                                    className={GROUP_BORDER}
+                                >
                                     {fmtNumber(row.cost_paid)}
                                 </TableCell>
-                                <TableCell>
+                                <TableCell align="right">
                                     {fmtNumber(row.cost_quests)}
                                 </TableCell>
-                                <TableCell>
+                                <TableCell
+                                    align="right"
+                                    className={GROUP_BORDER}
+                                >
                                     {fmtNumber(row.price_paid)}
                                 </TableCell>
-                                <TableCell>
+                                <TableCell align="right">
                                     {fmtNumber(row.price_quests)}
                                 </TableCell>
-                                <TableCell>
+                                <TableCell
+                                    align="right"
+                                    className={GROUP_BORDER}
+                                >
                                     {fmtNumber(row.byop_paid)}
                                 </TableCell>
-                                <TableCell>
+                                <TableCell align="right">
                                     {fmtNumber(row.byop_quests)}
                                 </TableCell>
-                                <TableCell>
+                                <TableCell
+                                    align="right"
+                                    className={GROUP_BORDER}
+                                >
                                     {fmtNumber(row.model_paid)}
                                 </TableCell>
-                                <TableCell>
+                                <TableCell align="right">
                                     {fmtNumber(row.model_quests)}
                                 </TableCell>
-                                <TableCell>
+                                <TableCell
+                                    align="right"
+                                    className={GROUP_BORDER}
+                                >
                                     {fmtNumber(row.requests_paid)}
                                 </TableCell>
-                                <TableCell>
+                                <TableCell align="right">
                                     {fmtNumber(row.requests_quests)}
                                 </TableCell>
                             </TableRow>
@@ -164,6 +286,6 @@ export function OpPollenTab({
                     )}
                 </TableBody>
             </DataTable>
-        </RawOpTableScroller>
+        </TableScroller>
     );
 }

@@ -35,10 +35,14 @@ import {
     useState,
 } from "react";
 import { ErrorBoundary } from "./components/ErrorBoundary";
-import { FilterBar, FilterSelect, MonthFilter } from "./components/Filters";
+import {
+    FilterBar,
+    FilterMultiSelect,
+    MonthFilter,
+} from "./components/Filters";
 import type { ProvenanceCode } from "./components/Provenance";
 import { insightVendorOptions, vendorPlanes } from "./lib/insights";
-import { collectMonths } from "./lib/months";
+import { collectMonths, type MonthFilterValue } from "./lib/months";
 import { fixturesMode, loadAll, TbError } from "./lib/tb";
 import type { Data } from "./types";
 import { CreditsTab } from "./views/CreditsTab";
@@ -54,25 +58,19 @@ import { VendorsTab } from "./views/VendorsTab";
 type Tab = "data-quality" | "op-transactions" | "op-pollen" | "op-cloud";
 type TreasurySection = "insights" | "raw";
 type InsightTab = "pnl" | "vendors" | "models" | "credits" | "gpu";
-
-function isOpRawTabId(section: TreasurySection, tab: Tab) {
-    return (
-        section === "raw" &&
-        (tab === "op-transactions" || tab === "op-pollen" || tab === "op-cloud")
-    );
-}
-
-function isOpTableViewId(section: TreasurySection, tab: Tab) {
-    return isOpRawTabId(section, tab);
-}
+type RefreshableRawTab = "op-transactions" | "op-pollen";
+type RefreshState = {
+    target: RefreshableRawTab | null;
+    message: string | null;
+    error: string | null;
+};
 
 function isCompactInsightView(
     section: TreasurySection,
     insightTab: InsightTab,
-    tab: Tab,
 ) {
     return (
-        (section === "raw" && tab === "data-quality") ||
+        section === "raw" ||
         (section === "insights" &&
             (insightTab === "pnl" ||
                 insightTab === "credits" ||
@@ -108,8 +106,8 @@ const INSIGHT_TABS: {
     },
     {
         id: "credits",
-        label: "Credits",
-        note: "Credit burn rate and runway per vendor: grants pooled vs witnessed credit burn, current burn rate, and the earlier of exhaustion or expiry - naive math, every caveat is a flag.",
+        label: "Credit",
+        note: "Credit burn rate and runway per vendor: credit pooled vs witnessed credit burn, current burn rate, and the earlier of exhaustion or expiry - naive math, every caveat is a flag.",
         icon: ClockIcon,
     },
 ] satisfies readonly DrawerItem<InsightTab>[];
@@ -123,19 +121,19 @@ const UNIT_ECONOMICS_TABS: {
     {
         id: "vendors",
         label: "Providers",
-        note: "Per-provider unit economics: the Models table rolled up one grain - retained pollen vs true cost from provider actuals, with credit share and break-even.",
+        note: "Per-provider unit economics: the Models table rolled up one grain - retained pollen vs provider cash, with credit shown separately.",
         icon: GlobeIcon,
     },
     {
         id: "models",
         label: "Models",
-        note: "Per-model economics: retained pollen (gross minus byop/model shares) vs true cost allocated from provider actuals.",
+        note: "Per-model economics: retained pollen (gross minus byop/model shares) vs provider cash, with credit shown separately.",
         icon: GenApiIcon,
     },
     {
         id: "gpu",
         label: "GPUs",
-        note: "GPU unit economics from OP Cloud GPU burn and OP Pollen demand: rent, paid and quest Pollen, coverage, efficiency, and break-even.",
+        note: "GPU unit economics from OP Cloud GPU burn and OP Pollen demand: rent, paid and quest, margin, efficiency, and break-even.",
         icon: RocketIcon,
     },
 ] satisfies readonly DrawerItem<InsightTab>[];
@@ -188,7 +186,7 @@ const TABS: {
         label: "Cloud",
         codes: ["API", "CLI", "BQ", "HC"],
         pipe: "op_cloud_api",
-        note: "New cloud ledger combining provider usage, GPU resources, infrastructure, and grants as signed cloud facts.",
+        note: "New cloud ledger combining provider usage, GPU resources, infrastructure, and credit as signed cloud facts.",
         icon: DatabaseIcon,
         rows: (data) => data.opCloud?.length ?? 0,
     },
@@ -196,6 +194,10 @@ const TABS: {
 
 function codesLabel(codes: readonly ProvenanceCode[]) {
     return codes.length ? `${codes.join(", ")} · ` : "";
+}
+
+function isRefreshableRawTab(id: Tab): id is RefreshableRawTab {
+    return id === "op-transactions" || id === "op-pollen";
 }
 
 function MobileMenuButton({
@@ -243,18 +245,87 @@ function DrawerGroup({
 function TreasuryNav({
     data,
     insightTab,
+    refresh,
     section,
     tab,
     onInsightTabChange,
     onRawTabChange,
+    onRefresh,
 }: {
     data: Data | null;
     insightTab: InsightTab;
+    refresh: RefreshState;
     section: TreasurySection;
     tab: Tab;
     onInsightTabChange: (value: InsightTab) => void;
     onRawTabChange: (value: Tab) => void;
+    onRefresh: (value: RefreshableRawTab) => void;
 }) {
+    const rawItem = (item: (typeof TABS)[number]) => {
+        const count = data ? item.rows(data) : null;
+        const title = `${codesLabel(item.codes)}${item.pipe}${data ? ` · ${count} rows` : ""}\n${item.note}`;
+
+        if (isRefreshableRawTab(item.id)) {
+            const refreshId = item.id;
+            const refreshing = refresh.target === item.id;
+            return (
+                <div key={item.id} className="flex items-center gap-1">
+                    <NavItem
+                        type="button"
+                        data-theme="accent"
+                        icon={item.icon}
+                        active={section === "raw" && tab === item.id}
+                        title={title}
+                        onClick={() => onRawTabChange(item.id)}
+                        className="min-w-0 flex-1"
+                    >
+                        <span className="min-w-0 flex-1 truncate">
+                            {item.label}
+                        </span>
+                    </NavItem>
+                    {count == null ? null : (
+                        <Button
+                            type="button"
+                            size="sm"
+                            data-theme="neutral"
+                            disabled={refreshing}
+                            title={`Update ${item.label} for the active month`}
+                            aria-label={`Update ${item.label}`}
+                            onClick={() => onRefresh(refreshId)}
+                            className="h-7 min-w-10 shrink-0 px-2 text-xs text-theme-text-soft"
+                        >
+                            {refreshing ? "..." : count}
+                        </Button>
+                    )}
+                </div>
+            );
+        }
+
+        return (
+            <NavItem
+                key={item.id}
+                type="button"
+                data-theme="accent"
+                icon={item.icon}
+                active={section === "raw" && tab === item.id}
+                title={title}
+                onClick={() => onRawTabChange(item.id)}
+            >
+                <span className="min-w-0 flex-1 truncate">{item.label}</span>
+                {count == null ? null : (
+                    <Chip
+                        data-theme="neutral"
+                        intent="neutral"
+                        size="sm"
+                        className="ml-auto bg-transparent text-theme-text-soft"
+                    >
+                        {count}
+                    </Chip>
+                )}
+            </NavItem>
+        );
+    };
+
     return (
         <nav className="flex flex-col gap-5 pr-2" aria-label="Treasury views">
             <DrawerGroup label="Insights">
@@ -291,33 +362,7 @@ function TreasuryNav({
                     </NavItem>
                 ))}
             </DrawerGroup>
-            <DrawerGroup label="Raw">
-                {TABS.map((item) => (
-                    <NavItem
-                        key={item.id}
-                        type="button"
-                        data-theme="accent"
-                        icon={item.icon}
-                        active={section === "raw" && tab === item.id}
-                        title={`${codesLabel(item.codes)}${item.pipe}${data ? ` · ${item.rows(data)} rows` : ""}\n${item.note}`}
-                        onClick={() => onRawTabChange(item.id)}
-                    >
-                        <span className="min-w-0 flex-1 truncate">
-                            {item.label}
-                        </span>
-                        {data ? (
-                            <Chip
-                                data-theme="neutral"
-                                intent="neutral"
-                                size="sm"
-                                className="ml-auto bg-transparent text-theme-text-soft"
-                            >
-                                {item.rows(data)}
-                            </Chip>
-                        ) : null}
-                    </NavItem>
-                ))}
-            </DrawerGroup>
+            <DrawerGroup label="Raw">{TABS.map(rawItem)}</DrawerGroup>
         </nav>
     );
 }
@@ -326,18 +371,22 @@ function TreasuryDrawer({
     data,
     footer,
     insightTab,
+    refresh,
     section,
     tab,
     onInsightTabChange,
     onRawTabChange,
+    onRefresh,
 }: {
     data: Data | null;
     footer: ReactNode;
     insightTab: InsightTab;
+    refresh: RefreshState;
     section: TreasurySection;
     tab: Tab;
     onInsightTabChange: (value: InsightTab) => void;
     onRawTabChange: (value: Tab) => void;
+    onRefresh: (value: RefreshableRawTab) => void;
 }) {
     return (
         <aside
@@ -354,8 +403,10 @@ function TreasuryDrawer({
                     section={section}
                     tab={tab}
                     insightTab={insightTab}
+                    refresh={refresh}
                     onRawTabChange={onRawTabChange}
                     onInsightTabChange={onInsightTabChange}
+                    onRefresh={onRefresh}
                 />
             </ScrollArea>
             <div className="flex shrink-0 flex-col gap-2 border-t border-theme-text-strong/10 px-1 pt-4">
@@ -370,19 +421,23 @@ function TreasuryShell({
     data,
     footer,
     insightTab,
+    refresh,
     section,
     tab,
     onInsightTabChange,
     onRawTabChange,
+    onRefresh,
 }: {
     children: ReactNode;
     data: Data | null;
     footer: ReactNode;
     insightTab: InsightTab;
+    refresh: RefreshState;
     section: TreasurySection;
     tab: Tab;
     onInsightTabChange: (value: InsightTab) => void;
     onRawTabChange: (value: Tab) => void;
+    onRefresh: (value: RefreshableRawTab) => void;
 }) {
     const [isDrawerOpen, setIsDrawerOpen] = useState(false);
     const drawerRef = useRef<HTMLDivElement>(null);
@@ -428,8 +483,10 @@ function TreasuryShell({
             section={section}
             tab={tab}
             insightTab={insightTab}
+            refresh={refresh}
             onRawTabChange={handleRawTabChange}
             onInsightTabChange={handleInsightTabChange}
+            onRefresh={onRefresh}
         />
     );
 
@@ -483,13 +540,7 @@ function TreasuryShell({
                     buttonRef={menuButtonRef}
                     onOpen={() => setIsDrawerOpen(true)}
                 />
-                <ScrollArea
-                    axis="y"
-                    className={cn(
-                        "min-h-0 flex-1",
-                        isOpTableViewId(section, tab) && "overflow-hidden",
-                    )}
-                >
+                <ScrollArea axis="y" className="min-h-0 flex-1">
                     {children}
                 </ScrollArea>
             </div>
@@ -586,7 +637,7 @@ function viewInfoContent(
                 <strong>Providers</strong>
                 <InfoLine>Models rolled up by provider.</InfoLine>
                 <InfoLine>
-                    Compare retained paid pollen against true provider cost.
+                    Compare retained paid pollen against provider cash.
                 </InfoLine>
                 <InfoLine>
                     Open <strong>Models</strong> to inspect each model per
@@ -601,8 +652,8 @@ function viewInfoContent(
                 <strong>Models</strong>
                 <InfoLine>One row per model per provider.</InfoLine>
                 <InfoLine>
-                    True cost uses provider calibration, then compares against
-                    retained paid pollen.
+                    Provider calibration gives usage; credit is shown separately
+                    from provider cash.
                 </InfoLine>
                 <InfoLine>
                     Quest burn is shown separately from paid margin.
@@ -613,10 +664,10 @@ function viewInfoContent(
     if (insightTab === "credits") {
         return (
             <span className="block max-w-72">
-                <strong>Credits</strong>
-                <InfoLine>Current grant runway, not a period view.</InfoLine>
+                <strong>Credit</strong>
+                <InfoLine>Current credit runway, not a period view.</InfoLine>
                 <InfoLine>
-                    Remaining is granted minus witnessed credit burn.
+                    Remaining is credited amount minus witnessed credit burn.
                 </InfoLine>
                 <InfoLine>
                     Depletion is the earlier of burn-out or expiry.
@@ -646,8 +697,8 @@ function viewInfoContent(
                     One row per GPU, provider, and model from OP Cloud GPU burn.
                 </InfoLine>
                 <InfoLine>
-                    OP Pollen adds requests, paid Pollen, and quest Pollen by
-                    vendor and model.
+                    OP Pollen adds requests, paid, and quest by vendor and
+                    model.
                 </InfoLine>
                 <InfoLine>
                     Flags mark missing model, unknown GPU, or no matching
@@ -700,6 +751,36 @@ async function login(password: string) {
     }
 }
 
+function currentMonth() {
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+}
+
+function refreshMonth(month: string) {
+    return /^\d{4}-\d{2}$/.test(month) ? month : currentMonth();
+}
+
+function activeMonthFilter(selected: readonly string[]): MonthFilterValue {
+    if (selected.length === 0) return "";
+    return selected.length === 1 ? selected[0] : selected;
+}
+
+async function refreshRawTable(target: RefreshableRawTab, month: string) {
+    const res = await fetch(`/api/refresh/${target}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ month }),
+    });
+    const body = (await res.json().catch(() => ({}))) as {
+        message?: string;
+        error?: string;
+    };
+    if (!res.ok) {
+        throw new Error(body.error ?? "Refresh failed");
+    }
+    return body.message ?? "Updated";
+}
+
 function PasswordGate({
     error,
     onSubmit,
@@ -749,11 +830,15 @@ export default function App() {
     const [tab, setTab] = useState<Tab>("op-transactions");
     const [section, setSection] = useState<TreasurySection>("insights");
     const [insightTab, setInsightTab] = useState<InsightTab>("pnl");
-    // Open on the full current audit year by default.
-    const [month, setMonth] = useState("2026");
-    // Keep the selection while it exists in the current tab's vendor set.
-    const [vendor, setVendor] = useState("all");
+    const [selectedMonths, setSelectedMonths] = useState<string[]>([]);
+    const [selectedVendors, setSelectedVendors] = useState<string[]>([]);
     const [attempt, setAttempt] = useState(0);
+    const [refresh, setRefresh] = useState<RefreshState>({
+        target: null,
+        message: null,
+        error: null,
+    });
+    const monthFilterInitialized = useRef(false);
     const ready = fixtures || (sessionChecked && authenticated);
 
     useEffect(() => {
@@ -816,7 +901,10 @@ export default function App() {
     }, [ready, attempt]);
 
     const months = useMemo(() => (data ? collectMonths(data) : []), [data]);
-    const activeMonth = month;
+    const monthFilter = useMemo(
+        () => activeMonthFilter(selectedMonths),
+        [selectedMonths],
+    );
     const vendorOptions = useMemo(
         () => vendorOptionsForTab(data, tab),
         [data, tab],
@@ -833,6 +921,10 @@ export default function App() {
             : vendorOptions.length > 1;
     const activeVendorOptions =
         section === "insights" ? insightVendors : vendorOptions;
+    const selectableVendorOptions = useMemo(
+        () => activeVendorOptions.filter((option) => option !== "all"),
+        [activeVendorOptions],
+    );
     const showPeriodFilter =
         (section === "insights" && insightTab !== "credits") ||
         section === "raw";
@@ -848,33 +940,74 @@ export default function App() {
         for (const row of data?.opTransactions ?? []) {
             if (row.category) categories.add(row.category);
         }
-        return ["all", ...[...categories].sort((a, b) => a.localeCompare(b))];
+        return [...categories].sort((a, b) => a.localeCompare(b));
     }, [data]);
     const typeOptions = useMemo(() => {
         const types = new Set<string>();
         for (const row of data?.opCloud ?? []) {
             if (row.type) types.add(row.type);
         }
-        return ["all", ...[...types].sort((a, b) => a.localeCompare(b))];
+        return [...types].sort((a, b) => a.localeCompare(b));
     }, [data]);
-    const [category, setCategory] = useState("all");
-    const [cloudType, setCloudType] = useState("all");
+    const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+    const [selectedTypes, setSelectedTypes] = useState<string[]>([]);
+    const handleRawRefresh = useCallback(
+        (target: RefreshableRawTab) => {
+            if (fixtures || refresh.target) return;
+            const monthToRefresh = refreshMonth(
+                selectedMonths.length === 1 ? selectedMonths[0] : "",
+            );
+            setRefresh({
+                target,
+                message: null,
+                error: null,
+            });
+            refreshRawTable(target, monthToRefresh)
+                .then((message) => {
+                    setRefresh({ target: null, message, error: null });
+                    setAttempt((current) => current + 1);
+                })
+                .catch((caught: unknown) => {
+                    setRefresh({
+                        target: null,
+                        message: null,
+                        error:
+                            caught instanceof Error
+                                ? caught.message
+                                : String(caught),
+                    });
+                });
+        },
+        [fixtures, refresh.target, selectedMonths],
+    );
 
     useEffect(() => {
-        if (vendor !== "all" && !activeVendorOptions.includes(vendor)) {
-            setVendor("all");
+        if (!monthFilterInitialized.current && months.length > 0) {
+            monthFilterInitialized.current = true;
+            setSelectedMonths([months[months.length - 1]]);
+            return;
         }
-    }, [vendor, activeVendorOptions]);
+        setSelectedMonths((current) =>
+            current.filter((month) => months.includes(month)),
+        );
+    }, [months]);
     useEffect(() => {
-        if (category !== "all" && !categoryOptions.includes(category)) {
-            setCategory("all");
-        }
-    }, [category, categoryOptions]);
+        setSelectedVendors((current) =>
+            current.filter((vendor) =>
+                selectableVendorOptions.includes(vendor),
+            ),
+        );
+    }, [selectableVendorOptions]);
     useEffect(() => {
-        if (cloudType !== "all" && !typeOptions.includes(cloudType)) {
-            setCloudType("all");
-        }
-    }, [cloudType, typeOptions]);
+        setSelectedCategories((current) =>
+            current.filter((category) => categoryOptions.includes(category)),
+        );
+    }, [categoryOptions]);
+    useEffect(() => {
+        setSelectedTypes((current) =>
+            current.filter((type) => typeOptions.includes(type)),
+        );
+    }, [typeOptions]);
 
     if (!sessionChecked) {
         return (
@@ -920,6 +1053,16 @@ export default function App() {
         <>
             <div className="flex flex-wrap items-center gap-2">
                 {fixtures && <Chip intent="alpha">fixtures</Chip>}
+                {refresh.message && (
+                    <Chip intent="neutral" title={refresh.message}>
+                        updated
+                    </Chip>
+                )}
+                {refresh.error && (
+                    <Chip intent="warning" title={refresh.error}>
+                        update failed
+                    </Chip>
+                )}
             </div>
             <div className="flex items-center justify-between gap-2">
                 <span />
@@ -929,40 +1072,42 @@ export default function App() {
     );
     const viewTitle = activeViewTitle(section, tab, insightTab);
     const viewInfo = viewInfoContent(section, tab, insightTab);
-    const isOpTableView = isOpTableViewId(section, tab);
-    const isCompactInsight = isCompactInsightView(section, insightTab, tab);
+    const isCompactInsight = isCompactInsightView(section, insightTab);
     const filters = hasFilters ? (
         <FilterBar>
             {showPeriodFilter && (
                 <MonthFilter
                     months={months}
-                    value={activeMonth}
-                    onChange={setMonth}
+                    value={selectedMonths}
+                    onChange={setSelectedMonths}
                 />
             )}
             <div className="flex flex-wrap items-center gap-3">
                 {showVendorFilter && (
-                    <FilterSelect
+                    <FilterMultiSelect
                         label="vendor"
-                        value={vendor}
-                        onChange={setVendor}
-                        options={activeVendorOptions}
+                        value={selectedVendors}
+                        onChange={setSelectedVendors}
+                        options={selectableVendorOptions}
+                        placeholder="All vendors"
                     />
                 )}
                 {showCategoryFilter && (
-                    <FilterSelect
+                    <FilterMultiSelect
                         label="category"
-                        value={category}
-                        onChange={setCategory}
+                        value={selectedCategories}
+                        onChange={setSelectedCategories}
                         options={categoryOptions}
+                        placeholder="All categories"
                     />
                 )}
                 {showTypeFilter && (
-                    <FilterSelect
+                    <FilterMultiSelect
                         label="type"
-                        value={cloudType}
-                        onChange={setCloudType}
+                        value={selectedTypes}
+                        onChange={setSelectedTypes}
                         options={typeOptions}
+                        placeholder="All types"
                     />
                 )}
             </div>
@@ -985,60 +1130,64 @@ export default function App() {
             )}
             {!error && !data && <Text tone="soft">Loading pipes...</Text>}
             <ErrorBoundary
-                resetKey={`${section}:${tab}:${insightTab}:${month}:${vendor}:${category}:${cloudType}`}
+                resetKey={`${section}:${tab}:${insightTab}:${selectedMonths.join(",")}:${selectedVendors.join(",")}:${selectedCategories.join(",")}:${selectedTypes.join(",")}`}
             >
                 {data && section === "raw" && tab === "data-quality" && (
                     <DataQualityTab
                         data={data}
-                        month={activeMonth}
-                        vendor={vendor}
+                        month={monthFilter}
+                        vendor={selectedVendors}
                     />
                 )}
                 {data && section === "raw" && tab === "op-transactions" && (
                     <OpTransactionsTab
-                        category={category}
+                        category={selectedCategories}
                         data={data}
-                        month={activeMonth}
-                        vendor={vendor}
+                        month={monthFilter}
+                        vendor={selectedVendors}
                     />
                 )}
                 {data && section === "raw" && tab === "op-pollen" && (
                     <OpPollenTab
                         data={data}
-                        month={activeMonth}
-                        vendor={vendor}
+                        month={monthFilter}
+                        vendor={selectedVendors}
                     />
                 )}
                 {data && section === "raw" && tab === "op-cloud" && (
                     <OpCloudTab
                         data={data}
-                        month={activeMonth}
-                        type={cloudType}
-                        vendor={vendor}
+                        month={monthFilter}
+                        type={selectedTypes}
+                        vendor={selectedVendors}
                     />
                 )}
                 {data && section === "insights" && insightTab === "pnl" && (
-                    <PnlTab data={data} month={activeMonth} />
+                    <PnlTab data={data} month={monthFilter} />
                 )}
                 {data && section === "insights" && insightTab === "vendors" && (
                     <VendorsTab
                         data={data}
-                        month={activeMonth}
-                        vendor={vendor}
+                        month={monthFilter}
+                        vendor={selectedVendors}
                     />
                 )}
                 {data && section === "insights" && insightTab === "models" && (
                     <ModelsTab
                         data={data}
-                        month={activeMonth}
-                        vendor={vendor}
+                        month={monthFilter}
+                        vendor={selectedVendors}
                     />
                 )}
                 {data && section === "insights" && insightTab === "credits" && (
                     <CreditsTab data={data} />
                 )}
                 {data && section === "insights" && insightTab === "gpu" && (
-                    <GpuTab data={data} month={activeMonth} vendor={vendor} />
+                    <GpuTab
+                        data={data}
+                        month={monthFilter}
+                        vendor={selectedVendors}
+                    />
                 )}
             </ErrorBoundary>
         </>
@@ -1048,6 +1197,7 @@ export default function App() {
         <TreasuryShell
             data={data}
             footer={drawerFooter}
+            refresh={refresh}
             section={section}
             tab={tab}
             insightTab={insightTab}
@@ -1059,32 +1209,12 @@ export default function App() {
                 setSection("insights");
                 setInsightTab(value);
             }}
+            onRefresh={handleRawRefresh}
         >
-            <main
-                className={cn(
-                    "flex w-full flex-col",
-                    isOpTableView
-                        ? "h-full min-h-0 gap-0 overflow-hidden px-0 py-0 pb-0"
-                        : "gap-6 px-4 py-14 pb-32 sm:px-6 sm:py-10 sm:pb-32 md:py-8 lg:px-8",
-                )}
-            >
-                {isOpTableView || isCompactInsight ? (
-                    <section
-                        className={cn(
-                            "flex flex-col",
-                            isOpTableView
-                                ? "min-h-0 flex-1 overflow-hidden"
-                                : "gap-5",
-                        )}
-                    >
-                        <header
-                            className={cn(
-                                "shrink-0",
-                                isOpTableView
-                                    ? "bg-app-bg/85 px-4 py-4 backdrop-blur-xl sm:px-6 lg:px-8"
-                                    : "px-1",
-                            )}
-                        >
+            <main className="flex w-full flex-col gap-6 px-4 py-14 pb-32 sm:px-6 sm:py-10 sm:pb-32 md:py-8 lg:px-8">
+                {isCompactInsight ? (
+                    <section className="flex flex-col gap-5">
+                        <header className="shrink-0 px-1">
                             <div className="flex flex-wrap items-center gap-x-4 gap-y-3">
                                 <div className="min-w-0 flex-1">{filters}</div>
                                 <div className="ml-auto flex min-w-0 shrink-0 items-center gap-2">
@@ -1104,14 +1234,7 @@ export default function App() {
                                 </div>
                             </div>
                         </header>
-                        <div
-                            className={cn(
-                                "flex flex-col",
-                                isOpTableView ? "min-h-0 flex-1" : "gap-5",
-                            )}
-                        >
-                            {content}
-                        </div>
+                        <div className="flex flex-col gap-5">{content}</div>
                     </section>
                 ) : (
                     <Section

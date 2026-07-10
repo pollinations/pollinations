@@ -8,16 +8,22 @@ import {
 import { useMemo } from "react";
 import {
     DataTable,
-    RAW_OP_STICKY_HEADER,
-    RawOpTableScroller,
+    GROUP_BORDER,
+    HeaderHint,
     type SortColumn,
+    TableScroller,
     useSortableRows,
     withUniqueRowKeys,
 } from "../components/DataTable";
 import { SourceCell } from "../components/Provenance";
 import { fmtNumber, fmtUtcDateTime, utcDateTimeTitle } from "../lib/format";
 import { isPreWindowGrantBurnRow } from "../lib/insights";
-import { matchesMonth } from "../lib/months";
+import {
+    type MonthFilterValue,
+    matchesMonth,
+    matchesValue,
+    type ValueFilter,
+} from "../lib/months";
 import type { Data, OpCloudRow } from "../types";
 
 function opCloudKey(row: OpCloudRow) {
@@ -40,21 +46,21 @@ function opCloudKey(row: OpCloudRow) {
 export function OpCloudTab({
     data,
     month = "",
-    type = "all",
+    type = [],
     vendor = "all",
 }: {
     data: Data;
-    month?: string;
-    type?: string;
-    vendor?: string;
+    month?: MonthFilterValue;
+    type?: ValueFilter;
+    vendor?: ValueFilter;
 }) {
     const baseRows = useMemo(() => {
         return (data.opCloud ?? []).filter(
             (row) =>
                 !isPreWindowGrantBurnRow(row) &&
                 matchesMonth(row.start, month) &&
-                (vendor === "all" || row.vendor === vendor) &&
-                (type === "all" || row.type === type),
+                matchesValue(row.vendor, vendor) &&
+                matchesValue(row.type, type),
         );
     }, [data.opCloud, month, vendor, type]);
     const sortColumns = useMemo<SortColumn<OpCloudRow>[]>(
@@ -83,63 +89,124 @@ export function OpCloudTab({
     });
 
     return (
-        <RawOpTableScroller>
-            <DataTable className={RAW_OP_STICKY_HEADER}>
+        <TableScroller>
+            <DataTable>
                 <TableHead>
                     <TableRow>
-                        <TableHeaderCell {...headerProps("source")}>
-                            source
+                        <TableHeaderCell colSpan={2} align="center">
+                            Period
                         </TableHeaderCell>
+                        <TableHeaderCell
+                            colSpan={3}
+                            align="center"
+                            className={GROUP_BORDER}
+                        >
+                            Cloud
+                        </TableHeaderCell>
+                        <TableHeaderCell
+                            colSpan={3}
+                            align="center"
+                            className={GROUP_BORDER}
+                        >
+                            Amount
+                        </TableHeaderCell>
+                        <TableHeaderCell
+                            colSpan={3}
+                            align="center"
+                            className={GROUP_BORDER}
+                        >
+                            Evidence
+                        </TableHeaderCell>
+                        <TableHeaderCell
+                            colSpan={4}
+                            align="center"
+                            className={GROUP_BORDER}
+                        >
+                            Resource
+                        </TableHeaderCell>
+                    </TableRow>
+                    <TableRow>
                         <TableHeaderCell {...headerProps("start")}>
-                            start
+                            Start
                         </TableHeaderCell>
                         <TableHeaderCell {...headerProps("end")}>
-                            end
+                            End
                         </TableHeaderCell>
-                        <TableHeaderCell {...headerProps("vendor")}>
-                            vendor
+                        <TableHeaderCell
+                            className={GROUP_BORDER}
+                            {...headerProps("vendor")}
+                        >
+                            Vendor
                         </TableHeaderCell>
                         <TableHeaderCell {...headerProps("type")}>
-                            type
+                            Type
                         </TableHeaderCell>
                         <TableHeaderCell {...headerProps("model")}>
-                            model
+                            Model
                         </TableHeaderCell>
-                        <TableHeaderCell {...headerProps("credit")}>
-                            credit
+                        <TableHeaderCell
+                            align="right"
+                            className={GROUP_BORDER}
+                            {...headerProps("credit")}
+                        >
+                            <HeaderHint
+                                hint={{
+                                    meaning:
+                                        "Signed credit ledger amount from OP Cloud. Negative values are credit-funded burn; positive values are credit awards.",
+                                    tables: "op_cloud_api",
+                                    sources: "API/CLI/BQ/HC",
+                                }}
+                            >
+                                Credit
+                            </HeaderHint>
                         </TableHeaderCell>
-                        <TableHeaderCell {...headerProps("paid")}>
-                            paid
+                        <TableHeaderCell align="right" {...headerProps("paid")}>
+                            <HeaderHint
+                                hint={{
+                                    meaning:
+                                        "Signed cash ledger amount from OP Cloud. Negative values are paid burn.",
+                                    tables: "op_cloud_api",
+                                    sources: "API/CLI/BQ/HC",
+                                }}
+                            >
+                                Paid
+                            </HeaderHint>
                         </TableHeaderCell>
                         <TableHeaderCell {...headerProps("currency")}>
-                            currency
+                            Currency
+                        </TableHeaderCell>
+                        <TableHeaderCell
+                            className={GROUP_BORDER}
+                            {...headerProps("source")}
+                        >
+                            Source
                         </TableHeaderCell>
                         <TableHeaderCell {...headerProps("evidence")}>
-                            evidence
+                            Evidence
                         </TableHeaderCell>
                         <TableHeaderCell {...headerProps("recorded_at")}>
-                            recorded_at
+                            Recorded
                         </TableHeaderCell>
-                        <TableHeaderCell {...headerProps("resource_sku")}>
-                            resource_sku
+                        <TableHeaderCell
+                            className={GROUP_BORDER}
+                            {...headerProps("resource_sku")}
+                        >
+                            SKU
                         </TableHeaderCell>
                         <TableHeaderCell {...headerProps("resource_count")}>
-                            resource_count
+                            Count
                         </TableHeaderCell>
                         <TableHeaderCell {...headerProps("resource_id")}>
-                            resource_id
+                            ID
                         </TableHeaderCell>
                         <TableHeaderCell {...headerProps("resource_name")}>
-                            resource_name
+                            Name
                         </TableHeaderCell>
                     </TableRow>
                 </TableHead>
                 <TableBody>
                     {withUniqueRowKeys(rows, opCloudKey).map(({ key, row }) => (
                         <TableRow key={key}>
-                            <TableCell>
-                                <SourceCell sources={[row.source]} />
-                            </TableCell>
                             <TableCell
                                 className="whitespace-nowrap"
                                 title={utcDateTimeTitle(row.start)}
@@ -152,12 +219,21 @@ export function OpCloudTab({
                             >
                                 {fmtUtcDateTime(row.end)}
                             </TableCell>
-                            <TableCell>{row.vendor}</TableCell>
+                            <TableCell className={GROUP_BORDER}>
+                                {row.vendor}
+                            </TableCell>
                             <TableCell>{row.type}</TableCell>
                             <TableCell>{row.model}</TableCell>
-                            <TableCell>{fmtNumber(row.credit)}</TableCell>
-                            <TableCell>{fmtNumber(row.paid)}</TableCell>
+                            <TableCell align="right" className={GROUP_BORDER}>
+                                {fmtNumber(row.credit)}
+                            </TableCell>
+                            <TableCell align="right">
+                                {fmtNumber(row.paid)}
+                            </TableCell>
                             <TableCell>{row.currency}</TableCell>
+                            <TableCell className={GROUP_BORDER}>
+                                <SourceCell sources={[row.source]} />
+                            </TableCell>
                             <TableCell>{row.evidence}</TableCell>
                             <TableCell
                                 className="whitespace-nowrap"
@@ -165,8 +241,10 @@ export function OpCloudTab({
                             >
                                 {fmtUtcDateTime(row.recorded_at)}
                             </TableCell>
-                            <TableCell>{row.resource_sku}</TableCell>
-                            <TableCell>
+                            <TableCell className={GROUP_BORDER}>
+                                {row.resource_sku}
+                            </TableCell>
+                            <TableCell align="right">
                                 {fmtNumber(row.resource_count)}
                             </TableCell>
                             <TableCell>{row.resource_id}</TableCell>
@@ -175,6 +253,6 @@ export function OpCloudTab({
                     ))}
                 </TableBody>
             </DataTable>
-        </RawOpTableScroller>
+        </TableScroller>
     );
 }

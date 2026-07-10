@@ -9,21 +9,25 @@ import {
 import { useMemo } from "react";
 import {
     DataTable,
-    RAW_OP_STICKY_HEADER,
-    RawOpTableScroller,
+    GROUP_BORDER,
+    HeaderHint,
     type SortColumn,
+    TableScroller,
     useSortableRows,
     withUniqueRowKeys,
 } from "../components/DataTable";
-import { SourceCell } from "../components/Provenance";
-import { fmtNumber, fmtUtcDateTime, utcDateTimeTitle } from "../lib/format";
-import { matchesMonth } from "../lib/months";
+import { fmtNumber } from "../lib/format";
+import {
+    type MonthFilterValue,
+    matchesMonth,
+    matchesValue,
+    type ValueFilter,
+} from "../lib/months";
 import type { Data, OpTransactionRow } from "../types";
 
 function opTransactionKey(row: OpTransactionRow) {
     return [
         row.date,
-        row.source,
         row.vendor,
         row.category,
         row.amount,
@@ -33,27 +37,26 @@ function opTransactionKey(row: OpTransactionRow) {
 }
 
 export function OpTransactionsTab({
-    category = "all",
+    category = [],
     data,
     month = "",
     vendor = "all",
 }: {
-    category?: string;
+    category?: ValueFilter;
     data: Data;
-    month?: string;
-    vendor?: string;
+    month?: MonthFilterValue;
+    vendor?: ValueFilter;
 }) {
     const baseRows = useMemo(() => {
         return (data.opTransactions ?? []).filter(
             (row) =>
                 matchesMonth(row.date, month) &&
-                (vendor === "all" || row.vendor === vendor) &&
-                (category === "all" || row.category === category),
+                matchesValue(row.vendor, vendor) &&
+                matchesValue(row.category, category),
         );
     }, [data.opTransactions, month, vendor, category]);
     const sortColumns = useMemo<SortColumn<OpTransactionRow>[]>(
         () => [
-            { key: "source", value: (row) => row.source },
             { key: "date", value: (row) => row.date },
             { key: "vendor", value: (row) => row.vendor },
             { key: "category", value: (row) => row.category },
@@ -61,7 +64,6 @@ export function OpTransactionsTab({
             { key: "currency", value: (row) => row.currency },
             { key: "description", value: (row) => row.description },
             { key: "evidence", value: (row) => row.evidence },
-            { key: "recorded_at", value: (row) => row.recorded_at },
         ],
         [],
     );
@@ -71,36 +73,65 @@ export function OpTransactionsTab({
     });
 
     return (
-        <RawOpTableScroller>
-            <DataTable className={RAW_OP_STICKY_HEADER}>
+        <TableScroller>
+            <DataTable>
                 <TableHead>
                     <TableRow>
-                        <TableHeaderCell {...headerProps("source")}>
-                            source
+                        <TableHeaderCell colSpan={3} align="center">
+                            Transaction
                         </TableHeaderCell>
+                        <TableHeaderCell
+                            colSpan={2}
+                            align="center"
+                            className={GROUP_BORDER}
+                        >
+                            Cash
+                        </TableHeaderCell>
+                        <TableHeaderCell
+                            colSpan={2}
+                            align="center"
+                            className={GROUP_BORDER}
+                        >
+                            Evidence
+                        </TableHeaderCell>
+                    </TableRow>
+                    <TableRow>
                         <TableHeaderCell {...headerProps("date")}>
-                            date
+                            Date
                         </TableHeaderCell>
                         <TableHeaderCell {...headerProps("vendor")}>
-                            vendor
+                            Vendor
                         </TableHeaderCell>
                         <TableHeaderCell {...headerProps("category")}>
-                            category
+                            Category
                         </TableHeaderCell>
-                        <TableHeaderCell {...headerProps("amount")}>
-                            amount
+                        <TableHeaderCell
+                            align="right"
+                            className={GROUP_BORDER}
+                            {...headerProps("amount")}
+                        >
+                            <HeaderHint
+                                hint={{
+                                    meaning:
+                                        "Signed Wise cash movement. Revenue/inflows are positive; spend/outflows are negative.",
+                                    tables: "op_transactions_api",
+                                    sources: "WISE",
+                                }}
+                            >
+                                Amount
+                            </HeaderHint>
                         </TableHeaderCell>
                         <TableHeaderCell {...headerProps("currency")}>
-                            currency
+                            Currency
                         </TableHeaderCell>
-                        <TableHeaderCell {...headerProps("description")}>
-                            description
+                        <TableHeaderCell
+                            className={GROUP_BORDER}
+                            {...headerProps("description")}
+                        >
+                            Description
                         </TableHeaderCell>
                         <TableHeaderCell {...headerProps("evidence")}>
-                            evidence
-                        </TableHeaderCell>
-                        <TableHeaderCell {...headerProps("recorded_at")}>
-                            recorded_at
+                            Evidence
                         </TableHeaderCell>
                     </TableRow>
                 </TableHead>
@@ -108,9 +139,6 @@ export function OpTransactionsTab({
                     {withUniqueRowKeys(rows, opTransactionKey).map(
                         ({ key, row }) => (
                             <TableRow key={key}>
-                                <TableCell>
-                                    <SourceCell sources={[row.source]} />
-                                </TableCell>
                                 <TableCell>{row.date}</TableCell>
                                 <TableCell>
                                     {row.vendor || (
@@ -120,21 +148,22 @@ export function OpTransactionsTab({
                                     )}
                                 </TableCell>
                                 <TableCell>{row.category}</TableCell>
-                                <TableCell>{fmtNumber(row.amount)}</TableCell>
-                                <TableCell>{row.currency}</TableCell>
-                                <TableCell>{row.description}</TableCell>
-                                <TableCell>{row.evidence}</TableCell>
                                 <TableCell
-                                    className="whitespace-nowrap"
-                                    title={utcDateTimeTitle(row.recorded_at)}
+                                    align="right"
+                                    className={GROUP_BORDER}
                                 >
-                                    {fmtUtcDateTime(row.recorded_at)}
+                                    {fmtNumber(row.amount)}
                                 </TableCell>
+                                <TableCell>{row.currency}</TableCell>
+                                <TableCell className={GROUP_BORDER}>
+                                    {row.description}
+                                </TableCell>
+                                <TableCell>{row.evidence}</TableCell>
                             </TableRow>
                         ),
                     )}
                 </TableBody>
             </DataTable>
-        </RawOpTableScroller>
+        </TableScroller>
     );
 }

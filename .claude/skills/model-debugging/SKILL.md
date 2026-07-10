@@ -1,6 +1,6 @@
 ---
 name: model-debugging
-description: Debug and diagnose model errors in Pollinations services. Analyze logs, find error patterns, identify affected users. To look up a user's balance or tier, see tier-management skill.
+description: Debug and diagnose model errors in Pollinations services. Analyze logs, find error patterns, identify affected users.
 ---
 
 # Model Debugging Skill
@@ -10,10 +10,6 @@ Use this skill when:
 - Finding users affected by errors (402 billing, 403 permissions, 500 backend)
 - Analyzing Tinybird/Cloudflare logs for patterns
 - Diagnosing specific request failures
-
-**Related skill**: Use `tier-management` to look up a user's balance or tier after identifying issues here.
-
----
 
 # Understanding Model Monitor Error Rates
 
@@ -530,14 +526,14 @@ The prod `TINYBIRD_READ_TOKEN` above can query the raw `generation_event` dataso
 ```bash
 # Find users with frequent 403 errors (last 24 hours)
 curl -s "https://api.europe-west2.gcp.tinybird.co/v0/sql?token=$TB" \
-  --data-urlencode "q=SELECT user_id, user_github_username, user_tier, count() as error_403_count 
-FROM generation_event 
-WHERE response_status = 403 
-  AND start_time > now() - interval 24 hour 
-  AND user_id != '' 
-  AND user_id != 'undefined' 
-GROUP BY user_id, user_github_username, user_tier 
-ORDER BY error_403_count DESC 
+  --data-urlencode "q=SELECT user_id, user_github_username, user_tier, count() as error_403_count
+FROM generation_event
+WHERE response_status = 403
+  AND start_time > now() - interval 24 hour
+  AND user_id != ''
+  AND user_id != 'undefined'
+GROUP BY user_id, user_github_username, user_tier
+ORDER BY error_403_count DESC
 LIMIT 20"
 
 # Find users with 500 errors (actual backend issues)

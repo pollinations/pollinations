@@ -28,7 +28,6 @@ interface CloudflareBindings {
     LOG_LEVEL?: "trace" | "debug";
     LOG_FORMAT?: "text" | "json";
     TINYBIRD_INGEST_URL: string;
-    TINYBIRD_TIER_INGEST_URL?: string;
     IMAGES?: ImagesBinding;
     PORTKEY_GATEWAY_URL: string;
     AWS_ACCESS_KEY_ID: string;

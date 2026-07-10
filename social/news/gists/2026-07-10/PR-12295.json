@@ -1,0 +1,35 @@
+{
+  "pr_number": 12295,
+  "title": "fix: cache model health consumers",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/12295",
+  "merged_at": "2026-07-10T19:57:32Z",
+  "labels": [
+    "DEV-INFRA"
+  ],
+  "pr_body_excerpt": "- Routes model-monitor and polli CLI health requests through the cached `gen.pollinations.ai/v1/models/status` gateway.\n- Supports windows up to 7 days while bounding the in-memory cache to 32 recent entries.\n- Exposes Tinybird fetch timestamps and stale-fallback state so the monitor reports truthful data freshness.\n- Aligns the 5-minute monitor poll with the 60-second cache and validates CLI windows from 1 to 10080 minutes.\n- Updates public stats documentation for gateway authentication and freshness headers.\n\nValidation:\n- `npx biome check --write` on changed source and test files\n- `npx vitest run test/index.test.ts --testNamePattern=\"model status\"`\n- `npm run typecheck --prefix gen.pollinations.ai`\n- `npm run build --prefix packages/polli-cli`\n- `npm run build --prefix apps/model-monitor`\n- Manual CLI invalid-window and help checks\n\nNote: no Tinybird deploy was required or performed.",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Caching the hive's health",
+    "blurb": "We've optimized how the model monitor and CLI fetch health stats. Faster load times and smarter caching mean you get the freshest data without overwhelming the hive.",
+    "summary": "Routes model-monitor and polli CLI health requests through a cached gateway at gen.pollinations.ai/v1/models/status, supporting up to 7-day windows with a 32-entry in-memory cache.",
+    "impact": "Developers checking model health via the CLI or monitor will experience faster, more reliable responses with clear data freshness headers.",
+    "keywords": [
+      "caching",
+      "cli",
+      "model-monitor",
+      "api",
+      "performance"
+    ],
+    "visual_concept": "Polly the bee and the Monitor Robot checking a glowing dashboard screen with a stopwatch, representing cached, fast health stats.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot and a chunky robot with a CRT monitor head looking at a glowing lime green (#ecf874) dashboard screen showing health stats. The bee holds a tiny stopwatch. Soft pastel lavender and cream gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Cozy pixel art, chunky sprites, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-10/PR-12295.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot and a chunky robot with a CRT monitor head looking at a glowing lime green (#ecf874) dashboard screen showing health stats. The bee holds a tiny stopwatch. Soft pastel lavender and cream gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Cozy pixel art, chunky sprites, emotionally warm."
+  },
+  "generated_at": "2026-07-10T19:58:30.816765+00:00"
+}

@@ -1,0 +1,35 @@
+{
+  "pr_number": 12331,
+  "title": "fix: retire Polar runtime integration",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/12331",
+  "merged_at": "2026-07-10T17:21:09Z",
+  "labels": [
+    "DEV-CHORE"
+  ],
+  "pr_body_excerpt": "- Removes the final live Polar dependency: KPI order polling, Worker config, encrypted runtime token, and stale UI naming.\n- Makes KPI revenue Stripe/Tinybird-only and removes obsolete Polar reporting scripts and finance forecasting.\n- Keeps a concise read-only Polar history/query playbook and preserves the historical D1/Tinybird archives.\n- Documents the root cause: pre-migration free daily subscriptions remain in Polar and can generate lifecycle events until they are revoked there.\n\nChecks:\n- `npm run build` (`apps/operation/kpi`)\n- `npm test` (`apps/operation/finance`, 52 passed)\n- Biome and `git diff --check`\n- `wrangler deploy --dry-run`",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Spring Cleaning: Polar Edition",
+    "blurb": "We've fully retired our Polar runtime integration, moving our KPI revenue tracking exclusively to Stripe and Tinybird. Just doing a little spring cleaning in the hive's financial backend!",
+    "summary": "Removed the final live Polar dependencies from the KPI worker and finance scripts, transitioning revenue tracking entirely to Stripe and Tinybird.",
+    "impact": "Internal operations and revenue tracking are now streamlined through Stripe and Tinybird, with historical Polar data preserved for reference.",
+    "keywords": [
+      "infrastructure",
+      "billing",
+      "kpi",
+      "cleanup",
+      "polar"
+    ],
+    "visual_concept": "The bee mascot and the Nomnom creature doing some spring cleaning in the server room. Nomnom is eating old Polar reporting scripts while the bee organizes the new Stripe/Tinybird data.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny janitor's hat, sweeping up old paper documents while the round tan nomnom creature happily eats a stack of deprecated reporting scripts. A retro terminal in the background glows with a lime green (#ecf874) dashboard. Soft pastel gradient background, warm lighting, lo-fi 8-bit aesthetic like Stardew Valley."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-10/PR-12331.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny janitor's hat, sweeping up old paper documents while the round tan nomnom creature happily eats a stack of deprecated reporting scripts. A retro terminal in the background glows with a lime green (#ecf874) dashboard. Soft pastel gradient background, warm lighting, lo-fi 8-bit aesthetic like Stardew Valley."
+  },
+  "generated_at": "2026-07-10T17:22:14.258968+00:00"
+}

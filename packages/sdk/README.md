@@ -21,7 +21,7 @@ Alpha (in-progress rebuild — pin an exact version):
 
 ```bash
 npm install @pollinations/sdk@alpha
-# or pin exactly: npm install @pollinations/sdk@5.1.0-alpha.0
+# or pin exactly: npm install @pollinations/sdk@5.1.0-alpha.3
 ```
 
 ### CDN / `<script>` tag

@@ -3,6 +3,7 @@
  * Handles the complete flow from request to image generation using Gemini
  */
 
+import type { Usage } from "@shared/registry/registry.ts";
 import debug from "debug";
 import type { ImageGenerationResult } from "./createAndReturnImages.js";
 import { HttpError } from "./httpError.ts";
@@ -15,24 +16,147 @@ const log = debug("pollinations:vertex-ai-generator");
 const errorLog = debug("pollinations:vertex-ai-generator:error");
 
 /** Mapping from pollinations model names to Vertex AI model IDs and display names */
-const NANOBANANA_MODELS: Record<string, { vertex: string; name: string }> = {
+export const NANOBANANA_MODELS: Record<
+    string,
+    { vertex: string; name: string; fallbackPromptImageTokens: number }
+> = {
     "nanobanana-pro": {
-        vertex: "gemini-3-pro-image-preview",
-        name: "Vertex AI Gemini 3 Pro Image Preview",
+        vertex: "gemini-3-pro-image",
+        name: "Vertex AI Gemini 3 Pro Image",
+        fallbackPromptImageTokens: 560,
     },
     "nanobanana-2": {
-        vertex: "gemini-3.1-flash-image-preview",
-        name: "Vertex AI Gemini 3.1 Flash Image Preview",
+        vertex: "gemini-3.1-flash-image",
+        name: "Vertex AI Gemini 3.1 Flash Image",
+        fallbackPromptImageTokens: 1120,
     },
     "nanobanana-2-lite": {
         vertex: "gemini-3.1-flash-lite-image",
         name: "Vertex AI Gemini 3.1 Flash-Lite Image",
+        fallbackPromptImageTokens: 1120,
     },
     "nanobanana": {
         vertex: "gemini-2.5-flash-image",
         name: "Vertex AI Gemini 2.5 Flash Image",
+        fallbackPromptImageTokens: 258,
     },
 };
+
+type GeminiModality = "TEXT" | "IMAGE" | "AUDIO" | "VIDEO";
+
+type ModalityTokenCount = {
+    modality?: GeminiModality;
+    tokenCount?: number;
+};
+
+type VertexUsageMetadata = {
+    promptTokenCount?: number;
+    candidatesTokenCount?: number;
+    totalTokenCount?: number;
+    thoughtsTokenCount?: number;
+    promptTokensDetails?: ModalityTokenCount[];
+    candidatesTokensDetails?: ModalityTokenCount[];
+};
+
+const PROMPT_MODALITY_TO_USAGE_KEY: Partial<
+    Record<GeminiModality, keyof Usage>
+> = {
+    TEXT: "promptTextTokens",
+    IMAGE: "promptImageTokens",
+    AUDIO: "promptAudioTokens",
+    VIDEO: "promptVideoTokens",
+};
+
+const COMPLETION_MODALITY_TO_USAGE_KEY: Partial<
+    Record<GeminiModality, keyof Usage>
+> = {
+    TEXT: "completionTextTokens",
+    IMAGE: "completionImageTokens",
+};
+
+function safeTokenCount(value: unknown): number {
+    return typeof value === "number" && Number.isFinite(value) && value > 0
+        ? value
+        : 0;
+}
+
+function addUsage(usage: Usage, key: keyof Usage | undefined, amount: number) {
+    if (!key || amount <= 0) return;
+    usage[key] = (usage[key] ?? 0) + amount;
+}
+
+function mapModalityDetails(
+    usage: Usage,
+    details: ModalityTokenCount[] | undefined,
+    keyMap: Partial<Record<GeminiModality, keyof Usage>>,
+): number {
+    let mappedTokens = 0;
+    for (const detail of details ?? []) {
+        const amount = safeTokenCount(detail.tokenCount);
+        if (!detail.modality || amount === 0) continue;
+        const key = keyMap[detail.modality];
+        if (!key) continue;
+        addUsage(usage, key, amount);
+        mappedTokens += amount;
+    }
+    return mappedTokens;
+}
+
+export function mapVertexGeminiImageUsage({
+    usage,
+    modelConfig,
+    referenceImageCount,
+}: {
+    usage?: VertexUsageMetadata;
+    modelConfig: { fallbackPromptImageTokens: number };
+    referenceImageCount: number;
+}): Usage {
+    const mappedUsage: Usage = {};
+    const promptTokens = safeTokenCount(usage?.promptTokenCount);
+    const mappedPromptTokens = mapModalityDetails(
+        mappedUsage,
+        usage?.promptTokensDetails,
+        PROMPT_MODALITY_TO_USAGE_KEY,
+    );
+
+    if (mappedPromptTokens === 0 && promptTokens > 0) {
+        const fallbackPromptImageTokens = Math.min(
+            promptTokens,
+            referenceImageCount * modelConfig.fallbackPromptImageTokens,
+        );
+        addUsage(mappedUsage, "promptImageTokens", fallbackPromptImageTokens);
+        addUsage(
+            mappedUsage,
+            "promptTextTokens",
+            promptTokens - fallbackPromptImageTokens,
+        );
+    }
+
+    const candidateTokens = safeTokenCount(usage?.candidatesTokenCount);
+    const mappedCandidateTokens = mapModalityDetails(
+        mappedUsage,
+        usage?.candidatesTokensDetails,
+        COMPLETION_MODALITY_TO_USAGE_KEY,
+    );
+
+    if (candidateTokens > mappedCandidateTokens) {
+        addUsage(
+            mappedUsage,
+            "completionImageTokens",
+            candidateTokens - mappedCandidateTokens,
+        );
+    } else if (candidateTokens === 0 && mappedCandidateTokens === 0) {
+        addUsage(mappedUsage, "completionImageTokens", 1);
+    }
+
+    addUsage(
+        mappedUsage,
+        "completionReasoningTokens",
+        safeTokenCount(usage?.thoughtsTokenCount),
+    );
+
+    return mappedUsage;
+}
 
 /**
  * Build an informative HttpError when Vertex AI returns no image data.
@@ -199,7 +323,9 @@ export async function callVertexAIGemini(
         // Log usage metadata from Vertex AI for debugging token counts (without full response to avoid base64 bloat)
         log("=== VERTEX AI USAGE METADATA ===");
         log("candidatesTokenCount:", result.usage?.candidatesTokenCount);
+        log("candidatesTokensDetails:", result.usage?.candidatesTokensDetails);
         log("promptTokenCount:", result.usage?.promptTokenCount);
+        log("promptTokensDetails:", result.usage?.promptTokensDetails);
         log("totalTokenCount:", result.usage?.totalTokenCount);
         log("================================");
 
@@ -249,14 +375,11 @@ export async function callVertexAIGemini(
             // Include tracking data for enter service headers
             trackingData: {
                 actualModel: safeParams.model,
-                usage: {
-                    // Convert Vertex AI format to unified format
-                    completionImageTokens:
-                        result.usage?.candidatesTokenCount || 1,
-                    promptTokenCount: result.usage?.promptTokenCount,
-                    totalTokenCount: result.usage?.totalTokenCount,
-                    completionReasoningTokens: result.usage?.thoughtsTokenCount,
-                },
+                usage: mapVertexGeminiImageUsage({
+                    usage: result.usage,
+                    modelConfig,
+                    referenceImageCount: processedImages.length,
+                }),
             },
         };
     } catch (error) {

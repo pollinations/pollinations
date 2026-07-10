@@ -765,11 +765,13 @@ exports[`effective cost and price per model — snapshot 1`] = `
   "nanobanana": {
     "cost": {
       "completionImageTokens": 0.00003,
+      "completionTextTokens": 0.0000025,
       "promptImageTokens": 0.0000003,
       "promptTextTokens": 0.0000003,
     },
     "price": {
       "completionImageTokens": 0.00003,
+      "completionTextTokens": 0.0000025,
       "promptImageTokens": 0.0000003,
       "promptTextTokens": 0.0000003,
     },
@@ -806,14 +808,14 @@ exports[`effective cost and price per model — snapshot 1`] = `
     "cost": {
       "completionImageTokens": 0.00012,
       "completionTextTokens": 0.000012,
-      "promptImageTokens": 0.00000125,
-      "promptTextTokens": 0.00000125,
+      "promptImageTokens": 0.000002,
+      "promptTextTokens": 0.000002,
     },
     "price": {
       "completionImageTokens": 0.00012,
       "completionTextTokens": 0.000012,
-      "promptImageTokens": 0.00000125,
-      "promptTextTokens": 0.00000125,
+      "promptImageTokens": 0.000002,
+      "promptTextTokens": 0.000002,
     },
   },
   "nova": {

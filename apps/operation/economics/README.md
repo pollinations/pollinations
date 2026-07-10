@@ -1,14 +1,16 @@
 # Economics Dashboard
 
-Grafana OSS dashboard for Pollinations economic observability. Public URL:
-`economics.pollinations.ai`; Myceli origin: `economics.myceli.ai`.
+Grafana OSS dashboard for Pollinations economic observability. Myceli origin:
+`economics.myceli.ai`.
+
+The old `economics.pollinations.ai` proxy route is retired. The replacement
+public hostname will be introduced with the observability migration.
 
 ## Architecture
 
 ```
 Local:   Browser → localhost:3000 → Grafana → Tinybird/D1
-Prod:    Browser → economics.pollinations.ai → pollinations-myceli-proxy
-         → economics.myceli.ai → Cloudflare Tunnel → Grafana → Tinybird/D1
+Prod:    Browser → economics.myceli.ai → Cloudflare Tunnel → Grafana → Tinybird/D1
 ```
 
 ## Quick Start (Local)
@@ -84,8 +86,6 @@ Secrets are stored in `.env` (gitignored) locally and on the production server.
 ### Prerequisites
 - DigitalOcean Droplet (Ubuntu 24.04, $6/mo)
 - Cloudflare Tunnel configured for `economics.myceli.ai`
-- `economics.pollinations.ai` attached to the old-account
-  `pollinations-proxy` worker and forwarded to `economics.myceli.ai`
 - Droplet IP: `207.154.253.25`
 
 ### Architecture on Production

@@ -5,7 +5,8 @@ compatibility_date = "2024-01-01"
 workers_dev = true
 
 routes = [
-    { pattern = "kpi.myceli.ai", custom_domain = true }
+    { pattern = "kpi.myceli.ai", zone_name = "myceli.ai", custom_domain = true },
+    { pattern = "kpi.pollinations.ai", zone_name = "pollinations.ai", custom_domain = true }
 ]
 
 [site]

@@ -388,10 +388,10 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.000001,
     },
     "price": {
-      "completionTextTokens": 0.0000042,
-      "promptCacheWriteTokens": 0.000000875,
-      "promptCachedTokens": 0.00000007,
-      "promptTextTokens": 0.0000007,
+      "completionTextTokens": 0.0000045,
+      "promptCacheWriteTokens": 0.0000009375,
+      "promptCachedTokens": 0.000000075,
+      "promptTextTokens": 0.00000075,
     },
   },
   "gpt-5.6-sol": {
@@ -402,10 +402,10 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.000005,
     },
     "price": {
-      "completionTextTokens": 0.000021,
-      "promptCacheWriteTokens": 0.000004375,
-      "promptCachedTokens": 0.00000035,
-      "promptTextTokens": 0.0000035,
+      "completionTextTokens": 0.0000225,
+      "promptCacheWriteTokens": 0.0000046875,
+      "promptCachedTokens": 0.000000375,
+      "promptTextTokens": 0.00000375,
     },
   },
   "gpt-5.6-terra": {
@@ -416,10 +416,10 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.0000025,
     },
     "price": {
-      "completionTextTokens": 0.0000105,
-      "promptCacheWriteTokens": 0.0000021875,
-      "promptCachedTokens": 0.000000175,
-      "promptTextTokens": 0.00000175,
+      "completionTextTokens": 0.00001125,
+      "promptCacheWriteTokens": 0.00000234375,
+      "promptCachedTokens": 0.0000001875,
+      "promptTextTokens": 0.000001875,
     },
   },
   "gpt-image-2": {

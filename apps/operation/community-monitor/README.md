@@ -53,7 +53,7 @@ Live-only on the box, never committed:
 ## Deploying a CYCLE.md change
 
 ```bash
-scp scripts/community-monitor/CYCLE.md community-monitor:/home/ubuntu/monitor/CYCLE.md
+scp apps/operation/community-monitor/CYCLE.md community-monitor:/home/ubuntu/monitor/CYCLE.md
 ```
 
 The agent re-reads `CYCLE.md` at the start of every cycle (every 15 min via
@@ -63,7 +63,7 @@ change.
 ## Deploying a watchdog.sh / launch-flags change
 
 ```bash
-scp scripts/community-monitor/watchdog.sh community-monitor:/home/ubuntu/monitor/watchdog.sh
+scp apps/operation/community-monitor/watchdog.sh community-monitor:/home/ubuntu/monitor/watchdog.sh
 ssh community-monitor "chmod +x /home/ubuntu/monitor/watchdog.sh"
 ```
 

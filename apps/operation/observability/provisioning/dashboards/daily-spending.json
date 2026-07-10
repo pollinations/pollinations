@@ -1660,7 +1660,7 @@
   "refresh": "5m",
   "schemaVersion": 40,
   "tags": [
-    "economics",
+    "observability",
     "spending",
     "providers"
   ],

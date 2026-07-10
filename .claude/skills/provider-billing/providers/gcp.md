@@ -362,7 +362,7 @@ GCP uses long-form region names (`us-central1`, `europe-west1`, `asia-northeast1
 | `gemini-3-flash-preview` | `us-central1` |
 | `gemini-3.1-pro-preview` | `us-central1` |
 | `gemini-2.5-flash-lite` | `global` (Vertex global endpoint) |
-| `gemini-3.1-flash-lite-preview` | `us-central1` |
+| `gemini-3.1-flash-lite` | `global` (Vertex global endpoint) |
 | `gemini-2.5-pro` | `us-central1` |
 
 The `global` region is a special Vertex-only endpoint that multiplexes across regions — used for models that have global deployment. Cost shows up under `location.location = 'global'` in the billing export.

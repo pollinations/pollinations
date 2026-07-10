@@ -1,0 +1,36 @@
+{
+  "pr_number": 12309,
+  "title": "feat: add GPT 5.6 and Seedream 5 Pro",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/12309",
+  "merged_at": "2026-07-10T00:18:22Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "pr_body_excerpt": "- Adds GPT 5.6 Sol, Terra, and Luna on Azure East US.\n- Makes GPT 5.6 models quest-eligible with `priceMultiplier: 0.7`.\n- Adds Seedream 5 Pro on Replicate as paid-only at the 2K image price.\n- Updates docs, aliases, effective-price snapshots, and Seedream Replicate coverage.\n\nValidation:\n- `npm run test -- test/image/seedreamModel.test.ts`\n- `npx vitest run test/aliases.test.ts test/effective-prices.snapshot.test.ts`\n- `npm run test -- test/text/transforms/parameterProcessor.test.ts`\n- Local end-to-end checks for GPT 5.6 Sol/Terra/Luna text and image input.\n- Local end-to-end checks for Seedream 5 Pro text and reference-image input.",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Fresh seeds in the garden",
+    "blurb": "GPT 5.6 (Sol, Terra, Luna) and Seedream 5 Pro have landed in the API. More ways to turn your prompts into pixels and poetry.",
+    "summary": "Added GPT 5.6 (Sol, Terra, Luna) via Azure East US with quest eligibility, and Seedream 5 Pro via Replicate as a paid-only image model.",
+    "impact": "You can now prompt the GPT 5.6 family at a 0.7x price multiplier, or generate images with Seedream 5 Pro at the standard 2K image price.",
+    "keywords": [
+      "models",
+      "gpt-5.6",
+      "seedream",
+      "api",
+      "text",
+      "image"
+    ],
+    "visual_concept": "Polly the bee planting glowing seeds (Seedream) and interacting with a futuristic sun/earth/moon mobile (Sol, Terra, Luna) in a cozy garden.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee planting glowing seeds in a digital garden while a futuristic sun, earth, and moon mobile spins above. Soft lime green (#ecf874) and pastel gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-10/PR-12309.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee planting glowing seeds in a digital garden while a futuristic sun, earth, and moon mobile spins above. Soft lime green (#ecf874) and pastel gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-07-10T00:19:32.518584+00:00"
+}

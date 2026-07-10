@@ -63,7 +63,17 @@ async function verifyApiKey(apiKey: string): Promise<AuthResult | null> {
         });
         if (!res.ok) return null;
         const data = await res.json<AuthResult>();
-        return data.valid ? data : null;
+        if (!data.valid) return null;
+        // Normalize: an enter deployment that predates the identity fields
+        // omits them, and `undefined` would slip past the `=== null` guards
+        // downstream — never treat an unattested key as user-attached.
+        return {
+            valid: true,
+            type: data.type,
+            name: data.name ?? null,
+            userId: data.userId ?? null,
+            byopClientKeyId: data.byopClientKeyId ?? null,
+        };
     } catch {
         return null;
     }
@@ -647,7 +657,7 @@ api.get(
         tags: ["media.pollinations.ai"],
         summary: "List media",
         description:
-            "List cataloged media, newest first. Two modes, selected by the `tag` query param:\n\n- **No `tag`** → your own library: every item you own, including untagged/private ones. Requires an API key attached to a user account.\n- **`tag` present** → the public gallery for that tag: any item carrying it, regardless of owner. Auth is optional; pass a key to get `myReactions` on each item.\n\nUpload-backed items reference storage that expires 30 days after their last upload — an expired item keeps its catalog entry, but its url 404s until the same content is re-uploaded. **Alpha:** this endpoint is new and its API may still change.",
+            "List cataloged media, newest first. Two modes, selected by the `tag` query param:\n\n- **No `tag`** → your own library: every item you own, including untagged/private ones. Requires a **secret (`sk_`)** API key attached to a user account; a key minted through a BYOP app lists only items created through that app.\n- **`tag` present** → the public gallery for that tag: any item carrying it, regardless of owner. Auth is optional; pass a key to get `myReactions` on each item.\n\nUpload-backed items reference storage that expires 30 days after last access — an expired item keeps its catalog entry, but its url 404s. **Alpha:** this endpoint is new and its API may still change.",
         security: [],
         responses: {
             200: {
@@ -672,7 +682,8 @@ api.get(
                 },
             },
             403: {
-                description: "API key is not attached to a user account",
+                description:
+                    "API key is not attached to a user account, or is not a secret (`sk_`) key — library listing is secret-key only",
                 content: {
                     "application/json": { schema: resolver(ErrorSchema) },
                 },
@@ -698,17 +709,20 @@ api.get(
         // we're browsing a public gallery, so auth is optional — but a key
         // that IS supplied must be valid (fail fast rather than silently
         // downgrading to anonymous).
-        let userId: string | null = null;
+        let auth: AuthResult | null = null;
         if (apiKey) {
-            const authResult = await verifyApiKey(apiKey);
-            if (!authResult) {
+            auth = await verifyApiKey(apiKey);
+            if (!auth) {
                 return c.json({ error: "Invalid or expired API key" }, 401);
             }
-            userId = authResult.userId;
         }
 
-        if (!query.tag) {
-            if (!apiKey) {
+        // Stored tags are trimmed + lowercased (normalizeTags), so the
+        // lookup must match or exact-case queries silently return nothing.
+        const tag = query.tag?.trim().toLowerCase() || undefined;
+
+        if (!tag) {
+            if (!auth) {
                 return c.json(
                     {
                         error: "API key required. Pass via Authorization: Bearer <key> or ?key=<key>",
@@ -716,9 +730,20 @@ api.get(
                     401,
                 );
             }
-            if (userId === null) {
+            if (auth.userId === null) {
                 return c.json(
                     { error: "This API key is not attached to a user account" },
+                    403,
+                );
+            }
+            // Publishable keys ship inside public clients — anyone holding
+            // one could read the owner's private library, so listing is
+            // secret-key only.
+            if (auth.type !== "secret") {
+                return c.json(
+                    {
+                        error: "Listing your library requires a secret (sk_) API key",
+                    },
                     403,
                 );
             }
@@ -726,15 +751,17 @@ api.get(
 
         const db = getDb(c.env.DB);
         const page = await listMedia(db, {
-            // No tag → scope to the owner's library. Tag → public gallery
-            // (any owner), so leave ownerUserId unset.
-            ownerUserId: query.tag ? undefined : (userId ?? undefined),
-            tag: query.tag,
+            // No tag → scope to the owner's library; a BYOP-minted key sees
+            // only items created through its app. Tag → public gallery (any
+            // owner), so leave both unset.
+            ownerUserId: tag ? undefined : (auth?.userId ?? undefined),
+            appKeyId: tag ? undefined : (auth?.byopClientKeyId ?? undefined),
+            tag,
             limit,
             cursor,
         });
 
-        return c.json(await toPageResponse(db, page, userId));
+        return c.json(await toPageResponse(db, page, auth?.userId ?? null));
     },
 );
 

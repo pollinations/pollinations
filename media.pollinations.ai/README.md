@@ -122,7 +122,7 @@ Check if a file exists without downloading.
 
 List cataloged media, newest first. The `tag` query param picks the mode:
 
-- **No `tag`** — your own library (all items you own, including untagged). Requires a user-owned API key.
+- **No `tag`** — your own library (all items you own, including untagged). Requires a user-owned **secret** (`sk_`) API key; publishable keys are rejected since anyone can read them out of a public client. A key minted through a BYOP app lists only items created through that app.
 - **`?tag=<tag>`** — public gallery for that tag (any owner). Auth optional; pass a key to get `myReactions`.
 
 **Query params:** `tag` (optional), `limit` (1–100, default 20), `cursor` (opaque, from a prior response's `nextCursor`).

@@ -88,6 +88,37 @@ const KEY_IDENTITIES: Record<
         userId: null,
         byopClientKeyId: null,
     },
+    // Library listing is secret-key only, so listing tests use these.
+    sk_alice: {
+        valid: true,
+        type: "secret",
+        name: "alice-secret",
+        userId: "user_alice",
+        byopClientKeyId: null,
+    },
+    sk_bob: {
+        valid: true,
+        type: "secret",
+        name: "bob-secret",
+        userId: "user_bob",
+        byopClientKeyId: null,
+    },
+    // Minted for user_alice through the same BYOP app pk_alice belongs to —
+    // must only see items created through that app.
+    sk_alice_app: {
+        valid: true,
+        type: "secret",
+        name: "alice-app-key",
+        userId: "user_alice",
+        byopClientKeyId: "pk_app_1",
+    },
+    // The response shape of an enter deployment that predates the identity
+    // fields — userId/byopClientKeyId entirely absent, not null.
+    sk_legacy: {
+        valid: true,
+        type: "secret",
+        name: "legacy-key",
+    },
 };
 
 function createMediaEnv(bucket = createTestR2Bucket()) {
@@ -447,8 +478,16 @@ describe("media.pollinations.ai", () => {
             expect(item).not.toHaveProperty("appKeyId");
         }
 
+        // Tag lookups normalize like the write side — case must not matter.
+        const upperRes = await SELF.fetch(
+            "https://media.pollinations.ai/media?tag=SUNSET",
+        );
+        expect(upperRes.status).toBe(200);
+        const upperGallery = (await upperRes.json()) as MediaPageResponse;
+        expect(upperGallery.items.map((i) => i.url)).toContain(upload.url);
+
         const meRes = await SELF.fetch("https://media.pollinations.ai/media", {
-            headers: { Authorization: "Bearer pk_alice" },
+            headers: { Authorization: "Bearer sk_alice" },
         });
         expect(meRes.status).toBe(200);
         const me = (await meRes.json()) as MediaPageResponse;
@@ -469,7 +508,7 @@ describe("media.pollinations.ai", () => {
         expect(upload.tags).toBeUndefined();
 
         const meRes = await SELF.fetch("https://media.pollinations.ai/media", {
-            headers: { Authorization: "Bearer pk_alice" },
+            headers: { Authorization: "Bearer sk_alice" },
         });
         const me = (await meRes.json()) as MediaPageResponse;
         expect(me.items.map((i) => i.url)).toContain(upload.url);
@@ -505,7 +544,7 @@ describe("media.pollinations.ai", () => {
 
         const aliceMediaRes = await SELF.fetch(
             "https://media.pollinations.ai/media",
-            { headers: { Authorization: "Bearer pk_alice" } },
+            { headers: { Authorization: "Bearer sk_alice" } },
         );
         const aliceMedia = (await aliceMediaRes.json()) as MediaPageResponse;
         const aliceUrls = aliceMedia.items.map((i) => i.url);
@@ -514,7 +553,7 @@ describe("media.pollinations.ai", () => {
 
         const bobMediaRes = await SELF.fetch(
             "https://media.pollinations.ai/media",
-            { headers: { Authorization: "Bearer pk_bob" } },
+            { headers: { Authorization: "Bearer sk_bob" } },
         );
         const bobMedia = (await bobMediaRes.json()) as MediaPageResponse;
         const bobUrls = bobMedia.items.map((i) => i.url);
@@ -611,7 +650,7 @@ describe("media.pollinations.ai", () => {
         expect(secondUpload.id).not.toBe(firstUpload.id);
 
         const meRes = await SELF.fetch("https://media.pollinations.ai/media", {
-            headers: { Authorization: "Bearer pk_alice" },
+            headers: { Authorization: "Bearer sk_alice" },
         });
         const me = (await meRes.json()) as MediaPageResponse;
         const firstItem = me.items.find((i) => i.url === firstUpload.url);
@@ -715,7 +754,7 @@ describe("media.pollinations.ai", () => {
         // A well-formed integer limit is accepted.
         const ok = await SELF.fetch(
             "https://media.pollinations.ai/media?limit=10",
-            { headers: { Authorization: "Bearer pk_alice" } },
+            { headers: { Authorization: "Bearer sk_alice" } },
         );
         expect(ok.status).toBe(200);
 
@@ -729,7 +768,7 @@ describe("media.pollinations.ai", () => {
         ]) {
             const res = await SELF.fetch(
                 `https://media.pollinations.ai/media?${q}`,
-                { headers: { Authorization: "Bearer pk_alice" } },
+                { headers: { Authorization: "Bearer sk_alice" } },
             );
             expect(res.status, q).toBe(400);
         }
@@ -758,11 +797,90 @@ describe("media.pollinations.ai", () => {
         });
         expect(noUser.status).toBe(403);
 
+        // Publishable keys ship inside public clients — anyone holding one
+        // must not be able to read the owner's private library.
+        const publishable = await SELF.fetch(
+            "https://media.pollinations.ai/media",
+            { headers: { Authorization: "Bearer pk_alice" } },
+        );
+        expect(publishable.status).toBe(403);
+
+        // An /account/key response predating the identity fields (userId
+        // absent, not null) must read as not-user-attached — never as an
+        // unscoped listing.
+        const legacy = await SELF.fetch("https://media.pollinations.ai/media", {
+            headers: { Authorization: "Bearer sk_legacy" },
+        });
+        expect(legacy.status).toBe(403);
+
         // A tag gallery, by contrast, is browsable with no key at all.
         const publicGallery = await SELF.fetch(
             "https://media.pollinations.ai/media?tag=sunset",
         );
         expect(publicGallery.status).toBe(200);
+    });
+
+    it("a BYOP-minted key lists only items created through its app", async () => {
+        // pk_alice carries byopClientKeyId pk_app_1 → this upload is stamped
+        // with that app; the sk_alice upload is direct (no app).
+        const viaApp = await uploadViaForm("pk_alice", {
+            fileName: "byop-app.png",
+            bytes: variant(80),
+        });
+        expect(viaApp.status).toBe(200);
+        const appUpload = viaApp.body as UploadResponse;
+
+        const direct = await uploadViaForm("sk_alice", {
+            fileName: "byop-direct.png",
+            bytes: variant(81),
+        });
+        expect(direct.status).toBe(200);
+        const directUpload = direct.body as UploadResponse;
+
+        const appRes = await SELF.fetch("https://media.pollinations.ai/media", {
+            headers: { Authorization: "Bearer sk_alice_app" },
+        });
+        expect(appRes.status).toBe(200);
+        const appMedia = (await appRes.json()) as MediaPageResponse;
+        const appUrls = appMedia.items.map((i) => i.url);
+        expect(appUrls).toContain(appUpload.url);
+        expect(appUrls).not.toContain(directUpload.url);
+
+        // The owner's plain secret key still sees the whole library.
+        const ownRes = await SELF.fetch("https://media.pollinations.ai/media", {
+            headers: { Authorization: "Bearer sk_alice" },
+        });
+        const ownMedia = (await ownRes.json()) as MediaPageResponse;
+        const ownUrls = ownMedia.items.map((i) => i.url);
+        expect(ownUrls).toContain(appUpload.url);
+        expect(ownUrls).toContain(directUpload.url);
+    });
+
+    it("serves a full page at limit=100 (D1 bound-parameter cap regression)", async () => {
+        const db = drizzle(env.DB);
+        const now = Date.now();
+        const rows = Array.from({ length: 101 }, (_, i) => ({
+            id: `bulk-${i}-${crypto.randomUUID()}`,
+            ownerUserId: "user_bob",
+            appKeyId: null,
+            contentType: "image/png",
+            size: 67,
+            createdAt: new Date(now + i),
+        }));
+        // Insert in slices — a single 101-row VALUES would itself blow the
+        // 100-bound-parameter cap this test guards against.
+        for (let i = 0; i < rows.length; i += 10) {
+            await db.insert(mediaItem).values(rows.slice(i, i + 10));
+        }
+
+        const res = await SELF.fetch(
+            "https://media.pollinations.ai/media?limit=100",
+            { headers: { Authorization: "Bearer sk_bob" } },
+        );
+        expect(res.status).toBe(200);
+        const page = (await res.json()) as MediaPageResponse;
+        expect(page.items).toHaveLength(100);
+        expect(page.hasMore).toBe(true);
     });
 
     describe("reactions", () => {
@@ -909,7 +1027,7 @@ describe("media.pollinations.ai", () => {
 
             const meRes = await SELF.fetch(
                 "https://media.pollinations.ai/media",
-                { headers: { Authorization: "Bearer pk_alice" } },
+                { headers: { Authorization: "Bearer sk_alice" } },
             );
             const me = (await meRes.json()) as MediaPageResponse;
             const meItem = me.items.find((i) => i.id === itemId);

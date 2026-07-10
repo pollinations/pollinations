@@ -6,6 +6,10 @@ on:
       - production
     paths:
       - 'media.pollinations.ai/**'
+      # The worker imports shared/ modules and queries tables migrated from
+      # enter's drizzle dir — redeploy on either so code and schema move together.
+      - 'shared/**'
+      - 'enter.pollinations.ai/drizzle/**'
       - '.github/workflows/deploy-media-cloudflare.yml'
   workflow_dispatch:
 

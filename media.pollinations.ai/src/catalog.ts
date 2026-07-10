@@ -198,6 +198,9 @@ export const MAX_LIMIT = 100;
  *    public, so this needs no auth.
  *  - both set → the owner's items carrying that tag.
  *
+ * appKeyId narrows an owner listing to items created through that BYOP app —
+ * a BYOP-minted key must not see the rest of the owner's library.
+ *
  * Ordering is always (createdAt DESC, id DESC) — a single keyset cursor over
  * the item table covers every mode.
  */
@@ -205,6 +208,7 @@ export async function listMedia(
     db: CatalogDb,
     params: {
         ownerUserId?: string;
+        appKeyId?: string;
         tag?: string;
         limit: number;
         cursor?: { createdAt: Date; id: string };
@@ -213,6 +217,9 @@ export async function listMedia(
     const conditions: SQL[] = [];
     if (params.ownerUserId) {
         conditions.push(eq(mediaItem.ownerUserId, params.ownerUserId));
+    }
+    if (params.appKeyId) {
+        conditions.push(eq(mediaItem.appKeyId, params.appKeyId));
     }
     if (params.cursor) {
         conditions.push(beforeCursor(params.cursor));
@@ -243,25 +250,38 @@ export async function listMedia(
     return paginate(rows, params.limit);
 }
 
-/** Fetch tags for a page of item ids in one query, grouped by item id. */
+// D1 caps bound parameters at 100 per statement. A full page holds up to
+// MAX_LIMIT (100) ids, and some lookups bind values on top of the id list,
+// so id-list queries run in chunks that stay well under the cap.
+const ID_CHUNK_SIZE = 50;
+
+function chunkIds(itemIds: string[]): string[][] {
+    const chunks: string[][] = [];
+    for (let i = 0; i < itemIds.length; i += ID_CHUNK_SIZE) {
+        chunks.push(itemIds.slice(i, i + ID_CHUNK_SIZE));
+    }
+    return chunks;
+}
+
+/** Fetch tags for a page of item ids, grouped by item id. */
 export async function tagsForItems(
     db: CatalogDb,
     itemIds: string[],
 ): Promise<Map<string, string[]>> {
     const byItem = new Map<string, string[]>();
-    if (itemIds.length === 0) return byItem;
+    for (const ids of chunkIds(itemIds)) {
+        const rows = await db
+            .select({ itemId: mediaTag.itemId, tag: mediaTag.tag })
+            .from(mediaTag)
+            .where(inArray(mediaTag.itemId, ids));
 
-    const rows = await db
-        .select({ itemId: mediaTag.itemId, tag: mediaTag.tag })
-        .from(mediaTag)
-        .where(inArray(mediaTag.itemId, itemIds));
-
-    for (const row of rows) {
-        const existing = byItem.get(row.itemId);
-        if (existing) {
-            existing.push(row.tag);
-        } else {
-            byItem.set(row.itemId, [row.tag]);
+        for (const row of rows) {
+            const existing = byItem.get(row.itemId);
+            if (existing) {
+                existing.push(row.tag);
+            } else {
+                byItem.set(row.itemId, [row.tag]);
+            }
         }
     }
     return byItem;
@@ -373,57 +393,57 @@ export async function reactionCountsForItems(
     itemIds: string[],
 ): Promise<Map<string, Record<string, number>>> {
     const byItem = new Map<string, Record<string, number>>();
-    if (itemIds.length === 0) return byItem;
+    for (const ids of chunkIds(itemIds)) {
+        const rows = await db
+            .select({
+                itemId: mediaReaction.itemId,
+                reaction: mediaReaction.reaction,
+                count: count(),
+            })
+            .from(mediaReaction)
+            .where(inArray(mediaReaction.itemId, ids))
+            .groupBy(mediaReaction.itemId, mediaReaction.reaction);
 
-    const rows = await db
-        .select({
-            itemId: mediaReaction.itemId,
-            reaction: mediaReaction.reaction,
-            count: count(),
-        })
-        .from(mediaReaction)
-        .where(inArray(mediaReaction.itemId, itemIds))
-        .groupBy(mediaReaction.itemId, mediaReaction.reaction);
-
-    for (const row of rows) {
-        const existing = byItem.get(row.itemId);
-        if (existing) {
-            existing[row.reaction] = row.count;
-        } else {
-            byItem.set(row.itemId, { [row.reaction]: row.count });
+        for (const row of rows) {
+            const existing = byItem.get(row.itemId);
+            if (existing) {
+                existing[row.reaction] = row.count;
+            } else {
+                byItem.set(row.itemId, { [row.reaction]: row.count });
+            }
         }
     }
     return byItem;
 }
 
-/** A user's reaction kinds for a page of item ids, in one query. */
+/** A user's reaction kinds for a page of item ids, grouped by item id. */
 export async function userReactionsForItems(
     db: CatalogDb,
     itemIds: string[],
     userId: string,
 ): Promise<Map<string, string[]>> {
     const byItem = new Map<string, string[]>();
-    if (itemIds.length === 0) return byItem;
+    for (const ids of chunkIds(itemIds)) {
+        const rows = await db
+            .select({
+                itemId: mediaReaction.itemId,
+                reaction: mediaReaction.reaction,
+            })
+            .from(mediaReaction)
+            .where(
+                and(
+                    inArray(mediaReaction.itemId, ids),
+                    eq(mediaReaction.userId, userId),
+                ),
+            );
 
-    const rows = await db
-        .select({
-            itemId: mediaReaction.itemId,
-            reaction: mediaReaction.reaction,
-        })
-        .from(mediaReaction)
-        .where(
-            and(
-                inArray(mediaReaction.itemId, itemIds),
-                eq(mediaReaction.userId, userId),
-            ),
-        );
-
-    for (const row of rows) {
-        const existing = byItem.get(row.itemId);
-        if (existing) {
-            existing.push(row.reaction);
-        } else {
-            byItem.set(row.itemId, [row.reaction]);
+        for (const row of rows) {
+            const existing = byItem.get(row.itemId);
+            if (existing) {
+                existing.push(row.reaction);
+            } else {
+                byItem.set(row.itemId, [row.reaction]);
+            }
         }
     }
     return byItem;

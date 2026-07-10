@@ -612,19 +612,23 @@ function renderEndpoint(
     out.push("```");
     out.push("");
 
-    // Response example (if we can synthesize one)
+    // Response example: prefer the media-type example injected by
+    // injectSamples() (RESPONSE_EXAMPLES), fall back to schema synthesis.
     const firstOk = successCodes[0];
     if (firstOk) {
         const r = asObj(responses[firstOk]);
         const jsonResp = asObj(asObj(r.content)["application/json"]);
-        if (jsonResp.schema) {
-            const ex = pickExample(spec, asObj(jsonResp.schema));
-            if (isResponseExampleWorthwhile(ex)) {
-                out.push("```json");
-                out.push(JSON.stringify(ex, null, 2));
-                out.push("```");
-                out.push("");
-            }
+        const ex =
+            jsonResp.example !== undefined
+                ? jsonResp.example
+                : jsonResp.schema
+                  ? pickExample(spec, asObj(jsonResp.schema))
+                  : undefined;
+        if (isResponseExampleWorthwhile(ex)) {
+            out.push("```json");
+            out.push(JSON.stringify(ex, null, 2));
+            out.push("```");
+            out.push("");
         }
     }
 
@@ -870,7 +874,7 @@ All endpoints return errors in this envelope:
 | \`400\` | \`BAD_REQUEST\` | Invalid input. \`details\` includes \`formErrors\` and \`fieldErrors\` for validation failures. |
 | \`401\` | \`UNAUTHORIZED\` | Missing or invalid API key. Provide via \`Authorization: Bearer <key>\` header or \`?key=<key>\` query param. |
 | \`402\` | \`PAYMENT_REQUIRED\` | Insufficient pollen balance or API key budget exhausted. |
-| \`403\` | \`FORBIDDEN\` | Access denied — insufficient permissions or tier for this model. |
+| \`403\` | \`FORBIDDEN\` | Access denied — insufficient permissions or paid-model access for this model. |
 | \`404\` | \`NOT_FOUND\` | Resource not found. |
 | \`405\` | \`METHOD_NOT_ALLOWED\` | HTTP method not supported on this route. |
 | \`409\` | \`CONFLICT\` | Request conflicts with current resource state (e.g. duplicate key name). |
@@ -929,6 +933,27 @@ const CURATED_BODIES: Record<string, Json> = {
         type: "secret",
         allowedModels: ["openai", "flux"],
         pollenBudget: 100,
+    },
+    postV1AudioSpeech: {
+        input: "Hello world",
+        voice: "nova",
+    },
+    postAccountMyModels: {
+        name: "my-community-model",
+        baseUrl: "https://api.example.com/v1",
+        bearerToken: "sk-upstream-token",
+    },
+    postAccountMyModelsModels: {
+        baseUrl: "https://api.example.com/v1",
+        bearerToken: "sk-upstream-token",
+    },
+    postAccountMyModelsTest: {
+        baseUrl: "https://api.example.com/v1",
+        bearerToken: "sk-upstream-token",
+        model: "llama-3.3-70b",
+    },
+    postAccountMyModelsByIdUpdate: {
+        description: "Updated model description",
     },
 };
 

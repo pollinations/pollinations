@@ -2,6 +2,13 @@
 
 Canonical vendor: `google`
 
+## Empirical status — 2026-07-10
+
+- Status: service-account OAuth and bounded BigQuery billing export work.
+- June returned 106,857 source rows through June 30.
+- Gross EUR 4,489.35, credits EUR 0.00, net EUR 4,489.35.
+- The export is current for the closed month; preserve native EUR.
+
 Use when:
 
 - collecting Google Cloud / Vertex / BigQuery billing export evidence

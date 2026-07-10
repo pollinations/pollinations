@@ -3,16 +3,9 @@ import type { Data, OpCloudRow, OpPollenRow } from "../types";
 import { gpuEconomics, gpuSummary, visibleGpuRows } from "./GpuTab";
 
 const baseData: Data = {
-    transactions: [],
-    providerMonthly: [],
-    pollenMonthly: [],
     opTransactions: [],
     opCloud: [],
     opPollen: [],
-    grants: [],
-    runs: [],
-    revenueMonthly: [],
-    gpuRuns: [],
 };
 
 function cloud(overrides: Partial<OpCloudRow>): OpCloudRow {

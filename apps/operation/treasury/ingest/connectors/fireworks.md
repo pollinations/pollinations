@@ -2,6 +2,15 @@
 
 Canonical vendor: `fireworks`
 
+## Empirical status — 2026-07-10
+
+- Status: all four configured API keys authenticate through `firectl`.
+- June account-cost queries returned one cost item per account. The primary
+  account total was USD 7,557.674738101; the other three were zero.
+- Fireworks money values are objects with `currency_code`, `units`, and
+  `nanos`; parse them as Money objects, not JavaScript numbers.
+- Invoice evidence remains necessary to split credit-funded and postpaid cost.
+
 Use when:
 
 - collecting Fireworks account usage and invoice evidence
@@ -12,6 +21,7 @@ Primary evidence sources:
 
 - CLI usage: `firectl billing get-usage --account-costs-only -o json`
 - CLI invoices: `firectl billing list-invoices`
+- Current account balance snapshot: `firectl account get`
 - Invoice/payment: Fireworks invoice, receipt, or Wise/card transaction.
 - Dashboard: Fireworks billing and account credits.
 
@@ -51,10 +61,12 @@ Collection steps:
 
    Save raw text/JSON evidence to `data/inbox/fireworks-<account>-invoices-<date>.txt`.
 
-3. For monthly usage, sum `account_costs.cost_data_items[].total`.
-4. Attribute invoices by usage month: postpaid invoices dated on the 1st usually cover the previous month.
-5. Keep prepaid credit top-ups separate from usage cost.
-6. Use `agent.system.txt` with `mode: extract` for saved raw evidence.
+3. If the user asks for balance now, query each relevant account with
+   `firectl account get` and save the dated snapshot separately.
+4. For monthly usage, sum `account_costs.cost_data_items[].total`.
+5. Attribute invoices by usage month: postpaid invoices dated on the 1st usually cover the previous month.
+6. Keep prepaid credit top-ups separate from usage cost.
+7. Use `agent.system.txt` with `mode: extract` for saved raw evidence.
 
 Expected entry:
 
@@ -68,6 +80,8 @@ Known traps:
 
 - Never save API keys in command logs or evidence files.
 - Multiple Fireworks accounts are in use; sum all relevant accounts for provider totals.
+- A current account balance does not prove month-to-date usage. Do not recreate
+  the retired month-open balance cache or infer a month solely from two snapshots.
 - Postpaid invoice date is not the usage month.
 - `PREPAID_CREDITS` top-ups fund balance; they are not usage consumption.
 - Draft or zero-amount invoices should not anchor cash usage.

@@ -11,16 +11,9 @@ import {
 } from "./months";
 
 const data: Data = {
-    transactions: [],
-    providerMonthly: [],
-    pollenMonthly: [],
     opTransactions: FIXTURES.op_transactions_api,
     opCloud: FIXTURES.op_cloud_api,
     opPollen: FIXTURES.op_pollen_api,
-    grants: [],
-    runs: [],
-    revenueMonthly: [],
-    gpuRuns: [],
 } as Data;
 
 describe("collectMonths", () => {

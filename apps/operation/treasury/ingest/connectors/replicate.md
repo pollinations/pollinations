@@ -2,6 +2,14 @@
 
 Canonical vendor: `replicate`
 
+## Empirical status — 2026-07-10
+
+- Status: account and predictions APIs work; invoice/balance remains manual.
+- The token resolved to an organization account. The first predictions page
+  contained 100 rows: 97 succeeded and three failed, with another page
+  available.
+- Predictions prove operational activity, not the amount charged.
+
 Use when:
 
 - collecting Replicate invoice, receipt, billing UI, or Wise/card payment evidence
@@ -56,6 +64,16 @@ Collection steps:
 5. For model pricing, save model page screenshots or short HTML/text evidence from the public model page. Do not infer pricing from `metrics.predict_time`.
 6. For invoice reconciliation, compare Replicate cash/invoice evidence with Tinybird metered Replicate model costs. Treat any remainder as a Replicate-wide reconciliation item until the missing source is identified.
 7. Use `agent.system.txt` with `mode: extract` for saved raw evidence.
+
+Seedance 2.0 pricing witness:
+
+- Validated 2026-05-07 from the public model page and completed prediction
+  metrics.
+- `non_video_in` at 720p is $0.18 per output second.
+- `video_in` at 720p is $0.22 per output second.
+- Pollinations exposes `non_video_in` at 720p; audio and image input do not
+  change that tier.
+- Re-check the public Replicate model page before changing the registry price.
 
 Expected entry:
 

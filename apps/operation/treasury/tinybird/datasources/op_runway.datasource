@@ -3,13 +3,13 @@ TOKEN "treasury_ingest" READ
 
 SCHEMA >
     `entry_id` String `json:$.entry_id`,
-    `source` String `json:$.source`,
+    `kind` String `json:$.kind`,
     `date` Date `json:$.date`,
     `vendor` String `json:$.vendor`,
     `category` String `json:$.category`,
     `amount` Float64 `json:$.amount`,
     `currency` String `json:$.currency`,
-    `description` String `json:$.description`,
+    `source` String `json:$.source`,
     `evidence` String `json:$.evidence`,
     `recorded_at` DateTime64(3) `json:$.recorded_at`
 

@@ -1,28 +1,22 @@
-import { execFile, execFileSync } from "node:child_process";
+import { execFileSync } from "node:child_process";
 import { createHmac, timingSafeEqual } from "node:crypto";
 import type { IncomingMessage, ServerResponse } from "node:http";
 import { fileURLToPath } from "node:url";
-import { promisify } from "node:util";
 import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react";
 import { defineConfig, type Plugin } from "vite";
 
 const TB_HOST = "https://api.europe-west2.gcp.tinybird.co";
-const execFileAsync = promisify(execFile);
 const SECRETS_PATH = fileURLToPath(
     new URL("../secrets/web.json", import.meta.url),
-);
-const FORAGER_PATH = fileURLToPath(
-    new URL("../../../../_local/audit/forager/", import.meta.url),
 );
 const SESSION_COOKIE = "treasury_session";
 const READ_PIPES = new Set([
     "op_transactions_api",
     "op_cloud_api",
     "op_pollen_api",
+    "op_runway_api",
 ]);
-const REFRESH_TARGETS = new Set(["op-transactions", "op-pollen"]);
-const MONTH_RE = /^\d{4}-(0[1-9]|1[0-2])$/;
 
 type TreasurySecrets = {
     TREASURY_PASSWORD: string;
@@ -99,28 +93,6 @@ async function readBody(req: IncomingMessage) {
         chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
     }
     return Buffer.concat(chunks).toString("utf8");
-}
-
-async function runRefresh(target: string, month: string) {
-    const args =
-        target === "op-pollen"
-            ? ["-m", "ingest.op_refresh", "pollen", "--month", month, "--write"]
-            : [
-                  "-m",
-                  "ingest.op_migrate",
-                  "--table",
-                  "op_transactions",
-                  "--write",
-              ];
-    const { stdout, stderr } = await execFileAsync("python3", args, {
-        cwd: FORAGER_PATH,
-        timeout: 300_000,
-        maxBuffer: 1024 * 1024,
-    });
-    const output = [stdout.trim(), stderr.trim()].filter(Boolean).join("\n");
-    const scope =
-        target === "op-pollen" ? `op_pollen ${month}` : "op_transactions";
-    return output ? `${scope}: ${output}` : `${scope}: updated`;
 }
 
 async function handleApi(req: IncomingMessage, res: ServerResponse) {
@@ -201,43 +173,6 @@ async function handleApi(req: IncomingMessage, res: ServerResponse) {
             upstream.headers.get("content-type") ?? "application/json",
         );
         res.end(await upstream.text());
-        return true;
-    }
-
-    if (url.pathname.startsWith("/api/refresh/") && req.method === "POST") {
-        const target = decodeURIComponent(
-            url.pathname.slice("/api/refresh/".length),
-        );
-        if (!REFRESH_TARGETS.has(target)) {
-            json(res, 404, { error: "Unknown refresh target" });
-            return true;
-        }
-
-        const raw = await readBody(req);
-        let body: { month?: string };
-        try {
-            body = raw ? (JSON.parse(raw) as { month?: string }) : {};
-        } catch {
-            json(res, 400, { error: "Invalid JSON body" });
-            return true;
-        }
-        const month = body.month ?? "";
-        if (!MONTH_RE.test(month)) {
-            json(res, 400, { error: "month must be YYYY-MM" });
-            return true;
-        }
-
-        try {
-            const message = await runRefresh(target, month);
-            json(res, 200, { message });
-        } catch (error) {
-            json(res, 500, {
-                error:
-                    error instanceof Error
-                        ? error.message
-                        : "Refresh command failed",
-            });
-        }
         return true;
     }
 

@@ -2,26 +2,54 @@
 
 Canonical vendor: `wise`
 
+## Empirical status — 2026-07-10
+
+- Status: profile, balance, and bounded activity APIs work.
+- The business context returned four standard currency balances, two nonzero,
+  and 44 June activities. The activity response included a pagination cursor.
+- No account identifiers or raw bank amounts belong in connector notes or chat.
+
 Use when:
 
 - collecting cash transaction truth
 - checking whether an invoice was paid or refunded
 - collecting FX-settled transaction amounts for provider invoices
+- collecting Wise's own cashback or fees
 
 Primary evidence sources:
 
+- API activity: `GET /v1/profiles/{profileId}/activities`.
+- API balances: `GET /v4/profiles/{profileId}/balances?types=STANDARD`.
+- API balance statements: use the bounded statement endpoint for a known
+  balance ID when activities are not detailed enough.
 - Dashboard/export: Wise Activities export.
 - Local files: Wise CSV/JSON/screenshots already placed in `data/inbox/`.
 - Transaction context: `op_transactions`.
 
-Use exported Wise files or a Treasury-native connector when one exists.
+Credentials are SOPS-encrypted in `secrets/env.json` as `WISE_API_TOKEN`,
+`WISE_BUSINESS_PROFILE_ID`, and `WISE_BUSINESS_EUR_BALANCE_ID`. Decrypt them in
+memory only. Never print token, profile, balance, account, or bank-detail values.
+
+Official references:
+
+- https://docs.wise.com/api-reference/activity
+- https://docs.wise.com/api-reference/balance
 
 Collection steps:
 
-1. Use Wise activities for the requested period only.
-2. Save any exported CSV/JSON/screenshots to `data/inbox/`.
-3. Use `agent.system.txt` with `mode: extract` when exported transaction evidence needs to become an entry.
-4. For reconciliation, compare against invoice entries and `op_transactions`.
+1. Prefer existing `op_transactions` when it already covers the requested
+   period; it is the Treasury cash ledger derived from Wise.
+2. For a missing or live period, request Wise activities with explicit ISO 8601
+   `since` and `until` bounds, `size=100`, and follow `cursor` with
+   `nextCursor` until it is null.
+3. For cash now, list `STANDARD` balances and convert each balance to the chosen
+   reporting currency with an explicit dated FX source. Do not include Jars
+   unless the user asks.
+4. Save raw API/export JSON, CSV, or screenshots to `data/inbox/` when the
+   result will become durable evidence.
+5. Use `agent.system.txt` with `mode: extract` when exported transaction
+   evidence needs to become an entry.
+6. For reconciliation, compare against invoice entries and `op_transactions`.
 
 Expected entry:
 
@@ -33,7 +61,9 @@ Expected entry:
 
 Entry mapping rules for Wise activity payment evidence:
 
-- `provider`: use the counterparty/provider vendor, such as `openai`, `vast.ai`, or `cloudflare`. Use `Wise Europe SA` only for Wise's own fees, cashback, or statements.
+- `provider`: use the counterparty/provider vendor, such as `openai`, `vast.ai`, or `cloudflare`. Use canonical vendor `wise` for Wise's own fees, cashback, or statements.
+- Wise cashback maps to canonical vendor `wise`, category `revenue`. Never map
+  it to `admin` or `others`.
 - `amount`: use the absolute settled cash amount for spend/payment entries. Record refund/credit direction in `usage_summary` and `reconciliation_notes`.
 - `currency`: use the settled Wise currency from `ingest.wise.settled_amount()`.
 - `period_start` and `period_end`: use the Wise export/activity period unless a matched invoice service period is explicit.
@@ -55,6 +85,15 @@ Known traps:
 - Settled currency is often EUR even when the provider invoice is USD.
 - Refunds may reverse prior charges and should not be counted as new spend.
 - Some transactions need vendor aliasing or split logic.
+- `primaryAmount` from the Activities API is display text, not a numeric amount;
+  use structured settled amounts from the activity resource or a balance
+  statement.
+- Activities are cursor-paginated; the first 100 rows are not necessarily the
+  complete period.
+- A current-month activity range is partial and must not be used as a full-month
+  forecast baseline.
+- A balance response is a current snapshot. It does not replace bounded Wise
+  activities or statements as historical cash evidence.
 - Do not expose account tokens or personal banking details in entry notes.
 
 Reconciliation notes:

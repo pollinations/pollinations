@@ -2,6 +2,13 @@
 
 Canonical vendor: `vast.ai`
 
+## Empirical status — 2026-07-10
+
+- Status: `vastai` billing API path works with the Treasury key.
+- June returned 13 charge rows with direct top-level amounts totaling USD 1.03.
+- Do not recursively sum every nested `amount`; invoice items and metadata can
+  repeat monetary values. Use the top-level charge amount once.
+
 Use when:
 
 - collecting Vast.ai GPU marketplace usage

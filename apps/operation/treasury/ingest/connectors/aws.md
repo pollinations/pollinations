@@ -2,6 +2,15 @@
 
 Canonical vendor: `aws`
 
+## Empirical status — 2026-07-10
+
+- Status: Umbrella authentication and the account-scoped data plane both work.
+- Two accounts were discovered. June returned 56 service rows totaling
+  USD 823.5055 and 48 rows totaling USD 4,855.0458; neither response had a
+  next page. Combined API cost was USD 5,678.5513.
+- Keep the accounts separate in raw evidence before summing, because service
+  ownership and reseller credits can differ.
+
 Use when:
 
 - collecting AWS/AIT/Umbrella Cost billing evidence

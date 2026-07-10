@@ -1,5 +1,11 @@
 import { FIXTURES } from "../fixtures";
-import type { Data, OpCloudRow, OpPollenRow, OpTransactionRow } from "../types";
+import type {
+    Data,
+    OpCloudRow,
+    OpPollenRow,
+    OpRunwayRow,
+    OpTransactionRow,
+} from "../types";
 
 export const fixturesMode = (): boolean =>
     typeof window !== "undefined" &&
@@ -47,22 +53,12 @@ async function fetchOptionalPipe<T>(pipe: string): Promise<T[]> {
 }
 
 export async function loadAll(): Promise<Data> {
-    const [opTransactions, opCloud, opPollen] = await Promise.all([
+    const [opTransactions, opCloud, opPollen, opRunway] = await Promise.all([
         fetchOptionalPipe<OpTransactionRow>("op_transactions_api"),
         fetchOptionalPipe<OpCloudRow>("op_cloud_api"),
         fetchOptionalPipe<OpPollenRow>("op_pollen_api"),
+        fetchOptionalPipe<OpRunwayRow>("op_runway_api"),
     ]);
 
-    return {
-        transactions: [],
-        providerMonthly: [],
-        pollenMonthly: [],
-        opTransactions,
-        opCloud,
-        opPollen,
-        grants: [],
-        runs: [],
-        revenueMonthly: [],
-        gpuRuns: [],
-    };
+    return { opTransactions, opCloud, opPollen, opRunway };
 }

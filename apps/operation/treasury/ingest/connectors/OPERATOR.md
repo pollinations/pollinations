@@ -16,12 +16,14 @@ Treasury ingest entries.
 
 Always use `agent.system.txt`.
 
-The prompt has three modes:
+The prompt has four modes:
 
 - `collect`: gather raw evidence from local files, connector guides, or Gmail.
 - `extract`: turn one raw source into one `ingest_entry.v1`.
 - `reconcile`: dry-run matching of existing entries against `op_transactions`
   and `op_cloud`.
+- `forecast`: propose explicit `op_runway` facts from closed-month OP data and
+  user-approved assumptions.
 
 ## Schema
 
@@ -34,23 +36,63 @@ truth.
 
 ## Connectors
 
-Provider-specific live collection notes live in:
+Provider-specific on-demand collection notes live in:
 
+- `alibaba.md`
+- `anthropic.md`
 - `aws.md`
 - `azure.md`
+- `bytedance.md`
 - `cloudflare.md`
+- `community.md`
+- `daytona.md`
 - `deepinfra.md`
+- `digitalocean.md`
+- `elevenlabs.md`
+- `fal.md`
+- `fireworks.md`
 - `google.md`
+- `io-net.md`
+- `lambda.md`
+- `modal.md`
 - `openai.md`
 - `openrouter.md`
 - `ovhcloud.md`
+- `perplexity.md`
+- `replicate.md`
 - `runpod.md`
+- `scaleway.md`
+- `stripe.md`
 - `vast-ai.md`
 - `wise.md`
 - `xai.md`
 
+## Empirical audit status
+
+Last full audit: 2026-07-10. Every connector was exercised with its available
+secret or its documented internal/manual evidence path. The audit was read-only:
+no paid inference, provider mutation, bank action, or Tinybird write.
+
+- Working provider billing/usage evidence: Alibaba, Anthropic, AWS/Umbrella,
+  Azure, Cloudflare billing history, DeepInfra, ElevenLabs, Fireworks, Google,
+  Modal, OpenAI, OpenRouter, OVHcloud, Scaleway, Stripe, Vast.ai, Wise, and xAI.
+- Partial but useful: ByteDance historical meter, community internal meter,
+  Daytona resource API, fal pricing plus internal meter, io.net historical
+  meter, Lambda live inventory/prices, Perplexity internal meter, Replicate
+  operational API, and RunPod live balance/burn snapshot.
+- Blocked: DigitalOcean billing endpoints return HTTP 403 with the current
+  active token. The token needs `billing:read`; use invoices/dashboard evidence
+  until it is replaced.
+
+Manual/partial connector files are intentionally retained. They document what
+the available API can prove, what must come from a dashboard/invoice/user, and
+why an absent API result must not be silently recorded as zero.
+
 Only use a live connector for the provider and period requested. Prefer existing
 files in `data/inbox/` when they already contain the needed evidence.
+
+There is no recurring connector job. A connector is one evidence path the agent
+may choose during a user-requested collection.
 
 ## Secrets
 

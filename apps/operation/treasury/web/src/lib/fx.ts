@@ -1,3 +1,5 @@
+import type { Data } from "../types";
+
 // Monthly average EUR→USD (ECB rates via frankfurter.dev, pulled 2026-07-06).
 // Append one line when a new month starts — the only maintenance this needs.
 export const FX_EUR_USD: Record<string, number> = {
@@ -14,6 +16,23 @@ export const FX_EUR_USD_FALLBACK = 1.15;
 
 export function eurUsdRate(month: string): number {
     return FX_EUR_USD[month] ?? FX_EUR_USD_FALLBACK;
+}
+
+// Months with EUR rows but no table rate: those rows silently convert at the
+// fallback, so the staleness must surface as a Data Quality flag instead of
+// bending every EUR margin unnoticed.
+export function fxFallbackMonths(data: Data): string[] {
+    const months = new Set<string>();
+    const check = (currency: string, period: string) => {
+        if (currency.toUpperCase() !== "EUR") return;
+        const month = period.slice(0, 7);
+        if (FX_EUR_USD[month] == null) months.add(month);
+    };
+    for (const row of data.opTransactions ?? []) check(row.currency, row.date);
+    for (const row of data.opCloud ?? []) check(row.currency, row.start);
+    for (const row of data.opPollen ?? []) check(row.currency, row.month);
+    for (const row of data.opRunway ?? []) check(row.currency, row.date);
+    return [...months].sort();
 }
 
 // period may be "YYYY-MM" or a full "YYYY-MM-DD" date; only the month is used.

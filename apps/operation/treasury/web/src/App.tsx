@@ -20,6 +20,7 @@ import {
     Text,
     TrendUpIcon,
     useScrollLock,
+    WalletIcon,
     XIcon,
 } from "@pollinations/ui";
 import logoUrl from "@pollinations/ui/assets/logo.svg";
@@ -53,17 +54,12 @@ import { OpCloudTab } from "./views/OpCloudTab";
 import { OpPollenTab } from "./views/OpPollenTab";
 import { OpTransactionsTab } from "./views/OpTransactionsTab";
 import { PnlTab } from "./views/PnlTab";
+import { RunwayTab } from "./views/RunwayTab";
 import { VendorsTab } from "./views/VendorsTab";
 
 type Tab = "data-quality" | "op-transactions" | "op-pollen" | "op-cloud";
 type TreasurySection = "insights" | "raw";
-type InsightTab = "pnl" | "vendors" | "models" | "credits" | "gpu";
-type RefreshableRawTab = "op-transactions" | "op-pollen";
-type RefreshState = {
-    target: RefreshableRawTab | null;
-    message: string | null;
-    error: string | null;
-};
+type InsightTab = "pnl" | "runway" | "vendors" | "models" | "credits" | "gpu";
 
 function isCompactInsightView(
     section: TreasurySection,
@@ -73,6 +69,7 @@ function isCompactInsightView(
         section === "raw" ||
         (section === "insights" &&
             (insightTab === "pnl" ||
+                insightTab === "runway" ||
                 insightTab === "credits" ||
                 insightTab === "vendors" ||
                 insightTab === "models" ||
@@ -103,6 +100,12 @@ const INSIGHT_TABS: {
         label: "P&L",
         note: "Strict cash P&L from the signed Wise ledger: revenue inflows minus non-revenue outflows by category.",
         icon: TrendUpIcon,
+    },
+    {
+        id: "runway",
+        label: "Runway",
+        note: "Cash runway from the signed Wise ledger plus explicit agent- or manually-authored forecast facts.",
+        icon: WalletIcon,
     },
     {
         id: "credits",
@@ -196,10 +199,6 @@ function codesLabel(codes: readonly ProvenanceCode[]) {
     return codes.length ? `${codes.join(", ")} · ` : "";
 }
 
-function isRefreshableRawTab(id: Tab): id is RefreshableRawTab {
-    return id === "op-transactions" || id === "op-pollen";
-}
-
 function MobileMenuButton({
     buttonRef,
     onOpen,
@@ -245,61 +244,21 @@ function DrawerGroup({
 function TreasuryNav({
     data,
     insightTab,
-    refresh,
     section,
     tab,
     onInsightTabChange,
     onRawTabChange,
-    onRefresh,
 }: {
     data: Data | null;
     insightTab: InsightTab;
-    refresh: RefreshState;
     section: TreasurySection;
     tab: Tab;
     onInsightTabChange: (value: InsightTab) => void;
     onRawTabChange: (value: Tab) => void;
-    onRefresh: (value: RefreshableRawTab) => void;
 }) {
     const rawItem = (item: (typeof TABS)[number]) => {
         const count = data ? item.rows(data) : null;
         const title = `${codesLabel(item.codes)}${item.pipe}${data ? ` · ${count} rows` : ""}\n${item.note}`;
-
-        if (isRefreshableRawTab(item.id)) {
-            const refreshId = item.id;
-            const refreshing = refresh.target === item.id;
-            return (
-                <div key={item.id} className="flex items-center gap-1">
-                    <NavItem
-                        type="button"
-                        data-theme="accent"
-                        icon={item.icon}
-                        active={section === "raw" && tab === item.id}
-                        title={title}
-                        onClick={() => onRawTabChange(item.id)}
-                        className="min-w-0 flex-1"
-                    >
-                        <span className="min-w-0 flex-1 truncate">
-                            {item.label}
-                        </span>
-                    </NavItem>
-                    {count == null ? null : (
-                        <Button
-                            type="button"
-                            size="sm"
-                            data-theme="neutral"
-                            disabled={refreshing}
-                            title={`Update ${item.label} for the active month`}
-                            aria-label={`Update ${item.label}`}
-                            onClick={() => onRefresh(refreshId)}
-                            className="h-7 min-w-10 shrink-0 px-2 text-xs text-theme-text-soft"
-                        >
-                            {refreshing ? "..." : count}
-                        </Button>
-                    )}
-                </div>
-            );
-        }
 
         return (
             <NavItem
@@ -371,22 +330,18 @@ function TreasuryDrawer({
     data,
     footer,
     insightTab,
-    refresh,
     section,
     tab,
     onInsightTabChange,
     onRawTabChange,
-    onRefresh,
 }: {
     data: Data | null;
     footer: ReactNode;
     insightTab: InsightTab;
-    refresh: RefreshState;
     section: TreasurySection;
     tab: Tab;
     onInsightTabChange: (value: InsightTab) => void;
     onRawTabChange: (value: Tab) => void;
-    onRefresh: (value: RefreshableRawTab) => void;
 }) {
     return (
         <aside
@@ -403,10 +358,8 @@ function TreasuryDrawer({
                     section={section}
                     tab={tab}
                     insightTab={insightTab}
-                    refresh={refresh}
                     onRawTabChange={onRawTabChange}
                     onInsightTabChange={onInsightTabChange}
-                    onRefresh={onRefresh}
                 />
             </ScrollArea>
             <div className="flex shrink-0 flex-col gap-2 border-t border-theme-text-strong/10 px-1 pt-4">
@@ -421,23 +374,19 @@ function TreasuryShell({
     data,
     footer,
     insightTab,
-    refresh,
     section,
     tab,
     onInsightTabChange,
     onRawTabChange,
-    onRefresh,
 }: {
     children: ReactNode;
     data: Data | null;
     footer: ReactNode;
     insightTab: InsightTab;
-    refresh: RefreshState;
     section: TreasurySection;
     tab: Tab;
     onInsightTabChange: (value: InsightTab) => void;
     onRawTabChange: (value: Tab) => void;
-    onRefresh: (value: RefreshableRawTab) => void;
 }) {
     const [isDrawerOpen, setIsDrawerOpen] = useState(false);
     const drawerRef = useRef<HTMLDivElement>(null);
@@ -483,10 +432,8 @@ function TreasuryShell({
             section={section}
             tab={tab}
             insightTab={insightTab}
-            refresh={refresh}
             onRawTabChange={handleRawTabChange}
             onInsightTabChange={handleInsightTabChange}
-            onRefresh={onRefresh}
         />
     );
 
@@ -689,6 +636,25 @@ function viewInfoContent(
             </span>
         );
     }
+    if (insightTab === "runway") {
+        return (
+            <span className="block max-w-72">
+                <strong>Runway</strong>
+                <InfoLine>
+                    Actual cash comes from OP Transactions; future cash comes
+                    from explicit OP Runway facts.
+                </InfoLine>
+                <InfoLine>
+                    The current month keeps Current Wise actuals and the
+                    authored full-month Forecast in separate columns.
+                </InfoLine>
+                <InfoLine>
+                    Cloud consumption can inform the forecast, but running cash
+                    remains cash-based.
+                </InfoLine>
+            </span>
+        );
+    }
     if (insightTab === "gpu") {
         return (
             <span className="block max-w-72">
@@ -751,34 +717,9 @@ async function login(password: string) {
     }
 }
 
-function currentMonth() {
-    const now = new Date();
-    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
-}
-
-function refreshMonth(month: string) {
-    return /^\d{4}-\d{2}$/.test(month) ? month : currentMonth();
-}
-
 function activeMonthFilter(selected: readonly string[]): MonthFilterValue {
     if (selected.length === 0) return "";
     return selected.length === 1 ? selected[0] : selected;
-}
-
-async function refreshRawTable(target: RefreshableRawTab, month: string) {
-    const res = await fetch(`/api/refresh/${target}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ month }),
-    });
-    const body = (await res.json().catch(() => ({}))) as {
-        message?: string;
-        error?: string;
-    };
-    if (!res.ok) {
-        throw new Error(body.error ?? "Refresh failed");
-    }
-    return body.message ?? "Updated";
 }
 
 function PasswordGate({
@@ -833,11 +774,6 @@ export default function App() {
     const [selectedMonths, setSelectedMonths] = useState<string[]>([]);
     const [selectedVendors, setSelectedVendors] = useState<string[]>([]);
     const [attempt, setAttempt] = useState(0);
-    const [refresh, setRefresh] = useState<RefreshState>({
-        target: null,
-        message: null,
-        error: null,
-    });
     const monthFilterInitialized = useRef(false);
     const ready = fixtures || (sessionChecked && authenticated);
 
@@ -916,6 +852,7 @@ export default function App() {
     const showVendorFilter =
         section === "insights"
             ? insightTab !== "pnl" &&
+              insightTab !== "runway" &&
               insightTab !== "credits" &&
               insightVendors.length > 1
             : vendorOptions.length > 1;
@@ -926,7 +863,9 @@ export default function App() {
         [activeVendorOptions],
     );
     const showPeriodFilter =
-        (section === "insights" && insightTab !== "credits") ||
+        (section === "insights" &&
+            insightTab !== "credits" &&
+            insightTab !== "runway") ||
         section === "raw";
     const showCategoryFilter = section === "raw" && tab === "op-transactions";
     const showTypeFilter = section === "raw" && tab === "op-cloud";
@@ -951,35 +890,6 @@ export default function App() {
     }, [data]);
     const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
     const [selectedTypes, setSelectedTypes] = useState<string[]>([]);
-    const handleRawRefresh = useCallback(
-        (target: RefreshableRawTab) => {
-            if (fixtures || refresh.target) return;
-            const monthToRefresh = refreshMonth(
-                selectedMonths.length === 1 ? selectedMonths[0] : "",
-            );
-            setRefresh({
-                target,
-                message: null,
-                error: null,
-            });
-            refreshRawTable(target, monthToRefresh)
-                .then((message) => {
-                    setRefresh({ target: null, message, error: null });
-                    setAttempt((current) => current + 1);
-                })
-                .catch((caught: unknown) => {
-                    setRefresh({
-                        target: null,
-                        message: null,
-                        error:
-                            caught instanceof Error
-                                ? caught.message
-                                : String(caught),
-                    });
-                });
-        },
-        [fixtures, refresh.target, selectedMonths],
-    );
 
     useEffect(() => {
         if (!monthFilterInitialized.current && months.length > 0) {
@@ -1053,16 +963,6 @@ export default function App() {
         <>
             <div className="flex flex-wrap items-center gap-2">
                 {fixtures && <Chip intent="alpha">fixtures</Chip>}
-                {refresh.message && (
-                    <Chip intent="neutral" title={refresh.message}>
-                        updated
-                    </Chip>
-                )}
-                {refresh.error && (
-                    <Chip intent="warning" title={refresh.error}>
-                        update failed
-                    </Chip>
-                )}
             </div>
             <div className="flex items-center justify-between gap-2">
                 <span />
@@ -1165,6 +1065,9 @@ export default function App() {
                 {data && section === "insights" && insightTab === "pnl" && (
                     <PnlTab data={data} month={monthFilter} />
                 )}
+                {data && section === "insights" && insightTab === "runway" && (
+                    <RunwayTab data={data} />
+                )}
                 {data && section === "insights" && insightTab === "vendors" && (
                     <VendorsTab
                         data={data}
@@ -1197,7 +1100,6 @@ export default function App() {
         <TreasuryShell
             data={data}
             footer={drawerFooter}
-            refresh={refresh}
             section={section}
             tab={tab}
             insightTab={insightTab}
@@ -1209,7 +1111,6 @@ export default function App() {
                 setSection("insights");
                 setInsightTab(value);
             }}
-            onRefresh={handleRawRefresh}
         >
             <main className="flex w-full flex-col gap-6 px-4 py-14 pb-32 sm:px-6 sm:py-10 sm:pb-32 md:py-8 lg:px-8">
                 {isCompactInsight ? (

@@ -29,13 +29,18 @@ import {
 } from "../lib/format";
 import { toUsd } from "../lib/fx";
 import {
+    opCloudCreditBurnUsd,
+    opCloudMonth,
+    opCloudPaidBurnUsd,
+} from "../lib/insights";
+import {
     type MonthFilterValue,
     matchesMonth,
     matchesValue,
     type ValueFilter,
     WINDOW_START,
 } from "../lib/months";
-import type { Data, OpCloudRow } from "../types";
+import type { Data } from "../types";
 
 const REGISTRY_UNIT_PRICES: Record<string, { price: number; unit: string }> = {
     zimage: { price: 0.002, unit: "img" },
@@ -80,18 +85,6 @@ function splitModels(model: string): string[] {
         .filter(Boolean);
 }
 
-function opCloudMonth(row: Pick<OpCloudRow, "start">): string {
-    return row.start.slice(0, 7);
-}
-
-function opCloudPaidBurnUsd(row: OpCloudRow): number {
-    return Math.max(0, -toUsd(row.paid, row.currency, row.start));
-}
-
-function opCloudCreditBurnUsd(row: OpCloudRow): number {
-    return Math.max(0, -toUsd(row.credit, row.currency, row.start));
-}
-
 function modelKey(model: string): string {
     return model.trim() || "missing model";
 }
@@ -134,7 +127,9 @@ export function gpuEconomics(data: Data, monthFilter: MonthFilterValue) {
         const paidRentUsd = opCloudPaidBurnUsd(row);
         const creditRentUsd = opCloudCreditBurnUsd(row);
         const rentUsd = paidRentUsd + creditRentUsd;
-        if (rentUsd <= 0) continue;
+        // Keep refund rows (negative paid burn) so they reduce the group's
+        // rent — skipping them would overstate GPU rent vs the Providers tab.
+        if (paidRentUsd === 0 && creditRentUsd === 0) continue;
 
         const gpu = gpuKey(row.resource_sku);
         const model = modelKey(row.model);

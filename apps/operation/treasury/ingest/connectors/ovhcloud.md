@@ -2,6 +2,14 @@
 
 Canonical vendor: `ovhcloud`
 
+## Empirical status — 2026-07-10
+
+- Status: signed OVH credit API works end to end.
+- One account-level balance was returned. `STARTUP_PROGRAM` had EUR 3,517.01
+  remaining and its movement ledger contained 70 entries.
+- Movement amounts use signed values: `USE` is negative and `VOUCHER` is
+  positive. Preserve the provider date before shifting a monthly debit.
+
 Use when:
 
 - collecting OVHcloud invoices
@@ -13,6 +21,21 @@ Primary evidence sources:
 - Invoice/payment: OVHcloud invoice PDFs and Wise/card transactions.
 - API: OVH credit balance movements for startup credit burn.
 - Dashboard: billing and startup credit pages when API evidence is incomplete.
+
+Required credentials:
+
+- `OVH_APPLICATION_KEY`
+- `OVH_APPLICATION_SECRET`
+- `OVH_CONSUMER_KEY`
+- `OVH_ENDPOINT`
+
+Collection endpoints:
+
+- `GET /me/credit/balance`
+- `GET /me/credit/balance/STARTUP_PROGRAM`
+- `GET /me/credit/balance/STARTUP_PROGRAM/movement`
+- Fetch each movement ID for amount, type, currency, and provider timestamp.
+- Sign every request with the OVH server time; never log the signature inputs.
 
 Known traps:
 

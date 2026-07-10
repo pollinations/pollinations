@@ -19,9 +19,6 @@ const opTxn = (over: Partial<OpTransactionRow>): OpTransactionRow => ({
 });
 
 const data: Data = {
-    transactions: [],
-    providerMonthly: [],
-    pollenMonthly: [],
     opTransactions: [
         opTxn({
             date: "2026-05-10",
@@ -68,10 +65,6 @@ const data: Data = {
     ],
     opCloud: [],
     opPollen: [],
-    grants: [],
-    runs: [],
-    revenueMonthly: [],
-    gpuRuns: [],
 };
 
 const lineKeys = (result: ReturnType<typeof pnlStatement>) =>

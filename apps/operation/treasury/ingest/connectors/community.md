@@ -2,6 +2,13 @@
 
 Canonical vendor: `community`
 
+## Empirical status — 2026-07-10
+
+- Status: working internal Treasury meter; no external provider API is needed.
+- June: 34 rows, USD 2.24 paid cost and USD 0.83 quest cost.
+- July partial: 144 rows, USD 5.53 paid cost and USD 48.19 quest cost.
+- These values are internal settlement evidence, not bank cash.
+
 Use when:
 
 - mirroring community model payouts/costs from our own pollen ledger

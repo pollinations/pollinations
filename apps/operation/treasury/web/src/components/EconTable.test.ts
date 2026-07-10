@@ -4,6 +4,7 @@ import {
     driftFlag,
     gaugeParts,
     hasEconActivity,
+    pollenSoldUsd,
     usageMatchPct,
     visibleEconRows,
 } from "./EconTable";
@@ -84,6 +85,33 @@ describe("gaugeParts", () => {
 
     it("returns null when there is nothing to draw", () => {
         expect(gaugeParts(0, 0)).toBeNull();
+    });
+});
+
+describe("pollenSoldUsd", () => {
+    it("sums sold value only — paid revenue plus quest usage at sold prices", () => {
+        expect(
+            pollenSoldUsd({
+                ...row("aws", "nova"),
+                soldPaidUsd: 100,
+                soldQuestsUsd: 40,
+                questBurnUsd: 999,
+                trueCostPaidUsd: 999,
+            }),
+        ).toBe(140);
+    });
+
+    it("keeps a healthy markup visible instead of faking a reconciliation gap", () => {
+        // Vendor billed $100 (all cash), we sold the same usage for $100:
+        // Match must be 100%, not diluted by cost-side terms.
+        const reconciled = {
+            ...row("aws", "nova"),
+            soldPaidUsd: 60,
+            soldQuestsUsd: 40,
+            trueCostPaidUsd: 80,
+            questBurnUsd: 20,
+        };
+        expect(usageMatchPct(pollenSoldUsd(reconciled), 100)).toBe(100);
     });
 });
 

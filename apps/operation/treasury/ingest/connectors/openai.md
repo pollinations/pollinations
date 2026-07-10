@@ -2,6 +2,13 @@
 
 Canonical vendor: `openai`
 
+## Empirical status — 2026-07-10
+
+- Status: organization costs API works with the admin key.
+- June returned 30 daily buckets, no next page, and USD 531.2165 total cost.
+- Amount values are already currency values; preserve the API currency and
+  do not treat them as cents.
+
 Use when:
 
 - collecting OpenAI organization model/API cost

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { VendorPlanes } from "../lib/insights";
 import {
+    dataQualityStatItems,
     dataQualitySummary,
     planeRank,
     problemsFirst,
@@ -159,5 +160,26 @@ describe("problemsFirst", () => {
             google,
             older,
         ]);
+    });
+});
+
+describe("dataQualityStatItems", () => {
+    const summary = dataQualitySummary([plane("2026-06", "aws")]);
+
+    it("shows a healthy FX card when no month needs the fallback rate", () => {
+        const fx = dataQualityStatItems(summary, []).find(
+            (item) => item.label === "FX",
+        );
+        expect(fx?.value).toBe("rates ok");
+        expect(fx?.tone).toBe("pos");
+    });
+
+    it("warns with the affected months when EUR rows use the fallback", () => {
+        const fx = dataQualityStatItems(summary, ["2031-01"]).find(
+            (item) => item.label === "FX",
+        );
+        expect(fx?.value).toBe("1 fallback");
+        expect(fx?.tone).toBe("warn");
+        expect(fx?.detail).toContain("January 31");
     });
 });

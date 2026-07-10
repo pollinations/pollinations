@@ -1,39 +1,3 @@
-export type TransactionRow = {
-    date: string;
-    vendor: string;
-    category: string;
-    charged_amount: number;
-    charged_currency: string;
-};
-
-export type ProviderMonthlyRow = {
-    month: string;
-    vendor: string;
-    currency: string;
-    // "compute" | "infra"; rows that predate the column count as compute
-    category?: string;
-    credit: number;
-    paid: number;
-    source: string;
-};
-
-export type PollenMonthlyRow = {
-    source: string;
-    month: string;
-    vendor: string;
-    model: string;
-    currency: string;
-    cost_paid: number;
-    cost_quests: number;
-    price_paid: number;
-    price_quests: number;
-    byop_paid: number;
-    byop_quests: number;
-    model_paid: number;
-    model_quests: number;
-    requests: number;
-};
-
 export type OpTransactionRow = {
     source: string;
     date: string;
@@ -82,58 +46,22 @@ export type OpPollenRow = {
     requests_quests: number;
 };
 
-export type GrantRow = {
+export type OpRunwayRow = {
+    entry_id: string;
+    kind: "opening_balance" | "forecast" | string;
+    date: string;
     vendor: string;
-    label: string;
-    granted: number;
+    category: string;
+    amount: number;
     currency: string;
-    start_date: string;
-    // 1970-01-01 = no expiry (sentinel from the grants datasource)
-    expires: string;
-};
-
-export type RunRow = {
-    run_at: string;
-    ok: number;
-    statuses: string;
-    notes: string;
-};
-
-export type RevenueMonthlyRow = {
     source: string;
-    month: string;
-    currency: string;
-    gross_amount: number;
-    fees_amount: number;
-    refunds_amount: number;
-};
-
-export type GpuRunRow = {
-    month: string; // "YYYY-MM"
-    vendor: string;
-    run_id: string;
-    deployment: string;
-    gpu: string; // "" when the provider hides it
-    gpu_count: number;
-    started_at: string; // "YYYY-MM-DD HH:MM:SS" or "" (unknown)
-    ended_at: string; // "" = still running / unknown
-    hours: number | null; // null = serverless / unknown
-    cost: number;
-    currency: string; // USD or EUR
-    model: string; // comma-joined model list; "" = unmapped
-    kind: string; // "gpu" | "serverless"
-    source: string; // "api" | "cli" | "manual"
+    evidence: string;
+    recorded_at: string;
 };
 
 export type Data = {
-    transactions: TransactionRow[];
-    providerMonthly: ProviderMonthlyRow[];
-    pollenMonthly: PollenMonthlyRow[];
     opTransactions?: OpTransactionRow[];
     opCloud?: OpCloudRow[];
     opPollen?: OpPollenRow[];
-    grants: GrantRow[];
-    runs: RunRow[];
-    revenueMonthly: RevenueMonthlyRow[];
-    gpuRuns: GpuRunRow[];
+    opRunway?: OpRunwayRow[];
 };

@@ -71,6 +71,14 @@ export function gaugeParts(paid: number, quests: number) {
     };
 }
 
+// Pollen-side sold value in price terms (paid revenue + quest usage at sold
+// prices) — the like-for-like counterpart of providerUsageUsd for Match %.
+// Never mix in questBurnUsd here: that is calibrated cost and already part of
+// the provider side.
+export function pollenSoldUsd(row: EconRow): number {
+    return row.soldPaidUsd + row.soldQuestsUsd;
+}
+
 export function usageMatchPct(
     pollenUsageUsd: number,
     providerUsageUsd: number,
@@ -208,10 +216,7 @@ export function EconTable({
             {
                 key: "usageMatchPct",
                 value: (row) =>
-                    usageMatchPct(
-                        row.soldPaidUsd + row.questBurnUsd,
-                        providerUsageUsd(row),
-                    ),
+                    usageMatchPct(pollenSoldUsd(row), providerUsageUsd(row)),
             },
             { key: "cashMarginPct", value: (row) => cashMarginPct(row) },
             { key: "trueMarginPct", value: (row) => trueMarginPct(row) },
@@ -267,9 +272,9 @@ export function EconTable({
                                 <HeaderHint
                                     hint={{
                                         meaning:
-                                            "Reconciliation between visible Pollen usage and provider usage.",
+                                            "Reconciliation between Pollen sold value (paid + quest, both at sold prices) and provider usage.",
                                         formula:
-                                            "min(Pollen Paid + Quest, Provider Cash + Credit) ÷ max(Pollen Paid + Quest, Provider Cash + Credit)",
+                                            "min(Pollen sold, Provider Cash + Credit) ÷ max(Pollen sold, Provider Cash + Credit)",
                                     }}
                                 >
                                     Match %
@@ -485,8 +490,7 @@ export function EconTable({
                             const rowCashMarginUsd = cashMarginUsd(row);
                             const rowCashMarginPct = cashMarginPct(row);
                             const rowTrueMarginPct = trueMarginPct(row);
-                            const rowPollenUsageUsd =
-                                row.soldPaidUsd + row.questBurnUsd;
+                            const rowPollenUsageUsd = pollenSoldUsd(row);
                             const rowProviderUsageUsd = providerUsageUsd(row);
                             const rowUsageMatchPct = usageMatchPct(
                                 rowPollenUsageUsd,

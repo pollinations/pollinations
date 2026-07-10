@@ -1,7 +1,8 @@
 # Treasury Web
 
 Treasury local UI over OP Tinybird pipe outputs in the `operations` workspace.
-Raw tabs: Data Quality, Transactions, Pollen, and Cloud.
+Insights include cash P&L, cash runway, credit runway, and unit economics. Raw
+tabs: Data Quality, Transactions, Pollen, and Cloud.
 
 ## Run
 
@@ -25,7 +26,12 @@ and no network calls.
 ## Data Contract
 
 Reads OP pipes from `apps/operation/treasury/tinybird/pipes/`:
-`op_transactions_api`, `op_cloud_api`, and `op_pollen_api`.
+`op_transactions_api`, `op_cloud_api`, `op_pollen_api`, and `op_runway_api`.
 
 The app is a read-only mirror; all reads go through the local server
 proxy.
+
+Runway keeps the open month as two independent columns: Current Wise cash and
+the agent-authored full-month Forecast. Closed months are actuals; future months
+are explicit forecast facts. Forecast methods (`last` or `zero`) are
+materialized by the Treasury ingest agent and never evaluated in the browser.

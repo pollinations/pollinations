@@ -2,6 +2,14 @@
 
 Canonical vendor: `runpod`
 
+## Empirical status — 2026-07-10
+
+- Status: live GraphQL balance, burn-rate, and pod inventory work.
+- Snapshot: USD 303.76 balance, USD 1.439/hour current spend, USD 80 spend
+  limit, and four pods with desired status `RUNNING`.
+- At the instantaneous rate the balance represents about 8.8 days, but this
+  is a live estimate—not historical spend or a durable forecast.
+
 Use when:
 
 - collecting RunPod GPU billing evidence
@@ -13,11 +21,25 @@ Primary evidence sources:
 - API: RunPod REST billing endpoints for pods, endpoints, and network volumes.
 - Dashboard: billing and credit balance screenshots.
 
+Required credential:
+
+- `RUNPOD_API_KEY`
+
+Current snapshot option:
+
+- RunPod GraphQL `myself` can expose `clientBalance`, `currentSpendPerHr`, and
+  active pod details. Use it only when the user asks for balance now, current
+  burn rate, or a live fleet snapshot.
+- Keep the API key out of saved URLs and logs. Save only the bounded response
+  needed as evidence.
+
 Known traps:
 
 - REST billing uses separate surfaces: `pods`, `endpoints`, and `networkvolumes`. Sum all relevant surfaces for the month.
 - `pods` and `endpoints` use a month key like `time`; `networkvolumes` may use `startDate`.
 - The historical GraphQL API is not enough for month ledger evidence; it mostly exposes live balance/current spend.
+- Do not recreate the retired month-open balance cache or top-up-reset state.
+  GraphQL balance and hourly spend are snapshots, not completed-month costs.
 - Grant waterfall matters. A $2,500 credit code was redeemed in March 2026; usage burns credit until exhausted.
 - Purchased GPU compute credits are our cash/prepaid balance, not grant. Do not classify purchased credits as free grant usage.
 - Invoice PDFs should outrank older roster assumptions when grant/payment status conflicts.

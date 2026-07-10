@@ -2,6 +2,14 @@
 
 Canonical vendor: `anthropic`
 
+## Empirical status — 2026-07-10
+
+- Status: API authentication and bounded cost-report collection work.
+- June was collected in five week-sized requests: 30 daily buckets, zero
+  result rows, and zero reported cents for this admin key's organization.
+- The zero is a scoped API result, not proof that every Anthropic account or
+  Claude subscription had zero cost; cross-check the console and Wise.
+
 Use when:
 
 - collecting Anthropic organization cost report evidence

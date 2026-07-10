@@ -1,0 +1,35 @@
+{
+  "pr_number": 12274,
+  "title": "[FEAT]: Polli-cli add rewards **kwargs",
+  "author": "Circuit-Overtime",
+  "url": "https://github.com/pollinations/pollinations/pull/12274",
+  "merged_at": "2026-07-10T04:45:34Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "pr_body_excerpt": "## Changes Made\r\n\r\n- Lists earned quest rewards and flags which are ready to claim (--pending/--claimed). Reuses the existing GET /api/quests/rewards ledger via a small enter() API helper. \r\n- Fixed the router to address all quests via the `quest` runnable \r\n- Updated the CLI to the new patch version `0.1.6`\r\n\r\n> Read-only — claiming still requires a dashboard session by design.",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Check your Pollen stash from the terminal",
+    "blurb": "The polli CLI just hit version 0.1.6, bringing your quest rewards right to the command line. You can now check your pending and claimed Pollen without ever leaving your terminal.",
+    "summary": "Updated the polli CLI to version 0.1.6, adding the ability to list earned quest rewards and filter them by --pending or --claimed status via the /api/quests/rewards endpoint.",
+    "impact": "Developers can now track their earned Pollen and quest progress directly from the command line, though claiming rewards still requires a quick trip to the dashboard.",
+    "keywords": [
+      "cli",
+      "quests",
+      "rewards",
+      "pollen",
+      "terminal"
+    ],
+    "visual_concept": "The CLI (terminal/command line) and rewards (Pollen/coins/gifts). Polly the bee checking a retro terminal that displays a list of rewards or glowing pollen, accompanied by the Monitor Robot.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee wearing a tiny hacker hoodie, looking at a glowing retro terminal screen displaying a list of golden pollen rewards. A chunky robot with a CRT monitor head stands nearby holding a small treasure chest. Soft lime green (#ecf874) and lavender gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-10/PR-12274.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee wearing a tiny hacker hoodie, looking at a glowing retro terminal screen displaying a list of golden pollen rewards. A chunky robot with a CRT monitor head stands nearby holding a small treasure chest. Soft lime green (#ecf874) and lavender gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-07-10T04:46:34.810551+00:00"
+}

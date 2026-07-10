@@ -314,8 +314,8 @@ export const AUDIO_SERVICES = {
         paidOnly: true,
         priceMultiplier: 1,
         cost: {
-            // DashScope Qwen3-TTS-Flash: ~$0.013 per 1K characters
-            completionAudioTokens: 0.013 / 1000,
+            // DashScope Qwen3-TTS-Flash: $0.10 per 10K characters
+            completionAudioTokens: 0.01 / 1000,
         },
         title: "Qwen3-TTS Flash",
         description: "Qwen3-TTS Flash - Fast multilingual text-to-speech",
@@ -332,7 +332,8 @@ export const AUDIO_SERVICES = {
         paidOnly: true,
         priceMultiplier: 1,
         cost: {
-            completionAudioTokens: 0.013 / 1000,
+            // DashScope Qwen3-TTS-Instruct-Flash: $0.115 per 10K characters
+            completionAudioTokens: 0.0115 / 1000,
         },
         title: "Qwen3-TTS Instruct",
         description: "Qwen3-TTS Instruct - TTS with emotion & style control",

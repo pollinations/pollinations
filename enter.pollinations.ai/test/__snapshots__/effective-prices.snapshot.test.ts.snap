@@ -1076,18 +1076,18 @@ exports[`effective cost and price per model — snapshot 1`] = `
   },
   "qwen-tts": {
     "cost": {
-      "completionAudioTokens": 0.000013,
+      "completionAudioTokens": 0.00001,
     },
     "price": {
-      "completionAudioTokens": 0.000013,
+      "completionAudioTokens": 0.00001,
     },
   },
   "qwen-tts-instruct": {
     "cost": {
-      "completionAudioTokens": 0.000013,
+      "completionAudioTokens": 0.0000115,
     },
     "price": {
-      "completionAudioTokens": 0.000013,
+      "completionAudioTokens": 0.0000115,
     },
   },
   "qwen-vision": {

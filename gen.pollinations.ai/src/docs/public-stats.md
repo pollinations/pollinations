@@ -19,8 +19,15 @@ p.eyJ1IjogImFjYTYzZjc5LThjNTYtNDhlNC05NWJjLWEyYmFjMTY0NmJkMyIsICJpZCI6ICI5ZWZmMG
 | `GET /v0/pipes/app_top_weekly.json` | — | Top 10 registered apps owned by showcase contributors, by request count over the last 7 days. The owner is listed in the directory; the returned app may be any of their registered apps |
 | `GET /v0/pipes/app_directory_public.json` | `category`, `platform`, `limit` (1000) | The community app directory ([apps/APPS.md](https://github.com/pollinations/pollinations/blob/main/apps/APPS.md)) |
 
-Each response is JSON: a `data` array of rows plus a `meta` array typing each
-column. Append `&token=<public-read-token>` to authenticate.
+Tinybird responses are JSON: a `data` array of rows plus a `meta` array typing
+each column. Append `&token=<public-read-token>` to authenticate them. The
+model status gateway has the same response shape and does not require the
+Tinybird token.
+
+The model status gateway reports the Tinybird fetch time in the
+`X-Model-Status-Timestamp` response header. It also sets
+`X-Model-Status-Stale: true` when returning cached data during a Tinybird
+failure.
 
 ```bash
 curl "https://api.europe-west2.gcp.tinybird.co/v0/pipes/public_model_stats.json?limit=5&token=PUBLIC_READ_TOKEN"

@@ -18,7 +18,7 @@ const POLL_INTERVALS = {
     "24h": 120000, // 2 minutes for 24-hour view
     "4h": 60000, // 1 minute for 4-hour view
     "60m": 60000, // 1 minute for stable 60m view
-    "5m": 15000, // 15 seconds for live 5m view
+    "5m": 60000, // Match the model status gateway cache
 };
 
 function resolveDisplayType(model) {
@@ -56,11 +56,13 @@ export function useModelMonitor(aggregationWindow = "60m") {
     const [models, setModels] = useState([]);
     const [healthStats, setHealthStats] = useState([]);
     const [lastUpdated, setLastUpdated] = useState(null);
-    const [error, setError] = useState(null);
+    const [catalogError, setCatalogError] = useState(null);
+    const [healthError, setHealthError] = useState(null);
     const [endpointStatus, setEndpointStatus] = useState({
         catalog: null,
     });
     const intervalRef = useRef(null);
+    const error = healthError || catalogError;
 
     // Fetch model list from gen.pollinations.ai
     const fetchModels = useCallback(async () => {
@@ -80,12 +82,12 @@ export function useModelMonitor(aggregationWindow = "60m") {
 
             setEndpointStatus({ catalog: true });
             setModels(catalogModels);
-            setError(null);
+            setCatalogError(null);
         } catch (err) {
             console.error("Failed to fetch model catalog:", err);
             setEndpointStatus({ catalog: false });
             setModels([]);
-            setError("Failed to fetch model catalog");
+            setCatalogError("Failed to fetch model catalog");
         }
     }, []);
 
@@ -101,13 +103,24 @@ export function useModelMonitor(aggregationWindow = "60m") {
                 throw new Error(`Model status API error: ${response.status}`);
             }
 
+            const sourceTimestamp = response.headers.get(
+                "X-Model-Status-Timestamp",
+            );
+            if (!sourceTimestamp) {
+                throw new Error("Model status API omitted its data timestamp");
+            }
+
             const data = await response.json();
             setHealthStats(data.data || []);
-            setLastUpdated(new Date());
-            setError(null);
+            setLastUpdated(new Date(sourceTimestamp));
+            setHealthError(
+                response.headers.get("X-Model-Status-Stale") === "true"
+                    ? "Live health data unavailable; showing cached data"
+                    : null,
+            );
         } catch (err) {
             console.error("Failed to fetch health stats:", err);
-            setError("Failed to fetch health stats");
+            setHealthError("Failed to fetch health stats");
         }
     }, [aggregationWindow]);
 

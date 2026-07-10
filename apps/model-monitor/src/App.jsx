@@ -511,7 +511,7 @@ function App() {
                                 onChange={setAggregationWindow}
                             />
                             <p className="m-0 text-xs leading-normal text-theme-text-soft">
-                                Last update:{" "}
+                                Data as of:{" "}
                                 {lastUpdated?.toLocaleTimeString("en-GB", {
                                     timeZone: "UTC",
                                     hour: "2-digit",

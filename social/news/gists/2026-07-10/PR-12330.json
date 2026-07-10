@@ -1,0 +1,35 @@
+{
+  "pr_number": 12330,
+  "title": "fix: update Buffer Instagram media payload",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/12330",
+  "merged_at": "2026-07-10T17:13:17Z",
+  "labels": [
+    "DEV-BUG"
+  ],
+  "pr_body_excerpt": "- Updates Buffer image and carousel payloads to the current ordered `assets` input.\n- Uses Instagram post metadata for multi-image carousels; Buffer now rejects `type: carousel`.\n- Preserves the existing single-image and multi-image publishing behavior.\n\nRoot cause: Buffer changed both its media input shape and accepted Instagram post types. Renewing the API key restores authentication, but the old mutation payload is no longer valid.\n\nChecks:\n- Buffer API authentication and all four configured channels verified read-only\n- Single-image and carousel payload assertions passed\n- Python compilation passed\n- Live Instagram draft mutation tested and cleaned up\n- `git diff --check` passed\n",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "none",
+    "importance": "minor",
+    "headline": "Fixing the social pipes",
+    "blurb": "Updated our internal Buffer scripts to handle their new Instagram media payload format. The daily social posts will keep flowing smoothly.",
+    "summary": "Updated the internal Buffer publishing scripts to use the new ordered assets input and Instagram post metadata for multi-image carousels.",
+    "impact": "Internal social media pipelines can successfully publish single-image and carousel posts to Instagram again.",
+    "keywords": [
+      "buffer",
+      "instagram",
+      "social",
+      "pipeline",
+      "infrastructure"
+    ],
+    "visual_concept": "A cute pixel art bee mascot wearing a tiny hard hat, fixing a glowing pipe or conveyor belt that has little polaroid pictures (Instagram) flowing through it. A chunky robot with a monitor head is helping by holding a wrench.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny hard hat, fixing a glowing lime green (#ecf874) pipeline that transports small polaroid pictures. A chunky robot with a CRT monitor head helps by holding a wrench. Soft pastel gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-10/PR-12330.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny hard hat, fixing a glowing lime green (#ecf874) pipeline that transports small polaroid pictures. A chunky robot with a CRT monitor head helps by holding a wrench. Soft pastel gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley, emotionally warm."
+  },
+  "generated_at": "2026-07-10T17:14:17.422287+00:00"
+}

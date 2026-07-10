@@ -33,6 +33,8 @@ jobs:
           PORTKEY_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID_MYCELI }}
           PORTKEY_PRODUCTION_HOST: portkey.myceli.ai
           PORTKEY_PRODUCTION_ZONE: myceli.ai
+          PORTKEY_PUBLIC_HOST: portkey.pollinations.ai
+          PORTKEY_PUBLIC_ZONE: pollinations.ai
           PORTKEY_COMMIT: ${{ github.event.inputs.commit }}
           PORTKEY_ENV: production
         run: |

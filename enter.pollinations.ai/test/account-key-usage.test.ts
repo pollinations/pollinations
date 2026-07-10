@@ -1,6 +1,6 @@
 import { SELF } from "cloudflare:test";
 import { describe, expect } from "vitest";
-import { test } from "./fixtures.ts";
+import { createApiKeyViaApi, test } from "./fixtures.ts";
 
 describe("GET /api/account/key/usage", () => {
     test("forwards the calling key's id to the usage pipe (no scope needed)", async ({
@@ -9,22 +9,9 @@ describe("GET /api/account/key/usage", () => {
     }) => {
         await mocks.enable("tinybird");
 
-        const createResponse = await SELF.fetch(
-            "http://localhost:3000/api/account/keys",
-            {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    Cookie: `better-auth.session_token=${sessionToken}`,
-                },
-                body: JSON.stringify({ name: "my-key" }),
-            },
-        );
-        expect(createResponse.status).toBe(200);
-        const created = (await createResponse.json()) as {
-            id: string;
-            key: string;
-        };
+        const created = await createApiKeyViaApi(sessionToken, {
+            name: "my-key",
+        });
         const myKeyId = created.id;
 
         mocks.tinybird.state.usageResponse = [

@@ -5,8 +5,8 @@
  *
  *   --phase=origin   Create the Myceli Pages project, add <sub>.myceli.ai,
  *                    and upsert the myceli.ai DNS CNAME.
- *   --phase=cutover  After upload and origin verification, reclaim
- *                    <sub>.pollinations.ai and attach it to pollinations-proxy.
+ *   --phase=cutover  After upload and origin verification, add
+ *                    <sub>.pollinations.ai directly to the Myceli Pages project.
  *
  * Usage: node deploy-app.js <appName> --phase=origin|cutover
  */
@@ -15,8 +15,6 @@ const fs = require("node:fs");
 const path = require("node:path");
 
 const CF_API = "https://api.cloudflare.com/client/v4";
-const OLD_POLLINATIONS_ZONE_ID = "0942247b74a58e4fc5ea70341a3754a3";
-const PROXY_WORKER = "pollinations-proxy";
 const PUBLIC_ZONE = "pollinations.ai";
 const UPSTREAM_ZONE = "myceli.ai";
 
@@ -41,8 +39,6 @@ function loadCredentials() {
         mycAccount:
             process.env.CLOUDFLARE_ACCOUNT_ID_MYCELI ||
             process.env.CLOUDFLARE_ACCOUNT_ID,
-        oldToken: process.env.CLOUDFLARE_API_TOKEN_OLD,
-        oldAccount: process.env.CLOUDFLARE_ACCOUNT_ID_OLD,
     };
 }
 
@@ -281,55 +277,6 @@ async function upsertCname(zoneId, headers, name, target) {
     throw new Error(`DNS upsert ${name} failed: ${JSON.stringify(json)}`);
 }
 
-async function deleteCname(zoneId, headers, name) {
-    const { ok, json } = await cf(
-        `${CF_API}/zones/${zoneId}/dns_records?type=CNAME&name=${name}`,
-        headers,
-    );
-    if (!ok)
-        throw new Error(`DNS list ${name} failed: ${JSON.stringify(json)}`);
-
-    const record = json.result?.[0];
-    if (!record) return;
-
-    const { ok: deleteOk, json: deleted } = await cf(
-        `${CF_API}/zones/${zoneId}/dns_records/${record.id}`,
-        headers,
-        { method: "DELETE" },
-    );
-    if (!deleteOk) {
-        throw new Error(
-            `Delete CNAME ${name} failed: ${JSON.stringify(deleted)}`,
-        );
-    }
-    console.log(`Removed old CNAME ${name}`);
-}
-
-async function attachWorkerDomain(account, headers, hostname, zoneId) {
-    const { ok, json } = await cf(
-        `${CF_API}/accounts/${account}/workers/domains`,
-        headers,
-        {
-            method: "PUT",
-            body: JSON.stringify({
-                hostname,
-                service: PROXY_WORKER,
-                environment: "production",
-                override_existing_origin: true,
-                zone_id: zoneId,
-            }),
-        },
-    );
-
-    if (!ok) {
-        throw new Error(
-            `Attach proxy domain ${hostname} failed: ${JSON.stringify(json)}`,
-        );
-    }
-
-    console.log(`Proxy custom domain ready: ${hostname} -> ${PROXY_WORKER}`);
-}
-
 function appContext(appName) {
     const config = JSON.parse(
         fs.readFileSync(path.join(__dirname, "../apps.json"), "utf8"),
@@ -371,28 +318,28 @@ async function runOrigin(appName) {
 }
 
 async function runCutover(appName) {
-    const { publicDomain, originDomain } = appContext(appName);
+    const { project, publicDomain, originDomain } = appContext(appName);
     console.log(`Public cutover: ${publicDomain} -> ${originDomain}`);
 
-    const oldHeaders = headersFor(OLD_TOKEN);
-    await detachPagesDomain(OLD_ACCOUNT, oldHeaders, publicDomain);
-    await deleteCname(OLD_POLLINATIONS_ZONE_ID, oldHeaders, publicDomain);
-    await attachWorkerDomain(
-        OLD_ACCOUNT,
-        oldHeaders,
+    const myceliHeaders = headersFor(MYC_TOKEN);
+    const publicZoneId = await resolveZoneId(PUBLIC_ZONE, myceliHeaders);
+    const pagesProject = await getPagesProject(
+        MYC_ACCOUNT,
+        myceliHeaders,
+        project,
+    );
+    await addPagesDomain(MYC_ACCOUNT, myceliHeaders, project, publicDomain);
+    await upsertCname(
+        publicZoneId,
+        myceliHeaders,
         publicDomain,
-        OLD_POLLINATIONS_ZONE_ID,
+        pagesProject.subdomain || `${project}.pages.dev`,
     );
 
     console.log(`Public routing ready: https://${publicDomain}`);
 }
 
-const {
-    mycToken: MYC_TOKEN,
-    mycAccount: MYC_ACCOUNT,
-    oldToken: OLD_TOKEN,
-    oldAccount: OLD_ACCOUNT,
-} = loadCredentials();
+const { mycToken: MYC_TOKEN, mycAccount: MYC_ACCOUNT } = loadCredentials();
 
 const appName = process.argv[2];
 const phaseArg = process.argv.find((arg) => arg.startsWith("--phase="));
@@ -406,13 +353,6 @@ if (!appName || (phase !== "origin" && phase !== "cutover")) {
 if (!MYC_TOKEN || !MYC_ACCOUNT) {
     console.error(
         "Missing Myceli creds (CLOUDFLARE_API_TOKEN_MYCELI / CLOUDFLARE_ACCOUNT_ID_MYCELI)",
-    );
-    process.exit(1);
-}
-
-if (phase === "cutover" && (!OLD_TOKEN || !OLD_ACCOUNT)) {
-    console.error(
-        "Missing old-account creds (CLOUDFLARE_API_TOKEN_OLD / CLOUDFLARE_ACCOUNT_ID_OLD)",
     );
     process.exit(1);
 }

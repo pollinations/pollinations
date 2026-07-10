@@ -24,6 +24,9 @@ export const COMMUNITY_MODEL_ALLOWED_GITHUB_IDS = [
     216855486, // Bakhshi7889
     64634725, // vendouple
     182555207, // YoannDev90
+    195966113, // JustScriptzz
+    113566110, // riofndev
+    188266626, // solarnode-developement
 ] as const;
 
 const COMMUNITY_MODEL_ALLOWED_GITHUB_ID_SET = new Set<number>(

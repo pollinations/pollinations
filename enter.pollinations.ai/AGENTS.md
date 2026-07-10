@@ -635,20 +635,14 @@ URL-based identity lookup was removed — identity is derived from `client_id` o
 
 ## 🎫 Wallet & Balance Lookups
 
-> Claude skill available: `.claude/skills/tier-management/SKILL.md`
-
-Pollen is earned by completing **Quests**. The `tier`, `tier_balance`, and `pack_balance` columns remain in D1 as the active wallet data model — do not treat the `tier` column as a runtime product level or mutate it to "upgrade" a user. The `tier_balance` bucket is shown to users as the **Quest Pollen** balance; `pack_balance` is the **Paid** balance. The old account-level upgrade/downgrade paths (Spore→Seed, app→Flower, admin tier-update) are removed.
+Pollen is earned by completing **Quests**. The `tier`, `tier_balance`, and `pack_balance` columns remain in D1 as the active wallet data model — do not treat the `tier` column as runtime product state or mutate it to "upgrade" a user. The `tier_balance` bucket is shown to users as the **Quest Pollen** balance; `pack_balance` is the **Paid** balance. Old account-level upgrade/downgrade paths are removed.
 
 ### Lookups (read-only)
 
 ```bash
-# Look up a user's balance
-.claude/skills/tier-management/scripts/check-user-balance.sh USERNAME_OR_EMAIL
-
-# Or query D1 directly
 cd enter.pollinations.ai
 npx wrangler d1 execute DB --remote --env production \
-  --command "SELECT github_username, email, tier, tier_balance FROM user WHERE LOWER(github_username) LIKE '%USERNAME%';"
+  --command "SELECT github_username, email, tier_balance, pack_balance FROM user WHERE LOWER(github_username) LIKE '%USERNAME%';"
 ```
 
 ---

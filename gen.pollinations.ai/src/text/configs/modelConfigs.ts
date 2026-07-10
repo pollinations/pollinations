@@ -72,6 +72,26 @@ export const portkeyConfig: PortkeyConfigMap = {
             "gpt-5.5",
         ),
 
+    // -- Azure (Myceli Prod — eastus, GPT-5.6) --------------------------------
+    "gpt-5.6-sol": () =>
+        createAzureModelConfig(
+            process.env.AZURE_MYCELI_PROD_API_KEY,
+            "https://myceli-prod-eastus.openai.azure.com/openai/deployments/gpt-5.6-sol/chat/completions?api-version=2025-04-01-preview",
+            "gpt-5.6-sol",
+        ),
+    "gpt-5.6-terra": () =>
+        createAzureModelConfig(
+            process.env.AZURE_MYCELI_PROD_API_KEY,
+            "https://myceli-prod-eastus.openai.azure.com/openai/deployments/gpt-5.6-terra/chat/completions?api-version=2025-04-01-preview",
+            "gpt-5.6-terra",
+        ),
+    "gpt-5.6-luna": () =>
+        createAzureModelConfig(
+            process.env.AZURE_MYCELI_PROD_API_KEY,
+            "https://myceli-prod-eastus.openai.azure.com/openai/deployments/gpt-5.6-luna/chat/completions?api-version=2025-04-01-preview",
+            "gpt-5.6-luna",
+        ),
+
     // -- Azure (Myceli Prod — swedencentral, audio mini) ------------------------
     "gpt-audio-mini-2025-12-15": () =>
         createAzureModelConfig(

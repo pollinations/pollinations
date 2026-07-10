@@ -1,0 +1,35 @@
+{
+  "pr_number": 11928,
+  "title": "[codex] remove drip and user tiers",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/11928",
+  "merged_at": "2026-07-10T16:05:02Z",
+  "labels": [
+    "DEV-CHORE"
+  ],
+  "pr_body_excerpt": "## Summary\n\n- Removes hourly Pollen drip/refill, user-tier runtime state, tier progression flows, and tier-focused admin/API/frontend surfaces.\n- Keeps active wallet buckets intact: legacy `tier_balance` remains Quest Pollen, `pack_balance` remains Paid Pollen, and regular generation still spends Quest Pollen before Paid Pollen.\n- Removes user-tier display/gating from wallet/model surfaces while preserving Quests, including the Contribute a pull request quest/app merge follow-up.\n- Leaves Grafana dashboards and passive tier analytics fields for a separate cleanup path; this PR removes behavior, not historical observability.\n\n## Release notes\n\n- **SDK release:** bumps `@pollinations/sdk` to `5.1.0-alpha.3` so the breaking type changes publish under the `alpha` dist-tag.\n- **Breaking API/SDK:** `GET /account/profile` no longer returns `tier` or `nextResetAt`; SDK types remove user/model tier fields.\n- **Behavior change:** user tier no longer activates, deactivates, unlocks, hides, refills, schedules, or upgrades anything.\n- **Billing:** existing balances are unchanged; legacy `tier`/`tier_balance` wire names continue to refer to Quest Pollen.\n- **Operations:** hourly refill cron must be detached with explicit `crons = []`; generated `APIDOCS.md` should be refreshed via the docs script, not hand-edited.\n- **Deferred:** Grafana/dashboard tier analysis cleanup remains a follow-up.\n\n## Validation\n\n- `npm run typecheck` in `gen.pollinations.ai`\n- `npm run typecheck` in `enter.pollinations.ai`\n- `npx vitest run test/billing-deduction.test.ts` in `gen.pollinations.ai`\n- `npm run test` in `gen.pollinations.ai` — 48 files, 400 tests\n- `npm run test` in `enter.pollinations.ai` — 25 files, 460 tests\n- `npm run typecheck`, `npm test`, `npm run build`, and `npm pack --dry-run` in `packages/sdk` — 31 tests\n- `git diff --check`\n- Grep gates for removed drip/user-tier terms are clean except retained schema/history fields\n\n## Notes\n\n- No D1 migration is included; retained columns stay",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "discord_only",
+    "importance": "major",
+    "headline": "Streamlined wallets",
+    "blurb": "We're simplifying the Pollen wallet system to focus entirely on Quests and Paid Pollen. Goodbye complex user tiers, hello straightforward balances!",
+    "summary": "The wallet system has been simplified by removing user tiers and the hourly Pollen drip, shifting the platform's focus entirely to earning through Quests and purchasing Paid Pollen.",
+    "impact": "The `tier` and `nextResetAt` fields have been removed from `GET /account/profile` and the SDK (v5.1.0-alpha.3), meaning your wallet now straightforwardly tracks just your Quest and Paid balances.",
+    "keywords": [
+      "wallet",
+      "api",
+      "sdk",
+      "quests",
+      "billing"
+    ],
+    "visual_concept": "Polly the bee organizing a wooden shelf, sweeping away complicated charts and leaving two glowing jars of golden pollen (representing Quest and Paid pollen).",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot organizing a wooden shelf, sweeping away complicated charts and leaving two glowing jars of golden pollen. Soft lime green (#ecf874) and warm cream gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-10/PR-11928.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot organizing a wooden shelf, sweeping away complicated charts and leaving two glowing jars of golden pollen. Soft lime green (#ecf874) and warm cream gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-07-10T16:06:12.815297+00:00"
+}

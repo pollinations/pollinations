@@ -59,6 +59,11 @@ export function CommunityEndpointCard({
                             )}
                             {VISIBILITY_LABELS[endpoint.visibility]}
                         </Chip>
+                        {endpoint.promptAgent && (
+                            <Chip intent="news" size="sm">
+                                Agent
+                            </Chip>
+                        )}
                     </div>
                     {endpoint.description && (
                         <p className="mt-1 text-sm text-theme-text-muted">
@@ -129,6 +134,30 @@ export function CommunityEndpointCard({
                         value={<CommunityPriceBadges group={group} />}
                     />
                 ))}
+                {Object.keys(endpoint.toolPrices).length > 0 && (
+                    <CommunityDetailRow
+                        icon={<CardIcon className="h-3.5 w-3.5" />}
+                        label="Tool fees"
+                        value={
+                            <span className="flex min-w-0 flex-wrap items-center gap-1">
+                                {Object.entries(endpoint.toolPrices)
+                                    .sort(([a], [b]) => a.localeCompare(b))
+                                    .map(([name, price]) => (
+                                        <Chip
+                                            key={name}
+                                            intent="neutral"
+                                            size="sm"
+                                        >
+                                            <span className="font-mono">
+                                                {name}
+                                            </span>
+                                            {price} / call
+                                        </Chip>
+                                    ))}
+                            </span>
+                        }
+                    />
+                )}
             </div>
         </Surface>
     );

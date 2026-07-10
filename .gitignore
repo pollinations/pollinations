@@ -386,3 +386,12 @@ apps/operation/finance/config.local.json
 
 # Playwright MCP scratch output (snapshots, screenshots, console logs)
 .playwright-mcp/
+
+# Community monitor — live-only artifacts, never committed (see scripts/community-monitor/README.md)
+scripts/community-monitor/.env
+scripts/community-monitor/state.json
+scripts/community-monitor/people_mapping.json
+scripts/community-monitor/probe-results.json
+scripts/community-monitor/*.log
+scripts/community-monitor/monitor.log
+scripts/community-monitor/results.json

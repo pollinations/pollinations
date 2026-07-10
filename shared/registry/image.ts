@@ -595,7 +595,7 @@ export const IMAGE_SERVICES = {
         paidOnly: true,
         cost: {
             promptImageTokens: 0.01, // per input image on edits
-            completionImageTokens: 0.07, // per image
+            completionImageTokens: 0.05, // per 1K image
         },
         title: "Grok Imagine Pro",
         description:

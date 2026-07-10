@@ -94,4 +94,31 @@ describe("xaiModel usage accounting", () => {
             completionImageTokens: 1,
         });
     });
+
+    it("uses the 1K default output tier for Grok Imagine Pro", async () => {
+        syncImageEnv({ XAI_API_KEY: "xai-test-key" } as CloudflareBindings, [
+            "XAI_API_KEY",
+        ]);
+        const requests: XaiRequest[] = [];
+        mockXaiFetch(requests);
+
+        const result = await callXaiImageAPI(
+            "test prompt",
+            { ...baseParams, model: "grok-imagine-pro" },
+            "grok-imagine-image-pro",
+        );
+
+        expect(requests[0].url).toBe(XAI_GENERATE_URL);
+        expect(requests[0].body).toMatchObject({
+            model: "grok-imagine-image-pro",
+            prompt: "test prompt",
+            n: 1,
+            response_format: "url",
+        });
+        expect(requests[0].body).not.toHaveProperty("resolution");
+        expect(result.trackingData?.actualModel).toBe("grok-imagine-pro");
+        expect(result.trackingData?.usage).toEqual({
+            completionImageTokens: 1,
+        });
+    });
 });

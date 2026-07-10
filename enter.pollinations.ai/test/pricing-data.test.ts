@@ -372,7 +372,7 @@ test("updated provider prices are reflected for xAI media and OpenRouter text", 
             promptImageTokens: 1,
             completionImageTokens: 1,
         }).totalCost,
-    ).toBeCloseTo(0.08, 8);
+    ).toBeCloseTo(0.06, 8);
     expect(
         calculateCost("grok-video-pro", {
             promptImageTokens: 1,

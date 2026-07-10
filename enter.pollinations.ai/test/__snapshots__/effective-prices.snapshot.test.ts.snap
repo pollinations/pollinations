@@ -524,11 +524,11 @@ exports[`effective cost and price per model — snapshot 1`] = `
   },
   "grok-imagine-pro": {
     "cost": {
-      "completionImageTokens": 0.07,
+      "completionImageTokens": 0.05,
       "promptImageTokens": 0.01,
     },
     "price": {
-      "completionImageTokens": 0.07,
+      "completionImageTokens": 0.05,
       "promptImageTokens": 0.01,
     },
   },

@@ -344,6 +344,63 @@ describe("gen worker routing", () => {
     });
 });
 
+describe("model status", () => {
+    it("reports the source timestamp and marks stale fallback data", async () => {
+        let now = 1_000;
+        vi.spyOn(Date, "now").mockImplementation(() => now);
+        const upstream = vi
+            .spyOn(globalThis, "fetch")
+            .mockResolvedValueOnce(Response.json({ data: [{ model: "test" }] }))
+            .mockRejectedValueOnce(new Error("Tinybird unavailable"));
+
+        const fresh = await fetchWorker("/v1/models/status?minutes=9876");
+        expect(fresh.status).toBe(200);
+        expect(fresh.headers.get("X-Model-Status-Timestamp")).toBe(
+            "1970-01-01T00:00:01.000Z",
+        );
+        expect(fresh.headers.get("X-Model-Status-Stale")).toBeNull();
+
+        now = 2_000;
+        const cached = await fetchWorker("/v1/models/status?minutes=9876");
+        expect(cached.status).toBe(200);
+        expect(cached.headers.get("X-Model-Status-Timestamp")).toBe(
+            "1970-01-01T00:00:01.000Z",
+        );
+        expect(upstream).toHaveBeenCalledTimes(1);
+
+        now = 62_000;
+        const stale = await fetchWorker("/v1/models/status?minutes=9876");
+        expect(stale.status).toBe(200);
+        expect(stale.headers.get("X-Model-Status-Timestamp")).toBe(
+            "1970-01-01T00:00:01.000Z",
+        );
+        expect(stale.headers.get("X-Model-Status-Stale")).toBe("true");
+        expect(upstream).toHaveBeenCalledTimes(2);
+    });
+
+    it("evicts old entries when the in-memory cache reaches its bound", async () => {
+        const upstream = vi
+            .spyOn(globalThis, "fetch")
+            .mockImplementation(async (request) => {
+                const minutes = new URL(
+                    new Request(request).url,
+                ).searchParams.get("minutes");
+                return Response.json({ data: [{ model: `test-${minutes}` }] });
+            });
+
+        for (let minutes = 8_000; minutes <= 8_032; minutes++) {
+            const response = await fetchWorker(
+                `/v1/models/status?minutes=${minutes}`,
+            );
+            expect(response.status).toBe(200);
+        }
+
+        const evicted = await fetchWorker("/v1/models/status?minutes=8000");
+        expect(evicted.status).toBe(200);
+        expect(upstream).toHaveBeenCalledTimes(34);
+    });
+});
+
 fixtureTest(
     "routes simple qwen audio requests through DashScope",
     async ({ paidApiKey }) => {

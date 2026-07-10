@@ -55,6 +55,27 @@ test.for(
     expect(resolved).toBe(shouldResolveTo);
 });
 
+test("gemini-search applies grounding cost on top of shared token rates", () => {
+    const usage = {
+        promptTextTokens: 1_000_000,
+        completionTextTokens: 1_000_000,
+    };
+    const geminiFastCost = calculateCost("gemini-fast", usage);
+    const geminiSearchCost = calculateCost("gemini-search", usage, {
+        choices: [
+            {
+                groundingMetadata: {
+                    webSearchQueries: ["latest Gemini pricing"],
+                },
+            },
+        ],
+    });
+
+    expect(geminiSearchCost.totalCost).toBeGreaterThan(
+        geminiFastCost.totalCost,
+    );
+});
+
 test("public price equals provider cost times priceMultiplier for every model", () => {
     // Invariant: price = cost × priceMultiplier, for every model, no exceptions.
     // Asserted per cost field so it holds at any multiplier (currently all 1×).
@@ -91,6 +112,28 @@ test("GPT-5.5 is available on the free tier", () => {
     const definition = getRegistryModelDefinition(resolveModelName("gpt-5.5"));
 
     expect(definition.paidOnly).toBeUndefined();
+});
+
+test("GPT-5.6 ChatGPT models are quest-eligible at the Azure multiplier", () => {
+    for (const model of [
+        "gpt-5.6-sol",
+        "gpt-5.6-terra",
+        "gpt-5.6-luna",
+    ] as const) {
+        const definition = getRegistryModelDefinition(model);
+
+        expect(definition.provider).toBe("azure");
+        expect(definition.paidOnly).toBeUndefined();
+        expect(definition.priceMultiplier).toBe(0.75);
+    }
+});
+
+test("Seedream 5 Pro uses Replicate and requires paid balance at provider cost", () => {
+    const definition = getRegistryModelDefinition("seedream5-pro");
+
+    expect(definition.provider).toBe("replicate");
+    expect(definition.paidOnly).toBe(true);
+    expect(definition.priceMultiplier).toBe(1);
 });
 
 test("DeepSeek V4 models are billed at provider cost", () => {

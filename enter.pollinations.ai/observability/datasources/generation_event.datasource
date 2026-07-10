@@ -39,6 +39,10 @@ SCHEMA >
 `selected_meter_slug`   LowCardinality(String)  `json:$.selectedMeterSlug` DEFAULT 'undefined',
 `balances`              Map(String, Float64)    `json:$.balances` DEFAULT map(),
 
+-- Billing adjustments (search/tool fees), keyed by versioned rule id
+`adjustment_costs`      Map(String, Float64)    `json:$.adjustmentCosts` DEFAULT map(),
+`adjustment_units`      Map(String, Float64)    `json:$.adjustmentUnits` DEFAULT map(),
+
 -- Referrer
 `referrer_url`    String                 `json:$.referrerUrl` DEFAULT 'undefined',
 `referrer_domain` LowCardinality(String) `json:$.referrerDomain` DEFAULT 'undefined',

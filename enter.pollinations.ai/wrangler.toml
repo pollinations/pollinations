@@ -71,6 +71,12 @@ STRIPE_PMC = "pmc_1SrYT96O03AauPe8ijLy6sZU"
 
 [env.production]
 
+# Explicitly detach cron schedules. Deleting the [triggers] block leaves
+# previously-deployed crons attached (crons undefined = unchanged); only
+# `crons = []` removes them. See Cloudflare Workers cron-triggers docs.
+[env.production.triggers]
+crons = []
+
 [env.production.observability]
 enabled = true
 head_sampling_rate = 1
@@ -78,6 +84,11 @@ head_sampling_rate = 1
 [[env.production.routes]]
 pattern = "enter.myceli.ai"
 zone_name = "myceli.ai"
+custom_domain = true
+
+[[env.production.routes]]
+pattern = "enter.pollinations.ai"
+zone_name = "pollinations.ai"
 custom_domain = true
 
 [[env.production.d1_databases]]
@@ -109,9 +120,18 @@ STRIPE_AUTO_TOP_UP_PMC_ID = "pmc_1TVU4T7rcjS3l7trqtBuve71"
 STRIPE_PMC = "pmc_1SrY4O7rcjS3l7trnGXDTuat"
 [env.staging]
 
+# See production note above: explicit empty crons detaches the schedule.
+[env.staging.triggers]
+crons = []
+
 [[env.staging.routes]]
 pattern = "staging.enter.myceli.ai"
 zone_name = "myceli.ai"
+custom_domain = true
+
+[[env.staging.routes]]
+pattern = "staging.enter.pollinations.ai"
+zone_name = "pollinations.ai"
 custom_domain = true
 
 [[env.staging.d1_databases]]

@@ -87,6 +87,41 @@ export type VideoCapability =
     | "keyframes"
     | "audio_output";
 
+export type BillingAdjustmentRule = {
+    id: string;
+    description: string;
+    kind: string;
+    unit: string;
+    unitCost: number;
+    // Counts billable units from the response output (stream outputs carry a
+    // `streamEvents` array). Returning 0 skips the rule for this request.
+    // Provider-specific parsing lives with the rule's provider module
+    // (gemini-billing.ts, perplexity-billing.ts) — not in the registry.
+    countUnits: (output: unknown) => number;
+    // Optional provider-reported unit cost (e.g. Perplexity usage.cost)
+    // resolved via the provider module's clamp-and-alert policy. Must never
+    // throw. Defaults to the static unitCost when omitted.
+    resolveUnitCost?: (output: unknown, modelId: string) => number;
+};
+
+export type BillingRules = {
+    adjustments?: BillingAdjustmentRule[];
+};
+
+// Per-rule billing breakdown, returned in parallel to the numeric usage maps.
+// The model's single priceMultiplier applies uniformly to tokens and
+// adjustments alike (there is no per-rule multiplier), so adjustment prices
+// are always derivable from costs: price = cost × svc.priceMultiplier.
+export type BillingAdjustment = {
+    ruleId: string;
+    kind: string;
+    unit: string;
+    units: number;
+    unitCost: number;
+    cost: number;
+    price: number;
+};
+
 export type ModelDefinition<TModelId extends string = ModelId> = {
     aliases: string[];
     modelId: TModelId;
@@ -102,6 +137,7 @@ export type ModelDefinition<TModelId extends string = ModelId> = {
     // USD-cost to Pollen-price multiplier. Required on every model — there is
     // no implicit default. Typical values: 1 (sold at cost) or 1.5 (paid markup).
     priceMultiplier: number;
+    billing?: BillingRules;
     // Date the model was added to the registry (ms epoch). Set once, never updated.
     addedDate: number;
     // User-facing metadata
@@ -168,6 +204,100 @@ function derivePrice(svc: ModelDefinition): PriceDefinition {
     return Object.fromEntries(
         Object.entries(svc.cost).map(([k, v]) => [k, (v as number) * m]),
     ) as PriceDefinition;
+}
+
+function calculateLinearCost(
+    model: string,
+    usage: Usage,
+    costDefinition: CostDefinition,
+): UsageCost {
+    const usageCost = convertUsage(usage, costDefinition, model);
+    const totalCost = Object.values(usageCost).reduce(
+        (total, cost) => total + cost,
+        0,
+    );
+    return {
+        ...usageCost,
+        totalCost,
+    };
+}
+
+// Single source of truth: the per-rule breakdown. Cost/price totals are derived
+// from this so there is no duplicated rule loop. The registry stays generic:
+// each rule brings its own counter and (optionally) provider-cost resolution.
+export function calculateBillingAdjustments(
+    svc: ModelDefinition<string>,
+    output: unknown,
+): BillingAdjustment[] {
+    const adjustments: BillingAdjustment[] = [];
+    for (const rule of svc.billing?.adjustments ?? []) {
+        const units = rule.countUnits(output);
+        if (units === 0) continue;
+        const unitCost =
+            rule.resolveUnitCost?.(output, svc.modelId) ?? rule.unitCost;
+        const cost = units * unitCost;
+        adjustments.push({
+            ruleId: rule.id,
+            kind: rule.kind,
+            unit: rule.unit,
+            units,
+            unitCost,
+            cost,
+            price: cost * svc.priceMultiplier,
+        });
+    }
+    return adjustments;
+}
+
+// Full billing for one generation, computed in a single pass: the adjustment
+// rules are walked exactly once (so clamp/absence warnings log once per
+// request) and cost, price, and the per-rule breakdown all derive from it.
+export type UsageBilling = {
+    cost: UsageCost;
+    price: UsagePrice;
+    adjustments: BillingAdjustment[];
+};
+
+export function calculateUsageBilling(
+    model: string,
+    usage: Usage,
+    svc: ModelDefinition<string>,
+    output?: unknown,
+): UsageBilling {
+    const adjustments = calculateBillingAdjustments(svc, output);
+    const adjustmentCost = adjustments.reduce((total, a) => total + a.cost, 0);
+    const adjustmentPrice = adjustments.reduce(
+        (total, a) => total + a.price,
+        0,
+    );
+
+    const usageCost = calculateLinearCost(model, usage, svc.cost);
+    const cost =
+        adjustmentCost === 0
+            ? usageCost
+            : {
+                  ...usageCost,
+                  totalCost: usageCost.totalCost + adjustmentCost,
+              };
+
+    const usagePrice = Object.fromEntries(
+        Object.entries(usageCost)
+            .filter(([usageType]) => usageType !== "totalCost")
+            .map(([usageType, usageTypeCost]) => [
+                usageType,
+                (usageTypeCost as number) * svc.priceMultiplier,
+            ]),
+    ) as Usage;
+    const tokenTotalPrice = Object.values(usagePrice).reduce(
+        (total, price) => total + price,
+        0,
+    );
+    const price = {
+        ...usagePrice,
+        totalPrice: roundPollenLedgerAmount(tokenTotalPrice + adjustmentPrice),
+    };
+
+    return { cost, price, adjustments };
 }
 
 const MODEL_REGISTRY = {
@@ -289,13 +419,26 @@ export function getPriceDefinition(model: ModelName): PriceDefinition | null {
 /**
  * Calculate cost for a model based on usage
  */
-export function calculateCost(model: ModelName, usage: Usage): UsageCost {
-    const costDefinition = getCostDefinition(model);
-    if (!costDefinition)
+export function calculateCost(
+    model: ModelName,
+    usage: Usage,
+    output?: unknown,
+): UsageCost {
+    const svc = MODEL_REGISTRY[model];
+    if (!svc)
         throw new Error(
             `Failed to get current cost for model: ${model.toString()}`,
         );
-    return calculateCostWithDefinition(model, usage, costDefinition);
+    return calculateCostForModelDefinition(model, usage, svc, output);
+}
+
+export function calculateCostForModelDefinition(
+    model: string,
+    usage: Usage,
+    svc: ModelDefinition<string>,
+    output?: unknown,
+): UsageCost {
+    return calculateUsageBilling(model, usage, svc, output).cost;
 }
 
 /**
@@ -306,27 +449,32 @@ export function calculateCostWithDefinition(
     usage: Usage,
     costDefinition: CostDefinition,
 ): UsageCost {
-    const usageCost = convertUsage(usage, costDefinition, model);
-    const totalCost = Object.values(usageCost).reduce(
-        (total, cost) => total + cost,
-        0,
-    );
-    return {
-        ...usageCost,
-        totalCost,
-    };
+    return calculateLinearCost(model, usage, costDefinition);
 }
 
 /**
  * Calculate price for a model based on usage
  */
-export function calculatePrice(model: ModelName, usage: Usage): UsagePrice {
-    const priceDefinition = getPriceDefinition(model);
-    if (!priceDefinition)
+export function calculatePrice(
+    model: ModelName,
+    usage: Usage,
+    output?: unknown,
+): UsagePrice {
+    const svc = MODEL_REGISTRY[model];
+    if (!svc)
         throw new Error(
             `Failed to get current price for model: ${model.toString()}`,
         );
-    return calculatePriceWithDefinition(model, usage, priceDefinition);
+    return calculatePriceForModelDefinition(model, usage, svc, output);
+}
+
+export function calculatePriceForModelDefinition(
+    model: string,
+    usage: Usage,
+    svc: ModelDefinition<string>,
+    output?: unknown,
+): UsagePrice {
+    return calculateUsageBilling(model, usage, svc, output).price;
 }
 
 /**

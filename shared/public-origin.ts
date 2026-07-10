@@ -1,19 +1,25 @@
 import type { Context } from "hono";
 
-const TRUSTED_FORWARDED_HOSTS: Record<string, string> = {
-    "enter.myceli.ai": "enter.pollinations.ai",
-    "staging.enter.myceli.ai": "staging.enter.pollinations.ai",
-    "dev.enter.myceli.ai": "dev.enter.pollinations.ai",
-    "gen.myceli.ai": "gen.pollinations.ai",
-    "staging.gen.myceli.ai": "staging.gen.pollinations.ai",
-    "media.myceli.ai": "media.pollinations.ai",
-};
+// Public-facing hosts served through the pollinations-myceli-proxy Worker.
+// The proxy forwards these as X-Forwarded-Host; we trust that header only when
+// it names one of them.
+const TRUSTED_PUBLIC_HOSTS = new Set<string>([
+    "enter.pollinations.ai",
+    "staging.enter.pollinations.ai",
+    "dev.enter.pollinations.ai",
+    "gen.pollinations.ai",
+    "staging.gen.pollinations.ai",
+    "media.pollinations.ai",
+]);
 
 function getTrustedForwardedHost(c: Context): string | undefined {
-    const requestHost = new URL(c.req.url).host;
+    // On Cloudflare custom-domain routes the Worker is invoked on the public
+    // host (e.g. gen.pollinations.ai), so c.req.url.host already equals the
+    // proxy's X-Forwarded-Host — comparing the two never identifies a proxy
+    // hop. Instead, trust X-Forwarded-Host when it names a known public host.
     const forwardedHost = c.req.header("x-forwarded-host");
 
-    return TRUSTED_FORWARDED_HOSTS[requestHost] === forwardedHost
+    return forwardedHost && TRUSTED_PUBLIC_HOSTS.has(forwardedHost)
         ? forwardedHost
         : undefined;
 }

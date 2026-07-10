@@ -1,0 +1,34 @@
+{
+  "pr_number": 12325,
+  "title": "refactor: move community-monitor to apps/operation/",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/12325",
+  "merged_at": "2026-07-10T16:21:31Z",
+  "labels": [
+    "DEV-CHORE"
+  ],
+  "pr_body_excerpt": "- Moves `scripts/community-monitor/` → `apps/operation/community-monitor/` (git mv, history preserved)\n- Joins the other internal ops tooling (economics, finance, kpi, quest-dashboard)\n- Updates path references in .gitignore, README deploy commands, and the systemd unit\n- `scripts/` shrinks back to just `cf-account.sh`\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Spring cleaning the ops folder",
+    "blurb": "We're tidying up the hive! The community monitor script has moved to its new home with the rest of our internal operations tools.",
+    "summary": "Moved the community-monitor tooling from scripts/ to apps/operation/ to consolidate internal operations apps.",
+    "impact": "Developers will find the community monitor alongside other ops tools like economics and kpi dashboards, keeping the root scripts folder clean.",
+    "keywords": [
+      "refactor",
+      "infrastructure",
+      "tooling",
+      "organization"
+    ],
+    "visual_concept": "Polly the bee and the Monitor Robot organizing files or boxes into a neat cabinet labeled 'Operations', representing the consolidation of internal tools.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee and the chunky Monitor Robot organizing small pixelated boxes into a neat filing cabinet. One box has a tiny heart icon representing the community monitor. Soft lime green (#ecf874) and warm cream gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-10/PR-12325.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee and the chunky Monitor Robot organizing small pixelated boxes into a neat filing cabinet. One box has a tiny heart icon representing the community monitor. Soft lime green (#ecf874) and warm cream gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-07-10T16:22:43.628493+00:00"
+}

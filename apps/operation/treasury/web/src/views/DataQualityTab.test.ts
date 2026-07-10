@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
 import type { VendorPlanes } from "../lib/insights";
-import { planeRank, problemsFirst, visiblePlaneRows } from "./DataQualityTab";
+import {
+    dataQualitySummary,
+    planeRank,
+    problemsFirst,
+    visiblePlaneRows,
+} from "./DataQualityTab";
 
 const plane = (
     month: string,
@@ -44,21 +49,74 @@ describe("visiblePlaneRows", () => {
     });
 });
 
+describe("dataQualitySummary", () => {
+    it("counts warnings, missing witnesses, reconciled rows, drift, and totals", () => {
+        const rows = [
+            plane("2026-07", "aws", {
+                status: "ok",
+                cloudUsd: 10,
+                pollenCostUsd: 8,
+                calibX: 1.25,
+            }),
+            plane("2026-07", "azure", {
+                status: "missing cloud",
+                cloudUsd: null,
+                pollenCostUsd: 4,
+            }),
+            plane("2026-07", "google", {
+                status: "missing cash",
+                cloudUsd: 6,
+                pollenCostUsd: 5,
+                calibX: 1.2,
+            }),
+            plane("2026-07", "aws", {
+                status: "drift",
+                cloudUsd: 20,
+                pollenCostUsd: 10,
+                calibX: 2,
+            }),
+            plane("2026-07", "lambda", {
+                status: "timing",
+                cloudUsd: 2,
+                pollenCostUsd: null,
+            }),
+        ];
+
+        expect(dataQualitySummary(rows)).toEqual({
+            total: 5,
+            warnings: 4,
+            missingWitnesses: 2,
+            reconciled: 1,
+            drift: 1,
+            calibrated: 3,
+            timing: 1,
+            cloudUsd: 38,
+            pollenUsd: 27,
+        });
+    });
+});
+
 describe("planeRank", () => {
-    it("puts missing witnesses before drift, timing, and ok rows", () => {
+    it("puts meter gaps before cash gaps, drift, timing, and ok rows", () => {
+        expect(
+            planeRank(plane("2026-07", "aws", { status: "missing cloud" })),
+        ).toBe(0);
+        expect(
+            planeRank(plane("2026-07", "aws", { status: "missing pollen" })),
+        ).toBe(0);
         expect(
             planeRank(plane("2026-07", "aws", { status: "missing cash" })),
-        ).toBe(0);
-        expect(planeRank(plane("2026-07", "aws", { status: "drift" }))).toBe(1);
+        ).toBe(1);
+        expect(planeRank(plane("2026-07", "aws", { status: "drift" }))).toBe(2);
         expect(planeRank(plane("2026-07", "aws", { status: "timing" }))).toBe(
-            2,
+            3,
         );
-        expect(planeRank(plane("2026-07", "aws", { status: "ok" }))).toBe(3);
+        expect(planeRank(plane("2026-07", "aws", { status: "ok" }))).toBe(4);
     });
 });
 
 describe("problemsFirst", () => {
-    it("orders missing witnesses, then drift, timing, and healthy rows by month desc", () => {
+    it("orders meter gaps, cash gaps, drift, timing, and healthy rows by month desc", () => {
         const healthyNew = plane("2026-07", "aws");
         const healthyOld = plane("2026-06", "aws");
         const timing = plane("2026-07", "vast.ai", { status: "timing" });

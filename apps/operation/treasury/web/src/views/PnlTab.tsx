@@ -20,6 +20,7 @@ import {
     type PnlVendorLine,
     pnlStatement,
 } from "../lib/insights";
+import type { MonthFilterValue } from "../lib/months";
 import type { Data } from "../types";
 
 export function pnlTone(value: number | null) {
@@ -144,7 +145,13 @@ const SEPARATOR_BEFORE = new Set(["total-spend"]);
 // rows never change with the filter — only the period columns do (year/all:
 // months + YTD; month: prior · selected · Δ). Category rows expand inline to
 // their vendor sub-rows in the same columns. Nothing swaps report shape.
-export function PnlTab({ data, month = "" }: { data: Data; month?: string }) {
+export function PnlTab({
+    data,
+    month = "",
+}: {
+    data: Data;
+    month?: MonthFilterValue;
+}) {
     const { periods, lines, primary } = useMemo(
         () => pnlStatement(data, month, new Date()),
         [data, month],

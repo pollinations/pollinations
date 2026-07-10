@@ -16,14 +16,23 @@ import {
     useSortableRows,
     withUniqueRowKeys,
 } from "../components/DataTable";
+import { StatCards, type StatItem } from "../components/StatCards";
 import { fmtMultiplier, fmtUsd } from "../lib/format";
 import {
+    CALIB_DRIFT_ABS_ALARM_USD,
     CALIB_DRIFT_ALARM,
     type DataQualityStatus,
+    hasCalibDrift,
     type VendorPlanes,
     vendorPlanes,
 } from "../lib/insights";
-import { matchesMonth, monthLabel } from "../lib/months";
+import {
+    type MonthFilterValue,
+    matchesMonth,
+    matchesValue,
+    monthLabel,
+    type ValueFilter,
+} from "../lib/months";
 import type { Data } from "../types";
 
 const STATUS_LABELS: Record<DataQualityStatus, string> = {
@@ -94,35 +103,125 @@ function StatusCell({ row }: { row: VendorPlanes }) {
     );
 }
 
+const WARNING_STATUSES = new Set<DataQualityStatus>([
+    "missing cash",
+    "missing cloud",
+    "missing pollen",
+    "drift",
+    "timing",
+]);
+
+const MISSING_WITNESS_STATUSES = new Set<DataQualityStatus>([
+    "missing cash",
+    "missing cloud",
+    "missing pollen",
+]);
+
+export type DataQualitySummary = {
+    total: number;
+    warnings: number;
+    missingWitnesses: number;
+    reconciled: number;
+    drift: number;
+    calibrated: number;
+    timing: number;
+    cloudUsd: number;
+    pollenUsd: number;
+};
+
+function sumKnown(rows: VendorPlanes[], field: keyof VendorPlanes): number {
+    return rows.reduce((total, row) => {
+        const value = row[field];
+        return typeof value === "number" ? total + value : total;
+    }, 0);
+}
+
+export function dataQualitySummary(rows: VendorPlanes[]): DataQualitySummary {
+    const statuses = rows.reduce(
+        (counts, row) =>
+            counts.set(row.status, (counts.get(row.status) ?? 0) + 1),
+        new Map<DataQualityStatus, number>(),
+    );
+
+    return {
+        total: rows.length,
+        warnings: rows.filter((row) => WARNING_STATUSES.has(row.status)).length,
+        missingWitnesses: rows.filter((row) =>
+            MISSING_WITNESS_STATUSES.has(row.status),
+        ).length,
+        reconciled: statuses.get("ok") ?? 0,
+        drift: statuses.get("drift") ?? 0,
+        calibrated: rows.filter((row) => row.calibX != null).length,
+        timing: statuses.get("timing") ?? 0,
+        cloudUsd: sumKnown(rows, "cloudUsd"),
+        pollenUsd: sumKnown(rows, "pollenCostUsd"),
+    };
+}
+
+function dataQualityStatItems(summary: DataQualitySummary): StatItem[] {
+    const total = summary.total;
+    const cloudPollenGap = summary.cloudUsd - summary.pollenUsd;
+    const hasRows = total > 0;
+
+    return [
+        {
+            label: "Warnings",
+            value: `${summary.warnings} of ${total}`,
+            tone: summary.warnings > 0 ? "warn" : "pos",
+            detail: "non-ok rows",
+        },
+        {
+            label: "Missing",
+            value: `${summary.missingWitnesses} of ${total}`,
+            tone: summary.missingWitnesses > 0 ? "neg" : "pos",
+            detail: "cash/cloud/pollen",
+        },
+        {
+            label: "Reconciled",
+            value: `${summary.reconciled} of ${total}`,
+            tone: hasRows && summary.reconciled === total ? "pos" : "base",
+            detail: "status ok",
+        },
+        {
+            label: "Drift",
+            value: `${summary.drift} of ${summary.calibrated}`,
+            tone: summary.drift > 0 ? "warn" : "pos",
+            detail: `>${Math.round(CALIB_DRIFT_ALARM * 100)}% and >${fmtUsd(CALIB_DRIFT_ABS_ALARM_USD)}`,
+        },
+        {
+            label: "Cloud - Pollen",
+            value: fmtUsd(cloudPollenGap),
+            tone: Math.abs(cloudPollenGap) > 1 ? "warn" : "base",
+            detail: `${fmtUsd(summary.cloudUsd)} vs ${fmtUsd(summary.pollenUsd)}`,
+        },
+    ];
+}
+
 export function visiblePlaneRows({
     month,
     rows,
     vendor,
 }: {
-    month: string;
+    month: MonthFilterValue;
     rows: VendorPlanes[];
-    vendor: string;
+    vendor: ValueFilter;
 }) {
     return rows.filter(
         (row) =>
-            matchesMonth(row.month, month) &&
-            (vendor === "all" || row.vendor === vendor),
+            matchesMonth(row.month, month) && matchesValue(row.vendor, vendor),
     );
 }
 
-// Problems float to the top: missing witnesses first, calibration drift second,
-// timing/prepaid rows third, healthy rows last - newest month first per band.
+// Product meter gaps are the highest-risk rows, then cash gaps, then material
+// calibration drift, timing/prepaid rows, and healthy rows.
 export function planeRank(row: VendorPlanes): number {
-    if (
-        row.status === "missing cash" ||
-        row.status === "missing cloud" ||
-        row.status === "missing pollen"
-    ) {
+    if (row.status === "missing cloud" || row.status === "missing pollen") {
         return 0;
     }
-    if (row.status === "drift") return 1;
-    if (row.status === "timing") return 2;
-    return 3;
+    if (row.status === "missing cash") return 1;
+    if (row.status === "drift") return 2;
+    if (row.status === "timing") return 3;
+    return 4;
 }
 
 export function problemsFirst(rows: VendorPlanes[]): VendorPlanes[] {
@@ -144,14 +243,15 @@ export function DataQualityTab({
     vendor = "all",
 }: {
     data: Data;
-    month?: string;
-    vendor?: string;
+    month?: MonthFilterValue;
+    vendor?: ValueFilter;
 }) {
     const allRows = useMemo(() => vendorPlanes(data), [data]);
     const baseRows = useMemo(
         () => problemsFirst(visiblePlaneRows({ rows: allRows, month, vendor })),
         [allRows, month, vendor],
     );
+    const summary = useMemo(() => dataQualitySummary(baseRows), [baseRows]);
     const sortColumns = useMemo<SortColumn<VendorPlanes>[]>(
         () => [
             { key: "status", value: (row) => planeRank(row) },
@@ -177,8 +277,11 @@ export function DataQualityTab({
     // No initial sort column: rows open in data-quality priority order.
     const { headerProps, rows } = useSortableRows(baseRows, sortColumns, null);
 
-    return (
-        <TableScroller>
+    return [
+        <div key="stats" className="mb-4">
+            <StatCards items={dataQualityStatItems(summary)} />
+        </div>,
+        <TableScroller key="table">
             <DataTable>
                 <TableHead>
                     <TableRow>
@@ -261,7 +364,7 @@ export function DataQualityTab({
                             <HeaderHint
                                 hint={{
                                     meaning:
-                                        "Credit-funded cloud burn. Positive grant-award rows are not counted as spend.",
+                                        "Credit-funded cloud burn. Positive credit-award rows are not counted as spend.",
                                     tables: "op_cloud_api",
                                     formula: "sum(max(0, -credit))",
                                 }}
@@ -276,7 +379,7 @@ export function DataQualityTab({
                             <HeaderHint
                                 hint={{
                                     meaning:
-                                        "Total OP Cloud burn for the vendor-month, including paid, credit, and infra.",
+                                        "Non-infra OP Cloud burn for the vendor-month, including paid and credit-funded provider usage.",
                                     tables: "op_cloud_api",
                                     formula:
                                         "cloud_paid_usd + cloud_credit_usd",
@@ -381,8 +484,7 @@ export function DataQualityTab({
                             </TableCell>
                             <TableCell
                                 className={`text-right ${GROUP_BORDER} ${
-                                    row.calibX != null &&
-                                    Math.abs(row.calibX - 1) > CALIB_DRIFT_ALARM
+                                    hasCalibDrift(row)
                                         ? "text-intent-danger-text"
                                         : "text-theme-text-soft"
                                 }`}
@@ -393,6 +495,6 @@ export function DataQualityTab({
                     ))}
                 </TableBody>
             </DataTable>
-        </TableScroller>
-    );
+        </TableScroller>,
+    ];
 }

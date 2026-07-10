@@ -7,7 +7,12 @@ import type {
     TransactionRow,
 } from "../types";
 import { toUsd } from "./fx";
-import { matchesMonth, monthLabel, WINDOW_START } from "./months";
+import {
+    type MonthFilterValue,
+    matchesMonth,
+    monthLabel,
+    WINDOW_START,
+} from "./months";
 
 // ---------------------------------------------------------------- revenue
 
@@ -272,13 +277,13 @@ function netMarginPct(
 // facts, then pivots line × period.
 export function pnlStatement(
     data: Data,
-    filter: string,
+    filter: MonthFilterValue,
     now: Date,
 ): { periods: PnlPeriod[]; lines: PnlLine[]; primary: string } {
     const byMonth = new Map(
         pnlByMonth(data, now).map((row) => [row.month, row]),
     );
-    const isMonth = MONTH_KEY_RE.test(filter);
+    const isMonth = typeof filter === "string" && MONTH_KEY_RE.test(filter);
 
     // Period columns and the primary period key (%rev denominator).
     let periods: PnlPeriod[];
@@ -305,6 +310,8 @@ export function pnlStatement(
         ];
         primary = selected;
     } else {
+        const totalLabel =
+            Array.isArray(filter) && filter.length > 0 ? "Total" : "YTD";
         const months = [...byMonth.keys()]
             .filter((month) => matchesMonth(month, filter))
             .sort();
@@ -318,7 +325,7 @@ export function pnlStatement(
                     inProgress: byMonth.get(month)?.monthInProgress ?? false,
                 }),
             ),
-            { key: "total", label: "YTD", kind: "total" },
+            { key: "total", label: totalLabel, kind: "total" },
         ];
         primary = "total";
     }
@@ -714,8 +721,7 @@ function dataQualityStatus({
     if (cashCoverage === "missing cash") return "missing cash";
     if (meterCoverage === "missing cloud") return "missing cloud";
     if (meterCoverage === "missing pollen") return "missing pollen";
-    if (calibX != null && Math.abs(calibX - 1) > CALIB_DRIFT_ALARM)
-        return "drift";
+    if (hasCalibDrift({ calibX, meterCloudUsd, pollenCostUsd })) return "drift";
     if (cashCoverage === "cash ±1mo" || cashCoverage === "prepaid")
         return "timing";
     if (
@@ -737,6 +743,8 @@ export function vendorPlanes(data: Data): VendorPlanes[] {
     const cloudMeterVendors = new Set<string>();
     const displayKeys = new Set<string>();
     const cumulativeKeys = new Set<string>();
+    const infraCloudKeys = new Set<string>();
+    const nonInfraCloudKeys = new Set<string>();
     for (const row of data.opTransactions ?? []) {
         if (row.category !== "cloud") continue;
         const month = row.date.slice(0, 7);
@@ -744,21 +752,22 @@ export function vendorPlanes(data: Data): VendorPlanes[] {
         const key = `${month}|${row.vendor}`;
         cash.set(key, (cash.get(key) ?? 0) - opTransactionUsd(row));
         cumulativeKeys.add(key);
-        if (month >= WINDOW_START) displayKeys.add(key);
     }
 
     const cloud = new Map<string, OpCloudWitness>();
     for (const row of data.opCloud ?? []) {
         const month = opCloudMonth(row);
         if (!MONTH_KEY_RE.test(month)) continue;
+        const key = `${month}|${row.vendor}`;
+        if (row.type === "infra") {
+            infraCloudKeys.add(key);
+            continue;
+        }
         const paidUsd = opCloudPaidBurnUsd(row);
         const creditUsd = opCloudCreditBurnUsd(row);
         const cloudUsd = paidUsd + creditUsd;
-        const meterCloudUsd = row.type === "infra" ? 0 : cloudUsd;
-        if (
-            row.type !== "infra" &&
-            Math.abs(meterCloudUsd) > POLLEN_ACTIVE_USD
-        ) {
+        const meterCloudUsd = cloudUsd;
+        if (Math.abs(meterCloudUsd) > POLLEN_ACTIVE_USD) {
             cloudMeterVendors.add(row.vendor);
         }
         if (
@@ -768,7 +777,6 @@ export function vendorPlanes(data: Data): VendorPlanes[] {
         ) {
             continue;
         }
-        const key = `${month}|${row.vendor}`;
         const entry = cloud.get(key) ?? {
             paidUsd: 0,
             creditUsd: 0,
@@ -780,6 +788,7 @@ export function vendorPlanes(data: Data): VendorPlanes[] {
         entry.cloudUsd += cloudUsd;
         entry.meterCloudUsd += meterCloudUsd;
         cloud.set(key, entry);
+        nonInfraCloudKeys.add(key);
         cumulativeKeys.add(key);
         if (month >= WINDOW_START) displayKeys.add(key);
     }
@@ -805,6 +814,12 @@ export function vendorPlanes(data: Data): VendorPlanes[] {
             cloudMeterVendors.add(row.vendor);
         }
         displayKeys.add(key);
+    }
+
+    for (const key of infraCloudKeys) {
+        if (!nonInfraCloudKeys.has(key) && !pollen.has(key)) {
+            displayKeys.delete(key);
+        }
     }
 
     // Running cash vs paid burn per vendor, for prepaid-balance coverage.
@@ -930,6 +945,21 @@ export const POLLEN_PRICED_VENDORS = new Set([
 
 // |calib − 1| beyond this marks a registry mispricing worth fixing.
 export const CALIB_DRIFT_ALARM = 0.25;
+export const CALIB_DRIFT_ABS_ALARM_USD = 100;
+
+export function hasCalibDrift({
+    calibX,
+    meterCloudUsd,
+    pollenCostUsd,
+}: Pick<VendorPlanes, "calibX" | "meterCloudUsd" | "pollenCostUsd">): boolean {
+    if (calibX == null || meterCloudUsd == null || pollenCostUsd == null) {
+        return false;
+    }
+    return (
+        Math.abs(calibX - 1) > CALIB_DRIFT_ALARM &&
+        Math.abs(meterCloudUsd - pollenCostUsd) > CALIB_DRIFT_ABS_ALARM_USD
+    );
+}
 
 export type EconGrain = "vendor" | "model";
 
@@ -950,6 +980,55 @@ export type EconRow = {
     flags: string[];
 };
 
+export function grantFundedUsd(row: EconRow): number {
+    if (row.trueCostPaidUsd <= 0) return 0;
+    const share = Math.min(100, Math.max(0, row.creditSharePct ?? 0)) / 100;
+    return row.trueCostPaidUsd * share;
+}
+
+export function providerUsageUsd(row: EconRow): number {
+    return row.trueCostPaidUsd + row.questBurnUsd;
+}
+
+export function providerGrantFundedUsd(row: EconRow): number {
+    const usage = providerUsageUsd(row);
+    if (usage <= 0) return 0;
+    const share = Math.min(100, Math.max(0, row.creditSharePct ?? 0)) / 100;
+    return usage * share;
+}
+
+export function providerCashCostUsd(row: EconRow): number {
+    return Math.max(0, providerUsageUsd(row) - providerGrantFundedUsd(row));
+}
+
+export function cashCostPaidUsd(row: EconRow): number {
+    return Math.max(0, row.trueCostPaidUsd - grantFundedUsd(row));
+}
+
+export function cashMarginUsd(row: EconRow): number {
+    return row.retainedPaidUsd - providerCashCostUsd(row);
+}
+
+export function marginPct(
+    marginUsd: number,
+    retainedPaidUsd: number,
+): number | null {
+    return retainedPaidUsd > 0 ? (marginUsd / retainedPaidUsd) * 100 : null;
+}
+
+export function cashMarginPct(row: EconRow): number | null {
+    return marginPct(cashMarginUsd(row), row.retainedPaidUsd);
+}
+
+export function trueMarginPct(row: EconRow): number | null {
+    return marginPct(row.marginUsd, row.retainedPaidUsd);
+}
+
+export function cashMultiplier(row: EconRow): number | null {
+    const cost = providerCashCostUsd(row);
+    return cost > 0 ? row.retainedPaidUsd / cost : null;
+}
+
 // One table, two grains: the Vendors summary is exactly the Models table
 // rolled up (calib is per-vendor, so every dollar column is additive and
 // true × is Σ/Σ). The math treats the raw data as perfect — calib is a plain
@@ -960,7 +1039,7 @@ export type EconRow = {
 // "no meter" (no provider rows at all — true cost falls back to our metering).
 export function economics(
     data: Data,
-    monthFilter: string,
+    monthFilter: MonthFilterValue,
     grain: EconGrain,
 ): EconRow[] {
     type VendorFacts = {
@@ -1100,6 +1179,8 @@ export function economics(
             const vendorCalib = calibs.get(entry.vendor);
             const applied = vendorCalib?.calib ?? 1;
             const trueCostPaidUsd = entry.meteredPaid * applied;
+            const questBurnUsd = entry.meteredQuests * applied;
+            const providerUsage = trueCostPaidUsd + questBurnUsd;
             const retainedPaidUsd = entry.soldPaid - entry.eco;
             return {
                 vendor: entry.vendor,
@@ -1109,15 +1190,13 @@ export function economics(
                 retainedPaidUsd,
                 soldQuestsUsd: entry.soldQuests,
                 trueCostPaidUsd,
-                questBurnUsd: entry.meteredQuests * applied,
+                questBurnUsd,
                 calib: vendorCalib?.calib ?? null,
                 pollenPriced: vendorCalib?.pollenPriced ?? false,
                 creditSharePct: vendorCalib?.creditSharePct ?? null,
                 trueMultiplier:
-                    trueCostPaidUsd > 0
-                        ? retainedPaidUsd / trueCostPaidUsd
-                        : null,
-                marginUsd: retainedPaidUsd - trueCostPaidUsd,
+                    providerUsage > 0 ? retainedPaidUsd / providerUsage : null,
+                marginUsd: retainedPaidUsd - providerUsage,
                 flags: vendorCalib?.flags ?? [],
             };
         })
@@ -1140,7 +1219,7 @@ export function economics(
 // Models keep the same table math while their data source moves.
 function opEconomics(
     data: Data,
-    monthFilter: string,
+    monthFilter: MonthFilterValue,
     grain: EconGrain,
 ): EconRow[] {
     type VendorFacts = {
@@ -1284,6 +1363,8 @@ function opEconomics(
             const vendorCalib = calibs.get(entry.vendor);
             const applied = vendorCalib?.calib ?? 1;
             const trueCostPaidUsd = entry.meteredPaid * applied;
+            const questBurnUsd = entry.meteredQuests * applied;
+            const providerUsage = trueCostPaidUsd + questBurnUsd;
             const retainedPaidUsd = entry.soldPaid - entry.eco;
             return {
                 vendor: entry.vendor,
@@ -1293,15 +1374,13 @@ function opEconomics(
                 retainedPaidUsd,
                 soldQuestsUsd: entry.soldQuests,
                 trueCostPaidUsd,
-                questBurnUsd: entry.meteredQuests * applied,
+                questBurnUsd,
                 calib: vendorCalib?.calib ?? null,
                 pollenPriced: vendorCalib?.pollenPriced ?? false,
                 creditSharePct: vendorCalib?.creditSharePct ?? null,
                 trueMultiplier:
-                    trueCostPaidUsd > 0
-                        ? retainedPaidUsd / trueCostPaidUsd
-                        : null,
-                marginUsd: retainedPaidUsd - trueCostPaidUsd,
+                    providerUsage > 0 ? retainedPaidUsd / providerUsage : null,
+                marginUsd: retainedPaidUsd - providerUsage,
                 flags: vendorCalib?.flags ?? [],
             };
         })
@@ -1315,11 +1394,17 @@ function opEconomics(
         });
 }
 
-export function providerEconomics(data: Data, monthFilter: string): EconRow[] {
+export function providerEconomics(
+    data: Data,
+    monthFilter: MonthFilterValue,
+): EconRow[] {
     return opEconomics(data, monthFilter, "vendor");
 }
 
-export function modelEconomics(data: Data, monthFilter: string): EconRow[] {
+export function modelEconomics(
+    data: Data,
+    monthFilter: MonthFilterValue,
+): EconRow[] {
     return opEconomics(data, monthFilter, "model");
 }
 
@@ -1327,10 +1412,19 @@ export type EconSummary = {
     soldPaidUsd: number;
     soldQuestsUsd: number;
     trueCostPaidUsd: number;
+    cashCostPaidUsd: number;
+    grantFundedUsd: number;
+    providerUsageUsd: number;
+    providerCashCostUsd: number;
+    providerGrantFundedUsd: number;
     retainedPaidUsd: number;
     questBurnUsd: number;
     marginUsd: number;
+    cashMarginUsd: number;
+    marginPct: number | null;
+    cashMarginPct: number | null;
     trueMultiplier: number | null; // blended Σ retained / Σ true cost
+    cashMultiplier: number | null; // blended Σ retained / Σ cash cost
     creditFundedPct: number | null; // true-cost-weighted credit share
     underwaterCount: number; // rows losing cash on compute (margin < 0)
     mostUnderpriced: EconRow | null; // lowest true × in scope
@@ -1344,10 +1438,19 @@ export function econSummary(rows: EconRow[]): EconSummary {
         soldPaidUsd: 0,
         soldQuestsUsd: 0,
         trueCostPaidUsd: 0,
+        cashCostPaidUsd: 0,
+        grantFundedUsd: 0,
+        providerUsageUsd: 0,
+        providerCashCostUsd: 0,
+        providerGrantFundedUsd: 0,
         retainedPaidUsd: 0,
         questBurnUsd: 0,
         marginUsd: 0,
+        cashMarginUsd: 0,
+        marginPct: null,
+        cashMarginPct: null,
         trueMultiplier: null,
+        cashMultiplier: null,
         creditFundedPct: null,
         underwaterCount: 0,
         mostUnderpriced: null,
@@ -1358,13 +1461,21 @@ export function econSummary(rows: EconRow[]): EconSummary {
         acc.soldPaidUsd += row.soldPaidUsd;
         acc.soldQuestsUsd += row.soldQuestsUsd;
         acc.trueCostPaidUsd += row.trueCostPaidUsd;
+        acc.cashCostPaidUsd += cashCostPaidUsd(row);
+        acc.grantFundedUsd += grantFundedUsd(row);
+        const rowProviderUsageUsd = providerUsageUsd(row);
+        acc.providerUsageUsd += rowProviderUsageUsd;
+        acc.providerCashCostUsd += providerCashCostUsd(row);
+        acc.providerGrantFundedUsd += providerGrantFundedUsd(row);
         acc.retainedPaidUsd += row.retainedPaidUsd;
         acc.questBurnUsd += row.questBurnUsd;
         acc.marginUsd += row.marginUsd;
-        if (row.marginUsd < 0) acc.underwaterCount += 1;
-        if (row.creditSharePct != null && row.trueCostPaidUsd > 0) {
-            creditWeighted += row.creditSharePct * row.trueCostPaidUsd;
-            creditWeight += row.trueCostPaidUsd;
+        const rowCashMarginUsd = cashMarginUsd(row);
+        acc.cashMarginUsd += rowCashMarginUsd;
+        if (rowCashMarginUsd < 0) acc.underwaterCount += 1;
+        if (row.creditSharePct != null && rowProviderUsageUsd > 0) {
+            creditWeighted += row.creditSharePct * rowProviderUsageUsd;
+            creditWeight += rowProviderUsageUsd;
         }
         if (
             row.trueMultiplier != null &&
@@ -1376,9 +1487,15 @@ export function econSummary(rows: EconRow[]): EconSummary {
         }
     }
     acc.trueMultiplier =
-        acc.trueCostPaidUsd > 0
-            ? acc.retainedPaidUsd / acc.trueCostPaidUsd
+        acc.providerUsageUsd > 0
+            ? acc.retainedPaidUsd / acc.providerUsageUsd
             : null;
+    acc.cashMultiplier =
+        acc.cashCostPaidUsd > 0
+            ? acc.retainedPaidUsd / acc.cashCostPaidUsd
+            : null;
+    acc.marginPct = marginPct(acc.marginUsd, acc.retainedPaidUsd);
+    acc.cashMarginPct = marginPct(acc.cashMarginUsd, acc.retainedPaidUsd);
     acc.creditFundedPct =
         creditWeight > 0 ? creditWeighted / creditWeight : null;
     return acc;
@@ -1802,7 +1919,7 @@ export type EcosystemTotals = { byopUsd: number; modelUsd: number };
 // (byop) and community model owners (model), paid + quests, in scope.
 export function ecosystemTotals(
     rows: PollenMonthlyRow[],
-    monthFilter: string,
+    monthFilter: MonthFilterValue,
 ): EcosystemTotals {
     let byop = 0;
     let model = 0;

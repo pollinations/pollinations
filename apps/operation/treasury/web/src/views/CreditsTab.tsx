@@ -172,7 +172,7 @@ export function CreditsTab({
             <StatCards
                 items={[
                     {
-                        label: "Granted",
+                        label: "Credit",
                         value: fmtUsd(totals.granted),
                         detail: `${totals.vendors} vendor${totals.vendors === 1 ? "" : "s"}`,
                     },
@@ -200,7 +200,7 @@ export function CreditsTab({
                             : "base",
                         detail: totals.next
                             ? totals.next.reason === "expiry"
-                                ? "grant expiry"
+                                ? "credit expiry"
                                 : "at current rate"
                             : "no runway risk",
                     },
@@ -229,12 +229,12 @@ export function CreditsTab({
                                 <HeaderHint
                                     hint={{
                                         meaning:
-                                            "Total grants for the vendor (hover the vendor for the per-grant split). EUR converted at the grant's start month.",
+                                            "Total credit for the vendor (hover the vendor for the per-credit split). EUR converted at the credit's start month.",
                                         tables: "op_cloud_api",
                                         sources: "API, CLI, BQ, HC",
                                     }}
                                 >
-                                    Granted
+                                    Credit
                                 </HeaderHint>
                             </TableHeaderCell>
                             <TableHeaderCell
@@ -244,9 +244,9 @@ export function CreditsTab({
                                 <HeaderHint
                                     hint={{
                                         meaning:
-                                            "Credit used as a share of granted credit.",
+                                            "Credit used as a share of total credit.",
                                         tables: "op_cloud_api",
-                                        formula: "burned ÷ granted",
+                                        formula: "burned ÷ credit",
                                     }}
                                 >
                                     Burned %
@@ -259,7 +259,7 @@ export function CreditsTab({
                                 <HeaderHint
                                     hint={{
                                         meaning:
-                                            "Opening credit burn before the 2026 window. Stored as OP Cloud rows named pre-2026 grant burn, hidden from the Cloud OP raw table.",
+                                            "Opening credit burn before the 2026 window. Hidden from the Cloud OP raw table.",
                                         tables: "op_cloud_api",
                                         formula: "-credit",
                                     }}
@@ -274,8 +274,8 @@ export function CreditsTab({
                                 <HeaderHint
                                     hint={{
                                         meaning:
-                                            "Granted minus credit used. Includes 2025 opening burn when that balance is recorded.",
-                                        formula: "granted − burned",
+                                            "Credit balance minus credit used. Includes 2025 opening burn when that balance is recorded.",
+                                        formula: "credit − burned",
                                     }}
                                 >
                                     Remaining
@@ -317,7 +317,7 @@ export function CreditsTab({
                                 <HeaderHint
                                     hint={{
                                         meaning:
-                                            "Estimated date the credit runs out at the recent burn rate, or the grant's expiry — whichever is sooner. Red under 30 days, amber under 90.",
+                                            "Estimated date the credit runs out at the recent burn rate, or the credit expiry — whichever is sooner. Red under 30 days, amber under 90.",
                                     }}
                                 >
                                     Runs Out

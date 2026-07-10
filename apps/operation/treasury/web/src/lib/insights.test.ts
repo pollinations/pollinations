@@ -16,6 +16,7 @@ import {
     categoryColumns,
     creditRunway,
     economics,
+    econSummary,
     ecosystemTotals,
     globalNetRatio,
     insightVendorOptions,
@@ -526,7 +527,7 @@ describe("vendorPlanes", () => {
         expect(vendorPlanes(data)).toEqual([]);
     });
 
-    it("keeps infra cloud burn out of the product-meter witness", () => {
+    it("keeps infra-only cloud burn out of data quality", () => {
         const data = emptyData({
             opTransactions: [
                 opTxn({
@@ -545,13 +546,48 @@ describe("vendorPlanes", () => {
                 }),
             ],
         });
+        expect(vendorPlanes(data)).toEqual([]);
+    });
+
+    it("keeps infra cloud burn out of mixed data quality rows", () => {
+        const data = emptyData({
+            opTransactions: [
+                opTxn({
+                    date: "2026-06-13",
+                    vendor: "runpod",
+                    category: "cloud",
+                    amount: -90,
+                }),
+            ],
+            opCloud: [
+                opCloud({
+                    start: "2026-06-01 00:00:00",
+                    vendor: "runpod",
+                    type: "infra",
+                    paid: -20,
+                }),
+                opCloud({
+                    start: "2026-06-01 00:00:00",
+                    vendor: "runpod",
+                    type: "gpu",
+                    paid: -70,
+                }),
+            ],
+            opPollen: [
+                opPollen({
+                    month: "2026-06",
+                    vendor: "runpod",
+                    cost_paid: 70,
+                }),
+            ],
+        });
         const [row] = vendorPlanes(data);
-        expect(row.vendor).toBe("cloudflare");
-        expect(row.cloudPaidUsd).toBe(1073);
-        expect(row.cloudUsd).toBe(1073);
-        expect(row.meterCloudUsd).toBeNull();
+        expect(row.vendor).toBe("runpod");
+        expect(row.cloudPaidUsd).toBe(70);
+        expect(row.cloudUsd).toBe(70);
+        expect(row.meterCloudUsd).toBe(70);
         expect(row.cashCoverage).toBe("same month");
-        expect(row.meterCoverage).toBeNull();
+        expect(row.meterCoverage).toBe("complete");
         expect(row.status).toBe("ok");
     });
 
@@ -746,7 +782,49 @@ describe("data quality status", () => {
         expect(row.status).toBe("ok");
     });
 
-    it("treats cash-only tooling vendors as neutral data-quality rows", () => {
+    it("only flags calibration drift when the dollar gap is material", () => {
+        const lowDollar = emptyData({
+            opCloud: [
+                opCloud({
+                    start: "2026-06-01 00:00:00",
+                    vendor: "fal",
+                    credit: -20,
+                }),
+            ],
+            opPollen: [
+                opPollen({
+                    month: "2026-06",
+                    vendor: "fal",
+                    cost_paid: 5,
+                }),
+            ],
+        });
+        const [lowDollarRow] = vendorPlanes(lowDollar);
+        expect(lowDollarRow.calibX).toBe(4);
+        expect(lowDollarRow.status).toBe("ok");
+
+        const material = emptyData({
+            opCloud: [
+                opCloud({
+                    start: "2026-06-01 00:00:00",
+                    vendor: "fal",
+                    credit: -250,
+                }),
+            ],
+            opPollen: [
+                opPollen({
+                    month: "2026-06",
+                    vendor: "fal",
+                    cost_paid: 100,
+                }),
+            ],
+        });
+        const [materialRow] = vendorPlanes(material);
+        expect(materialRow.calibX).toBe(2.5);
+        expect(materialRow.status).toBe("drift");
+    });
+
+    it("does not display transaction-only tooling vendors", () => {
         const data = emptyData({
             opTransactions: [
                 opTxn({
@@ -757,16 +835,10 @@ describe("data quality status", () => {
                 }),
             ],
         });
-        const [row] = vendorPlanes(data);
-        expect(row.cashUsd).toBe(225.25);
-        expect(row.cloudUsd).toBeNull();
-        expect(row.pollenCostUsd).toBeNull();
-        expect(row.cashCoverage).toBeNull();
-        expect(row.meterCoverage).toBeNull();
-        expect(row.status).toBe("cash only");
+        expect(vendorPlanes(data)).toEqual([]);
     });
 
-    it("flags cash-only rows for vendors that normally have product cloud meters", () => {
+    it("does not display cash-only rows for vendors that normally have product cloud meters", () => {
         const data = emptyData({
             opTransactions: [
                 opTxn({
@@ -784,11 +856,9 @@ describe("data quality status", () => {
                 }),
             ],
         });
-        const row = vendorPlanes(data).find(
-            (entry) => entry.month === "2026-06",
-        );
-        expect(row?.meterCoverage).toBe("missing cloud");
-        expect(row?.status).toBe("missing cloud");
+        expect(
+            vendorPlanes(data).some((entry) => entry.month === "2026-06"),
+        ).toBe(false);
     });
 });
 
@@ -892,8 +962,8 @@ describe("economics", () => {
         expect(geminiA.ecoPaidUsd).toBe(150); // 50 byop + 100 model, paid side
         expect(geminiA.retainedPaidUsd).toBe(750);
         expect(geminiA.soldQuestsUsd).toBe(250);
-        expect(geminiA.trueMultiplier).toBeCloseTo(750 / 3000, 5);
-        expect(geminiA.marginUsd).toBeCloseTo(750 - 3000, 5);
+        expect(geminiA.trueMultiplier).toBeCloseTo(750 / 4000, 5);
+        expect(geminiA.marginUsd).toBeCloseTo(750 - 4000, 5);
         expect(geminiA.pollenPriced).toBe(false);
         expect(geminiA.flags).toEqual([]);
     });
@@ -906,7 +976,7 @@ describe("economics", () => {
         expect(azure.calib).toBeNull();
         expect(azure.flags).toEqual(["no meter"]);
         expect(azure.trueCostPaidUsd).toBeCloseTo(50, 5); // metering unadjusted
-        expect(azure.trueMultiplier).toBeCloseTo(0.8, 5); // 40 / 50
+        expect(azure.trueMultiplier).toBeCloseTo(0.4, 5); // 40 / (50 + 50)
         expect(azure.creditSharePct).toBeNull();
     });
 
@@ -940,7 +1010,7 @@ describe("economics", () => {
         );
         expect(vendorRow.trueMultiplier).toBeCloseTo(
             sum((row) => row.retainedPaidUsd) /
-                sum((row) => row.trueCostPaidUsd),
+                sum((row) => row.trueCostPaidUsd + row.questBurnUsd),
             5,
         );
     });
@@ -1034,7 +1104,7 @@ describe("economics", () => {
         expect(economics(data, "2026-05", "model")).toEqual([]);
     });
 
-    it("reports a null multiplier for quest-only models", () => {
+    it("reports a zero multiplier for quest-only models", () => {
         const questOnly = emptyData({
             pollenMonthly: [
                 usage({
@@ -1048,7 +1118,7 @@ describe("economics", () => {
             ],
         });
         const [row] = economics(questOnly, "", "model");
-        expect(row.trueMultiplier).toBeNull();
+        expect(row.trueMultiplier).toBe(0);
         expect(row.questBurnUsd).toBeCloseTo(10, 5);
         expect(row.flags).toEqual(["no meter"]);
     });
@@ -1114,8 +1184,8 @@ describe("providerEconomics", () => {
         expect(row.ecoPaidUsd).toBe(150);
         expect(row.retainedPaidUsd).toBe(750);
         expect(row.soldQuestsUsd).toBe(250);
-        expect(row.trueMultiplier).toBeCloseTo(750 / 3750, 5);
-        expect(row.marginUsd).toBeCloseTo(750 - 3750, 5);
+        expect(row.trueMultiplier).toBeCloseTo(750 / 5000, 5);
+        expect(row.marginUsd).toBeCloseTo(750 - 5000, 5);
         expect(row.flags).toEqual([]);
     });
 
@@ -1197,7 +1267,7 @@ describe("providerEconomics", () => {
         expect(row.calib).toBeNull();
         expect(row.flags).toEqual(["no meter"]);
         expect(row.trueCostPaidUsd).toBeCloseTo(50, 5);
-        expect(row.trueMultiplier).toBeCloseTo(0.8, 5);
+        expect(row.trueMultiplier).toBeCloseTo(0.4, 5);
         expect(row.creditSharePct).toBeNull();
     });
 });
@@ -1273,7 +1343,45 @@ describe("modelEconomics", () => {
         expect(pro.trueCostPaidUsd).toBeCloseTo(600, 5);
         expect(pro.questBurnUsd).toBeCloseTo(200, 5);
         expect(pro.retainedPaidUsd).toBe(600);
-        expect(pro.trueMultiplier).toBeCloseTo(1, 5);
+        expect(pro.trueMultiplier).toBeCloseTo(600 / 800, 5);
+    });
+
+    it("summarizes provider credits across paid and quest usage", () => {
+        const data = emptyData({
+            opCloud: [
+                opCloud({
+                    start: "2026-06-01 00:00:00",
+                    vendor: "perplexity",
+                    credit: -1243.87,
+                }),
+            ],
+            opPollen: [
+                opPollen({
+                    month: "2026-06",
+                    vendor: "perplexity",
+                    model: "sonar",
+                    cost_paid: 13.1904,
+                    cost_quests: 200.2977,
+                    price_paid: 13.229,
+                }),
+            ],
+        });
+
+        const [row] = modelEconomics(data, "2026-06");
+        const summary = econSummary([row]);
+
+        expect(summary.trueCostPaidUsd).toBeCloseTo(76.85, 2);
+        expect(summary.questBurnUsd).toBeCloseTo(1167.02, 2);
+        expect(summary.grantFundedUsd).toBeCloseTo(76.85, 2);
+        expect(summary.providerUsageUsd).toBeCloseTo(1243.87, 2);
+        expect(summary.providerGrantFundedUsd).toBeCloseTo(1243.87, 2);
+        expect(summary.providerCashCostUsd).toBeCloseTo(0, 5);
+        expect(summary.creditFundedPct).toBeCloseTo(100, 5);
+        expect(summary.cashMarginPct).toBeCloseTo(100, 5);
+        expect(summary.marginPct).toBeCloseTo(
+            ((13.229 - 1243.87) / 13.229) * 100,
+            5,
+        );
     });
 });
 

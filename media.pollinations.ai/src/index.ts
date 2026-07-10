@@ -313,6 +313,13 @@ api.post(
                     },
                 },
             },
+            400: {
+                description:
+                    "No/empty file, invalid JSON/base64, invalid tags, or tags on a key with no user account",
+                content: {
+                    "application/json": { schema: resolver(ErrorSchema) },
+                },
+            },
             401: {
                 description: "Missing or invalid API key",
                 content: {
@@ -378,6 +385,9 @@ api.post(
                 if (file.size > maxSize) {
                     return c.json(fileTooLargeError(maxSize), 413);
                 }
+                if (file.size === 0) {
+                    return c.json({ error: "Empty file" }, 400);
+                }
 
                 fileBuffer = await file.arrayBuffer();
                 contentType = file.type || detectContentType(file.name);
@@ -394,12 +404,17 @@ api.post(
                     ),
                 );
             } else if (requestContentType.includes("application/json")) {
-                const body = await c.req.json<{
+                let body: {
                     data: string;
                     contentType?: string;
                     name?: string;
                     tags?: string | string[];
-                }>();
+                };
+                try {
+                    body = await c.req.json();
+                } catch {
+                    return c.json({ error: "Invalid JSON body" }, 400);
+                }
 
                 if (!body.data) {
                     return c.json(
@@ -411,7 +426,12 @@ api.post(
                 const base64Data = body.data.includes(",")
                     ? body.data.split(",")[1]
                     : body.data;
-                const binaryString = atob(base64Data);
+                let binaryString: string;
+                try {
+                    binaryString = atob(base64Data);
+                } catch {
+                    return c.json({ error: "Invalid base64 data" }, 400);
+                }
                 const bytes = new Uint8Array(binaryString.length);
                 for (let i = 0; i < binaryString.length; i++) {
                     bytes[i] = binaryString.charCodeAt(i);
@@ -687,11 +707,13 @@ api.delete(
             return c.json({ error: "You do not own this media item" }, 403);
         }
 
-        // Catalog rows first (atomic batch), then the blob. If the R2 delete
-        // fails the item is already unpublished and the orphaned blob expires
-        // via the bucket's 30-day lifecycle.
-        await deleteCatalogItem(db, id);
+        // Blob first, then catalog rows: if either step fails the item is
+        // still cataloged (owner still resolvable), so the DELETE can simply
+        // be retried — R2 delete is idempotent. The reverse order would
+        // strand an undeletable public blob behind a 404ing retry. In the
+        // brief gap a gallery may list an item whose URL already 404s.
         await c.env.MEDIA_BUCKET.delete(id);
+        await deleteCatalogItem(db, id);
 
         console.log(
             JSON.stringify({

@@ -15,12 +15,14 @@ export function getDb(d1: D1Database): CatalogDb {
     return drizzle(d1);
 }
 
-// Lowercase, trimmed slug: letters/digits, then `_.:+-` allowed after the
-// first char. Keeps tags URL-safe and consistent for gallery lookups.
-export const TAG_PATTERN = /^[a-z0-9][a-z0-9_.:+-]{0,127}$/;
+// Lowercase, trimmed slug: letters/digits, then `_.:-` allowed after the
+// first char. Keeps tags URL-safe and consistent for gallery lookups. No
+// `+`: query parsers (incl. hono's) decode a literal `+` in `?tag=` as a
+// space, so a `+`-tagged gallery would be unreachable without %2B-encoding.
+export const TAG_PATTERN = /^[a-z0-9][a-z0-9_.:-]{0,127}$/;
 // Prose twin of TAG_PATTERN for error messages — keep in sync with the regex.
 export const TAG_PATTERN_DESCRIPTION =
-    "lowercase letters, digits, and _.:+- (not leading), max 128 chars";
+    "lowercase letters, digits, and _.:- (not leading), max 128 chars";
 export const MAX_TAGS = 8;
 
 /** Thrown by normalizeTags; message is complete and user-facing. */

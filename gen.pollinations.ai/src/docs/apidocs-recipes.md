@@ -166,10 +166,10 @@ curl -X POST "https://gen.pollinations.ai/v1/images/edits" \
 
 Repeat `-F "image=@…"` to pass multiple reference images on models that accept them (`seedream`, `nanobanana`, `klein`).
 
-**Upload arbitrary media** to the media store. Returns a `https://media.pollinations.ai/<id>` URL you can pass anywhere a remote image, audio, or video URL is accepted.
+**Upload arbitrary media** to the media store (a separate host: `media.pollinations.ai`). Returns a `https://media.pollinations.ai/<id>` URL you can pass anywhere a remote image, audio, or video URL is accepted.
 
 ```bash
-curl -X POST "https://gen.pollinations.ai/upload" \
+curl -X POST "https://media.pollinations.ai/upload" \
   -H "Authorization: Bearer $POLLINATIONS_KEY" \
   -F "file=@./asset.png"
 ```

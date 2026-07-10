@@ -98,7 +98,7 @@ Upload a media file. **Requires API key** via `Authorization: Bearer <key>` head
 
 Tagging **publishes** the upload to each tag's public gallery. `tags` accepts a
 comma-separated string (or a JSON array in the JSON format), max 8 tags,
-each `lowercase letters, digits, and _.:+- (not leading), max 128 chars`.
+each `lowercase letters, digits, and _.:- (not leading), max 128 chars`.
 Publishing requires a key attached to a user account.
 
 **Response:**

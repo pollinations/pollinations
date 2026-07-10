@@ -340,6 +340,49 @@ describe("media.pollinations.ai", () => {
         expect(body.error).toContain("multipart/form-data");
     });
 
+    it("rejects empty files, invalid base64, and malformed JSON with 400", async () => {
+        const emptyForm = new FormData();
+        emptyForm.append(
+            "file",
+            new File([], "empty.png", { type: "image/png" }),
+        );
+        const emptyRes = await SELF.fetch(
+            "https://media.pollinations.ai/upload",
+            {
+                method: "POST",
+                body: emptyForm,
+                headers: { Authorization: `Bearer ${VALID_KEY}` },
+            },
+        );
+        expect(emptyRes.status).toBe(400);
+
+        const badBase64 = await SELF.fetch(
+            "https://media.pollinations.ai/upload",
+            {
+                method: "POST",
+                headers: {
+                    Authorization: `Bearer ${VALID_KEY}`,
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({ data: "!!!not-base64!!!" }),
+            },
+        );
+        expect(badBase64.status).toBe(400);
+
+        const badJson = await SELF.fetch(
+            "https://media.pollinations.ai/upload",
+            {
+                method: "POST",
+                headers: {
+                    Authorization: `Bearer ${VALID_KEY}`,
+                    "Content-Type": "application/json",
+                },
+                body: "{not json",
+            },
+        );
+        expect(badJson.status).toBe(400);
+    });
+
     it("refreshes uploaded media TTL on aged GET", async () => {
         const bucket = createTestR2Bucket();
         const mediaEnv = createMediaEnv(bucket);
@@ -780,6 +823,15 @@ describe("media.pollinations.ai", () => {
             const body = (await res.json()) as { error: string };
             expect(body.error, q).toContain("limit");
         }
+
+        // A garbage cursor is a 400 in the same {error} shape, not a 500.
+        const badCursor = await SELF.fetch(
+            "https://media.pollinations.ai/media?tag=sunset&cursor=not-a-cursor",
+        );
+        expect(badCursor.status).toBe(400);
+        expect(((await badCursor.json()) as { error: string }).error).toContain(
+            "cursor",
+        );
     });
 
     it("GET /media requires a tag; galleries need no auth at all", async () => {
@@ -894,6 +946,22 @@ describe("media.pollinations.ai", () => {
                 headers: { Authorization: "Bearer sk_bob" },
             });
             expect(nonOwner.status).toBe(403);
+
+            // A valid key with no attached user has no library to own.
+            const noUser = await SELF.fetch(url, {
+                method: "DELETE",
+                headers: { Authorization: "Bearer pk_nouser" },
+            });
+            expect(noUser.status).toBe(403);
+
+            // An /account/key response predating the identity fields (userId
+            // absent, not null) must read as not-user-attached — the `?? null`
+            // normalization guard, exercised on the delete path.
+            const legacy = await SELF.fetch(url, {
+                method: "DELETE",
+                headers: { Authorization: "Bearer sk_legacy" },
+            });
+            expect(legacy.status).toBe(403);
 
             // None of the failed attempts deleted anything.
             const getRes = await SELF.fetch(

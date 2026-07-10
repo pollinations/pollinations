@@ -1,0 +1,35 @@
+{
+  "pr_number": 12321,
+  "title": "chore: remove unavailable Roblox apps from showcase",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/12321",
+  "merged_at": "2026-07-10T13:49:12Z",
+  "labels": [
+    "DEV-CHORE"
+  ],
+  "pr_body_excerpt": "- Removes **Watch TV with neko (Roblox)** — owner requested deletion via email (game closing soon)\n- Removes **The Mita** — verified unavailable: Roblox returns [TITLE UNAVAILABLE], content-restricted, page HTTP 500\n- Removes **AI Character RP (Roblox)** — game closed ~1 year; listed repo (snipcola/Roblox-AI) is an unrelated client-side script, misattributed\n- Regenerates `apps/GREENHOUSE.md` via `app-update-greenhouse.js` (829 → 826 apps)\n\nAvailability verified 2026-07-10 via Roblox public APIs and GitHub API.\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Pruning the Greenhouse",
+    "blurb": "We've done a little weeding in the Greenhouse, removing a few closed Roblox apps to keep the community showcase fresh and healthy.",
+    "summary": "Removed three unavailable Roblox apps (Watch TV with neko, The Mita, and AI Character RP) from the community showcase, updating the active app count to 826.",
+    "impact": "Users browsing the Greenhouse will only find active, working projects, improving the discovery experience.",
+    "keywords": [
+      "showcase",
+      "greenhouse",
+      "cleanup",
+      "roblox",
+      "apps"
+    ],
+    "visual_concept": "The bee mascot doing some gentle gardening in a digital greenhouse, pruning dead leaves from a plant to keep the garden healthy.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny gardener's hat, gently pruning a withered pixelated leaf from a glowing digital plant in a greenhouse. Soft lime green (#ecf874) and warm peach gradient background. Chunky retro sprites, warm lighting, lo-fi Stardew Valley aesthetic. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-10/PR-12321.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny gardener's hat, gently pruning a withered pixelated leaf from a glowing digital plant in a greenhouse. Soft lime green (#ecf874) and warm peach gradient background. Chunky retro sprites, warm lighting, lo-fi Stardew Valley aesthetic. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-07-10T13:50:13.740632+00:00"
+}

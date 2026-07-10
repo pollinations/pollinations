@@ -1281,7 +1281,7 @@ export const TEXT_SERVICES = {
         addedDate: new Date("2026-05-04").getTime(),
         priceMultiplier: 1,
         cost: {
-            promptTextTokens: perMillion(0.08),
+            promptTextTokens: perMillion(0.1),
             completionTextTokens: perMillion(0.3),
         },
         title: "Meta Llama 4 Scout",
@@ -1532,9 +1532,9 @@ export const TEXT_SERVICES = {
         addedDate: new Date("2026-05-29").getTime(),
         priceMultiplier: 1,
         cost: {
-            // OpenRouter stepfun/step-3.5-flash posted rates (2026-05-29):
-            // prompt $0.09/M, completion $0.30/M, cache read $0.02/M
-            promptTextTokens: perMillion(0.09),
+            // OpenRouter stepfun/step-3.5-flash posted rates (2026-07-10):
+            // prompt $0.10/M, completion $0.30/M, cache read $0.02/M
+            promptTextTokens: perMillion(0.1),
             promptCachedTokens: perMillion(0.02),
             completionTextTokens: perMillion(0.3),
         },

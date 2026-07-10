@@ -574,6 +574,7 @@ export const IMAGE_SERVICES = {
         priceMultiplier: 1,
         paidOnly: true,
         cost: {
+            promptImageTokens: 0.002, // per input image on edits
             completionImageTokens: 0.02, // per image
         },
         title: "Grok Imagine",
@@ -592,6 +593,7 @@ export const IMAGE_SERVICES = {
         priceMultiplier: 1,
         paidOnly: true,
         cost: {
+            promptImageTokens: 0.01, // per input image on edits
             completionImageTokens: 0.07, // per image
         },
         title: "Grok Imagine Pro",
@@ -611,7 +613,8 @@ export const IMAGE_SERVICES = {
         priceMultiplier: 1,
         paidOnly: true,
         cost: {
-            completionVideoSeconds: 0.05, // per sec at 720p
+            promptImageTokens: 0.002, // per start-frame image
+            completionVideoSeconds: 0.07, // per sec at 720p
         },
         title: "Grok Video Pro",
         description:

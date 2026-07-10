@@ -351,6 +351,36 @@ test("Claude Fable 5 is paid-only and billed at current standard rates", () => {
     );
 });
 
+test("updated provider prices are reflected for xAI media and OpenRouter text", () => {
+    expect(getCostDefinition("llama-scout").promptTextTokens).toBeCloseTo(
+        0.0000001,
+        12,
+    );
+    expect(getCostDefinition("step-3.5-flash").promptTextTokens).toBeCloseTo(
+        0.0000001,
+        12,
+    );
+
+    expect(
+        calculateCost("grok-imagine", {
+            promptImageTokens: 1,
+            completionImageTokens: 1,
+        }).totalCost,
+    ).toBeCloseTo(0.022, 8);
+    expect(
+        calculateCost("grok-imagine-pro", {
+            promptImageTokens: 1,
+            completionImageTokens: 1,
+        }).totalCost,
+    ).toBeCloseTo(0.08, 8);
+    expect(
+        calculateCost("grok-video-pro", {
+            promptImageTokens: 1,
+            completionVideoSeconds: 5,
+        }).totalCost,
+    ).toBeCloseTo(0.352, 8);
+});
+
 test("Gemini grounding cost is added by family billing rules", () => {
     const usage = {
         promptTextTokens: 1_000_000,

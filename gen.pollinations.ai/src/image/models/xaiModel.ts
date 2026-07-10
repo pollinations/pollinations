@@ -101,6 +101,7 @@ export async function callXaiImageAPI(
                     ? "grok-imagine-pro"
                     : "grok-imagine",
             usage: {
+                ...(isEditMode ? { promptImageTokens: 1 } : {}),
                 completionImageTokens: 1,
             },
         },

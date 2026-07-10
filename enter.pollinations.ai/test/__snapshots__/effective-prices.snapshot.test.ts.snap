@@ -515,17 +515,21 @@ exports[`effective cost and price per model — snapshot 1`] = `
   "grok-imagine": {
     "cost": {
       "completionImageTokens": 0.02,
+      "promptImageTokens": 0.002,
     },
     "price": {
       "completionImageTokens": 0.02,
+      "promptImageTokens": 0.002,
     },
   },
   "grok-imagine-pro": {
     "cost": {
       "completionImageTokens": 0.07,
+      "promptImageTokens": 0.01,
     },
     "price": {
       "completionImageTokens": 0.07,
+      "promptImageTokens": 0.01,
     },
   },
   "grok-large": {
@@ -544,10 +548,12 @@ exports[`effective cost and price per model — snapshot 1`] = `
   },
   "grok-video-pro": {
     "cost": {
-      "completionVideoSeconds": 0.05,
+      "completionVideoSeconds": 0.07,
+      "promptImageTokens": 0.002,
     },
     "price": {
-      "completionVideoSeconds": 0.05,
+      "completionVideoSeconds": 0.07,
+      "promptImageTokens": 0.002,
     },
   },
   "hyper3d-rodin": {
@@ -645,11 +651,11 @@ exports[`effective cost and price per model — snapshot 1`] = `
   "llama-scout": {
     "cost": {
       "completionTextTokens": 0.0000003,
-      "promptTextTokens": 0.00000008,
+      "promptTextTokens": 0.0000001,
     },
     "price": {
       "completionTextTokens": 0.0000003,
-      "promptTextTokens": 0.00000008,
+      "promptTextTokens": 0.0000001,
     },
   },
   "ltx-2": {
@@ -1188,12 +1194,12 @@ exports[`effective cost and price per model — snapshot 1`] = `
     "cost": {
       "completionTextTokens": 0.0000003,
       "promptCachedTokens": 0.00000002,
-      "promptTextTokens": 0.00000009,
+      "promptTextTokens": 0.0000001,
     },
     "price": {
       "completionTextTokens": 0.0000003,
       "promptCachedTokens": 0.00000002,
-      "promptTextTokens": 0.00000009,
+      "promptTextTokens": 0.0000001,
     },
   },
   "step-flash": {

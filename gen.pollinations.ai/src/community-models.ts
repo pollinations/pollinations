@@ -3,6 +3,7 @@ import {
     communityEndpointPrices,
     communityModelDefinition,
     communityModelId,
+    parseCommunityToolPrices,
 } from "@shared/community-endpoints.ts";
 import * as schema from "@shared/db/better-auth.ts";
 import {
@@ -48,6 +49,7 @@ export async function getCommunityModelRegistryEntries(
             bearerTokenCiphertext:
                 schema.communityEndpoint.bearerTokenCiphertext,
             visibility: schema.communityEndpoint.visibility,
+            toolPrices: schema.communityEndpoint.toolPrices,
             promptTextPrice: schema.communityEndpoint.promptTextPrice,
             promptCachedPrice: schema.communityEndpoint.promptCachedPrice,
             promptCacheWritePrice:
@@ -81,6 +83,7 @@ export async function getCommunityModelRegistryEntries(
             upstreamModel: row.upstreamModel,
             bearerTokenCiphertext: row.bearerTokenCiphertext,
             visibility: row.visibility,
+            toolPrices: parseCommunityToolPrices(row.toolPrices),
             disabledAt: row.disabledAt ? row.disabledAt.getTime() : null,
             disabledReason: row.disabledReason,
             ...communityEndpointPrices(row),

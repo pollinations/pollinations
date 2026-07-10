@@ -249,6 +249,7 @@ describe("community endpoint helpers", () => {
             baseUrl: "https://api.example.com/v1",
             upstreamModel: "gpt-4.1-mini",
             visibility: "public",
+            toolPrices: {},
             disabledAt: null,
             disabledReason: null,
             bearerTokenCiphertext: await encryptSecret(

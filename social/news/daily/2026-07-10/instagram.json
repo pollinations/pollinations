@@ -1,0 +1,23 @@
+{
+  "platform": "instagram",
+  "scope": "daily",
+  "date": "2026-07-10",
+  "period_start": "2026-07-10",
+  "period_end": "2026-07-10",
+  "generated_at": "2026-07-11T06:43:42.410378+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-07-10/images/instagram-1.jpg"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-07-10/images/instagram-2.jpg"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-07-10/images/instagram-3.jpg"
+    }
+  ],
+  "text": "A few new things in the garden this week. We plugged in GPT 5.6 and Seedream 5 Pro, and finally moved Gemini over to its GA endpoint. \n\nThe CLI now handles Quest rewards properly, and we cached the model health checks so things feel a bit snappier. Also added JustScriptzz, riofndev, and solarnode-developement to the community models allowlist. \n\nKeep building. Everything's open on GitHub. 🌱\n\n#pollinations #opensource #aitools #pixelart #creativecoding #indiedev #stardewvalley #llm #github #buildinpublic",
+  "metadata": {
+    "post_type": "carousel"
+  }
+}

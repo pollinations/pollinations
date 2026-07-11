@@ -1777,7 +1777,8 @@ curl "https://gen.pollinations.ai/quests/catalog"
 
 Returns raw model health rows from the public Tinybird `model_health` pipe.
 
-The optional `minutes` query parameter controls the rolling window and must be an integer between 1 and 1440.
+The optional `minutes` query parameter controls the rolling window and must be an integer between 1 and 10080.
+The X-Model-Status-Timestamp response header reports when the data was fetched from Tinybird; X-Model-Status-Stale is set when stale data is returned during an upstream failure.
 
 📤 **Response** · `200` · `application/json` — Success
 

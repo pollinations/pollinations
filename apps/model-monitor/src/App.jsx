@@ -345,7 +345,7 @@ function WindowTabs({ value, onChange }) {
 function App() {
     const [aggregationWindow, setAggregationWindow] = useState("60m");
     const [adminMode] = useState(isAdminPath);
-    const { models, lastUpdated, error, tinybirdConfigured, endpointStatus } =
+    const { models, lastUpdated, error, endpointStatus } =
         useModelMonitor(aggregationWindow);
 
     const [sort, setSort] = useState({ key: "requests", asc: false });
@@ -504,13 +504,6 @@ function App() {
                                 Real-time health monitoring for Pollinations AI
                                 models.
                             </p>
-                            {!tinybirdConfigured && (
-                                <div className="mt-2">
-                                    <Chip intent="warning" size="sm">
-                                        Tinybird not configured
-                                    </Chip>
-                                </div>
-                            )}
                         </div>
                         <div className="flex flex-col items-start gap-2 sm:items-end">
                             <WindowTabs
@@ -518,7 +511,7 @@ function App() {
                                 onChange={setAggregationWindow}
                             />
                             <p className="m-0 text-xs leading-normal text-theme-text-soft">
-                                Last update:{" "}
+                                Data as of:{" "}
                                 {lastUpdated?.toLocaleTimeString("en-GB", {
                                     timeZone: "UTC",
                                     hour: "2-digit",

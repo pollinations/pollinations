@@ -1,0 +1,31 @@
+{
+  "date": "2026-07-10",
+  "period_start": "2026-07-10",
+  "period_end": "2026-07-10",
+  "title": "GPT 5.6, Seedream 5 Pro, and a Gemini GA migration",
+  "summary": "A heavy model update day featuring GPT 5.6, Seedream 5 Pro, a Gemini GA migration, and CLI upgrades for tracking quest rewards.\n\nThe model roster gets a reshuffle. We added the GPT 5.6 family (Sol, Terra, Luna) and Seedream 5 Pro. On the Google side, they retired the Gemini 3.1 Flash Lite preview, which started throwing 502s. We've wired the endpoints to the GA model, so your Gemini calls will actually resolve again.\n\nThe polli CLI hits v0.1.6. You can now check your quest rewards and filter pending or claimed Pollen without leaving the terminal. We also added a caching layer to the model health endpoints, making CLI and monitor status checks significantly snappier.\n\nRolled out the welcome mat for JustScriptzz, riofndev, and solarnode-developement, granting them access to deploy and tinker with community models.",
+  "pr_count": 5,
+  "prs": [
+    {
+      "number": 12274,
+      "date": "2026-07-10"
+    },
+    {
+      "number": 12295,
+      "date": "2026-07-10"
+    },
+    {
+      "number": 12309,
+      "date": "2026-07-10"
+    },
+    {
+      "number": 12318,
+      "date": "2026-07-10"
+    },
+    {
+      "number": 12324,
+      "date": "2026-07-10"
+    }
+  ],
+  "generated_at": "2026-07-11T06:43:42.410378+00:00"
+}

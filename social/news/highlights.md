@@ -1,3 +1,5 @@
+- **2026-07-10** – **🚀 GPT 5.6 & Seedream 5 Pro** The GPT 5.6 family (Sol, Terra, Luna) is now live for text generation, alongside Seedream 5 Pro for high-quality images. Check the [Available Models](https://gen.pollinations.ai/v1/models).
+- **2026-07-10** – **✨ CLI Quest Rewards** Track your earned Pollen and quest progress directly from the terminal with the updated [Polli CLI](https://www.npmjs.com/package/@pollinations/cli).
 - **2026-07-06** – **🎮 Roblox Integration** Tomdacat brings Pollinations to Roblox creators with an OpenAI-compatible API powering 40+ models. [Try it](https://ai.tomdacat.com) <!-- app -->
 - **2026-07-05** – **⚡ Gemini Prompt Caching** Send `cache_control` markers with your Gemini requests to cache large contexts. Deterministic hits, faster responses, and significantly cheaper repeated queries via the [Unified API](https://gen.pollinations.ai).
 - **2026-07-05** – **🌟 Sprout** A new community creation has landed in the Greenhouse directory. [Try it](https://murderszn.github.io/sprout/) <!-- app -->

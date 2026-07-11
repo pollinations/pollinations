@@ -1,0 +1,34 @@
+{
+  "pr_number": 12339,
+  "title": "chore: update app metrics 2026-07-11",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/12339",
+  "merged_at": "2026-07-11T05:11:20Z",
+  "labels": [
+    "DEV-CHORE"
+  ],
+  "pr_body_excerpt": "Daily automated update of app metrics, health checks, and greenhouse",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Daily Greenhouse Check",
+    "blurb": "Polly did her daily rounds, checking on all the community apps and updating their health metrics in the greenhouse.",
+    "summary": "Automated daily update of community app metrics and health checks in the APPS and GREENHOUSE markdown files.",
+    "impact": "Keeps the community app directory up-to-date with the latest health statuses and usage metrics.",
+    "keywords": [
+      "metrics",
+      "apps",
+      "greenhouse",
+      "automated"
+    ],
+    "visual_concept": "Polly the bee flying through a digital greenhouse, holding a tiny clipboard and checking on glowing code-plants (representing community apps).",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot with a tiny clipboard checking on glowing code-plants in a digital greenhouse. Soft lime green (#ecf874) and pastel mint gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-11/PR-12339.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot with a tiny clipboard checking on glowing code-plants in a digital greenhouse. Soft lime green (#ecf874) and pastel mint gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-07-11T05:12:23.430171+00:00"
+}

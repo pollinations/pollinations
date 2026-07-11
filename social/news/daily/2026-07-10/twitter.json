@@ -1,0 +1,14 @@
+{
+  "platform": "twitter",
+  "scope": "daily",
+  "date": "2026-07-10",
+  "period_start": "2026-07-10",
+  "period_end": "2026-07-10",
+  "generated_at": "2026-07-11T06:43:42.410378+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-07-10/images/twitter.jpg"
+    }
+  ],
+  "text": "added gpt 5.6 and seedream 5 pro. gemini-3.1-flash-lite preview retired, so we swapped to the GA model id. cli now supports quest reward kwargs and caches model health checks so things run faster. 5 PRs merged today."
+}

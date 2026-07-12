@@ -38,7 +38,7 @@ SQL >
             argMax(resource_id, recorded_at) AS resource_id,
             argMax(resource_name, recorded_at) AS resource_name,
             max(recorded_at) AS latest_recorded_at
-        FROM op_cloud_v2
+        FROM op_cloud
         GROUP BY entry_id
     )
     WHERE NOT (credit = 0 AND paid = 0 AND positionCaseInsensitive(evidence, 'superseded') > 0)

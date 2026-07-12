@@ -2,6 +2,7 @@ TOKEN "treasury_ingest" APPEND
 TOKEN "treasury_ingest" READ
 
 SCHEMA >
+    `entry_id` String `json:$.entry_id`,
     `source` String `json:$.source`,
     `vendor` String `json:$.vendor`,
     `type` String `json:$.type`,
@@ -16,7 +17,7 @@ SCHEMA >
     `resource_count` Float64 `json:$.resource_count`,
     `model` String `json:$.model`,
     `evidence` String `json:$.evidence`,
-    `recorded_at` DateTime `json:$.recorded_at`
+    `recorded_at` DateTime64(3) `json:$.recorded_at`
 
 ENGINE MergeTree
-ENGINE_SORTING_KEY vendor, type, start, resource_id
+ENGINE_SORTING_KEY entry_id, recorded_at

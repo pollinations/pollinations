@@ -115,13 +115,17 @@ committed derivatives, or stamp out app-icon / social presets on demand:
 
 ```bash
 npm run brand                               # rebuild the committed kit in src/brand
-npm run brand -- --kit=social --out=./out   # social sizes, on demand (uncommitted)
-npm run brand -- --kit=app --tone=white --bg=transparent
+npm run brand -- --kit=app --out=./out      # favicon/PWA/OG in brand colours
+npm run brand -- --kit=og --fg='#ff0088' --bg=transparent
 ```
 
 Presets (favicon, apple-touch, PWA, OG, X/Instagram/Facebook) are data in
-`scripts/brand/presets.js` — recolor with `--ink`/`--tone`, pad for circular
-avatars, add a platform by adding a line.
+`scripts/brand/presets.js`. Each defaults to a brand theme matching
+enter.pollinations.ai — icons gold on transparent, OG/social dark on cream —
+with colours from `theme-palette.json`. Two knobs override any run: `--fg` and
+`--bg` (a palette name — `gold`/`ink`/`cream`/`white` — a hex, or
+`transparent`). `pad` keeps avatars clear of a circular mask; add a platform by
+adding a line.
 
 Wallet colors and utilities are bundled into the main stylesheet
 (`@pollinations/ui/styles.css`) — no separate import needed.

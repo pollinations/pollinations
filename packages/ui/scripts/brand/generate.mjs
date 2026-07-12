@@ -2,13 +2,14 @@
 // Brand asset generator.
 //
 //   npm run brand                              rebuild the committed kit in src/brand
-//   npm run brand -- --kit=social --out=./out  render a preset kit on demand
-//   npm run brand -- --kit=app --tone=white
-//   npm run brand -- --kit=og --ink='#ff0088' --bg=transparent
+//   npm run brand -- --kit=app --out=./out     render a preset kit (brand defaults)
+//   npm run brand -- --kit=og --fg=gold --bg=transparent
+//   npm run brand -- --kit=social --fg='#ff0088'
 //
 // Everything derives from three atomic sources: mark.svg + wordmark.svg
-// (currentColor) and the raster bee polli.png. Recolour = swap currentColor;
-// size + padding come from presets.js. No dynamic text, no per-app config.
+// (currentColor) and the raster bee polli.png. Two knobs: front colour (--fg)
+// and background (--bg), each defaulting per preset to a brand theme. Recolour =
+// swap currentColor; size + padding come from presets.js. No dynamic text.
 
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { createRequire } from "node:module";
@@ -24,9 +25,20 @@ const BRAND = join(UI, "src/brand");
 const palette = JSON.parse(
     readFileSync(join(UI, "src/theme-palette.json"), "utf8"),
 );
-const INK = palette.brandDark; // #110518
-const WHITE = "#ffffff";
-const NAMED = { pale: palette.bgPale.accent };
+// Brand colours — the single source of truth is theme-palette.json.
+const COLORS = {
+    ink: palette.brandDark, // #110518  dark lotus
+    cream: palette.bgPale.accent, // #fef8eb  pale field
+    gold: palette.bgActive.accent, // #ffd76d  favicon accent
+    white: "#ffffff",
+};
+// Two default front/background pairs, matching enter.pollinations.ai.
+const THEMES = {
+    mark: { fg: "gold", bg: "transparent" }, // favicons, app icons
+    field: { fg: "ink", bg: "cream" }, // OG, apple-touch, social
+};
+// name or hex → hex, "transparent" → null
+const color = (c) => (c === "transparent" ? null : (COLORS[c] ?? c));
 const round = (n) => Math.round(n * 1000) / 1000;
 const recolor = (svg, c) => svg.replaceAll("currentColor", c);
 const transparent = { r: 0, g: 0, b: 0, alpha: 0 };
@@ -197,10 +209,10 @@ async function contentSource(name, ink) {
 }
 
 // --- render one preset: fit content inside the padded box, centre on the canvas ---
-async function renderPreset(preset, ink, bgKey) {
-    const bg = bgKey === "transparent" ? transparent : (NAMED[bgKey] ?? bgKey);
+// fg = front colour (hex); bg = background colour (hex) or null for transparent.
+async function renderPreset(preset, fg, bg) {
     const pad = Math.round(Math.min(preset.w, preset.h) * preset.pad);
-    const source = await contentSource(preset.content, ink);
+    const source = await contentSource(preset.content, fg);
     const content = await sharp(source)
         .resize({
             width: preset.w - pad * 2,
@@ -211,7 +223,7 @@ async function renderPreset(preset, ink, bgKey) {
         .png()
         .toBuffer();
     const cm = await sharp(content).metadata();
-    return canvas(preset.w, preset.h, bg)
+    return canvas(preset.w, preset.h, bg ?? transparent)
         .composite([
             {
                 input: content,
@@ -232,8 +244,8 @@ async function buildKit() {
         "lockup-stacked": 1024,
     };
     for (const [name, master] of Object.entries(VECTOR)) {
-        const black = recolor(master, INK);
-        const white = recolor(master, WHITE);
+        const black = recolor(master, COLORS.ink);
+        const white = recolor(master, COLORS.white);
         if (name.startsWith("lockup"))
             writeFileSync(join(BRAND, `${name}.svg`), `${master.trim()}\n`); // composed master
         writeFileSync(join(BRAND, `${name}-black.svg`), `${black.trim()}\n`);
@@ -254,8 +266,8 @@ async function buildKit() {
         );
     }
     for (const [tone, ink] of [
-        ["black", INK],
-        ["white", WHITE],
+        ["black", COLORS.ink],
+        ["white", COLORS.white],
     ]) {
         writeFileSync(
             join(BRAND, `polli/polli-lockup-horizontal-${tone}.png`),
@@ -281,8 +293,8 @@ if (!kit) {
     await buildKit();
     console.log("rebuilt brand kit → src/brand");
 } else {
-    const ink = arg("ink", arg("tone") === "white" ? WHITE : INK);
-    const bg = arg("bg"); // undefined → each preset's own default
+    const fg = arg("fg"); // override front colour (name or hex); else preset theme
+    const bg = arg("bg"); // override background (name/hex/transparent); else theme
     const out = resolve(process.cwd(), arg("out", "brand-out"));
     const names = KITS[kit] ?? (PRESETS[kit] ? [kit] : null);
     if (!names)
@@ -291,9 +303,15 @@ if (!kit) {
         );
     mkdirSync(out, { recursive: true });
     for (const name of names) {
+        const preset = PRESETS[name];
+        const theme = THEMES[preset.theme];
         writeFileSync(
             join(out, `${name}.png`),
-            await renderPreset(PRESETS[name], ink, bg ?? PRESETS[name].bg),
+            await renderPreset(
+                preset,
+                color(fg ?? theme.fg),
+                color(bg ?? theme.bg),
+            ),
         );
     }
     console.log(

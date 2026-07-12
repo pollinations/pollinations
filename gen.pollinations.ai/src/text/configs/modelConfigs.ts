@@ -9,6 +9,7 @@ import {
     createOVHcloudModelConfig,
     createPerplexityModelConfig,
     createPollyConfig,
+    createVercelAIGatewayModelConfig,
 } from "./providerConfigs.js";
 
 // =============================================================================
@@ -70,6 +71,26 @@ export const portkeyConfig: PortkeyConfigMap = {
             process.env.AZURE_MYCELI_PROD_SWEDEN_API_KEY,
             "https://myceli-prod-swedencentral.cognitiveservices.azure.com/openai/deployments/gpt-5.5/chat/completions?api-version=2024-12-01-preview",
             "gpt-5.5",
+        ),
+
+    // -- Azure (Myceli Prod — eastus, GPT-5.6) --------------------------------
+    "gpt-5.6-sol": () =>
+        createAzureModelConfig(
+            process.env.AZURE_MYCELI_PROD_API_KEY,
+            "https://myceli-prod-eastus.openai.azure.com/openai/deployments/gpt-5.6-sol/chat/completions?api-version=2025-04-01-preview",
+            "gpt-5.6-sol",
+        ),
+    "gpt-5.6-terra": () =>
+        createAzureModelConfig(
+            process.env.AZURE_MYCELI_PROD_API_KEY,
+            "https://myceli-prod-eastus.openai.azure.com/openai/deployments/gpt-5.6-terra/chat/completions?api-version=2025-04-01-preview",
+            "gpt-5.6-terra",
+        ),
+    "gpt-5.6-luna": () =>
+        createAzureModelConfig(
+            process.env.AZURE_MYCELI_PROD_API_KEY,
+            "https://myceli-prod-eastus.openai.azure.com/openai/deployments/gpt-5.6-luna/chat/completions?api-version=2025-04-01-preview",
+            "gpt-5.6-luna",
         ),
 
     // -- Azure (Myceli Prod — swedencentral, audio mini) ------------------------
@@ -220,8 +241,10 @@ export const portkeyConfig: PortkeyConfigMap = {
         "gemini-2.5-flash-lite",
         "global",
     ),
-    "gemini-3.1-flash-lite-preview": createVertexGeminiConfig(
-        "gemini-3.1-flash-lite-preview",
+    // The gemini-3.1-flash-lite-preview publisher model was retired by Google
+    // (404 as of 2026-07); only the GA id resolves.
+    "gemini-3.1-flash-lite": createVertexGeminiConfig(
+        "gemini-3.1-flash-lite",
         "global",
     ),
     "gemini-3.5-flash": createVertexGeminiConfig("gemini-3.5-flash", "global"),
@@ -248,6 +271,12 @@ export const portkeyConfig: PortkeyConfigMap = {
     "accounts/fireworks/models/minimax-m3": () =>
         createFireworksModelConfig({
             model: "accounts/fireworks/models/minimax-m3",
+        }),
+
+    // -- Vercel AI Gateway (Meta) --------------------------------------------
+    "meta/muse-spark-1.1": () =>
+        createVercelAIGatewayModelConfig({
+            model: "meta/muse-spark-1.1",
         }),
 
     // -- Azure (Myceli Prod — eastus, Meta Llama) ----------------------------

@@ -222,9 +222,9 @@ Wallet tokens are public (bundled into `@pollinations/ui/styles.css`):
 | `--polli-color-paid-pale`     | Paid-balance wash.                            |
 | `--polli-color-paid-soft`     | Paid-balance marker.                          |
 | `--polli-color-paid-deep`     | Paid-balance text.                            |
-| `--polli-color-tier-pale`     | Tier-balance wash.                            |
-| `--polli-color-tier-soft`     | Tier-balance marker.                          |
-| `--polli-color-tier-deep`     | Tier-balance text.                            |
+| `--polli-color-tier-pale`     | Quest Pollen wash.                            |
+| `--polli-color-tier-soft`     | Quest Pollen marker.                          |
+| `--polli-color-tier-deep`     | Quest Pollen text.                            |
 
 **Intent (theme-independent):**
 

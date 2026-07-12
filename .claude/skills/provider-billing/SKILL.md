@@ -1,6 +1,6 @@
 ---
 name: provider-billing
-description: Query billing, usage, credits, and resource deployments across all our cloud and SaaS providers (Azure, AWS, Cloudflare, GCP, Tinybird, Vercel, Stripe, Polar, etc.) via their native CLIs and APIs. Use for any question about provider costs, spend by service/day/month, credit eligibility, invoice totals, which resources are running, or how to deploy/inspect resources. Each provider has a dedicated playbook under `providers/`.
+description: Query billing, usage, credits, and resource deployments across all our cloud and SaaS providers (Azure, AWS, Cloudflare, GCP, Tinybird, Vercel, Stripe, historical Polar, etc.) via their native CLIs and APIs. Use for any question about provider costs, spend by service/day/month, credit eligibility, invoice totals, which resources are running, or how to deploy/inspect resources. Each provider has a dedicated playbook under `providers/`.
 ---
 
 # Provider billing knowledge base
@@ -26,7 +26,7 @@ The goal is simple: **never re-derive a billing API shape twice.** Every time we
 | Umbrella Cost (Automat-IT reseller) | [providers/umbrella-cost.md](providers/umbrella-cost.md) | ⚠️ Auth validated, data plane blocked (API access gated at tenant). **Shows real invoiced AWS cost after reseller discount — supersedes `aws.md` for runway math once unblocked.** | 2026-04-11 |
 | GCP / Vertex AI | [providers/gcp.md](providers/gcp.md) | ✅ Production — auth + inventory validated live. BigQuery billing export needs one-time Console enable before SKU-level queries work. | 2026-04-11 |
 | Stripe (revenue + fees) | [providers/stripe.md](providers/stripe.md) | ✅ Production — balance, balance_transactions, fees. March 2026: €7,303 gross / €6,627 net. | 2026-04-11 |
-| Polar.sh (subscriptions + MRR) | [providers/polar.md](providers/polar.md) | ✅ Production — `/metrics` endpoint, products, churn. ⚠️ `/metrics.revenue = 0` since Feb 2026 while Stripe shows €7k/mo — cross-check always. | 2026-04-11 |
+| Polar.sh (historical billing) | [providers/polar.md](providers/polar.md) | 🗄️ Retired from runtime; read-only queries for pre-migration orders and subscriptions | 2026-07-10 |
 | Wise (cash position) | [providers/wise.md](providers/wise.md) | ✅ Production — profiles + balances live. €58,594 in business EUR balance captured. ⚠️ Statement/transaction endpoints require SCA keypair (one-time openssl setup). | 2026-04-11 |
 | RunPod (GPU shadow cost) | [providers/runpod.md](providers/runpod.md) | ✅ Production — live burn rate + credit balance via GraphQL. $2,071 credit remaining, $1.648/hr burn, ~52 days runway. No historical ledger (poll to reconstruct). | 2026-04-11 |
 | Lambda Labs (GPU shadow cost) | [providers/lambda-labs.md](providers/lambda-labs.md) | ✅ Production — instances + price book live. $5.57/hr → ~$4,010/mo across 3 instances. ❌ Zero billing endpoints; shadow cost ONLY via polling + price book. | 2026-04-11 |
@@ -111,6 +111,6 @@ Validated: <YYYY-MM-DD>. Re-validate if a command returns unexpected results.
 
 ## Related skills
 
-- [spending-analysis](../spending-analysis/SKILL.md) — Pollinations revenue side (Polar orders + Tinybird usage). Pair with this skill when answering "how much did we spend vs. how much did we earn."
+- [spending-analysis](../spending-analysis/SKILL.md) — Pollinations revenue side (Stripe events + Tinybird usage). Pair with this skill when answering "how much did we spend vs. how much did we earn."
 - [tinybird-deploy](../tinybird-deploy/SKILL.md) — Tinybird deployment mechanics. This skill will eventually host the **cost** side of Tinybird.
 - [enter-services](../enter-services/SKILL.md) — enter.pollinations.ai deployment. Related for EC2 and Cloudflare Worker spend questions.

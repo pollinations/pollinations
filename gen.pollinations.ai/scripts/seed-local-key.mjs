@@ -131,10 +131,10 @@ const esc = (s) => s.replace(/'/g, "''");
 sql(
     db,
     `INSERT OR REPLACE INTO user
-       (id, name, email, email_verified, tier, tier_balance, pack_balance,
+       (id, name, email, email_verified, tier_balance, pack_balance,
         created_at, updated_at, auto_top_up_enabled)
      VALUES
-       ('${USER_ID}', 'Local E2E', 'local-e2e@test.local', 1, 'flower',
+       ('${USER_ID}', 'Local E2E', 'local-e2e@test.local', 1,
         1000000, 1000000, strftime('%s','now'), strftime('%s','now'), 0);`,
 );
 sql(
@@ -154,7 +154,7 @@ if (generated && existsSync(ENV_FILE)) {
 console.log(`
 ✔ Seeded local API key into gen's D1
   db:    ${db}
-  user:  ${USER_ID} (tier=flower, balances=1,000,000)
+  user:  ${USER_ID} (balances=1,000,000)
   key:   ${KEY_ID} (enabled, no expiry, full access)
   token: ${token}${generated ? "  (generated → appended to _local/.env)" : "  (from _local/.env)"}
 

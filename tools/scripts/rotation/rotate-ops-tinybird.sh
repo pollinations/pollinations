@@ -11,7 +11,7 @@
 #   tinybird_read    → internal current-workspace read token
 #   tinybird_sync    → GitHub sync token for D1 + app_directory
 #
-# Note: tinybird_legacy_read (consumed by apps/operation/economics) lives in
+# Note: tinybird_legacy_read (consumed by apps/operation/observability) lives in
 # the retired pollinations_ai workspace — not rotated here.
 #
 # Worker-consumed: after refresh, this script does `wrangler secret put`
@@ -56,7 +56,7 @@ API_BASE="https://$API_HOST/v0"
 # token_name | env_var_name | sops_files (csv) | sinks (space-sep: github:NAME wrangler:NAME)
 TOKENS=(
     "tinybird_ingest|TINYBIRD_INGEST_TOKEN|enter.pollinations.ai/secrets/dev.vars.json,enter.pollinations.ai/secrets/staging.vars.json,enter.pollinations.ai/secrets/prod.vars.json|wrangler:TINYBIRD_INGEST_TOKEN"
-    "tinybird_read|TINYBIRD_READ_TOKEN|enter.pollinations.ai/secrets/dev.vars.json,enter.pollinations.ai/secrets/staging.vars.json,enter.pollinations.ai/secrets/prod.vars.json,apps/operation/kpi/secrets/env.json,apps/operation/economics/secrets/secrets.vars.json|github:TINYBIRD_READ_TOKEN wrangler:TINYBIRD_READ_TOKEN"
+    "tinybird_read|TINYBIRD_READ_TOKEN|enter.pollinations.ai/secrets/dev.vars.json,enter.pollinations.ai/secrets/staging.vars.json,enter.pollinations.ai/secrets/prod.vars.json,apps/operation/kpi/secrets/env.json,apps/operation/observability/secrets/secrets.vars.json|github:TINYBIRD_READ_TOKEN wrangler:TINYBIRD_READ_TOKEN"
     "tinybird_sync|TINYBIRD_SYNC_TOKEN|enter.pollinations.ai/secrets/dev.vars.json,enter.pollinations.ai/secrets/staging.vars.json,enter.pollinations.ai/secrets/prod.vars.json|github:TINYBIRD_SYNC_TOKEN wrangler:TINYBIRD_SYNC_TOKEN"
 )
 

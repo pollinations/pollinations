@@ -40,8 +40,8 @@ We've launched **https://gen.pollinations.ai** — a single endpoint for all you
 
 - **Unified endpoint** — single API at `gen.pollinations.ai` for all generation
 - **Pollen credits** — simple pay-as-you-go system ($1 ≈ 1 Pollen)
-- **All models, one place** — Flux, GPT-5, Claude, Gemini, Seedream, and more
-- **API keys** — publishable keys for frontend, secret keys for backend
+- **All models, one place** — Flux, GPT, Claude, Gemini, Seedream, and more
+- **API keys** — secret keys for model usage, app keys for tracking BYOP apps.
 - **CLI** — `npx @pollinations/cli` for humans and AI agents ([source](packages/polli-cli))
 
 > Get started at [enter.pollinations.ai](https://enter.pollinations.ai) and check out the [API docs](https://gen.pollinations.ai/docs)

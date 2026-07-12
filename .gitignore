@@ -12,7 +12,7 @@ pollinations-myceli-proxy/wrangler.generated.toml
 /_local/
 
 # Local treasury ingest source artifacts and generated data
-/apps/operation/treasury/ingest/data/
+/apps/operation/economics/ingest/data/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

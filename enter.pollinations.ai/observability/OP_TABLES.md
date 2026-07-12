@@ -1,6 +1,7 @@
-# Economics Tinybird
+# OP Tables (Economics)
 
-Economics owns the OP Tinybird read surface.
+Economics owns four OP resources in this workspace, alongside enter's own
+datasources/endpoints/materializations.
 
 ## OP Tables
 
@@ -8,19 +9,24 @@ Economics owns the OP Tinybird read surface.
 | --- | --- | --- |
 | `op_transactions_api` | `op_transactions` | Signed Wise cash movements, in and out. |
 | `op_cloud_api` | `op_cloud` | Cloud/provider usage, spend, credit, grants, and manual evidence. |
-| `op_pollen_api` | `op_pollen` | Product usage in Pollen with paid/quest splits, including request counts. |
+| `op_pollen_api` | *(none — computed live)* | Product usage in Pollen with paid/quest splits, computed directly from `generation_event` via `activity_usage_events` (cost/price/requests) and `activity_earnings_events` (byop/model payouts). Not manually ingested. |
 | `op_runway_api` | `op_runway` | Latest agent- or manually-authored cash balance and forecast facts. |
 
 ## Idempotent Writes
 
-Every OP table is append-only and every row carries a stable `entry_id` plus a
-millisecond-precision `recorded_at`. Re-registering a fact that already exists
-must reuse its `entry_id`; a correction appends the same `entry_id` with a newer
-`recorded_at`. Each `*_api` pipe returns only the latest revision per
-`entry_id`, so duplicate or corrected appends can never double-count in the app.
+`op_transactions`, `op_cloud`, and `op_runway` are append-only and every row
+carries a stable `entry_id` plus a millisecond-precision `recorded_at`.
+Re-registering a fact that already exists must reuse its `entry_id`; a
+correction appends the same `entry_id` with a newer `recorded_at`. Each
+`*_api` pipe returns only the latest revision per `entry_id`, so duplicate or
+corrected appends can never double-count in the app.
 
-`entry_id` must be deterministic from the fact's identity, never from ingestion
-time. Conventions:
+`op_pollen_api` does not follow this pattern — it has no `entry_id` and
+nothing is ever appended to it. It recomputes from `generation_event` on every
+read, so there is nothing to correct or deduplicate.
+
+`entry_id` must be deterministic from the fact's identity, never from
+ingestion time. Conventions:
 
 - `op_cloud`: `{source}:{vendor}:{type}:{start}:{resource_id or resource_name}:{model}`,
   extended with the SKU or a line-item suffix when one period legitimately has
@@ -28,8 +34,6 @@ time. Conventions:
 - `op_transactions`: the native bank identifier (Wise transfer/transaction ID).
   Two genuinely separate transfers always have distinct native IDs, even when
   date, vendor, and amount are identical.
-- `op_pollen`: `{source}:{month}:{vendor}:{model}` — the table's natural monthly
-  grain.
 - `op_runway`: see Runway Facts below.
 
 ## Runway Facts
@@ -57,5 +61,12 @@ completed source months. The page does not calculate or carry forecast rules.
 
 Economics converts each fact to USD using the same monthly FX table as the other
 financial insights.
+
+## Tokens
+
+- `operations_ingest`: APPEND + READ on `op_cloud`, `op_runway`, `op_transactions`.
+  Used by the ingest agent.
+- `operations_read`: READ on all four `*_api` endpoints. Used by the economics
+  web app's server-side proxy (`apps/operation/economics/secrets/web.json`).
 
 Deploy from this directory with Tinybird Cloud.

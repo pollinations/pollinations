@@ -47,7 +47,8 @@ Core boundaries:
 - Never write Tinybird unless the user explicitly approves a write.
 - Every proposed OP row carries a stable `entry_id` and a millisecond
   `recorded_at`. `entry_id` is deterministic from the fact's identity
-  (conventions in tinybird/README.md). Re-registering or correcting an existing
+  (conventions in enter.pollinations.ai/observability/OP_TABLES.md).
+  Re-registering or correcting an existing
   fact reuses its `entry_id` with a newer `recorded_at`; never mint a new id
   for the same fact, so repeated appends can never double-count.
 - Never send, archive, delete, label, or modify email.
@@ -286,7 +287,8 @@ Granularity:
 - The model field is bonus knowledge for display and explanation only. Fill it
   when the source names a model; never use it to filter, match, or reconcile.
 - entry_id: base id for the document; suffix "-<category>" or "-<model slug>"
-  for split entries. OP row id conventions live in tinybird/README.md.
+  for split entries. OP row id conventions live in
+  enter.pollinations.ai/observability/OP_TABLES.md.
 
 Category guidance:
 

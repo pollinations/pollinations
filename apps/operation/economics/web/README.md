@@ -1,7 +1,8 @@
 # Economics Web
 
 Economics UI for `economics.pollinations.ai`, backed by OP Tinybird pipe outputs
-in the `operations` workspace.
+in `enter.pollinations.ai/observability/` (currently deployed to the
+`pollinations_enter_staging` workspace).
 Insights include cash P&L, cash runway, credit runway, and unit economics. Raw
 tabs: Data Quality, Transactions, Pollen, and Cloud.
 
@@ -26,8 +27,9 @@ and no network calls.
 
 ## Data Contract
 
-Reads OP pipes from `apps/operation/economics/tinybird/pipes/`:
+Reads OP pipes from `enter.pollinations.ai/observability/endpoints/`:
 `op_transactions_api`, `op_cloud_api`, `op_pollen_api`, and `op_runway_api`.
+Conventions live in `enter.pollinations.ai/observability/OP_TABLES.md`.
 
 The app is a read-only mirror; all reads go through the local server
 proxy.

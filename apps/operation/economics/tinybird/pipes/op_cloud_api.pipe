@@ -1,8 +1,9 @@
-TOKEN "economics_web" READ
+TOKEN "treasury_web" READ
 
 NODE endpoint
 SQL >
     SELECT
+        entry_id,
         source,
         start,
         end,
@@ -37,9 +38,10 @@ SQL >
             argMax(resource_id, recorded_at) AS resource_id,
             argMax(resource_name, recorded_at) AS resource_name,
             max(recorded_at) AS latest_recorded_at
-        FROM op_cloud
+        FROM op_cloud_v2
         GROUP BY entry_id
     )
+    WHERE NOT (credit = 0 AND paid = 0 AND positionCaseInsensitive(evidence, 'superseded') > 0)
     ORDER BY start DESC, vendor, type, resource_name, resource_id
 
 TYPE ENDPOINT

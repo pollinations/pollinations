@@ -1,8 +1,7 @@
-TOKEN "economics_ingest" APPEND
-TOKEN "economics_ingest" READ
+TOKEN "treasury_ingest" APPEND
+TOKEN "treasury_ingest" READ
 
 SCHEMA >
-    `entry_id` String `json:$.entry_id`,
     `source` String `json:$.source`,
     `date` Date `json:$.date`,
     `vendor` String `json:$.vendor`,
@@ -11,7 +10,7 @@ SCHEMA >
     `currency` String `json:$.currency`,
     `description` String `json:$.description`,
     `evidence` String `json:$.evidence`,
-    `recorded_at` DateTime64(3) `json:$.recorded_at`
+    `recorded_at` DateTime `json:$.recorded_at`
 
 ENGINE MergeTree
-ENGINE_SORTING_KEY entry_id, recorded_at
+ENGINE_SORTING_KEY date, vendor, category

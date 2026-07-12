@@ -1,4 +1,4 @@
-TOKEN "economics_web" READ
+TOKEN "treasury_web" READ
 
 NODE endpoint
 SQL >

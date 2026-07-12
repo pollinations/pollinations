@@ -1,5 +1,5 @@
-TOKEN "economics_ingest" APPEND
-TOKEN "economics_ingest" READ
+TOKEN "treasury_ingest" APPEND
+TOKEN "treasury_ingest" READ
 
 SCHEMA >
     `entry_id` String `json:$.entry_id`,

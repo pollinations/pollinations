@@ -1,4 +1,4 @@
-TOKEN "economics_web" READ
+TOKEN "treasury_web" READ
 
 NODE endpoint
 SQL >
@@ -19,28 +19,7 @@ SQL >
         requests_paid,
         requests_quests,
         requests_paid + requests_quests AS requests
-    FROM
-    (
-        SELECT
-            entry_id,
-            argMax(source, recorded_at) AS source,
-            argMax(month, recorded_at) AS month,
-            argMax(vendor, recorded_at) AS vendor,
-            argMax(model, recorded_at) AS model,
-            argMax(currency, recorded_at) AS currency,
-            argMax(cost_paid, recorded_at) AS cost_paid,
-            argMax(cost_quests, recorded_at) AS cost_quests,
-            argMax(price_paid, recorded_at) AS price_paid,
-            argMax(price_quests, recorded_at) AS price_quests,
-            argMax(byop_paid, recorded_at) AS byop_paid,
-            argMax(byop_quests, recorded_at) AS byop_quests,
-            argMax(model_paid, recorded_at) AS model_paid,
-            argMax(model_quests, recorded_at) AS model_quests,
-            argMax(requests_paid, recorded_at) AS requests_paid,
-            argMax(requests_quests, recorded_at) AS requests_quests
-        FROM op_pollen
-        GROUP BY entry_id
-    )
+    FROM op_pollen
     ORDER BY month, vendor, model
 
 TYPE ENDPOINT

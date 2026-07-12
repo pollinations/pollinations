@@ -8,7 +8,11 @@ export type ProvenanceCode =
     | "API"
     | "CLI"
     | "BQ"
-    | "HC";
+    | "HC"
+    | "INV"
+    | "EXP"
+    | "ING"
+    | "AGT";
 
 const PROVENANCE: Record<ProvenanceCode, { title: string; display?: string }> =
     {
@@ -36,6 +40,18 @@ const PROVENANCE: Record<ProvenanceCode, { title: string; display?: string }> =
         HC: {
             title: "Manual, hardcoded, or operator-corrected value",
         },
+        INV: {
+            title: "Vendor invoice document - ingest evidence",
+        },
+        EXP: {
+            title: "Vendor console or billing export - ingest evidence",
+        },
+        ING: {
+            title: "Ingest batch - agent-extracted evidence entry",
+        },
+        AGT: {
+            title: "Agent-computed row derived from vendor data during reconcile",
+        },
     };
 
 const SOURCE_META: Record<
@@ -54,6 +70,10 @@ const SOURCE_META: Record<
     st: { code: "ST", display: "ST" },
     tinybird: { code: "TB", display: "TB" },
     tb: { code: "TB", display: "TB" },
+    invoice: { code: "INV", display: "INV" },
+    export: { code: "EXP", display: "EXP" },
+    ingest: { code: "ING", display: "ING" },
+    agent: { code: "AGT", display: "AGT" },
     usage: {
         code: "HC",
         display: "HC",

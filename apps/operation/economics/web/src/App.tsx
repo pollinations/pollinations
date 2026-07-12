@@ -187,7 +187,7 @@ const TABS: {
     {
         id: "op-cloud",
         label: "Cloud",
-        codes: ["API", "CLI", "BQ", "HC"],
+        codes: ["API", "CLI", "BQ", "HC", "INV", "EXP", "ING", "AGT"],
         pipe: "op_cloud_api",
         note: "New cloud ledger combining provider usage, GPU resources, infrastructure, and credit as signed cloud facts.",
         icon: DatabaseIcon,
@@ -735,7 +735,8 @@ function PasswordGate({
         <div className="mx-auto mt-24 flex max-w-md flex-col gap-4 px-4">
             <Heading as="h1">Economics</Heading>
             <Text tone="soft">
-                Enter the economics password. Tinybird tokens stay on the server.
+                Enter the economics password. Tinybird tokens stay on the
+                server.
             </Text>
             {error && <Alert intent="warning">{error}</Alert>}
             <form

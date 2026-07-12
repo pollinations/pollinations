@@ -1,4 +1,6 @@
-BYOP (Bring Your Own Pollen) lets your users authorize your app to spend their own Pollen on Pollinations requests. Your publishable App Key (`pk_...`) identifies the app; after approval, Pollinations returns a scoped user key (`sk_...`) for API calls.
+# Bring Your Own Pollen (BYOP)
+
+BYOP lets users authorize your app to spend their Pollen on Pollinations requests. Your publishable App Key (`pk_...`) identifies the app; after approval, Pollinations returns a scoped user key (`sk_...`) for API calls.
 
 Users stay in control of their balance, budgets, and revocation; your app never has to pay for their usage.
 
@@ -6,19 +8,7 @@ Users stay in control of their balance, budgets, and revocation; your app never 
 
 An **App Key** (`pk_...`) is the publishable key your app sends users to Pollinations with. Without one, the consent screen falls back to the redirect hostname and traffic isn't attributed to your account.
 
-To create one, go to [enter.pollinations.ai](https://enter.pollinations.ai) → **Create New App Key**:
-
-<p align="left"><img src="https://media.pollinations.ai/1133540dc4c19635" alt="Edit App Key" width="420"></p>
-
-Set the **Name** (shows on the consent screen). For web apps, add at least one **Redirect URI** (your exact callback URL). The key you get back is your `client_id` (a `pk_...` publishable key; the legacy name `app_key` is still accepted).
-
-When a user lands on the consent screen signed-out, they're prompted to continue with GitHub:
-
-<p align="left"><img src="https://media.pollinations.ai/fbc04dd1c77dbfd8" alt="Authorize — signed out" width="420"></p>
-
-Once signed in, they review the requested access and confirm:
-
-<p align="left"><img src="https://media.pollinations.ai/a7e4a1e9c5f48b8d" alt="Authorize — signed in" width="420"></p>
+Create an App Key at [enter.pollinations.ai](https://enter.pollinations.ai) under **Create New App Key**. Set the name shown on the consent screen and, for web apps, add the exact callback URL as a **Redirect URI**. The resulting `pk_...` key is your `client_id`; the legacy name `app_key` is also accepted.
 
 ## Developer Earnings
 
@@ -141,37 +131,11 @@ https://myapp.com/callback#api_key=sk_abc123xyz
 
 Fragment, not query param — never hits server logs. 🔒 If you passed `state`, it's echoed back: `#api_key=sk_...&state=...`. On denial the fragment is `#error=access_denied&state=...`.
 
-### Code
-
-```javascript
-// Send user to auth
-const params = new URLSearchParams({
-  redirect_uri: location.href,
-  client_id: 'pk_yourkey',
-});
-window.location.href = `https://enter.pollinations.ai/authorize?${params}`;
-
-// Grab key from URL after redirect
-const apiKey = new URLSearchParams(location.hash.slice(1)).get('api_key');
-
-// Use their pollen
-fetch('https://gen.pollinations.ai/v1/chat/completions', {
-  method: 'POST',
-  headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
-  body: JSON.stringify({ model: 'openai', messages: [{ role: 'user', content: 'yo' }] })
-});
-```
-
 ## 🖥️ CLIs & Headless Apps (Device Flow)
 
 Same authorize screen, but the user opens a browser separately. Your CLI polls for the key.
 
-**Where this fits:**
-- **Discord / Telegram / WhatsApp bots** — bot DMs the code, user approves in browser, bot gets their key
-- **CLI tools** — `pollinations login` opens a browser, CLI waits for approval
-- **MCP servers** — AI agent requests access, user approves from their browser
-- **Raspberry Pi / IoT** — headless device displays a code, user approves on their phone
-- **VS Code extensions** — extension shows the code, user approves in browser
+Use this flow for CLIs, bots, MCP servers, extensions, and headless devices.
 
 ```bash
 # 1. request a device code (pass your app_key as client_id for attribution)
@@ -199,7 +163,7 @@ curl -X POST https://enter.pollinations.ai/api/oauth/token \
   -d 'device_code=...'
 ```
 
-## 👤 Who's Using This Key?
+## 👤 User info
 
 Once you have the user-authorized `sk_...` key, you can check who it belongs to:
 
@@ -211,9 +175,3 @@ curl https://enter.pollinations.ai/api/device/userinfo \
 ```
 
 `/api/oauth/userinfo` returns the same standard OIDC userinfo shape. `name` and `email` are included only when the key carries the `profile` scope.
-
----
-
-🕐 User-authorized keys default to 7 days. Users can revoke anytime from the dashboard.
-
-[edit this doc](https://github.com/pollinations/pollinations/edit/main/BRING_YOUR_OWN_POLLEN.md) · *h/t [Puter.js](https://docs.puter.com/user-pays-model/) for the idea*

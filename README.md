@@ -32,19 +32,6 @@
 | [🗺️ World Weaver](https://github.com/MrMegnis/world-generator) | Generate worlds with AI using GPT-5.4, render scenes with gpt-image-2, and create videos with ltx-2 via pollinations.ai unified API. | [@MrMegnis](https://github.com/MrMegnis) |
 
 [Browse all apps →](apps/GREENHOUSE.md)
-## 🚀 New Unified API — Now Live
-
-We've launched **https://gen.pollinations.ai** — a single endpoint for all your AI generation needs: text, images, audio, video — all in one place.
-
-### What's New
-
-- **Unified endpoint** — single API at `gen.pollinations.ai` for all generation
-- **Pollen credits** — simple pay-as-you-go system ($1 ≈ 1 Pollen)
-- **All models, one place** — Flux, GPT, Claude, Gemini, Seedream, and more
-- **API keys** — secret keys for model usage, app keys for tracking BYOP apps.
-- **CLI** — `npx @pollinations/cli` for humans and AI agents ([source](packages/polli-cli))
-
-> Get started at [enter.pollinations.ai](https://enter.pollinations.ai) and check out the [API docs](https://gen.pollinations.ai/docs)
 
 ## 🆕 Latest News
 
@@ -82,30 +69,18 @@ We've launched **https://gen.pollinations.ai** — a single endpoint for all you
  </picture>
 </a>
 
-### Quick Start (3 Steps)
-
-1️⃣ **Get your API key**  
-Sign up at [enter.pollinations.ai](https://enter.pollinations.ai) to generate your key.
-
-2️⃣ **Choose what you want to generate**  
-Pollinations supports:
-- 🖼 Images  
-- 📝 Text  
-- 🔊 Audio  
-- 🎬 Video  
-
-3️⃣ **Make your first request**  
-Use one of the examples below to generate your first AI output in seconds.
-
-
 ## 🚀 Getting Started
 
 [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/pollinations/pollinations)
 
+Get an API key from [enter.pollinations.ai](https://enter.pollinations.ai), then choose an endpoint below.
+
 ### Image Generation
 
 ```bash
-curl 'https://gen.pollinations.ai/image/a%20beautiful%20sunset' -o image.jpg
+curl 'https://gen.pollinations.ai/image/a%20beautiful%20sunset' \
+  -H "Authorization: Bearer $POLLINATIONS_KEY" \
+  -o image.jpg
 ```
 
 Or visit [pollinations.ai](https://pollinations.ai) for an interactive experience.
@@ -113,7 +88,8 @@ Or visit [pollinations.ai](https://pollinations.ai) for an interactive experienc
 ### Text Generation
 
 ```bash
-curl 'https://gen.pollinations.ai/text/Hello%20world'
+curl 'https://gen.pollinations.ai/text/Hello%20world' \
+  -H "Authorization: Bearer $POLLINATIONS_KEY"
 ```
 
 ### Audio Generation
@@ -134,7 +110,7 @@ curl 'https://gen.pollinations.ai/v1/audio/speech' \
   -o speech.mp3
 ```
 
-Available voices: `alloy`, `echo`, `fable`, `onyx`, `nova`, `shimmer`, plus [30+ ElevenLabs voices](https://gen.pollinations.ai/docs).
+See the [API documentation](APIDOCS.md) for available voices and models.
 
 ### MCP Server for AI Assistants
 
@@ -211,65 +187,6 @@ export POLLINATIONS_API_KEY=sk_...
 
 See [full API docs](APIDOCS.md) for detailed authentication information.
 
-## 🖥️ How to Use
-
-### Web Interface
-
-Our web interface is user-friendly and doesn't require any technical knowledge. Simply visit [https://pollinations.ai](https://pollinations.ai) and start creating!
-
-### API
-
-Use our API directly in your browser or applications:
-
-    https://pollinations.ai/p/a_cozy_pixel_art_robot_and_bee_in_a_digital_garden_8-bit_warm_stardew_valley_vibes
-
-Replace the description with your own, and you'll get a unique image based on your words!
-
-Here's an example of a generated image:
-
-<p align="center"><img src="https://media.pollinations.ai/589dc7f43393c30a" alt="Pixel art robot and bee in a cozy digital garden — Stardew Valley vibes" width="800" height="340" /></p>
-
-<p align="center"><img src="https://media.pollinations.ai/7317bd94b97edde2" alt="Robot holding generated image saying I CAN SEE, nomnom creature eating prompt text" width="800" height="340" /></p>
-
-## 🎨 Examples
-
-### Image Generation
-
-Python code to download the generated image:
-
-    import requests
-
-    def download_image(prompt):
-        url = f"https://pollinations.ai/p/{prompt}"
-        response = requests.get(url)
-        with open('generated_image.jpg', 'wb') as file:
-            file.write(response.content)
-        print('Image downloaded!')
-
-    download_image("a_cozy_pixel_art_robot_and_bee_in_a_digital_garden_8-bit_warm_stardew_valley_vibes")
-
-### Text Generation
-
-To generate text:
-
-    https://gen.pollinations.ai/text/What%20is%20artificial%20intelligence?
-
-### Audio Generation
-
-Generate speech from text:
-
-    https://gen.pollinations.ai/audio/Hello%20from%20Pollinations?voice=alloy&key=YOUR_API_KEY
-
-Or use the OpenAI TTS-compatible endpoint:
-
-```bash
-curl 'https://gen.pollinations.ai/v1/audio/speech' \
-  -H 'Content-Type: application/json' \
-  -H 'Authorization: Bearer YOUR_API_KEY' \
-  -d '{"model": "tts-1", "input": "Hello from Pollinations!", "voice": "alloy"}' \
-  -o speech.mp3
-```
-
 ## 🛠️ Integration
 
 ### SDK
@@ -278,115 +195,25 @@ Check out our [Pollinations SDK](./packages/sdk/README.md) for Node.js, browser,
 
 ## Architecture
 
-```mermaid
-%%{init: {'theme': 'dark', 'themeVariables': { 'background': '#1a1a1a', 'primaryColor': '#2a2a2a', 'primaryBorderColor': '#555555', 'primaryTextColor': '#eeeeee', 'lineColor': '#00e5ff', 'clusterBkg': 'transparent', 'clusterBorder': '#888888', 'fontSize': '13px', 'fontFamily': 'Inter, system-ui, sans-serif'}}}%%
-
-graph LR
-    subgraph CLIENTS["Clients / Apps"]
-        Q[Bots - Discord, Telegram, WhatsApp]
-        N[30+ Mobile and Web Apps]
-        A[pollinations.ai Web Frontend]
-        R[AI Agents - Qwen, Sillytavern, ...]
-        AI[AI Assistants - Claude]
-        MCP[MCP Server]
-    end
-
-    AI --> MCP
-    Q --> GEN
-    N --> GEN
-    A --> GEN
-    R --> GEN
-    MCP --> GEN
-
-    GEN["gen.pollinations.ai"]:::cfWorker --> ENTER["enter.pollinations.ai Gateway"]:::cfWorker
-
-    ENTER --> IMG["Image Service"]:::ec2
-    ENTER --> AUD["Audio Service"]:::ec2
-
-    IMG --> CF["Cloudflare Worker with R2 Cache"]:::cfWorkerLight
-    CF --> B["image-origin.pollinations.ai"]:::ec2
-    B --> D["FLUX / GPT Image / Seedream - GPU VMs"]:::gpuNode
-
-    AUD --> EL["ElevenLabs TTS API"]:::provider
-
-    GEN --> SC["Scaleway API"]:::provider
-    GEN --> DS["Deepseek API"]:::provider
-    GEN --> G["Azure-hosted LLMs"]:::provider
-    GEN --> CFM["Cloudflare AI"]:::provider
-
-    style CLIENTS fill:none,stroke:#888,stroke-width:2px,stroke-dasharray: 5 5
-
-    linkStyle default stroke-width:3px,stroke:#00E5FF
-
-    classDef cfWorker fill:#E65100,color:#fff,stroke:#FFB300,stroke-width:2px,font-weight:bold
-    classDef cfWorkerLight fill:#BF360C,color:#fff,stroke:#FFB300,stroke-width:1px
-    classDef ec2 fill:#1F2937,color:#fff,stroke:#F59E0B,stroke-width:2px
-    classDef gpuNode fill:#064E3B,stroke:#34D399,color:#ECFDF5,stroke-width:2px
-    classDef provider fill:#1E3A8A,stroke:#60A5FA,color:#EFF6FF,stroke-width:1px
-```
-
-## 🔮 Future Developments
-
-We're constantly exploring new ways to push the boundaries of AI-driven content creation. Some areas we're excited about include:
-
-- Digital Twins: Creating interactive AI-driven avatars
-- Music Video Generation: Combining AI-generated visuals with music for unique video experiences
-- Real-time AI-driven Visual Experiences: Projects like our Dreamachine, which create immersive, personalized visual journeys
-
-## 🌍 Our Vision
-
-pollinations.ai envisions a future where AI technology is:
-
-- **Open & Accessible**: We believe AI should be available to everyone — earn Pollen by contributing, no credit card required
-
-- **Transparent & Ethical**: Our open-source approach ensures transparency in how our models work and behave
-
-- **Community-Driven**: We're building a platform where developers, creators, and AI enthusiasts can collaborate and innovate
-
-- **Interconnected**: We're creating an ecosystem where AI services can seamlessly work together, fostering innovation through composability
-
-- **Evolving**: We embrace the rapid evolution of AI technology while maintaining our commitment to openness and accessibility
-
-We're committed to developing AI technology that serves humanity while respecting ethical boundaries and promoting responsible innovation. Join us in shaping the future of AI.
+See [DEVELOP.md](./DEVELOP.md#architecture) for the current service diagrams.
 
 ## 🤝 Community and Development
 
-We believe in community-driven development. You can contribute to pollinations.ai in several ways:
-
-1. **Coding Assistant**: The easiest way to contribute! Just [create a GitHub issue](https://github.com/pollinations/pollinations/issues/new) describing the feature you'd like to see implemented. The [MentatBot AI assistant](https://mentat.ai/) will analyze and implement it directly! No coding required - just describe what you want.
-
-2. **Project Submissions**: Have you built something with pollinations.ai? [Use our project submission template](https://github.com/pollinations/pollinations/issues/new?template=project-submission.yml) (labeled as **APPS**) to share it with the community and get it featured in our README.
-
-3. **Feature Requests & Bug Reports**: Have an idea or found a bug? [Open an issue](https://github.com/pollinations/pollinations/issues/new) and let us know. Our team and the MentatBot assistant will review it.
-
-4. **Community Engagement**: Join our vibrant [Discord community](https://discord.gg/pollinations-ai-885844321461485618) to:
-   - Share your creations
-   - Get support and help others
-   - Collaborate with fellow AI enthusiasts
-   - Discuss feature ideas before creating issues
-
-For any questions or support, please visit our [Discord channel](https://discord.gg/pollinations-ai-885844321461485618) or create an issue on our [GitHub repository](https://github.com/pollinations/pollinations).
+- [Contribute code or documentation](CONTRIBUTING.md)
+- [Report a bug or request a feature](https://github.com/pollinations/pollinations/issues/new)
+- [Submit an app](https://github.com/pollinations/pollinations/issues/new?template=tier-app-submission.yml)
+- [Join the Discord community](https://discord.gg/pollinations-ai-885844321461485618)
 
 ## 🗂️ Project Structure
 
-Our codebase is organized into several key folders, each serving a specific purpose in the pollinations.ai ecosystem:
-
-- [`pollinations.ai/`](./app/): The main React application for the Pollinations.ai website.
-
-- [`image.pollinations.ai/`](./image.pollinations.ai/): Backend service for image generation and caching with Cloudflare Workers and R2 storage.
-
-- [`gen.pollinations.ai/`](./gen.pollinations.ai/): Cloudflare Worker for API routing, auth handoff, text generation, and caching.
-
-- [`packages/polli-cli/`](./packages/polli-cli/): The Pollinations CLI — for humans, AI agents, and everything in between.
-
-- [`packages/sdk/`](./packages/sdk/): SDK NPM library with pollinations ready functions for Pollinations.ai.
-
-- [`packages/mcp/`](./packages/mcp/): Model Context Protocol (MCP) server for AI assistants like Claude to generate images directly.
-
-- [`opencode-pollinations-plugin`](https://github.com/fkom13/opencode-pollinations-plugin): This is `open-code-pollinations-plugin`, a plugin for OpenCode that integrates Pollinations.ai's inference capabilities directly into the OpenCode environment, built by our community member [@fkom13](https://github.com/fkom13).
-
-
-This structure encompasses the frontend website, backend services for image and text generation, and integrations like the Discord bot and MCP server, providing a comprehensive framework for the pollinations.ai platform.
+- [`pollinations.ai/`](./pollinations.ai/): React frontend
+- [`enter.pollinations.ai/`](./enter.pollinations.ai/): Authentication and billing gateway
+- [`gen.pollinations.ai/`](./gen.pollinations.ai/): API routing and generation worker
+- [`image.pollinations.ai/`](./image.pollinations.ai/): Image GPU and backend assets
+- [`packages/polli-cli/`](./packages/polli-cli/): Command-line client
+- [`packages/sdk/`](./packages/sdk/): JavaScript SDK and React hooks
+- [`packages/mcp/`](./packages/mcp/): MCP server
+- [`shared/`](./shared/): Shared authentication, registry, and queue code
 
 For development setup and environment management, see [DEVELOP.md](./DEVELOP.md).
 

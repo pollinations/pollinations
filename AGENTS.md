@@ -58,57 +58,33 @@ curl "http://localhost:8788/image/test?model=flux" -H "Authorization: Bearer $TO
 curl "http://localhost:8788/v1/chat/completions" -H "Authorization: Bearer $TOKEN" ...
 ```
 
-## API Quick Reference
+See `./APIDOCS.md` for endpoints and `.claude/skills/enter-services/SKILL.md` for service workflows.
 
-- Image: `GET gen.pollinations.ai/image/{prompt}` (bearer token)
-- Text (OpenAI): `POST gen.pollinations.ai/v1/chat/completions` with `{model, messages}` (bearer token)
-- Simple text: `GET gen.pollinations.ai/text/{prompt}?key=...`
-- Audio: `GET gen.pollinations.ai/audio/{text}?voice=nova&key=...`
-- Models: `/image/models`, `/v1/models`
-- See `./APIDOCS.md`, `.claude/skills/enter-services/SKILL.md`
+## YAGNI
 
-## ⚠️ YAGNI — You Aren't Gonna Need It (CRITICAL)
-
-**Follow YAGNI religiously:**
+Implement only what the current task needs:
 
 - Only implement what's needed now. Remove unused functions.
 - No speculative abstractions, "just in case" helpers, preemptive test utils/wrappers.
-- No backward-compat fallbacks — clean breaks beat bloat. When changing tokens/headers/APIs, update all consumers at once.
+- Avoid speculative compatibility layers. Preserve public API compatibility unless the task explicitly approves a coordinated breaking change.
 - When user says "keep it simple" — one function, one price, one config. Simplest thing that works.
 
 ## Tinybird Deployment Safety
 
-**CRITICAL — These rules apply whenever deploying to Tinybird:**
-
-- Two workspaces: `pollinations_enter` (prod) and `pollinations_enter_staging` (staging + dev + local). Pipes and datasources must be deployed to **both** — no CI auto-deploy yet, tracked in #11127.
-- Use the Tinybird **Forward CLI** as `tb` (not Classic).
-- Do not rely on `.tinyb` for workspace selection. Always pass `TB_TOKEN` from `secrets/{staging,prod}.vars.json` and `--host https://api.europe-west2.gcp.tinybird.co`.
-- Always validate and deploy to **staging first**, verify, then prod only when requested.
-- Validate first: `tb --cloud --host "$TB_HOST" deployment create --check --no-allow-destructive-operations`
-- Deploy staging: `tb --cloud --host "$TB_HOST" deployment create --wait --no-allow-destructive-operations`
-- Verify staging: `tb --staging --cloud --host "$TB_HOST" endpoint ls` and `tb --cloud --host "$TB_HOST" deployment ls`
-- Never `--allow-destructive-operations` without explicit permission
-- Never `tb push` (deprecated). Avoid `tb deploy`; use explicit `deployment create` commands so promotion is never accidental.
-- Never use `--auto` or `deployment promote` without explicit permission.
-- Always `--cloud` (otherwise CLI hits Tinybird Local/Docker)
-- Run from `enter.pollinations.ai/observability`
-- Verify all consumers within a workspace before modifying a pipe (pipes are NOT cross-workspace; each workspace has its own copy)
-- If validation reports datasource or pipe deletion, stop. Restore the missing definition or ask before deleting; do not override with destructive flags.
-- Forward materialized views cannot use `UNION`; split sources into separate materialized pipes writing to the same datasource.
-- Timeouts: use `uniq()` not `uniqExact()`; avoid CTE+JOIN; single-pass queries; for large time ranges use `start_date` parameter week-by-week
-- Full procedure: `.claude/skills/tinybird-deploy/SKILL.md`
+- Work from `enter.pollinations.ai/observability` with the Forward CLI, `--cloud`, the explicit Europe West host, and the correct workspace token.
+- Validate and deploy to staging first. Deploy to production only when requested.
+- Never use destructive operations, `tb push`, `--auto`, or promotion without explicit permission.
+- Stop if validation reports datasource or pipe deletion.
+- Pipes are workspace-local; verify consumers in each workspace.
+- Follow `.claude/skills/tinybird-deploy/SKILL.md` for commands and query constraints.
 
 ## Code Style & Workflow
 
 - Modern JS/TS, ES modules (all `.js` are ESM). Follow existing formatting. Comment complex logic.
 - Run `npx biome check --write <file>` after edits and before commits.
-- Before implementing: verify assumptions on web (APIs change), read related files, check related PRs/issues, check existing utilities in `shared/` before writing new ones (auth, queue, registry, SSE parsing, retry wrappers), confirm branch via `git branch --show-current`.
+- Before editing, inspect related code, search existing utilities in `shared/`, confirm the branch, and verify unstable external APIs against primary documentation when relevant.
 - When continuing prior work: read relevant code first; identify clear next steps.
 - Don't reimplement existing logic — search first.
-- When adding a React browser/IIFE bundle, grep bundled dependencies'
-  published dist for `react/jsx-runtime` and `react-dom` imports before
-  choosing shim vs external; transitive deps such as `@ark-ui/react` Portal can
-  reintroduce externals the package source does not import.
 
 ## Common Mistakes to Avoid
 
@@ -118,8 +94,6 @@ curl "http://localhost:8788/v1/chat/completions" -H "Authorization: Bearer $TOKE
 - Don't run `pytest`; use `npm run test` or `npx vitest run`.
 - Don't create `.md` docs unless asked.
 - Always use absolute paths.
-- Don't edit files manually during a Claude Code session (busts cache).
-- Don't run `/compact` unless necessary (busts cache).
 - Don't let searches run wild — use targeted paths.
 - Don't modify test files to make tests pass — fix the code.
 - Run `npm run decrypt-vars` before tests in enter.pollinations.ai.
@@ -128,10 +102,7 @@ curl "http://localhost:8788/v1/chat/completions" -H "Authorization: Bearer $TOKE
 
 ## Testing
 
-Commands:
-- enter.pollinations.ai: `cd enter.pollinations.ai && npm run test` (vitest + CF Workers pool)
-- gen.pollinations.ai: `cd gen.pollinations.ai && npm run test` (vitest + CF Workers pool)
-- image.pollinations.ai: `cd image.pollinations.ai && npm run test` (vitest)
+Run `npm run test` with the working directory set to `enter.pollinations.ai/`, `gen.pollinations.ai/`, or `image.pollinations.ai/`.
 
 Run individually — full suite is slow:
 ```bash
@@ -142,7 +113,7 @@ npx vitest run test/file.test.ts
 - Test real code, not mocks — use direct imports. Don't create mock infrastructure.
 - Read existing tests before adding; prefer extending existing files; follow existing conventions.
 - Snapshots (enter): VCR-style, replayed by default. `TEST_VCR_MODE=record` to record; default `replay-or-record`.
-- `.testingtokens` contains: `ENTER_API_TOKEN_LOCAL`, `ENTER_API_TOKEN_REMOTE`, `ENTER_TOKEN`, `GITHUB_TOKEN`.
+- Local or CI setups may provide `enter.pollinations.ai/.testingtokens`; never commit it.
 - Production API tests should hit `gen.pollinations.ai`.
 
 ## Architecture & Common Tasks
@@ -155,37 +126,26 @@ npx vitest run test/file.test.ts
 - API docs: strictly technical, no marketing; link dynamic endpoints (e.g. `/models`) vs hardcoded lists; no internal impl/env vars; minimal examples for both simplified and OpenAI-compatible endpoints.
 - Security: never expose keys/secrets; use env vars; validate input.
 - Temp scratch files go in `temp/` clearly labeled.
-- Shrinking large snapshots: video/image snapshots can be 10–30 MB because stream chunks store raw binary as text (`TextDecoder` output in `vcr.ts:289`). To shrink: replace `response.body.data` array with one tiny chunk `[{"data": "<minimal-bytes>", "delay": 1}]`. For mp4, a valid 20-byte ftyp box is `\x00\x00\x00\x14ftypisom\x00\x00\x00\x00isom` (use `bytes.decode('latin-1')` in Python). Tests only check headers/status, not media content.
 
 ## Workflow Orchestration
 
 - Plan mode for any non-trivial task (3+ steps or architectural). If things go sideways, STOP and re-plan. Write specs upfront.
 - Use subagents liberally for research, exploration, parallel analysis — one task per subagent.
-- After user correction: propose an AGENTS.md update capturing the pattern; iterate until mistake rate drops.
+- Propose an AGENTS.md change only for a durable, repeated repository-specific failure mode.
 - Never mark complete without proving it works — run tests, check logs, diff vs main when relevant.
 - Non-trivial changes: ask "is there a more elegant way?" If fix feels hacky, redo elegantly. Skip for obvious fixes.
 - Bug reports: just fix them — point at logs/errors/failing tests and resolve. Fix failing CI without being asked how.
 
-## Task Management
-
-1. Plan first (todos or plan mode). 2. Verify plan before implementing. 3. Track progress. 4. Summarize changes. 5. Capture lessons in AGENTS.md.
-
 ## Compact Instructions
 
 Preserve during compaction: modified files + line numbers, all code/diffs/impl details, test output + errors + command results, full plan + progress + pending, user preferences/corrections this session, architectural decisions + rationale.
-
-## Core Principles
-
-- Simplicity first — minimal code impact.
-- No laziness — find root causes, no temp fixes, senior standards.
-- Minimal impact — touch only what's necessary.
 
 ## Git Workflow
 
 - "send to git" = git status, diff, branch, commit all, push, PR description.
 - Verify branch: `git branch --show-current` and confirm if unsure (branch mix-ups are a recurring mistake).
 - Avoid force pushes (`--force`, `--force-with-lease`) — prefer follow-up commits.
-- Run biome check before committing.
+- Run `npx biome check --write <file>` on changed supported files before committing.
 - If PR already merged: open a new branch/PR for follow-ups.
 
 ## Communication Style
@@ -198,7 +158,7 @@ Be concise. PRs/comments/issues: bullets, <200 words, no fluff.
 
 ## GitHub Labels
 
-Only use established labels (check with `mcp1_list_issues`). Don't create new labels ad-hoc; keep names consistent.
+Check existing repository labels before applying one. Do not create labels ad hoc.
 
 ## Contributor Attribution
 

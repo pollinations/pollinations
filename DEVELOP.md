@@ -1,11 +1,11 @@
-# Setup the development environment
+# Development
 
+## Secrets
 
-##### SOPS
-We use [sops](https://github.com/getsops/sops) with [age](https://github.com/FiloSottile/age) encryption for secrets management.
+We use [SOPS](https://github.com/getsops/sops) with [age](https://github.com/FiloSottile/age) encryption.
 
-###### Installation
-Install sops via your package manager:
+### Install SOPS
+
 ```bash
 # macOS
 brew install sops
@@ -13,61 +13,43 @@ brew install sops
 # Linux (see https://github.com/getsops/sops/releases)
 ```
 
-Set up your SOPS age key:
+Put your age key where SOPS expects it:
+
 ```bash
 mkdir -p $HOME/.config/sops/age/
 mv /path/to/keys.txt $HOME/.config/sops/age/
 ```
 
-By default, sops will look for your key file in `$HOME/.config/sops/age/keys.txt`. If you want to use a different location, set `SOPS_AGE_KEY_FILE` to your preferred path.
+The default path is `$HOME/.config/sops/age/keys.txt`. Set `SOPS_AGE_KEY_FILE` to use another path.
 
-To decrypt service env files, run the command that matches the service:
-```bash
-sops --output-type dotenv decrypt secrets/dev.vars.json > .dev.vars   # enter.pollinations.ai
-sops --output-type dotenv decrypt secrets/env.json > .env             # generation service secrets
-``` 
+Each service stores encrypted variables in `secrets/{dev,staging,prod}.vars.json`. From `enter.pollinations.ai/` or `gen.pollinations.ai/`, run `npm run decrypt-vars` to prepare local variables. Use `sops edit secrets/<environment>.vars.json` to edit an encrypted file.
 
-The variables are kept encrypted in `**/secrets/*.json`. If you need to edit them, run `sops edit /secrets/file.json`. This will open an editor and when you save the file, write it to the encrypted file. `enter.pollinations.ai` uses `secrets/{dev,staging,prod}.vars.json` for app/runtime secrets; `tools/scripts/rotation/secrets.vars.json` is only for local operator admin credentials used by rotation scripts. (hint: set the editor env variable: `export EDITOR=/path/to/your/editor` to open with your favorite editor)
+`tools/scripts/rotation/secrets.vars.json` contains only local operator credentials for rotation scripts.
 
+### Common SOPS commands
 
-###### Common SOPS commands:
 | Command | Description |
 | :--- | :--- |
 | `sops -d secrets/dev.vars.json` | View decrypted content |
-| `sops edit secrets/dev.vars.json` | Edit encrypted file directly (set `EDITOR` env var) |
-| `sops -e .dev.vars > secrets/dev.vars.json` | Encrypt .env → .encrypted.env |
+| `sops edit secrets/dev.vars.json` | Edit an encrypted file |
+| `sops -e .dev.vars > secrets/dev.vars.json` | Encrypt local variables |
 
+Set `EDITOR` if SOPS should open a specific editor.
 
-##### Running Multiple Services
-
-To run multiple services simultaneously during development:
+## Run services
 
 ```bash
-# Install dependencies for all services
 npm run install:all
 
-# Run all services (enter, gen) with auto-restart
+# Run enter and gen
 npm run dev
 
-# Run individual services
+# Or run one service
 npm run dev:enter
 npm run dev:gen
 ```
 
-The `npm run dev` command uses `concurrently` to run all services with colored output and automatic restart on failure.
-
-##### Debugging
-For verbose logging and debugging across all services, you can use:
-
-```bash
-DEBUG=* npm start
-```
-
-This will enable comprehensive debug output to help troubleshoot issues during development.
-
----
-
-# Architecture Overview
+## Architecture
 
 Current-state architecture diagrams for pollinations.ai infrastructure and model routing.
 
@@ -283,9 +265,3 @@ graph TD
     classDef social fill:#713F12,color:#FEFCE8,stroke:#FACC15,stroke-width:1px
     classDef cicd fill:#374151,color:#F3F4F6,stroke:#9CA3AF,stroke-width:1px
 ```
-
-Billing history: Polar handled pack billing and free daily tier subscriptions
-before the Stripe/D1 migration at the end of January 2026. The remaining Polar
-runtime and webhook integration was removed on May 2, 2026. Read-only historical
-query notes remain in
-`.claude/skills/provider-billing/providers/polar.md`.

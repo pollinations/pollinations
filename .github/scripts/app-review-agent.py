@@ -237,11 +237,6 @@ def main():
 
         if duplicate.get("isDuplicate"):
             label = "TIER-APP-REJECTED"
-        elif error_code == "SPORE_TIER":
-            label = "TIER-APP-REJECTED"
-        elif error_code == "TIER_NOT_SET":
-            # System bug - don't reject, mark incomplete so we can investigate
-            label = "TIER-APP-INCOMPLETE"
         elif error_code == "NOT_REGISTERED":
             label = "TIER-APP-INCOMPLETE"
         else:

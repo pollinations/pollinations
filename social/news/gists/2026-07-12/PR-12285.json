@@ -1,0 +1,34 @@
+{
+  "pr_number": 12285,
+  "title": "docs: app ideas markdown cleanup",
+  "author": "Nimzozo",
+  "url": "https://github.com/pollinations/pollinations/pull/12285",
+  "merged_at": "2026-07-12T23:37:10Z",
+  "labels": [
+    "DEV-DOCS"
+  ],
+  "pr_body_excerpt": "Cleaned up the Markdown code in `apps/IDEAS.md` so that line breaks display correctly.",
+  "gist": {
+    "category": "docs",
+    "user_facing": true,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Tidying up the ideas board",
+    "blurb": "Gave the app ideas document a quick polish so the line breaks actually break where they're supposed to.",
+    "summary": "Fixed Markdown formatting and line breaks in the apps/IDEAS.md file to improve readability.",
+    "impact": "Developers browsing the app ideas list will have an easier time reading the suggestions.",
+    "keywords": [
+      "docs",
+      "markdown",
+      "formatting",
+      "ideas"
+    ],
+    "visual_concept": "Polly the bee organizing a digital bulletin board, representing the cleanup of the IDEAS.md file.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot organizing a glowing lime green (#ecf874) digital bulletin board. A chunky pixel robot companion holds a neatly formatted document. Soft pastel gradient background, warm lighting, lo-fi 8-bit aesthetic like Stardew Valley."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-12/PR-12285.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot organizing a glowing lime green (#ecf874) digital bulletin board. A chunky pixel robot companion holds a neatly formatted document. Soft pastel gradient background, warm lighting, lo-fi 8-bit aesthetic like Stardew Valley."
+  },
+  "generated_at": "2026-07-12T23:38:12.283329+00:00"
+}

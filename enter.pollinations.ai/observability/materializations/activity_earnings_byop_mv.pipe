@@ -1,0 +1,32 @@
+DESCRIPTION >
+    Materializes BYOP app markup earning events for Activity dashboard earnings reads.
+
+NODE byop_earning_events
+SQL >
+    SELECT
+        api_key_created_for_user_id AS dev_user_id,
+        start_time AS timestamp,
+        event_id,
+        'byop_markup' AS source,
+        api_key_client_id AS entity_id,
+        coalesce(
+            nullIf(if(api_key_created_for_app = 'undefined', '', api_key_created_for_app), ''),
+            api_key_client_id
+        ) AS entity_name,
+        model_used AS model,
+        multiIf(
+            selected_meter_slug = 'v1:meter:tier', 'tier',
+            selected_meter_slug = 'v1:meter:pack', 'pack',
+            'unknown'
+        ) AS meter_source,
+        dev_price AS baseline_price,
+        total_price AS price_usd,
+        total_price - dev_price AS pollen_earned,
+        markup_rate AS reward_rate
+    FROM generation_event
+    WHERE api_key_created_for_user_id != 'undefined'
+      AND total_price > dev_price
+      AND start_time >= toDateTime('2026-01-01 00:00:00')
+
+TYPE MATERIALIZED
+DATASOURCE activity_earnings_events

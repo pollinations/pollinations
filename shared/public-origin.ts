@@ -1,8 +1,7 @@
 import type { Context } from "hono";
 
-// Public-facing hosts served through the pollinations-myceli-proxy Worker.
-// The proxy forwards these as X-Forwarded-Host; we trust that header only when
-// it names one of them.
+// Public-facing hosts that can arrive through an intermediate edge layer such
+// as CloudFront. We trust X-Forwarded-Host only when it names one of them.
 const TRUSTED_PUBLIC_HOSTS = new Set<string>([
     "enter.pollinations.ai",
     "staging.enter.pollinations.ai",
@@ -30,8 +29,7 @@ export function hasTrustedProxyHeaders(c: Context): boolean {
 
 /**
  * Resolve the *public-facing* origin of a request, honoring X-Forwarded-Host
- * and X-Forwarded-Proto when set by a trusted upstream proxy. Used when the
- * Worker is reached via the pollinations-myceli-proxy in the old Cloudflare account.
+ * and X-Forwarded-Proto when set by a trusted upstream edge layer.
  *
  * Falls back to the request URL's own origin (which on direct hits is the
  * Myceli upstream hostname).

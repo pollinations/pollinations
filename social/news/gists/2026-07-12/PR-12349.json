@@ -1,0 +1,34 @@
+{
+  "pr_number": 12349,
+  "title": "fix: dedupe activity dashboard events",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/12349",
+  "merged_at": "2026-07-12T12:36:18Z",
+  "labels": [
+    "DEV-BUG"
+  ],
+  "pr_body_excerpt": "## Summary\n- Dedupes Activity usage and earnings endpoint reads before charts, transactions, and CSV rows are returned.\n- Removes unused `d1_rewards.datasource` and `quest_usage_summary.pipe` from observability definitions.\n- Keeps the live duplicate materialized rows in place; endpoints now collapse duplicate logical events at read time.\n\n## Validation\n- Staging/prod Tinybird dry-runs for the dedupe endpoint changes passed before deployment.\n- Deployed endpoint-only dedupe change to staging deployment `51` and prod deployment `139`.\n- Verified prod duplicate source rows: materialized `activity_usage_events` has 2 rows for the known event, live endpoint returns 1.\n- Rechecked repo consumers: no references to `quest_usage_summary` or `d1_rewards` remain.\n- Destructive cleanup dry-runs showed only `d1_rewards` datasource deletion, `quest_usage_summary` pipe deletion, and read-token permission cleanup.\n- Deployed destructive cleanup to staging deployment `52` and prod deployment `140` with `--allow-destructive-operations`.\n- Verified `quest_usage_summary` now returns 404 and `d1_rewards` is not found in both staging and prod.\n- Smoke-tested the four Activity endpoints after prod cleanup; all return 200.\n\n## Notes\n- The known duplicate materialized usage rows were not physically deleted. A simple Tinybird delete condition matches both identical rows, not only the extra copy, so the safer cleanup is read-time dedupe.\n- `d1_rewards` was empty in both staging and prod before deletion.\n- `quest_usage_summary` had no repo consumer; prod returned rows only because the pipe itself existed.",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Double vision cured",
+    "blurb": "We've polished up the Activity dashboard to filter out duplicate usage and earnings events. Your charts and transaction histories are now perfectly crisp and accurate.",
+    "summary": "Activity usage and earnings endpoints now deduplicate events at read time, ensuring charts, transactions, and CSV exports display accurately.",
+    "impact": "Users will see precise, deduplicated data in their Activity dashboard instead of double-counted events.",
+    "keywords": [
+      "dashboard",
+      "activity",
+      "bug-fix",
+      "analytics"
+    ],
+    "visual_concept": "The bee mascot wearing glasses or holding a magnifying glass, looking at a clean, organized chart or ledger. A robot companion sweeping away duplicate pixelated data blocks.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing tiny reading glasses, inspecting a clean, glowing lime green (#ecf874) bar chart on a retro monitor. A chunky robot companion sweeps away duplicate pixelated data blocks with a small broom. Soft pastel gradient background, warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm and organized."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-12/PR-12349.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing tiny reading glasses, inspecting a clean, glowing lime green (#ecf874) bar chart on a retro monitor. A chunky robot companion sweeps away duplicate pixelated data blocks with a small broom. Soft pastel gradient background, warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm and organized."
+  },
+  "generated_at": "2026-07-12T12:37:15.009187+00:00"
+}

@@ -15,13 +15,13 @@ export const PRESETS = {
     // --- app icons ---
     "favicon-16": { w: 16, h: 16, content: "mark", pad: 0, theme: "mark" },
     "favicon-32": { w: 32, h: 32, content: "mark", pad: 0, theme: "mark" },
-    "pwa-192": { w: 192, h: 192, content: "mark", pad: 0.12, theme: "mark" },
-    "pwa-512": { w: 512, h: 512, content: "mark", pad: 0.12, theme: "mark" },
+    "pwa-192": { w: 192, h: 192, content: "mark", pad: 0.175, theme: "mark" },
+    "pwa-512": { w: 512, h: 512, content: "mark", pad: 0.175, theme: "mark" },
     "apple-touch": {
         w: 180,
         h: 180,
         content: "mark",
-        pad: 0.14,
+        pad: 0.175,
         theme: "field",
     },
     "maskable-512": {
@@ -35,7 +35,7 @@ export const PRESETS = {
         w: 1200,
         h: 630,
         content: "lockup-stacked",
-        pad: 0.16,
+        pad: 0.2,
         theme: "field",
     },
 
@@ -67,7 +67,7 @@ export const PRESETS = {
         w: 1200,
         h: 630,
         content: "lockup-stacked",
-        pad: 0.16,
+        pad: 0.2,
         theme: "field",
     },
 };

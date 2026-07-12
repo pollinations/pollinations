@@ -14,7 +14,7 @@ curl https://gen.pollinations.ai/v1/chat/completions \
   -H "Authorization: Bearer YOUR_API_KEY" \
   -H "Content-Type: application/json" \
   -H "Pollinations-Safe: privacy" \
-  -d '{"model":"openai","messages":[{"role":"user","content":"email me at a@example.com"}]}'
+  -d '{"model":"gpt-5.4-nano","messages":[{"role":"user","content":"email me at a@example.com"}]}'
 ```
 
 Large requests check the latest 50,000 text characters, across up to 25 text parts, in one safety call.

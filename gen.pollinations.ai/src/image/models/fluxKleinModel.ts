@@ -104,7 +104,7 @@ export const callFluxKleinAPI = async (
             isMature: false,
             isChild: false,
             trackingData: {
-                actualModel: "klein",
+                actualModel: "flux-klein",
                 usage: {
                     completionImageTokens: 1,
                     totalTokenCount: 1,

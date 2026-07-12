@@ -90,7 +90,7 @@ export async function callFireworksFluxSchnellAPI(
         isMature: false,
         isChild: false,
         trackingData: {
-            actualModel: "flux",
+            actualModel: "flux-schnell",
             usage: {
                 completionImageTokens: 1,
                 totalTokenCount: 1,

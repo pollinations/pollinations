@@ -63,6 +63,11 @@ export type TinybirdEvent = {
     resolvedModelRequested?: string;
     modelUsed?: string;
     modelProviderUsed?: string;
+    /** Registry metadata for the resolved model, denormalized for analytics. */
+    modelCategory?: string;
+    modelBrand?: string;
+    modelFamily?: string;
+    modelSelfHosted?: boolean;
     /** True when Portkey served from a non-primary fallback target. */
     fallbackUsed?: boolean;
     isBilledUsage: boolean;

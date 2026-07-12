@@ -192,7 +192,7 @@ export async function callAzureFluxKontext(
             data.data[0].content_filter_results?.sexual?.filtered || false,
         isChild: false, // Azure doesn't provide child detection
         trackingData: {
-            actualModel: "kontext",
+            actualModel: "flux-kontext",
             usage: {
                 completionImageTokens: 1,
                 totalTokenCount: 1,

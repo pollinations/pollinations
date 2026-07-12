@@ -1,17 +1,18 @@
 import { perMillion } from "./price-helpers";
 import type { ModelDefinition } from "./registry";
 
-export const DEFAULT_IMAGE_MODEL = "zimage" as const;
+export const DEFAULT_IMAGE_MODEL = "z-image-turbo" as const;
 
 export type ImageModelName = keyof typeof IMAGE_SERVICES;
 export type ImageModelId = (typeof IMAGE_SERVICES)[ImageModelName]["modelId"];
 
 export const IMAGE_SERVICES = {
-    "kontext": {
-        aliases: [],
+    "flux-kontext": {
+        aliases: ["kontext"],
         modelId: "kontext",
         provider: "azure",
         brand: "Black Forest Labs",
+        family: "flux-kontext",
         category: "image",
         addedDate: new Date("2025-10-07").getTime(),
         priceMultiplier: 1,
@@ -29,6 +30,7 @@ export const IMAGE_SERVICES = {
         modelId: "nanobanana",
         provider: "google",
         brand: "Google",
+        family: "nanobanana",
         category: "image",
         addedDate: new Date("2025-10-07").getTime(),
         paidOnly: true,
@@ -50,6 +52,8 @@ export const IMAGE_SERVICES = {
         modelId: "nanobanana-2",
         provider: "google",
         brand: "Google",
+        family: "nanobanana",
+        version: "2",
         category: "image",
         addedDate: new Date("2026-02-27").getTime(),
         paidOnly: true,
@@ -73,6 +77,8 @@ export const IMAGE_SERVICES = {
         modelId: "nanobanana-2-lite",
         provider: "google",
         brand: "Google",
+        family: "nanobanana-lite",
+        version: "2",
         category: "image",
         addedDate: new Date("2026-06-30").getTime(),
         paidOnly: true,
@@ -96,6 +102,7 @@ export const IMAGE_SERVICES = {
         modelId: "nanobanana-pro",
         provider: "google",
         brand: "Google",
+        family: "nanobanana-pro",
         category: "image",
         addedDate: new Date("2025-12-01").getTime(),
         paidOnly: true,
@@ -115,11 +122,13 @@ export const IMAGE_SERVICES = {
         outputModalities: ["image"],
         maxReferenceImages: 14, // Gemini 3 Pro Image provider limit.
     },
-    "seedream5": {
-        aliases: [],
+    "seedream-5-lite": {
+        aliases: ["seedream5"],
         modelId: "seedream5",
         provider: "replicate",
         brand: "ByteDance",
+        family: "seedream-lite",
+        version: "5",
         category: "image",
         addedDate: new Date("2026-02-27").getTime(),
         priceMultiplier: 1,
@@ -134,11 +143,13 @@ export const IMAGE_SERVICES = {
         outputModalities: ["image"],
         maxReferenceImages: 14, // Pollinations route cap from Replicate schema.
     },
-    "seedream5-pro": {
-        aliases: ["seedream-5-pro", "seedream-pro-5"],
+    "seedream-5-pro": {
+        aliases: ["seedream5-pro", "seedream-pro-5"],
         modelId: "seedream5-pro",
         provider: "replicate",
         brand: "ByteDance",
+        family: "seedream-pro",
+        version: "5",
         category: "image",
         addedDate: new Date("2026-07-10").getTime(),
         priceMultiplier: 1,
@@ -152,11 +163,13 @@ export const IMAGE_SERVICES = {
         outputModalities: ["image"],
         maxReferenceImages: 10,
     },
-    "seedream": {
-        aliases: [],
+    "seedream-4": {
+        aliases: ["seedream"],
         modelId: "seedream",
         provider: "replicate",
         brand: "ByteDance",
+        family: "seedream",
+        version: "4",
         category: "image",
         addedDate: new Date("2025-10-07").getTime(),
         priceMultiplier: 1,
@@ -170,11 +183,13 @@ export const IMAGE_SERVICES = {
         outputModalities: ["image"],
         maxReferenceImages: 10, // Pollinations route cap from Replicate schema.
     },
-    "seedream-pro": {
-        aliases: [],
+    "seedream-4.5-pro": {
+        aliases: ["seedream-pro"],
         modelId: "seedream-pro",
         provider: "replicate",
         brand: "ByteDance",
+        family: "seedream-pro",
+        version: "4.5",
         category: "image",
         addedDate: new Date("2025-12-04").getTime(),
         priceMultiplier: 1,
@@ -200,6 +215,8 @@ export const IMAGE_SERVICES = {
         modelId: "ideogram-v4-turbo",
         provider: "replicate",
         brand: "Ideogram",
+        family: "ideogram-turbo",
+        version: "4",
         category: "image",
         addedDate: new Date("2026-06-15").getTime(),
         priceMultiplier: 1,
@@ -218,6 +235,8 @@ export const IMAGE_SERVICES = {
         modelId: "ideogram-v4-balanced",
         provider: "replicate",
         brand: "Ideogram",
+        family: "ideogram-balanced",
+        version: "4",
         category: "image",
         addedDate: new Date("2026-06-15").getTime(),
         priceMultiplier: 1,
@@ -236,6 +255,8 @@ export const IMAGE_SERVICES = {
         modelId: "ideogram-v4-quality",
         provider: "replicate",
         brand: "Ideogram",
+        family: "ideogram-quality",
+        version: "4",
         category: "image",
         addedDate: new Date("2026-06-15").getTime(),
         priceMultiplier: 1,
@@ -249,11 +270,13 @@ export const IMAGE_SERVICES = {
         inputModalities: ["text"],
         outputModalities: ["image"],
     },
-    "gptimage": {
-        aliases: ["gpt-image", "gpt-image-1-mini"],
+    "gpt-image-1-mini": {
+        aliases: ["gptimage", "gpt-image"],
         modelId: "gptimage",
         provider: "azure",
         brand: "OpenAI",
+        family: "gpt-image-mini",
+        version: "1",
         category: "image",
         addedDate: new Date("2025-10-10").getTime(),
         priceMultiplier: 0.75,
@@ -269,11 +292,13 @@ export const IMAGE_SERVICES = {
         outputModalities: ["image"],
         maxReferenceImages: 16, // GPT Image edit endpoint accepts up to 16 input images.
     },
-    "gptimage-large": {
-        aliases: ["gpt-image-1.5", "gpt-image-large"],
+    "gpt-image-1.5": {
+        aliases: ["gptimage-large", "gpt-image-large"],
         modelId: "gptimage-large",
         provider: "azure",
         brand: "OpenAI",
+        family: "gpt-image",
+        version: "1.5",
         category: "image",
         addedDate: new Date("2025-12-23").getTime(),
         priceMultiplier: 1,
@@ -296,6 +321,8 @@ export const IMAGE_SERVICES = {
         modelId: "gpt-image-2",
         provider: "openai",
         brand: "OpenAI",
+        family: "gpt-image",
+        version: "2",
         category: "image",
         addedDate: new Date("2026-04-22").getTime(),
         paidOnly: true,
@@ -313,11 +340,13 @@ export const IMAGE_SERVICES = {
         outputModalities: ["image"],
         maxReferenceImages: 16, // GPT Image edit endpoint accepts up to 16 input images.
     },
-    "flux": {
-        aliases: [],
+    "flux-schnell": {
+        aliases: ["flux"],
         modelId: "flux",
         provider: "vast",
+        selfHosted: true,
         brand: "Black Forest Labs",
+        family: "flux",
         category: "image",
         addedDate: new Date("2025-10-07").getTime(),
         priceMultiplier: 1.25,
@@ -329,11 +358,13 @@ export const IMAGE_SERVICES = {
         inputModalities: ["text"],
         outputModalities: ["image"],
     },
-    "zimage": {
-        aliases: ["z-image", "z-image-turbo"],
+    "z-image-turbo": {
+        aliases: ["zimage", "z-image"],
         modelId: "zimage",
         provider: "runpod",
+        selfHosted: true,
         brand: "Alibaba",
+        family: "z-image",
         category: "image",
         addedDate: new Date("2025-12-08").getTime(),
         priceMultiplier: 1,
@@ -345,11 +376,13 @@ export const IMAGE_SERVICES = {
         inputModalities: ["text"],
         outputModalities: ["image"],
     },
-    "veo": {
-        aliases: ["veo-3.1-fast", "video"],
+    "veo-3.1-fast": {
+        aliases: ["veo", "video"],
         modelId: "veo",
         provider: "google",
         brand: "Google",
+        family: "veo",
+        version: "3.1",
         category: "video",
         addedDate: new Date("2025-11-27").getTime(),
         paidOnly: true,
@@ -369,6 +402,7 @@ export const IMAGE_SERVICES = {
         modelId: "seedance-pro",
         provider: "replicate",
         brand: "ByteDance",
+        family: "seedance-pro",
         category: "video",
         addedDate: new Date("2025-12-04").getTime(),
         priceMultiplier: 1,
@@ -392,6 +426,8 @@ export const IMAGE_SERVICES = {
         modelId: "seedance-2.0",
         provider: "replicate",
         brand: "ByteDance",
+        family: "seedance",
+        version: "2.0",
         category: "video",
         addedDate: new Date("2026-05-07").getTime(),
         priceMultiplier: 1,
@@ -408,11 +444,13 @@ export const IMAGE_SERVICES = {
         videoCapabilities: ["start_frame", "end_frame", "audio_output"],
         maxReferenceImages: 2, // Video keyframe slots: start + end.
     },
-    "wan": {
-        aliases: ["wan2.6", "wan-i2v"],
+    "wan-2.6": {
+        aliases: ["wan", "wan2.6", "wan-i2v"],
         modelId: "wan",
         provider: "replicate",
         brand: "Alibaba",
+        family: "wan",
+        version: "2.6",
         category: "video",
         addedDate: new Date("2026-01-21").getTime(),
         priceMultiplier: 1,
@@ -430,11 +468,13 @@ export const IMAGE_SERVICES = {
         videoCapabilities: ["start_frame", "audio_output"],
         maxReferenceImages: 1, // Video keyframe slots: start only.
     },
-    "wan-fast": {
-        aliases: ["wan2.2", "wan-2.2"],
+    "wan-2.2": {
+        aliases: ["wan-fast", "wan2.2"],
         modelId: "wan-fast",
         provider: "replicate",
         brand: "Alibaba",
+        family: "wan",
+        version: "2.2",
         category: "video",
         addedDate: new Date("2026-03-23").getTime(),
         priceMultiplier: 1,
@@ -451,11 +491,13 @@ export const IMAGE_SERVICES = {
         videoCapabilities: ["start_frame", "end_frame"],
         maxReferenceImages: 2, // Video keyframe slots: start + end.
     },
-    "wan-pro": {
-        aliases: ["wan2.7", "wan-2.7"],
+    "wan-2.7": {
+        aliases: ["wan-pro", "wan2.7"],
         modelId: "wan-pro",
         provider: "replicate",
         brand: "Alibaba",
+        family: "wan",
+        version: "2.7",
         category: "video",
         addedDate: new Date("2026-05-26").getTime(),
         priceMultiplier: 1,
@@ -473,11 +515,13 @@ export const IMAGE_SERVICES = {
         videoCapabilities: ["start_frame", "end_frame", "audio_output"],
         maxReferenceImages: 2, // Video keyframe slots: start + end.
     },
-    "wan-pro-1080p": {
-        aliases: ["wan2.7-1080p", "wan-pro-1080"],
+    "wan-2.7-1080p": {
+        aliases: ["wan-pro-1080p", "wan2.7-1080p", "wan-pro-1080"],
         modelId: "wan-pro-1080p",
         provider: "replicate",
         brand: "Alibaba",
+        family: "wan",
+        version: "2.7",
         category: "video",
         addedDate: new Date("2026-06-13").getTime(),
         priceMultiplier: 1,
@@ -496,11 +540,13 @@ export const IMAGE_SERVICES = {
         videoCapabilities: ["start_frame", "end_frame", "audio_output"],
         maxReferenceImages: 2, // Video keyframe slots: start + end.
     },
-    "wan-image": {
-        aliases: ["wan2.7-image", "wan-img"],
+    "wan-2.7-image": {
+        aliases: ["wan-image", "wan2.7-image", "wan-img"],
         modelId: "wan-image",
         provider: "replicate",
         brand: "Alibaba",
+        family: "wan-image",
+        version: "2.7",
         category: "image",
         addedDate: new Date("2026-04-02").getTime(),
         paidOnly: true,
@@ -516,11 +562,13 @@ export const IMAGE_SERVICES = {
         outputModalities: ["image"],
         maxReferenceImages: 9, // Pollinations route cap.
     },
-    "wan-image-pro": {
-        aliases: ["wan2.7-image-pro", "wan-img-pro"],
+    "wan-2.7-image-pro": {
+        aliases: ["wan-image-pro", "wan2.7-image-pro", "wan-img-pro"],
         modelId: "wan-image-pro",
         provider: "replicate",
         brand: "Alibaba",
+        family: "wan-image",
+        version: "2.7",
         category: "image",
         addedDate: new Date("2026-04-02").getTime(),
         priceMultiplier: 1,
@@ -537,9 +585,9 @@ export const IMAGE_SERVICES = {
         outputModalities: ["image"],
         maxReferenceImages: 9, // Pollinations route cap.
     },
-    "qwen-image": {
+    "qwen-image-plus": {
         aliases: [
-            "qwen-image-plus",
+            "qwen-image",
             "qwen-image-2512",
             "qwen-image-edit",
             "qwen-image-edit-plus",
@@ -547,6 +595,7 @@ export const IMAGE_SERVICES = {
         modelId: "qwen-image",
         provider: "replicate",
         brand: "Qwen",
+        family: "qwen-image",
         category: "image",
         addedDate: new Date("2026-03-23").getTime(),
         paidOnly: true,
@@ -568,6 +617,7 @@ export const IMAGE_SERVICES = {
         modelId: "grok-imagine",
         provider: "xai",
         brand: "xAI",
+        family: "grok-imagine",
         category: "image",
         addedDate: new Date("2026-02-25").getTime(),
         priceMultiplier: 1,
@@ -586,6 +636,7 @@ export const IMAGE_SERVICES = {
         modelId: "grok-imagine-pro",
         provider: "xai",
         brand: "xAI",
+        family: "grok-imagine",
         category: "image",
         addedDate: new Date("2026-03-23").getTime(),
         priceMultiplier: 1,
@@ -605,6 +656,7 @@ export const IMAGE_SERVICES = {
         modelId: "grok-video-pro",
         provider: "xai",
         brand: "xAI",
+        family: "grok-video",
         category: "video",
         addedDate: new Date("2026-03-23").getTime(),
         priceMultiplier: 1,
@@ -620,11 +672,14 @@ export const IMAGE_SERVICES = {
         videoCapabilities: ["start_frame"],
         maxReferenceImages: 1, // Video keyframe slots: start only.
     },
-    "klein": {
-        aliases: ["flux-klein"],
+    "flux-klein": {
+        aliases: ["klein"],
         modelId: "klein",
         provider: "runpod",
+        selfHosted: true,
         brand: "Black Forest Labs",
+        family: "flux-klein",
+        version: "2",
         category: "image",
         addedDate: new Date("2026-01-17").getTime(),
         priceMultiplier: 1,
@@ -637,11 +692,14 @@ export const IMAGE_SERVICES = {
         outputModalities: ["image"],
         maxReferenceImages: 10, // Pollinations self-hosted route cap.
     },
-    "ltx-2": {
-        aliases: ["ltx2", "ltx-2.3", "ltxvideo", "ltx-video"],
+    "ltx-2.3": {
+        aliases: ["ltx-2", "ltx2", "ltxvideo", "ltx-video"],
         modelId: "ltx-2",
         provider: "lambda",
+        selfHosted: true,
         brand: "Lightricks",
+        family: "ltx",
+        version: "2.3",
         category: "video",
         addedDate: new Date("2026-02-06").getTime(),
         priceMultiplier: 1,
@@ -662,6 +720,7 @@ export const IMAGE_SERVICES = {
         modelId: "p-image",
         provider: "replicate",
         brand: "Pruna",
+        family: "p-image",
         category: "image",
         addedDate: new Date("2026-03-14").getTime(),
         priceMultiplier: 1,
@@ -679,6 +738,7 @@ export const IMAGE_SERVICES = {
         modelId: "p-image-edit",
         provider: "replicate",
         brand: "Pruna",
+        family: "p-image",
         category: "image",
         addedDate: new Date("2026-03-14").getTime(),
         priceMultiplier: 1,
@@ -701,6 +761,7 @@ export const IMAGE_SERVICES = {
         modelId: "p-video-720p",
         provider: "replicate",
         brand: "Pruna",
+        family: "p-video",
         category: "video",
         addedDate: new Date("2026-03-14").getTime(),
         priceMultiplier: 1,
@@ -720,6 +781,7 @@ export const IMAGE_SERVICES = {
         modelId: "p-video-1080p",
         provider: "replicate",
         brand: "Pruna",
+        family: "p-video",
         category: "video",
         addedDate: new Date("2026-06-09").getTime(),
         priceMultiplier: 1,
@@ -739,6 +801,7 @@ export const IMAGE_SERVICES = {
         modelId: "nova-canvas",
         provider: "aws",
         brand: "Amazon",
+        family: "nova-canvas",
         category: "image",
         addedDate: new Date("2026-03-23").getTime(),
         priceMultiplier: 1,
@@ -756,6 +819,7 @@ export const IMAGE_SERVICES = {
         modelId: "nova-reel",
         provider: "aws",
         brand: "Amazon",
+        family: "nova-reel",
         category: "video",
         addedDate: new Date("2026-03-23").getTime(),
         priceMultiplier: 1,

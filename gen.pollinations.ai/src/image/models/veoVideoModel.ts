@@ -224,7 +224,7 @@ export const callVeoAPI = async (
         mimeType: "video/mp4",
         durationSeconds: durationSeconds,
         trackingData: {
-            actualModel: "veo",
+            actualModel: "veo-3.1-fast",
             usage: {
                 completionVideoSeconds: durationSeconds,
             },

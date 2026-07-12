@@ -5,13 +5,13 @@
  * already use for Seedance). Replicate splits text-to-video and image-to-video
  * into separate models, so each variant routes by whether a first frame is
  * supplied:
- *   - wan-fast → wan-2.2-t2v-fast / wan-2.2-i2v-fast  (480p, ~5s, silent)
- *   - wan      → wan-2.6-t2v      / wan-2.6-i2v       (720p, native audio)
- *   - wan-pro  → wan-2.7-t2v      / wan-2.7-i2v       (720p, native audio)
+ *   - wan-2.2 → wan-2.2-t2v-fast / wan-2.2-i2v-fast  (480p, ~5s, silent)
+ *   - wan-2.6 → wan-2.6-t2v      / wan-2.6-i2v       (720p, native audio)
+ *   - wan-2.7 → wan-2.7-t2v      / wan-2.7-i2v       (720p, native audio)
  *
  * ONE PRICE PER MODEL: Replicate prices Wan video per-second by resolution
  * (720p vs 1080p) — so each model is LOCKED to a single resolution to keep a
- * single rate. wan/wan-pro lock to 720p ($0.10/s, audio bundled); wan-fast
+ * single rate. wan-2.6/wan-2.7 lock to 720p ($0.10/s, audio bundled); wan-2.2
  * locks to 480p (flat $0.05 per fixed-length clip). 1080p, if ever wanted,
  * would be a separate model. This mirrors the Seedance 720p-locked convention.
  */
@@ -104,7 +104,7 @@ function withSeed(
 const WAN_FAST_CONFIG: WanVariantConfig = {
     t2vModel: "wan-video/wan-2.2-t2v-fast",
     i2vModel: "wan-video/wan-2.2-i2v-fast",
-    trackingName: "wan-fast",
+    trackingName: "wan-2.2",
     displayName: "Wan 2.2",
     resolveDuration: () => WAN_FAST_FIXED_SECONDS,
     buildInput(mode, prompt, safeParams, frames) {
@@ -133,7 +133,7 @@ const WAN_FAST_CONFIG: WanVariantConfig = {
 const WAN_26_CONFIG: WanVariantConfig = {
     t2vModel: "wan-video/wan-2.6-t2v",
     i2vModel: "wan-video/wan-2.6-i2v",
-    trackingName: "wan",
+    trackingName: "wan-2.6",
     displayName: "Wan 2.6",
     resolveDuration: (p) => snapDuration(p.duration, WAN_26_DURATIONS),
     buildInput(mode, prompt, safeParams, frames) {
@@ -154,7 +154,7 @@ const WAN_26_CONFIG: WanVariantConfig = {
 };
 
 // Wan 2.7 is offered at two locked resolutions as separate models (one price
-// each): wan-pro @720p ($0.10/s) and wan-pro-1080p @1080p ($0.15/s). The t2v/i2v
+// each): wan-2.7 @720p ($0.10/s) and wan-2.7-1080p @1080p ($0.15/s). The t2v/i2v
 // schemas are identical apart from the resolution value, so share a factory.
 function makeWan27Config(
     resolution: "720p" | "1080p",
@@ -197,8 +197,8 @@ function makeWan27Config(
     };
 }
 
-const WAN_27_CONFIG = makeWan27Config("720p", "wan-pro");
-const WAN_27_1080P_CONFIG = makeWan27Config("1080p", "wan-pro-1080p");
+const WAN_27_CONFIG = makeWan27Config("720p", "wan-2.7");
+const WAN_27_1080P_CONFIG = makeWan27Config("1080p", "wan-2.7-1080p");
 
 async function generateWanVideo(
     config: WanVariantConfig,
@@ -266,7 +266,7 @@ async function generateWanVideo(
 
     // Bill on Replicate's reported output length when available, else the
     // requested duration. Audio is bundled into the per-second video rate (or
-    // absent on wan-fast), so there is no separate audio line.
+    // absent on wan-2.2), so there is no separate audio line.
     const billedDuration = actualDurationSeconds ?? requestedDuration;
 
     return {

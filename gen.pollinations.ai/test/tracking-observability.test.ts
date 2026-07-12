@@ -35,9 +35,9 @@ function createTestApp(
     consumePollen: (amount: number) => Promise<void>,
     user?: AuthUser,
     model: ModelVariables["model"] = {
-        requested: "openai",
-        resolved: "openai",
-        definition: getRegistryModelDefinition("openai"),
+        requested: "gpt-5.4-nano",
+        resolved: "gpt-5.4-nano",
+        definition: getRegistryModelDefinition("gpt-5.4-nano"),
     },
 ) {
     const app = new Hono<Env>();
@@ -140,9 +140,9 @@ function createWrongContentTypeApp(
         });
         c.set("frontendKeyRateLimit", { consumePollen });
         c.set("model", {
-            requested: "openai",
-            resolved: "openai",
-            definition: getRegistryModelDefinition("openai"),
+            requested: "gpt-5.4-nano",
+            resolved: "gpt-5.4-nano",
+            definition: getRegistryModelDefinition("gpt-5.4-nano"),
         });
         await next();
     });
@@ -172,9 +172,9 @@ function createHeaderApp(extraHeaders: Record<string, string>) {
         });
         c.set("frontendKeyRateLimit", { consumePollen: async () => {} });
         c.set("model", {
-            requested: "openai",
-            resolved: "openai",
-            definition: getRegistryModelDefinition("openai"),
+            requested: "gpt-5.4-nano",
+            resolved: "gpt-5.4-nano",
+            definition: getRegistryModelDefinition("gpt-5.4-nano"),
         });
         await next();
     });
@@ -209,7 +209,7 @@ async function captureFallbackEvent(extraHeaders: Record<string, string>) {
             method: "POST",
             headers: { "content-type": "application/json" },
             body: JSON.stringify({
-                model: "openai",
+                model: "gpt-5.4-nano",
                 stream: false,
                 messages: [{ role: "user", content: "test" }],
             }),
@@ -254,7 +254,7 @@ describe("tracking observability", () => {
                     referer: "https://example.com/app",
                 },
                 body: JSON.stringify({
-                    model: "openai",
+                    model: "gpt-5.4-nano",
                     stream: false,
                     messages: [{ role: "user", content: "test" }],
                 }),
@@ -286,8 +286,8 @@ describe("tracking observability", () => {
             environment: "test",
             eventType: "generate.text",
             responseStatus: 200,
-            modelRequested: "openai",
-            resolvedModelRequested: "openai",
+            modelRequested: "gpt-5.4-nano",
+            resolvedModelRequested: "gpt-5.4-nano",
             modelUsed: "gpt-5-nano-2025-08-07",
             modelProviderUsed: expect.any(String),
             isBilledUsage: true,
@@ -339,7 +339,7 @@ describe("tracking observability", () => {
                     "cf-connecting-ip": "203.0.113.42",
                 },
                 body: JSON.stringify({
-                    model: "openai",
+                    model: "gpt-5.4-nano",
                     stream: false,
                     messages: [{ role: "user", content: "test" }],
                 }),
@@ -602,7 +602,7 @@ describe("tracking observability", () => {
                 method: "POST",
                 headers: { "content-type": "application/json" },
                 body: JSON.stringify({
-                    model: "openai",
+                    model: "gpt-5.4-nano",
                     stream: true,
                     messages: [{ role: "user", content: "test" }],
                 }),

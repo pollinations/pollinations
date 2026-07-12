@@ -3,8 +3,8 @@
  *
  * Moved off Alibaba DashScope (provider consolidation onto Replicate, which we
  * already use for Seedream/Seedance). Replicate models:
- *   - wan-image     → wan-video/wan-2.7-image      ($0.03/img, up to 2K)
- *   - wan-image-pro → wan-video/wan-2.7-image-pro  ($0.03/img, 4K, thinking)
+ *   - wan-2.7-image     → wan-video/wan-2.7-image      ($0.03/img, up to 2K)
+ *   - wan-2.7-image-pro → wan-video/wan-2.7-image-pro  ($0.03/img, 4K, thinking)
  *
  * Both accept an `images` array for editing and a `size` enum (named tier or
  * exact W*H). We resolve the requested aspect ratio to the nearest exact size
@@ -87,7 +87,7 @@ export async function callWanImageAPI(
     const hasImage = images.length > 0;
     const model = isPro ? WAN_IMAGE_PRO_MODEL : WAN_IMAGE_MODEL;
     const modelLabel = isPro ? "Wan 2.7 Image Pro" : "Wan 2.7 Image";
-    const trackingLabel = isPro ? "wan-image-pro" : "wan-image";
+    const trackingLabel = isPro ? "wan-2.7-image-pro" : "wan-2.7-image";
 
     // 4K is available only for pro text-to-image; pro editing and the standard
     // model cap at 2K (matches the prior DashScope pixel limits).

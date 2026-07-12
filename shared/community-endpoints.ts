@@ -188,6 +188,7 @@ export function communityModelDefinition(
         modelId: endpoint.modelId,
         provider: "community",
         brand: "Community",
+        family: parsed?.modelName ?? endpoint.modelId,
         category: "text",
         cost: communityPriceDefinition(endpoint),
         priceMultiplier: 1,

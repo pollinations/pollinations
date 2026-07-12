@@ -23,7 +23,10 @@ import { checkBalance } from "@/utils/generation-access.ts";
 
 const db = drizzle(env.DB);
 
-function fakeStatsEnv(price: number, model = "openai"): CloudflareBindings {
+function fakeStatsEnv(
+    price: number,
+    model = "gpt-5.4-nano",
+): CloudflareBindings {
     return {
         DB: env.DB,
         KV: {
@@ -48,7 +51,7 @@ function fakeLog() {
     };
 }
 
-function testModel(model: ModelName = "openai") {
+function testModel(model: ModelName = "gpt-5.4-nano") {
     return {
         requested: model,
         resolved: model,
@@ -287,12 +290,12 @@ describe("BYOP markup", () => {
                     packBalance: 1,
                 }),
             },
-            model: testModel("llama-maverick"),
+            model: testModel("llama-4-maverick"),
             log: fakeLog(),
         } as unknown as Parameters<typeof checkBalance>[0];
 
         await expect(
-            checkBalance(vars, fakeStatsEnv(1, "llama-maverick")),
+            checkBalance(vars, fakeStatsEnv(1, "llama-4-maverick")),
         ).rejects.toMatchObject({
             status: 402,
         });

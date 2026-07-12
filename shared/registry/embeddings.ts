@@ -3,9 +3,9 @@ import type { ModelDefinition } from "./registry";
 
 // Embedding model IDs as returned by providers
 type EmbeddingModelDefinitions = {
-    "gemini-2": ModelDefinition<"gemini-embedding-2-preview">;
-    "openai-3-small": ModelDefinition<"text-embedding-3-small">;
-    "openai-3-large": ModelDefinition<"text-embedding-3-large">;
+    "gemini-embedding-2": ModelDefinition<"gemini-embedding-2-preview">;
+    "text-embedding-3-small": ModelDefinition<"text-embedding-3-small">;
+    "text-embedding-3-large": ModelDefinition<"text-embedding-3-large">;
     "cohere-embed-v4": ModelDefinition<"embed-v-4-0">;
     "qwen3-embedding-8b": ModelDefinition<"accounts/fireworks/models/qwen3-embedding-8b">;
 };
@@ -14,14 +14,17 @@ export type EmbeddingServiceId = keyof EmbeddingModelDefinitions;
 export type EmbeddingModelId =
     EmbeddingModelDefinitions[EmbeddingServiceId]["modelId"];
 
-export const DEFAULT_EMBEDDING_MODEL: EmbeddingServiceId = "openai-3-small";
+export const DEFAULT_EMBEDDING_MODEL: EmbeddingServiceId =
+    "text-embedding-3-small";
 
 export const EMBEDDING_SERVICES: EmbeddingModelDefinitions = {
-    "gemini-2": {
-        aliases: ["embedding"],
+    "gemini-embedding-2": {
+        aliases: ["gemini-2", "embedding"],
         modelId: "gemini-embedding-2-preview",
         provider: "google",
         brand: "Google",
+        family: "gemini-embedding",
+        version: "2",
         category: "embedding",
         addedDate: new Date("2026-05-08").getTime(),
         paidOnly: true,
@@ -39,11 +42,13 @@ export const EMBEDDING_SERVICES: EmbeddingModelDefinitions = {
         outputModalities: ["embedding"],
         contextLength: 8192,
     },
-    "openai-3-small": {
-        aliases: ["embedding-small"],
+    "text-embedding-3-small": {
+        aliases: ["openai-3-small", "embedding-small"],
         modelId: "text-embedding-3-small",
         provider: "openai",
         brand: "OpenAI",
+        family: "text-embedding",
+        version: "3",
         category: "embedding",
         addedDate: new Date("2026-05-08").getTime(),
         priceMultiplier: 1,
@@ -57,11 +62,13 @@ export const EMBEDDING_SERVICES: EmbeddingModelDefinitions = {
         outputModalities: ["embedding"],
         contextLength: 8192,
     },
-    "openai-3-large": {
-        aliases: ["embedding-large"],
+    "text-embedding-3-large": {
+        aliases: ["openai-3-large", "embedding-large"],
         modelId: "text-embedding-3-large",
         provider: "openai",
         brand: "OpenAI",
+        family: "text-embedding",
+        version: "3",
         category: "embedding",
         addedDate: new Date("2026-05-08").getTime(),
         priceMultiplier: 1,
@@ -80,6 +87,8 @@ export const EMBEDDING_SERVICES: EmbeddingModelDefinitions = {
         modelId: "embed-v-4-0",
         provider: "azure",
         brand: "Cohere",
+        family: "cohere-embed",
+        version: "4",
         category: "embedding",
         addedDate: new Date("2026-05-26").getTime(),
         priceMultiplier: 0.75,
@@ -100,6 +109,8 @@ export const EMBEDDING_SERVICES: EmbeddingModelDefinitions = {
         modelId: "accounts/fireworks/models/qwen3-embedding-8b",
         provider: "fireworks",
         brand: "Qwen",
+        family: "qwen-embedding",
+        version: "3",
         category: "embedding",
         addedDate: new Date("2026-05-26").getTime(),
         priceMultiplier: 1,

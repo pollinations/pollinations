@@ -11,6 +11,8 @@ export const REALTIME_SERVICES = {
         modelId: DEFAULT_REALTIME_MODEL,
         provider: "azure",
         brand: "OpenAI",
+        family: "gpt-realtime",
+        version: "2",
         category: "realtime",
         addedDate: new Date("2026-05-23").getTime(),
         priceMultiplier: 1,

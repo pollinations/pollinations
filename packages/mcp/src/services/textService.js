@@ -259,7 +259,7 @@ async function listTextModels(_params) {
         const audioModels = models.filter(
             (m) =>
                 m.output_modalities?.includes("audio") ||
-                m.name === "openai-audio",
+                m.name === "gpt-audio-mini",
         );
         const visionModels = models.filter(
             (m) => m.input_modalities?.includes("image") || m.vision,

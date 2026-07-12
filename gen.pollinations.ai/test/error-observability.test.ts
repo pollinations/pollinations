@@ -24,9 +24,9 @@ function createTestApp() {
     app.post("/v1/chat/completions", async (c) => {
         await c.req.json();
         c.set("model", {
-            requested: "openai",
-            resolved: "openai",
-            definition: getRegistryModelDefinition("openai"),
+            requested: "gpt-5.4-nano",
+            resolved: "gpt-5.4-nano",
+            definition: getRegistryModelDefinition("gpt-5.4-nano"),
         });
         throw new UpstreamError(502, {
             message:
@@ -57,7 +57,7 @@ describe("error observability", () => {
                 method: "POST",
                 headers: { "content-type": "application/json" },
                 body: JSON.stringify({
-                    model: "openai",
+                    model: "gpt-5.4-nano",
                     stream: true,
                     messages: [
                         {
@@ -142,15 +142,15 @@ describe("error observability", () => {
             upstream_host: "portkey.test",
             upstream_status: 200,
             upstream_body: "application/json",
-            model_requested: "openai",
-            resolved_model_requested: "openai",
+            model_requested: "gpt-5.4-nano",
+            resolved_model_requested: "gpt-5.4-nano",
             request_inputs: expect.any(String),
         });
         expect(
             JSON.parse(tinybirdPayload.request_inputs as string),
         ).toMatchObject({
             body: {
-                model: "openai",
+                model: "gpt-5.4-nano",
                 stream: true,
                 messages: [
                     {
@@ -423,7 +423,7 @@ describe("error observability", () => {
                 method: "POST",
                 headers: { "content-type": "application/json" },
                 body: JSON.stringify({
-                    model: "openai-fast",
+                    model: "gpt-5-nano",
                     messages: [{ role: "user", content: "test" }],
                 }),
             }),
@@ -478,7 +478,7 @@ describe("error observability", () => {
                 method: "POST",
                 headers: { "content-type": "application/json" },
                 body: JSON.stringify({
-                    model: "nova",
+                    model: "nova-2-lite",
                     messages: [
                         {
                             role: "user",

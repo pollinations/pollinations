@@ -17,7 +17,7 @@ export const log = debug("pollinations:portkey");
 
 const clientConfig = {
     defaultOptions: {
-        model: "openai-fast",
+        model: "gpt-5-nano",
         jsonMode: false,
     },
 };

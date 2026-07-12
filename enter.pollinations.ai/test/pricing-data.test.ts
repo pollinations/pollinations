@@ -367,12 +367,12 @@ test("Gemini grounding cost is added by family billing rules", () => {
     };
 
     const geminiSearchCost = calculateCost(
-        "gemini-search",
+        "gemini-2.5-flash-lite-search",
         usage,
         groundedOutput,
     );
     const geminiSearchPrice = calculatePrice(
-        "gemini-search",
+        "gemini-2.5-flash-lite-search",
         usage,
         groundedOutput,
     );
@@ -382,17 +382,17 @@ test("Gemini grounding cost is added by family billing rules", () => {
         groundedOutput,
     );
     const geminiSearchFastCost = calculateCost(
-        "gemini-search-fast",
+        "gemini-3.1-flash-lite-search",
         usage,
         groundedOutput,
     );
     const geminiSearchLargeCost = calculateCost(
-        "gemini-search-large",
+        "gemini-3.5-flash-search",
         usage,
         groundedOutput,
     );
     const ungroundedGeminiSearchFastCost = calculateCost(
-        "gemini-search-fast",
+        "gemini-3.1-flash-lite-search",
         usage,
         { choices: [] },
     );
@@ -414,10 +414,10 @@ test("Gemini grounding cost is added by family billing rules", () => {
 // object is absent so a future re-exposure is a deliberate, tested change.
 test("Gemini billing internals are not exposed in public model catalog", () => {
     const geminiSearchFast = getTextModelsInfo().find(
-        (model) => model.name === "gemini-search-fast",
+        (model) => model.name === "gemini-3.1-flash-lite-search",
     );
     const geminiLarge = getTextModelsInfo().find(
-        (model) => model.name === "gemini-large",
+        (model) => model.name === "gemini-3.1-pro",
     );
 
     expect(geminiSearchFast).toBeDefined();
@@ -432,10 +432,10 @@ test("Perplexity request search fees are added by declarative billing rules", ()
         completionTextTokens: 1_000_000,
     };
     const cases = [
-        ["perplexity-fast", 2.005],
-        ["perplexity-deep", 2.012],
-        ["perplexity", 18.014],
-        ["perplexity-reasoning", 10.014],
+        ["sonar", 2.005],
+        ["sonar-deep", 2.012],
+        ["sonar-pro", 18.014],
+        ["sonar-reasoning-pro", 10.014],
     ] as const;
 
     for (const [model, total] of cases) {
@@ -475,15 +475,17 @@ test("Perplexity request search fee prefers provider-reported request cost", () 
         ],
     };
 
+    expect(calculateCost("sonar", usage, responseOutput).totalCost).toBeCloseTo(
+        2.006,
+        8,
+    );
     expect(
-        calculateCost("perplexity-fast", usage, responseOutput).totalCost,
+        calculatePrice("sonar", usage, responseOutput).totalPrice,
     ).toBeCloseTo(2.006, 8);
-    expect(
-        calculatePrice("perplexity-fast", usage, responseOutput).totalPrice,
-    ).toBeCloseTo(2.006, 8);
-    expect(
-        calculateCost("perplexity-fast", usage, streamOutput).totalCost,
-    ).toBeCloseTo(2.012, 8);
+    expect(calculateCost("sonar", usage, streamOutput).totalCost).toBeCloseTo(
+        2.012,
+        8,
+    );
 });
 
 test("Perplexity provider-reported request cost clamps-and-alerts, never throws", () => {
@@ -498,31 +500,32 @@ test("Perplexity provider-reported request cost clamps-and-alerts, never throws"
     const malformed = [-0.5, Number.NaN, "0.005", null, { nested: true }];
     for (const requestCost of malformed) {
         const output = { usage: { cost: { request_cost: requestCost } } };
-        expect(
-            calculateCost("perplexity-fast", usage, output).totalCost,
-        ).toBeCloseTo(2.005, 8);
-        expect(
-            calculatePrice("perplexity-fast", usage, output).totalPrice,
-        ).toBeCloseTo(2.005, 8);
+        expect(calculateCost("sonar", usage, output).totalCost).toBeCloseTo(
+            2.005,
+            8,
+        );
+        expect(calculatePrice("sonar", usage, output).totalPrice).toBeCloseTo(
+            2.005,
+            8,
+        );
     }
 
     // A finite non-negative value within 10× the static fee is billed verbatim.
     const reasonable = { usage: { cost: { request_cost: 0.04 } } };
-    expect(
-        calculateCost("perplexity-fast", usage, reasonable).totalCost,
-    ).toBeCloseTo(2.04, 8);
+    expect(calculateCost("sonar", usage, reasonable).totalCost).toBeCloseTo(
+        2.04,
+        8,
+    );
 
     // A value above 10× the static fee is clamped down to the static fee.
     const runaway = { usage: { cost: { request_cost: 9.99 } } };
-    expect(
-        calculateCost("perplexity-fast", usage, runaway).totalCost,
-    ).toBeCloseTo(2.005, 8);
-
-    // Absent cost data falls back to the static registry fee.
-    expect(calculateCost("perplexity-fast", usage, {}).totalCost).toBeCloseTo(
+    expect(calculateCost("sonar", usage, runaway).totalCost).toBeCloseTo(
         2.005,
         8,
     );
+
+    // Absent cost data falls back to the static registry fee.
+    expect(calculateCost("sonar", usage, {}).totalCost).toBeCloseTo(2.005, 8);
 });
 
 test("Gemini grounding is detected on streamed chunk output", () => {
@@ -551,13 +554,16 @@ test("Gemini grounding is detected on streamed chunk output", () => {
     // Same totals as the non-stream fixtures: grounding billed once per
     // prompt for Gemini 2.5, per unique query for Gemini 3.x.
     expect(
-        calculateCost("gemini-search", usage, streamOutput).totalCost,
+        calculateCost("gemini-2.5-flash-lite-search", usage, streamOutput)
+            .totalCost,
     ).toBeCloseTo(0.535, 8);
     expect(
-        calculatePrice("gemini-search", usage, streamOutput).totalPrice,
+        calculatePrice("gemini-2.5-flash-lite-search", usage, streamOutput)
+            .totalPrice,
     ).toBeCloseTo(0.535, 8);
     expect(
-        calculateCost("gemini-search-fast", usage, streamOutput).totalCost,
+        calculateCost("gemini-3.1-flash-lite-search", usage, streamOutput)
+            .totalCost,
     ).toBeCloseTo(1.778, 8);
 });
 
@@ -565,19 +571,11 @@ test("Gemini grounding is detected on streamed chunk output", () => {
 // NOT surfaced in the public /models schema. Assert both facts.
 test("Perplexity billing rules carry per-tier request fees privately only", () => {
     const perplexityFees = [
-        ["perplexity-fast", "perplexity.sonar_low.search_request.v1", 5 / 1000],
+        ["sonar", "perplexity.sonar_low.search_request.v1", 5 / 1000],
+        ["sonar-deep", "perplexity.sonar_high.search_request.v1", 12 / 1000],
+        ["sonar-pro", "perplexity.sonar_pro_high.search_request.v1", 14 / 1000],
         [
-            "perplexity-deep",
-            "perplexity.sonar_high.search_request.v1",
-            12 / 1000,
-        ],
-        [
-            "perplexity",
-            "perplexity.sonar_pro_high.search_request.v1",
-            14 / 1000,
-        ],
-        [
-            "perplexity-reasoning",
+            "sonar-reasoning-pro",
             "perplexity.sonar_reasoning_high.search_request.v1",
             14 / 1000,
         ],
@@ -623,7 +621,8 @@ test("Gemini 2.5 grounded prompt is billed on web chunks even without queries", 
         ],
     };
     expect(
-        calculateCost("gemini-search", usage, chunksOnly).totalCost,
+        calculateCost("gemini-2.5-flash-lite-search", usage, chunksOnly)
+            .totalCost,
     ).toBeCloseTo(0.535, 8);
 
     // groundingSupports alone (no queries, no web chunks) is NOT billable
@@ -639,7 +638,8 @@ test("Gemini 2.5 grounded prompt is billed on web chunks even without queries", 
         ],
     };
     expect(
-        calculateCost("gemini-search", usage, supportsOnly).totalCost,
+        calculateCost("gemini-2.5-flash-lite-search", usage, supportsOnly)
+            .totalCost,
     ).toBeCloseTo(0.5, 8);
 });
 
@@ -672,13 +672,16 @@ test("Gemini 2.5 retrievalQueries-only response is not billed as grounded", () =
     const noGrounding = { choices: [{ groundingMetadata: {} }] };
 
     expect(
-        calculateCost("gemini-search", usage, retrievalOnly).totalCost,
+        calculateCost("gemini-2.5-flash-lite-search", usage, retrievalOnly)
+            .totalCost,
     ).toBeCloseTo(0.5, 8);
     expect(
-        calculateCost("gemini-search", usage, malformedWebChunk).totalCost,
+        calculateCost("gemini-2.5-flash-lite-search", usage, malformedWebChunk)
+            .totalCost,
     ).toBeCloseTo(0.5, 8);
     expect(
-        calculateCost("gemini-search", usage, noGrounding).totalCost,
+        calculateCost("gemini-2.5-flash-lite-search", usage, noGrounding)
+            .totalCost,
     ).toBeCloseTo(0.5, 8);
 });
 
@@ -770,7 +773,8 @@ test("Gemini counters never throw on malformed provider metadata", () => {
             calculateCost("gemini-3-flash", usage, output).totalCost,
         ).toBeCloseTo(3.5, 8);
         expect(
-            calculateCost("gemini-search", usage, output).totalCost,
+            calculateCost("gemini-2.5-flash-lite-search", usage, output)
+                .totalCost,
         ).toBeCloseTo(0.5, 8);
     }
 });
@@ -781,13 +785,13 @@ test("vertex gemini models price cache writes at the standard input rate", () =>
     // created prefix as cache_creation_input_tokens → promptCacheWriteTokens.
     const models = [
         "gemini-3-flash",
-        "gemini",
-        "gemini-flash-lite-3.1",
-        "gemini-fast",
-        "gemini-large",
-        "gemini-search",
-        "gemini-search-fast",
-        "gemini-search-large",
+        "gemini-3.5-flash",
+        "gemini-3.1-flash-lite",
+        "gemini-2.5-flash-lite",
+        "gemini-3.1-pro",
+        "gemini-2.5-flash-lite-search",
+        "gemini-3.1-flash-lite-search",
+        "gemini-3.5-flash-search",
     ] as const;
     for (const model of models) {
         // getRegistryModelDefinition throws on unknown names, so a renamed
@@ -804,7 +808,7 @@ test("vertex gemini models price cache writes at the standard input rate", () =>
 test("bedrock nova models price cache writes free and reads at 25% of input", () => {
     // AWS Price List API (verified 2026-07-05): Nova cache writes are a $0
     // SKU; cache reads bill at 25% of the standard input rate.
-    for (const model of ["nova", "nova-fast"] as const) {
+    for (const model of ["nova-2-lite", "nova-micro"] as const) {
         const cost = getRegistryModelDefinition(model).cost;
         expect(cost.promptCacheWriteTokens).toBe(0);
         expect(cost.promptCachedTokens).toBeCloseTo(
@@ -817,7 +821,7 @@ test("bedrock nova models price cache writes free and reads at 25% of input", ()
 test("vertex cache storage adjustment bills cache-creating requests", () => {
     // Flash-family storage: $1.00 / 1M token-hours, 1-hour TTL per create.
     const created = calculateBillingAdjustments(
-        getRegistryModelDefinition("gemini-fast"),
+        getRegistryModelDefinition("gemini-2.5-flash-lite"),
         { usage: { cache_creation_input_tokens: 1_000_000 } },
     );
     expect(created).toEqual([
@@ -834,7 +838,7 @@ test("vertex cache storage adjustment bills cache-creating requests", () => {
 
     // Stream responses carry usage on the final chunk.
     const streamed = calculateBillingAdjustments(
-        getRegistryModelDefinition("gemini-fast"),
+        getRegistryModelDefinition("gemini-2.5-flash-lite"),
         {
             streamEvents: [
                 { choices: [{}] },
@@ -848,7 +852,7 @@ test("vertex cache storage adjustment bills cache-creating requests", () => {
 
     // Pro-family storage is $4.50 / 1M token-hours.
     const pro = calculateBillingAdjustments(
-        getRegistryModelDefinition("gemini-large"),
+        getRegistryModelDefinition("gemini-3.1-pro"),
         { usage: { cache_creation_input_tokens: 1_000_000 } },
     );
     const proStorage = pro.find((a) => a.kind === "cache_storage");
@@ -856,7 +860,7 @@ test("vertex cache storage adjustment bills cache-creating requests", () => {
 
     // Search variants share the same Vertex routes and flash-family storage.
     const search = calculateBillingAdjustments(
-        getRegistryModelDefinition("gemini-search"),
+        getRegistryModelDefinition("gemini-2.5-flash-lite-search"),
         { usage: { cache_creation_input_tokens: 1_000_000 } },
     );
     expect(search.find((a) => a.kind === "cache_storage")?.cost).toBeCloseTo(
@@ -866,16 +870,19 @@ test("vertex cache storage adjustment bills cache-creating requests", () => {
 
     // Cache HITS report cached_tokens, not creation tokens → no storage fee.
     expect(
-        calculateBillingAdjustments(getRegistryModelDefinition("gemini-fast"), {
-            usage: { prompt_tokens_details: { cached_tokens: 21500 } },
-        }),
+        calculateBillingAdjustments(
+            getRegistryModelDefinition("gemini-2.5-flash-lite"),
+            {
+                usage: { prompt_tokens_details: { cached_tokens: 21500 } },
+            },
+        ),
     ).toEqual([]);
 
     // Malformed values never bill or throw.
     for (const bad of [-5, "21500", null, true, {}]) {
         expect(
             calculateBillingAdjustments(
-                getRegistryModelDefinition("gemini-fast"),
+                getRegistryModelDefinition("gemini-2.5-flash-lite"),
                 { usage: { cache_creation_input_tokens: bad } },
             ),
         ).toEqual([]);
@@ -908,7 +915,7 @@ test("calculateBillingAdjustments returns per-rule breakdown entries", () => {
     ]);
 
     const gemini25 = calculateBillingAdjustments(
-        getRegistryModelDefinition("gemini-search"),
+        getRegistryModelDefinition("gemini-2.5-flash-lite-search"),
         {
             choices: [
                 {
@@ -935,7 +942,7 @@ test("calculateBillingAdjustments returns per-rule breakdown entries", () => {
 
     // Perplexity: request fee prefers provider-reported cost when present.
     const perplexity = calculateBillingAdjustments(
-        getRegistryModelDefinition("perplexity-fast"),
+        getRegistryModelDefinition("sonar"),
         { usage: { cost: { request_cost: 0.006 } } },
     );
     expect(perplexity).toEqual([
@@ -953,7 +960,7 @@ test("calculateBillingAdjustments returns per-rule breakdown entries", () => {
     // No grounding evidence → no adjustment entries.
     expect(
         calculateBillingAdjustments(
-            getRegistryModelDefinition("gemini-search"),
+            getRegistryModelDefinition("gemini-2.5-flash-lite-search"),
             {
                 choices: [],
             },

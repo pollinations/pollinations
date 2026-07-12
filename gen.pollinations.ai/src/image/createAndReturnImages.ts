@@ -308,14 +308,14 @@ interface GPTImageConfig {
 const AZURE_API_VERSION = "2025-04-01-preview";
 
 const GPTIMAGE_CONFIGS: Record<string, GPTImageConfig> = {
-    gptimage: {
+    "gpt-image-1-mini": {
         provider: "azure",
         baseUrl:
             "https://myceli-prod-img-westus3.cognitiveservices.azure.com/openai/deployments/gpt-image-1-mini",
         modelName: "gpt-image-1-mini",
         apiKeyEnv: "AZURE_MYCELI_PROD_IMG_WESTUS3_API_KEY",
     },
-    "gptimage-large": {
+    "gpt-image-1.5": {
         provider: "azure",
         baseUrl:
             "https://myceli-prod-img-westus3.cognitiveservices.azure.com/openai/deployments/gpt-image-1.5",
@@ -334,7 +334,7 @@ const callGPTImageWithEndpoint = async (
     prompt: string,
     safeParams: ImageParams,
     userInfo: AuthResult,
-    config: GPTImageConfig = GPTIMAGE_CONFIGS.gptimage,
+    config: GPTImageConfig = GPTIMAGE_CONFIGS["gpt-image-1-mini"],
 ): Promise<ImageGenerationResult> => {
     const apiKey = getImageEnv(config.apiKeyEnv);
 
@@ -399,7 +399,7 @@ const callGPTImageWithEndpoint = async (
     // Use requested quality - access control runs in this worker's auth/balance middleware
     const quality = safeParams.quality === "hd" ? "high" : safeParams.quality;
 
-    // Set output format to png if model is gptimage, otherwise jpeg
+    // Set output format to png if model is a GPT Image model, otherwise jpeg
     const outputFormat = "png";
     // Build request body. OpenAI's direct API requires model in body; Azure
     // routes by deployment name in the URL path so model is implicit there.
@@ -413,10 +413,10 @@ const callGPTImageWithEndpoint = async (
         background: safeParams.transparent ? "transparent" : undefined,
     };
 
-    // Add background parameter for transparent images when using gptimage model
+    // Add background parameter for transparent images when using a GPT Image model
     if (safeParams.transparent) {
         logCloudflare(
-            "Adding background=transparent parameter for gptimage model",
+            "Adding background=transparent parameter for GPT Image model",
         );
     }
 
@@ -525,11 +525,11 @@ const callGPTImageWithEndpoint = async (
         formData.append("quality", quality);
         formData.append("n", "1");
 
-        // Add background parameter for transparent images when using gptimage model
+        // Add background parameter for transparent images when using a GPT Image model
         if (safeParams.transparent) {
             formData.append("background", "transparent");
             logCloudflare(
-                "Adding background=transparent parameter for gptimage edit mode",
+                "Adding background=transparent parameter for GPT Image edit mode",
             );
         }
 
@@ -610,9 +610,10 @@ export const callGPTImage = async (
     prompt: string,
     safeParams: ImageParams,
     userInfo: AuthResult,
-    model: string = "gptimage",
+    model: string = "gpt-image-1-mini",
 ): Promise<ImageGenerationResult> => {
-    const config = GPTIMAGE_CONFIGS[model] || GPTIMAGE_CONFIGS.gptimage;
+    const config =
+        GPTIMAGE_CONFIGS[model] || GPTIMAGE_CONFIGS["gpt-image-1-mini"];
     try {
         return await callGPTImageWithEndpoint(
             prompt,
@@ -644,8 +645,8 @@ const generateImage = async (
     userInfo: AuthResult,
 ): Promise<ImageGenerationResult> => {
     switch (safeParams.model) {
-        case "gptimage":
-        case "gptimage-large":
+        case "gpt-image-1-mini":
+        case "gpt-image-1.5":
         case "gpt-image-2": {
             const gptConfig = GPTIMAGE_CONFIGS[safeParams.model];
             logError(
@@ -696,7 +697,7 @@ const generateImage = async (
             }
         }
 
-        case "kontext": {
+        case "flux-kontext": {
             try {
                 return await callAzureFluxKontext(prompt, safeParams, userInfo);
             } catch (error) {
@@ -709,16 +710,16 @@ const generateImage = async (
             }
         }
 
-        case "seedream5":
+        case "seedream-5-lite":
             return await callSeedream5API(prompt, safeParams);
 
-        case "seedream5-pro":
+        case "seedream-5-pro":
             return await callSeedream5ProAPI(prompt, safeParams);
 
-        case "seedream":
+        case "seedream-4":
             return await callSeedreamAPI(prompt, safeParams);
 
-        case "seedream-pro":
+        case "seedream-4.5-pro":
             return await callSeedreamProAPI(prompt, safeParams);
 
         case "ideogram-v4-turbo":
@@ -730,7 +731,7 @@ const generateImage = async (
         case "ideogram-v4-quality":
             return await callIdeogramQualityAPI(prompt, safeParams);
 
-        case "klein":
+        case "flux-klein":
             return await callFluxKleinAPI(prompt, safeParams);
 
         case "p-image":
@@ -756,20 +757,20 @@ const generateImage = async (
         case "nova-canvas":
             return await callNovaCanvasAPI(prompt, safeParams);
 
-        case "wan-image":
+        case "wan-2.7-image":
             return await callWanImageAPI(prompt, safeParams, false);
 
-        case "wan-image-pro":
+        case "wan-2.7-image-pro":
             return await callWanImageAPI(prompt, safeParams, true);
 
-        case "qwen-image":
+        case "qwen-image-plus":
             return await callQwenImageAPI(prompt, safeParams);
 
-        case "flux":
+        case "flux-schnell":
             return await callFluxWithFallback(prompt, safeParams);
 
         default:
-            // zimage is the only model that reaches the default branch
+            // z-image-turbo is the only model that reaches the default branch
             // (the model enum is closed and every other model is dispatched above)
             return await callSelfHostedServer(prompt, safeParams);
     }

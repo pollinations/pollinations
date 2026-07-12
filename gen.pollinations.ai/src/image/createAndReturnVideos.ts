@@ -40,7 +40,7 @@ export async function createAndReturnVideo(
 
     let result: VideoGenerationResult;
     switch (safeParams.model) {
-        case "veo":
+        case "veo-3.1-fast":
             result = await callVeoAPI(prompt, safeParams);
             break;
         case "seedance-pro":
@@ -49,19 +49,19 @@ export async function createAndReturnVideo(
         case "seedance-2.0":
             result = await callSeedanceV2API(prompt, safeParams);
             break;
-        case "wan":
+        case "wan-2.6":
             result = await callWanAPI(prompt, safeParams);
             break;
-        case "wan-fast":
+        case "wan-2.2":
             result = await callWanFastAPI(prompt, safeParams);
             break;
-        case "wan-pro":
+        case "wan-2.7":
             result = await callWanProAPI(prompt, safeParams);
             break;
-        case "wan-pro-1080p":
+        case "wan-2.7-1080p":
             result = await callWanPro1080pAPI(prompt, safeParams);
             break;
-        case "ltx-2":
+        case "ltx-2.3":
             result = await callLtx2API(prompt, safeParams);
             break;
         case "p-video-720p":

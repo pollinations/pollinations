@@ -40,6 +40,8 @@ export const ModelInfoSchema = z.object({
         "realtime",
     ]),
     brand: z.string(),
+    family: z.string(),
+    version: z.string().optional(),
     community: z.boolean().optional(),
     pricing: z
         .record(z.string(), z.string())
@@ -110,6 +112,8 @@ export function modelInfoFromDefinition(
         aliases: service.aliases,
         category: service.category,
         brand: service.brand,
+        family: service.family,
+        version: service.version,
         community: options.community || undefined,
         pricing: pricingInfoFromDefinition(getPriceDefinitionForModel(service)),
         // User-facing metadata from service definition

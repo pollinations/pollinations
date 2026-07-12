@@ -15,10 +15,10 @@ import { MAX_EMBEDDING_BATCH_SIZE } from "../../src/embeddings/limits.ts";
 import worker from "../../src/index.ts";
 import googleCloudAuth from "../../src/text/auth/googleCloudAuth.ts";
 
-const TEST_EMBEDDING_MODEL = "gemini-2";
+const TEST_EMBEDDING_MODEL = "gemini-embedding-2";
 const TEST_PROVIDER_MODEL = "gemini-embedding-2-preview";
-const TEST_OPENAI_SMALL_MODEL = "openai-3-small";
-const TEST_OPENAI_LARGE_MODEL = "openai-3-large";
+const TEST_OPENAI_SMALL_MODEL = "text-embedding-3-small";
+const TEST_OPENAI_LARGE_MODEL = "text-embedding-3-large";
 const TEST_OPENAI_SMALL_PROVIDER_MODEL = "text-embedding-3-small";
 const TEST_OPENAI_LARGE_PROVIDER_MODEL = "text-embedding-3-large";
 const TEST_COHERE_MODEL = "cohere-embed-v4";
@@ -790,7 +790,7 @@ describe("POST /v1/embeddings", () => {
                 "content-type": "application/json",
                 authorization: `Bearer ${apiKey}`,
             },
-            body: buildEmbeddingsBody({ model: "flux" }),
+            body: buildEmbeddingsBody({ model: "flux-schnell" }),
         });
         const body = await response.text();
 

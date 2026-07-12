@@ -56,7 +56,7 @@ client = OpenAI(
 )
 
 response = client.chat.completions.create(
-    model="openai",
+    model="gpt-5.4-nano",
     messages=[{"role": "user", "content": "Summarise the theory of relativity in one sentence."}],
 )
 print(response.choices[0].message.content)
@@ -79,7 +79,7 @@ const response = await client.chat.completions.create({
 console.log(response.choices[0].message.content);
 ```
 
-Model IDs come from `GET /v1/models`. Anything `openai`, `claude`, `mistral`, `deepseek`, etc. routes to the corresponding provider on our side — you don't need separate keys per provider.
+Model IDs come from `GET /v1/models`. Anything `gpt-5.4-nano`, `claude-sonnet-4.6`, `mistral-small-4`, `deepseek-v4-flash`, etc. routes to the corresponding provider on our side — you don't need separate keys per provider.
 
 ## 🌊 Streaming chat completions
 
@@ -91,7 +91,7 @@ Set `stream: true` to receive Server-Sent Events (SSE) deltas as the model write
 curl -N "https://gen.pollinations.ai/v1/chat/completions" \
   -H "Authorization: Bearer $POLLINATIONS_KEY" \
   -H "Content-Type: application/json" \
-  -d '{"model":"openai","stream":true,"messages":[{"role":"user","content":"Count to five, one word per line."}]}'
+  -d '{"model":"gpt-5.4-nano","stream":true,"messages":[{"role":"user","content":"Count to five, one word per line."}]}'
 ```
 
 `-N` disables curl's output buffering so deltas appear as they arrive. Each event is a line of the form `data: {…}` terminated by `data: [DONE]`.
@@ -100,7 +100,7 @@ curl -N "https://gen.pollinations.ai/v1/chat/completions" \
 
 ```python
 stream = client.chat.completions.create(
-    model="openai",
+    model="gpt-5.4-nano",
     stream=True,
     messages=[{"role": "user", "content": "Count to five, one word per line."}],
 )
@@ -114,14 +114,14 @@ When `stream: true` is set, usage info still arrives on the final chunk (`stream
 
 ## 🖼️ Vision: passing images into chat
 
-Models that accept image input (`openai`, `claude`, `gemini`, …) use the standard OpenAI multimodal `content` shape — an array of typed parts instead of a plain string.
+Models that accept image input (`gpt-5.4-nano`, `claude-sonnet-4.6`, `gemini-3.5-flash`, …) use the standard OpenAI multimodal `content` shape — an array of typed parts instead of a plain string.
 
 ```bash
 curl "https://gen.pollinations.ai/v1/chat/completions" \
   -H "Authorization: Bearer $POLLINATIONS_KEY" \
   -H "Content-Type: application/json" \
   -d '{
-    "model": "openai",
+    "model": "gpt-5.4-nano",
     "messages": [{
       "role": "user",
       "content": [
@@ -146,7 +146,7 @@ Three endpoints accept `multipart/form-data` request bodies. Each has its own fi
 curl -X POST "https://gen.pollinations.ai/v1/audio/transcriptions" \
   -H "Authorization: Bearer $POLLINATIONS_KEY" \
   -F "file=@./recording.mp3" \
-  -F "model=openai-audio" \
+  -F "model=gpt-audio-mini" \
   -F "response_format=verbose_json" \
   -F "temperature=0"
 ```
@@ -160,11 +160,11 @@ curl -X POST "https://gen.pollinations.ai/v1/images/edits" \
   -H "Authorization: Bearer $POLLINATIONS_KEY" \
   -F "image=@./photo.png" \
   -F "prompt=replace the sky with a sunset" \
-  -F "model=kontext" \
+  -F "model=flux-kontext" \
   -F "size=1024x1024"
 ```
 
-Repeat `-F "image=@…"` to pass multiple reference images on models that accept them (`seedream`, `nanobanana`, `klein`).
+Repeat `-F "image=@…"` to pass multiple reference images on models that accept them (`seedream-4`, `nanobanana`, `flux-klein`).
 
 **Upload arbitrary media** to the content-addressed store. Returns a `https://media.pollinations.ai/<hash>` URL you can pass anywhere a remote image, audio, or video URL is accepted.
 

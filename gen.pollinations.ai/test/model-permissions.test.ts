@@ -1,5 +1,6 @@
 import { SELF } from "cloudflare:test";
 import { getAudioModelsInfo } from "@shared/registry/model-info.ts";
+import { resolveModelName } from "@shared/registry/registry.ts";
 import {
     RESTRICTED_IMAGE_TEST_MODEL,
     RESTRICTED_TEST_MODELS,
@@ -24,11 +25,14 @@ test("filters OpenAI-compatible model list by API key permissions", async ({
         data: { id: string }[];
     };
     const modelIds = body.data.map((model) => model.id);
-    const allowedModels = new Set<string>(RESTRICTED_TEST_MODELS);
+    // Key permissions store aliases; the list reports canonical names.
+    const allowedModels = new Set<string>(
+        RESTRICTED_TEST_MODELS.map(resolveModelName),
+    );
 
     expect(modelIds.length).toBeGreaterThan(0);
     expect(modelIds.every((modelId) => allowedModels.has(modelId))).toBe(true);
-    expect(modelIds).toContain(RESTRICTED_TEXT_TEST_MODEL);
+    expect(modelIds).toContain(resolveModelName(RESTRICTED_TEXT_TEST_MODEL));
 });
 
 test("filters image model list by API key permissions", async ({
@@ -41,13 +45,16 @@ test("filters image model list by API key permissions", async ({
     expect(response.status).toBe(200);
     const body = (await response.json()) as { name: string }[];
     const modelNames = body.map((model) => model.name);
-    const allowedModels = new Set<string>(RESTRICTED_TEST_MODELS);
+    // Key permissions store aliases; the list reports canonical names.
+    const allowedModels = new Set<string>(
+        RESTRICTED_TEST_MODELS.map(resolveModelName),
+    );
 
     expect(modelNames.length).toBeGreaterThan(0);
     expect(modelNames.every((modelName) => allowedModels.has(modelName))).toBe(
         true,
     );
-    expect(modelNames).toContain(RESTRICTED_IMAGE_TEST_MODEL);
+    expect(modelNames).toContain(resolveModelName(RESTRICTED_IMAGE_TEST_MODEL));
 });
 
 test("filters paid-only audio models by paid balance", async ({

@@ -34,11 +34,11 @@ interface ModelDefinition {
 
 const models: ModelDefinition[] = [
     {
-        name: "openai",
+        name: "gpt-5.4-nano",
         config: portkeyConfig["gpt-5.4-nano"],
     },
     {
-        name: "openai-fast",
+        name: "gpt-5-nano",
         config: portkeyConfig["gpt-5-nano-2025-08-07"],
     },
     {
@@ -50,7 +50,7 @@ const models: ModelDefinition[] = [
         config: portkeyConfig["gpt-5.4-mini"],
     },
     {
-        name: "openai-large",
+        name: "gpt-5.5",
         config: portkeyConfig["gpt-5.5"],
     },
     {
@@ -66,12 +66,12 @@ const models: ModelDefinition[] = [
         config: portkeyConfig["gpt-5.6-luna"],
     },
     {
-        name: "mercury",
+        name: "mercury-2",
         config: portkeyConfig["mercury-2"],
         transform: stripReasoning,
     },
     {
-        name: "qwen-coder",
+        name: "qwen3-coder",
         config: portkeyConfig["qwen3-coder-30b-a3b-instruct"],
         // OVHcloud Qwen3-Coder 400s on reasoning_effort (no reasoning mode).
         transform: pipe(
@@ -80,23 +80,23 @@ const models: ModelDefinition[] = [
         ),
     },
     {
-        name: "qwen-coder-large",
+        name: "qwen3-coder-next",
         config: portkeyConfig["qwen/qwen3-coder-next"],
         transform: createSystemPromptTransform(BASE_PROMPTS.coding),
     },
     {
-        name: "qwen-large",
+        name: "qwen3.7-plus",
         config: portkeyConfig["accounts/fireworks/models/qwen3p7-plus"],
         transform: fireworksThinking,
     },
     {
-        name: "qwen-vision",
+        name: "qwen3-vl-30b",
         config: portkeyConfig["qwen/qwen3-vl-30b-a3b-instruct"],
         // Vision model, no reasoning mode.
         transform: stripReasoning,
     },
     {
-        name: "qwen-vision-pro",
+        name: "qwen3-vl-235b",
         config: portkeyConfig["qwen/qwen3-vl-235b-a22b-thinking"],
         // Reasoning mandatory: rejects "none" but accepts low/medium/high.
         transform: mandatoryReasoning,
@@ -107,7 +107,7 @@ const models: ModelDefinition[] = [
         transform: mandatoryReasoning,
     },
     {
-        name: "step-flash",
+        name: "step-3.7-flash",
         config: portkeyConfig["stepfun/step-3.7-flash"],
         transform: mandatoryReasoning,
     },
@@ -118,58 +118,58 @@ const models: ModelDefinition[] = [
         transform: pipe(stripCacheControl, stripReasoning),
     },
     {
-        name: "mistral",
+        name: "mistral-small-4",
         config: portkeyConfig["mistral-small-2603"],
         transform: stripCacheControl,
     },
     {
-        name: "deepseek",
+        name: "deepseek-v4-flash",
         config: portkeyConfig["accounts/fireworks/models/deepseek-v4-flash"],
         transform: fireworksThinking,
     },
     {
-        name: "gemma",
+        name: "gemma-4-26b",
         config: portkeyConfig["google/gemma-4-26b-a4b-it"],
     },
     {
-        name: "deepseek-pro",
+        name: "deepseek-v4-pro",
         config: portkeyConfig["accounts/fireworks/models/deepseek-v4-pro"],
         transform: fireworksThinking,
     },
     {
-        name: "grok",
+        name: "grok-4.20",
         config: portkeyConfig["grok-4-20-non-reasoning"],
         // Non-reasoning deployment 500s if reasoning_effort is forwarded.
         transform: pipe(stripCacheControl, stripReasoning),
     },
     {
-        name: "grok-4-20-reasoning",
+        name: "grok-4.20-reasoning",
         config: portkeyConfig["grok-4-20-reasoning"],
         transform: stripCacheControl,
     },
     {
-        name: "grok-large",
+        name: "grok-4.3",
         config: portkeyConfig["grok-4.3"],
         transform: stripCacheControl,
     },
     {
-        name: "openai-audio",
+        name: "gpt-audio-mini",
         config: portkeyConfig["gpt-audio-mini-2025-12-15"],
         // Audio models don't support reasoning_effort.
         transform: stripReasoning,
     },
     {
-        name: "openai-audio-large",
+        name: "gpt-audio-1.5",
         config: portkeyConfig["gpt-audio-1.5"],
         transform: stripReasoning,
     },
     {
-        name: "claude-fast",
+        name: "claude-haiku-4.5",
         config: portkeyConfig["claude-haiku-4-5"],
         transform: claudeManualThinking,
     },
     {
-        name: "claude",
+        name: "claude-sonnet-4.6",
         config: portkeyConfig["claude-sonnet-4-6"],
         transform: claudeAdaptiveThinking,
     },
@@ -190,7 +190,7 @@ const models: ModelDefinition[] = [
         transform: claudeAdaptiveThinking,
     },
     {
-        name: "claude-large",
+        name: "claude-opus-4.8",
         config: portkeyConfig["claude-opus-4-8"],
         transform: claudeAdaptiveThinking,
     },
@@ -210,7 +210,7 @@ const models: ModelDefinition[] = [
         ),
     },
     {
-        name: "gemini",
+        name: "gemini-3.5-flash",
         config: portkeyConfig["gemini-3.5-flash"],
         transform: pipe(
             sanitizeToolSchemas,
@@ -220,7 +220,7 @@ const models: ModelDefinition[] = [
         ),
     },
     {
-        name: "gemini-flash-lite-3.1",
+        name: "gemini-3.1-flash-lite",
         config: portkeyConfig["gemini-3.1-flash-lite"],
         transform: pipe(
             sanitizeToolSchemas,
@@ -228,7 +228,7 @@ const models: ModelDefinition[] = [
         ),
     },
     {
-        name: "gemini-fast",
+        name: "gemini-2.5-flash-lite",
         config: portkeyConfig["gemini-2.5-flash-lite"],
         transform: pipe(
             sanitizeToolSchemas,
@@ -236,7 +236,7 @@ const models: ModelDefinition[] = [
         ),
     },
     {
-        name: "gemini-search",
+        name: "gemini-2.5-flash-lite-search",
         config: portkeyConfig["gemini-2.5-flash-lite"],
         transform: pipe(
             sanitizeToolSchemas,
@@ -245,7 +245,7 @@ const models: ModelDefinition[] = [
         ),
     },
     {
-        name: "gemini-search-fast",
+        name: "gemini-3.1-flash-lite-search",
         config: portkeyConfig["gemini-3.1-flash-lite"],
         transform: pipe(
             sanitizeToolSchemas,
@@ -254,7 +254,7 @@ const models: ModelDefinition[] = [
         ),
     },
     {
-        name: "gemini-search-large",
+        name: "gemini-3.5-flash-search",
         config: portkeyConfig["gemini-3.5-flash"],
         transform: pipe(
             sanitizeToolSchemas,
@@ -273,37 +273,37 @@ const models: ModelDefinition[] = [
         transform: createMessageTransform(midijourneyPrompt),
     },
     {
-        name: "perplexity-fast",
+        name: "sonar",
         config: portkeyConfig["sonar"],
         transform: createPerplexitySearchTransform("low"),
     },
     {
-        name: "perplexity-deep",
+        name: "sonar-deep",
         config: portkeyConfig["sonar"],
         transform: createPerplexitySearchTransform("high"),
     },
     {
-        name: "perplexity",
+        name: "sonar-pro",
         config: portkeyConfig["sonar-pro"],
         transform: createPerplexitySearchTransform("high"),
     },
     {
-        name: "perplexity-reasoning",
+        name: "sonar-reasoning-pro",
         config: portkeyConfig["sonar-reasoning-pro"],
         transform: createPerplexitySearchTransform("high"),
     },
     {
-        name: "kimi",
+        name: "kimi-k2.6",
         config: portkeyConfig["accounts/fireworks/models/kimi-k2p6"],
         transform: pipe(stripCacheControl, fireworksThinking),
     },
     {
-        name: "kimi-code",
+        name: "kimi-k2.7-code",
         config: portkeyConfig["accounts/fireworks/models/kimi-k2p7-code"],
         transform: pipe(stripCacheControl, fireworksThinking),
     },
     {
-        name: "gemini-large",
+        name: "gemini-3.1-pro",
         config: portkeyConfig["gemini-3.1-pro-preview"],
         transform: pipe(
             sanitizeToolSchemas,
@@ -313,17 +313,17 @@ const models: ModelDefinition[] = [
         ),
     },
     {
-        name: "nova-fast",
+        name: "nova-micro",
         config: portkeyConfig["nova-micro"],
         // AWS Nova Micro doesn't support reasoning_effort.
         transform: stripReasoning,
     },
     {
-        name: "nova",
+        name: "nova-2-lite",
         config: portkeyConfig["nova-2-lite"],
     },
     {
-        name: "glm",
+        name: "glm-5.2",
         config: portkeyConfig["accounts/fireworks/models/glm-5p2"],
         transform: pipe(stripCacheControl, fireworksThinking),
     },
@@ -334,29 +334,29 @@ const models: ModelDefinition[] = [
         transform: mandatoryReasoning,
     },
     {
-        name: "minimax",
+        name: "minimax-m3",
         config: portkeyConfig["accounts/fireworks/models/minimax-m3"],
         transform: fireworksThinking,
     },
     {
-        name: "llama",
+        name: "llama-3.3-70b",
         config: portkeyConfig["Llama-3.3-70B-Instruct"],
         // No reasoning mode; Azure 422/400s on reasoning_effort.
         transform: stripReasoning,
     },
     {
-        name: "llama-maverick",
+        name: "llama-4-maverick",
         config: portkeyConfig["Llama-4-Maverick-17B-128E-Instruct-FP8"],
         transform: stripReasoning,
     },
     {
-        name: "llama-scout",
+        name: "llama-4-scout",
         config: portkeyConfig["Llama-4-Scout-17B-16E-Instruct"],
         // No reasoning mode.
         transform: stripReasoning,
     },
     {
-        name: "mistral-large",
+        name: "mistral-large-3",
         config: portkeyConfig["Mistral-Large-3"],
         // Azure deployment 500s on reasoning_effort.
         transform: stripReasoning,
@@ -366,7 +366,7 @@ const models: ModelDefinition[] = [
         config: portkeyConfig["polly"],
     },
     {
-        name: "qwen-safety",
+        name: "qwen3guard",
         config: portkeyConfig["Qwen3Guard-Gen-8B"],
         // Safety/guard model, no reasoning mode.
         transform: stripReasoning,

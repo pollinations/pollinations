@@ -23,11 +23,11 @@ function requiredCostRate(model: ModelName, field: UsageType): number {
 
 test("Image models should calculate costs proportionally to token count", () => {
     const models: ModelName[] = [
-        "flux",
+        "flux-schnell",
         "nanobanana",
-        "kontext",
-        "zimage",
-        "seedream",
+        "flux-kontext",
+        "z-image-turbo",
+        "seedream-4",
     ];
 
     for (const model of models) {
@@ -56,7 +56,7 @@ test("Models with API costs should have non-zero operational costs", () => {
     };
 
     // Flux has operational cost estimate
-    const fluxCost = calculateCost("flux", usage);
+    const fluxCost = calculateCost("flux-schnell", usage);
     expect(fluxCost.totalCost).toBeGreaterThan(0);
 
     // Nanobanana uses Vertex AI (paid API)
@@ -66,11 +66,11 @@ test("Models with API costs should have non-zero operational costs", () => {
 
 test("Cost should be non-negative for all models", () => {
     const models: ModelName[] = [
-        "flux",
+        "flux-schnell",
         "nanobanana",
-        "kontext",
-        "zimage",
-        "seedream",
+        "flux-kontext",
+        "z-image-turbo",
+        "seedream-4",
     ];
     const usage: Usage = {
         completionImageTokens: 1,
@@ -88,8 +88,8 @@ test("gptimage-large should calculate costs for image output tokens", () => {
     const usage: Usage = {
         completionImageTokens: 1000,
     };
-    const cost = calculateCost("gptimage-large", usage);
-    const rate = requiredCostRate("gptimage-large", "completionImageTokens");
+    const cost = calculateCost("gpt-image-1.5", usage);
+    const rate = requiredCostRate("gpt-image-1.5", "completionImageTokens");
     const expectedCost = rate * (usage.completionImageTokens ?? 0);
 
     expect(cost.completionImageTokens).toBeCloseTo(expectedCost, 4);
@@ -100,8 +100,8 @@ test("gptimage-large should calculate costs for text input tokens", () => {
     const usage: Usage = {
         promptTextTokens: 1000,
     };
-    const cost = calculateCost("gptimage-large", usage);
-    const rate = requiredCostRate("gptimage-large", "promptTextTokens");
+    const cost = calculateCost("gpt-image-1.5", usage);
+    const rate = requiredCostRate("gpt-image-1.5", "promptTextTokens");
     const expectedCost = rate * (usage.promptTextTokens ?? 0);
 
     expect(cost.promptTextTokens).toBeCloseTo(expectedCost, 4);
@@ -112,8 +112,8 @@ test("gptimage-large should calculate costs for image input tokens", () => {
     const usage: Usage = {
         promptImageTokens: 1000,
     };
-    const cost = calculateCost("gptimage-large", usage);
-    const rate = requiredCostRate("gptimage-large", "promptImageTokens");
+    const cost = calculateCost("gpt-image-1.5", usage);
+    const rate = requiredCostRate("gpt-image-1.5", "promptImageTokens");
     const expectedCost = rate * (usage.promptImageTokens ?? 0);
 
     expect(cost.promptImageTokens).toBeCloseTo(expectedCost, 4);
@@ -124,8 +124,8 @@ test("gptimage-large should calculate costs for text output tokens", () => {
     const usage: Usage = {
         completionTextTokens: 1000,
     };
-    const cost = calculateCost("gptimage-large", usage);
-    const rate = requiredCostRate("gptimage-large", "completionTextTokens");
+    const cost = calculateCost("gpt-image-1.5", usage);
+    const rate = requiredCostRate("gpt-image-1.5", "completionTextTokens");
     const expectedCost = rate * (usage.completionTextTokens ?? 0);
 
     expect(cost.completionTextTokens).toBeCloseTo(expectedCost, 4);
@@ -139,15 +139,15 @@ test("gptimage-large combined text/image input + output costs", () => {
         completionTextTokens: 200,
         completionImageTokens: 1000,
     };
-    const cost = calculateCost("gptimage-large", usage);
+    const cost = calculateCost("gpt-image-1.5", usage);
     const expectedCost =
-        requiredCostRate("gptimage-large", "promptTextTokens") *
+        requiredCostRate("gpt-image-1.5", "promptTextTokens") *
             (usage.promptTextTokens ?? 0) +
-        requiredCostRate("gptimage-large", "promptImageTokens") *
+        requiredCostRate("gpt-image-1.5", "promptImageTokens") *
             (usage.promptImageTokens ?? 0) +
-        requiredCostRate("gptimage-large", "completionTextTokens") *
+        requiredCostRate("gpt-image-1.5", "completionTextTokens") *
             (usage.completionTextTokens ?? 0) +
-        requiredCostRate("gptimage-large", "completionImageTokens") *
+        requiredCostRate("gpt-image-1.5", "completionImageTokens") *
             (usage.completionImageTokens ?? 0);
 
     expect(cost.totalCost).toBeCloseTo(expectedCost, 4);

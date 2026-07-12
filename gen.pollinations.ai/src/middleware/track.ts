@@ -701,6 +701,10 @@ function createTrackingEvent({
         resolvedModelRequested: requestTracking.resolvedModelRequested,
         modelUsed: responseTracking.modelUsed,
         modelProviderUsed: requestTracking.modelProvider,
+        modelCategory: requestTracking.modelDefinition.category,
+        modelBrand: requestTracking.modelDefinition.brand,
+        modelFamily: requestTracking.modelDefinition.family,
+        modelSelfHosted: requestTracking.modelDefinition.selfHosted ?? false,
         fallbackUsed: responseTracking.fallbackUsed,
 
         isBilledUsage: responseTracking.isBilledUsage,

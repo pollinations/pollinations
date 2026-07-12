@@ -132,6 +132,16 @@ export type ModelDefinition<TModelId extends string = ModelId> = {
     // the handler dispatch code.
     fallbackProvider?: string;
     brand: string;
+    // Model line within a brand, stable across version bumps — lowercase slug
+    // (e.g. "gpt-mini", "claude-opus", "gemini-flash"). Analytics group by
+    // this to keep continuity when a new version displaces the old key.
+    family: string;
+    // Release within the family (e.g. "5.4", "k2.6", "3"). Omitted for
+    // unversioned products.
+    version?: string;
+    // Served from GPU instances Pollinations operates (Vast/RunPod/Lambda)
+    // rather than a managed provider API.
+    selfHosted?: boolean;
     category: Category;
     cost: CostDefinition;
     // USD-cost to Pollen-price multiplier. Required on every model — there is
@@ -327,6 +337,20 @@ export function resolveModelName(model: string): ModelName {
     throw new Error(
         `Invalid model or alias: "${model}". Must be a valid model name or alias.`,
     );
+}
+
+/**
+ * Resolve a model name or alias to its canonical name, returning the input
+ * unchanged when it is not in the registry (e.g. community model ids).
+ * Use for lenient comparisons like API-key model permissions, where stored
+ * values may predate a canonical rename.
+ */
+export function resolveModelNameSafe(model: string): string {
+    try {
+        return resolveModelName(model);
+    } catch {
+        return model;
+    }
 }
 
 /**

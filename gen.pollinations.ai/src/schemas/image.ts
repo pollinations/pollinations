@@ -28,7 +28,7 @@ const GenerateImageRequestQueryParamsBaseSchema = z.object({
         )
         .meta({
             description:
-                "Model to use. **Image:** flux, zimage, gptimage, kontext, seedream5, seedream5-pro, nanobanana, nanobanana-pro, klein. **Video:** veo, seedance, seedance-pro, wan, nova-reel. See /image/models for full list.",
+                "Model to use. **Image:** flux-schnell, z-image-turbo, gpt-image-1-mini, flux-kontext, seedream-5-lite, seedream-5-pro, nanobanana, nanobanana-pro, flux-klein. **Video:** veo-3.1-fast, seedance, seedance-pro, wan-2.6, nova-reel. See /image/models for full list.",
         }),
     width: z.coerce.number().int().nonnegative().optional().default(1024).meta({
         description:
@@ -53,7 +53,7 @@ const GenerateImageRequestQueryParamsBaseSchema = z.object({
         .default(0)
         .meta({
             description:
-                "Seed for reproducible results. Use -1 for random. Supported by: flux, zimage, seedream, klein, seedance, nova-reel. Other models ignore this parameter.",
+                "Seed for reproducible results. Use -1 for random. Supported by: flux-schnell, z-image-turbo, seedream-4, flux-klein, seedance, nova-reel. Other models ignore this parameter.",
         }),
     safe: SafeSchema,
     quality: z
@@ -62,7 +62,7 @@ const GenerateImageRequestQueryParamsBaseSchema = z.object({
         .default("medium")
         .meta({
             description:
-                "Image quality level. Only supported by `gptimage`, `gptimage-large`, and `gpt-image-2`.",
+                "Image quality level. Only supported by `gpt-image-1-mini`, `gpt-image-1.5`, and `gpt-image-2`.",
         }),
     image: z
         .string()
@@ -89,17 +89,17 @@ const GenerateImageRequestQueryParamsBaseSchema = z.object({
         )
         .meta({
             description:
-                "Reference image URL(s) for image editing or video generation. Separate multiple URLs with `|` or `,`. **Image models:** Used for editing/style reference (kontext, gptimage, seedream, klein, nanobanana). **Video models:** `image[0]` = starting frame (I2V); `image[1]` = ending frame for first+last-frame interpolation. End-frame supported by `veo`, `seedance`, `seedance-2.0`, and `wan-fast`; other video models silently drop `image[1]`. See `video_capabilities` on `/image/models` or `/models` for per-model support.",
+                "Reference image URL(s) for image editing or video generation. Separate multiple URLs with `|` or `,`. **Image models:** Used for editing/style reference (flux-kontext, gpt-image-1-mini, seedream-4, flux-klein, nanobanana). **Video models:** `image[0]` = starting frame (I2V); `image[1]` = ending frame for first+last-frame interpolation. End-frame supported by `veo-3.1-fast`, `seedance`, `seedance-2.0`, and `wan-2.2`; other video models silently drop `image[1]`. See `video_capabilities` on `/image/models` or `/models` for per-model support.",
         }),
     transparent: z.coerce.boolean().optional().default(false).meta({
         description:
-            "Generate image with transparent background. Only supported by `gptimage`, `gptimage-large`, and `gpt-image-2`.",
+            "Generate image with transparent background. Only supported by `gpt-image-1-mini`, `gpt-image-1.5`, and `gpt-image-2`.",
     }),
 
     // Video-specific params
     duration: z.coerce.number().int().min(1).max(120).optional().meta({
         description:
-            "Video duration in seconds. Only applies to video models. `veo`: 4, 6, or 8s. `seedance`: 2-10s. `seedance-2.0`: 4-15s. `wan`: 2-15s. `nova-reel`: 6-120s (multiples of 6).",
+            "Video duration in seconds. Only applies to video models. `veo-3.1-fast`: 4, 6, or 8s. `seedance`: 2-10s. `seedance-2.0`: 4-15s. `wan-2.6`: 2-15s. `nova-reel`: 6-120s (multiples of 6).",
     }),
     aspectRatio: z.string().optional().meta({
         description:
@@ -107,7 +107,7 @@ const GenerateImageRequestQueryParamsBaseSchema = z.object({
     }),
     audio: z.coerce.boolean().optional().default(false).meta({
         description:
-            "Generate audio for the video. Only applies to video models. Note: `wan` generates audio regardless of this flag. For `veo`, set to `true` to enable audio.",
+            "Generate audio for the video. Only applies to video models. Note: `wan-2.6` generates audio regardless of this flag. For `veo-3.1-fast`, set to `true` to enable audio.",
     }),
 });
 

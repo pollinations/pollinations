@@ -16,6 +16,7 @@
     "amount",
     "currency",
     "cost_category",
+    "model",
     "op_cloud_type",
     "op_transaction_category",
     "should_match_op_transaction",
@@ -47,12 +48,14 @@
         "network",
         "office",
         "payroll",
+        "revenue",
         "support",
         "storage",
         "tax",
         "unknown"
       ]
     },
+    "model": { "type": ["string", "null"] },
     "op_cloud_type": {
       "type": ["string", "null"],
       "enum": ["infra", "gpu", "inference", null]

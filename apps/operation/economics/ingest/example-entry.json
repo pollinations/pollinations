@@ -1,7 +1,7 @@
 {
   "schema_version": "ingest_entry.v1",
   "entry_id": "dashboard-vast-ai-2026-01",
-  "source_file": "apps/operation/economics/ingest/data/processed/vast-ai/raw/vast-ai-2026-01-dashboard.png",
+  "source_file": "apps/operation/economics/ingest/data/processed/vast-ai/dashboard-vast-ai-2026-01/vast-ai-2026-01-dashboard.png",
   "provider": "vast.ai",
   "invoice_id": null,
   "issued_at": "2026-07-09",
@@ -10,6 +10,7 @@
   "amount": 8.17,
   "currency": "USD",
   "cost_category": "gpu",
+  "model": "flux",
   "op_cloud_type": "gpu",
   "op_transaction_category": null,
   "should_match_op_transaction": false,

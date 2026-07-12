@@ -76,6 +76,7 @@ Each app gets:
 
 # 2. Community Created App Submissions 
 
+<a name="submission-criteria"></a>
 ### What Makes a Good App Submission
 
 > To increase the chances of approval during app review, submitted apps should meet the following criteria:

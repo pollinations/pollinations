@@ -1,0 +1,50 @@
+DESCRIPTION >
+    Activity API usage transactions for table pagination and detailed CSV export.
+
+TOKEN "tinybird_read" READ
+
+NODE activity_usage_transactions_node
+SQL >
+    %
+    SELECT
+        timestamp,
+        event_id as cursor_event_id,
+        type,
+        resolved_model as model,
+        api_key_id,
+        api_key,
+        api_key_type,
+        meter_source,
+        input_text_tokens,
+        input_cached_tokens,
+        input_audio_tokens,
+        input_audio_seconds,
+        input_image_tokens,
+        output_text_tokens,
+        output_reasoning_tokens,
+        output_audio_tokens,
+        output_audio_seconds,
+        output_image_tokens,
+        output_video_seconds,
+        price_usd as cost_usd,
+        response_time_ms
+    FROM activity_usage_events
+    WHERE
+        user_id = {{ String(user_id, '') }}
+        {% if defined(api_key_ids) %} AND api_key_id IN {{ Array(api_key_ids, 'String') }} {% end %}
+        {% if defined(models) %} AND resolved_model IN {{ Array(models, 'String') }} {% end %}
+        {% if defined(since) %} AND timestamp >= {{ DateTime(since) }}
+        {% else %} AND timestamp >= now() - INTERVAL 30 DAY
+        {% end %}
+        {% if defined(until) %} AND timestamp < {{ DateTime(until) }} {% end %}
+        {% if defined(before) and defined(before_event_id) %}
+            AND (
+                timestamp < {{ DateTime(before) }}
+                OR (timestamp = {{ DateTime(before) }} AND event_id < {{ String(before_event_id) }})
+            )
+        {% elif defined(before) %} AND timestamp < {{ DateTime(before) }}
+        {% end %}
+    ORDER BY timestamp DESC, event_id DESC
+    LIMIT {{ Int32(limit, 100) }}
+
+TYPE endpoint

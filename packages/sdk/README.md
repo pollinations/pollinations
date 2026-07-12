@@ -21,7 +21,7 @@ Alpha (in-progress rebuild — pin an exact version):
 
 ```bash
 npm install @pollinations/sdk@alpha
-# or pin exactly: npm install @pollinations/sdk@5.1.0-alpha.0
+# or pin exactly: npm install @pollinations/sdk@5.1.0-alpha.3
 ```
 
 ### CDN / `<script>` tag
@@ -149,7 +149,7 @@ const accessToken = await auth.poll(); // blocks until user approves
 configure({ apiKey: accessToken });
 
 const me = await userInfo();
-console.log(`Logged in as ${me.name} (${me.tier})`);
+console.log(`Logged in as ${me.name} (${me.preferred_username})`);
 ```
 
 `authorizeDevice()` does NOT require an API key — it's how you get one.

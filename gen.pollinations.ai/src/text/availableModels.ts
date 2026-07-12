@@ -54,6 +54,18 @@ const models: ModelDefinition[] = [
         config: portkeyConfig["gpt-5.5"],
     },
     {
+        name: "gpt-5.6-sol",
+        config: portkeyConfig["gpt-5.6-sol"],
+    },
+    {
+        name: "gpt-5.6-terra",
+        config: portkeyConfig["gpt-5.6-terra"],
+    },
+    {
+        name: "gpt-5.6-luna",
+        config: portkeyConfig["gpt-5.6-luna"],
+    },
+    {
         name: "mercury",
         config: portkeyConfig["mercury-2"],
         transform: stripReasoning,
@@ -183,6 +195,11 @@ const models: ModelDefinition[] = [
         transform: claudeAdaptiveThinking,
     },
     {
+        name: "claude-fable-5",
+        config: portkeyConfig["claude-fable-5"],
+        transform: claudeAdaptiveThinking,
+    },
+    {
         name: "gemini-3-flash",
         config: portkeyConfig["gemini-3-flash-preview"],
         transform: pipe(
@@ -204,7 +221,7 @@ const models: ModelDefinition[] = [
     },
     {
         name: "gemini-flash-lite-3.1",
-        config: portkeyConfig["gemini-3.1-flash-lite-preview"],
+        config: portkeyConfig["gemini-3.1-flash-lite"],
         transform: pipe(
             sanitizeToolSchemas,
             createGeminiThinkingTransform("v3-flash"),
@@ -229,7 +246,7 @@ const models: ModelDefinition[] = [
     },
     {
         name: "gemini-search-fast",
-        config: portkeyConfig["gemini-3.1-flash-lite-preview"],
+        config: portkeyConfig["gemini-3.1-flash-lite"],
         transform: pipe(
             sanitizeToolSchemas,
             createGeminiToolsTransform(["google_search"]),

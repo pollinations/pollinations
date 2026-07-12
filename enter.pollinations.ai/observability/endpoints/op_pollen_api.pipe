@@ -3,7 +3,7 @@ DESCRIPTION >
     from generation_event. Cost/price/requests from activity_usage_events,
     byop/model payouts from activity_earnings_events.
 
-TOKEN "tinybird_read" READ
+TOKEN "operations_read" READ
 
 NODE usage_rollup
 SQL >
@@ -37,8 +37,9 @@ NODE endpoint
 SQL >
     SELECT
         u.month AS month,
-        u.provider AS provider,
+        u.provider AS vendor,
         u.model AS model,
+        'USD' AS currency,
         u.cost_paid AS cost_paid,
         u.cost_quests AS cost_quests,
         u.price_paid AS price_paid,
@@ -52,6 +53,6 @@ SQL >
     FROM usage_rollup AS u
     LEFT JOIN earnings_rollup AS e
         ON u.month = e.month AND u.provider = e.provider AND u.model = e.model
-    ORDER BY month DESC, provider, model
+    ORDER BY month DESC, vendor, model
 
 TYPE ENDPOINT

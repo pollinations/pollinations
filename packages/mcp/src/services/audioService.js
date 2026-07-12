@@ -309,7 +309,7 @@ const audioModelSchema = z
     .string()
     .optional()
     .describe(
-        "Audio model override (e.g. 'eleven-v3', 'gpt-audio-mini'). " +
+        "Audio model override (e.g. 'elevenlabs', 'openai-audio'). " +
             "Defaults to the current primary TTS model from the registry.",
     );
 
@@ -367,7 +367,7 @@ export const audioTools = [
 
     [
         "transcribeAudio",
-        "Transcribe audio from a URL. Uses gemini-3.1-pro for accurate speech-to-text transcription.",
+        "Transcribe audio from a URL. Uses gemini-large for accurate speech-to-text transcription.",
         {
             audioUrl: z
                 .string()
@@ -382,7 +382,7 @@ export const audioTools = [
                 .string()
                 .optional()
                 .describe(
-                    "Model to use (default: 'gemini-3.1-pro'). Also supports: gemini-3.5-flash, gpt-audio-mini",
+                    "Model to use (default: 'gemini-large'). Also supports: gemini, openai-audio",
                 ),
         },
         transcribeAudio,

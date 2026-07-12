@@ -451,7 +451,7 @@ export class Pollinations {
      * ```ts
      * const result = await pollinations.imageEdit('Make the sky purple', {
      *   image: 'https://example.com/photo.jpg',
-     *   model: 'flux-schnell',
+     *   model: 'flux',
      * });
      * ```
      */
@@ -527,7 +527,7 @@ export class Pollinations {
      * // Single image, size string (OpenAI style)
      * const img = await pollinations.imageGenerate('A cute robot', {
      *   size: '1024x1024',
-     *   model: 'flux-schnell',
+     *   model: 'flux',
      * });
      *
      * // Multiple images
@@ -688,7 +688,7 @@ export class Pollinations {
      *
      * @example
      * ```ts
-     * const url = await pollinations.videoUrl('A cat playing piano', { model: 'veo-3.1-fast', duration: 4 });
+     * const url = await pollinations.videoUrl('A cat playing piano', { model: 'veo', duration: 4 });
      * ```
      */
     async videoUrl(
@@ -1111,7 +1111,7 @@ export class Pollinations {
      * const { buffer } = await pollinations.audio('Hello, how are you today?', { voice: 'nova' });
      *
      * // Music generation
-     * const { buffer } = await pollinations.audio('upbeat jazz', { model: 'eleven-music', duration: 30 });
+     * const { buffer } = await pollinations.audio('upbeat jazz', { model: 'elevenmusic', duration: 30 });
      * ```
      */
     async audio(
@@ -1429,7 +1429,7 @@ export class Pollinations {
      * ```ts
      * const url = pollinations.authorizeUrl({
      *   redirectUrl: 'https://myapp.com/callback',
-     *   models: ['flux-schnell', 'gpt-5.4-nano'],
+     *   models: ['flux', 'openai'],
      *   budget: 10,
      *   permissions: ['profile', 'usage'],
      * });

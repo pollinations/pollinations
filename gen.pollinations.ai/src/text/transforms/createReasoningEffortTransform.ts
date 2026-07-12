@@ -15,7 +15,7 @@ const log = debug("pollinations:transforms:reasoning-effort");
  *   with a 400 (Fireworks MiniMax-M2 and similar). Off-requests are dropped so
  *   the model keeps its always-on default; `minimal` maps to `low`.
  * - `"strip"`: model has no reasoning mode and errors when the param is
- *   forwarded (mistral-large-3 500; OpenRouter non-reasoning models 400; the
+ *   forwarded (mistral-large 500; OpenRouter non-reasoning models 400; the
  *   non-reasoning Grok deployment 500). The param is removed entirely.
  */
 export type ReasoningCapability = "toggle" | "mandatory" | "strip";

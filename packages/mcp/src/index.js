@@ -43,23 +43,23 @@ Get your API key at: https://enter.pollinations.ai
 - **generateImageUrl** - Get a shareable URL for an image (without API key)
 - **generateImage** - Generate an image and get base64 data
 - **generateImageBatch** - Generate multiple images in parallel (best with sk_ keys)
-- **generateVideo** - Generate videos using veo-3.1-fast, seedance-pro, or seedance-2.0
+- **generateVideo** - Generate videos using veo, seedance, or seedance-pro
 - **generateVideoUrl** - Get a shareable URL for a video (without API key)
 - **describeImage** - Analyze/describe an image using vision AI
-- **analyzeVideo** - Analyze YouTube videos or video URLs using gemini-3.1-pro
+- **analyzeVideo** - Analyze YouTube videos or video URLs using gemini-large
 - **listImageModels** - List all available image/video models (dynamic)
 
 ### Text Generation
 - **generateText** - Simple text generation from a prompt
 - **chatCompletion** - OpenAI-compatible chat completions with tool calling
-- **webSearch** - Search the web using sonar or gemini search models
+- **webSearch** - Search the web using perplexity or gemini-search
 - **listTextModels** - List all available text models (dynamic)
 - **getPricing** - Get model pricing info (cost per token/image)
 
 ### Audio
 - **respondAudio** - AI responds to your prompt with speech
 - **sayText** - Text-to-speech (verbatim)
-- **transcribeAudio** - Transcribe audio using gemini-3.1-pro
+- **transcribeAudio** - Transcribe audio using gemini-large
 - **listAudioVoices** - List available voices (dynamic)
 
 ### Authentication
@@ -77,11 +77,11 @@ All requests go through: https://gen.pollinations.ai
 ## Tips
 - Models are fetched dynamically from the API - always up to date!
 - Use listImageModels/listTextModels to see available options
-- Image-to-image: Use the 'image' parameter with flux-kontext or seedream models
+- Image-to-image: Use the 'image' parameter with kontext or seedream models
 - Video generation: use listImageModels for live videoCapabilities, including start/end-frame and audio support
-- Web search: Use webSearch with sonar, sonar-reasoning-pro, or gemini-3.5-flash-search
-- Audio transcription: Use transcribeAudio with gemini-3.1-pro
-- Reasoning: Use kimi-k2.6, sonar-reasoning-pro, gpt-5.5, gemini-3.1-pro`;
+- Web search: Use webSearch with perplexity-fast, perplexity-reasoning, or gemini-search
+- Audio transcription: Use transcribeAudio with gemini-large
+- Reasoning: Use kimi, perplexity-reasoning, openai-large, gemini-large`;
 
 /**
  * Start the MCP server with STDIO transport

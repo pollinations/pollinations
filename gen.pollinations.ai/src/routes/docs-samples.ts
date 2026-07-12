@@ -28,7 +28,7 @@ export const CODE_SAMPLES: Record<
   -H "Authorization: Bearer YOUR_API_KEY" \\
   -H "Content-Type: application/json" \\
   -d '{
-    "model": "gpt-5.4-nano",
+    "model": "openai",
     "messages": [{"role": "user", "content": "Hello!"}]
   }'`,
         },
@@ -43,7 +43,7 @@ client = OpenAI(
 )
 
 response = client.chat.completions.create(
-    model="gpt-5.4-nano",
+    model="openai",
     messages=[{"role": "user", "content": "Hello!"}]
 )
 print(response.choices[0].message.content)`,
@@ -59,7 +59,7 @@ const client = new OpenAI({
 });
 
 const response = await client.chat.completions.create({
-  model: "gpt-5.4-nano",
+  model: "openai",
   messages: [{ role: "user", content: "Hello!" }],
 });
 console.log(response.choices[0].message.content);`,
@@ -69,7 +69,7 @@ console.log(response.choices[0].message.content);`,
         {
             label: "cURL",
             lang: "Shell",
-            source: `curl "https://gen.pollinations.ai/text/Write%20a%20haiku?model=gpt-5.4-nano" \\
+            source: `curl "https://gen.pollinations.ai/text/Write%20a%20haiku?model=openai" \\
   -H "Authorization: Bearer YOUR_API_KEY"`,
         },
         {
@@ -79,7 +79,7 @@ console.log(response.choices[0].message.content);`,
 
 response = requests.get(
     "https://gen.pollinations.ai/text/Write a haiku",
-    params={"model": "gpt-5.4-nano"},
+    params={"model": "openai"},
     headers={"Authorization": "Bearer YOUR_API_KEY"},
 )
 print(response.text)`,
@@ -88,7 +88,7 @@ print(response.text)`,
             label: "JavaScript",
             lang: "JavaScript",
             source: `const response = await fetch(
-  "https://gen.pollinations.ai/text/Write%20a%20haiku?model=gpt-5.4-nano",
+  "https://gen.pollinations.ai/text/Write%20a%20haiku?model=openai",
   { headers: { Authorization: "Bearer YOUR_API_KEY" } },
 );
 console.log(await response.text());`,
@@ -99,17 +99,17 @@ console.log(await response.text());`,
             label: "HTML",
             lang: "HTML",
             source: `<!-- No code needed — use as an image URL -->
-<img src="https://gen.pollinations.ai/image/a%20cat%20in%20space?model=flux-schnell" />`,
+<img src="https://gen.pollinations.ai/image/a%20cat%20in%20space?model=flux" />`,
         },
         {
             label: "cURL",
             lang: "Shell",
             source: `# Generate an image
-curl "https://gen.pollinations.ai/image/a%20cat%20in%20space?model=flux-schnell" \\
+curl "https://gen.pollinations.ai/image/a%20cat%20in%20space?model=flux" \\
   -H "Authorization: Bearer YOUR_API_KEY" -o image.jpg
 
 # Generate a video
-curl "https://gen.pollinations.ai/image/a%20sunset%20timelapse?model=veo-3.1-fast&duration=4" \\
+curl "https://gen.pollinations.ai/image/a%20sunset%20timelapse?model=veo&duration=4" \\
   -H "Authorization: Bearer YOUR_API_KEY" -o video.mp4`,
         },
         {
@@ -119,7 +119,7 @@ curl "https://gen.pollinations.ai/image/a%20sunset%20timelapse?model=veo-3.1-fas
 
 response = requests.get(
     "https://gen.pollinations.ai/image/a cat in space",
-    params={"model": "flux-schnell"},
+    params={"model": "flux"},
     headers={"Authorization": "Bearer YOUR_API_KEY"},
 )
 with open("image.jpg", "wb") as f:
@@ -129,7 +129,7 @@ with open("image.jpg", "wb") as f:
             label: "JavaScript",
             lang: "JavaScript",
             source: `const response = await fetch(
-  "https://gen.pollinations.ai/image/a%20cat%20in%20space?model=flux-schnell",
+  "https://gen.pollinations.ai/image/a%20cat%20in%20space?model=flux",
   { headers: { Authorization: "Bearer YOUR_API_KEY" } },
 );
 const blob = await response.blob();`,
@@ -139,7 +139,7 @@ const blob = await response.blob();`,
         {
             label: "cURL",
             lang: "Shell",
-            source: `curl "https://gen.pollinations.ai/video/a%20sunset%20timelapse?model=veo-3.1-fast&duration=4" \\
+            source: `curl "https://gen.pollinations.ai/video/a%20sunset%20timelapse?model=veo&duration=4" \\
   -H "Authorization: Bearer YOUR_API_KEY" -o video.mp4`,
         },
         {
@@ -149,7 +149,7 @@ const blob = await response.blob();`,
 
 response = requests.get(
     "https://gen.pollinations.ai/video/a sunset timelapse",
-    params={"model": "veo-3.1-fast", "duration": 4},
+    params={"model": "veo", "duration": 4},
     headers={"Authorization": "Bearer YOUR_API_KEY"},
 )
 with open("video.mp4", "wb") as f:
@@ -159,7 +159,7 @@ with open("video.mp4", "wb") as f:
             label: "JavaScript",
             lang: "JavaScript",
             source: `const response = await fetch(
-  "https://gen.pollinations.ai/video/a%20sunset%20timelapse?model=veo-3.1-fast&duration=4",
+  "https://gen.pollinations.ai/video/a%20sunset%20timelapse?model=veo&duration=4",
   { headers: { Authorization: "Bearer YOUR_API_KEY" } },
 );
 const blob = await response.blob();`,
@@ -174,7 +174,7 @@ curl "https://gen.pollinations.ai/audio/Hello%20world?voice=nova" \\
   -H "Authorization: Bearer YOUR_API_KEY" -o speech.mp3
 
 # Generate music (ElevenLabs)
-curl "https://gen.pollinations.ai/audio/upbeat%20jazz?model=eleven-music&duration=30" \\
+curl "https://gen.pollinations.ai/audio/upbeat%20jazz?model=elevenmusic&duration=30" \\
   -H "Authorization: Bearer YOUR_API_KEY" -o music.mp3
 
 # Generate music (ACE-Step, open-source)
@@ -501,7 +501,7 @@ export const RESPONSE_EXAMPLES: Record<string, unknown> = {
         id: "chatcmpl-abc123",
         object: "chat.completion",
         created: 1700000000,
-        model: "gpt-5.4-nano",
+        model: "openai",
         choices: [
             {
                 index: 0,
@@ -522,19 +522,19 @@ export const RESPONSE_EXAMPLES: Record<string, unknown> = {
         object: "list",
         data: [
             {
-                id: "gpt-5.4-nano",
+                id: "openai",
                 object: "model",
                 created: 1700000000,
                 owned_by: "pollinations",
             },
             {
-                id: "claude-sonnet-4.6",
+                id: "claude",
                 object: "model",
                 created: 1700000000,
                 owned_by: "pollinations",
             },
             {
-                id: "gemini-3.5-flash",
+                id: "gemini",
                 object: "model",
                 created: 1700000000,
                 owned_by: "pollinations",

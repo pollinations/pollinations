@@ -583,9 +583,9 @@ const imageParamsSchema = {
         .string()
         .optional()
         .describe(
-            "Image model to use. Options: flux-schnell (default, fast), z-image-turbo (ultra-fast), gpt-image-1-mini (OpenAI), " +
-                "flux-kontext (context-aware, supports i2i), seedream-4/seedream-4.5-pro (high quality, supports i2i), " +
-                "nanobanana/nanobanana-pro (Gemini-based). Use listImageModels for full list.",
+            "Image model to use. Options: flux (default, fast), turbo (ultra-fast), gptimage (OpenAI), " +
+                "kontext (context-aware, supports i2i), seedream/seedream-pro (high quality, supports i2i), " +
+                "nanobanana/nanobanana-pro (Gemini-based), zimage (experimental). Use listImageModels for full list.",
         ),
     width: z
         .number()
@@ -632,7 +632,7 @@ const imageParamsSchema = {
         .optional()
         .describe(
             "Reference image URL(s) for image-to-image generation. Separate multiple URLs with | or comma.\n" +
-                "I2I models: seedream-4.5-pro, nanobanana-pro, nanobanana, gpt-image-1-mini, seedream-4 (all multi-image), flux-kontext (single image).\n" +
+                "I2I models: seedream-pro, nanobanana-pro, nanobanana, gptimage, seedream (all multi-image), kontext (single image).\n" +
                 "Put this parameter last in URL or URL-encode it.",
         ),
     transparent: z
@@ -657,7 +657,7 @@ const videoParamsSchema = {
         .string()
         .optional()
         .describe(
-            "Video model (default: 'veo-3.1-fast'). Common options: veo-3.1-fast, seedance-pro, seedance-2.0, wan-2.6, wan-2.2. " +
+            "Video model (default: 'veo'). Common options: veo, seedance, seedance-2.0, wan, wan-fast. " +
                 "Use listImageModels to see the full live list — models are validated against the registry.",
         ),
     duration: z
@@ -715,7 +715,7 @@ export const imageTools = [
     [
         "generateImage",
         "Generate an image from a text prompt and return the base64-encoded image data. " +
-            "Full control over all generation parameters. Supports image-to-image with flux-kontext, seedream, nanobanana models.",
+            "Full control over all generation parameters. Supports image-to-image with kontext, seedream, nanobanana models.",
         imageParamsSchema,
         generateImage,
     ],
@@ -798,8 +798,8 @@ export const imageTools = [
                 .string()
                 .optional()
                 .describe(
-                    "Vision-capable model to use (default: 'gpt-5.4-nano'). " +
-                        "Options: gpt-5.4-nano, gemini-3.5-flash, claude-sonnet-4.6, grok-4.20 - all support vision",
+                    "Vision-capable model to use (default: 'openai'). " +
+                        "Options: openai, gemini, claude, grok - all support vision",
                 ),
         },
         describeImage,
@@ -807,7 +807,7 @@ export const imageTools = [
     [
         "analyzeVideo",
         "Analyze a video using AI. Supports YouTube URLs and direct video links. " +
-            "Uses gemini-3.1-pro for native video understanding (frames + audio). " +
+            "Uses gemini-large for native video understanding (frames + audio). " +
             "Great for video summarization, content analysis, and Q&A about videos.",
         {
             videoUrl: z
@@ -827,8 +827,8 @@ export const imageTools = [
                 .string()
                 .optional()
                 .describe(
-                    "Model to use (default: 'gemini-3.1-pro'). " +
-                        "gemini-3.1-pro and gemini-3.5-flash support native video input",
+                    "Model to use (default: 'gemini-large'). " +
+                        "gemini-large and gemini support native video input",
                 ),
         },
         analyzeVideo,

@@ -110,7 +110,7 @@ echo ""
 echo "🔀 Cutting over public domain..."
 node "$SCRIPT_DIR/deploy-app.js" "$APP_NAME" --phase=cutover
 
-# Step 8: Verify the public URL serves through the proxy
+# Step 8: Verify the public URL serves through the direct Pages custom domain
 echo ""
 echo "⏳ Verifying https://$SUBDOMAIN.pollinations.ai ..."
 for i in $(seq 1 30); do

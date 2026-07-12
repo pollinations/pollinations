@@ -73,7 +73,6 @@ Implication: **local gen alone covers ~90% of model-management work** — includ
 **Boot Enter locally only if the change touches any of:**
 - Dashboard, auth routes, account APIs (Stripe portal, webhook handlers, login)
 - Pollen pack / `packBalance` mutation logic, auto-top-up flow itself
-- Tier configs (the source of truth in enter — `enter.pollinations.ai/src/tier-config.ts`)
 - Tinybird event schema (the event SHAPE / new datasource column — not the data inside it; gen writes the data)
 - DB seeding / migrations
 
@@ -575,13 +574,13 @@ If `-a "$USER"` doesn't match, try without `-a` (`security find-generic-password
 
 ## 11.2 Description style
 
-Format: `<Model Name> - <what it does or what makes it distinct>`. ≤ ~70 chars when possible.
+Format: `<what it does or what makes it distinct>`. ≤ ~70 chars when possible.
 
 - Say what the model **does** or what makes it **different** ("Fast & affordable image generation", "Long-context MoE for retrieval"). Capability over branding.
+- **Do not repeat the model name/title** in the description. The model manager renders the display name separately, so descriptions like "Seedream 5.0 Pro - Premium image generation" are redundant.
 - **No provider/inference attribution** in the description — no "(OpenRouter)", "via DashScope", "OpenAI's", etc. `provider` and `brand` fields carry that.
-- **No filler.** "X - Image Generation Model" tells the reader nothing. "FLUX.2 Klein 4B - Fast image generation and editing" > "FLUX.2 Klein 4B - Advanced Model".
+- **No filler.** "Image generation model" tells the reader nothing. "Fast image generation and editing" > "Advanced model".
 
 ## 11.3 Wrapper models (e.g. persona-prompted Claude)
 
 For specialized wrappers, the underlying model's capabilities are NOT the same as the product's. Mark `inputModalities` to reflect the **product intent**, not what the underlying model technically supports. Add a one-line comment explaining the discrepancy.
-

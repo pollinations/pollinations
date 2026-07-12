@@ -295,7 +295,7 @@ async function main() {
     // the current month). The current month holds live MTD revenue (partial
     // activity) so it's not a stable base for extrapolation. For Stripe this
     // picks up the shifted Mar value (= Apr-1 payout = March's activity).
-    const revenueVendors = ["Stripe", "Polar.sh"];
+    const revenueVendors = ["Stripe"];
     const finishedMonths = extended.months.filter(
         (m) => !extended.forecastMonths.has(m) && m !== nowMonth,
     );

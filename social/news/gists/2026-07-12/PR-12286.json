@@ -1,0 +1,34 @@
+{
+  "pr_number": 12286,
+  "title": "Add model search bar to dashboard",
+  "author": "tomdacatto",
+  "url": "https://github.com/pollinations/pollinations/pull/12286",
+  "merged_at": "2026-07-12T11:35:33Z",
+  "labels": [
+    "DEV-UI-UX"
+  ],
+  "pr_body_excerpt": "## Summary\n- Adds a search input to the Models section (dashboard) that filters by name, display name, description, and brand\n- Tabs stay pinned to the full catalog — a search query filters contents only, never hides or auto-switches a tab\n- Shows a \"no results\" state when a filter matches nothing\n\n## Notes\nSplit out of #12157 so this frontend-only change (no backend/Tinybird changes) can merge independently of the generation-throughput discussion.\n\n## Test plan\n- [x] `tsc --noEmit` clean\n- [x] Verified live in browser (search filters, tab pinning, no-results state)",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Search the hive",
+    "blurb": "Added a shiny new search bar to the dashboard's Models section. Now you can filter the ever-growing catalog by name, brand, or description without losing your place.",
+    "summary": "Added a search input to the dashboard's Models section that filters the catalog by name, display name, description, and brand while keeping tabs pinned.",
+    "impact": "Users can now instantly find specific models across the catalog without manually scrolling through tabs.",
+    "keywords": [
+      "dashboard",
+      "search",
+      "models",
+      "ui"
+    ],
+    "visual_concept": "The bee mascot using a magnifying glass to look at a catalog or list of models (represented as glowing blocks or files). The robot companion could be holding the list.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot hovering with a tiny magnifying glass, inspecting a glowing list of digital files held by a chunky robot with a CRT monitor head. Soft lime green (#ecf874) and pastel lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-12/PR-12286.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot hovering with a tiny magnifying glass, inspecting a glowing list of digital files held by a chunky robot with a CRT monitor head. Soft lime green (#ecf874) and pastel lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-07-12T11:38:38.461358+00:00"
+}

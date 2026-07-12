@@ -1,0 +1,34 @@
+{
+  "pr_number": 12226,
+  "title": "Fix code block formatting for image URL",
+  "author": "tubby864",
+  "url": "https://github.com/pollinations/pollinations/pull/12226",
+  "merged_at": "2026-07-12T23:44:18Z",
+  "labels": [
+    "DEV-DOCS"
+  ],
+  "pr_body_excerpt": "Correct formatting for image URL section in quick-start.md\r\n<img width=\"621\" height=\"106\" alt=\"image\" src=\"https://github.com/user-attachments/assets/4d0cfd52-89d3-4009-89b2-3c11a09981e8\" />\r\nfix this stupid color ^ ",
+  "gist": {
+    "category": "docs",
+    "user_facing": true,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Polishing the docs",
+    "blurb": "Squashed a tiny formatting bug in the quick start guide. The image URL code blocks are looking crisp and readable again.",
+    "summary": "Fixed a markdown formatting issue in the quick-start guide to ensure image URLs display with the correct syntax highlighting.",
+    "impact": "Developers reading the quick-start guide will see properly formatted code blocks for image URLs.",
+    "keywords": [
+      "docs",
+      "markdown",
+      "quick-start",
+      "formatting"
+    ],
+    "visual_concept": "Polly the bee fixing a glowing text document or painting over a weirdly colored line of code, representing a small documentation formatting fix.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee mascot wearing a tiny painter's beret, carefully painting a glowing line of code on a giant retro document. Soft lime green (#ecf874) and lavender gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-12/PR-12226.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee mascot wearing a tiny painter's beret, carefully painting a glowing line of code on a giant retro document. Soft lime green (#ecf874) and lavender gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-07-12T23:45:21.031645+00:00"
+}

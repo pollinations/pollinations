@@ -1,6 +1,6 @@
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="assets/logo-text-white.svg">
-  <img alt="Pollinations" src="assets/logo-text-black.svg" width="420">
+  <source media="(prefers-color-scheme: dark)" srcset="packages/ui/src/assets/logo-text-white.svg">
+  <img alt="Pollinations" src="packages/ui/src/assets/logo-text-black.svg" width="420">
 </picture>
 
 > Generate text, images, video, audio, realtime voice, and embeddings with a single API. OpenAI-compatible — use any OpenAI SDK by changing the base URL.

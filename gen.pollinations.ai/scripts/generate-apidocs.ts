@@ -707,10 +707,10 @@ function renderHeader(spec: Spec): string {
     // `alt` carries the semantic title so screen readers and feeds still get it.
     out.push("<picture>");
     out.push(
-        '  <source media="(prefers-color-scheme: dark)" srcset="assets/logo-text-white.svg">',
+        '  <source media="(prefers-color-scheme: dark)" srcset="packages/ui/src/assets/logo-text-white.svg">',
     );
     out.push(
-        '  <img alt="Pollinations" src="assets/logo-text-black.svg" width="420">',
+        '  <img alt="Pollinations" src="packages/ui/src/assets/logo-text-black.svg" width="420">',
     );
     out.push("</picture>");
     out.push("");

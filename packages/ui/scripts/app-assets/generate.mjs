@@ -1,6 +1,5 @@
 #!/usr/bin/env node
 import { mkdir, readFile, writeFile } from "node:fs/promises";
-import { createRequire } from "node:module";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import {
@@ -8,15 +7,16 @@ import {
     renderOg,
     renderPaddedIcon,
     renderSolidIcon,
-} from "./render.js";
+} from "./render.mjs";
 
-const require = createRequire(import.meta.url);
+const HERE = dirname(fileURLToPath(import.meta.url));
 
-// tools/icons/src -> repo root is three levels up.
-const REPO_ROOT = join(dirname(fileURLToPath(import.meta.url)), "../../..");
+// packages/ui/scripts/app-assets -> repo root is four levels up.
+const REPO_ROOT = join(HERE, "../../../..");
 
-// Single brand source: the logos shipped in the UI package (use currentColor).
-const UI_ROOT = dirname(require.resolve("@pollinations/ui/package.json"));
+// Single brand source: the logos shipped in this UI package (use currentColor).
+// packages/ui/scripts/app-assets -> packages/ui is two levels up.
+const UI_ROOT = join(HERE, "../..");
 const uiAsset = (file) => readFile(join(UI_ROOT, "src/assets", file), "utf8");
 const loadLogo = () => uiAsset("logo.svg"); // lotus mark — icons + OG
 const loadText = () => uiAsset("logo-text.svg"); // logotype — OG card
@@ -220,7 +220,7 @@ async function generate(name) {
 
 const app = parseApp(process.argv.slice(2));
 if (!app) {
-    console.error("Usage: npm run generate -- --app <name>");
+    console.error("Usage: npm run generate:assets -- --app <name>");
     process.exit(1);
 }
 try {

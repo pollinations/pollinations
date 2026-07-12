@@ -14,7 +14,7 @@ import { generateSpecs } from "hono-openapi";
 import { marked } from "marked";
 import { stringify as yamlStringify } from "yaml";
 import type { Env } from "@/env.ts";
-import LOGO_WHITE_SVG from "../../../assets/logo-text-white.svg?raw";
+import LOGO_WHITE_SVG from "../../../packages/ui/src/assets/logo-text-white.svg?raw";
 import { CODE_SAMPLES, RESPONSE_EXAMPLES } from "./docs-samples.ts";
 import {
     API_REFERENCE_CUSTOM_CSS,

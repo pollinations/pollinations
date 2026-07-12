@@ -11,6 +11,7 @@ SQL >
         resolved_model_requested AS entity_id,
         resolved_model_requested AS entity_name,
         model_used AS model,
+        model_provider_used AS provider,
         multiIf(
             selected_meter_slug = 'v1:meter:tier', 'tier',
             selected_meter_slug = 'v1:meter:pack', 'pack',

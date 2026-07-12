@@ -29,6 +29,8 @@ SQL >
         token_count_completion_image AS output_image_tokens,
         token_count_completion_video_seconds AS output_video_seconds,
         total_price AS price_usd,
+        total_cost AS cost_usd,
+        model_provider_used AS provider,
         response_time AS response_time_ms
     FROM generation_event
     WHERE total_price > 0

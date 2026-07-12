@@ -1,0 +1,35 @@
+{
+  "pr_number": 12350,
+  "title": "feat: add Muse Spark 1.1",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/12350",
+  "merged_at": "2026-07-12T13:06:02Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "pr_body_excerpt": "- Adds `muse-spark-1.1` as a paid-only text/image-to-text model via Vercel AI Gateway.\n- Adds `AI_GATEWAY_API_KEY` secret plumbing and encrypted dev/staging/prod secret entries.\n- Sets pricing to Vercel/Meta rates with `priceMultiplier: 1`.\n- Updates effective-price snapshot.\n\nValidation:\n- `npx biome check --write ...`\n- `gen`: `npm run typecheck`; `vitest` model permissions + text transform tests.\n- `enter`: aliases, pricing-data, effective-prices snapshot.\n- Local Gen E2E: text, streaming, tools, image input, Tinybird billing rows.\n- Pushed Cloudflare Gen secrets to staging and production.\n\nNotes:\n- Vercel reports image input under prompt text tokens.\n- Spark uses always-on reasoning; small `max_tokens` values can return empty visible content.\n",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "A New Muse Appears",
+    "blurb": "We've added Muse Spark 1.1 to our text and vision lineup! This always-on reasoning model is ready to tackle your complex prompts and image inputs.",
+    "summary": "Added Muse Spark 1.1 as a paid-only text and vision model via the Vercel AI Gateway, priced at standard Vercel/Meta rates.",
+    "impact": "Users can now query `muse-spark-1.1` for text and image-to-text generation, leveraging its always-on reasoning capabilities for complex tasks.",
+    "keywords": [
+      "models",
+      "muse-spark",
+      "vision",
+      "text-generation",
+      "vercel-ai"
+    ],
+    "visual_concept": "The pollinations bee interacting with a glowing spark of energy, representing the new Muse Spark model. The robot companion is amazed by the new reasoning capabilities.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot holding a glowing lime green (#ecf874) spark of energy in a retro hackerspace. A chunky robot with a CRT monitor head watches in awe as the spark illuminates the room. Soft pastel gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-12/PR-12350.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot holding a glowing lime green (#ecf874) spark of energy in a retro hackerspace. A chunky robot with a CRT monitor head watches in awe as the spark illuminates the room. Soft pastel gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley, emotionally warm."
+  },
+  "generated_at": "2026-07-12T13:07:07.474836+00:00"
+}

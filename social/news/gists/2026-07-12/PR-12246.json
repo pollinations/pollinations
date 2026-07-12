@@ -1,0 +1,35 @@
+{
+  "pr_number": 12246,
+  "title": "docs(quick-start): fix Python OpenAI SDK base_url — add /v1",
+  "author": "housir2001",
+  "url": "https://github.com/pollinations/pollinations/pull/12246",
+  "merged_at": "2026-07-12T23:31:57Z",
+  "labels": [
+    "DEV-DOCS"
+  ],
+  "pr_body_excerpt": "## Problem\n\nThe Quick Start Python example uses:\n```python\nclient = OpenAI(base_url=\"https://gen.pollinations.ai\", api_key=\"YOUR_API_KEY\")\n```\n\nThis is inconsistent with `APIDOCS.md`, which explicitly states:\n\n> Point the SDK at `https://gen.pollinations.ai/v1` and pass your `sk_…` key as the OpenAI key.\n\nAnd shows:\n```python\nclient = OpenAI(\n    base_url=\"https://gen.pollinations.ai/v1\",\n    api_key=\"sk_your_secret_key\",\n)\n```\n\nThe OpenAI Python SDK does **not** auto-append `/v1` to a custom `base_url`. Without `/v1`, requests are constructed incorrectly (e.g. the SDK would target `/chat/completions` instead of `/v1/chat/completions`).\n\n## Fix\n\nAdd `/v1` to the `base_url` in the Quick Start Python example to match `APIDOCS.md`.",
+  "gist": {
+    "category": "docs",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "The missing /v1",
+    "blurb": "Fixed a sneaky typo in our Python Quick Start guide. The OpenAI SDK now points to the correct /v1 endpoint, so your copy-pasted code will work on the first try.",
+    "summary": "Added the missing `/v1` suffix to the `base_url` in the Python Quick Start guide so the OpenAI SDK routes requests correctly to `/v1/chat/completions`.",
+    "impact": "Developers copying the Python example will no longer encounter routing errors when connecting to the text generation API.",
+    "keywords": [
+      "docs",
+      "python",
+      "openai-sdk",
+      "api",
+      "quick-start"
+    ],
+    "visual_concept": "Polly the bee fixing a signpost or a blueprint that has a snake (Python) on it, or adding a 'v1' sticker to a glowing green terminal.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee mascot carefully placing a glowing 'v1' sticker onto a retro computer terminal displaying Python code. Soft lime green (#ecf874) and lavender gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-12/PR-12246.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee mascot carefully placing a glowing 'v1' sticker onto a retro computer terminal displaying Python code. Soft lime green (#ecf874) and lavender gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-07-12T23:32:57.683330+00:00"
+}

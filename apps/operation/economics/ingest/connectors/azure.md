@@ -102,3 +102,21 @@ Reconciliation notes:
   amount only. Use Azure usage exports or dashboard evidence for detailed
   service/model/GPU attribution; if those are unavailable, classify cautiously
   and explain the limitation in `reconciliation_notes`.
+
+## Rotation
+
+- Rotates the Azure OpenAI/Cognitive Services keys gen.pollinations.ai uses for
+  model calls (key1/key2 slots per resource: `east`, `sweden`, `safety`) — a
+  different credential from this connector's `AZURE_CLIENT_ID`/`AZURE_TENANT_ID`/
+  `AZURE_CLIENT_SECRET` billing-API app registration, so rotating it does not
+  affect billing collection here.
+- Mechanism: each Cognitive Services resource exposes two key slots. Detect
+  which slot the current SOPS value matches, regenerate the unused slot, then
+  switch SOPS to it. The previous slot stays valid the whole time — true
+  zero-downtime, no delete step needed.
+- SOPS files: `gen.pollinations.ai/secrets/{dev,staging,prod}.vars.json`.
+- Deploy target: gen's Cloudflare deploy workflow. Health check:
+  `POST gen.pollinations.ai/v1/chat/completions` against an Azure-backed model
+  → 200.
+- The `safety` resource lives in a subscription not visible under the default
+  `az` context — run `az account set --subscription <other>` first.

@@ -133,3 +133,18 @@ Reconciliation notes:
 - API usage evidence should reconcile to `op_cloud`.
 - Paid invoice evidence should reconcile to `op_transactions`.
 - Credit-funded usage should usually explain `op_cloud` without a cash transaction.
+
+## Rotation
+
+- Rotates the `AWS_ACCESS_KEY_ID`/`AWS_SECRET_ACCESS_KEY` pair gen.pollinations.ai
+  uses for Bedrock model calls — a different credential from this connector's
+  `UMBRELLA_USERNAME`/`UMBRELLA_PASSWORD` reseller-billing login, so rotating it
+  does not affect billing collection here.
+- Mechanism: IAM `create-access-key` for the same IAM user (old key stays
+  valid), deploy, verify `aws sts get-caller-identity` with the new key, then
+  `delete-access-key` for the old one. Zero downtime.
+- SOPS files: `gen.pollinations.ai/secrets/{dev,staging,prod}.vars.json`.
+- Deploy target: gen's Cloudflare deploy workflow. Health check:
+  `GET gen.pollinations.ai/v1/models` → 200.
+- Any failure after the new key is created aborts without deleting the old
+  one — it stays valid until the operator retries.

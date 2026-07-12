@@ -27,7 +27,7 @@ sops --output-type dotenv decrypt secrets/dev.vars.json > .dev.vars   # enter.po
 sops --output-type dotenv decrypt secrets/env.json > .env             # generation service secrets
 ``` 
 
-The variables are kept encrypted in `**/secrets/*.json`. If you need to edit them, run `sops edit /secrets/file.json`. This will open an editor and when you save the file, write it to the encrypted file. `enter.pollinations.ai` uses `secrets/{dev,staging,prod}.vars.json` for app/runtime secrets; `tools/scripts/rotation/secrets.vars.json` is only for local operator admin credentials used by rotation scripts. (hint: set the editor env variable: `export EDITOR=/path/to/your/editor` to open with your favorite editor)
+The variables are kept encrypted in `**/secrets/*.json`. If you need to edit them, run `sops edit /secrets/file.json`. This will open an editor and when you save the file, write it to the encrypted file. `enter.pollinations.ai` uses `secrets/{dev,staging,prod}.vars.json` for app/runtime secrets. Credential rotation is agent-driven — see `apps/operation/economics/ingest/agent.system.txt`'s `secret` mode and the `## Rotation` section in each `apps/operation/economics/ingest/connectors/*.md` guide. (hint: set the editor env variable: `export EDITOR=/path/to/your/editor` to open with your favorite editor)
 
 
 ###### Common SOPS commands:

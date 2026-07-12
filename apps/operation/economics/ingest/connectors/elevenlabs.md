@@ -75,3 +75,24 @@ Reconciliation notes:
 - Analytics explains `op_cloud` usage.
 - Top-ups/subscriptions/card charges explain `op_transactions`.
 - If grant-funded, do not force a same-month cash transaction match.
+
+## Rotation
+
+- Rotates `ELEVENLABS_API_KEY` in enter/gen's runtime secrets — the same env
+  var name and same "admin/usage analytics scope" this connector requires.
+  Verify empirically whether it's the identical key value as the economics
+  copy before assuming it stays valid; update `secrets/env.json` too if
+  shared.
+- Mechanism: `POST /service-accounts/{id}/api-keys`, authenticated with a
+  separate static admin key (`ELEVENLABS_ADMIN_API_KEY` +
+  `ELEVENLABS_SERVICE_ACCOUNT_ID`), creates a new SA key (old stays valid),
+  deploy, verify with a live `/v1/audio/speech` call, then
+  `DELETE /service-accounts/{id}/api-keys/{old-id}`.
+- On the very first rotation, the runtime key may predate the service account
+  (e.g. a personal key) — the admin API can't delete a key it doesn't own.
+  Warn and ask the operator to revoke it manually in the ElevenLabs UI instead
+  of silently leaving it valid.
+- SOPS files: `enter.pollinations.ai/secrets/{dev,staging,prod}.vars.json`
+  (ElevenLabs is called by the enter worker, not gen).
+- Deploy target: enter's Cloudflare deploy workflow. Health check:
+  `POST gen.pollinations.ai/v1/audio/speech` → 200.

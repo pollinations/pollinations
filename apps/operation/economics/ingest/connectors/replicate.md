@@ -100,3 +100,18 @@ Reconciliation notes:
 - Tinybird `generation_event.total_cost` explains internal per-model `op_cloud` attribution.
 - Replicate prediction exports can help find untracked model IDs, web-created predictions, status mix, and output metrics for video pricing.
 - If invoice total exceeds metered model cost, keep the raw model price unchanged unless independent model-level pricing evidence shows the model itself is underpriced.
+
+## Rotation
+
+- Rotates the runtime `REPLICATE_API_TOKEN` gen.pollinations.ai uses for
+  predictions — the same env var this connector uses. Verify empirically
+  whether it's the identical token as the economics copy before assuming it
+  stays valid; update `secrets/env.json` too if shared.
+- Replicate has no public token create/delete API. The operator must create
+  the new token and (later) delete the old one manually in the Replicate UI
+  (<https://replicate.com/account/api-tokens>); only the middle step can be
+  automated: update SOPS, deploy, verify.
+- SOPS files: `gen.pollinations.ai/secrets/{dev,staging,prod}.vars.json`.
+- Deploy target: gen's Cloudflare deploy workflow. Health check: a live
+  prediction or `GET /v1/account` with the new token, plus an end-to-end
+  Pollinations smoke test.

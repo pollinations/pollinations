@@ -57,3 +57,20 @@ Known traps:
 Official reference:
 
 - https://docs.perplexity.ai
+
+## Rotation
+
+- Rotates `PERPLEXITY_API_KEY` in gen.pollinations.ai's runtime secrets — the
+  same env var name this connector lists as `Required credential`. Verify
+  empirically whether the economics copy in `secrets/env.json` is the
+  identical key value before assuming it stays valid after rotation; update it
+  too if shared.
+- Mechanism: `POST /generate_auth_token` for a new key (old stays valid),
+  deploy, verify with a live `/chat/completions` call using the `sonar` model,
+  then `POST /revoke_auth_token` for the old key. Zero downtime.
+- SOPS files: `gen.pollinations.ai/secrets/{dev,staging,prod}.vars.json`.
+- Deploy target: gen's Cloudflare deploy workflow. Health check:
+  `POST gen.pollinations.ai/v1/chat/completions` with `sonar` → 200.
+- Lowest blast radius of any rotation here (text-only, isolated provider, old
+  key valid until the very last step) — the best candidate for proving a
+  rotation end-to-end for the first time.

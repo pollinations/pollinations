@@ -128,3 +128,21 @@ Reconciliation notes:
 - BigQuery export evidence should reconcile to `op_cloud`.
 - Google invoices/payments should reconcile to `op_transactions`.
 - Credits and discounts should explain cloud usage without necessarily matching cash movement.
+
+## Rotation
+
+- Rotates the Vertex/GenAI service-account key (`GOOGLE_CLIENT_EMAIL`/
+  `GOOGLE_PRIVATE_KEY_ID`) gen.pollinations.ai uses for model calls — a
+  different credential from this connector's `GCP_BILLING_SA_JSON` (billing
+  export service account), so rotating it does not affect billing collection
+  here.
+- Mechanism: `gcloud iam service-accounts keys create` for the same SA (old
+  key stays valid), deploy, verify, then `keys delete` for the old key ID.
+  Zero downtime.
+- Authenticates via a dedicated `key-rotator` service account whose key lives
+  in the rotation tooling's own admin secrets — separate from both credentials
+  above.
+- SOPS files: `gen.pollinations.ai/secrets/{dev,staging,prod}.vars.json`.
+- Deploy target: gen's Cloudflare deploy workflow. Health check:
+  `POST gen.pollinations.ai/v1/chat/completions` against a GCP/Vertex-backed
+  model → 200.

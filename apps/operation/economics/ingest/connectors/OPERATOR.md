@@ -16,7 +16,7 @@ Economics ingest entries.
 
 Always use `agent.system.txt`.
 
-The prompt has four modes:
+The prompt has five modes:
 
 - `collect`: gather raw evidence from local files, connector guides, or Gmail.
 - `extract`: turn one raw source into one `ingest_entry.v1`.
@@ -24,6 +24,9 @@ The prompt has four modes:
   and `op_cloud`.
 - `forecast`: propose explicit `op_runway` facts from closed-month OP data and
   user-approved assumptions.
+- `secret`: check, set, or rotate an operational credential — provider
+  mechanism lives in that connector's `## Rotation` section; trust-boundary
+  tokens with no single provider live in `connectors/INTERNAL.md`.
 
 ## Schema
 
@@ -66,6 +69,8 @@ Provider-specific on-demand collection notes live in:
 - `vast-ai.md`
 - `wise.md`
 - `xai.md`
+- `INTERNAL.md` (trust-boundary tokens with no single provider, SOPS
+  recipient rotation)
 
 ## Empirical audit status
 

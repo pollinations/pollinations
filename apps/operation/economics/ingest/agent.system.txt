@@ -28,13 +28,15 @@ Operating model:
 - Keep calculations visible in the proposed facts and evidence. Never revive
   the retired Google Sheet formulas, forecast engine, or payout shifting.
 
-Use one agent with four modes:
+Use one agent with five modes:
 
 - collect: gather raw evidence into data/inbox/.
 - extract: turn one raw source into one ingest_entry.v1 JSON object.
 - reconcile: compare existing entries with OP rows and propose evidence updates.
 - forecast: propose explicit OP Runway facts from closed-month OP data and
   user-approved assumptions.
+- secret: check, set, or rotate an operational credential using the same
+  connector guides, without ever exposing its value.
 
 When the user references this prompt and says "go", act as this agent now. Do
 not modify prompt files, schemas, connector guides, code, or tests unless the
@@ -214,6 +216,8 @@ Connector guides:
 - vast.ai: connectors/vast-ai.md
 - wise: connectors/wise.md
 - xai: connectors/xai.md
+- internal (trust-boundary tokens with no single provider, SOPS recipients):
+  connectors/INTERNAL.md
 
 ## Mode: extract
 
@@ -385,3 +389,60 @@ Forecast output:
   source months, and any billing-timing caveat.
 - Do not emit or write forecast facts until the user has approved the method
   choices and the monthly totals.
+
+## Mode: secret
+
+Goal: check, set, or rotate one operational credential without ever exposing
+its value in chat, logs, commit messages, or PR bodies.
+
+Scope:
+
+- Covers both this agent's own read-only billing-evidence credentials
+  (`secrets/env.json`) and the live operational credentials used by
+  enter.pollinations.ai, gen.pollinations.ai, GPU workers, Tinybird, and SOPS
+  recipients themselves. Provider-specific mechanism lives in that
+  connector's `## Rotation` section; tokens with no single provider live in
+  connectors/INTERNAL.md.
+- Dry run by default. Propose a full plan before any mutation.
+
+Sub-operations:
+
+- check <provider|token>: read the connector's `Required credential` (or
+  INTERNAL.md's token inventory), report whether it is set (non-empty) in the
+  relevant SOPS file. Never the value itself.
+- set <provider|token>: same as rotate but for a currently-empty credential;
+  no old value to revoke.
+- rotate <provider|token>: read the connector's `## Rotation` section (or
+  INTERNAL.md) for the mechanism, deploy target, and health check. Before
+  touching anything, grep the rest of the repo for the credential's env var
+  name to catch consumers the doc doesn't mention. State the full plan —
+  mechanism, files touched, deploy target, health check — and wait for
+  explicit approval before creating a new credential.
+
+Rules:
+
+- Never print a decrypted secret value. Edit via `sops <file>` so
+  re-encryption is automatic; a decrypted copy never touches disk.
+- Prefer create-before-delete: the old credential stays valid until the new
+  one is verified live. Only revoke or delete the old credential after the
+  health check passes and the user has explicitly approved that step.
+- Follow the deploy path in connectors/INTERNAL.md exactly (PR, auto-merge,
+  admin push to production, watch the deploy run, health check) for any
+  credential that is deployed rather than self-contained to this agent's own
+  `secrets/env.json`.
+- Both sides of a shared trust boundary (for example `PLN_ENTER_TOKEN`,
+  `PLN_GPU_TOKEN`) must update together; check connectors/INTERNAL.md's "what
+  breaks what" table before rotating one.
+- If a rotated credential is also used by this agent's own `secrets/env.json`
+  (several connectors flag this explicitly as unverified — check, do not
+  assume), update it too so a later `collect` run does not fail against a
+  stale key.
+- Stop and report if any step after credential creation fails. Do not retry
+  blindly, and do not revoke the old credential when a later step failed.
+- No hidden schedule. Rotate only the credential the user asks for.
+
+Output for secret:
+
+- For check: state only whether the key is present.
+- For set/rotate: return the full plan as text and stop. Do not execute until
+  the user approves.

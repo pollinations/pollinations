@@ -91,3 +91,21 @@ Reconciliation notes:
 - Usage exports explain `op_cloud`.
 - Postpaid invoices and top-ups explain `op_transactions`.
 - Grant/credit waterfalls should be replayed from the grant start, not just the requested month.
+
+## Rotation
+
+- Rotates the primary account's `FIREWORKS_API_KEY` in gen.pollinations.ai's
+  runtime secrets — the same env var name this connector uses for the primary
+  account. Verify empirically whether it's the same key value as the
+  economics copy before assuming it stays valid; update `secrets/env.json` too
+  if shared. The three sub-account keys (`_MYCELI`, `_NEO_GLYPH`,
+  `_PIXELMARKET`) are not touched by this rotation.
+- Mechanism: `POST apiKeys` for a new key (old stays valid), deploy, verify
+  with a live model call, then `POST apiKeys:delete` for the old key. Zero
+  downtime.
+- Needs admin credentials beyond the key itself: `FIREWORKS_ACCOUNT_ID`,
+  `FIREWORKS_USER_ID` (Fireworks dashboard or `~/.fireworks/auth.ini`).
+- SOPS files: `gen.pollinations.ai/secrets/{dev,staging,prod}.vars.json`.
+- Deploy target: gen's Cloudflare deploy workflow. Health check:
+  `POST gen.pollinations.ai/v1/chat/completions` against a Fireworks-backed
+  model → 200.

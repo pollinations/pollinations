@@ -53,3 +53,18 @@ Expected entry:
 - `op_transaction_category`: `cloud` for paid invoices/top-ups, `null` for pure usage evidence
 - `should_match_op_transaction`: true for invoices/top-ups, false for pure usage exports
 - `should_match_op_cloud`: true for cycle invoice usage
+
+## Rotation
+
+- Rotates the runtime `XAI_API_KEY` gen.pollinations.ai uses for chat
+  completions — a different credential from this connector's
+  `XAI_MANAGEMENT_API_KEY` (billing/invoices). Rotation needs its own
+  management-scoped admin credentials (`XAI_MANAGEMENT_KEY`, `XAI_TEAM_ID`) —
+  verify empirically whether these are the same value as this connector's
+  management key before assuming so; the naming differs slightly.
+- Mechanism: `POST /auth/api-keys` cloning the old key's ACLs (old stays
+  valid), deploy, verify with a live grok-model completion, then
+  `DELETE /auth/api-keys/{old-id}`. Zero downtime.
+- SOPS files: `gen.pollinations.ai/secrets/{dev,staging,prod}.vars.json`.
+- Deploy target: gen's Cloudflare deploy workflow. Health check:
+  `POST gen.pollinations.ai/v1/chat/completions` with a grok model → 200.

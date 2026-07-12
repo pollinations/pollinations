@@ -33,6 +33,7 @@ type ModelsProps = {
 };
 
 const SECTION_ORDER: SectionType[] = [
+    "all",
     "image",
     "video",
     "3d",
@@ -42,6 +43,18 @@ const SECTION_ORDER: SectionType[] = [
     "community",
     "embedding",
 ];
+
+const SEARCH_LABELS: Record<SectionType, string> = {
+    all: "all",
+    image: "image",
+    video: "video",
+    "3d": "3D",
+    audio: "audio",
+    realtime: "realtime",
+    text: "text",
+    community: "community",
+    embedding: "embedding",
+};
 
 function matchesQuery(model: ModelPrice, query: string): boolean {
     if (!query) return true;
@@ -55,6 +68,7 @@ function categorizeModels(
     models: ModelPrice[],
 ): Record<SectionType, ModelPrice[]> {
     return {
+        all: models,
         image: models.filter((m) => m.type === "image"),
         video: models.filter((m) => m.type === "video"),
         "3d": models.filter((m) => m.type === "3d"),
@@ -67,7 +81,7 @@ function categorizeModels(
 }
 
 export const Models: FC<ModelsProps> = ({ showCommunityEndpoints = false }) => {
-    const [activeTab, setActiveTab] = useState<SectionType>("image");
+    const [activeTab, setActiveTab] = useState<SectionType>("all");
     const [catalogModels, setCatalogModels] = useState<ApiModelInfo[]>([]);
     const [catalogError, setCatalogError] = useState<string | null>(null);
     const [search, setSearch] = useState("");
@@ -111,6 +125,7 @@ export const Models: FC<ModelsProps> = ({ showCommunityEndpoints = false }) => {
         () => categorizeModels(filteredModels),
         [filteredModels],
     );
+    const searchLabel = SEARCH_LABELS[activeTab];
     const availableSections =
         allModels.length > 0
             ? SECTION_ORDER.filter(
@@ -120,7 +135,7 @@ export const Models: FC<ModelsProps> = ({ showCommunityEndpoints = false }) => {
 
     useEffect(() => {
         if (!availableSections.includes(activeTab)) {
-            setActiveTab(availableSections[0] ?? "text");
+            setActiveTab(availableSections[0] ?? "all");
         }
     }, [activeTab, availableSections]);
 
@@ -153,7 +168,7 @@ export const Models: FC<ModelsProps> = ({ showCommunityEndpoints = false }) => {
                     </div>
                 }
             >
-                <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div className="mb-4 flex flex-col items-start gap-3">
                     <div className="flex flex-wrap gap-1.5">
                         {availableSections.map((section) => (
                             <TabButton
@@ -177,14 +192,14 @@ export const Models: FC<ModelsProps> = ({ showCommunityEndpoints = false }) => {
                             </TabButton>
                         ))}
                     </div>
-                    <div className="relative w-full sm:w-64">
+                    <div className="relative w-full sm:w-72">
                         <SearchIcon className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-theme-text-muted" />
                         <Input
                             type="search"
                             value={search}
                             onChange={(e) => setSearch(e.target.value)}
-                            placeholder="Search models…"
-                            aria-label="Search models"
+                            placeholder={`Search ${searchLabel} models…`}
+                            aria-label={`Search ${searchLabel} models`}
                             className="w-full pl-9"
                         />
                     </div>
@@ -202,6 +217,7 @@ export const Models: FC<ModelsProps> = ({ showCommunityEndpoints = false }) => {
                 ) : (
                     <div className="overflow-x-auto md:overflow-visible [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
                         <UnifiedModelTable
+                            allModels={sectionModels.all}
                             imageModels={sectionModels.image}
                             videoModels={sectionModels.video}
                             model3dModels={sectionModels["3d"]}

@@ -1,0 +1,35 @@
+{
+  "pr_number": 12359,
+  "title": "fix: repair media documentation links",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/12359",
+  "merged_at": "2026-07-12T22:46:58Z",
+  "labels": [
+    "DEV-DOCS"
+  ],
+  "pr_body_excerpt": "- Makes generated curl examples honor OpenAPI server precedence: operation, path, then root.\n- Uses `media.pollinations.ai` for upload and retrieval examples instead of nonexistent gen routes.\n- Corrects retention wording: duplicate uploads reset retention rather than becoming no-ops.\n- Replaces three expired BYOP screenshots with current, verified media uploads.\n- Adds validation that rejects media examples using the wrong origin.\n\nChecks:\n- `npm run docs:generate`\n- `npm run docs:validate`\n- `npm run typecheck`\n- `npx vitest run test/docs.test.ts`\n- New BYOP media URLs return `200 image/png`\n\nNote: `lefthook` is unavailable locally; commits completed successfully.",
+  "gist": {
+    "category": "docs",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Pointing in the right direction",
+    "blurb": "We've polished up the API documentation for media uploads. Curl examples now point to the right servers, and we've refreshed the screenshots so everything looks as good as it works.",
+    "summary": "Updated the API documentation generator to correctly route media upload and retrieval curl examples to media.pollinations.ai instead of the text generation endpoints.",
+    "impact": "Developers copying curl commands from the docs will now hit the correct media endpoints on the first try, and duplicate upload retention rules are now clearly explained.",
+    "keywords": [
+      "docs",
+      "api",
+      "media",
+      "curl",
+      "openapi"
+    ],
+    "visual_concept": "Polly the bee fixing a directional signpost to point the right way, while the Monitor Robot holds up a fresh, working picture (representing the fixed screenshots).",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny tool belt, fixing a glowing lime green (#ecf874) wooden signpost that reads 'MEDIA'. A chunky robot with a CRT monitor head stands nearby holding a fresh, colorful picture frame. Soft pastel lavender and cream gradient background with warm lighting. Lo-fi 8-bit aesthetic, Stardew Valley vibes, emotionally warm and nostalgic."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-12/PR-12359.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny tool belt, fixing a glowing lime green (#ecf874) wooden signpost that reads 'MEDIA'. A chunky robot with a CRT monitor head stands nearby holding a fresh, colorful picture frame. Soft pastel lavender and cream gradient background with warm lighting. Lo-fi 8-bit aesthetic, Stardew Valley vibes, emotionally warm and nostalgic."
+  },
+  "generated_at": "2026-07-12T22:47:58.230745+00:00"
+}

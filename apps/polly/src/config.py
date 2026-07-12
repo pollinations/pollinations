@@ -50,6 +50,7 @@ class Config:
         # =================================================================
         discord_cfg = cfg.get("discord", {})
         self.admin_role_ids: list[int] = discord_cfg.get("admin_role_ids", [])
+        self.collaborator_role_ids: list[int] = discord_cfg.get("collaborator_role_ids", [])
 
         # Secret from .env
         self.discord_token = os.getenv("DISCORD_TOKEN")
@@ -85,6 +86,7 @@ class Config:
         # =================================================================
         ai_cfg = cfg.get("ai", {})
         self.pollinations_model = ai_cfg.get("model", "gemini-large")
+        self.pollinations_fallback_model = ai_cfg.get("fallback_model", None)
 
         # Secret from .env
         self.pollinations_token = os.getenv("POLLINATIONS_TOKEN", "")
@@ -108,7 +110,7 @@ class Config:
         self.doc_sites = features_cfg.get(
             "doc_sites",
             [
-                "https://enter.pollinations.ai/api/docs/open-api/generate-schema",
+                "https://gen.pollinations.ai/docs/open-api/generate-schema",
             ],
         )
 

@@ -85,7 +85,7 @@ npm run preview
 Create `.env` file for custom configurations:
 ```env
 # API Configuration (defaults work fine)
-VITE_API_BASE_URL=https://text.pollinations.ai
+VITE_API_BASE_URL=https://gen.pollinations.ai
 VITE_IMAGE_API_URL=https://image.pollinations.ai
 ```
 

@@ -1,7 +1,7 @@
 #!/bin/bash
 # meditate.sh — Generate a soothing TTS meditation audio via Pollinations
 # Usage: bash meditate.sh "Your meditation text here"
-# Requires: POLLINATIONS_API_KEY env var (or works without for free tier)
+# Requires: POLLINATIONS_API_KEY env var for authenticated use
 
 set -e
 
@@ -25,7 +25,7 @@ echo ""
 
 # Use Pollinations TTS API with a calm ElevenLabs voice
 # charlotte = warm, soothing female voice perfect for meditation
-API_KEY="sk_zJv4vyQXkd4H7OiwWA27dnJZhQ2x6fBN"
+API_KEY="<YOUR_POLLINATIONS_API_KEY>"
 AUTH_HEADER=""
 if [ -n "$API_KEY" ]; then
     AUTH_HEADER="-H \"Authorization: Bearer ${API_KEY}\""

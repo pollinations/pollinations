@@ -1,370 +1,367 @@
-import { useEffect, useState } from "react";
+import {
+    Alert,
+    AppHeader,
+    AppIcon,
+    Button,
+    Chip,
+    ColorModeToggle,
+    cn,
+    DiscordIcon,
+    ExternalLinkButton,
+    GitHubIcon,
+    Heading,
+    ScrollArea,
+    Surface,
+    TabButton,
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeaderCell,
+    TableRow,
+} from "@pollinations/ui";
+import { ModalityChip } from "@pollinations/ui/gen";
+import { useRef, useState } from "react";
 import { useModelMonitor } from "./hooks/useModelMonitor";
 
-// ── Modality color map ──────────────────────────────────────────────
-// primary (lavender) = image, secondary (periwinkle) = text,
-// tertiary (mint) = audio, accent (lime) = video
-const TYPE_COLORS = {
-    image: {
-        badge: "bg-primary-light text-dark border border-primary-strong",
-        card: "bg-primary-light border-primary-strong",
-        dot: "bg-primary-strong",
-    },
-    text: {
-        badge: "bg-secondary-light text-dark border border-secondary-strong",
-        card: "bg-secondary-light border-secondary-strong",
-        dot: "bg-secondary-strong",
-    },
-    audio: {
-        badge: "bg-tertiary-light text-dark border border-tertiary-strong",
-        card: "bg-tertiary-light border-tertiary-strong",
-        dot: "bg-tertiary-strong",
-    },
-    video: {
-        badge: "bg-accent-light text-dark border border-accent-strong",
-        card: "bg-accent-light border-accent-strong",
-        dot: "bg-accent-strong",
-    },
-};
+const WINDOW_OPTIONS = [
+    { key: "7d", label: "7d" },
+    { key: "24h", label: "24h" },
+    { key: "4h", label: "4h" },
+    { key: "60m", label: "1h" },
+    { key: "5m", label: "5m" },
+];
 
-const fallbackColors = TYPE_COLORS.text;
+const MODEL_TYPES = [
+    { key: "image", title: "Image" },
+    { key: "video", title: "Video" },
+    { key: "audio", title: "Audio" },
+    { key: "realtime", title: "Realtime" },
+    { key: "text", title: "Text" },
+    { key: "embedding", title: "Embedding" },
+];
 
-function typeColor(type) {
-    return TYPE_COLORS[type] || fallbackColors;
+const EXTERNAL_LINKS = [
+    {
+        href: "https://enter.pollinations.ai",
+        label: "Dashboard",
+        icon: <AppIcon className="h-4 w-4 shrink-0" />,
+        showLabel: true,
+    },
+    {
+        href: "https://discord.gg/pollinations-ai-885844321461485618",
+        label: "Discord",
+        icon: <DiscordIcon className="h-4 w-4" />,
+    },
+    {
+        href: "https://github.com/pollinations/pollinations",
+        label: "GitHub",
+        icon: <GitHubIcon className="h-4 w-4" />,
+    },
+];
+
+function isAdminPath() {
+    if (typeof window === "undefined") return false;
+    const path = window.location.pathname.replace(/\/+$/, "");
+    return path === "/debug" || path.endsWith("/debug");
 }
 
-// ── Helpers ──────────────────────────────────────────────────────────
+function statusSeverity(model) {
+    const health = computeHealthStatus(model.stats);
+    if (health === "off") return 6;
+    if (health === "degraded") return 5;
+    if (model.catalogStatus === "unregistered") return 4;
+    if (model.catalogStatus === "anomaly") return 3;
+    if (model.catalogStatus === "catalog-unavailable") return 2;
+    return 0;
+}
 
 function formatPercent(count, total, showZero = false) {
-    if (!total || total === 0) return "—";
+    if (!total || total === 0) return "-";
     const pct = (count / total) * 100;
-    if (pct === 0) return showZero ? "0%" : "—";
+    if (pct === 0) return showZero ? "0%" : "-";
     return `${pct.toFixed(1)}%`;
 }
 
-function get2xxColor(ok2xx, total, excludedUserErrors = 0) {
-    const adjustedTotal = total - excludedUserErrors;
-    if (!adjustedTotal || adjustedTotal <= 0) return "text-border";
-    if (ok2xx === 0) return "text-dark font-medium";
-    const pct = (ok2xx / adjustedTotal) * 100;
-    if (pct > 95) return "text-tertiary-strong font-medium";
-    if (pct > 80) return "text-tertiary-strong";
-    if (pct > 50) return "text-muted";
-    return "text-dark font-medium";
-}
-
-function get2xx(stats) {
-    return stats?.status_2xx || 0;
+function get2xxColor(ok2xx, total) {
+    if (!total || total <= 0) return "text-theme-text-muted";
+    if (ok2xx === 0) return "text-intent-danger-text font-semibold";
+    const pct = (ok2xx / total) * 100;
+    if (pct > 95) return "text-intent-success-text font-semibold";
+    if (pct > 80) return "text-intent-success-text";
+    if (pct > 50) return "text-theme-text-muted";
+    return "text-intent-danger-text font-semibold";
 }
 
 function getLatencyColor(latencySec) {
-    if (latencySec < 2) return "text-secondary-strong";
-    if (latencySec < 5) return "text-tertiary-strong";
-    if (latencySec < 10) return "text-muted";
-    return "text-dark font-medium";
+    if (latencySec < 2) return "text-theme-text-soft font-semibold";
+    if (latencySec < 5) return "text-intent-success-text";
+    if (latencySec < 10) return "text-theme-text-muted";
+    return "text-intent-warning-text font-semibold";
 }
 
 function computeHealthStatus(stats) {
     if (!stats || !stats.total_requests) return "on";
     const success = stats.status_2xx || 0;
-    const total5xx = stats.total_5xx || 0;
+    const total5xx = stats.errors_5xx || 0;
+    // 4xx are client errors and don't count. Judge purely on the 5xx share of
+    // real (2xx+5xx) traffic — even a single 5xx-only request is off. Low
+    // volume is not a reason to call a failing model healthy.
     const modelRequests = success + total5xx;
-    if (modelRequests < 3) return "on";
+    if (modelRequests === 0) return "on";
     const pct5xx = (total5xx / modelRequests) * 100;
     if (pct5xx >= 50) return "off";
     if (pct5xx >= 10) return "degraded";
     return "on";
 }
 
-// ── Health summary cards ─────────────────────────────────────────────
+function healthIntent(status) {
+    if (status === "off") return "danger";
+    if (status === "degraded") return "warning";
+    return "success";
+}
 
-function GlobalHealthSummary({ models }) {
-    const calcGroupStats = (group) => {
-        let total2xx = 0;
-        let total5xx = 0;
-        let countOn = 0;
-        let countDegraded = 0;
-        let countOff = 0;
+function rowIntent(status) {
+    if (status === "off") return "danger";
+    if (status === "degraded") return "warning";
+    return "default";
+}
 
-        for (const m of group) {
-            const stats = m.stats;
-            if (!stats) continue;
-            total2xx += stats.status_2xx || 0;
-            total5xx += stats.total_5xx || 0;
-            const status = computeHealthStatus(stats);
-            if (status === "on") countOn++;
-            else if (status === "degraded") countDegraded++;
-            else countOff++;
-        }
+function calcGroupStats(group) {
+    let total2xx = 0;
+    let total5xx = 0;
+    let countOn = 0;
+    let countDegraded = 0;
+    let countOff = 0;
 
-        const modelRequests = total2xx + total5xx;
-        const successRate =
-            modelRequests > 0 ? (total2xx / modelRequests) * 100 : 100;
+    for (const model of group) {
+        const stats = model.stats;
+        if (!stats) continue;
+        total2xx += stats.status_2xx || 0;
+        total5xx += stats.errors_5xx || 0;
+        const status = computeHealthStatus(stats);
+        if (status === "on") countOn++;
+        else if (status === "degraded") countDegraded++;
+        else countOff++;
+    }
 
-        let status = "healthy";
-        if (successRate < 75) status = "critical";
-        else if (successRate < 95) status = "degraded";
+    const modelRequests = total2xx + total5xx;
+    const successRate =
+        modelRequests > 0 ? (total2xx / modelRequests) * 100 : 100;
 
-        return {
-            successRate,
-            status,
-            countOn,
-            countDegraded,
-            countOff,
-            totalModels: group.length,
-        };
+    return {
+        successRate,
+        countOn,
+        countDegraded,
+        countOff,
+        totalModels: group.length,
     };
+}
 
-    const statusLabel = {
-        healthy: "Healthy",
-        degraded: "Degraded",
-        critical: "Critical",
-    };
-
-    const HealthCard = ({ title, type, stats }) => {
-        const colors = typeColor(type);
-        return (
-            <div
-                className={`flex-1 min-w-[140px] ${colors.card} border-r-4 border-b-4 p-3`}
-            >
-                <div className="flex items-center gap-2 mb-1">
-                    <span className="text-xs font-bold uppercase tracking-wider text-dark">
-                        {title}
-                    </span>
-                </div>
-                <div className="flex items-center gap-1.5 mb-1">
-                    <span
-                        className={`w-2 h-2 ${colors.dot} ${stats.status === "critical" ? "animate-pulse" : ""}`}
-                    />
-                    <span className="text-sm font-bold text-dark">
-                        {statusLabel[stats.status]}
-                    </span>
-                </div>
-                <div className="text-xs text-muted">
-                    {stats.successRate.toFixed(1)}% success
-                </div>
-                <div className="text-[10px] text-subtle mt-1">
-                    {stats.totalModels} models
-                    {(stats.countDegraded > 0 || stats.countOff > 0) && (
-                        <span className="ml-1">
-                            (
-                            {stats.countOff > 0 && (
-                                <span className="font-bold text-dark">
-                                    {stats.countOff} off
-                                </span>
-                            )}
-                            {stats.countOff > 0 &&
-                                stats.countDegraded > 0 &&
-                                ", "}
-                            {stats.countDegraded > 0 && (
-                                <span className="font-bold text-muted">
-                                    {stats.countDegraded} degraded
-                                </span>
-                            )}
-                            )
-                        </span>
-                    )}
-                </div>
-            </div>
-        );
-    };
-
-    if (models.length === 0) return null;
-
-    const types = [
-        { key: "text", title: "Text" },
-        { key: "image", title: "Image" },
-        { key: "video", title: "Video" },
-        { key: "audio", title: "Audio" },
-    ];
-
+// A count badge for a tab: red = off, orange = degraded. Just the number;
+// the native title carries the detail on hover.
+function CountBadge({ intent, count, label }) {
     return (
-        <div className="flex flex-wrap gap-3">
-            {types.map(({ key, title }) => {
-                const group = models.filter((m) => m.type === key);
-                if (group.length === 0) return null;
-                return (
-                    <HealthCard
-                        key={key}
-                        title={title}
-                        type={key}
-                        stats={calcGroupStats(group)}
-                    />
-                );
-            })}
-        </div>
+        <Chip
+            intent={intent}
+            size="sm"
+            className="tabular-nums"
+            title={`${count} ${label}`}
+        >
+            {count}
+        </Chip>
     );
 }
 
-// ── Status badge ─────────────────────────────────────────────────────
+// A tab's contents: category name + success rate, plus up to two count badges
+// (off, then degraded). Healthy categories show name + % only.
+function CategoryTab({ title, stats, showBadges = true }) {
+    return (
+        <span className="inline-flex items-center gap-1.5">
+            <span>{title}</span>
+            <span className="text-xs tabular-nums opacity-70">
+                {stats.successRate.toFixed(1)}%
+            </span>
+            {showBadges && stats.countOff > 0 && (
+                <CountBadge
+                    intent="danger"
+                    count={stats.countOff}
+                    label="off"
+                />
+            )}
+            {showBadges && stats.countDegraded > 0 && (
+                <CountBadge
+                    intent="warning"
+                    count={stats.countDegraded}
+                    label="degraded"
+                />
+            )}
+        </span>
+    );
+}
+
+// Category filter — the shared soft TabButton, same selector as the Window
+// picker. "All" clears the filter and shows the aggregate rate; only
+// categories with models are shown, each carrying its own rate + badges.
+function CategoryTabs({ models, value, onChange }) {
+    const available = MODEL_TYPES.filter(({ key }) =>
+        models.some((model) => model.type === key),
+    );
+    if (available.length === 0) return null;
+
+    return (
+        <div className="flex flex-wrap gap-1.5">
+            <TabButton
+                active={value === null}
+                onClick={() => onChange(null)}
+                size="sm"
+            >
+                <CategoryTab
+                    title="All"
+                    stats={calcGroupStats(models)}
+                    showBadges={false}
+                />
+            </TabButton>
+            {available.map(({ key, title }) => (
+                <TabButton
+                    key={key}
+                    active={value === key}
+                    onClick={() => onChange(key)}
+                    size="sm"
+                >
+                    <CategoryTab
+                        title={title}
+                        stats={calcGroupStats(
+                            models.filter((model) => model.type === key),
+                        )}
+                    />
+                </TabButton>
+            ))}
+        </div>
+    );
+}
 
 function StatusBadge({ stats }) {
     const status = computeHealthStatus(stats);
     if (status === "on") return null;
 
-    const styles = {
-        off: "bg-status-off text-white border-status-off",
-        degraded: "bg-status-degraded text-white border-status-degraded",
-    };
-
     return (
-        <span
-            className={`inline-flex items-center px-1.5 py-0.5 text-[8px] border font-bold ${styles[status]} ${status === "off" ? "animate-pulse" : ""} uppercase tracking-wider`}
+        <Chip
+            intent={healthIntent(status)}
+            size="sm"
+            className={status === "off" ? "animate-pulse" : undefined}
         >
-            {status === "off" ? "OFF" : "DEGRADED"}
-        </span>
+            {status === "off" ? "Off" : "Degraded"}
+        </Chip>
     );
 }
 
-// ── Sortable header ──────────────────────────────────────────────────
+function CatalogStatusBadge({ status }) {
+    if (!status || status === "visible") {
+        return null;
+    }
+
+    const variants = {
+        anomaly: { label: "anomaly", intent: "warning" },
+        unregistered: { label: "unknown", intent: "warning" },
+        "catalog-unavailable": { label: "unverified", intent: "neutral" },
+    };
+
+    const variant = variants[status];
+    if (!variant) return null;
+
+    return (
+        <Chip intent={variant.intent} size="sm">
+            {variant.label}
+        </Chip>
+    );
+}
 
 function SortableTh({ label, sortKey, currentSort, onSort, align = "left" }) {
     const isActive = currentSort.key === sortKey;
-    const arrow = isActive ? (currentSort.asc ? " ↑" : " ↓") : "";
-    const alignClass =
-        align === "right"
-            ? "text-right"
-            : align === "center"
-              ? "text-center"
-              : "text-left";
 
     return (
-        <th
-            className={`px-3 py-2 font-bold cursor-pointer hover:text-dark select-none uppercase tracking-wider ${alignClass}`}
-            onClick={() => onSort(sortKey)}
+        <TableHeaderCell
+            align={align}
+            active={isActive}
+            sortDirection={
+                isActive ? (currentSort.asc ? "asc" : "desc") : undefined
+            }
+            onSort={() => onSort(sortKey)}
         >
             {label}
-            {arrow}
-        </th>
+        </TableHeaderCell>
     );
 }
 
-// ── Gateway health ───────────────────────────────────────────────────
-
-function GatewayHealth({ stats }) {
-    if (!stats || stats.length === 0) return null;
-
-    const totals = stats.reduce(
-        (acc, s) => ({
-            requests: acc.requests + (s.total_requests || 0),
-            err400: acc.err400 + (s.errors_400 || 0),
-            err401: acc.err401 + (s.errors_401 || 0),
-            err402: acc.err402 + (s.errors_402 || 0),
-            err403: acc.err403 + (s.errors_403 || 0),
-            err429: acc.err429 + (s.errors_429 || 0),
-            err4xxOther: acc.err4xxOther + (s.errors_4xx_other || 0),
-        }),
-        {
-            requests: 0,
-            err400: 0,
-            err401: 0,
-            err402: 0,
-            err403: 0,
-            err429: 0,
-            err4xxOther: 0,
-        },
-    );
-
-    if (totals.requests === 0) return null;
-
-    const total4xx =
-        totals.err400 +
-        totals.err401 +
-        totals.err402 +
-        totals.err403 +
-        totals.err429 +
-        totals.err4xxOther;
-    if (total4xx === 0) return null;
-
-    const fmtPct = (n) => {
-        const p = totals.requests > 0 ? (n / totals.requests) * 100 : 0;
-        if (p === 0) return "0%";
-        return p < 1 ? `${p.toFixed(1)}%` : `${Math.round(p)}%`;
-    };
-
-    const errors = [
-        { code: "400", count: totals.err400, label: "Bad Request" },
-        { code: "401", count: totals.err401, label: "No API Key" },
-        { code: "402", count: totals.err402, label: "Billing" },
-        { code: "403", count: totals.err403, label: "Access Denied" },
-        { code: "429", count: totals.err429, label: "Rate Limited" },
-        { code: "4xx", count: totals.err4xxOther, label: "Other" },
-    ].filter((e) => e.count > 0);
+function HeaderLink({ href, label, icon, showLabel = false }) {
+    if (showLabel) {
+        return (
+            <ExternalLinkButton href={href} size="sm" className="h-9 px-3 py-0">
+                <span className="inline-flex items-center gap-1.5">
+                    {icon}
+                    {label}
+                </span>
+            </ExternalLinkButton>
+        );
+    }
 
     return (
-        <div className="bg-tan border-r-4 border-b-4 border-border overflow-hidden">
-            <div className="px-4 py-2 bg-border/50 border-b border-border">
-                <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                        <span className="text-xs font-bold uppercase tracking-wider text-dark">
-                            Auth & Validation
-                        </span>
-                        <span className="text-[10px] text-dark bg-cream px-1.5 py-0.5 border border-dark font-bold">
-                            {fmtPct(total4xx)} rejected
-                        </span>
-                    </div>
-                    <span className="text-xs text-muted">
-                        {totals.requests} unresolved
-                    </span>
-                </div>
-            </div>
-            <div className="px-4 py-2 flex flex-wrap gap-3">
-                {errors.map(({ code, count, label }) => (
-                    <div
-                        key={code}
-                        className="flex items-center gap-2 bg-cream border border-border px-2 py-1"
+        <Button
+            as="a"
+            href={href}
+            target="_blank"
+            rel="noopener noreferrer"
+            title={label}
+            size="sm"
+            className="h-9 w-9 gap-2 px-0 py-0"
+            aria-label={label}
+        >
+            {icon}
+        </Button>
+    );
+}
+
+function WindowTabs({ value, onChange }) {
+    return (
+        <div className="flex w-fit max-w-full flex-wrap items-center gap-2 text-xs font-semibold uppercase tracking-wide text-theme-text-strong">
+            <span>Window</span>
+            <span className="inline-flex flex-wrap gap-1">
+                {WINDOW_OPTIONS.map(({ key, label }) => (
+                    <TabButton
+                        key={key}
+                        active={value === key}
+                        onClick={() => onChange(key)}
+                        size="sm"
                     >
-                        <span className="text-xs font-mono font-bold text-dark">
-                            {code}
-                        </span>
-                        <span className="text-xs font-bold text-muted">
-                            {fmtPct(count)}
-                        </span>
-                        <span className="text-[10px] text-subtle">{label}</span>
-                    </div>
+                        {label}
+                    </TabButton>
                 ))}
-            </div>
+            </span>
         </div>
     );
 }
 
-// ── Main app ─────────────────────────────────────────────────────────
-
 function App() {
     const [aggregationWindow, setAggregationWindow] = useState("60m");
-    const isLiveMode = aggregationWindow === "5m";
-
-    const {
-        models,
-        gatewayStats,
-        refresh,
-        pollInterval,
-        lastUpdated,
-        error,
-        tinybirdConfigured,
-        endpointStatus,
-    } = useModelMonitor(aggregationWindow);
+    const [adminMode] = useState(isAdminPath);
+    const { models, lastUpdated, error, endpointStatus } =
+        useModelMonitor(aggregationWindow);
 
     const [sort, setSort] = useState({ key: "requests", asc: false });
-    const [countdown, setCountdown] = useState(pollInterval / 1000);
-
-    useEffect(() => {
-        setCountdown(pollInterval / 1000);
-        const timer = setInterval(() => {
-            setCountdown((prev) => (prev > 0 ? prev - 1 : pollInterval / 1000));
-        }, 1000);
-        return () => clearInterval(timer);
-    }, [pollInterval]);
+    const [typeFilter, setTypeFilter] = useState(null);
+    const scrollAreaRef = useRef(null);
+    const catalogUnavailable = endpointStatus.catalog === false;
 
     const handleSort = (key) => {
         setSort((prev) => ({
             key,
-            asc: prev.key === key ? !prev.asc : true,
+            asc:
+                prev.key === key ? !prev.asc : key === "name" || key === "type",
         }));
     };
 
     const sortedModels = [...models].sort((a, b) => {
-        // Models with no traffic at all always sink to the bottom
         const aHasData = (a.stats?.total_requests || 0) > 0;
         const bHasData = (b.stats?.total_requests || 0) > 0;
         if (aHasData !== bHasData) return aHasData ? -1 : 1;
@@ -378,10 +375,9 @@ function App() {
             case "requests":
             case "share": {
                 const aReqs =
-                    (a.stats?.total_requests || 0) - (a.stats?.total_4xx || 0);
+                    (a.stats?.total_requests || 0) - (a.stats?.errors_4xx || 0);
                 const bReqs =
-                    (b.stats?.total_requests || 0) - (b.stats?.total_4xx || 0);
-                // Tiebreak: if both have 0 non-4xx, rank by total requests
+                    (b.stats?.total_requests || 0) - (b.stats?.errors_4xx || 0);
                 if (aReqs === bReqs) {
                     return (
                         dir *
@@ -391,13 +387,38 @@ function App() {
                 }
                 return dir * (aReqs - bReqs);
             }
-            case "ok2xx":
-                return dir * (get2xx(a.stats) - get2xx(b.stats));
+            case "ok2xx": {
+                const aTotal2 =
+                    (a.stats?.total_requests || 0) - (a.stats?.errors_4xx || 0);
+                const bTotal2 =
+                    (b.stats?.total_requests || 0) - (b.stats?.errors_4xx || 0);
+                const aHasModelHealth = aTotal2 > 0;
+                const bHasModelHealth = bTotal2 > 0;
+
+                if (aHasModelHealth !== bHasModelHealth) {
+                    return aHasModelHealth ? -1 : 1;
+                }
+
+                if (!aHasModelHealth && !bHasModelHealth) {
+                    return (
+                        (b.stats?.total_requests || 0) -
+                        (a.stats?.total_requests || 0)
+                    );
+                }
+
+                const aPct2 =
+                    aTotal2 > 0 ? (a.stats?.status_2xx || 0) / aTotal2 : 0;
+                const bPct2 =
+                    bTotal2 > 0 ? (b.stats?.status_2xx || 0) / bTotal2 : 0;
+                if (aPct2 === bPct2) {
+                    return bTotal2 - aTotal2;
+                }
+                return dir * (aPct2 - bPct2);
+            }
             case "errors":
                 return (
                     dir *
-                    ((a.stats?.total_errors || 0) -
-                        (b.stats?.total_errors || 0))
+                    ((a.stats?.errors_5xx || 0) - (b.stats?.errors_5xx || 0))
                 );
             case "lastError": {
                 const aTime =
@@ -433,353 +454,359 @@ function App() {
             case "user4xx": {
                 const aTotal = a.stats?.total_requests || 1;
                 const bTotal = b.stats?.total_requests || 1;
-                const aPct = (a.stats?.total_4xx || 0) / aTotal;
-                const bPct = (b.stats?.total_4xx || 0) / bTotal;
+                const aPct = (a.stats?.errors_4xx || 0) / aTotal;
+                const bPct = (b.stats?.errors_4xx || 0) / bTotal;
                 return dir * (aPct - bPct);
             }
+            case "status":
+                return dir * (statusSeverity(a) - statusSeverity(b));
+            case "provider":
+                return dir * (a.provider || "").localeCompare(b.provider || "");
             default:
                 return 0;
         }
     });
 
-    // Endpoint status indicators
-    const endpoints = [
-        { key: "text", label: "text" },
-        { key: "image", label: "image" },
-        { key: "audio", label: "audio" },
-    ];
+    const filteredModels = typeFilter
+        ? sortedModels.filter((model) => model.type === typeFilter)
+        : sortedModels;
 
     return (
-        <div className="min-h-screen p-4 md:p-6 bg-cream">
-            <div className="max-w-5xl mx-auto space-y-4">
-                {/* Header */}
-                <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                    <div>
-                        <div className="flex items-center gap-3">
-                            <img
-                                src="/bee-text-black.svg"
-                                alt="pollinations.ai"
-                                className="h-[7.5rem]"
+        <div className="h-dvh bg-app-bg text-theme-text-base">
+            <ScrollArea ref={scrollAreaRef} axis="y" className="h-full">
+                <AppHeader
+                    navLabel="Model Monitor links"
+                    autoHide
+                    scrollTargetRef={scrollAreaRef}
+                    innerClassName={adminMode ? "polli:max-w-6xl" : undefined}
+                >
+                    {EXTERNAL_LINKS.map((link) => (
+                        <HeaderLink key={link.href} {...link} />
+                    ))}
+                    <ColorModeToggle />
+                </AppHeader>
+                <main
+                    className={cn(
+                        "mx-auto flex min-h-full w-full min-w-0 flex-col gap-4 px-4 py-5 sm:px-6 md:py-7",
+                        adminMode ? "max-w-6xl" : "max-w-5xl",
+                    )}
+                >
+                    <section className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+                        <div className="flex min-w-0 flex-col gap-1">
+                            <Heading
+                                as="h1"
+                                size="title"
+                                className="polli-model-monitor-title polli:m-0 polli:text-theme-text-strong"
+                            >
+                                Model Monitor
+                            </Heading>
+                            <p className="m-0 max-w-3xl text-base leading-relaxed text-theme-text-base">
+                                Real-time health monitoring for Pollinations AI
+                                models.
+                            </p>
+                        </div>
+                        <div className="flex flex-col items-start gap-2 sm:items-end">
+                            <WindowTabs
+                                value={aggregationWindow}
+                                onChange={setAggregationWindow}
                             />
-                            <span className="text-lg font-bold text-dark uppercase tracking-wider">
-                                model monitor
-                            </span>
-                            {isLiveMode && (
-                                <span
-                                    className="inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-bold bg-accent-light text-dark border border-accent-strong uppercase tracking-wider"
-                                    title="Live mode shows 5-minute data. More volatile than standard view."
-                                >
-                                    Live (noisy)
-                                </span>
-                            )}
+                            <p className="m-0 text-xs leading-normal text-theme-text-soft">
+                                Data as of:{" "}
+                                {lastUpdated?.toLocaleTimeString("en-GB", {
+                                    timeZone: "UTC",
+                                    hour: "2-digit",
+                                    minute: "2-digit",
+                                    second: "2-digit",
+                                }) || "-"}{" "}
+                                UTC
+                            </p>
                         </div>
-                        <p className="text-xs text-subtle flex items-center gap-2 flex-wrap mt-1">
-                            <span>
-                                {isLiveMode ? "5-minute" : "60-minute"} window
-                            </span>
-                            {endpoints.map(({ key, label }) => (
-                                <span
-                                    key={key}
-                                    className="flex items-center gap-1"
-                                >
-                                    <span
-                                        className={`inline-block w-2 h-2 ${
-                                            endpointStatus[key] === true
-                                                ? typeColor(key).dot
-                                                : endpointStatus[key] === false
-                                                  ? "bg-dark"
-                                                  : "bg-border"
-                                        }`}
-                                    />
-                                    {label}:{" "}
-                                    {
-                                        sortedModels.filter(
-                                            (m) =>
-                                                m.type === key ||
-                                                (key === "image" &&
-                                                    m.type === "video"),
-                                        ).length
-                                    }
-                                </span>
-                            ))}
-                            <span>
-                                Updated:{" "}
-                                {lastUpdated?.toLocaleTimeString() || "—"}
-                            </span>
-                        </p>
-                    </div>
+                    </section>
 
-                    <div className="flex items-center gap-3">
-                        {/* Aggregation toggle */}
-                        <div
-                            className="inline-flex border border-dark overflow-hidden"
-                            title="60m is more stable. 5m is faster but noisier."
+                    {error && (
+                        <Alert intent="danger" title="Monitor error">
+                            {error}
+                        </Alert>
+                    )}
+
+                    {catalogUnavailable && (
+                        <Alert
+                            intent="warning"
+                            title="Model catalog unavailable"
                         >
-                            <button
-                                type="button"
-                                onClick={() => setAggregationWindow("60m")}
-                                className={`px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider transition-colors ${
-                                    !isLiveMode
-                                        ? "bg-dark text-white"
-                                        : "bg-cream text-muted hover:bg-tan"
-                                }`}
-                            >
-                                60m
-                            </button>
-                            <button
-                                type="button"
-                                onClick={() => setAggregationWindow("5m")}
-                                className={`px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider transition-colors border-l border-dark ${
-                                    isLiveMode
-                                        ? "bg-accent-strong text-dark"
-                                        : "bg-cream text-muted hover:bg-tan"
-                                }`}
-                            >
-                                5m
-                            </button>
-                        </div>
+                            Showing observed Tinybird traffic only until the
+                            live model catalog responds.
+                        </Alert>
+                    )}
 
-                        {!tinybirdConfigured && (
-                            <span className="text-xs text-dark bg-accent-light px-2 py-1 border border-accent-strong font-bold">
-                                Tinybird not configured
-                            </span>
-                        )}
+                    <CategoryTabs
+                        models={models}
+                        value={typeFilter}
+                        onChange={setTypeFilter}
+                    />
 
-                        <span className="text-[10px] text-subtle tabular-nums font-mono">
-                            {countdown}s
-                        </span>
+                    <Surface variant="card" className="overflow-hidden p-0">
+                        <ScrollArea axis="x">
+                            <Table className="min-w-[960px]">
+                                <TableHead>
+                                    <tr>
+                                        <SortableTh
+                                            label="Type"
+                                            sortKey="type"
+                                            currentSort={sort}
+                                            onSort={handleSort}
+                                        />
+                                        <SortableTh
+                                            label="Model"
+                                            sortKey="name"
+                                            currentSort={sort}
+                                            onSort={handleSort}
+                                        />
+                                        <SortableTh
+                                            label="Status"
+                                            sortKey="status"
+                                            currentSort={sort}
+                                            onSort={handleSort}
+                                        />
+                                        {adminMode && (
+                                            <SortableTh
+                                                label="Provider"
+                                                sortKey="provider"
+                                                currentSort={sort}
+                                                onSort={handleSort}
+                                            />
+                                        )}
+                                        <SortableTh
+                                            label="Reqs (+4xx)"
+                                            sortKey="requests"
+                                            currentSort={sort}
+                                            onSort={handleSort}
+                                            align="right"
+                                        />
+                                        <SortableTh
+                                            label="Success"
+                                            sortKey="ok2xx"
+                                            currentSort={sort}
+                                            onSort={handleSort}
+                                            align="right"
+                                        />
+                                        <SortableTh
+                                            label="5xx"
+                                            sortKey="errors"
+                                            currentSort={sort}
+                                            onSort={handleSort}
+                                            align="right"
+                                        />
+                                        <SortableTh
+                                            label="4xx"
+                                            sortKey="user4xx"
+                                            currentSort={sort}
+                                            onSort={handleSort}
+                                            align="right"
+                                        />
+                                        <SortableTh
+                                            label="Avg"
+                                            sortKey="avg"
+                                            currentSort={sort}
+                                            onSort={handleSort}
+                                            align="right"
+                                        />
+                                        <SortableTh
+                                            label="P95"
+                                            sortKey="p95"
+                                            currentSort={sort}
+                                            onSort={handleSort}
+                                            align="right"
+                                        />
+                                    </tr>
+                                </TableHead>
+                                <TableBody>
+                                    {filteredModels.length === 0 ? (
+                                        <TableRow>
+                                            <TableCell
+                                                colSpan={adminMode ? 10 : 9}
+                                                align="center"
+                                                className="py-8 text-theme-text-muted"
+                                            >
+                                                {lastUpdated
+                                                    ? "No models found"
+                                                    : "Loading models..."}
+                                            </TableCell>
+                                        </TableRow>
+                                    ) : (
+                                        filteredModels.map((model) => {
+                                            const stats = model.stats;
+                                            const total =
+                                                stats?.total_requests || 0;
+                                            const total5xx =
+                                                stats?.errors_5xx || 0;
+                                            const total4xx =
+                                                stats?.errors_4xx || 0;
+                                            const nonUserErrorTotal =
+                                                total - total4xx;
+                                            const pct4xx =
+                                                total > 0
+                                                    ? (total4xx / total) * 100
+                                                    : 0;
+                                            const avgSec = stats?.avg_latency_ms
+                                                ? stats.avg_latency_ms / 1000
+                                                : null;
+                                            const p95Sec = stats?.latency_p95_ms
+                                                ? stats.latency_p95_ms / 1000
+                                                : null;
+                                            const health =
+                                                computeHealthStatus(stats);
 
-                        <button
-                            type="button"
-                            onClick={refresh}
-                            className="px-3 py-1.5 text-xs font-bold uppercase tracking-wider border border-dark bg-white text-dark hover:bg-tan transition-colors border-r-2 border-b-2"
-                        >
-                            Refresh
-                        </button>
-                    </div>
-                </header>
-
-                {/* Error banner */}
-                {error && (
-                    <div className="px-3 py-2 bg-cream border-r-4 border-b-4 border-dark text-xs text-dark font-bold">
-                        {error}
-                    </div>
-                )}
-
-                {/* Global Health Summary */}
-                <GlobalHealthSummary models={models} />
-
-                {/* Gateway Health (pre-model errors) */}
-                <GatewayHealth stats={gatewayStats} />
-
-                {/* Model Table */}
-                <div className="border border-dark bg-white border-r-4 border-b-4 overflow-x-auto shadow-sm">
-                    <table className="w-full text-sm">
-                        <thead className="bg-tan text-[10px] text-muted">
-                            <tr>
-                                <SortableTh
-                                    label="Model"
-                                    sortKey="name"
-                                    currentSort={sort}
-                                    onSort={handleSort}
-                                />
-                                <SortableTh
-                                    label="Reqs (+4xx)"
-                                    sortKey="requests"
-                                    currentSort={sort}
-                                    onSort={handleSort}
-                                    align="right"
-                                />
-                                <SortableTh
-                                    label="Success"
-                                    sortKey="ok2xx"
-                                    currentSort={sort}
-                                    onSort={handleSort}
-                                    align="right"
-                                />
-                                <SortableTh
-                                    label="5xx"
-                                    sortKey="errors"
-                                    currentSort={sort}
-                                    onSort={handleSort}
-                                    align="right"
-                                />
-                                <SortableTh
-                                    label="4xx"
-                                    sortKey="user4xx"
-                                    currentSort={sort}
-                                    onSort={handleSort}
-                                    align="right"
-                                />
-                                <SortableTh
-                                    label="Avg"
-                                    sortKey="avg"
-                                    currentSort={sort}
-                                    onSort={handleSort}
-                                    align="right"
-                                />
-                                <SortableTh
-                                    label="P95"
-                                    sortKey="p95"
-                                    currentSort={sort}
-                                    onSort={handleSort}
-                                    align="right"
-                                />
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-tan">
-                            {sortedModels.length === 0 ? (
-                                <tr>
-                                    <td
-                                        colSpan={7}
-                                        className="p-8 text-center text-subtle"
-                                    >
-                                        {lastUpdated
-                                            ? "No models found"
-                                            : "Loading models..."}
-                                    </td>
-                                </tr>
-                            ) : (
-                                sortedModels.map((model) => {
-                                    const stats = model.stats;
-                                    const total = stats?.total_requests || 0;
-                                    const total5xx = stats?.total_5xx || 0;
-                                    const total4xx = stats?.total_4xx || 0;
-                                    const pct4xx =
-                                        total > 0
-                                            ? (total4xx / total) * 100
-                                            : 0;
-                                    const avgSec = stats?.avg_latency_ms
-                                        ? stats.avg_latency_ms / 1000
-                                        : null;
-                                    const p95Sec = stats?.latency_p95_ms
-                                        ? stats.latency_p95_ms / 1000
-                                        : null;
-                                    const colors = typeColor(model.type);
-                                    const health = computeHealthStatus(stats);
-                                    const rowBg =
-                                        health === "off"
-                                            ? "bg-status-off-light"
-                                            : health === "degraded"
-                                              ? "bg-status-degraded-light"
-                                              : "";
-
-                                    return (
-                                        <tr
-                                            key={`${model.type}-${model.name}`}
-                                            className={`hover:bg-cream/50 ${rowBg}`}
-                                        >
-                                            <td className="px-3 py-2">
-                                                <div className="flex items-center gap-2">
-                                                    <span
-                                                        className={`px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider ${colors.badge}`}
+                                            return (
+                                                <TableRow
+                                                    key={`${model.type}-${model.name}`}
+                                                    intent={rowIntent(health)}
+                                                >
+                                                    <TableCell>
+                                                        <ModalityChip
+                                                            modality={
+                                                                model.type
+                                                            }
+                                                            size="sm"
+                                                            className="text-micro font-bold uppercase tracking-wide"
+                                                        >
+                                                            {model.type}
+                                                        </ModalityChip>
+                                                    </TableCell>
+                                                    <TableCell>
+                                                        <div className="flex items-center gap-2">
+                                                            <span className="font-medium text-theme-text-strong">
+                                                                {model.name}
+                                                            </span>
+                                                            {model.title && (
+                                                                <span className="max-w-[24rem] truncate text-xs text-theme-text-muted">
+                                                                    {
+                                                                        model.title
+                                                                    }
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                    </TableCell>
+                                                    <TableCell>
+                                                        <div className="flex flex-wrap items-center gap-1">
+                                                            <StatusBadge
+                                                                stats={stats}
+                                                            />
+                                                            <CatalogStatusBadge
+                                                                status={
+                                                                    model.catalogStatus
+                                                                }
+                                                            />
+                                                        </div>
+                                                    </TableCell>
+                                                    {adminMode && (
+                                                        <TableCell muted>
+                                                            {model.provider ||
+                                                                "-"}
+                                                        </TableCell>
+                                                    )}
+                                                    <TableCell
+                                                        align="right"
+                                                        numeric
+                                                        muted
                                                     >
-                                                        {model.type}
-                                                    </span>
-                                                    <span className="text-dark font-medium">
-                                                        {model.name}
-                                                    </span>
-                                                    <StatusBadge
-                                                        stats={stats}
-                                                    />
-                                                </div>
-                                            </td>
-                                            <td className="px-3 py-2 text-right tabular-nums text-muted">
-                                                {total > 0 ? (
-                                                    <>
-                                                        {(
-                                                            total - total4xx
-                                                        ).toLocaleString()}
-                                                        {total4xx > 0 && (
-                                                            <span className="text-subtle text-xs ml-1">
-                                                                (
-                                                                {total.toLocaleString()}
-                                                                )
+                                                        {total > 0 ? (
+                                                            <>
+                                                                {nonUserErrorTotal.toLocaleString()}
+                                                                {total4xx >
+                                                                    0 && (
+                                                                    <span className="ml-1 text-xs text-theme-text-muted">
+                                                                        (
+                                                                        {total.toLocaleString()}
+                                                                        )
+                                                                    </span>
+                                                                )}
+                                                            </>
+                                                        ) : (
+                                                            "-"
+                                                        )}
+                                                    </TableCell>
+                                                    <TableCell
+                                                        align="right"
+                                                        numeric
+                                                        className={get2xxColor(
+                                                            stats?.status_2xx ||
+                                                                0,
+                                                            nonUserErrorTotal,
+                                                        )}
+                                                    >
+                                                        {formatPercent(
+                                                            stats?.status_2xx ||
+                                                                0,
+                                                            nonUserErrorTotal,
+                                                            true,
+                                                        )}
+                                                    </TableCell>
+                                                    <TableCell
+                                                        align="right"
+                                                        numeric
+                                                    >
+                                                        {total5xx > 0 ? (
+                                                            <span className="font-semibold text-intent-danger-text">
+                                                                {total5xx}
+                                                            </span>
+                                                        ) : (
+                                                            <span className="text-theme-text-muted">
+                                                                -
                                                             </span>
                                                         )}
-                                                    </>
-                                                ) : (
-                                                    "—"
-                                                )}
-                                            </td>
-                                            <td
-                                                className={`px-3 py-2 text-right tabular-nums ${get2xxColor(
-                                                    stats?.status_2xx || 0,
-                                                    total - total4xx,
-                                                    0,
-                                                )}`}
-                                            >
-                                                {formatPercent(
-                                                    stats?.status_2xx || 0,
-                                                    total - total4xx,
-                                                    true,
-                                                )}
-                                            </td>
-                                            <td className="px-3 py-2 text-right tabular-nums">
-                                                {total5xx > 0 ? (
-                                                    <span className="text-dark font-bold">
-                                                        {total5xx}
-                                                    </span>
-                                                ) : (
-                                                    <span className="text-border">
-                                                        —
-                                                    </span>
-                                                )}
-                                            </td>
-                                            <td className="px-3 py-2 text-right tabular-nums text-subtle">
-                                                {pct4xx > 0
-                                                    ? pct4xx < 1
-                                                        ? `${pct4xx.toFixed(1)}%`
-                                                        : `${Math.round(pct4xx)}%`
-                                                    : "—"}
-                                            </td>
-                                            <td
-                                                className={`px-3 py-2 text-right tabular-nums ${
-                                                    avgSec
-                                                        ? getLatencyColor(
-                                                              avgSec,
-                                                          )
-                                                        : "text-border"
-                                                }`}
-                                            >
-                                                {avgSec
-                                                    ? `${avgSec.toFixed(1)}s`
-                                                    : "—"}
-                                            </td>
-                                            <td
-                                                className={`px-3 py-2 text-right tabular-nums ${
-                                                    p95Sec
-                                                        ? getLatencyColor(
-                                                              p95Sec,
-                                                          )
-                                                        : "text-border"
-                                                }`}
-                                            >
-                                                {p95Sec
-                                                    ? `${p95Sec.toFixed(1)}s`
-                                                    : "—"}
-                                            </td>
-                                        </tr>
-                                    );
-                                })
-                            )}
-                        </tbody>
-                    </table>
-                </div>
-
-                {/* Legend */}
-                <div className="text-[10px] text-subtle text-center">
-                    <span className="inline-block px-1.5 py-0.5 text-[8px] font-bold bg-status-off text-white border border-status-off mr-1 uppercase tracking-wider">
-                        OFF
-                    </span>
-                    5xx ≥ 50%
-                    <span className="mx-3">·</span>
-                    <span className="inline-block px-1.5 py-0.5 text-[8px] font-bold bg-status-degraded text-white border border-status-degraded mr-1 uppercase tracking-wider">
-                        DEGRADED
-                    </span>
-                    5xx ≥ 10%
-                </div>
-            </div>
+                                                    </TableCell>
+                                                    <TableCell
+                                                        align="right"
+                                                        numeric
+                                                        muted
+                                                    >
+                                                        {pct4xx > 0
+                                                            ? pct4xx < 1
+                                                                ? `${pct4xx.toFixed(1)}%`
+                                                                : `${Math.round(pct4xx)}%`
+                                                            : "-"}
+                                                    </TableCell>
+                                                    <TableCell
+                                                        align="right"
+                                                        numeric
+                                                        className={
+                                                            avgSec
+                                                                ? getLatencyColor(
+                                                                      avgSec,
+                                                                  )
+                                                                : "text-theme-text-muted"
+                                                        }
+                                                    >
+                                                        {avgSec
+                                                            ? `${avgSec.toFixed(1)}s`
+                                                            : "-"}
+                                                    </TableCell>
+                                                    <TableCell
+                                                        align="right"
+                                                        numeric
+                                                        className={
+                                                            p95Sec
+                                                                ? getLatencyColor(
+                                                                      p95Sec,
+                                                                  )
+                                                                : "text-theme-text-muted"
+                                                        }
+                                                    >
+                                                        {p95Sec
+                                                            ? `${p95Sec.toFixed(1)}s`
+                                                            : "-"}
+                                                    </TableCell>
+                                                </TableRow>
+                                            );
+                                        })
+                                    )}
+                                </TableBody>
+                            </Table>
+                        </ScrollArea>
+                    </Surface>
+                </main>
+            </ScrollArea>
         </div>
     );
 }

@@ -1,13 +1,12 @@
-import { createMCPResponse, createTextContent } from "../utils/coreUtils.js";
+import { z } from "zod";
 import {
-    setApiKey as storeApiKey,
-    getApiKey,
     clearApiKey as clearStoredKey,
-    hasApiKey,
     getKeyType,
     getMaskedKey,
+    hasApiKey,
+    setApiKey as storeApiKey,
 } from "../utils/authUtils.js";
-import { z } from "zod";
+import { createMCPResponse, createTextContent } from "../utils/coreUtils.js";
 
 async function setApiKey(params) {
     const { key } = params;
@@ -44,7 +43,7 @@ async function setApiKey(params) {
     ]);
 }
 
-async function getKeyInfo(params) {
+async function getKeyInfo() {
     if (!hasApiKey()) {
         return createMCPResponse([
             createTextContent(
@@ -77,7 +76,7 @@ async function getKeyInfo(params) {
     ]);
 }
 
-async function clearApiKey(params) {
+async function clearApiKey() {
     const wasSet = hasApiKey();
     clearStoredKey();
 

@@ -10,3 +10,6 @@ Rules:
 - Do not start with "A" or "An" — start with the action or capability
 - NEVER change, rename, or replace the app name — preserve it exactly as given
 - Preserve all proper nouns, tool names, model names, and URLs exactly
+- Stay faithful to the original description — condense it, don't reinterpret it
+- NEVER infer meaning from the app name — treat names as opaque identifiers (e.g. "Unity" could be a character, not the game engine)
+- If the original is unclear, shorten it as-is rather than guessing what the app does

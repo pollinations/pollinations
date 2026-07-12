@@ -13,10 +13,10 @@ if [ -z "$GPU0_PUBLIC_PORT" ] || [ -z "$GPU1_PUBLIC_PORT" ]; then
 fi
 
 PUBLIC_IP="${PUBLIC_IP:-52.205.25.210}"
-# PLN_IMAGE_BACKEND_TOKEN must be provided as environment variable - no default for security
-if [ -z "$PLN_IMAGE_BACKEND_TOKEN" ]; then
-    echo "ERROR: PLN_IMAGE_BACKEND_TOKEN must be set"
-    echo "Usage: PLN_IMAGE_BACKEND_TOKEN=xxx GPU0_PUBLIC_PORT=24602 GPU1_PUBLIC_PORT=25962 bash setup-ionet.sh"
+# PLN_GPU_TOKEN must be provided as environment variable - no default for security
+if [ -z "$PLN_GPU_TOKEN" ]; then
+    echo "ERROR: PLN_GPU_TOKEN must be set"
+    echo "Usage: PLN_GPU_TOKEN=xxx GPU0_PUBLIC_PORT=24602 GPU1_PUBLIC_PORT=25962 bash setup-ionet.sh"
     exit 1
 fi
 BRANCH="${BRANCH:-main}"
@@ -79,7 +79,7 @@ fi
 # 6. Create systemd services
 
 # Create .env file for token (EnvironmentFile pattern)
-echo "PLN_IMAGE_BACKEND_TOKEN=$PLN_IMAGE_BACKEND_TOKEN" > $HOME/.env
+echo "PLN_GPU_TOKEN=$PLN_GPU_TOKEN" > $HOME/.env
 chmod 600 $HOME/.env
 log "Created $HOME/.env with backend token"
 log "Creating systemd services..."

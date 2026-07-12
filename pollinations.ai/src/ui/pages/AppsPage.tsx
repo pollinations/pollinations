@@ -283,7 +283,7 @@ export default function AppsPage() {
     const { prettified } = usePrettify(
         filteredApps,
         "description",
-        apiKey,
+        apiKey ?? undefined,
         "name",
         "emoji",
     );

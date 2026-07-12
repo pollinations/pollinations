@@ -1,0 +1,5 @@
+{
+  "Acme Cloud Inc.": { "canonical": "Acme", "category": "Compute", "forecast": "avg3" },
+  "Beta, LLC":       { "canonical": "Beta", "category": "Office",  "forecast": 42 },
+  "Gamma Revenue":   { "canonical": "Gamma","category": "Revenue", "forecast": "none" }
+}

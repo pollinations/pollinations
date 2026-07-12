@@ -81,7 +81,7 @@ export default function CommunityPage() {
 
                 <Divider />
 
-                {/* Section 2 — Contributing Earns Pollen */}
+                {/* Section 2 — Build with the community */}
                 <div className="mb-12">
                     <Heading variant="section" spacing="comfortable">
                         {pageCopy.contributeTitle}
@@ -147,7 +147,7 @@ export default function CommunityPage() {
                     >
                         {pageCopy.contributeNotePre}
                         <a
-                            href={LINKS.enterTiersFaq}
+                            href={SOCIAL_LINKS.discord.url}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="font-bold text-dark hover:underline"
@@ -157,7 +157,7 @@ export default function CommunityPage() {
                         {pageCopy.contributeNotePost}
                     </Body>
                     <a
-                        href={LINKS.enterTiersFaq}
+                        href={SOCIAL_LINKS.discord.url}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="font-headline text-xs font-black hover:underline inline-flex items-center gap-1 text-dark bg-accent-strong px-2 py-0.5"
@@ -196,7 +196,7 @@ export default function CommunityPage() {
                                         href={LINKS.discordPollenBeta}
                                         target="_blank"
                                         rel="noopener noreferrer"
-                                        className="font-headline text-xs font-black text-dark bg-accent-strong px-2 py-0.5 hover:underline"
+                                        className="font-bold hover:underline"
                                     >
                                         {pageCopy.discordDesc2Link}
                                     </a>

@@ -6,11 +6,7 @@
 import { generateText } from "../../services/pollinationsAPI";
 import { memoizeAsync } from "../../utils";
 import { COPY_GUIDELINES } from "./guidelines";
-
-interface CopyItem {
-    id: string;
-    text: string;
-}
+import type { CopyItem } from "./types";
 
 /**
  * Translate copy items with natural, idiomatic rephrasing
@@ -32,7 +28,7 @@ Process all items now:`;
         `📝 [COPY] Processing ${items.length} items → ${targetLanguage}`,
     );
 
-    const response = await generateText(prompt);
+    const response = await generateText(prompt, undefined, "openai-fast");
     const result = parseJsonResponse(response, items);
     console.log(`✅ [COPY] Done`);
 

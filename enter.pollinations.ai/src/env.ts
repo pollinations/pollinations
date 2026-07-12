@@ -1,9 +1,6 @@
-import { RequestIdVariables } from "hono/request-id";
-import { LoggerVariables } from "./middleware/logger.ts";
-
-export type ErrorVariables = {
-    error?: Error;
-};
+import type { ErrorVariables } from "@shared/error.ts";
+import type { RequestIdVariables } from "hono/request-id";
+import type { LoggerVariables } from "./middleware/logger.ts";
 
 export type Env = {
     Bindings: CloudflareBindings;

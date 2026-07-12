@@ -1,0 +1,80 @@
+name: Community Quest
+description: Define a maintainer-owned community quest with a fixed Pollen reward
+body:
+  - type: textarea
+    id: process
+    attributes:
+      label: How this quest works
+      description: Standard quest workflow. Leave as-is unless you need to override.
+      value: |
+        Community quests are maintainer-owned tasks with a fixed Pollen reward earned after a linked PR is merged.
+        Only maintainer-authored quest issues should receive the `POLLEN-QUEST` label. If a community member proposes a quest, a maintainer should create the final quest issue before labeling it.
+
+        1. Comment on this issue if you'd like to take it on — multiple devs can express interest
+        2. A maintainer picks one dev and assigns the issue to them — please wait until you're assigned before starting work
+        3. Once assigned, open a PR against `main` — **start the description with `Fixes #N`** so GitHub links it to this quest
+        4. After merge, open [enter.pollinations.ai](https://enter.pollinations.ai), check quests, and claim the pending reward
+
+        Need help? Drop a comment here or ask in [Discord #dev-talk](https://discord.com/channels/885844321461485618/920274483896516609).
+    validations:
+      required: true
+
+  - type: textarea
+    id: goal
+    attributes:
+      label: Goal
+      description: One or two sentences describing what success looks like.
+      placeholder: "Add Llama 4 Maverick via Fireworks so it shows up in /v1/models and routes through the existing Fireworks provider config."
+    validations:
+      required: true
+
+  - type: textarea
+    id: scope
+    attributes:
+      label: What to build
+      description: Concrete changes needed.
+      value: |
+        -
+        -
+        -
+    validations:
+      required: true
+
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      description: Testable checklist. The PR ships when every box is ticked.
+      value: |
+        - [ ]
+        - [ ]
+        - [ ] Tests passing locally (`npm run test`)
+        - [ ] `npx biome check --write` run on modified files
+    validations:
+      required: true
+
+  - type: textarea
+    id: resources
+    attributes:
+      label: Resources
+      description: Links to docs, related code, prior PRs, or skills that help.
+      value: |
+        - [AGENTS.md](https://github.com/pollinations/pollinations/blob/main/AGENTS.md)
+        - [API docs](https://gen.pollinations.ai/api/docs)
+        -
+
+  - type: input
+    id: parent-issue
+    attributes:
+      label: Parent issue
+      description: If this quest comes from an existing issue or discussion, link it here.
+      placeholder: "#1234 or https://github.com/pollinations/pollinations/issues/1234"
+
+  - type: input
+    id: reward
+    attributes:
+      label: Reward
+      description: Pollen reward amount
+      placeholder: "e.g. 20"
+    validations:
+      required: true

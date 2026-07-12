@@ -1,0 +1,47 @@
+import type { ComponentPropsWithoutRef, FC, ReactNode } from "react";
+import { cn } from "../lib/cn.ts";
+import { Text } from "../primitives/Typography.tsx";
+
+type AlertIntent = "info" | "warning" | "danger";
+
+const intentClasses: Record<AlertIntent, string> = {
+    info: "polli:bg-theme-bg-pale polli:text-theme-text-strong",
+    warning: "polli:bg-intent-warning-bg-light polli:text-intent-warning-text",
+    danger: "polli:bg-intent-danger-bg-light polli:text-intent-danger-text",
+};
+
+export type AlertProps = ComponentPropsWithoutRef<"div"> & {
+    intent?: AlertIntent;
+    title?: ReactNode;
+};
+
+export const Alert: FC<AlertProps> = ({
+    intent = "info",
+    title,
+    className,
+    children,
+    ...rest
+}) => (
+    <div
+        {...rest}
+        role={intent === "danger" ? "alert" : "status"}
+        className={cn(
+            "polli:rounded-xl polli:px-3 polli:py-2 polli:text-sm",
+            intentClasses[intent],
+            className,
+        )}
+    >
+        {title && (
+            <Text
+                as="div"
+                size="xs"
+                tone="strong"
+                weight="bold"
+                className="polli:mb-1 polli:uppercase polli:tracking-wide"
+            >
+                {title}
+            </Text>
+        )}
+        <div>{children}</div>
+    </div>
+);

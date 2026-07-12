@@ -121,6 +121,11 @@ def main():
     summary = ai.get("summary", gist["title"])
     impact = ai.get("impact", "")
     keywords = ", ".join(ai.get("keywords", []))
+    # Trust boundary: PR body comes from merged PRs (requires repo write access),
+    # not arbitrary user input. Already truncated to 2000 chars upstream.
+    if "pr_body_excerpt" not in gist:
+        print("  WARN: gist has no pr_body_excerpt field — older gist format, specifics may be lost")
+    pr_excerpt = gist.get("pr_body_excerpt") or "(no PR body)"
 
     # Voice = platform tone (system prompt), Task = format with data (user prompt)
     voice = load_prompt("tone/discord")
@@ -129,10 +134,11 @@ def main():
         .replace("{summary}", summary)
         .replace("{impact}", impact)
         .replace("{keywords}", keywords)
+        .replace("{pr_excerpt}", pr_excerpt)
     )
 
     snippet = call_pollinations_api(
-        voice, task, pollinations_token, temperature=0.7, exit_on_failure=False
+        voice, task, pollinations_token, temperature=0.7
     )
     if not snippet:
         print("  FATAL: Discord snippet generation failed")
@@ -158,9 +164,17 @@ def main():
         except Exception:
             pass
 
-    pr_link = f"[PR #{pr_number}](<{pr_url}>)"
     author_link = f"[{author}](<https://github.com/{author}>)"
-    footer = f"\n\n{pr_link} | By {author_link}{timestamp_str}"
+
+    # App submission PRs: embed app link in the description, keep PR link in footer
+    app_url = gist.get("app_url")
+    app_name = gist.get("app_name")
+    if app_url and app_name:
+        snippet += f"\n\n🔗 [{app_name}](<{app_url}>)"
+
+    source_link = f"[PR #{pr_number}](<{pr_url}>)"
+
+    footer = f"\n\n{source_link} | By {author_link}{timestamp_str}"
 
     message = snippet + footer
 

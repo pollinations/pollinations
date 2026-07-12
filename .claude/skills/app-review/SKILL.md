@@ -54,13 +54,13 @@ git fetch origin main
 # 5. Add row
 export NEW_ROW="| EMOJI | NAME | URL | DESC | LANG | CAT | @AUTHOR | GITHUB_ID | REPO | STARS | DISCORD | | SUBMITTED_DATE | ISSUE_URL | $(date +%Y-%m-%d) |"
 node .github/scripts/app-prepend-row.js
-node .github/scripts/app-update-readme.js
+node .github/scripts/app-update-greenhouse.js
 
 # 6. Commit and push
 git add -A && git commit -m "Add NAME to CATEGORY" && git push origin HEAD --force-with-lease
 
-# 7. Create PR if new (label: TIER-APP-REVIEW-PR)
-gh pr create --title "Add NAME to CATEGORY" --body "Fixes #$ISSUE_NUMBER" --label "TIER-APP-REVIEW-PR"
+# 7. Create PR if new
+gh pr create --title "Add NAME to CATEGORY" --body "Fixes #$ISSUE_NUMBER"
 
 # 8. Update issue label
 gh issue edit $ISSUE_NUMBER --remove-label "TIER-APP" --add-label "TIER-APP-REVIEW"
@@ -74,5 +74,6 @@ gh issue edit $ISSUE_NUMBER --remove-label "TIER-APP" --add-label "TIER-APP-REVI
 |-------|---------|
 | `TIER-APP` | New submission |
 | `TIER-APP-INCOMPLETE` | Waiting for user fix |
-| `TIER-APP-REVIEW` | PR created |
+| `TIER-APP-REVIEW` | AI reviewed, awaiting maintainer |
+| `TIER-APP-APPROVED` | Maintainer approved, PR created |
 | `TIER-APP-REJECTED` | Rejected (duplicate, etc.) |

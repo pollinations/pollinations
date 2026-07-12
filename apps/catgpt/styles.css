@@ -481,6 +481,29 @@ header {
     text-align: left;
 }
 
+.model-upsell {
+    margin-top: 0.75rem;
+    padding: 0.75rem 1rem;
+    font-size: 0.82rem;
+    color: #665520;
+    background: linear-gradient(135deg, #fffbe6 0%, #fff3cc 100%);
+    border-left: 4px solid #f0c040;
+    border-radius: 0 var(--border-radius) var(--border-radius) 0;
+    line-height: 1.5;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+}
+
+.model-upsell a {
+    color: #b8860b;
+    font-weight: 600;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+}
+
+.model-upsell a:hover {
+    color: #8b6508;
+}
+
 .generate-btn.generating {
     background: var(--color-secondary);
     color: var(--color-text);

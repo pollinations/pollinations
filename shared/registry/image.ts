@@ -1,180 +1,330 @@
-import { COST_START_DATE, perMillion } from "./price-helpers";
-import type { ServiceDefinition } from "./registry";
+import { perMillion } from "./price-helpers";
+import type { ModelDefinition } from "./registry";
 
 export const DEFAULT_IMAGE_MODEL = "zimage" as const;
 
-export type ImageServiceId = keyof typeof IMAGE_SERVICES;
-export type ImageModelId = (typeof IMAGE_SERVICES)[ImageServiceId]["modelId"];
+export type ImageModelName = keyof typeof IMAGE_SERVICES;
+export type ImageModelId = (typeof IMAGE_SERVICES)[ImageModelName]["modelId"];
 
 export const IMAGE_SERVICES = {
     "kontext": {
         aliases: [],
         modelId: "kontext",
         provider: "azure",
-        paidOnly: true,
-        cost: [
-            {
-                date: COST_START_DATE,
-                completionImageTokens: 0.04, // $0.04 per image (Azure pricing)
-            },
-        ],
+        brand: "Black Forest Labs",
+        category: "image",
+        addedDate: new Date("2025-10-07").getTime(),
+        priceMultiplier: 1,
+        cost: {
+            completionImageTokens: 0.04, // per image
+        },
+        title: "FLUX.1 Kontext",
         description: "FLUX.1 Kontext - In-context editing & generation",
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
+        maxReferenceImages: 1, // Azure FLUX.1 Kontext edit route forwards one input image.
     },
     "nanobanana": {
         aliases: [],
         modelId: "nanobanana",
         provider: "google",
+        brand: "Google",
+        category: "image",
+        addedDate: new Date("2025-10-07").getTime(),
         paidOnly: true,
-        cost: [
+        priceMultiplier: 1,
+        cost: {
             // Gemini 2.5 Flash Image via Vertex AI
-            {
-                date: COST_START_DATE,
-                promptTextTokens: perMillion(0.3), // $0.30 per 1M input tokens
-                promptImageTokens: perMillion(0.3), // $0.30 per 1M input tokens
-                completionImageTokens: perMillion(30), // $30 per 1M tokens × 1290 tokens/image = $0.039 per image
-            },
-        ],
-        description: "NanoBanana - Gemini 2.5 Flash Image",
+            promptTextTokens: perMillion(0.3), // per 1M tokens
+            promptImageTokens: perMillion(0.3), // per 1M tokens
+            completionImageTokens: perMillion(30), // per 1M tokens, 1290 tokens/image
+        },
+        title: "NanoBanana",
+        description: "NanoBanana - Fast image generation & editing",
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
+        maxReferenceImages: 3, // Pollinations cap for Gemini 2.5 Flash Image route.
     },
     "nanobanana-2": {
         aliases: ["nanobanana2"],
         modelId: "nanobanana-2",
         provider: "google",
+        brand: "Google",
+        category: "image",
+        addedDate: new Date("2026-02-27").getTime(),
         paidOnly: true,
-        cost: [
+        priceMultiplier: 1,
+        cost: {
             // Gemini 3.1 Flash Image via Vertex AI
-            {
-                date: COST_START_DATE,
-                promptTextTokens: perMillion(0.5), // $0.50 per 1M input tokens
-                promptImageTokens: perMillion(0.5), // $0.50 per 1M input tokens
-                completionImageTokens: perMillion(60), // $60 per 1M tokens × 2520 tokens/image = $0.151 per image
-            },
-        ],
-        description: "NanoBanana 2 - Gemini 3.1 Flash Image",
+            promptTextTokens: perMillion(0.5), // per 1M tokens
+            promptImageTokens: perMillion(0.5), // per 1M tokens
+            completionTextTokens: perMillion(3), // text/reasoning output tokens
+            completionImageTokens: perMillion(60), // per 1M tokens, 2520 tokens/image
+        },
+        title: "NanoBanana 2",
+        description:
+            "NanoBanana 2 - Image generation & editing with sharper detail",
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
+        maxReferenceImages: 14, // Pollinations cap for Gemini 3.1 Flash Image route.
+    },
+    "nanobanana-2-lite": {
+        aliases: ["nanobanana2lite", "nanobanana-lite"],
+        modelId: "nanobanana-2-lite",
+        provider: "google",
+        brand: "Google",
+        category: "image",
+        addedDate: new Date("2026-06-30").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1,
+        cost: {
+            // Gemini 3.1 Flash-Lite Image (GA) via Vertex AI — half of nanobanana-2
+            promptTextTokens: perMillion(0.25), // per 1M tokens
+            promptImageTokens: perMillion(0.25), // per 1M tokens
+            completionTextTokens: perMillion(1.5), // text/reasoning output tokens
+            completionImageTokens: perMillion(30), // per 1M tokens, 1120 tokens/1K image = $0.0336
+        },
+        title: "NanoBanana 2 Lite",
+        description:
+            "NanoBanana 2 Lite - Fast, low-cost image generation & editing",
+        inputModalities: ["text", "image"],
+        outputModalities: ["image"],
+        maxReferenceImages: 14, // Pollinations cap for Gemini 3.1 Flash-Lite Image route.
     },
     "nanobanana-pro": {
         aliases: [],
         modelId: "nanobanana-pro",
         provider: "google",
+        brand: "Google",
+        category: "image",
+        addedDate: new Date("2025-12-01").getTime(),
         paidOnly: true,
-        cost: [
+        priceMultiplier: 1,
+        cost: {
             // Gemini 3 Pro Image via Vertex AI
             // 1K/2K image: 1120 tokens = $0.134/image ($120/M tokens)
             // 4K image: 2000 tokens = $0.24/image
-            {
-                date: COST_START_DATE,
-                promptTextTokens: perMillion(1.25), // $1.25 per 1M input tokens
-                promptImageTokens: perMillion(1.25), // $1.25 per 1M input tokens
-                completionImageTokens: perMillion(120), // $120 per 1M tokens = $0.134 per 1K image
-            },
-        ],
+            promptTextTokens: perMillion(1.25), // per 1M tokens
+            promptImageTokens: perMillion(1.25), // per 1M tokens
+            completionTextTokens: perMillion(12), // text/reasoning output tokens
+            completionImageTokens: perMillion(120), // per 1M tokens, 1120 tokens per 1K image
+        },
+        title: "NanoBanana Pro",
         description: "NanoBanana Pro - Gemini 3 Pro Image (4K, Thinking)",
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
+        maxReferenceImages: 14, // Gemini 3 Pro Image provider limit.
     },
     "seedream5": {
         aliases: [],
         modelId: "seedream5",
-        provider: "bytedance",
+        provider: "replicate",
+        brand: "ByteDance",
+        category: "image",
+        addedDate: new Date("2026-02-27").getTime(),
+        priceMultiplier: 1,
         paidOnly: true,
-        cost: [
-            // ByteDance ARK Seedream 5.0 Lite - $0.035 per image
-            {
-                date: COST_START_DATE,
-                completionImageTokens: 0.035, // $0.035 per image (3.5 cents)
-            },
-        ],
+        cost: {
+            completionImageTokens: 0.035, // per image
+        },
+        title: "Seedream 5.0 Lite",
         description:
-            "Seedream 5.0 Lite - ByteDance ARK (web search, reasoning)",
+            "Seedream 5.0 Lite - Image generation with web search & reasoning",
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
+        maxReferenceImages: 14, // Pollinations route cap from Replicate schema.
+    },
+    "seedream5-pro": {
+        aliases: ["seedream-5-pro", "seedream-pro-5"],
+        modelId: "seedream5-pro",
+        provider: "replicate",
+        brand: "ByteDance",
+        category: "image",
+        addedDate: new Date("2026-07-10").getTime(),
+        priceMultiplier: 1,
+        paidOnly: true,
+        cost: {
+            completionImageTokens: 0.09, // per 2K image
+        },
+        title: "Seedream 5.0 Pro",
+        description: "Premium multimodal image generation and editing",
+        inputModalities: ["text", "image"],
+        outputModalities: ["image"],
+        maxReferenceImages: 10,
     },
     "seedream": {
         aliases: [],
         modelId: "seedream",
-        provider: "bytedance",
+        provider: "replicate",
+        brand: "ByteDance",
+        category: "image",
+        addedDate: new Date("2025-10-07").getTime(),
+        priceMultiplier: 1,
         paidOnly: true,
-        hidden: true,
-        cost: [
-            {
-                date: COST_START_DATE,
-                completionImageTokens: 0.03, // $0.03 per image (real 4.0)
-            },
-        ],
-        description: "Seedream 4.0 - ByteDance ARK (legacy)",
+        cost: {
+            completionImageTokens: 0.03, // per image
+        },
+        title: "Seedream 4.0",
+        description: "Seedream 4.0 - Photorealistic image generation",
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
+        maxReferenceImages: 10, // Pollinations route cap from Replicate schema.
     },
     "seedream-pro": {
         aliases: [],
         modelId: "seedream-pro",
-        provider: "bytedance",
+        provider: "replicate",
+        brand: "ByteDance",
+        category: "image",
+        addedDate: new Date("2025-12-04").getTime(),
+        priceMultiplier: 1,
         paidOnly: true,
-        hidden: true,
-        cost: [
-            {
-                date: COST_START_DATE,
-                completionImageTokens: 0.04, // $0.04 per image (real 4.5)
-            },
-        ],
-        description: "Seedream 4.5 Pro - ByteDance ARK (legacy)",
+        cost: {
+            completionImageTokens: 0.04, // per image
+        },
+        title: "Seedream 4.5 Pro",
+        description:
+            "Seedream 4.5 Pro - Premium photorealistic image generation",
         inputModalities: ["text", "image"],
+        outputModalities: ["image"],
+        maxReferenceImages: 14, // Pollinations route cap from Replicate schema.
+    },
+    // Ideogram 4.0 (turbo/balanced/quality) via Replicate. These are official
+    // Replicate models (is_official=true) → billed a FLAT price per output
+    // image set by the publisher, NOT per-second of GPU time. The price is
+    // therefore independent of the resolution preset the handler picks, and all
+    // v4 presets sit in a single 3.4–4.2 MP band (no 1K/2K/4K tier split). So a
+    // flat per-image cost is correct regardless of aspect ratio / resolution.
+    "ideogram-v4-turbo": {
+        aliases: [],
+        modelId: "ideogram-v4-turbo",
+        provider: "replicate",
+        brand: "Ideogram",
+        category: "image",
+        addedDate: new Date("2026-06-15").getTime(),
+        priceMultiplier: 1,
+        paidOnly: true,
+        cost: {
+            completionImageTokens: 0.03, // flat per image — ideogram-ai/ideogram-v4-turbo
+        },
+        title: "Ideogram 4.0 Turbo",
+        description:
+            "Ideogram 4.0 Turbo - Fast text-to-image with accurate typography",
+        inputModalities: ["text"],
+        outputModalities: ["image"],
+    },
+    "ideogram-v4-balanced": {
+        aliases: [],
+        modelId: "ideogram-v4-balanced",
+        provider: "replicate",
+        brand: "Ideogram",
+        category: "image",
+        addedDate: new Date("2026-06-15").getTime(),
+        priceMultiplier: 1,
+        paidOnly: true,
+        cost: {
+            completionImageTokens: 0.06, // flat per image — ideogram-ai/ideogram-v4-balanced
+        },
+        title: "Ideogram 4.0 Balanced",
+        description:
+            "Ideogram 4.0 Balanced - Text-to-image with accurate typography",
+        inputModalities: ["text"],
+        outputModalities: ["image"],
+    },
+    "ideogram-v4-quality": {
+        aliases: [],
+        modelId: "ideogram-v4-quality",
+        provider: "replicate",
+        brand: "Ideogram",
+        category: "image",
+        addedDate: new Date("2026-06-15").getTime(),
+        priceMultiplier: 1,
+        paidOnly: true,
+        cost: {
+            completionImageTokens: 0.1, // flat per image — ideogram-ai/ideogram-v4-quality
+        },
+        title: "Ideogram 4.0 Quality",
+        description:
+            "Ideogram 4.0 Quality - High-fidelity text-to-image with typography",
+        inputModalities: ["text"],
         outputModalities: ["image"],
     },
     "gptimage": {
         aliases: ["gpt-image", "gpt-image-1-mini"],
         modelId: "gptimage",
-        provider: "azure-2",
-        cost: [
-            // Azure gpt-image-1-mini
-            {
-                date: COST_START_DATE,
-                promptTextTokens: perMillion(2.0), // $2.00 per 1M text input tokens
-                promptCachedTokens: perMillion(0.2), // $0.20 per 1M cached text input tokens
-                promptImageTokens: perMillion(2.5), // $2.50 per 1M image input tokens
-                completionImageTokens: perMillion(8), // $8.00 per 1M output tokens
-            },
-        ],
-        description: "GPT Image 1 Mini - OpenAI's image generation model",
+        provider: "azure",
+        brand: "OpenAI",
+        category: "image",
+        addedDate: new Date("2025-10-10").getTime(),
+        priceMultiplier: 0.75,
+        cost: {
+            promptTextTokens: perMillion(2.0), // per 1M tokens
+            promptCachedTokens: perMillion(0.2), // per 1M tokens
+            promptImageTokens: perMillion(2.5), // per 1M tokens
+            completionImageTokens: perMillion(8), // per 1M tokens
+        },
+        title: "GPT Image 1 Mini",
+        description: "GPT Image 1 Mini - Fast & affordable image generation",
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
+        maxReferenceImages: 16, // GPT Image edit endpoint accepts up to 16 input images.
     },
     "gptimage-large": {
         aliases: ["gpt-image-1.5", "gpt-image-large"],
         modelId: "gptimage-large",
         provider: "azure",
-        paidOnly: true,
-        cost: [
-            // Azure GPT Image 1.5 (via AI Foundry)
+        brand: "OpenAI",
+        category: "image",
+        addedDate: new Date("2025-12-23").getTime(),
+        priceMultiplier: 1,
+        cost: {
             // Official pricing: https://techcommunity.microsoft.com/blog/azure-ai-foundry-blog/introducing-openai%E2%80%99s-gpt-image-1-5-in-microsoft-foundry/4478139
-            {
-                date: COST_START_DATE,
-                promptTextTokens: perMillion(8), // $8.00 per 1M input tokens (Azure)
-                promptCachedTokens: perMillion(2), // $2.00 per 1M cached input tokens (Azure)
-                promptImageTokens: perMillion(8), // $8.00 per 1M image input tokens (Azure)
-                completionImageTokens: perMillion(32), // $32.00 per 1M output tokens (Azure)
-            },
-        ],
-        description: "GPT Image 1.5 - OpenAI's advanced image generation model",
+            promptTextTokens: perMillion(5), // per 1M tokens
+            promptCachedTokens: perMillion(1.25), // per 1M tokens
+            promptImageTokens: perMillion(8), // per 1M tokens
+            completionTextTokens: perMillion(10), // per 1M tokens
+            completionImageTokens: perMillion(32), // per 1M tokens
+        },
+        title: "GPT Image 1.5",
+        description: "GPT Image 1.5 - High-fidelity image generation & editing",
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
+        maxReferenceImages: 16, // GPT Image edit endpoint accepts up to 16 input images.
+    },
+    "gpt-image-2": {
+        aliases: [],
+        modelId: "gpt-image-2",
+        provider: "openai",
+        brand: "OpenAI",
+        category: "image",
+        addedDate: new Date("2026-04-22").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1,
+        cost: {
+            promptTextTokens: perMillion(5), // per 1M tokens
+            promptCachedTokens: perMillion(1.25), // per 1M tokens
+            promptImageTokens: perMillion(8), // per 1M tokens
+            completionImageTokens: perMillion(30), // per 1M tokens
+        },
+        title: "GPT Image 2",
+        description:
+            "GPT Image 2 - Premium high-resolution image generation & editing",
+        inputModalities: ["text", "image"],
+        outputModalities: ["image"],
+        maxReferenceImages: 16, // GPT Image edit endpoint accepts up to 16 input images.
     },
     "flux": {
         aliases: [],
         modelId: "flux",
-        provider: "vast.ai",
-        cost: [
-            {
-                date: COST_START_DATE,
-                completionImageTokens: 0.001,
-            },
-        ],
+        provider: "vast",
+        brand: "Black Forest Labs",
+        category: "image",
+        addedDate: new Date("2025-10-07").getTime(),
+        priceMultiplier: 1.25,
+        cost: {
+            completionImageTokens: 0.0014, // per image
+        },
+        title: "Flux Schnell",
         description: "Flux Schnell - Fast high-quality image generation",
         inputModalities: ["text"],
         outputModalities: ["image"],
@@ -182,14 +332,16 @@ export const IMAGE_SERVICES = {
     "zimage": {
         aliases: ["z-image", "z-image-turbo"],
         modelId: "zimage",
-        provider: "vast.ai",
-        cost: [
-            {
-                date: COST_START_DATE,
-                completionImageTokens: 0.002,
-            },
-        ],
-        description: "Z-Image Turbo - Fast 6B Flux with 2x upscaling",
+        provider: "runpod",
+        brand: "Alibaba",
+        category: "image",
+        addedDate: new Date("2025-12-08").getTime(),
+        priceMultiplier: 1,
+        cost: {
+            completionImageTokens: 0.002, // per image
+        },
+        title: "Z-Image Turbo",
+        description: "Z-Image Turbo - Alibaba S3-DiT 6B with 2x SPAN upscaling",
         inputModalities: ["text"],
         outputModalities: ["image"],
     },
@@ -197,214 +349,327 @@ export const IMAGE_SERVICES = {
         aliases: ["veo-3.1-fast", "video"],
         modelId: "veo",
         provider: "google",
+        brand: "Google",
+        category: "video",
+        addedDate: new Date("2025-11-27").getTime(),
         paidOnly: true,
-        cost: [
-            // Veo 3.1 Fast - $0.15 per second of video
-            // We bill by "video seconds" - each second is counted like a token
-            {
-                date: COST_START_DATE,
-                completionVideoSeconds: 0.15, // $0.15 per second of video
-            },
-        ],
-        description: "Veo 3.1 Fast - Google's video generation model (preview)",
+        priceMultiplier: 1,
+        cost: {
+            completionVideoSeconds: 0.15, // per sec
+        },
+        title: "Veo 3.1 Fast",
+        description: "Veo 3.1 Fast - Fast text-to-video with audio (preview)",
         inputModalities: ["text", "image"],
         outputModalities: ["video"],
-    },
-    "seedance": {
-        aliases: [],
-        modelId: "seedance",
-        provider: "bytedance",
-        paidOnly: true,
-        cost: [
-            // Seedance Lite - $1.8/M tokens
-            // Token formula: (height × width × FPS × duration) / 1024
-            {
-                date: COST_START_DATE,
-                completionVideoTokens: perMillion(1.8), // $1.8 per 1M tokens
-            },
-        ],
-        description:
-            "Seedance Lite - BytePlus video generation (better quality)",
-        inputModalities: ["text", "image"],
-        outputModalities: ["video"],
+        videoCapabilities: ["start_frame", "end_frame", "audio_output"],
+        maxReferenceImages: 2, // Video keyframe slots: start + end.
     },
     "seedance-pro": {
         aliases: [],
         modelId: "seedance-pro",
-        provider: "bytedance",
+        provider: "replicate",
+        brand: "ByteDance",
+        category: "video",
+        addedDate: new Date("2025-12-04").getTime(),
+        priceMultiplier: 1,
         paidOnly: true,
-        cost: [
-            // Seedance Pro-Fast - $1/M tokens
-            // Token formula: (height × width × FPS × duration) / 1024
-            {
-                date: COST_START_DATE,
-                completionVideoTokens: perMillion(1.0), // $1.0 per 1M tokens
-            },
-        ],
+        // Replicate bytedance/seedance-1-pro-fast is per-second tiered by
+        // resolution (480p $0.015, 720p $0.025, 1080p $0.06). Handler is locked
+        // to 720p; revisit if/when the registry supports tiered pricing.
+        cost: {
+            completionVideoSeconds: 0.025, // per sec at 720p
+        },
+        title: "Seedance Pro-Fast",
         description:
-            "Seedance Pro-Fast - BytePlus video generation (better prompt adherence)",
+            "Seedance Pro-Fast - Text/image-to-video (720p, better prompt adherence)",
         inputModalities: ["text", "image"],
         outputModalities: ["video"],
+        videoCapabilities: ["start_frame"],
+        maxReferenceImages: 1, // Video keyframe slots: start only.
+    },
+    "seedance-2.0": {
+        aliases: ["seedance-2"],
+        modelId: "seedance-2.0",
+        provider: "replicate",
+        brand: "ByteDance",
+        category: "video",
+        addedDate: new Date("2026-05-07").getTime(),
+        priceMultiplier: 1,
+        paidOnly: true,
+        // non_video_in tier @ 720p; see provider-billing/providers/replicate.md
+        cost: {
+            completionVideoSeconds: 0.18,
+        },
+        title: "Seedance 2.0",
+        description:
+            "Seedance 2.0 - ByteDance multimodal video gen (720p, native audio)",
+        inputModalities: ["text", "image"],
+        outputModalities: ["video", "audio"],
+        videoCapabilities: ["start_frame", "end_frame", "audio_output"],
+        maxReferenceImages: 2, // Video keyframe slots: start + end.
     },
     "wan": {
         aliases: ["wan2.6", "wan-i2v"],
         modelId: "wan",
-        provider: "alibaba",
+        provider: "replicate",
+        brand: "Alibaba",
+        category: "video",
+        addedDate: new Date("2026-01-21").getTime(),
+        priceMultiplier: 1,
         paidOnly: true,
-        cost: [
-            // Wan 2.6 - Alibaba DashScope international pricing (720P)
-            // T2V: $0.10/sec, I2V+audio: $0.05/sec, I2V no audio: $0.025/sec
-            // Using I2V+audio rate as base since T2V also generates audio
-            // Audio cost split out separately for tracking
-            {
-                date: new Date("2026-02-20").getTime(),
-                completionVideoSeconds: 0.05, // $0.05 per second (video)
-                completionAudioSeconds: 0.05, // $0.05 per second (audio)
-            },
-        ],
+        // Replicate wan-2.6, locked to 720p ($0.10/s). Native audio is bundled
+        // into the per-second rate, so there is no separate audio line.
+        cost: {
+            completionVideoSeconds: 0.1, // per sec (720p, includes audio)
+        },
+        title: "Wan 2.6",
         description:
-            "Wan 2.6 - Alibaba text/image-to-video with audio (2-15s, up to 1080P) via DashScope",
+            "Wan 2.6 - text/image-to-video with audio (720p, 5/10/15s)",
         inputModalities: ["text", "image"],
         outputModalities: ["video"],
+        videoCapabilities: ["start_frame", "audio_output"],
+        maxReferenceImages: 1, // Video keyframe slots: start only.
+    },
+    "wan-fast": {
+        aliases: ["wan2.2", "wan-2.2"],
+        modelId: "wan-fast",
+        provider: "replicate",
+        brand: "Alibaba",
+        category: "video",
+        addedDate: new Date("2026-03-23").getTime(),
+        priceMultiplier: 1,
+        paidOnly: true,
+        // Replicate wan-2.2-fast, locked to 480p. Silent, fixed ~5s clip billed
+        // flat ($0.01/s x 5s = $0.05).
+        cost: {
+            completionVideoSeconds: 0.01, // per sec (480p, silent)
+        },
+        title: "Wan 2.2",
+        description: "Wan 2.2 - Fast & cheap text/image-to-video (5s, 480p)",
+        inputModalities: ["text", "image"],
+        outputModalities: ["video"],
+        videoCapabilities: ["start_frame", "end_frame"],
+        maxReferenceImages: 2, // Video keyframe slots: start + end.
+    },
+    "wan-pro": {
+        aliases: ["wan2.7", "wan-2.7"],
+        modelId: "wan-pro",
+        provider: "replicate",
+        brand: "Alibaba",
+        category: "video",
+        addedDate: new Date("2026-05-26").getTime(),
+        priceMultiplier: 1,
+        paidOnly: true,
+        // Replicate wan-2.7, locked to 720p ($0.10/s). Audio bundled into the
+        // per-second rate. 1080p would be a separate model (one price each).
+        cost: {
+            completionVideoSeconds: 0.1, // per sec (720p, includes audio)
+        },
+        title: "Wan 2.7",
+        description:
+            "Wan 2.7 - text/image-to-video with bundled audio (720p, keyframes)",
+        inputModalities: ["text", "image"],
+        outputModalities: ["video", "audio"],
+        videoCapabilities: ["start_frame", "end_frame", "audio_output"],
+        maxReferenceImages: 2, // Video keyframe slots: start + end.
+    },
+    "wan-pro-1080p": {
+        aliases: ["wan2.7-1080p", "wan-pro-1080"],
+        modelId: "wan-pro-1080p",
+        provider: "replicate",
+        brand: "Alibaba",
+        category: "video",
+        addedDate: new Date("2026-06-13").getTime(),
+        priceMultiplier: 1,
+        paidOnly: true,
+        // Replicate wan-2.7 locked to 1080p. i2v bills $0.15/s at 1080p and t2v
+        // $0.10/s; we charge the single higher rate so the model has one price
+        // and never under-bills. Audio bundled into the per-second rate.
+        cost: {
+            completionVideoSeconds: 0.15, // per sec (1080p, includes audio)
+        },
+        title: "Wan 2.7 1080p",
+        description:
+            "Wan 2.7 1080p - text/image-to-video with bundled audio (1080p, keyframes)",
+        inputModalities: ["text", "image"],
+        outputModalities: ["video", "audio"],
+        videoCapabilities: ["start_frame", "end_frame", "audio_output"],
+        maxReferenceImages: 2, // Video keyframe slots: start + end.
+    },
+    "wan-image": {
+        aliases: ["wan2.7-image", "wan-img"],
+        modelId: "wan-image",
+        provider: "replicate",
+        brand: "Alibaba",
+        category: "image",
+        addedDate: new Date("2026-04-02").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1,
+        // Moved off Alibaba DashScope ($0.035) to Replicate wan-2.7-image.
+        cost: {
+            completionImageTokens: 0.03, // per image
+        },
+        title: "Wan 2.7 Image",
+        description:
+            "Wan 2.7 Image - Alibaba text-to-image and image editing (up to 2K)",
+        inputModalities: ["text", "image"],
+        outputModalities: ["image"],
+        maxReferenceImages: 9, // Pollinations route cap.
+    },
+    "wan-image-pro": {
+        aliases: ["wan2.7-image-pro", "wan-img-pro"],
+        modelId: "wan-image-pro",
+        provider: "replicate",
+        brand: "Alibaba",
+        category: "image",
+        addedDate: new Date("2026-04-02").getTime(),
+        priceMultiplier: 1,
+        paidOnly: true,
+        // Moved off Alibaba DashScope ($0.075) to Replicate wan-2.7-image-pro,
+        // which prices Pro identically to standard ($0.03/img).
+        cost: {
+            completionImageTokens: 0.03, // per image
+        },
+        title: "Wan 2.7 Image Pro",
+        description:
+            "Wan 2.7 Image Pro - Alibaba text-to-image and editing (4K, thinking mode)",
+        inputModalities: ["text", "image"],
+        outputModalities: ["image"],
+        maxReferenceImages: 9, // Pollinations route cap.
+    },
+    "qwen-image": {
+        aliases: [
+            "qwen-image-plus",
+            "qwen-image-2512",
+            "qwen-image-edit",
+            "qwen-image-edit-plus",
+        ],
+        modelId: "qwen-image",
+        provider: "replicate",
+        brand: "Qwen",
+        category: "image",
+        addedDate: new Date("2026-03-23").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1,
+        // Moved off Alibaba DashScope to Replicate: qwen/qwen-image (t2i,
+        // $0.025) + qwen/qwen-image-edit-plus (edit, $0.03). Billed at $0.03.
+        cost: {
+            completionImageTokens: 0.03, // per image
+        },
+        title: "Qwen Image Plus",
+        description:
+            "Qwen Image Plus - Alibaba text-to-image and image editing",
+        inputModalities: ["text", "image"],
+        outputModalities: ["image"],
+        maxReferenceImages: 3, // DashScope Qwen Image Edit route cap.
+    },
+    "grok-imagine": {
+        aliases: ["grok-imagine-image"],
+        modelId: "grok-imagine",
+        provider: "xai",
+        brand: "xAI",
+        category: "image",
+        addedDate: new Date("2026-02-25").getTime(),
+        priceMultiplier: 1,
+        paidOnly: true,
+        cost: {
+            completionImageTokens: 0.02, // per image
+        },
+        title: "Grok Imagine",
+        description: "Grok Imagine - Photorealistic image generation",
+        inputModalities: ["text", "image"],
+        outputModalities: ["image"],
+        maxReferenceImages: 1, // xAI image edit route forwards one input image.
+    },
+    "grok-imagine-pro": {
+        aliases: ["grok-aurora", "aurora", "grok-imagine-image-pro"],
+        modelId: "grok-imagine-pro",
+        provider: "xai",
+        brand: "xAI",
+        category: "image",
+        addedDate: new Date("2026-03-23").getTime(),
+        priceMultiplier: 1,
+        paidOnly: true,
+        cost: {
+            completionImageTokens: 0.07, // per image
+        },
+        title: "Grok Imagine Pro",
+        description:
+            "Grok Imagine Pro - xAI official pro image generation (Aurora)",
+        inputModalities: ["text", "image"],
+        outputModalities: ["image"],
+        maxReferenceImages: 1, // xAI image edit route forwards one input image.
+    },
+    "grok-video-pro": {
+        aliases: ["grok-imagine-video"],
+        modelId: "grok-video-pro",
+        provider: "xai",
+        brand: "xAI",
+        category: "video",
+        addedDate: new Date("2026-03-23").getTime(),
+        priceMultiplier: 1,
+        paidOnly: true,
+        cost: {
+            completionVideoSeconds: 0.05, // per sec at 720p
+        },
+        title: "Grok Video Pro",
+        description:
+            "Grok Video Pro - xAI official video generation (720p, 1-15s)",
+        inputModalities: ["text", "image"],
+        outputModalities: ["video"],
+        videoCapabilities: ["start_frame"],
+        maxReferenceImages: 1, // Video keyframe slots: start only.
     },
     "klein": {
         aliases: ["flux-klein"],
         modelId: "klein",
-        provider: "bpai",
-        alpha: true,
-        cost: [
-            {
-                date: new Date("2026-01-21").getTime(), // Launch date
-                completionImageTokens: 0.01,
-            },
-        ],
-        description:
-            "FLUX.2 Klein 4B - Fast image generation and editing via bpaigen",
+        provider: "runpod",
+        brand: "Black Forest Labs",
+        category: "image",
+        addedDate: new Date("2026-01-17").getTime(),
+        priceMultiplier: 1,
+        cost: {
+            completionImageTokens: 0.01,
+        },
+        title: "FLUX.2 Klein 4B",
+        description: "FLUX.2 Klein 4B - Fast image generation and editing",
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
-    },
-    "imagen-4": {
-        aliases: ["imagen"],
-        modelId: "imagen-4",
-        provider: "airforce",
-        alpha: true,
-        cost: [
-            {
-                date: new Date("2026-02-07").getTime(),
-                completionImageTokens: 0.0025, // $0.0025 per image
-            },
-        ],
-        description: "Imagen 4 (api.airforce) - Google's latest image gen",
-        inputModalities: ["text"],
-        outputModalities: ["image"],
-    },
-    "flux-2-dev": {
-        aliases: ["flux-2", "flux2-dev"],
-        modelId: "flux-2-dev",
-        provider: "airforce",
-        alpha: true,
-        cost: [
-            {
-                date: new Date("2026-03-02").getTime(),
-                completionImageTokens: 0.001, // $0.001 per image
-            },
-        ],
-        description: "FLUX.2 Dev (api.airforce) - Flux 2 image generation",
-        inputModalities: ["text", "image"],
-        outputModalities: ["image"],
-    },
-    "grok-imagine": {
-        aliases: [],
-        modelId: "grok-imagine",
-        provider: "airforce",
-        alpha: true,
-        cost: [
-            {
-                date: new Date("2026-02-16").getTime(),
-                completionImageTokens: 0.0025, // $0.0025 per image
-            },
-        ],
-        description: "Grok Imagine (api.airforce) - xAI image gen",
-        inputModalities: ["text"],
-        outputModalities: ["image"],
-    },
-    "dirtberry": {
-        aliases: [],
-        modelId: "dirtberry",
-        provider: "airforce",
-        alpha: true,
-        cost: [
-            {
-                date: new Date("2026-03-09").getTime(),
-                completionImageTokens: 0.001, // ~free via api.airforce
-            },
-        ],
-        description:
-            "Dirtberry (api.airforce) - Quick realistic image generation",
-        inputModalities: ["text"],
-        outputModalities: ["image"],
-    },
-    "dirtberry-pro": {
-        aliases: ["special-berry"],
-        modelId: "special-berry",
-        provider: "airforce",
-        alpha: true,
-        cost: [
-            {
-                date: new Date("2026-03-13").getTime(),
-                completionImageTokens: 0.0015, // 1.5x dirtberry ($0.001)
-            },
-        ],
-        description:
-            "Dirtberry Pro (api.airforce) - High quality realism, pixel art & complex scenes",
-        inputModalities: ["text"],
-        outputModalities: ["image"],
-    },
-    "grok-video": {
-        aliases: ["grok-imagine-video"],
-        modelId: "grok-video",
-        provider: "airforce",
-        alpha: true,
-        cost: [
-            {
-                date: new Date("2026-02-07").getTime(),
-                completionVideoSeconds: 0.0025, // $0.0025 per second
-            },
-        ],
-        description: "Grok Video (api.airforce) - xAI video gen",
-        inputModalities: ["text", "image"],
-        outputModalities: ["video"],
+        maxReferenceImages: 10, // Pollinations self-hosted route cap.
     },
     "ltx-2": {
-        aliases: ["ltx2", "ltxvideo", "ltx-video"],
+        aliases: ["ltx2", "ltx-2.3", "ltxvideo", "ltx-video"],
         modelId: "ltx-2",
-        provider: "modal",
-        paidOnly: true,
-        cost: [
-            // LTX-2 on Modal H200 GPU
-            // Replicate's price (~$0.08/8s = $0.01/s)
-            // $0.05 per 5-second video
-            {
-                date: new Date("2026-02-03").getTime(), // Launch date
-                completionVideoSeconds: 0.01, // $0.01/sec (Replicate's rate)
-            },
-        ],
+        provider: "lambda",
+        brand: "Lightricks",
+        category: "video",
+        addedDate: new Date("2026-02-06").getTime(),
+        priceMultiplier: 1,
+        alpha: true,
+        cost: {
+            completionVideoSeconds: 0.005,
+        },
+        title: "LTX-2.3",
         description:
-            "LTX-2 - Fast text-to-video generation with audio on Modal",
-        inputModalities: ["text"],
+            "LTX-2.3 - Fast text/image-to-video generation with upscaler",
+        inputModalities: ["text", "image"],
         outputModalities: ["video"],
+        videoCapabilities: ["start_frame"],
+        maxReferenceImages: 1, // Video keyframe slots: start only.
     },
     "p-image": {
         aliases: ["pruna-image", "pruna"],
         modelId: "p-image",
-        provider: "pruna",
+        provider: "replicate",
+        brand: "Pruna",
+        category: "image",
+        addedDate: new Date("2026-03-14").getTime(),
+        priceMultiplier: 1,
         paidOnly: true,
-        cost: [
-            {
-                date: new Date("2026-03-13").getTime(),
-                completionImageTokens: 0.005, // $0.005 per image
-            },
-        ],
+        cost: {
+            completionImageTokens: 0.005, // per image
+        },
+        title: "Pruna p-image",
         description: "Pruna p-image - Fast text-to-image generation",
         inputModalities: ["text"],
         outputModalities: ["image"],
@@ -412,32 +677,110 @@ export const IMAGE_SERVICES = {
     "p-image-edit": {
         aliases: ["pruna-edit", "pruna-image-edit"],
         modelId: "p-image-edit",
-        provider: "pruna",
+        provider: "replicate",
+        brand: "Pruna",
+        category: "image",
+        addedDate: new Date("2026-03-14").getTime(),
+        priceMultiplier: 1,
         paidOnly: true,
-        cost: [
-            {
-                date: new Date("2026-03-13").getTime(),
-                completionImageTokens: 0.01, // $0.01 per image
-            },
-        ],
+        cost: {
+            completionImageTokens: 0.01, // per image
+        },
+        title: "Pruna p-image-edit",
         description: "Pruna p-image-edit - Image-to-image editing",
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
+        maxReferenceImages: 5, // Pollinations route cap.
     },
-    "p-video": {
-        aliases: ["pruna-video"],
-        modelId: "p-video",
-        provider: "pruna",
+    // Pruna p-video is one Replicate model (prunaai/p-video) priced per second
+    // by resolution: 720p $0.02/s, 1080p $0.04/s. The registry carries one flat
+    // rate per model, so we expose the two tiers as separate models, each with
+    // its real per-second cost. `p-video` aliases to the 720p tier.
+    "p-video-720p": {
+        aliases: ["p-video", "pruna-video"],
+        modelId: "p-video-720p",
+        provider: "replicate",
+        brand: "Pruna",
+        category: "video",
+        addedDate: new Date("2026-03-14").getTime(),
+        priceMultiplier: 1,
         paidOnly: true,
-        cost: [
-            {
-                date: new Date("2026-03-13").getTime(),
-                completionVideoSeconds: 0.024, // $0.12 per run / 5s default = $0.024/sec
-            },
-        ],
-        description:
-            "Pruna p-video - Text/image-to-video generation (up to 1080p)",
+        cost: {
+            completionVideoSeconds: 0.02, // Replicate 720p per sec
+        },
+        title: "Pruna p-video 720p",
+        description: "Pruna p-video - Text/image-to-video generation (720p)",
         inputModalities: ["text", "image"],
         outputModalities: ["video"],
+        videoCapabilities: ["start_frame"],
+        maxReferenceImages: 1, // Video keyframe slots: start only.
     },
-} as const satisfies Record<string, ServiceDefinition<string>>;
+    "p-video-1080p": {
+        aliases: ["pruna-video-1080p"],
+        modelId: "p-video-1080p",
+        provider: "replicate",
+        brand: "Pruna",
+        category: "video",
+        addedDate: new Date("2026-06-09").getTime(),
+        priceMultiplier: 1,
+        paidOnly: true,
+        cost: {
+            completionVideoSeconds: 0.04, // Replicate 1080p per sec
+        },
+        title: "Pruna p-video 1080p",
+        description: "Pruna p-video - Text/image-to-video generation (1080p)",
+        inputModalities: ["text", "image"],
+        outputModalities: ["video"],
+        videoCapabilities: ["start_frame"],
+        maxReferenceImages: 1, // Video keyframe slots: start only.
+    },
+    "nova-canvas": {
+        aliases: ["amazon-nova-canvas"],
+        modelId: "nova-canvas",
+        provider: "aws",
+        brand: "Amazon",
+        category: "image",
+        addedDate: new Date("2026-03-23").getTime(),
+        priceMultiplier: 1,
+        cost: {
+            completionImageTokens: 0.04, // per image
+        },
+        title: "Nova Canvas",
+        description: "Nova Canvas - Image generation, editing & inpainting",
+        inputModalities: ["text", "image"],
+        outputModalities: ["image"],
+        maxReferenceImages: 1, // Nova Canvas route forwards one input image.
+    },
+    "nova-reel": {
+        aliases: ["amazon-nova-reel"],
+        modelId: "nova-reel",
+        provider: "aws",
+        brand: "Amazon",
+        category: "video",
+        addedDate: new Date("2026-03-23").getTime(),
+        priceMultiplier: 1,
+        cost: {
+            completionVideoSeconds: 0.08, // per sec
+        },
+        title: "Nova Reel",
+        description: "Nova Reel - Video Generation (6-120s, 720p)",
+        inputModalities: ["text", "image"],
+        outputModalities: ["video"],
+        videoCapabilities: ["start_frame"],
+        maxReferenceImages: 1, // Video keyframe slots: start only.
+    },
+} as const satisfies Record<string, ModelDefinition<string>>;
+
+const isVideoService = (svc: {
+    outputModalities?: readonly string[];
+}): boolean => svc.outputModalities?.includes("video") ?? false;
+
+export const getVideoModelIds = (): string[] =>
+    Object.keys(IMAGE_SERVICES).filter((id) =>
+        isVideoService(IMAGE_SERVICES[id as ImageModelName]),
+    );
+
+export const getImageModelIds = (): string[] =>
+    Object.keys(IMAGE_SERVICES).filter(
+        (id) => !isVideoService(IMAGE_SERVICES[id as ImageModelName]),
+    );

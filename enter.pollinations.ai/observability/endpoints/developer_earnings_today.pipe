@@ -1,0 +1,48 @@
+DESCRIPTION >
+    Recent developer earnings split by which balance the spending user paid
+    from. Includes BYOP markup rewards and community model owner rewards.
+    `paid_week` aggregates earnings from events where the user was charged
+    from their pack (paid) balance; `tier_week` aggregates earnings from
+    tier-side debits. Window is the last 7 days (rolling).
+
+TOKEN tinybird_read READ
+
+NODE byop_earnings
+SQL >
+    %
+    SELECT
+        selected_meter_slug,
+        total_price - dev_price AS earned
+    FROM generation_event
+    WHERE api_key_created_for_user_id = {{String(dev_user_id, '')}}
+      AND markup_rate > 0
+      AND total_price > dev_price
+      AND start_time >= now() - INTERVAL 7 DAY
+
+NODE community_model_earnings
+SQL >
+    %
+    SELECT
+        selected_meter_slug,
+        community_model_reward_amount AS earned
+    FROM generation_event
+    WHERE community_model_reward_user_id = {{String(dev_user_id, '')}}
+      AND community_model_reward_amount > 0
+      AND start_time >= now() - INTERVAL 7 DAY
+
+NODE earnings
+SQL >
+    %
+    SELECT * FROM byop_earnings
+    UNION ALL
+    SELECT * FROM community_model_earnings
+
+NODE today
+SQL >
+    %
+    SELECT
+        sumIf(earned, selected_meter_slug = 'v1:meter:pack') AS paid_week,
+        sumIf(earned, selected_meter_slug = 'v1:meter:tier') AS tier_week
+    FROM earnings
+
+TYPE endpoint

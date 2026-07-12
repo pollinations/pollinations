@@ -1,0 +1,45 @@
+{
+  "request": {
+    "url": "https://portkey.test/v1/chat/completions",
+    "method": "POST",
+    "body": {
+      "type": "json",
+      "data": {
+        "model": "gpt-5-nano",
+        "messages": [
+          {
+            "role": "user",
+            "content": "vcr chat stream"
+          }
+        ],
+        "temperature": 1,
+        "top_p": 1,
+        "presence_penalty": 0,
+        "frequency_penalty": 0,
+        "stream": true,
+        "voice": "alloy",
+        "logprobs": false,
+        "stream_options": {
+          "include_usage": true
+        }
+      }
+    },
+    "params": {}
+  },
+  "response": {
+    "status": 200,
+    "statusText": "OK",
+    "headers": {
+      "content-type": "text/event-stream; charset=utf-8"
+    },
+    "body": {
+      "type": "stream",
+      "data": [
+        {
+          "data": "data: {\"id\":\"chatcmpl_vcr_stream\",\"object\":\"chat.completion.chunk\",\"model\":\"gpt-5-nano\",\"choices\":[{\"index\":0,\"delta\":{\"content\":\"snapshot stream\"},\"finish_reason\":null}]}\n\ndata: {\"id\":\"chatcmpl_vcr_stream\",\"object\":\"chat.completion.chunk\",\"model\":\"gpt-5-nano\",\"choices\":[{\"index\":0,\"delta\":{},\"finish_reason\":\"stop\"}],\"usage\":{\"prompt_tokens\":7,\"completion_tokens\":3,\"total_tokens\":10}}\n\ndata: [DONE]\n\n",
+          "delay": 0
+        }
+      ]
+    }
+  }
+}

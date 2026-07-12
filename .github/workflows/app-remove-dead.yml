@@ -1,0 +1,88 @@
+name: App Remove Dead
+
+on:
+  schedule:
+    - cron: '0 6 * * 1'  # Weekly on Monday at 6am UTC
+  workflow_dispatch:
+
+jobs:
+  remove-dead:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    timeout-minutes: 45
+
+    steps:
+      - name: Generate Pollinations AI Token
+        id: pollinations-ai
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ secrets.POLLY_BOT_APP_ID }}
+          private-key: ${{ secrets.POLLY_BOT_PRIVATE_KEY }}
+
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          token: ${{ steps.pollinations-ai.outputs.token }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Configure git
+        run: |
+          git config user.name "pollinations-ai[bot]"
+          git config user.email "pollinations-ai[bot]@users.noreply.github.com"
+
+      - name: Remove dead apps
+        run: node .github/scripts/app-remove-dead.js --verbose 2>&1 | tee /tmp/dead-apps.log
+
+      - name: Check for changes
+        id: changes
+        run: |
+          if git diff --quiet apps/APPS.md; then
+            echo "changed=false" >> $GITHUB_OUTPUT
+          else
+            echo "changed=true" >> $GITHUB_OUTPUT
+
+            # Extract dead app list for PR body (only lines after the 🗑️ marker)
+            DEAD_LIST=$(sed -n '/Dead apps:/,/^$/p' /tmp/dead-apps.log | grep '|' | sed 's/^ */- /' || true)
+            COUNT=$(git diff apps/APPS.md | grep '^-|' | grep -v '^\-\-\-' | wc -l | tr -d ' ')
+
+            {
+              echo "dead_list<<EOF"
+              echo "$DEAD_LIST"
+              echo "EOF"
+              echo "count=$COUNT"
+            } >> $GITHUB_OUTPUT
+          fi
+
+      - name: Create branch and PR
+        if: steps.changes.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ steps.pollinations-ai.outputs.token }}
+        run: |
+          DATE=$(date -u +%Y-%m-%d)
+          BRANCH="auto/remove-dead-apps-${DATE}"
+          COUNT="${{ steps.changes.outputs.count }}"
+
+          git checkout -b "$BRANCH"
+          git add apps/APPS.md
+          git commit -m "chore: remove ${COUNT} dead apps (${DATE})"
+          git push -u origin "$BRANCH"
+
+          cat > /tmp/pr-body.md << 'PREOF'
+          ## Dead App Removal
+
+          These apps returned 404/410 in **all 3 check rounds** (5 min apart):
+
+          ${{ steps.changes.outputs.dead_list }}
+
+          Review before merging. Close this PR to keep all apps.
+          PREOF
+
+          gh pr create \
+            --title "chore: remove ${COUNT} dead apps (${DATE})" \
+            --body-file /tmp/pr-body.md

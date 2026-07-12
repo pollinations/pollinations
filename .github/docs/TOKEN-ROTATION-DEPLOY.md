@@ -24,16 +24,6 @@ Security hardening following Jan 28-29 token compromise. This checklist tracks a
   ```
   New public key: `age1k85e3hjd2tv3wtjv7npjtmp9pwr5cfda22hyz9ajg06uqel3cc5s6c34rd`
 
-- [ ] **Create Modal `backend-token` secret**
-  ```bash
-  # Get PLN_IMAGE_BACKEND_TOKEN from SOPS secrets:
-  export SOPS_AGE_KEY=$(security find-generic-password -a "$USER" -s "sops-age-key" -w)
-  TOKEN=$(sops -d image.pollinations.ai/secrets/env.json | jq -r '.PLN_IMAGE_BACKEND_TOKEN')
-  
-  # Create Modal secret:
-  modal secret create backend-token PLN_IMAGE_BACKEND_TOKEN="$TOKEN"
-  ```
-
 ## Merge & Deploy
 
 - [ ] **Merge PR #7807**

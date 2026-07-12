@@ -1,8 +1,11 @@
 node_modules/
 dist/
+.vite/
 .pipelight/
 .wrangler/
 .dev.vars
+.dev.vars.local
+.dev.vars.override
 .dev.vars.prod
 .env
 *.log

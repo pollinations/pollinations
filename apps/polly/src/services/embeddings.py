@@ -12,6 +12,16 @@ from .embeddings_utils import validate_and_get_openai_client
 
 logger = logging.getLogger(__name__)
 
+# Try to use Rust-accelerated polly_core, fall back to Python
+try:
+    import polly_core
+
+    _use_rust = True
+    logger.info("polly_core (Rust) loaded — using accelerated chunking, hashing, file collection")
+except ImportError:
+    _use_rust = False
+    logger.info("polly_core not available — using Python fallback")
+
 # tiktoken encoder for text-embedding-3-small (cl100k_base)
 _enc = tiktoken.get_encoding("cl100k_base")
 MAX_TOKENS_PER_INPUT = 8000  # hard limit is 8192, leave headroom
@@ -83,7 +93,23 @@ SKIP_DIRS = {
     ".mypy_cache",
 }
 
-MAX_FILE_SIZE = 500 * 1024
+# Lock files and generated files — large, noisy, zero search value
+SKIP_FILES = {
+    "package-lock.json",
+    "yarn.lock",
+    "pnpm-lock.yaml",
+    "pnpm-lock.yml",
+    "Gemfile.lock",
+    "Pipfile.lock",
+    "poetry.lock",
+    "Cargo.lock",
+    "composer.lock",
+    "go.sum",
+    "flake.lock",
+    "packages.lock.json",
+}
+
+MAX_FILE_SIZE = 200 * 1024  # 200KB — lock files are large; most useful code is small
 
 UPDATE_DEBOUNCE_SECONDS = 30
 _pending_update_task: asyncio.Task | None = None
@@ -132,6 +158,19 @@ async def wait_for_initialization(timeout: float = 300.0) -> bool:
 
 
 def _chunk_code(content: str, file_path: str, max_lines: int = 100) -> list[dict]:
+    if _use_rust:
+        rust_chunks = polly_core.chunk_code(content, file_path, max_tokens=MAX_TOKENS_PER_INPUT, max_lines=max_lines)
+        return [
+            {
+                "content": c.content,
+                "file_path": c.file_path,
+                "start_line": c.start_line,
+                "end_line": c.end_line,
+            }
+            for c in rust_chunks
+        ]
+
+    # Python fallback
     lines = content.split("\n")
 
     if len(lines) <= max_lines:
@@ -182,7 +221,6 @@ def _chunk_code(content: str, file_path: str, max_lines: int = 100) -> list[dict
         if len(tokens) <= MAX_TOKENS_PER_INPUT:
             final_chunks.append(chunk)
         else:
-            # Split by token boundaries — exact, no guessing
             parts = list(range(0, len(tokens), MAX_TOKENS_PER_INPUT))
             for part_idx, pos in enumerate(parts):
                 sub_tokens = tokens[pos : pos + MAX_TOKENS_PER_INPUT]
@@ -215,6 +253,8 @@ def _is_definition_start(line: str) -> bool:
 
 
 def _file_hash(content: str) -> str:
+    if _use_rust:
+        return polly_core.hash_xxh3(content)
     return content_hash(content)
 
 
@@ -264,6 +304,7 @@ async def clone_or_pull_repo(repo: str) -> bool:
                     "git",
                     "clone",
                     "--depth=1",
+                    "--filter=blob:limit=100k",
                     f"https://github.com/{repo}.git",
                     str(repo_path),
                 ],
@@ -297,12 +338,23 @@ async def get_changed_files(repo: str) -> list[str]:
 
 
 def _collect_code_files(repo_path: Path) -> list[Path]:
-    files = []
+    if _use_rust:
+        paths = polly_core.collect_files(
+            str(repo_path),
+            list(CODE_EXTENSIONS),
+            list(SKIP_DIRS),
+            MAX_FILE_SIZE,
+        )
+        return [Path(p) for p in paths if Path(p).name not in SKIP_FILES]
 
+    files = []
     for root, dirs, filenames in os.walk(repo_path):
         dirs[:] = [d for d in dirs if d not in SKIP_DIRS]
 
         for filename in filenames:
+            if filename in SKIP_FILES:
+                continue
+
             file_path = Path(root) / filename
 
             if file_path.suffix.lower() not in CODE_EXTENSIONS:
@@ -421,7 +473,9 @@ async def embed_repository(repo: str, force_full: bool = False) -> int:
                 batch_tokens = 0
                 i = batch_start
                 while i < len(all_documents):
-                    doc_tokens = len(_enc.encode(all_documents[i]))
+                    doc_tokens = (
+                        polly_core.count_tokens(all_documents[i]) if _use_rust else len(_enc.encode(all_documents[i]))
+                    )
                     if batch_tokens + doc_tokens > MAX_BATCH_TOKENS and batch_docs:
                         break
                     batch_docs.append(all_documents[i])
@@ -527,6 +581,37 @@ async def search_code(query: str, top_k: int = 5) -> list[dict]:
     return formatted
 
 
+_LAST_HEAD_FILE = EMBEDDINGS_DIR / "last_embedded_head.txt"
+
+
+def _read_last_embedded_head() -> str | None:
+    try:
+        return _LAST_HEAD_FILE.read_text().strip() if _LAST_HEAD_FILE.exists() else None
+    except Exception:
+        return None
+
+
+def _save_last_embedded_head(head: str) -> None:
+    try:
+        _LAST_HEAD_FILE.parent.mkdir(parents=True, exist_ok=True)
+        _LAST_HEAD_FILE.write_text(head)
+    except Exception as e:
+        logger.warning(f"Failed to save last embedded HEAD: {e}")
+
+
+async def _get_repo_head(repo: str) -> str | None:
+    repo_path = REPO_DIR / repo.replace("/", "_")
+    try:
+        result = await asyncio.to_thread(
+            subprocess.run,
+            ["git", "-C", str(repo_path), "rev-parse", "HEAD"],
+            capture_output=True, text=True,
+        )
+        return result.stdout.strip() if result.returncode == 0 else None
+    except Exception:
+        return None
+
+
 async def pull_and_update():
     from ..config import config
 
@@ -539,6 +624,9 @@ async def pull_and_update():
             logger.info("Repository changes detected, running incremental embedding update...")
             count = await embed_repository(config.embeddings_repo, force_full=False)
             logger.info(f"Update complete. Embedded {count} new/changed chunks.")
+            head = await _get_repo_head(config.embeddings_repo)
+            if head:
+                _save_last_embedded_head(head)
 
         else:
             logger.info("No repository changes detected, skipping embedding update")
@@ -583,13 +671,31 @@ async def initialize():
         await clone_or_pull_repo(config.embeddings_repo)
 
         collection = _get_collection()
-        force_full = collection.count() == 0
+        current_head = await _get_repo_head(config.embeddings_repo)
+        last_head = _read_last_embedded_head()
+        has_existing = collection.count() > 0
+
+        if has_existing and current_head and current_head == last_head:
+            logger.info(
+                f"✅ Embeddings up to date (HEAD {current_head[:8]}, "
+                f"{collection.count()} chunks) — skipping re-embed"
+            )
+            _initialized.set()
+            return
+
+        force_full = not has_existing
         if force_full:
             logger.info("No existing embeddings found, running full embed (first initialization)...")
         else:
-            logger.info(f"Found {collection.count()} existing embeddings, checking for updates...")
+            logger.info(
+                f"Found {collection.count()} existing embeddings, HEAD changed "
+                f"({last_head[:8] if last_head else 'none'} -> {current_head[:8] if current_head else '?'}), updating..."
+            )
 
         await embed_repository(config.embeddings_repo, force_full=force_full)
+
+        if current_head:
+            _save_last_embedded_head(current_head)
 
         _initialized.set()
         logger.info("✅ Code embeddings initialization complete — %d chunks ready", collection.count())

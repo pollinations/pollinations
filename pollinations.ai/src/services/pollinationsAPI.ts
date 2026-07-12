@@ -1,5 +1,9 @@
-import { API, API_KEY, DEFAULTS } from "../api.config";
+import { API, DEFAULTS } from "../api.config";
 import { fetchWithRetry } from "../utils/fetchWithRetry";
+
+function authHeaders(apiKey?: string): HeadersInit {
+    return apiKey ? { Authorization: `Bearer ${apiKey}` } : {};
+}
 
 /**
  * Fetch text from Pollinations text generation API
@@ -9,13 +13,13 @@ export async function generateText(
     prompt: string,
     seed?: number | number[],
     model = DEFAULTS.TEXT_MODEL,
-    apiKey = API_KEY,
+    apiKey?: string,
 ): Promise<string> {
     const response = await fetchWithRetry(API.TEXT_GENERATION, {
         method: "POST",
         headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${apiKey}`,
+            ...authHeaders(apiKey),
         },
         body: JSON.stringify({
             messages: [{ role: "user", content: prompt }],
@@ -48,7 +52,7 @@ export async function generateImage(
         height = DEFAULTS.IMAGE_HEIGHT,
         seed = DEFAULTS.SEED,
         model = DEFAULTS.IMAGE_MODEL,
-        apiKey = API_KEY,
+        apiKey,
     } = options;
 
     const baseUrl = `${API.IMAGE_GENERATION}/${encodeURIComponent(prompt)}`;
@@ -60,7 +64,7 @@ export async function generateImage(
     const url = `${baseUrl}?${params.toString()}`;
 
     const response = await fetchWithRetry(url, {
-        headers: { Authorization: `Bearer ${apiKey}` },
+        headers: authHeaders(apiKey),
     });
 
     const blob = await response.blob();

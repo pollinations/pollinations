@@ -19,7 +19,7 @@ if [ $? -eq 0 ]; then
     echo ""
     echo "The image includes:"
     echo "  - Updated server.py with PUBLIC_PORT support"
-    echo "  - Direct EC2 endpoint as default REGISTER_URL"
+    echo "  - gen worker registry as default REGISTER_URL"
     echo "  - Proper SERVICE_TYPE=flux"
 else
     echo "❌ Build failed!"

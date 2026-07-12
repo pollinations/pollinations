@@ -1,0 +1,54 @@
+{
+  "request": {
+    "url": "https://portkey.test/v1/chat/completions",
+    "method": "POST",
+    "body": {
+      "type": "json",
+      "data": {
+        "model": "gpt-5-nano",
+        "messages": [
+          {
+            "role": "user",
+            "content": "vcr simple text"
+          }
+        ],
+        "seed": 42,
+        "voice": "alloy",
+        "temperature": 1,
+        "stream": false
+      }
+    },
+    "params": {}
+  },
+  "response": {
+    "status": 200,
+    "statusText": "OK",
+    "headers": {
+      "content-type": "application/json; charset=utf-8"
+    },
+    "body": {
+      "type": "json",
+      "data": {
+        "id": "chatcmpl_vcr",
+        "object": "chat.completion",
+        "created": 1,
+        "model": "gpt-5-nano",
+        "choices": [
+          {
+            "index": 0,
+            "message": {
+              "role": "assistant",
+              "content": "snapshot text response"
+            },
+            "finish_reason": "stop"
+          }
+        ],
+        "usage": {
+          "prompt_tokens": 6,
+          "completion_tokens": 4,
+          "total_tokens": 10
+        }
+      }
+    }
+  }
+}

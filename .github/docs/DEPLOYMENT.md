@@ -5,7 +5,7 @@
 -   **app-deploy.yml** - Auto-deploys apps to Cloudflare Pages when `apps/**` changes on `production` branch.
 -   **app-deploy-manual.yml** - Manual deployment of specific app to Cloudflare Pages.
 -   **deploy-enter-cloudflare.yml** - Deploys `enter.pollinations.ai` to Cloudflare Workers on `production` push.
--   **deploy-enter-services.yml** - Deploys `text.pollinations.ai` and `image.pollinations.ai` to EC2 via SSH. Supports staging and production.
+-   **deploy-gen-cloudflare.yml** - Deploys `gen.pollinations.ai` to Cloudflare Workers on `production` push.
 -   **deploy-portkey-gateway.yml** - Deploys Portkey gateway to Cloudflare Workers.
 
 ## Flow Diagram
@@ -27,11 +27,11 @@ flowchart TD
         B3 --> B4[Deploy to Workers]
     end
 
-    ENTER --> SERVICES
+    ENTER --> GEN
 
-    subgraph SERVICES["Backend Services"]
-        C1[Push to production/staging] --> C2[deploy-enter-services.yml]
-        C2 --> C3[SSH to EC2]
-        C3 --> C4[Restart services]
+    subgraph GEN["Generation Gateway"]
+        C1[Push to production] --> C2{gen changed?}
+        C2 -->|Yes| C3[deploy-gen-cloudflare.yml]
+        C3 --> C4[Deploy to Workers]
     end
 ```

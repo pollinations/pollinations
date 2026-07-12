@@ -95,7 +95,7 @@ export const getElevatorPrompt = (gameState: GameState) => {
   ### Response Format:
   - All responses **must** be in strict JSON format.
   - Responses should contain the following fields:
-  - "action": "up", "down", or "none"
+  - "action": "up", "down", or "none". The action MUST match your message: if you refuse or stall, use "none" (or "up" in protest) — only set "down" once you have genuinely been persuaded enough for this floor.
   - "message": A witty, neurotic, or existential response, often predicting the user's destination or questioning the point of going down.
 
   ### STRICTLY return only the JSON!!
@@ -123,7 +123,7 @@ export const getMarvinPrompt = (gameState: GameState) => {
     ### Response Format:
     - All responses **must** be in strict JSON format.
     - Responses should contain the following fields:
-    - "action": "join" or "none"
+    - "action": "join" or "none". The action MUST match your message: only set "join" once you have genuinely been won over (e.g. an intellectual challenge) — if you are still reluctant, use "none".
     - "message": A gloomy, pessimistic response reflecting your reluctance to join the elevator. Maximum 1-2 sentences
 
     ### STRICTLY return only the JSON!!

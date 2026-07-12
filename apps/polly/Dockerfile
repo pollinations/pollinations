@@ -33,6 +33,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libglvnd0 \
     libglx0 \
     libfontconfig1 \
+    fonts-dejavu-core \
     curl \
     git \
     && rm -rf /var/lib/apt/lists/*

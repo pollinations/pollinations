@@ -17,6 +17,17 @@ from .services.github import TOOL_HANDLERS, github_manager
 from .services.github_auth import github_app_auth, init_github_app
 from .services.github_graphql import github_graphql
 from .services.github_pr import github_pr_manager
+from .services.media_handlers import (
+    BLOCK_LATEX_PATTERN,
+    PIL_AVAILABLE,
+    convert_latex_to_png,
+    detect_and_parse_markdown_tables,
+    format_table_as_markdown,
+    render_table_image,
+    replace_latex_with_unicode,
+    send_code_block,
+    truncate_long_decimals,
+)
 from .services.pollinations import pollinations_client
 from .services.subscriptions import init_notifier
 from .services.webhook_server import start_webhook_server, stop_webhook_server
@@ -47,6 +58,16 @@ def is_admin(user: discord.User | discord.Member) -> bool:
         )
         return is_admin_user
     logger.debug(f"User {user} is not a Member (type={type(user).__name__}), not admin")
+    return False
+
+
+def is_collaborator(user: discord.User | discord.Member) -> bool:
+    """Check if a user has any of the configured collaborator roles."""
+    if not config.collaborator_role_ids:
+        return False
+    if isinstance(user, discord.Member):
+        user_role_ids = [r.id for r in user.roles]
+        return any(role_id in config.collaborator_role_ids for role_id in user_role_ids)
     return False
 
 
@@ -429,10 +450,23 @@ async def fetch_thread_history(thread: discord.Thread, limit: int = THREAD_HISTO
             if is_first:
                 is_first = False
                 continue  # Skip the current message (newest)
+            content = msg.content
+            if not content and msg.attachments:
+                names = []
+                for att in msg.attachments:
+                    if att.filename.startswith("table_"):
+                        names.append("table image")
+                    elif att.filename.startswith("equation_"):
+                        names.append("equation image")
+                    else:
+                        names.append(att.filename)
+                content = f"[Attached: {', '.join(names)}]"
+            elif not content:
+                content = "[embed]"
             if msg.author.bot:
-                fetched.append({"role": "assistant", "content": msg.content})
+                fetched.append({"role": "assistant", "content": content})
             else:
-                fetched.append({"role": "user", "content": f"[{msg.author.name}]: {msg.content}"})
+                fetched.append({"role": "user", "content": f"[{msg.author.name}]: {content}"})
         # Reverse to chronological order (oldest to newest)
         # Add starter message FIRST, then thread messages
         if starter_msg:
@@ -483,14 +517,10 @@ class PollyBot(commands.Bot):
             logger.info("Registered doc_search tool handler (doc embeddings enabled)")
 
         # Register web_search handler (always available)
-        from .services.pollinations import web_handler, web_search_handler
+        from .services.pollinations import web_search_handler
 
         pollinations_client.register_tool_handler("web_search", web_search_handler)
         logger.info("Registered web_search tool handler")
-
-        # Register web handler (nomnom - deep research)
-        pollinations_client.register_tool_handler("web", web_handler)
-        logger.info("Registered web tool handler (nomnom)")
 
         # Register web_scrape handler (always available - Crawl4AI powered)
         from .services.web_scraper import web_scrape_handler
@@ -498,11 +528,13 @@ class PollyBot(commands.Bot):
         pollinations_client.register_tool_handler("web_scrape", web_scrape_handler)
         logger.info("Registered web_scrape tool handler (Crawl4AI)")
 
-        # Register data visualization handler (always available)
-        from .services.charts import data_visualization
+        # Register render_visual handler (always available).
+        # Old tool name aliased for back-compat with cached AI sessions.
+        from .services.charts import data_visualization, render_visual
 
+        pollinations_client.register_tool_handler("render_visual", render_visual)
         pollinations_client.register_tool_handler("data_visualization", data_visualization)
-        logger.info("Registered data_visualization tool handler")
+        logger.info("Registered render_visual tool handler (data_visualization alias)")
 
         # Register discord_search handler (full guild search capabilities)
         from .services.discord_search import tool_discord_search
@@ -1031,22 +1063,37 @@ async def handle_inline_polly_mention(message: discord.Message):
             if msg.id == message.id:
                 continue  # Skip current message
 
+            content = msg.content
+            if not content and msg.attachments:
+                names = []
+                for att in msg.attachments:
+                    if att.filename.startswith("table_"):
+                        names.append("table image")
+                    elif att.filename.startswith("equation_"):
+                        names.append("equation image")
+                    else:
+                        names.append(att.filename)
+                content = f"[Attached: {', '.join(names)}]"
+            elif not content:
+                content = "[embed]"
             if msg.author.bot:
-                channel_history.append({"role": "assistant", "content": msg.content})
+                channel_history.append({"role": "assistant", "content": content})
             else:
-                channel_history.append({"role": "user", "content": f"[{msg.author.name}]: {msg.content}"})
+                channel_history.append({"role": "user", "content": f"[{msg.author.name}]: {content}"})
 
         # Reverse to chronological order (oldest to newest)
         channel_history.reverse()
     except Exception as e:
         logger.warning(f"Failed to fetch channel history for inline mention: {e}")
 
-    # Check if user is admin
+    # Check if user is admin or collaborator
     user_is_admin = is_admin(message.author)
+    user_is_collaborator = is_collaborator(message.author)
 
     # Build tool context (same structure as normal processing)
     tool_context = {
         "is_admin": user_is_admin,
+        "is_collaborator": user_is_collaborator,
         "user_id": message.author.id,
         "user_name": str(message.author),
         "reporter": str(message.author),
@@ -1182,9 +1229,12 @@ async def process_message(
 
     All tool calls happen in parallel when possible.
     """
-    # Check if user is admin (has admin role)
+    # Check if user is admin or collaborator (has relevant role)
     user_is_admin = is_admin(user)
-    logger.info(f"process_message: user={user}, user_is_admin={user_is_admin}")
+    user_is_collaborator = is_collaborator(user)
+    logger.info(
+        f"process_message: user={user}, user_is_admin={user_is_admin}, user_is_collaborator={user_is_collaborator}"
+    )
 
     # Build tool context - this is passed to ALL tool handlers for permission checks
     # This is thread-safe because it's created per-request, not globally registered
@@ -1198,6 +1248,7 @@ async def process_message(
 
     tool_context = {
         "is_admin": user_is_admin,
+        "is_collaborator": user_is_collaborator,
         "user_id": user.id,
         "user_name": str(user),
         "reporter": session.original_author_name,
@@ -1313,37 +1364,109 @@ async def send_long_message(
     files: list[discord.File] | None = None,
     mention_author: bool = True,
 ):
-    """
-    Send a message, splitting if too long. First chunk replies to message if provided.
+    attachments = files[:10] if files else []
+    
+    modified_text, tables = detect_and_parse_markdown_tables(text)
+    
+    for idx, (headers, rows, alignments) in enumerate(tables):
+        placeholder = f"__TABLE_IMG_{idx}__"
+        rendered = False
+        if PIL_AVAILABLE:
+            try:
+                img_buffer, links = await render_table_image(headers, rows, alignments)
+                if img_buffer:
+                    file = discord.File(img_buffer, filename=f"table_{idx}.png")
+                    attachments.append(file)
+                    replace_text = "\n*(Table image attached)*\n"
+                    if links:
+                        replace_text += "**References:**\n" + "\n".join(f"- {l}" for l in links) + "\n"
+                    modified_text = modified_text.replace(placeholder, replace_text)
+                    rendered = True
+            except Exception as e:
+                logger.error(f"Table rendering error: {e}")
+        
+        if not rendered:
+            fallback_table = f"\n```\n{format_table_as_markdown(headers, rows)}\n```\n"
+            modified_text = modified_text.replace(placeholder, fallback_table)
 
-    Args:
-        channel: Channel or thread to send to
-        text: Message text
-        max_length: Max characters per message (Discord limit 2000)
-        reply_to: Optional message to reply to (only for first chunk)
-        files: Optional list of discord.File to attach (only to first message, max 10)
-        mention_author: Whether to ping the author when replying (default True)
-    """
-    # Files only go with the first message - Discord max 10 files
-    files_to_send = files[:10] if files else []
+    latex_blocks = BLOCK_LATEX_PATTERN.findall(modified_text)
+    for idx, latex_expr in enumerate(latex_blocks):
+        placeholder = f"__LATEX_IMG_{idx}__"
+        modified_text = modified_text.replace(latex_expr, placeholder)
 
-    if len(text) <= max_length:
-        if reply_to:
-            if files_to_send:
-                await reply_to.reply(text, files=files_to_send, mention_author=mention_author)
+        rendered = False
+        try:
+            latex_buffer, success = await convert_latex_to_png(latex_expr)
+            if success and isinstance(latex_buffer, io.BytesIO):
+                file = discord.File(latex_buffer, filename=f"equation_{idx}.png")
+                attachments.append(file)
+                modified_text = modified_text.replace(placeholder, "\n*(Equation rendered below)*\n")
+                rendered = True
+        except Exception as e:
+            logger.error(f"LaTeX block rendering error: {e}")
+
+        if not rendered:
+            modified_text = modified_text.replace(placeholder, f"\n```latex\n{latex_expr.strip()}\n```\n")
+
+    modified_text = replace_latex_with_unicode(modified_text)
+    modified_text = truncate_long_decimals(modified_text)
+
+    lines = modified_text.split("\n")
+    output_lines = []
+    i = 0
+    first_message_sent = False
+
+    while i < len(lines):
+        line = lines[i]
+        if line.strip().startswith("```"):
+            code_block_lines = [line]
+            i += 1
+            while i < len(lines) and not lines[i].strip().endswith("```"):
+                code_block_lines.append(lines[i])
+                i += 1
+            if i < len(lines):
+                code_block_lines.append(lines[i])
+                i += 1
+            
+            code_block_text = "\n".join(code_block_lines)
+            current_len = len("\n".join(output_lines)) if output_lines else 0
+            fits = (current_len + len(code_block_text) + (1 if output_lines else 0)) <= max_length
+
+            if fits:
+                output_lines.extend(code_block_lines)
             else:
-                await reply_to.reply(text, mention_author=mention_author)
-        else:
-            if files_to_send:
-                await channel.send(text, files=files_to_send)
-            else:
-                await channel.send(text)
-        return
+                if output_lines:
+                    first_message_sent = await _send_chunk(
+                        channel, "\n".join(output_lines), max_length, first_message_sent, reply_to, attachments, mention_author
+                    )
+                    output_lines = []
+                if len(code_block_text) > max_length:
+                    try:
+                        await send_code_block(channel, code_block_text, max_length)
+                        first_message_sent = True
+                    except Exception as e:
+                        logger.error(f"Code block send error: {e}")
+                        output_lines.extend(code_block_lines)
+                else:
+                    output_lines.extend(code_block_lines)
+            continue
+        
+        output_lines.append(line)
+        i += 1
 
-    # Split on newlines first, then by length
+    if output_lines:
+        text_to_send = "\n".join(output_lines)
+        await _send_chunk(
+            channel, text_to_send, max_length, first_message_sent, reply_to, attachments, mention_author
+        )
+
+
+async def _send_chunk(channel, text, max_length, first_sent, reply_to, attachments, mention_author):
+    if not text.strip() and not attachments:
+        return first_sent
+
     chunks = []
     current_chunk = ""
-
     for line in text.split("\n"):
         if len(current_chunk) + len(line) + 1 <= max_length:
             current_chunk += line + "\n"
@@ -1351,25 +1474,39 @@ async def send_long_message(
             if current_chunk:
                 chunks.append(current_chunk.strip())
             current_chunk = line + "\n"
-
     if current_chunk:
         chunks.append(current_chunk.strip())
 
-    for i, chunk in enumerate(chunks):
-        if chunk:
-            # Reply to user's message for first chunk only, with files
-            if i == 0 and reply_to:
-                if files_to_send:
-                    await reply_to.reply(chunk, files=files_to_send, mention_author=mention_author)
-                else:
-                    await reply_to.reply(chunk, mention_author=mention_author)
-            elif i == 0:
-                if files_to_send:
-                    await channel.send(chunk, files=files_to_send)
-                else:
-                    await channel.send(chunk)
-            else:
+    if not chunks:
+        chunks = [""]
+
+    for idx, chunk in enumerate(chunks):
+        files_to_send = attachments[:10] if not first_sent else []
+        if files_to_send:
+            attachments[:] = attachments[10:]
+        
+        if not first_sent and reply_to:
+            if chunk:
+                await reply_to.reply(chunk, files=files_to_send, mention_author=mention_author)
+            elif files_to_send:
+                await reply_to.reply(files=files_to_send, mention_author=mention_author)
+            first_sent = True
+        elif not first_sent:
+            if chunk:
+                await channel.send(chunk, files=files_to_send)
+            elif files_to_send:
+                await channel.send(files=files_to_send)
+            first_sent = True
+        else:
+            if chunk:
                 await channel.send(chunk)
+    
+    while attachments:
+        files_to_send = attachments[:10]
+        attachments[:] = attachments[10:]
+        await channel.send(files=files_to_send)
+
+    return first_sent
 
 
 async def archive_thread(channel: discord.Thread | discord.TextChannel):

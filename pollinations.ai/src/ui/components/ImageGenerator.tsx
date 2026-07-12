@@ -36,7 +36,13 @@ export function ImageGenerator({
         setLoading(true);
         setError(null);
 
-        generateImage(prompt, { width, height, seed, model, apiKey })
+        generateImage(prompt, {
+            width,
+            height,
+            seed,
+            model,
+            apiKey: apiKey ?? undefined,
+        })
             .then((url) => {
                 objectUrl = url;
                 setImageUrl(url);

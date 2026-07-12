@@ -11,7 +11,6 @@ import json
 import random
 import requests
 from typing import Dict, List, Optional
-from datetime import datetime, timedelta, timezone
 from urllib.parse import quote
 from pathlib import Path
 
@@ -23,7 +22,6 @@ POLLINATIONS_IMAGE_BASE = "https://gen.pollinations.ai/image"
 # Models - single source of truth for all social scripts
 MODEL = "gemini-large"  # Text generation model
 IMAGE_MODEL = "nanobanana-2"  # Image generation model
-WEBSEARCH_MODEL = "perplexity-reasoning"  # Web search model (used by Instagram)
 
 # Limits and retry settings
 MAX_SEED = 2147483647
@@ -37,6 +35,33 @@ OWNER = "pollinations"
 REPO = "pollinations"
 GISTS_BRANCH = "news"  # Unprotected branch for gist data (avoids main branch protection)
 
+
+# Models-weekly staging
+MODELS_NEWS_DIR = "social/news/models"
+
+
+def models_news_staging_dir(date_str: str) -> str:
+    """Workspace-local dir holding the artifacts to be committed to the news
+    branch in a single tree commit. Generator writes them all here; publisher
+    reads them, posts Discord, and only on success commits all four atomically.
+    A publish failure leaves the news branch untouched, so next week's run
+    re-detects and re-announces the same changes."""
+    base = os.environ.get("RUNNER_TEMP") or "/tmp"
+    path = os.path.join(base, f"models-news-{date_str}")
+    os.makedirs(path, exist_ok=True)
+    return path
+
+
+def models_news_staged_files(date_str: str) -> list[tuple[str, str]]:
+    """Returns [(local_filename, news_branch_path), ...] for the four artifacts
+    committed atomically per weekly run."""
+    return [
+        ("discord.json", f"{MODELS_NEWS_DIR}/{date_str}/discord.json"),
+        ("diff.json", f"{MODELS_NEWS_DIR}/diffs/{date_str}.json"),
+        ("models.md", f"{MODELS_NEWS_DIR}/models.md"),
+        ("snapshot.json", f"{MODELS_NEWS_DIR}/snapshots/{date_str}.json"),
+    ]
+
 # Image generation
 IMAGE_SIZE = 2048
 # Style suffix appended to every image prompt — ensures consistent pixel art style
@@ -46,7 +71,10 @@ IMAGE_STYLE_SUFFIX = (
     "soft pastel gradients, warm ambient glow lighting, CRT glow effects. "
     "Lime green #ecf874 used BOLDLY. "
     "Tiny pixel sparkles and glowing particles floating in the air. Magical warm atmosphere. "
-    "Lo-fi retro gaming vibes like Stardew Valley or A Short Hike."
+    "Lo-fi retro gaming vibes like Stardew Valley or A Short Hike. "
+    "The attached image is a CHARACTER REFERENCE SHEET only — use it for character design, "
+    "proportions, and art style consistency. Do NOT copy the layout or background from it. "
+    "Only draw the characters mentioned in the prompt above, not all characters from the sheet."
 )
 
 # Discord-specific
@@ -253,23 +281,11 @@ def load_format(platform: str) -> str:
     return "\n".join(section_lines).strip()
 
 
-def get_date_range(days_back: int = 1) -> tuple[datetime, datetime]:
-    """Get date range for the specified number of days back"""
-    now = datetime.now(timezone.utc)
-    end_date = now
-    start_date = end_date - timedelta(days=days_back)
-    return start_date, end_date
-
-
 def call_pollinations_api(
     system_prompt: str,
     user_prompt: str,
     token: str,
     temperature: float = 0.7,
-    max_retries: int = None,
-    model: str = None,
-    verbose: bool = False,
-    exit_on_failure: bool = False
 ) -> Optional[str]:
     """Call pollinations.ai API with retry logic and exponential backoff
 
@@ -278,42 +294,22 @@ def call_pollinations_api(
         user_prompt: User prompt for the AI
         token: pollinations.ai API token
         temperature: Temperature for generation (default 0.7)
-        max_retries: Number of retries (default MAX_RETRIES from constants)
-        model: Model to use (default MODEL from constants)
-        verbose: If True, print full prompts sent to API
-        exit_on_failure: If True, sys.exit(1) on failure instead of returning None
-    
+
     Returns:
-        Response content or None if failed (exits if exit_on_failure=True)
+        Response content or None if failed
     """
     headers = {
         "Authorization": f"Bearer {token}",
         "Content-Type": "application/json"
     }
 
-    use_model = model or MODEL
-    retries = max_retries if max_retries is not None else MAX_RETRIES
     last_error = None
 
-    # Verbose logging
-    if verbose:
-        print(f"\n  [VERBOSE] API Call to {POLLINATIONS_API_BASE}")
-        print(f"  [VERBOSE] Model: {use_model}")
-        print(f"  [VERBOSE] Temperature: {temperature}")
-        print(f"  [VERBOSE] System prompt ({len(system_prompt)} chars):")
-        print(f"  ---BEGIN SYSTEM PROMPT---")
-        print(system_prompt[:2000] + ("..." if len(system_prompt) > 2000 else ""))
-        print(f"  ---END SYSTEM PROMPT---")
-        print(f"  [VERBOSE] User prompt ({len(user_prompt)} chars):")
-        print(f"  ---BEGIN USER PROMPT---")
-        print(user_prompt[:2000] + ("..." if len(user_prompt) > 2000 else ""))
-        print(f"  ---END USER PROMPT---")
-
-    for attempt in range(retries):
+    for attempt in range(MAX_RETRIES):
         seed = random.randint(0, MAX_SEED)
 
         payload = {
-            "model": use_model,
+            "model": MODEL,
             "messages": [
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": user_prompt}
@@ -322,12 +318,9 @@ def call_pollinations_api(
             "seed": seed
         }
 
-        if attempt == 0:
-            if verbose:
-                print(f"  Using seed: {seed}")
-        else:
+        if attempt > 0:
             backoff_delay = INITIAL_RETRY_DELAY * (2 ** attempt)
-            print(f"  Retry {attempt}/{retries - 1} with new seed: {seed} (waiting {backoff_delay}s)")
+            print(f"  Retry {attempt}/{MAX_RETRIES - 1} with new seed: {seed} (waiting {backoff_delay}s)")
             time.sleep(backoff_delay)
 
         try:
@@ -342,11 +335,6 @@ def call_pollinations_api(
                 try:
                     result = response.json()
                     content = result['choices'][0]['message']['content']
-                    if verbose:
-                        print(f"  [VERBOSE] Response ({len(content)} chars):")
-                        print(f"  ---BEGIN RESPONSE---")
-                        print(content[:3000] + ("..." if len(content) > 3000 else ""))
-                        print(f"  ---END RESPONSE---")
                     return content
                 except (KeyError, IndexError, json.JSONDecodeError) as e:
                     last_error = f"Error parsing API response: {e}"
@@ -363,10 +351,7 @@ def call_pollinations_api(
             last_error = f"Request failed: {e}"
             print(f"  {last_error}")
 
-    print(f"All {retries} attempts failed. Last error: {last_error}")
-    
-    if exit_on_failure:
-        sys.exit(1)
+    print(f"All {MAX_RETRIES} attempts failed. Last error: {last_error}")
     return None
 
 
@@ -400,11 +385,9 @@ def generate_image(prompt: str, token: str, width: int = 2048, height: int = 204
             "width": width,
             "height": height,
             "quality": "hd",
-            "nologo": "true",
-            "private": "true",
-            "nofeed": "true",
             "seed": seed,
-            "key": token
+            "key": token,
+            "image": "https://raw.githubusercontent.com/pollinations/pollinations/main/social/prompts/brand/characters-ref.jpg",
         }
 
         if attempt == 0:
@@ -723,31 +706,6 @@ def read_news_text_file(file_path: str, github_token: str, owner: str, repo: str
     return None
 
 
-def format_pr_summary(prs: List[Dict], time_label: str = "TODAY") -> str:
-    """Format PRs into a summary string for prompts
-    
-    Args:
-        prs: List of PR dictionaries
-        time_label: Label to use (e.g., "TODAY", "WEEKLY")
-    
-    Returns:
-        Formatted summary string
-    """
-    if prs:
-        pr_summary = f"{time_label}'S UPDATES ({len(prs)} merged PRs):\n"
-        for pr in prs[:20]:
-            labels = pr.get("labels", [])
-            labels_str = f" [{', '.join(labels)}]" if labels else ""
-            pr_summary += f"- #{pr.get('number', '?')}: {pr.get('title', 'Untitled')}{labels_str}\n"
-            body = pr.get("body", "")
-            if body:
-                pr_summary += f"  {body[:150]}...\n"
-    else:
-        pr_summary = f"NO UPDATES {time_label}"
-    
-    return pr_summary
-
-
 def generate_platform_post(
     platform: str,
     summary: Dict,
@@ -781,7 +739,7 @@ def generate_platform_post(
     if extra_context:
         task += extra_context
 
-    response = call_pollinations_api(voice, task, token, temperature=temperature, exit_on_failure=False)
+    response = call_pollinations_api(voice, task, token, temperature=temperature)
     if not response:
         return None
     return parse_json_response(response)
@@ -803,51 +761,158 @@ def build_linkedin_post_text(post_data: Dict) -> str:
     return "\n\n".join(parts)
 
 
-# ── PR creation helpers ──────────────────────────────────────────────
+def build_instagram_post_text(post_data: Dict) -> str:
+    """Build the final Instagram caption text from structured fields."""
+    caption = (post_data.get("caption") or "").strip()
+    hashtags = [tag.strip() for tag in post_data.get("hashtags", []) if tag.strip()]
 
-def create_branch_from_main(
-    branch: str,
-    github_token: str,
-    owner: str,
-    repo: str,
-) -> Optional[str]:
-    """Create a branch from main HEAD. Returns base SHA, or None on failure.
-    Tolerates 'Reference already exists' for branch reuse."""
-    headers = _github_headers(github_token)
+    parts = []
+    if caption:
+        parts.append(caption)
+    if hashtags:
+        parts.append(" ".join(hashtags))
 
-    ref_resp = github_api_request(
-        "GET",
-        f"{GITHUB_API_BASE}/repos/{owner}/{repo}/git/ref/heads/main",
-        headers=headers,
-    )
-    if ref_resp.status_code != 200:
-        print(f"Error getting ref: {ref_resp.text[:200]}")
-        return None
-    base_sha = ref_resp.json()["object"]["sha"]
+    return "\n\n".join(parts)
 
-    create_resp = github_api_request(
-        "POST",
-        f"{GITHUB_API_BASE}/repos/{owner}/{repo}/git/refs",
-        headers=headers,
-        json={"ref": f"refs/heads/{branch}", "sha": base_sha},
-    )
-    if create_resp.status_code not in [200, 201]:
-        if "Reference already exists" not in create_resp.text:
-            print(f"Error creating branch: {create_resp.text[:200]}")
-            return None
-        # Update existing branch to latest main
-        update_resp = github_api_request(
-            "PATCH",
-            f"{GITHUB_API_BASE}/repos/{owner}/{repo}/git/refs/heads/{branch}",
-            headers=headers,
-            json={"sha": base_sha, "force": True},
+
+def extract_generated_post_image_urls(post_data: Dict) -> List[str]:
+    """Extract image URLs from in-memory generated post data before normalization."""
+    urls = []
+
+    for image in post_data.get("images", []) or []:
+        url = str(image.get("url") or "").strip()
+        if url and url not in urls:
+            urls.append(url)
+
+    single_image = post_data.get("image") or {}
+    url = str(single_image.get("url") or "").strip()
+    if url and url not in urls:
+        urls.append(url)
+
+    return urls
+
+
+def get_post_image_urls(post_data: Dict) -> List[str]:
+    """Return image URLs from the simplified persisted post shape."""
+    urls = []
+    for image in post_data.get("images", []) or []:
+        url = str(image.get("url") or "").strip()
+        if url and url not in urls:
+            urls.append(url)
+    return urls
+
+
+def normalize_platform_post(
+    *,
+    platform: str,
+    scope: str,
+    date: str,
+    period_start: str,
+    period_end: str,
+    generated_at: str,
+    raw_post: Dict,
+) -> Dict:
+    """Normalize a generated platform post to the minimal persisted envelope."""
+    text = ""
+    title = ""
+    metadata = {}
+
+    if platform == "twitter":
+        text = (raw_post.get("tweet") or "").strip()
+    elif platform == "linkedin":
+        text = (raw_post.get("full_post") or build_linkedin_post_text(raw_post)).strip()
+    elif platform == "instagram":
+        text = build_instagram_post_text(raw_post)
+        metadata["post_type"] = (
+            "carousel" if len(extract_generated_post_image_urls(raw_post)) > 1 else "post"
         )
-        if update_resp.status_code != 200:
-            print(f"  Warning: could not update branch {branch}: {update_resp.text[:200]}")
-        else:
-            print(f"  Branch {branch} updated to main HEAD")
+    elif platform == "reddit":
+        title = (raw_post.get("title") or "").strip()
+        text = (raw_post.get("body") or raw_post.get("text") or "").strip()
+    elif platform == "discord":
+        text = (raw_post.get("message") or "").strip()
+    else:
+        text = (raw_post.get("text") or "").strip()
+        title = (raw_post.get("title") or "").strip()
 
-    return base_sha
+    result = {
+        "platform": platform,
+        "scope": scope,
+        "date": date,
+        "period_start": period_start,
+        "period_end": period_end,
+        "generated_at": generated_at,
+        "images": [{"url": url} for url in extract_generated_post_image_urls(raw_post)],
+    }
+
+    if title:
+        result["title"] = title
+    if text:
+        result["text"] = text
+    if metadata:
+        result["metadata"] = metadata
+
+    return result
+
+
+def join_summary_parts(parts: List[str]) -> str:
+    """Join non-empty summary sections without repeating the same sentence twice."""
+    unique_parts = []
+    seen = set()
+    for part in parts:
+        text = (part or "").strip()
+        if not text:
+            continue
+        key = text.casefold()
+        if key in seen:
+            continue
+        seen.add(key)
+        unique_parts.append(text)
+    return "\n\n".join(unique_parts)
+
+
+def build_canonical_summary(
+    *,
+    date: str,
+    period_start: str,
+    period_end: str,
+    title: str,
+    summary: str,
+    prs: List[Dict],
+    generated_at: str,
+) -> Dict:
+    """Build the minimal persisted summary shape shared by daily and weekly."""
+    canonical_prs = []
+    seen = set()
+
+    for pr in prs:
+        try:
+            number = int(pr.get("number"))
+        except (TypeError, ValueError):
+            continue
+        pr_date = str(pr.get("date") or "").strip()
+        if not pr_date:
+            continue
+        key = (number, pr_date)
+        if key in seen:
+            continue
+        seen.add(key)
+        canonical_prs.append({"number": number, "date": pr_date})
+
+    canonical_prs.sort(key=lambda item: (item["date"], item["number"]))
+
+    result = {
+        "date": date,
+        "period_start": period_start,
+        "period_end": period_end,
+        "title": title.strip(),
+        "summary": summary.strip(),
+        "pr_count": len(canonical_prs),
+        "prs": canonical_prs,
+        "generated_at": generated_at,
+    }
+
+    return result
 
 
 def commit_files_to_branch(
@@ -902,68 +967,6 @@ def commit_files_to_branch(
             print(f"  Error committing {file_path}: {resp.status_code} {resp.text[:200]}")
 
 
-def create_or_update_pr(
-    title: str,
-    body: str,
-    branch: str,
-    github_token: str,
-    owner: str,
-    repo: str,
-) -> Optional[int]:
-    """Create a PR (or update existing). Returns PR number or None."""
-    headers = _github_headers(github_token)
-
-    pr_resp = github_api_request(
-        "POST",
-        f"{GITHUB_API_BASE}/repos/{owner}/{repo}/pulls",
-        headers=headers,
-        json={"title": title, "body": body, "head": branch, "base": "main"},
-    )
-
-    if pr_resp.status_code in [200, 201]:
-        pr_info = pr_resp.json()
-        pr_number = pr_info["number"]
-        print(f"  Created PR #{pr_number}: {pr_info['html_url']}")
-        _apply_pr_labels(pr_number, github_token, owner, repo)
-        return pr_number
-
-    if "A pull request already exists" in pr_resp.text:
-        list_resp = github_api_request(
-            "GET",
-            f"{GITHUB_API_BASE}/repos/{owner}/{repo}/pulls?head={owner}:{branch}&state=open",
-            headers=headers,
-        )
-        if list_resp.status_code == 200 and list_resp.json():
-            existing = list_resp.json()[0]
-            github_api_request(
-                "PATCH",
-                f"{GITHUB_API_BASE}/repos/{owner}/{repo}/pulls/{existing['number']}",
-                headers=headers,
-                json={"title": title, "body": body},
-            )
-            print(f"  Updated existing PR #{existing['number']}")
-            return existing["number"]
-        print("  PR already exists but could not update it")
-        return None
-
-    print(f"  Error creating PR: {pr_resp.text[:200]}")
-    return None
-
-
-def _apply_pr_labels(pr_number: int, github_token: str, owner: str, repo: str) -> None:
-    """Apply PR_LABELS env var labels to a PR."""
-    pr_labels = get_env("PR_LABELS", required=False)
-    if pr_labels:
-        headers = _github_headers(github_token)
-        labels_list = [l.strip() for l in pr_labels.split(",")]
-        github_api_request(
-            "POST",
-            f"{GITHUB_API_BASE}/repos/{owner}/{repo}/issues/{pr_number}/labels",
-            headers=headers,
-            json={"labels": labels_list},
-        )
-
-
 # ── VPS deployment ───────────────────────────────────────────────────
 
 def deploy_reddit_post(
@@ -975,7 +978,8 @@ def deploy_reddit_post(
     import paramiko
 
     title = reddit_data.get("title", "")
-    image_url = reddit_data.get("image", {}).get("url", "")
+    image_urls = get_post_image_urls(reddit_data)
+    image_url = image_urls[0] if image_urls else ""
 
     if not all([title, image_url, vps_host, vps_user, pkey]):
         print("  VPS: Missing required arguments")

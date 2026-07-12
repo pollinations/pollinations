@@ -54,6 +54,11 @@ Rules:
 6. 1-2 lines max per entry
 7. Output ONLY the markdown bullets
 8. Add relevant links from REFERENCE LINKS section when they add value (don't force links)
+9. When a changelog entry has an **App Link**, ALWAYS include it in the highlight. End the line with ` <!-- app -->` so it can be filtered programmatically. Link text rules:
+   - If the URL is a web app or live site: use `[Try it](url)`
+   - If the URL is a GitHub repo: use `[View repo](url)`
+   - If linking multiple apps in one entry: use `[View repos](url)` pointing to the apps directory
+   - Never use the app name as link text — keep it short and action-oriented
 
 ## REFERENCE LINKS
 Use these links when relevant to add helpful references in your highlights.

@@ -6,7 +6,7 @@
  *
  * @example
  * ```ts
- * import { generateImage, generateText } from '@pollinations_ai/sdk';
+ * import { generateImage, generateText } from '@pollinations/sdk';
  *
  * const image = await generateImage('a cat in space');
  * await image.saveToFile('cat.png');
@@ -19,21 +19,14 @@
 export { Pollinations } from "./client.js";
 // Extra utilities
 export {
-    type AwaitOptions,
+    type AudioResponseExt,
     type ChatResponseExt,
     // Conversation class
     Conversation,
-    displayImage,
-    // Batch generation (multiple different prompts)
-    generateImages,
-    // Progress tracking
-    generateImageWithProgress,
-    generateVideos,
     // Extended response types with helpers
     type ImageResponseExt,
-    // Browser helpers
-    showImage,
     type VideoResponseExt,
+    wrapAudioResponse,
     wrapChatResponse,
     // Response wrappers (for advanced use)
     wrapImageResponse,
@@ -41,11 +34,14 @@ export {
 } from "./extras.js";
 // Helper functions
 export {
+    authorizeDevice,
     authorizeUrl,
     chat,
     chatStream,
     configure,
     conversation,
+    createKey,
+    editImage,
     generateAudio,
     generateImage,
     generateText,
@@ -54,29 +50,45 @@ export {
     getBalance,
     getDailyUsage,
     getImageModels,
+    getKeyUsage,
     getModels,
     getProfile,
     getTextModels,
     getUsage,
+    imageGenerate,
     imageUrl,
+    listKeys,
     resetClient,
+    revokeKey,
     transcribe,
     upload,
+    userInfo,
     validateKey,
     videoUrl,
 } from "./helpers.js";
+export {
+    type FetchModelCatalogOptions,
+    fetchModelCatalog,
+    type ModelCatalog,
+    type ModelCatalogItem,
+    pricingEntries,
+} from "./models.js";
 
 // Export all types
 export type {
     AccountBalance,
+    AccountKey,
     AccountPermission,
     AccountProfile,
+    AudioBinaryResponse,
     AudioContentPart,
     AudioFormat,
     AudioGenerateOptions,
-    AudioResponse,
     // Audio
+    AudioModel,
+    AudioResponse,
     AudioVoice,
+    AuthorizeDeviceOptions,
     AuthorizeOptions,
     BuiltInToolType,
     ChatChoice,
@@ -84,25 +96,34 @@ export type {
     ChatResponse,
     ChatStreamChunk,
     CompletionUsage,
+    CreatedKey,
+    CreateKeyOptions,
     DailyUsageRecord,
     DailyUsageResponse,
+    DeviceAuthorization,
+    DeviceCodeResponse,
+    DeviceTokenResponse,
     FileContentPart,
     FunctionDefinition,
     ImageContentPart,
+    ImageEditOptions,
     ImageGenerateOptions,
+    ImageGenerateV1Options,
     // Image
     ImageModel,
     ImageQuality,
     ImageResponse,
     JsonSchema,
+    KeyAccountPermission,
     KeyInfo,
+    KeyUsageOptions,
     Message,
     MessageContent,
     MessageContentPart,
     MessageRole,
-    ModelInfo,
     // Models
-    ModelTier,
+    ModelCategory,
+    ModelInfo,
     // Config
     PollinationsConfig,
     // Errors
@@ -113,7 +134,6 @@ export type {
     TextGenerateOptions,
     // Text
     TextModel,
-    ThinkingOptions,
     Tool,
     ToolCall,
     TranscribeOptions,
@@ -126,6 +146,7 @@ export type {
     UsageOptions,
     UsageRecord,
     UsageResponse,
+    UserInfo,
     VideoContentPart,
     VideoGenerateOptions,
     // Video
@@ -135,5 +156,3 @@ export type {
 
 // Export the error class
 export { PollinationsError } from "./types.js";
-
-// React hooks coming soon - see https://github.com/pollinations/pollinations for updates

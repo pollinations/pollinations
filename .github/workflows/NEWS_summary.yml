@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
     inputs:
       target_date:
-        description: 'Date to summarize (YYYY-MM-DD). For daily: yesterday. For weekly: week start (Monday).'
+        description: 'Date to summarize (YYYY-MM-DD). For daily: yesterday. For weekly: week start (Sunday).'
         required: false
         type: string
       mode:

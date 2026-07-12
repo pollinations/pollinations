@@ -4,7 +4,7 @@
  *
  * @example
  * ```ts
- * import { generateImage, generateText } from '@pollinations_ai/sdk';
+ * import { generateImage, generateText } from '@pollinations/sdk';
  *
  * // Generate an image and save it
  * const image = await generateImage('A cute cat');
@@ -20,23 +20,34 @@
 
 import { Pollinations } from "./client.js";
 import {
+    type AudioResponseExt,
     type ChatResponseExt,
     Conversation,
     type ImageResponseExt,
     type VideoResponseExt,
+    wrapAudioResponse,
     wrapChatResponse,
     wrapImageResponse,
     wrapVideoResponse,
 } from "./extras.js";
 import type {
     AccountBalance,
+    AccountKey,
     AccountProfile,
     AudioGenerateOptions,
+    AuthorizeDeviceOptions,
     AuthorizeOptions,
     ChatOptions,
+    CreatedKey,
+    CreateKeyOptions,
+    DailyUsageOptions,
     DailyUsageResponse,
+    DeviceAuthorization,
+    ImageEditOptions,
     ImageGenerateOptions,
+    ImageGenerateV1Options,
     KeyInfo,
+    KeyUsageOptions,
     Message,
     ModelInfo,
     TextGenerateOptions,
@@ -47,6 +58,7 @@ import type {
     UploadResponse,
     UsageOptions,
     UsageResponse,
+    UserInfo,
     VideoGenerateOptions,
 } from "./types.js";
 
@@ -75,7 +87,7 @@ export function resetClient(): void {
  *
  * @example
  * ```ts
- * import { configure } from '@pollinations_ai/sdk';
+ * import { configure } from '@pollinations/sdk';
  * configure({ apiKey: 'your-api-key' });
  * ```
  */
@@ -158,6 +170,52 @@ export async function generateImage(
         ),
     );
     return results.map(wrapImageResponse);
+}
+
+// ============================================================================
+// Image Editing Functions
+// ============================================================================
+
+/**
+ * Edit an image using a text prompt (OpenAI-compatible endpoint)
+ *
+ * @example
+ * ```ts
+ * const result = await editImage('Make the sky purple', {
+ *   image: 'https://example.com/photo.jpg',
+ * });
+ * await result.saveToFile('edited.png');
+ * ```
+ */
+export async function editImage(
+    prompt: string,
+    options?: ImageEditOptions,
+): Promise<ImageResponseExt> {
+    const response = await getClient().imageEdit(prompt, options);
+    return wrapImageResponse(response);
+}
+
+/**
+ * Generate image(s) via the OpenAI-compatible POST /v1/images/generations endpoint.
+ *
+ * @example
+ * ```ts
+ * // Single image, OpenAI-style size string
+ * const img = await imageGenerate('A robot', { size: '1024x1024' });
+ * await img.saveToFile('robot.png');
+ *
+ * // Multiple images
+ * const imgs = await imageGenerate('A robot', { n: 3 });
+ * ```
+ */
+export async function imageGenerate(
+    prompt: string,
+    options?: ImageGenerateV1Options,
+): Promise<ImageResponseExt | ImageResponseExt[]> {
+    const response = await getClient().imageGenerate(prompt, options);
+    return Array.isArray(response)
+        ? response.map(wrapImageResponse)
+        : wrapImageResponse(response);
 }
 
 // ============================================================================
@@ -361,21 +419,18 @@ export function conversation(options?: ChatOptions): Conversation {
 // Audio Functions
 // ============================================================================
 
-/** Audio response type */
-export interface AudioResponseExt {
-    transcript: string;
-    data: string;
-    id: string;
-    expiresAt: number;
-}
-
 /**
- * Generate speech audio from text
+ * Generate audio from text (TTS or music). Returns binary audio with helper methods.
  *
  * @example
  * ```ts
- * // Single audio
+ * // Text-to-speech
  * const audio = await generateAudio('Hello world!', { voice: 'nova' });
+ * await audio.saveToFile('speech.mp3');
+ *
+ * // Music generation
+ * const music = await generateAudio('upbeat jazz', { model: 'elevenmusic', duration: 30 });
+ * await music.saveToFile('jazz.mp3');
  *
  * // Multiple variations
  * const audios = await generateAudio('Hello world!', { n: 3, voice: 'nova' });
@@ -389,7 +444,8 @@ export async function generateAudio(
     const client = getClient();
 
     if (n === 1) {
-        return client.audio(text, audioOptions);
+        const response = await client.audio(text, audioOptions);
+        return wrapAudioResponse(response);
     }
 
     const results = await Promise.all(
@@ -397,7 +453,7 @@ export async function generateAudio(
             client.audio(text, { ...audioOptions, seed: -1 }),
         ),
     );
-    return results;
+    return results.map(wrapAudioResponse);
 }
 
 // ============================================================================
@@ -491,7 +547,40 @@ export async function upload(
  * ```
  */
 export function authorizeUrl(options: AuthorizeOptions): string {
-    return getClient().authorizeUrl(options);
+    return Pollinations.authorizeUrl(options);
+}
+
+/**
+ * Start OAuth device flow for headless/CLI authentication. Does NOT
+ * require an existing API key — use the returned access token to
+ * configure the SDK.
+ *
+ * @example
+ * ```ts
+ * const auth = await authorizeDevice();
+ * console.log(`Visit ${auth.verificationUri} and enter: ${auth.userCode}`);
+ * const accessToken = await auth.poll();
+ * configure({ apiKey: accessToken });
+ * ```
+ */
+export async function authorizeDevice(
+    options?: AuthorizeDeviceOptions,
+): Promise<DeviceAuthorization> {
+    return Pollinations.authorizeDevice(options);
+}
+
+/**
+ * Get the authenticated user's identity. Uses the currently configured
+ * API key (from `configure()` or the `POLLINATIONS_API_KEY` env var).
+ *
+ * @example
+ * ```ts
+ * const user = await userInfo();
+ * console.log(user.name, user.preferred_username);
+ * ```
+ */
+export async function userInfo(): Promise<UserInfo> {
+    return getClient().userInfo();
 }
 
 // ============================================================================
@@ -520,11 +609,20 @@ export async function getUsage(options?: UsageOptions): Promise<UsageResponse> {
 }
 
 /**
+ * Get usage history for the currently configured API key only.
+ */
+export async function getKeyUsage(
+    options?: KeyUsageOptions,
+): Promise<UsageResponse> {
+    return getClient().accountKeyUsage(options);
+}
+
+/**
  * Get daily usage summary
  */
-export async function getDailyUsage(options?: {
-    format?: "json" | "csv";
-}): Promise<DailyUsageResponse> {
+export async function getDailyUsage(
+    options?: DailyUsageOptions,
+): Promise<DailyUsageResponse> {
     return getClient().accountUsageDaily(options);
 }
 
@@ -533,4 +631,49 @@ export async function getDailyUsage(options?: {
  */
 export async function validateKey(): Promise<KeyInfo> {
     return getClient().validateKey();
+}
+
+/**
+ * List all API keys on the authenticated account.
+ *
+ * @example
+ * ```ts
+ * const keys = await listKeys();
+ * keys.forEach(k => console.log(k.name, k.prefix, k.enabled));
+ * ```
+ */
+export async function listKeys(): Promise<AccountKey[]> {
+    return getClient().listKeys();
+}
+
+/**
+ * Create a new API key. The returned `key` field is only shown once —
+ * store it immediately.
+ *
+ * @example
+ * ```ts
+ * const created = await createKey({
+ *   name: 'my-bot',
+ *   type: 'secret',
+ *   accountPermissions: ['usage'],
+ * });
+ * console.log('Save this key — it will not be shown again:', created.key);
+ * ```
+ */
+export async function createKey(
+    options: CreateKeyOptions,
+): Promise<CreatedKey> {
+    return getClient().createKey(options);
+}
+
+/**
+ * Revoke an API key by its id (from `listKeys()`).
+ *
+ * @example
+ * ```ts
+ * await revokeKey('key_abc123');
+ * ```
+ */
+export async function revokeKey(id: string): Promise<void> {
+    return getClient().revokeKey(id);
 }

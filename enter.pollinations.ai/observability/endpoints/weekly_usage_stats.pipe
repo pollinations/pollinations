@@ -4,7 +4,7 @@ DESCRIPTION >
     Optimized: single-pass query with uniq() instead of uniqExact() for ~10x speed.
     Supports start_date param for single-week queries to avoid Tinybird timeouts.
 
-TOKEN model_usage READ
+TOKEN tinybird_read READ
 
 NODE weekly_usage_stats_node
 SQL >
@@ -30,7 +30,6 @@ SQL >
         {% else %}
         start_time >= now() - INTERVAL {{Int32(weeks_back, 12)}} WEEK
         {% end %}
-    AND environment = 'production'
     GROUP BY week
     ORDER BY week ASC
 

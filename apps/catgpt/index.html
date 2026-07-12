@@ -64,8 +64,6 @@
                     <a id="authDashboardLink" href="https://enter.pollinations.ai" target="_blank" rel="noopener" class="auth-dashboard-btn">Dashboard</a>
                     <button id="authLogoutBtn" class="auth-logout-btn">Logout</button>
                 </div>
-                <span id="authUserEmail" class="hidden"></span>
-                <span id="authTier" class="hidden">-</span>
                 <span id="authApiKey" class="hidden">-</span>
             </div>
         </div>
@@ -91,6 +89,9 @@
             </div>
 
             <button id="generateBtn" class="generate-btn">Generate Meme</button>
+            <div id="modelUpsell" class="model-upsell hidden">
+                🐱 CatGPT is on the free catnip. <a href="https://enter.pollinations.ai" target="_blank" rel="noopener">Add pollen credits</a> for the good stuff — crisper art and wittier comebacks. A share goes to the original artist, <a href="https://www.instagram.com/missfitcomics/" target="_blank" rel="noopener">Tanika Godbole</a>.
+            </div>
             <div id="generateError" class="generate-error hidden"></div>
 
             <div id="resultSection" class="result-section hidden">
@@ -114,6 +115,7 @@
         </div>
 
         <footer>
+            <p>Original CatGPT by <a href="https://www.instagram.com/missfitcomics/" target="_blank" rel="noopener">@missfitcomics</a> (Tanika Godbole)</p>
             <p>Made with 💜 by <a href="https://pollinations.ai" target="_blank" rel="noopener">Pollinations.AI</a></p>
             <p class="footer-small">
                 <a href="https://github.com/pollinations/pollinations/tree/main/apps/catgpt" target="_blank" rel="noopener">View on GitHub</a> 🐙

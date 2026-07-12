@@ -36,6 +36,7 @@ async function fetchHighlights(): Promise<Highlight[]> {
     return text
         .split("\n")
         .filter((line) => line.trim().startsWith("- "))
+        .filter((line) => !line.includes("<!-- app -->"))
         .map(parseLine)
         .filter((item): item is Highlight => item !== null)
         .slice(0, MAX_ITEMS);

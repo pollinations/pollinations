@@ -14,11 +14,11 @@ export const APPS_PAGE = {
 
     // CTAs
     submitCtaTitle: "Built something cool?",
-    submitCtaDescription: "Get featured in the showcase and earn Pollen!",
+    submitCtaDescription: "Get featured in the showcase and level up!",
     submitCtaButton: "Submit App",
     pollenCtaTitle: "🏵️ Add Pollen to Your App",
     pollenCtaDescription:
-        "Let users sign in with Pollinations. They pay for usage, you pay $0.",
+        "Let users sign in with their own Pollinations account.",
     pollenCtaButton: "Learn More",
 
     // Badges & tooltips

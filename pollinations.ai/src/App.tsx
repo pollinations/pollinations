@@ -19,6 +19,7 @@ const AppsPage = lazy(() => import("./ui/pages/AppsPage"));
 const CommunityPage = lazy(() => import("./ui/pages/CommunityPage"));
 const TermsPage = lazy(() => import("./ui/pages/TermsPage"));
 const PrivacyPage = lazy(() => import("./ui/pages/PrivacyPage"));
+const RefundsPage = lazy(() => import("./ui/pages/RefundsPage"));
 
 // Prefetch likely routes on idle
 const prefetchRoutes = () => {
@@ -56,6 +57,7 @@ function App() {
                         <Route path="community" element={<CommunityPage />} />
                         <Route path="terms" element={<TermsPage />} />
                         <Route path="privacy" element={<PrivacyPage />} />
+                        <Route path="refunds" element={<RefundsPage />} />
                         <Route path="*" element={<Navigate to="/" replace />} />
                     </Route>
                 </Routes>

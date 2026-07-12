@@ -42,4 +42,5 @@ jobs:
           GITHUB_TOKEN: ${{ steps.pollinations-ai.outputs.token }}
           GITHUB_EVENT: ${{ toJSON(github.event) }}
           POLLINATIONS_TOKEN: ${{ secrets.PLN_GITHUB_POLLY_KEY }}
+          TINYBIRD_READ_TOKEN: ${{ secrets.TINYBIRD_READ_TOKEN }}
         run: python .github/scripts/project-manager.py

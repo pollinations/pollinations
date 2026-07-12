@@ -9,13 +9,6 @@ export function setApiKey(key) {
     }
 }
 
-/**
- * @returns {string|null} - The stored API key or null
- */
-export function getApiKey() {
-    return apiKey;
-}
-
 export function clearApiKey() {
     apiKey = null;
 }
@@ -68,7 +61,7 @@ export function requireApiKey() {
     if (!hasApiKey()) {
         throw new Error(
             "API key required. Use setApiKey tool first or set POLLINATIONS_API_KEY environment variable. " +
-            "Get your key at https://enter.pollinations.ai"
+                "Get your key at https://enter.pollinations.ai",
         );
     }
 }

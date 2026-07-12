@@ -1,6 +1,15 @@
 
+# Temp test scripts (may contain API keys)
+temp/
+pollinations-myceli-proxy/wrangler.generated.toml
+
 # Crush
 .crush/
+
+# Local-only design planning docs (kept out of the repo)
+/DESIGN_REFACTOR_PLAN.md
+/Design Audit.html
+/_local/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
@@ -307,6 +316,7 @@ image.pollinations.ai/temp_logs/
 
 # Tinybird CLI configuration (contains sensitive tokens)
 .tinyb
+.tinyb.*
 
 # Google Cloud credentials and service account keys
 **/credentials/
@@ -343,6 +353,7 @@ debugsession_*/
 
 # Claude skills mutable data (sensitive/local)
 .claude/skills/*/data/
+.claude/scheduled_tasks.lock
 
 # Vim swap files
 *.swp
@@ -358,3 +369,26 @@ agent-communication.md
 .claude/MAIN.md
 .claude/SETUP.md
 .claude/settings.json
+apps/operation/finance/secrets/vendors.json
+apps/operation/finance/secrets/update-live.err
+apps/operation/finance/secrets/pool-history.json
+apps/operation/finance/secrets/input/2026-03.csv
+apps/operation/finance/secrets/input/2026-02.csv
+apps/operation/finance/secrets/input/2026-01.csv
+apps/operation/finance/config.local.json
+
+# Local-only demo / sandbox files — never committed.
+*.demo.tsx
+*.demo.ts
+
+# Playwright MCP scratch output (snapshots, screenshots, console logs)
+.playwright-mcp/
+
+# Community monitor — live-only artifacts, never committed (see apps/operation/community-monitor/README.md)
+apps/operation/community-monitor/.env
+apps/operation/community-monitor/state.json
+apps/operation/community-monitor/people_mapping.json
+apps/operation/community-monitor/probe-results.json
+apps/operation/community-monitor/*.log
+apps/operation/community-monitor/monitor.log
+apps/operation/community-monitor/results.json

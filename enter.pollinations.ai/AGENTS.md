@@ -2,9 +2,9 @@
 
 > 🔧 **Internal testing only** — For production API usage, use [`gen.pollinations.ai`](https://gen.pollinations.ai). This cheatsheet tests the Enter gateway directly for debugging purposes.
 
-> Quick reference for testing image and text models via **enter.pollinations.ai**
+> Quick reference for testing image and text models via **gen.pollinations.ai**. Enter keeps the dashboard and internal `/api/*` control-plane routes.
 
-> ⚠️ **Note**: The current endpoint structure (`/api/generate/image/*`, `/api/generate/v1/*`, `/api/generate/text/*`) is transitional and will be simplified in future releases.
+> ⚠️ **Note**: Generation routes now live on gen without an internal `/api/generate` prefix.
 
 ---
 
@@ -12,9 +12,9 @@
 
 ### Endpoints
 
-- **Image:** `GET /api/generate/image/{prompt}?model=flux`
-- **Text (OpenAI):** `POST /api/generate/v1/chat/completions` with JSON body
-- **Text (Simple):** `GET /api/generate/text/{prompt}?model=openai`
+- **Image:** `GET /image/{prompt}?model=flux`
+- **Text (OpenAI):** `POST /v1/chat/completions` with JSON body
+- **Text (Simple):** `GET /text/{prompt}?model=openai`
 
 ### Authentication
 
@@ -23,8 +23,8 @@
 
 ### Model Discovery
 
-- **Image models:** `/api/generate/image/models`
-- **Text models:** `/api/generate/v1/models`
+- **Image models:** `/image/models`
+- **Text models:** `/v1/models`
 
 ---
 
@@ -109,7 +109,7 @@ curl "$BASE_URL/generate/image/test4?model=seedream&width=1024&height=1024" \
 
 ```bash
 # All parameters
-curl "$BASE_URL/generate/image/test5?model=gptimage&width=1024&height=1024&seed=123&quality=high&enhance=true&nologo=true&private=true&guidance_scale=7.5" \
+curl "$BASE_URL/generate/image/test5?model=gptimage&width=1024&height=1024&seed=123&quality=high&guidance_scale=7.5" \
   -H "Authorization: Bearer $TOKEN"
 
 # Image-to-image (with reference image URL)
@@ -117,7 +117,7 @@ curl "$BASE_URL/generate/image/test6?model=flux&image=https://example.com/image.
   -H "Authorization: Bearer $TOKEN"
 
 # Transparent background
-curl "$BASE_URL/generate/image/test7?model=flux&transparent=true&nologo=true" \
+curl "$BASE_URL/generate/image/test7?model=flux&transparent=true" \
   -H "Authorization: Bearer $TOKEN"
 
 # Save to file
@@ -154,12 +154,7 @@ echo "All images generated!"
   - **seedream**: Minimum 960x960 (921600 pixels required)
 - `seed`: Random seed (default: 42)
 - `quality`: low, medium (default), high, hd
-- `enhance`: Enhance prompt with AI (default: false)
-- `negative_prompt`: What to avoid (default: "worst quality, blurry")
 - `guidance_scale`: How closely to follow prompt (number)
-- `nologo`: Remove watermark (default: false)
-- `private`: Don't show in public feed (default: false)
-- `nofeed`: Don't add to feed (default: false)
 - `safe`: Enable safety filters (default: false)
 - `image`: Reference image URL for image-to-image
 - `transparent`: Generate with transparent background (default: false)
@@ -582,108 +577,79 @@ curl "$BASE_URL/generate/v1/chat/completions" \
 
 ## 🔐 BYOP Authorization Flow
 
-Third-party apps redirect users to get an API key. With `app_key`, the consent screen shows app name + developer GitHub.
+Third-party apps redirect users to authorize a scoped user key. New web integrations should use OAuth authorization-code + PKCE; the old `#api_key=` fragment flow remains supported for legacy clients. With `client_id`/`app_key`, the consent screen shows app name + developer GitHub.
 
 ### Base URL
 
 ```
-https://enter.pollinations.ai/authorize?redirect_url=YOUR_APP_URL&app_key=pk_yourkey
+https://enter.pollinations.ai/authorize?response_type=code&redirect_uri=YOUR_CALLBACK&client_id=pk_yourkey&state=STATE&code_challenge=CHALLENGE&code_challenge_method=S256
 ```
 
 ### Parameters
 
 | Param | Description | Example |
 |-------|-------------|---------|
-| `app_key` | Publishable key (shows app name + author) | `pk_abc123` |
+| `client_id` | Publishable key (shows app name + author); `app_key` is legacy alias | `pk_abc123` |
+| `redirect_uri` | Registered callback URL; `redirect_url` is legacy alias | `https://myapp.com/callback` |
+| `response_type` | `code` for OAuth code flow; omit for legacy fragment flow | `code` |
+| `code_challenge` | PKCE S256 challenge for code flow | `abc...` |
+| `code_challenge_method` | Must be `S256` for code flow | `S256` |
 | `models` | Comma-separated allowed models | `flux,openai,gptimage` |
 | `budget` | Pollen budget limit | `10` |
-| `expiry` | Expiry in days (default: 30) | `7` |
-| `permissions` | Account permissions | `profile,balance,usage` |
+| `expiry` | Expiry in days (default: 7) | `7` |
+| `scope` | Account permissions; `permissions` is legacy alias | `profile usage` |
 
 ### Account Permissions
 
 - `profile`: Read user's name, email, GitHub username
-- `balance`: Read pollen balance
-- `usage`: Read usage history
+- `usage`: Read usage history and pollen balance
 
 ### App Registration
 
-Register a `pk_` key at enter.pollinations.ai with **App URL** + **BYOP** toggle enabled. The key name becomes the app display name on the consent screen.
+Register a `pk_` key at enter.pollinations.ai with at least one **Redirect URI** + **BYOP** toggle enabled. The key name becomes the app display name on the consent screen.
 
 ### Example
 
 ```
-https://enter.pollinations.ai/authorize?redirect_url=https://myapp.com/callback&app_key=pk_abc123&permissions=profile,balance&expiry=7
+https://enter.pollinations.ai/authorize?response_type=code&redirect_uri=https://myapp.com/callback&client_id=pk_abc123&scope=profile%20usage&expiry=7&state=random&code_challenge=...&code_challenge_method=S256
 ```
 
-After authorization, the user is redirected back with an `sk_` key in the URL fragment:
+After authorization, the user is redirected back with a short-lived code:
 ```
-https://myapp.com/callback#api_key=sk_xxxxx
+https://myapp.com/callback?code=oauth_code&state=random
+```
+
+Exchange it at `POST /api/oauth/token` with form-encoded `grant_type=authorization_code`, `code`, `client_id`, `redirect_uri`, and `code_verifier`. Response:
+```
+{ "access_token": "sk_xxxxx", "token_type": "bearer" }
 ```
 
 ### App Lookup Endpoint
 
 `GET /api/app-lookup` — resolves app attribution (no auth required):
-- `?app_key=pk_xxx` — direct key lookup
-- `?redirect_url=https://...` — matches against registered `appUrl` values
+- `?app_key=pk_xxx` (or `?client_id=pk_xxx`) — direct key lookup; returns `{ found: false }` if absent
+
+URL-based identity lookup was removed — identity is derived from `client_id` only, never from the redirect URL. When `client_id` is present, the requested `redirect_uri` must exactly match one registered redirect URI. See PR #10447.
 
 ---
 
-## 🎫 User Tier Management
+## 🎫 Wallet & Balance Lookups
 
-> Claude skill available: `.claude/skills/tier-management/SKILL.md`
+Pollen is earned by completing **Quests**. The `tier`, `tier_balance`, and `pack_balance` columns remain in D1 as the active wallet data model — do not treat the `tier` column as runtime product state or mutate it to "upgrade" a user. The `tier_balance` bucket is shown to users as the **Quest Pollen** balance; `pack_balance` is the **Paid** balance. Old account-level upgrade/downgrade paths are removed.
 
-### Tier Levels
-
-| Tier   | Emoji | Pollen   | Cadence | Criteria                 |
-| ------ | ----- | -------- | ------- | ------------------------ |
-| microbe| 🦠    | 0        | none    | Entry tier (auto-upgrades once verified) |
-| spore  | 🍄    | 0.01     | hourly  | Verified accounts        |
-| seed   | 🌱    | 0.15     | hourly  | GitHub engagement        |
-| flower | 🌸    | 10       | daily   | Contributor              |
-| nectar | 🍯    | 20       | daily   | Coming soon              |
-
-### Quick Tier Update
+### Lookups (read-only)
 
 ```bash
 cd enter.pollinations.ai
-
-# 1. Find user
 npx wrangler d1 execute DB --remote --env production \
-  --command "SELECT github_username, email, tier FROM user WHERE LOWER(github_username) LIKE '%USERNAME%';"
-
-# 2. Update DB tier
-npx wrangler d1 execute DB --remote --env production \
-  --command "UPDATE user SET tier='flower' WHERE github_username='USERNAME';"
-
-# 3. Update Polar subscription
-export POLAR_ACCESS_TOKEN=$(sops -d secrets/prod.vars.json | grep POLAR_ACCESS_TOKEN | cut -d'"' -f4)
-npx tsx scripts/manage-polar.ts user update-tier --email USER@EMAIL.COM --tier flower
+  --command "SELECT github_username, email, tier_balance, pack_balance FROM user WHERE LOWER(github_username) LIKE '%USERNAME%';"
 ```
-
-### Evaluate User for Upgrade
-
-**Flower tier** (any ONE qualifies):
-
-- Has commits: `gh api 'search/commits?q=repo:pollinations/pollinations+author:USERNAME' --jq '.total_count'`
-- Has project: `grep -ri "author.*USERNAME" pollinations.ai/src/config/projects/`
-
-**Seed tier** (any ONE qualifies):
-
-- Issue involvement: `gh api 'search/issues?q=repo:pollinations/pollinations+involves:USERNAME' --jq '.total_count'`
-- Starred repo: `.claude/skills/tier-management/fetch-stargazers.sh USERNAME`
-
-### Notes
-
-- **DB tier** = what user CAN activate
-- **Polar subscription** = what user HAS activated
-- If no Polar subscription, user must click "Activate" at enter.pollinations.ai
 
 ---
 
 ## API Documentation Pipeline
 
-The API reference at `gen.pollinations.ai/api/docs` is auto-generated from source code. **Never edit `APIDOCS.md` directly** — it gets overwritten by CI.
+The API reference at `gen.pollinations.ai/docs` is auto-generated from source code. **Never edit `APIDOCS.md` directly** — it gets overwritten by CI.
 
 ### How It Works
 
@@ -694,11 +660,11 @@ Source files (routes + Zod schemas)
 hono-openapi introspects describeRoute() + validators
         │
         ▼
-OpenAPI 3.x JSON served at /api/docs/open-api/generate-schema
+OpenAPI 3.x JSON served at /docs/open-api/generate-schema
         │
-        ├──► Scalar UI at /api/docs (interactive, runtime)
-        ├──► /api/docs/llm.txt (compact plain text for AI agents)
-        └──► scripts/generate-apidocs.ts → APIDOCS.md (offline, via CI)
+        ├──► Scalar UI at gen.pollinations.ai/docs (interactive, runtime)
+        ├──► /docs/llm.txt (compact plain text for AI agents)
+        └──► gen.pollinations.ai/scripts/generate-apidocs.ts → APIDOCS.md (offline, via CI)
 ```
 
 ### Source Files (what you edit)
@@ -722,19 +688,19 @@ OpenAPI 3.x JSON served at /api/docs/open-api/generate-schema
   1. Strips `/generate/` prefix from paths (internal mount point → public API paths)
   2. `filterAliases()` removes model aliases from enums (only primary IDs shown)
   3. Injects `x-codeSamples` (curl, Python, JS examples) from the `CODE_SAMPLES` object
-- **`generateLLMDoc()`** in `docs.ts` — hand-written compact text doc served at `/api/docs/llm.txt`, separate from OpenAPI
-- **Hidden endpoints** — routes with `hide: true` in `describeRoute()` are excluded from production docs (e.g. `/customer/balance`, `/api-keys`, `/tiers/view`)
+- **`generateLLMDoc()`** in `docs.ts` — hand-written compact text doc served at `/docs/llm.txt`, separate from OpenAPI
+- **Hidden endpoints** — routes with `hide: true` in `describeRoute()` are excluded from production docs (e.g. `/customer/balance`, `/api-keys`)
 
 ### Three Output Surfaces
 
-1. **Scalar UI** (`/api/docs`) — interactive docs page, fetches OpenAPI JSON client-side at runtime
-2. **LLM text** (`/api/docs/llm.txt`) — compact plain text for AI agents, generated from `generateLLMDoc()` at startup
-3. **APIDOCS.md** — markdown version, generated offline by `scripts/generate-apidocs.ts` using `@scalar/openapi-to-markdown`
+1. **Scalar UI** (`gen.pollinations.ai/docs`) — interactive docs page, fetches OpenAPI JSON client-side at runtime
+2. **LLM text** (`/docs/llm.txt`) — compact plain text for AI agents, generated from `generateLLMDoc()` at startup
+3. **APIDOCS.md** — markdown version, generated offline by `gen.pollinations.ai/scripts/generate-apidocs.ts` using `@scalar/openapi-to-markdown`
 
 ### Regenerating APIDOCS.md
 
-- **Automatic**: CI workflow `.github/workflows/docs-regenerate-apidocs.yml` runs on push to `main`
-- **Manual**: `npm run docs:generate` (fetches from production `enter.pollinations.ai`, so changes must be deployed first)
+- **Automatic**: CI workflow `.github/workflows/docs-regenerate-apidocs.yml` runs after a successful production deploy (`Deploy gen.pollinations.ai` workflow on the `production` branch). If APIDOCS.md drifts, it opens or updates a single `docs/apidocs-sync` PR against `main`.
+- **Manual**: `npm run docs:generate --prefix gen.pollinations.ai` (fetches from production `gen.pollinations.ai`, so changes must be deployed first)
 
 ### Where to Make Changes
 

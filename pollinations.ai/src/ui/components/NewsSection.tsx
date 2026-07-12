@@ -63,7 +63,7 @@ export function NewsSection({
                                         a: ({ node, ...props }) => (
                                             <a
                                                 {...props}
-                                                className="text-dark hover:underline font-bold"
+                                                className="bg-accent-strong px-1 text-dark hover:underline"
                                                 target="_blank"
                                                 rel="noopener noreferrer"
                                             />

@@ -148,11 +148,19 @@ def create_api_app(pollinations_client, config):
             thread_history = [{"role": m.role, "content": m.content} for m in request.messages[:-1]]
 
         user_message = request.messages[-1].content if request.messages else ""
-        # content can be a list of content parts — extract text
+        content_image_urls: list[str] = []
         if isinstance(user_message, list):
-            user_message = " ".join(
-                part.get("text", "") for part in user_message if isinstance(part, dict) and part.get("type") == "text"
-            )
+            text_parts: list[str] = []
+            for part in user_message:
+                if not isinstance(part, dict):
+                    continue
+                if part.get("type") == "text":
+                    text_parts.append(part.get("text", ""))
+                elif part.get("type") == "image_url":
+                    url = (part.get("image_url") or {}).get("url", "")
+                    if url:
+                        content_image_urls.append(url)
+            user_message = " ".join(text_parts)
 
         # Collect ALL OpenAI params to pass through to the underlying model
         api_params: dict[str, Any] = {}
@@ -166,7 +174,7 @@ def create_api_app(pollinations_client, config):
                 user_message=user_message,
                 discord_username=request.user_name,
                 thread_history=thread_history,
-                image_urls=request.image_urls or [],
+                image_urls=content_image_urls + (request.image_urls or []),
                 video_urls=request.video_urls or [],
                 file_urls=request.file_urls or [],
                 is_admin=False,  # API users are never admin

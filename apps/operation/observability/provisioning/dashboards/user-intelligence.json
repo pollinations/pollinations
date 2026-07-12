@@ -1,0 +1,3620 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": {
+          "type": "grafana",
+          "uid": "-- Grafana --"
+        },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "description": "User intelligence — registrations, tier progression, activation funnels, and cohort analysis.",
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [],
+  "panels": [
+    {
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "PAD1A0A25CD30D456"
+      },
+      "description": "Total registered users (non-banned) as of the latest sync.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "blue",
+                "value": null
+              }
+            ]
+          },
+          "unit": "locale"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 0,
+        "y": 0
+      },
+      "id": 1,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": true
+        },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "pluginVersion": "11.4.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "PAD1A0A25CD30D456"
+          },
+          "format": 1,
+          "rawSql": "SELECT COUNT(*) AS total_users\nFROM d1_user\nWHERE synced_at = (SELECT max(synced_at) FROM d1_user)\n  AND banned = 0",
+          "refId": "A"
+        }
+      ],
+      "title": "Total Users",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "PAD1A0A25CD30D456"
+      },
+      "description": "New registrations in the selected time range.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "unit": "locale"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 6,
+        "y": 0
+      },
+      "id": 2,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": true
+        },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "pluginVersion": "11.4.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "PAD1A0A25CD30D456"
+          },
+          "format": 1,
+          "rawSql": "SELECT COUNT(*) AS new_users\nFROM d1_user\nWHERE synced_at = (SELECT max(synced_at) FROM d1_user)\n  AND created_at IS NOT NULL\n  AND $__timeFilter(fromUnixTimestamp(created_at))",
+          "refId": "A"
+        }
+      ],
+      "title": "New Users (Period)",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "PAD1A0A25CD30D456"
+      },
+      "description": "Tier distribution of all active (non-banned) users.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            }
+          },
+          "mappings": [],
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 12,
+        "y": 0
+      },
+      "id": 3,
+      "options": {
+        "displayLabels": [
+          "name",
+          "percent"
+        ],
+        "legend": {
+          "displayMode": "table",
+          "placement": "right",
+          "showLegend": true,
+          "values": [
+            "value",
+            "percent"
+          ]
+        },
+        "pieType": "donut",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "11.4.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "PAD1A0A25CD30D456"
+          },
+          "format": 1,
+          "rawSql": "SELECT tier, COUNT(*) AS users\nFROM d1_user\nWHERE synced_at = (SELECT max(synced_at) FROM d1_user)\n  AND banned = 0\nGROUP BY tier\nORDER BY users DESC",
+          "refId": "A"
+        }
+      ],
+      "title": "Tier Distribution",
+      "type": "piechart"
+    },
+    {
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "PAD1A0A25CD30D456"
+      },
+      "description": "Banned users count.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              }
+            ]
+          },
+          "unit": "locale"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 18,
+        "y": 0
+      },
+      "id": 4,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": true
+        },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "pluginVersion": "11.4.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "PAD1A0A25CD30D456"
+          },
+          "format": 1,
+          "rawSql": "SELECT COUNT(*) AS banned_users\nFROM d1_user\nWHERE synced_at = (SELECT max(synced_at) FROM d1_user)\n  AND banned = 1",
+          "refId": "A"
+        }
+      ],
+      "title": "Banned Users",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "PAD1A0A25CD30D456"
+      },
+      "description": "New user registrations over time, grouped by the selected granularity. Uses the Grafana time range picker to filter.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "Registrations",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "barWidthFactor": 0.6,
+            "drawStyle": "bars",
+            "fillOpacity": 80,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 10,
+        "w": 24,
+        "x": 0,
+        "y": 4
+      },
+      "id": 5,
+      "options": {
+        "legend": {
+          "calcs": [
+            "sum",
+            "mean",
+            "max"
+          ],
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "11.4.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "PAD1A0A25CD30D456"
+          },
+          "format": 0,
+          "range": true,
+          "rawSql": "SELECT\n  date_trunc('$granularity', fromUnixTimestamp(assumeNotNull(created_at))) AS ts,\n  count() AS registrations\nFROM d1_user\nWHERE synced_at = (SELECT max(synced_at) FROM d1_user)\n  AND created_at IS NOT NULL\n  AND $__timeFilter(fromUnixTimestamp(created_at))\nGROUP BY ts\nORDER BY ts ASC",
+          "refId": "A"
+        }
+      ],
+      "title": "User Registrations",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "PAD1A0A25CD30D456"
+      },
+      "description": "Cumulative registered users over time.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "fixedColor": "blue",
+            "mode": "fixed"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "Cumulative Users",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 20,
+            "gradientMode": "scheme",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "smooth",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": true,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "blue",
+                "value": null
+              }
+            ]
+          },
+          "unit": "locale"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "user_tier"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "User (spore)"
+              },
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "orange",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "dev_tier"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Dev (seed + flower + nectar)"
+              },
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "green",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "abuser_tier"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Abuser (microbe)"
+              },
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "red",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "dead_tier"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Dead (banned/deleted)"
+              },
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "semi-dark-purple",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 10,
+        "w": 24,
+        "x": 0,
+        "y": 14
+      },
+      "id": 6,
+      "options": {
+        "legend": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "11.4.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "PAD1A0A25CD30D456"
+          },
+          "format": 0,
+          "range": true,
+          "rawSql": "SELECT\n  ts,\n  sum(user_tier) OVER (ORDER BY ts ASC) AS user_tier,\n  sum(dev_tier) OVER (ORDER BY ts ASC) AS dev_tier,\n  sum(abuser_tier) OVER (ORDER BY ts ASC) AS abuser_tier,\n  sum(dead_tier) OVER (ORDER BY ts ASC) AS dead_tier\nFROM (\n  SELECT\n    date_trunc('$granularity', fromUnixTimestamp(assumeNotNull(created_at))) AS ts,\n    countIf(tier = 'spore' AND banned = 0) AS user_tier,\n    countIf(tier IN ('seed', 'flower', 'nectar') AND banned = 0) AS dev_tier,\n    countIf(tier = 'microbe' AND banned = 0) AS abuser_tier,\n    countIf(banned = 1) AS dead_tier\n  FROM d1_user\n  WHERE synced_at = (SELECT max(synced_at) FROM d1_user)\n    AND created_at IS NOT NULL\n    AND $__timeFilter(fromUnixTimestamp(created_at))\n  GROUP BY ts\n  ORDER BY ts ASC\n)",
+          "refId": "A"
+        }
+      ],
+      "title": "Cumulative Registrations (User vs Dev)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "PAD1A0A25CD30D456"
+      },
+      "description": "Registration growth rate vs previous period. Adapts to selected granularity (DoD, WoW, MoM, etc).",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "continuous-GrYlRd"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": true,
+            "axisColorMode": "text",
+            "axisLabel": "Growth %",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "barWidthFactor": 0.6,
+            "drawStyle": "bars",
+            "fillOpacity": 80,
+            "gradientMode": "scheme",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "unit": "percent"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 24
+      },
+      "id": 8,
+      "options": {
+        "legend": {
+          "calcs": [
+            "mean",
+            "lastNotNull"
+          ],
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "11.4.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "PAD1A0A25CD30D456"
+          },
+          "format": 0,
+          "range": true,
+          "rawSql": "SELECT\n  ts,\n  if(prev > 0, round((registrations - prev) / prev * 100, 1), null) AS growth_pct\nFROM (\n  SELECT\n    ts,\n    registrations,\n    lagInFrame(registrations) OVER (ORDER BY ts ASC) AS prev\n  FROM (\n    SELECT\n      date_trunc('$granularity', fromUnixTimestamp(assumeNotNull(created_at))) AS ts,\n      count() AS registrations\n    FROM d1_user\n    WHERE synced_at = (SELECT max(synced_at) FROM d1_user)\n      AND created_at IS NOT NULL\n      AND $__timeFilter(fromUnixTimestamp(created_at))\n    GROUP BY ts\n    ORDER BY ts ASC\n  )\n)\nWHERE prev IS NOT NULL",
+          "refId": "A"
+        }
+      ],
+      "title": "Registration Growth Rate",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "PAD1A0A25CD30D456"
+      },
+      "description": "New registrations broken down by tier assigned at registration time.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "Registrations",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "barWidthFactor": 0.6,
+            "drawStyle": "bars",
+            "fillOpacity": 80,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "normal"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 10,
+        "w": 24,
+        "x": 0,
+        "y": 32
+      },
+      "id": 7,
+      "options": {
+        "legend": {
+          "calcs": [
+            "sum"
+          ],
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "pluginVersion": "11.4.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "PAD1A0A25CD30D456"
+          },
+          "format": 0,
+          "range": true,
+          "rawSql": "SELECT\n  date_trunc('$granularity', fromUnixTimestamp(assumeNotNull(created_at))) AS ts,\n  tier,\n  count() AS registrations\nFROM d1_user\nWHERE synced_at = (SELECT max(synced_at) FROM d1_user)\n  AND created_at IS NOT NULL\n  AND $__timeFilter(fromUnixTimestamp(created_at))\nGROUP BY ts, tier\nORDER BY ts ASC",
+          "refId": "A"
+        }
+      ],
+      "title": "Registrations by Tier",
+      "type": "timeseries"
+    },
+    {
+      "id": 100,
+      "type": "row",
+      "title": "Buyer Geography",
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 42
+      },
+      "panels": []
+    },
+    {
+      "id": 101,
+      "type": "barchart",
+      "title": "Top Countries by Revenue (Billing Address — self-reported)",
+      "description": "Revenue grouped by the billing-address country the buyer typed at checkout. Self-reported and not verified — see 'Failures: Country × Reason' for the carding pattern where buyers claim one country but the card was issued in another. To get the card-issuing country for SUCCESSFUL charges too (currently only available for failures via last_payment_error), enable the `charge.succeeded` webhook in enter.pollinations.ai/src/routes/stripe-webhooks.ts.",
+      "gridPos": {
+        "h": 10,
+        "w": 12,
+        "x": 0,
+        "y": 43
+      },
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "PAD1A0A25CD30D457"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {},
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "unit": "currencyUSD"
+        },
+        "overrides": []
+      },
+      "options": {
+        "barRadius": 0,
+        "barWidth": 0.8,
+        "groupWidth": 0.7,
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": false
+        },
+        "orientation": "horizontal",
+        "stacking": "none",
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        },
+        "xField": "country",
+        "xTickLabelRotation": 0
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "PAD1A0A25CD30D457"
+          },
+          "format": 1,
+          "rawSql": "WITH JSONExtractString(payload, 'data', 'object', 'customer_details', 'address', 'country') AS code\nSELECT\n  transform(code, ['AC','AD','AE','AF','AG','AI','AL','AM','AN','AO','AQ','AR','AS','AT','AU','AW','AZ','BA','BB','BD','BE','BF','BG','BH','BI','BJ','BL','BM','BN','BO','BQ','BR','BS','BT','BU','BV','BW','BY','BZ','CA','CC','CD','CF','CG','CH','CI','CK','CL','CM','CN','CO','CP','CQ','CR','CS','CU','CV','CW','CX','CY','CZ','DD','DE','DG','DJ','DK','DM','DO','DY','DZ','EA','EC','EE','EG','EH','ER','ES','ET','EU','EZ','FI','FJ','FK','FM','FO','FR','FX','GA','GB','GD','GE','GF','GG','GH','GI','GL','GM','GN','GP','GQ','GR','GS','GT','GU','GW','GY','HK','HM','HN','HR','HT','HU','HV','IC','ID','IE','IL','IM','IN','IO','IQ','IR','IS','IT','JE','JM','JO','JP','KE','KG','KH','KI','KM','KN','KP','KR','KW','KY','KZ','LA','LB','LC','LI','LK','LR','LS','LT','LU','LV','LY','MA','MC','MD','ME','MF','MG','MH','MK','ML','MM','MN','MO','MP','MQ','MR','MS','MT','MU','MV','MW','MX','MY','MZ','NA','NC','NE','NF','NG','NH','NI','NL','NO','NP','NR','NU','NZ','OM','PA','PE','PF','PG','PH','PK','PL','PM','PN','PR','PS','PT','PW','PY','QA','QO','RE','RH','RO','RS','RU','RW','SA','SB','SC','SD','SE','SG','SH','SI','SJ','SK','SL','SM','SN','SO','SR','SS','ST','SU','SV','SX','SY','SZ','TA','TC','TD','TF','TG','TH','TJ','TK','TL','TM','TN','TO','TP','TR','TT','TV','TW','TZ','UA','UG','UK','UM','UN','US','UY','UZ','VA','VC','VD','VE','VG','VI','VN','VU','WF','WS','XA','XB','XK','YD','YE','YT','YU','ZA','ZM','ZR','ZW','ZZ'], ['Ascension Island','Andorra','United Arab Emirates','Afghanistan','Antigua & Barbuda','Anguilla','Albania','Armenia','Curaçao','Angola','Antarctica','Argentina','American Samoa','Austria','Australia','Aruba','Azerbaijan','Bosnia & Herzegovina','Barbados','Bangladesh','Belgium','Burkina Faso','Bulgaria','Bahrain','Burundi','Benin','St. Barthélemy','Bermuda','Brunei','Bolivia','Caribbean Netherlands','Brazil','Bahamas','Bhutan','Myanmar (Burma)','Bouvet Island','Botswana','Belarus','Belize','Canada','Cocos (Keeling) Islands','Congo - Kinshasa','Central African Republic','Congo - Brazzaville','Switzerland','Côte d’Ivoire','Cook Islands','Chile','Cameroon','China','Colombia','Clipperton Island','Sark','Costa Rica','Serbia','Cuba','Cape Verde','Curaçao','Christmas Island','Cyprus','Czechia','Germany','Germany','Diego Garcia','Djibouti','Denmark','Dominica','Dominican Republic','Benin','Algeria','Ceuta & Melilla','Ecuador','Estonia','Egypt','Western Sahara','Eritrea','Spain','Ethiopia','European Union','Eurozone','Finland','Fiji','Falkland Islands','Micronesia','Faroe Islands','France','France','Gabon','United Kingdom','Grenada','Georgia','French Guiana','Guernsey','Ghana','Gibraltar','Greenland','Gambia','Guinea','Guadeloupe','Equatorial Guinea','Greece','South Georgia & South Sandwich Islands','Guatemala','Guam','Guinea-Bissau','Guyana','Hong Kong SAR China','Heard & McDonald Islands','Honduras','Croatia','Haiti','Hungary','Burkina Faso','Canary Islands','Indonesia','Ireland','Israel','Isle of Man','India','British Indian Ocean Territory','Iraq','Iran','Iceland','Italy','Jersey','Jamaica','Jordan','Japan','Kenya','Kyrgyzstan','Cambodia','Kiribati','Comoros','St. Kitts & Nevis','North Korea','South Korea','Kuwait','Cayman Islands','Kazakhstan','Laos','Lebanon','St. Lucia','Liechtenstein','Sri Lanka','Liberia','Lesotho','Lithuania','Luxembourg','Latvia','Libya','Morocco','Monaco','Moldova','Montenegro','St. Martin','Madagascar','Marshall Islands','North Macedonia','Mali','Myanmar (Burma)','Mongolia','Macao SAR China','Northern Mariana Islands','Martinique','Mauritania','Montserrat','Malta','Mauritius','Maldives','Malawi','Mexico','Malaysia','Mozambique','Namibia','New Caledonia','Niger','Norfolk Island','Nigeria','Vanuatu','Nicaragua','Netherlands','Norway','Nepal','Nauru','Niue','New Zealand','Oman','Panama','Peru','French Polynesia','Papua New Guinea','Philippines','Pakistan','Poland','St. Pierre & Miquelon','Pitcairn Islands','Puerto Rico','Palestinian Territories','Portugal','Palau','Paraguay','Qatar','Outlying Oceania','Réunion','Zimbabwe','Romania','Serbia','Russia','Rwanda','Saudi Arabia','Solomon Islands','Seychelles','Sudan','Sweden','Singapore','St. Helena','Slovenia','Svalbard & Jan Mayen','Slovakia','Sierra Leone','San Marino','Senegal','Somalia','Suriname','South Sudan','São Tomé & Príncipe','Russia','El Salvador','Sint Maarten','Syria','Eswatini','Tristan da Cunha','Turks & Caicos Islands','Chad','French Southern Territories','Togo','Thailand','Tajikistan','Tokelau','Timor-Leste','Turkmenistan','Tunisia','Tonga','Timor-Leste','Türkiye','Trinidad & Tobago','Tuvalu','Taiwan','Tanzania','Ukraine','Uganda','United Kingdom','U.S. Outlying Islands','United Nations','United States','Uruguay','Uzbekistan','Vatican City','St. Vincent & Grenadines','Vietnam','Venezuela','British Virgin Islands','U.S. Virgin Islands','Vietnam','Vanuatu','Wallis & Futuna','Samoa','Pseudo-Accents','Pseudo-Bidi','Kosovo','Yemen','Yemen','Mayotte','Serbia','South Africa','Zambia','Congo - Kinshasa','Zimbabwe','Unknown Region'], code) AS country,\n  round(SUM(amount_cents) / 100.0, 2) AS revenue\nFROM stripe_event\nWHERE timestamp >= $__fromTime AND timestamp < $__toTime\n  AND event_type = 'checkout.session.completed'\n  AND payment_status = 'paid'\n  AND livemode = 1\n  AND code != ''\nGROUP BY country\nORDER BY revenue DESC\nLIMIT 15",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 102,
+      "type": "piechart",
+      "title": "Pack Mix (Overall)",
+      "description": "Share of paid checkouts by pack size. Derived from amount_cents (200 = $2, 500 = $5, 1000 = $10, ...).",
+      "gridPos": {
+        "h": 10,
+        "w": 12,
+        "x": 12,
+        "y": 43
+      },
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "PAD1A0A25CD30D457"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            }
+          },
+          "mappings": [],
+          "unit": "short"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "$2"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#5794F2"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "$5"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#73BF69"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "$10"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#FADE2A"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "$20"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#FF9830"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "$50"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#F2495C"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "$100"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#B877D9"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Other"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#8E8E8E"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "displayLabels": [
+          "name",
+          "percent"
+        ],
+        "legend": {
+          "displayMode": "table",
+          "placement": "right",
+          "showLegend": true,
+          "values": [
+            "value",
+            "percent"
+          ]
+        },
+        "pieType": "donut",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "PAD1A0A25CD30D457"
+          },
+          "format": 1,
+          "rawSql": "SELECT\n  multiIf(\n    amount_cents = 200, '$2',\n    amount_cents = 500, '$5',\n    amount_cents = 1000, '$10',\n    amount_cents = 2000, '$20',\n    amount_cents = 5000, '$50',\n    amount_cents = 10000, '$100',\n    'Other'\n  ) AS pack,\n  count() AS purchases\nFROM stripe_event\nWHERE timestamp >= $__fromTime AND timestamp < $__toTime\n  AND event_type = 'checkout.session.completed'\n  AND payment_status = 'paid'\n  AND livemode = 1\nGROUP BY pack\nORDER BY purchases DESC",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 103,
+      "type": "barchart",
+      "title": "Top Countries × Pack Mix",
+      "description": "Top 10 countries by purchase count, stacked by pack size. Shows whether each country leans toward small or large packs.",
+      "gridPos": {
+        "h": 12,
+        "w": 24,
+        "x": 0,
+        "y": 53
+      },
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "PAD1A0A25CD30D457"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "stacking": {
+              "group": "A",
+              "mode": "normal"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "$2"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#5794F2"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "$5"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#73BF69"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "$10"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#FADE2A"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "$20"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#FF9830"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "$50"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#F2495C"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "$100"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#B877D9"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Other"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#8E8E8E"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "barRadius": 0,
+        "barWidth": 0.8,
+        "groupWidth": 0.7,
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "orientation": "horizontal",
+        "stacking": "normal",
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        },
+        "xField": "country",
+        "xTickLabelRotation": 0
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "PAD1A0A25CD30D457"
+          },
+          "format": 1,
+          "rawSql": "WITH JSONExtractString(payload, 'data', 'object', 'customer_details', 'address', 'country') AS code\nSELECT\n  transform(code, ['AC','AD','AE','AF','AG','AI','AL','AM','AN','AO','AQ','AR','AS','AT','AU','AW','AZ','BA','BB','BD','BE','BF','BG','BH','BI','BJ','BL','BM','BN','BO','BQ','BR','BS','BT','BU','BV','BW','BY','BZ','CA','CC','CD','CF','CG','CH','CI','CK','CL','CM','CN','CO','CP','CQ','CR','CS','CU','CV','CW','CX','CY','CZ','DD','DE','DG','DJ','DK','DM','DO','DY','DZ','EA','EC','EE','EG','EH','ER','ES','ET','EU','EZ','FI','FJ','FK','FM','FO','FR','FX','GA','GB','GD','GE','GF','GG','GH','GI','GL','GM','GN','GP','GQ','GR','GS','GT','GU','GW','GY','HK','HM','HN','HR','HT','HU','HV','IC','ID','IE','IL','IM','IN','IO','IQ','IR','IS','IT','JE','JM','JO','JP','KE','KG','KH','KI','KM','KN','KP','KR','KW','KY','KZ','LA','LB','LC','LI','LK','LR','LS','LT','LU','LV','LY','MA','MC','MD','ME','MF','MG','MH','MK','ML','MM','MN','MO','MP','MQ','MR','MS','MT','MU','MV','MW','MX','MY','MZ','NA','NC','NE','NF','NG','NH','NI','NL','NO','NP','NR','NU','NZ','OM','PA','PE','PF','PG','PH','PK','PL','PM','PN','PR','PS','PT','PW','PY','QA','QO','RE','RH','RO','RS','RU','RW','SA','SB','SC','SD','SE','SG','SH','SI','SJ','SK','SL','SM','SN','SO','SR','SS','ST','SU','SV','SX','SY','SZ','TA','TC','TD','TF','TG','TH','TJ','TK','TL','TM','TN','TO','TP','TR','TT','TV','TW','TZ','UA','UG','UK','UM','UN','US','UY','UZ','VA','VC','VD','VE','VG','VI','VN','VU','WF','WS','XA','XB','XK','YD','YE','YT','YU','ZA','ZM','ZR','ZW','ZZ'], ['Ascension Island','Andorra','United Arab Emirates','Afghanistan','Antigua & Barbuda','Anguilla','Albania','Armenia','Curaçao','Angola','Antarctica','Argentina','American Samoa','Austria','Australia','Aruba','Azerbaijan','Bosnia & Herzegovina','Barbados','Bangladesh','Belgium','Burkina Faso','Bulgaria','Bahrain','Burundi','Benin','St. Barthélemy','Bermuda','Brunei','Bolivia','Caribbean Netherlands','Brazil','Bahamas','Bhutan','Myanmar (Burma)','Bouvet Island','Botswana','Belarus','Belize','Canada','Cocos (Keeling) Islands','Congo - Kinshasa','Central African Republic','Congo - Brazzaville','Switzerland','Côte d’Ivoire','Cook Islands','Chile','Cameroon','China','Colombia','Clipperton Island','Sark','Costa Rica','Serbia','Cuba','Cape Verde','Curaçao','Christmas Island','Cyprus','Czechia','Germany','Germany','Diego Garcia','Djibouti','Denmark','Dominica','Dominican Republic','Benin','Algeria','Ceuta & Melilla','Ecuador','Estonia','Egypt','Western Sahara','Eritrea','Spain','Ethiopia','European Union','Eurozone','Finland','Fiji','Falkland Islands','Micronesia','Faroe Islands','France','France','Gabon','United Kingdom','Grenada','Georgia','French Guiana','Guernsey','Ghana','Gibraltar','Greenland','Gambia','Guinea','Guadeloupe','Equatorial Guinea','Greece','South Georgia & South Sandwich Islands','Guatemala','Guam','Guinea-Bissau','Guyana','Hong Kong SAR China','Heard & McDonald Islands','Honduras','Croatia','Haiti','Hungary','Burkina Faso','Canary Islands','Indonesia','Ireland','Israel','Isle of Man','India','British Indian Ocean Territory','Iraq','Iran','Iceland','Italy','Jersey','Jamaica','Jordan','Japan','Kenya','Kyrgyzstan','Cambodia','Kiribati','Comoros','St. Kitts & Nevis','North Korea','South Korea','Kuwait','Cayman Islands','Kazakhstan','Laos','Lebanon','St. Lucia','Liechtenstein','Sri Lanka','Liberia','Lesotho','Lithuania','Luxembourg','Latvia','Libya','Morocco','Monaco','Moldova','Montenegro','St. Martin','Madagascar','Marshall Islands','North Macedonia','Mali','Myanmar (Burma)','Mongolia','Macao SAR China','Northern Mariana Islands','Martinique','Mauritania','Montserrat','Malta','Mauritius','Maldives','Malawi','Mexico','Malaysia','Mozambique','Namibia','New Caledonia','Niger','Norfolk Island','Nigeria','Vanuatu','Nicaragua','Netherlands','Norway','Nepal','Nauru','Niue','New Zealand','Oman','Panama','Peru','French Polynesia','Papua New Guinea','Philippines','Pakistan','Poland','St. Pierre & Miquelon','Pitcairn Islands','Puerto Rico','Palestinian Territories','Portugal','Palau','Paraguay','Qatar','Outlying Oceania','Réunion','Zimbabwe','Romania','Serbia','Russia','Rwanda','Saudi Arabia','Solomon Islands','Seychelles','Sudan','Sweden','Singapore','St. Helena','Slovenia','Svalbard & Jan Mayen','Slovakia','Sierra Leone','San Marino','Senegal','Somalia','Suriname','South Sudan','São Tomé & Príncipe','Russia','El Salvador','Sint Maarten','Syria','Eswatini','Tristan da Cunha','Turks & Caicos Islands','Chad','French Southern Territories','Togo','Thailand','Tajikistan','Tokelau','Timor-Leste','Turkmenistan','Tunisia','Tonga','Timor-Leste','Türkiye','Trinidad & Tobago','Tuvalu','Taiwan','Tanzania','Ukraine','Uganda','United Kingdom','U.S. Outlying Islands','United Nations','United States','Uruguay','Uzbekistan','Vatican City','St. Vincent & Grenadines','Vietnam','Venezuela','British Virgin Islands','U.S. Virgin Islands','Vietnam','Vanuatu','Wallis & Futuna','Samoa','Pseudo-Accents','Pseudo-Bidi','Kosovo','Yemen','Yemen','Mayotte','Serbia','South Africa','Zambia','Congo - Kinshasa','Zimbabwe','Unknown Region'], code) AS country,\n  countIf(amount_cents = 200)   AS \"$2\",\n  countIf(amount_cents = 500)   AS \"$5\",\n  countIf(amount_cents = 1000)  AS \"$10\",\n  countIf(amount_cents = 2000)  AS \"$20\",\n  countIf(amount_cents = 5000)  AS \"$50\",\n  countIf(amount_cents = 10000) AS \"$100\"\nFROM stripe_event\nWHERE timestamp >= $__fromTime AND timestamp < $__toTime\n  AND event_type = 'checkout.session.completed'\n  AND payment_status = 'paid'\n  AND livemode = 1\n  AND code != ''\nGROUP BY country\nHAVING (\"$2\" + \"$5\" + \"$10\" + \"$20\" + \"$50\" + \"$100\") > 0\nORDER BY (\"$2\" + \"$5\" + \"$10\" + \"$20\" + \"$50\" + \"$100\") DESC\nLIMIT 10",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 104,
+      "type": "timeseries",
+      "title": "Revenue by Country (Top 5 + Other)",
+      "description": "Daily/weekly/monthly Stripe revenue, stacked by buyer country. Top 5 countries by total revenue in range, rest bucketed as 'Other'.",
+      "gridPos": {
+        "h": 10,
+        "w": 24,
+        "x": 0,
+        "y": 65
+      },
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "PAD1A0A25CD30D457"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisPlacement": "auto",
+            "drawStyle": "bars",
+            "fillOpacity": 70,
+            "lineWidth": 1,
+            "showPoints": "never",
+            "stacking": {
+              "group": "A",
+              "mode": "normal"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "unit": "currencyUSD"
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "PAD1A0A25CD30D457"
+          },
+          "format": 0,
+          "range": true,
+          "rawSql": "WITH top_codes AS (\n  SELECT JSONExtractString(payload, 'data', 'object', 'customer_details', 'address', 'country') AS c\n  FROM stripe_event\n  WHERE timestamp >= $__fromTime AND timestamp < $__toTime\n    AND event_type = 'checkout.session.completed'\n    AND payment_status = 'paid'\n    AND livemode = 1\n  GROUP BY c\n  HAVING c != ''\n  ORDER BY SUM(amount_cents) DESC\n  LIMIT 5\n)\nSELECT\n  toStartOfInterval(timestamp, INTERVAL 1 $granularity) AS time,\n  if(\n    code IN (SELECT c FROM top_codes),\n    transform(code, ['AC','AD','AE','AF','AG','AI','AL','AM','AN','AO','AQ','AR','AS','AT','AU','AW','AZ','BA','BB','BD','BE','BF','BG','BH','BI','BJ','BL','BM','BN','BO','BQ','BR','BS','BT','BU','BV','BW','BY','BZ','CA','CC','CD','CF','CG','CH','CI','CK','CL','CM','CN','CO','CP','CQ','CR','CS','CU','CV','CW','CX','CY','CZ','DD','DE','DG','DJ','DK','DM','DO','DY','DZ','EA','EC','EE','EG','EH','ER','ES','ET','EU','EZ','FI','FJ','FK','FM','FO','FR','FX','GA','GB','GD','GE','GF','GG','GH','GI','GL','GM','GN','GP','GQ','GR','GS','GT','GU','GW','GY','HK','HM','HN','HR','HT','HU','HV','IC','ID','IE','IL','IM','IN','IO','IQ','IR','IS','IT','JE','JM','JO','JP','KE','KG','KH','KI','KM','KN','KP','KR','KW','KY','KZ','LA','LB','LC','LI','LK','LR','LS','LT','LU','LV','LY','MA','MC','MD','ME','MF','MG','MH','MK','ML','MM','MN','MO','MP','MQ','MR','MS','MT','MU','MV','MW','MX','MY','MZ','NA','NC','NE','NF','NG','NH','NI','NL','NO','NP','NR','NU','NZ','OM','PA','PE','PF','PG','PH','PK','PL','PM','PN','PR','PS','PT','PW','PY','QA','QO','RE','RH','RO','RS','RU','RW','SA','SB','SC','SD','SE','SG','SH','SI','SJ','SK','SL','SM','SN','SO','SR','SS','ST','SU','SV','SX','SY','SZ','TA','TC','TD','TF','TG','TH','TJ','TK','TL','TM','TN','TO','TP','TR','TT','TV','TW','TZ','UA','UG','UK','UM','UN','US','UY','UZ','VA','VC','VD','VE','VG','VI','VN','VU','WF','WS','XA','XB','XK','YD','YE','YT','YU','ZA','ZM','ZR','ZW','ZZ'], ['Ascension Island','Andorra','United Arab Emirates','Afghanistan','Antigua & Barbuda','Anguilla','Albania','Armenia','Curaçao','Angola','Antarctica','Argentina','American Samoa','Austria','Australia','Aruba','Azerbaijan','Bosnia & Herzegovina','Barbados','Bangladesh','Belgium','Burkina Faso','Bulgaria','Bahrain','Burundi','Benin','St. Barthélemy','Bermuda','Brunei','Bolivia','Caribbean Netherlands','Brazil','Bahamas','Bhutan','Myanmar (Burma)','Bouvet Island','Botswana','Belarus','Belize','Canada','Cocos (Keeling) Islands','Congo - Kinshasa','Central African Republic','Congo - Brazzaville','Switzerland','Côte d’Ivoire','Cook Islands','Chile','Cameroon','China','Colombia','Clipperton Island','Sark','Costa Rica','Serbia','Cuba','Cape Verde','Curaçao','Christmas Island','Cyprus','Czechia','Germany','Germany','Diego Garcia','Djibouti','Denmark','Dominica','Dominican Republic','Benin','Algeria','Ceuta & Melilla','Ecuador','Estonia','Egypt','Western Sahara','Eritrea','Spain','Ethiopia','European Union','Eurozone','Finland','Fiji','Falkland Islands','Micronesia','Faroe Islands','France','France','Gabon','United Kingdom','Grenada','Georgia','French Guiana','Guernsey','Ghana','Gibraltar','Greenland','Gambia','Guinea','Guadeloupe','Equatorial Guinea','Greece','South Georgia & South Sandwich Islands','Guatemala','Guam','Guinea-Bissau','Guyana','Hong Kong SAR China','Heard & McDonald Islands','Honduras','Croatia','Haiti','Hungary','Burkina Faso','Canary Islands','Indonesia','Ireland','Israel','Isle of Man','India','British Indian Ocean Territory','Iraq','Iran','Iceland','Italy','Jersey','Jamaica','Jordan','Japan','Kenya','Kyrgyzstan','Cambodia','Kiribati','Comoros','St. Kitts & Nevis','North Korea','South Korea','Kuwait','Cayman Islands','Kazakhstan','Laos','Lebanon','St. Lucia','Liechtenstein','Sri Lanka','Liberia','Lesotho','Lithuania','Luxembourg','Latvia','Libya','Morocco','Monaco','Moldova','Montenegro','St. Martin','Madagascar','Marshall Islands','North Macedonia','Mali','Myanmar (Burma)','Mongolia','Macao SAR China','Northern Mariana Islands','Martinique','Mauritania','Montserrat','Malta','Mauritius','Maldives','Malawi','Mexico','Malaysia','Mozambique','Namibia','New Caledonia','Niger','Norfolk Island','Nigeria','Vanuatu','Nicaragua','Netherlands','Norway','Nepal','Nauru','Niue','New Zealand','Oman','Panama','Peru','French Polynesia','Papua New Guinea','Philippines','Pakistan','Poland','St. Pierre & Miquelon','Pitcairn Islands','Puerto Rico','Palestinian Territories','Portugal','Palau','Paraguay','Qatar','Outlying Oceania','Réunion','Zimbabwe','Romania','Serbia','Russia','Rwanda','Saudi Arabia','Solomon Islands','Seychelles','Sudan','Sweden','Singapore','St. Helena','Slovenia','Svalbard & Jan Mayen','Slovakia','Sierra Leone','San Marino','Senegal','Somalia','Suriname','South Sudan','São Tomé & Príncipe','Russia','El Salvador','Sint Maarten','Syria','Eswatini','Tristan da Cunha','Turks & Caicos Islands','Chad','French Southern Territories','Togo','Thailand','Tajikistan','Tokelau','Timor-Leste','Turkmenistan','Tunisia','Tonga','Timor-Leste','Türkiye','Trinidad & Tobago','Tuvalu','Taiwan','Tanzania','Ukraine','Uganda','United Kingdom','U.S. Outlying Islands','United Nations','United States','Uruguay','Uzbekistan','Vatican City','St. Vincent & Grenadines','Vietnam','Venezuela','British Virgin Islands','U.S. Virgin Islands','Vietnam','Vanuatu','Wallis & Futuna','Samoa','Pseudo-Accents','Pseudo-Bidi','Kosovo','Yemen','Yemen','Mayotte','Serbia','South Africa','Zambia','Congo - Kinshasa','Zimbabwe','Unknown Region'], code),\n    'Other'\n  ) AS country,\n  round(SUM(amount_cents) / 100.0, 2) AS revenue\nFROM (\n  SELECT\n    timestamp,\n    amount_cents,\n    JSONExtractString(payload, 'data', 'object', 'customer_details', 'address', 'country') AS code\n  FROM stripe_event\n  WHERE timestamp >= $__fromTime AND timestamp < $__toTime\n    AND event_type = 'checkout.session.completed'\n    AND payment_status = 'paid'\n    AND livemode = 1\n)\nGROUP BY time, country\nORDER BY time",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 200,
+      "type": "row",
+      "title": "Payment Methods & Failures",
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 75
+      },
+      "panels": []
+    },
+    {
+      "id": 105,
+      "type": "piechart",
+      "title": "Payment Method Mix (Paid)",
+      "description": "Share of successful checkouts by the ACTUAL payment method used. Joins checkout.session.completed to its payment_intent.succeeded sibling (by payment_intent ID) and reads charges[0].payment_method_details.type from the PI payload. Sessions without a matching PI event roll up as 'unknown'.",
+      "gridPos": {
+        "h": 10,
+        "w": 8,
+        "x": 0,
+        "y": 76
+      },
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "PAD1A0A25CD30D457"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            }
+          },
+          "mappings": [],
+          "unit": "short"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "card"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#5794F2"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "link"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#73BF69"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "paypal"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#1F60C4"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "cashapp"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#96D98D"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "klarna"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#FF899D"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "sepa_debit"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#FADE2A"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "ideal"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#FF9830"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "bancontact"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#B877D9"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "apple_pay"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#000000"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "google_pay"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#EA4335"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "other"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#8E8E8E"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "unknown"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#555555"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "displayLabels": [
+          "name",
+          "percent"
+        ],
+        "legend": {
+          "displayMode": "table",
+          "placement": "right",
+          "showLegend": true,
+          "values": [
+            "value",
+            "percent"
+          ]
+        },
+        "pieType": "donut",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "PAD1A0A25CD30D457"
+          },
+          "format": 1,
+          "rawSql": "WITH\n  cs_completed AS (\n    SELECT\n      JSONExtractString(payload, 'data', 'object', 'payment_intent') AS pi_id,\n      JSONExtractString(payload, 'data', 'object', 'customer_details', 'address', 'country') AS code,\n      amount_cents\n    FROM stripe_event\n    WHERE timestamp >= $__fromTime AND timestamp < $__toTime\n      AND event_type = 'checkout.session.completed'\n      AND payment_status = 'paid'\n      AND livemode = 1\n  ),\n  pi_methods AS (\n    SELECT\n      JSONExtractString(payload, 'data', 'object', 'id') AS pi_id,\n      payment_method AS real_method\n    FROM stripe_event\n    WHERE timestamp >= $__fromTime AND timestamp < $__toTime\n      AND event_type = 'payment_intent.succeeded'\n      AND livemode = 1\n  )\nSELECT\n  coalesce(nullIf(p.real_method, ''), 'unknown') AS payment_method,\n  count() AS purchases\nFROM cs_completed s\nLEFT JOIN pi_methods p ON s.pi_id = p.pi_id\nGROUP BY payment_method\nORDER BY purchases DESC",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 106,
+      "type": "barchart",
+      "title": "Top Countries × Payment Method",
+      "description": "Top 10 countries by paid checkouts, stacked by the ACTUAL payment method used (joined from payment_intent.succeeded).",
+      "gridPos": {
+        "h": 10,
+        "w": 16,
+        "x": 8,
+        "y": 76
+      },
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "PAD1A0A25CD30D457"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "stacking": {
+              "group": "A",
+              "mode": "normal"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "card"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#5794F2"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "link"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#73BF69"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "paypal"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#1F60C4"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "cashapp"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#96D98D"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "klarna"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#FF899D"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "sepa_debit"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#FADE2A"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "ideal"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#FF9830"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "bancontact"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#B877D9"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "apple_pay"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#000000"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "google_pay"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#EA4335"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "other"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#8E8E8E"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "unknown"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#555555"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "barRadius": 0,
+        "barWidth": 0.8,
+        "groupWidth": 0.7,
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "orientation": "horizontal",
+        "stacking": "normal",
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        },
+        "xField": "country",
+        "xTickLabelRotation": 0
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "PAD1A0A25CD30D457"
+          },
+          "format": 1,
+          "rawSql": "WITH\n  cs_completed AS (\n    SELECT\n      JSONExtractString(payload, 'data', 'object', 'payment_intent') AS pi_id,\n      JSONExtractString(payload, 'data', 'object', 'customer_details', 'address', 'country') AS code,\n      amount_cents\n    FROM stripe_event\n    WHERE timestamp >= $__fromTime AND timestamp < $__toTime\n      AND event_type = 'checkout.session.completed'\n      AND payment_status = 'paid'\n      AND livemode = 1\n  ),\n  pi_methods AS (\n    SELECT\n      JSONExtractString(payload, 'data', 'object', 'id') AS pi_id,\n      payment_method AS real_method\n    FROM stripe_event\n    WHERE timestamp >= $__fromTime AND timestamp < $__toTime\n      AND event_type = 'payment_intent.succeeded'\n      AND livemode = 1\n  ),\n  joined AS (\n    SELECT s.code, coalesce(nullIf(p.real_method, ''), 'unknown') AS payment_method\n    FROM cs_completed s\n    LEFT JOIN pi_methods p ON s.pi_id = p.pi_id\n    WHERE s.code != ''\n  )\nSELECT\n  transform(code, ['AC','AD','AE','AF','AG','AI','AL','AM','AN','AO','AQ','AR','AS','AT','AU','AW','AZ','BA','BB','BD','BE','BF','BG','BH','BI','BJ','BL','BM','BN','BO','BQ','BR','BS','BT','BU','BV','BW','BY','BZ','CA','CC','CD','CF','CG','CH','CI','CK','CL','CM','CN','CO','CP','CQ','CR','CS','CU','CV','CW','CX','CY','CZ','DD','DE','DG','DJ','DK','DM','DO','DY','DZ','EA','EC','EE','EG','EH','ER','ES','ET','EU','EZ','FI','FJ','FK','FM','FO','FR','FX','GA','GB','GD','GE','GF','GG','GH','GI','GL','GM','GN','GP','GQ','GR','GS','GT','GU','GW','GY','HK','HM','HN','HR','HT','HU','HV','IC','ID','IE','IL','IM','IN','IO','IQ','IR','IS','IT','JE','JM','JO','JP','KE','KG','KH','KI','KM','KN','KP','KR','KW','KY','KZ','LA','LB','LC','LI','LK','LR','LS','LT','LU','LV','LY','MA','MC','MD','ME','MF','MG','MH','MK','ML','MM','MN','MO','MP','MQ','MR','MS','MT','MU','MV','MW','MX','MY','MZ','NA','NC','NE','NF','NG','NH','NI','NL','NO','NP','NR','NU','NZ','OM','PA','PE','PF','PG','PH','PK','PL','PM','PN','PR','PS','PT','PW','PY','QA','QO','RE','RH','RO','RS','RU','RW','SA','SB','SC','SD','SE','SG','SH','SI','SJ','SK','SL','SM','SN','SO','SR','SS','ST','SU','SV','SX','SY','SZ','TA','TC','TD','TF','TG','TH','TJ','TK','TL','TM','TN','TO','TP','TR','TT','TV','TW','TZ','UA','UG','UK','UM','UN','US','UY','UZ','VA','VC','VD','VE','VG','VI','VN','VU','WF','WS','XA','XB','XK','YD','YE','YT','YU','ZA','ZM','ZR','ZW','ZZ'], ['Ascension Island','Andorra','United Arab Emirates','Afghanistan','Antigua & Barbuda','Anguilla','Albania','Armenia','Curaçao','Angola','Antarctica','Argentina','American Samoa','Austria','Australia','Aruba','Azerbaijan','Bosnia & Herzegovina','Barbados','Bangladesh','Belgium','Burkina Faso','Bulgaria','Bahrain','Burundi','Benin','St. Barthélemy','Bermuda','Brunei','Bolivia','Caribbean Netherlands','Brazil','Bahamas','Bhutan','Myanmar (Burma)','Bouvet Island','Botswana','Belarus','Belize','Canada','Cocos (Keeling) Islands','Congo - Kinshasa','Central African Republic','Congo - Brazzaville','Switzerland','Côte d’Ivoire','Cook Islands','Chile','Cameroon','China','Colombia','Clipperton Island','Sark','Costa Rica','Serbia','Cuba','Cape Verde','Curaçao','Christmas Island','Cyprus','Czechia','Germany','Germany','Diego Garcia','Djibouti','Denmark','Dominica','Dominican Republic','Benin','Algeria','Ceuta & Melilla','Ecuador','Estonia','Egypt','Western Sahara','Eritrea','Spain','Ethiopia','European Union','Eurozone','Finland','Fiji','Falkland Islands','Micronesia','Faroe Islands','France','France','Gabon','United Kingdom','Grenada','Georgia','French Guiana','Guernsey','Ghana','Gibraltar','Greenland','Gambia','Guinea','Guadeloupe','Equatorial Guinea','Greece','South Georgia & South Sandwich Islands','Guatemala','Guam','Guinea-Bissau','Guyana','Hong Kong SAR China','Heard & McDonald Islands','Honduras','Croatia','Haiti','Hungary','Burkina Faso','Canary Islands','Indonesia','Ireland','Israel','Isle of Man','India','British Indian Ocean Territory','Iraq','Iran','Iceland','Italy','Jersey','Jamaica','Jordan','Japan','Kenya','Kyrgyzstan','Cambodia','Kiribati','Comoros','St. Kitts & Nevis','North Korea','South Korea','Kuwait','Cayman Islands','Kazakhstan','Laos','Lebanon','St. Lucia','Liechtenstein','Sri Lanka','Liberia','Lesotho','Lithuania','Luxembourg','Latvia','Libya','Morocco','Monaco','Moldova','Montenegro','St. Martin','Madagascar','Marshall Islands','North Macedonia','Mali','Myanmar (Burma)','Mongolia','Macao SAR China','Northern Mariana Islands','Martinique','Mauritania','Montserrat','Malta','Mauritius','Maldives','Malawi','Mexico','Malaysia','Mozambique','Namibia','New Caledonia','Niger','Norfolk Island','Nigeria','Vanuatu','Nicaragua','Netherlands','Norway','Nepal','Nauru','Niue','New Zealand','Oman','Panama','Peru','French Polynesia','Papua New Guinea','Philippines','Pakistan','Poland','St. Pierre & Miquelon','Pitcairn Islands','Puerto Rico','Palestinian Territories','Portugal','Palau','Paraguay','Qatar','Outlying Oceania','Réunion','Zimbabwe','Romania','Serbia','Russia','Rwanda','Saudi Arabia','Solomon Islands','Seychelles','Sudan','Sweden','Singapore','St. Helena','Slovenia','Svalbard & Jan Mayen','Slovakia','Sierra Leone','San Marino','Senegal','Somalia','Suriname','South Sudan','São Tomé & Príncipe','Russia','El Salvador','Sint Maarten','Syria','Eswatini','Tristan da Cunha','Turks & Caicos Islands','Chad','French Southern Territories','Togo','Thailand','Tajikistan','Tokelau','Timor-Leste','Turkmenistan','Tunisia','Tonga','Timor-Leste','Türkiye','Trinidad & Tobago','Tuvalu','Taiwan','Tanzania','Ukraine','Uganda','United Kingdom','U.S. Outlying Islands','United Nations','United States','Uruguay','Uzbekistan','Vatican City','St. Vincent & Grenadines','Vietnam','Venezuela','British Virgin Islands','U.S. Virgin Islands','Vietnam','Vanuatu','Wallis & Futuna','Samoa','Pseudo-Accents','Pseudo-Bidi','Kosovo','Yemen','Yemen','Mayotte','Serbia','South Africa','Zambia','Congo - Kinshasa','Zimbabwe','Unknown Region'], code) AS country,\n  countIf(payment_method = 'card')        AS card,\n  countIf(payment_method = 'link')        AS link,\n  countIf(payment_method = 'paypal')      AS paypal,\n  countIf(payment_method = 'cashapp')     AS cashapp,\n  countIf(payment_method = 'klarna')      AS klarna,\n  countIf(payment_method = 'sepa_debit')  AS sepa_debit,\n  countIf(payment_method = 'ideal')       AS ideal,\n  countIf(payment_method = 'bancontact')  AS bancontact,\n  countIf(payment_method = 'alipay')      AS alipay,\n  countIf(payment_method NOT IN ('card','link','paypal','cashapp','klarna','sepa_debit','ideal','bancontact','alipay','unknown')) AS other,\n  countIf(payment_method = 'unknown')     AS unknown\nFROM joined\nGROUP BY country\nHAVING (card+link+paypal+cashapp+klarna+sepa_debit+ideal+bancontact+alipay+other+unknown) > 0\nORDER BY (card+link+paypal+cashapp+klarna+sepa_debit+ideal+bancontact+alipay+other+unknown) DESC\nLIMIT 10",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 107,
+      "type": "table",
+      "title": "Failure Rate by Payment Method",
+      "description": "Successes from paid checkout.session.completed (joined to payment_intent.succeeded for the real method). Failures from payment_intent.payment_failed (real method from the column). 'abandoned' = checkout.session.expired (user opened checkout and left without picking a payment method — Stripe doesn't tell us what they were going to use, so this is not a real payment-method failure rate, just a count of dropped sessions).",
+      "gridPos": {
+        "h": 10,
+        "w": 12,
+        "x": 0,
+        "y": 86
+      },
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "PAD1A0A25CD30D457"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "inspect": false
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "failure_rate_pct"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "percent"
+              },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-background",
+                  "mode": "gradient"
+                }
+              },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "green",
+                      "value": null
+                    },
+                    {
+                      "color": "yellow",
+                      "value": 10
+                    },
+                    {
+                      "color": "orange",
+                      "value": 25
+                    },
+                    {
+                      "color": "red",
+                      "value": 50
+                    }
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "successes"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "text"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "failures"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "text"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "abandoned"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#8E8E8E"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "cellHeight": "sm",
+        "footer": {
+          "countRows": false,
+          "fields": "",
+          "reducer": [
+            "sum"
+          ],
+          "show": false
+        },
+        "showHeader": true,
+        "sortBy": [
+          {
+            "desc": true,
+            "displayName": "attempts"
+          }
+        ]
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "PAD1A0A25CD30D457"
+          },
+          "format": 1,
+          "rawSql": "WITH\n  cs_completed AS (\n    SELECT\n      JSONExtractString(payload, 'data', 'object', 'payment_intent') AS pi_id,\n      JSONExtractString(payload, 'data', 'object', 'customer_details', 'address', 'country') AS code,\n      amount_cents\n    FROM stripe_event\n    WHERE timestamp >= $__fromTime AND timestamp < $__toTime\n      AND event_type = 'checkout.session.completed'\n      AND payment_status = 'paid'\n      AND livemode = 1\n  ),\n  pi_methods AS (\n    SELECT\n      JSONExtractString(payload, 'data', 'object', 'id') AS pi_id,\n      payment_method AS real_method\n    FROM stripe_event\n    WHERE timestamp >= $__fromTime AND timestamp < $__toTime\n      AND event_type = 'payment_intent.succeeded'\n      AND livemode = 1\n  ),\n  success_by_method AS (\n    SELECT coalesce(nullIf(p.real_method, ''), 'unknown') AS payment_method, count() AS successes\n    FROM cs_completed s LEFT JOIN pi_methods p ON s.pi_id = p.pi_id\n    GROUP BY payment_method\n  ),\n  failure_by_method AS (\n    SELECT\n      if(event_type = 'checkout.session.expired', 'abandoned', payment_method) AS payment_method,\n      count() AS failures\n    FROM stripe_event\n    WHERE timestamp >= $__fromTime AND timestamp < $__toTime\n      AND event_type IN ('payment_intent.payment_failed','checkout.session.expired')\n      AND livemode = 1\n    GROUP BY payment_method\n  )\nSELECT\n  coalesce(nullIf(s.payment_method, ''), f.payment_method) AS payment_method,\n  coalesce(s.successes, 0) AS successes,\n  coalesce(f.failures, 0)  AS failures,\n  (coalesce(s.successes, 0) + coalesce(f.failures, 0)) AS attempts,\n  round(100.0 * coalesce(f.failures, 0) / nullIf(coalesce(s.successes, 0) + coalesce(f.failures, 0), 0), 1) AS failure_rate_pct\nFROM success_by_method s\nFULL OUTER JOIN failure_by_method f ON s.payment_method = f.payment_method\nWHERE (coalesce(s.successes, 0) + coalesce(f.failures, 0)) > 0\nORDER BY attempts DESC\nLIMIT 20",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 108,
+      "type": "table",
+      "title": "Failures: Country × Payment Method",
+      "description": "Per (country, payment method) pair: attempts and failures. Successes from checkout.session.completed paid, joined to payment_intent.succeeded for the ACTUAL method. Failures from payment_intent.payment_failed (real method from last_payment_error) + checkout.session.expired (method = unknown).",
+      "gridPos": {
+        "h": 10,
+        "w": 12,
+        "x": 12,
+        "y": 86
+      },
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "PAD1A0A25CD30D457"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "inspect": false
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "failure_rate_pct"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "percent"
+              },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-background",
+                  "mode": "gradient"
+                }
+              },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "green",
+                      "value": null
+                    },
+                    {
+                      "color": "yellow",
+                      "value": 10
+                    },
+                    {
+                      "color": "orange",
+                      "value": 25
+                    },
+                    {
+                      "color": "red",
+                      "value": 50
+                    }
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "abandoned"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#8E8E8E"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "cellHeight": "sm",
+        "footer": {
+          "countRows": false,
+          "fields": "",
+          "reducer": [
+            "sum"
+          ],
+          "show": false
+        },
+        "showHeader": true,
+        "sortBy": [
+          {
+            "desc": true,
+            "displayName": "failures"
+          }
+        ]
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "PAD1A0A25CD30D457"
+          },
+          "format": 1,
+          "rawSql": "WITH\n  cs_completed AS (\n    SELECT\n      JSONExtractString(payload, 'data', 'object', 'payment_intent') AS pi_id,\n      JSONExtractString(payload, 'data', 'object', 'customer_details', 'address', 'country') AS code,\n      amount_cents\n    FROM stripe_event\n    WHERE timestamp >= $__fromTime AND timestamp < $__toTime\n      AND event_type = 'checkout.session.completed'\n      AND payment_status = 'paid'\n      AND livemode = 1\n  ),\n  pi_methods AS (\n    SELECT\n      JSONExtractString(payload, 'data', 'object', 'id') AS pi_id,\n      payment_method AS real_method\n    FROM stripe_event\n    WHERE timestamp >= $__fromTime AND timestamp < $__toTime\n      AND event_type = 'payment_intent.succeeded'\n      AND livemode = 1\n  ),\n  successes AS (\n    SELECT s.code, coalesce(nullIf(p.real_method, ''), 'unknown') AS payment_method\n    FROM cs_completed s LEFT JOIN pi_methods p ON s.pi_id = p.pi_id\n    WHERE s.code != ''\n  ),\n  failures AS (\n    SELECT\n      coalesce(\n        nullIf(JSONExtractString(payload, 'data', 'object', 'customer_details', 'address', 'country'), ''),\n        nullIf(JSONExtractString(payload, 'data', 'object', 'last_payment_error', 'payment_method', 'billing_details', 'address', 'country'), ''),\n        ''\n      ) AS code,\n      if(event_type = 'checkout.session.expired', 'abandoned', payment_method) AS payment_method\n    FROM stripe_event\n    WHERE timestamp >= $__fromTime AND timestamp < $__toTime\n      AND event_type IN ('payment_intent.payment_failed','checkout.session.expired')\n      AND livemode = 1\n  ),\n  combined AS (\n    SELECT code, payment_method, 1 AS s, 0 AS f FROM successes WHERE code != ''\n    UNION ALL\n    SELECT code, payment_method, 0 AS s, 1 AS f FROM failures WHERE code != ''\n  )\nSELECT\n  transform(code, ['AC','AD','AE','AF','AG','AI','AL','AM','AN','AO','AQ','AR','AS','AT','AU','AW','AZ','BA','BB','BD','BE','BF','BG','BH','BI','BJ','BL','BM','BN','BO','BQ','BR','BS','BT','BU','BV','BW','BY','BZ','CA','CC','CD','CF','CG','CH','CI','CK','CL','CM','CN','CO','CP','CQ','CR','CS','CU','CV','CW','CX','CY','CZ','DD','DE','DG','DJ','DK','DM','DO','DY','DZ','EA','EC','EE','EG','EH','ER','ES','ET','EU','EZ','FI','FJ','FK','FM','FO','FR','FX','GA','GB','GD','GE','GF','GG','GH','GI','GL','GM','GN','GP','GQ','GR','GS','GT','GU','GW','GY','HK','HM','HN','HR','HT','HU','HV','IC','ID','IE','IL','IM','IN','IO','IQ','IR','IS','IT','JE','JM','JO','JP','KE','KG','KH','KI','KM','KN','KP','KR','KW','KY','KZ','LA','LB','LC','LI','LK','LR','LS','LT','LU','LV','LY','MA','MC','MD','ME','MF','MG','MH','MK','ML','MM','MN','MO','MP','MQ','MR','MS','MT','MU','MV','MW','MX','MY','MZ','NA','NC','NE','NF','NG','NH','NI','NL','NO','NP','NR','NU','NZ','OM','PA','PE','PF','PG','PH','PK','PL','PM','PN','PR','PS','PT','PW','PY','QA','QO','RE','RH','RO','RS','RU','RW','SA','SB','SC','SD','SE','SG','SH','SI','SJ','SK','SL','SM','SN','SO','SR','SS','ST','SU','SV','SX','SY','SZ','TA','TC','TD','TF','TG','TH','TJ','TK','TL','TM','TN','TO','TP','TR','TT','TV','TW','TZ','UA','UG','UK','UM','UN','US','UY','UZ','VA','VC','VD','VE','VG','VI','VN','VU','WF','WS','XA','XB','XK','YD','YE','YT','YU','ZA','ZM','ZR','ZW','ZZ'], ['Ascension Island','Andorra','United Arab Emirates','Afghanistan','Antigua & Barbuda','Anguilla','Albania','Armenia','Curaçao','Angola','Antarctica','Argentina','American Samoa','Austria','Australia','Aruba','Azerbaijan','Bosnia & Herzegovina','Barbados','Bangladesh','Belgium','Burkina Faso','Bulgaria','Bahrain','Burundi','Benin','St. Barthélemy','Bermuda','Brunei','Bolivia','Caribbean Netherlands','Brazil','Bahamas','Bhutan','Myanmar (Burma)','Bouvet Island','Botswana','Belarus','Belize','Canada','Cocos (Keeling) Islands','Congo - Kinshasa','Central African Republic','Congo - Brazzaville','Switzerland','Côte d’Ivoire','Cook Islands','Chile','Cameroon','China','Colombia','Clipperton Island','Sark','Costa Rica','Serbia','Cuba','Cape Verde','Curaçao','Christmas Island','Cyprus','Czechia','Germany','Germany','Diego Garcia','Djibouti','Denmark','Dominica','Dominican Republic','Benin','Algeria','Ceuta & Melilla','Ecuador','Estonia','Egypt','Western Sahara','Eritrea','Spain','Ethiopia','European Union','Eurozone','Finland','Fiji','Falkland Islands','Micronesia','Faroe Islands','France','France','Gabon','United Kingdom','Grenada','Georgia','French Guiana','Guernsey','Ghana','Gibraltar','Greenland','Gambia','Guinea','Guadeloupe','Equatorial Guinea','Greece','South Georgia & South Sandwich Islands','Guatemala','Guam','Guinea-Bissau','Guyana','Hong Kong SAR China','Heard & McDonald Islands','Honduras','Croatia','Haiti','Hungary','Burkina Faso','Canary Islands','Indonesia','Ireland','Israel','Isle of Man','India','British Indian Ocean Territory','Iraq','Iran','Iceland','Italy','Jersey','Jamaica','Jordan','Japan','Kenya','Kyrgyzstan','Cambodia','Kiribati','Comoros','St. Kitts & Nevis','North Korea','South Korea','Kuwait','Cayman Islands','Kazakhstan','Laos','Lebanon','St. Lucia','Liechtenstein','Sri Lanka','Liberia','Lesotho','Lithuania','Luxembourg','Latvia','Libya','Morocco','Monaco','Moldova','Montenegro','St. Martin','Madagascar','Marshall Islands','North Macedonia','Mali','Myanmar (Burma)','Mongolia','Macao SAR China','Northern Mariana Islands','Martinique','Mauritania','Montserrat','Malta','Mauritius','Maldives','Malawi','Mexico','Malaysia','Mozambique','Namibia','New Caledonia','Niger','Norfolk Island','Nigeria','Vanuatu','Nicaragua','Netherlands','Norway','Nepal','Nauru','Niue','New Zealand','Oman','Panama','Peru','French Polynesia','Papua New Guinea','Philippines','Pakistan','Poland','St. Pierre & Miquelon','Pitcairn Islands','Puerto Rico','Palestinian Territories','Portugal','Palau','Paraguay','Qatar','Outlying Oceania','Réunion','Zimbabwe','Romania','Serbia','Russia','Rwanda','Saudi Arabia','Solomon Islands','Seychelles','Sudan','Sweden','Singapore','St. Helena','Slovenia','Svalbard & Jan Mayen','Slovakia','Sierra Leone','San Marino','Senegal','Somalia','Suriname','South Sudan','São Tomé & Príncipe','Russia','El Salvador','Sint Maarten','Syria','Eswatini','Tristan da Cunha','Turks & Caicos Islands','Chad','French Southern Territories','Togo','Thailand','Tajikistan','Tokelau','Timor-Leste','Turkmenistan','Tunisia','Tonga','Timor-Leste','Türkiye','Trinidad & Tobago','Tuvalu','Taiwan','Tanzania','Ukraine','Uganda','United Kingdom','U.S. Outlying Islands','United Nations','United States','Uruguay','Uzbekistan','Vatican City','St. Vincent & Grenadines','Vietnam','Venezuela','British Virgin Islands','U.S. Virgin Islands','Vietnam','Vanuatu','Wallis & Futuna','Samoa','Pseudo-Accents','Pseudo-Bidi','Kosovo','Yemen','Yemen','Mayotte','Serbia','South Africa','Zambia','Congo - Kinshasa','Zimbabwe','Unknown Region'], code) AS country,\n  payment_method,\n  sum(s) AS successes,\n  sum(f) AS failures,\n  (sum(s) + sum(f)) AS attempts,\n  round(100.0 * sum(f) / nullIf(sum(s) + sum(f), 0), 1) AS failure_rate_pct\nFROM combined\nGROUP BY country, payment_method\nHAVING attempts >= 2\nORDER BY failures DESC, failure_rate_pct DESC\nLIMIT 50",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 109,
+      "type": "table",
+      "title": "Failure Reasons",
+      "description": "What kinds of failures we're seeing. Reason = Stripe's decline_code if present, else error code, else '(no detail)' for abandoned sessions. % is share of all failures in the time range.",
+      "gridPos": {
+        "h": 10,
+        "w": 12,
+        "x": 0,
+        "y": 96
+      },
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "PAD1A0A25CD30D457"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "inspect": false
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "pct_of_failures"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "percent"
+              },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-background",
+                  "mode": "gradient"
+                }
+              },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "green",
+                      "value": null
+                    },
+                    {
+                      "color": "yellow",
+                      "value": 5
+                    },
+                    {
+                      "color": "orange",
+                      "value": 15
+                    },
+                    {
+                      "color": "red",
+                      "value": 30
+                    }
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "sample_message"
+            },
+            "properties": [
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "auto",
+                  "wrapText": true
+                }
+              },
+              {
+                "id": "custom.width",
+                "value": 320
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "cellHeight": "sm",
+        "footer": {
+          "countRows": false,
+          "fields": "",
+          "reducer": [
+            "sum"
+          ],
+          "show": false
+        },
+        "showHeader": true,
+        "sortBy": [
+          {
+            "desc": true,
+            "displayName": "failures"
+          }
+        ]
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "PAD1A0A25CD30D457"
+          },
+          "format": 1,
+          "rawSql": "WITH failures AS (\n    SELECT\n      multiIf(\n        event_type = 'checkout.session.expired', 'session_abandoned',\n        payment_status = 'failed', 'payment_declined',\n        'other_failure'\n      ) AS failure_category,\n      nullIf(JSONExtractString(payload, 'data', 'object', 'last_payment_error', 'code'), '')         AS err_code,\n      nullIf(JSONExtractString(payload, 'data', 'object', 'last_payment_error', 'decline_code'), '') AS decline_code,\n      nullIf(JSONExtractString(payload, 'data', 'object', 'last_payment_error', 'message'), '')     AS err_message\n    FROM stripe_event\n    WHERE timestamp >= $__fromTime AND timestamp < $__toTime\n      AND event_type IN ('payment_intent.payment_failed','checkout.session.expired')\n      AND livemode = 1\n  )\nSELECT\n  failure_category,\n  coalesce(decline_code, err_code, '(no detail)') AS reason,\n  any(err_message) AS sample_message,\n  count() AS failures,\n  round(100.0 * count() / (SELECT count() FROM failures), 1) AS pct_of_failures\nFROM failures\nGROUP BY failure_category, reason\nORDER BY failures DESC\nLIMIT 30",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 110,
+      "type": "table",
+      "title": "Failures: Country × Reason",
+      "description": "Which failure reasons hit which countries (and which payment method actually failed). real_method from last_payment_error.payment_method.type for declines; \"unknown\" for abandoned sessions.",
+      "gridPos": {
+        "h": 10,
+        "w": 12,
+        "x": 12,
+        "y": 96
+      },
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "PAD1A0A25CD30D457"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "inspect": false
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "failures"
+            },
+            "properties": [
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-background",
+                  "mode": "gradient"
+                }
+              },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "green",
+                      "value": null
+                    },
+                    {
+                      "color": "yellow",
+                      "value": 3
+                    },
+                    {
+                      "color": "orange",
+                      "value": 10
+                    },
+                    {
+                      "color": "red",
+                      "value": 25
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "cellHeight": "sm",
+        "footer": {
+          "countRows": false,
+          "fields": "",
+          "reducer": [
+            "sum"
+          ],
+          "show": false
+        },
+        "showHeader": true,
+        "sortBy": [
+          {
+            "desc": true,
+            "displayName": "failures"
+          }
+        ]
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "PAD1A0A25CD30D457"
+          },
+          "format": 1,
+          "rawSql": "WITH failures AS (\n    SELECT\n      multiIf(\n        event_type = 'checkout.session.expired', 'session_abandoned',\n        payment_status = 'failed', 'payment_declined',\n        'other_failure'\n      ) AS failure_category,\n      coalesce(\n        nullIf(JSONExtractString(payload, 'data', 'object', 'last_payment_error', 'decline_code'), ''),\n        nullIf(JSONExtractString(payload, 'data', 'object', 'last_payment_error', 'code'), ''),\n        '(no detail)'\n      ) AS reason,\n      coalesce(\n        nullIf(JSONExtractString(payload, 'data', 'object', 'customer_details', 'address', 'country'), ''),\n        nullIf(JSONExtractString(payload, 'data', 'object', 'last_payment_error', 'payment_method', 'billing_details', 'address', 'country'), ''),\n        ''\n      ) AS code,\n      if(event_type = 'checkout.session.expired', 'abandoned', payment_method) AS payment_method\n    FROM stripe_event\n    WHERE timestamp >= $__fromTime AND timestamp < $__toTime\n      AND event_type IN ('payment_intent.payment_failed','checkout.session.expired')\n      AND livemode = 1\n  )\nSELECT\n  transform(code, ['AC','AD','AE','AF','AG','AI','AL','AM','AN','AO','AQ','AR','AS','AT','AU','AW','AZ','BA','BB','BD','BE','BF','BG','BH','BI','BJ','BL','BM','BN','BO','BQ','BR','BS','BT','BU','BV','BW','BY','BZ','CA','CC','CD','CF','CG','CH','CI','CK','CL','CM','CN','CO','CP','CQ','CR','CS','CU','CV','CW','CX','CY','CZ','DD','DE','DG','DJ','DK','DM','DO','DY','DZ','EA','EC','EE','EG','EH','ER','ES','ET','EU','EZ','FI','FJ','FK','FM','FO','FR','FX','GA','GB','GD','GE','GF','GG','GH','GI','GL','GM','GN','GP','GQ','GR','GS','GT','GU','GW','GY','HK','HM','HN','HR','HT','HU','HV','IC','ID','IE','IL','IM','IN','IO','IQ','IR','IS','IT','JE','JM','JO','JP','KE','KG','KH','KI','KM','KN','KP','KR','KW','KY','KZ','LA','LB','LC','LI','LK','LR','LS','LT','LU','LV','LY','MA','MC','MD','ME','MF','MG','MH','MK','ML','MM','MN','MO','MP','MQ','MR','MS','MT','MU','MV','MW','MX','MY','MZ','NA','NC','NE','NF','NG','NH','NI','NL','NO','NP','NR','NU','NZ','OM','PA','PE','PF','PG','PH','PK','PL','PM','PN','PR','PS','PT','PW','PY','QA','QO','RE','RH','RO','RS','RU','RW','SA','SB','SC','SD','SE','SG','SH','SI','SJ','SK','SL','SM','SN','SO','SR','SS','ST','SU','SV','SX','SY','SZ','TA','TC','TD','TF','TG','TH','TJ','TK','TL','TM','TN','TO','TP','TR','TT','TV','TW','TZ','UA','UG','UK','UM','UN','US','UY','UZ','VA','VC','VD','VE','VG','VI','VN','VU','WF','WS','XA','XB','XK','YD','YE','YT','YU','ZA','ZM','ZR','ZW','ZZ'], ['Ascension Island','Andorra','United Arab Emirates','Afghanistan','Antigua & Barbuda','Anguilla','Albania','Armenia','Curaçao','Angola','Antarctica','Argentina','American Samoa','Austria','Australia','Aruba','Azerbaijan','Bosnia & Herzegovina','Barbados','Bangladesh','Belgium','Burkina Faso','Bulgaria','Bahrain','Burundi','Benin','St. Barthélemy','Bermuda','Brunei','Bolivia','Caribbean Netherlands','Brazil','Bahamas','Bhutan','Myanmar (Burma)','Bouvet Island','Botswana','Belarus','Belize','Canada','Cocos (Keeling) Islands','Congo - Kinshasa','Central African Republic','Congo - Brazzaville','Switzerland','Côte d’Ivoire','Cook Islands','Chile','Cameroon','China','Colombia','Clipperton Island','Sark','Costa Rica','Serbia','Cuba','Cape Verde','Curaçao','Christmas Island','Cyprus','Czechia','Germany','Germany','Diego Garcia','Djibouti','Denmark','Dominica','Dominican Republic','Benin','Algeria','Ceuta & Melilla','Ecuador','Estonia','Egypt','Western Sahara','Eritrea','Spain','Ethiopia','European Union','Eurozone','Finland','Fiji','Falkland Islands','Micronesia','Faroe Islands','France','France','Gabon','United Kingdom','Grenada','Georgia','French Guiana','Guernsey','Ghana','Gibraltar','Greenland','Gambia','Guinea','Guadeloupe','Equatorial Guinea','Greece','South Georgia & South Sandwich Islands','Guatemala','Guam','Guinea-Bissau','Guyana','Hong Kong SAR China','Heard & McDonald Islands','Honduras','Croatia','Haiti','Hungary','Burkina Faso','Canary Islands','Indonesia','Ireland','Israel','Isle of Man','India','British Indian Ocean Territory','Iraq','Iran','Iceland','Italy','Jersey','Jamaica','Jordan','Japan','Kenya','Kyrgyzstan','Cambodia','Kiribati','Comoros','St. Kitts & Nevis','North Korea','South Korea','Kuwait','Cayman Islands','Kazakhstan','Laos','Lebanon','St. Lucia','Liechtenstein','Sri Lanka','Liberia','Lesotho','Lithuania','Luxembourg','Latvia','Libya','Morocco','Monaco','Moldova','Montenegro','St. Martin','Madagascar','Marshall Islands','North Macedonia','Mali','Myanmar (Burma)','Mongolia','Macao SAR China','Northern Mariana Islands','Martinique','Mauritania','Montserrat','Malta','Mauritius','Maldives','Malawi','Mexico','Malaysia','Mozambique','Namibia','New Caledonia','Niger','Norfolk Island','Nigeria','Vanuatu','Nicaragua','Netherlands','Norway','Nepal','Nauru','Niue','New Zealand','Oman','Panama','Peru','French Polynesia','Papua New Guinea','Philippines','Pakistan','Poland','St. Pierre & Miquelon','Pitcairn Islands','Puerto Rico','Palestinian Territories','Portugal','Palau','Paraguay','Qatar','Outlying Oceania','Réunion','Zimbabwe','Romania','Serbia','Russia','Rwanda','Saudi Arabia','Solomon Islands','Seychelles','Sudan','Sweden','Singapore','St. Helena','Slovenia','Svalbard & Jan Mayen','Slovakia','Sierra Leone','San Marino','Senegal','Somalia','Suriname','South Sudan','São Tomé & Príncipe','Russia','El Salvador','Sint Maarten','Syria','Eswatini','Tristan da Cunha','Turks & Caicos Islands','Chad','French Southern Territories','Togo','Thailand','Tajikistan','Tokelau','Timor-Leste','Turkmenistan','Tunisia','Tonga','Timor-Leste','Türkiye','Trinidad & Tobago','Tuvalu','Taiwan','Tanzania','Ukraine','Uganda','United Kingdom','U.S. Outlying Islands','United Nations','United States','Uruguay','Uzbekistan','Vatican City','St. Vincent & Grenadines','Vietnam','Venezuela','British Virgin Islands','U.S. Virgin Islands','Vietnam','Vanuatu','Wallis & Futuna','Samoa','Pseudo-Accents','Pseudo-Bidi','Kosovo','Yemen','Yemen','Mayotte','Serbia','South Africa','Zambia','Congo - Kinshasa','Zimbabwe','Unknown Region'], code) AS country,\n  failure_category,\n  reason,\n  payment_method,\n  count() AS failures\nFROM failures\nWHERE code != ''\nGROUP BY country, failure_category, reason, payment_method\nORDER BY failures DESC\nLIMIT 100",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 111,
+      "type": "table",
+      "title": "Risky Users — High Payment Failures",
+      "description": "Users with the most failed payment attempts in the time range, joined to d1_user (ban status, tier, github), latest scoring_snapshot (trust score, account age) AND their successful purchases. Watch success_rate_pct: legitimate customers who hit a decline or two usually still convert >70%; carders are <10%. Click the github_username to open the profile.",
+      "gridPos": {
+        "h": 14,
+        "w": 24,
+        "x": 0,
+        "y": 106
+      },
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "PAD1A0A25CD30D457"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "inspect": false,
+            "filterable": true
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "github_username"
+            },
+            "properties": [
+              {
+                "id": "links",
+                "value": [
+                  {
+                    "title": "View on GitHub",
+                    "url": "https://github.com/${__value.text}",
+                    "targetBlank": true
+                  }
+                ]
+              },
+              {
+                "id": "custom.width",
+                "value": 180
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "banned"
+            },
+            "properties": [
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "type": "value",
+                    "options": {
+                      "BANNED": {
+                        "color": "green",
+                        "index": 0,
+                        "text": "BANNED"
+                      }
+                    }
+                  },
+                  {
+                    "type": "value",
+                    "options": {
+                      "active": {
+                        "color": "red",
+                        "index": 1,
+                        "text": "active"
+                      }
+                    }
+                  }
+                ]
+              },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-background",
+                  "mode": "basic"
+                }
+              },
+              {
+                "id": "custom.width",
+                "value": 90
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "fraudulent_attempts"
+            },
+            "properties": [
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-background",
+                  "mode": "gradient"
+                }
+              },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "green",
+                      "value": null
+                    },
+                    {
+                      "color": "yellow",
+                      "value": 1
+                    },
+                    {
+                      "color": "orange",
+                      "value": 5
+                    },
+                    {
+                      "color": "red",
+                      "value": 10
+                    }
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "failed_attempts"
+            },
+            "properties": [
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-background",
+                  "mode": "gradient"
+                }
+              },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "green",
+                      "value": null
+                    },
+                    {
+                      "color": "yellow",
+                      "value": 5
+                    },
+                    {
+                      "color": "orange",
+                      "value": 20
+                    },
+                    {
+                      "color": "red",
+                      "value": 50
+                    }
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "attempted_amount_usd"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "currencyUSD"
+              },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-background",
+                  "mode": "gradient"
+                }
+              },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "green",
+                      "value": null
+                    },
+                    {
+                      "color": "yellow",
+                      "value": 50
+                    },
+                    {
+                      "color": "orange",
+                      "value": 200
+                    },
+                    {
+                      "color": "red",
+                      "value": 1000
+                    }
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "trust_score"
+            },
+            "properties": [
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-background",
+                  "mode": "gradient"
+                }
+              },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "red",
+                      "value": null
+                    },
+                    {
+                      "color": "orange",
+                      "value": 25
+                    },
+                    {
+                      "color": "yellow",
+                      "value": 50
+                    },
+                    {
+                      "color": "green",
+                      "value": 75
+                    }
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "pollinations_age_days"
+            },
+            "properties": [
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-background",
+                  "mode": "gradient"
+                }
+              },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "red",
+                      "value": null
+                    },
+                    {
+                      "color": "orange",
+                      "value": 7
+                    },
+                    {
+                      "color": "yellow",
+                      "value": 30
+                    },
+                    {
+                      "color": "green",
+                      "value": 90
+                    }
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "github_age_days"
+            },
+            "properties": [
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-background",
+                  "mode": "gradient"
+                }
+              },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "red",
+                      "value": null
+                    },
+                    {
+                      "color": "orange",
+                      "value": 90
+                    },
+                    {
+                      "color": "yellow",
+                      "value": 365
+                    },
+                    {
+                      "color": "green",
+                      "value": 1095
+                    }
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "last_failure_at"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "dateTimeAsIso"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "successful_purchases"
+            },
+            "properties": [
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-background",
+                  "mode": "gradient"
+                }
+              },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "red",
+                      "value": null
+                    },
+                    {
+                      "color": "orange",
+                      "value": 1
+                    },
+                    {
+                      "color": "yellow",
+                      "value": 3
+                    },
+                    {
+                      "color": "green",
+                      "value": 5
+                    }
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "pollen_bought_usd"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "currencyUSD"
+              },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-background",
+                  "mode": "gradient"
+                }
+              },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "red",
+                      "value": null
+                    },
+                    {
+                      "color": "orange",
+                      "value": 2
+                    },
+                    {
+                      "color": "yellow",
+                      "value": 10
+                    },
+                    {
+                      "color": "green",
+                      "value": 25
+                    }
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "success_rate_pct"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "percent"
+              },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-background",
+                  "mode": "gradient"
+                }
+              },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "red",
+                      "value": null
+                    },
+                    {
+                      "color": "orange",
+                      "value": 10
+                    },
+                    {
+                      "color": "yellow",
+                      "value": 40
+                    },
+                    {
+                      "color": "green",
+                      "value": 70
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "cellHeight": "sm",
+        "footer": {
+          "countRows": false,
+          "fields": "",
+          "reducer": [
+            "sum"
+          ],
+          "show": false
+        },
+        "showHeader": true,
+        "sortBy": [
+          {
+            "desc": true,
+            "displayName": "fraudulent_attempts"
+          }
+        ]
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "PAD1A0A25CD30D457"
+          },
+          "format": 1,
+          "rawSql": "WITH\n  failed_payments AS (\n    SELECT\n      user_id,\n      customer_email,\n      count() AS failed_attempts,\n      countIf(JSONExtractString(payload, 'data', 'object', 'last_payment_error', 'decline_code') = 'fraudulent') AS fraudulent_attempts,\n      round(sum(amount_cents) / 100.0, 2) AS attempted_amount_usd,\n      max(timestamp) AS last_failure_at\n    FROM stripe_event\n    WHERE timestamp >= $__fromTime AND timestamp < $__toTime\n      AND event_type = 'payment_intent.payment_failed'\n      AND livemode = 1\n      AND user_id != ''\n    GROUP BY user_id, customer_email\n    HAVING failed_attempts >= 2\n  ),\n  successful_payments AS (\n    SELECT\n      user_id,\n      count() AS successful_purchases,\n      round(sum(amount_cents) / 100.0, 2) AS pollen_bought_usd\n    FROM stripe_event\n    WHERE timestamp >= $__fromTime AND timestamp < $__toTime\n      AND event_type = 'checkout.session.completed'\n      AND payment_status = 'paid'\n      AND livemode = 1\n      AND user_id != ''\n    GROUP BY user_id\n  ),\n  latest_users AS (\n    SELECT id, github_username, email, tier, banned\n    FROM d1_user\n    WHERE synced_at = (SELECT max(synced_at) FROM d1_user)\n  ),\n  latest_scores AS (\n    SELECT\n      user_id,\n      argMax(trust_score, timestamp)            AS trust_score,\n      argMax(total_score, timestamp)            AS total_score,\n      argMax(github_age_days, timestamp)        AS github_age_days,\n      argMax(pollinations_age_days, timestamp)  AS pollinations_age_days\n    FROM scoring_snapshot\n    GROUP BY user_id\n  )\nSELECT\n  coalesce(nullIf(u.github_username, ''), '(no github)')                              AS github_username,\n  coalesce(nullIf(u.email, ''), f.customer_email)                                     AS email,\n  u.tier                                                                              AS tier,\n  if(u.banned = 1, 'BANNED', 'active')                                                AS banned,\n  coalesce(sp.successful_purchases, 0)                                                AS successful_purchases,\n  f.failed_attempts                                                                   AS failed_attempts,\n  f.fraudulent_attempts                                                               AS fraudulent_attempts,\n  round(100.0 * coalesce(sp.successful_purchases, 0)\n        / nullIf(coalesce(sp.successful_purchases, 0) + f.failed_attempts, 0), 1)     AS success_rate_pct,\n  coalesce(sp.pollen_bought_usd, 0)                                                   AS pollen_bought_usd,\n  f.attempted_amount_usd                                                              AS attempted_amount_usd,\n  coalesce(s.trust_score, 100)                                                        AS trust_score,\n  round(coalesce(s.total_score, 0), 1)                                                AS total_score,\n  coalesce(s.github_age_days, 0)                                                      AS github_age_days,\n  coalesce(s.pollinations_age_days, 0)                                                AS pollinations_age_days,\n  f.last_failure_at                                                                   AS last_failure_at\nFROM failed_payments f\nLEFT JOIN successful_payments sp ON f.user_id = sp.user_id\nLEFT JOIN latest_users         u  ON f.user_id = u.id\nLEFT JOIN latest_scores        s  ON f.user_id = s.user_id\nORDER BY f.fraudulent_attempts DESC, f.failed_attempts DESC\nLIMIT 50",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 201,
+      "type": "table",
+      "title": "Top Buyers — Smurf Watch",
+      "description": "Successful-payment counterpart to 'Risky Users'. Surfaces emails with 5+ paid checkouts in the time range. distinct_stripe_customers shows how many separate Stripe Customer objects the email generated — a high smurf_ratio (close to 1.0) means almost every charge created a fresh Customer, the classic throwaway-session / reseller pattern. top_card_country + card_brands show what the buyer's cards actually are (joined from charge.succeeded by payment-intent ID); a mismatch between top_card_country and the listed billing_countries is the carding signature. Joined to d1_user via user_id for tier/ban.",
+      "gridPos": {
+        "h": 14,
+        "w": 24,
+        "x": 0,
+        "y": 120
+      },
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "PAD1A0A25CD30D457"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "filterable": true,
+            "inspect": false
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "github_username"
+            },
+            "properties": [
+              {
+                "id": "links",
+                "value": [
+                  {
+                    "title": "View on GitHub",
+                    "url": "https://github.com/${__value.text}",
+                    "targetBlank": true
+                  }
+                ]
+              },
+              {
+                "id": "custom.width",
+                "value": 180
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "banned"
+            },
+            "properties": [
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "type": "value",
+                    "options": {
+                      "BANNED": {
+                        "color": "green",
+                        "index": 0,
+                        "text": "BANNED"
+                      }
+                    }
+                  },
+                  {
+                    "type": "value",
+                    "options": {
+                      "active": {
+                        "color": "red",
+                        "index": 1,
+                        "text": "active"
+                      }
+                    }
+                  }
+                ]
+              },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-background",
+                  "mode": "basic"
+                }
+              },
+              {
+                "id": "custom.width",
+                "value": 90
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "charges"
+            },
+            "properties": [
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-background",
+                  "mode": "gradient"
+                }
+              },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "green",
+                      "value": null
+                    },
+                    {
+                      "color": "yellow",
+                      "value": 10
+                    },
+                    {
+                      "color": "orange",
+                      "value": 30
+                    },
+                    {
+                      "color": "red",
+                      "value": 100
+                    }
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "distinct_stripe_customers"
+            },
+            "properties": [
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-background",
+                  "mode": "gradient"
+                }
+              },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "green",
+                      "value": null
+                    },
+                    {
+                      "color": "yellow",
+                      "value": 5
+                    },
+                    {
+                      "color": "orange",
+                      "value": 20
+                    },
+                    {
+                      "color": "red",
+                      "value": 50
+                    }
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "smurf_ratio"
+            },
+            "properties": [
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-background",
+                  "mode": "gradient"
+                }
+              },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "green",
+                      "value": null
+                    },
+                    {
+                      "color": "yellow",
+                      "value": 0.5
+                    },
+                    {
+                      "color": "orange",
+                      "value": 0.75
+                    },
+                    {
+                      "color": "red",
+                      "value": 0.9
+                    }
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "total_usd"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "currencyUSD"
+              },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-background",
+                  "mode": "gradient"
+                }
+              },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "green",
+                      "value": null
+                    },
+                    {
+                      "color": "yellow",
+                      "value": 50
+                    },
+                    {
+                      "color": "orange",
+                      "value": 200
+                    },
+                    {
+                      "color": "red",
+                      "value": 1000
+                    }
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "distinct_countries"
+            },
+            "properties": [
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-background",
+                  "mode": "gradient"
+                }
+              },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "green",
+                      "value": null
+                    },
+                    {
+                      "color": "yellow",
+                      "value": 2
+                    },
+                    {
+                      "color": "orange",
+                      "value": 3
+                    },
+                    {
+                      "color": "red",
+                      "value": 5
+                    }
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "first_seen"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "dateTimeAsIso"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "last_seen"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "dateTimeAsIso"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "billing_vs_card"
+            },
+            "properties": [
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "type": "value",
+                    "options": {
+                      "mismatch": {
+                        "color": "red",
+                        "index": 0,
+                        "text": "mismatch"
+                      }
+                    }
+                  },
+                  {
+                    "type": "value",
+                    "options": {
+                      "match": {
+                        "color": "green",
+                        "index": 1,
+                        "text": "match"
+                      }
+                    }
+                  }
+                ]
+              },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-background",
+                  "mode": "basic"
+                }
+              },
+              {
+                "id": "custom.width",
+                "value": 110
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "card_countries"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 160
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "card_brands"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 130
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "distinct_billing_countries"
+            },
+            "properties": [
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-background",
+                  "mode": "gradient"
+                }
+              },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "green",
+                      "value": null
+                    },
+                    {
+                      "color": "yellow",
+                      "value": 2
+                    },
+                    {
+                      "color": "orange",
+                      "value": 3
+                    },
+                    {
+                      "color": "red",
+                      "value": 5
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "cellHeight": "sm",
+        "footer": {
+          "countRows": false,
+          "fields": "",
+          "reducer": [
+            "sum"
+          ],
+          "show": false
+        },
+        "showHeader": true,
+        "sortBy": [
+          {
+            "desc": true,
+            "displayName": "charges"
+          }
+        ]
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "PAD1A0A25CD30D457"
+          },
+          "format": 1,
+          "rawSql": "WITH\n  paid AS (\n    SELECT\n      customer_email,\n      user_id,\n      JSONExtractString(payload, 'data', 'object', 'payment_intent') AS pi_id,\n      timestamp,\n      amount_cents,\n      JSONExtractString(payload, 'data', 'object', 'customer') AS stripe_customer,\n      JSONExtractString(payload, 'data', 'object', 'customer_details', 'address', 'country') AS billing_country\n    FROM stripe_event\n    WHERE timestamp >= $__fromTime AND timestamp < $__toTime\n      AND event_type = 'checkout.session.completed'\n      AND payment_status = 'paid'\n      AND livemode = 1\n      AND customer_email != ''\n  ),\n  charges AS (\n    SELECT\n      JSONExtractString(payload, 'data', 'object', 'payment_intent') AS pi_id,\n      anyHeavy(card_country) AS card_country,\n      anyHeavy(card_brand) AS card_brand\n    FROM stripe_event\n    WHERE timestamp >= $__fromTime AND timestamp < $__toTime\n      AND event_type = 'charge.succeeded'\n      AND livemode = 1\n    GROUP BY pi_id\n  ),\n  joined AS (\n    SELECT p.*, c.card_country, c.card_brand\n    FROM paid p LEFT JOIN charges c ON p.pi_id = c.pi_id\n  ),\n  per_email AS (\n    SELECT\n      customer_email,\n      any(user_id) AS user_id,\n      count() AS charges,\n      uniq(stripe_customer) AS distinct_stripe_customers,\n      round(sum(amount_cents) / 100.0, 2) AS total_usd,\n      arraySort(arrayDistinct(groupArray(billing_country))) AS billing_countries,\n      arraySort(arrayDistinct(groupArrayIf(card_country, card_country != ''))) AS card_countries,\n      arraySort(arrayDistinct(groupArrayIf(card_brand, card_brand != ''))) AS card_brands,\n      min(timestamp) AS first_seen,\n      max(timestamp) AS last_seen\n    FROM joined\n    GROUP BY customer_email\n    HAVING charges >= 5\n  ),\n  latest_users AS (\n    SELECT id, github_username, email, tier, banned\n    FROM d1_user\n    WHERE synced_at = (SELECT max(synced_at) FROM d1_user)\n  )\nSELECT\n  p.customer_email                                                                  AS email,\n  coalesce(nullIf(u.github_username, ''), '(no github)')                            AS github_username,\n  u.tier                                                                            AS tier,\n  if(u.banned = 1, 'BANNED', 'active')                                              AS banned,\n  p.charges                                                                         AS charges,\n  p.distinct_stripe_customers                                                       AS distinct_stripe_customers,\n  round(p.distinct_stripe_customers / nullIf(p.charges, 0), 2)                      AS smurf_ratio,\n  p.total_usd                                                                       AS total_usd,\n  length(p.billing_countries)                                                       AS distinct_billing_countries,\n  arrayStringConcat(arraySlice(p.billing_countries, 1, 5), ', ')                    AS billing_countries_sample,\n  arrayStringConcat(p.card_countries, ', ')                                         AS card_countries,\n  arrayStringConcat(p.card_brands, ', ')                                            AS card_brands,\n  if(length(p.card_countries) = 0\n     OR (length(p.billing_countries) = 1\n         AND length(p.card_countries) = 1\n         AND p.billing_countries[1] = p.card_countries[1]),\n     'match', 'mismatch')                                                           AS billing_vs_card,\n  p.first_seen                                                                      AS first_seen,\n  p.last_seen                                                                       AS last_seen\nFROM per_email p\nLEFT JOIN latest_users u ON p.user_id = u.id\nORDER BY p.charges DESC\nLIMIT 50",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 202,
+      "type": "row",
+      "title": "Card Issuer Geography (verified)",
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 134
+      },
+      "panels": []
+    },
+    {
+      "id": 203,
+      "type": "barchart",
+      "title": "Top Countries by Card Issuer (Verified)",
+      "description": "Revenue grouped by the country that issued the actual card used. Compare against 'Top Countries by Revenue (Billing Address)' above — buyers can write any billing address but cannot fake the issuer. Sourced from charge.succeeded events (only populated for events after the charge.succeeded webhook landed via PR #11158).",
+      "gridPos": {
+        "h": 10,
+        "w": 12,
+        "x": 0,
+        "y": 135
+      },
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "PAD1A0A25CD30D457"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "fillOpacity": 80,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineWidth": 1,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "unit": "currencyUSD"
+        },
+        "overrides": []
+      },
+      "options": {
+        "barRadius": 0,
+        "barWidth": 0.97,
+        "fullHighlight": false,
+        "groupWidth": 0.7,
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": false
+        },
+        "orientation": "horizontal",
+        "showValue": "auto",
+        "stacking": "none",
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        },
+        "xField": "country",
+        "xTickLabelRotation": 0,
+        "xTickLabelSpacing": 0
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "PAD1A0A25CD30D457"
+          },
+          "format": 1,
+          "rawSql": "SELECT\n  card_country AS country,\n  card_brand,\n  round(sum(amount_cents) / 100.0, 2) AS revenue\nFROM stripe_event\nWHERE timestamp >= $__fromTime AND timestamp < $__toTime\n  AND event_type = 'charge.succeeded'\n  AND livemode = 1\n  AND card_country != ''\nGROUP BY country, card_brand\nORDER BY revenue DESC\nLIMIT 15",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 204,
+      "type": "table",
+      "title": "Billing × Card Country Mismatch",
+      "description": "Successful charges where the buyer's stated billing-address country doesn't match the card's actual issuing country. Legitimate travel/expats produce a small tail; concentrated patterns (MO billing + US-issued amex, ZA billing + US-issued amex) are the reseller / carding signature. Sourced from charge.succeeded — rows accumulate from the date the webhook landed (PR #11158).",
+      "gridPos": {
+        "h": 10,
+        "w": 12,
+        "x": 12,
+        "y": 135
+      },
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "PAD1A0A25CD30D457"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "filterable": true,
+            "inspect": false
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "charges"
+            },
+            "properties": [
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-background",
+                  "mode": "gradient"
+                }
+              },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "green",
+                      "value": null
+                    },
+                    {
+                      "color": "yellow",
+                      "value": 5
+                    },
+                    {
+                      "color": "orange",
+                      "value": 20
+                    },
+                    {
+                      "color": "red",
+                      "value": 50
+                    }
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "usd"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "currencyUSD"
+              },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-background",
+                  "mode": "gradient"
+                }
+              },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "green",
+                      "value": null
+                    },
+                    {
+                      "color": "yellow",
+                      "value": 50
+                    },
+                    {
+                      "color": "orange",
+                      "value": 200
+                    },
+                    {
+                      "color": "red",
+                      "value": 1000
+                    }
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "billing_country"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 120
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "card_country"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 120
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "cellHeight": "sm",
+        "footer": {
+          "countRows": false,
+          "fields": "",
+          "reducer": [
+            "sum"
+          ],
+          "show": false
+        },
+        "showHeader": true,
+        "sortBy": [
+          {
+            "desc": true,
+            "displayName": "charges"
+          }
+        ]
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "PAD1A0A25CD30D457"
+          },
+          "format": 1,
+          "rawSql": "SELECT\n  JSONExtractString(payload, 'data', 'object', 'billing_details', 'address', 'country') AS billing_country,\n  card_country,\n  card_brand,\n  count() AS charges,\n  round(sum(amount_cents) / 100.0, 2) AS usd\nFROM stripe_event\nWHERE timestamp >= $__fromTime AND timestamp < $__toTime\n  AND event_type = 'charge.succeeded'\n  AND livemode = 1\n  AND card_country != ''\n  AND JSONExtractString(payload, 'data', 'object', 'billing_details', 'address', 'country') != ''\n  AND JSONExtractString(payload, 'data', 'object', 'billing_details', 'address', 'country') != card_country\nGROUP BY billing_country, card_country, card_brand\nORDER BY charges DESC\nLIMIT 50",
+          "refId": "A"
+        }
+      ]
+    }
+  ],
+  "schemaVersion": 40,
+  "tags": [
+    "users",
+    "registrations"
+  ],
+  "templating": {
+    "list": [
+      {
+        "current": {
+          "selected": false,
+          "text": "day",
+          "value": "day"
+        },
+        "description": "Time granularity for aggregation",
+        "hide": 0,
+        "includeAll": false,
+        "label": "Granularity",
+        "multi": false,
+        "name": "granularity",
+        "options": [
+          {
+            "selected": false,
+            "text": "minute",
+            "value": "minute"
+          },
+          {
+            "selected": false,
+            "text": "hour",
+            "value": "hour"
+          },
+          {
+            "selected": true,
+            "text": "day",
+            "value": "day"
+          },
+          {
+            "selected": false,
+            "text": "week",
+            "value": "week"
+          },
+          {
+            "selected": false,
+            "text": "month",
+            "value": "month"
+          }
+        ],
+        "query": "minute, hour, day, week, month",
+        "queryValue": "",
+        "skipUrlSync": false,
+        "type": "custom"
+      }
+    ]
+  },
+  "time": {
+    "from": "now-7d",
+    "to": "now"
+  },
+  "timepicker": {},
+  "timezone": "utc",
+  "title": "User Intelligence",
+  "uid": "user-intelligence",
+  "version": 2
+}

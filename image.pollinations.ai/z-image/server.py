@@ -51,14 +51,16 @@ async def send_heartbeat():
     if public_ip:
         try:
             port = int(os.getenv("PUBLIC_PORT", os.getenv("PORT", "10002")))
-            url = f"http://{public_ip}:{port}"
+            url = f"https://{public_ip}"
             service_type = os.getenv("SERVICE_TYPE", "zimage")
-            # Use direct EC2 endpoint to bypass Cloudflare (some io.net IPs are blocked)
-            register_url = os.getenv("REGISTER_URL", "http://ec2-3-80-56-235.compute-1.amazonaws.com:16384/register")
+            register_url = os.getenv("REGISTER_URL", "https://gen.pollinations.ai/register")
+            token = os.getenv("PLN_GPU_TOKEN", "")
+            headers = {"Authorization": f"Bearer {token}"} if token else {}
             async with aiohttp.ClientSession() as session:
                 async with session.post(
                     register_url,
-                    json={'url': url, 'type': service_type}
+                    json={'url': url, 'type': service_type},
+                    headers=headers,
                 ) as response:
                     if response.status == 200:
                         logger.info(f"Heartbeat sent successfully. URL: {url}, type: {service_type}")
@@ -166,6 +168,7 @@ def calculate_generation_dimensions(requested_width: int, requested_height: int)
 pipe = None
 upscaler = None  # SPAN 2x upscaler
 heartbeat_task = None
+BACKEND_TOKEN = os.getenv("PLN_GPU_TOKEN")
 SAFETY_EXTRACTOR = None
 SAFETY_MODEL = None
 
@@ -194,6 +197,9 @@ async def lifespan(app: FastAPI):
     global pipe, upscaler, heartbeat_task, SAFETY_EXTRACTOR, SAFETY_MODEL
     
     logger.info("Starting up...")
+    if not BACKEND_TOKEN:
+        logger.critical("PLN_GPU_TOKEN not configured - refusing to start")
+        raise RuntimeError("PLN_GPU_TOKEN must be configured")
     
     # Load models
     load_model_time = time.time()
@@ -276,14 +282,9 @@ def verify_backend_token(
 ):
     """Verify backend authentication token.
     
-    Requires x-backend-token header validated against PLN_IMAGE_BACKEND_TOKEN env var.
+    Requires x-backend-token header validated against PLN_GPU_TOKEN env var.
     """
-    expected_token = os.getenv("PLN_IMAGE_BACKEND_TOKEN")
-    if not expected_token:
-        logger.warning("PLN_IMAGE_BACKEND_TOKEN not configured - allowing request")
-        return True
-    
-    if x_backend_token != expected_token:
+    if x_backend_token != BACKEND_TOKEN:
         logger.warning("Invalid or missing backend token")
         raise HTTPException(status_code=403, detail="Unauthorized")
     return True

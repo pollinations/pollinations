@@ -1,3 +1,7 @@
+import { ALLOWED_MODEL_IDS, DEFAULT_MODEL } from "./models.js";
+
+const ALLOWED_MODEL_SET = new Set(ALLOWED_MODEL_IDS);
+
 const systemPrompt = `You are an HTML generator. Your task is to return a single, complete HTML file that implements what the user asks for.
 The HTML should be valid, self-contained, and ready to be rendered in a browser.
 
@@ -15,56 +19,128 @@ Include all necessary CSS inline within a <style> tag in the head section.
 Include all necessary JavaScript within <script> tags, preferably at the end of the body.
 Make the design clean, modern, and responsive.
 Write the code in a sequence that lets the browser already render something meaningful while it is being transmitted.
-The UI will be incrementally shown as the code is streamed to the frontend.
 Imagine you are coding for a demoscene challenge where code should be short and elegant.
 Use images from src="https://image.pollinations.ai/prompt/[urlencoded prompt]?width=[width]&height=[height]"
-Links to subpages should always be relative without a leading slash. Don't use JS-based links unless it is triggering something interactive. New content should usually come by following a real link.
+Do not create links to generated subpages. Keep navigation within this single HTML file using anchors, buttons, tabs, details/summary, dialogs, or other browser-native interactions.
 You are targeting modern browsers.
 Please include open-graph metatags and use a Pollinations image for the thumbnail / image preview. include 'og:image:width' and 'og:image:height`;
 
-// Main handler function
+const STATIC_PATHS = new Set([
+    "/",
+    "/index.html",
+    "/favicon.ico",
+    "/favicon-16x16.png",
+    "/favicon-32x32.png",
+    "/apple-touch-icon.png",
+    "/apple-touch-icon-152x152.png",
+    "/apple-touch-icon-167x167.png",
+    "/icon-192.png",
+    "/icon-512.png",
+    "/icon-maskable-512.png",
+    "/manifest.webmanifest",
+    "/og-image.png",
+    "/robots.txt",
+]);
+
 export default {
     async fetch(request, env) {
         return handleRequest(request, env);
     },
 };
 
-/**
- * Main request handler
- * @param {Request} request - The incoming request
- * @param {Object} env - The environment variables
- * @returns {Response} The response
- */
 async function handleRequest(request, env) {
-    // Handle CORS preflight requests
     if (request.method === "OPTIONS") {
         return handleCorsPreflightRequest();
     }
 
     const url = new URL(request.url);
-    const path = decodeURIComponent(url.pathname);
 
-    // Handle quick filters and redirects
-    const pathResponse = processPath(path, request);
-    if (pathResponse) return pathResponse;
-
-    // Extract prompt from path
-    const prompt = extractPromptFromPath(path);
-    if (!prompt) {
-        return new Response("Pass a prompt after /", {
-            status: 400,
-            headers: getCorsHeaders(),
+    if (url.pathname === "/api/health") {
+        return jsonResponse({
+            ok: true,
+            defaultModel: DEFAULT_MODEL,
+            models: ALLOWED_MODEL_IDS,
+            generationMode: "non-streaming",
+            auth: "bearer",
+            assets: Boolean(env.ASSETS),
         });
     }
 
-    // Generate HTML from prompt
-    return generateHtml(prompt, request, env);
+    if (url.pathname === "/api/generate") {
+        return handleGenerateApi(request);
+    }
+
+    if (request.method === "HEAD" && isAssetPath(url.pathname)) {
+        return serveAsset(request, env);
+    }
+
+    if (request.method !== "GET") {
+        return new Response("Method not allowed", {
+            status: 405,
+            headers: {
+                Allow: "GET, HEAD, POST, OPTIONS",
+                ...getCorsHeaders(),
+            },
+        });
+    }
+
+    if (isAssetPath(url.pathname)) {
+        return serveAsset(request, env);
+    }
+
+    const pathResponse = processPath(url.pathname, request);
+    if (pathResponse) return pathResponse;
+
+    const prompt = extractPromptFromPath(url.pathname);
+    if (!prompt) return serveAsset(request, env);
+
+    return generateHtml(prompt, request);
 }
 
-/**
- * Get standard CORS headers
- * @returns {Object} CORS headers
- */
+async function handleGenerateApi(request) {
+    if (request.method !== "POST") {
+        return new Response("Method not allowed", {
+            status: 405,
+            headers: {
+                Allow: "POST, OPTIONS",
+                ...getCorsHeaders(),
+            },
+        });
+    }
+
+    let body;
+    try {
+        body = await request.json();
+    } catch {
+        return jsonResponse({ error: "Invalid JSON body" }, 400);
+    }
+
+    const prompt = typeof body.prompt === "string" ? body.prompt.trim() : "";
+    if (!prompt) {
+        return jsonResponse({ error: "Prompt is required" }, 400);
+    }
+
+    return generateHtml(prompt, request, body.model);
+}
+
+function isAssetPath(pathname) {
+    return pathname.startsWith("/assets/") || STATIC_PATHS.has(pathname);
+}
+
+function serveAsset(request, env) {
+    if (!env.ASSETS) {
+        return new Response("Websim app assets are not configured.", {
+            status: 503,
+            headers: {
+                "Content-Type": "text/plain; charset=utf-8",
+                "Cache-Control": "no-store",
+            },
+        });
+    }
+
+    return env.ASSETS.fetch(request);
+}
+
 function getCorsHeaders() {
     return {
         "Access-Control-Allow-Origin": "*",
@@ -73,43 +149,28 @@ function getCorsHeaders() {
     };
 }
 
-/**
- * Handle CORS preflight requests
- * @returns {Response} A response with CORS headers
- */
 function handleCorsPreflightRequest() {
-    const headers = {
-        ...getCorsHeaders(),
-        "Access-Control-Max-Age": "86400", // 24 hours
-    };
-
     return new Response(null, {
         status: 204,
-        headers,
+        headers: {
+            ...getCorsHeaders(),
+            "Access-Control-Max-Age": "86400",
+        },
     });
 }
 
-/**
- * Process the URL path and handle redirects
- * @param {string} path - The URL path
- * @param {Request} request - The original request
- * @returns {Response|null} A response for redirects/errors or null to continue processing
- */
 function processPath(path, request) {
-    // Quick filters for common non-content requests
-    if (path === "/favicon.ico" || path.startsWith("/.")) {
+    if (path.startsWith("/.")) {
         return new Response("Not found", {
             status: 404,
             headers: getCorsHeaders(),
         });
     }
 
-    // Enforce trailing slash only if there are 2 or less slashes in the path
     if (shouldRedirectWithTrailingSlash(path)) {
         const redirectUrl = new URL(request.url);
         redirectUrl.pathname += "/";
 
-        // Create a new response with the same status and redirect URL, but with CORS headers
         return new Response(null, {
             status: 301,
             headers: {
@@ -122,98 +183,69 @@ function processPath(path, request) {
     return null;
 }
 
-/**
- * Determine if the path should redirect with a trailing slash
- * @param {string} path - The URL path
- * @returns {boolean} Whether to redirect
- */
 function shouldRedirectWithTrailingSlash(path) {
     if (path === "/" || path.endsWith("/")) {
         return false;
     }
 
-    // Count the number of slashes in the path
     const slashCount = (path.match(/\//g) || []).length;
-
-    // Only redirect if there are 1 or less slashes (including the leading slash)
     return slashCount <= 1;
 }
 
-/**
- * Extract the prompt from the URL path
- * @param {string} path - The URL path
- * @returns {string} The extracted prompt
- */
 function extractPromptFromPath(path) {
-    return path.slice(1, path.endsWith("/") ? -1 : undefined);
+    const encodedPrompt = path.slice(1, path.endsWith("/") ? -1 : undefined);
+    try {
+        return decodeURIComponent(encodedPrompt).trim();
+    } catch {
+        return encodedPrompt.trim();
+    }
 }
 
-/**
- * Generate HTML from a prompt by calling the text API
- * @param {string} prompt - The user prompt
- * @param {Request} request - The original request
- * @param {Object} env - The environment variables
- * @returns {Response} The HTML response
- */
-async function generateHtml(prompt, request, env) {
-    // Get URL for query parameters
+async function generateHtml(prompt, request, modelOverride) {
     const url = new URL(request.url);
+    const model = resolveModel(modelOverride || url.searchParams.get("model"));
+    const token = bearerToken(request.headers.get("Authorization"));
 
-    // Make upstream request to text API
-    const upstream = await fetchFromTextApi(prompt, url, env);
-
-    if (!upstream.ok || !upstream.body) {
-        return new Response(`Upstream error ${upstream.status}`, {
-            status: 502,
-            headers: getCorsHeaders(),
-        });
+    if (!token) {
+        return authRequiredResponse();
     }
 
-    // Process the stream
-    const htmlStream = upstream.body
-        .pipeThrough(new TextDecoderStream()) // bytes ➜ text
-        .pipeThrough(createSseToHtmlTransformer())
-        .pipeThrough(createHtmlGateTransformer())
-        .pipeThrough(new TextEncoderStream()); // text ➜ bytes
+    const upstream = await fetchFromTextApi(prompt, model, token);
 
-    // Return the response with CORS headers
-    return new Response(htmlStream, {
+    if (!upstream.ok) {
+        return upstreamErrorResponse(upstream);
+    }
+
+    const data = await upstream.json();
+    const html = extractGeneratedHtml(data.choices?.[0]?.message?.content);
+
+    return new Response(html, {
         headers: {
             "Content-Type": "text/html; charset=utf-8",
-            "Content-Encoding": "identity",
-            "Cache-Control": "no-cache",
+            "Cache-Control": "no-store",
             ...getCorsHeaders(),
         },
     });
 }
 
-/**
- * Fetch HTML generation from the text API
- * @param {string} prompt - The user prompt
- * @param {URL} url - The URL object with query parameters
- * @param {Object} env - The environment variables
- * @returns {Promise<Response>} The upstream response
- */
-function fetchFromTextApi(prompt, url, env) {
-    // Get model from query parameter or use default
-    const model = url.searchParams.get("model") || "openai-large";
+function resolveModel(model) {
+    if (typeof model !== "string") return DEFAULT_MODEL;
+    const trimmed = model.trim();
+    return ALLOWED_MODEL_SET.has(trimmed) ? trimmed : DEFAULT_MODEL;
+}
 
-    // Prepare headers with Bearer token
+function fetchFromTextApi(prompt, model, token) {
     const headers = {
         "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
     };
 
-    // Add Authorization header if TEXT_API_TOKEN is available
-    if (env.TEXT_API_TOKEN) {
-        headers["Authorization"] = `Bearer ${env.TEXT_API_TOKEN}`;
-    }
-
-    return fetch("https://text.pollinations.ai/v1/chat/completions", {
+    return fetch("https://gen.pollinations.ai/v1/chat/completions", {
         method: "POST",
         headers,
         body: JSON.stringify({
             model,
-            stream: true,
+            stream: false,
             messages: [
                 { role: "system", content: systemPrompt },
                 { role: "user", content: prompt },
@@ -222,66 +254,160 @@ function fetchFromTextApi(prompt, url, env) {
     });
 }
 
-/**
- * Create a transformer that converts SSE format to raw HTML
- * @returns {TransformStream} The SSE to HTML transformer
- */
-function createSseToHtmlTransformer() {
-    return new TransformStream({
-        start() {
-            this.buf = "";
-        },
-        transform(chunk, ctrl) {
-            this.buf += chunk;
-            const lines = this.buf.split("\n");
-            this.buf = lines.pop();
-            for (let l of lines) {
-                l = l.trim();
-                if (!l || l === "data: [DONE]") continue;
-                if (l.startsWith("data:")) l = l.slice(5).trim();
-                try {
-                    const html = JSON.parse(l).choices?.[0]?.delta?.content;
-                    if (html) ctrl.enqueue(html);
-                } catch {}
-            }
-        },
-    });
+function extractGeneratedHtml(value) {
+    const content = String(value || "").trim();
+    if (!content) {
+        return renderGeneratedFallback("No HTML was generated.");
+    }
+
+    const withoutFence = content
+        .replace(/^```html\s*/i, "")
+        .replace(/^```\s*/i, "")
+        .replace(/```$/i, "")
+        .trim();
+    const lower = withoutFence.toLowerCase();
+    const htmlIndex = lower.indexOf("<html");
+
+    if (htmlIndex === -1) {
+        return renderGeneratedFallback(withoutFence);
+    }
+
+    const doctypeIndex = lower.lastIndexOf("<!doctype", htmlIndex);
+    const start = doctypeIndex === -1 ? htmlIndex : doctypeIndex;
+    const endIndex = lower.indexOf("</html>", htmlIndex);
+    if (endIndex === -1) {
+        return withoutFence.slice(start);
+    }
+
+    return withoutFence.slice(start, endIndex + "</html>".length);
 }
 
-/**
- * Create a transformer that buffers until <html> and stops after </html>
- * @returns {TransformStream} The HTML gate transformer
- */
-function createHtmlGateTransformer() {
-    return new TransformStream({
-        start() {
-            this.prefixBuf = "";
-            this.afterOpen = false;
-            this.done = false;
-            this.tailBuf = "";
+function renderGeneratedFallback(content) {
+    return `<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Websim</title>
+</head>
+<body>
+<pre>${escapeHtml(content)}</pre>
+</body>
+</html>`;
+}
+
+function bearerToken(value) {
+    if (!value) return "";
+    const match = value.match(/^Bearer\s+(.+)$/i);
+    return match?.[1]?.trim() || "";
+}
+
+function authRequiredResponse() {
+    return new Response(
+        renderErrorPage(
+            "Authorization required",
+            "Open Websim and authorize with Pollinations before generating HTML.",
+        ),
+        {
+            status: 401,
+            headers: {
+                "Content-Type": "text/html; charset=utf-8",
+                "Cache-Control": "no-store",
+                ...getCorsHeaders(),
+            },
         },
-        transform(chunk, ctrl) {
-            if (this.done) return; // ignore the rest
+    );
+}
 
-            let text = chunk;
-            if (!this.afterOpen) {
-                this.prefixBuf += text;
-                const lower = this.prefixBuf.toLowerCase();
-                const idx = lower.indexOf("<html");
-                if (idx === -1) return; // still waiting
-                // found <html …>
-                this.afterOpen = true;
-                text = this.prefixBuf.slice(idx); // drop everything before it
-                this.prefixBuf = null;
-            }
+async function upstreamErrorResponse(upstream) {
+    const upstreamStatus = upstream?.status || 502;
+    const status =
+        upstreamStatus >= 400 && upstreamStatus < 500 ? upstreamStatus : 502;
+    const detail = upstream ? await readResponsePreview(upstream, 4096) : "";
 
-            // already streaming; emit chunk
-            ctrl.enqueue(text);
+    return new Response(
+        renderErrorPage(
+            `Upstream error ${upstreamStatus}`,
+            detail ||
+                "The Pollinations text API did not return generated HTML for this request.",
+        ),
+        {
+            status,
+            headers: {
+                "Content-Type": "text/html; charset=utf-8",
+                "Cache-Control": "no-store",
+                ...getCorsHeaders(),
+            },
+        },
+    );
+}
 
-            // keep last few KB to look for closing tag
-            this.tailBuf = (this.tailBuf + text).slice(-8192);
-            if (this.tailBuf.toLowerCase().includes("</html>"))
-                this.done = true; // stop further output
+async function readResponsePreview(response, maxChars) {
+    if (!response.body) return "";
+
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let result = "";
+
+    try {
+        while (result.length < maxChars) {
+            const { value, done } = await reader.read();
+            if (done) break;
+            result += decoder.decode(value, { stream: true });
+        }
+        result += decoder.decode();
+    } catch {
+        return "";
+    } finally {
+        await reader.cancel().catch(() => {});
+    }
+
+    return result.slice(0, maxChars);
+}
+
+function renderErrorPage(title, detail) {
+    return `<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>${escapeHtml(title)} | Websim</title>
+<style>
+:root{color-scheme:light dark;font-family:Inter,ui-sans-serif,system-ui,sans-serif;background:#f7f3ff;color:#21163a}
+body{margin:0;min-height:100dvh;display:grid;place-items:center;padding:24px}
+main{width:min(640px,100%);border:1px solid color-mix(in srgb,currentColor 18%,transparent);border-radius:16px;background:color-mix(in srgb,Canvas 88%,transparent);padding:24px;box-shadow:0 18px 60px color-mix(in srgb,currentColor 12%,transparent)}
+h1{margin:0 0 12px;font-size:clamp(1.5rem,4vw,2.4rem);line-height:1.05}
+pre{white-space:pre-wrap;overflow-wrap:anywhere;margin:16px 0 0;padding:16px;border-radius:12px;background:color-mix(in srgb,currentColor 8%,transparent);font-size:.9rem}
+a{color:inherit}
+</style>
+</head>
+<body>
+<main>
+<h1>${escapeHtml(title)}</h1>
+<p>Websim could not generate this page.</p>
+<pre>${escapeHtml(detail)}</pre>
+<p><a href="/">Return to Websim</a></p>
+</main>
+</body>
+</html>`;
+}
+
+function escapeHtml(value) {
+    return String(value)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#39;");
+}
+
+function jsonResponse(data, status = 200) {
+    return new Response(JSON.stringify(data), {
+        status,
+        headers: {
+            "Content-Type": "application/json; charset=utf-8",
+            "Cache-Control": "no-store",
+            ...getCorsHeaders(),
         },
     });
 }

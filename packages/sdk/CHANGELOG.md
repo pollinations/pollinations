@@ -1,6 +1,56 @@
 # Changelog
 
-All notable changes to `@pollinations_ai/sdk` will be documented in this file.
+All notable changes to `@pollinations/sdk` will be documented in this file.
+
+## [5.1.0-alpha.3] - 2026-07-10
+
+### Removed (Breaking)
+- Removed retired user and model tier fields from the SDK types, including
+  `AccountProfile.tier`, `AccountProfile.nextResetAt`, `UserInfo.tier`,
+  `AccountKey.permissions.tier`, `ModelInfo.tier`, and `ModelTier`. This release
+  must ship with the Enter and Gen deployment that removes tier/drip behavior.
+
+## [5.1.0-alpha.2] - 2026-07-02
+
+### Changed
+- `authorizeDevice()` is now a spec-compliant RFC 8628 client: requests are
+  form-encoded, polling goes through the standard OAuth token endpoint
+  (`/api/oauth/token`) and includes `client_id`, and `slow_down` responses back
+  off by 5 seconds. Requires the enter.pollinations.ai deploy that ships the
+  OAuth 2.1 endpoints (publishes under the `alpha` dist-tag; sync production
+  right after merging).
+
+## [5.1.0-alpha.1] - 2026-06-12
+
+### Removed (Breaking)
+- Removed the `./client` subpath export. It resolved to exactly the same files
+  as the package root; import from `@pollinations/sdk` instead.
+
+### Changed
+- The model catalog no longer silently drops models whose `category` is not in
+  `MODEL_CATEGORIES`. Unknown categories (e.g. ones added to the registry after
+  this SDK release) now pass through `fetchModelCatalog()` and sort after the
+  known categories.
+- HTTP error parsing is now one shared parser for the client and the react
+  hooks. Unified semantics: nested `{error: {...}}` envelopes and flat error
+  bodies are both understood everywhere; the default error code without an
+  explicit `code` in the body is `UNKNOWN_ERROR` (`UNAUTHORIZED` on 401 — the
+  hooks previously defaulted to `HTTP_ERROR`); `Retry-After` is parsed on every
+  status (seconds or HTTP date, capped at 300s) with a 60s default on 429.
+
+## [5.0.0] - 2026-06-01
+
+### Removed (Breaking)
+- Removed speculative, never-used helpers from the public API surface:
+  - `generateImages()` / `generateVideos()` — batch generation across multiple different prompts
+  - `generateImageWithProgress()` — image generation with progress polling
+  - `showImage()` / `displayImage()` — browser DOM helpers
+  - Associated types: `BatchResult`, `AwaitOptions`, `ProgressStatus`
+
+  Generating multiple images for a single prompt remains available via the
+  documented `generateImage({ n })` / `imageGenerate({ n })` helpers. For
+  multiple distinct prompts, call `generateImage()` per prompt (e.g. with
+  `Promise.all`).
 
 ## [4.1.0] - 2026-03-05
 
@@ -9,7 +59,7 @@ All notable changes to `@pollinations_ai/sdk` will be documented in this file.
 - **Media Upload**: `upload()` method for uploading images, audio, and video to `media.pollinations.ai` with content-addressed deduplication
 - **BYOP (Bring Your Own Pollen)**: `authorizeUrl()` to build authorization URLs that let users grant apps access to their Pollen balance with model/budget/permission scoping
 - **Account endpoints**:
-  - `accountProfile()` / `getProfile()` - Get user profile (name, email, tier)
+  - `accountProfile()` / `getProfile()` - Get user profile (GitHub username, image)
   - `accountBalance()` / `getBalance()` - Get pollen balance
   - `accountUsage()` / `getUsage()` - Get detailed usage history with pagination
   - `accountUsageDaily()` / `getDailyUsage()` - Get daily aggregated usage
@@ -29,10 +79,10 @@ All notable changes to `@pollinations_ai/sdk` will be documented in this file.
 
 ### Fixed 
 - Created a single sdk package with react + frontend + backend support.
-- Updated README.md to reflect new usage instructions for react hooks from '@pollinations_ai/sdk'.
+- Updated README.md to reflect new usage instructions for react hooks from '@pollinations/sdk'.
 
 ### Renamed 
-- Renamed package from `pollinations-react` to `@pollinations_ai/sdk`.
+- Renamed package from `pollinations-react` to `@pollinations/sdk`.
 
 ### Improved
 - Updated package.json with new name, version, description, and keywords and authors.
@@ -94,7 +144,7 @@ All notable changes to `@pollinations_ai/sdk` will be documented in this file.
 ### Removed
 
 -   `lodash.memoize` dependency (uses React built-in memoization)
--   Legacy `text.pollinations.ai` and `image.pollinations.ai` endpoints
+-   Legacy `gen.pollinations.ai` and `image.pollinations.ai` endpoints
 
 ## Migration from v2.x
 

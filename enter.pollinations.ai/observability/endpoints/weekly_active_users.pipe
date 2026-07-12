@@ -3,7 +3,7 @@ DESCRIPTION >
     Returns data for the last N weeks.
     Supports start_date param for single-week queries to avoid Tinybird timeouts.
 
-TOKEN model_usage READ
+TOKEN tinybird_read READ
 
 NODE weekly_active_users_node
 SQL >
@@ -24,7 +24,6 @@ SQL >
         {% else %}
         start_time >= now() - INTERVAL {{Int32(weeks_back, 12)}} WEEK
         {% end %}
-    AND environment = 'production'
     AND user_id != 'undefined'
     AND user_id != ''
     GROUP BY week_start

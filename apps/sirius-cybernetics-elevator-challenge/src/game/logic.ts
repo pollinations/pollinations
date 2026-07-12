@@ -13,7 +13,6 @@ import {
     type PollingsMessage,
 } from "@/types";
 import { fetchFromPollinations } from "@/utils/api";
-import { findMarvinJoinStartIndex, rewindMessages } from "./rewind";
 
 // Core message management hook
 export const useMessages = () => {
@@ -102,12 +101,17 @@ export const fetchPersonaMessage = async (
     gameState: GameState,
     existingMessages: Message[] = [],
 ): Promise<Message> => {
-    const createErrorMessage = (_error: unknown): Message =>
-        createMessage(
+    // Speak failures in the voice of the world: the cabin malfunctions and the
+    // real upstream error rides along inside the dialogue.
+    const createErrorMessage = (error: unknown): Message => {
+        const detail =
+            error instanceof Error ? error.message : "Sub-Etha signal lost";
+        return createMessage(
             persona,
-            "Apologies, I'm experiencing some difficulties.",
+            `A Sirius Cybernetics malfunction shudders through the cabin — [${detail}]. Share and Enjoy. Please try again.`,
             "none",
         );
+    };
 
     try {
         const messages: PollingsMessage[] = [
@@ -166,14 +170,16 @@ export const useGuideMessages = (
         }
     }, [lastMessage, addMessage, gameState.marvinJoined]);
 
-    // floor changed
+    // floor changed — intentionally only depend on currentFloor to avoid
+    // firing on every gameState change (which caused repeated "Now arriving" spam)
+    // biome-ignore lint/correctness/useExhaustiveDependencies: intentional
     useEffect(() => {
         addMessage({
             persona: "guide",
             message: getFloorMessage(gameState),
             action: gameState.currentFloor === 1 ? "show_instructions" : "none",
         });
-    }, [gameState.currentFloor, addMessage, gameState]);
+    }, [gameState.currentFloor, addMessage]);
 };
 
 // Autonomous conversation hook
@@ -211,7 +217,6 @@ export const useMessageHandlers = (
     gameState: GameState,
     messages: Message[],
     addMessage: (message: Message) => void,
-    setMessages: React.Dispatch<React.SetStateAction<Message[]>>,
 ) => {
     const handleGuideAdvice = useCallback(async () => {
         if (gameState.isLoading) return;
@@ -229,21 +234,13 @@ export const useMessageHandlers = (
     }, [gameState, messages, addMessage]);
 
     const handlePersonaSwitch = useCallback(() => {
-        if (gameState.conversationMode === "autonomous") {
-            // Rewind functionality with animation
-            const rewindIndex = findMarvinJoinStartIndex(messages);
-            if (rewindIndex !== -1) {
-                rewindMessages(messages, rewindIndex, setMessages);
-            }
-        } else {
-            // Original transition to Marvin functionality
-            addMessage({
-                persona: "guide",
-                message: GAME_CONFIG.MARVIN_TRANSITION_MSG,
-                action: "none",
-            });
-        }
-    }, [messages, gameState.conversationMode, setMessages, addMessage]);
+        // Transition to Marvin.
+        addMessage({
+            persona: "guide",
+            message: GAME_CONFIG.MARVIN_TRANSITION_MSG,
+            action: "none",
+        });
+    }, [addMessage]);
 
     return {
         handleGuideAdvice,

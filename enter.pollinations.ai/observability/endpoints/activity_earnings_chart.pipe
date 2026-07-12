@@ -29,8 +29,8 @@ SQL >
         SELECT
             if(
                 {{ String(grain, 'day') }} = 'hour',
-                formatDateTime(toStartOfHour(timestamp), '%F %T'),
-                formatDateTime(toStartOfDay(timestamp), '%F')
+                    formatDateTime(toStartOfHour(event_timestamp), '%F %T'),
+                    formatDateTime(toStartOfDay(event_timestamp), '%F')
             ) AS date,
             entity_id,
             entity_name,
@@ -44,11 +44,24 @@ SQL >
             sumIf(pollen_earned, meter_source = 'tier') AS tier_earned,
             sum(price_usd) AS price_sum,
             avg(reward_rate) AS reward_rate_avg
-        FROM activity_earnings_events
-        WHERE
-            dev_user_id = {{ String(dev_user_id, '') }}
-            {% if defined(since) %} AND timestamp >= {{ DateTime(since) }} {% end %}
-            {% if defined(until) %} AND timestamp < {{ DateTime(until) }} {% end %}
+        FROM (
+            SELECT
+                any(timestamp) AS event_timestamp,
+                source,
+                entity_id,
+                any(entity_name) AS entity_name,
+                any(meter_source) AS meter_source,
+                any(baseline_price) AS baseline_price,
+                any(pollen_earned) AS pollen_earned,
+                any(price_usd) AS price_usd,
+                any(reward_rate) AS reward_rate
+            FROM activity_earnings_events
+            WHERE
+                dev_user_id = {{ String(dev_user_id, '') }}
+                {% if defined(since) %} AND timestamp >= {{ DateTime(since) }} {% end %}
+                {% if defined(until) %} AND timestamp < {{ DateTime(until) }} {% end %}
+            GROUP BY dev_user_id, source, entity_id, event_id
+        )
         GROUP BY date, entity_id, entity_name, source
     )
     ORDER BY date DESC, entity_id, entity_name, source

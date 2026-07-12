@@ -1,0 +1,34 @@
+{
+  "pr_number": 12268,
+  "title": "fix(greenhouse): update Sprout description to be informative",
+  "author": "murderszn",
+  "url": "https://github.com/pollinations/pollinations/pull/12268",
+  "merged_at": "2026-07-12T23:55:38Z",
+  "labels": [
+    "DEV-DOCS"
+  ],
+  "pr_body_excerpt": "This PR updates the description for Sprout in both README.md and apps/GREENHOUSE.md. The previous description was a botched placeholder link to the social card image.",
+  "gist": {
+    "category": "docs",
+    "user_facing": true,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Sprouting proper words",
+    "blurb": "We fixed a botched placeholder in the Sprout app description. Now it actually tells you what it does instead of linking to an image!",
+    "summary": "Updated the Sprout app description in the README and Greenhouse docs to replace a broken image link placeholder with actual informative text.",
+    "impact": "Readers exploring the Greenhouse apps will now see a proper description for Sprout instead of a broken markdown link.",
+    "keywords": [
+      "docs",
+      "greenhouse",
+      "sprout",
+      "readme"
+    ],
+    "visual_concept": "The bee mascot fixing a wooden sign next to a small sprout plant, representing the corrected documentation.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing tiny reading glasses, carefully painting words onto a wooden sign next to a small green sprout plant. Soft lime green (#ecf874) and lavender gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-12/PR-12268.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing tiny reading glasses, carefully painting words onto a wooden sign next to a small green sprout plant. Soft lime green (#ecf874) and lavender gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-07-12T23:56:35.548652+00:00"
+}

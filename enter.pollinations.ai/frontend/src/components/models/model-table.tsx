@@ -8,11 +8,7 @@ import {
 } from "@pollinations/ui";
 import { PaidChip, TierChip } from "@pollinations/ui/wallet";
 import { type FC, useState } from "react";
-import {
-    calculatePerPollen,
-    calculatePerPollenValue,
-    unitLabels,
-} from "./calculations.ts";
+import { calculatePerPollen, calculatePerPollenValue } from "./calculations.ts";
 import { CAPABILITY_ICON, MODALITY_ICON } from "./model-icons.tsx";
 import {
     type DisplayCapability,
@@ -32,6 +28,7 @@ import { getModelPriceBadges, PriceBadgeList } from "./price-badge.tsx";
 import type { ModelPrice, PriceDirection } from "./types.ts";
 
 export type SectionType =
+    | "all"
     | "image"
     | "video"
     | "3d"
@@ -42,6 +39,7 @@ export type SectionType =
     | "embedding";
 
 type UnifiedModelTableProps = {
+    allModels: ModelPrice[];
     imageModels: ModelPrice[];
     videoModels: ModelPrice[];
     model3dModels: ModelPrice[];
@@ -95,6 +93,7 @@ const sortModels = (
 };
 
 export const sectionLabels: Record<SectionType, string> = {
+    all: "All",
     image: "Image",
     video: "Video",
     "3d": "3D",
@@ -343,6 +342,7 @@ const MobileMetadataBadges: FC<MobileMetadataBadgesProps> = ({
 // --- Main export ---
 
 export const UnifiedModelTable: FC<UnifiedModelTableProps> = ({
+    allModels,
     imageModels,
     videoModels,
     model3dModels,
@@ -354,6 +354,7 @@ export const UnifiedModelTable: FC<UnifiedModelTableProps> = ({
     activeTab,
 }) => {
     const sections: { type: SectionType; models: ModelPrice[] }[] = [
+        { type: "all", models: allModels },
         { type: "image", models: imageModels },
         { type: "video", models: videoModels },
         { type: "3d", models: model3dModels },
@@ -399,7 +400,7 @@ export const UnifiedModelTable: FC<UnifiedModelTableProps> = ({
                         <span className="block w-[220px] whitespace-normal leading-snug">
                             Based on{" "}
                             <span className="font-semibold text-theme-text-strong">
-                                average community usage
+                                average usage
                             </span>
                             . Actual costs vary with modality and output.
                         </span>
@@ -414,10 +415,7 @@ export const UnifiedModelTable: FC<UnifiedModelTableProps> = ({
                             1 pollen {sortArrow("perPollen")}
                         </div>
                         <div className="text-xs font-normal text-ink-700 opacity-70 italic">
-                            ≈{" "}
-                            {activeSection
-                                ? unitLabels[activeSection.type]
-                                : ""}
+                            ≈ gen
                         </div>
                     </button>
                 </Tooltip>

@@ -1,0 +1,11 @@
+# Intentionally (almost) empty.
+#
+# The vitest workers pool loads .dev.vars on top of [env.test.vars] from
+# wrangler.toml. With decrypted secrets present, that repoints
+# TINYBIRD_INGEST_URL at the real staging workspace, bypassing the fetch mock
+# (shared/test/mocks/tinybird.ts intercepts localhost:7181 only) — so "mocked"
+# tests silently read live staging data.
+#
+# This file shadows .dev.vars for the `test` environment, keeping unit tests
+# on the mocked wrangler.toml [env.test.vars] values regardless of whether
+# `npm run decrypt-vars` has been run.

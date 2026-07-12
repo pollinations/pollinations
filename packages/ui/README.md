@@ -109,6 +109,20 @@ The SVG sources use `currentColor`. Apps control the rendered color by inlining
 them or using them as masks. Root-level favicon, PWA icon, and SEO files stay
 app-owned.
 
+The whole kit derives from two atomic sources — `mark.svg` and `wordmark.svg`
+(both `currentColor`) plus the raster bee `polli/polli.png`. Regenerate the
+committed derivatives, or stamp out app-icon / social presets on demand:
+
+```bash
+npm run brand                               # rebuild the committed kit in src/brand
+npm run brand -- --kit=social --out=./out   # social sizes, on demand (uncommitted)
+npm run brand -- --kit=app --tone=white --bg=transparent
+```
+
+Presets (favicon, apple-touch, PWA, OG, X/Instagram/Facebook) are data in
+`scripts/brand/presets.js` — recolor with `--ink`/`--tone`, pad for circular
+avatars, add a platform by adding a line.
+
 Wallet colors and utilities are bundled into the main stylesheet
 (`@pollinations/ui/styles.css`) — no separate import needed.
 

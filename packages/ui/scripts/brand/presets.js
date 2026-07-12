@@ -34,8 +34,8 @@ export const PRESETS = {
     og: {
         w: 1200,
         h: 630,
-        content: "lockup-horizontal",
-        pad: 0.22,
+        content: "lockup-stacked",
+        pad: 0.16,
         theme: "field",
     },
 
@@ -66,8 +66,8 @@ export const PRESETS = {
     "fb-cover": {
         w: 1200,
         h: 630,
-        content: "lockup-horizontal",
-        pad: 0.26,
+        content: "lockup-stacked",
+        pad: 0.16,
         theme: "field",
     },
 };

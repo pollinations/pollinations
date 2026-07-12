@@ -44,9 +44,8 @@ echo "🌐 Subdomain: $SUBDOMAIN"
 echo "📁 Output: $OUTPUT_DIR"
 echo "🎯 Target: $DEPLOY_TARGET"
 
-# Apps ship committed brand assets (favicons/icons/OG/manifest). After an app
-# migrates to the design-system logo, regenerate them via
-# `npm run generate:assets --workspace @pollinations/ui -- --app <name>`.
+# Apps ship committed brand assets (favicons/icons/OG/manifest).
+# Source of truth: packages/ui/src/brand/ (@pollinations/ui/brand).
 
 # Install dependencies
 echo ""

@@ -101,8 +101,8 @@ and generic `polli-ui-root`, `polli-ui-body`, and `polli-ui-shell` classes.
 Canonical Pollinations source SVGs are exported from the package:
 
 ```ts
-import logoUrl from "@pollinations/ui/assets/logo.svg";
-import logoWordmarkUrl from "@pollinations/ui/assets/logo-wordmark.svg";
+import markUrl from "@pollinations/ui/brand/mark.svg";
+import lockupUrl from "@pollinations/ui/brand/lockup-horizontal.svg";
 ```
 
 The SVG sources use `currentColor`. Apps control the rendered color by inlining
@@ -137,8 +137,9 @@ Wallet colors and utilities are bundled into the main stylesheet
 - `@pollinations/ui/gen` exports generation UI modules and modality helpers:
   `ModelSelector`, `ModalityChip`, `ModalityDot`, `ModalityTab`,
   `categoryLabel`, and `getModalityKey`.
-- `@pollinations/ui/assets/*` exports canonical Pollinations source SVGs:
-  `logo.svg` and `logo-wordmark.svg`.
+- `@pollinations/ui/brand/*` exports the canonical brand kit — `mark`,
+  `wordmark`, `lockup-horizontal`, `lockup-stacked` (currentColor SVG masters
+  plus `-black`/`-white` SVG + PNG), and the `polli/` mascot PNGs.
 - **Design primitives** — `Button`, `ButtonGroup`, `Chip`, `ChevronIcon`,
   `Dialog`, `DialogTitle`, `Dropdown`, `DropdownItem`, `Field`, `Heading`,
   `IconButton`, `InlineLink`, `Input`, `ScrollArea`, `Slider`, `Surface`,

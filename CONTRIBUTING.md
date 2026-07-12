@@ -100,17 +100,76 @@ Once your pull request is merged, you will automatically be issued the badge!
 
 ## Guidelines
 
-Follow the Coding Style: Write your code using the same style and rules that the project already uses. This helps keep the code consistent and easy to read for everyone.
+### Follow the Coding Style
 
-**Code Formatting**: We use [Biome](https://biomejs.dev/) for code formatting and linting. Before submitting your PR:
-- Run `npm run format` to auto-format your code
-- Run `npm run lint` to check for issues
-- Our CI will automatically check formatting on changed files
+Write your code using the same style and rules that the project already uses. This helps keep the code consistent and easy to read for everyone.
 
-Write Clear Commit Messages: When saving your changes (committing), write messages that clearly and simply explain what you did and why.
+### Code Formatting
 
-Document Your Changes Well: Add comments to your code where needed to explain how it works. If you are updating or adding documentation, make sure it is clear and accurate.
+We use [Biome](https://biomejs.dev/) for code formatting and linting to ensure consistency across the codebase.
 
-Test Your Work: If you can, write and run tests to check that your changes work correctly and do not break anything else.
+#### Before submitting your PR:
 
-Thank You! Thank you for contributing! Your help makes the pollinations.ai project stronger and more useful for the community. Happy coding!
+```bash
+# Auto-format all files
+npm run format
+
+# Check for linting issues
+npm run lint
+
+# Auto-fix linting issues (when possible)
+npm run lint:fix
+```
+
+#### What gets checked:
+
+- **Code style** (indentation, spacing, quotes)
+- **Linting rules** (unused variables, potential bugs)
+- **Import ordering** and organization
+- **Type safety** (if TypeScript is used)
+
+#### CI/CD Automation:
+
+Our CI pipeline automatically checks formatting on all changed files. If the check fails:
+
+1. Run `npm run format` locally
+2. Commit the formatting changes
+3. Push again
+
+#### Editor Configuration:
+
+For the best experience, configure your editor to use Biome:
+
+**VS Code:**
+```json
+{
+  "editor.defaultFormatter": "biomejs.biome",
+  "editor.formatOnSave": true
+}
+```
+
+**WebStorm/IntelliJ:**
+Install the Biome plugin and enable it.
+
+#### Troubleshooting:
+
+If formatting fails unexpectedly:
+- Ensure you're using the latest Node.js version (18+)
+- Delete `node_modules` and run `npm install` again
+- Check that Biome is installed: `npx biome --version`
+
+### Write Clear Commit Messages
+
+When saving your changes (committing), write messages that clearly and simply explain what you did and why.
+
+### Document Your Changes Well
+
+Add comments to your code where needed to explain how it works. If you are updating or adding documentation, make sure it is clear and accurate.
+
+### Test Your Work
+
+If you can, write and run tests to check that your changes work correctly and do not break anything else.
+
+## Thank You!
+
+Thank you for contributing! Your help makes the pollinations.ai project stronger and more useful for the community. Happy coding!

@@ -18,7 +18,7 @@ async function generateText(params) {
 
     const {
         prompt,
-        model = "openai",
+        model = "gpt-5.4-nano",
         seed,
         system,
         temperature,
@@ -80,7 +80,7 @@ async function chatCompletion(params) {
 
     const {
         messages,
-        model = "openai",
+        model = "gpt-5.4-nano",
         temperature,
         max_tokens,
         top_p,
@@ -306,8 +306,8 @@ async function listTextModels(_params) {
                 advanced:
                     "Use chatCompletion for multi-turn conversations, tool calling, audio output",
                 reasoning:
-                    "True reasoning models: kimi, perplexity-reasoning, openai-large, gemini-large. Use reasoning_effort",
-                audio: "Use openai-audio with modalities=['text','audio'] for voice output",
+                    "True reasoning models: kimi-k2.6, sonar-reasoning-pro, gpt-5.5, gemini-3.1-pro. Use reasoning_effort",
+                audio: "Use gpt-audio-mini with modalities=['text','audio'] for voice output",
             },
         };
 
@@ -433,13 +433,13 @@ const textParamsSchema = {
         .string()
         .optional()
         .describe(
-            "Text model to use (default: 'openai'). Popular options:\n" +
-                "- openai/openai-fast/openai-large: GPT models (balanced/fast/powerful)\n" +
-                "- claude/claude-fast/claude-large: Anthropic Claude models\n" +
-                "- gemini/gemini-fast/gemini-large: Google Gemini models\n" +
-                "- deepseek: Advanced reasoning model\n" +
-                "- grok: xAI's Grok model\n" +
-                "- mistral, qwen-coder, perplexity-fast, perplexity-reasoning\n" +
+            "Text model to use (default: 'gpt-5.4-nano'). Popular options:\n" +
+                "- gpt-5.4-nano/gpt-5-nano/gpt-5.5: GPT models (balanced/fast/powerful)\n" +
+                "- claude-sonnet-4.6/claude-haiku-4.5/claude-opus-4.8: Anthropic Claude models\n" +
+                "- gemini-3.5-flash/gemini-2.5-flash-lite/gemini-3.1-pro: Google Gemini models\n" +
+                "- deepseek-v4-flash: Advanced reasoning model\n" +
+                "- grok-4.20: xAI's Grok model\n" +
+                "- mistral-small-4, qwen3-coder, sonar, sonar-reasoning-pro\n" +
                 "Use listTextModels for complete list.",
         ),
     seed: z
@@ -596,7 +596,7 @@ const chatParamsSchema = {
         .string()
         .optional()
         .describe(
-            "Text model (default: 'openai'). See listTextModels for all options",
+            "Text model (default: 'gpt-5.4-nano'). See listTextModels for all options",
         ),
     temperature: z
         .number()

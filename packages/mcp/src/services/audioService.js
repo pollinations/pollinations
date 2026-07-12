@@ -18,7 +18,7 @@ import {
     validateVoice,
 } from "../utils/models.js";
 
-const DEFAULT_AUDIO_MODEL = "openai-audio";
+const DEFAULT_AUDIO_MODEL = "gpt-audio-mini";
 
 async function resolveAudioModel(requested) {
     if (requested) return requested;
@@ -220,7 +220,7 @@ async function transcribeAudio(params) {
     const {
         audioUrl,
         prompt = "Transcribe this audio accurately. Include timestamps if there are multiple speakers.",
-        model = "gemini-large",
+        model = "gemini-3.1-pro",
     } = params;
 
     if (!audioUrl || typeof audioUrl !== "string") {
@@ -309,7 +309,7 @@ const audioModelSchema = z
     .string()
     .optional()
     .describe(
-        "Audio model override (e.g. 'elevenlabs', 'openai-audio'). " +
+        "Audio model override (e.g. 'eleven-v3', 'gpt-audio-mini'). " +
             "Defaults to the current primary TTS model from the registry.",
     );
 
@@ -367,7 +367,7 @@ export const audioTools = [
 
     [
         "transcribeAudio",
-        "Transcribe audio from a URL. Uses gemini-large for accurate speech-to-text transcription.",
+        "Transcribe audio from a URL. Uses gemini-3.1-pro for accurate speech-to-text transcription.",
         {
             audioUrl: z
                 .string()
@@ -382,7 +382,7 @@ export const audioTools = [
                 .string()
                 .optional()
                 .describe(
-                    "Model to use (default: 'gemini-large'). Also supports: gemini, openai-audio",
+                    "Model to use (default: 'gemini-3.1-pro'). Also supports: gemini-3.5-flash, gpt-audio-mini",
                 ),
         },
         transcribeAudio,

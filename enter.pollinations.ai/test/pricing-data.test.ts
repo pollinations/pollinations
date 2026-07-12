@@ -775,6 +775,113 @@ test("Gemini counters never throw on malformed provider metadata", () => {
     }
 });
 
+test("vertex gemini models price cache writes at the standard input rate", () => {
+    // Google bills explicit-cache creation at the standard input token rate
+    // (GCP Billing Catalog, verified 2026-07-03). The gateway reports the
+    // created prefix as cache_creation_input_tokens → promptCacheWriteTokens.
+    const models = [
+        "gemini-3-flash",
+        "gemini",
+        "gemini-flash-lite-3.1",
+        "gemini-fast",
+        "gemini-large",
+        "gemini-search",
+        "gemini-search-fast",
+        "gemini-search-large",
+    ] as const;
+    for (const model of models) {
+        // getRegistryModelDefinition throws on unknown names, so a renamed
+        // model fails loudly instead of passing on undefined === undefined.
+        const cost = getRegistryModelDefinition(model).cost;
+        expect(
+            cost?.promptCacheWriteTokens,
+            `${model} promptCacheWriteTokens must equal its input rate`,
+        ).toBeDefined();
+        expect(cost?.promptCacheWriteTokens).toBe(cost?.promptTextTokens);
+    }
+});
+
+test("bedrock nova models price cache writes free and reads at 25% of input", () => {
+    // AWS Price List API (verified 2026-07-05): Nova cache writes are a $0
+    // SKU; cache reads bill at 25% of the standard input rate.
+    for (const model of ["nova", "nova-fast"] as const) {
+        const cost = getRegistryModelDefinition(model).cost;
+        expect(cost.promptCacheWriteTokens).toBe(0);
+        expect(cost.promptCachedTokens).toBeCloseTo(
+            (cost.promptTextTokens ?? 0) * 0.25,
+            12,
+        );
+    }
+});
+
+test("vertex cache storage adjustment bills cache-creating requests", () => {
+    // Flash-family storage: $1.00 / 1M token-hours, 1-hour TTL per create.
+    const created = calculateBillingAdjustments(
+        getRegistryModelDefinition("gemini-fast"),
+        { usage: { cache_creation_input_tokens: 1_000_000 } },
+    );
+    expect(created).toEqual([
+        {
+            ruleId: "google.vertex.cache_storage.v1",
+            kind: "cache_storage",
+            unit: "token_hour",
+            units: 1_000_000,
+            unitCost: 0.000001,
+            cost: 1.0,
+            price: 1.0,
+        },
+    ]);
+
+    // Stream responses carry usage on the final chunk.
+    const streamed = calculateBillingAdjustments(
+        getRegistryModelDefinition("gemini-fast"),
+        {
+            streamEvents: [
+                { choices: [{}] },
+                { usage: { cache_creation_input_tokens: 21500 } },
+            ],
+        },
+    );
+    expect(streamed).toHaveLength(1);
+    expect(streamed[0].units).toBe(21500);
+    expect(streamed[0].cost).toBeCloseTo(0.0215, 8);
+
+    // Pro-family storage is $4.50 / 1M token-hours.
+    const pro = calculateBillingAdjustments(
+        getRegistryModelDefinition("gemini-large"),
+        { usage: { cache_creation_input_tokens: 1_000_000 } },
+    );
+    const proStorage = pro.find((a) => a.kind === "cache_storage");
+    expect(proStorage?.cost).toBeCloseTo(4.5, 8);
+
+    // Search variants share the same Vertex routes and flash-family storage.
+    const search = calculateBillingAdjustments(
+        getRegistryModelDefinition("gemini-search"),
+        { usage: { cache_creation_input_tokens: 1_000_000 } },
+    );
+    expect(search.find((a) => a.kind === "cache_storage")?.cost).toBeCloseTo(
+        1.0,
+        8,
+    );
+
+    // Cache HITS report cached_tokens, not creation tokens → no storage fee.
+    expect(
+        calculateBillingAdjustments(getRegistryModelDefinition("gemini-fast"), {
+            usage: { prompt_tokens_details: { cached_tokens: 21500 } },
+        }),
+    ).toEqual([]);
+
+    // Malformed values never bill or throw.
+    for (const bad of [-5, "21500", null, true, {}]) {
+        expect(
+            calculateBillingAdjustments(
+                getRegistryModelDefinition("gemini-fast"),
+                { usage: { cache_creation_input_tokens: bad } },
+            ),
+        ).toEqual([]);
+    }
+});
+
 test("calculateBillingAdjustments returns per-rule breakdown entries", () => {
     const gemini3 = calculateBillingAdjustments(
         getRegistryModelDefinition("gemini-3-flash"),

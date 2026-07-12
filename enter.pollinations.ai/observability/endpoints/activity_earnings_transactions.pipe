@@ -1,0 +1,37 @@
+DESCRIPTION >
+    Recent earnings transactions for the last-events feed.
+    Includes BYOP app markup and community model reward earnings.
+
+TOKEN "tinybird_read" READ
+
+NODE activity_earnings_transactions_node
+SQL >
+    %
+    SELECT
+        event_timestamp AS timestamp,
+        cursor_event_id,
+        entity_name,
+        model,
+        meter_source,
+        pollen_earned
+    FROM (
+        SELECT
+            any(timestamp) AS event_timestamp,
+            event_id AS cursor_event_id,
+            any(entity_name) AS entity_name,
+            any(model) AS model,
+            any(meter_source) AS meter_source,
+            any(pollen_earned) AS pollen_earned
+        FROM activity_earnings_events
+        WHERE
+            dev_user_id = {{ String(dev_user_id, '') }}
+            {% if defined(since) %} AND timestamp >= {{ DateTime(since) }}
+            {% else %} AND timestamp >= now() - INTERVAL 30 DAY
+            {% end %}
+            {% if defined(until) %} AND timestamp < {{ DateTime(until) }} {% end %}
+        GROUP BY dev_user_id, source, entity_id, event_id
+    )
+    ORDER BY event_timestamp DESC, cursor_event_id DESC
+    LIMIT {{ Int32(limit, 100) }}
+
+TYPE endpoint

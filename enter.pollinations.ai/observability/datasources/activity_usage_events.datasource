@@ -25,8 +25,6 @@ SCHEMA >
     `output_image_tokens` UInt32,
     `output_video_seconds` Float64,
     `price_usd` Float64,
-    `cost_usd` Float64,
-    `provider` LowCardinality(String),
     `response_time_ms` Float32
 
 ENGINE MergeTree

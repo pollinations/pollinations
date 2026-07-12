@@ -14,7 +14,6 @@ SQL >
             api_key_client_id
         ) AS entity_name,
         model_used AS model,
-        model_provider_used AS provider,
         multiIf(
             selected_meter_slug = 'v1:meter:tier', 'tier',
             selected_meter_slug = 'v1:meter:pack', 'pack',

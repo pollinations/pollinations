@@ -1,58 +1,30 @@
 DESCRIPTION >
     op_pollen: product usage in Pollen with paid/quest splits, computed directly
-    from generation_event. Cost/price/requests from activity_usage_events,
-    byop/model payouts from activity_earnings_events.
+    from generation_event. Reads the pre-aggregated op_pollen (cost/price/
+    requests and byop/model payouts, per month/provider/model) instead of
+    scanning raw event history.
 
 TOKEN "operations_read" READ
-
-NODE usage_rollup
-SQL >
-    SELECT
-        formatDateTime(toStartOfMonth(timestamp), '%Y-%m') AS month,
-        provider,
-        resolved_model AS model,
-        sumIf(cost_usd, meter_source = 'pack') AS cost_paid,
-        sumIf(cost_usd, meter_source = 'tier') AS cost_quests,
-        sumIf(price_usd, meter_source = 'pack') AS price_paid,
-        sumIf(price_usd, meter_source = 'tier') AS price_quests,
-        countIf(meter_source = 'pack') AS requests_paid,
-        countIf(meter_source = 'tier') AS requests_quests
-    FROM activity_usage_events
-    GROUP BY month, provider, model
-
-NODE earnings_rollup
-SQL >
-    SELECT
-        formatDateTime(toStartOfMonth(timestamp), '%Y-%m') AS month,
-        provider,
-        model,
-        sumIf(pollen_earned, meter_source = 'pack' AND source = 'byop_markup') AS byop_paid,
-        sumIf(pollen_earned, meter_source = 'tier' AND source = 'byop_markup') AS byop_quests,
-        sumIf(pollen_earned, meter_source = 'pack' AND source = 'community_model') AS model_paid,
-        sumIf(pollen_earned, meter_source = 'tier' AND source = 'community_model') AS model_quests
-    FROM activity_earnings_events
-    GROUP BY month, provider, model
 
 NODE endpoint
 SQL >
     SELECT
-        u.month AS month,
-        u.provider AS vendor,
-        u.model AS model,
+        month,
+        provider AS vendor,
+        model,
         'USD' AS currency,
-        u.cost_paid AS cost_paid,
-        u.cost_quests AS cost_quests,
-        u.price_paid AS price_paid,
-        u.price_quests AS price_quests,
-        coalesce(e.byop_paid, 0) AS byop_paid,
-        coalesce(e.byop_quests, 0) AS byop_quests,
-        coalesce(e.model_paid, 0) AS model_paid,
-        coalesce(e.model_quests, 0) AS model_quests,
-        u.requests_paid AS requests_paid,
-        u.requests_quests AS requests_quests
-    FROM usage_rollup AS u
-    LEFT JOIN earnings_rollup AS e
-        ON u.month = e.month AND u.provider = e.provider AND u.model = e.model
+        sumMerge(cost_paid) AS cost_paid,
+        sumMerge(cost_quests) AS cost_quests,
+        sumMerge(price_paid) AS price_paid,
+        sumMerge(price_quests) AS price_quests,
+        sumMerge(byop_paid) AS byop_paid,
+        sumMerge(byop_quests) AS byop_quests,
+        sumMerge(model_paid) AS model_paid,
+        sumMerge(model_quests) AS model_quests,
+        sumMerge(requests_paid) AS requests_paid,
+        sumMerge(requests_quests) AS requests_quests
+    FROM op_pollen
+    GROUP BY month, provider, model
     ORDER BY month DESC, vendor, model
 
 TYPE ENDPOINT

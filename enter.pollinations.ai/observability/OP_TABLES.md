@@ -9,7 +9,7 @@ datasources/endpoints/materializations.
 | --- | --- | --- |
 | `op_transactions_api` | `op_transactions` | Signed Wise cash movements, in and out. |
 | `op_cloud_api` | `op_cloud` | Cloud/provider usage, spend, credit, grants, and manual evidence. |
-| `op_pollen_api` | *(none — computed live)* | Product usage in Pollen with paid/quest splits, computed directly from `generation_event` via `activity_usage_events` (cost/price/requests) and `activity_earnings_events` (byop/model payouts). Not manually ingested. |
+| `op_pollen_api` | `op_pollen` | Product usage in Pollen with paid/quest splits and byop/model payouts, per month/provider/model. `op_pollen` is maintained by `op_pollen_populate`, an incremental materialization straight off `generation_event` (500M+ rows in prod — an endpoint query can't scan that live). Not manually ingested. |
 | `op_runway_api` | `op_runway` | Latest agent- or manually-authored cash balance and forecast facts. |
 
 ## Idempotent Writes
@@ -21,9 +21,10 @@ correction appends the same `entry_id` with a newer `recorded_at`. Each
 `*_api` pipe returns only the latest revision per `entry_id`, so duplicate or
 corrected appends can never double-count in the app.
 
-`op_pollen_api` does not follow this pattern — it has no `entry_id` and
-nothing is ever appended to it. It recomputes from `generation_event` on every
-read, so there is nothing to correct or deduplicate.
+`op_pollen` does not follow this pattern — it has no `entry_id` and is never
+manually appended to. It's a running aggregate maintained by
+`op_pollen_populate` off `generation_event`, so there is no fact to correct or
+deduplicate, only sums to read back with `sumMerge`.
 
 `entry_id` must be deterministic from the fact's identity, never from
 ingestion time. Conventions:

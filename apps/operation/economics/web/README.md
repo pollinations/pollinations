@@ -1,8 +1,8 @@
 # Economics Web
 
 Economics UI for `economics.pollinations.ai`, backed by OP Tinybird pipe outputs
-in `enter.pollinations.ai/observability/` (currently deployed to the
-`pollinations_enter_staging` workspace).
+in `enter.pollinations.ai/observability/`, deployed to the `pollinations_enter`
+(prod) workspace.
 Insights include cash P&L, cash runway, credit runway, and unit economics. Raw
 tabs: Data Quality, Transactions, Pollen, and Cloud.
 

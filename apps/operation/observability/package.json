@@ -1,30 +1,26 @@
 {
-  "name": "observability-grafana",
-  "private": true,
-  "version": "1.0.0",
-  "type": "module",
-  "scripts": {
-    "check": "wrangler deploy --dry-run --containers-rollout=none",
-    "decrypt-vars": "sops exec-file --no-fifo secrets/secrets.vars.json 'node scripts/push-secrets.mjs {} local'",
-    "dev": "wrangler dev",
-    "dev:web": "npm run dev --prefix web",
-    "build:web": "npm run build --prefix web",
-    "test:web": "npm run test --prefix web",
-    "typecheck:web": "npm run typecheck --prefix web",
-    "deploy": "wrangler deploy",
-    "deploy:production": "npm run deploy && npm run push-secrets",
-    "deploy:no-containers": "wrangler deploy --containers-rollout=none",
-    "push-secrets": "sops exec-file --no-fifo secrets/secrets.vars.json 'node scripts/push-secrets.mjs {}'",
-    "containers:list": "wrangler containers list",
-    "containers:images": "wrangler containers images list"
-  },
-  "dependencies": {
-    "@cloudflare/containers": "^0.3.7"
-  },
-  "devDependencies": {
-    "wrangler": "^4.110.0"
-  },
-  "engines": {
-    "node": ">=22"
-  }
+    "name": "observability-grafana",
+    "private": true,
+    "version": "1.0.0",
+    "type": "module",
+    "scripts": {
+        "check": "wrangler deploy --dry-run --containers-rollout=none",
+        "decrypt-vars": "sops exec-file --no-fifo secrets/secrets.vars.json 'node scripts/push-secrets.mjs {} local'",
+        "dev": "wrangler dev",
+        "deploy": "wrangler deploy",
+        "deploy:production": "npm run deploy && npm run push-secrets",
+        "deploy:no-containers": "wrangler deploy --containers-rollout=none",
+        "push-secrets": "sops exec-file --no-fifo secrets/secrets.vars.json 'node scripts/push-secrets.mjs {}'",
+        "containers:list": "wrangler containers list",
+        "containers:images": "wrangler containers images list"
+    },
+    "dependencies": {
+        "@cloudflare/containers": "^0.3.7"
+    },
+    "devDependencies": {
+        "wrangler": "^4.110.0"
+    },
+    "engines": {
+        "node": ">=22"
+    }
 }

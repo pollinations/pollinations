@@ -623,13 +623,13 @@ export const proxyRoutes = new Hono<Env>()
             description: [
                 "Generate vector embeddings with an OpenAI-compatible response format.",
                 "",
-                "**Models:** `gemini-2` supports text, image, audio, and video inputs. `openai-3-small` and `openai-3-large` are text-only models.",
+                "**Models:** `gemini-embedding-2` supports text, image, audio, and video inputs. `text-embedding-3-small` and `text-embedding-3-large` are text-only models.",
                 "",
                 "**Input:** Pass a string, an array of up to 32 strings, or Gemini multimodal content parts (`text`, `image_url`, `input_audio`, `video_url`) in the `input` field.",
                 "",
-                "**Task types:** `task_type` is Gemini-only. For example, use `RETRIEVAL_QUERY` or `CLASSIFICATION` with `gemini-2`.",
+                "**Task types:** `task_type` is Gemini-only. For example, use `RETRIEVAL_QUERY` or `CLASSIFICATION` with `gemini-embedding-2`.",
                 "",
-                "**Dimensions:** Defaults are model-specific. `qwen3-embedding-8b` supports up to 4096 dimensions; `gemini-2` and `openai-3-large` support up to 3072; `openai-3-small` supports up to 1536.",
+                "**Dimensions:** Defaults are model-specific. `qwen3-embedding-8b` supports up to 4096 dimensions; `gemini-embedding-2` and `text-embedding-3-large` support up to 3072; `text-embedding-3-small` supports up to 1536.",
             ].join("\n"),
             responses: {
                 200: {
@@ -910,7 +910,7 @@ export const proxyRoutes = new Hono<Env>()
                 "",
                 "**Output formats:** mp3 (default), opus, aac, flac, wav, pcm",
                 "",
-                "**Music generation:** Set `model=elevenmusic`, `acestep`, `stable-audio-3-medium`, or `stable-audio-3-large` to generate music instead of speech. `elevenmusic` supports `duration` (3-300 seconds) and `instrumental` mode; `stable-audio-3-medium`/`stable-audio-3-large` support `seconds` (1-380), `steps`, `seed`, and `negative_prompt`. Use `POST /v1/audio/speech` with multipart `reference_audio` for style transfer (medium/large), or `POST /v1/audio/music/upload` to register a source track for inpainting.",
+                "**Music generation:** Set `model=eleven-music`, `acestep`, `stable-audio-3-medium`, or `stable-audio-3-large` to generate music instead of speech. `eleven-music` supports `duration` (3-300 seconds) and `instrumental` mode; `stable-audio-3-medium`/`stable-audio-3-large` support `seconds` (1-380), `steps`, `seed`, and `negative_prompt`. Use `POST /v1/audio/speech` with multipart `reference_audio` for style transfer (medium/large), or `POST /v1/audio/music/upload` to register a source track for inpainting.",
             ].join("\n"),
             responses: {
                 200: {
@@ -929,7 +929,7 @@ export const proxyRoutes = new Hono<Env>()
             z.object({
                 text: z.string().min(1).meta({
                     description:
-                        "Text to convert to speech, or a music description when model=elevenmusic",
+                        "Text to convert to speech, or a music description when model=eleven-music",
                     example: "Hello, welcome to Pollinations!",
                 }),
             }),
@@ -955,7 +955,7 @@ export const proxyRoutes = new Hono<Env>()
                     }),
                 model: z.string().optional().meta({
                     description:
-                        "Audio model: TTS (default) or elevenmusic for music generation",
+                        "Audio model: TTS (default) or eleven-music for music generation",
                     example: "tts-1",
                 }),
                 duration: z
@@ -965,7 +965,7 @@ export const proxyRoutes = new Hono<Env>()
                     .pipe(z.number().min(0.5).max(300).optional())
                     .meta({
                         description:
-                            "Music duration in seconds, 3-300 (elevenmusic only)",
+                            "Music duration in seconds, 3-300 (eleven-music only)",
                         example: "30",
                     }),
                 seconds: z.coerce.number().min(1).max(380).optional().meta({
@@ -988,7 +988,7 @@ export const proxyRoutes = new Hono<Env>()
                     .transform((v) => v === "true")
                     .meta({
                         description:
-                            "If true, guarantees instrumental output (elevenmusic only)",
+                            "If true, guarantees instrumental output (eleven-music only)",
                         example: "false",
                     }),
                 style: z.string().optional().meta({
@@ -998,7 +998,7 @@ export const proxyRoutes = new Hono<Env>()
                 }),
                 instruct: z.string().optional().meta({
                     description:
-                        "Emotion/style instruction (qwen-tts-instruct only)",
+                        "Emotion/style instruction (qwen3-tts-instruct only)",
                     example: "speak softly and warmly",
                 }),
                 loop: z

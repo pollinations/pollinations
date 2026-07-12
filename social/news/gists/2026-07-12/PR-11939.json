@@ -1,0 +1,36 @@
+{
+  "pr_number": 11939,
+  "title": "feat: materialize activity dashboard",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/11939",
+  "merged_at": "2026-07-12T00:30:32Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "pr_body_excerpt": "## Summary\n- Adds Activity usage and earnings materialized event datasources plus chart and transaction pipes.\n- Updates the Activity tab to show Last events plus Over time usage and earnings charts.\n- Mixes usage spend, BYOP markup earnings, and community model rewards in Last events with load-more pagination.\n- Aligns the activity data window/backfill floor to 2026-01-01.\n\n## Review follow-ups\n- Daily usage CSV includes `api_key_id` and `api_key` so rows grouped by key are not ambiguous.\n- Transaction tables ignore stale responses and recover from network/JSON failures.\n- Unknown meter sources stay `unknown` instead of being counted as paid.\n- Earnings filters cover both apps and models without over-counting stats.\n\n## Tinybird rollout chain before prod\n- Validate staging with Forward CLI: `tb --cloud --host \"$TB_HOST\" deployment create --check --no-allow-destructive-operations`.\n- Deploy to staging and let Forward run the MV populate/backfill. Do not use Classic `tb push`, manual populate, or destructive flags.\n- Verify staging endpoints with `__tb__deployment=<id>` against `generation_event` for usage, BYOP markup earnings, and model reward earnings.\n- Check 1d, 7d, 30d, and one older month since `2026-01-01`.\n- Confirm usage chart, usage transactions, earnings chart, and earnings transactions stay below the Worker timeout.\n- Before prod, verify redelivery/dedup behavior and whether non-production `generation_event` rows must be filtered.\n- Promote staging only after verification.\n- Repeat validate, deploy, backfill verification, and latency checks in prod before promoting prod live.\n\n## Checks\n- `npx biome check --write <changed TS/TSX files>`\n- `npx vitest run test/account-earnings.test.ts test/account-usage.test.ts test/account-key-usage.test.ts`\n- `npm run typecheck`",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "The hive's ledger",
+    "blurb": "We've completely rebuilt the Activity dashboard so you can track your usage, model rewards, and BYOP earnings all in one place. Faster charts, infinite scrolling, and a much clearer view of where your Pollen is flowing.",
+    "summary": "The Activity dashboard has been rebuilt with materialized Tinybird datasources, introducing unified 'Last events' pagination and new 'Over time' charts that mix usage spend, BYOP markup, and community model rewards.",
+    "impact": "You can now seamlessly track your exact Pollen spend and earnings on a single, lightning-fast dashboard with infinite scroll and detailed daily breakdowns.",
+    "keywords": [
+      "dashboard",
+      "activity",
+      "pollen",
+      "earnings",
+      "analytics",
+      "tinybird"
+    ],
+    "visual_concept": "Polly the bee acting as an accountant or data analyst, reviewing charts. The Monitor Robot displaying a bar chart on its screen. A cozy, warm study or hackerspace setting.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee mascot wearing tiny reading glasses, looking at a glowing retro computer monitor displaying a bar chart. The chunky monitor robot stands nearby holding a ledger book. Soft lime green (#ecf874) and warm peach gradient background. Chunky pixels, warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-12/PR-11939.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee mascot wearing tiny reading glasses, looking at a glowing retro computer monitor displaying a bar chart. The chunky monitor robot stands nearby holding a ledger book. Soft lime green (#ecf874) and warm peach gradient background. Chunky pixels, warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-07-12T00:33:46.425109+00:00"
+}

@@ -22,6 +22,24 @@ export const ModelCapabilitySchema = z.enum([
 
 export type ModelCapability = z.infer<typeof ModelCapabilitySchema>;
 
+// Per-unit fees billed on top of token pricing (billing adjustments): e.g.
+// Gemini grounded-search queries, Perplexity request fees, community
+// tool-call fees. `price` is the per-unit fee in Pollen as a fixed-point
+// string (same format as `pricing`) for fees with a fixed cost. For fees
+// whose per-unit cost is resolved from the provider's response at runtime
+// (e.g. Perplexity's reported request cost), `dynamic` is true and `price`
+// is omitted — the static value would be misleading.
+export const ModelFeeSchema = z.object({
+    id: z.string(),
+    kind: z.string(),
+    unit: z.string(),
+    price: z.string().optional(),
+    dynamic: z.boolean().optional(),
+    description: z.string(),
+});
+
+export type ModelFee = z.infer<typeof ModelFeeSchema>;
+
 // Pricing uses registry field names directly, filtering out zero/undefined values
 // Fields: promptTextTokens, promptCachedTokens, promptCacheWriteTokens,
 //         promptAudioTokens, promptAudioSeconds, promptImageTokens,
@@ -40,10 +58,12 @@ export const ModelInfoSchema = z.object({
         "realtime",
     ]),
     brand: z.string(),
+    kind: z.enum(["model", "agent"]).optional(),
     community: z.boolean().optional(),
     pricing: z
         .record(z.string(), z.string())
         .and(z.object({ currency: z.literal("pollen") })),
+    fees: z.array(ModelFeeSchema).optional(),
     title: z.string(),
     description: z.string().optional(),
     input_modalities: z.array(z.string()).optional(),
@@ -86,6 +106,35 @@ type ModelInfoOptions = {
     community?: boolean;
 };
 
+// Fixed-cost adjustment prices are unitCost × the model's uniform
+// priceMultiplier (see BillingAdjustment in registry.ts). Rules that carry a
+// `resolveUnitCost` resolver bill a per-request cost read from the provider
+// response, so no single static price is meaningful — mark them dynamic and
+// omit the price rather than expose the (misleading) static fallback.
+function feesFromDefinition(
+    service: ModelDefinition<string>,
+): ModelFee[] | undefined {
+    const adjustments = service.billing?.adjustments;
+    if (!adjustments?.length) return undefined;
+    return adjustments.map((rule) =>
+        rule.resolveUnitCost
+            ? {
+                  id: rule.id,
+                  kind: rule.kind,
+                  unit: rule.unit,
+                  dynamic: true,
+                  description: rule.description,
+              }
+            : {
+                  id: rule.id,
+                  kind: rule.kind,
+                  unit: rule.unit,
+                  price: toFixedPoint(rule.unitCost * service.priceMultiplier),
+                  description: rule.description,
+              },
+    );
+}
+
 function pricingInfoFromDefinition(
     priceDefinition: PriceDefinition,
 ): Record<string, string> & { currency: "pollen" } {
@@ -110,8 +159,10 @@ export function modelInfoFromDefinition(
         aliases: service.aliases,
         category: service.category,
         brand: service.brand,
+        kind: service.kind,
         community: options.community || undefined,
         pricing: pricingInfoFromDefinition(getPriceDefinitionForModel(service)),
+        fees: feesFromDefinition(service),
         // User-facing metadata from service definition
         title: service.title,
         description: service.description,

@@ -201,8 +201,18 @@ export const communityEndpoint = sqliteTable("community_endpoint", {
   name: text("name").notNull(),
   description: text("description"),
   baseUrl: text("base_url").notNull(),
+  // Single-module worker source for platform-deployed endpoints; null when
+  // the owner hosts the endpoint themselves (baseUrl-only registration).
+  source: text("source"),
   upstreamModel: text("upstream_model").notNull(),
   bearerTokenCiphertext: text("bearer_token_ciphertext").notNull(),
+  kind: text("kind", { enum: ["model", "agent"] })
+    .default("model")
+    .notNull(),
+  tools: integer("tools", { mode: "boolean" }).default(false).notNull(),
+  search: integer("search", { mode: "boolean" }).default(false).notNull(),
+  reasoning: integer("reasoning", { mode: "boolean" }).default(false).notNull(),
+  toolPrices: text("tool_prices"),
   promptTextPrice: real("prompt_text_price").notNull(),
   promptCachedPrice: real("prompt_cached_price").default(0).notNull(),
   promptCacheWritePrice: real("prompt_cache_write_price").default(0).notNull(),

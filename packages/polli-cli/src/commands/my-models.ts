@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import chalk from "chalk";
 import { Command } from "commander";
 import { gen, requireKey } from "../lib/api.js";
@@ -36,6 +37,8 @@ const PRICE_OPTION_KEYS = [
 
 type PriceOptionKey = (typeof PRICE_OPTION_KEYS)[number];
 
+const CAPABILITY_FLAG_KEYS = ["tools", "search", "reasoning"] as const;
+
 interface MyModel {
     id: string;
     modelId: string;
@@ -43,6 +46,7 @@ interface MyModel {
     description: string | null;
     baseUrl: string;
     upstreamModel: string;
+    kind?: string;
     createdAt: string;
     updatedAt: string;
     [key: string]: unknown;
@@ -53,6 +57,23 @@ function addPriceOptions(command: Command): Command {
         command.option(flag, description);
     }
     return command;
+}
+
+function addCapabilityOptions(command: Command): Command {
+    return command
+        .option("--kind <kind>", "Endpoint kind: model or agent")
+        .option(
+            "--tool-price <name=price>",
+            "Per-call tool fee in Pollen, repeatable (e.g. --tool-price web_search=0.005). On update, replaces the whole map.",
+            (value: string, previous: string[]) => [...previous, value],
+            [] as string[],
+        )
+        .option("--tools", "Declare tool-calling support")
+        .option("--no-tools", "Clear tool-calling support")
+        .option("--search", "Declare web-search support")
+        .option("--no-search", "Clear web-search support")
+        .option("--reasoning", "Declare reasoning support")
+        .option("--no-reasoning", "Clear reasoning support");
 }
 
 function readPriceOptions(opts: Record<string, unknown>) {
@@ -87,14 +108,78 @@ function modelBody(opts: Record<string, unknown>, includeRequired: boolean) {
         if (opts[optionKey] !== undefined) body[bodyKey] = opts[optionKey];
     }
 
-    if (includeRequired) {
-        for (const required of ["name", "baseUrl", "bearerToken"]) {
-            if (!body[required]) {
+    if (opts.source !== undefined) {
+        try {
+            body.source = readFileSync(String(opts.source), "utf8");
+        } catch (err) {
+            printError(
+                `Failed to read --source file: ${err instanceof Error ? err.message : "unknown"}`,
+            );
+            process.exit(1);
+        }
+    }
+
+    if (opts.promptAgent !== undefined) {
+        try {
+            body.promptAgent = JSON.parse(
+                readFileSync(String(opts.promptAgent), "utf8"),
+            );
+        } catch (err) {
+            printError(
+                `Failed to read/parse --prompt-agent JSON file: ${err instanceof Error ? err.message : "unknown"}`,
+            );
+            process.exit(1);
+        }
+    }
+
+    if (opts.kind !== undefined) {
+        if (opts.kind !== "model" && opts.kind !== "agent") {
+            printError("--kind must be 'model' or 'agent'");
+            process.exit(1);
+        }
+        body.kind = opts.kind;
+    }
+    for (const flag of CAPABILITY_FLAG_KEYS) {
+        if (opts[flag] !== undefined) body[flag] = opts[flag];
+    }
+
+    const toolPriceEntries = opts.toolPrice as string[] | undefined;
+    if (toolPriceEntries && toolPriceEntries.length > 0) {
+        const toolPrices: Record<string, number> = {};
+        for (const entry of toolPriceEntries) {
+            const separator = entry.indexOf("=");
+            const name = separator > 0 ? entry.slice(0, separator) : "";
+            const price = Number(entry.slice(separator + 1));
+            if (!name || !Number.isFinite(price) || price <= 0) {
                 printError(
-                    `--${required.replace(/[A-Z]/g, (c) => `-${c.toLowerCase()}`)} is required`,
+                    `--tool-price must be <name>=<positive number>, got '${entry}'`,
                 );
                 process.exit(1);
             }
+            toolPrices[name] = price;
+        }
+        body.toolPrices = toolPrices;
+    }
+
+    if (includeRequired) {
+        if (!body.name) {
+            printError("--name is required");
+            process.exit(1);
+        }
+        const modeCount = [body.baseUrl, body.source, body.promptAgent].filter(
+            (value) => value !== undefined,
+        ).length;
+        if (modeCount !== 1) {
+            printError(
+                "Provide exactly one of --base-url, --source, or --prompt-agent",
+            );
+            process.exit(1);
+        }
+        // A bearer token is only meaningful for a self-hosted --base-url
+        // endpoint; source and prompt-agent deploys mint their own.
+        if (body.baseUrl !== undefined && !body.bearerToken) {
+            printError("--bearer-token is required with --base-url");
+            process.exit(1);
         }
     }
 
@@ -110,11 +195,12 @@ function printModels(models: MyModel[]) {
         models.map((model) => ({
             id: chalk.dim(model.id),
             model: chalk.hex("#a78bfa").bold(model.modelId),
+            kind: model.kind ?? "model",
             upstream: model.upstreamModel,
             base_url: model.baseUrl,
             description: model.description ?? "-",
         })),
-        ["id", "model", "upstream", "base_url", "description"],
+        ["id", "model", "kind", "upstream", "base_url", "description"],
     );
 }
 
@@ -136,13 +222,23 @@ const list = new Command("list")
     });
 
 const create = addPriceOptions(
-    new Command("create")
-        .description("Register an OpenAI-compatible model endpoint")
-        .requiredOption("--name <name>", "Model name")
-        .option("--description <text>", "Model description")
-        .requiredOption("--base-url <url>", "OpenAI-compatible base URL")
-        .option("--upstream-model <model>", "Upstream model id")
-        .requiredOption("--bearer-token <token>", "Upstream bearer token"),
+    addCapabilityOptions(
+        new Command("create")
+            .description("Register an OpenAI-compatible model endpoint")
+            .requiredOption("--name <name>", "Model name")
+            .option("--description <text>", "Model description")
+            .option("--base-url <url>", "OpenAI-compatible base URL")
+            .option(
+                "--source <file>",
+                "Worker source file to deploy as a hosted endpoint (instead of --base-url)",
+            )
+            .option(
+                "--prompt-agent <file>",
+                "JSON config file for a no-code prompt agent: { systemPrompt, baseModel, tools?, mcpServers? }",
+            )
+            .option("--upstream-model <model>", "Upstream model id")
+            .option("--bearer-token <token>", "Upstream bearer token"),
+    ),
 ).action(async (opts) => {
     const key = requireKey();
     try {
@@ -165,14 +261,20 @@ const create = addPriceOptions(
 });
 
 const update = addPriceOptions(
-    new Command("update")
-        .description("Update one of your models")
-        .argument("<id>", "Model id")
-        .option("--name <name>", "Model name")
-        .option("--description <text>", "Model description")
-        .option("--base-url <url>", "OpenAI-compatible base URL")
-        .option("--upstream-model <model>", "Upstream model id")
-        .option("--bearer-token <token>", "Upstream bearer token"),
+    addCapabilityOptions(
+        new Command("update")
+            .description("Update one of your models")
+            .argument("<id>", "Model id")
+            .option("--name <name>", "Model name")
+            .option("--description <text>", "Model description")
+            .option("--base-url <url>", "OpenAI-compatible base URL")
+            .option(
+                "--source <file>",
+                "Worker source file to redeploy the hosted endpoint from",
+            )
+            .option("--upstream-model <model>", "Upstream model id")
+            .option("--bearer-token <token>", "Upstream bearer token"),
+    ),
 ).action(async (id, opts) => {
     const key = requireKey();
     try {

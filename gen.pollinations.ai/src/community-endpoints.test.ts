@@ -19,6 +19,8 @@ import {
 } from "@shared/db/better-auth.ts";
 import { handleError } from "@shared/error.ts";
 import { IMMUTABLE_CACHE_CONTROL } from "@shared/http/cache-control.ts";
+import { modelInfoFromDefinition } from "@shared/registry/model-info.ts";
+import { calculateUsageBilling } from "@shared/registry/registry.ts";
 import { encryptSecret } from "@shared/secret-encryption.ts";
 import {
     createTestApiKey,
@@ -83,9 +85,10 @@ async function createEnterFrontendApi(): Promise<Hono<Env>> {
 async function fetchEnterApi(
     app: Hono<Env>,
     request: Request,
+    envOverride: typeof env = env,
 ): Promise<Response> {
     const ctx = createExecutionContext();
-    return app.fetch(request, env, ctx);
+    return app.fetch(request, envOverride, ctx);
 }
 
 async function signedSessionCookie(token: string): Promise<string> {
@@ -238,6 +241,175 @@ describe("community endpoint helpers", () => {
         );
     });
 
+    it("maps declared capability flags into the model definition", () => {
+        const agentDefinition = communityModelDefinition({
+            modelId: "voodoohop/deep-research",
+            description: "Agentic community endpoint",
+            kind: "agent",
+            tools: true,
+            search: true,
+            reasoning: false,
+            ...communityEndpointPrices({}),
+        });
+        expect(agentDefinition.kind).toBe("agent");
+        expect(agentDefinition.tools).toBe(true);
+        expect(agentDefinition.search).toBe(true);
+        expect(agentDefinition.reasoning).toBeUndefined();
+
+        const modelDefinition = communityModelDefinition({
+            modelId: "voodoohop/openai",
+            description: null,
+            ...communityEndpointPrices({}),
+        });
+        expect(modelDefinition.kind).toBeUndefined();
+        expect(modelDefinition.tools).toBeUndefined();
+        expect(modelDefinition.search).toBeUndefined();
+        expect(modelDefinition.reasoning).toBeUndefined();
+    });
+
+    it("bills owner-declared tool fees from reported tool_call_counts", () => {
+        const definition = communityModelDefinition({
+            modelId: "voodoohop/deep-research",
+            description: null,
+            toolPrices: { web_search: 0.005, code_exec: 0.03 },
+            ...communityEndpointPrices({ completionTextPrice: 0.000001 }),
+        });
+        expect(definition.billing?.adjustments?.map((a) => a.id)).toEqual([
+            "community.tool.code_exec.v1",
+            "community.tool.web_search.v1",
+        ]);
+
+        // Non-stream: counts read from the response usage object; undeclared
+        // tools in the report are ignored.
+        const billing = calculateUsageBilling(
+            "voodoohop/deep-research",
+            { completionTextTokens: 10 },
+            definition,
+            {
+                usage: {
+                    tool_call_counts: {
+                        web_search: 3,
+                        code_exec: 1,
+                        undeclared: 5,
+                    },
+                },
+            },
+        );
+        expect(billing.adjustments).toHaveLength(2);
+        expect(billing.price.totalPrice).toBeCloseTo(
+            10 * 0.000001 + 3 * 0.005 + 1 * 0.03,
+            10,
+        );
+
+        // Stream: counts read from the last usage-bearing stream event.
+        const streamed = calculateUsageBilling(
+            "voodoohop/deep-research",
+            { completionTextTokens: 10 },
+            definition,
+            {
+                streamEvents: [
+                    { choices: [{ delta: { content: "ok" } }] },
+                    { usage: { tool_call_counts: { web_search: 2 } } },
+                ],
+            },
+        );
+        expect(streamed.adjustments).toEqual([
+            expect.objectContaining({
+                ruleId: "community.tool.web_search.v1",
+                units: 2,
+                cost: 0.01,
+            }),
+        ]);
+
+        // Malformed counts bill as 0 and never throw.
+        const malformed = calculateUsageBilling(
+            "voodoohop/deep-research",
+            { completionTextTokens: 10 },
+            definition,
+            { usage: { tool_call_counts: { web_search: "three" } } },
+        );
+        expect(malformed.adjustments).toHaveLength(0);
+
+        // No declared tools → no billing rules at all.
+        const plain = communityModelDefinition({
+            modelId: "voodoohop/openai",
+            description: null,
+            toolPrices: {},
+            ...communityEndpointPrices({}),
+        });
+        expect(plain.billing).toBeUndefined();
+    });
+
+    it("surfaces billing adjustments as fees in catalog model info", () => {
+        const definition = communityModelDefinition({
+            modelId: "voodoohop/deep-research",
+            description: null,
+            toolPrices: { web_search: 0.005 },
+            ...communityEndpointPrices({ completionTextPrice: 0.000001 }),
+        });
+        const info = modelInfoFromDefinition(
+            "voodoohop/deep-research",
+            definition,
+            { community: true },
+        );
+        expect(info.fees).toEqual([
+            {
+                id: "community.tool.web_search.v1",
+                kind: "tool_call",
+                unit: "call",
+                price: "0.005",
+                description: expect.stringContaining("web_search"),
+            },
+        ]);
+
+        const plain = communityModelDefinition({
+            modelId: "voodoohop/openai",
+            description: null,
+            ...communityEndpointPrices({}),
+        });
+        expect(
+            modelInfoFromDefinition("voodoohop/openai", plain).fees,
+        ).toBeUndefined();
+    });
+
+    it("marks resolver-priced fees dynamic and omits their static price", () => {
+        const definition = communityModelDefinition({
+            modelId: "voodoohop/deep-research",
+            description: null,
+            ...communityEndpointPrices({}),
+        });
+        // A rule whose per-unit cost is read from the response at runtime
+        // (as Perplexity's request fee is) must not advertise a static price.
+        definition.billing = {
+            adjustments: [
+                {
+                    id: "provider.request.v1",
+                    description: "Provider-reported request cost",
+                    kind: "search_request",
+                    unit: "request",
+                    unitCost: 0.005,
+                    countUnits: () => 1,
+                    resolveUnitCost: () => 0.02,
+                },
+            ],
+        };
+        const info = modelInfoFromDefinition(
+            "voodoohop/deep-research",
+            definition,
+            { community: true },
+        );
+        expect(info.fees).toEqual([
+            {
+                id: "provider.request.v1",
+                kind: "search_request",
+                unit: "request",
+                dynamic: true,
+                description: "Provider-reported request cost",
+            },
+        ]);
+        expect(info.fees?.[0]).not.toHaveProperty("price");
+    });
+
     it("builds Portkey gateway context with the saved token", async () => {
         const secret = "test-secret";
         const endpoint: CommunityEndpointRuntime = {
@@ -248,6 +420,11 @@ describe("community endpoint helpers", () => {
             description: null,
             baseUrl: "https://api.example.com/v1",
             upstreamModel: "gpt-4.1-mini",
+            kind: "model",
+            tools: false,
+            search: false,
+            reasoning: false,
+            toolPrices: {},
             disabledAt: null,
             disabledReason: null,
             bearerTokenCiphertext: await encryptSecret(
@@ -634,6 +811,30 @@ fixtureTest(
             createdAt: new Date(),
             updatedAt: new Date(),
         });
+        const agentModelName = `agent-${crypto.randomUUID().slice(0, 8)}`;
+        const agentModelId = communityModelId(
+            ownerGithubUsername,
+            agentModelName,
+        );
+        await db.insert(communityEndpointTable).values({
+            id: `endpoint-${crypto.randomUUID()}`,
+            ownerUserId,
+            name: agentModelName,
+            description: "Public community agent",
+            baseUrl: "https://agent.example.com/v1",
+            upstreamModel: "agent-loop",
+            bearerTokenCiphertext: await encryptSecret(
+                "sk_saved_token",
+                env.BETTER_AUTH_SECRET,
+            ),
+            kind: "agent",
+            tools: true,
+            search: true,
+            promptTextPrice: 0.1 / 1_000_000,
+            completionTextPrice: 0.2 / 1_000_000,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+        });
 
         const textResponse = await SELF.fetch(
             "https://gen.pollinations.ai/text/models",
@@ -657,6 +858,9 @@ fixtureTest(
             alpha?: boolean;
             description?: string;
             pricing?: Record<string, string>;
+            kind?: string;
+            tools?: boolean;
+            capabilities?: string[];
             baseUrl?: string;
             bearerTokenCiphertext?: string;
         }[];
@@ -665,6 +869,8 @@ fixtureTest(
             data: {
                 id: string;
                 supported_endpoints?: string[];
+                kind?: string;
+                tools?: boolean;
             }[];
         };
 
@@ -688,6 +894,21 @@ fixtureTest(
             });
             expect(listed).not.toHaveProperty("baseUrl");
             expect(listed).not.toHaveProperty("bearerTokenCiphertext");
+            expect(listed).not.toHaveProperty("kind");
+
+            const listedAgent = models.find(
+                (model) => model.name === agentModelId,
+            );
+            expect(listedAgent).toMatchObject({
+                name: agentModelId,
+                community: true,
+                kind: "agent",
+                tools: true,
+                capabilities: expect.arrayContaining([
+                    "tool_calling",
+                    "web_search",
+                ]),
+            });
         }
 
         expect(openaiModels.data).toEqual(
@@ -698,8 +919,17 @@ fixtureTest(
                         "/v1/chat/completions",
                     ]),
                 }),
+                expect.objectContaining({
+                    id: agentModelId,
+                    kind: "agent",
+                    tools: true,
+                }),
             ]),
         );
+        const openaiPlainModel = openaiModels.data.find(
+            (model) => model.id === modelId,
+        );
+        expect(openaiPlainModel).not.toHaveProperty("kind");
     },
 );
 
@@ -1215,6 +1445,9 @@ fixtureTest(
                     baseUrl: "https://api.example.com/v1",
                     upstreamModel: "gpt-4.1-mini",
                     bearerToken: "sk_saved_token",
+                    kind: "agent",
+                    tools: true,
+                    toolPrices: { web_search: 0.005 },
                     promptTextPrice: 0.1,
                     completionTextPrice: 0.2,
                 }),
@@ -1230,6 +1463,11 @@ fixtureTest(
             name: "my-test-model",
             baseUrl: "https://api.example.com/v1",
             upstreamModel: "gpt-4.1-mini",
+            kind: "agent",
+            tools: true,
+            search: false,
+            reasoning: false,
+            toolPrices: { web_search: 0.005 },
             promptTextPrice: 0.1,
             completionTextPrice: 0.2,
             disabled: false,
@@ -1261,6 +1499,9 @@ fixtureTest(
                     },
                     body: JSON.stringify({
                         description: "Updated description",
+                        tools: false,
+                        search: true,
+                        toolPrices: { web_search: 0.01, fetch_url: 0.0005 },
                     }),
                 },
             ),
@@ -1268,10 +1509,34 @@ fixtureTest(
         expect(updateResponse.status).toBe(200);
         await expect(updateResponse.json()).resolves.toMatchObject({
             description: "Updated description",
+            kind: "agent",
+            tools: false,
+            search: true,
+            reasoning: false,
+            toolPrices: { web_search: 0.01, fetch_url: 0.0005 },
             promptTextPrice: 0.1,
             completionTextPrice: 0.2,
             disabled: true,
             disabledReason: "was failing",
+        });
+
+        const clearToolPricesResponse = await fetchEnterApi(
+            enterApi,
+            new Request(
+                `http://localhost:3000/api/account/my-models/${createdId}/update`,
+                {
+                    method: "POST",
+                    headers: {
+                        Authorization: `Bearer ${key}`,
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({ toolPrices: {} }),
+                },
+            ),
+        );
+        expect(clearToolPricesResponse.status).toBe(200);
+        await expect(clearToolPricesResponse.json()).resolves.toMatchObject({
+            toolPrices: {},
         });
 
         const secondListResponse = await fetchEnterApi(
@@ -1329,3 +1594,370 @@ fixtureTest("rejects a community model name containing a slash", async () => {
 
     expect(response.status).toBe(400);
 });
+
+fixtureTest(
+    "rejects community registration unless exactly one of baseUrl or source is provided",
+    async () => {
+        const ownerGithubUsername = `owner-${crypto.randomUUID().slice(0, 8)}`;
+        const ownerUserId = await createTestUser({
+            githubId: COMMUNITY_ENDPOINT_ALLOWED_TEST_GITHUB_ID,
+            githubUsername: ownerGithubUsername,
+        });
+        const sessionToken = `session-${crypto.randomUUID()}`;
+        await db.insert(sessionTable).values({
+            id: `session-${crypto.randomUUID()}`,
+            token: sessionToken,
+            userId: ownerUserId,
+            expiresAt: new Date(Date.now() + 60 * 60 * 1000),
+            createdAt: new Date(),
+            updatedAt: new Date(),
+        });
+
+        const enterApi = await createEnterCommunityApi();
+        const cookie = await signedSessionCookie(sessionToken);
+        const register = (body: Record<string, unknown>) =>
+            fetchEnterApi(
+                enterApi,
+                new Request("http://localhost:3000/api/community-endpoints", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Cookie: cookie,
+                    },
+                    body: JSON.stringify({
+                        name: `bee-${crypto.randomUUID().slice(0, 8)}`,
+                        bearerToken: "sk_saved_token",
+                        ...body,
+                    }),
+                }),
+            );
+
+        const both = await register({
+            baseUrl: "https://api.example.com/v1",
+            source: "export default { fetch: () => new Response('ok') };",
+        });
+        expect(both.status).toBe(400);
+
+        const neither = await register({});
+        expect(neither.status).toBe(400);
+    },
+);
+
+fixtureTest(
+    "deploys worker source on registration, redeploys on update, deletes worker on removal",
+    async () => {
+        const ownerGithubUsername = `owner-${crypto.randomUUID().slice(0, 8)}`;
+        const modelName = `bee-${crypto.randomUUID().slice(0, 8)}`;
+        const ownerUserId = await createTestUser({
+            githubId: COMMUNITY_ENDPOINT_ALLOWED_TEST_GITHUB_ID,
+            githubUsername: ownerGithubUsername,
+        });
+        const sessionToken = `session-${crypto.randomUUID()}`;
+        await db.insert(sessionTable).values({
+            id: `session-${crypto.randomUUID()}`,
+            token: sessionToken,
+            userId: ownerUserId,
+            expiresAt: new Date(Date.now() + 60 * 60 * 1000),
+            createdAt: new Date(),
+            updatedAt: new Date(),
+        });
+
+        const cfRequests: Request[] = [];
+        const fetchMock = vi.fn(async (input, init) => {
+            const request = new Request(input, init);
+            const url = new URL(request.url);
+            if (url.hostname !== "api.cloudflare.com") {
+                throw new Error(`Unexpected fetch: ${request.url}`);
+            }
+            expect(request.headers.get("authorization")).toBe(
+                "Bearer cf-deploy-token",
+            );
+            cfRequests.push(request.clone() as Request);
+            if (
+                request.method === "GET" &&
+                url.pathname.endsWith("/workers/subdomain")
+            ) {
+                return Response.json({
+                    success: true,
+                    result: { subdomain: "staging-sub" },
+                });
+            }
+            return Response.json({ success: true, result: {} });
+        });
+        vi.stubGlobal("fetch", fetchMock);
+
+        const deployEnv = {
+            ...env,
+            CF_WORKER_DEPLOY_ACCOUNT_ID: "cf-account",
+            CF_WORKER_DEPLOY_API_TOKEN: "cf-deploy-token",
+        };
+        const enterApi = await createEnterCommunityApi();
+        const cookie = await signedSessionCookie(sessionToken);
+        const source =
+            "export default { fetch: () => Response.json({ ok: true }) };";
+        // No bearerToken sent — source deploys mint their own worker auth token.
+        const createResponse = await fetchEnterApi(
+            enterApi,
+            new Request("http://localhost:3000/api/community-endpoints", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Cookie: cookie,
+                },
+                body: JSON.stringify({
+                    name: modelName,
+                    source,
+                    promptTextPrice: 0.1,
+                    completionTextPrice: 0.1,
+                }),
+            }),
+            deployEnv,
+        );
+        expect(createResponse.status).toBe(200);
+        const created = (await createResponse.json()) as {
+            id: string;
+            baseUrl: string;
+            source: string;
+        };
+        // Script name is keyed on the endpoint id, not owner/name.
+        const scriptName = `bee-${created.id}`;
+        expect(created).toMatchObject({
+            baseUrl: `https://${scriptName}.staging-sub.workers.dev/v1`,
+            source,
+        });
+
+        const putRequest = cfRequests.find(
+            (request) => request.method === "PUT",
+        );
+        if (!putRequest) throw new Error("No worker upload PUT captured");
+        expect(new URL(putRequest.url).pathname).toBe(
+            `/client/v4/accounts/cf-account/workers/scripts/${scriptName}`,
+        );
+        const form = await putRequest.formData();
+        const metadata = JSON.parse(String(form.get("metadata")));
+        expect(metadata).toMatchObject({ main_module: "index.mjs" });
+        // The generated auth token is injected as a secret binding.
+        const authBinding = metadata.bindings?.find(
+            (b: { name?: string }) => b?.name === "BEE_AUTH_TOKEN",
+        );
+        expect(authBinding).toMatchObject({ type: "secret_text" });
+        expect(typeof authBinding.text).toBe("string");
+        expect(authBinding.text.length).toBeGreaterThan(0);
+        await expect((form.get("index.mjs") as File).text()).resolves.toBe(
+            source,
+        );
+
+        const subdomainEnable = cfRequests.find(
+            (request) =>
+                request.method === "POST" &&
+                new URL(request.url).pathname.endsWith(
+                    `/workers/scripts/${scriptName}/subdomain`,
+                ),
+        );
+        if (!subdomainEnable) throw new Error("No subdomain enable captured");
+        await expect(subdomainEnable.json()).resolves.toEqual({
+            enabled: true,
+        });
+
+        cfRequests.length = 0;
+        const updatedSource =
+            "export default { fetch: () => Response.json({ ok: 2 }) };";
+        const updateResponse = await fetchEnterApi(
+            enterApi,
+            new Request(
+                `http://localhost:3000/api/community-endpoints/${created.id}/update`,
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Cookie: cookie,
+                    },
+                    body: JSON.stringify({ source: updatedSource }),
+                },
+            ),
+            deployEnv,
+        );
+        expect(updateResponse.status).toBe(200);
+        await expect(updateResponse.json()).resolves.toMatchObject({
+            baseUrl: `https://${scriptName}.staging-sub.workers.dev/v1`,
+            source: updatedSource,
+        });
+        // Redeploys the same id-keyed script — no orphan from the name.
+        expect(
+            cfRequests.filter((request) => request.method === "PUT"),
+        ).toHaveLength(1);
+
+        cfRequests.length = 0;
+        const deleteResponse = await fetchEnterApi(
+            enterApi,
+            new Request(
+                `http://localhost:3000/api/community-endpoints/${created.id}`,
+                {
+                    method: "DELETE",
+                    headers: { Cookie: cookie },
+                },
+            ),
+            deployEnv,
+        );
+        expect(deleteResponse.status).toBe(200);
+        // Delete retires the public worker, not just the D1 row.
+        const deleteWorkerCall = cfRequests.find(
+            (request) => request.method === "DELETE",
+        );
+        if (!deleteWorkerCall) throw new Error("No worker DELETE captured");
+        expect(new URL(deleteWorkerCall.url).pathname).toBe(
+            `/client/v4/accounts/cf-account/workers/scripts/${scriptName}`,
+        );
+    },
+);
+
+fixtureTest(
+    "deploys the prompt-agent template with config bindings and a minted owner key",
+    async () => {
+        const ownerGithubUsername = `owner-${crypto.randomUUID().slice(0, 8)}`;
+        const modelName = `bee-${crypto.randomUUID().slice(0, 8)}`;
+        const ownerUserId = await createTestUser({
+            githubId: COMMUNITY_ENDPOINT_ALLOWED_TEST_GITHUB_ID,
+            githubUsername: ownerGithubUsername,
+        });
+        const sessionToken = `session-${crypto.randomUUID()}`;
+        await db.insert(sessionTable).values({
+            id: `session-${crypto.randomUUID()}`,
+            token: sessionToken,
+            userId: ownerUserId,
+            expiresAt: new Date(Date.now() + 60 * 60 * 1000),
+            createdAt: new Date(),
+            updatedAt: new Date(),
+        });
+
+        const cfRequests: Request[] = [];
+        const fetchMock = vi.fn(async (input, init) => {
+            const request = new Request(input, init);
+            const url = new URL(request.url);
+            if (url.hostname !== "api.cloudflare.com") {
+                throw new Error(`Unexpected fetch: ${request.url}`);
+            }
+            cfRequests.push(request.clone() as Request);
+            if (
+                request.method === "GET" &&
+                url.pathname.endsWith("/workers/subdomain")
+            ) {
+                return Response.json({
+                    success: true,
+                    result: { subdomain: "staging-sub" },
+                });
+            }
+            return Response.json({ success: true, result: {} });
+        });
+        vi.stubGlobal("fetch", fetchMock);
+
+        const deployEnv = {
+            ...env,
+            CF_WORKER_DEPLOY_ACCOUNT_ID: "cf-account",
+            CF_WORKER_DEPLOY_API_TOKEN: "cf-deploy-token",
+        };
+        const enterApi = await createEnterCommunityApi();
+        const cookie = await signedSessionCookie(sessionToken);
+        const promptAgent = {
+            systemPrompt: "You are a terse SQL tutor.",
+            baseModel: "openai-fast",
+            tools: ["web_search"],
+            mcpServers: [{ name: "docs", url: "https://mcp.example.com/rpc" }],
+        };
+        // No source, no baseUrl, no bearerToken — a prompt agent manages its own.
+        const createResponse = await fetchEnterApi(
+            enterApi,
+            new Request("http://localhost:3000/api/community-endpoints", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Cookie: cookie,
+                },
+                body: JSON.stringify({
+                    name: modelName,
+                    promptAgent,
+                    completionTextPrice: 0.1,
+                    toolPrices: { web_search: 0.002 },
+                }),
+            }),
+            deployEnv,
+        );
+        expect(createResponse.status).toBe(200);
+        const created = (await createResponse.json()) as {
+            id: string;
+            kind: string;
+            source: string | null;
+            promptAgent: typeof promptAgent | null;
+        };
+        // Prompt agents default to the agent kind, never expose their raw
+        // source blob, and surface the config as promptAgent.
+        expect(created.kind).toBe("agent");
+        expect(created.source).toBeNull();
+        expect(created.promptAgent).toMatchObject({
+            systemPrompt: "You are a terse SQL tutor.",
+            baseModel: "openai-fast",
+            tools: ["web_search"],
+        });
+
+        const scriptName = `bee-${created.id}`;
+        const putRequest = cfRequests.find(
+            (request) => request.method === "PUT",
+        );
+        if (!putRequest) throw new Error("No worker upload PUT captured");
+        const form = await putRequest.formData();
+        const metadata = JSON.parse(String(form.get("metadata")));
+        const bindingByName = Object.fromEntries(
+            (metadata.bindings ?? []).map((b: { name: string }) => [b.name, b]),
+        );
+        // The template config is injected as secret_text bindings alongside the
+        // auth token, and the minted owner key is present (never returned).
+        for (const name of [
+            "BEE_AUTH_TOKEN",
+            "SYSTEM_PROMPT",
+            "BASE_MODEL",
+            "TOOLS_JSON",
+            "MCP_JSON",
+            "POLLINATIONS_KEY",
+            "GEN_BASE_URL",
+        ]) {
+            expect(bindingByName[name]).toMatchObject({ type: "secret_text" });
+        }
+        expect(bindingByName.SYSTEM_PROMPT.text).toBe(
+            "You are a terse SQL tutor.",
+        );
+        expect(bindingByName.BASE_MODEL.text).toBe("openai-fast");
+        expect(JSON.parse(bindingByName.TOOLS_JSON.text)).toEqual([
+            "web_search",
+        ]);
+        expect(JSON.parse(bindingByName.MCP_JSON.text)).toEqual([
+            { name: "docs", url: "https://mcp.example.com/rpc" },
+        ]);
+        expect(bindingByName.POLLINATIONS_KEY.text).toMatch(/^sk_/);
+        // The deployed module is the platform template, not user source.
+        await expect((form.get("index.mjs") as File).text()).resolves.toContain(
+            "MAX_TOOL_ROUNDS",
+        );
+
+        // Delete retires the worker (its source is non-null) like any deploy.
+        cfRequests.length = 0;
+        const deleteResponse = await fetchEnterApi(
+            enterApi,
+            new Request(
+                `http://localhost:3000/api/community-endpoints/${created.id}`,
+                {
+                    method: "DELETE",
+                    headers: { Cookie: cookie },
+                },
+            ),
+            deployEnv,
+        );
+        expect(deleteResponse.status).toBe(200);
+        const deleteWorkerCall = cfRequests.find(
+            (request) => request.method === "DELETE",
+        );
+        if (!deleteWorkerCall) throw new Error("No worker DELETE captured");
+        expect(new URL(deleteWorkerCall.url).pathname).toBe(
+            `/client/v4/accounts/cf-account/workers/scripts/${scriptName}`,
+        );
+    },
+);

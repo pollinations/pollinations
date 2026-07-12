@@ -1,4 +1,5 @@
 import {
+    COMMUNITY_ENDPOINT_KINDS,
     COMMUNITY_ENDPOINT_PRICE_FIELDS,
     type CommunityEndpointPriceKey,
     communityEndpointPrices,
@@ -6,9 +7,11 @@ import {
     isCommunityEndpointOwnerAllowed,
     normalizeCommunityEndpointBaseUrl,
     normalizeCommunityEndpointBearerToken,
+    parseCommunityToolPrices,
 } from "@shared/community-endpoints.ts";
 import * as schema from "@shared/db/better-auth.ts";
 import { validator } from "@shared/middleware/validator.ts";
+import { COMMUNITY_TOOL_NAME_PATTERN } from "@shared/registry/community-billing.ts";
 import { encryptSecret } from "@shared/secret-encryption.ts";
 import { and, eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
@@ -23,25 +26,71 @@ import {
     listCommunityEndpointModels,
     testCommunityEndpoint,
 } from "../services/community-endpoint-openai.ts";
+import {
+    buildPromptAgentDeploy,
+    PromptAgentSchema,
+    parseStoredPromptAgent,
+} from "../services/prompt-agent.ts";
+import {
+    communityWorkerScriptName,
+    deleteCommunityWorker,
+    deployCommunityWorker,
+    requireWorkerDeployConfig,
+} from "../services/worker-deploy.ts";
 import { hasDirectAccountPermission } from "./account-permissions.ts";
 
 const PriceSchema = z.number().finite().min(0);
 const CreatePriceFieldsSchema = Object.fromEntries(
     COMMUNITY_ENDPOINT_PRICE_FIELDS.map((field) => [
         field.key,
-        PriceSchema.optional().default(0),
+        PriceSchema.optional()
+            .default(0)
+            .describe(`${field.label} price in Pollen per token.`),
     ]),
 ) as unknown as Record<CommunityEndpointPriceKey, z.ZodType<number>>;
 const UpdatePriceFieldsSchema = Object.fromEntries(
     COMMUNITY_ENDPOINT_PRICE_FIELDS.map((field) => [
         field.key,
-        PriceSchema.optional(),
+        PriceSchema.optional().describe(
+            `${field.label} price in Pollen per token.`,
+        ),
     ]),
 ) as unknown as Record<
     CommunityEndpointPriceKey,
     z.ZodType<number | undefined>
 >;
 
+const CAPABILITY_FLAG_KEYS = ["tools", "search", "reasoning"] as const;
+const KindSchema = z
+    .enum(COMMUNITY_ENDPOINT_KINDS)
+    .describe(
+        '"model" for a plain upstream model; "agent" for an endpoint that runs multi-step or tool-using logic behind the chat-completions shape.',
+    );
+// Whole-map semantics on update: sending toolPrices replaces the map; {} clears it.
+const ToolPricesSchema = z
+    .record(
+        z
+            .string()
+            .regex(
+                COMMUNITY_TOOL_NAME_PATTERN,
+                "Tool names must be lowercase alphanumeric with _ or - (max 40 chars)",
+            ),
+        z.number().finite().positive().describe("Pollen per call."),
+    )
+    .describe(
+        "Per-call tool fees, keyed by tool name (e.g. web_search). Each request is billed `fee × usage.tool_call_counts.<name>` as reported by the endpoint in its response usage object (on the final usage-bearing event for streams). On update the map is replaced whole; send {} to clear.",
+    );
+// 1 MiB is well under Cloudflare's per-script size limit and far larger than
+// any hand-written single-module bee; the cap keeps unbounded blobs out of D1
+// and the upload.
+const MAX_SOURCE_BYTES = 1_048_576;
+const SourceSchema = z
+    .string()
+    .min(1)
+    .max(MAX_SOURCE_BYTES)
+    .describe(
+        "Single-ES-module JavaScript worker source (max 1 MiB) exposing an OpenAI-compatible API (POST /v1/chat/completions). Deployed to a Pollinations-managed Cloudflare Worker and the model's baseUrl is set to its workers.dev URL. Mutually exclusive with baseUrl.",
+    );
 const EndpointFieldsSchema = {
     // No "/": the public model id is `<owner>/<name>`, so a slash in the name
     // would inject a second separator and let one model spoof another's id.
@@ -57,18 +106,81 @@ const EndpointFieldsSchema = {
     bearerToken: z.string().min(1),
 } as const;
 
-const CreateEndpointSchema = z.object({
-    ...EndpointFieldsSchema,
-    ...CreatePriceFieldsSchema,
-});
-const UpdateEndpointSchema = z.object({
-    name: EndpointFieldsSchema.name.optional(),
-    description: EndpointFieldsSchema.description,
-    baseUrl: EndpointFieldsSchema.baseUrl.optional(),
-    upstreamModel: EndpointFieldsSchema.upstreamModel,
-    bearerToken: EndpointFieldsSchema.bearerToken.optional(),
-    ...UpdatePriceFieldsSchema,
-});
+const CreateEndpointSchema = z
+    .object({
+        ...EndpointFieldsSchema,
+        baseUrl: EndpointFieldsSchema.baseUrl.optional(),
+        source: SourceSchema.optional(),
+        promptAgent: PromptAgentSchema.optional(),
+        kind: KindSchema.optional().default("model"),
+        tools: z
+            .boolean()
+            .optional()
+            .default(false)
+            .describe(
+                "Declares tool/function-calling support (metadata only).",
+            ),
+        search: z
+            .boolean()
+            .optional()
+            .default(false)
+            .describe("Declares web-search capability (metadata only)."),
+        reasoning: z
+            .boolean()
+            .optional()
+            .default(false)
+            .describe("Declares reasoning/thinking support (metadata only)."),
+        // Ignored for source deploys — the worker auth token is generated
+        // server-side and stored as the bearer token in that mode.
+        bearerToken: EndpointFieldsSchema.bearerToken.optional(),
+        toolPrices: ToolPricesSchema.optional(),
+        ...CreatePriceFieldsSchema,
+    })
+    .refine(
+        (input) =>
+            [input.baseUrl, input.source, input.promptAgent].filter(
+                (value) => value !== undefined,
+            ).length === 1,
+        { message: "Provide exactly one of baseUrl, source, or promptAgent" },
+    )
+    .refine(
+        // A bearer token is only meaningful for self-hosted baseUrl endpoints;
+        // source and promptAgent deploys mint and manage their own worker token.
+        (input) => input.baseUrl === undefined || Boolean(input.bearerToken),
+        {
+            message: "bearerToken is required when registering with baseUrl",
+        },
+    );
+const UpdateEndpointSchema = z
+    .object({
+        name: EndpointFieldsSchema.name.optional(),
+        description: EndpointFieldsSchema.description,
+        baseUrl: EndpointFieldsSchema.baseUrl.optional(),
+        source: SourceSchema.optional(),
+        upstreamModel: EndpointFieldsSchema.upstreamModel,
+        bearerToken: EndpointFieldsSchema.bearerToken.optional(),
+        kind: KindSchema.optional(),
+        tools: z
+            .boolean()
+            .optional()
+            .describe(
+                "Declares tool/function-calling support (metadata only).",
+            ),
+        search: z
+            .boolean()
+            .optional()
+            .describe("Declares web-search capability (metadata only)."),
+        reasoning: z
+            .boolean()
+            .optional()
+            .describe("Declares reasoning/thinking support (metadata only)."),
+        toolPrices: ToolPricesSchema.optional(),
+        ...UpdatePriceFieldsSchema,
+    })
+    .refine(
+        (input) => input.baseUrl === undefined || input.source === undefined,
+        { message: "Provide only one of baseUrl or source" },
+    );
 const ModelListSchema = z.object({
     baseUrl: z.string().url(),
     bearerToken: z.string().min(1),
@@ -87,7 +199,21 @@ const CommunityEndpointResponseSchema = z.object({
     name: z.string(),
     description: z.string().nullable(),
     baseUrl: z.string(),
+    source: z
+        .string()
+        .nullable()
+        .describe(
+            "Worker source for platform-deployed endpoints; null when self-hosted or a prompt agent.",
+        ),
+    promptAgent: PromptAgentSchema.nullable().describe(
+        "No-code agent config when this endpoint is a prompt agent; null otherwise.",
+    ),
     upstreamModel: z.string(),
+    kind: KindSchema,
+    tools: z.boolean(),
+    search: z.boolean(),
+    reasoning: z.boolean(),
+    toolPrices: ToolPricesSchema,
     ...ResponsePriceFieldsSchema,
     disabled: z.boolean(),
     disabledReason: z.string().nullable(),
@@ -113,6 +239,13 @@ const CommunityEndpointDeleteResponseSchema = z.object({
 const ENDPOINT_PROBE_THROTTLE_SECONDS = 30;
 type Db = ReturnType<typeof drizzle<typeof schema>>;
 type CommunityEndpointRow = typeof schema.communityEndpoint.$inferSelect;
+
+function serializeToolPrices(
+    toolPrices: Record<string, number> | undefined,
+): string | null {
+    if (!toolPrices || Object.keys(toolPrices).length === 0) return null;
+    return JSON.stringify(toolPrices);
+}
 
 function normalizeInputBaseUrl(value: string): string {
     try {
@@ -170,13 +303,25 @@ async function requireOwnerGithubUsername(
 }
 
 function toResponse(row: CommunityEndpointRow, ownerGithubUsername: string) {
+    // A prompt agent stores its config (and the minted key id) in `source`;
+    // surface the config as `promptAgent` and never expose the raw blob or the
+    // internal key id. Its platform-owned template is not user source, so
+    // `source` reads as null for prompt agents.
+    const storedPromptAgent = parseStoredPromptAgent(row.source);
     return {
         id: row.id,
         modelId: communityModelId(ownerGithubUsername, row.name),
         name: row.name,
         description: row.description,
         baseUrl: row.baseUrl,
+        source: storedPromptAgent ? null : row.source,
+        promptAgent: storedPromptAgent?.promptAgent ?? null,
         upstreamModel: row.upstreamModel,
+        kind: row.kind,
+        tools: row.tools,
+        search: row.search,
+        reasoning: row.reasoning,
+        toolPrices: parseCommunityToolPrices(row.toolPrices),
         ...communityEndpointPrices(row),
         disabled: row.disabledAt !== null,
         disabledReason: row.disabledReason,
@@ -333,7 +478,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
             tags: ["👤 Account"],
             summary: "Create My Model",
             description:
-                "Register an invite-only community text model. API keys require `account:keys` and an account with `communityEndpointsAllowed: true`. The upstream bearer token is encrypted and never returned.",
+                'Register an invite-only community text model or agent. API keys require `account:keys` and an account with `communityEndpointsAllowed: true`. The upstream bearer token is encrypted and never returned. Callers are billed your declared per-token prices plus any `toolPrices` fees; to charge tool fees the endpoint reports per-tool call counts in `usage.tool_call_counts` (e.g. `{"web_search": 2}`) on its response — for streams, on the final usage-bearing event. Provide exactly one of `baseUrl` (self-hosted endpoint) or `source` (worker source deployed to a Pollinations-managed Cloudflare Worker; `baseUrl` is set to the deployed URL).',
             responses: {
                 200: {
                     description: "Created community text model",
@@ -364,25 +509,100 @@ export const communityEndpointsRoutes = new Hono<Env>()
             );
             await ensureModelNameAvailable(db, user.id, input.name);
             const id = crypto.randomUUID();
-            const [row] = await db
-                .insert(schema.communityEndpoint)
-                .values({
-                    id,
-                    ownerUserId: user.id,
-                    name: input.name,
-                    description: input.description || null,
-                    baseUrl: normalizeInputBaseUrl(input.baseUrl),
-                    upstreamModel: input.upstreamModel ?? input.name,
-                    bearerTokenCiphertext: await encryptSecret(
-                        normalizeInputBearerToken(input.bearerToken),
-                        c.env.BETTER_AUTH_SECRET,
-                    ),
-                    ...communityEndpointPrices(input),
-                    createdAt: new Date(),
-                    updatedAt: new Date(),
-                })
-                .returning();
-            return c.json(toResponse(row, ownerGithubUsername));
+            // Source and promptAgent both deploy a Pollinations-managed worker:
+            // the stored bearer token IS the generated worker auth token that
+            // gen sends to the (public) workers.dev URL, so direct callers
+            // without it are rejected. A prompt agent additionally deploys the
+            // fixed template with the owner's config injected as bindings.
+            const isManagedDeploy =
+                input.source !== undefined || input.promptAgent !== undefined;
+            const deployConfig = isManagedDeploy
+                ? requireWorkerDeployConfig(c.env)
+                : null;
+            const promptAgentDeploy =
+                deployConfig && input.promptAgent !== undefined
+                    ? await buildPromptAgentDeploy({
+                          authClient: c.var.auth.client,
+                          dbBinding: c.env.DB,
+                          userId: user.id,
+                          agentName: input.name,
+                          config: input.promptAgent,
+                          genBaseUrl:
+                              (c.env as { GEN_BASE_URL?: string })
+                                  .GEN_BASE_URL ??
+                              "https://gen.pollinations.ai",
+                      })
+                    : null;
+            const workerAuthToken = deployConfig
+                ? crypto.randomUUID().replaceAll("-", "")
+                : null;
+            const baseUrl = deployConfig
+                ? await deployCommunityWorker(
+                      deployConfig,
+                      communityWorkerScriptName(id),
+                      promptAgentDeploy?.source ?? (input.source as string),
+                      workerAuthToken as string,
+                      promptAgentDeploy?.extraBindings,
+                  )
+                : normalizeInputBaseUrl(input.baseUrl ?? "");
+            // Guaranteed present in baseUrl mode by CreateEndpointSchema.
+            const bearerToken =
+                workerAuthToken ??
+                normalizeInputBearerToken(input.bearerToken ?? "");
+            // Prompt agents default to the agent kind; source/baseUrl keep the
+            // caller's choice (which itself defaults to "model").
+            const kind =
+                input.promptAgent !== undefined && input.kind === "model"
+                    ? "agent"
+                    : input.kind;
+            // Prompt agents store their structured config (+ minted key id) in
+            // the source column; source deploys store the raw worker source.
+            const storedSource = promptAgentDeploy
+                ? promptAgentDeploy.storedSource
+                : (input.source ?? null);
+            try {
+                const [row] = await db
+                    .insert(schema.communityEndpoint)
+                    .values({
+                        id,
+                        ownerUserId: user.id,
+                        name: input.name,
+                        description: input.description || null,
+                        baseUrl,
+                        source: storedSource,
+                        upstreamModel: input.upstreamModel ?? input.name,
+                        bearerTokenCiphertext: await encryptSecret(
+                            bearerToken,
+                            c.env.BETTER_AUTH_SECRET,
+                        ),
+                        kind,
+                        tools: input.tools,
+                        search: input.search,
+                        reasoning: input.reasoning,
+                        toolPrices: serializeToolPrices(input.toolPrices),
+                        ...communityEndpointPrices(input),
+                        createdAt: new Date(),
+                        updatedAt: new Date(),
+                    })
+                    .returning();
+                return c.json(toResponse(row, ownerGithubUsername));
+            } catch (error) {
+                // The worker is live but the row failed — remove the orphan so
+                // there's no callable script without a backing endpoint, and
+                // revoke the prompt agent's minted key.
+                if (deployConfig) {
+                    await deleteCommunityWorker(
+                        deployConfig,
+                        communityWorkerScriptName(id),
+                    );
+                }
+                if (promptAgentDeploy) {
+                    await db
+                        .delete(schema.apikey)
+                        .where(eq(schema.apikey.id, promptAgentDeploy.keyId));
+                }
+                throw error;
+            }
         },
     )
     .post(
@@ -535,21 +755,63 @@ export const communityEndpointsRoutes = new Hono<Env>()
             > = {
                 updatedAt: new Date(),
             };
+            // Switching a prompt agent to a baseUrl or source endpoint retires
+            // its worker (below) and must also revoke its minted owner key so
+            // it can no longer spend.
+            const previousPromptAgent = parseStoredPromptAgent(endpoint.source);
+            const switchingAway =
+                input.baseUrl !== undefined || input.source !== undefined;
             if (input.name !== undefined) update.name = input.name;
             if (input.description !== undefined) {
                 update.description = input.description || null;
             }
             if (input.baseUrl !== undefined) {
+                // Switching to a self-hosted URL retires the deployed worker
+                // so it is no longer publicly callable.
                 update.baseUrl = normalizeInputBaseUrl(input.baseUrl);
+                update.source = null;
+                if (endpoint.source !== null) {
+                    await deleteCommunityWorker(
+                        requireWorkerDeployConfig(c.env),
+                        communityWorkerScriptName(endpoint.id),
+                    );
+                }
+            }
+            if (input.source !== undefined) {
+                // Redeploy the same id-keyed script with a fresh auth token;
+                // the token becomes the stored bearer token gen sends. A prompt
+                // agent's template bindings are dropped by this overwrite.
+                const deployConfig = requireWorkerDeployConfig(c.env);
+                const workerAuthToken = crypto.randomUUID().replaceAll("-", "");
+                update.baseUrl = await deployCommunityWorker(
+                    deployConfig,
+                    communityWorkerScriptName(endpoint.id),
+                    input.source,
+                    workerAuthToken,
+                );
+                update.source = input.source;
+                update.bearerTokenCiphertext = await encryptSecret(
+                    workerAuthToken,
+                    c.env.BETTER_AUTH_SECRET,
+                );
             }
             if (input.upstreamModel !== undefined) {
                 update.upstreamModel = input.upstreamModel;
             }
-            if (input.bearerToken !== undefined) {
+            // A caller-supplied bearer token only applies to self-hosted
+            // endpoints; source deploys manage their own token above.
+            if (input.bearerToken !== undefined && input.source === undefined) {
                 update.bearerTokenCiphertext = await encryptSecret(
                     normalizeInputBearerToken(input.bearerToken),
                     c.env.BETTER_AUTH_SECRET,
                 );
+            }
+            if (input.kind !== undefined) update.kind = input.kind;
+            for (const flag of CAPABILITY_FLAG_KEYS) {
+                if (input[flag] !== undefined) update[flag] = input[flag];
+            }
+            if (input.toolPrices !== undefined) {
+                update.toolPrices = serializeToolPrices(input.toolPrices);
             }
             for (const field of COMMUNITY_ENDPOINT_PRICE_FIELDS) {
                 if (input[field.key] !== undefined) {
@@ -566,6 +828,13 @@ export const communityEndpointsRoutes = new Hono<Env>()
                     ),
                 )
                 .returning();
+            // Revoke the old prompt agent's minted key after the row no longer
+            // references it (the worker was already retired above).
+            if (previousPromptAgent && switchingAway) {
+                await db
+                    .delete(schema.apikey)
+                    .where(eq(schema.apikey.id, previousPromptAgent.keyId));
+            }
             return c.json(toResponse(row, ownerGithubUsername));
         },
     )
@@ -601,7 +870,24 @@ export const communityEndpointsRoutes = new Hono<Env>()
                 user.id,
                 c.var.auth.apiKey,
             );
-            await requireOwnedEndpoint(db, id, user.id);
+            const endpoint = await requireOwnedEndpoint(db, id, user.id);
+            // Retire the deployed worker first; a failure here must not leave
+            // a callable script with no backing row, so it happens before the
+            // D1 delete.
+            if (endpoint.source !== null) {
+                await deleteCommunityWorker(
+                    requireWorkerDeployConfig(c.env),
+                    communityWorkerScriptName(endpoint.id),
+                );
+            }
+            // Prompt agents mint a dedicated owner key injected into the worker;
+            // remove it so it can no longer spend once the agent is gone.
+            const storedPromptAgent = parseStoredPromptAgent(endpoint.source);
+            if (storedPromptAgent) {
+                await db
+                    .delete(schema.apikey)
+                    .where(eq(schema.apikey.id, storedPromptAgent.keyId));
+            }
             await db
                 .delete(schema.communityEndpoint)
                 .where(

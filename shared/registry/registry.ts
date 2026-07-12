@@ -133,6 +133,10 @@ export type ModelDefinition<TModelId extends string = ModelId> = {
     fallbackProvider?: string;
     brand: string;
     category: Category;
+    // Model-vs-agent distinction for community endpoints. Absent = plain
+    // model. "agent" marks endpoints that run multi-step/tool-using logic
+    // behind the chat-completions shape.
+    kind?: "model" | "agent";
     cost: CostDefinition;
     // USD-cost to Pollen-price multiplier. Required on every model — there is
     // no implicit default. Typical values: 1 (sold at cost) or 1.5 (paid markup).

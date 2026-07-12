@@ -1,0 +1,29 @@
+{
+    "name": "queen-bee",
+    "main": "src/index.ts",
+    "compatibility_date": "2026-01-01",
+    "compatibility_flags": ["nodejs_compat"],
+    "workers_dev": true,
+    "containers": [
+        {
+            "class_name": "Sandbox",
+            "image": "./Dockerfile",
+            "instance_type": "basic",
+            "max_instances": 2
+        }
+    ],
+    "durable_objects": {
+        "bindings": [
+            {
+                "class_name": "Sandbox",
+                "name": "Sandbox"
+            }
+        ]
+    },
+    "migrations": [
+        {
+            "tag": "v1",
+            "new_sqlite_classes": ["Sandbox"]
+        }
+    ]
+}

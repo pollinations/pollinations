@@ -1,4 +1,8 @@
 import { isCommunityModelAllowedGithubId } from "./auth/github-id-list.ts";
+import {
+    type CommunityToolPrices,
+    communityToolBillingRules,
+} from "./registry/community-billing.ts";
 import type { ModelDefinition, PriceDefinition } from "./registry/registry.ts";
 import {
     OPENAI_CHAT_USAGE_PATHS,
@@ -65,6 +69,20 @@ export function communityEndpointPrices(
     ) as CommunityEndpointPrices;
 }
 
+export const COMMUNITY_ENDPOINT_KINDS = ["model", "agent"] as const;
+
+export type CommunityEndpointKind = (typeof COMMUNITY_ENDPOINT_KINDS)[number];
+
+// Owner-declared metadata: whether the endpoint is a plain model or an agent,
+// and which capabilities it supports. Declarative only — the proxy is
+// shape-agnostic and never enforces these.
+export type CommunityEndpointCapabilityFlags = {
+    kind: CommunityEndpointKind;
+    tools: boolean;
+    search: boolean;
+    reasoning: boolean;
+};
+
 export type CommunityEndpointRuntime = {
     id: string;
     ownerUserId: string;
@@ -74,14 +92,40 @@ export type CommunityEndpointRuntime = {
     baseUrl: string;
     upstreamModel: string;
     bearerTokenCiphertext: string;
+    toolPrices: CommunityToolPrices;
     disabledAt: number | null;
     disabledReason: string | null;
-} & CommunityEndpointPrices;
+} & CommunityEndpointPrices &
+    CommunityEndpointCapabilityFlags;
 
 export type CommunityModelDefinitionInput = {
     modelId: string;
     description: string | null;
-} & CommunityEndpointPrices;
+    toolPrices?: CommunityToolPrices;
+} & CommunityEndpointPrices &
+    Partial<CommunityEndpointCapabilityFlags>;
+
+// tool_prices is stored as a JSON text column; rows are only written through
+// the zod-validated API, so malformed JSON means hand-edited data — log loudly
+// and treat as no declared tools rather than breaking the whole catalog.
+export function parseCommunityToolPrices(
+    raw: string | null,
+): CommunityToolPrices {
+    if (!raw) return {};
+    let parsed: unknown;
+    try {
+        parsed = JSON.parse(raw);
+    } catch {
+        parsed = undefined;
+    }
+    if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+        return parsed as CommunityToolPrices;
+    }
+    console.error(
+        `[community] malformed tool_prices JSON — ignoring: ${raw.slice(0, 100)}`,
+    );
+    return {};
+}
 
 export type CommunityModelParts = {
     ownerGithubUsername: string;
@@ -189,13 +233,20 @@ export function communityModelDefinition(
         provider: "community",
         brand: "Community",
         category: "text",
+        kind: endpoint.kind === "agent" ? "agent" : undefined,
         cost: communityPriceDefinition(endpoint),
         priceMultiplier: 1,
+        billing: endpoint.toolPrices
+            ? communityToolBillingRules(endpoint.toolPrices)
+            : undefined,
         addedDate: 0,
         title: description || parsed?.modelName || endpoint.modelId,
         description: description || undefined,
         inputModalities: ["text"],
         outputModalities: ["text"],
+        tools: endpoint.tools || undefined,
+        search: endpoint.search || undefined,
+        reasoning: endpoint.reasoning || undefined,
         paidOnly: false,
         alpha: true,
     };

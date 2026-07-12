@@ -181,10 +181,8 @@ Get your API key at [enter.pollinations.ai](https://enter.pollinations.ai)
 
 | Key             | Prefix | Use Case                       | Rate Limits              | Status  |
 | --------------- | ------ | ------------------------------ | ------------------------ | ------- |
-| **App Keys** | `pk_`  | Used to track user activity | No rate limits | Stable |
+| **App Key** | `pk_`  | Browsers, mobile apps, public clients | Budget & permissions set at creation | Stable |
 | **Secret**      | `sk_`  | Server-side only               | No rate limits           | Stable  |
-
-> ⚠️ **Publishable keys:** Turnstile protection coming soon. Not recommended for production yet.
 
 > ⚠️ **Never expose `sk_` keys** in client-side code, git repos, or public URLs
 

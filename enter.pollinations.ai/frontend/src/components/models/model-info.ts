@@ -10,6 +10,7 @@ const BRAND_LOGOS: Record<string, string> = {
     ByteDance: "bytedance",
     Cohere: "cohere",
     Community: "community",
+    Deemos: "deemos",
     DeepSeek: "deepseek",
     ElevenLabs: "elevenlabs",
     Google: "google",
@@ -17,6 +18,7 @@ const BRAND_LOGOS: Record<string, string> = {
     Inception: "inception",
     Lightricks: "lightricks",
     Meta: "meta",
+    Microsoft: "microsoft",
     MiniMax: "minimax",
     Mistral: "mistral",
     "Moonshot AI": "moonshot",
@@ -175,7 +177,7 @@ export const isNewModel = (model: ModelPrice): boolean => {
 };
 
 /**
- * Check if a model requires paid balance only (no tier balance)
+ * Check if a model requires paid balance only, not Quest Pollen.
  */
 export const isPaidOnly = (model: ModelPrice): boolean =>
     model.paidOnly === true;

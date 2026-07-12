@@ -62,7 +62,7 @@ Each of these has a structural unknown the perplexity run can't answer:
 These prevent specific scripts from running on the current machine:
 
 - **azure (safety only)** — `gptimagemain1-resource` lives in a subscription not visible to the default `az` context. `--resource east` and `--resource sweden` work standalone; `--resource safety` and `--resource all` need `az account set --subscription <other>` first. Same decision: document or fix.
-- **`TINYBIRD_LEGACY_READ_TOKEN`** — lives in the retired `pollinations_ai` workspace. Consumed by `apps/operation/economics`. Current admin token can't rotate it. Either rotate manually periodically, or migrate economics off the legacy workspace and delete the token.
+- **`TINYBIRD_LEGACY_READ_TOKEN`** — lives in the retired `pollinations_ai` workspace. Consumed by `apps/operation/observability`. Current admin token can't rotate it. Either rotate manually periodically, or migrate observability off the legacy workspace and delete the token.
 
 ### 4. Modularization (lowest priority — only after #1-#3 prove the design)
 

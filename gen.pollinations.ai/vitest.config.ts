@@ -32,6 +32,7 @@ const genAliases = [
     "middleware/validator.ts",
     "schemas/embeddings.ts",
     "schemas/image.ts",
+    "schemas/model3d.ts",
     "schemas/realtime.ts",
     "schemas/text.ts",
     "util",
@@ -63,6 +64,10 @@ const baseConfig = defineConfig({
             {
                 find: /^@\/image\/(.*)$/,
                 replacement: `${genSrc}image/$1`,
+            },
+            {
+                find: /^@\/model3d\/(.*)$/,
+                replacement: `${genSrc}model3d/$1`,
             },
             {
                 find: /^@shared\/(.*)$/,

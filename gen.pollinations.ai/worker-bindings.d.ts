@@ -10,6 +10,7 @@ interface CloudflareBindings {
     MUSIC_SERVICE_URL: string;
     DASHSCOPE_API_KEY: string;
     FAL_KEY: string;
+    INFERENCEPORT_API_KEY?: string;
     STABILITY_API_KEY?: string;
     KV: KVNamespace;
     IMAGE_BUCKET: R2Bucket;
@@ -27,7 +28,6 @@ interface CloudflareBindings {
     LOG_LEVEL?: "trace" | "debug";
     LOG_FORMAT?: "text" | "json";
     TINYBIRD_INGEST_URL: string;
-    TINYBIRD_TIER_INGEST_URL?: string;
     IMAGES?: ImagesBinding;
     PORTKEY_GATEWAY_URL: string;
     AWS_ACCESS_KEY_ID: string;
@@ -45,6 +45,7 @@ interface CloudflareBindings {
     AZURE_CONTENT_SAFETY_API_KEY: string;
     AZURE_CONTENT_SAFETY_ENDPOINT: string;
     FIREWORKS_API_KEY: string;
+    FIREWORKS_NEO_API_KEY: string;
     GOOGLE_CLIENT_EMAIL: string;
     GOOGLE_PRIVATE_KEY: string;
     GOOGLE_PRIVATE_KEY_ID: string;

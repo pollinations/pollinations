@@ -11,6 +11,7 @@ import type {
 const TOKEN_TYPE_LABELS: Record<PriceKind, string> = {
     text: "text",
     image: "image",
+    "3d": "3D model",
     cached: "cached",
     cacheWrite: "cache write",
     reasoning: "reasoning",

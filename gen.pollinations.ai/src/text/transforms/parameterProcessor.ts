@@ -70,9 +70,9 @@ export function processParameters(
         updatedOptions.temperature = 1;
     }
 
-    // Claude Opus 4.7/4.8 deprecated temperature/top_p/top_k — non-default values
-    // return 400 from Anthropic. Strip them entirely.
-    if (/claude-opus-4-[78]/i.test(model)) {
+    // Claude Opus 4.7/4.8 and Fable 5 reject non-default sampling params.
+    // Strip them entirely.
+    if (/claude-(opus-4-[78]|fable-5)/i.test(model)) {
         for (const param of ["temperature", "top_p", "top_k"] as const) {
             if (updatedOptions[param] !== undefined) {
                 log(`Stripping ${param} for ${model}`);

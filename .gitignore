@@ -375,6 +375,13 @@ agent-communication.md
 enter.pollinations.ai/src/tier-progression/spore-to-microbe-report-enriched.csv
 enter.pollinations.ai/src/tier-progression/spore-to-microbe-report-reviewed.csv
 enter.pollinations.ai/src/tier-progression/abuse-ledger.csv
+apps/operation/finance/secrets/vendors.json
+apps/operation/finance/secrets/update-live.err
+apps/operation/finance/secrets/pool-history.json
+apps/operation/finance/secrets/input/2026-03.csv
+apps/operation/finance/secrets/input/2026-02.csv
+apps/operation/finance/secrets/input/2026-01.csv
+apps/operation/finance/config.local.json
 
 # Local-only demo / sandbox files — never committed.
 *.demo.tsx
@@ -382,3 +389,12 @@ enter.pollinations.ai/src/tier-progression/abuse-ledger.csv
 
 # Playwright MCP scratch output (snapshots, screenshots, console logs)
 .playwright-mcp/
+
+# Community monitor — live-only artifacts, never committed (see apps/operation/community-monitor/README.md)
+apps/operation/community-monitor/.env
+apps/operation/community-monitor/state.json
+apps/operation/community-monitor/people_mapping.json
+apps/operation/community-monitor/probe-results.json
+apps/operation/community-monitor/*.log
+apps/operation/community-monitor/monitor.log
+apps/operation/community-monitor/results.json

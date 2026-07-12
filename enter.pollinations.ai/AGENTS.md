@@ -577,23 +577,27 @@ curl "$BASE_URL/generate/v1/chat/completions" \
 
 ## 🔐 BYOP Authorization Flow
 
-Third-party apps redirect users to get an API key. With `app_key`, the consent screen shows app name + developer GitHub.
+Third-party apps redirect users to authorize a scoped user key. New web integrations should use OAuth authorization-code + PKCE; the old `#api_key=` fragment flow remains supported for legacy clients. With `client_id`/`app_key`, the consent screen shows app name + developer GitHub.
 
 ### Base URL
 
 ```
-https://enter.pollinations.ai/authorize?redirect_url=YOUR_APP_URL&app_key=pk_yourkey
+https://enter.pollinations.ai/authorize?response_type=code&redirect_uri=YOUR_CALLBACK&client_id=pk_yourkey&state=STATE&code_challenge=CHALLENGE&code_challenge_method=S256
 ```
 
 ### Parameters
 
 | Param | Description | Example |
 |-------|-------------|---------|
-| `app_key` | Publishable key (shows app name + author) | `pk_abc123` |
+| `client_id` | Publishable key (shows app name + author); `app_key` is legacy alias | `pk_abc123` |
+| `redirect_uri` | Registered callback URL; `redirect_url` is legacy alias | `https://myapp.com/callback` |
+| `response_type` | `code` for OAuth code flow; omit for legacy fragment flow | `code` |
+| `code_challenge` | PKCE S256 challenge for code flow | `abc...` |
+| `code_challenge_method` | Must be `S256` for code flow | `S256` |
 | `models` | Comma-separated allowed models | `flux,openai,gptimage` |
 | `budget` | Pollen budget limit | `10` |
-| `expiry` | Expiry in days (default: 30) | `7` |
-| `permissions` | Account permissions | `profile,usage` |
+| `expiry` | Expiry in days (default: 7) | `7` |
+| `scope` | Account permissions; `permissions` is legacy alias | `profile usage` |
 
 ### Account Permissions
 
@@ -607,12 +611,17 @@ Register a `pk_` key at enter.pollinations.ai with at least one **Redirect URI**
 ### Example
 
 ```
-https://enter.pollinations.ai/authorize?redirect_url=https://myapp.com/callback&app_key=pk_abc123&permissions=profile,usage&expiry=7
+https://enter.pollinations.ai/authorize?response_type=code&redirect_uri=https://myapp.com/callback&client_id=pk_abc123&scope=profile%20usage&expiry=7&state=random&code_challenge=...&code_challenge_method=S256
 ```
 
-After authorization, the user is redirected back with an `sk_` key in the URL fragment:
+After authorization, the user is redirected back with a short-lived code:
 ```
-https://myapp.com/callback#api_key=sk_xxxxx
+https://myapp.com/callback?code=oauth_code&state=random
+```
+
+Exchange it at `POST /api/oauth/token` with form-encoded `grant_type=authorization_code`, `code`, `client_id`, `redirect_uri`, and `code_verifier`. Response:
+```
+{ "access_token": "sk_xxxxx", "token_type": "bearer" }
 ```
 
 ### App Lookup Endpoint
@@ -626,20 +635,14 @@ URL-based identity lookup was removed — identity is derived from `client_id` o
 
 ## 🎫 Wallet & Balance Lookups
 
-> Claude skill available: `.claude/skills/tier-management/SKILL.md`
-
-Pollen is earned by completing **Quests**. The `tier`, `tier_balance`, and `pack_balance` columns remain in D1 as the active wallet data model — do not treat the `tier` column as a runtime product level or mutate it to "upgrade" a user. The `tier_balance` bucket is shown to users as the **Quest Pollen** balance; `pack_balance` is the **Paid** balance. The old account-level upgrade/downgrade paths (Spore→Seed, app→Flower, admin tier-update) are removed.
+Pollen is earned by completing **Quests**. The `tier`, `tier_balance`, and `pack_balance` columns remain in D1 as the active wallet data model — do not treat the `tier` column as runtime product state or mutate it to "upgrade" a user. The `tier_balance` bucket is shown to users as the **Quest Pollen** balance; `pack_balance` is the **Paid** balance. Old account-level upgrade/downgrade paths are removed.
 
 ### Lookups (read-only)
 
 ```bash
-# Look up a user's balance
-.claude/skills/tier-management/scripts/check-user-balance.sh USERNAME_OR_EMAIL
-
-# Or query D1 directly
 cd enter.pollinations.ai
 npx wrangler d1 execute DB --remote --env production \
-  --command "SELECT github_username, email, tier, tier_balance FROM user WHERE LOWER(github_username) LIKE '%USERNAME%';"
+  --command "SELECT github_username, email, tier_balance, pack_balance FROM user WHERE LOWER(github_username) LIKE '%USERNAME%';"
 ```
 
 ---

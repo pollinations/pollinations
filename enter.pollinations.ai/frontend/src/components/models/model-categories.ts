@@ -10,6 +10,7 @@ export type ModelCategoryLabel =
     | "Text"
     | "Image"
     | "Video"
+    | "3D"
     | "Audio"
     | "Realtime"
     | "Embedding"
@@ -18,7 +19,14 @@ export type ModelCategoryModel = { id: string; label: string };
 export type ModelCategoryGroup = {
     category: ModelDisplayCategory;
     label: ModelCategoryLabel;
-    modality: "text" | "images" | "video" | "audio" | "realtime" | "embeddings";
+    modality:
+        | "text"
+        | "images"
+        | "video"
+        | "3d"
+        | "audio"
+        | "realtime"
+        | "embeddings";
     models: ModelCategoryModel[];
 };
 
@@ -26,6 +34,7 @@ const CATEGORY_ORDER: ModelDisplayCategory[] = [
     "text",
     "image",
     "video",
+    "3d",
     "audio",
     "realtime",
     "embedding",
@@ -36,6 +45,7 @@ const CATEGORY_LABELS: Record<ModelDisplayCategory, ModelCategoryLabel> = {
     text: "Text",
     image: "Image",
     video: "Video",
+    "3d": "3D",
     audio: "Audio",
     realtime: "Realtime",
     embedding: "Embedding",
@@ -49,6 +59,7 @@ const CATEGORY_MODALITIES: Record<
     text: "text",
     image: "images",
     video: "video",
+    "3d": "3d",
     audio: "audio",
     realtime: "realtime",
     embedding: "embeddings",
@@ -59,6 +70,7 @@ const ALL_MODALITIES: ModelCategoryGroup["modality"][] = [
     "text",
     "images",
     "video",
+    "3d",
     "audio",
     "realtime",
     "embeddings",

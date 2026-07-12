@@ -11,12 +11,12 @@ No CI workflows — operators run scripts from their own machine with admin cred
 | `PLN_ENTER_TOKEN` | CF Worker (enter) → EC2 (image/text) | enter `{dev,staging,prod}.vars.json`, image `env.json`, text `env.json` | GitHub secrets (`PLN_ENTER_TOKEN`, `ENTER_TOKEN`), Wrangler (production, staging) |
 | `PLN_GPU_TOKEN` | gen image + enter (ACE-Step) → GPU workers | image `env.json`, enter `{dev,staging,prod}.vars.json` | Wrangler (production, staging), RunPod pods (Flux+Z-Image, Klein), Lambda Labs GH200 (LTX-2, ACE-Step, Sana) |
 | `TINYBIRD_INGEST_TOKEN` | enter+gen runtime → Tinybird append | enter+gen `{dev,staging,prod}.vars.json` | Wrangler (production, staging) |
-| `TINYBIRD_READ_TOKEN` | enter/KPI/economics/app metrics → Tinybird read | enter `{dev,staging,prod}.vars.json`, kpi `env.json`, economics `secrets.vars.json` | GitHub secret `TINYBIRD_READ_TOKEN` |
+| `TINYBIRD_READ_TOKEN` | enter/KPI/observability/app metrics → Tinybird read | enter `{dev,staging,prod}.vars.json`, kpi `env.json`, observability `secrets.vars.json` | GitHub secret `TINYBIRD_READ_TOKEN` |
 | `TINYBIRD_SYNC_TOKEN` | GitHub Actions + enter admin route → Tinybird sync writes | enter `{dev,staging,prod}.vars.json` | GitHub secret `TINYBIRD_SYNC_TOKEN`, Wrangler (production, staging) |
 
 **Workspace routing** (as of 2026-05-18): each token is workspace-scoped. `prod.vars.json` files hold tokens for the `pollinations_enter` workspace; `staging.vars.json` and `dev.vars.json` files hold tokens for the new `pollinations_enter_staging` workspace. The rotation script (`rotate-ops-tinybird.sh`) currently only rotates the prod workspace tokens — staging workspace tokens must be rotated manually until that script is updated (tracked in #11127). The `TINYBIRD_SYNC_TOKEN` in staging/dev files still points at the prod workspace because no staging sync token exists yet (also in #11127).
 
-`TINYBIRD_LEGACY_READ_TOKEN` (consumed by `apps/operation/economics`) lives in the retired `pollinations_ai` workspace and is not rotated by any script — rotate manually or migrate economics off the legacy workspace.
+`TINYBIRD_LEGACY_READ_TOKEN` (consumed by `apps/operation/observability`) lives in the retired `pollinations_ai` workspace and is not rotated by any script — rotate manually or migrate observability off the legacy workspace.
 
 ## Scripts
 
@@ -379,17 +379,23 @@ Or revert the SOPS commit on `main`, push `main` to `production`, and redeploy.
 |--------|-------------|
 | `BETTER_AUTH_SECRET` | Needs `secrets: []` multi-secret array in Better Auth config — rotating now would invalidate all user sessions |
 | `STRIPE_WEBHOOK_SECRET` | Needs dual-secret verifier in `stripe-webhooks.ts` |
-| Polar (`POLAR_ACCESS_TOKEN`, `POLAR_WEBHOOK_SECRET`) | Third-party payment platform; rotation managed through Polar dashboard |
 
 ## GPU workers
 
 Hosts reached by SSH during `rotate-infra-gpu-token.sh`. SSH keys are stored in SOPS (`enter.pollinations.ai/secrets/{dev,staging,prod}.vars.json`) and extracted into a temp file at rotation time.
 
-| Worker | Pod / Host | SSH key (SOPS) | SSH target | `.env` path | Restart |
+> ⚠️ **The script's Flux+Z-Image leg is STALE (2026-07-02):** pod
+> `hsl3ksl31lvrcc` is terminated — flux moved to Vast.ai
+> (`image.pollinations.ai/GPU_INSTANCES.md`) and zimage to 3 single-GPU pods.
+> Pre-flight will fail against the dead host; rework the script before the next
+> rotation.
+
+| Worker | Pod / Host | SSH key | SSH target | `.env` path | Restart |
 |---|---|---|---|---|---|
-| Flux + Z-Image | RunPod `hsl3ksl31lvrcc` | `SSH_RUNPOD_FLUX_ZIMAGE` | `root@38.65.239.17 -p 19489` | `$HOME/.env` | screen sessions |
+| Flux | Vast.ai 5090 instance(s) — see `image.pollinations.ai/GPU_INSTANCES.md` | local `~/.ssh/pollinations_services_2026` (not in SOPS; attached via `vastai attach ssh`) | `vastai show instances` for IP/port | `nunchaku/.env.flux` | restart `flux` screen |
+| Z-Image | 3× RunPod single-GPU pods (discover via `runpodctl pod list`) | `SSH_RUNPOD_KLEIN` (SOPS; `SSH_RUNPOD_FLUX_ZIMAGE` does NOT auth) | rotating tcp port via RunPod GraphQL | env from PID 1 | `/root/relaunch-zimage.sh` |
 | Klein 4B | RunPod `lqh6weiexk4sth` | RunPod relay | `<pod-id>-<key-id>@ssh.runpod.io` (interactive only) | `/workspace/restart.sh` reads `PLN_GPU_TOKEN` from process env | `/workspace/restart.sh` |
-| LTX-2 + ACE-Step + Sana | Lambda Labs GH200 | `SSH_LAMBDA_SANA_LTX2_ACESTEP` | `ubuntu@192.222.51.105` | `$HOME/.env` | `systemctl restart ltx2 acestep sana` |
+| LTX-2 + ACE-Step + Sana | Lambda Labs GH200 | `SSH_LAMBDA_SANA_LTX2_ACESTEP` (SOPS) | `ubuntu@192.222.51.105` | `$HOME/.env` | `systemctl restart ltx2 acestep sana` |
 
 Klein's pod ID changes if recreated. Verify current ID with `runpodctl pod list` and the `KLEIN_URL` env in `gen.pollinations.ai/secrets/prod.vars.json`. The relay does not support non-interactive command execution — rotations against Klein currently require a manual edit of `/workspace/restart.sh` (which has the token baked in via `export`) followed by re-running it inside an interactive SSH session.
 

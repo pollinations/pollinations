@@ -295,6 +295,18 @@ function modelPriceFromCatalog(model: ApiModelInfo): ModelPrice | null {
         };
     }
 
+    if ((price.type as string) === "3d") {
+        return {
+            ...price,
+            prices: priceLines([
+                "output",
+                "3d",
+                formatPrice(completionImageTokens, formatPriceFlat),
+                "request",
+            ]),
+        };
+    }
+
     if (price.type === "audio") {
         // Flat per-generation models (e.g. Stable Audio): one fee per request,
         // independent of length. Show flat "/gen" In/Out audio prices instead of

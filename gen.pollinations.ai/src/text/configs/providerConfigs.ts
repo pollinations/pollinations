@@ -90,7 +90,7 @@ export function createFireworksModelConfig(
 ): ProviderConfig {
     return createOpenAICompatibleConfig(
         "https://api.fireworks.ai/inference/v1",
-        process.env.FIREWORKS_API_KEY,
+        process.env.FIREWORKS_NEO_API_KEY,
         overrides,
     );
 }

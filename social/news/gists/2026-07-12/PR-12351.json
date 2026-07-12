@@ -1,0 +1,34 @@
+{
+  "pr_number": 12351,
+  "title": "fix: remove sixfingerdev from community model allowlist",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/12351",
+  "merged_at": "2026-07-12T14:31:24Z",
+  "labels": [
+    "DEV-BUG"
+  ],
+  "pr_body_excerpt": "## Summary\n- Owner exploited a per-token vs per-million-token unit confusion bug in community model pricing (no max-price validation in the schema) to extract ~$954 in reward payouts from disposable burner accounts (7+ accounts, Jul 10-12)\n- Also self-farmed ~$138 more via a scripted self-call loop against their own model\n- All 15 of their community models have been deactivated in production D1 (`disabled_by='maintainer'`)\n- Their `tier_balance` has been corrected in production to remove the exploited income\n\n## Test plan\n- [x] Verified via direct D1 queries: all sixfingerdev community models now have `disabled_at` set\n- [x] Verified balance write landed correctly\n- [x] `npx biome check` clean on the changed file",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Weeding the garden",
+    "blurb": "Removed a community model provider from the allowlist to keep our ecosystem healthy and fair.",
+    "summary": "Removed sixfingerdev from the community model allowlist and deactivated their models following abuse of the reward system.",
+    "impact": "Ensures community model rewards are distributed fairly to legitimate contributors.",
+    "keywords": [
+      "moderation",
+      "community-models",
+      "security",
+      "allowlist"
+    ],
+    "visual_concept": "The bee mascot acting as a gardener, pulling a weed from a pot of healthy code-plants to represent cleaning up the community ecosystem.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny gardener's hat, pulling a small pixelated weed from a lime green (#ecf874) flower pot where healthy code-plants are growing. Soft pastel gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-12/PR-12351.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny gardener's hat, pulling a small pixelated weed from a lime green (#ecf874) flower pot where healthy code-plants are growing. Soft pastel gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-07-12T14:32:25.589101+00:00"
+}

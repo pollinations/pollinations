@@ -111,9 +111,28 @@ Credentials:
 Local layout:
 
 - data/inbox/: messy raw drop zone for PDFs, CSVs, screenshots, emails, exports,
-  JSON, and notes.
-- data/processed/<vendor>/raw/: original raw files after successful extraction.
-- data/processed/<vendor>/entries/: generated ingest_entry.v1 JSON.
+  JSON, and notes. Files at the root are untriaged.
+- data/inbox/<vendor>/: triaged evidence awaiting extraction, sorted by
+  canonical vendor slug (connector names, e.g. vast-ai, io-net, ovhcloud; short
+  lowercase slugs for vendors without a connector).
+- data/processed/<vendor>/<source_id>/: one folder per source document, holding
+  entries.ndjson (one ingest_entry.v1 object per line) and every raw evidence
+  file, original filenames preserved. source_id is the document's base
+  entry_id.
+- data/processed/runway/entries/: NDJSON batches of approved forecast facts.
+- data/other/: non-billing material worth keeping (contracts, decks, financial
+  models, mockups). Never ledger evidence.
+- data/reconcile/: reconcile working artifacts — reports/ (per-vendor reconcile
+  reports), proposals/ (validated op_cloud row proposals), snapshots/ (op table
+  pulls taken before writes), writes/ (NDJSON batches actually appended to
+  Tinybird; the write audit trail).
+- data/QUESTIONS.md: the cross-vendor open-questions ledger.
+- data/archive/: predecessor projects kept intact for reference (forager, the
+  retired Operations-workspace ingest system; 2026-07-01-spend-audit). Read
+  only; never build on or write into these.
+
+Save every working artifact inside data/ — never in _local/, temp/, or other
+scratch locations outside the app.
 
 Schema:
 
@@ -155,6 +174,15 @@ Collect rules:
   as raw evidence and extracted.
 - Record collection source, command/query/page/email subject, and caveats in the
   later reconciliation_notes field.
+
+Triage rules:
+
+- Triage sorts inbox root files into data/inbox/<vendor>/ by canonical vendor.
+  It never extracts, renames, deletes, or writes entries.
+- Classify from the filename pattern when a sampled file confirms the family;
+  otherwise open the file. Leave a file at the inbox root when the vendor
+  stays unclear.
+- Move non-billing material to data/other/.
 
 Connector guides:
 
@@ -228,9 +256,33 @@ Extraction rules:
 - Set op_transaction_category to "cloud", "saas", "payroll", "admin", "office",
   "revenue", or null.
 - For dry runs, return JSON only and do not move or write files.
-- For non-dry runs, move the original source from data/inbox/ to
-  data/processed/<vendor>/raw/ and write the entry to
-  data/processed/<vendor>/entries/.
+- For non-dry runs, create data/processed/<vendor>/<source_id>/, write all
+  entries from the document as entries.ndjson inside it (one ingest_entry.v1
+  object per line), and move the original source file(s) from data/inbox/ into
+  the same folder, keeping original filenames.
+- If the document's folder already exists, the source is another artifact of
+  the same fact(s): move it into the existing folder and update entries.ndjson
+  in place (same entry_ids) instead of minting new entries. Note the extra
+  artifact in reconciliation_notes.
+
+Granularity:
+
+- Extract at the deepest grain the source actually shows, never deeper.
+- Per-model rows visible (usage dashboards, exports, model line items): one
+  entry per model per period, with the model field set. Use cost_category
+  "model" and op_cloud_type "inference" unless the source shows otherwise.
+- Category split visible (gpu vs inference vs infrastructure, or storage,
+  network, support, tax, credit lines): one entry per category.
+- No internal structure: one entry for the full document amount.
+- Mixed detail: deepest grain per portion; the undetailed remainder becomes
+  one entry. Never invent a split the source does not show.
+- The signed entries of one source document must sum to the document's total.
+  Verify the sum before writing; report a mismatch instead of adjusting it
+  away.
+- The model field is bonus knowledge for display and explanation only. Fill it
+  when the source names a model; never use it to filter, match, or reconcile.
+- entry_id: base id for the document; suffix "-<category>" or "-<model slug>"
+  for split entries. OP row id conventions live in tinybird/README.md.
 
 Category guidance:
 
@@ -246,6 +298,9 @@ Category guidance:
 - support: support plans, subscriptions, SaaS seats.
 - tax: VAT, sales tax, withholding, duties.
 - credit: credits, grants, refunds, adjustments.
+- revenue: income the company invoices or receives (Pollen packs, rev-share,
+  platform payouts, cashback). Positive amounts; op_transaction_category
+  "revenue"; op_cloud_type null.
 - unknown: useful evidence that is not confidently classifiable.
 
 Output for extract:
@@ -253,7 +308,7 @@ Output for extract:
 - Return JSON only.
 - No markdown.
 - No comments.
-- The top-level object must be a single ingest_entry.v1 object.
+- Return NDJSON: one ingest_entry.v1 object per line, one line per entry.
 
 ## Mode: reconcile
 
@@ -261,7 +316,7 @@ Goal: compare existing source entries with OP rows and propose evidence updates.
 
 Inputs:
 
-- One entry JSON from data/processed/<vendor>/entries/.
+- Entries from one data/processed/<vendor>/<source_id>/entries.ndjson.
 - A small related batch only when entries clearly share the same provider/period.
 - Candidate op_transactions and op_cloud rows.
 - Existing evidence fields when available.

@@ -14,7 +14,7 @@
 
 </div>
 
-<p align="center"><img src="https://media.pollinations.ai/8d8dcfb9bd9905af" alt="Pixel art cozy hackerspace — robot at terminal, nomnom creature eating code, bee with glasses" width="800" height="340" /></p>
+<p align="center"><img src="https://media.pollinations.ai/eb3be88cf66d7491" alt="Pixel art cozy hackerspace — robot at terminal, nomnom creature eating code, bee with glasses" width="800" /></p>
 
 ## 🆕 Recent Apps
 
@@ -22,7 +22,7 @@
 |------|-------------|--------|
 | [🤖 LLM Playground](https://llmplayground.net) | LLM Playground is a chat workspace for GPT, Claude, Pollinations, and other AI models with markdown/LaTeX rendering. Add custom AI Characters and team servers with channels and per-member quotas. | [@voodoohop](https://github.com/voodoohop) |
 | [🖼️ /motion](https://motion-e93d3.web.app/) | /motion is a free, open-source generative graphics studio for designing WebGL shader visuals and looping motion backgrounds. It lets users tweak shader parameters, customize palettes, preview visuals | [@murderszn](https://github.com/murderszn) |
-| [🌱 Sprout](https://murderszn.github.io/sprout/) | Sprout is an open-source install-fixer CLI that diagnoses and resolves local developer tool installation, configuration, and PATH problems on macOS, Linux, and Windows. | [@murderszn](https://github.com/murderszn) |
+| [🌱 Sprout](https://murderszn.github.io/sprout/) | Display the Sprout social card image at https://murderszn.github.io/sprout/public/og-image.png. | [@murderszn](https://github.com/murderszn) |
 | [💬 Flow Linnom](https://flow.linnom.com) | Flow Linnom provides a chat interface to access multiple AI language models. | [@omarsenusi](https://github.com/omarsenusi) |
 | [🎙️ VoiceEnable Agent](https://metamysteries8.github.io/realtimed/) | Enable voice functionality for VoiceEnable Agent. | [@MetaMysteries8](https://github.com/MetaMysteries8) |
 | [📝 Textylize](https://textylize.vercel.app/) | Textylize is a mainly client-side text stylizer. It lets users apply text styling changes. | [@bytetilde](https://github.com/bytetilde) |
@@ -40,14 +40,17 @@ We've launched **https://gen.pollinations.ai** — a single endpoint for all you
 
 - **Unified endpoint** — single API at `gen.pollinations.ai` for all generation
 - **Pollen credits** — simple pay-as-you-go system ($1 ≈ 1 Pollen)
-- **All models, one place** — Flux, GPT-5, Claude, Gemini, Seedream, and more
-- **API keys** — publishable keys for frontend, secret keys for backend
+- **All models, one place** — Flux, GPT, Claude, Gemini, Seedream, and more
+- **API keys** — secret keys for model usage, app keys for tracking BYOP apps.
 - **CLI** — `npx @pollinations/cli` for humans and AI agents ([source](packages/polli-cli))
 
 > Get started at [enter.pollinations.ai](https://enter.pollinations.ai) and check out the [API docs](https://gen.pollinations.ai/docs)
 
 ## 🆕 Latest News
 
+- **2026-07-10** – **🚀 GPT 5.6 & Seedream 5 Pro** The GPT 5.6 family (Sol, Terra, Luna) is now live for text generation, alongside Seedream 5 Pro for high-quality images. Check the [Available Models](https://gen.pollinations.ai/v1/models).
+- **2026-07-10** – **✨ CLI Quest Rewards** Track your earned Pollen and quest progress directly from the terminal with the updated [Polli CLI](https://www.npmjs.com/package/@pollinations/cli).
+- **2026-07-06** – **🎮 Roblox Integration** Tomdacat brings Pollinations to Roblox creators with an OpenAI-compatible API powering 40+ models. [Try it](https://ai.tomdacat.com) <!-- app -->
 - **2026-07-05** – **⚡ Gemini Prompt Caching** Send `cache_control` markers with your Gemini requests to cache large contexts. Deterministic hits, faster responses, and significantly cheaper repeated queries via the [Unified API](https://gen.pollinations.ai).
 - **2026-07-05** – **🌟 Sprout** A new community creation has landed in the Greenhouse directory. [Try it](https://murderszn.github.io/sprout/) <!-- app -->
 - **2026-07-05** – **🎨 /motion** An open-source generative graphics studio for designing WebGL shader visuals and looping motion backgrounds. [Try it](https://motion-e93d3.web.app/) <!-- app -->
@@ -55,9 +58,6 @@ We've launched **https://gen.pollinations.ai** — a single endpoint for all you
 - **2026-07-03** – **🤖 Flow Linnom** A new multi-model chat interface joins the community directory. For when querying just one LLM isn't enough. [Try it](https://flow.linnom.com) <!-- app -->
 - **2026-07-02** – **🚀 3D Generation API** Send a text prompt to `/3d/{prompt}`, get a downloadable GLB file back. Powered by Trellis 2 and Rodin 2.5. [API Docs](https://gen.pollinations.ai/docs)
 - **2026-07-02** – **⚡ RTX 5090s for Flux** Image generation now routes to a self-hosted 5090 pool. Median generation time for 1024x1024 is down to 2.25s. [Try it](https://pollinations.ai/play)
-- **2026-07-02** – **🔗 OAuth 2.1 Support** Build apps that authenticate users without touching raw API keys. Standard authorization-code grant with PKCE is now live. [Dashboard](https://enter.pollinations.ai)
-- **2026-06-29** – **🚀 Community Text Endpoints** Bring your own brain. Register and monetize your own OpenAI-compatible models via the [dashboard](https://enter.pollinations.ai), or query the new decentralized registry of community-run AI at `community/{username}/{model-id}`.
-- **2026-06-28** – **🩺 Real-time Model Health** Added `GET /v1/models/status` so you can programmatically check if a model is awake before throwing requests at it. Cached for 60 seconds. Check the [API Docs](https://gen.pollinations.ai/docs).
 ---
 
 ## 🌱 Introduction
@@ -227,9 +227,9 @@ Replace the description with your own, and you'll get a unique image based on yo
 
 Here's an example of a generated image:
 
-<p align="center"><img src="https://media.pollinations.ai/589dc7f43393c30a" alt="Pixel art robot and bee in a cozy digital garden — Stardew Valley vibes" width="800" height="340" /></p>
+<p align="center"><img src="https://media.pollinations.ai/9e0df3b04d27666c" alt="Pixel art robot and bee in a cozy digital garden — Stardew Valley vibes" width="800" /></p>
 
-<p align="center"><img src="https://media.pollinations.ai/7317bd94b97edde2" alt="Robot holding generated image saying I CAN SEE, nomnom creature eating prompt text" width="800" height="340" /></p>
+<p align="center"><img src="https://media.pollinations.ai/ec34c8a3c45c42d9" alt="Robot holding generated image saying I CAN SEE, nomnom creature eating prompt text" width="800" /></p>
 
 ## 🎨 Examples
 
@@ -394,7 +394,7 @@ For development setup and environment management, see [DEVELOP.md](./DEVELOP.md)
 
 > pollinations.ai is proud to be supported by:
 
-<p align="center"><img src="https://media.pollinations.ai/8d2067a54db29fbf" alt="Pixel art garden shelf — supporter plants in labeled pots, robot watering, bee with watering can" width="800" height="340" /></p>
+<p align="center"><img src="https://media.pollinations.ai/3f7405eb2d6f57b7" alt="Pixel art garden shelf — supporter plants in labeled pots, robot watering, bee with watering can" width="800" /></p>
 
 - [Perplexity AI](https://www.perplexity.ai/): AI-powered search and conversational answer engine
 - [AWS Activate](https://aws.amazon.com/): GPU Cloud Credits
@@ -413,7 +413,7 @@ For development setup and environment management, see [DEVELOP.md](./DEVELOP.md)
 The best way to support pollinations.ai is by using our product! Get your API key and start building at **[enter.pollinations.ai](https://enter.pollinations.ai)**.
 
 ## 📣 Stay Connected
-[News & FAQ](https://enter.pollinations.ai/#news-faq) · 
+[News & FAQ](https://enter.pollinations.ai/#news-faq) ·
 [𝕏 Twitter](https://twitter.com/pollinations_ai) · [Instagram](https://instagram.com/pollinations_ai) · [LinkedIn](https://www.linkedin.com/company/pollinations-ai) · [Facebook](https://facebook.com/pollinations) · [Reddit](https://www.reddit.com/r/pollinations_ai/) · [YouTube](https://www.youtube.com/c/pollinations)
 
 ## 📜 License

@@ -10,7 +10,6 @@ import type { Env } from "./env.ts";
 import { logger } from "./middleware/logger.ts";
 import { createDocsRoutes } from "./routes/docs.ts";
 import { wellKnownRoutes } from "./routes/well-known.ts";
-import { runScheduledTasks } from "./services/scheduled-tasks.ts";
 
 function stripTrailingSlash(path: string): string {
     return path.length > 1 ? path.replace(/\/+$/, "") : path;
@@ -90,11 +89,4 @@ export type AppRoutes = typeof app;
 
 export default {
     fetch: app.fetch,
-    async scheduled(
-        _event: ScheduledController,
-        env: CloudflareBindings,
-        ctx: ExecutionContext,
-    ) {
-        await runScheduledTasks(env, ctx);
-    },
 } satisfies ExportedHandler<CloudflareBindings>;

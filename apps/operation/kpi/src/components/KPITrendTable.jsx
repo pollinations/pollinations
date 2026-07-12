@@ -136,7 +136,7 @@ export function KPITrendTable({ weeklyData, title }) {
             category: "Revenue",
             format: "currency",
             tooltip:
-                "Gross revenue in USD from pollen pack purchases. Source: Polar API (order amounts)",
+                "Gross revenue in USD from pollen pack purchases. Source: Stripe checkout events in Tinybird.",
         },
         {
             key: "packPurchases",
@@ -144,7 +144,7 @@ export function KPITrendTable({ weeklyData, title }) {
             category: "Revenue",
             format: "number",
             tooltip:
-                "Count of completed pollen pack purchases this week. Source: Polar API (successful orders)",
+                "Count of completed pollen pack purchases this week. Source: Stripe checkout events in Tinybird.",
         },
         {
             key: "arpa",

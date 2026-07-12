@@ -134,6 +134,24 @@ export const IMAGE_SERVICES = {
         outputModalities: ["image"],
         maxReferenceImages: 14, // Pollinations route cap from Replicate schema.
     },
+    "seedream5-pro": {
+        aliases: ["seedream-5-pro", "seedream-pro-5"],
+        modelId: "seedream5-pro",
+        provider: "replicate",
+        brand: "ByteDance",
+        category: "image",
+        addedDate: new Date("2026-07-10").getTime(),
+        priceMultiplier: 1,
+        paidOnly: true,
+        cost: {
+            completionImageTokens: 0.09, // per 2K image
+        },
+        title: "Seedream 5.0 Pro",
+        description: "Premium multimodal image generation and editing",
+        inputModalities: ["text", "image"],
+        outputModalities: ["image"],
+        maxReferenceImages: 10,
+    },
     "seedream": {
         aliases: [],
         modelId: "seedream",
@@ -298,7 +316,7 @@ export const IMAGE_SERVICES = {
     "flux": {
         aliases: [],
         modelId: "flux",
-        provider: "fireworks",
+        provider: "vast",
         brand: "Black Forest Labs",
         category: "image",
         addedDate: new Date("2025-10-07").getTime(),
@@ -307,8 +325,7 @@ export const IMAGE_SERVICES = {
             completionImageTokens: 0.0014, // per image
         },
         title: "Flux Schnell",
-        description:
-            "Flux Schnell - Fast high-quality image generation (Fireworks)",
+        description: "Flux Schnell - Fast high-quality image generation",
         inputModalities: ["text"],
         outputModalities: ["image"],
     },

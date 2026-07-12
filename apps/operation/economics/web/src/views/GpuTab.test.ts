@@ -71,9 +71,8 @@ describe("gpuEconomics", () => {
 
         expect(rows).toHaveLength(1);
         expect(rows[0]).toMatchObject({
-            gpu: "RTX 4090",
             vendor: "runpod",
-            model: "zimage",
+            models: "zimage",
             rentUsd: 100,
             paidRentUsd: 90,
             creditRentUsd: 10,
@@ -91,32 +90,64 @@ describe("gpuEconomics", () => {
         ]);
     });
 
-    it("splits Pollen across matching GPU rows by rent share", () => {
+    it("sums rent across pods and models for the same vendor+month, without splitting Pollen", () => {
         const rows = gpuEconomics(
             {
                 ...baseData,
                 opCloud: [
                     cloud({
                         resource_sku: "RTX 4090",
+                        model: "zimage",
                         paid: -75,
                     }),
                     cloud({
                         resource_id: "pod-2",
                         resource_sku: "RTX A5000",
+                        model: "klein",
                         paid: -25,
                     }),
                 ],
-                opPollen: [pollen({ price_paid: 100, requests_paid: 100 })],
+                opPollen: [
+                    pollen({
+                        price_paid: 100,
+                        requests_paid: 100,
+                        requests_quests: 0,
+                    }),
+                ],
             },
             "2026-06",
         );
 
-        const paidByGpu = new Map(rows.map((row) => [row.gpu, row.paidUsd]));
-        expect(paidByGpu.get("RTX A5000")).toBe(25);
-        expect(paidByGpu.get("RTX 4090")).toBe(75);
+        expect(rows).toHaveLength(1);
+        expect(rows[0]).toMatchObject({
+            vendor: "runpod",
+            models: "klein, zimage",
+            rentUsd: 100,
+            paidUsd: 100,
+            requests: 100,
+        });
     });
 
-    it("flags missing model, unknown GPU, and no Pollen match", () => {
+    it("keeps separate vendors as separate rows", () => {
+        const rows = gpuEconomics(
+            {
+                ...baseData,
+                opCloud: [
+                    cloud({ vendor: "runpod" }),
+                    cloud({ vendor: "lambda", resource_id: "pod-2" }),
+                ],
+                opPollen: [
+                    pollen({ vendor: "runpod" }),
+                    pollen({ vendor: "lambda" }),
+                ],
+            },
+            "2026-06",
+        );
+
+        expect(rows).toHaveLength(2);
+    });
+
+    it("flags missing model", () => {
         const rows = gpuEconomics(
             {
                 ...baseData,
@@ -130,9 +161,20 @@ describe("gpuEconomics", () => {
             "2026-06",
         );
 
-        expect(rows[0].gpu).toBe("unknown GPU");
-        expect(rows[0].model).toBe("missing model");
-        expect(rows[0].flags).toEqual(["unknown GPU", "missing model"]);
+        expect(rows[0].models).toBe("");
+        expect(rows[0].flags).toEqual(["missing model"]);
+    });
+
+    it("flags no Pollen match when a model exists but nothing matched", () => {
+        const rows = gpuEconomics(
+            {
+                ...baseData,
+                opCloud: [cloud({})],
+            },
+            "2026-06",
+        );
+
+        expect(rows[0].flags).toEqual(["no Pollen match"]);
     });
 });
 

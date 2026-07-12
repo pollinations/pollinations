@@ -49,9 +49,8 @@ const REGISTRY_UNIT_PRICES: Record<string, { price: number; unit: string }> = {
 };
 
 export type GpuEconomicsRow = {
-    gpu: string;
     vendor: string;
-    model: string;
+    models: string;
     month: string;
     rentUsd: number;
     paidRentUsd: number;
@@ -85,14 +84,6 @@ function splitModels(model: string): string[] {
         .filter(Boolean);
 }
 
-function modelKey(model: string): string {
-    return model.trim() || "missing model";
-}
-
-function gpuKey(gpu: string): string {
-    return gpu.trim() || "unknown GPU";
-}
-
 function computeBreakEven(
     models: string[],
     rentUsd: number,
@@ -111,10 +102,16 @@ function computeBreakEven(
     return result;
 }
 
+// GPU rent is attributed at vendor+month grain, not per-pod or per-model:
+// generation_event's provider field is real per-request ground truth, but a
+// pod's manually-entered "model" label isn't (one host can run several
+// models at once), so splitting rent across models would just be a guess
+// dressed up as precision. This is still biased when a vendor's Pollen
+// traffic includes usage not actually served by the GPU we rent from them —
+// accepted for now; fixing that needs real per-request GPU tagging.
 export function gpuEconomics(data: Data, monthFilter: MonthFilterValue) {
     type Acc = GpuEconomicsRow & {
         modelSet: Set<string>;
-        rawModel: string;
     };
     const groups = new Map<string, Acc>();
 
@@ -131,13 +128,10 @@ export function gpuEconomics(data: Data, monthFilter: MonthFilterValue) {
         // rent — skipping them would overstate GPU rent vs the Providers tab.
         if (paidRentUsd === 0 && creditRentUsd === 0) continue;
 
-        const gpu = gpuKey(row.resource_sku);
-        const model = modelKey(row.model);
-        const key = `${month}|${row.vendor}|${gpu}|${model}`;
+        const key = `${month}|${row.vendor}`;
         const acc = groups.get(key) ?? {
-            gpu,
             vendor: row.vendor,
-            model,
+            models: "",
             month,
             rentUsd: 0,
             paidRentUsd: 0,
@@ -151,8 +145,7 @@ export function gpuEconomics(data: Data, monthFilter: MonthFilterValue) {
             effUsdPerReq: null,
             breakEven: [],
             flags: [],
-            modelSet: new Set(splitModels(row.model)),
-            rawModel: row.model,
+            modelSet: new Set<string>(),
         };
         acc.rentUsd += rentUsd;
         acc.paidRentUsd += paidRentUsd;
@@ -163,16 +156,6 @@ export function gpuEconomics(data: Data, monthFilter: MonthFilterValue) {
         groups.set(key, acc);
     }
 
-    const groupsByVendorMonthModel = new Map<string, Acc[]>();
-    for (const group of groups.values()) {
-        for (const model of group.modelSet) {
-            const key = `${group.month}|${group.vendor}|${model}`;
-            const entries = groupsByVendorMonthModel.get(key) ?? [];
-            entries.push(group);
-            groupsByVendorMonthModel.set(key, entries);
-        }
-    }
-
     for (const pollen of data.opPollen ?? []) {
         if (
             pollen.month < WINDOW_START ||
@@ -180,44 +163,35 @@ export function gpuEconomics(data: Data, monthFilter: MonthFilterValue) {
         ) {
             continue;
         }
-        const candidates =
-            groupsByVendorMonthModel.get(
-                `${pollen.month}|${pollen.vendor}|${pollen.model}`,
-            ) ?? [];
-        if (candidates.length === 0) continue;
+        const acc = groups.get(`${pollen.month}|${pollen.vendor}`);
+        if (!acc) continue;
 
-        const totalRent = candidates.reduce((sum, row) => sum + row.rentUsd, 0);
-        for (const row of candidates) {
-            const share =
-                totalRent > 0 ? row.rentUsd / totalRent : 1 / candidates.length;
-            row.requests +=
-                (pollen.requests_paid + pollen.requests_quests) * share;
-            row.paidUsd +=
-                toUsd(pollen.price_paid, pollen.currency, pollen.month) * share;
-            row.questUsd +=
-                toUsd(pollen.price_quests, pollen.currency, pollen.month) *
-                share;
-            row.retainedUsd +=
-                toUsd(
-                    pollen.price_paid - pollen.byop_paid - pollen.model_paid,
-                    pollen.currency,
-                    pollen.month,
-                ) * share;
-        }
+        acc.requests += pollen.requests_paid + pollen.requests_quests;
+        acc.paidUsd += toUsd(pollen.price_paid, pollen.currency, pollen.month);
+        acc.questUsd += toUsd(
+            pollen.price_quests,
+            pollen.currency,
+            pollen.month,
+        );
+        acc.retainedUsd += toUsd(
+            pollen.price_paid - pollen.byop_paid - pollen.model_paid,
+            pollen.currency,
+            pollen.month,
+        );
     }
 
     return [...groups.values()]
         .map((row): GpuEconomicsRow => {
             const models = [...row.modelSet].sort();
             const flags: string[] = [];
-            if (row.gpu === "unknown GPU") flags.push("unknown GPU");
-            if (row.model === "missing model") flags.push("missing model");
+            if (models.length === 0) flags.push("missing model");
             if (models.length > 0 && row.requests <= 0) {
                 flags.push("no Pollen match");
             }
             const marginUsd = row.retainedUsd - row.rentUsd;
             return {
                 ...row,
+                models: models.join(", "),
                 marginUsd,
                 marginPct:
                     row.retainedUsd > 0
@@ -306,9 +280,8 @@ export function GpuTab({
     const stats = useMemo(() => gpuSummary(rows), [rows]);
     const sortColumns = useMemo<SortColumn<GpuEconomicsRow>[]>(
         () => [
-            { key: "gpu", value: (row) => row.gpu },
             { key: "vendor", value: (row) => row.vendor },
-            { key: "model", value: (row) => row.model },
+            { key: "models", value: (row) => row.models },
             { key: "rentUsd", value: (row) => row.rentUsd },
             {
                 key: "usageMatchPct",
@@ -387,21 +360,15 @@ export function GpuTab({
                         <TableRow>
                             <TableHeaderCell
                                 rowSpan={2}
-                                {...headerProps("gpu")}
-                            >
-                                GPU
-                            </TableHeaderCell>
-                            <TableHeaderCell
-                                rowSpan={2}
                                 {...headerProps("vendor")}
                             >
                                 vendor
                             </TableHeaderCell>
                             <TableHeaderCell
                                 rowSpan={2}
-                                {...headerProps("model")}
+                                {...headerProps("models")}
                             >
-                                model
+                                models
                             </TableHeaderCell>
                             <TableHeaderCell
                                 colSpan={1}
@@ -474,7 +441,7 @@ export function GpuTab({
                                 <HeaderHint
                                     hint={{
                                         meaning:
-                                            "Paid plus quest requests from OP Pollen, matched by vendor, month, and model.",
+                                            "Paid plus quest requests from OP Pollen, matched by vendor and month.",
                                         tables: "op_pollen_api",
                                         sources: "TB",
                                     }}
@@ -541,8 +508,7 @@ export function GpuTab({
                     <TableBody>
                         {withUniqueRowKeys(
                             sorted,
-                            (row) =>
-                                `${row.month}|${row.vendor}|${row.gpu}|${row.model}`,
+                            (row) => `${row.month}|${row.vendor}`,
                         ).map(({ key, row }) => {
                             const pollenUsageUsd = row.paidUsd + row.questUsd;
                             const matchPct = usageMatchPct(
@@ -551,9 +517,8 @@ export function GpuTab({
                             );
                             return (
                                 <TableRow key={key}>
-                                    <TableCell>{row.gpu}</TableCell>
                                     <TableCell>{row.vendor}</TableCell>
-                                    <TableCell>{row.model}</TableCell>
+                                    <TableCell>{row.models}</TableCell>
                                     <TableCell
                                         align="right"
                                         className={GROUP_BORDER}

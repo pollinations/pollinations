@@ -1,0 +1,36 @@
+{
+  "pr_number": 12364,
+  "title": "Add CarouselCraft AI to image",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/12364",
+  "merged_at": "2026-07-13T00:13:54Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds [CarouselCraft AI](https://trdefi.github.io/carouselcraft-ai/) to image\n- CarouselCraft AI generates Instagram carousels from a DeFi/Crypto topic using Pollinations.ai for prompt text generation and slide image generation. Users enter a topic to create carousel slides.\n\nFixes #12152",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Slide into DeFi",
+    "blurb": "CarouselCraft AI just landed in the Greenhouse! This clever new community app uses Pollinations to instantly generate Instagram carousels for DeFi and crypto topics.",
+    "summary": "Added CarouselCraft AI to the community apps list, a new tool that generates complete Instagram carousels for DeFi and crypto topics using Pollinations for both text and image generation.",
+    "impact": "Creators can now discover and use CarouselCraft AI to turn simple crypto topics into ready-to-post, multi-slide Instagram decks.",
+    "keywords": [
+      "community",
+      "app",
+      "instagram",
+      "carousel",
+      "crypto",
+      "defi"
+    ],
+    "visual_concept": "The PR is about an app that makes Instagram carousels for Crypto/DeFi. Visual symbols: Instagram-style photo slides/carousels, crypto coins (Bitcoin/Ethereum style pixel coins), the Pollinations bee. The bee could be swiping through glowing pixel-art slides or holding a stack of polaroids with crypto symbols on them.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny director's beret, swiping through a glowing floating carousel of polaroid pictures showing pixelated crypto coins. Soft lime green (#ecf874) and lavender gradient background. Chunky retro sprites, warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-13/PR-12364.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny director's beret, swiping through a glowing floating carousel of polaroid pictures showing pixelated crypto coins. Soft lime green (#ecf874) and lavender gradient background. Chunky retro sprites, warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-07-13T00:14:51.362132+00:00",
+  "app_name": "CarouselCraft AI",
+  "app_url": "https://trdefi.github.io/carouselcraft-ai/"
+}

@@ -1,6 +1,6 @@
 # 🔆 App Greenhouse
 
-> **841** community apps powered by [pollinations.ai](https://pollinations.ai)
+> **842** community apps powered by [pollinations.ai](https://pollinations.ai)
 
 🐝 **Buzz** = 100+ requests/24h · 🏵️ **Pollen** = Sign in with Pollinations · 🫧 **Fresh** = Added in the last 30 days
 
@@ -44,6 +44,7 @@ Users pay with their own balance — developers pay $0. [Learn more →](../BRIN
 
 | App | Description | Author | ⭐ | |
 |-----|-------------|--------|---:|---|
+| [🪄 Magic Story Image](https://msi.jieren.my.id/) | Changes images from drawings or pictures into a magical, children friendly picture. Uses a website interface for the conversion. | [@Rayantion](https://github.com/Rayantion) |  | 🫧 |
 | [🛋️ Deco Spacio](https://deco-spacio.vercel.app/) | Generates AI interior concepts using Next.js, TypeScript, and Tailwind CSS, with Pollinations imagery and optional Supabase storage. | [@LuthfanM](https://github.com/LuthfanM) |  | 🫧 |
 | [🛠️ Markitdown-for-Everyone](https://github.com/soyangelromero/Markitdown-for-Everyone) | Markitdown-for-Everyone is a command-line tool using Microsoft MarkItDown and the Pollinations API to convert many file formats into Markdown. | [@soyangelromero](https://github.com/soyangelromero) |  | 🫧 |
 | [🤖 worst AI](https://ai.cesustheteapot.dpdns.org/) | worst AI provides AI responses using pollinations.ai and requires pollinations auth to access the site. It combines generated content with user input, often including unhelpful information. | [@Guest453](https://github.com/Guest453) |  | 🫧 |
@@ -53,7 +54,6 @@ Users pay with their own balance — developers pay $0. [Learn more →](../BRIN
 | [📚 BOOK TO GAME](https://gelfer1979.itch.io/book-to-game) | Convert book formats (txt, mobi, epub, docx, fb2) into gamebooks using cloud AI (web/mobile) and local AI via LMSTUDIO or llama; default uses polination AI. Web version does not save game state. | [@gelfer1979](https://github.com/gelfer1979) |  | 🫧 |
 | [🏫 JadiKelas](https://jadikelas.tech) | Open https://JadiKelas.tech. Display “JadiKelas” content from the site. | [@fikrifahrezi25](https://github.com/fikrifahrezi25) |  | 🫧 |
 | [🪝 Hookly](https://hookly-alpha.vercel.app) | Generate AI content ideas with hooks, angles, and ready-to-post drafts for 7 platforms in Hookly. Uses the Pollinations text API (DeepSeek via gen.pollinations.ai). | [@a2650040-dev](https://github.com/a2650040-dev) |  | 🫧 |
-| [💬 XiaoXian ai](https://candy535.github.io/XiaoXian/) | A professional AI chat interface built on the Pollinations API. It supports multi-model switching, deep thinking mode, streaming typing output with a visual cursor, role presets, custom model input, c | [@candy535](https://github.com/candy535) |  | 🫧 |
 
 ---
 
@@ -72,7 +72,7 @@ Users pay with their own balance — developers pay $0. [Learn more →](../BRIN
 | [🎨 Immage Generator](https://genimg.mummer.org/) | Web-based AI image generator for creating images from text prompts. | [@mumblemummer](https://github.com/mumblemummer) |  | 🐝 |
 | [🎨 PixArt AI](https://apps.apple.com/us/app/pixart-ai-ai-image-generator/id6749236127) | iOS app that turns text prompts into AI-generated artwork via Pollinations. | [@bhyahmed86-maker](https://github.com/bhyahmed86-maker) |  | 🐝 |
 
-<details><summary>Show all 204 apps</summary>
+<details><summary>Show all 205 apps</summary>
 
 | App | Description | Author | ⭐ | |
 |-----|-------------|--------|---:|---|
@@ -127,6 +127,7 @@ Users pay with their own balance — developers pay $0. [Learn more →](../BRIN
 | [🧩 TileTile](https://tiletile.netlify.app/) | Generate seamless tile textures with TileTile using the Flux Schnell image generation model provided by Pollinations. | [@xaw1](https://github.com/xaw1) | 1 |  |
 | [🎨 SpecAI](https://specai.pages.dev) | Provide an interactive UI for Pollinations AI that generates images with custom resolutions and reproducible seeds. | [@spectre365](https://github.com/spectre365) | 1 |  |
 | [🎨 Inkly AI](https://inkly-ai.vercel.app/) | Generate images from text or transform images via image-to-image, view your gallery, and download generated files. | [@Auspicious14](https://github.com/Auspicious14) | 1 |  |
+| [🪄 Magic Story Image](https://msi.jieren.my.id/) | Changes images from drawings or pictures into a magical, children friendly picture. Uses a website interface for the conversion. | [@Rayantion](https://github.com/Rayantion) |  | 🫧 |
 | [🖼️ Pollinations Image lab](https://raptorvampire.github.io/pollinations-image-lab/) | Generate and browse images using Pollinations Image Lab. | [@RaptorVampire](https://github.com/RaptorVampire) |  | 🫧 |
 | [👗 MURI — AI Fashion Mockup Generator](https://muri-five.vercel.app/) | Transform multiple fabric reference images into a fashion catalogue composition with MURI, an AI-powered sustainable fashion mockup generator. | [@Gedesutrisna](https://github.com/Gedesutrisna) |  | 🫧 |
 | [🖼️ CarouselCraft AI](https://trdefi.github.io/carouselcraft-ai/) | CarouselCraft AI generates Instagram carousels from a DeFi/Crypto topic using Pollinations.ai for prompt text generation and slide image generation. Users enter a topic to create carousel slides. | [@TRDEFI](https://github.com/TRDEFI) |  | 🫧 |

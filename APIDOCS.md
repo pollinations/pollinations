@@ -1,6 +1,6 @@
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="assets/logo-text-white.svg">
-  <img alt="Pollinations" src="assets/logo-text-black.svg" width="420">
+  <source media="(prefers-color-scheme: dark)" srcset="packages/ui/src/brand/lockup-horizontal-white.svg">
+  <img alt="Pollinations" src="packages/ui/src/brand/lockup-horizontal-black.svg" width="420">
 </picture>
 
 > Generate text, images, video, audio, realtime voice, and embeddings with a single API. OpenAI-compatible — use any OpenAI SDK by changing the base URL.
@@ -226,12 +226,12 @@ Repeat `-F "image=@…"` to pass multiple reference images on models that accept
 **Upload arbitrary media** to the content-addressed store. Returns a `https://media.pollinations.ai/<hash>` URL you can pass anywhere a remote image, audio, or video URL is accepted.
 
 ```bash
-curl -X POST "https://gen.pollinations.ai/upload" \
+curl -X POST "https://media.pollinations.ai/upload" \
   -H "Authorization: Bearer $POLLINATIONS_KEY" \
   -F "file=@./asset.png"
 ```
 
-The hash is derived from the bytes **and** the filename, so the same content uploaded under different names yields different URLs. Files are retained for 30 days; re-uploading resets the timer (and is a no-op if the hash already exists — the `duplicate` field in the response tells you which).
+The hash is derived from the bytes **and** the filename, so the same content uploaded under different names yields different URLs. Files are retained for 30 days. Re-uploading resets the timer, while the `duplicate` field reports whether the file already existed. Retrieving a file keeps it active.
 
 ## 💡 Tips
 
@@ -975,7 +975,7 @@ Upload an image, audio, or video file. Supports multipart/form-data, raw binary,
 💻 **Example**
 
 ```bash
-curl -X POST "https://gen.pollinations.ai/upload" \
+curl -X POST "https://media.pollinations.ai/upload" \
   -H "Authorization: Bearer $POLLINATIONS_KEY" \
   -F "file=@./image.png"
 ```
@@ -999,7 +999,7 @@ Get a file by its content hash. Access keeps files from expiring.
 💻 **Example**
 
 ```bash
-curl "https://gen.pollinations.ai/a1b2c3d4e5f60718"
+curl "https://media.pollinations.ai/a1b2c3d4e5f60718"
 ```
 
 ---
@@ -1021,7 +1021,7 @@ Check existence and metadata without downloading the file.
 💻 **Example**
 
 ```bash
-curl -X HEAD "https://gen.pollinations.ai/a1b2c3d4e5f60718"
+curl -X HEAD "https://media.pollinations.ai/a1b2c3d4e5f60718"
 ```
 
 ---
@@ -1052,7 +1052,7 @@ Return file metadata (hash, content type, size, upload timestamp) as JSON withou
 💻 **Example**
 
 ```bash
-curl "https://gen.pollinations.ai/a1b2c3d4e5f60718/metadata"
+curl "https://media.pollinations.ai/a1b2c3d4e5f60718/metadata"
 ```
 
 ### Account
@@ -1470,7 +1470,7 @@ curl "https://gen.pollinations.ai/account/usage?format=json&limit=100" \
 
 #### `GET` `/account/usage/daily` — Get Daily Usage
 
-Returns daily aggregated usage for the requested time window, grouped by date and model. Use `days` for rolling windows or `granularity` and `period` for exact day/week/month periods. Useful for dashboards and spending analysis. Supports JSON and CSV export. Results are cached for 1 hour. API keys require the read-only `account:usage` permission.
+Returns aggregated usage for the requested time window, grouped by date, API key, model, and billing source. Use `days` for rolling windows or `granularity` and `period` for exact day/week/month periods. Useful for dashboards and spending analysis. Supports JSON and CSV export. Requires `account:usage` permission when using API keys.
 
 ⚙️ **Parameters**
 
@@ -1484,12 +1484,14 @@ Returns daily aggregated usage for the requested time window, grouped by date an
 
 <sub>`*` = required parameter</sub>
 
-📤 **Response** · `200` · `application/json` — Daily usage records aggregated by date/model
+📤 **Response** · `200` · `application/json` — Usage records aggregated by date/API key/model/source
 
 | Field | Type | Description |
 |---|---|---|
 | `usage` * | `object`[] | Array of daily usage records |
 | `usage[].date` * | `string` | Date (YYYY-MM-DD format) |
+| `usage[].api_key_id` * | `string` | API key id used for these requests |
+| `usage[].api_key` * | `string` \| `null` | API key name used for these requests |
 | `usage[].model` * | `string` \| `null` | Model used |
 | `usage[].meter_source` * | `string` \| `null` | Billing source: 'tier' = Quest Pollen balance, 'pack' = paid balance |
 | `usage[].requests` * | `number` | Number of requests |
@@ -1507,9 +1509,48 @@ curl "https://gen.pollinations.ai/account/usage/daily?format=json&days=90" \
 
 ---
 
+#### `GET` `/account/earnings/transactions` — Get Earnings Transactions
+
+Returns recent per-request earnings transactions, newest first. Requires `account:usage` permission when using API keys.
+
+⚙️ **Parameters**
+
+| Param | In | Type | Description |
+|---|---|---|---|
+| `limit` | `query` | `number` | default: `100` · range: `1…50000` |
+| `days` | `query` | `integer` | default: `30` · range: `1…90` |
+| `granularity` | `query` | `"day"` \| `"week"` \| `"month"` | — |
+| `period` | `query` | `string` | — |
+
+<sub>`*` = required parameter</sub>
+
+📤 **Response** · `200` · `application/json` — Earnings transaction records
+
+| Field | Type | Description |
+|---|---|---|
+| `transactions` * | `object`[] | Earning transaction records |
+| `transactions[].timestamp` * | `string` | Request timestamp (YYYY-MM-DD HH:mm:ss format) |
+| `transactions[].cursor_event_id` * | `string` | Stable event id |
+| `transactions[].entity_name` * | `string` | Earning entity display name |
+| `transactions[].model` * | `string` \| `null` | Model used for generation |
+| `transactions[].meter_source` * | `string` \| `null` | Billing source: 'tier' = tier balance, 'pack' = paid balance |
+| `transactions[].pollen_earned` * | `number` | Developer credit earned |
+| `count` * | `number` | Number of records returned |
+
+<sub>`*` = required field</sub>
+
+💻 **Example**
+
+```bash
+curl "https://gen.pollinations.ai/account/earnings/transactions?limit=100&days=30" \
+  -H "Authorization: Bearer $POLLINATIONS_KEY"
+```
+
+---
+
 #### `GET` `/account/earnings` — Get Developer Earnings
 
-Returns developer earnings in one response: per-(date, entity) buckets, per-entity rollups, per-source rollups, and additive money totals across BYOP apps and community models. Source-specific rows include `requests`, `baseline_price`, reward basis `cost_usd`, `reward_rate`, and `unique_users`; the top-level total only includes additive earned-pollen fields. Use `days` for rolling windows or `granularity` and `period` for exact day/week/month periods. Cached for 1 hour. API keys require the read-only `account:usage` permission.
+Returns developer earnings in one response: per-(date, entity) buckets and per-entity rollups across BYOP apps and community models. Rows include `requests`, `baseline_price`, reward basis `cost_usd`, and `reward_rate`. Use `days` for rolling windows or `granularity` and `period` for exact day/week/month periods. API keys require the read-only `account:usage` permission.
 
 ⚙️ **Parameters**
 
@@ -1519,58 +1560,41 @@ Returns developer earnings in one response: per-(date, entity) buckets, per-enti
 | `days` | `query` | `integer` | default: `90` · range: `1…90` |
 | `granularity` | `query` | `"day"` \| `"week"` \| `"month"` | — |
 | `period` | `query` | `string` | — |
-| `api_key_ids` | `query` | `string` | — |
-| `entity_ids` | `query` | `string` | — |
 
 <sub>`*` = required parameter</sub>
 
-📤 **Response** · `200` · `application/json` — Source-specific earnings buckets and additive totals
+📤 **Response** · `200` · `application/json` — Earnings buckets and additive totals
 
 | Field | Type | Description |
 |---|---|---|
 | `daily` * | `object`[] | Per-(date, earning entity) buckets for the period |
 | `daily[].date` * | `string` | Date bucket (YYYY-MM-DD or hourly); empty string on rollup rows |
-| `daily[].entity_id` * | `string` | Earning entity id (BYOP app key or community model); empty string on source rollup rows |
+| `daily[].entity_id` * | `string` | Earning entity id (BYOP app key or community model) |
 | `daily[].entity_name` * | `string` | Earning entity display name |
 | `daily[].source` * | `"byop_markup"` \| `"community_model"` | Reward source, such as byop_markup or community_model |
 | `daily[].requests` * | `number` | Number of billed requests |
+| `daily[].paid_requests` * | `number` | Billed requests paid from paid balance |
+| `daily[].tier_requests` * | `number` | Billed requests paid from tier balance |
 | `daily[].baseline_price` * | `number` | Model cost before markup (sum over the bucket) |
 | `daily[].pollen_earned` * | `number` | Developer credit earned over the bucket |
 | `daily[].paid_earned` * | `number` | Developer credit earned from paid-balance spend |
 | `daily[].tier_earned` * | `number` | Developer credit earned from Quest Pollen spend |
 | `daily[].cost_usd` * | `number` | Reward basis total for the bucket; BYOP rows use payer charge, community model rows use model price |
 | `daily[].reward_rate` * | `number` | Average reward or markup rate applied |
-| `daily[].unique_users` * | `number` | Distinct end-users who paid. Always 0 on daily/hourly bucket rows by design — meaningful only on rollup rows (where date=''). |
 | `perEntity` * | `object`[] | Per-earning-entity rollups for the period |
 | `perEntity[].date` * | `string` | Date bucket (YYYY-MM-DD or hourly); empty string on rollup rows |
-| `perEntity[].entity_id` * | `string` | Earning entity id (BYOP app key or community model); empty string on source rollup rows |
+| `perEntity[].entity_id` * | `string` | Earning entity id (BYOP app key or community model) |
 | `perEntity[].entity_name` * | `string` | Earning entity display name |
 | `perEntity[].source` * | `"byop_markup"` \| `"community_model"` | Reward source, such as byop_markup or community_model |
 | `perEntity[].requests` * | `number` | Number of billed requests |
+| `perEntity[].paid_requests` * | `number` | Billed requests paid from paid balance |
+| `perEntity[].tier_requests` * | `number` | Billed requests paid from tier balance |
 | `perEntity[].baseline_price` * | `number` | Model cost before markup (sum over the bucket) |
 | `perEntity[].pollen_earned` * | `number` | Developer credit earned over the bucket |
 | `perEntity[].paid_earned` * | `number` | Developer credit earned from paid-balance spend |
 | `perEntity[].tier_earned` * | `number` | Developer credit earned from Quest Pollen spend |
 | `perEntity[].cost_usd` * | `number` | Reward basis total for the bucket; BYOP rows use payer charge, community model rows use model price |
 | `perEntity[].reward_rate` * | `number` | Average reward or markup rate applied |
-| `perEntity[].unique_users` * | `number` | Distinct end-users who paid. Always 0 on daily/hourly bucket rows by design — meaningful only on rollup rows (where date=''). |
-| `bySource` * | `object`[] | Per-source rollups for the period. Source-specific request, user, basis, and rate metrics are meaningful here. |
-| `bySource[].date` * | `string` | Date bucket (YYYY-MM-DD or hourly); empty string on rollup rows |
-| `bySource[].entity_id` * | `string` | Earning entity id (BYOP app key or community model); empty string on source rollup rows |
-| `bySource[].entity_name` * | `string` | Earning entity display name |
-| `bySource[].source` * | `"byop_markup"` \| `"community_model"` | Reward source, such as byop_markup or community_model |
-| `bySource[].requests` * | `number` | Number of billed requests |
-| `bySource[].baseline_price` * | `number` | Model cost before markup (sum over the bucket) |
-| `bySource[].pollen_earned` * | `number` | Developer credit earned over the bucket |
-| `bySource[].paid_earned` * | `number` | Developer credit earned from paid-balance spend |
-| `bySource[].tier_earned` * | `number` | Developer credit earned from Quest Pollen spend |
-| `bySource[].cost_usd` * | `number` | Reward basis total for the bucket; BYOP rows use payer charge, community model rows use model price |
-| `bySource[].reward_rate` * | `number` | Average reward or markup rate applied |
-| `bySource[].unique_users` * | `number` | Distinct end-users who paid. Always 0 on daily/hourly bucket rows by design — meaningful only on rollup rows (where date=''). |
-| `total` * | `object` | Additive money totals across all earning sources. Non-additive metrics such as requests, users, basis, and rates are intentionally source-specific. |
-| `total.pollen_earned` * | `number` | Total developer credit earned across earning sources |
-| `total.paid_earned` * | `number` | Total developer credit earned from paid-balance spend |
-| `total.tier_earned` * | `number` | Total developer credit earned from Quest Pollen spend |
 
 <sub>`*` = required field</sub>
 
@@ -1589,11 +1613,6 @@ curl "https://gen.pollinations.ai/account/earnings?format=json&days=90" \
     }
   ],
   "perEntity": [
-    {
-      "source": "byop_markup"
-    }
-  ],
-  "bySource": [
     {
       "source": "byop_markup"
     }
@@ -1812,7 +1831,8 @@ curl "https://gen.pollinations.ai/quests/catalog"
 
 Returns raw model health rows from the public Tinybird `model_health` pipe.
 
-The optional `minutes` query parameter controls the rolling window and must be an integer between 1 and 1440.
+The optional `minutes` query parameter controls the rolling window and must be an integer between 1 and 10080.
+The X-Model-Status-Timestamp response header reports when the data was fetched from Tinybird; X-Model-Status-Stale is set when stale data is returned during an upstream failure.
 
 📤 **Response** · `200` · `application/json` — Success
 

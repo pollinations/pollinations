@@ -1,0 +1,34 @@
+{
+  "pr_number": 12363,
+  "title": "Add Pollinations Image Studio to image",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/12363",
+  "merged_at": "2026-07-13T00:10:09Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds [Pollinations Image Studio](https://housir2001.github.io/pollinations-image-demo/) to image\n- Generate images with Pollinations.ai in Pollinations Image Studio using a free, no-key, two-surface setup.\n\nFixes #11827",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Welcome to the Studio",
+    "blurb": "The community greenhouse is growing! Pollinations Image Studio just landed, bringing a slick, no-key interface for generating your next masterpiece.",
+    "summary": "Added Pollinations Image Studio by housir2001 to the community apps directory.",
+    "impact": "Users can now discover and use Pollinations Image Studio, a free, no-key interface for generating images.",
+    "keywords": [
+      "community",
+      "apps",
+      "image-generation",
+      "greenhouse"
+    ],
+    "visual_concept": "Polly the bee in an art studio or greenhouse setting, acting as an artist. The Monitor Robot can be present, displaying the generated art on its screen to represent the 'Image Studio' app.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee mascot wearing a tiny painter's beret, standing at a wooden easel in a sunlit greenhouse. A chunky retro monitor robot sits next to her, its screen glowing with a beautiful generated landscape. Soft lime green (#ecf874) and pastel peach gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-13/PR-12363.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee mascot wearing a tiny painter's beret, standing at a wooden easel in a sunlit greenhouse. A chunky retro monitor robot sits next to her, its screen glowing with a beautiful generated landscape. Soft lime green (#ecf874) and pastel peach gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-07-13T00:11:10.352784+00:00",
+  "app_name": "Pollinations Image Studio",
+  "app_url": "https://housir2001.github.io/pollinations-image-demo/"
+}

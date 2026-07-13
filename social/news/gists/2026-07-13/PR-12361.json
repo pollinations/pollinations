@@ -1,0 +1,34 @@
+{
+  "pr_number": 12361,
+  "title": "fix: nudge.sh must retype stuck text before Enter, not send bare \\r",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/12361",
+  "merged_at": "2026-07-13T07:17:25Z",
+  "labels": [
+    "DEV-BUG"
+  ],
+  "pr_body_excerpt": "## Summary\n- The blind-\\`\\\\r\\`-only nudge.sh (deployed a few days ago) doesn't reliably work — confirmed live: the monitor sat stalled ~49h because bare Enter didn't register as submit in Claude Code's TUI post-\\`/compact\\`\n- Restored detection + retype-the-exact-text-then-Enter, matching the proven pattern from self-compact's \\`auto-continue.sh\\` (\\`it2 send-text\\` + separate \\`send-key enter\\`)\n- Fixed a real bug found while restoring detection: bare \\`o\\` prompt lines were excluded via \\`len(l) > 1\\`, so a genuinely idle bottom prompt could never clear a stale match from higher in scrollback\n\n## Test plan\n- [x] Verified against 4 synthetic scenarios (stuck / idle / busy / scrollback-trap regression case)\n- [x] Deployed to the live EC2 box, confirmed safe no-op against an actively-working session\n- [x] Live monitor unstuck manually and confirmed resuming normal cycles",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "A gentle nudge",
+    "blurb": "Fixed a bug where our community monitor would get stuck waiting for input. Now it properly retypes the prompt before hitting enter to keep things moving.",
+    "summary": "Updated the community monitor's nudge script to retype stuck text before sending an Enter keystroke, fixing an issue where bare carriage returns failed to unstick Claude Code's TUI.",
+    "impact": "The internal community monitor will now reliably recover from stalled states, ensuring continuous operation without manual intervention.",
+    "keywords": [
+      "monitoring",
+      "infrastructure",
+      "bug-fix",
+      "automation"
+    ],
+    "visual_concept": "The monitor robot getting stuck at a terminal and the bee helping it out by pressing a key to unstick the system.",
+    "image_prompt": "Cozy pixel art scene of the chunky monitor robot looking confused at a stalled retro terminal screen. The cute bee mascot hovers nearby, gently pressing a large 'ENTER' key on a mechanical keyboard to unstick the system. Soft lime green (#ecf874) and lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-13/PR-12361.jpg",
+    "prompt": "Cozy pixel art scene of the chunky monitor robot looking confused at a stalled retro terminal screen. The cute bee mascot hovers nearby, gently pressing a large 'ENTER' key on a mechanical keyboard to unstick the system. Soft lime green (#ecf874) and lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley."
+  },
+  "generated_at": "2026-07-13T07:20:30.539944+00:00"
+}

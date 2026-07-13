@@ -1,7 +1,7 @@
 <div align="center">
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="assets/logo-text-white.svg" />
-    <img src="assets/logo-text-black.svg" alt="pollinations.ai" width="100%" />
+    <source media="(prefers-color-scheme: dark)" srcset="packages/ui/src/brand/lockup-horizontal-white.svg" />
+    <img src="packages/ui/src/brand/lockup-horizontal-black.svg" alt="pollinations.ai" width="100%" />
   </picture>
   
   <p><strong>Open-source AI for people who make things.</strong></p>

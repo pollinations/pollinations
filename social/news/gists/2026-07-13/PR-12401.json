@@ -1,0 +1,35 @@
+{
+  "pr_number": 12401,
+  "title": "fix: remove unused issue automation backfill",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/12401",
+  "merged_at": "2026-07-13T13:53:42Z",
+  "labels": [
+    "DEV-CHORE"
+  ],
+  "pr_body_excerpt": "- Removes the one-off Issue Automation Backfill workflow.\n- Deletes 296 lines of duplicated triage logic that has not run since April 11.\n- Leaves the active issue automation workflow unchanged.\n- Confirms no repository references depend on the backfill workflow.",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Backfill leaves the garden",
+    "blurb": "A retired one-off triage workflow has been composted. The active issue automations keep tending the queue, minus 296 lines of dormant duplicate logic.",
+    "summary": "Removed the unused Issue Automation Backfill GitHub workflow, deleting 296 lines of duplicate triage logic while leaving the active automation unchanged.",
+    "impact": "Repository maintenance is simpler with no behavior change to the active issue-triage workflow.",
+    "keywords": [
+      "github-actions",
+      "issue-automation",
+      "triage",
+      "workflow-cleanup",
+      "maintenance"
+    ],
+    "visual_concept": "Depict Polly as a tidy gardener removing an old, clearly retired automation scroll from a cozy garden shed while a nearby active CRT terminal continues watering healthy code-plants; the old backfill is being composted, not treated as a failure.",
+    "image_prompt": "Cozy pixel art scene of Polly, the cute yellow-and-brown striped bee mascot with pink cheek blush, light blue wings, and a tiny gardener hat, gently placing an old scroll labeled \"BACKFILL\" into a compost bin while a retro CRT terminal keeps watering flourishing code-plants. Cozy 8-bit pixel art aesthetic with a prominent lime green (#ecf874) glow, soft pastel gradients, warm lighting, subtle scanlines, and retro gaming vibes; a small flower garden makes the cleanup feel calm and useful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-13/PR-12401.jpg",
+    "prompt": "Cozy pixel art scene of Polly, the cute yellow-and-brown striped bee mascot with pink cheek blush, light blue wings, and a tiny gardener hat, gently placing an old scroll labeled \"BACKFILL\" into a compost bin while a retro CRT terminal keeps watering flourishing code-plants. Cozy 8-bit pixel art aesthetic with a prominent lime green (#ecf874) glow, soft pastel gradients, warm lighting, subtle scanlines, and retro gaming vibes; a small flower garden makes the cleanup feel calm and useful."
+  },
+  "generated_at": "2026-07-13T13:54:34.225598+00:00"
+}

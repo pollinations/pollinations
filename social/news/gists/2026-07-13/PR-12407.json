@@ -1,0 +1,36 @@
+{
+  "pr_number": 12407,
+  "title": "Add Thumbsnare to image",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/12407",
+  "merged_at": "2026-07-13T16:05:56Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds [Thumbsnare](https://thumbsnare.vercel.app/) to image\n- Thumbsnare generates YouTube thumbnail concepts from a video idea, using title, creative angle, target audience, and visual direction to create structured options for review and export.\n\nFixes #11673",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Thumbnails catch the light",
+    "blurb": "Thumbsnare has landed in the garden: feed it a video idea and it grows structured YouTube thumbnail concepts for review and export. Fewer blank canvases, more tiny billboards with opinions.",
+    "summary": "Added Thumbsnare to the Pollinations apps directory, giving creators a tool that turns a video idea, title, creative angle, target audience, and visual direction into structured YouTube thumbnail concepts.",
+    "impact": "Creators can now find Thumbsnare through Pollinations and quickly explore reviewable, export-ready thumbnail directions before making the final pixels.",
+    "keywords": [
+      "community-app",
+      "thumbsnare",
+      "youtube",
+      "thumbnails",
+      "creator-tools",
+      "image-generation"
+    ],
+    "visual_concept": "Depict Thumbsnare as a cozy thumbnail-design garden: several small framed YouTube-style concept cards sprout from pots labeled title, audience, angle, and visual direction. Polly, wearing a tiny director beret and holding a clipboard, tends the cards while a friendly CRT robot compares the thumbnail options; use flowers and vines to make the ideation process feel like growing concepts rather than filling out a form.",
+    "image_prompt": "Cozy pixel art scene of Polly, a cute yellow bee with dark brown stripes, black antennae and oval eyes, pink rectangular cheek blushes, a happy smile, and rounded light-blue translucent wings, wearing a tiny director beret as she holds a clipboard beside a garden of framed YouTube thumbnail concept cards sprouting from lime green (#ecf874) pots labeled in simple pixel text “TITLE”, “AUDIENCE”, and “ANGLE”; a cute CRT monitor robot eagerly compares the cards while code-vines and flowers curl around a retro desk. Cozy 8-bit pixel art aesthetic, soft lime green and pastel gradient background, chunky retro sprites, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, nostalgic and emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-13/PR-12407.jpg",
+    "prompt": "Cozy pixel art scene of Polly, a cute yellow bee with dark brown stripes, black antennae and oval eyes, pink rectangular cheek blushes, a happy smile, and rounded light-blue translucent wings, wearing a tiny director beret as she holds a clipboard beside a garden of framed YouTube thumbnail concept cards sprouting from lime green (#ecf874) pots labeled in simple pixel text “TITLE”, “AUDIENCE”, and “ANGLE”; a cute CRT monitor robot eagerly compares the cards while code-vines and flowers curl around a retro desk. Cozy 8-bit pixel art aesthetic, soft lime green and pastel gradient background, chunky retro sprites, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, nostalgic and emotionally warm."
+  },
+  "generated_at": "2026-07-13T16:06:57.685721+00:00",
+  "app_name": "Thumbsnare",
+  "app_url": "https://thumbsnare.vercel.app/"
+}

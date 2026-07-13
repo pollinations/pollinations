@@ -1,6 +1,6 @@
 # 🔆 App Greenhouse
 
-> **849** community apps powered by [pollinations.ai](https://pollinations.ai)
+> **850** community apps powered by [pollinations.ai](https://pollinations.ai)
 
 🐝 **Buzz** = 100+ requests/24h · 🏵️ **Pollen** = Sign in with Pollinations · 🫧 **Fresh** = Added in the last 30 days
 
@@ -44,6 +44,7 @@ Users pay with their own balance — developers pay $0. [Learn more →](../BRIN
 
 | App | Description | Author | ⭐ | |
 |-----|-------------|--------|---:|---|
+| [🧠 Blaze Prep](https://blazeprep.net) | Manage FDNY Prep learning content in Blaze Prep, with AI-generated materials from Pollinations AI. | [@beedieeyez](https://github.com/beedieeyez) |  | 🫧 |
 | [🧩 ScrollStop UGC Ad Studio](https://scrollstop-ugc-studio.vercel.app/) | ScrollStop UGC Studio is a web app that helps creators and marketers generate short-form UGC ad ideas for TikTok, Reels, and Shorts. Users enter product details, target audience, offer, and creative a | [@dreamm160-ops](https://github.com/dreamm160-ops) |  | 🫧 |
 | [🎉 Aventi](https://aventi-web.vercel.app/) | Aventi is a swipe-first discovery app for local events, nightlife, and experiences. It helps users find what to do nearby. | [@Erics1337](https://github.com/Erics1337) |  | 🫧 |
 | [📹 Affiliate Video Maker](https://github.com/falconafk31/affiliate-video-maker) | Generate AI-Powered affiliate videos with Affiliate Video Maker. | [@falconafk31](https://github.com/falconafk31) |  | 🫧 |
@@ -53,7 +54,6 @@ Users pay with their own balance — developers pay $0. [Learn more →](../BRIN
 | [🗣️ Talkti](https://talktiweb.web.app) | Talkti provides real-time voice translation. | [@Tyrone-J](https://github.com/Tyrone-J) |  | 🫧 |
 | [🪄 Magic Story Image](https://msi.jieren.my.id/) | Changes images from drawings or pictures into a magical, children friendly picture. Uses a website interface for the conversion. | [@Rayantion](https://github.com/Rayantion) |  | 🫧 |
 | [🛋️ Deco Spacio](https://deco-spacio.vercel.app/) | Generates AI interior concepts using Next.js, TypeScript, and Tailwind CSS, with Pollinations imagery and optional Supabase storage. | [@LuthfanM](https://github.com/LuthfanM) |  | 🫧 |
-| [🛠️ Markitdown-for-Everyone](https://github.com/soyangelromero/Markitdown-for-Everyone) | Markitdown-for-Everyone is a command-line tool using Microsoft MarkItDown and the Pollinations API to convert many file formats into Markdown. | [@soyangelromero](https://github.com/soyangelromero) |  | 🫧 |
 
 ---
 
@@ -671,7 +671,7 @@ Users pay with their own balance — developers pay $0. [Learn more →](../BRIN
 | [🗣️ Practica un segundo idioma](https://proyectodescartes.org/IATools/131_Practica_el_segundo_idioma/) | Practica un segundo idioma con ejercicios de conversación, vocabulario y comprensión auditiva y seguimiento del progreso. | [@Juanrivera126](https://github.com/Juanrivera126) |  | 🏵️ |
 | [📝 AI Quiz Simulator](https://mrlearner1606.github.io/quiz/) | Free AI-powered quiz simulator for competitive exams with timer, scoring, and explanations. | [@mrlearner1606](https://github.com/mrlearner1606) |  | 🏵️ |
 
-<details><summary>Show all 67 apps</summary>
+<details><summary>Show all 68 apps</summary>
 
 | App | Description | Author | ⭐ | |
 |-----|-------------|--------|---:|---|
@@ -686,6 +686,7 @@ Users pay with their own balance — developers pay $0. [Learn more →](../BRIN
 | [🧭 Psy-Path-AI](https://psy-path-ai.vercel.app/) | Help engineering students determine career paths using Psy-Path-AI, combining psychological profiling (MBTI + Holland code) with AI-driven personalized chat guidance. | [@unKnownNG](https://github.com/unKnownNG) | 2 |  |
 | [🧠 G-Pai](https://g-pai.vercel.app/) | G-Pai is an app for students with some glitches. The developer is working to fix issues. | [@Harhsit](https://github.com/Harhsit) | 1 |  |
 | [🔎 Zairok AI Discovery App](https://zairok.web.app) | Discover AI tools and resources with Zairok AI Discovery App, a free hub for browsing models and services. | [@aarushlohit](https://github.com/aarushlohit) | 1 |  |
+| [🧠 Blaze Prep](https://blazeprep.net) | Manage FDNY Prep learning content in Blaze Prep, with AI-generated materials from Pollinations AI. | [@beedieeyez](https://github.com/beedieeyez) |  | 🫧 |
 | [🏫 JadiKelas](https://jadikelas.tech) | Open https://JadiKelas.tech. Display “JadiKelas” content from the site. | [@fikrifahrezi25](https://github.com/fikrifahrezi25) |  | 🫧 |
 | [🧶 NebulaCraft](https://nebulacraft-1c723.web.app) | Generate amigurumi patterns with Pollinations AI in NebulaCraft. Includes a PWA experience, SEO optimization, and a variation selector for iterative design. | [@Lubloodyrose](https://github.com/Lubloodyrose) |  |  |
 | [📚 KPSS Zamanı](https://kpsszamani.com) | KPSS is an annual exam in Türkiye for selecting candidates for government positions. KPSS Zamanı helps you study for the exam on your mobile. | [@rudde0](https://github.com/rudde0) |  |  |

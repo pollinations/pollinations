@@ -20,6 +20,7 @@
 
 | Name | Description | Author |
 |------|-------------|--------|
+| [🧠 Blaze Prep](https://blazeprep.net) | Manage FDNY Prep learning content in Blaze Prep, with AI-generated materials from Pollinations AI. | [@beedieeyez](https://github.com/beedieeyez) |
 | [🧩 ScrollStop UGC Ad Studio](https://scrollstop-ugc-studio.vercel.app/) | ScrollStop UGC Studio is a web app that helps creators and marketers generate short-form UGC ad ideas for TikTok, Reels, and Shorts. Users enter product details, target audience, offer, and creative a | [@dreamm160-ops](https://github.com/dreamm160-ops) |
 | [🎉 Aventi](https://aventi-web.vercel.app/) | Aventi is a swipe-first discovery app for local events, nightlife, and experiences. It helps users find what to do nearby. | [@Erics1337](https://github.com/Erics1337) |
 | [📹 Affiliate Video Maker](https://github.com/falconafk31/affiliate-video-maker) | Generate AI-Powered affiliate videos with Affiliate Video Maker. | [@falconafk31](https://github.com/falconafk31) |
@@ -29,7 +30,6 @@
 | [🗣️ Talkti](https://talktiweb.web.app) | Talkti provides real-time voice translation. | [@Tyrone-J](https://github.com/Tyrone-J) |
 | [🪄 Magic Story Image](https://msi.jieren.my.id/) | Changes images from drawings or pictures into a magical, children friendly picture. Uses a website interface for the conversion. | [@Rayantion](https://github.com/Rayantion) |
 | [🛋️ Deco Spacio](https://deco-spacio.vercel.app/) | Generates AI interior concepts using Next.js, TypeScript, and Tailwind CSS, with Pollinations imagery and optional Supabase storage. | [@LuthfanM](https://github.com/LuthfanM) |
-| [🛠️ Markitdown-for-Everyone](https://github.com/soyangelromero/Markitdown-for-Everyone) | Markitdown-for-Everyone is a command-line tool using Microsoft MarkItDown and the Pollinations API to convert many file formats into Markdown. | [@soyangelromero](https://github.com/soyangelromero) |
 
 [Browse all apps →](apps/GREENHOUSE.md)
 ## 🚀 New Unified API — Now Live

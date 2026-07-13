@@ -46,11 +46,16 @@ Core boundaries:
 
 - Never write Tinybird unless the user explicitly approves a write.
 - Every proposed OP row carries a stable `entry_id` and a millisecond
-  `recorded_at`. `entry_id` is deterministic from the fact's identity
-  (conventions in enter.pollinations.ai/observability/OP_TABLES.md).
-  Re-registering or correcting an existing
-  fact reuses its `entry_id` with a newer `recorded_at`; never mint a new id
-  for the same fact, so repeated appends can never double-count.
+  `recorded_at`. `entry_id` is deterministic from the fact's identity, never
+  from ingestion time: for `op_cloud`,
+  `{source}:{vendor}:{type}:{start}:{resource_id or resource_name}:{model}`,
+  extended with the SKU or a line-item suffix when one period legitimately has
+  several rows for the same resource; for `op_transactions`, the native bank
+  identifier (Wise transfer/transaction ID) — two genuinely separate transfers
+  always have distinct native IDs, even when date, vendor, and amount are
+  identical. Re-registering or correcting an existing fact reuses its
+  `entry_id` with a newer `recorded_at`; never mint a new id for the same
+  fact, so repeated appends can never double-count.
 - Never send, archive, delete, label, or modify email.
 - Never expose secrets, tokens, cookies, bank details, or personal account data.
 - Preserve raw evidence. Do not rename source files unless the user asks.
@@ -286,9 +291,9 @@ Granularity:
   away.
 - The model field is bonus knowledge for display and explanation only. Fill it
   when the source names a model; never use it to filter, match, or reconcile.
-- entry_id: base id for the document; suffix "-<category>" or "-<model slug>"
-  for split entries. OP row id conventions live in
-  enter.pollinations.ai/observability/OP_TABLES.md.
+- entry_id: base id for the document (see the `op_cloud` id convention in Core
+  boundaries above); suffix "-<category>" or "-<model slug>" for split
+  entries.
 
 Category guidance:
 

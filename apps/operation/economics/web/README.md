@@ -29,7 +29,8 @@ and no network calls.
 
 Reads OP pipes from `enter.pollinations.ai/observability/endpoints/`:
 `op_transactions_api`, `op_cloud_api`, `op_pollen_api`, and `op_runway_api`.
-Conventions live in `enter.pollinations.ai/observability/OP_TABLES.md`.
+Write-side conventions (entry_id, idempotent corrections) live in the
+Economics ingest agent's own system prompt.
 
 The app is a read-only mirror; all reads go through the local server
 proxy.

@@ -23,6 +23,27 @@ function testEnv(overrides: Partial<CloudflareBindings> = {}) {
     } as CloudflareBindings;
 }
 
+function chatCompletionResponse() {
+    return Response.json({
+        id: "chatcmpl_legacy",
+        object: "chat.completion",
+        created: 1,
+        model: "gpt-oss-20b",
+        choices: [
+            {
+                index: 0,
+                message: { role: "assistant", content: "hello" },
+                finish_reason: "stop",
+            },
+        ],
+        usage: {
+            prompt_tokens: 1,
+            completion_tokens: 1,
+            total_tokens: 2,
+        },
+    });
+}
+
 async function fetchWorker(
     url: string,
     init: RequestInit = {},
@@ -103,27 +124,7 @@ describe("legacy API hostnames", () => {
                     providerHosts.push(
                         request.headers.get("x-portkey-custom-host"),
                     );
-                    return Response.json({
-                        id: "chatcmpl_legacy",
-                        object: "chat.completion",
-                        created: 1,
-                        model: "gpt-oss-20b",
-                        choices: [
-                            {
-                                index: 0,
-                                message: {
-                                    role: "assistant",
-                                    content: "hello",
-                                },
-                                finish_reason: "stop",
-                            },
-                        ],
-                        usage: {
-                            prompt_tokens: 1,
-                            completion_tokens: 1,
-                            total_tokens: 2,
-                        },
-                    });
+                    return chatCompletionResponse();
                 }
                 if (hostname === "tinybird.test") {
                     trackedEvents.push(JSON.parse(await request.text()));
@@ -158,6 +159,60 @@ describe("legacy API hostnames", () => {
                 }),
             ]),
         );
+    });
+
+    it.each([
+        {
+            endpoint: "legacy",
+            url: "https://text.pollinations.ai/v1/chat/completions",
+            ip: "203.0.113.88",
+        },
+        {
+            endpoint: "normal",
+            url: "https://gen.pollinations.ai/v1/chat/completions",
+            ip: "203.0.113.89",
+        },
+    ])("rate limits GPT-OSS cache misses on the $endpoint endpoint", async ({
+        url,
+        ip,
+    }) => {
+        let providerRequests = 0;
+        vi.spyOn(globalThis, "fetch").mockImplementation(
+            async (input, init) => {
+                const request = new Request(input, init);
+                if (new URL(request.url).hostname === "portkey.test") {
+                    providerRequests++;
+                    return chatCompletionResponse();
+                }
+                return new Response(null, { status: 202 });
+            },
+        );
+        const bindings = testEnv();
+        const headers = {
+            "CF-Connecting-IP": ip,
+            "Content-Type": "application/json",
+        };
+        const request = (content: string) =>
+            fetchWorker(
+                url,
+                {
+                    method: "POST",
+                    headers,
+                    body: JSON.stringify({
+                        model: "gpt-oss",
+                        messages: [{ role: "user", content }],
+                    }),
+                },
+                bindings,
+            );
+
+        const first = await request("first cache miss");
+        const second = await request("second cache miss");
+
+        expect(first.status).toBe(200);
+        expect(second.status).toBe(429);
+        expect(second.headers.get("Retry-After")).toBeTruthy();
+        expect(providerRequests).toBe(1);
     });
 
     it("reuses legacy image cache keys before auth and rate limiting", async () => {
@@ -203,13 +258,26 @@ describe("legacy API hostnames", () => {
         expect(response.status).toBe(401);
     });
 
-    it("rate limits Sana cache misses on both anonymous legacy requests", async () => {
+    it.each([
+        {
+            endpoint: "legacy",
+            url: "https://image.pollinations.ai/prompt/uncached-cat",
+            ip: "203.0.113.77",
+        },
+        {
+            endpoint: "normal",
+            url: "https://gen.pollinations.ai/image/uncached-cat?model=sana",
+            ip: "203.0.113.78",
+        },
+    ])("rate limits Sana cache misses on the $endpoint endpoint", async ({
+        url,
+        ip,
+    }) => {
         vi.spyOn(globalThis, "fetch").mockResolvedValue(
             new Response(null, { status: 202 }),
         );
         const bindings = testEnv({ IMAGE_BUCKET: createTestR2Bucket() });
-        const headers = { "CF-Connecting-IP": "203.0.113.77" };
-        const url = "https://image.pollinations.ai/prompt/uncached-cat";
+        const headers = { "CF-Connecting-IP": ip };
 
         const first = await fetchWorker(url, { headers }, bindings);
         const second = await fetchWorker(url, { headers }, bindings);

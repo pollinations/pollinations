@@ -16,4 +16,6 @@ Two ways to authenticate generation requests:
 
 When a key is supplied for a zero-priced model, normal key permissions and user attribution still apply. Invalid supplied keys are rejected.
 
+To protect shared free capacity, cache misses are limited per IP with or without authentication: one GPT-OSS request every 30 seconds and one Sana request every 45 seconds.
+
 For detailed integration guides on user-pays authorization, including OAuth discovery and token exchange, refer to the [Bring Your Own Pollen (BYOP) guide](https://github.com/pollinations/pollinations/blob/main/BRING_YOUR_OWN_POLLEN.md).

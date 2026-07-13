@@ -6,6 +6,7 @@ import type { Env } from "@/env.ts";
 import { handleImagePrompt, handleRegisterServer } from "@/image/handler.ts";
 import { auth } from "@/middleware/auth.ts";
 import { balance } from "@/middleware/balance.ts";
+import { freeModelRateLimit } from "@/middleware/free-model-rate-limit.ts";
 import {
     audioCache,
     imageCache,
@@ -14,7 +15,6 @@ import {
 import { type ResolveModelOptions, resolveModel } from "@/middleware/model.ts";
 import { frontendKeyRateLimit } from "@/middleware/rate-limit-durable.ts";
 import { edgeRateLimit } from "@/middleware/rate-limit-edge.ts";
-import { sanaRateLimit } from "@/middleware/sana-rate-limit.ts";
 import { textCache } from "@/middleware/text-cache.ts";
 import { track } from "@/middleware/track.ts";
 import { handleImageEdit, handleImageGeneration } from "./images.ts";
@@ -111,7 +111,7 @@ export const createImageVideoHandlers = (options?: ResolveModelOptions) =>
         resolveModel("generate.image", options),
         track("generate.image"),
         imageCache,
-        sanaRateLimit,
+        freeModelRateLimit,
         generationAccess,
         handleImageVideo,
     );
@@ -185,6 +185,7 @@ export const createChatCompletionHandlers = (options?: ResolveModelOptions) =>
         resolveModel("generate.text", options),
         track("generate.text"),
         textCache,
+        freeModelRateLimit,
         generationAccess,
         handleChatCompletion,
     );
@@ -210,6 +211,7 @@ export const createTextContentHandlers = (options?: ResolveModelOptions) =>
         resolveModel("generate.text", options),
         track("generate.text"),
         textCache,
+        freeModelRateLimit,
         generationAccess,
         handleTextContent,
     );
@@ -245,6 +247,7 @@ export const createSimpleTextHandlers = (options?: ResolveModelOptions) =>
         resolveModel("generate.text", options),
         track("generate.text"),
         textCache,
+        freeModelRateLimit,
         generationAccess,
         handleSimpleText,
     );

@@ -1,0 +1,36 @@
+{
+  "pr_number": 12409,
+  "title": "Add AINewsForge to business",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/12409",
+  "merged_at": "2026-07-13T16:12:37Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds [AINewsForge](Not public) to business\n- AINewsForge is an agentic system built with LangGraph that fetches news, generates LinkedIn posts, verifies claims, creates cover images, reviews quality, and publishes to LinkedIn.\n\nFixes #11622",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "News, forged responsibly",
+    "blurb": "AINewsForge joined the business garden: an agentic newsroom that gathers stories, checks its work, makes a cover, and sends a polished post to LinkedIn. Apparently even content pipelines need editors.",
+    "summary": "Added AINewsForge to the business app directory, showcasing a LangGraph agentic workflow that fetches news, verifies claims, generates LinkedIn copy and cover images, reviews quality, and publishes posts.",
+    "impact": "Builders can discover a concrete Pollinations-powered example of a multi-step AI publishing system that takes news from research through reviewed LinkedIn publication.",
+    "keywords": [
+      "community",
+      "AINewsForge",
+      "LangGraph",
+      "LinkedIn",
+      "agentic workflow",
+      "business apps"
+    ],
+    "visual_concept": "Depict a cozy miniature AI newsroom inside a garden shed: Polly acts as a tiny editor wearing a press hat, reviewing a news page beside a retro terminal. Code-plants grow around a corkboard of verified story notes, while a small CRT monitor robot holds a finished LinkedIn-style post and a pastel cover-image card.",
+    "image_prompt": "Cozy pixel art scene of Polly, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny press hat, editing a news story in a warm garden-shed newsroom; a CRT monitor robot proudly holds a polished LinkedIn post and cover-image card beside code-plants and a board of checked notes. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, retro gaming vibes; small pixel-font text: 'FACT CHECKED'. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-13/PR-12409.jpg",
+    "prompt": "Cozy pixel art scene of Polly, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny press hat, editing a news story in a warm garden-shed newsroom; a CRT monitor robot proudly holds a polished LinkedIn post and cover-image card beside code-plants and a board of checked notes. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, retro gaming vibes; small pixel-font text: 'FACT CHECKED'. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-07-13T16:13:33.196579+00:00",
+  "app_name": "AINewsForge",
+  "app_url": "Not public"
+}

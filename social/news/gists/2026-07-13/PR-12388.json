@@ -1,0 +1,35 @@
+{
+  "pr_number": 12388,
+  "title": "Add worst AI to chat",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/12388",
+  "merged_at": "2026-07-13T08:25:38Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds [worst AI](https://ai.cesustheteapot.dpdns.org/) to chat\n- worst AI provides AI responses using pollinations.ai and requires pollinations auth to access the site. It combines generated content with user input, often including unhelpful information.\n\nFixes #11820",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Gloriously unhelpful",
+    "blurb": "A new community app called 'worst AI' just landed in the Greenhouse. It uses Pollinations to generate delightfully unhelpful responses—because sometimes you just need a little chaos in your chat.",
+    "summary": "Added 'worst AI' to the Greenhouse, a community chat application that intentionally provides unhelpful AI responses using the Pollinations API.",
+    "impact": "Users can now explore this delightfully chaotic chat app, showcasing how developers can creatively use the API for comedic effect.",
+    "keywords": [
+      "community",
+      "apps",
+      "greenhouse",
+      "chat",
+      "humor"
+    ],
+    "visual_concept": "Polly the bee looking amused at a retro terminal that is printing out a tangled, messy pile of paper, representing the 'unhelpful' AI responses. A fun, chaotic but cozy vibe.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot looking amused at a retro computer terminal that is printing out a tangled, messy pile of paper. The screen shows a chaotic smiley face. Soft lime green (#ecf874) and lavender gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-13/PR-12388.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot looking amused at a retro computer terminal that is printing out a tangled, messy pile of paper. The screen shows a chaotic smiley face. Soft lime green (#ecf874) and lavender gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-07-13T08:26:39.958683+00:00",
+  "app_name": "worst AI",
+  "app_url": "https://ai.cesustheteapot.dpdns.org/"
+}

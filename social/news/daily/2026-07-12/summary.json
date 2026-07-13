@@ -1,0 +1,39 @@
+{
+  "date": "2026-07-12",
+  "period_start": "2026-07-12",
+  "period_end": "2026-07-12",
+  "title": "A faster, cleaner view of your Pollen activity",
+  "summary": "A dashboard-focused day: clearer Pollen activity, faster model discovery, a new reasoning model, and docs that survive copy-paste.\n\nThe Activity dashboard now runs on materialized Tinybird datasources, with unified infinite-scroll event history and daily charts for usage, earnings, BYOP markup, and community model rewards. Read-time event deduplication keeps the charts, transactions, and CSV exports accurate.\n\nThe dashboard’s Models section gained a search bar that filters by model name, display name, description, and provider while leaving navigation tabs in place. Muse Spark 1.1 also joined the catalog for text and image-to-text work, including its always-on reasoning mode.\n\nThe Python Quick Start now uses the correct OpenAI SDK `/v1` base URL, and generated media API docs send upload and retrieval curl examples to media.pollinations.ai rather than a text endpoint. Small slashes, large amounts of developer time.",
+  "pr_count": 7,
+  "prs": [
+    {
+      "number": 11939,
+      "date": "2026-07-12"
+    },
+    {
+      "number": 12246,
+      "date": "2026-07-12"
+    },
+    {
+      "number": 12286,
+      "date": "2026-07-12"
+    },
+    {
+      "number": 12349,
+      "date": "2026-07-12"
+    },
+    {
+      "number": 12350,
+      "date": "2026-07-12"
+    },
+    {
+      "number": 12359,
+      "date": "2026-07-12"
+    },
+    {
+      "number": 12360,
+      "date": "2026-07-12"
+    }
+  ],
+  "generated_at": "2026-07-13T13:07:44.652695+00:00"
+}

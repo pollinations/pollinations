@@ -1,0 +1,35 @@
+{
+  "pr_number": 12410,
+  "title": "Add Affiliate Video Maker to video_audio",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/12410",
+  "merged_at": "2026-07-13T16:15:36Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds [Affiliate Video Maker](https://github.com/falconafk31/affiliate-video-maker) to video_audio\n- Generate AI-Powered affiliate videos with Affiliate Video Maker.\n\nFixes #11598",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Affiliate videos enter the garden",
+    "blurb": "Affiliate Video Maker has landed in the video_audio greenhouse. It turns product ideas into AI-powered affiliate videos, leaving the bee more time to inspect the lighting.",
+    "summary": "Added Affiliate Video Maker to the video_audio app directory, giving builders a listed tool for creating AI-powered affiliate videos.",
+    "impact": "Users can now discover Affiliate Video Maker alongside Pollinations video and audio projects when looking for a way to produce affiliate video content.",
+    "keywords": [
+      "community-app",
+      "video-audio",
+      "affiliate-video-maker",
+      "ai-video",
+      "video-generation"
+    ],
+    "visual_concept": "Depict Affiliate Video Maker as a cozy creator workstation: a retro video editor with a simple product card, camera icon, and timeline assembling into a short film. Polly, wearing a tiny director beret and holding a clapperboard, helps arrange blooming code-plants around the monitor to show a community app joining the video_audio garden.",
+    "image_prompt": "Cozy pixel art scene of Polly, the cute bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks, a small happy smile, and small rounded light blue translucent wings, wearing a tiny director beret and holding a clapperboard beside a retro video-editing monitor that turns product cards and a camera icon into an affiliate video timeline; code-plants and small flowers bloom around the desk, with lime green (#ecf874) prominent. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, dark purple (#110518) outlines, emotionally warm and nostalgic."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-13/PR-12410.jpg",
+    "prompt": "Cozy pixel art scene of Polly, the cute bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks, a small happy smile, and small rounded light blue translucent wings, wearing a tiny director beret and holding a clapperboard beside a retro video-editing monitor that turns product cards and a camera icon into an affiliate video timeline; code-plants and small flowers bloom around the desk, with lime green (#ecf874) prominent. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, dark purple (#110518) outlines, emotionally warm and nostalgic."
+  },
+  "generated_at": "2026-07-13T16:16:29.843282+00:00",
+  "app_name": "Affiliate Video Maker",
+  "app_url": "https://github.com/falconafk31/affiliate-video-maker"
+}

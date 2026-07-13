@@ -1,0 +1,35 @@
+{
+  "pr_number": 12415,
+  "title": "fix: remove legacy deploy workflow name",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/12415",
+  "merged_at": "2026-07-13T16:45:41Z",
+  "labels": [
+    "DEV-INFRA"
+  ],
+  "pr_body_excerpt": "- Removes the temporary `Deploy gen.pollinations.ai` compatibility entry.\n- Keeps API-reference regeneration listening only to `Deploy / gen.pollinations.ai`.\n- Follows successful production deploy and dependent docs-workflow verification.\n- Validated with `actionlint` and `git diff --check`.\n",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "One deploy name, fewer ghosts",
+    "blurb": "The docs hive has stopped listening for a temporary deploy alias. One canonical signal now wakes the API-reference gardener.",
+    "summary": "The API-reference regeneration workflow now listens only for the canonical `Deploy / gen.pollinations.ai` workflow name, removing the temporary `Deploy gen.pollinations.ai` compatibility entry.",
+    "impact": "Deploy-triggered API documentation regeneration now follows one verified production workflow signal, reducing duplicate legacy configuration.",
+    "keywords": [
+      "github-actions",
+      "deploy",
+      "api-docs",
+      "workflow",
+      "automation"
+    ],
+    "visual_concept": "A cozy garden shed automation scene: Polly, wearing a tiny maintainer cap, removes an old handwritten alias tag from a single glowing deployment bell while a code-plant API reference blooms beside it. The scene represents retiring compatibility wiring while preserving the canonical docs regeneration trigger.",
+    "image_prompt": "Cozy pixel art scene in a warm garden-shed hackerspace where Polly the cute yellow-and-brown striped bee mascot wears a tiny maintainer cap and gently removes an old label from a glowing lime green (#ecf874) deployment bell marked in simple pixel text `Deploy / gen.pollinations.ai`; beside her, an API-reference code-plant blooms from a pastel pot. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, subtle CRT glow, dark purple (#110518) outlines, nostalgic and emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-13/PR-12415.jpg",
+    "prompt": "Cozy pixel art scene in a warm garden-shed hackerspace where Polly the cute yellow-and-brown striped bee mascot wears a tiny maintainer cap and gently removes an old label from a glowing lime green (#ecf874) deployment bell marked in simple pixel text `Deploy / gen.pollinations.ai`; beside her, an API-reference code-plant blooms from a pastel pot. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, subtle CRT glow, dark purple (#110518) outlines, nostalgic and emotionally warm."
+  },
+  "generated_at": "2026-07-13T16:46:30.162710+00:00"
+}

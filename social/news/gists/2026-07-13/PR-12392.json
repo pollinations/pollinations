@@ -1,0 +1,35 @@
+{
+  "pr_number": 12392,
+  "title": "Add Magic Story Image to image",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/12392",
+  "merged_at": "2026-07-13T08:34:20Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds [Magic Story Image](https://msi.jieren.my.id/) to image\n- Changes images from drawings or pictures into a magical, children friendly picture. Uses a website interface for the conversion.\n\nFixes #11765",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Once Upon a Pixel",
+    "blurb": "A new community app just landed! Magic Story Image transforms your everyday drawings and photos into magical, child-friendly storybook illustrations.",
+    "summary": "Added the community-built 'Magic Story Image' app to the ecosystem, which converts standard drawings and pictures into magical, child-friendly illustrations.",
+    "impact": "Users can now easily transform their images into whimsical storybook-style art through a dedicated web interface.",
+    "keywords": [
+      "community",
+      "app",
+      "image-to-image",
+      "storybook",
+      "magic"
+    ],
+    "visual_concept": "The pollinations bee (Polly) acting as a wizard or storyteller, transforming a simple drawing into a glowing, magical storybook illustration. Represents the 'Magic Story Image' app's core function.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny wizard hat, waving a small wand at a canvas where a simple sketch is transforming into a glowing, magical storybook illustration. Soft lime green (#ecf874) and lavender pastel gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-13/PR-12392.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny wizard hat, waving a small wand at a canvas where a simple sketch is transforming into a glowing, magical storybook illustration. Soft lime green (#ecf874) and lavender pastel gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-07-13T08:35:22.053323+00:00",
+  "app_name": "Magic Story Image",
+  "app_url": "https://msi.jieren.my.id/"
+}

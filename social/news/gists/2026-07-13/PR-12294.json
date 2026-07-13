@@ -1,0 +1,36 @@
+{
+  "pr_number": 12294,
+  "title": "fix: preaggregate KPI activations",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/12294",
+  "merged_at": "2026-07-13T15:07:46Z",
+  "labels": [
+    "DEV-BUG"
+  ],
+  "pr_body_excerpt": "- Adds a user_first_activity_mv aggregate maintained from generation_event.\n- Rewrites kpi_activations to read minMerge(first_activity_time) instead of grouping raw generation_event per dashboard request.\n- Reduces the 15GB-per-call activation scan that was timing out in Tinybird.\n\nValidation:\n- npx biome check --write apps/model-monitor/src/hooks/useModelMonitor.js apps/model-monitor/src/App.jsx gen.pollinations.ai/src/routes/model-status.ts packages/polli-cli/src/commands/stats.ts gen.pollinations.ai/src/docs/public-stats.md\n- npm run typecheck --prefix gen.pollinations.ai\n- npm run build --prefix packages/polli-cli\n- npm run build --prefix apps/model-monitor\n\nNote: no Tinybird deploy was performed. A dry-run validation was attempted earlier and was blocked by unrelated workspace drift where remote Tinybird objects are absent from this checkout.",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Activations stop eating 15GB",
+    "blurb": "The activation dashboard was rereading the whole meadow for every question. Now it keeps a tidy first-activity ledger, so the numbers arrive before the flowers wilt.",
+    "summary": "Added a `user_first_activity_mv` aggregate maintained from `generation_event`, and rewrote `kpi_activations` to use `minMerge(first_activity_time)` instead of grouping raw events on every dashboard request.",
+    "impact": "Activation KPI requests avoid the previous 15GB raw-event scan per call, making the dashboard substantially more reliable and less prone to Tinybird timeouts.",
+    "keywords": [
+      "observability",
+      "analytics",
+      "kpi",
+      "activations",
+      "tinybird",
+      "performance"
+    ],
+    "visual_concept": "Depict Polly as a careful garden keeper using a small clipboard to record each code-plant's first bloom in a compact ledger, while a nearby CRT monitor robot happily reads a fast, tidy activation chart instead of digging through an enormous pile of event scrolls. The first-bloom ledger represents the materialized first-activity aggregate and the calm dashboard represents the faster KPI query.",
+    "image_prompt": "Cozy pixel art scene of Polly, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny gardener visor, recording the first bloom of lime green (#ecf874) code-plants in a neat glowing ledger while a chunky CRT monitor robot displays a clean rising activation chart; a huge dusty pile of old event scrolls rests quietly in the background. Cozy 8-bit pixel art aesthetic, soft pastel mint-lavender-peach gradients, warm lighting, subtle CRT glow, retro gaming vibes like Stardew Valley or A Short Hike, emotionally warm and inviting."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-13/PR-12294.jpg",
+    "prompt": "Cozy pixel art scene of Polly, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny gardener visor, recording the first bloom of lime green (#ecf874) code-plants in a neat glowing ledger while a chunky CRT monitor robot displays a clean rising activation chart; a huge dusty pile of old event scrolls rests quietly in the background. Cozy 8-bit pixel art aesthetic, soft pastel mint-lavender-peach gradients, warm lighting, subtle CRT glow, retro gaming vibes like Stardew Valley or A Short Hike, emotionally warm and inviting."
+  },
+  "generated_at": "2026-07-13T15:08:42.178563+00:00"
+}

@@ -1,4 +1,4 @@
-name: PR Assign Author
+name: Repo / Assign PR author
 
 on:
   pull_request_target:

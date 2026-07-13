@@ -1,4 +1,4 @@
-name: Project Manager
+name: Repo / Organize issues and PRs
 
 on:
   issues:

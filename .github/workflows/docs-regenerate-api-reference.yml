@@ -1,4 +1,4 @@
-name: Regenerate API Docs
+name: Docs / Regenerate API reference
 
 # Runs only AFTER a successful production deploy so the fetched OpenAPI spec
 # reflects the code that's actually live. Avoids the isolate-rollout flapping
@@ -6,7 +6,7 @@ name: Regenerate API Docs
 # deploys from the `production` branch, not `main`).
 on:
   workflow_run:
-    workflows: ["Deploy gen.pollinations.ai"]
+    workflows: ["Deploy / gen.pollinations.ai"]
     types:
       - completed
     branches:

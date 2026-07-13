@@ -1,4 +1,4 @@
-name: Deploy gen.pollinations.ai
+name: Deploy / gen.pollinations.ai
 
 on:
   push:

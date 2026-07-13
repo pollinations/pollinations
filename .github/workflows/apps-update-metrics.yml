@@ -1,4 +1,4 @@
-name: App Update Metrics
+name: Apps / Update metrics
 
 on:
   schedule:

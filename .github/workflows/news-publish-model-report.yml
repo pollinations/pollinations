@@ -1,4 +1,4 @@
-name: Models Weekly Report
+name: News / Publish model report
 
 on:
   schedule:

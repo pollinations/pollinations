@@ -98,7 +98,7 @@ npm run deploy:production
 ```
 
 Production deploys are wired through
-`.github/workflows/deploy-operation-cloudflare.yml` on the `production` branch.
+`.github/workflows/deploy-operations-cloudflare.yml` on the `production` branch.
 The workflow deploys the container Worker, pushes filtered Grafana secrets, and
 checks both `/api/health` endpoints.
 

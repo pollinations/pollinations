@@ -1,4 +1,4 @@
-name: App Remove Dead
+name: Apps / Remove dead apps
 
 on:
   schedule:

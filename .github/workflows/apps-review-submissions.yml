@@ -1,4 +1,4 @@
-name: App Review Submission
+name: Apps / Review submissions
 
 on:
   issues:

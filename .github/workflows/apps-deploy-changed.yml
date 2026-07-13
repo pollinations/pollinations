@@ -1,4 +1,4 @@
-name: Deploy App (Automatic)
+name: Apps / Deploy changed apps
 
 on:
   workflow_dispatch:

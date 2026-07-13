@@ -104,6 +104,10 @@ Canonical vendor rules:
 - Stripe bank payouts are canonical vendor `stripe`, category `revenue`.
   Classify an inflow as `investment` only when separate evidence proves that it
   is financing rather than operating revenue.
+- Polar was the pre-Stripe merchant of record for pollen packs (Nov 2025–Jan
+  2026) and is retired from runtime. Its payouts, fees, and pack revenue are
+  canonical vendor `polar`, category `revenue`; treat Polar as historical,
+  read-only evidence and never add Polar SDKs, webhooks, or automated writes.
 - Use `others` only for a genuinely unmatched inflow after checking the
   available evidence. Never classify by amount or date pattern alone.
 

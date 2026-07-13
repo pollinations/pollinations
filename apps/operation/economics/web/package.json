@@ -9,6 +9,7 @@
     "build": "vite build",
     "prebuild": "npm run build --prefix ../../../../packages/ui",
     "preview": "vite preview",
+    "pretest": "npm run build --prefix ../../../../packages/ui",
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
     "pretypecheck": "npm run build --prefix ../../../../packages/ui"

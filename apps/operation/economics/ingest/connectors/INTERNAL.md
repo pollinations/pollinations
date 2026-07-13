@@ -55,10 +55,9 @@ the token.
 
 ## Deploy path — how a SOPS change actually reaches production
 
-This is the generic shipping mechanism every connector's Rotation section
-assumes when it says "deploy." It is the same for any provider or internal
-token — only the SOPS file(s) touched and the workflow/health-check at the
-end differ.
+The generic shipping mechanism every connector's `## Rotation` section assumes
+when it says "deploy" — only the SOPS file(s) touched and the final
+health-check differ.
 
 1. `git checkout -b rotate/<name>-<date>`, edit the SOPS file(s) via `sops`,
    commit, `git push -u origin <branch>`.
@@ -108,22 +107,20 @@ table's specifics as current without checking.
 
 ## SOPS recipient rotation
 
-Recipient roles are labelled in a `sops-recipients.yaml`-style file:
-`core` (shared), `ci` (GitHub Actions), and per-person identities. Rotating a
-recipient is a two-phase, overlap-window operation — never a single swap:
+Recipients (age public keys) live in `.sops.yaml`: a shared team key, the CI
+key used by GitHub Actions, and per-person identities. Rotating one is a
+two-phase, overlap-window operation — never a single swap:
 
-1. **Add** the new age public key as a recipient, `sops updatekeys` every
+1. **Add** the new age public key to `.sops.yaml`, `sops updatekeys` every
    affected file, get it merged. The old recipient stays valid.
-2. **Verify** the new key actually decrypts — for `ci`, trigger a staging
-   deploy and confirm the "decrypt .env files with SOPS" step is green; for a
-   personal identity, run a local `sops -d <file>` smoke test using only the
-   new private key.
+2. **Verify** the new key decrypts — for CI, trigger a staging deploy and
+   confirm the "decrypt .env files with SOPS" step is green; for a personal
+   identity, run a local `sops -d <file>` smoke test using only the new key.
 3. **Remove** the old recipient, `sops updatekeys` again, merge.
 
-Refuse to rotate the `core` (shared) recipient for a single person — that
-would cut off everyone else who relies on it. Before any recipient rotation,
-confirm `.sops.yaml` and the recipient-role labels actually agree — drifted
-recipient sets have caused a real regression here before.
+Never drop the shared team key to rotate one person — that cuts off everyone
+else. Confirm `.sops.yaml` matches the recipients actually on each file before
+rotating; drifted recipient sets have caused a real regression here before.
 
 ## Manual-only providers (no rotation automation)
 

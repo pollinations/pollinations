@@ -286,6 +286,6 @@ graph TD
 
 Billing history: Polar handled pack billing and free daily tier subscriptions
 before the Stripe/D1 migration at the end of January 2026. The remaining Polar
-runtime and webhook integration was removed on May 2, 2026. Read-only historical
-query notes remain in
-`.claude/skills/provider-billing/providers/polar.md`.
+runtime and webhook integration was removed on May 2, 2026. Historical Polar
+handling for accounting lives in the economics ingest connector prompt
+(`apps/operation/economics/ingest/agent.system.txt`).

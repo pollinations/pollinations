@@ -36,28 +36,14 @@ export async function fetchPipe<T>(pipe: string): Promise<T[]> {
     return body.data;
 }
 
-async function fetchOptionalPipe<T>(pipe: string): Promise<T[]> {
-    try {
-        return await fetchPipe<T>(pipe);
-    } catch (error) {
-        if (
-            (error instanceof TbError && error.status === 404) ||
-            (fixturesMode() &&
-                error instanceof Error &&
-                error.message.includes("Missing fixture"))
-        ) {
-            return [];
-        }
-        throw error;
-    }
-}
-
 export async function loadAll(): Promise<Data> {
+    // All four pipes are required contracts. A missing pipe (404) must surface
+    // as an error, never render as plausible-but-empty economics data.
     const [opTransactions, opCloud, opPollen, opRunway] = await Promise.all([
-        fetchOptionalPipe<OpTransactionRow>("op_transactions_api"),
-        fetchOptionalPipe<OpCloudRow>("op_cloud_api"),
-        fetchOptionalPipe<OpPollenRow>("op_pollen_api"),
-        fetchOptionalPipe<OpRunwayRow>("op_runway_api"),
+        fetchPipe<OpTransactionRow>("op_transactions_api"),
+        fetchPipe<OpCloudRow>("op_cloud_api"),
+        fetchPipe<OpPollenRow>("op_pollen_api"),
+        fetchPipe<OpRunwayRow>("op_runway_api"),
     ]);
 
     return { opTransactions, opCloud, opPollen, opRunway };

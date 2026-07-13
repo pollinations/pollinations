@@ -1,0 +1,35 @@
+{
+  "pr_number": 12391,
+  "title": "Add Deco Spacio to build",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/12391",
+  "merged_at": "2026-07-13T08:31:23Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds [Deco Spacio](https://deco-spacio.vercel.app/) to build\n- Generates AI interior concepts using Next.js, TypeScript, and Tailwind CSS, with Pollinations imagery and optional Supabase storage.\n\nFixes #11771",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Deco Spacio joins the hive",
+    "blurb": "Deco Spacio just landed in our community greenhouse! It's a slick Next.js app that generates beautiful AI interior design concepts using Pollinations.",
+    "summary": "Added Deco Spacio, a Next.js and Tailwind CSS application that generates AI interior design concepts using Pollinations imagery, to the community apps directory.",
+    "impact": "Builders can now explore Deco Spacio in the community greenhouse to see how Pollinations can be integrated into a full-stack interior design concept generator.",
+    "keywords": [
+      "community",
+      "apps",
+      "interior-design",
+      "nextjs",
+      "showcase"
+    ],
+    "visual_concept": "Interior design and architecture. Polly the bee acting as an interior designer, arranging furniture or looking at a room layout, representing the Deco Spacio app.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny painter's beret, arranging miniature pixelated furniture on a glowing lime green (#ecf874) room blueprint. A chunky retro monitor nearby displays a beautiful interior design concept. Soft pastel gradient background, warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm and creative."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-13/PR-12391.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny painter's beret, arranging miniature pixelated furniture on a glowing lime green (#ecf874) room blueprint. A chunky retro monitor nearby displays a beautiful interior design concept. Soft pastel gradient background, warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm and creative."
+  },
+  "generated_at": "2026-07-13T08:32:22.259914+00:00",
+  "app_name": "Deco Spacio",
+  "app_url": "https://deco-spacio.vercel.app/"
+}

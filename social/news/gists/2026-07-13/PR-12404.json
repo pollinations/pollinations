@@ -1,0 +1,35 @@
+{
+  "pr_number": 12404,
+  "title": "docs: align Tinybird token ownership",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/12404",
+  "merged_at": "2026-07-13T14:08:58Z",
+  "labels": [
+    "DEV-DOCS"
+  ],
+  "pr_body_excerpt": "- Removes stale claims that `TINYBIRD_SYNC_TOKEN` lives in Enter SOPS or Worker secrets\n- Documents the sync token as GitHub Actions-only for snapshot replacement\n- Requires an explicit workspace-scoped `WORKSPACE:DEPLOY` token for Tinybird CLI deployments\n- Leaves both active sync workflows unchanged\n\nValidation: `git diff --check` and repository-wide token-reference audit.",
+  "gist": {
+    "category": "docs",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Token maps, less folklore",
+    "blurb": "The Tinybird token notes now agree on where the keys actually live. A small bit of documentation gardening, saving future deployers from digging in the wrong secret vault.",
+    "summary": "Updated Tinybird deployment documentation to define TINYBIRD_SYNC_TOKEN as a GitHub Actions-only snapshot-replacement secret and require a workspace-scoped WORKSPACE:DEPLOY token for Tinybird CLI deployments.",
+    "impact": "Contributors now have an accurate token-ownership map for syncing snapshots and deploying Tinybird changes without searching Enter SOPS or Worker secrets.",
+    "keywords": [
+      "tinybird",
+      "tokens",
+      "github-actions",
+      "deployment",
+      "documentation"
+    ],
+    "visual_concept": "A cozy documentation garden with Polly using a tiny librarian hat and pointer to sort two clearly labeled pixel keycards: TINYBIRD_SYNC_TOKEN placed beside a GitHub Actions workflow scroll, and WORKSPACE:DEPLOY placed beside a Tinybird CLI terminal. Small code-plants and flowers show careful infrastructure maintenance; a CRT robot can hold the workflow scroll.",
+    "image_prompt": "Cozy pixel art scene in a warm garden-hackerspace where Polly, a cute yellow-and-brown striped bee with pink blush, light blue wings, and a tiny librarian hat, carefully files a lime green (#ecf874) keycard labeled \"SYNC TOKEN\" beside a GitHub Actions scroll while a friendly CRT monitor robot holds a terminal card labeled \"WORKSPACE:DEPLOY\". Code-plants and soft pastel flowers grow around the desk, with subtle pixel-font text \"TOKEN MAP\"; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-13/PR-12404.jpg",
+    "prompt": "Cozy pixel art scene in a warm garden-hackerspace where Polly, a cute yellow-and-brown striped bee with pink blush, light blue wings, and a tiny librarian hat, carefully files a lime green (#ecf874) keycard labeled \"SYNC TOKEN\" beside a GitHub Actions scroll while a friendly CRT monitor robot holds a terminal card labeled \"WORKSPACE:DEPLOY\". Code-plants and soft pastel flowers grow around the desk, with subtle pixel-font text \"TOKEN MAP\"; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, nostalgic but beautiful."
+  },
+  "generated_at": "2026-07-13T14:10:00.892742+00:00"
+}

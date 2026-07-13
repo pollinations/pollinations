@@ -2,7 +2,7 @@
 
 ## App Submission Handling
 
-Two-phase review via `app-review-submission.yml` (AI + human). Source of truth: `apps/APPS.md`.
+Two-phase review via `apps-review-submissions.yml` (AI + human). Source of truth: `apps/APPS.md`.
 
 Flow: user opens issue with `TIER-APP` → workflow validates + AI generates preview → bot posts `APP_REVIEW_DATA` JSON + labels `TIER-APP-REVIEW` → maintainer adds `TIER-APP-APPROVED` → workflow prepends row to `apps/APPS.md`, opens PR with auto-merge, closes issue via `Fixes #NNN`.
 
@@ -39,10 +39,10 @@ Primary: `https://gen.pollinations.ai` → routes to `enter.pollinations.ai` for
 
 - Auth: `pk_` (frontend), `sk_` (backend). Keys: https://enter.pollinations.ai
 - Billing: Pollen credits ($1 ≈ 1 Pollen). Full docs: `./APIDOCS.md`
-- Pack checkout: Stripe. Polar is retired from runtime; keep its concise
-  historical/read-only query notes in
-  `.claude/skills/provider-billing/providers/polar.md`, but do not add Polar
-  SDKs, Worker bindings, webhooks, or automated writes.
+- Pack checkout: Stripe. Polar is retired from runtime; do not add Polar SDKs,
+  Worker bindings, webhooks, or automated writes. Historical Polar handling
+  (pre-Stripe pack revenue, Nov 2025–Jan 2026) lives in the economics ingest
+  connector prompt (`apps/operation/economics/ingest/agent.system.txt`).
 - Services: Text (Portkey, multi-provider), Image (gen Worker dispatch to providers/GPU backends), Video (Wan/Veo/LTX), Audio (ElevenLabs, TTM)
 - Wallet: Pollen is earned by completing Quests; balances live in the `tier_balance` (shown as Quest Pollen) and `pack_balance` (Paid) buckets. The legacy `tier` D1 column and `tier_balance` wire name are kept for compatibility; see `shared/db/better-auth.ts`.
 
@@ -82,7 +82,7 @@ curl "http://localhost:8788/v1/chat/completions" -H "Authorization: Bearer $TOKE
 
 - Two workspaces: `pollinations_enter` (prod) and `pollinations_enter_staging` (staging + dev + local). Pipes and datasources must be deployed to **both** — no CI auto-deploy yet, tracked in #11127.
 - Use the Tinybird **Forward CLI** as `tb` (not Classic).
-- Do not rely on `.tinyb` for workspace selection. Always pass `TB_TOKEN` from `secrets/{staging,prod}.vars.json` and `--host https://api.europe-west2.gcp.tinybird.co`.
+- Do not rely on `.tinyb` for workspace selection. Always pass an explicit workspace-scoped `TB_TOKEN` with `WORKSPACE:DEPLOY` and `--host https://api.europe-west2.gcp.tinybird.co`; never source deploy credentials from Enter runtime secrets.
 - Always validate and deploy to **staging first**, verify, then prod only when requested.
 - Validate first: `tb --cloud --host "$TB_HOST" deployment create --check --no-allow-destructive-operations`
 - Deploy staging: `tb --cloud --host "$TB_HOST" deployment create --wait --no-allow-destructive-operations`

@@ -1,7 +1,11 @@
+import { bytesToHex } from "@shared/client-ip.ts";
 import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
 import type { Env } from "../env.ts";
-import { runD1TinybirdSync } from "../services/d1-tinybird-sync.ts";
+import {
+    exportD1TinybirdPage,
+    isD1TinybirdDatasource,
+} from "../services/d1-tinybird-sync.ts";
 
 export const adminRoutes = new Hono<Env>()
     .use("*", async (c, next) => {
@@ -19,12 +23,12 @@ export const adminRoutes = new Hono<Env>()
             return await next();
         }
 
-        // Tinybird sync token: authenticates the GH Action AND is used for Tinybird API calls
-        const syncToken = c.env.TINYBIRD_SYNC_TOKEN;
+        // The runner holds the token; the Worker stores only its hash.
+        const exportTokenHash = c.env.D1_EXPORT_TOKEN_SHA256;
         if (
-            syncToken &&
-            providedKey === syncToken &&
-            c.req.path.endsWith("/trigger-d1-sync")
+            exportTokenHash &&
+            c.req.path.endsWith("/trigger-d1-sync") &&
+            (await sha256(providedKey)) === exportTokenHash
         ) {
             return await next();
         }
@@ -32,18 +36,53 @@ export const adminRoutes = new Hono<Env>()
         throw new HTTPException(401, { message: "Unauthorized" });
     })
     .post("/trigger-d1-sync", async (c) => {
-        const syncToken = c.env.TINYBIRD_SYNC_TOKEN;
-        if (!syncToken) {
-            throw new HTTPException(500, {
-                message: "TINYBIRD_SYNC_TOKEN not configured",
-            });
+        let body: unknown;
+        try {
+            body = await c.req.json();
+        } catch {
+            throw new HTTPException(400, { message: "Invalid JSON body" });
         }
 
-        const results = await runD1TinybirdSync(c.env.DB, syncToken);
-        const hasErrors = results.some((r) => r.status === "error");
+        if (!body || typeof body !== "object") {
+            throw new HTTPException(400, { message: "Invalid sync request" });
+        }
 
-        return c.json(
-            { success: !hasErrors, tables: results },
-            hasErrors ? 207 : 200,
+        const { datasource, cursor } = body as {
+            datasource?: unknown;
+            cursor?: unknown;
+        };
+
+        if (
+            typeof datasource !== "string" ||
+            !isD1TinybirdDatasource(datasource)
+        ) {
+            throw new HTTPException(400, { message: "Invalid datasource" });
+        }
+        if (
+            cursor !== undefined &&
+            (typeof cursor !== "string" ||
+                cursor.length === 0 ||
+                cursor.length > 256)
+        ) {
+            throw new HTTPException(400, { message: "Invalid cursor" });
+        }
+
+        const result = await exportD1TinybirdPage(
+            c.env.DB,
+            datasource,
+            cursor as string | undefined,
         );
+
+        return c.json({
+            success: true,
+            datasource: result.datasource,
+            rows: result.rows,
+            next_cursor: result.nextCursor,
+            done: result.done,
+        });
     });
+
+async function sha256(value: string): Promise<string> {
+    const bytes = new TextEncoder().encode(value);
+    return bytesToHex(await crypto.subtle.digest("SHA-256", bytes));
+}

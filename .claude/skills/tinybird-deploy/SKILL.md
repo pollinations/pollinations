@@ -13,7 +13,7 @@ Deploy observability pipes and datasources to Tinybird Cloud.
 - Do **not** install or update this workflow with `pip install tinybird-cli`; that can put the Classic CLI first on PATH.
 - If `tb --cloud` is missing, or Tinybird says this is a Forward workspace but the CLI is Classic, fix PATH so `~/.local/bin` wins. The Classic CLI is kept only as `tb-classic`.
 - Run commands from `enter.pollinations.ai/observability`.
-- Prefer explicit `TB_TOKEN` + `--host` on every deploy command. Do not rely on `.tinyb` or `tb workspace use` for workspace selection.
+- Set `TB_TOKEN` explicitly to a token with `WORKSPACE:DEPLOY` for the target workspace, and pass `--host` on every deploy command. Do not rely on `.tinyb` or `tb workspace use` for workspace selection.
 
 ## Workspaces
 
@@ -24,9 +24,9 @@ Two workspaces, same region (`gcp-europe-west2`). Pipes and datasources must be 
 | `pollinations_enter` | production worker only | https://cloud.tinybird.co/gcp/europe-west2/pollinations_enter |
 | `pollinations_enter_staging` | staging worker + dev worker + local `npm run dev` | https://cloud.tinybird.co/gcp/europe-west2/pollinations_enter_staging |
 
-Workspace routing is token-scoped: same regional ingest URL, different Tinybird tokens per environment in `secrets/{prod,staging,dev}.vars.json`.
+Workspace routing is token-scoped: the same regional host serves both workspaces, and the token selects the workspace.
 
-The local `.tinyb` is gitignored and must not be trusted for prod/staging selection. For staging, set `TB_TOKEN` from `secrets/staging.vars.json`. For prod, set `TB_TOKEN` from `secrets/prod.vars.json`. Keep tokens out of logs.
+The local `.tinyb` is gitignored and must not be trusted for prod/staging selection. Set `TB_TOKEN` from an operator or CI secret store, not from Enter runtime SOPS files. Use a staging-workspace deploy token for staging and a prod-workspace deploy token for prod. Keep tokens out of logs.
 
 ## Directory Structure
 
@@ -48,18 +48,13 @@ enter.pollinations.ai/observability/
 
 # Commands
 
-Set the region once per shell session:
+Set the region once per shell session and require the staging deploy token to
+already be present in the environment:
 
 ```bash
 TB_HOST="https://api.europe-west2.gcp.tinybird.co"
-```
-
-Load the staging sync token without printing it:
-
-```bash
-TB_TOKEN="$(SOPS_AGE_KEY=$(security find-generic-password -a "$USER" -s sops-age-key -w 2>/dev/null || true) \
-  sops -d ../secrets/staging.vars.json | jq -r '.TINYBIRD_SYNC_TOKEN')"
-export TB_TOKEN
+: "${TB_TOKEN:?Set TB_TOKEN to a pollinations_enter_staging WORKSPACE:DEPLOY token}"
+export TB_HOST TB_TOKEN
 ```
 
 ## Step 1: Validate (Dry Run)
@@ -87,7 +82,7 @@ tb --cloud --host "$TB_HOST" deployment create --wait --no-allow-destructive-ope
 
 Never pass `--auto` or run `deployment promote` unless the user explicitly asks for promotion.
 
-Prod deploys use the same command shape with the prod token, but only after staging validation and verification. Deploying to both workspaces is still manual until #11127 is resolved.
+Prod deploys use the same command shape after explicitly replacing `TB_TOKEN` with a `pollinations_enter` deploy token, but only after staging validation and verification. Deploying to both workspaces is still manual until #11127 is resolved.
 
 ## Step 3: Verify
 

@@ -60,6 +60,6 @@ curl -sS "https://api.europe-west2.gcp.tinybird.co/v0/sql" \
 - `generation_event` records Pollen consumption, not cash revenue.
 - Both datasets use `user_id`, so revenue and usage can be joined directly.
 - The dashboard's `daily_stripe_revenue` pipe applies the same paid-event filter.
-- For pre-migration revenue history, use the read-only
-  [Polar query notes](../provider-billing/providers/polar.md). Do not combine
-  historical Polar and Stripe totals without checking the cutoff for overlap.
+- For pre-migration revenue history, note that Polar was the pre-Stripe merchant
+  of record (Nov 2025–Jan 2026) and is retired. Do not combine historical Polar
+  and Stripe totals without checking the cutoff for overlap.

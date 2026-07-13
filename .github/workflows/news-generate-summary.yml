@@ -1,4 +1,4 @@
-name: Social Summary Generator
+name: News / Generate social summary
 
 on:
   schedule:

@@ -1,4 +1,4 @@
-name: PR Gist Generator
+name: News / Create PR gist
 
 on:
   pull_request_target:

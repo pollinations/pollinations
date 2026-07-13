@@ -1,4 +1,4 @@
-name: Build Klein RunPod Image
+name: Build / Klein RunPod image
 
 on:
   workflow_dispatch:

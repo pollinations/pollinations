@@ -1,4 +1,4 @@
-name: Social Publish (Direct Channels)
+name: News / Publish social posts
 
 on:
   schedule:

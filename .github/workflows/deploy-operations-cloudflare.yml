@@ -1,4 +1,4 @@
-name: Deploy Operation Cloudflare Apps
+name: Deploy / Operations apps
 
 on:
   push:
@@ -8,7 +8,7 @@ on:
       - "apps/operation/kpi/**"
       - "apps/operation/quest-dashboard/**"
       - "apps/operation/observability/**"
-      - ".github/workflows/deploy-operation-cloudflare.yml"
+      - ".github/workflows/deploy-operations-cloudflare.yml"
   workflow_dispatch:
     inputs:
       app:
@@ -62,7 +62,7 @@ jobs:
               git diff --name-only HEAD~1 HEAD > changed.txt
             fi
 
-            if grep -qx ".github/workflows/deploy-operation-cloudflare.yml" changed.txt; then
+            if grep -qx ".github/workflows/deploy-operations-cloudflare.yml" changed.txt; then
               APPS="$SUPPORTED_APPS"
             else
               APPS=$(

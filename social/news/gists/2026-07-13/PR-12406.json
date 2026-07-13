@@ -1,0 +1,35 @@
+{
+  "pr_number": 12406,
+  "title": "Add Talkti to chat",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/12406",
+  "merged_at": "2026-07-13T16:03:05Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds [Talkti](https://talktiweb.web.app) to chat\n- Talkti provides real-time voice translation.\n\nFixes #11727",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "The hive speaks Talkti",
+    "blurb": "Talkti has joined the chat: a community-built tool for translating voices in real time. Language barriers have been asked to please hold.",
+    "summary": "Added Talkti, a real-time voice translation app, to the Pollinations chat and community app listings.",
+    "impact": "People browsing Pollinations apps can now discover Talkti for live voice translation across conversations.",
+    "keywords": [
+      "Talkti",
+      "voice translation",
+      "community app",
+      "chat",
+      "real-time"
+    ],
+    "visual_concept": "Depict Talkti as a cozy multilingual conversation: Polly helps two friendly pixel characters exchange speech bubbles that transform into different languages through a glowing retro translation terminal. Include small flowers and code-plants to show a community app growing in the Pollinations garden.",
+    "image_prompt": "A cozy pixel art garden-café scene where Polly, a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings, wears tiny translator headphones while tending a retro terminal that turns speech bubbles into several friendly languages; two pixel friends chat beside blooming code-plants, with simple pixel text: 'TALKTI'. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-13/PR-12406.jpg",
+    "prompt": "A cozy pixel art garden-café scene where Polly, a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings, wears tiny translator headphones while tending a retro terminal that turns speech bubbles into several friendly languages; two pixel friends chat beside blooming code-plants, with simple pixel text: 'TALKTI'. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
+  },
+  "generated_at": "2026-07-13T16:04:05.504332+00:00",
+  "app_name": "Talkti",
+  "app_url": "https://talktiweb.web.app"
+}

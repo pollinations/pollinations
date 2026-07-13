@@ -69,12 +69,12 @@ We've launched **https://gen.pollinations.ai** — a single endpoint for all you
 - 🔓 **100% Open Source** — code, decisions, roadmap all public
 - 🤝 **Community-Built** — 500+ projects already using our APIs
 - 🌱 **Pollen Quests** — earn Pollen by completing Quests (in alpha)
-- 🖼️ **Image Generation** — Flux, GPT Image, Seedream, Kontext...
-- 📝 **Text Generation** - GPT, Claude, Gemini, Grok, DeepSeek...
-- 🎬 **Video Generation** — Seedance, Veo, Grok Video...
-- 🎵 **Audio** — Text-to-speech and speech-to-text with Wisper, EvenLabs...
-- 🧊 **3D Generation** - Trellis, Hyper3D
-- 🔢 **Embeddings creation** - OpenAI, Gemini, Qwen Embedding...
+- 🖼️ **Image Generation** — Text-to-image and image editing
+- 📝 **Text Generation** - Chat, reasoning, vision, function calling, structured outputs 
+- 🎬 **Video Generation** — Text-to-video and image-to-video
+- 🎵 **Audio** — Text-to-speech and speech-to-text
+- 🧊 **3D Generation** - Text-to-3D and Image-to-3D
+- 🔢 **Embeddings Creation** — Semantic search, retrieval, similarity matching
 - 🎣 **_Easy-to-use Packages_** ([Packages](packages/))
 
 <a href="https://star-history.com/#pollinations/pollinations&Date">

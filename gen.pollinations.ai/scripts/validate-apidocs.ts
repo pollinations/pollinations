@@ -7,6 +7,7 @@
  *     work, even if the example "looks" valid
  *   - no `model=<image-model>` appears inside a `/video/` curl example
  *   - public read examples (media retrieval) do not include `Authorization`
+ *   - media-storage examples use the media.pollinations.ai origin
  *
  * Exits non-zero on any failure so it can gate CI.
  */
@@ -35,6 +36,7 @@ const IMAGE_MODELS = new Set([
 
 // Public read endpoints whose curl examples must not show Authorization.
 const PUBLIC_READ_PATHS = ["/:hash", "/:hash/metadata"];
+const MEDIA_PATHS = new Set(["/upload", "/:hash", "/:hash/metadata"]);
 
 function slug(s: string): string {
     return s
@@ -113,6 +115,7 @@ function validate(md: string): Failure[] {
         const url = urlMatch ? urlMatch[1] : "";
         const methodMatch = firstLine.match(/-X\s+(\w+)/);
         const method = methodMatch ? methodMatch[1].toUpperCase() : "GET";
+        const parsedUrl = URL.parse(url);
 
         // Find the nearest preceding heading to give a useful failure path.
         const heading = findEnclosingHeading(lines, block.startLine);
@@ -154,6 +157,19 @@ function validate(md: string): Failure[] {
                 rule: "auth-on-public-read",
                 line: block.startLine,
                 message: `public read endpoint "${heading}" includes Authorization header in curl example`,
+            });
+        }
+
+        // 5. Media storage is hosted separately from the gen gateway.
+        if (
+            parsedUrl &&
+            MEDIA_PATHS.has(parsedUrl.pathname) &&
+            parsedUrl.origin !== "https://media.pollinations.ai"
+        ) {
+            failures.push({
+                rule: "wrong-media-origin",
+                line: block.startLine,
+                message: `media endpoint "${heading}" uses ${parsedUrl.origin} instead of https://media.pollinations.ai`,
             });
         }
     }

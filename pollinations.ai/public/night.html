@@ -172,6 +172,7 @@
       <input type="hidden" name="_captcha" value="false">
       <input type="hidden" name="_next" value="https://pollinations.ai/night?rsvp=ok#rsvp">
       <input type="text" name="_honey" class="hp" tabindex="-1" autocomplete="off" aria-hidden="true">
+      <input type="hidden" name="came_from" id="came-from" value="direct">
       <label>Name<input name="name" required maxlength="100" autocomplete="name"></label>
       <label>Email (optional, so we can reply)<input name="email" type="email" maxlength="200" autocomplete="email"></label>
       <label>Coming as<select name="party">
@@ -202,10 +203,18 @@
   </div>
 </main>
 <script>
-  if (new URLSearchParams(location.search).get("rsvp") === "ok") {
+  var params = new URLSearchParams(location.search);
+  if (params.get("rsvp") === "ok") {
     document.getElementById("rsvp-ok").hidden = false;
     document.getElementById("rsvp-form").hidden = true;
   }
+  var src = params.get("src");
+  if (src) {
+    try { sessionStorage.setItem("night-src", src); } catch (e) {}
+  } else {
+    try { src = sessionStorage.getItem("night-src"); } catch (e) {}
+  }
+  if (src) document.getElementById("came-from").value = src.slice(0, 40);
 </script>
 </body>
 </html>

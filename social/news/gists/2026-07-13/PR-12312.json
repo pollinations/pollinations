@@ -1,0 +1,35 @@
+{
+  "pr_number": 12312,
+  "title": "fix: readapt pricing from provider updates",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/12312",
+  "merged_at": "2026-07-13T09:50:01Z",
+  "labels": [
+    "DEV-CHORE"
+  ],
+  "pr_body_excerpt": "Price changes:\n- `nanobanana`: adds Gemini image text output billing at `$2.50/M` tokens.\n- `nanobanana-pro`: updates Gemini 3 Pro Image input text/image from `$1.25/M` to `$2.00/M` tokens.\n- `grok-imagine`: adds xAI edit input-image cost at `$0.002/image`.\n- `grok-imagine-pro`: adds xAI edit input-image cost at `$0.01/image` and corrects output from `$0.07` to `$0.05/image` for the default 1K output.\n- `grok-video-pro`: adds xAI start-frame input-image cost at `$0.002/image` and updates video output from `$0.05/sec` to `$0.07/sec`.\n- `llama-scout`: updates OpenRouter input from `$0.08/M` to `$0.10/M` tokens.\n- `step-3.5-flash`: updates OpenRouter input from `$0.09/M` to `$0.10/M` tokens and removes stale cached-input pricing.\n- `mistral`: updates OpenRouter cached input from `$0.15/M` to `$0.015/M` tokens.\n- `qwen-coder-large`: adds OpenRouter cached input at `$0.07/M` tokens.\n- `mistral-small-3.2`: removes stale cached-input pricing.\n- `qwen-tts`: updates Alibaba TTS from `$0.013/1K` to `$0.010/1K` characters.\n- `qwen-tts-instruct`: updates Alibaba TTS from `$0.013/1K` to `$0.0115/1K` characters.\n- `hyper3d-rodin`: updates Fal Rodin from `$0.40` to `$0.10/gen`.\n- `eleven-sfx`: updates ElevenLabs Sound Effects from `$0.004/sec` to `$0.002/sec`.\n- `deepseek`: updates Fireworks cached input from `$0.014/M` to `$0.03/M` tokens.\n- `glm`: updates Fireworks cached input from `$0.26/M` to `$0.14/M` tokens.\n- `claude-sonnet-5`: applies Bedrock promo pricing through `2026-08-31` (`$2/M` input, `$0.20/M` cache read, `$2.50/M` cache write, `$10/M` output).\n\nOther changes:\n- Maps Vertex Gemini image prompt usage so Nano Banana text/image inputs are billed.\n- Marks `flux` registry provider as VAST; Fireworks remains fallback only.\n- Updates `grok-imagine-pro` to call xAI `grok-imagine-image-quality`.\n- Refreshes effective-price snapshots and focused pricing coverage.\n\nValidation:\n- Local `gen` E2E: `/image/models`, `/text/models`, `/models`, `/v1/models`.\n- Live OpenRouter pric",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Balancing the pollen books",
+    "blurb": "We've synced our registries with the latest upstream provider pricing. Enjoy cheaper 3D generations, discounted sound effects, and a quality bump for Grok images!",
+    "summary": "Synced internal pricing registries across 17 models to match upstream provider changes, and updated grok-imagine-pro to use the higher-fidelity grok-imagine-image-quality endpoint.",
+    "impact": "Pollen credit burn rates now reflect the latest upstream costs—including significant drops for hyper3d-rodin ($0.40 to $0.10/gen) and eleven-sfx—while grok-imagine-pro users will notice improved image outputs.",
+    "keywords": [
+      "pricing",
+      "billing",
+      "models",
+      "grok",
+      "registry"
+    ],
+    "visual_concept": "The bee mascot acting as an accountant, reviewing a long receipt or ledger, while the Nomnom creature happily eats the old pricing documents. Represents updating the books and consuming old data.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing tiny reading glasses, reviewing a long glowing digital receipt while the round tan Nomnom creature happily eats a stack of old paper ledgers. Speech bubble: 'NOMNOM'. Soft lime green (#ecf874) and warm peach gradient background. Chunky pixels, warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-13/PR-12312.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing tiny reading glasses, reviewing a long glowing digital receipt while the round tan Nomnom creature happily eats a stack of old paper ledgers. Speech bubble: 'NOMNOM'. Soft lime green (#ecf874) and warm peach gradient background. Chunky pixels, warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-07-13T09:51:14.491690+00:00"
+}

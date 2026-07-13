@@ -1,0 +1,35 @@
+{
+  "pr_number": 12403,
+  "title": "cleanup: remove unused branch formatter",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/12403",
+  "merged_at": "2026-07-13T14:04:20Z",
+  "labels": [
+    "DEV-CHORE"
+  ],
+  "pr_body_excerpt": "- Deletes the unused `tools/scripts/format-branch.sh` duplicate.\n- Removes the now-empty tracked `tools/scripts/` and `tools/` tree.\n- Keeps the canonical formatter under `.claude/skills/code-formatting/` intact.\n\nChecks:\n- Verified there are no references to `tools/scripts/format-branch.sh`.\n- Ran `git diff --check`.",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "One less stray branch",
+    "blurb": "The duplicate branch formatter has been composted. The canonical formatting skill remains safely in its little `.claude` greenhouse.",
+    "summary": "Removed the unused `tools/scripts/format-branch.sh` duplicate while retaining the canonical formatter in `.claude/skills/code-formatting/`.",
+    "impact": "Contributors now have one clear home for branch formatting, with an empty legacy tools tree removed.",
+    "keywords": [
+      "cleanup",
+      "formatting",
+      "developer-tools",
+      "scripts",
+      "chore"
+    ],
+    "visual_concept": "Depict Polly tidying a cozy garden-shed workspace, carrying an old duplicate scroll toward a compost bin while a single labeled formatting manual sits neatly on a retro terminal desk. Small code-plants and flowers reinforce that the useful tool remains tended and easy to find.",
+    "image_prompt": "Cozy pixel art scene of Polly, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny gardener scarf, tidying a garden-shed coding desk: she places an old duplicate script scroll into a compost bin while one neat retro terminal manual labeled 'FORMAT' remains beside blooming code-plants. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, retro gaming vibes, dark purple (#110518) outlines, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-13/PR-12403.jpg",
+    "prompt": "Cozy pixel art scene of Polly, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny gardener scarf, tidying a garden-shed coding desk: she places an old duplicate script scroll into a compost bin while one neat retro terminal manual labeled 'FORMAT' remains beside blooming code-plants. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, retro gaming vibes, dark purple (#110518) outlines, nostalgic but beautiful."
+  },
+  "generated_at": "2026-07-13T14:05:26.936229+00:00"
+}

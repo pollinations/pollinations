@@ -1,118 +1,65 @@
-# Flux Schnell Server (Nunchaku)
+# Flux Schnell on Vast.ai
 
-Fast Flux image generation server using [MIT-HAN-LAB's Nunchaku](https://github.com/mit-han-lab/nunchaku) quantization for RTX 4090 GPUs.
+The production Flux worker runs FLUX.1 Schnell with Nunchaku FP4 on a single
+RTX 5090. Vast instances are containers without systemd, so
+[`setup-vast.sh`](./setup-vast.sh) installs the pinned runtime and supervises
+the model server and Cloudflare Tunnel in `screen` restart loops.
 
-## Quick Start
+## Cloudflare preparation
 
-Deploy to a fresh Ubuntu 24.04 instance with RTX 4090 GPUs:
+Create a remotely-managed tunnel in the authoritative Pollinations Cloudflare
+account before provisioning the Vast host:
 
-```bash
-HF_TOKEN=your_huggingface_token \
-WORKER_NUM=1 \
-PUBLIC_IP=52.205.25.210 \
-GPU0_PUBLIC_PORT=27235 \
-GPU1_PUBLIC_PORT=30830 \
-bash setup.sh
-```
+1. Route a stable hostname such as `flux-vast-NN.pollinations.ai` to
+   `http://localhost:8765`.
+2. Copy the tunnel token. Do not copy `cert.pem` to a rental host; it can create
+   tunnels and DNS records for the account. A remotely-managed tunnel only
+   needs its scoped token to run. See [Cloudflare tunnel tokens](https://developers.cloudflare.com/tunnel/advanced/tunnel-tokens/).
 
-The script takes ~20 minutes and will:
-1. Install CUDA 12.8 and Python dev headers
-2. Create Python venv with PyTorch + dependencies
-3. Build nunchaku from source for RTX 4090
-4. Create and start systemd services for each GPU
+The stable tunnel is required because the gen Cloudflare Worker cannot route to
+a Vast NAT address on a non-standard port.
 
-## Current Workers (Nov 2025)
+## Deploy
 
-| Worker | SSH Host | Public IP | GPU 0 Port | GPU 1 Port |
-|--------|----------|-----------|------------|------------|
-| 1 | `ionet-flux-1` | 52.205.25.210 | 27235 | 30830 |
-| 2 | `ionet-flux-2` | 52.205.25.210 | 20884 | - |
-| 3 | `ionet-flux-3` | 54.185.175.109 | 29108 | - |
-| 4 | `ionet-flux-4` | 52.205.25.210 | 29309 | - |
-
-## API
-
-### Generate Image
+On a fresh Vast RTX 5090 instance:
 
 ```bash
-curl -X POST http://<IP>:<PORT>/generate \
-  -H 'Content-Type: application/json' \
-  -d '{
-    "prompt": "a cute cat",
-    "width": 1024,
-    "height": 1024,
-    "num_inference_steps": 4,
-    "seed": 42
-  }' \
-  --output image.png
+PLN_GPU_TOKEN=... \
+HF_TOKEN=... \
+CLOUDFLARED_TUNNEL_TOKEN=... \
+PUBLIC_HOSTNAME=flux-vast-NN.pollinations.ai \
+bash setup-vast.sh
 ```
 
-### Health Check
+The tunnel token is written to a mode `0600` token file and is not included in
+the `cloudflared` process arguments. Model and server settings are persisted in
+the ignored `.env.flux` file.
+
+## Verify before traffic cutover
+
+A healthy `/docs` response and registry heartbeat are control-plane checks;
+they do not prove that `gen.pollinations.ai` can reach the tunnel. Fireworks can
+otherwise hide a broken Vast route.
+
+Run the end-to-end canary on the Vast host with a valid Pollinations API key:
 
 ```bash
-curl http://<IP>:<PORT>/health
+POLLINATIONS_API_KEY=... bash verify-vast.sh
 ```
 
-## Management
+The canary creates a unique uncached prompt, generates it directly on Vast and
+through the public Flux route with the same seed, and compares decoded pixels.
+Do not destroy the old worker until this passes on the replacement.
 
-### Check Status
+## Operations
 
 ```bash
-# On the worker
-sudo systemctl status ionet-flux-worker1-gpu0 ionet-flux-worker1-gpu1
-
-# View logs
-sudo journalctl -u ionet-flux-worker1-gpu0 -u ionet-flux-worker1-gpu1 -f
+tail -f /tmp/flux.log
+tail -f /tmp/cloudflared.log
+screen -r flux
+screen -r cloudflared
 ```
 
-### Restart Services
-
-```bash
-sudo systemctl restart ionet-flux-worker1-gpu0 ionet-flux-worker1-gpu1
-```
-
-### Update Code
-
-```bash
-cd ~/pollinations && git pull
-sudo systemctl restart ionet-flux-worker1-gpu0 ionet-flux-worker1-gpu1
-```
-
-## Requirements
-
-- Ubuntu 24.04
-- NVIDIA RTX 4090 GPU(s)
-- ~50GB disk space
-- HuggingFace token with access to Flux models
-
-## Docker
-
-Build and run with Docker:
-
-```bash
-# Build (takes 15-20 min due to nunchaku compilation)
-docker build -t flux-schnell-nunchaku .
-
-# Run on GPU 0
-docker run --gpus '"device=0"' -p 8000:8000 \
-  -e HF_TOKEN=your_huggingface_token \
-  flux-schnell-nunchaku
-
-# Run on specific GPU with custom port
-docker run --gpus '"device=1"' -p 8001:8000 \
-  -e HF_TOKEN=your_token \
-  -e PORT=8000 \
-  -e PUBLIC_IP=52.205.25.210 \
-  -e PUBLIC_PORT=8001 \
-  flux-schnell-nunchaku
-```
-
-**Note:** The Dockerfile builds nunchaku for RTX 4090 (SM 8.9). For other GPUs, modify `TORCH_CUDA_ARCH_LIST` in the Dockerfile.
-
-## Files
-
-- `setup.sh` - Main deployment script (for bare metal)
-- `Dockerfile` - Container build (for Docker/K8s)
-- `server.py` - FastAPI server
-- `requirements.txt` - Python dependencies
-- `safety_checker/` - NSFW content filter
+The setup defaults are `QUEUE_LIMIT=10`, `MAX_PIXELS=1048576`, and
+`mit-han-lab/svdq-fp4-flux.1-schnell`. Override them only through the documented
+environment variables in `setup-vast.sh`.

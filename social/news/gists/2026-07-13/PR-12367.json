@@ -1,0 +1,35 @@
+{
+  "pr_number": 12367,
+  "title": "chore: trim editor cruft and dead turnstile tool from repo root",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/12367",
+  "merged_at": "2026-07-13T02:20:07Z",
+  "labels": [
+    "DEV-CHORE"
+  ],
+  "pr_body_excerpt": "Cleanup of stale config and an unused tool cluttering the repo root:\n\n- Removes `.windsurf/` — a redundant Biome format workflow (duplicates `npm run format:changed`) plus an empty `img.md`.\n- Removes the Foam VS Code bits (`.vscode/foam.json`, `.vscode/spellright.dict`) and drops their now-orphaned extension recommendations. Keeps `settings.json`/`extensions.json`/`launch.json` since they enforce the team's Biome-on-save standard.\n- Removes `tools/turnstile/` — a one-off Hacktoberfest Turnstile setup script + test page with zero references anywhere in the codebase (still targeted the pre-gen-worker `image.pollinations.ai` secret path).\n\nNo tracked source or runtime code touched.",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Spring cleaning the hive",
+    "blurb": "We did a little spring cleaning in the repository, sweeping away old editor configs and unused scripts to keep the codebase tidy.",
+    "summary": "Removed stale .windsurf workflows, orphaned Foam VS Code configurations, and an unused Turnstile setup script from the repository root.",
+    "impact": "Contributors will navigate a cleaner repository root without redundant editor extensions or deprecated tooling cluttering the workspace.",
+    "keywords": [
+      "chore",
+      "cleanup",
+      "vscode",
+      "tooling",
+      "repository"
+    ],
+    "visual_concept": "Polly the bee and the Nomnom creature doing some spring cleaning. Polly has a tiny broom sweeping up old dusty files, while Nomnom enthusiastically eats the discarded documents.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny bandana, sweeping dusty old file folders with a small broom. The round tan nomnom creature happily eats a stack of old documents nearby. Soft lime green (#ecf874) and lavender gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-13/PR-12367.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny bandana, sweeping dusty old file folders with a small broom. The round tan nomnom creature happily eats a stack of old documents nearby. Soft lime green (#ecf874) and lavender gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-07-13T02:21:02.666886+00:00"
+}

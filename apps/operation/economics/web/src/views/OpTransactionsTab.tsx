@@ -25,18 +25,6 @@ import {
 } from "../lib/months";
 import type { Data, OpTransactionRow } from "../types";
 
-function opTransactionKey(row: OpTransactionRow) {
-    if (row.entry_id) return row.entry_id;
-    return [
-        row.date,
-        row.vendor,
-        row.category,
-        row.amount,
-        row.currency,
-        row.description,
-    ].join("|");
-}
-
 export function OpTransactionsTab({
     category = [],
     data,
@@ -137,7 +125,7 @@ export function OpTransactionsTab({
                     </TableRow>
                 </TableHead>
                 <TableBody>
-                    {withUniqueRowKeys(rows, opTransactionKey).map(
+                    {withUniqueRowKeys(rows, (row) => row.entry_id).map(
                         ({ key, row }) => (
                             <TableRow key={key}>
                                 <TableCell>{row.date}</TableCell>

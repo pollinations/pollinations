@@ -2,36 +2,23 @@ TOKEN "operations_read" READ
 
 NODE endpoint
 SQL >
+    -- Every row carries a Wise-native entry_id (2026-07-13 statement rebuild).
+    -- Corrections re-append the same entry_id with a newer recorded_at; expose
+    -- only the newest fact per key. The inner alias differs from the column
+    -- name because ClickHouse substitutes aliases into the argMax arguments.
     SELECT
-        t.entry_id,
-        t.source,
-        formatDateTime(t.date, '%F') AS date,
-        multiIf(
-            t.category = 'revenue'
-                AND t.vendor = ''
-                AND t.description = 'Mercatus Center, Inc.',
-            'investment',
-            t.category = 'revenue' AND t.vendor = '',
-            'others',
-            t.vendor
-        ) AS vendor,
-        multiIf(
-            t.category = 'revenue' AND t.vendor = 'github',
-            'cloud',
-            t.category = 'revenue' AND t.vendor = 'naturenergie',
-            'office',
-            t.category
-        ) AS category,
-        t.amount,
-        t.currency,
-        t.description,
-        t.evidence,
-        toString(t.latest_recorded_at) AS recorded_at
+        entry_id,
+        source,
+        formatDateTime(date, '%F') AS date,
+        vendor,
+        category,
+        amount,
+        currency,
+        description,
+        evidence,
+        toString(latest_recorded_at) AS recorded_at
     FROM
     (
-        -- Every row carries a Wise-native (or deterministic hash) entry_id
-        -- since the 2026-07-13 rebuild. Re-appends and corrections reuse the
-        -- entry_id; expose only the newest fact per key.
         SELECT
             entry_id,
             argMax(source, recorded_at) AS source,
@@ -45,7 +32,7 @@ SQL >
             max(recorded_at) AS latest_recorded_at
         FROM op_transactions
         GROUP BY entry_id
-    ) AS t
+    )
     ORDER BY date DESC, vendor, category
 
 TYPE ENDPOINT

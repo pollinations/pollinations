@@ -7,7 +7,6 @@
 ## AI Agents
 
 - **repo-polly-assistant.yml** - AI assistant (Polly) via pollinations.ai, triggered by `polly` in issues/PRs. Whitelisted users only.
-- **issue-pr-review-changes.yml** - Claude Opus agent triggered by `@claude` in issues/PRs. Performs code reviews and answers questions.
 
 ## Issue Automation Pipeline
 
@@ -43,7 +42,6 @@ flowchart TD
 
 - **repo-organize-issues-prs.yml** - AI-powered auto-kanban. Classifies issues/PRs and routes to Dev/Support/Apps projects with priority.
 - **repo-close-discarded-issues.yml** - Auto-closes issues marked "Discarded" in project (hourly).
-- **pr-update-project-status.yml** - Updates PR status in project (In Progress/In Review/Done/Discarded).
 
 ### Project Manager (Auto-Kanban)
 

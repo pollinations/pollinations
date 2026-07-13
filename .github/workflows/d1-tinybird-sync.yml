@@ -3,46 +3,119 @@ name: Daily D1 → Tinybird Sync
 on:
   schedule:
     # Run at 03:00 UTC daily
-    - cron: '0 3 * * *'
-  workflow_dispatch: # Manual trigger from GitHub UI
+    - cron: "0 3 * * *"
+  workflow_dispatch:
 
 permissions: {}
+
+concurrency:
+  group: d1-tinybird-sync
+  cancel-in-progress: false
 
 jobs:
   sync:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      max-parallel: 2
+      matrix:
+        datasource:
+          - d1_user
+          - d1_apikey
+          - d1_community_model
+          - d1_session
+          - d1_account
+
     steps:
-      - name: Sync D1 tables to Tinybird
+      - name: Sync ${{ matrix.datasource }}
+        env:
+          DATASOURCE: ${{ matrix.datasource }}
+          EXPORT_TOKEN: ${{ secrets.D1_EXPORT_TOKEN }}
+          TINYBIRD_TOKEN: ${{ secrets.TINYBIRD_SYNC_TOKEN }}
+          TINYBIRD_HOST: https://api.europe-west2.gcp.tinybird.co
         run: |
-          response=$(curl -s -w "\n%{http_code}" -X POST \
-            "https://enter.pollinations.ai/api/admin/trigger-d1-sync" \
-            -H "Authorization: Bearer ${{ secrets.TINYBIRD_SYNC_TOKEN }}" \
-            -H "Content-Type: application/json")
+          set -euo pipefail
 
-          http_code=$(echo "$response" | tail -n1)
-          body=$(echo "$response" | head -n-1)
+          synced_at=$(date -u "+%Y-%m-%d %H:%M:%S")
+          snapshot="$RUNNER_TEMP/$DATASOURCE.ndjson"
+          page_file="$RUNNER_TEMP/$DATASOURCE-page.json"
+          cursor=""
+          total_rows=0
+          pages=0
+          : > "$snapshot"
 
-          echo "Response: $body"
-          echo "HTTP Status: $http_code"
+          while true; do
+            pages=$((pages + 1))
+            if [ "$pages" -gt 1000 ]; then
+              echo "::error::$DATASOURCE exceeded 1000 pages"
+              exit 1
+            fi
 
-          # 207 means partial success (some tables failed)
-          if [ "$http_code" != "200" ] && [ "$http_code" != "207" ]; then
-            echo "::error::D1→Tinybird sync failed with HTTP $http_code"
+            payload=$(jq -n \
+              --arg datasource "$DATASOURCE" \
+              --arg cursor "$cursor" \
+              '{datasource: $datasource}
+               + if $cursor == "" then {} else {cursor: $cursor} end')
+
+            http_code=$(curl -sS --max-time 180 -o "$page_file" -w "%{http_code}" \
+              -X POST "https://enter.pollinations.ai/api/admin/trigger-d1-sync" \
+              -H "Authorization: Bearer $EXPORT_TOKEN" \
+              -H "Content-Type: application/json" \
+              --data "$payload")
+
+            if [ "$http_code" != "200" ]; then
+              echo "::error::$DATASOURCE page $pages failed with HTTP $http_code"
+              exit 1
+            fi
+            if ! jq -e \
+              '.success == true and (.rows | type == "array") and (.done | type == "boolean")' \
+              "$page_file" \
+              >/dev/null; then
+              echo "::error::$DATASOURCE page $pages returned an invalid response"
+              exit 1
+            fi
+
+            rows=$(jq '.rows | length' "$page_file")
+            total_rows=$((total_rows + rows))
+            jq -c --arg synced_at "$synced_at" \
+              '.rows[] + {synced_at: $synced_at}' "$page_file" >> "$snapshot"
+            done=$(jq -r '.done' "$page_file")
+            echo "$DATASOURCE page $pages: $rows rows"
+
+            if [ "$done" = "true" ]; then
+              break
+            fi
+
+            cursor=$(jq -r '.next_cursor // empty' "$page_file")
+            if [ -z "$cursor" ]; then
+              echo "::error::$DATASOURCE page $pages did not return next_cursor"
+              exit 1
+            fi
+          done
+
+          if [ "$total_rows" -eq 0 ]; then
+            echo "::error::$DATASOURCE export was empty; keeping the existing Tinybird snapshot"
             exit 1
           fi
 
-          # Report per-table results (handle non-JSON responses gracefully)
-          if echo "$body" | jq -e '.tables' > /dev/null 2>&1; then
-            echo "$body" | jq -r '.tables[] | "  \(.datasource): \(.rows) rows (\(.status))"'
-          else
-            echo "::warning::Unexpected response format: $body"
+          import_file="$RUNNER_TEMP/$DATASOURCE-import.json"
+          http_code=$(curl -sS --max-time 300 -o "$import_file" -w "%{http_code}" \
+            -X POST "$TINYBIRD_HOST/v0/datasources?name=$DATASOURCE&mode=replace&format=ndjson" \
+            -H "Authorization: Bearer $TINYBIRD_TOKEN" \
+            -F "ndjson=@$snapshot;type=application/x-ndjson")
+
+          if [ "$http_code" -lt 200 ] || [ "$http_code" -ge 300 ]; then
+            echo "::error::$DATASOURCE replacement failed with HTTP $http_code"
             exit 1
           fi
 
-          if [ "$http_code" = "207" ]; then
-            echo "::warning::Some tables failed to sync"
-            echo "$body" | jq -r '.tables[] | select(.status == "error") | "  ERROR: \(.datasource) - \(.error)"'
+          imported_rows=$(jq -r '.statistics.row_count // -1' "$import_file")
+          quarantine_rows=$(jq -r '.quarantine_rows // -1' "$import_file")
+          invalid_lines=$(jq -r '.invalid_lines // 0' "$import_file")
+          if [ "$imported_rows" -ne "$total_rows" ] || \
+             [ "$quarantine_rows" -ne 0 ] || [ "$invalid_lines" -ne 0 ]; then
+            echo "::error::$DATASOURCE validation failed: expected=$total_rows imported=$imported_rows quarantined=$quarantine_rows invalid=$invalid_lines"
             exit 1
           fi
 
-          echo "::notice::D1→Tinybird sync complete"
+          echo "::notice::$DATASOURCE replaced atomically: $total_rows rows across $pages pages"

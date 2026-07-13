@@ -124,4 +124,25 @@ describe("xaiVideoModel aspect ratio handling", () => {
         });
         expect(aspectRatio).toBe("1:1");
     });
+
+    it("tracks the xAI start-frame image input fee", async () => {
+        syncImageEnv({ XAI_API_KEY: "xai-test-key" } as CloudflareBindings, [
+            "XAI_API_KEY",
+        ]);
+        const requests: XaiRequest[] = [];
+        mockXaiFetch(requests);
+
+        const result = await callXaiVideoAPI("a calm ocean at sunrise", {
+            ...baseParams,
+            image: ["https://example.com/start.png"],
+        });
+
+        expect(requests[0].body.image).toEqual({
+            url: "https://example.com/start.png",
+        });
+        expect(result.trackingData?.usage).toEqual({
+            promptImageTokens: 1,
+            completionVideoSeconds: 5,
+        });
+    });
 });

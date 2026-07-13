@@ -8,8 +8,7 @@
     "packages/sdk",
     "packages/ui",
     "apps/react",
-    "apps/operation/economics/web",
-    "tools/icons"
+    "apps/operation/economics/web"
   ],
   "scripts": {
     "install:all": "npm install && npm install --prefix packages/sdk && npm install --prefix packages/mcp",

@@ -41,6 +41,8 @@ const MODEL_TYPES = [
     { key: "embedding", title: "Embedding" },
 ];
 
+const LOW_SAMPLE_REQUESTS = 10;
+
 const EXTERNAL_LINKS = [
     {
         href: "https://enter.pollinations.ai",
@@ -243,16 +245,32 @@ function CategoryTabs({ models, value, onChange }) {
 
 function StatusBadge({ stats }) {
     const status = computeHealthStatus(stats);
-    if (status === "on") return null;
+    const modelRequests = (stats?.status_2xx || 0) + (stats?.errors_5xx || 0);
+    const lowSample = modelRequests > 0 && modelRequests < LOW_SAMPLE_REQUESTS;
+
+    if (status === "on" && !lowSample) return null;
 
     return (
-        <Chip
-            intent={healthIntent(status)}
-            size="sm"
-            className={status === "off" ? "animate-pulse" : undefined}
-        >
-            {status === "off" ? "Off" : "Degraded"}
-        </Chip>
+        <>
+            {status !== "on" && (
+                <Chip
+                    intent={healthIntent(status)}
+                    size="sm"
+                    className={status === "off" ? "animate-pulse" : undefined}
+                >
+                    {status === "off" ? "Off" : "Degraded"}
+                </Chip>
+            )}
+            {lowSample && (
+                <Chip
+                    intent="neutral"
+                    size="sm"
+                    title={`Health is based on ${modelRequests} non-client request${modelRequests === 1 ? "" : "s"}`}
+                >
+                    Low sample
+                </Chip>
+            )}
+        </>
     );
 }
 

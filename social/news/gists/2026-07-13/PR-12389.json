@@ -1,0 +1,35 @@
+{
+  "pr_number": 12389,
+  "title": "Add /night event page (Pollinations AI Night, 16 July, Block1 Berlin)",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/12389",
+  "merged_at": "2026-07-13T11:35:56Z",
+  "labels": [
+    "DEV-UI-UX"
+  ],
+  "pr_body_excerpt": "- Adds `public/night.html`: static, self-contained event page at pollinations.ai/night — the RSVP URL printed on the event flyer. Served as an exact asset match, so no SPA/router changes.\n- Adds `public/night-flyer.jpg` (142 KB) as og:image for link previews.\n- Adds `/night` to `ROUTE_META` in `worker.ts` so the SEO rewriter doesn't stamp homepage meta over the page.\n- Page includes schema.org Event JSON-LD, mailto RSVP, mobile-responsive. Biome clean, rendering verified.\n- Temporary page — safe to remove after the event (16 July).\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Meet the hive in Berlin",
+    "blurb": "We're hosting Pollinations AI Night at Block1 Berlin on July 16th! Check out the new event page to grab your RSVP and join us for an evening of open-source AI and art.",
+    "summary": "Added a static event page at pollinations.ai/night for the July 16th Pollinations AI Night at Block1 Berlin, including RSVP links and SEO metadata.",
+    "impact": "Community members can now visit the /night endpoint to view the event flyer, get location details, and RSVP via email.",
+    "keywords": [
+      "event",
+      "berlin",
+      "community",
+      "meetup",
+      "frontend"
+    ],
+    "visual_concept": "A cozy nighttime outdoor gathering. Polly the bee wearing a tiny party hat or scarf, hanging out with the Monitor Robot under glowing string lights. A brick wall with a pixelated event poster. Nighttime but warm and inviting.",
+    "image_prompt": "Cozy pixel art scene of a nighttime outdoor gathering under warm glowing string lights. The cute bee mascot wearing a tiny party hat hovers next to a chunky retro monitor robot holding a glowing event flyer. Soft lime green (#ecf874) and deep lavender night sky gradient background. Large visible pixels, lo-fi 8-bit aesthetic, Stardew Valley night market vibes, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-13/PR-12389.jpg",
+    "prompt": "Cozy pixel art scene of a nighttime outdoor gathering under warm glowing string lights. The cute bee mascot wearing a tiny party hat hovers next to a chunky retro monitor robot holding a glowing event flyer. Soft lime green (#ecf874) and deep lavender night sky gradient background. Large visible pixels, lo-fi 8-bit aesthetic, Stardew Valley night market vibes, emotionally warm."
+  },
+  "generated_at": "2026-07-13T11:37:02.392568+00:00"
+}

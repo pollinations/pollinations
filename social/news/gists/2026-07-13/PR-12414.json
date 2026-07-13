@@ -1,0 +1,36 @@
+{
+  "pr_number": 12414,
+  "title": "Add Code Canvas Complete to build",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/12414",
+  "merged_at": "2026-07-13T16:37:17Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds [Code Canvas Complete](https://code-canvas-complete-production.up.railway.app/) to build\n- Code Canvas is an all-in-one browser-based IDE with a built-in AI assistant for code generation, debugging, and explanation. It integrates Pollinations.ai as a Bring-Your-Own-Key (BYOK) AI provider, a\n\nFixes #11662",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "A canvas for code bees",
+    "blurb": "Code Canvas Complete has joined the garden: a browser-based IDE where an AI assistant helps write, debug, and explain the mysterious little spells we call code. Bring your own Pollinations key and let the pixels get to work.",
+    "summary": "Added Code Canvas Complete to the Pollinations build directory, highlighting its browser-based IDE with BYOK Pollinations.ai support for AI code generation, debugging, and explanations.",
+    "impact": "Developers can now discover a complete in-browser coding workspace that connects their own Pollinations API key to an assistant for writing, fixing, and understanding code.",
+    "keywords": [
+      "community-app",
+      "code-canvas",
+      "browser-ide",
+      "byok",
+      "coding-assistant",
+      "developer-tools"
+    ],
+    "visual_concept": "Depict Code Canvas Complete as a cozy browser-based coding studio: a large retro terminal canvas shows neat code, helpful AI suggestion bubbles, and a tiny bug being gently debugged with a magnifying glass. Polly, wearing a small developer headset, collaborates at the desk while code-plants grow from pots around the monitor, representing an IDE that helps code ideas grow through a user-provided Pollinations key.",
+    "image_prompt": "Cozy pixel art scene of a friendly browser-based IDE on a chunky CRT monitor, its code canvas glowing prominently lime green (#ecf874) with tidy code blocks, a small AI helper sparkle, and a tiny pixel bug being inspected with a magnifying glass; code-plants and warm flowers grow around the desk. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears tiny developer headphones and warmly points at the code beside the monitor. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, dark purple (#110518) outlines, pixel-font text: \"CODE CANVAS\"."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-13/PR-12414.jpg",
+    "prompt": "Cozy pixel art scene of a friendly browser-based IDE on a chunky CRT monitor, its code canvas glowing prominently lime green (#ecf874) with tidy code blocks, a small AI helper sparkle, and a tiny pixel bug being inspected with a magnifying glass; code-plants and warm flowers grow around the desk. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears tiny developer headphones and warmly points at the code beside the monitor. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, dark purple (#110518) outlines, pixel-font text: \"CODE CANVAS\"."
+  },
+  "generated_at": "2026-07-13T16:38:29.901990+00:00",
+  "app_name": "Code Canvas Complete",
+  "app_url": "https://code-canvas-complete-production.up.railway.app/"
+}

@@ -39,10 +39,10 @@ Primary: `https://gen.pollinations.ai` → routes to `enter.pollinations.ai` for
 
 - Auth: `pk_` (frontend), `sk_` (backend). Keys: https://enter.pollinations.ai
 - Billing: Pollen credits ($1 ≈ 1 Pollen). Full docs: `./APIDOCS.md`
-- Pack checkout: Stripe. Polar is retired from runtime; keep its concise
-  historical/read-only query notes in
-  `.claude/skills/provider-billing/providers/polar.md`, but do not add Polar
-  SDKs, Worker bindings, webhooks, or automated writes.
+- Pack checkout: Stripe. Polar is retired from runtime; do not add Polar SDKs,
+  Worker bindings, webhooks, or automated writes. Historical Polar handling
+  (pre-Stripe pack revenue, Nov 2025–Jan 2026) lives in the economics ingest
+  connector prompt (`apps/operation/economics/ingest/agent.system.txt`).
 - Services: Text (Portkey, multi-provider), Image (gen Worker dispatch to providers/GPU backends), Video (Wan/Veo/LTX), Audio (ElevenLabs, TTM)
 - Wallet: Pollen is earned by completing Quests; balances live in the `tier_balance` (shown as Quest Pollen) and `pack_balance` (Paid) buckets. The legacy `tier` D1 column and `tier_balance` wire name are kept for compatibility; see `shared/db/better-auth.ts`.
 

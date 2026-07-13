@@ -1,0 +1,36 @@
+{
+  "pr_number": 12424,
+  "title": "Add studybuddy to learn",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/12424",
+  "merged_at": "2026-07-13T23:30:37Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds [studybuddy](https://studybuddy-deploy2026.streamlit.app/) to learn\n- studybuddy is an AI-powered learner assistant that helps students study using their own notes.\n\nFixes #12227",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Notes, meet study buddy",
+    "blurb": "A new StudyBuddy has moved into the learning garden. Feed it your notes and it helps turn the usual study pile into something you can actually work with.",
+    "summary": "Added StudyBuddy to the Learn directory, an AI-powered study assistant that helps students study from their own notes.",
+    "impact": "Learners can now discover StudyBuddy through pollinations.ai and use their personal notes as the basis for AI-assisted study sessions.",
+    "keywords": [
+      "community",
+      "learn",
+      "studybuddy",
+      "education",
+      "student-tools",
+      "notes"
+    ],
+    "visual_concept": "Depict a cozy digital study nook where Polly helps a friendly student-focused StudyBuddy organize handwritten notes into sprouting code-plants and neat flashcards. Use books, note pages, a warm retro terminal, and small garden flowers to represent learning growing from a learner's own material.",
+    "image_prompt": "A cozy pixel art study nook where Polly, a cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light blue translucent wings, wears tiny round reading glasses while helping organize a student's handwritten notes into glowing flashcards and little code-plants; a friendly retro StudyBuddy terminal sits beside books and flowers. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel lavender-to-warm-cream gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, pixel-font text: \"STUDY BUDDY\", nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-13/PR-12424.jpg",
+    "prompt": "A cozy pixel art study nook where Polly, a cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light blue translucent wings, wears tiny round reading glasses while helping organize a student's handwritten notes into glowing flashcards and little code-plants; a friendly retro StudyBuddy terminal sits beside books and flowers. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel lavender-to-warm-cream gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, pixel-font text: \"STUDY BUDDY\", nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-07-13T23:31:31.592750+00:00",
+  "app_name": "studybuddy",
+  "app_url": "https://studybuddy-deploy2026.streamlit.app/"
+}

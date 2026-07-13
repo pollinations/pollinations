@@ -4,12 +4,18 @@
 
 import type { IMAGE_SERVICES } from "@shared/registry/image.ts";
 import type { Usage } from "@shared/registry/registry.ts";
-import { buildUsageHeaders } from "@shared/registry/usage-headers.ts";
+import {
+    buildUsageHeaders,
+    FALLBACK_TARGET_HEADER,
+    MODEL_PROVIDER_USED_HEADER,
+} from "@shared/registry/usage-headers.ts";
 
 type ValidServiceName = keyof typeof IMAGE_SERVICES;
 
 export interface TrackingData {
     actualModel?: string;
+    actualProvider?: string;
+    fallbackUsed?: boolean;
     usage?: Usage & Record<string, unknown>; // Allow extra fields like totalTokenCount
 }
 
@@ -23,5 +29,12 @@ export function buildTrackingHeaders(
 ): Record<string, string> {
     const modelUsed = trackingData?.actualModel || model;
     const usage: Usage = trackingData?.usage || { completionImageTokens: 1 };
-    return buildUsageHeaders(modelUsed, usage);
+    const headers = buildUsageHeaders(modelUsed, usage);
+    if (trackingData?.actualProvider) {
+        headers[MODEL_PROVIDER_USED_HEADER] = trackingData.actualProvider;
+    }
+    if (trackingData?.fallbackUsed) {
+        headers[FALLBACK_TARGET_HEADER] = "config.targets[1]";
+    }
+    return headers;
 }

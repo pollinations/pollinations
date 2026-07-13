@@ -298,7 +298,10 @@ async function captureFallbackEvent(extraHeaders: Record<string, string>) {
     await waitOnExecutionContext(ctx);
 
     expect(tinybirdRequests).toHaveLength(1);
-    return (await tinybirdRequests[0].json()) as { fallbackUsed?: boolean };
+    return (await tinybirdRequests[0].json()) as {
+        fallbackUsed?: boolean;
+        modelProviderUsed?: string;
+    };
 }
 
 describe("tracking observability", () => {
@@ -773,6 +776,13 @@ describe("tracking observability", () => {
     it("records fallbackUsed=false when no fallback header is present", async () => {
         const event = await captureFallbackEvent({});
         expect(event.fallbackUsed).toBe(false);
+    });
+
+    it("records a response-level provider override", async () => {
+        const event = await captureFallbackEvent({
+            "x-model-provider-used": "fireworks",
+        });
+        expect(event.modelProviderUsed).toBe("fireworks");
     });
 });
 

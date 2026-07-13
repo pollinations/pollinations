@@ -51,11 +51,17 @@ export const OPENAI_CHAT_USAGE_PATHS: Record<
 };
 
 /**
- * Internal worker header carrying Portkey's served fallback target (e.g.
- * "config.targets[1]"), re-emitted from x-portkey-last-used-option-index so
- * tracking can read it off the worker response like the other usage headers.
+ * Internal response header carrying the served fallback target (for example,
+ * "config.targets[1]"). Portkey responses re-emit this from
+ * x-portkey-last-used-option-index; other gateways set it directly.
  */
 export const FALLBACK_TARGET_HEADER = "x-fallback-target";
+
+/**
+ * Internal response header carrying the provider that actually served a
+ * request when it differs from the model registry's configured provider.
+ */
+export const MODEL_PROVIDER_USED_HEADER = "x-model-provider-used";
 
 /**
  * Convert OpenAI usage format to Usage format.

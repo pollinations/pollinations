@@ -7,6 +7,7 @@ import {
 import { callFluxWithFallback } from "../../src/image/createAndReturnImages.ts";
 import { syncImageEnv } from "../../src/image/env.ts";
 import type { ImageParams } from "../../src/image/params.ts";
+import { buildTrackingHeaders } from "../../src/image/utils/trackingHeaders.ts";
 
 // Minimal in-memory KV stub matching the subset of KVNamespace we use
 // (same shape as availableServers.test.ts).
@@ -116,6 +117,18 @@ describe("callFluxWithFallback", () => {
             true,
         );
         expect(result.isMature).toBe(false);
+        expect(result.trackingData).toMatchObject({
+            actualModel: "flux-1-schnell-fp8",
+            actualProvider: "fireworks",
+            fallbackUsed: true,
+        });
+        expect(buildTrackingHeaders("flux", result.trackingData)).toMatchObject(
+            {
+                "x-model-used": "flux-1-schnell-fp8",
+                "x-model-provider-used": "fireworks",
+                "x-fallback-target": "config.targets[1]",
+            },
+        );
     });
 
     it("falls back to Fireworks when the pool request fails", async () => {

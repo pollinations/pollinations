@@ -1,0 +1,34 @@
+{
+  "pr_number": 12377,
+  "title": "Add StoryWeaver to writing",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/12377",
+  "merged_at": "2026-07-13T07:51:53Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds [StoryWeaver](https://carvalholuciano.github.io/storyweaver/) to writing\n- StoryWeaver is a single-page web app using pure HTML/CSS/JS with no backend that turns a\n\nFixes #11799",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "StoryWeaver joins the hive",
+    "blurb": "A new community app just landed in the Greenhouse! StoryWeaver is a pure frontend web app that spins up stories using Pollinations.",
+    "summary": "Added StoryWeaver, a new single-page HTML/CSS/JS web app, to the community apps directory under the writing category.",
+    "impact": "Users can now discover and use StoryWeaver to generate stories directly from the community showcase.",
+    "keywords": [
+      "community",
+      "apps",
+      "writing",
+      "storyweaver"
+    ],
+    "visual_concept": "The PR is about 'StoryWeaver', a writing app. Visuals should include a loom or weaving wheel made of glowing code, books, and a writing desk. Polly the bee wearing a tiny author's cap or reading glasses, weaving a story or reading a book.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee wearing tiny reading glasses, sitting at a wooden desk weaving a glowing scroll of text on a small magical loom. A stack of colorful books sits nearby. Soft lime green (#ecf874) and warm peach gradient background. Chunky retro sprites, warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-13/PR-12377.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee wearing tiny reading glasses, sitting at a wooden desk weaving a glowing scroll of text on a small magical loom. A stack of colorful books sits nearby. Soft lime green (#ecf874) and warm peach gradient background. Chunky retro sprites, warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-07-13T07:53:02.649642+00:00",
+  "app_name": "StoryWeaver",
+  "app_url": "https://carvalholuciano.github.io/storyweaver/"
+}

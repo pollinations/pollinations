@@ -64,10 +64,10 @@ Entry mapping rules for Wise activity payment evidence:
 - `provider`: use the counterparty/provider vendor, such as `openai`, `vast.ai`, or `cloudflare`. Use canonical vendor `wise` for Wise's own fees, cashback, or statements.
 - Wise cashback maps to canonical vendor `wise`, category `revenue`. Never map
   it to `admin` or `others`.
-- `amount`: use the absolute settled cash amount for spend/payment entries. Record refund/credit direction in `usage_summary` and `reconciliation_notes`.
-- `currency`: use the settled Wise currency from `ingest.wise.settled_amount()`.
+- `amount`: use the **signed** settled amount — costs positive, refunds/credits/reversals negative — so the signed entries sum to the source total. The number carries the direction; do not record it in prose only.
+- `currency`: use the settled Wise currency (from the activity's settled amount — often EUR even when the underlying invoice is USD).
 - `period_start` and `period_end`: use the Wise export/activity period unless a matched invoice service period is explicit.
-- `op_transaction_category`: use the local Wise `op_transaction_for()` category.
+- `op_transaction_category`: map the Wise category/counterparty to one of `cloud`, `saas`, `payroll`, `admin`, `office`, or `revenue`.
 - `cost_category`: map only to schema-safe values:
   - `cloud` -> `infrastructure` unless vendor/detail clearly indicates `gpu`, `model`, or `inference_serverless`
   - `saas` -> `admin` or `unknown`

@@ -219,6 +219,7 @@ Connector guides:
 - openrouter: connectors/openrouter.md
 - ovhcloud: connectors/ovhcloud.md
 - perplexity: connectors/perplexity.md
+- polar: connectors/polar.md
 - replicate: connectors/replicate.md
 - runpod: connectors/runpod.md
 - scaleway: connectors/scaleway.md

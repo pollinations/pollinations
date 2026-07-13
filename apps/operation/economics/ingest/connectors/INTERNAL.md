@@ -107,20 +107,26 @@ table's specifics as current without checking.
 
 ## SOPS recipient rotation
 
-Recipients (age public keys) live in `.sops.yaml`: a shared team key, the CI
-key used by GitHub Actions, and per-person identities. Rotating one is a
-two-phase, overlap-window operation — never a single swap:
+Recipients are age public keys declared per path in `.sops.yaml`
+`creation_rules` — there is no separate role registry; that file is the source
+of truth. Economics secrets (`apps/operation/economics/**/secrets/*`) encrypt to
+a single dedicated age key; the repo-wide worker/CI secrets (`*.vars.json`,
+`env.json`) encrypt to the team key set. Rotating a recipient means changing the
+`age:` list on the relevant `creation_rules` entry, as a two-phase,
+overlap-window operation — never a single swap:
 
-1. **Add** the new age public key to `.sops.yaml`, `sops updatekeys` every
-   affected file, get it merged. The old recipient stays valid.
-2. **Verify** the new key decrypts — for CI, trigger a staging deploy and
-   confirm the "decrypt .env files with SOPS" step is green; for a personal
-   identity, run a local `sops -d <file>` smoke test using only the new key.
-3. **Remove** the old recipient, `sops updatekeys` again, merge.
+1. **Add** the new age public key to that path's `age:` list in `.sops.yaml`,
+   `sops updatekeys` every file the rule matches, and merge. The old key stays
+   valid.
+2. **Verify** the new key decrypts without printing any secret — e.g.
+   `sops exec-env <file> 'true'` using only the new private key, or a green
+   "decrypt with SOPS" step in a staging deploy.
+3. **Remove** the old key from `.sops.yaml`, `sops updatekeys` again, merge.
 
-Never drop the shared team key to rotate one person — that cuts off everyone
-else. Confirm `.sops.yaml` matches the recipients actually on each file before
-rotating; drifted recipient sets have caused a real regression here before.
+Never drop a key other files or people still depend on to rotate one holder —
+check which `creation_rules` paths share it first. Confirm `.sops.yaml` matches
+the recipients actually on each file before rotating; drifted recipient sets
+have caused a real regression here before.
 
 ## Manual-only providers (no rotation automation)
 

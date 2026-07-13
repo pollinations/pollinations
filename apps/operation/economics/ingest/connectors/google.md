@@ -139,9 +139,9 @@ Reconciliation notes:
 - Mechanism: `gcloud iam service-accounts keys create` for the same SA (old
   key stays valid), deploy, verify, then `keys delete` for the old key ID.
   Zero downtime.
-- Authenticates via a dedicated `key-rotator` service account whose key lives
-  in the rotation tooling's own admin secrets — separate from both credentials
-  above.
+- Authenticates via an already-authenticated local `gcloud` session with IAM
+  permission to manage keys on that service account — there is no dedicated
+  rotation service account or separate admin credential.
 - SOPS files: `gen.pollinations.ai/secrets/{dev,staging,prod}.vars.json`.
 - Deploy target: gen's Cloudflare deploy workflow. Health check:
   `POST gen.pollinations.ai/v1/chat/completions` against a GCP/Vertex-backed

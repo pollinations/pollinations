@@ -1,0 +1,36 @@
+{
+  "pr_number": 12412,
+  "title": "Add ScrollStop UGC Ad Studio to build",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/12412",
+  "merged_at": "2026-07-13T16:21:24Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds [ScrollStop UGC Ad Studio](https://scrollstop-ugc-studio.vercel.app/) to build\n- ScrollStop UGC Studio is a web app that helps creators and marketers generate short-form UGC ad ideas for TikTok, Reels, and Shorts. Users enter product details, target audience, offer, and creative a\n\nFixes #11448",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Stop the scroll, gently",
+    "blurb": "ScrollStop UGC Ad Studio has joined the garden. Give it a product, audience, offer, and creative angle; it helps turn the blank-page stare into short-form ad ideas.",
+    "summary": "Added ScrollStop UGC Ad Studio to the community app build, giving creators and marketers a web tool for generating TikTok, Reels, and Shorts UGC ad ideas from product details, target audience, offers, and creative angles.",
+    "impact": "Users can now discover ScrollStop alongside other Pollinations-powered apps and use it to turn campaign inputs into practical short-form ad concepts.",
+    "keywords": [
+      "community-app",
+      "ugc",
+      "advertising",
+      "creators",
+      "short-form-video",
+      "ScrollStop"
+    ],
+    "visual_concept": "Depict a cozy creator desk where Polly helps arrange product notes, audience cards, and tiny storyboard panels for vertical short-form videos. A retro monitor shows a simple pixel-font \"SCROLLSTOP\" idea board, while code-plants and flowers grow around the workspace to represent ideas taking root.",
+    "image_prompt": "Cozy pixel art scene of Polly, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny director's beret, helping create vertical UGC ad storyboard cards at a warm retro computer desk; the monitor displays simple pixel text: \"SCROLLSTOP\". Lime green (#ecf874) is prominent in the glowing screen and code-flower pots, with pastel lavender and peach gradients, cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-13/PR-12412.jpg",
+    "prompt": "Cozy pixel art scene of Polly, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny director's beret, helping create vertical UGC ad storyboard cards at a warm retro computer desk; the monitor displays simple pixel text: \"SCROLLSTOP\". Lime green (#ecf874) is prominent in the glowing screen and code-flower pots, with pastel lavender and peach gradients, cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, nostalgic but beautiful."
+  },
+  "generated_at": "2026-07-13T16:22:21.148954+00:00",
+  "app_name": "ScrollStop UGC Ad Studio",
+  "app_url": "https://scrollstop-ugc-studio.vercel.app/"
+}

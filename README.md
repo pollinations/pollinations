@@ -1,7 +1,7 @@
 <div align="center">
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="assets/logo-text-white.svg" />
-    <img src="assets/logo-text-black.svg" alt="pollinations.ai" width="100%" />
+    <source media="(prefers-color-scheme: dark)" srcset="packages/ui/src/brand/lockup-horizontal-white.svg" />
+    <img src="packages/ui/src/brand/lockup-horizontal-black.svg" alt="pollinations.ai" width="100%" />
   </picture>
   
   <p><strong>Open-source AI for people who make things.</strong></p>
@@ -20,16 +20,16 @@
 
 | Name | Description | Author |
 |------|-------------|--------|
+| [🖼️ CarouselCraft AI](https://trdefi.github.io/carouselcraft-ai/) | CarouselCraft AI generates Instagram carousels from a DeFi/Crypto topic using Pollinations.ai for prompt text generation and slide image generation. Users enter a topic to create carousel slides. | [@TRDEFI](https://github.com/TRDEFI) |
+| [🖼️ Pollinations Image Studio](https://housir2001.github.io/pollinations-image-demo/) | Generate images with Pollinations.ai in Pollinations Image Studio using a free, no-key, two-surface setup. | [@housir2001](https://github.com/housir2001) |
 | [🤖 LLM Playground](https://llmplayground.net) | LLM Playground is a chat workspace for GPT, Claude, Pollinations, and other AI models with markdown/LaTeX rendering. Add custom AI Characters and team servers with channels and per-member quotas. | [@voodoohop](https://github.com/voodoohop) |
 | [🖼️ /motion](https://motion-e93d3.web.app/) | /motion is a free, open-source generative graphics studio for designing WebGL shader visuals and looping motion backgrounds. It lets users tweak shader parameters, customize palettes, preview visuals | [@murderszn](https://github.com/murderszn) |
-| [🌱 Sprout](https://murderszn.github.io/sprout/) | Display the Sprout social card image at https://murderszn.github.io/sprout/public/og-image.png. | [@murderszn](https://github.com/murderszn) |
+| [🌱 Sprout](https://murderszn.github.io/sprout/) | Open-source CLI that diagnoses and fixes dev tool installs, config, and PATH issues. | [@murderszn](https://github.com/murderszn) |
 | [💬 Flow Linnom](https://flow.linnom.com) | Flow Linnom provides a chat interface to access multiple AI language models. | [@omarsenusi](https://github.com/omarsenusi) |
 | [🎙️ VoiceEnable Agent](https://metamysteries8.github.io/realtimed/) | Enable voice functionality for VoiceEnable Agent. | [@MetaMysteries8](https://github.com/MetaMysteries8) |
 | [📝 Textylize](https://textylize.vercel.app/) | Textylize is a mainly client-side text stylizer. It lets users apply text styling changes. | [@bytetilde](https://github.com/bytetilde) |
 | [🖼️ Poli image and chat](https://poli-sparkle-studio.lovable.app) | Use Poli image and chat to access free source providers and generate professional images or run chat tools. | [@malik4498](https://github.com/malik4498) |
 | [🎨 PolliArt Studio](https://github.com/wwishao/polli-art-studio) | Generate AI artwork from text prompts using the pollinations.ai API in PolliArt Studio. Choose Flux (free) or Turbo models and save generation history in local storage with a gallery view. | [@wwishao](https://github.com/wwishao) |
-| [📚 BeDream APP](https://bedream.xyz) | **BeDream APP** is a comprehensive AI roleplay and creative writing platform designed for immersive, unrestricted storytelling. Users can craft deeply detailed characters, build elaborate worlds and s | [@budibudi7](https://github.com/budibudi7) |
-| [🗺️ World Weaver](https://github.com/MrMegnis/world-generator) | Generate worlds with AI using GPT-5.4, render scenes with gpt-image-2, and create videos with ltx-2 via pollinations.ai unified API. | [@MrMegnis](https://github.com/MrMegnis) |
 
 [Browse all apps →](apps/GREENHOUSE.md)
 ## 🚀 New Unified API — Now Live
@@ -181,10 +181,8 @@ Get your API key at [enter.pollinations.ai](https://enter.pollinations.ai)
 
 | Key             | Prefix | Use Case                       | Rate Limits              | Status  |
 | --------------- | ------ | ------------------------------ | ------------------------ | ------- |
-| **Publishable** | `pk_`  | Client-side, demos, prototypes | 1 pollen per IP per hour | ⚠️ Beta |
+| **App Key** | `pk_`  | Browsers, mobile apps, public clients | Budget & permissions set at creation | Stable |
 | **Secret**      | `sk_`  | Server-side only               | No rate limits           | Stable  |
-
-> ⚠️ **Publishable keys:** Turnstile protection coming soon. Not recommended for production yet.
 
 > ⚠️ **Never expose `sk_` keys** in client-side code, git repos, or public URLs
 

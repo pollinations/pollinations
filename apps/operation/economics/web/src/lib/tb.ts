@@ -22,7 +22,7 @@ export class TbError extends Error {
     }
 }
 
-export async function fetchPipe<T>(pipe: string): Promise<T[]> {
+async function fetchPipe<T>(pipe: string): Promise<T[]> {
     if (fixturesMode()) {
         const rows = FIXTURES[pipe];
         if (!rows) throw new Error(`Missing fixture for pipe ${pipe}`);

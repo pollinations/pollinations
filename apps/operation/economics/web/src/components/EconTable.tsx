@@ -141,16 +141,6 @@ function usageMatchTone(value: number | null) {
     return "text-intent-danger-text";
 }
 
-export function trueXStatTone(
-    value: number | null,
-    cashBreakEven: number | null,
-): "base" | "pos" | "neg" | "warn" {
-    if (value == null) return "base";
-    if (value < 1) return "neg";
-    if (cashBreakEven != null && value < cashBreakEven) return "warn";
-    return "pos";
-}
-
 function providerFunding(
     row: EconRow,
 ): { paid: number; grants: number } | null {

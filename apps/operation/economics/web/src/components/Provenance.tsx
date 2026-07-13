@@ -94,22 +94,6 @@ function sourceTitle(source: string, code: ProvenanceCode, custom?: string) {
     return custom ?? `${source}: ${PROVENANCE[code].title}`;
 }
 
-export function SourceMark({ code }: { code: ProvenanceCode }) {
-    const source = PROVENANCE[code];
-
-    return (
-        <Chip
-            data-theme="neutral"
-            intent="neutral"
-            size="sm"
-            title={source.title}
-            className="font-mono"
-        >
-            {source.display ?? code}
-        </Chip>
-    );
-}
-
 export function InlineSourceBadge({ source }: { source: string }) {
     if (!source) return null;
 

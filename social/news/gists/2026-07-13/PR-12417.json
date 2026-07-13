@@ -1,0 +1,36 @@
+{
+  "pr_number": 12417,
+  "title": "night: RSVP source tracking + IG-ratio flyer crops",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/12417",
+  "merged_at": "2026-07-13T18:24:16Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "pr_body_excerpt": "Two small additions to the /night event page setup:\n\n- Hidden `came_from` field on the RSVP form, filled from a `?src=` URL parameter (and remembered in sessionStorage). Scheduled social posts link with `?src=li` / `?src=fb` / `?src=x`, so each RSVP email shows which channel drove it. UI-only, no backend.\n- `night-flyer-4x5.jpg` and `night-flyer-square.jpg`: the flyer padded on its own cream ground to Instagram-compatible ratios, referenced by scheduled Buffer posts.\n\nAlready deployed to production manually; this PR keeps the next deploy from overwriting it.\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Follow the RSVP pollen",
+    "blurb": "Night RSVPs now carry a tiny trail of pollen from the post that sent them. The flyer also has proper Instagram-shaped homes, because rectangles remain surprisingly political.",
+    "summary": "The /night RSVP form now records a ?src= value such as li, fb, or x in a hidden came_from field and remembers it with sessionStorage, while dedicated 4:5 and square cream-padded flyer crops support scheduled Instagram posts.",
+    "impact": "Event organizers can see which social channel brought each RSVP email, and social posts now use flyer images sized cleanly for Instagram feeds.",
+    "keywords": [
+      "night",
+      "rsvp",
+      "source-tracking",
+      "social",
+      "instagram",
+      "flyer"
+    ],
+    "visual_concept": "Depict Polly as a cozy event promoter tracing little pollen trails from three tiny social-post signposts into an RSVP envelope, beside a cream-framed square and 4:5 event flyer display. The visual metaphor is attribution without surveillance: friendly labeled paths, a clipboard, and blooming flowers around a warm night-event noticeboard.",
+    "image_prompt": "Cozy pixel art scene of Polly, a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks, a small happy smile, and small rounded light blue translucent wings, wearing a tiny event-promoter beret and holding a clipboard beside a warm cream RSVP noticeboard. Little pollen trails lead from three tiny social-post signs labeled “LI”, “FB”, and “X” into an RSVP envelope, with square and 4:5 cream-padded flyer frames, flowers, and code-plants nearby; cozy pixel art, 8-bit aesthetic, soft pastel gradients, prominent lime green (#ecf874), warm lighting, retro gaming vibes, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-13/PR-12417.jpg",
+    "prompt": "Cozy pixel art scene of Polly, a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks, a small happy smile, and small rounded light blue translucent wings, wearing a tiny event-promoter beret and holding a clipboard beside a warm cream RSVP noticeboard. Little pollen trails lead from three tiny social-post signs labeled “LI”, “FB”, and “X” into an RSVP envelope, with square and 4:5 cream-padded flyer frames, flowers, and code-plants nearby; cozy pixel art, 8-bit aesthetic, soft pastel gradients, prominent lime green (#ecf874), warm lighting, retro gaming vibes, nostalgic but beautiful."
+  },
+  "generated_at": "2026-07-13T18:25:20.670216+00:00"
+}

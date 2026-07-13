@@ -8,9 +8,7 @@ SQL >
         multiIf(
             t.category = 'revenue'
                 AND t.vendor = ''
-                AND t.date = toDate('2026-05-27')
-                AND t.currency = 'USD'
-                AND round(t.amount, 2) = 9993.89,
+                AND t.description = 'Mercatus Center, Inc.',
             'investment',
             t.category = 'revenue' AND t.vendor = '',
             'others',

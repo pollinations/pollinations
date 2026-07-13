@@ -10,7 +10,8 @@ SCHEMA >
     `currency` String `json:$.currency`,
     `description` String `json:$.description`,
     `evidence` String `json:$.evidence`,
-    `recorded_at` DateTime `json:$.recorded_at`
+    `recorded_at` DateTime `json:$.recorded_at`,
+    `entry_id` String `json:$.entry_id`
 
 ENGINE MergeTree
 ENGINE_SORTING_KEY date, vendor, category

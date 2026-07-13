@@ -1,9 +1,9 @@
 ---
 name: model-management
-description: "Add, update, or remove text/image/video/audio/embeddings models. Covers the full lifecycle: files to touch, what to verify, and how to test empirically before merging."
+description: "Add, update, or remove text/image/video/audio/embeddings/3D/realtime models. Covers the mandatory business and inference-routing confirmation, files to touch, and empirical verification before merging."
 ---
 
-> **Read top to bottom on first use.** Then bookmark §6 ([Change matrix](#6-change-matrix--if-you-change-x-verify-y)) and §7 ([Test matrix](#7-test-matrix--if-model-claims-x-run-y)) — those are the daily-driver tables. §9 ([Field-parity audit](#9-field-parity-audit--mandatory-on-new-model--provider-change)) is **mandatory** for new model and provider-change PRs.
+> **Read top to bottom on first use.** Complete the mandatory confirmation gate below before editing any model. Then use §6 ([Change matrix](#6-change-matrix--if-you-change-x-verify-y)), §7 ([Test matrix](#7-test-matrix--if-model-claims-x-run-y)), and §9 ([Field-parity audit](#9-field-parity-audit--mandatory-on-new-model--provider-change)).
 
 ---
 
@@ -20,6 +20,24 @@ description: "Add, update, or remove text/image/video/audio/embeddings models. C
 | Deleting a model | §6 (row "Delete") |
 | Debugging a live issue | See `model-debugging` skill (currently stale — scheduled for rewrite) |
 
+## Mandatory confirmation gate — every model change
+
+Before editing any model, trace the current/proposed registry values and actual runtime route, then stop and ask the user:
+
+> Are you sure `<model>` should use:
+> - `priceMultiplier: <number>` (`public price = provider cost × multiplier`)
+> - `paidOnly: <true|false>` (`true` requires purchased Pack Pollen; `false`/omitted allows Quest Pollen)
+> - GPU/`selfHosted: <true|false>` (`true` only when Pollinations operates the production inference GPUs; a managed API using GPUs is `false`)
+> - registry `provider: <provider>`
+> - primary inference route: `<dispatch/config → backend host/deployment/modelId>`
+> - fallback route: `<none | provider/backend/modelId>`
+>
+> Are all of these correct and should they remain or be set exactly this way?
+
+Apply this gate even to alias-, description-, capability-, and metadata-only changes: show the current values and explicitly confirm that they remain unchanged. Existing registry values and vendor documentation are evidence, not user confirmation. If the user already supplied every value, repeat them back and ask for confirmation.
+
+If any value is unknown, dynamic, multi-provider, or inconsistent with the runtime route, ask before editing. Do not flatten mixed routing into one provider or GPU status. Repeat the gate if implementation reveals a different value or route.
+
 ## Related skills — when to hand off
 
 This skill is self-contained for the model lifecycle. Hand off to a dedicated skill when the work clearly belongs elsewhere:
@@ -28,7 +46,7 @@ This skill is self-contained for the model lifecycle. Hand off to a dedicated sk
 |---|---|---|
 | Adding/modifying a Tinybird **pipe or datasource schema** | `tinybird-deploy` | Querying existing pipes/SQL to verify billing rows |
 | Investigating a live model error in prod (logs, error patterns, affected users) | `model-debugging` | Pre-merge empirical testing |
-| Verifying provider invoice ↔ our cost block math, monthly spend rollups | `provider-billing` | Setting the cost block from provider's posted rates |
+| Verifying provider invoice ↔ our cost block math, monthly spend rollups | Economics `apps/operation/economics/ingest/connectors/<provider>.md` | Setting the cost block from provider's posted rates |
 | Deploying gen/enter workers themselves | `enter-services` | Local-only testing before merge |
 
 **Things kept inline (not extracted into their own skills) on purpose:**
@@ -152,7 +170,7 @@ Provider/runtime secrets (Azure, OpenAI, OpenRouter API keys, etc.) belong in `g
 | `gen.pollinations.ai/src/text/configs/modelConfigs.ts` | Per-model provider routing config |
 | `gen.pollinations.ai/src/text/configs/providerConfigs.ts` | Provider clients (Portkey, Bedrock, OpenAI-compat) |
 | `gen.pollinations.ai/src/text/availableModels.ts` | Service-name → config mapping (the slug you call) |
-| `shared/registry/text.ts` | `name`, `aliases`, `description`, `provider`, `inputModalities`, `outputModalities`, `tools`/`reasoning`/`search`, `cost` block, `priceMultiplier`, `paidOnly`, `addedDate`, `tier`, `alpha` |
+| `shared/registry/text.ts` | Registry identity, provider/hosting, capabilities, modalities, access, and pricing |
 | `gen.pollinations.ai/secrets/{dev,staging,prod}.vars.json` | Encrypted provider API keys (SOPS) |
 
 ## Image / Video
@@ -181,18 +199,34 @@ Provider/runtime secrets (Azure, OpenAI, OpenRouter API keys, etc.) belong in `g
 | `gen.pollinations.ai/src/embeddings/*` | Embedding model dispatch |
 | `shared/registry/embeddings.ts` | Pricing, provider, aliases |
 
+## 3D
+
+| File | Controls |
+|---|---|
+| `shared/registry/model3d.ts` | Registry metadata, pricing, provider/fallback provider, and modalities |
+| `gen.pollinations.ai/src/image/handler.ts` and model handlers | Dispatch and upstream inference route |
+
+## Realtime
+
+| File | Controls |
+|---|---|
+| `shared/registry/realtime.ts` | Registry metadata, pricing, provider, capabilities, and modalities |
+| `gen.pollinations.ai/src/routes/realtime.ts` | WebSocket dispatch, billing, and its separate Tinybird event builder |
+
 ## Cross-cutting
 
 | File | Controls |
 |---|---|
 | `shared/registry/registry.ts` | `convertUsage()` — where missing cost keys log `[registry] Missing conversion rate`. `completionReasoningTokens` is rewritten to `completionTextTokens` **before** the rate lookup (line 118), so it never produces this warning. If you see the warning for reasoning, it actually means `completionTextTokens` is missing. |
-| `shared/registry/usage-headers.ts` | `x-usage-*` header builder/parser; defines every typed usage field (13 total) |
+| `shared/registry/usage-headers.ts` | `x-usage-*` header builder/parser; defines every typed usage field (14 total) |
 | `shared/registry/price-helpers.ts` | `perMillion()`, `priceMultiplier` math (`price = usage × cost × priceMultiplier`, rounded to 8 decimals) |
 | `gen.pollinations.ai/src/middleware/track.ts` | Builds the `generation_event` row sent to Tinybird; cache HITs are flagged `isBilledUsage: false` (line 395) |
 
 ### `priceMultiplier`
 
-Every cost block requires `priceMultiplier`. Current values in the registry: **`1` or `1.5`**, no others. `1.5` is our standard markup for retail; `1` is at-cost or strategically subsidized. Set it explicitly on every new model. Final billed price = `usage × cost × priceMultiplier`.
+Every cost block requires an explicit positive `priceMultiplier`. Do not infer it, copy a neighboring model, or restrict it to a hard-coded allowlist: it is a business decision that the user must confirm. Final billed price = `usage × cost × priceMultiplier`.
+
+Registry metadata includes `provider`, `fallbackProvider`, `brand`, `family`, `version`, `category`, `selfHosted`, `cost`, `priceMultiplier`, and `paidOnly`. `family` is the stable model line within a brand; `version` is the release. `selfHosted` means Pollinations operates the inference deployment; it does not mean merely that the upstream uses GPUs. Trace dispatch/config and handlers to the final host, deployment, and upstream `modelId`; never infer runtime routing from registry metadata alone.
 
 ---
 
@@ -203,8 +237,10 @@ Every cost block requires `priceMultiplier`. Current values in the registry: **`
 
 | If you change… | …in these files | …re-verify |
 |---|---|---|
-| **Pricing (`cost` block + `priceMultiplier`)** | `shared/registry/{text,image,audio,embeddings}.ts` | §7 one request per declared modality + §8 (usage JSON + `x-usage-*` headers + Tinybird row with correct cost + tail **completely clean** of `[registry] Missing conversion rate`) + §9 (field parity) |
-| **Provider** | config/handler + registry `provider` + SOPS keys | §7 **full modality matrix** (providers silently drop modalities — empirical only), pricing (often differs by provider), prompt-cache behavior, §8, §9 (**mandatory** — field-parity audit catches new usage fields the old provider didn't return) |
+| **Any model add or modification** | Registry and routing files | Complete the mandatory confirmation gate before editing; repeat it if discovered values differ |
+| **Pricing (`cost` block + `priceMultiplier`)** | `shared/registry/{text,image,audio,embeddings,model3d,realtime}.ts` | User-confirm the multiplier; §7 one request per declared modality + §8 (usage JSON + `x-usage-*` headers + Tinybird row with correct cost + tail **completely clean** of `[registry] Missing conversion rate`) + §9 (field parity) |
+| **Provider / GPU / inference routing** | Registry `provider`, `selfHosted`, `fallbackProvider`; config, dispatch, handler | Trace primary and fallback routes to final host/deployment/modelId; run each reachable route; verify per-request Tinybird attribution; rerun pricing, modalities, prompt-cache behavior, §8, and §9 |
+| **Structured metadata** | Registry `brand`, `family`, `version`, `category` | Validate naming semantics, `/models` output, and matching Tinybird columns |
 | **modelId** (upstream identifier) | config only | One real call per modality returns 200; §8; §9 if the upstream version is new |
 | **Slug / service name** | `availableModels.ts` + registry `name` + every alias entry referencing it | `aliases.test.ts`; `/v1/models` lists new slug; old slug returns 404 or alias-redirects; `rg <old-slug>` across `apps/`, `pollinations.ai/`, `packages/sdk` for hardcoded refs |
 | **Aliases** | registry `aliases` array | `aliases.test.ts`; each alias resolves to canonical |
@@ -214,7 +250,7 @@ Every cost block requires `priceMultiplier`. Current values in the registry: **`
 | **Image resolutions / aspect ratios** | handler + (registry comment) | One generation per supported ratio returns 200 with matching dims; unsupported ratios return 4xx; §7 cache row with byte-identical params shows MISS→HIT |
 | **Video duration / fps** | handler | Each supported duration returns 200, mp4 of declared length; unsupported returns 4xx |
 | **Cached-token behavior** | registry `promptCachedTokens` in cost block | §7 prompt-cache row passes (`cached_tokens > 0` on call 2); tail clean of `Missing conversion rate: usageType=promptCachedTokens` |
-| **`paidOnly` flip** | registry `paidOnly: true/false` | Token whose user has `packBalance == 0` → 4xx; token with pack balance → 200; `/v1/models` filtering correct per pack balance |
+| **`paidOnly` flip** | registry `paidOnly: true/false` | User-confirm access policy; token whose user has `packBalance == 0` → 4xx; token with pack balance → 200; `/v1/models` filtering correct per pack balance |
 | **Add model** | every file above | Full §7 + §8 + **§9 (mandatory)** + §10 |
 | **Delete model** | remove from config + registry; keep SOPS provider keys (other models may share) | `/v1/models` no longer lists slug; request returns model-not-found 4xx; `aliases.test.ts` updated; `rg <slug>` across the repo for orphan hardcodes; PR description names any downstream apps removed from |
 
@@ -294,7 +330,7 @@ curl -s -o /tmp/i2.jpg -D /tmp/i2.h \
   -H "Authorization: Bearer $TOKEN"
 grep -iE "x-cache" /tmp/i2.h   # expect: HIT
 # NOTE: media cache HIT does NOT preserve x-usage-* headers (only safety metadata).
-#       No Tinybird row is written for HITs. See §8 caveat.
+#       Tinybird still receives an unbilled row with cache_hit=true.
 ```
 
 ## 7.3 Video
@@ -363,7 +399,7 @@ done
 
 # 8. Usage, billing, cache verification
 
-After every **MISS** call (cache HITs are explicitly NOT billed — see caveat below), every new model or pricing change must pass all four checks:
+After every **MISS** call (cache HITs are explicitly not billed), every new model or pricing change must pass all four checks:
 
 ### A. JSON `usage` (text / OpenAI-compatible responses)
 - Dump the full `usage` block — including `prompt_tokens_details` and `completion_tokens_details`
@@ -373,7 +409,7 @@ After every **MISS** call (cache HITs are explicitly NOT billed — see caveat b
 - Any unmapped key = revenue leak. Tail will say `[registry] Missing conversion rate: model=X usageType=Y` and bill 0 for that line.
 
 ### B. `x-usage-*` response headers (image/video/audio/embeddings + text)
-- Inspect with `curl -D -` or `-D /tmp/h`. The 13 typed headers are defined in `shared/registry/usage-headers.ts`.
+- Inspect with `curl -D -` or `-D /tmp/h`. The 14 typed headers are defined in `shared/registry/usage-headers.ts`.
 - For MISS: every non-zero header should have a matching registry cost entry.
 - For HIT: **text caches preserve `x-usage-*` headers** so the parsed usage matches the original MISS; **media (image/video/audio) caches drop `x-usage-*` headers** and only preserve selected safety metadata. Don't flag missing media usage headers on a HIT.
 
@@ -381,7 +417,8 @@ After every **MISS** call (cache HITs are explicitly NOT billed — see caveat b
 - Local gen / dev → staging workspace → `TINYBIRD_READ_STAGING`
 - Prod gen → prod workspace → `TINYBIRD_READ_PROD`
 - Confirm a row exists for your model with non-zero `token_count_*` and `token_price_*` columns matching the JSON/headers (column list: `enter.pollinations.ai/observability/datasources/generation_event.datasource`).
-- **No row is written for cache HITs** (`isBilledUsage: false` at `gen.pollinations.ai/src/middleware/track.ts:395`). HIT-call verification stops at the `X-Cache: HIT` header.
+- Cache HITs still write a row with `cache_hit=true`, `is_billed_usage=false`, and zero billed totals. Verify that row as well as the `X-Cache: HIT` header.
+- Verify registry snapshot columns: provider, category, brand, family, version, self-hosted, paid-only, multiplier, and input/output modalities. Treat provider/self-hosted as runtime attribution only if the serving route emits actual backend data; otherwise document them as configured registry values.
 
 `model_health` returns counts/errors/latency only, no usage. Query `generation_event` directly to see token + price columns:
 ```bash
@@ -390,6 +427,11 @@ SQL="SELECT resolved_model_requested AS model, start_time,
   token_count_prompt_text, token_count_prompt_cached, token_count_prompt_image,
   token_count_completion_text, token_count_completion_reasoning,
   token_count_completion_image, token_count_completion_video_seconds,
+  model_provider_configured, model_provider_used,
+  model_category, model_brand, model_family, model_version,
+  model_self_hosted_configured, model_self_hosted_used,
+  model_paid_only, model_price_multiplier,
+  model_input_modalities, model_output_modalities,
   total_cost, total_price, dev_price, markup_rate
  FROM generation_event
  WHERE resolved_model_requested = '$MODEL'
@@ -422,7 +464,7 @@ In a separate terminal during testing:
 **Why.** Every time we add a model or swap a provider, the upstream may return usage fields we don't yet capture. If the field exists in the response but not in our registry, billing under-charges (or charges zero) for that resource — silently, with no test failure. We've already seen this with `promptCachedTokens` (caught only after deploy). The audit catches it before merge.
 
 **The contract.** For a new model or provider swap, every numeric field present in the upstream response's usage/billing block must:
-1. Map to one of the **13 typed usage fields** in `shared/registry/usage-headers.ts` (`promptTextTokens`, `promptCachedTokens`, `promptAudioTokens`, `promptAudioSeconds`, `promptImageTokens`, `promptVideoTokens`, `completionTextTokens`, `completionReasoningTokens`, `completionAudioTokens`, `completionAudioSeconds`, `completionImageTokens`, `completionVideoSeconds`, `completionVideoTokens`),
+1. Map to one of the **14 typed usage fields** in `shared/registry/usage-headers.ts` (`promptTextTokens`, `promptCachedTokens`, `promptCacheWriteTokens`, `promptAudioTokens`, `promptAudioSeconds`, `promptImageTokens`, `promptVideoTokens`, `completionTextTokens`, `completionReasoningTokens`, `completionAudioTokens`, `completionAudioSeconds`, `completionImageTokens`, `completionVideoSeconds`, `completionVideoTokens`),
 2. AND have a corresponding entry in the registry `cost` block (reasoning tokens are an exception — they're rewritten to `completionTextTokens` in `registry.ts:118` before rate lookup, so they don't need a separate cost line; but `completionTextTokens` itself must exist),
 3. AND surface in the response headers as `x-usage-<kebab-case-name>`,
 4. AND land in the Tinybird `generation_event` row via `track.ts`,
@@ -446,7 +488,7 @@ curl -s "http://localhost:8788/v1/chat/completions" \
 
 # 2. List every numeric field upstream returned
 jq -r '.usage | paths(numbers) | join(".")' /tmp/response.json | sort -u
-# Cross-check against the 13 typed fields above.
+# Cross-check against the 14 typed fields above.
 
 # 3. Confirm each non-zero field appears as an x-usage-* header
 grep -iE "^x-usage-" /tmp/headers.txt
@@ -470,7 +512,7 @@ curl -s -G "$TB/v0/sql" \
 
 ## Audit acceptance gates
 
-- Every numeric upstream usage field is in the 13-typed list **or** explicitly documented as dropped in the PR
+- Every numeric upstream usage field is in the 14-typed list **or** explicitly documented as dropped in the PR
 - Every non-zero usage field has a matching `x-usage-*` header
 - Every non-zero usage field has a matching column in the Tinybird row
 - The cost block multiplies through correctly: `displayed price ≈ sum(usage_field × cost_rate × priceMultiplier)`
@@ -520,6 +562,8 @@ This is acceptable. What's NOT acceptable is silently dropping a separately-bill
 
 ## Empirical (must all pass against `localhost:8788`)
 
+- [ ] User explicitly confirmed `priceMultiplier`, `paidOnly`, GPU/`selfHosted`, registry provider, primary inference route, and fallback route before edits
+- [ ] PR description records those confirmed values and routes
 - [ ] All [Change matrix](#6-change-matrix--if-you-change-x-verify-y) rows for this change type re-verified
 - [ ] All [Test matrix](#7-test-matrix--if-model-claims-x-run-y) rows for declared capabilities passed (not from docs)
 - [ ] [Output cache](#72-image) tested with **byte-identical requests** if the modality caches
@@ -528,7 +572,8 @@ This is acceptable. What's NOT acceptable is silently dropping a separately-bill
 - [ ] [Field-parity audit](#9-field-parity-audit--mandatory-on-new-model--provider-change) passed (new model or provider change)
 - [ ] `/v1/models` returns the model with correct pricing + modalities
 - [ ] `addedDate` set on first add, **untouched** on later edits
-- [ ] `priceMultiplier` set (1 or 1.5)
+- [ ] `priceMultiplier` is explicit, positive, and matches the user-confirmed value
+- [ ] Tinybird row matches registry metadata and, where claimed, the backend that actually served the request—including fallback behavior
 - [ ] No 5xx in [error-path matrix](#76-error-paths--every-malformed-request-must-return-4xx-never-opaque-5xx)
 - [ ] Burst test passed at expected production concurrency
 - [ ] PR description notes any docs/upstream discrepancies found and any bundled-modality choices

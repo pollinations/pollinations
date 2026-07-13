@@ -228,7 +228,7 @@ async function captureFallbackEvent(extraHeaders: Record<string, string>) {
     await waitOnExecutionContext(ctx);
 
     expect(tinybirdRequests).toHaveLength(1);
-    return (await tinybirdRequests[0].json()) as { fallbackUsed?: boolean };
+    return (await tinybirdRequests[0].json()) as Record<string, unknown>;
 }
 
 describe("tracking observability", () => {
@@ -289,7 +289,18 @@ describe("tracking observability", () => {
             modelRequested: "gpt-5.4-nano",
             resolvedModelRequested: "gpt-5.4-nano",
             modelUsed: "gpt-5-nano-2025-08-07",
-            modelProviderUsed: expect.any(String),
+            modelProviderConfigured: "azure",
+            modelProviderUsed: "azure",
+            modelCategory: "text",
+            modelBrand: "OpenAI",
+            modelFamily: "gpt-nano",
+            modelVersion: "5.4",
+            modelSelfHostedConfigured: false,
+            modelSelfHostedUsed: false,
+            modelPaidOnly: false,
+            modelPriceMultiplier: 0.75,
+            modelInputModalities: ["text", "image"],
+            modelOutputModalities: ["text"],
             isBilledUsage: true,
             tokenCountPromptText: 1000,
             tokenCountCompletionText: 500,
@@ -636,6 +647,9 @@ describe("tracking observability", () => {
             "x-fallback-target": "config.targets[1]",
         });
         expect(event.fallbackUsed).toBe(true);
+        expect(event.modelProviderConfigured).toBe("azure");
+        expect(event.modelProviderUsed).toBeUndefined();
+        expect(event.modelSelfHostedUsed).toBeUndefined();
     });
 
     it("records fallbackUsed=false when Portkey served the primary target", async () => {
@@ -648,6 +662,20 @@ describe("tracking observability", () => {
     it("records fallbackUsed=false when no fallback header is present", async () => {
         const event = await captureFallbackEvent({});
         expect(event.fallbackUsed).toBe(false);
+    });
+
+    it("records the backend attribution emitted by a model handler", async () => {
+        const event = await captureFallbackEvent({
+            "x-provider-used": "fireworks",
+            "x-self-hosted-used": "false",
+            "x-fallback-used": "true",
+        });
+
+        expect(event.modelProviderConfigured).toBe("azure");
+        expect(event.modelProviderUsed).toBe("fireworks");
+        expect(event.modelSelfHostedConfigured).toBe(false);
+        expect(event.modelSelfHostedUsed).toBe(false);
+        expect(event.fallbackUsed).toBe(true);
     });
 });
 

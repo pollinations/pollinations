@@ -487,7 +487,18 @@ test("deducts aggregate session usage from paid pack balance on close", async ()
     expect(telemetry.eventType).toBe("generate.realtime");
     expect(telemetry.responseStatus).toBe(200);
     expect(telemetry.resolvedModelRequested).toBe("gpt-realtime-2");
+    expect(telemetry.modelProviderConfigured).toBe("azure");
     expect(telemetry.modelProviderUsed).toBe("azure");
+    expect(telemetry.modelCategory).toBe("realtime");
+    expect(telemetry.modelBrand).toBe("OpenAI");
+    expect(telemetry.modelFamily).toBe("gpt-realtime");
+    expect(telemetry.modelVersion).toBe("2");
+    expect(telemetry.modelSelfHostedConfigured).toBe(false);
+    expect(telemetry.modelSelfHostedUsed).toBe(false);
+    expect(telemetry.modelPaidOnly).toBe(false);
+    expect(telemetry.modelPriceMultiplier).toBe(1);
+    expect(telemetry.modelInputModalities).toEqual(["text", "audio", "image"]);
+    expect(telemetry.modelOutputModalities).toEqual(["text", "audio"]);
     expect(telemetry.tokenCountPromptText).toBe(200);
     expect(telemetry.tokenCountPromptCached).toBe(40);
     expect(telemetry.tokenCountPromptAudio).toBe(20);

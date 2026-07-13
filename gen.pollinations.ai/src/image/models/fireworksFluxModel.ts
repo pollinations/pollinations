@@ -91,6 +91,9 @@ export async function callFireworksFluxSchnellAPI(
         isChild: false,
         trackingData: {
             actualModel: "flux-schnell",
+            providerUsed: "fireworks",
+            selfHostedUsed: false,
+            fallbackUsed: true,
             usage: {
                 completionImageTokens: 1,
                 totalTokenCount: 1,

@@ -7,6 +7,7 @@ import {
 import { callFluxWithFallback } from "../../src/image/createAndReturnImages.ts";
 import { syncImageEnv } from "../../src/image/env.ts";
 import type { ImageParams } from "../../src/image/params.ts";
+import { buildTrackingHeaders } from "../../src/image/utils/trackingHeaders.ts";
 
 // Minimal in-memory KV stub matching the subset of KVNamespace we use
 // (same shape as availableServers.test.ts).
@@ -101,6 +102,18 @@ describe("callFluxWithFallback", () => {
             true,
         );
         expect(result.trackingData?.actualModel).toBe("flux-schnell");
+        expect(result.trackingData).toMatchObject({
+            providerUsed: "vast",
+            selfHostedUsed: true,
+            fallbackUsed: false,
+        });
+        expect(
+            buildTrackingHeaders(fluxParams.model, result.trackingData),
+        ).toMatchObject({
+            "x-provider-used": "vast",
+            "x-self-hosted-used": "true",
+            "x-fallback-used": "false",
+        });
     });
 
     it("falls back to Fireworks when no flux worker is registered", async () => {
@@ -116,6 +129,18 @@ describe("callFluxWithFallback", () => {
             true,
         );
         expect(result.isMature).toBe(false);
+        expect(result.trackingData).toMatchObject({
+            providerUsed: "fireworks",
+            selfHostedUsed: false,
+            fallbackUsed: true,
+        });
+        expect(
+            buildTrackingHeaders(fluxParams.model, result.trackingData),
+        ).toMatchObject({
+            "x-provider-used": "fireworks",
+            "x-self-hosted-used": "false",
+            "x-fallback-used": "true",
+        });
     });
 
     it("falls back to Fireworks when the pool request fails", async () => {
@@ -134,5 +159,10 @@ describe("callFluxWithFallback", () => {
         expect(Buffer.from(result.buffer).equals(Buffer.from(JPEG_BYTES))).toBe(
             true,
         );
+        expect(result.trackingData).toMatchObject({
+            providerUsed: "fireworks",
+            selfHostedUsed: false,
+            fallbackUsed: true,
+        });
     });
 });

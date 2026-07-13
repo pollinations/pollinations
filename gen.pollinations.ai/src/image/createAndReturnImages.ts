@@ -253,6 +253,9 @@ export const callSelfHostedServer = async (
             ...rest,
             trackingData: {
                 actualModel: safeParams.model,
+                providerUsed: poolType === "flux" ? "vast" : "runpod",
+                selfHostedUsed: true,
+                fallbackUsed: false,
                 usage: {
                     completionImageTokens: 1,
                     totalTokenCount: 1,

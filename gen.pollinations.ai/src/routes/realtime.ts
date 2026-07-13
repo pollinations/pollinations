@@ -429,7 +429,21 @@ function createRealtimeTrackingEvent(args: {
         modelRequested: args.tracking.modelRequested,
         resolvedModelRequested: args.tracking.resolvedModelRequested,
         modelUsed: args.tracking.resolvedModelRequested,
+        modelProviderConfigured: args.tracking.modelDefinition.provider,
         modelProviderUsed: args.tracking.modelDefinition.provider,
+        modelCategory: args.tracking.modelDefinition.category,
+        modelBrand: args.tracking.modelDefinition.brand,
+        modelFamily: args.tracking.modelDefinition.family,
+        modelVersion: args.tracking.modelDefinition.version,
+        modelSelfHostedConfigured:
+            args.tracking.modelDefinition.selfHosted ?? false,
+        modelSelfHostedUsed: args.tracking.modelDefinition.selfHosted ?? false,
+        modelPaidOnly: args.tracking.modelDefinition.paidOnly ?? false,
+        modelPriceMultiplier: args.tracking.modelDefinition.priceMultiplier,
+        modelInputModalities:
+            args.tracking.modelDefinition.inputModalities ?? [],
+        modelOutputModalities:
+            args.tracking.modelDefinition.outputModalities ?? [],
         isBilledUsage: true,
         ...getPostDeductionBalances(args.payerBucket, args.balances),
         ...priceToEventParams(args.tracking.modelPriceDefinition),

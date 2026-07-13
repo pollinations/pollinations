@@ -64,10 +64,17 @@ export type TinybirdEvent = {
     modelUsed?: string;
     modelProviderUsed?: string;
     /** Registry metadata for the resolved model, denormalized for analytics. */
+    modelProviderConfigured?: string;
     modelCategory?: string;
     modelBrand?: string;
     modelFamily?: string;
-    modelSelfHosted?: boolean;
+    modelVersion?: string;
+    modelSelfHostedConfigured?: boolean;
+    modelSelfHostedUsed?: boolean;
+    modelPaidOnly?: boolean;
+    modelPriceMultiplier?: number;
+    modelInputModalities?: string[];
+    modelOutputModalities?: string[];
     /** True when Portkey served from a non-primary fallback target. */
     fallbackUsed?: boolean;
     isBilledUsage: boolean;
@@ -77,11 +84,13 @@ export type TinybirdEvent = {
     tokenPricePromptCached: number;
     tokenPricePromptCacheWrite: number;
     tokenPricePromptAudio: number;
+    tokenPricePromptAudioSeconds: number;
     tokenPricePromptImage: number;
     tokenPricePromptVideo: number;
     tokenPriceCompletionText: number;
     tokenPriceCompletionReasoning: number;
     tokenPriceCompletionAudio: number;
+    tokenPriceCompletionAudioSeconds: number;
     tokenPriceCompletionImage: number;
     tokenPriceCompletionVideoSeconds: number;
     tokenPriceCompletionVideoTokens: number;
@@ -141,11 +150,13 @@ export type GenerationEventPriceParams = {
     tokenPricePromptCached: number;
     tokenPricePromptCacheWrite: number;
     tokenPricePromptAudio: number;
+    tokenPricePromptAudioSeconds: number;
     tokenPricePromptImage: number;
     tokenPricePromptVideo: number;
     tokenPriceCompletionText: number;
     tokenPriceCompletionReasoning: number;
     tokenPriceCompletionAudio: number;
+    tokenPriceCompletionAudioSeconds: number;
     tokenPriceCompletionImage: number;
     tokenPriceCompletionVideoSeconds: number;
     tokenPriceCompletionVideoTokens: number;
@@ -182,6 +193,8 @@ export function priceToEventParams(
             priceDefinition?.promptCacheWriteTokens || 0,
         tokenPricePromptAudio: 
             priceDefinition?.promptAudioTokens || 0,
+        tokenPricePromptAudioSeconds:
+            priceDefinition?.promptAudioSeconds || 0,
         tokenPricePromptImage:
             priceDefinition?.promptImageTokens || 0,
         tokenPricePromptVideo:
@@ -194,6 +207,8 @@ export function priceToEventParams(
             0,
         tokenPriceCompletionAudio:
             priceDefinition?.completionAudioTokens || 0,
+        tokenPriceCompletionAudioSeconds:
+            priceDefinition?.completionAudioSeconds || 0,
         tokenPriceCompletionImage:
             priceDefinition?.completionImageTokens || 0,
         tokenPriceCompletionVideoSeconds:

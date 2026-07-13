@@ -106,6 +106,8 @@ type ResponseTrackingData = {
     cacheData: CacheData;
     isBilledUsage: boolean;
     fallbackUsed: boolean;
+    modelProviderUsed?: string;
+    modelSelfHostedUsed?: boolean;
     modelUsed?: string;
     usage?: Usage;
     cost?: UsageCost;
@@ -448,7 +450,17 @@ async function trackResponse(
     const log = getLogger(["hono", "track", "response"]);
     const { resolvedModelRequested } = requestTracking;
     const cacheInfo = extractCacheHeaders(response);
-    const fallbackUsed = parseFallbackUsed(response);
+    const fallbackUsed =
+        parseBooleanLike(response.headers.get("x-fallback-used")) ??
+        parseFallbackUsed(response);
+    const modelProviderUsed =
+        response.headers.get("x-provider-used") ??
+        (fallbackUsed ? undefined : requestTracking.modelProvider);
+    const modelSelfHostedUsed =
+        parseBooleanLike(response.headers.get("x-self-hosted-used")) ??
+        (fallbackUsed
+            ? undefined
+            : (requestTracking.modelDefinition.selfHosted ?? false));
     const notBilled = (
         extra?: Partial<ResponseTrackingData>,
     ): ResponseTrackingData => ({
@@ -457,6 +469,8 @@ async function trackResponse(
         cacheData: cacheInfo,
         isBilledUsage: false,
         fallbackUsed,
+        modelProviderUsed,
+        modelSelfHostedUsed,
         ...extra,
     });
 
@@ -509,6 +523,8 @@ async function trackResponse(
         cacheData: cacheInfo,
         isBilledUsage: true,
         fallbackUsed,
+        modelProviderUsed,
+        modelSelfHostedUsed,
         cost,
         price,
         adjustments,
@@ -700,11 +716,21 @@ function createTrackingEvent({
         modelRequested: requestTracking.modelRequested,
         resolvedModelRequested: requestTracking.resolvedModelRequested,
         modelUsed: responseTracking.modelUsed,
-        modelProviderUsed: requestTracking.modelProvider,
+        modelProviderConfigured: requestTracking.modelProvider,
+        modelProviderUsed: responseTracking.modelProviderUsed,
         modelCategory: requestTracking.modelDefinition.category,
         modelBrand: requestTracking.modelDefinition.brand,
         modelFamily: requestTracking.modelDefinition.family,
-        modelSelfHosted: requestTracking.modelDefinition.selfHosted ?? false,
+        modelVersion: requestTracking.modelDefinition.version,
+        modelSelfHostedConfigured:
+            requestTracking.modelDefinition.selfHosted ?? false,
+        modelSelfHostedUsed: responseTracking.modelSelfHostedUsed,
+        modelPaidOnly: requestTracking.modelDefinition.paidOnly ?? false,
+        modelPriceMultiplier: requestTracking.modelDefinition.priceMultiplier,
+        modelInputModalities:
+            requestTracking.modelDefinition.inputModalities ?? [],
+        modelOutputModalities:
+            requestTracking.modelDefinition.outputModalities ?? [],
         fallbackUsed: responseTracking.fallbackUsed,
 
         isBilledUsage: responseTracking.isBilledUsage,

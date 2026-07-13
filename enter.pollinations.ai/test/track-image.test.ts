@@ -194,3 +194,13 @@ test("nanobanana reasoning token event prices use text output rates", () => {
         proPrice?.completionTextTokens,
     );
 });
+
+test("audio-second event prices are preserved", () => {
+    const eventPrices = priceToEventParams({
+        promptAudioSeconds: 0.001,
+        completionAudioSeconds: 0.002,
+    });
+
+    expect(eventPrices.tokenPricePromptAudioSeconds).toBe(0.001);
+    expect(eventPrices.tokenPriceCompletionAudioSeconds).toBe(0.002);
+});

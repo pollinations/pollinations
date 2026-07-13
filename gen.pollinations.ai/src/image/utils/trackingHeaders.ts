@@ -10,6 +10,9 @@ type ValidServiceName = keyof typeof IMAGE_SERVICES;
 
 export interface TrackingData {
     actualModel?: string;
+    providerUsed?: string;
+    selfHostedUsed?: boolean;
+    fallbackUsed?: boolean;
     usage?: Usage & Record<string, unknown>; // Allow extra fields like totalTokenCount
 }
 
@@ -23,5 +26,16 @@ export function buildTrackingHeaders(
 ): Record<string, string> {
     const modelUsed = trackingData?.actualModel || model;
     const usage: Usage = trackingData?.usage || { completionImageTokens: 1 };
-    return buildUsageHeaders(modelUsed, usage);
+    return {
+        ...buildUsageHeaders(modelUsed, usage),
+        ...(trackingData?.providerUsed && {
+            "x-provider-used": trackingData.providerUsed,
+        }),
+        ...(trackingData?.selfHostedUsed !== undefined && {
+            "x-self-hosted-used": String(trackingData.selfHostedUsed),
+        }),
+        ...(trackingData?.fallbackUsed !== undefined && {
+            "x-fallback-used": String(trackingData.fallbackUsed),
+        }),
+    };
 }

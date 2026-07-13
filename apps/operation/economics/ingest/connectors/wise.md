@@ -61,6 +61,15 @@ Expected entry:
 
 Entry mapping rules for Wise activity payment evidence:
 
+- `entry_id` (op_transactions rows): use the Wise-native resource ID
+  `{resource.type}-{resource.id}` from the Activities API, e.g.
+  `CARD_TRANSACTION-4049450438` or `TRANSFER-2237416213`. Every row MUST carry
+  one — the `op_transactions_api` pipe collapses rows per `entry_id` via
+  `argMax(recorded_at)`, so corrections re-append with the SAME `entry_id` and
+  a newer `recorded_at`, and a blank id would merge unrelated rows. Only when
+  a cash fact has no Wise activity witness (e.g. invoice-booked rows), use the
+  deterministic fallback `wise-hash-<sha256(date|vendor|category|amount|currency|description)[:16]>`
+  (see `data/reconcile/2026-07-13-op-transactions-entryid-rebuild/match_rebuild.py`).
 - `provider`: use the counterparty/provider vendor, such as `openai`, `vast.ai`, or `cloudflare`. Use canonical vendor `wise` for Wise's own fees, cashback, or statements.
 - Wise cashback maps to canonical vendor `wise`, category `revenue`. Never map
   it to `admin` or `others`.

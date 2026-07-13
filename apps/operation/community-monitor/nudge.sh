@@ -28,16 +28,15 @@
 # prompt, "resubmitting" a dead command for 36+ hours while the session was
 # actually idle with no /loop armed at all.
 #
-# A THIRD stuck state, separate from both of the above: an open tool-permission
-# dialog ("Do you want to proceed? 1. Yes ..."). CYCLE.md now tells the agent to
-# never wait on one of these, but that instruction only helps once the agent
-# reads it -- a dialog raised before that (e.g. mid-cycle, before the file is
-# re-read) still stalls the loop for real. Confirmed live (2026-07-13): the
-# monitor sat on a `discord_get_server_info` approval prompt for over an hour,
-# and this script's retype-text path never fired because a permission dialog
-# doesn't match the "stuck prompt-box text" shape at all (no leading "o" glyph
-# line) -- it needs its own detection and its own remedy (send "1" then Enter
-# to pick "Yes", not retype text into an already-closed input box).
+# A permission dialog ("Do you want to proceed? 1. Yes ...") used to be a
+# THIRD stuck state this script had to detect+recover separately (it doesn't
+# match the "stuck prompt-box text" shape at all, so the retype-text path
+# below never caught it -- confirmed live 2026-07-13, a `discord_get_server_info`
+# approval prompt stalled the monitor over an hour). That's now handled at
+# the source instead: watchdog.sh launches the session with
+# `--dangerously-skip-permissions`, so approval dialogs never appear in the
+# first place. Verified live (2026-07-13) across a full real cycle -- bash,
+# curl, and Discord MCP tool calls all ran with zero prompts.
 set -u
 LOG=/home/ubuntu/monitor/nudge.log
 DUMP=/tmp/community-monitor-nudge-dump.txt
@@ -48,20 +47,6 @@ fi
 
 screen -S community-monitor -X hardcopy "$DUMP" 2>/dev/null
 sleep 0.5
-
-if grep -q "Do you want to proceed?" "$DUMP" 2>/dev/null; then
-    echo "$(date -u +%FT%TZ) detected stuck permission dialog, approving (option 1)" >> "$LOG"
-    screen -S community-monitor -X stuff "1"
-    sleep 0.5
-    screen -S community-monitor -X stuff $'\r'
-    sleep 2
-    screen -S community-monitor -X hardcopy "$DUMP" 2>/dev/null
-    sleep 0.5
-    if grep -q "Do you want to proceed?" "$DUMP" 2>/dev/null; then
-        echo "$(date -u +%FT%TZ) WARNING: permission dialog still present after approving -- may need manual intervention" >> "$LOG"
-    fi
-    exit 0
-fi
 
 STUCK_LINE=$(python3 - "$DUMP" <<'PY'
 import re, sys

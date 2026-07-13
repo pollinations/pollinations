@@ -1,0 +1,37 @@
+{
+  "pr_number": 12362,
+  "title": "feat: economics operations app (ingest agent, dashboard, tinybird backend)",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/12362",
+  "merged_at": "2026-07-13T13:57:07Z",
+  "labels": [
+    "DEV-APP"
+  ],
+  "pr_body_excerpt": "Adds the economics operations app: an agent-driven ingest pipeline plus a read-only web dashboard for tracking real spend, credits, cash runway, and product usage in Pollen.\n\n- Backing data lives in enter.pollinations.ai's Tinybird project (`pollinations_enter` / `pollinations_enter_staging`), replacing the old standalone \"operations\" workspace.\n- `op_pollen` is computed directly from `generation_event` (no manual invoice reconciliation) — cross-checked against the old invoice-based totals within ~1% for most GPU vendors.\n- GPU margin is attributed by vendor+month using real per-request provider data, since per-pod/per-model attribution isn't reliable (one host can serve several models at once).\n- Ingest agent and web app both point at the prod Tinybird workspace; staging is kept in sync for validation.",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "The hive gets a ledger",
+    "blurb": "A new operations dashboard gathers the hive's numbers in one warm little place. An ingest agent does the collecting; Tinybird does the remembering.",
+    "summary": "Added an agent-driven economics operations app and read-only dashboard backed by the enter.pollinations.ai Tinybird projects, with op_pollen computed directly from generation_event and GPU margins grouped by vendor and month.",
+    "impact": "Operations contributors can inspect spend, credits, runway, product Pollen usage, and provider-level GPU margins from one validated dashboard instead of reconciling separate finance and operations workspaces.",
+    "keywords": [
+      "economics",
+      "operations",
+      "tinybird",
+      "dashboard",
+      "pollen",
+      "gpu-margins",
+      "observability"
+    ],
+    "visual_concept": "Depict Pollinations' internal economics system as a cozy garden ledger: Tinybird-like data streams flow from retro terminals into labeled jars for Pollen, cloud spend, runway, and GPU vendors. Polly, wearing a tiny accountant visor and holding a clipboard, checks blooming code-plants while a CRT monitor robot happily charts the incoming data; the scene communicates reliable automated accounting rather than a user-facing product launch.",
+    "image_prompt": "Cozy pixel art scene of Polly, the cute yellow-and-brown striped bee mascot with pink cheek blushes, light blue wings, and a tiny accountant visor, checking a clipboard beside a glowing lime green (#ecf874) retro dashboard where data streams fill jars labeled \"POLLEN\", \"RUNWAY\", and \"GPU\"; a friendly CRT monitor robot points excitedly at a vendor-by-month chart while code-plants bloom around the desk. Cozy 8-bit pixel art aesthetic, soft pastel mint-lavender-peach gradients, warm lighting, subtle CRT glow, retro gaming vibes like Stardew Valley or A Short Hike, nostalgic and emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-13/PR-12362.jpg",
+    "prompt": "Cozy pixel art scene of Polly, the cute yellow-and-brown striped bee mascot with pink cheek blushes, light blue wings, and a tiny accountant visor, checking a clipboard beside a glowing lime green (#ecf874) retro dashboard where data streams fill jars labeled \"POLLEN\", \"RUNWAY\", and \"GPU\"; a friendly CRT monitor robot points excitedly at a vendor-by-month chart while code-plants bloom around the desk. Cozy 8-bit pixel art aesthetic, soft pastel mint-lavender-peach gradients, warm lighting, subtle CRT glow, retro gaming vibes like Stardew Valley or A Short Hike, nostalgic and emotionally warm."
+  },
+  "generated_at": "2026-07-13T13:58:06.618021+00:00"
+}

@@ -2,7 +2,7 @@
 
 ## App Submission Handling
 
-Two-phase review via `app-review-submission.yml` (AI + human). Source of truth: `apps/APPS.md`.
+Two-phase review via `apps-review-submissions.yml` (AI + human). Source of truth: `apps/APPS.md`.
 
 Flow: user opens issue with `TIER-APP` → workflow validates + AI generates preview → bot posts `APP_REVIEW_DATA` JSON + labels `TIER-APP-REVIEW` → maintainer adds `TIER-APP-APPROVED` → workflow prepends row to `apps/APPS.md`, opens PR with auto-merge, closes issue via `Fixes #NNN`.
 

@@ -1,7 +1,7 @@
 # Pollinations AI - AI assistant via Pollinations AI
 # Trigger: polly | Whitelist: voodoohop, ElliotEtag, Circuit-Overtime, Itachi-1824
 
-name: Polly
+name: Repo / Polly assistant
 
 on:
   issue_comment:

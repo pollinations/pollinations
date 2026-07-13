@@ -1,4 +1,4 @@
-name: Issue Automation
+name: Repo / Triage new issues
 
 on:
   issues:

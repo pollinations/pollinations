@@ -1,4 +1,4 @@
-name: Biome Check
+name: CI / Pull request checks
 
 "on":
   pull_request:

@@ -1,4 +1,4 @@
-name: App Merge Celebration
+name: Apps / Finalize submissions
 
 on:
   pull_request_target:

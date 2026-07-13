@@ -1,4 +1,4 @@
-name: Deploy pollinations.ai
+name: Deploy / pollinations.ai
 
 on:
   push:
@@ -10,7 +10,7 @@ on:
       - 'shared/**'
       - 'packages/sdk/**'
       - 'packages/ui/**'
-      - '.github/workflows/deploy-pollinations-ai-cloudflare.yml'
+      - '.github/workflows/deploy-website-cloudflare.yml'
   workflow_dispatch:
 
 jobs:

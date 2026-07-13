@@ -1,4 +1,4 @@
-name: Deploy Portkey Gateway
+name: Deploy / Portkey gateway
 
 on:
   push:
@@ -6,7 +6,7 @@ on:
       - production
     paths:
       - 'gen.pollinations.ai/scripts/deploy-portkey.sh'
-      - '.github/workflows/deploy-portkey-gateway.yml'
+      - '.github/workflows/deploy-portkey-cloudflare.yml'
   workflow_dispatch:
     inputs:
       commit:

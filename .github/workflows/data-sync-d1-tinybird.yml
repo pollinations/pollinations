@@ -1,4 +1,4 @@
-name: Daily D1 → Tinybird Sync
+name: Data / Sync D1 to Tinybird
 
 on:
   schedule:

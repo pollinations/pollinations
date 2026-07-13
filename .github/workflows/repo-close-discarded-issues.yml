@@ -1,4 +1,4 @@
-name: Issue Close Discarded
+name: Repo / Close discarded issues
 
 on:
   schedule:

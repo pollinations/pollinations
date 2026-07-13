@@ -1,0 +1,35 @@
+{
+  "pr_number": 12400,
+  "title": "fix: validate issue automation verdicts",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/12400",
+  "merged_at": "2026-07-13T13:49:53Z",
+  "labels": [
+    "DEV-BUG"
+  ],
+  "pr_body_excerpt": "- Validates Polly responses against the verdict schema requested by the workflow.\n- Accepts direct, fenced, and prose-embedded verdict JSON without requiring the nonexistent action field.\n- Rejects malformed verdicts before any issue comment, label, or closure is attempted.\n- Leaves the backfill workflow, prompt, model, and action thresholds unchanged.",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Polly checks the paperwork",
+    "blurb": "Issue automation now reads verdicts a little more carefully before touching labels or closing tickets. Even bees appreciate valid JSON when the garden is automated.",
+    "summary": "The issue-automation workflow now validates Polly's verdict JSON against the requested schema, accepting direct, fenced, and prose-embedded responses while rejecting malformed output before comments, labels, or closures run.",
+    "impact": "GitHub issue triage gets safer and more reliable: only schema-valid verdicts can trigger automated issue actions, with the existing prompt, model, backfill flow, and thresholds unchanged.",
+    "keywords": [
+      "github-actions",
+      "issue-automation",
+      "validation",
+      "json",
+      "polly"
+    ],
+    "visual_concept": "A cozy garden-shed triage desk where Polly, wearing tiny librarian glasses, carefully checks several verdict scrolls against a glowing schema checklist before a friendly CRT robot applies garden labels to issue seedlings. A clearly malformed scroll is set aside, while valid documents receive neat stamps; vines and code-plants make the workflow feel safe rather than severe.",
+    "image_prompt": "Cozy pixel art scene in a warm garden-shed hackerspace: the cute pixel art bee mascot with a yellow body, dark brown stripes, black antennae, oval eyes, pink rectangular blush marks, small smile, light blue wings, and tiny librarian glasses carefully validates JSON verdict scrolls against a glowing lime green (#ecf874) schema checklist, while a friendly CRT monitor robot waits beside labeled code-plants. Cozy 8-bit pixel art aesthetic, soft lime green and pastel gradient background, warm lighting, subtle scanlines, retro gaming vibes like Stardew Valley; pixel-font text: \"VALID VERDICT\". Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-13/PR-12400.jpg",
+    "prompt": "Cozy pixel art scene in a warm garden-shed hackerspace: the cute pixel art bee mascot with a yellow body, dark brown stripes, black antennae, oval eyes, pink rectangular blush marks, small smile, light blue wings, and tiny librarian glasses carefully validates JSON verdict scrolls against a glowing lime green (#ecf874) schema checklist, while a friendly CRT monitor robot waits beside labeled code-plants. Cozy 8-bit pixel art aesthetic, soft lime green and pastel gradient background, warm lighting, subtle scanlines, retro gaming vibes like Stardew Valley; pixel-font text: \"VALID VERDICT\". Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-07-13T13:50:48.929705+00:00"
+}

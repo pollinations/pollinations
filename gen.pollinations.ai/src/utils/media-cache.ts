@@ -11,9 +11,17 @@ import type { Context } from "hono";
 
 // "nofeed" is a removed/no-op param kept here on purpose: external and
 // community clients still send `?nofeed=true`, and excluding it from the
-// cache key prevents those requests from fragmenting the cache. "no-cache"
-// and "key" are request controls that must never affect the cache key.
-const EXCLUDED_PARAMS = ["nofeed", "no-cache", "key"];
+// cache key prevents those requests from fragmenting the cache. The remaining
+// entries are request controls or legacy auth/referrer parameters that must
+// never affect the cache key.
+const EXCLUDED_PARAMS = [
+    "nofeed",
+    "no-cache",
+    "key",
+    "token",
+    "referrer",
+    "referer",
+];
 export const SAFETY_CACHE_VERSION = "bedrock-input-v1";
 const CACHED_HEADER_PREFIXES = ["x-safety-"];
 

@@ -330,6 +330,22 @@ export const IMAGE_SERVICES = {
         inputModalities: ["text"],
         outputModalities: ["image"],
     },
+    "sana": {
+        aliases: [],
+        modelId: "sana",
+        provider: "vast",
+        brand: "NVIDIA",
+        category: "image",
+        addedDate: new Date("2025-10-07").getTime(),
+        priceMultiplier: 0,
+        cost: {
+            completionImageTokens: 0.0002, // estimated self-hosted GPU cost per image
+        },
+        title: "Sana Sprint",
+        description: "Sana Sprint - Fast open image generation",
+        inputModalities: ["text"],
+        outputModalities: ["image"],
+    },
     "zimage": {
         aliases: ["z-image", "z-image-turbo"],
         modelId: "zimage",

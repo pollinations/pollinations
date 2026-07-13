@@ -61,9 +61,11 @@ export async function requireGenerationAccess(
     vars: GenerationAccessVariables,
     env: CloudflareBindings,
 ): Promise<void> {
-    await vars.auth.requireAuthorization();
+    const isFree = vars.model.definition.priceMultiplier === 0;
+
+    if (!isFree) await vars.auth.requireAuthorization();
     vars.auth.requireModelAccess();
-    await checkBalance(vars, env);
+    if (!isFree) await checkBalance(vars, env);
 }
 
 export const generationAccess = createMiddleware<GenerationAccessEnv>(

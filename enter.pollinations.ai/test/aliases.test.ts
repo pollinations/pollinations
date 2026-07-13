@@ -106,6 +106,22 @@ test("calculatePrice derives the total from cost via priceMultiplier", () => {
     expect(price.totalPrice).toBeCloseTo(cost.totalCost * priceMultiplier, 8);
 });
 
+test("Sana and GPT-OSS retain provider costs while remaining free", () => {
+    const sanaUsage = { completionImageTokens: 1 };
+    const gptOssUsage = {
+        promptTextTokens: 1_000_000,
+        completionTextTokens: 1_000_000,
+    };
+
+    expect(getRegistryModelDefinition("sana").priceMultiplier).toBe(0);
+    expect(calculateCost("sana", sanaUsage).totalCost).toBeGreaterThan(0);
+    expect(calculatePrice("sana", sanaUsage).totalPrice).toBe(0);
+
+    expect(getRegistryModelDefinition("gpt-oss").priceMultiplier).toBe(0);
+    expect(calculateCost("gpt-oss", gptOssUsage).totalCost).toBeGreaterThan(0);
+    expect(calculatePrice("gpt-oss", gptOssUsage).totalPrice).toBe(0);
+});
+
 test("GPT-5.5 is available without paid-only gating", () => {
     // GPT-5.5 is the flagship behind the `openai-large` clean slug; `gpt-5.5`
     // remains a back-compat alias. Resolve before the direct registry lookup.

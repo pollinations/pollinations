@@ -56,6 +56,24 @@ export class PollenRateLimiter extends DurableObject {
         };
     }
 
+    /** Atomically reserve a fixed interval for callers using a dedicated key. */
+    async checkAndConsumeInterval(intervalMs: number): Promise<{
+        allowed: boolean;
+        waitMs?: number;
+    }> {
+        const now = Date.now();
+        if (now < this.nextAllowedTime) {
+            return {
+                allowed: false,
+                waitMs: this.nextAllowedTime - now,
+            };
+        }
+
+        this.nextAllowedTime = now + intervalMs;
+        await this.ctx.storage.put("nextAllowedTime", this.nextAllowedTime);
+        return { allowed: true };
+    }
+
     async consumePollen(cost: number): Promise<void> {
         const now = Date.now();
         const waitTime = Math.ceil(cost / this.refillRate);

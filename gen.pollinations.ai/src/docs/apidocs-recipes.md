@@ -25,9 +25,10 @@ The header is preferred for everything except browser flows that can't set custo
 |---|---|
 | `GET /{hash}`, `GET /{hash}/metadata`, `HEAD /{hash}` | None — content-addressed media URLs are public reads |
 | `GET /models`, `GET /v1/models`, `GET /image/models`, `GET /text/models`, `GET /audio/models`, `GET /embeddings/models` | None — model catalogue is public. Sending a bearer key returns the same data; some endpoints add per-account fields when authenticated. |
+| Generation with `model=gpt-oss` or `model=sana` | Optional — these zero-priced models accept anonymous requests. Valid supplied keys retain permissions and attribution. |
 | Everything else | Bearer key required unless the endpoint documents `?key=` support |
 
-`401 UNAUTHORIZED` always means key missing or invalid. `402 PAYMENT_REQUIRED` means the key authenticated but the account or per-key budget is exhausted — see [Error Responses](#-error-responses).
+`401 UNAUTHORIZED` means a required key is missing or a supplied key is invalid. `402 PAYMENT_REQUIRED` means the key authenticated but the account or per-key budget is exhausted — see [Error Responses](#-error-responses).
 
 ## 🔓 Sign in with Pollinations (OAuth 2.1)
 

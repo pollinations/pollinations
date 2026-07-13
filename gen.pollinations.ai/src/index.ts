@@ -27,6 +27,7 @@ import type { Env } from "@/env.ts";
 import { logger } from "@/middleware/logger.ts";
 import { audioRoutes } from "./routes/audio.ts";
 import { buildMergedOpenApiSpec, createDocsRoutes } from "./routes/docs.ts";
+import { legacyImageRoutes, legacyTextRoutes } from "./routes/legacy.ts";
 import { modelStatusRoutes } from "./routes/model-status.ts";
 import { proxyRoutes } from "./routes/proxy.ts";
 import { docsLandingHtml, manifestResponse } from "./routes/seo.ts";
@@ -159,6 +160,35 @@ app.notFound(async (c: Context<Env>) => {
 
 app.onError(handleError);
 
+function createLegacyApp(routes: Hono<Env>): Hono<Env> {
+    const legacyApp = new Hono<Env>()
+        .use("*", cors(PERMISSIVE_CORS_OPTIONS))
+        .use("*", requestId())
+        .use("*", logger)
+        .use("*", async (c, next) => {
+            await next();
+            c.header("X-Robots-Tag", "noindex, nofollow");
+        })
+        .route("/", routes);
+    legacyApp.notFound(async (c: Context<Env>) => {
+        return handleError(new HTTPException(404), c);
+    });
+    legacyApp.onError(handleError);
+    return legacyApp;
+}
+
+const legacyTextApp = createLegacyApp(legacyTextRoutes);
+const legacyImageApp = createLegacyApp(legacyImageRoutes);
+
 export default {
-    fetch: app.fetch,
+    fetch(request: Request, env: Env["Bindings"], ctx: ExecutionContext) {
+        const hostname = new URL(request.url).hostname.toLowerCase();
+        if (hostname === "text.pollinations.ai") {
+            return legacyTextApp.fetch(request, env, ctx);
+        }
+        if (hostname === "image.pollinations.ai") {
+            return legacyImageApp.fetch(request, env, ctx);
+        }
+        return app.fetch(request, env, ctx);
+    },
 };

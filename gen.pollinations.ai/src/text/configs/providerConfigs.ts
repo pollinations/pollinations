@@ -145,6 +145,16 @@ export function createOVHcloudModelConfig(
     );
 }
 
+export function createOVHcloudGptOssConfig(
+    overrides: ModelOverride = {},
+): ProviderConfig {
+    return createOpenAICompatibleConfig(
+        "https://gpt-oss-20b.endpoints.kepler.ai.cloud.ovh.net/api/openai_compat/v1",
+        process.env.OVHCLOUD_API_KEY,
+        overrides,
+    );
+}
+
 export function createOVHcloudMistralConfig(
     overrides: ModelOverride = {},
 ): ProviderConfig {

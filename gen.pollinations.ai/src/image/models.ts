@@ -8,6 +8,7 @@ const DEFAULT_IMAGE_SIDE_LENGTH = 1024;
 export const IMAGE_DEFAULT_SIDE_LENGTHS: Partial<
     Record<ImageModelName, number>
 > = {
+    sana: 768,
     seedream5: 2048,
     "seedream5-pro": 2048,
     "seedream-pro": 2048,

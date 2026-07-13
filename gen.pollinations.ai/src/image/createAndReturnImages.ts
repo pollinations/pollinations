@@ -768,6 +768,9 @@ const generateImage = async (
         case "flux":
             return await callFluxWithFallback(prompt, safeParams);
 
+        case "sana":
+            return await callSelfHostedServer(prompt, safeParams, "sana");
+
         default:
             // zimage is the only model that reaches the default branch
             // (the model enum is closed and every other model is dispatched above)

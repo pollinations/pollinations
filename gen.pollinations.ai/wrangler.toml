@@ -72,6 +72,16 @@ pattern = "gen.pollinations.ai"
 zone_name = "pollinations.ai"
 custom_domain = true
 
+[[env.production.routes]]
+pattern = "text.pollinations.ai"
+zone_name = "pollinations.ai"
+custom_domain = true
+
+[[env.production.routes]]
+pattern = "image.pollinations.ai"
+zone_name = "pollinations.ai"
+custom_domain = true
+
 [[env.production.services]]
 binding = "ENTER"
 service = "pollinations-enter-production"

@@ -11,9 +11,10 @@ import {
     imageCache,
     model3dCache,
 } from "@/middleware/media-cache.ts";
-import { resolveModel } from "@/middleware/model.ts";
+import { type ResolveModelOptions, resolveModel } from "@/middleware/model.ts";
 import { frontendKeyRateLimit } from "@/middleware/rate-limit-durable.ts";
 import { edgeRateLimit } from "@/middleware/rate-limit-edge.ts";
+import { sanaRateLimit } from "@/middleware/sana-rate-limit.ts";
 import { textCache } from "@/middleware/text-cache.ts";
 import { track } from "@/middleware/track.ts";
 import { handleImageEdit, handleImageGeneration } from "./images.ts";
@@ -93,22 +94,30 @@ const factory = createFactory<Env>();
 const textBodyLimit = bodyLimit({
     maxSize: 20 * 1024 * 1024,
 });
+async function handleImageVideo(c: Context<Env>) {
+    const query = (c.req.valid("query" as never) as
+        | { safe?: SafeValue }
+        | undefined) ?? { safe: undefined };
+    const prompt = await applySafety(
+        c,
+        c.req.param("prompt") || "",
+        query.safe,
+    );
+    return withSafetyHeaders(c, await handleImagePrompt(c, prompt));
+}
+
+export const createImageVideoHandlers = (options?: ResolveModelOptions) =>
+    factory.createHandlers(
+        resolveModel("generate.image", options),
+        track("generate.image"),
+        imageCache,
+        sanaRateLimit,
+        generationAccess,
+        handleImageVideo,
+    );
+
 // Shared handler for image and video generation (used by both /image/ and /video/ routes)
-const imageVideoHandlers = factory.createHandlers(
-    resolveModel("generate.image"),
-    track("generate.image"),
-    imageCache,
-    generationAccess,
-    async (c) => {
-        const query = c.req.valid("query" as never) as { safe?: SafeValue };
-        const prompt = await applySafety(
-            c,
-            c.req.param("prompt") || "",
-            query.safe,
-        );
-        return withSafetyHeaders(c, await handleImagePrompt(c, prompt));
-    },
-);
+const imageVideoHandlers = createImageVideoHandlers();
 
 // Handler for 3D model generation (reuses the "generate.image" EventType,
 // same as video, to avoid touching Tinybird/EventType consumers).
@@ -128,58 +137,117 @@ const model3dHandlers = factory.createHandlers(
     },
 );
 
-// Shared handler for OpenAI-compatible chat completions
-const chatCompletionHandlers = factory.createHandlers(
-    textBodyLimit,
-    validator("json", CreateChatCompletionRequestSchema),
-    resolveModel("generate.text"),
-    track("generate.text"),
-    textCache,
-    generationAccess,
-    async (c) => {
-        // Use resolved model from middleware for the backend request
-        const requestBody = await applySafetyToChatRequest(c, {
-            ...(c.req.valid("json" as never) as CreateChatCompletionRequest),
-            model: c.var.model.resolved,
-        });
+async function handleChatCompletion(c: Context<Env>) {
+    const requestBody = await applySafetyToChatRequest(c, {
+        ...(c.req.valid("json" as never) as CreateChatCompletionRequest),
+        model: c.var.model.resolved,
+    });
 
-        const response = await handleChatCompletionLocal(c, requestBody);
+    const response = await handleChatCompletionLocal(c, requestBody);
+    assertStreamContentType(c, response);
 
-        assertStreamContentType(c, response);
-
-        // add content filter headers if not streaming
-        let contentFilterHeaders = {};
-        if (!c.var.track.streamRequested) {
-            const responseText = await response.clone().text();
-            try {
-                const parsedResponse = CreateChatCompletionResponseSchema.parse(
-                    JSON.parse(responseText),
-                    { reportInput: true },
-                );
-                contentFilterHeaders =
-                    contentFilterResultsToHeaders(parsedResponse);
-            } catch (parseError) {
-                throw new UpstreamError(502, {
-                    message: `Upstream returned response that failed schema validation: ${parseError instanceof Error ? parseError.message : String(parseError)}`,
-                    requestUrl: new URL(c.req.url),
-                    upstreamStatus: response.status,
-                    responseBody: responseText,
-                    cause: parseError,
-                });
-            }
+    let contentFilterHeaders = {};
+    if (!c.var.track.streamRequested) {
+        const responseText = await response.clone().text();
+        try {
+            const parsedResponse = CreateChatCompletionResponseSchema.parse(
+                JSON.parse(responseText),
+                { reportInput: true },
+            );
+            contentFilterHeaders =
+                contentFilterResultsToHeaders(parsedResponse);
+        } catch (parseError) {
+            throw new UpstreamError(502, {
+                message: `Upstream returned response that failed schema validation: ${parseError instanceof Error ? parseError.message : String(parseError)}`,
+                requestUrl: new URL(c.req.url),
+                upstreamStatus: response.status,
+                responseBody: responseText,
+                cause: parseError,
+            });
         }
+    }
 
-        return withSafetyHeaders(
+    return withSafetyHeaders(
+        c,
+        new Response(response.body, {
+            headers: {
+                ...Object.fromEntries(response.headers),
+                ...contentFilterHeaders,
+            },
+        }),
+    );
+}
+
+export const createChatCompletionHandlers = (options?: ResolveModelOptions) =>
+    factory.createHandlers(
+        textBodyLimit,
+        validator("json", CreateChatCompletionRequestSchema),
+        resolveModel("generate.text", options),
+        track("generate.text"),
+        textCache,
+        generationAccess,
+        handleChatCompletion,
+    );
+
+// Shared handler for OpenAI-compatible chat completions
+const chatCompletionHandlers = createChatCompletionHandlers();
+
+async function handleTextContent(c: Context<Env>) {
+    const requestBody = await applySafetyToChatRequest(c, {
+        ...(c.req.valid("json" as never) as CreateChatCompletionRequest),
+        model: c.var.model.resolved,
+    });
+
+    const response = await handleTextContentLocal(c, requestBody);
+    assertStreamContentType(c, response);
+    return withSafetyHeaders(c, response);
+}
+
+export const createTextContentHandlers = (options?: ResolveModelOptions) =>
+    factory.createHandlers(
+        textBodyLimit,
+        validator("json", CreateChatCompletionRequestSchema),
+        resolveModel("generate.text", options),
+        track("generate.text"),
+        textCache,
+        generationAccess,
+        handleTextContent,
+    );
+
+async function handleSimpleText(c: Context<Env>) {
+    const query = c.req.valid("query" as never) as {
+        safe?: SafeValue;
+        system?: string;
+    };
+    const textInputs =
+        typeof query.system === "string"
+            ? [c.req.param("prompt"), query.system]
+            : [c.req.param("prompt")];
+    const [prompt, system] = await applySafetyToTexts(
+        c,
+        textInputs,
+        query.safe,
+    );
+
+    return withSafetyHeaders(
+        c,
+        await handleSimpleTextLocal(
             c,
-            new Response(response.body, {
-                headers: {
-                    ...Object.fromEntries(response.headers),
-                    ...contentFilterHeaders,
-                },
-            }),
-        );
-    },
-);
+            prompt,
+            c.var.model.resolved,
+            system ? { system } : undefined,
+        ),
+    );
+}
+
+export const createSimpleTextHandlers = (options?: ResolveModelOptions) =>
+    factory.createHandlers(
+        resolveModel("generate.text", options),
+        track("generate.text"),
+        textCache,
+        generationAccess,
+        handleSimpleText,
+    );
 
 // Validate streaming responses: if client requested stream but upstream
 // returned non-SSE, throw rather than forwarding broken data.
@@ -674,24 +742,7 @@ export const proxyRoutes = new Hono<Env>()
                 ...errorResponseDescriptions(400, 401, 402, 403, 429, 500),
             },
         }),
-        textBodyLimit,
-        validator("json", CreateChatCompletionRequestSchema),
-        resolveModel("generate.text"),
-        track("generate.text"),
-        textCache,
-        generationAccess,
-        async (c) => {
-            const requestBody = await applySafetyToChatRequest(c, {
-                ...(c.req.valid(
-                    "json" as never,
-                ) as CreateChatCompletionRequest),
-                model: c.var.model.resolved,
-            });
-
-            const response = await handleTextContentLocal(c, requestBody);
-            assertStreamContentType(c, response);
-            return withSafetyHeaders(c, response);
-        },
+        ...createTextContentHandlers(),
     )
     .get(
         "/text/:prompt{[\\s\\S]+}",
@@ -725,38 +776,7 @@ export const proxyRoutes = new Hono<Env>()
             }),
         ),
         validator("query", GenerateTextRequestQueryParamsSchema),
-        resolveModel("generate.text"),
-        track("generate.text"),
-        textCache,
-        generationAccess,
-        async (c) => {
-            // Use resolved model from middleware
-            const model = c.var.model.resolved;
-
-            const query = c.req.valid("query" as never) as {
-                safe?: SafeValue;
-                system?: string;
-            };
-            const textInputs =
-                typeof query.system === "string"
-                    ? [c.req.param("prompt"), query.system]
-                    : [c.req.param("prompt")];
-            const [prompt, system] = await applySafetyToTexts(
-                c,
-                textInputs,
-                query.safe,
-            );
-
-            return withSafetyHeaders(
-                c,
-                await handleSimpleTextLocal(
-                    c,
-                    prompt,
-                    model,
-                    system ? { system } : undefined,
-                ),
-            );
-        },
+        ...createSimpleTextHandlers(),
     )
     .get(
         // Use :prompt{[\\s\\S]+} regex to capture everything including slashes AND newlines

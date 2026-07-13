@@ -27,6 +27,7 @@ const genAliases = [
     "middleware/rate-limit-durable.ts",
     "middleware/rate-limit-edge.ts",
     "middleware/safety.ts",
+    "middleware/sana-rate-limit.ts",
     "middleware/text-cache.ts",
     "middleware/track.ts",
     "middleware/validator.ts",

@@ -1,6 +1,6 @@
 ## Authentication
 
-All generation requests require an API key from [enter.pollinations.ai](https://enter.pollinations.ai). Model listing endpoints work without authentication.
+Generation requests normally require an API key from [enter.pollinations.ai](https://enter.pollinations.ai). The zero-priced `gpt-oss` text model and `sana` image model work with or without authentication. Model listing endpoints also work without authentication.
 
 | Type | Prefix | Use case | Rate limits | Description |
 |------|--------|----------|-------------|-------------|
@@ -13,5 +13,7 @@ Two ways to authenticate generation requests:
 
 - Header: `Authorization: Bearer YOUR_API_KEY`
 - Query param: `?key=YOUR_API_KEY`
+
+When a key is supplied for a zero-priced model, normal key permissions and user attribution still apply. Invalid supplied keys are rejected.
 
 For detailed integration guides on user-pays authorization, including OAuth discovery and token exchange, refer to the [Bring Your Own Pollen (BYOP) guide](https://github.com/pollinations/pollinations/blob/main/BRING_YOUR_OWN_POLLEN.md).

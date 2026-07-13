@@ -17,6 +17,7 @@ import type { ContentfulStatusCode } from "hono/utils/http-status";
 import type { Env } from "@/env.ts";
 import { generateImageOrVideoResponse } from "@/image/handler.ts";
 import { applySafety, withSafetyHeaders } from "@/middleware/safety.ts";
+import { enforceSanaRateLimit } from "@/middleware/sana-rate-limit.ts";
 import { arrayBufferToBase64 } from "@/util.ts";
 import { requireGenerationAccess } from "@/utils/generation-access.ts";
 
@@ -171,6 +172,7 @@ async function parseEditInput(c: Context): Promise<{
 // --- Exported handlers ---
 
 export async function handleImageGeneration(c: Context<Env>) {
+    await enforceSanaRateLimit(c);
     await requireGenerationAccess(c.var, c.env);
 
     const body = c.req.valid("json" as never) as CreateImageRequest &
@@ -221,6 +223,7 @@ export async function handleImageGeneration(c: Context<Env>) {
 }
 
 export async function handleImageEdit(c: Context<Env>) {
+    await enforceSanaRateLimit(c);
     await requireGenerationAccess(c.var, c.env);
 
     const { prompt, imageUrls, size, quality, seed, safe, extra } =

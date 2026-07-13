@@ -31,8 +31,9 @@ export type ModelVariables = {
     formData?: FormData;
 };
 
-type ResolveModelOptions = {
+export type ResolveModelOptions = {
     defaultModel?: string;
+    modelMap?: Readonly<Record<string, string>>;
 };
 
 function hasJsonContentType(contentType: string): boolean {
@@ -135,8 +136,12 @@ export function resolveModel(
                     : eventType === "generate.realtime"
                       ? DEFAULT_REALTIME_MODEL
                       : DEFAULT_IMAGE_MODEL);
-        const model = rawModel || defaultModel;
-        c.set("model", await resolveModelDefinition(model, eventType, c.env));
+        const requestedModel = rawModel || defaultModel;
+        const model = options?.modelMap?.[requestedModel] || requestedModel;
+        c.set("model", {
+            ...(await resolveModelDefinition(model, eventType, c.env)),
+            requested: requestedModel,
+        });
         await next();
     });
 }

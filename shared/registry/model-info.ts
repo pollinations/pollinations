@@ -93,7 +93,7 @@ function pricingInfoFromDefinition(
         currency: "pollen",
     };
     for (const [key, value] of Object.entries(priceDefinition)) {
-        if (typeof value === "number" && value > 0) {
+        if (typeof value === "number" && value >= 0) {
             pricing[key] = toFixedPoint(value);
         }
     }

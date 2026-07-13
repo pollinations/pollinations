@@ -33,6 +33,9 @@ export type AuthEnv = {
 
 export const auth = () =>
     createMiddleware<AuthEnv>(async (c, next) => {
+        const authorizationProvided =
+            c.req.header("authorization") !== undefined ||
+            new URL(c.req.url).searchParams.has("key");
         const authResult = await (async () => {
             try {
                 return await authenticateApiKeyRequest({
@@ -50,6 +53,10 @@ export const auth = () =>
                 throw error;
             }
         })();
+
+        if (authorizationProvided && !authResult) {
+            throw new HTTPException(401);
+        }
 
         const { user, apiKey } = authResult || {};
 

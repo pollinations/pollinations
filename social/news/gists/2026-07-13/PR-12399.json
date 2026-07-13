@@ -1,0 +1,35 @@
+{
+  "pr_number": 12399,
+  "title": "fix: use native merged branch deletion",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/12399",
+  "merged_at": "2026-07-13T13:22:16Z",
+  "labels": [
+    "DEV-INFRA"
+  ],
+  "pr_body_excerpt": "- Enables the repository's native automatic head-branch deletion setting.\n- Removes the redundant PR Delete Branch workflow.\n- Avoids failed runs for merged fork pull requests where Actions secrets are unavailable.\n- Keeps the separate manual stale-branch cleanup workflow unchanged.",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Branches clean themselves now",
+    "blurb": "The hive stopped sending a robot to delete branches one by one. GitHub’s built-in broom now handles merged heads, while the stale-branch caretaker keeps doing its separate rounds.",
+    "summary": "Removed the redundant merged-branch deletion GitHub Actions workflow and enabled GitHub’s native automatic head-branch deletion, avoiding failed workflow runs on merged fork PRs without Actions secrets.",
+    "impact": "Merged PR branches are now cleaned up by the repository setting instead of a secret-dependent workflow, while manual stale-branch cleanup remains available.",
+    "keywords": [
+      "github",
+      "branch-cleanup",
+      "automation",
+      "pull-requests",
+      "workflows"
+    ],
+    "visual_concept": "Depict a cozy garden cleanup: Polly the bee, wearing a tiny groundskeeper hat, watches a friendly self-moving broom trim away a neatly merged branch from a code-tree. A small retro terminal shows a calm green checkmark, with the separate stale-branch rake resting nearby to show that manual cleanup remains.",
+    "image_prompt": "Cozy pixel art garden scene where the cute pollinations bee mascot, with her yellow body, dark brown stripes, pink blush, light blue wings, and a tiny groundskeeper hat, warmly watches a friendly automatic broom sweep away a small merged branch from a code-tree while a retro terminal glows lime green (#ecf874) with a checkmark. Pixel flowers and code-plants surround a separate rake labeled \"STALE\" resting nearby; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-13/PR-12399.jpg",
+    "prompt": "Cozy pixel art garden scene where the cute pollinations bee mascot, with her yellow body, dark brown stripes, pink blush, light blue wings, and a tiny groundskeeper hat, warmly watches a friendly automatic broom sweep away a small merged branch from a code-tree while a retro terminal glows lime green (#ecf874) with a checkmark. Pixel flowers and code-plants surround a separate rake labeled \"STALE\" resting nearby; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, nostalgic but beautiful."
+  },
+  "generated_at": "2026-07-13T13:49:41.007260+00:00"
+}

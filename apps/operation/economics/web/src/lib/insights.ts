@@ -1357,7 +1357,7 @@ export function allocateGrants(
         const months = [
             ...(burnByVendorMonth.get(vendor) ?? new Map()).entries(),
         ].sort((a, b) => a[0].localeCompare(b[0]));
-        let overflow = 0;
+        const overflowByMonth: [string, number][] = [];
         for (const [month, burn] of months) {
             let left = burn.creditUsd;
             for (const grant of grants) {
@@ -1375,18 +1375,29 @@ export function allocateGrants(
                     fillMonth.set(grant, month);
                 }
             }
-            overflow += left;
+            if (left > 0) overflowByMonth.push([month, left]);
         }
-        // Pass 2: leftover into any non-expired grant with capacity.
-        if (overflow > 0) {
+        // Pass 2: leftover into non-expired grants that already existed at
+        // burn time — burn cannot consume credit granted later. Pre-window
+        // months are opening-balance plugs whose dates predate grant
+        // metadata, so only those may spill onto any non-expired grant.
+        let overflow = 0;
+        for (const [month, amount] of overflowByMonth) {
+            let left = amount;
             for (const grant of grants) {
-                if (overflow <= 0) break;
+                if (left <= 0) break;
                 if (grant.expires && grant.expires < today) continue;
+                if (
+                    month >= WINDOW_START &&
+                    grant.startDate.slice(0, 7) > month
+                ) {
+                    continue;
+                }
                 const capacity = grant.grantedUsd - grant.allocatedUsd;
                 if (capacity <= 0) continue;
-                const take = Math.min(capacity, overflow);
+                const take = Math.min(capacity, left);
                 grant.allocatedUsd += take;
-                overflow -= take;
+                left -= take;
                 if (grant.grantedUsd - grant.allocatedUsd <= POOL_EPS_USD) {
                     const latest = months[months.length - 1];
                     if (latest && !fillMonth.has(grant)) {
@@ -1394,6 +1405,7 @@ export function allocateGrants(
                     }
                 }
             }
+            overflow += left;
         }
         if (overflow > POOL_EPS_USD) unallocated.set(vendor, overflow);
 
@@ -1528,31 +1540,53 @@ export function creditRunway(data: Data, now: Date): RunwayRow[] {
         }
 
         if (!row.finished) {
-            let burnDate: string | null = null;
-            if (row.monthlyRateUsd && row.remainingUsd > 0) {
-                // remainingUsd is the last full-month close minus this
-                // month's witnessed burn, so this projects from today.
-                const days =
-                    (row.remainingUsd / row.monthlyRateUsd) *
-                    AVG_DAYS_PER_MONTH;
-                burnDate = new Date(now.getTime() + days * 86_400_000)
-                    .toISOString()
-                    .slice(0, 10);
+            // Walk the remaining capacity in expiry order: burn drains the
+            // earliest-expiring parcel first, and whatever is left of a
+            // parcel at its expiry lapses. The pool runs out when burn
+            // empties the last parcel or the last parcel lapses — an early
+            // expiry alone does not end a pool that has later grants.
+            const perDayUsd = row.monthlyRateUsd
+                ? row.monthlyRateUsd / AVG_DAYS_PER_MONTH
+                : null;
+            const parcels = row.grants
+                .filter(
+                    (grant) =>
+                        !(grant.expires != null && grant.expires < today),
+                )
+                .map((grant) => ({
+                    expiresMs: grant.expires
+                        ? Date.parse(grant.expires)
+                        : Number.POSITIVE_INFINITY,
+                    remainingUsd: Math.max(
+                        grant.grantedUsd - grant.allocatedUsd,
+                        0,
+                    ),
+                }))
+                .filter((parcel) => parcel.remainingUsd > 0)
+                .sort((a, b) => a.expiresMs - b.expiresMs);
+            let atMs = now.getTime();
+            let reason: RunwayRow["depletionReason"] = null;
+            for (const parcel of parcels) {
+                if (perDayUsd) {
+                    const burnMs =
+                        (parcel.remainingUsd / perDayUsd) * 86_400_000;
+                    if (atMs + burnMs <= parcel.expiresMs) {
+                        atMs += burnMs;
+                        reason = "burn";
+                        continue;
+                    }
+                }
+                if (parcel.expiresMs === Number.POSITIVE_INFINITY) {
+                    // no burn signal and no expiry — never runs out
+                    reason = null;
+                    break;
+                }
+                atMs = parcel.expiresMs;
+                reason = "expiry";
             }
-            const upcomingExpiry =
-                row.grants
-                    .map((grant) => grant.expires)
-                    .filter(
-                        (expiry): expiry is string =>
-                            expiry != null && expiry >= today,
-                    )
-                    .sort()[0] ?? null;
-            if (burnDate && (!upcomingExpiry || burnDate <= upcomingExpiry)) {
-                row.depletionDate = burnDate;
-                row.depletionReason = "burn";
-            } else if (upcomingExpiry) {
-                row.depletionDate = upcomingExpiry;
-                row.depletionReason = "expiry";
+            if (reason) {
+                row.depletionDate = new Date(atMs).toISOString().slice(0, 10);
+                row.depletionReason = reason;
             }
         }
 

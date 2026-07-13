@@ -23,7 +23,7 @@ import {
     WalletIcon,
     XIcon,
 } from "@pollinations/ui";
-import logoUrl from "@pollinations/ui/assets/logo.svg";
+import logoUrl from "@pollinations/ui/brand/mark.svg";
 import {
     type ComponentType,
     type CSSProperties,

@@ -1133,6 +1133,38 @@ describe("creditRunway", () => {
         expect(row.depletionReason).toBe("expiry");
     });
 
+    it("keeps the pool alive past an early expiry while later grants hold capacity", () => {
+        // One grant lapses on Jul 22, but a second, unexpiring grant keeps
+        // the vendor funded — Runs Out must reflect burning through it, not
+        // the first expiry.
+        const data = emptyData({
+            opCloud: [
+                grant({
+                    vendor: "digitalocean",
+                    label: "expiring",
+                    granted: 1000,
+                    expires: "2026-07-22",
+                }),
+                grant({
+                    vendor: "digitalocean",
+                    label: "evergreen",
+                    granted: 380,
+                }),
+                opCreditBurn({
+                    month: "2026-07",
+                    vendor: "digitalocean",
+                    credit: 80,
+                }),
+            ],
+        });
+        const [row] = creditRunway(data, NOW);
+        // rate: 80 over 8 days = 304.37/month = 10/day. July's burn fills
+        // the evergreen grant first (label order), leaving it 300. The
+        // expiring parcel lapses Jul 22; 300 more burn 30 days past that.
+        expect(row.depletionReason).toBe("burn");
+        expect(row.depletionDate).toBe("2026-08-21");
+    });
+
     it("flags pre-window grants, lapsed remainders, and unallocated burn", () => {
         const data = emptyData({
             opCloud: [
@@ -1184,10 +1216,9 @@ describe("creditRunway", () => {
         expect(byVendor.get("runpod")?.flags).toEqual([]);
     });
 
-    it("allocates burn to grants by active window, then overflow to open grants", () => {
-        // aws shape: an early grant caps out, the leftover flows to a grant
-        // that had not started yet (vendor-pooled burn cannot be attributed
-        // per-grant more precisely).
+    it("never lets in-window burn consume a grant that started later", () => {
+        // January burn cannot draw down an April grant — the leftover is
+        // surfaced as unallocated instead of understating remaining credit.
         const data = emptyData({
             opCloud: [
                 grant({
@@ -1214,9 +1245,31 @@ describe("creditRunway", () => {
         const early = row.grants.find((g) => g.label === "early");
         const late = row.grants.find((g) => g.label === "late");
         expect(early?.allocatedUsd).toBe(100); // window-respecting fill
-        expect(late?.allocatedUsd).toBe(30); // overflow pass
-        expect(row.remainingUsd).toBe(170);
-        expect(row.flags).not.toContain("unallocated burn 30");
+        expect(late?.allocatedUsd).toBe(0); // April grant untouched
+        expect(row.remainingUsd).toBe(200);
+        expect(row.flags).toContain("unallocated burn 30");
+    });
+
+    it("lets pre-window opening plugs spill onto later-started grants", () => {
+        // google shape: the pre-2026 opening burn plug predates the grant
+        // rows' start metadata but verifiably drew from those pools.
+        const data = emptyData({
+            opCloud: [
+                grant({
+                    vendor: "google",
+                    granted: 100000,
+                    start_date: "2026-01-01",
+                }),
+                opCreditBurn({
+                    month: "2025-01",
+                    vendor: "google",
+                    credit: 63899.8,
+                }),
+            ],
+        });
+        const [row] = creditRunway(data, NOW);
+        expect(row.remainingUsd).toBeCloseTo(36100.2, 2);
+        expect(row.flags).not.toContain("unallocated burn 63899.8");
     });
 
     it("reports grant statuses from positive OP Cloud credit rows", () => {

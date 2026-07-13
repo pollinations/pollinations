@@ -1,0 +1,35 @@
+{
+  "pr_number": 12419,
+  "title": "night: 3:4 social artwork + typo-fixed landscape banner",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/12419",
+  "merged_at": "2026-07-13T18:54:31Z",
+  "labels": [
+    "DEV-UI-UX"
+  ],
+  "pr_body_excerpt": "Two more public assets for the /night promo, referenced by Buffer posts:\n\n- `night-social-3x4.jpg` — new 3:4 portrait artwork (displays uncropped on LinkedIn/Facebook/X)\n- `night-banner-wide-wide.jpg` — landscape banner; the original had a \"GASWERKSIEDLLUNG\" typo, fixed via generative edit before use\n\nAlready deployed to production manually.\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Night gets the right crop",
+    "blurb": "The /night garden now has a portrait-ready social card and a freshly proofread wide banner. Even moonlit pixels deserve spellcheck.",
+    "summary": "Added a new 3:4 /night social artwork for uncropped LinkedIn, Facebook, and X posts, plus a corrected landscape banner with the GASWERKSIEDLLUNG typo fixed.",
+    "impact": "People seeing /night promotion get a properly framed portrait image on social feeds and a clean, typo-free wide banner.",
+    "keywords": [
+      "night",
+      "social-assets",
+      "artwork",
+      "banner",
+      "frontend"
+    ],
+    "visual_concept": "Depict Polly as a tiny nocturnal art director in a cozy moonlit pixel garden, using a painter's beret and clipboard to hang two framed /night artworks: a tall 3:4 portrait card and a wide corrected banner. Include soft flowers, vines, and a warmly glowing retro display to make the asset-format update visible without relying on dense text.",
+    "image_prompt": "Cozy pixel art scene of Polly, the cute yellow-and-brown striped bee mascot with pink cheek blush, light blue wings, and a tiny painter's beret, carefully hanging a tall portrait artwork beside a wide landscape banner in a moonlit flower garden; a small CRT monitor glows lime green (#ecf874) nearby, with code-plants and soft pastel vines around the frames. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, nostalgic and emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-13/PR-12419.jpg",
+    "prompt": "Cozy pixel art scene of Polly, the cute yellow-and-brown striped bee mascot with pink cheek blush, light blue wings, and a tiny painter's beret, carefully hanging a tall portrait artwork beside a wide landscape banner in a moonlit flower garden; a small CRT monitor glows lime green (#ecf874) nearby, with code-plants and soft pastel vines around the frames. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, nostalgic and emotionally warm."
+  },
+  "generated_at": "2026-07-13T18:55:29.149578+00:00"
+}

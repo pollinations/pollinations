@@ -10,6 +10,7 @@ import type {
 // before authentication.
 const opTransactions: OpTransactionRow[] = [
     {
+        entry_id: "wise-example-stripe-2026-06-30",
         source: "wise",
         date: "2026-06-30",
         vendor: "stripe",
@@ -18,9 +19,10 @@ const opTransactions: OpTransactionRow[] = [
         currency: "EUR",
         description: "Example Stripe settlement",
         evidence: "",
-        recorded_at: "2026-07-09 00:00:00",
+        recorded_at: "2026-07-09 00:00:00.000",
     },
     {
+        entry_id: "wise-example-alibaba-2026-06-01",
         source: "wise",
         date: "2026-06-01",
         vendor: "alibaba",
@@ -29,9 +31,10 @@ const opTransactions: OpTransactionRow[] = [
         currency: "EUR",
         description: "Example Alibaba Cloud charge",
         evidence: "",
-        recorded_at: "2026-07-09 00:00:00",
+        recorded_at: "2026-07-09 00:00:00.000",
     },
     {
+        entry_id: "wise-example-elevenlabs-2026-06-13",
         source: "wise",
         date: "2026-06-13",
         vendor: "elevenlabs",
@@ -40,9 +43,10 @@ const opTransactions: OpTransactionRow[] = [
         currency: "EUR",
         description: "Example ElevenLabs charge",
         evidence: "",
-        recorded_at: "2026-07-09 00:00:00",
+        recorded_at: "2026-07-09 00:00:00.000",
     },
     {
+        entry_id: "wise-example-tinybird-2026-06-20",
         source: "wise",
         date: "2026-06-20",
         vendor: "tinybird",
@@ -51,9 +55,10 @@ const opTransactions: OpTransactionRow[] = [
         currency: "EUR",
         description: "Example Tinybird charge",
         evidence: "",
-        recorded_at: "2026-07-09 00:00:00",
+        recorded_at: "2026-07-09 00:00:00.000",
     },
     {
+        entry_id: "wise-example-unmatched-2026-06-27",
         source: "wise",
         date: "2026-06-27",
         vendor: "",
@@ -62,9 +67,10 @@ const opTransactions: OpTransactionRow[] = [
         currency: "EUR",
         description: "Example unmatched admin charge",
         evidence: "",
-        recorded_at: "2026-07-09 00:00:00",
+        recorded_at: "2026-07-09 00:00:00.000",
     },
     {
+        entry_id: "wise-example-stripe-2026-05-31",
         source: "wise",
         date: "2026-05-31",
         vendor: "stripe",
@@ -73,9 +79,10 @@ const opTransactions: OpTransactionRow[] = [
         currency: "EUR",
         description: "Example Stripe settlement",
         evidence: "",
-        recorded_at: "2026-07-09 00:00:00",
+        recorded_at: "2026-07-09 00:00:00.000",
     },
     {
+        entry_id: "wise-example-deel-2026-05-25",
         source: "wise",
         date: "2026-05-25",
         vendor: "deel",
@@ -84,9 +91,10 @@ const opTransactions: OpTransactionRow[] = [
         currency: "EUR",
         description: "Example Deel payroll",
         evidence: "",
-        recorded_at: "2026-07-09 00:00:00",
+        recorded_at: "2026-07-09 00:00:00.000",
     },
     {
+        entry_id: "wise-example-google-2026-05-12",
         source: "wise",
         date: "2026-05-12",
         vendor: "google",
@@ -95,7 +103,7 @@ const opTransactions: OpTransactionRow[] = [
         currency: "EUR",
         description: "Example Google Cloud charge",
         evidence: "",
-        recorded_at: "2026-07-09 00:00:00",
+        recorded_at: "2026-07-09 00:00:00.000",
     },
 ];
 const opCloud: OpCloudRow[] = [];

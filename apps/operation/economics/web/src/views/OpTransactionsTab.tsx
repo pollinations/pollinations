@@ -26,6 +26,7 @@ import {
 import type { Data, OpTransactionRow } from "../types";
 
 function opTransactionKey(row: OpTransactionRow) {
+    if (row.entry_id) return row.entry_id;
     return [
         row.date,
         row.vendor,

@@ -7,6 +7,7 @@ const NOW = new Date("2026-07-10T12:00:00Z");
 const transaction = (
     overrides: Partial<OpTransactionRow>,
 ): OpTransactionRow => ({
+    entry_id: "wise-test-transaction",
     source: "wise",
     date: "2026-07-05",
     vendor: "aws",

@@ -1,4 +1,5 @@
 export type OpTransactionRow = {
+    entry_id: string;
     source: string;
     date: string;
     vendor: string;

@@ -36,6 +36,7 @@ describe("toUsd", () => {
 
 describe("fxEstimatedMonths", () => {
     const eurTxn = (date: string) => ({
+        entry_id: `wise-${date}`,
         source: "wise",
         date,
         vendor: "google",

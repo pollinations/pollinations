@@ -6,6 +6,7 @@ import { pnlCellText, pnlTone, statSourceFromLines } from "./PnlTab";
 const now = new Date("2026-07-06T12:00:00Z");
 
 const opTxn = (over: Partial<OpTransactionRow>): OpTransactionRow => ({
+    entry_id: "wise-test-transaction",
     source: "wise",
     date: "2026-05-10",
     vendor: "aws",

@@ -3,6 +3,7 @@ TOKEN "operations_read" READ
 NODE endpoint
 SQL >
     SELECT
+        t.entry_id,
         t.source,
         formatDateTime(t.date, '%F') AS date,
         multiIf(
@@ -25,8 +26,26 @@ SQL >
         t.currency,
         t.description,
         t.evidence,
-        formatDateTime(t.recorded_at, '%F %T') AS recorded_at
-    FROM op_transactions AS t
+        toString(t.latest_recorded_at) AS recorded_at
+    FROM
+    (
+        -- Every row carries a Wise-native (or deterministic hash) entry_id
+        -- since the 2026-07-13 rebuild. Re-appends and corrections reuse the
+        -- entry_id; expose only the newest fact per key.
+        SELECT
+            entry_id,
+            argMax(source, recorded_at) AS source,
+            argMax(date, recorded_at) AS date,
+            argMax(vendor, recorded_at) AS vendor,
+            argMax(category, recorded_at) AS category,
+            argMax(amount, recorded_at) AS amount,
+            argMax(currency, recorded_at) AS currency,
+            argMax(description, recorded_at) AS description,
+            argMax(evidence, recorded_at) AS evidence,
+            max(recorded_at) AS latest_recorded_at
+        FROM op_transactions
+        GROUP BY entry_id
+    ) AS t
     ORDER BY date DESC, vendor, category
 
 TYPE ENDPOINT

@@ -15,4 +15,13 @@ describe("fixtures", () => {
             expect(FIXTURES[pipe], pipe).toBeInstanceOf(Array);
         }
     });
+
+    it("gives every transaction a stable entry id", () => {
+        const transactions = FIXTURES.op_transactions_api as Array<{
+            entry_id: string;
+        }>;
+        const ids = transactions.map((row) => row.entry_id);
+        expect(ids.every(Boolean)).toBe(true);
+        expect(new Set(ids).size).toBe(ids.length);
+    });
 });

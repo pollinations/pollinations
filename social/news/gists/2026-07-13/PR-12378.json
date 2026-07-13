@@ -1,0 +1,34 @@
+{
+  "pr_number": 12378,
+  "title": "fix: capture end_time at stream completion for streamed responses",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/12378",
+  "merged_at": "2026-07-13T08:15:13Z",
+  "labels": [
+    "DEV-BUG"
+  ],
+  "pr_body_excerpt": "## Summary\n- Moves the tracking `endTime` capture from right-after-`next()` (upstream header arrival) to after `trackResponse()` — which already consumes the SSE tee to completion — so `end_time`/`response_time` cover the whole request for streamed text instead of time-to-first-byte\n- Adds a middleware test streaming SSE chunks with real delays, asserting `responseTime` covers the full stream duration\n- Enables tokens/sec = `completion_tokens / response_time` in `model_health.pipe` with **no `generation_event` schema change** (simplifies #12287)\n\n## Evidence the old value was wrong\nProd data: completions of 65,535 tokens logged with `response_time` of 1.1–2.4s (implied 27k–57k tok/s, physically impossible); 39% of >1500-token completions implied >400 tok/s.\n\n## Intended semantic shift (accepted)\n`latency_p50/p95`, `avg_response_ms` (model_health, public_model_stats, weekly_health_stats) and the activity dashboard shift from TTFB to full duration for streamed text — expect a one-time step up for stream-heavy models at deploy. Adversarial review swept the monorepo: no alerting, billing, abuse, or dedup logic keys on these values; realtime billing has its own timing and is unaffected. Binary bodies (image/audio) are not read by tracking and keep header-arrival semantics.\n\n## Test plan\n- [x] `tracking-observability.test.ts` (14 tests) + `error-observability` + `billing-deduction` + `usage-headers` all pass\n- [x] `tsc --noEmit` clean, biome clean\n\nCo-authored-by: Claude Fable 5 <noreply@anthropic.com>\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Stopwatch fixed",
+    "blurb": "We fixed a bug where our internal stopwatch was stopping at the first byte of a streamed response instead of the last. Now our tokens-per-second metrics are actually bound by the laws of physics.",
+    "summary": "Updated the tracking middleware to capture `end_time` at stream completion rather than time-to-first-byte, fixing artificially inflated tokens-per-second metrics for streamed text.",
+    "impact": "Internal dashboards and model health metrics will now reflect the full generation duration for streamed responses instead of just the initial connection time.",
+    "keywords": [
+      "metrics",
+      "streaming",
+      "observability",
+      "bugfix"
+    ],
+    "visual_concept": "Polly the bee holding a stopwatch, timing a stream of data flowing from a retro computer, with the Nomnom creature eating the data stream.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee mascot holding a tiny stopwatch, timing a glowing stream of text flowing from a retro computer monitor. The round tan Nomnom creature happily eats the end of the data stream. Soft lime green (#ecf874) and lavender gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-13/PR-12378.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee mascot holding a tiny stopwatch, timing a glowing stream of text flowing from a retro computer monitor. The round tan Nomnom creature happily eats the end of the data stream. Soft lime green (#ecf874) and lavender gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-07-13T08:16:15.375037+00:00"
+}

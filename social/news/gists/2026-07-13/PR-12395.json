@@ -1,0 +1,35 @@
+{
+  "pr_number": 12395,
+  "title": "fix: make D1 Tinybird sync atomic",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/12395",
+  "merged_at": "2026-07-13T12:36:11Z",
+  "labels": [
+    "DEV-BUG"
+  ],
+  "pr_body_excerpt": "## What changed\n\n- Pages each D1 table through bounded 5,000-row Worker reads, avoiding the CPU/resource limit that broke the daily sync.\n- Builds one NDJSON snapshot per datasource and atomically replaces Tinybird with `mode=replace`.\n- Polls and validates the Tinybird job without printing response bodies that may contain private row data.\n- Uses a dedicated hashed `D1_EXPORT_TOKEN` for the Worker endpoint; the Tinybird credential remains only in GitHub Actions.\n- Fails closed on empty exports and handles cancelling jobs.\n\n## Validation\n\n- `npx vitest run test/admin-auth.test.ts test/d1-tinybird-sync.test.ts` (11 tests)\n- `npm run typecheck`\n- Biome, Actionlint, Bash syntax, generated bindings, and `git diff --check`\n\n## Rollout\n\nDeploy this Enter revision to the `production` branch before running the updated sync workflow. After deployment, delete the existing `TINYBIRD_SYNC_TOKEN` secret from the Cloudflare Worker; it remains required as a GitHub Actions secret.",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Feeding the Tinybird",
+    "blurb": "Our internal data pipelines just got a major stability upgrade. We're now feeding data to our analytics engine in careful, bite-sized chunks to keep the servers humming happily.",
+    "summary": "Refactored the daily D1 to Tinybird sync to use 5,000-row paginated Worker reads and atomic replacements, resolving CPU limit timeouts.",
+    "impact": "Internal analytics pipelines are now reliable and secure, utilizing dedicated hashed export tokens and preventing private row data from appearing in logs.",
+    "keywords": [
+      "infrastructure",
+      "d1",
+      "tinybird",
+      "analytics",
+      "sync"
+    ],
+    "visual_concept": "Polly the bee carefully feeding glowing data-seeds to a literal tiny pixel bird, representing the paginated, atomic data sync. The Monitor Robot tracks the progress.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee mascot wearing a tiny tool belt, carefully feeding glowing data-seeds to a cute tiny pixelated bird perched on a retro server rack. A chunky monitor robot stands nearby holding a clipboard with a green checkmark. Soft lime green (#ecf874) and warm peach gradient background. Warm lighting, lo-fi 8-bit aesthetic, Stardew Valley vibes."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-13/PR-12395.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee mascot wearing a tiny tool belt, carefully feeding glowing data-seeds to a cute tiny pixelated bird perched on a retro server rack. A chunky monitor robot stands nearby holding a clipboard with a green checkmark. Soft lime green (#ecf874) and warm peach gradient background. Warm lighting, lo-fi 8-bit aesthetic, Stardew Valley vibes."
+  },
+  "generated_at": "2026-07-13T12:37:20.420784+00:00"
+}

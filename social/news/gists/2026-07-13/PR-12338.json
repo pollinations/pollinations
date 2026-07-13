@@ -1,0 +1,35 @@
+{
+  "pr_number": 12338,
+  "title": "fix: clamp text seed to int32 max",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/12338",
+  "merged_at": "2026-07-13T02:25:55Z",
+  "labels": [
+    "DEV-BUG"
+  ],
+  "pr_body_excerpt": "- Clamps `seed` in the chat completions schema to signed INT32 max (`2147483647`) — oversized client seeds were reaching strict providers and coming back as 500s, polluting model health stats instead of failing as clean 400s\n- Adds schema tests for the INT32 boundary\n- Adds a \"Low sample\" chip to the model monitor when health status is based on fewer than 10 requests\n- Documents the oversized-seed failure mode and the `request_inputs` column of `recent_server_errors` in the model-debugging skill\n\nSalvaged from local work left over after #12295 merged.",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Taming the giant seeds",
+    "blurb": "We've clamped text generation seeds to the INT32 maximum to prevent oversized numbers from causing provider errors. Plus, the model monitor now flags low-sample health stats!",
+    "summary": "Clamps the chat completion `seed` parameter to the signed INT32 maximum (2147483647) to prevent oversized client seeds from triggering 500 errors from strict providers.",
+    "impact": "API requests with excessively large seeds will now be automatically clamped instead of failing, and the model monitor now displays a 'Low sample' chip for models with fewer than 10 requests.",
+    "keywords": [
+      "api",
+      "bug-fix",
+      "schema",
+      "model-monitor",
+      "seed"
+    ],
+    "visual_concept": "Polly the bee trimming a giant glowing digital seed down to a manageable size, while Nomnom eats the excess. A retro monitor in the background shows a 'Low sample' warning.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot using tiny pixelated clippers to trim a giant glowing digital seed down to size, while the round tan Nomnom creature happily eats the trimmed pieces. A retro CRT monitor in the background displays a green 'Low sample' chip. Cozy 8-bit pixel art aesthetic. Soft lime green (#ecf874) and pastel lavender gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-13/PR-12338.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot using tiny pixelated clippers to trim a giant glowing digital seed down to size, while the round tan Nomnom creature happily eats the trimmed pieces. A retro CRT monitor in the background displays a green 'Low sample' chip. Cozy 8-bit pixel art aesthetic. Soft lime green (#ecf874) and pastel lavender gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-07-13T02:26:58.000416+00:00"
+}

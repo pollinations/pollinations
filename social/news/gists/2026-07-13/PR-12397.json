@@ -1,0 +1,35 @@
+{
+  "pr_number": 12397,
+  "title": "fix: validate synchronous D1 Tinybird replacement",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/12397",
+  "merged_at": "2026-07-13T12:54:56Z",
+  "labels": [
+    "DEV-INFRA"
+  ],
+  "pr_body_excerpt": "- Treats multipart `mode=replace` uploads as synchronous Tinybird operations.\n- Removes the invalid `/v0/jobs/<datasource-id>` polling that made all five jobs fail after successful replacement in [run 29250993475](https://github.com/pollinations/pollinations/actions/runs/29250993475).\n- Validates imported, quarantined, and invalid counts directly from the replacement response without logging response bodies.\n- Production verification found every exported row present across all five datasources with zero quarantine rows.\n- Validated with actionlint, embedded Bash syntax checking, and `git diff --check`.",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Five jobs, zero ghosts",
+    "blurb": "The D1-to-Tinybird garden now trusts a completed replacement when it sees one. Five datasources made the trip with every row accounted for and no phantom job polling.",
+    "summary": "Updated the D1 Tinybird sync workflow so multipart mode=replace uploads are handled as synchronous operations, validating imported, quarantined, and invalid row counts directly from the replacement response instead of polling invalid /v0/jobs/<datasource-id> endpoints.",
+    "impact": "Production data syncs can now complete cleanly across all five datasources, with exported rows verified present and zero quarantine rows.",
+    "keywords": [
+      "tinybird",
+      "d1",
+      "data-sync",
+      "github-actions",
+      "validation"
+    ],
+    "visual_concept": "A cozy data-garden migration: Polly, wearing a tiny mechanic tool belt, tends five small lime-green data pipes flowing from D1-labeled storage pots into a Tinybird-shaped pixel birdhouse. Each pipe ends in a neat completed checkmark, representing synchronous replacement responses and direct row-count validation; no abandoned polling terminal is needed. Small flowers and code-plants make the infrastructure feel cared for rather than dramatic.",
+    "image_prompt": "Cozy pixel art scene of Polly, the cute yellow-and-brown striped bee mascot with pink blush and light blue wings, wearing a tiny mechanic tool belt while checking five glowing lime green (#ecf874) data pipes flowing from little database pots into a friendly pixel birdhouse terminal labeled “TINYBIRD”; each pipe has a completed checkmark and code-flowers grow nearby. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley, with subtle CRT glow and a warm cream background."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-13/PR-12397.jpg",
+    "prompt": "Cozy pixel art scene of Polly, the cute yellow-and-brown striped bee mascot with pink blush and light blue wings, wearing a tiny mechanic tool belt while checking five glowing lime green (#ecf874) data pipes flowing from little database pots into a friendly pixel birdhouse terminal labeled “TINYBIRD”; each pipe has a completed checkmark and code-flowers grow nearby. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley, with subtle CRT glow and a warm cream background."
+  },
+  "generated_at": "2026-07-13T12:55:53.048355+00:00"
+}

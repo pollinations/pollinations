@@ -110,22 +110,20 @@ them or using them as masks. Root-level favicon, PWA icon, and SEO files stay
 app-owned.
 
 The whole kit derives from two atomic sources — `mark.svg` and `wordmark.svg`
-(both `currentColor`) plus the raster bee `polli/polli.png`. Regenerate the
-committed derivatives, or stamp out app-icon / social presets on demand:
+(both `currentColor`) plus the raster bee `polli/polli.png`. One zero-config
+command rebuilds everything:
 
 ```bash
-npm run brand                               # rebuild the committed kit in src/brand
-npm run brand -- --kit=app --out=./out      # favicon/PWA/OG in brand colours
-npm run brand -- --kit=og --fg='#ff0088' --bg=transparent
+npm run brand
 ```
 
-Presets (favicon, apple-touch, PWA, OG, X/Instagram/Facebook) are data in
-`scripts/brand/presets.js`. Each defaults to a brand theme matching
-enter.pollinations.ai — icons gold on transparent, OG/social dark on cream —
-with colours from `theme-palette.json`. Two knobs override any run: `--fg` and
-`--bg` (a palette name — `gold`/`ink`/`cream`/`white` — a hex, or
-`transparent`). `pad` keeps avatars clear of a circular mask; add a platform by
-adding a line.
+It refreshes the committed derivatives in `src/brand`, and writes every
+favicon / PWA / apple-touch / maskable / OG / social asset to `brand-out/`
+(gitignored) — copy those into a site's `public/`. Colours are fixed to the two
+brand themes matching enter.pollinations.ai (icons gold on transparent,
+OG/social dark on cream), resolved from `theme-palette.json`. Sizes and padding
+are data in `scripts/brand/presets.js` — `pad` keeps avatars clear of a circular
+mask; add a platform by adding a line.
 
 Wallet colors and utilities are bundled into the main stylesheet
 (`@pollinations/ui/styles.css`) — no separate import needed.

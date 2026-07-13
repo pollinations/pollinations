@@ -1,21 +1,21 @@
 #!/usr/bin/env node
-// Brand asset generator.
+// Brand asset generator — zero config.
 //
-//   npm run brand                              rebuild the committed kit in src/brand
-//   npm run brand -- --kit=app --out=./out     render a preset kit (brand defaults)
-//   npm run brand -- --kit=og --fg=gold --bg=transparent
-//   npm run brand -- --kit=social --fg='#ff0088'
+//   npm run brand
+//     → rebuilds the committed kit in src/brand (mark/wordmark/lockup, black+white)
+//     → writes every favicon / PWA / apple-touch / maskable / OG / social asset
+//       to brand-out/ (gitignored) — copy them into a site's public/
 //
 // Everything derives from three atomic sources: mark.svg + wordmark.svg
-// (currentColor) and the raster bee polli.png. Two knobs: front colour (--fg)
-// and background (--bg), each defaulting per preset to a brand theme. Recolour =
-// swap currentColor; size + padding come from presets.js. No dynamic text.
+// (currentColor) and the raster bee polli.png. Colours are the two brand themes
+// in presets.js, resolved from theme-palette.json — no per-run options. Recolour
+// = swap currentColor; size + padding come from presets.js. No dynamic text.
 
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { KITS, PRESETS } from "./presets.js";
+import { PRESETS } from "./presets.js";
 
 const require = createRequire(import.meta.url);
 const sharp = require("sharp");
@@ -280,41 +280,17 @@ async function buildKit() {
     }
 }
 
-// --- CLI ---
-const arg = (name, def) => {
-    const eq = process.argv.find((a) => a.startsWith(`--${name}=`));
-    if (eq) return eq.slice(name.length + 3);
-    const i = process.argv.indexOf(`--${name}`);
-    return i >= 0 ? process.argv[i + 1] : def;
-};
-
-const kit = arg("kit");
-if (!kit) {
-    await buildKit();
-    console.log("rebuilt brand kit → src/brand");
-} else {
-    const fg = arg("fg"); // override front colour (name or hex); else preset theme
-    const bg = arg("bg"); // override background (name/hex/transparent); else theme
-    const out = resolve(process.cwd(), arg("out", "brand-out"));
-    const names = KITS[kit] ?? (PRESETS[kit] ? [kit] : null);
-    if (!names)
-        throw new Error(
-            `unknown kit/preset "${kit}". kits: ${Object.keys(KITS).join(", ")}; presets: ${Object.keys(PRESETS).join(", ")}`,
-        );
-    mkdirSync(out, { recursive: true });
-    for (const name of names) {
-        const preset = PRESETS[name];
-        const theme = THEMES[preset.theme];
-        writeFileSync(
-            join(out, `${name}.png`),
-            await renderPreset(
-                preset,
-                color(fg ?? theme.fg),
-                color(bg ?? theme.bg),
-            ),
-        );
-    }
-    console.log(
-        `wrote ${names.length} preset${names.length > 1 ? "s" : ""} → ${out}`,
+// --- run: rebuild the committed kit, then write every asset to brand-out/ ---
+await buildKit();
+const OUT = join(UI, "brand-out");
+mkdirSync(OUT, { recursive: true });
+const names = Object.keys(PRESETS);
+for (const name of names) {
+    const preset = PRESETS[name];
+    const theme = THEMES[preset.theme];
+    writeFileSync(
+        join(OUT, `${name}.png`),
+        await renderPreset(preset, color(theme.fg), color(theme.bg)),
     );
 }
+console.log(`brand kit → src/brand · ${names.length} assets → brand-out/`);

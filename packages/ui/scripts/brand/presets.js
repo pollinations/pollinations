@@ -4,10 +4,10 @@
 //             bee | bee-horizontal | bee-stacked   (Polli, raster full-colour)
 //   pad     : safe-area inset as a fraction of the shorter side
 //             (0 = full-bleed favicon; ~0.18 = clears a circular avatar mask)
-//   theme   : default front + background pair, matching enter.pollinations.ai:
+//   theme   : front + background pair, matching enter.pollinations.ai:
 //               mark  → gold lotus on transparent  (favicons, app icons)
 //               field → dark lotus on cream field   (OG, apple-touch, social)
-//             Colours live in theme-palette.json; override a run with --fg / --bg.
+//             Colours live in theme-palette.json.
 //
 // Add a platform by adding a line. No code change.
 
@@ -70,24 +70,4 @@ export const PRESETS = {
         pad: 0.2,
         theme: "field",
     },
-};
-
-export const KITS = {
-    app: [
-        "favicon-16",
-        "favicon-32",
-        "pwa-192",
-        "pwa-512",
-        "apple-touch",
-        "maskable-512",
-        "og",
-    ],
-    social: [
-        "profile",
-        "x-avatar",
-        "x-header",
-        "ig-post",
-        "ig-story",
-        "fb-cover",
-    ],
 };

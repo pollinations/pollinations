@@ -1,0 +1,35 @@
+{
+  "pr_number": 12382,
+  "title": "Add Hookly to writing",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/12382",
+  "merged_at": "2026-07-13T08:03:55Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds [Hookly](https://hookly-alpha.vercel.app) to writing\n- Generate AI content ideas with hooks, angles, and ready-to-post drafts for 7 platforms in Hookly. Uses the Pollinations text API (DeepSeek via gen.pollinations.ai).\n\nFixes #12265",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Fishing for content",
+    "blurb": "Hookly just landed in the Greenhouse! It's a fresh community app that spins up AI content ideas, hooks, and ready-to-post drafts for seven different platforms using our DeepSeek text API.",
+    "summary": "Added Hookly to the community apps directory, a new tool that generates AI content ideas, hooks, and drafts for 7 platforms using the Pollinations DeepSeek text API.",
+    "impact": "Creators can now discover Hookly in the Greenhouse to streamline their social media drafting process.",
+    "keywords": [
+      "community",
+      "apps",
+      "writing",
+      "deepseek",
+      "hookly"
+    ],
+    "visual_concept": "The Pollinations bee mascot wearing a tiny fishing hat, catching a glowing lightbulb (idea) on a fishing line, representing 'hooks' and 'ideas'. The Nomnom creature eating social media drafts.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny fishing hat, using a fishing rod to catch a glowing lightbulb from a digital pond. The round tan Nomnom creature sits nearby happily eating a stack of paper drafts. Soft lime green (#ecf874) and pastel lavender gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-13/PR-12382.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny fishing hat, using a fishing rod to catch a glowing lightbulb from a digital pond. The round tan Nomnom creature sits nearby happily eating a stack of paper drafts. Soft lime green (#ecf874) and pastel lavender gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-07-13T08:05:32.026869+00:00",
+  "app_name": "Hookly",
+  "app_url": "https://hookly-alpha.vercel.app"
+}

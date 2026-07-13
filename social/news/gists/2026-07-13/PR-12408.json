@@ -1,0 +1,36 @@
+{
+  "pr_number": 12408,
+  "title": "Add Subtitle Studio (SubCap) to video_audio",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/12408",
+  "merged_at": "2026-07-13T16:09:28Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds [Subtitle Studio (SubCap)](https://subtitle-studio-eta.vercel.app/) to video_audio\n- Subtitle Studio (SubCap) is a browser-based video captioning tool that uses AI transcription to generate styled subtitles from speech without manual typing.\n\nFixes #11647",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Captions, minus the typing",
+    "blurb": "Subtitle Studio (SubCap) has joined the video_audio garden. Drop in a video, let AI catch the words, then give the subtitles some actual style.",
+    "summary": "Added Subtitle Studio (SubCap) to the video_audio app directory, a browser-based tool that transcribes speech and creates styled video subtitles without manual typing.",
+    "impact": "People looking for captioning tools can now discover SubCap through pollinations.ai's video_audio collection and turn spoken video into styled subtitles in the browser.",
+    "keywords": [
+      "community-app",
+      "video",
+      "audio",
+      "captions",
+      "transcription",
+      "subtitles"
+    ],
+    "visual_concept": "Depict Subtitle Studio as a cozy retro video-editing desk: a small CRT monitor plays a video with chunky subtitle lines appearing beneath it, while waveform ribbons turn into neat caption cards. Polly wears tiny editor headphones and carefully places a subtitle strip on the screen, with code-plants and flowers around the workstation to show a community app joining the garden.",
+    "image_prompt": "Cozy pixel art scene of Polly, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and tiny editor headphones, placing a styled subtitle strip beneath a video playing on a retro CRT monitor; soft waveform ribbons become caption cards beside flowering code-plants. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel lavender-to-cream gradient background, warm lighting, retro gaming vibes; pixel-font text on the monitor: \"SUBCAP\". Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-13/PR-12408.jpg",
+    "prompt": "Cozy pixel art scene of Polly, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and tiny editor headphones, placing a styled subtitle strip beneath a video playing on a retro CRT monitor; soft waveform ribbons become caption cards beside flowering code-plants. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel lavender-to-cream gradient background, warm lighting, retro gaming vibes; pixel-font text on the monitor: \"SUBCAP\". Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-07-13T16:10:31.352711+00:00",
+  "app_name": "Subtitle Studio (SubCap)",
+  "app_url": "https://subtitle-studio-eta.vercel.app/"
+}

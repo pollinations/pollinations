@@ -1,0 +1,35 @@
+{
+  "pr_number": 12381,
+  "title": "Add XiaoXian ai to chat",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/12381",
+  "merged_at": "2026-07-13T08:00:31Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds [XiaoXian ai](https://candy535.github.io/XiaoXian/) to chat\n- A professional AI chat interface built on the Pollinations API. It supports multi-model switching, deep thinking mode, streaming typing output with a visual cursor, role presets, custom model input, c\n\nFixes #12301",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "XiaoXian joins the greenhouse",
+    "blurb": "A fresh new chat interface just sprouted in the community greenhouse! XiaoXian AI brings multi-model switching, deep thinking mode, and custom role presets to your conversations.",
+    "summary": "Added XiaoXian AI, a professional chat interface built on the Pollinations API featuring multi-model switching, deep thinking mode, and role presets, to the community apps directory.",
+    "impact": "Users can now discover and use XiaoXian AI from the community greenhouse to experience a feature-rich chat interface with streaming output and custom model inputs.",
+    "keywords": [
+      "community",
+      "apps",
+      "chat",
+      "interface",
+      "greenhouse"
+    ],
+    "visual_concept": "The PR adds a new community app called 'XiaoXian AI' (a chat interface) to the 'Greenhouse' (apps directory). Visuals should include the Pollinations bee (Polly) welcoming a new plant or chat-bubble-shaped flower in a cozy greenhouse setting.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee mascot watering a glowing chat-bubble-shaped flower in a lush digital greenhouse. Soft lime green (#ecf874) and pastel lavender gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-13/PR-12381.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee mascot watering a glowing chat-bubble-shaped flower in a lush digital greenhouse. Soft lime green (#ecf874) and pastel lavender gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-07-13T08:01:56.416962+00:00",
+  "app_name": "XiaoXian ai",
+  "app_url": "https://candy535.github.io/XiaoXian/"
+}

@@ -15,7 +15,10 @@ Files:
 Rules:
 
 - Do not print secret values in chat or logs.
-- Decrypt with `sops -d env.json` and keep decrypted values in memory only.
+- Do not run `sops -d env.json` in a captured command — it prints the whole
+  decrypted store to the logs. Run the consuming command under `sops exec-env
+  env.json '<cmd>'` so values stay in that subprocess's environment only, never
+  in stdout, logs, or a file.
 - Do not pass encrypted `ENC[...]` values to providers.
 - Do not write API tokens into connector guides, entries, or reconciliation notes.
 - Prefer checking key presence by name only.

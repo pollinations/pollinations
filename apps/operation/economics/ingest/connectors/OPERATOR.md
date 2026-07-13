@@ -62,6 +62,7 @@ Provider-specific on-demand collection notes live in:
 - `openrouter.md`
 - `ovhcloud.md`
 - `perplexity.md`
+- `polar.md`
 - `replicate.md`
 - `runpod.md`
 - `scaleway.md`
@@ -102,8 +103,11 @@ may choose during a user-requested collection.
 ## Secrets
 
 - Connector credentials live in `secrets/env.json`.
-- `env.json` is SOPS-encrypted. Decrypt with `sops -d secrets/env.json` and keep
-  values in memory only.
+- `env.json` is SOPS-encrypted. Do not run `sops -d secrets/env.json` in a
+  captured command — it prints every decrypted credential to stdout/logs.
+  Instead run the consuming command under `sops exec-env secrets/env.json
+  '<cmd>'`, so the values live only in that subprocess's environment (e.g.
+  `$WISE_API_TOKEN`) and never reach stdout, logs, or disk.
 - Do not print decrypted secret values in chat, logs, guides, entries, or
   reconciliation notes.
 - Do not pass encrypted `ENC[...]` values to providers.

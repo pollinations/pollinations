@@ -1,6 +1,6 @@
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="assets/logo-text-white.svg">
-  <img alt="Pollinations" src="assets/logo-text-black.svg" width="420">
+  <source media="(prefers-color-scheme: dark)" srcset="packages/ui/src/brand/lockup-horizontal-white.svg">
+  <img alt="Pollinations" src="packages/ui/src/brand/lockup-horizontal-black.svg" width="420">
 </picture>
 
 > Generate text, images, video, audio, realtime voice, and embeddings with a single API. OpenAI-compatible — use any OpenAI SDK by changing the base URL.
@@ -224,12 +224,12 @@ Repeat `-F "image=@…"` to pass multiple reference images on models that accept
 **Upload arbitrary media** to the content-addressed store. Returns a `https://media.pollinations.ai/<hash>` URL you can pass anywhere a remote image, audio, or video URL is accepted.
 
 ```bash
-curl -X POST "https://gen.pollinations.ai/upload" \
+curl -X POST "https://media.pollinations.ai/upload" \
   -H "Authorization: Bearer $POLLINATIONS_KEY" \
   -F "file=@./asset.png"
 ```
 
-The hash is derived from the bytes **and** the filename, so the same content uploaded under different names yields different URLs. Files are retained for 30 days; re-uploading resets the timer (and is a no-op if the hash already exists — the `duplicate` field in the response tells you which).
+The hash is derived from the bytes **and** the filename, so the same content uploaded under different names yields different URLs. Files are retained for 30 days. Re-uploading resets the timer, while the `duplicate` field reports whether the file already existed. Retrieving a file keeps it active.
 
 ## 💡 Tips
 
@@ -973,7 +973,7 @@ Upload an image, audio, or video file. Supports multipart/form-data, raw binary,
 💻 **Example**
 
 ```bash
-curl -X POST "https://gen.pollinations.ai/upload" \
+curl -X POST "https://media.pollinations.ai/upload" \
   -H "Authorization: Bearer $POLLINATIONS_KEY" \
   -F "file=@./image.png"
 ```
@@ -997,7 +997,7 @@ Get a file by its content hash. Access keeps files from expiring.
 💻 **Example**
 
 ```bash
-curl "https://gen.pollinations.ai/a1b2c3d4e5f60718"
+curl "https://media.pollinations.ai/a1b2c3d4e5f60718"
 ```
 
 ---
@@ -1019,7 +1019,7 @@ Check existence and metadata without downloading the file.
 💻 **Example**
 
 ```bash
-curl -X HEAD "https://gen.pollinations.ai/a1b2c3d4e5f60718"
+curl -X HEAD "https://media.pollinations.ai/a1b2c3d4e5f60718"
 ```
 
 ---
@@ -1050,7 +1050,7 @@ Return file metadata (hash, content type, size, upload timestamp) as JSON withou
 💻 **Example**
 
 ```bash
-curl "https://gen.pollinations.ai/a1b2c3d4e5f60718/metadata"
+curl "https://media.pollinations.ai/a1b2c3d4e5f60718/metadata"
 ```
 
 ### Account

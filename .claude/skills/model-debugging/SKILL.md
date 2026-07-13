@@ -128,6 +128,12 @@ AZURE_CONTENT_SAFETY_API_KEY=<new-key>
 **Impact**: 400 error returned to user
 **Fix**: User error - use supported voices: alloy, echo, fable, onyx, nova, shimmer, coral, verse, ballad, ash, sage, etc.
 
+## Oversized Text Seed Surfaced as 500
+**Error**: `'seed' must be Integer`, `invalid request error`, or a generic upstream 500
+**Cause**: A client sent a seed above signed INT32 max (`2147483647`) to a strict provider
+**Impact**: The provider may misclassify invalid client input as 500, inflating model health errors
+**Fix**: Reject oversized seeds as 400 at gateway validation; group incidents by user, API key, and request shape before treating them as a model outage
+
 ## Veo No Video Data
 **Error**: `No video data in response`
 **Cause**: Vertex AI returned empty video response
@@ -425,7 +431,7 @@ curl -s "$H/v0/pipes/recent_server_errors.json?token=$TB&minutes=240&limit=500" 
 
 **`model_health` columns** (note: NOT `error_count`/`error_rate`): `model`, `event_type`, `provider`, `model_used`, `total_requests`, `status_2xx`, `errors_4xx`, `errors_5xx`, `last_error_at`, `latency_p50_ms`, `latency_p95_ms`, `avg_latency_ms`, `last_request_at`. Sort by `errors_5xx` to find backend issues.
 
-**`recent_server_errors`** is the go-to pipe for root-causing (defined in `enter.pollinations.ai/observability/endpoints/recent_server_errors.pipe`, params `minutes` default 1440, `limit` default 200). It returns `timestamp, status, upstream_status, upstream_host, upstream_body, message, error_code, error_class, model_requested, route_path, user_id, user_tier, api_key_id`. There is **no** `model_errors` pipe.
+**`recent_server_errors`** is the go-to pipe for root-causing (defined in `enter.pollinations.ai/observability/endpoints/recent_server_errors.pipe`, params `minutes` default 1440, `limit` default 200). It returns `timestamp, status, upstream_status, upstream_host, upstream_body, message, error_code, error_class, model_requested, route_path, request_inputs, user_id, user_tier, api_key_id`. There is **no** `model_errors` pipe.
 
 > **JSON quirk**: `recent_server_errors` rows contain raw newlines in `stack`/`message`, which break `jq`. Parse with Python instead: `python3 -c "import json; d=json.load(open('/tmp/errs.json'),strict=False); ..."`.
 
@@ -442,6 +448,8 @@ curl -s "$H/v0/pipes/recent_server_errors.json?token=$TB&minutes=240&limit=500" 
 2. **Query Cloudflare Logs** - Use the API queries above
    - Get raw error events with full details
    - Look for patterns in error messages
+   - Group by `user_id`, `api_key_id`, route, and sanitized `request_inputs` before calling the pattern a model-wide outage
+   - A concentrated burst from one caller can be invalid input even when the upstream reports 500
 
 3. **Correlate with Request ID** - If you have a specific request ID:
    ```bash

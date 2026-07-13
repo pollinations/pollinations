@@ -1,0 +1,35 @@
+{
+  "pr_number": 12396,
+  "title": "feat: update social generation models",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/12396",
+  "merged_at": "2026-07-13T12:44:11Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "pr_body_excerpt": "- Uses `gpt-5.6-terra` for news and social text generation.\n- Uses `nanobanana-2-lite` for realtime, daily, and weekly social images.\n- Keeps the social pipeline and brand prompt documentation aligned with the shared model configuration.\n- Validated both model IDs against the live API, compiled all social Python scripts, and checked for stale model references.",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "none",
+    "importance": "minor",
+    "headline": "The garden got new brushes",
+    "blurb": "The social bot now writes with gpt-5.6-terra and paints with nanobanana-2-lite. Same hive notes, fresher tiny pixels.",
+    "summary": "Updated the internal social pipeline to generate news and post copy with gpt-5.6-terra and realtime, daily, and weekly images with nanobanana-2-lite.",
+    "impact": "Pollinations announcements can now use the shared current text and image model configuration while the public API experience remains unchanged.",
+    "keywords": [
+      "social",
+      "gpt-5.6-terra",
+      "nanobanana-2-lite",
+      "content-pipeline",
+      "model-configuration"
+    ],
+    "visual_concept": "An internal content-workbench refresh: Polly, wearing a tiny editor visor, tends two glowing code-plants labeled as text and image generation beside a retro terminal. The lime-green garden represents the shared configuration; no additional mascot is needed because this is a behind-the-scenes social-pipeline change.",
+    "image_prompt": "Cozy pixel art scene of Polly, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny editor visor, tending two code-plants beside a retro CRT terminal: one plant grows neat text pages and the other grows tiny landscape pictures. Prominent soft lime green (#ecf874) glow, warm cream and lavender garden shed, pixel flowers and vines, cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes; small pixel-font terminal labels read “TEXT” and “IMAGE”, nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-13/PR-12396.jpg",
+    "prompt": "Cozy pixel art scene of Polly, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny editor visor, tending two code-plants beside a retro CRT terminal: one plant grows neat text pages and the other grows tiny landscape pictures. Prominent soft lime green (#ecf874) glow, warm cream and lavender garden shed, pixel flowers and vines, cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes; small pixel-font terminal labels read “TEXT” and “IMAGE”, nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-07-13T12:51:05.034421+00:00"
+}

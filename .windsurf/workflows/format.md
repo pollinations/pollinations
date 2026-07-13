@@ -9,7 +9,7 @@ Run Biome check with auto-fix on all JS/TS/JSON files changed on this branch com
 // turbo
 1. Run the format script:
 ```bash
-bash tools/scripts/format-branch.sh
+npm run format:changed
 ```
 
 2. If there are formatting changes, stage and commit them:

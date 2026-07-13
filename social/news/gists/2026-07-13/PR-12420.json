@@ -1,0 +1,35 @@
+{
+  "pr_number": 12420,
+  "title": "night: space-filling square artwork v2",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/12420",
+  "merged_at": "2026-07-13T19:00:41Z",
+  "labels": [
+    "DEV-UI-UX"
+  ],
+  "pr_body_excerpt": "Square 1:1 social artwork regenerated to use the full canvas (was: flyer padded with wide margins). Referenced by scheduled Buffer posts. Already deployed manually.\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Night fills the frame",
+    "blurb": "The night artwork stopped arriving as a tiny flyer in a very large room. Fresh square and 3:4 crops now use the canvas they were given.",
+    "summary": "Regenerated the Night campaign’s 1:1 social artwork to fill the full canvas, with new square, 3:4, and wide image assets for scheduled posts.",
+    "impact": "Night posts now display as intentional full-frame artwork instead of a padded flyer surrounded by wide margins.",
+    "keywords": [
+      "night",
+      "social-assets",
+      "ui-ux",
+      "artwork",
+      "campaign"
+    ],
+    "visual_concept": "A cozy nighttime pixel-art garden scene framed edge-to-edge like a finished social card: Polly, wearing a tiny moon-and-stars cap, carefully hangs a full-bleed square artwork on a glowing retro display while vines and pixel flowers fill the corners. The visual metaphor is the artwork finally occupying its whole frame, with warm moonlight and prominent lime-green accents.",
+    "image_prompt": "Cozy pixel art scene of Polly, the cute yellow-and-brown striped bee mascot with pink cheek blush, light blue wings, and a tiny moon-and-stars cap, hanging a full-canvas square night illustration on a retro glowing display in a moonlit garden; pixel flowers, vines, and code-plants naturally fill every edge of the composition. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel lavender-to-cream gradients, warm lighting, retro gaming vibes, subtle CRT glow, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-13/PR-12420.jpg",
+    "prompt": "Cozy pixel art scene of Polly, the cute yellow-and-brown striped bee mascot with pink cheek blush, light blue wings, and a tiny moon-and-stars cap, hanging a full-canvas square night illustration on a retro glowing display in a moonlit garden; pixel flowers, vines, and code-plants naturally fill every edge of the composition. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel lavender-to-cream gradients, warm lighting, retro gaming vibes, subtle CRT glow, emotionally warm."
+  },
+  "generated_at": "2026-07-13T19:01:40.297539+00:00"
+}

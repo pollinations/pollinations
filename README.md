@@ -20,6 +20,7 @@
 
 | Name | Description | Author |
 |------|-------------|--------|
+| [📝 Subtitle Studio (SubCap)](https://subtitle-studio-eta.vercel.app/) | Subtitle Studio (SubCap) is a browser-based video captioning tool that uses AI transcription to generate styled subtitles from speech without manual typing. | [@somjaina142](https://github.com/somjaina142) |
 | [🎬 Thumbsnare](https://thumbsnare.vercel.app/) | Thumbsnare generates YouTube thumbnail concepts from a video idea, using title, creative angle, target audience, and visual direction to create structured options for review and export. | [@sompongna141](https://github.com/sompongna141) |
 | [🗣️ Talkti](https://talktiweb.web.app) | Talkti provides real-time voice translation. | [@Tyrone-J](https://github.com/Tyrone-J) |
 | [🪄 Magic Story Image](https://msi.jieren.my.id/) | Changes images from drawings or pictures into a magical, children friendly picture. Uses a website interface for the conversion. | [@Rayantion](https://github.com/Rayantion) |
@@ -29,7 +30,6 @@
 | [🤖 NovAI](https://nov-ai.github.io/) | NovAI integrates Pollinations AI with Discord as an open-source project. It enables AI features via Discord. | [@JustScriptzz](https://github.com/JustScriptzz) |
 | [🖼️ Pollinations Image lab](https://raptorvampire.github.io/pollinations-image-lab/) | Generate and browse images using Pollinations Image Lab. | [@RaptorVampire](https://github.com/RaptorVampire) |
 | [🃏 Crestbound TCG (Server Assistant)](https://serverassistant.wandweb.co) | Run Crestbound TCG inside the Server Assistant Discord-bot portal, powered by Pollinations. Generate card art, menus, shop, packs, and soundtrack using FLUX and gen.pollinations. | [@WandWeb2](https://github.com/WandWeb2) |
-| [📚 BOOK TO GAME](https://gelfer1979.itch.io/book-to-game) | Convert book formats (txt, mobi, epub, docx, fb2) into gamebooks using cloud AI (web/mobile) and local AI via LMSTUDIO or llama; default uses polination AI. Web version does not save game state. | [@gelfer1979](https://github.com/gelfer1979) |
 
 [Browse all apps →](apps/GREENHOUSE.md)
 ## 🚀 New Unified API — Now Live

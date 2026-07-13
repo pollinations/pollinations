@@ -1,0 +1,36 @@
+{
+  "pr_number": 12425,
+  "title": "fix: catgpt bot — durable selfie URL, nanobanana-2-lite, catch-up + CLI ask",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/12425",
+  "merged_at": "2026-07-13T23:45:38Z",
+  "labels": [
+    "DEV-APP"
+  ],
+  "pr_body_excerpt": "- Fixes catgpt image 400s: selfie reference URL on media.pollinations.ai expired (R2 30-day lifecycle, second occurrence after #10826) — now uses durable GitHub raw URL\n- Switches comic model to nanobanana-2-lite\n- On startup, answers up to 5 recent unanswered messages in the channel (😾 error-fallback replies don't count as answered)\n- Adds one-shot CLI trigger: `tsx bot.ts ask \"question\" [avatarUrl]`\n\nAlready deployed live on enter-services EC2 and verified end-to-end.\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "CatGPT remembers the thread",
+    "blurb": "The cat got a durable selfie, a fresh comic engine, and a small pile of messages it had been meaning to answer. Software cats, like regular cats, operate on their own schedule.",
+    "summary": "CatGPT now uses a durable GitHub-hosted selfie reference instead of an expiring media URL, generates comics with nanobanana-2-lite, catches up on up to five unanswered channel messages at startup, and supports one-shot questions through `tsx bot.ts ask \"question\" [avatarUrl]`.",
+    "impact": "CatGPT image requests no longer fail when its old selfie URL expires, while channel conversations can recover recent missed replies and developers can invoke a single prompt directly from the CLI.",
+    "keywords": [
+      "catgpt",
+      "bot",
+      "nanobanana-2-lite",
+      "image-generation",
+      "cli",
+      "community-app"
+    ],
+    "visual_concept": "Depict CatGPT as a cozy pixel-art cat portrait or comic-panel companion beside Polly, with a durable framed selfie hanging safely above a retro terminal. Polly wears a tiny librarian scarf and helps the cat sort five unanswered message envelopes into a glowing nanobanana-2-lite comic machine, with code-plants and flowers making the catch-up feel warm rather than frantic.",
+    "image_prompt": "Cozy pixel art scene in a warm garden hackerspace: Polly, the cute yellow-and-brown striped bee mascot with pink cheek blush, light blue wings, and a tiny librarian scarf, helps a friendly pixel cat beside a retro terminal sort five little unanswered message envelopes into a glowing comic printer labeled \"NANO LITE\"; a durable framed cat selfie hangs safely on the wall, surrounded by code-plants and flowers. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-13/PR-12425.jpg",
+    "prompt": "Cozy pixel art scene in a warm garden hackerspace: Polly, the cute yellow-and-brown striped bee mascot with pink cheek blush, light blue wings, and a tiny librarian scarf, helps a friendly pixel cat beside a retro terminal sort five little unanswered message envelopes into a glowing comic printer labeled \"NANO LITE\"; a durable framed cat selfie hangs safely on the wall, surrounded by code-plants and flowers. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
+  },
+  "generated_at": "2026-07-13T23:46:37.655018+00:00"
+}

@@ -1,0 +1,36 @@
+{
+  "pr_number": 12393,
+  "title": "feat: enable use_app and app_active quests",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/12393",
+  "merged_at": "2026-07-13T22:34:02Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "pr_body_excerpt": "- Enables `use_app` (0.25 Pollen, Setup lane) — BYOP login via `byop_client_key_id`; 14,157 users already eligible (~3,540 Pollen retroactive ceiling, granted lazily on dashboard checks)\n- Enables `app_active` (Grow lane) with reward tuned 10 → 7 Pollen — 101 eligible app owners today (~707 Pollen ceiling)\n- Tunes `app_paid_request` 20 → 15 Pollen but keeps it `coming_soon`; `quest_paid_app_spend` pipe verified deployed + parameterized in both Tinybird workspaces, pending semantic check that `api_key_created_for_user_id` = app owner before enabling\n- Bumps quest catalog cache key v22 → v23 (per convention from #12088)\n- Updates `test/quests.test.ts` to the new board: catalog pins for the three quests, app-growth grant assertions flipped (26/26 passing)\n\nBoth evaluators are pure D1 queries already wired in `EVALUATED_QUESTS` — no new infra.\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Your app made the board",
+    "blurb": "Two more ways to earn Pollen have wandered out of the greenhouse. Log into a BYOP app or keep one active, and the quest board now knows what to do.",
+    "summary": "Enabled the Setup-lane `use_app` quest for BYOP logins via `byop_client_key_id` worth 0.25 Pollen, enabled the Grow-lane `app_active` quest at 7 Pollen, and advanced the quest catalog cache key from v22 to v23.",
+    "impact": "The 14,157 users already eligible for `use_app` can receive its reward lazily during dashboard checks, while 101 current app owners can now earn 7 Pollen for keeping an app active.",
+    "keywords": [
+      "quests",
+      "pollen",
+      "BYOP",
+      "app_active",
+      "use_app",
+      "dashboard"
+    ],
+    "visual_concept": "Depict the quest board gaining two newly blooming cards: a small BYOP login key for `use_app` and a thriving potted app/code-plant for `app_active`. Polly, wearing a tiny gardener tool belt, pins the cards onto the board while a cheerful CRT monitor robot watches the rewards light up; scattered flowers and a softly glowing Pollen jar make the app-growth metaphor literal.",
+    "image_prompt": "Cozy pixel art scene in a warm garden hackerspace where Polly, the cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, black antennae and oval eyes, pink rectangular cheek blushes, a small smile, and rounded translucent light-blue wings, wears a tiny gardener tool belt while pinning `USE APP 0.25` and `APP ACTIVE 7` cards to a quest board beside a flourishing code-plant; a cute chunky CRT monitor robot looks on excitedly. Cozy 8-bit pixel art aesthetic with a prominent soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, pixel flowers, warm lighting, subtle CRT glow, retro gaming vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-13/PR-12393.jpg",
+    "prompt": "Cozy pixel art scene in a warm garden hackerspace where Polly, the cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, black antennae and oval eyes, pink rectangular cheek blushes, a small smile, and rounded translucent light-blue wings, wears a tiny gardener tool belt while pinning `USE APP 0.25` and `APP ACTIVE 7` cards to a quest board beside a flourishing code-plant; a cute chunky CRT monitor robot looks on excitedly. Cozy 8-bit pixel art aesthetic with a prominent soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, pixel flowers, warm lighting, subtle CRT glow, retro gaming vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
+  },
+  "generated_at": "2026-07-13T22:35:07.989742+00:00"
+}

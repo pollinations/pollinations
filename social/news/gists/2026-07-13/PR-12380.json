@@ -1,0 +1,35 @@
+{
+  "pr_number": 12380,
+  "title": "Add BYOP Temp Controller to bots",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/12380",
+  "merged_at": "2026-07-13T07:57:39Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds [BYOP Temp Controller](https://connor11016.github.io) to bots\n- BYOP Temp Controller lets you control AI temperature and get varied responses using pollinations.ai.\n\nFixes #12315",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Turning up the heat",
+    "blurb": "A new community app just sprouted in the Greenhouse! BYOP Temp Controller lets you dial in the AI's temperature for perfectly varied responses.",
+    "summary": "Added the BYOP Temp Controller app by connor11016 to the community Greenhouse, providing an interface to control AI temperature settings.",
+    "impact": "Users can now easily experiment with how different temperature values affect AI generation through a dedicated community tool.",
+    "keywords": [
+      "community",
+      "app",
+      "greenhouse",
+      "temperature",
+      "generation"
+    ],
+    "visual_concept": "The PR is about an app that controls 'temperature' (AI randomness) added to the Greenhouse. Visuals: The bee mascot in a greenhouse, adjusting a retro thermostat or temperature dial on a glowing terminal. Code-plants around.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot in a digital greenhouse, adjusting a chunky retro thermostat dial on a glowing terminal. Small code-plants sprout from lime green (#ecf874) flower pots nearby. Soft pastel gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-13/PR-12380.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot in a digital greenhouse, adjusting a chunky retro thermostat dial on a glowing terminal. Small code-plants sprout from lime green (#ecf874) flower pots nearby. Soft pastel gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-07-13T07:58:36.557563+00:00",
+  "app_name": "BYOP Temp Controller",
+  "app_url": "https://connor11016.github.io"
+}

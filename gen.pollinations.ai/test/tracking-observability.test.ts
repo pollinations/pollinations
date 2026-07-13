@@ -151,6 +151,76 @@ function createWrongContentTypeApp(
     return app;
 }
 
+// App that streams an SSE completion whose chunks arrive with real delays,
+// used to assert that endTime/responseTime cover the whole stream duration
+// rather than just time-to-first-byte.
+function createSseStreamApp(chunkDelayMs: number) {
+    const app = new Hono<Env>();
+
+    app.use("*", requestId());
+    app.use("*", logger);
+    app.use("*", async (c, next) => {
+        c.set("auth", {
+            user: undefined,
+            requireAuthorization: async () => {},
+            requireUser: () => {
+                throw new Error("user should not be required in this test");
+            },
+            requireModelAccess: () => {},
+        });
+        c.set("balance", {
+            getBalance: async () => ({ tierBalance: 1, packBalance: 0 }),
+        });
+        c.set("frontendKeyRateLimit", { consumePollen: async () => {} });
+        c.set("model", {
+            requested: "openai",
+            resolved: "openai",
+            definition: getRegistryModelDefinition("openai"),
+        });
+        await next();
+    });
+    app.post("/v1/chat/completions", track("generate.text"), () => {
+        const encoder = new TextEncoder();
+        const sse = (data: object) => `data: ${JSON.stringify(data)}\n\n`;
+        const chunks = [
+            sse({
+                model: "gpt-5-nano-2025-08-07",
+                choices: [{ delta: { content: "hel" } }],
+            }),
+            sse({
+                model: "gpt-5-nano-2025-08-07",
+                choices: [{ delta: { content: "lo" } }],
+            }),
+            sse({
+                model: "gpt-5-nano-2025-08-07",
+                choices: [],
+                usage: {
+                    prompt_tokens: 1000,
+                    completion_tokens: 500,
+                    total_tokens: 1500,
+                },
+            }),
+            "data: [DONE]\n\n",
+        ];
+        const body = new ReadableStream<Uint8Array>({
+            async start(controller) {
+                for (const chunk of chunks) {
+                    await new Promise((resolve) =>
+                        setTimeout(resolve, chunkDelayMs),
+                    );
+                    controller.enqueue(encoder.encode(chunk));
+                }
+                controller.close();
+            },
+        });
+        return new Response(body, {
+            headers: { "content-type": "text/event-stream" },
+        });
+    });
+
+    return app;
+}
+
 // App whose text response carries caller-supplied headers, used to assert that
 // the x-fallback-target worker header propagates into the Tinybird event.
 function createHeaderApp(extraHeaders: Record<string, string>) {
@@ -194,30 +264,6 @@ function createHeaderApp(extraHeaders: Record<string, string>) {
     );
 
     return app;
-}
-
-// Builds a real SSE ReadableStream, optionally delaying between chunks so
-// tests can assert on measured elapsed time between the first and last chunk.
-function createSseStream(
-    parts: Array<{ payload: unknown; delayMs?: number }>,
-): ReadableStream<Uint8Array> {
-    const encoder = new TextEncoder();
-    return new ReadableStream({
-        async start(controller) {
-            for (const part of parts) {
-                if (part.delayMs) {
-                    await new Promise((resolve) =>
-                        setTimeout(resolve, part.delayMs),
-                    );
-                }
-                controller.enqueue(
-                    encoder.encode(`data: ${JSON.stringify(part.payload)}\n\n`),
-                );
-            }
-            controller.enqueue(encoder.encode("data: [DONE]\n\n"));
-            controller.close();
-        },
-    });
 }
 
 async function captureFallbackEvent(extraHeaders: Record<string, string>) {
@@ -332,7 +378,6 @@ describe("tracking observability", () => {
             id: userId,
             email: `${userId}@test.local`,
             name: "Track Auto Top Up Test",
-            tier: "flower",
             tierBalance: 0,
             packBalance: 100,
             autoTopUpEnabled: true,
@@ -400,7 +445,6 @@ describe("tracking observability", () => {
                 id: payerId,
                 email: `${payerId}@test.local`,
                 name: "Track Community Payer",
-                tier: "flower",
                 tierBalance: 1,
                 packBalance: 0,
                 createdAt: new Date(),
@@ -410,7 +454,6 @@ describe("tracking observability", () => {
                 id: ownerId,
                 email: `${ownerId}@test.local`,
                 name: "Track Community Owner",
-                tier: "flower",
                 tierBalance: 0,
                 packBalance: 0,
                 createdAt: new Date(),
@@ -658,7 +701,7 @@ describe("tracking observability", () => {
         expect(consumePollen).toHaveBeenCalledWith(0);
     });
 
-    it("measures streamDurationMs from first to last SSE chunk, not total response time", async () => {
+    it("captures endTime at stream completion so responseTime covers the whole request", async () => {
         const tinybirdRequests: Request[] = [];
         vi.spyOn(globalThis, "fetch").mockImplementation(
             async (input, init) => {
@@ -666,38 +709,11 @@ describe("tracking observability", () => {
                 return new Response("ok");
             },
         );
-        const consumePollen = vi.fn<(amount: number) => Promise<void>>(
-            async () => {},
-        );
 
-        const model = "gpt-5-nano-2025-08-07";
-        const stream = createSseStream([
-            { payload: { model, choices: [{}] } },
-            { payload: { model, choices: [{}] }, delayMs: 30 },
-            {
-                payload: {
-                    model,
-                    choices: [{}],
-                    usage: {
-                        prompt_tokens: 1000,
-                        completion_tokens: 500,
-                        total_tokens: 1500,
-                    },
-                },
-                delayMs: 30,
-            },
-        ]);
-        const upstream = new Response(stream, {
-            headers: { "content-type": "text/event-stream" },
-        });
-
+        // 4 chunks × 50ms upstream delay; first-byte capture would record ~0ms.
         const ctx = createExecutionContext();
-        const response = await createWrongContentTypeApp(
-            consumePollen,
-            "generate.text",
-            upstream,
-        ).fetch(
-            new Request("https://gen.pollinations.ai/upstream", {
+        const response = await createSseStreamApp(50).fetch(
+            new Request("https://gen.pollinations.ai/v1/chat/completions", {
                 method: "POST",
                 headers: { "content-type": "application/json" },
                 body: JSON.stringify({
@@ -722,22 +738,22 @@ describe("tracking observability", () => {
 
         expect(response.status).toBe(200);
         expect(tinybirdRequests).toHaveLength(1);
-        const event = (await tinybirdRequests[0].json()) as Record<
-            string,
-            unknown
-        >;
-        expect(event).toMatchObject({
-            eventType: "generate.text",
-            isBilledUsage: true,
-            modelUsed: model,
-            tokenCountCompletionText: 500,
-        });
-        // The route handler returns as soon as headers are available (before
-        // the stream body is read), so responseTime alone would read as
-        // near-instant here — streamDurationMs is what actually reflects the
-        // ~60ms of simulated generation time across the delayed chunks.
-        expect(event.streamDurationMs).toEqual(expect.any(Number));
-        expect(event.streamDurationMs as number).toBeGreaterThan(0);
+        const event = (await tinybirdRequests[0].json()) as {
+            responseTime: number;
+            startTime: string;
+            endTime: string;
+            tokenCountCompletionText: number;
+            modelUsed: string;
+            isBilledUsage: boolean;
+        };
+        expect(event.responseTime).toBeGreaterThanOrEqual(100);
+        expect(
+            new Date(event.endTime).getTime() -
+                new Date(event.startTime).getTime(),
+        ).toBeGreaterThanOrEqual(100);
+        expect(event.tokenCountCompletionText).toBe(500);
+        expect(event.modelUsed).toBe("gpt-5-nano-2025-08-07");
+        expect(event.isBilledUsage).toBe(true);
     });
 
     it("records fallbackUsed=true when Portkey served a non-primary target", async () => {

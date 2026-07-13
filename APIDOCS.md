@@ -7,7 +7,7 @@
 
 # API docs
 
-Also avaiable at [https://gen.pollinations.ai/docs](https://gen.pollinations.ai/docs)
+Also available at [https://gen.pollinations.ai/docs](https://gen.pollinations.ai/docs)
 
 **Version:** `0.3.0` · **OpenAPI:** `3.1.0` · **Base URL:** `https://gen.pollinations.ai`
 

@@ -316,7 +316,7 @@ export const IMAGE_SERVICES = {
     "flux": {
         aliases: [],
         modelId: "flux",
-        provider: "fireworks",
+        provider: "vast",
         brand: "Black Forest Labs",
         category: "image",
         addedDate: new Date("2025-10-07").getTime(),
@@ -325,8 +325,7 @@ export const IMAGE_SERVICES = {
             completionImageTokens: 0.0014, // per image
         },
         title: "Flux Schnell",
-        description:
-            "Flux Schnell - Fast high-quality image generation (Fireworks)",
+        description: "Flux Schnell - Fast high-quality image generation",
         inputModalities: ["text"],
         outputModalities: ["image"],
     },

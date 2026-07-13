@@ -9,6 +9,7 @@ import {
     createOVHcloudModelConfig,
     createPerplexityModelConfig,
     createPollyConfig,
+    createVercelAIGatewayModelConfig,
 } from "./providerConfigs.js";
 
 // =============================================================================
@@ -270,6 +271,12 @@ export const portkeyConfig: PortkeyConfigMap = {
     "accounts/fireworks/models/minimax-m3": () =>
         createFireworksModelConfig({
             model: "accounts/fireworks/models/minimax-m3",
+        }),
+
+    // -- Vercel AI Gateway (Meta) --------------------------------------------
+    "meta/muse-spark-1.1": () =>
+        createVercelAIGatewayModelConfig({
+            model: "meta/muse-spark-1.1",
         }),
 
     // -- Azure (Myceli Prod — eastus, Meta Llama) ----------------------------

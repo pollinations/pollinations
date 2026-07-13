@@ -232,6 +232,9 @@ Extraction rules:
   currency, credits, refunds, and period information when present.
 - Put granular line items and usage metrics in cost_details.
 - Amounts are positive costs unless the source clearly marks a credit/refund.
+  EXCEPTION — bank/cash evidence (Wise statements, activities, anything bound
+  for op_transactions) keeps the bank's signs instead: money out negative,
+  money in positive, summing to the statement total (see connectors/wise.md).
 - Keep currency as ISO 4217 when available.
 - Set should_match_op_transaction true only for billing, payment, receipt,
   payable, payout, credit, refund, or invoice-level cash evidence.

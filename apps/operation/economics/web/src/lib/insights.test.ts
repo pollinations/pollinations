@@ -1250,9 +1250,9 @@ describe("creditRunway", () => {
         expect(row.flags).toContain("unallocated burn 30");
     });
 
-    it("lets pre-window opening plugs spill onto later-started grants", () => {
-        // google shape: the pre-2026 opening burn plug predates the grant
-        // rows' start metadata but verifiably drew from those pools.
+    it("lets the pre-2026 opening plug spill onto later-started grants", () => {
+        // google shape: the explicit "pre-2026 grant burn" plug predates the
+        // grant rows' start metadata but verifiably drew from those pools.
         const data = emptyData({
             opCloud: [
                 grant({
@@ -1264,12 +1264,35 @@ describe("creditRunway", () => {
                     month: "2025-01",
                     vendor: "google",
                     credit: 63899.8,
+                    resource_name: "pre-2026 grant burn",
                 }),
             ],
         });
         const [row] = creditRunway(data, NOW);
         expect(row.remainingUsd).toBeCloseTo(36100.2, 2);
         expect(row.flags).not.toContain("unallocated burn 63899.8");
+    });
+
+    it("keeps ordinary pre-window burn off grants that started later", () => {
+        // only the synthetic opening plug gets the metadata exemption; a
+        // regular 2025 burn row cannot consume a 2026 grant.
+        const data = emptyData({
+            opCloud: [
+                grant({
+                    vendor: "google",
+                    granted: 100000,
+                    start_date: "2026-01-01",
+                }),
+                opCreditBurn({
+                    month: "2025-01",
+                    vendor: "google",
+                    credit: 500,
+                }),
+            ],
+        });
+        const [row] = creditRunway(data, NOW);
+        expect(row.remainingUsd).toBe(100000);
+        expect(row.flags).toContain("unallocated burn 500");
     });
 
     it("reports grant statuses from positive OP Cloud credit rows", () => {

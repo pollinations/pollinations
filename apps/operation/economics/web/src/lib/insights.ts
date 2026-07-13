@@ -1298,9 +1298,12 @@ function opCloudGrantStatuses(data: Data): GrantStatus[] {
 }
 
 function opCloudBurnByVendorMonth(data: Data) {
+    // plugUsd is the slice of creditUsd from explicit "pre-2026 grant burn"
+    // opening-balance rows — the only burn allowed to consume grants whose
+    // start metadata postdates it.
     const byVendor = new Map<
         string,
-        Map<string, { creditUsd: number; paidUsd: number }>
+        Map<string, { creditUsd: number; paidUsd: number; plugUsd: number }>
     >();
     for (const row of data.opCloud ?? []) {
         const month = opCloudMonth(row);
@@ -1311,14 +1314,20 @@ function opCloudBurnByVendorMonth(data: Data) {
         const months = getOrInit(
             byVendor,
             row.vendor,
-            () => new Map<string, { creditUsd: number; paidUsd: number }>(),
+            () =>
+                new Map<
+                    string,
+                    { creditUsd: number; paidUsd: number; plugUsd: number }
+                >(),
         );
         const entry = getOrInit(months, month, () => ({
             creditUsd: 0,
             paidUsd: 0,
+            plugUsd: 0,
         }));
         entry.creditUsd += creditUsd;
         entry.paidUsd += paidUsd;
+        if (isPreWindowGrantBurnRow(row)) entry.plugUsd += creditUsd;
     }
     return byVendor;
 }
@@ -1326,11 +1335,12 @@ function opCloudBurnByVendorMonth(data: Data) {
 // Allocate each vendor's monthly credit burn to its grants. Pass 1 respects
 // each grant's active window (start month ≤ burn month ≤ expiry month),
 // oldest grant first — so an expired grant only absorbs burn from its own
-// lifetime and its unused remainder LAPSES. Pass 2 re-allocates any leftover
-// to non-expired grants regardless of window (vendor-pooled burn can't be
-// attributed per-grant more precisely than that); what still doesn't fit is
-// real unallocated burn. Exhaustion (allocated ≈ granted) marks a grant
-// inactive and records the month it filled.
+// lifetime and its unused remainder LAPSES. Pass 2 re-allocates leftover to
+// non-expired grants that had already started by the burn month — burn can
+// never consume credit granted later, except the explicit "pre-2026 grant
+// burn" opening plugs whose dates predate grant metadata by construction.
+// What still doesn't fit is real unallocated burn. Exhaustion (allocated ≈
+// granted) marks a grant inactive and records the month it filled.
 export function allocateGrants(
     data: Data,
     now: Date,
@@ -1357,7 +1367,7 @@ export function allocateGrants(
         const months = [
             ...(burnByVendorMonth.get(vendor) ?? new Map()).entries(),
         ].sort((a, b) => a[0].localeCompare(b[0]));
-        const overflowByMonth: [string, number][] = [];
+        const overflowByMonth: [string, number, number][] = [];
         for (const [month, burn] of months) {
             let left = burn.creditUsd;
             for (const grant of grants) {
@@ -1375,37 +1385,45 @@ export function allocateGrants(
                     fillMonth.set(grant, month);
                 }
             }
-            if (left > 0) overflowByMonth.push([month, left]);
+            if (left > 0) {
+                // pass 1 consumed ordinary burn first, so the leftover is
+                // plug-first up to the month's plug amount
+                const plugLeft = Math.min(left, burn.plugUsd);
+                overflowByMonth.push([month, left - plugLeft, plugLeft]);
+            }
         }
         // Pass 2: leftover into non-expired grants that already existed at
-        // burn time — burn cannot consume credit granted later. Pre-window
-        // months are opening-balance plugs whose dates predate grant
-        // metadata, so only those may spill onto any non-expired grant.
+        // burn time — burn cannot consume credit granted later. The one
+        // exception is the explicit "pre-2026 grant burn" opening plug,
+        // whose date predates grant metadata by construction; only its
+        // amount may spill onto any non-expired grant.
         let overflow = 0;
-        for (const [month, amount] of overflowByMonth) {
-            let left = amount;
-            for (const grant of grants) {
-                if (left <= 0) break;
-                if (grant.expires && grant.expires < today) continue;
-                if (
-                    month >= WINDOW_START &&
-                    grant.startDate.slice(0, 7) > month
-                ) {
-                    continue;
-                }
-                const capacity = grant.grantedUsd - grant.allocatedUsd;
-                if (capacity <= 0) continue;
-                const take = Math.min(capacity, left);
-                grant.allocatedUsd += take;
-                left -= take;
-                if (grant.grantedUsd - grant.allocatedUsd <= POOL_EPS_USD) {
-                    const latest = months[months.length - 1];
-                    if (latest && !fillMonth.has(grant)) {
-                        fillMonth.set(grant, latest[0]);
+        for (const [month, ordinaryLeft, plugLeft] of overflowByMonth) {
+            for (const [amount, plug] of [
+                [plugLeft, true],
+                [ordinaryLeft, false],
+            ] as const) {
+                let left = amount;
+                for (const grant of grants) {
+                    if (left <= 0) break;
+                    if (grant.expires && grant.expires < today) continue;
+                    if (!plug && grant.startDate.slice(0, 7) > month) {
+                        continue;
+                    }
+                    const capacity = grant.grantedUsd - grant.allocatedUsd;
+                    if (capacity <= 0) continue;
+                    const take = Math.min(capacity, left);
+                    grant.allocatedUsd += take;
+                    left -= take;
+                    if (grant.grantedUsd - grant.allocatedUsd <= POOL_EPS_USD) {
+                        const latest = months[months.length - 1];
+                        if (latest && !fillMonth.has(grant)) {
+                            fillMonth.set(grant, latest[0]);
+                        }
                     }
                 }
+                overflow += left;
             }
-            overflow += left;
         }
         if (overflow > POOL_EPS_USD) unallocated.set(vendor, overflow);
 

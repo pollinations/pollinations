@@ -166,7 +166,7 @@ describe("problemsFirst", () => {
 describe("dataQualityStatItems", () => {
     const summary = dataQualitySummary([plane("2026-06", "aws")]);
 
-    it("shows a healthy FX card when no month needs the fallback rate", () => {
+    it("shows a healthy FX card when every EUR month has a table rate", () => {
         const fx = dataQualityStatItems(summary, []).find(
             (item) => item.label === "FX",
         );
@@ -174,11 +174,11 @@ describe("dataQualityStatItems", () => {
         expect(fx?.tone).toBe("pos");
     });
 
-    it("warns with the affected months when EUR rows use the fallback", () => {
+    it("warns with the affected months when EUR rows use an estimated rate", () => {
         const fx = dataQualityStatItems(summary, ["2031-01"]).find(
             (item) => item.label === "FX",
         );
-        expect(fx?.value).toBe("1 fallback");
+        expect(fx?.value).toBe("1 estimated");
         expect(fx?.tone).toBe("warn");
         expect(fx?.detail).toContain("January 31");
     });

@@ -15,8 +15,6 @@ type SortState = {
     direction: SortDirection;
 };
 
-export type InitialSort = SortState;
-
 export type ColumnHint = {
     meaning: string;
     tables?: string;
@@ -167,7 +165,7 @@ export function withUniqueRowKeys<Row>(
 export function useSortableRows<Row>(
     rows: readonly Row[],
     columns: readonly SortColumn<Row>[],
-    initialSort: InitialSort | null = null,
+    initialSort: SortState | null = null,
 ) {
     const [sort, setSort] = useState<SortState | null>(initialSort);
     const columnByKey = useMemo(

@@ -21,7 +21,5 @@ Live mode uses a password gate. Tinybird read/write tokens live only in
 `secrets/web.json` and are used by the Vite server-side proxy, never by the
 browser bundle.
 
-Data contracts live in [`tinybird/README.md`](./tinybird/README.md).
-
-Current OP Tinybird datasource and pipe definitions live in
-[`tinybird/`](./tinybird/).
+The OP Tinybird datasource and pipe definitions (`op_*`) live in
+[`enter.pollinations.ai/observability/`](../../../enter.pollinations.ai/observability/).

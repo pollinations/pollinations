@@ -702,10 +702,9 @@ describe("providerEconomics", () => {
         expect(row.soldQuestsUsd).toBe(250);
         expect(row.trueMultiplier).toBeCloseTo(750 / 5000, 5);
         expect(row.marginUsd).toBeCloseTo(750 - 5000, 5);
-        expect(row.flags).toEqual([]);
     });
 
-    it("flags OP Pollen months that have no OP Cloud witness", () => {
+    it("calibrates across the scope even when a pollen month has no cloud witness", () => {
         const data = emptyData({
             opCloud: [
                 opCloud({
@@ -732,10 +731,9 @@ describe("providerEconomics", () => {
 
         const [row] = providerEconomics(data, "");
         expect(row.calib).toBeCloseTo(1, 5);
-        expect(row.flags).toEqual(["unwitnessed July 26"]);
     });
 
-    it("flags OP Cloud months that have no OP Pollen meter", () => {
+    it("calibrates across the scope even when a cloud month has no pollen meter", () => {
         const data = emptyData({
             opCloud: [
                 opCloud({
@@ -761,10 +759,9 @@ describe("providerEconomics", () => {
 
         const [row] = providerEconomics(data, "");
         expect(row.calib).toBeCloseTo(2, 5);
-        expect(row.flags).toEqual(["unmetered May 26"]);
     });
 
-    it("falls back to OP Pollen cost when a provider has no OP Cloud meter", () => {
+    it("keeps true cost unknown when a provider has no OP Cloud bill", () => {
         const data = emptyData({
             opPollen: [
                 opPollen({
@@ -781,10 +778,17 @@ describe("providerEconomics", () => {
         const [row] = providerEconomics(data, "2026-06");
         expect(row.vendor).toBe("azure");
         expect(row.calib).toBeNull();
-        expect(row.flags).toEqual(["no meter"]);
-        expect(row.trueCostPaidUsd).toBeCloseTo(50, 5);
-        expect(row.trueMultiplier).toBeCloseTo(0.4, 5);
+        expect(row.trueCostPaidUsd).toBeNull();
+        expect(row.questBurnUsd).toBeNull();
+        expect(row.marginUsd).toBeNull();
+        expect(row.trueMultiplier).toBeNull();
         expect(row.creditSharePct).toBeNull();
+
+        const summary = econSummary([row]);
+        expect(summary.unpricedCount).toBe(1);
+        expect(summary.soldPaidUsd).toBe(40);
+        expect(summary.trueCostPaidUsd).toBe(0);
+        expect(summary.marginPct).toBeNull();
     });
 });
 

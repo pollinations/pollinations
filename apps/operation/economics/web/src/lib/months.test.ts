@@ -1,14 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { FIXTURES } from "../fixtures";
 import type { Data } from "../types";
-import {
-    collectMonths,
-    isYearFilter,
-    lastFullMonth,
-    matchesMonth,
-    monthLabel,
-    yearsOf,
-} from "./months";
+import { collectMonths, matchesMonth, monthLabel, yearsOf } from "./months";
 
 const data: Data = {
     opTransactions: FIXTURES.op_transactions_api,
@@ -55,14 +48,6 @@ describe("matchesMonth", () => {
     });
 });
 
-describe("isYearFilter", () => {
-    it("only accepts bare four-digit years", () => {
-        expect(isYearFilter("2026")).toBe(true);
-        expect(isYearFilter("2026-07")).toBe(false);
-        expect(isYearFilter("")).toBe(false);
-    });
-});
-
 describe("monthLabel", () => {
     it("renders full month names with two-digit years", () => {
         expect(monthLabel("2006-06")).toBe("June 06");
@@ -82,15 +67,5 @@ describe("yearsOf", () => {
             "2026",
             "2027",
         ]);
-    });
-});
-
-describe("lastFullMonth", () => {
-    it("returns the previous calendar month", () => {
-        expect(lastFullMonth(new Date("2026-07-08T12:00:00Z"))).toBe("2026-06");
-    });
-
-    it("handles January by rolling back to the previous year", () => {
-        expect(lastFullMonth(new Date("2026-01-01T00:00:00Z"))).toBe("2025-12");
     });
 });

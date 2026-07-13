@@ -61,13 +61,6 @@ export function utcDateTimeTitle(value: string | null | undefined): string {
     return value ?? "";
 }
 
-/** Tinybird DateTime strings ("YYYY-MM-DD HH:MM:SS") are UTC. */
-export function hoursSince(runAt: string, nowMs: number = Date.now()): number {
-    const t = Date.parse(`${runAt.replace(" ", "T")}Z`);
-    if (Number.isNaN(t)) return Number.POSITIVE_INFINITY;
-    return (nowMs - t) / 3_600_000;
-}
-
 export function fmtSmartNumber(
     value: number,
     {
@@ -141,6 +134,12 @@ export function fmtPct(value: number | null): string {
     if (value == null || !Number.isFinite(value)) return "–";
     const magnitude = fmtSmartNumber(Math.abs(value));
     return value < 0 ? `−${magnitude}%` : `+${magnitude}%`;
+}
+
+// Margin percentages carry the − sign but drop the leading + — a positive
+// margin is the unremarkable case.
+export function fmtMarginPct(value: number | null): string {
+    return fmtPct(value).replace(/^\+/, "");
 }
 
 export function fmtUnsignedPct(value: number | null | undefined): string {

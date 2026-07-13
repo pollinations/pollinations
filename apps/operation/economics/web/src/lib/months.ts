@@ -2,14 +2,9 @@ import type { Data } from "../types";
 import { fmtMonthYear } from "./format";
 
 const MONTH_RE = /^\d{4}-\d{2}$/;
-const YEAR_RE = /^\d{4}$/;
 
 export type MonthFilterValue = string | readonly string[];
 export type ValueFilter = string | readonly string[];
-
-export function isYearFilter(value: string): boolean {
-    return YEAR_RE.test(value);
-}
 
 export function monthLabel(month: string): string {
     if (!MONTH_RE.test(month)) return month;
@@ -60,11 +55,4 @@ export function yearsOf(months: string[]): string[] {
     return [...new Set(months.map((month) => month.slice(0, 4)))].sort((a, b) =>
         a.localeCompare(b),
     );
-}
-
-export function lastFullMonth(now: Date = new Date()): string {
-    const year = now.getUTCFullYear();
-    const monthIndex = now.getUTCMonth();
-    const last = new Date(Date.UTC(year, monthIndex - 1, 1));
-    return `${last.getUTCFullYear()}-${String(last.getUTCMonth() + 1).padStart(2, "0")}`;
 }

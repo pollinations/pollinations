@@ -48,14 +48,13 @@ import { fixturesMode, loadAll, TbError } from "./lib/tb";
 import type { Data } from "./types";
 import { CreditsTab } from "./views/CreditsTab";
 import { DataQualityTab } from "./views/DataQualityTab";
+import { EconTab } from "./views/EconTab";
 import { GpuTab } from "./views/GpuTab";
-import { ModelsTab } from "./views/ModelsTab";
 import { OpCloudTab } from "./views/OpCloudTab";
 import { OpPollenTab } from "./views/OpPollenTab";
 import { OpTransactionsTab } from "./views/OpTransactionsTab";
 import { PnlTab } from "./views/PnlTab";
 import { RunwayTab } from "./views/RunwayTab";
-import { VendorsTab } from "./views/VendorsTab";
 
 type Tab = "data-quality" | "op-transactions" | "op-pollen" | "op-cloud";
 type EconomicsSection = "insights" | "raw";
@@ -1070,15 +1069,17 @@ export default function App() {
                     <RunwayTab data={data} />
                 )}
                 {data && section === "insights" && insightTab === "vendors" && (
-                    <VendorsTab
+                    <EconTab
                         data={data}
+                        grain="vendor"
                         month={monthFilter}
                         vendor={selectedVendors}
                     />
                 )}
                 {data && section === "insights" && insightTab === "models" && (
-                    <ModelsTab
+                    <EconTab
                         data={data}
+                        grain="model"
                         month={monthFilter}
                         vendor={selectedVendors}
                     />
@@ -1097,67 +1098,73 @@ export default function App() {
         </>
     );
 
+    // The shell itself computes insights (nav row counts) — a compute error
+    // there must render the error state, not white-screen the app.
     return (
-        <EconomicsShell
-            data={data}
-            footer={drawerFooter}
-            section={section}
-            tab={tab}
-            insightTab={insightTab}
-            onRawTabChange={(value) => {
-                setSection("raw");
-                setTab(value);
-            }}
-            onInsightTabChange={(value) => {
-                setSection("insights");
-                setInsightTab(value);
-            }}
-        >
-            <main className="flex w-full flex-col gap-6 px-4 py-14 pb-32 sm:px-6 sm:py-10 sm:pb-32 md:py-8 lg:px-8">
-                {isCompactInsight ? (
-                    <section className="flex flex-col gap-5">
-                        <header className="shrink-0 px-1">
-                            <div className="flex flex-wrap items-center gap-x-4 gap-y-3">
-                                <div className="min-w-0 flex-1">{filters}</div>
-                                <div className="ml-auto flex min-w-0 shrink-0 items-center gap-2">
-                                    <Heading
-                                        as="h2"
-                                        size="section"
-                                        className="truncate text-left"
-                                    >
-                                        {viewTitle}
-                                    </Heading>
-                                    {viewInfo && (
-                                        <InfoTip
-                                            content={viewInfo}
-                                            label={`${viewTitle} info`}
-                                        />
-                                    )}
+        <ErrorBoundary resetKey={String(attempt)}>
+            <EconomicsShell
+                data={data}
+                footer={drawerFooter}
+                section={section}
+                tab={tab}
+                insightTab={insightTab}
+                onRawTabChange={(value) => {
+                    setSection("raw");
+                    setTab(value);
+                }}
+                onInsightTabChange={(value) => {
+                    setSection("insights");
+                    setInsightTab(value);
+                }}
+            >
+                <main className="flex w-full flex-col gap-6 px-4 py-14 pb-32 sm:px-6 sm:py-10 sm:pb-32 md:py-8 lg:px-8">
+                    {isCompactInsight ? (
+                        <section className="flex flex-col gap-5">
+                            <header className="shrink-0 px-1">
+                                <div className="flex flex-wrap items-center gap-x-4 gap-y-3">
+                                    <div className="min-w-0 flex-1">
+                                        {filters}
+                                    </div>
+                                    <div className="ml-auto flex min-w-0 shrink-0 items-center gap-2">
+                                        <Heading
+                                            as="h2"
+                                            size="section"
+                                            className="truncate text-left"
+                                        >
+                                            {viewTitle}
+                                        </Heading>
+                                        {viewInfo && (
+                                            <InfoTip
+                                                content={viewInfo}
+                                                label={`${viewTitle} info`}
+                                            />
+                                        )}
+                                    </div>
                                 </div>
-                            </div>
-                        </header>
-                        <div className="flex flex-col gap-5">{content}</div>
-                    </section>
-                ) : (
-                    <Section
-                        title={viewTitle}
-                        action={
-                            viewInfo ? (
-                                <InfoTip
-                                    content={viewInfo}
-                                    label={`${viewTitle} info`}
-                                />
-                            ) : null
-                        }
-                        actionClassName="mr-auto"
-                        framed
-                        panelClassName="gap-5"
-                    >
-                        {filters}
-                        {content}
-                    </Section>
-                )}
-            </main>
-        </EconomicsShell>
+                            </header>
+                            <div className="flex flex-col gap-5">{content}</div>
+                        </section>
+                    ) : (
+                        <Section
+                            title={viewTitle}
+                            action={
+                                viewInfo ? (
+                                    <InfoTip
+                                        content={viewInfo}
+                                        label={`${viewTitle} info`}
+                                    />
+                                ) : null
+                            }
+                            actionClassName="mr-auto"
+                            framed
+                            panelClassName="gap-5"
+                        >
+                            {filters}
+                            {content}
+                        </Section>
+                    )}
+                </main>
+            </EconomicsShell>
+        </ErrorBoundary>
     );
 }

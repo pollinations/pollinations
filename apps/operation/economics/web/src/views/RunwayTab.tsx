@@ -24,6 +24,7 @@ import {
     type RunwayColumn,
     type RunwayMatrixRow,
 } from "../lib/runway";
+import { signedTone } from "../lib/tone";
 import type { Data } from "../types";
 
 const CATEGORY_LABELS: Record<string, string> = {
@@ -49,7 +50,7 @@ function valueTone(value: number | null): StatTone {
 
 export function runwayValueClass(value: number | null): string {
     if (value == null || value === 0) return "text-theme-text-soft";
-    return value > 0 ? "text-intent-success-text" : "text-intent-danger-text";
+    return signedTone(value);
 }
 
 export function runwayText(months: number | null, capped: boolean): string {

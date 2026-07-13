@@ -1,5 +1,4 @@
 import {
-    Chip,
     cn,
     TableBody,
     TableCell,
@@ -9,7 +8,7 @@ import {
     Tooltip,
 } from "@pollinations/ui";
 import { useMemo } from "react";
-import { fmtMultiplier, fmtPct, fmtUnsignedPct, fmtUsd } from "../lib/format";
+import { fmtMarginPct, fmtUnsignedPct, fmtUsd } from "../lib/format";
 import {
     cashMarginPct,
     cashMarginUsd,
@@ -20,6 +19,7 @@ import {
     trueMarginPct,
 } from "../lib/insights";
 import { matchesValue, type ValueFilter } from "../lib/months";
+import { signedToneOrSoft, usageMatchTone } from "../lib/tone";
 import {
     DataTable,
     GROUP_BORDER,
@@ -35,29 +35,6 @@ export function visibleEconRows(
     vendor: ValueFilter,
 ): EconRow[] {
     return rows.filter((row) => matchesValue(row.vendor, vendor));
-}
-
-export function hasEconActivity(row: EconRow): boolean {
-    return [
-        row.soldPaidUsd,
-        row.soldQuestsUsd,
-        providerCashCostUsd(row),
-        providerGrantFundedUsd(row),
-        row.questBurnUsd,
-        cashMarginUsd(row),
-    ].some((value) => value !== 0);
-}
-
-// Registry mispricing shows up as calibration far from 1.0× — the provider
-// bills a multiple of what our own meter expected. Only severe drift (off by
-// 2× or more, either direction) becomes a flag, so healthy rows stay quiet.
-export const SEVERE_DRIFT = 2;
-export function driftFlag(calib: number | null): string | null {
-    if (calib == null) return null;
-    if (calib >= SEVERE_DRIFT || calib <= 1 / SEVERE_DRIFT) {
-        return `${fmtMultiplier(calib)} meter drift`;
-    }
-    return null;
 }
 
 // Minimal two-segment mix. No volume scaling — the dollar columns carry the
@@ -81,8 +58,9 @@ export function pollenSoldUsd(row: EconRow): number {
 
 export function usageMatchPct(
     pollenUsageUsd: number,
-    providerUsageUsd: number,
+    providerUsageUsd: number | null,
 ): number | null {
+    if (providerUsageUsd == null) return null;
     const pollen = Math.max(0, pollenUsageUsd);
     const provider = Math.max(0, providerUsageUsd);
     const total = Math.max(pollen, provider);
@@ -121,34 +99,16 @@ export function Gauge({
     );
 }
 
-function marginTone(value: number) {
-    return value >= 0 ? "text-intent-success-text" : "text-intent-danger-text";
-}
-
-function marginPctText(value: number | null) {
-    return fmtPct(value).replace(/^\+/, "");
-}
-
-function marginPctTone(value: number | null) {
-    if (value == null) return "text-theme-text-soft";
-    return marginTone(value);
-}
-
-function usageMatchTone(value: number | null) {
-    if (value == null) return "text-theme-text-soft";
-    if (value >= 95) return "text-intent-success-text";
-    if (value >= 80) return "text-intent-warning-text";
-    return "text-intent-danger-text";
-}
-
 function providerFunding(
     row: EconRow,
 ): { paid: number; grants: number } | null {
-    if (providerUsageUsd(row) <= 0) return null;
-    return {
-        paid: providerCashCostUsd(row),
-        grants: providerGrantFundedUsd(row),
-    };
+    const usage = providerUsageUsd(row);
+    const paid = providerCashCostUsd(row);
+    const grants = providerGrantFundedUsd(row);
+    if (usage == null || usage <= 0 || paid == null || grants == null) {
+        return null;
+    }
+    return { paid, grants };
 }
 
 const ECON_SOURCE_HINTS = {
@@ -164,14 +124,11 @@ const ECON_SOURCE_HINTS = {
 // math, same thresholds — so the two tabs can never drift apart.
 export function EconTable({
     rows,
-    showFlags = false,
     showModel = false,
 }: {
     rows: EconRow[];
-    showFlags?: boolean;
     showModel?: boolean;
 }) {
-    const sourceHints = ECON_SOURCE_HINTS;
     const sortColumns = useMemo<SortColumn<EconRow>[]>(
         () => [
             { key: "vendor", value: (row) => row.vendor },
@@ -194,7 +151,9 @@ export function EconTable({
                 key: "providerFundingMix",
                 value: (row) => {
                     const funding = providerFunding(row);
-                    return funding && row.trueCostPaidUsd > 0
+                    return funding &&
+                        row.trueCostPaidUsd != null &&
+                        row.trueCostPaidUsd > 0
                         ? funding.paid / row.trueCostPaidUsd
                         : null;
                 },
@@ -212,7 +171,6 @@ export function EconTable({
             { key: "trueMarginPct", value: (row) => trueMarginPct(row) },
             { key: "cashMarginUsd", value: (row) => cashMarginUsd(row) },
             { key: "marginUsd", value: (row) => row.marginUsd },
-            { key: "flags", value: (row) => row.flags.join(", ") },
         ],
         [],
     );
@@ -291,22 +249,6 @@ export function EconTable({
                             >
                                 Without Credit
                             </TableHeaderCell>
-                            {showFlags && (
-                                <TableHeaderCell
-                                    rowSpan={2}
-                                    className={GROUP_BORDER}
-                                    {...headerProps("flags")}
-                                >
-                                    <HeaderHint
-                                        hint={{
-                                            meaning:
-                                                "Data-quality caveats: meter drift = provider bills a multiple of our meter (registry mispriced) · unwitnessed = pollen active but no provider row that month · unmetered = provider billed a month with no pollen · no meter = no provider rows at all.",
-                                        }}
-                                    >
-                                        Flags
-                                    </HeaderHint>
-                                </TableHeaderCell>
-                            )}
                         </TableRow>
                         <TableRow>
                             <TableHeaderCell
@@ -318,7 +260,7 @@ export function EconTable({
                                     hint={{
                                         meaning:
                                             "Revenue from paid users (hover a row for retained vs ecosystem split).",
-                                        tables: sourceHints.pollenTables,
+                                        tables: ECON_SOURCE_HINTS.pollenTables,
                                         sources: "TB",
                                     }}
                                 >
@@ -333,7 +275,7 @@ export function EconTable({
                                     hint={{
                                         meaning:
                                             "Usage mix — green is paid, amber is free quest.",
-                                        tables: sourceHints.pollenTables,
+                                        tables: ECON_SOURCE_HINTS.pollenTables,
                                         sources: "TB",
                                     }}
                                 >
@@ -348,7 +290,7 @@ export function EconTable({
                                     hint={{
                                         meaning:
                                             "What free quest usage consumes — pure subsidy, earns nothing.",
-                                        tables: sourceHints.pollenTables,
+                                        tables: ECON_SOURCE_HINTS.pollenTables,
                                         sources: "TB",
                                     }}
                                 >
@@ -364,8 +306,9 @@ export function EconTable({
                                     hint={{
                                         meaning:
                                             "Provider usage paid with real money. Includes paid-user and quest usage.",
-                                        tables: sourceHints.providerTables,
-                                        sources: sourceHints.providerSources,
+                                        tables: ECON_SOURCE_HINTS.providerTables,
+                                        sources:
+                                            ECON_SOURCE_HINTS.providerSources,
                                         formula:
                                             "provider usage − provider Credit",
                                     }}
@@ -381,8 +324,9 @@ export function EconTable({
                                     hint={{
                                         meaning:
                                             "Provider funding mix — green is cash, amber is credit.",
-                                        tables: sourceHints.fundingTables,
-                                        sources: sourceHints.fundingSources,
+                                        tables: ECON_SOURCE_HINTS.fundingTables,
+                                        sources:
+                                            ECON_SOURCE_HINTS.fundingSources,
                                         formula:
                                             "paid ÷ (paid + credit), credit ÷ (paid + credit)",
                                     }}
@@ -398,8 +342,9 @@ export function EconTable({
                                     hint={{
                                         meaning:
                                             "Provider usage paid with provider credit. Includes paid-user and quest usage.",
-                                        tables: sourceHints.fundingTables,
-                                        sources: sourceHints.fundingSources,
+                                        tables: ECON_SOURCE_HINTS.fundingTables,
+                                        sources:
+                                            ECON_SOURCE_HINTS.fundingSources,
                                         formula:
                                             "provider usage × credit-funded share",
                                     }}
@@ -486,10 +431,6 @@ export function EconTable({
                                 rowPollenUsageUsd,
                                 rowProviderUsageUsd,
                             );
-                            const drift = driftFlag(row.calib);
-                            const flags = drift
-                                ? [drift, ...row.flags]
-                                : row.flags;
                             return (
                                 <TableRow key={key}>
                                     {showModel && (
@@ -552,8 +493,11 @@ export function EconTable({
                                                     )}{" "}
                                                     · delta{" "}
                                                     {fmtUsd(
-                                                        rowProviderUsageUsd -
-                                                            rowPollenUsageUsd,
+                                                        rowProviderUsageUsd ==
+                                                            null
+                                                            ? null
+                                                            : rowProviderUsageUsd -
+                                                                  rowPollenUsageUsd,
                                                     )}
                                                 </span>
                                             }
@@ -577,19 +521,23 @@ export function EconTable({
                                                 <span className="block max-w-72">
                                                     provider usage before credit{" "}
                                                     {fmtUsd(
-                                                        providerUsageUsd(row),
+                                                        rowProviderUsageUsd,
                                                     )}{" "}
                                                     = cash{" "}
-                                                    {fmtUsd(funding?.paid ?? 0)}{" "}
+                                                    {fmtUsd(
+                                                        funding?.paid ?? null,
+                                                    )}{" "}
                                                     + credit{" "}
                                                     {fmtUsd(
-                                                        funding?.grants ?? 0,
+                                                        funding?.grants ?? null,
                                                     )}
                                                 </span>
                                             }
                                         >
                                             <span>
-                                                {fmtUsd(funding?.paid ?? 0)}
+                                                {funding
+                                                    ? fmtUsd(funding.paid)
+                                                    : "–"}
                                             </span>
                                         </Tooltip>
                                     </TableCell>
@@ -614,16 +562,16 @@ export function EconTable({
                                     <TableCell
                                         className={cn(
                                             "text-right",
-                                            marginPctTone(rowCashMarginPct),
+                                            signedToneOrSoft(rowCashMarginPct),
                                             GROUP_BORDER,
                                         )}
                                     >
-                                        {marginPctText(rowCashMarginPct)}
+                                        {fmtMarginPct(rowCashMarginPct)}
                                     </TableCell>
                                     <TableCell
                                         className={cn(
                                             "text-right",
-                                            marginTone(rowCashMarginUsd),
+                                            signedToneOrSoft(rowCashMarginUsd),
                                         )}
                                     >
                                         {fmtUsd(rowCashMarginUsd)}
@@ -632,34 +580,19 @@ export function EconTable({
                                         className={cn(
                                             "text-right",
                                             GROUP_BORDER,
-                                            marginPctTone(rowTrueMarginPct),
+                                            signedToneOrSoft(rowTrueMarginPct),
                                         )}
                                     >
-                                        {marginPctText(rowTrueMarginPct)}
+                                        {fmtMarginPct(rowTrueMarginPct)}
                                     </TableCell>
                                     <TableCell
                                         className={cn(
                                             "text-right",
-                                            marginTone(row.marginUsd),
+                                            signedToneOrSoft(row.marginUsd),
                                         )}
                                     >
                                         {fmtUsd(row.marginUsd)}
                                     </TableCell>
-                                    {showFlags && (
-                                        <TableCell className={GROUP_BORDER}>
-                                            <div className="flex flex-wrap gap-1">
-                                                {flags.map((flag) => (
-                                                    <Chip
-                                                        key={flag}
-                                                        intent="warning"
-                                                        size="sm"
-                                                    >
-                                                        ⚠ {flag}
-                                                    </Chip>
-                                                ))}
-                                            </div>
-                                        </TableCell>
-                                    )}
                                 </TableRow>
                             );
                         })}

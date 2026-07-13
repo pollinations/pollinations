@@ -1,16 +1,10 @@
 import type { OpRunwayRow, OpTransactionRow } from "../types";
 import { toUsd } from "./fx";
+import { CATEGORY_ORDER, monthShift } from "./insights";
 import { WINDOW_START } from "./months";
 
 const MONTH_RE = /^\d{4}-\d{2}$/;
-const CATEGORY_ORDER = [
-    "revenue",
-    "cloud",
-    "saas",
-    "office",
-    "admin",
-    "payroll",
-];
+const RUNWAY_CATEGORY_ORDER = ["revenue", ...CATEGORY_ORDER];
 
 export type RunwayAssumption = OpRunwayRow & {
     amountUsd: number;
@@ -51,16 +45,6 @@ export type RunwayResult = {
     flags: string[];
 };
 
-function monthShift(month: string, delta: number): string {
-    const total =
-        Number(month.slice(0, 4)) * 12 +
-        (Number(month.slice(5, 7)) - 1) +
-        delta;
-    const year = Math.floor(total / 12);
-    const shiftedMonth = (total % 12) + 1;
-    return `${String(year).padStart(4, "0")}-${String(shiftedMonth).padStart(2, "0")}`;
-}
-
 function monthRange(start: string, end: string): string[] {
     const months: string[] = [];
     let cursor = start;
@@ -75,8 +59,10 @@ function normalizedVendor(value: string) {
     return value.trim() || "unmatched";
 }
 
+// Uncategorized facts stay visible as "other" — folding them into a named
+// bucket would silently misstate that bucket.
 function normalizedCategory(value: string) {
-    return value.trim() || "admin";
+    return value.trim() || "other";
 }
 
 function matrixKey(category: string, vendor: string) {
@@ -84,8 +70,8 @@ function matrixKey(category: string, vendor: string) {
 }
 
 function categoryRank(category: string) {
-    const rank = CATEGORY_ORDER.indexOf(category);
-    return rank === -1 ? CATEGORY_ORDER.length : rank;
+    const rank = RUNWAY_CATEGORY_ORDER.indexOf(category);
+    return rank === -1 ? RUNWAY_CATEGORY_ORDER.length : rank;
 }
 
 export function forecastMethodFromEvidence(

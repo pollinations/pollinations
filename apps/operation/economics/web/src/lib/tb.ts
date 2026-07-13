@@ -32,7 +32,10 @@ async function fetchPipe<T>(pipe: string): Promise<T[]> {
     const res = await fetch(`/api/pipes/${encodeURIComponent(pipe)}`);
     if (!res.ok) throw new TbError(pipe, res.status);
 
-    const body = (await res.json()) as { data: T[] };
+    const body = (await res.json()) as { data?: T[] };
+    if (!Array.isArray(body.data)) {
+        throw new Error(`${pipe}: response has no data array`);
+    }
     return body.data;
 }
 

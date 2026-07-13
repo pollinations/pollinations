@@ -94,7 +94,7 @@ function sourceTitle(source: string, code: ProvenanceCode, custom?: string) {
     return custom ?? `${source}: ${PROVENANCE[code].title}`;
 }
 
-export function InlineSourceBadge({ source }: { source: string }) {
+function InlineSourceBadge({ source }: { source: string }) {
     if (!source) return null;
 
     const meta = sourceMeta(source);
@@ -119,7 +119,7 @@ function normalizeSource(source: string) {
     return normalized;
 }
 
-export function uniqueSources(sources: readonly (string | null | undefined)[]) {
+function uniqueSources(sources: readonly (string | null | undefined)[]) {
     const normalized = sources
         .flatMap((source) => (source ?? "").split(/[,+/ ]+/))
         .map(normalizeSource)

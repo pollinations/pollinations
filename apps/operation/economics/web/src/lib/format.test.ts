@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+    fmtMarginPct,
     fmtMonthYear,
     fmtMultiplier,
     fmtNumber,
@@ -9,7 +10,6 @@ import {
     fmtUnsignedPct,
     fmtUsd,
     fmtUtcDateTime,
-    hoursSince,
     utcDateTimeTitle,
 } from "./format";
 
@@ -29,10 +29,10 @@ describe("format", () => {
         expect(fmtPeriod("unknown")).toBe("unknown");
     });
 
-    it("hoursSince parses TB DateTime as UTC", () => {
-        const now = Date.parse("2026-07-03T12:00:00Z");
-        expect(hoursSince("2026-07-03 06:00:00", now)).toBeCloseTo(6, 5);
-        expect(hoursSince("garbage", now)).toBe(Number.POSITIVE_INFINITY);
+    it("fmtMarginPct keeps the minus sign but drops the leading plus", () => {
+        expect(fmtMarginPct(42)).toBe("42%");
+        expect(fmtMarginPct(-42)).toBe("−42%");
+        expect(fmtMarginPct(null)).toBe("–");
     });
 
     it("fmtUtcDateTime renders compact UTC labels", () => {

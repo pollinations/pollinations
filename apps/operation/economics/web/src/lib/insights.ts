@@ -19,6 +19,15 @@ export const CATEGORY_ORDER = [
 
 const MONTH_KEY_RE = /^\d{4}-\d{2}$/;
 
+function getOrInit<K, V>(map: Map<K, V>, key: K, make: () => V): V {
+    let value = map.get(key);
+    if (value === undefined) {
+        value = make();
+        map.set(key, value);
+    }
+    return value;
+}
+
 function opTransactionUsd(row: OpTransactionRow): number {
     return toUsd(row.amount, row.currency, row.date);
 }
@@ -42,11 +51,13 @@ export function opCloudCreditBurnUsd(
     return Math.max(0, -toUsd(row.credit, row.currency, row.start));
 }
 
+// Uncategorized spend stays visible as "other" — folding it into a named
+// bucket would silently misstate that bucket.
 function opSpendCategory(row: Pick<OpTransactionRow, "category">): string {
-    return row.category && row.category !== "other" ? row.category : "admin";
+    return row.category || "other";
 }
 
-export type PnlMonth = {
+type PnlMonth = {
     month: string;
     revenueNetUsd: number | null;
     categories: Record<string, number>;
@@ -350,16 +361,16 @@ function pnlVendorLines(
         const month = row.date.slice(0, 7);
         if (!monthSet.has(month)) continue;
         const category = opSpendCategory(row);
-        let vendors = byCategory.get(category);
-        if (!vendors) {
-            vendors = new Map();
-            byCategory.set(category, vendors);
-        }
-        let months = vendors.get(row.vendor);
-        if (!months) {
-            months = new Map();
-            vendors.set(row.vendor, months);
-        }
+        const vendors = getOrInit(
+            byCategory,
+            category,
+            () => new Map<string, Map<string, number>>(),
+        );
+        const months = getOrInit(
+            vendors,
+            row.vendor,
+            () => new Map<string, number>(),
+        );
         months.set(month, (months.get(month) ?? 0) - opTransactionUsd(row));
     }
 
@@ -399,12 +410,7 @@ function pnlVendorLines(
 // Vendors funded by prepaid balance top-ups: cash precedes usage by more
 // than a month, so monthly cash matching is meaningless — coverage holds as
 // long as cumulative cash keeps up with cumulative paid burn.
-export const PREPAID_VENDORS = new Set([
-    "vast.ai",
-    "deepinfra",
-    "pruna",
-    "fal",
-]);
+const PREPAID_VENDORS = new Set(["vast.ai", "deepinfra", "pruna", "fal"]);
 
 // Pollen activity below this is noise, not a funding question.
 const POLLEN_ACTIVE_USD = 1;
@@ -428,7 +434,7 @@ type OpPollenWitness = {
     totalCostUsd: number;
 };
 
-export type CashCoverage =
+type CashCoverage =
     | "same month"
     | "cash ±1mo"
     | "prepaid"
@@ -436,11 +442,7 @@ export type CashCoverage =
     | "missing cash"
     | null;
 
-export type MeterCoverage =
-    | "complete"
-    | "missing cloud"
-    | "missing pollen"
-    | null;
+type MeterCoverage = "complete" | "missing cloud" | "missing pollen" | null;
 
 export type DataQualityStatus =
     | "ok"
@@ -663,17 +665,16 @@ export function vendorPlanes(data: Data): VendorPlanes[] {
         ) {
             continue;
         }
-        const entry = cloud.get(key) ?? {
+        const entry = getOrInit(cloud, key, () => ({
             paidUsd: 0,
             creditUsd: 0,
             cloudUsd: 0,
             meterCloudUsd: 0,
-        };
+        }));
         entry.paidUsd += paidUsd;
         entry.creditUsd += creditUsd;
         entry.cloudUsd += cloudUsd;
         entry.meterCloudUsd += meterCloudUsd;
-        cloud.set(key, entry);
         nonInfraCloudKeys.add(key);
         cumulativeKeys.add(key);
         if (month >= WINDOW_START) displayKeys.add(key);
@@ -683,11 +684,11 @@ export function vendorPlanes(data: Data): VendorPlanes[] {
     for (const row of data.opPollen ?? []) {
         if (!MONTH_KEY_RE.test(row.month) || row.month < WINDOW_START) continue;
         const key = `${row.month}|${row.vendor}`;
-        const entry = pollen.get(key) ?? {
+        const entry = getOrInit(pollen, key, () => ({
             paidCostUsd: 0,
             questCostUsd: 0,
             totalCostUsd: 0,
-        };
+        }));
         entry.paidCostUsd += toUsd(row.cost_paid, row.currency, row.month);
         entry.questCostUsd += toUsd(row.cost_quests, row.currency, row.month);
         entry.totalCostUsd += toUsd(
@@ -695,7 +696,6 @@ export function vendorPlanes(data: Data): VendorPlanes[] {
             row.currency,
             row.month,
         );
-        pollen.set(key, entry);
         if (entry.totalCostUsd > POLLEN_ACTIVE_USD) {
             cloudMeterVendors.add(row.vendor);
         }
@@ -713,9 +713,7 @@ export function vendorPlanes(data: Data): VendorPlanes[] {
     const monthsByVendor = new Map<string, string[]>();
     for (const key of cumulativeKeys) {
         const [month, vendor] = key.split("|");
-        const months = monthsByVendor.get(vendor) ?? [];
-        months.push(month);
-        monthsByVendor.set(vendor, months);
+        getOrInit(monthsByVendor, vendor, (): string[] => []).push(month);
     }
     for (const [vendor, months] of monthsByVendor) {
         let cashUsd = 0;
@@ -821,7 +819,7 @@ export function insightVendorOptions(data: Data): string[] {
 // Vendors whose provider_monthly rows are our own pollen numbers booked back
 // (community mirror + meter-less free partners) — their calib is 1.00 by
 // construction, a definition rather than a measurement.
-export const POLLEN_PRICED_VENDORS = new Set([
+const POLLEN_PRICED_VENDORS = new Set([
     "airforce",
     "community",
     "inferenceport",
@@ -847,7 +845,7 @@ export function hasCalibDrift({
     );
 }
 
-export type EconGrain = "vendor" | "model";
+type EconGrain = "vendor" | "model";
 
 export type EconRow = {
     vendor: string;
@@ -856,49 +854,61 @@ export type EconRow = {
     ecoPaidUsd: number;
     retainedPaidUsd: number;
     soldQuestsUsd: number;
-    trueCostPaidUsd: number;
-    questBurnUsd: number;
+    // Null when the vendor has no provider bill — provider truth is unknown,
+    // never substituted with our own meter.
+    trueCostPaidUsd: number | null;
+    questBurnUsd: number | null;
     calib: number | null;
     pollenPriced: boolean;
     creditSharePct: number | null;
     trueMultiplier: number | null;
-    marginUsd: number;
-    flags: string[];
+    marginUsd: number | null;
 };
 
-export function grantFundedUsd(row: EconRow): number {
+function grantFundedUsd(row: EconRow): number | null {
+    if (row.trueCostPaidUsd == null) return null;
     if (row.trueCostPaidUsd <= 0) return 0;
     const share = Math.min(100, Math.max(0, row.creditSharePct ?? 0)) / 100;
     return row.trueCostPaidUsd * share;
 }
 
-export function providerUsageUsd(row: EconRow): number {
+export function providerUsageUsd(row: EconRow): number | null {
+    if (row.trueCostPaidUsd == null || row.questBurnUsd == null) return null;
     return row.trueCostPaidUsd + row.questBurnUsd;
 }
 
-export function providerGrantFundedUsd(row: EconRow): number {
+export function providerGrantFundedUsd(row: EconRow): number | null {
     const usage = providerUsageUsd(row);
+    if (usage == null) return null;
     if (usage <= 0) return 0;
     const share = Math.min(100, Math.max(0, row.creditSharePct ?? 0)) / 100;
     return usage * share;
 }
 
-export function providerCashCostUsd(row: EconRow): number {
-    return Math.max(0, providerUsageUsd(row) - providerGrantFundedUsd(row));
+export function providerCashCostUsd(row: EconRow): number | null {
+    const usage = providerUsageUsd(row);
+    const grants = providerGrantFundedUsd(row);
+    if (usage == null || grants == null) return null;
+    return Math.max(0, usage - grants);
 }
 
-export function cashCostPaidUsd(row: EconRow): number {
-    return Math.max(0, row.trueCostPaidUsd - grantFundedUsd(row));
+function cashCostPaidUsd(row: EconRow): number | null {
+    const grants = grantFundedUsd(row);
+    if (row.trueCostPaidUsd == null || grants == null) return null;
+    return Math.max(0, row.trueCostPaidUsd - grants);
 }
 
-export function cashMarginUsd(row: EconRow): number {
-    return row.retainedPaidUsd - providerCashCostUsd(row);
+export function cashMarginUsd(row: EconRow): number | null {
+    const cash = providerCashCostUsd(row);
+    if (cash == null) return null;
+    return row.retainedPaidUsd - cash;
 }
 
-export function marginPct(
-    marginUsd: number,
+function marginPct(
+    marginUsd: number | null,
     retainedPaidUsd: number,
 ): number | null {
+    if (marginUsd == null) return null;
     return retainedPaidUsd > 0 ? (marginUsd / retainedPaidUsd) * 100 : null;
 }
 
@@ -916,38 +926,30 @@ export function trueMarginPct(row: EconRow): number | null {
 // - OP Cloud is the provider bill witness (paid + credit burn, excluding infra)
 // - OP Pollen is the product meter and paid/quest revenue split
 // The math treats the raw data as perfect — calib is a plain
-// Σ provider actual / Σ our metering over the scope, no pairing or smoothing —
-// and every condition that could bend that number becomes a flag instead:
-// "unwitnessed" months (pollen active, no provider row yet — calib reads low),
-// "unmetered" months (provider billed, no pollen — calib reads high),
-// "no meter" (no provider rows at all — true cost falls back to our metering).
+// Σ provider actual / Σ our metering over the scope, no pairing or smoothing.
+// A vendor with no provider bill has no calib: its true-cost columns stay
+// null ("–") rather than passing our own meter off as the provider's truth.
+// Month-level witness gaps surface on the Data Quality tab.
 function opEconomics(
     data: Data,
     monthFilter: MonthFilterValue,
     grain: EconGrain,
 ): EconRow[] {
     type VendorFacts = {
-        meteredByMonth: Map<string, number>;
+        meteredUsd: number;
         actualUsd: number;
         creditUsd: number;
-        providerMonths: Set<string>;
+        hasPollen: boolean;
         hasProvider: boolean;
     };
     const vendors = new Map<string, VendorFacts>();
-    const factsFor = (vendor: string): VendorFacts => {
-        let facts = vendors.get(vendor);
-        if (!facts) {
-            facts = {
-                meteredByMonth: new Map(),
-                actualUsd: 0,
-                creditUsd: 0,
-                providerMonths: new Set(),
-                hasProvider: false,
-            };
-            vendors.set(vendor, facts);
-        }
-        return facts;
-    };
+    const emptyFacts = (): VendorFacts => ({
+        meteredUsd: 0,
+        actualUsd: 0,
+        creditUsd: 0,
+        hasPollen: false,
+        hasProvider: false,
+    });
 
     for (const row of data.opCloud ?? []) {
         const month = opCloudMonth(row);
@@ -960,9 +962,8 @@ function opEconomics(
         const actualUsd = paidUsd + creditUsd;
         if (Math.abs(actualUsd) <= 0.0001 && creditUsd <= 0.0001) continue;
 
-        const facts = factsFor(row.vendor);
+        const facts = getOrInit(vendors, row.vendor, emptyFacts);
         facts.hasProvider = true;
-        facts.providerMonths.add(month);
         facts.actualUsd += actualUsd;
         facts.creditUsd += creditUsd;
     }
@@ -980,15 +981,16 @@ function opEconomics(
     for (const row of data.opPollen ?? []) {
         if (!MONTH_KEY_RE.test(row.month) || row.month < WINDOW_START) continue;
         if (!matchesMonth(row.month, monthFilter)) continue;
-        const facts = factsFor(row.vendor);
-        facts.meteredByMonth.set(
+        const facts = getOrInit(vendors, row.vendor, emptyFacts);
+        facts.hasPollen = true;
+        facts.meteredUsd += toUsd(
+            row.cost_paid + row.cost_quests,
+            row.currency,
             row.month,
-            (facts.meteredByMonth.get(row.month) ?? 0) +
-                toUsd(row.cost_paid + row.cost_quests, row.currency, row.month),
         );
         const key =
             grain === "model" ? `${row.vendor}|${row.model}` : row.vendor;
-        const entry = byKey.get(key) ?? {
+        const entry = getOrInit(byKey, key, () => ({
             vendor: row.vendor,
             model: grain === "model" ? row.model : null,
             soldPaid: 0,
@@ -996,7 +998,7 @@ function opEconomics(
             soldQuests: 0,
             meteredPaid: 0,
             meteredQuests: 0,
-        };
+        }));
         entry.soldPaid += toUsd(row.price_paid, row.currency, row.month);
         entry.eco += toUsd(
             row.byop_paid + row.model_paid,
@@ -1006,50 +1008,22 @@ function opEconomics(
         entry.soldQuests += toUsd(row.price_quests, row.currency, row.month);
         entry.meteredPaid += toUsd(row.cost_paid, row.currency, row.month);
         entry.meteredQuests += toUsd(row.cost_quests, row.currency, row.month);
-        byKey.set(key, entry);
     }
 
     type VendorCalib = {
         calib: number | null;
         pollenPriced: boolean;
         creditSharePct: number | null;
-        flags: string[];
     };
     const calibs = new Map<string, VendorCalib>();
     for (const [vendor, facts] of vendors) {
-        if (facts.meteredByMonth.size === 0) continue;
-        const metered = [...facts.meteredByMonth.values()].reduce(
-            (a, b) => a + b,
-            0,
-        );
+        if (!facts.hasPollen) continue;
         const pollenPriced = POLLEN_PRICED_VENDORS.has(vendor);
-        const flags: string[] = [];
         let calib: number | null = null;
         if (pollenPriced) {
             calib = 1;
-        } else if (!facts.hasProvider) {
-            flags.push("no meter");
-        } else if (metered > 0) {
-            calib = facts.actualUsd / metered;
-            const unwitnessed = [...facts.meteredByMonth.entries()]
-                .filter(
-                    ([month, usd]) =>
-                        usd > POLLEN_ACTIVE_USD &&
-                        !facts.providerMonths.has(month),
-                )
-                .map(([month]) => month)
-                .sort();
-            if (unwitnessed.length) {
-                flags.push(
-                    `unwitnessed ${unwitnessed.map(monthLabel).join(", ")}`,
-                );
-            }
-            const unmetered = [...facts.providerMonths]
-                .filter((month) => !facts.meteredByMonth.has(month))
-                .sort();
-            if (unmetered.length) {
-                flags.push(`unmetered ${unmetered.map(monthLabel).join(", ")}`);
-            }
+        } else if (facts.hasProvider && facts.meteredUsd > 0) {
+            calib = facts.actualUsd / facts.meteredUsd;
         }
         calibs.set(vendor, {
             calib,
@@ -1058,17 +1032,21 @@ function opEconomics(
                 facts.hasProvider && facts.actualUsd > 0
                     ? (facts.creditUsd / facts.actualUsd) * 100
                     : null,
-            flags,
         });
     }
 
     return [...byKey.values()]
         .map((entry) => {
             const vendorCalib = calibs.get(entry.vendor);
-            const applied = vendorCalib?.calib ?? 1;
-            const trueCostPaidUsd = entry.meteredPaid * applied;
-            const questBurnUsd = entry.meteredQuests * applied;
-            const providerUsage = trueCostPaidUsd + questBurnUsd;
+            const calib = vendorCalib?.calib ?? null;
+            const trueCostPaidUsd =
+                calib == null ? null : entry.meteredPaid * calib;
+            const questBurnUsd =
+                calib == null ? null : entry.meteredQuests * calib;
+            const providerUsage =
+                trueCostPaidUsd == null || questBurnUsd == null
+                    ? null
+                    : trueCostPaidUsd + questBurnUsd;
             const retainedPaidUsd = entry.soldPaid - entry.eco;
             return {
                 vendor: entry.vendor,
@@ -1079,18 +1057,22 @@ function opEconomics(
                 soldQuestsUsd: entry.soldQuests,
                 trueCostPaidUsd,
                 questBurnUsd,
-                calib: vendorCalib?.calib ?? null,
+                calib,
                 pollenPriced: vendorCalib?.pollenPriced ?? false,
                 creditSharePct: vendorCalib?.creditSharePct ?? null,
                 trueMultiplier:
-                    providerUsage > 0 ? retainedPaidUsd / providerUsage : null,
-                marginUsd: retainedPaidUsd - providerUsage,
-                flags: vendorCalib?.flags ?? [],
+                    providerUsage != null && providerUsage > 0
+                        ? retainedPaidUsd / providerUsage
+                        : null,
+                marginUsd:
+                    providerUsage == null
+                        ? null
+                        : retainedPaidUsd - providerUsage,
             };
         })
         .sort((a, b) => {
             if (a.trueMultiplier == null && b.trueMultiplier == null) {
-                return b.questBurnUsd - a.questBurnUsd;
+                return (b.questBurnUsd ?? 0) - (a.questBurnUsd ?? 0);
             }
             if (a.trueMultiplier == null) return 1;
             if (b.trueMultiplier == null) return -1;
@@ -1112,7 +1094,7 @@ export function modelEconomics(
     return opEconomics(data, monthFilter, "model");
 }
 
-export type EconSummary = {
+type EconSummary = {
     soldPaidUsd: number;
     soldQuestsUsd: number;
     trueCostPaidUsd: number;
@@ -1131,12 +1113,15 @@ export type EconSummary = {
     cashMultiplier: number | null; // blended Σ retained / Σ cash cost
     creditFundedPct: number | null; // true-cost-weighted credit share
     underwaterCount: number; // rows losing cash on compute (margin < 0)
+    unpricedCount: number; // rows without a provider bill — excluded from cost sums
     mostUnderpriced: EconRow | null; // lowest true × in scope
 };
 
 // Roll a set of EconRows up to the headline numbers behind the stat cards.
 // Blended true × is Σ/Σ, exactly how the table's own math composes, so the
-// card can never disagree with the rows under it.
+// card can never disagree with the rows under it. Revenue sums cover every
+// row; cost and margin sums (and their % denominators) cover only priced
+// rows — unpricedCount surfaces the gap instead of guessing at it.
 export function econSummary(rows: EconRow[]): EconSummary {
     const acc: EconSummary = {
         soldPaidUsd: 0,
@@ -1157,24 +1142,47 @@ export function econSummary(rows: EconRow[]): EconSummary {
         cashMultiplier: null,
         creditFundedPct: null,
         underwaterCount: 0,
+        unpricedCount: 0,
         mostUnderpriced: null,
     };
     let creditWeighted = 0;
     let creditWeight = 0;
+    let pricedRetainedUsd = 0;
     for (const row of rows) {
         acc.soldPaidUsd += row.soldPaidUsd;
         acc.soldQuestsUsd += row.soldQuestsUsd;
-        acc.trueCostPaidUsd += row.trueCostPaidUsd;
-        acc.cashCostPaidUsd += cashCostPaidUsd(row);
-        acc.grantFundedUsd += grantFundedUsd(row);
-        const rowProviderUsageUsd = providerUsageUsd(row);
-        acc.providerUsageUsd += rowProviderUsageUsd;
-        acc.providerCashCostUsd += providerCashCostUsd(row);
-        acc.providerGrantFundedUsd += providerGrantFundedUsd(row);
         acc.retainedPaidUsd += row.retainedPaidUsd;
+        // Every null below shares one cause — the vendor has no provider
+        // bill (null calib) — so the guard rejects the row exactly once.
+        const rowGrantFundedUsd = grantFundedUsd(row);
+        const rowProviderUsageUsd = providerUsageUsd(row);
+        const rowProviderCashCostUsd = providerCashCostUsd(row);
+        const rowProviderGrantFundedUsd = providerGrantFundedUsd(row);
+        const rowCashCostPaidUsd = cashCostPaidUsd(row);
+        const rowCashMarginUsd = cashMarginUsd(row);
+        if (
+            row.trueCostPaidUsd == null ||
+            row.questBurnUsd == null ||
+            row.marginUsd == null ||
+            rowGrantFundedUsd == null ||
+            rowProviderUsageUsd == null ||
+            rowProviderCashCostUsd == null ||
+            rowProviderGrantFundedUsd == null ||
+            rowCashCostPaidUsd == null ||
+            rowCashMarginUsd == null
+        ) {
+            acc.unpricedCount += 1;
+            continue;
+        }
+        pricedRetainedUsd += row.retainedPaidUsd;
+        acc.trueCostPaidUsd += row.trueCostPaidUsd;
+        acc.cashCostPaidUsd += rowCashCostPaidUsd;
+        acc.grantFundedUsd += rowGrantFundedUsd;
+        acc.providerUsageUsd += rowProviderUsageUsd;
+        acc.providerCashCostUsd += rowProviderCashCostUsd;
+        acc.providerGrantFundedUsd += rowProviderGrantFundedUsd;
         acc.questBurnUsd += row.questBurnUsd;
         acc.marginUsd += row.marginUsd;
-        const rowCashMarginUsd = cashMarginUsd(row);
         acc.cashMarginUsd += rowCashMarginUsd;
         if (rowCashMarginUsd < 0) acc.underwaterCount += 1;
         if (row.creditSharePct != null && rowProviderUsageUsd > 0) {
@@ -1192,14 +1200,14 @@ export function econSummary(rows: EconRow[]): EconSummary {
     }
     acc.trueMultiplier =
         acc.providerUsageUsd > 0
-            ? acc.retainedPaidUsd / acc.providerUsageUsd
+            ? pricedRetainedUsd / acc.providerUsageUsd
             : null;
     acc.cashMultiplier =
         acc.cashCostPaidUsd > 0
-            ? acc.retainedPaidUsd / acc.cashCostPaidUsd
+            ? pricedRetainedUsd / acc.cashCostPaidUsd
             : null;
-    acc.marginPct = marginPct(acc.marginUsd, acc.retainedPaidUsd);
-    acc.cashMarginPct = marginPct(acc.cashMarginUsd, acc.retainedPaidUsd);
+    acc.marginPct = marginPct(acc.marginUsd, pricedRetainedUsd);
+    acc.cashMarginPct = marginPct(acc.cashMarginUsd, pricedRetainedUsd);
     acc.creditFundedPct =
         creditWeight > 0 ? creditWeighted / creditWeight : null;
     return acc;
@@ -1207,7 +1215,7 @@ export function econSummary(rows: EconRow[]): EconSummary {
 
 // --------------------------------------------------------- credit runway
 
-export type GrantStatus = {
+type GrantStatus = {
     vendor: string;
     label: string;
     grantedUsd: number;
@@ -1241,7 +1249,7 @@ export type RunwayRow = {
     grants: GrantStatus[];
 };
 
-export const PRE_WINDOW_GRANT_BURN_RESOURCE = "pre-2026 grant burn";
+const PRE_WINDOW_GRANT_BURN_RESOURCE = "pre-2026 grant burn";
 
 const AVG_DAYS_PER_MONTH = 30.44;
 const POOL_EPS_USD = 0.5;
@@ -1300,12 +1308,17 @@ function opCloudBurnByVendorMonth(data: Data) {
         const creditUsd = opCloudCreditBurnUsd(row);
         const paidUsd = opCloudPaidBurnUsd(row);
         if (creditUsd <= 0 && paidUsd <= 0) continue;
-        const months = byVendor.get(row.vendor) ?? new Map();
-        const entry = months.get(month) ?? { creditUsd: 0, paidUsd: 0 };
+        const months = getOrInit(
+            byVendor,
+            row.vendor,
+            () => new Map<string, { creditUsd: number; paidUsd: number }>(),
+        );
+        const entry = getOrInit(months, month, () => ({
+            creditUsd: 0,
+            paidUsd: 0,
+        }));
         entry.creditUsd += creditUsd;
         entry.paidUsd += paidUsd;
-        months.set(month, entry);
-        byVendor.set(row.vendor, months);
     }
     return byVendor;
 }
@@ -1326,9 +1339,7 @@ export function allocateGrants(
 
     const byVendor = new Map<string, GrantStatus[]>();
     for (const grant of opCloudGrantStatuses(data)) {
-        const list = byVendor.get(grant.vendor) ?? [];
-        list.push(grant);
-        byVendor.set(grant.vendor, list);
+        getOrInit(byVendor, grant.vendor, (): GrantStatus[] => []).push(grant);
     }
     for (const list of byVendor.values()) {
         list.sort(
@@ -1421,7 +1432,7 @@ export function creditRunway(data: Data, now: Date): RunwayRow[] {
 
     const byVendor = new Map<string, RunwayRow>();
     for (const grant of grants) {
-        const row = byVendor.get(grant.vendor) ?? {
+        const row = getOrInit(byVendor, grant.vendor, () => ({
             vendor: grant.vendor,
             grantedUsd: 0,
             burnedUsd: 0,
@@ -1441,7 +1452,7 @@ export function creditRunway(data: Data, now: Date): RunwayRow[] {
             finishedDate: null,
             flags: [],
             grants: [],
-        };
+        }));
         row.grantedUsd += grant.grantedUsd;
         row.lapsedUsd += grant.lapsedUsd;
         if (!(grant.expires != null && grant.expires < today)) {
@@ -1451,7 +1462,6 @@ export function creditRunway(data: Data, now: Date): RunwayRow[] {
             );
         }
         row.grants.push(grant);
-        byVendor.set(grant.vendor, row);
     }
 
     const burnByVendorMonth = opCloudBurnByVendorMonth(data);

@@ -21,11 +21,12 @@ import {
     pnlStatement,
 } from "../lib/insights";
 import type { MonthFilterValue } from "../lib/months";
+import { signedTone } from "../lib/tone";
 import type { Data } from "../types";
 
 export function pnlTone(value: number | null) {
     if (value == null) return "";
-    return value >= 0 ? "text-intent-success-text" : "text-intent-danger-text";
+    return signedTone(value);
 }
 
 // One statement, one source of truth for the cards: the primary period's line

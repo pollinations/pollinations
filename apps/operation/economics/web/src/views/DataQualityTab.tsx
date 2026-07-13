@@ -18,7 +18,7 @@ import {
 } from "../components/DataTable";
 import { StatCards, type StatItem } from "../components/StatCards";
 import { fmtMultiplier, fmtUsd } from "../lib/format";
-import { FX_EUR_USD_FALLBACK, fxFallbackMonths } from "../lib/fx";
+import { fxEstimatedMonths } from "../lib/fx";
 import {
     CALIB_DRIFT_ABS_ALARM_USD,
     CALIB_DRIFT_ALARM,
@@ -161,7 +161,7 @@ export function dataQualitySummary(rows: VendorPlanes[]): DataQualitySummary {
 
 export function dataQualityStatItems(
     summary: DataQualitySummary,
-    fxFallback: string[] = [],
+    fxEstimated: string[] = [],
 ): StatItem[] {
     const total = summary.total;
     const cloudPollenGap = summary.cloudUsd - summary.pollenUsd;
@@ -200,12 +200,12 @@ export function dataQualityStatItems(
         },
         {
             label: "FX",
-            value: fxFallback.length
-                ? `${fxFallback.length} fallback`
+            value: fxEstimated.length
+                ? `${fxEstimated.length} estimated`
                 : "rates ok",
-            tone: fxFallback.length ? "warn" : "pos",
-            detail: fxFallback.length
-                ? `${fxFallback.map(monthLabel).join(", ")} at ${FX_EUR_USD_FALLBACK} — append rates in fx.ts`
+            tone: fxEstimated.length ? "warn" : "pos",
+            detail: fxEstimated.length
+                ? `${fxEstimated.map(monthLabel).join(", ")} at latest known rate — append rates in fx.ts`
                 : "monthly EUR rates present",
         },
     ];
@@ -266,7 +266,7 @@ export function DataQualityTab({
         [allRows, month, vendor],
     );
     const summary = useMemo(() => dataQualitySummary(baseRows), [baseRows]);
-    const fxFallback = useMemo(() => fxFallbackMonths(data), [data]);
+    const fxEstimated = useMemo(() => fxEstimatedMonths(data), [data]);
     const sortColumns = useMemo<SortColumn<VendorPlanes>[]>(
         () => [
             { key: "status", value: (row) => planeRank(row) },
@@ -294,7 +294,7 @@ export function DataQualityTab({
 
     return [
         <div key="stats" className="mb-4">
-            <StatCards items={dataQualityStatItems(summary, fxFallback)} />
+            <StatCards items={dataQualityStatItems(summary, fxEstimated)} />
         </div>,
         <TableScroller key="table">
             <DataTable>

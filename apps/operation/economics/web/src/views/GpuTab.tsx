@@ -21,8 +21,8 @@ import {
 import { Gauge, usageMatchPct } from "../components/EconTable";
 import { StatCards } from "../components/StatCards";
 import {
+    fmtMarginPct,
     fmtNumber,
-    fmtPct,
     fmtUnsignedPct,
     fmtUsd,
     fmtUsd4,
@@ -40,6 +40,7 @@ import {
     type ValueFilter,
     WINDOW_START,
 } from "../lib/months";
+import { signedToneOrSoft, usageMatchTone } from "../lib/tone";
 import type { Data } from "../types";
 
 const REGISTRY_UNIT_PRICES: Record<string, { price: number; unit: string }> = {
@@ -244,22 +245,6 @@ export function gpuSummary(rows: GpuEconomicsRow[]): GpuSummary {
     return summary;
 }
 
-function marginPctText(value: number | null) {
-    return fmtPct(value).replace(/^\+/, "");
-}
-
-function rowMarginPctTone(value: number | null) {
-    if (value == null) return "text-theme-text-soft";
-    return value >= 0 ? "text-intent-success-text" : "text-intent-danger-text";
-}
-
-function usageMatchTone(value: number | null) {
-    if (value == null) return "text-theme-text-soft";
-    if (value >= 95) return "text-intent-success-text";
-    if (value >= 80) return "text-intent-warning-text";
-    return "text-intent-danger-text";
-}
-
 function marginTone(value: number) {
     return value >= 0 ? "pos" : "neg";
 }
@@ -343,7 +328,7 @@ export function GpuTab({
                     },
                     {
                         label: "GPU Margin %",
-                        value: marginPctText(stats.marginPct),
+                        value: fmtMarginPct(stats.marginPct),
                         tone: marginTone(stats.marginPct ?? stats.marginUsd),
                         detail: "margin ÷ retained",
                     },
@@ -579,11 +564,11 @@ export function GpuTab({
                                     <TableCell
                                         align="right"
                                         className={cn(
-                                            rowMarginPctTone(row.marginPct),
+                                            signedToneOrSoft(row.marginPct),
                                             GROUP_BORDER,
                                         )}
                                     >
-                                        {marginPctText(row.marginPct)}
+                                        {fmtMarginPct(row.marginPct)}
                                     </TableCell>
                                     <TableCell align="right">
                                         {fmtUsd4(row.effUsdPerReq)}

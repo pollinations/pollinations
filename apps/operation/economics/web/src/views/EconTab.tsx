@@ -1,28 +1,35 @@
 import { useMemo } from "react";
 import { EconTable, Gauge, visibleEconRows } from "../components/EconTable";
 import { StatCards } from "../components/StatCards";
-import { fmtPct, fmtUnsignedPct, fmtUsd } from "../lib/format";
-import { econSummary, providerEconomics } from "../lib/insights";
+import { fmtMarginPct, fmtUnsignedPct, fmtUsd } from "../lib/format";
+import {
+    econSummary,
+    modelEconomics,
+    providerEconomics,
+} from "../lib/insights";
 import type { MonthFilterValue, ValueFilter } from "../lib/months";
 import type { Data } from "../types";
 
-function fmtMarginPct(value: number | null): string {
-    return fmtPct(value).replace(/^\+/, "");
-}
-
-export function VendorsTab({
+// One view, two grains: Vendors is exactly Models rolled up (same columns,
+// same math), so a single component keeps the two tabs from drifting apart.
+export function EconTab({
     data,
+    grain,
     month = "",
     vendor = "all",
 }: {
     data: Data;
+    grain: "vendor" | "model";
     month?: MonthFilterValue;
     vendor?: ValueFilter;
 }) {
-    const econRows = useMemo(
-        () => visibleEconRows(providerEconomics(data, month), vendor),
-        [data, month, vendor],
-    );
+    const econRows = useMemo(() => {
+        const rows =
+            grain === "model"
+                ? modelEconomics(data, month)
+                : providerEconomics(data, month);
+        return visibleEconRows(rows, vendor);
+    }, [data, grain, month, vendor]);
     const stats = useMemo(() => econSummary(econRows), [econRows]);
 
     return (
@@ -42,10 +49,13 @@ export function VendorsTab({
                     {
                         label: "Provider Cash",
                         value: fmtUsd(stats.providerCashCostUsd),
+                        tone: stats.unpricedCount > 0 ? "warn" : undefined,
                         detail:
-                            stats.providerGrantFundedUsd > 0
-                                ? `usage ${fmtUsd(stats.providerUsageUsd)}`
-                                : "cash",
+                            stats.unpricedCount > 0
+                                ? `${stats.unpricedCount} unpriced (no provider bill)`
+                                : stats.providerGrantFundedUsd > 0
+                                  ? `usage ${fmtUsd(stats.providerUsageUsd)}`
+                                  : "cash",
                     },
                     {
                         label: "Provider Credit",
@@ -77,7 +87,7 @@ export function VendorsTab({
                     },
                 ]}
             />
-            <EconTable rows={econRows} />
+            <EconTable rows={econRows} showModel={grain === "model"} />
         </div>
     );
 }

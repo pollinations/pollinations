@@ -1,13 +1,17 @@
 import { describe, expect, it } from "vitest";
-import { eurUsdRate, FX_EUR_USD_FALLBACK, fxFallbackMonths, toUsd } from "./fx";
+import { eurUsdRate, fxEstimatedMonths, toUsd } from "./fx";
 
 describe("eurUsdRate", () => {
     it("returns the table rate for a known month", () => {
         expect(eurUsdRate("2026-06")).toBeCloseTo(1.1518, 4);
     });
 
-    it("falls back for unknown months", () => {
-        expect(eurUsdRate("2031-01")).toBe(FX_EUR_USD_FALLBACK);
+    it("converts future months at the latest known rate", () => {
+        expect(eurUsdRate("2031-01")).toBeCloseTo(1.1411, 4);
+    });
+
+    it("throws on a past month missing from the table", () => {
+        expect(() => eurUsdRate("2024-11")).toThrow(/2024-11/);
     });
 });
 
@@ -30,7 +34,7 @@ describe("toUsd", () => {
     });
 });
 
-describe("fxFallbackMonths", () => {
+describe("fxEstimatedMonths", () => {
     const eurTxn = (date: string) => ({
         source: "wise",
         date,
@@ -45,13 +49,13 @@ describe("fxFallbackMonths", () => {
 
     it("stays empty while every EUR month has a table rate", () => {
         expect(
-            fxFallbackMonths({ opTransactions: [eurTxn("2026-06-20")] }),
+            fxEstimatedMonths({ opTransactions: [eurTxn("2026-06-20")] }),
         ).toEqual([]);
     });
 
     it("flags EUR rows in months missing from the table, deduped and sorted", () => {
         expect(
-            fxFallbackMonths({
+            fxEstimatedMonths({
                 opTransactions: [
                     eurTxn("2031-02-01"),
                     eurTxn("2031-02-15"),
@@ -63,7 +67,7 @@ describe("fxFallbackMonths", () => {
 
     it("ignores USD rows in unknown months — only EUR needs a rate", () => {
         expect(
-            fxFallbackMonths({
+            fxEstimatedMonths({
                 opTransactions: [{ ...eurTxn("2031-01-03"), currency: "USD" }],
             }),
         ).toEqual([]);

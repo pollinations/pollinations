@@ -1,9 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { EconRow } from "../lib/insights";
 import {
-    driftFlag,
     gaugeParts,
-    hasEconActivity,
     pollenSoldUsd,
     usageMatchPct,
     visibleEconRows,
@@ -23,7 +21,6 @@ const row = (vendor: string, model: string | null): EconRow => ({
     creditSharePct: null,
     trueMultiplier: null,
     marginUsd: 0,
-    flags: [],
 });
 
 describe("visibleEconRows", () => {
@@ -35,46 +32,6 @@ describe("visibleEconRows", () => {
 
     it("passes everything through for all", () => {
         expect(visibleEconRows(rows, "all")).toEqual(rows);
-    });
-});
-
-describe("hasEconActivity", () => {
-    it("hides rows with no economics to display", () => {
-        expect(hasEconActivity(row("community", "empty"))).toBe(false);
-    });
-
-    it("keeps tiny non-zero rows", () => {
-        expect(
-            hasEconActivity({
-                ...row("community", "tiny"),
-                questBurnUsd: 0.001,
-            }),
-        ).toBe(true);
-    });
-
-    it("keeps quest-only provider-funded rows", () => {
-        expect(
-            hasEconActivity({
-                ...row("perplexity", "sonar"),
-                questBurnUsd: 100,
-                creditSharePct: 100,
-            }),
-        ).toBe(true);
-    });
-});
-
-describe("driftFlag", () => {
-    it("stays quiet for healthy calibration", () => {
-        expect(driftFlag(null)).toBeNull();
-        expect(driftFlag(1)).toBeNull();
-        expect(driftFlag(1.9)).toBeNull();
-        expect(driftFlag(0.6)).toBeNull();
-    });
-
-    it("flags severe over- and under-metering both ways", () => {
-        expect(driftFlag(7)).toBe("7× meter drift");
-        expect(driftFlag(2)).toBe("2× meter drift");
-        expect(driftFlag(0.5)).toBe("0.5× meter drift");
     });
 });
 
@@ -132,5 +89,9 @@ describe("usageMatchPct", () => {
 
     it("returns null when neither side exists", () => {
         expect(usageMatchPct(0, 0)).toBeNull();
+    });
+
+    it("returns null when provider usage is unknown", () => {
+        expect(usageMatchPct(100, null)).toBeNull();
     });
 });

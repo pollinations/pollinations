@@ -2,11 +2,10 @@
 
 Canonical vendor: `wise`
 
-## Empirical status — 2026-07-10
+## Verified — 2026-07-10
 
 - Status: profile, balance, and bounded activity APIs work.
-- The business context returned four standard currency balances, two nonzero,
-  and 44 June activities. The activity response included a pagination cursor.
+- The activity response included a pagination cursor.
 - No account identifiers or raw bank amounts belong in connector notes or chat.
 
 Use when:
@@ -22,7 +21,9 @@ Primary evidence sources:
 - API balances: `GET /v4/profiles/{profileId}/balances?types=STANDARD`.
 - API balance statements: use the bounded statement endpoint for a known
   balance ID when activities are not detailed enough.
-- Dashboard/export: Wise Activities export.
+- Dashboard/export: Wise Activities export; per-balance statement CSVs
+  (Balances → statement) — complete settled truth incl. fees and running
+  balance, and the workaround while the statement API's SCA key is unregistered.
 - Local files: Wise CSV/JSON/screenshots already placed in `data/inbox/`.
 - Transaction context: `op_transactions`.
 
@@ -66,10 +67,19 @@ Entry mapping rules for Wise activity payment evidence:
   `CARD_TRANSACTION-4049450438` or `TRANSFER-2237416213`. Every row MUST carry
   one — the `op_transactions_api` pipe collapses rows per `entry_id` via
   `argMax(recorded_at)`, so corrections re-append with the SAME `entry_id` and
-  a newer `recorded_at`, and a blank id would merge unrelated rows. Only when
-  a cash fact has no Wise activity witness (e.g. invoice-booked rows), use the
-  deterministic fallback `wise-hash-<sha256(date|vendor|category|amount|currency|description)[:16]>`
-  (see `data/reconcile/2026-07-13-op-transactions-entryid-rebuild/match_rebuild.py`).
+  a newer `recorded_at`, and a blank id would merge unrelated rows.
+  Balance-statement rows use the same namespace: normalize the statement's
+  `TransferWise ID` prefix (`CARD-` → `CARD_TRANSACTION-`, `DIRECT_DEBIT-` →
+  `DIRECT_DEBIT_TRANSACTION-`; `TRANSFER-` as-is; `BALANCE_CASHBACK-<uuid>` →
+  the activity's numeric id when one matches by date+amount). Established by
+  the 2026-07-13 v2 rebuild
+  (`data/reconcile/2026-07-13-ledger-completeness-backfill/build_rebuild.py`):
+  statement `FEE-` legs fold into the parent amount (all-in cash cost);
+  same-id reversal pairs net out and zero-net groups are dropped; internal
+  balance conversions are excluded with their fees booked as `wise`/`admin`
+  rows keyed `FEE-BALANCE-<id>`; a reimbursement lump split into per-provider
+  rows keys them `TRANSFER-<lump-id>-<n>`; a charge settled from two balances
+  suffixes the currency (`...-EUR`/`...-USD`).
 - `provider`: use the counterparty/provider vendor, such as `openai`, `vast.ai`, or `cloudflare`. Use canonical vendor `wise` for Wise's own fees, cashback, or statements.
 - Wise cashback maps to canonical vendor `wise`, category `revenue`. Never map
   it to `admin` or `others`.

@@ -25,6 +25,14 @@ describe("toUsd", () => {
         expect(toUsd(42, "POLLEN", "2026-06")).toBe(42);
     });
 
+    it("converts CAD at the month rate", () => {
+        expect(toUsd(100, "CAD", "2025-05-08")).toBeCloseTo(72.08, 2);
+    });
+
+    it("throws on a past CAD month missing from the table", () => {
+        expect(() => toUsd(1, "CAD", "2025-04")).toThrow(/2025-04/);
+    });
+
     it("treats a blank currency as USD (rows without that leg carry 0)", () => {
         expect(toUsd(0, "", "2026-06")).toBe(0);
     });
@@ -66,11 +74,19 @@ describe("fxEstimatedMonths", () => {
         ).toEqual(["2031-01", "2031-02"]);
     });
 
-    it("ignores USD rows in unknown months — only EUR needs a rate", () => {
+    it("ignores USD rows in unknown months — only table currencies need a rate", () => {
         expect(
             fxEstimatedMonths({
                 opTransactions: [{ ...eurTxn("2031-01-03"), currency: "USD" }],
             }),
         ).toEqual([]);
+    });
+
+    it("flags CAD rows past the tiny CAD table", () => {
+        expect(
+            fxEstimatedMonths({
+                opTransactions: [{ ...eurTxn("2031-01-03"), currency: "CAD" }],
+            }),
+        ).toEqual(["2031-01"]);
     });
 });

@@ -26,28 +26,45 @@ const FX_EUR_USD: Record<string, number> = {
     "2026-07": 1.1411,
 };
 
-const LATEST_FX_MONTH = Object.keys(FX_EUR_USD).sort().at(-1) as string;
+// Monthly average CAD→USD. Only two CAD facts exist (the 2025 VLAS MIKROPULO
+// payments and their conversion out); append here if CAD ever reappears.
+const FX_CAD_USD: Record<string, number> = {
+    "2025-05": 0.7208,
+    "2025-06": 0.731,
+};
+
+const FX_TABLES: Record<string, Record<string, number>> = {
+    EUR: FX_EUR_USD,
+    CAD: FX_CAD_USD,
+};
 
 // A past month with no table rate is a missing append — throw so it surfaces
-// instead of bending every EUR margin. Future months cannot have a published
+// instead of bending every margin. Future months cannot have a published
 // rate yet, so forecasts convert at the latest known rate; those months are
 // listed per-month on the Data Quality tab via fxEstimatedMonths.
-export function eurUsdRate(month: string): number {
-    const rate = FX_EUR_USD[month];
+function tableRate(currency: string, month: string): number {
+    const table = FX_TABLES[currency];
+    const rate = table[month];
     if (rate != null) return rate;
-    if (month > LATEST_FX_MONTH) return FX_EUR_USD[LATEST_FX_MONTH];
+    const latest = Object.keys(table).sort().at(-1) as string;
+    if (month > latest) return table[latest];
     throw new Error(
-        `Missing EUR→USD rate for ${month} — append it to FX_EUR_USD in lib/fx.ts`,
+        `Missing ${currency}→USD rate for ${month} — append it to FX_${currency}_USD in lib/fx.ts`,
     );
 }
 
-// Months with EUR rows converting at the estimated (latest known) rate.
+export function eurUsdRate(month: string): number {
+    return tableRate("EUR", month);
+}
+
+// Months with EUR/CAD rows converting at the estimated (latest known) rate.
 export function fxEstimatedMonths(data: Data): string[] {
     const months = new Set<string>();
     const check = (currency: string, period: string) => {
-        if (currency.toUpperCase() !== "EUR") return;
+        const table = FX_TABLES[currency.toUpperCase()];
+        if (!table) return;
         const month = period.slice(0, 7);
-        if (FX_EUR_USD[month] == null) months.add(month);
+        if (table[month] == null) months.add(month);
     };
     for (const row of data.opTransactions ?? []) check(row.currency, row.date);
     for (const row of data.opCloud ?? []) check(row.currency, row.start);
@@ -66,7 +83,10 @@ export function toUsd(
 ): number {
     switch (currency.toUpperCase()) {
         case "EUR":
-            return amount * eurUsdRate(period.slice(0, 7));
+        case "CAD":
+            return (
+                amount * tableRate(currency.toUpperCase(), period.slice(0, 7))
+            );
         case "USD":
         case "POLLEN":
         case "":

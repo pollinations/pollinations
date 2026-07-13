@@ -187,8 +187,6 @@ export const track = (eventType: EventType) =>
 
         await next();
 
-        const endTime = new Date();
-
         c.executionCtx.waitUntil(
             (async () => {
                 // Routes attach telemetry headers (x-moderation-*, cache
@@ -204,6 +202,11 @@ export const track = (eventType: EventType) =>
                     requestTracking,
                     response,
                 );
+                // trackResponse consumes SSE text and JSON bodies, so for
+                // those endTime marks actual response completion — not
+                // time-to-first-byte. Binary bodies (image/audio) are never
+                // read by tracking, so their endTime stays ~header arrival.
+                const endTime = new Date();
 
                 // Capture balance tracking AFTER next() so balanceCheckResult is set
                 const balanceTracking = {

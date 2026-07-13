@@ -105,6 +105,21 @@
     padding: 14px 28px;
   }
   .btn:hover { background: #1f47c4; }
+  button.btn { border: 0; cursor: pointer; width: fit-content; }
+  .form { display: grid; gap: 14px; margin-top: 18px; }
+  .form[hidden] { display: none; }
+  .form label { display: grid; gap: 6px; font-weight: 800; text-transform: uppercase; font-size: 12px; letter-spacing: 0.04em; }
+  .form input, .form select, .form textarea {
+    border: 2px solid #111; background: #fdfaf2; padding: 10px 12px;
+    font: inherit; font-size: 16px; border-radius: 0; width: 100%;
+  }
+  .form input:focus, .form select:focus, .form textarea:focus { outline: 3px solid #1f47c4; outline-offset: -1px; }
+  .form fieldset { border: 2px solid #111; padding: 12px; display: grid; gap: 10px; }
+  .form legend { font-weight: 800; text-transform: uppercase; font-size: 12px; letter-spacing: 0.04em; padding: 0 6px; }
+  .form .radio { display: flex; align-items: center; gap: 10px; font-weight: 700; text-transform: none; font-size: 15px; letter-spacing: 0; }
+  .form .radio input { width: auto; accent-color: #1f47c4; }
+  .form input.hp { position: absolute; left: -9999px; width: 1px; height: 1px; opacity: 0; }
+  .ok { background: #1f47c4; color: #f2ecdf; font-weight: 800; padding: 16px 18px; margin-top: 18px; font-size: 17px; }
   .foot {
     margin-top: 40px; padding-top: 14px; border-top: 3px solid #111;
     display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap;
@@ -129,7 +144,7 @@
   <h2>Program</h2>
   <ol class="prog">
     <li><span class="num">01</span><span class="what">Introduction</span></li>
-    <li><span class="num">02</span><span class="what">Show &amp; Tell<span class="how">people show how they use AI: pictures, music, tools, stories</span></span></li>
+    <li><span class="num">02</span><span class="what">Show &amp; Tell<span class="how">10-minute talks: people show how they use AI. pictures, music, tools, stories. register below.</span></span></li>
     <li><span class="num">03</span><span class="what">Real or Fake?<span class="how">songs, images and news. you vote.</span></span></li>
     <li><span class="num">04</span><span class="what">Robot DJ<span class="how">an AI watches the room and picks the music, till late</span></span></li>
   </ol>
@@ -139,24 +154,46 @@
     <li><span class="dot yellow"></span>AIahuasca</li>
     <li><span class="dot red"></span>Personalized cocktails</li>
     <li><span class="dot blue"></span>AI slop</li>
-    <li><span class="dot yellow"></span>Love AI? Hate it?</li>
-    <li><span class="dot red"></span>What is your weird use-case?</li>
+    <li><span class="dot yellow"></span>Share your hate for AI.</li>
+    <li><span class="dot blue"></span>Visuals + music</li>
   </ul>
 
   <div class="shapes" aria-hidden="true">
     <div class="c1"></div><div class="c2"></div><div class="c3"></div>
   </div>
 
-  <section class="rsvp">
+  <section class="rsvp" id="rsvp">
     <h2 style="margin-top:0">RSVP</h2>
-    <p>Coming? Send a one-line email so we know how many drinks to get. Want to show something you made with AI, tell a story, or make the case against it? Say that too. Ten relaxed minutes are yours.</p>
-    <a class="btn" href="mailto:thomash@pollinations.ai?subject=Pollinations%20AI%20Night&amp;body=I%27m%20coming%20%2B%20N%20friends.%0A%0AOptional%3A%20I%20want%20to%20show%20%2F%20tell%3A%20">Email us</a>
+    <p>Coming? Fill this in so we know how many drinks to get. Want to do a ten-minute show &amp; tell, or share your hate for AI? Say so, the projector is ready.</p>
+    <div class="ok" id="rsvp-ok" hidden>Thanks, you're in. See you on the 16th.</div>
+    <form class="form" id="rsvp-form" method="POST" action="https://formsubmit.co/thomash@pollinations.ai">
+      <input type="hidden" name="_subject" value="Pollinations Night RSVP">
+      <input type="hidden" name="_template" value="table">
+      <input type="hidden" name="_captcha" value="false">
+      <input type="hidden" name="_next" value="https://pollinations.ai/night?rsvp=ok#rsvp">
+      <input type="text" name="_honey" class="hp" tabindex="-1" autocomplete="off" aria-hidden="true">
+      <label>Name<input name="name" required maxlength="100" autocomplete="name"></label>
+      <label>Email (optional, so we can reply)<input name="email" type="email" maxlength="200" autocomplete="email"></label>
+      <label>Coming as<select name="party">
+        <option>just me</option>
+        <option>me +1</option>
+        <option>me +2</option>
+        <option>small crew</option>
+      </select></label>
+      <fieldset>
+        <legend>And</legend>
+        <label class="radio"><input type="radio" name="participation" value="just coming" checked>just coming</label>
+        <label class="radio"><input type="radio" name="participation" value="10-minute show and tell">a 10-minute show &amp; tell</label>
+        <label class="radio"><input type="radio" name="participation" value="share my hate for AI">sharing my hate for AI</label>
+      </fieldset>
+      <label>What would you show or tell? (optional)<textarea name="pitch" rows="3" maxlength="1000"></textarea></label>
+      <button class="btn" type="submit">RSVP</button>
+    </form>
     <p>Or just show up. Bring a friend.</p>
   </section>
 
-  <div class="foot">
-    <span>no experience needed</span>
-    <span>visuals + music by department of cosmic affairs</span>
+  <div class="foot" style="justify-content:center">
+    <span>Open to anyone curious. No experience needed.</span>
   </div>
 
   <div class="logos">
@@ -164,5 +201,11 @@
     <span>BLOCK1</span>
   </div>
 </main>
+<script>
+  if (new URLSearchParams(location.search).get("rsvp") === "ok") {
+    document.getElementById("rsvp-ok").hidden = false;
+    document.getElementById("rsvp-form").hidden = true;
+  }
+</script>
 </body>
 </html>

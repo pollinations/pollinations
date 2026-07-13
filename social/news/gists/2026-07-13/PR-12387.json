@@ -1,0 +1,35 @@
+{
+  "pr_number": 12387,
+  "title": "Add NovAI to bots",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/12387",
+  "merged_at": "2026-07-13T08:22:49Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds [NovAI](https://nov-ai.github.io/) to bots\n- NovAI integrates Pollinations AI with Discord as an open-source project. It enables AI features via Discord.\n\nFixes #12053",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "NovAI joins the greenhouse",
+    "blurb": "NovAI just landed in the Greenhouse! This open-source project brings Pollinations AI directly into your Discord servers.",
+    "summary": "Added NovAI, an open-source Discord integration, to the community apps directory and Greenhouse.",
+    "impact": "Users can now discover and deploy NovAI to bring Pollinations-powered AI features directly into their Discord communities.",
+    "keywords": [
+      "community",
+      "discord",
+      "bot",
+      "greenhouse",
+      "apps"
+    ],
+    "visual_concept": "The Pollinations bee (Polly) welcoming a cute chat-bot robot into a lush, cozy greenhouse filled with glowing plants, representing the new Discord bot integration.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot flying inside a warm, glowing greenhouse, handing a glowing lime green (#ecf874) flower to a chunky retro robot with a chat bubble on its screen. Soft pastel gradient background with lush pixelated plants. Warm lighting, lo-fi vibes like Stardew Valley. Cozy pixel art, 8-bit aesthetic, chunky sprites, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-13/PR-12387.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot flying inside a warm, glowing greenhouse, handing a glowing lime green (#ecf874) flower to a chunky retro robot with a chat bubble on its screen. Soft pastel gradient background with lush pixelated plants. Warm lighting, lo-fi vibes like Stardew Valley. Cozy pixel art, 8-bit aesthetic, chunky sprites, emotionally warm."
+  },
+  "generated_at": "2026-07-13T08:23:50.844567+00:00",
+  "app_name": "NovAI",
+  "app_url": "https://nov-ai.github.io/"
+}

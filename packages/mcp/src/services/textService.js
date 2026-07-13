@@ -321,20 +321,22 @@ async function listTextModels(_params) {
 async function webSearch(params) {
     requireApiKey();
 
-    const { query, model = "perplexity-fast", detailed = false } = params;
+    const { query, model = "sonar", detailed = false } = params;
 
     if (!query || typeof query !== "string") {
         throw new Error("Query is required and must be a string");
     }
 
-    const searchModels = [
-        "perplexity-fast",
-        "perplexity-reasoning",
-        "gemini-search",
-    ];
-    if (!searchModels.includes(model)) {
+    const validation = await validateTextModel(model);
+    if (!validation.valid) {
         throw new Error(
-            `Model "${model}" doesn't support web search. Use: ${searchModels.join(", ")}`,
+            `${validation.error} Did you mean: ${validation.suggestions.join(", ")}? ` +
+                `Use listTextModels to see all ${validation.availableCount} available models.`,
+        );
+    }
+    if (!validation.model.capabilities?.includes("web_search")) {
+        throw new Error(
+            `Model "${model}" doesn't support web search. Use listTextModels to see search-capable models.`,
         );
     }
 
@@ -758,14 +760,10 @@ export const textTools = [
         {
             query: z.string().describe("The search query or question"),
             model: z
-                .enum([
-                    "perplexity-fast",
-                    "perplexity-reasoning",
-                    "gemini-search",
-                ])
+                .string()
                 .optional()
                 .describe(
-                    "Search model (default: 'perplexity-fast'):\n- perplexity-fast: Quick answers with web search\n- perplexity-reasoning: Deeper analysis with web search\n- gemini-search: Google's Gemini with Google Search",
+                    "Search-enabled text model (default: 'sonar'). Use listTextModels for the live list; canonical names and aliases are accepted.",
                 ),
             detailed: z
                 .boolean()

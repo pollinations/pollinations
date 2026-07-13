@@ -52,7 +52,7 @@ Get your API key at: https://enter.pollinations.ai
 ### Text Generation
 - **generateText** - Simple text generation from a prompt
 - **chatCompletion** - OpenAI-compatible chat completions with tool calling
-- **webSearch** - Search the web using perplexity or gemini-search
+- **webSearch** - Search the web using a search-enabled text model
 - **listTextModels** - List all available text models (dynamic)
 - **getPricing** - Get model pricing info (cost per token/image)
 
@@ -79,7 +79,7 @@ All requests go through: https://gen.pollinations.ai
 - Use listImageModels/listTextModels to see available options
 - Image-to-image: Use the 'image' parameter with kontext or seedream models
 - Video generation: use listImageModels for live videoCapabilities, including start/end-frame and audio support
-- Web search: Use webSearch with perplexity-fast, perplexity-reasoning, or gemini-search
+- Web search: Use webSearch; call listTextModels for current web_search-capable models
 - Audio transcription: Use transcribeAudio with gemini-large
 - Reasoning: Use kimi, perplexity-reasoning, openai-large, gemini-large`;
 

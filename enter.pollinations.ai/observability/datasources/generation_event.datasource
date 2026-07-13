@@ -60,7 +60,7 @@ SCHEMA >
 `model_self_hosted_configured` Nullable(Bool)       `json:$.modelSelfHostedConfigured`,
 `model_self_hosted_used`    Nullable(Bool)         `json:$.modelSelfHostedUsed`,
 `model_paid_only`           Nullable(Bool)         `json:$.modelPaidOnly`,
-`model_price_multiplier`    Float32                `json:$.modelPriceMultiplier` DEFAULT 0,
+`model_price_multiplier`    Nullable(Float32)      `json:$.modelPriceMultiplier`,
 `model_input_modalities`    Array(LowCardinality(String)) `json:$.modelInputModalities` DEFAULT [],
 `model_output_modalities`   Array(LowCardinality(String)) `json:$.modelOutputModalities` DEFAULT [],
 `fallback_used`             Bool                   `json:$.fallbackUsed` DEFAULT false,

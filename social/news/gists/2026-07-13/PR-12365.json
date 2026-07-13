@@ -1,0 +1,35 @@
+{
+  "pr_number": 12365,
+  "title": "Skip Pages cutover for worker-target apps",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/12365",
+  "merged_at": "2026-07-13T01:44:14Z",
+  "labels": [
+    "DEV-INFRA"
+  ],
+  "pr_body_excerpt": "`deploy.sh` ran the Pages-only cutover (`deploy-app.js --phase=cutover`, which calls `getPagesProject apps-<sub>`) for **every** app. Worker apps have no Pages project, so it 404s:\n\n```\ncutover failed: Get project apps-websim failed: Project not found (8000007)\n```\n\nWorker apps (e.g. websim) already bind `<sub>.pollinations.ai` themselves via `wrangler.toml` custom-domain routes — same as enter/gen — so the Pages cutover doesn't apply to them.\n\n- Skip `--phase=cutover` when `deployTarget == worker`\n- Fixes the red `Deploy App (Automatic)` on any run that deploys a worker app; websim itself was never down (HTTP 200)\n\nSurfaced by the app-deploy that ran on the brand-assets merge; unrelated to that change.",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Smooth worker deploys",
+    "blurb": "Fixed a hiccup in our deployment pipeline where worker apps were getting confused with Pages apps. CI/CD is back to being beautifully green!",
+    "summary": "Updated the deployment script to skip the Cloudflare Pages cutover phase for worker-target apps like websim, preventing a 404 error during CI/CD runs.",
+    "impact": "Internal deployment pipelines for worker apps will now succeed cleanly without failing on non-existent Pages projects.",
+    "keywords": [
+      "infrastructure",
+      "deployment",
+      "cloudflare",
+      "ci-cd",
+      "workers"
+    ],
+    "visual_concept": "The bee mascot wearing a tiny hard hat (representing 'workers' and 'infrastructure') fixing a glowing green pipeline, with the robot companion holding a green checkmark to symbolize a successful build.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny yellow hard hat, happily tightening a glowing green pipe with a small wrench. A chunky pixel robot companion holds up a sign with a green checkmark. Soft lime green (#ecf874) and pastel mint gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-13/PR-12365.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny yellow hard hat, happily tightening a glowing green pipe with a small wrench. A chunky pixel robot companion holds up a sign with a green checkmark. Soft lime green (#ecf874) and pastel mint gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-07-13T01:45:14.070432+00:00"
+}

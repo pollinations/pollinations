@@ -2,12 +2,10 @@
 
 Canonical vendor: `cloudflare`
 
-## Empirical status — 2026-07-10
+## Verified — 2026-07-10
 
 - Status: the deprecated billing-history API still works for both configured
   account contexts.
-- The Pollinations token returned 29 rows; the Myceli token returned six.
-  Both responses reported success with no API errors.
 - Credit consumption still requires dashboard evidence; history rows are
   invoice/payment evidence and are not a complete usage ledger.
 

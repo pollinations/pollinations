@@ -58,16 +58,6 @@ export function runwayText(months: number | null, capped: boolean): string {
     return `${months}${capped ? "+" : ""} month${months === 1 ? "" : "s"}`;
 }
 
-export function assumptionTitle(assumptions: RunwayAssumption[] | undefined) {
-    if (!assumptions?.length) return undefined;
-    return assumptions
-        .map(
-            (assumption) =>
-                `${assumption.source || "unknown"}: ${assumption.evidence || assumption.entry_id}`,
-        )
-        .join("\n");
-}
-
 export function forecastMethodLabel(method: RunwayMatrixRow["forecastMethod"]) {
     if (method === "last") return "LAST";
     if (method === "zero") return "0";

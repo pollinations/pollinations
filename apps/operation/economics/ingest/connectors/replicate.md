@@ -2,12 +2,10 @@
 
 Canonical vendor: `replicate`
 
-## Empirical status — 2026-07-10
+## Verified — 2026-07-10
 
 - Status: account and predictions APIs work; invoice/balance remains manual.
-- The token resolved to an organization account. The first predictions page
-  contained 100 rows: 97 succeeded and three failed, with another page
-  available.
+- The token resolved to an organization account.
 - Predictions prove operational activity, not the amount charged.
 
 Use when:

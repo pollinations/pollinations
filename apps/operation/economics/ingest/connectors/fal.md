@@ -2,12 +2,11 @@
 
 Canonical vendor: `fal`
 
-## Empirical status — 2026-07-10
+## Verified — 2026-07-10
 
 - Status: pricing API and internal usage meter work; account billing is manual.
-- The unit-price estimate for Stable Audio 2.5 returned USD 0.20 without
-  triggering inference.
-- `op_pollen` showed June USD 4.96 paid cost and July partial USD 1.94.
+- The unit-price estimate endpoint returns a price without triggering
+  inference.
 - Use dashboard/invoice evidence for account balance and closed cash charges.
 
 Use when:

@@ -2,7 +2,7 @@
 
 Canonical vendor: `digitalocean`
 
-## Empirical status — 2026-07-10
+## Verified — 2026-07-10
 
 - Status: blocked by the stored token's scope, not by API availability.
 - `GET /v2/account` succeeded and reported an active account.

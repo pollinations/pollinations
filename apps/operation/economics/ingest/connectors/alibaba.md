@@ -2,12 +2,9 @@
 
 Canonical vendor: `alibaba`
 
-## Empirical status — 2026-07-10
+## Verified — 2026-07-10
 
 - Status: working provider billing API through the `aliyun` CLI.
-- June 2026 returned four bill-overview rows across Alibaba Cloud Model
-  Studio and Object Storage Service.
-- Sum of `PretaxAmount`: USD 606.70.
 - The current month remains partial and must not be used as a closed-month
   forecast baseline.
 
@@ -32,8 +29,7 @@ Required local setup:
 Live validation:
 
 - Read-only CLI call tested on 2026-07-10.
-- June 2026 normalized to one CLI meter row from four bill-overview rows, source `cli`, currency `USD`, paid total `606.70`.
-- July 2026 partial returned one CLI meter row, source `cli`, currency `USD`, paid total `1.80`.
+- A billing cycle's bill-overview rows normalize to one CLI meter row, source `cli`, currency `USD`.
 
 Collection steps:
 

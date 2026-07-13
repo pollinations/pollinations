@@ -2,10 +2,10 @@
 
 Canonical vendor: `daytona`
 
-## Empirical status — 2026-07-10
+## Verified — 2026-07-10
 
 - Status: API key validation works; dollar billing remains manual-only.
-- `GET /api/api-keys/current` succeeded and exposed 16 permissions.
+- `GET /api/api-keys/current` succeeded.
 - The same key received HTTP 401 from `GET /api/organizations`, so it cannot
   discover the organization needed for resource usage. The billing wallet
   is not available to this API-key scope.

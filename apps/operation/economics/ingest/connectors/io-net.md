@@ -2,11 +2,10 @@
 
 Canonical vendor: `io.net`
 
-## Empirical status — 2026-07-10
+## Verified — 2026-07-10
 
 - Status: manual balance plus historical internal meter; no supported billing API.
-- `op_pollen` returned no io.net rows for June or July. Repository model
-  registries no longer show an active io.net provider route.
+- Repository model registries no longer show an active io.net provider route.
 - Keep this guide for historical facts, invoices, and grant audits. A zero
   recent meter is not a live balance and should not overwrite old facts.
 

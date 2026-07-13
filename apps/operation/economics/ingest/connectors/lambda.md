@@ -2,14 +2,12 @@
 
 Canonical vendor: `lambda`
 
-## Empirical status — 2026-07-10
+## Verified — 2026-07-10
 
 - Status: live resource inventory and price-book APIs work; historical billing
   remains unavailable.
-- The API returned one instance and it was active. The price book returned
-  25 instance types.
-- This proves the current fleet shape only. It cannot establish June runtime
-  hours or a closed-month invoice.
+- A live snapshot proves the current fleet shape only. It cannot establish
+  historical runtime hours or a closed-month invoice.
 
 Use when:
 

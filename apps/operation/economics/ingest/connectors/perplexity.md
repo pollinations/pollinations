@@ -2,13 +2,11 @@
 
 Canonical vendor: `perplexity`
 
-## Empirical status — 2026-07-10
+## Verified — 2026-07-10
 
 - Status: internal usage meter works; provider account billing remains manual.
 - A read-only `GET /models` probe returned HTTP 404, confirming that the Sonar
   key does not expose an account/models surface.
-- `op_pollen` June: USD 13.19 paid plus USD 200.30 quest cost. July partial:
-  USD 3.37 paid plus USD 126.98 quest cost.
 
 Use when:
 

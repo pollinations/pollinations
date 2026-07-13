@@ -2,15 +2,12 @@
 
 Canonical vendor: `xai`
 
-## Empirical status — 2026-07-10
+## Verified — 2026-07-10
 
 - Status: management-key validation, team discovery, invoices, and prepaid
   balance endpoints all work.
-- The June cycle invoice was created July 7, is pending, contains 29 lines,
-  and totals 28,644 cents (USD 286.44).
-- A separate paid June 26 invoice is a USD 200 prepaid top-up, not usage.
-- The prepaid API returned raw signed total `-20000` cents; preserve its sign
-  and classify purchase, spend, and auto-purchase changes separately.
+- The prepaid API returns raw signed totals in cents; preserve the sign and
+  classify purchase, spend, and auto-purchase changes separately.
 
 Use when:
 

@@ -2,11 +2,9 @@
 
 Canonical vendor: `fireworks`
 
-## Empirical status — 2026-07-10
+## Verified — 2026-07-10
 
 - Status: all four configured API keys authenticate through `firectl`.
-- June account-cost queries returned one cost item per account. The primary
-  account total was USD 7,557.674738101; the other three were zero.
 - Fireworks money values are objects with `currency_code`, `units`, and
   `nanos`; parse them as Money objects, not JavaScript numbers.
 - Invoice evidence remains necessary to split credit-funded and postpaid cost.
@@ -35,8 +33,6 @@ Required credentials:
 Live validation:
 
 - Read-only `firectl` usage and invoice calls tested on 2026-07-10.
-- June 2026 returned two CLI meter rows, source `cli`, currency `USD`, credit total `5124.83`, paid total `2432.84`.
-- July 2026 partial returned two CLI meter rows, source `cli`, currency `USD`, credit total `824.73`, paid total `278.75`.
 
 Collection steps:
 

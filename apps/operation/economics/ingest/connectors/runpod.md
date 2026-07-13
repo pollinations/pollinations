@@ -2,13 +2,9 @@
 
 Canonical vendor: `runpod`
 
-## Empirical status — 2026-07-10
+## Verified — 2026-07-10
 
 - Status: live GraphQL balance, burn-rate, and pod inventory work.
-- Snapshot: USD 303.76 balance, USD 1.439/hour current spend, USD 80 spend
-  limit, and four pods with desired status `RUNNING`.
-- At the instantaneous rate the balance represents about 8.8 days, but this
-  is a live estimate—not historical spend or a durable forecast.
 
 Use when:
 

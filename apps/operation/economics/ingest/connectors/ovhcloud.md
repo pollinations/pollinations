@@ -2,11 +2,9 @@
 
 Canonical vendor: `ovhcloud`
 
-## Empirical status — 2026-07-10
+## Verified — 2026-07-10
 
 - Status: signed OVH credit API works end to end.
-- One account-level balance was returned. `STARTUP_PROGRAM` had EUR 3,517.01
-  remaining and its movement ledger contained 70 entries.
 - Movement amounts use signed values: `USE` is negative and `VOUCHER` is
   positive. Preserve the provider date before shifting a monthly debit.
 

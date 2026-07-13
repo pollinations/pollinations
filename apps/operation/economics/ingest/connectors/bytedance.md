@@ -2,12 +2,11 @@
 
 Canonical vendor: `bytedance`
 
-## Empirical status — 2026-07-10
+## Verified — 2026-07-10
 
 - Status: historical/manual connector, not a current provider billing API.
-- `op_pollen` returned no `bytedance` rows for June or July. The direct
-  Model Ark key returned HTTP 401, and current Seedance/Seedream handlers in
-  the repository route through Replicate.
+- The direct Model Ark key returned HTTP 401, and current Seedance/Seedream
+  handlers in the repository route through Replicate.
 - Use this guide for historical `bytedance` facts and old BytePlus evidence.
   Use `replicate.md` for current Seedance/Seedream provider collection.
 

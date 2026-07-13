@@ -2,11 +2,9 @@
 
 Canonical vendor: `azure`
 
-## Empirical status — 2026-07-10
+## Verified — 2026-07-10
 
 - Status: client-credential authentication and the invoices API work.
-- The June billing-period query returned four invoices: three zero-EUR
-  invoices issued during June and one EUR 3,798.88 invoice issued July 9.
 - Do not sum every returned invoice blindly. Select the monthly obligation
   and preserve invoice date separately from the covered billing period.
 

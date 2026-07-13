@@ -2,13 +2,10 @@
 
 Canonical vendor: `scaleway`
 
-## Empirical status — 2026-07-10
+## Verified — 2026-07-10
 
 - Status: billing API authentication works.
-- The current and June consumption queries returned zero rows. The API still
-  returned 14 invoices and three discounts.
-- All discounts are fully used/expired: native API values 59, 3,500, and 100,
-  with zero remaining. Preserve each discount's currency when extracting.
+- Preserve each discount's currency when extracting.
 - Keep the connector for historical invoices and grants; zero consumption is
   a valid API result, not a credential failure.
 

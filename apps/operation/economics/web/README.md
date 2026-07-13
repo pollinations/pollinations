@@ -15,10 +15,9 @@ npm run dev
 
 The dev server is pinned to `http://127.0.0.1:4180`.
 
-Auth uses a password gate backed by the Vite server. Tinybird read/write tokens
-are decrypted from `../secrets/web.json` on the server and are never bundled or
-stored in the browser. The read token is pipe-scoped; write calls go through the
-server allowlist for the current editor datasources.
+Auth uses a password gate backed by the Vite server. The pipe-scoped Tinybird
+read token is decrypted from `../secrets/web.json` on the server and is never
+bundled or stored in the browser.
 
 ## Fixtures Mode
 

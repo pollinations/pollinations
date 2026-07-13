@@ -2,12 +2,10 @@
 
 Canonical vendor: `community`
 
-## Empirical status — 2026-07-10
+## Verified — 2026-07-10
 
 - Status: working internal Economics meter; no external provider API is needed.
-- June: 34 rows, USD 2.24 paid cost and USD 0.83 quest cost.
-- July partial: 144 rows, USD 5.53 paid cost and USD 48.19 quest cost.
-- These values are internal settlement evidence, not bank cash.
+- Meter values are internal settlement evidence, not bank cash.
 
 Use when:
 
@@ -27,7 +25,6 @@ Required credential:
 Live validation:
 
 - Read-only `op_pollen` query tested on 2026-07-10.
-- Economics `op_pollen` returned community rows for June and July 2026.
 - The old Forager connector path against `pollen_monthly` returned 403/resource-not-found in the current Economics workspace, so use `op_pollen` here.
 
 Collection steps:

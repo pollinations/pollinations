@@ -2,13 +2,11 @@
 
 Canonical vendor: `openrouter`
 
-## Empirical status — 2026-07-10
+## Verified — 2026-07-10
 
 - Status: management-key credit and activity APIs work.
-- Credit snapshot: USD 3,000.00 total credits, USD 1,460.43 all-time usage,
-  USD 1,539.57 remaining.
-- Activity returned 1,089 rows covering June 9 through July 9. Because June
-  1-8 is absent, this response cannot prove a complete June total.
+- The activity window is truncated, so a single response cannot prove a
+  complete calendar-month total.
 
 Use when:
 

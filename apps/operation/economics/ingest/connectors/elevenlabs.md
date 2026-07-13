@@ -2,11 +2,9 @@
 
 Canonical vendor: `elevenlabs`
 
-## Empirical status — 2026-07-10
+## Verified — 2026-07-10
 
 - Status: workspace analytics API works with the stored key.
-- June returned 31 daily rows. Summing the `total_cost` column by its column
-  index produced USD 208.90.
 - The response is column-oriented (`columns` plus array-valued `rows`); it
   does not return a `total_cost` property on each row object.
 
@@ -29,8 +27,6 @@ Required credential:
 Live validation:
 
 - Read-only analytics API call tested on 2026-07-10.
-- June 2026 returned one API meter row, source `api`, currency `USD`, paid total `208.90`.
-- July 2026 partial returned one API meter row, source `api`, currency `USD`, paid total `46.85`.
 
 Collection steps:
 

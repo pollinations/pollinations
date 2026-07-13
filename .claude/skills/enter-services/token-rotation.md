@@ -1,9 +1,8 @@
 # Internal Trust-Boundary Tokens
 
-Not a third-party provider guide. This is the reference for Pollinations-internal
-tokens and SOPS-recipient identities that the `secret` mode may be asked to
-check or rotate — credentials with no single external provider connector to
-live in.
+Reference for checking and rotating Pollinations-internal tokens and
+SOPS-recipient identities — credentials we issue ourselves, with no external
+provider dashboard to rotate them in.
 
 Use when:
 
@@ -55,9 +54,8 @@ the token.
 
 ## Deploy path — how a SOPS change actually reaches production
 
-The generic shipping mechanism every connector's `## Rotation` section assumes
-when it says "deploy" — only the SOPS file(s) touched and the final
-health-check differ.
+The generic shipping mechanism any credential rotation assumes when it says
+"deploy" — only the SOPS file(s) touched and the final health-check differ.
 
 1. `git checkout -b rotate/<name>-<date>`, edit the SOPS file(s) via `sops`,
    commit, `git push -u origin <branch>`.
@@ -140,8 +138,7 @@ have caused a real regression here before.
 
 Recipe: dashboard → new key → SOPS edit → (if worker-consumed, also `wrangler
 secret put`) → deploy → health check → revoke old key in the provider
-dashboard. AssemblyAI and Pruna have no economics ingest connector yet since
-they're not billing-evidence sources tracked here.
+dashboard.
 
 Not rotated at all, deliberately deferred:
 

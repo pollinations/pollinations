@@ -17,8 +17,8 @@ Use fixtures mode for UI development without password or Tinybird access:
 http://127.0.0.1:4180/?fixtures=1
 ```
 
-Live mode uses a password gate. Tinybird read/write tokens live only in
-`secrets/web.json` and are used by the Vite server-side proxy, never by the
+Live mode uses a password gate. The Tinybird read token lives only in
+`secrets/web.json` and is used by the Vite server-side proxy, never by the
 browser bundle.
 
 The OP Tinybird datasource and pipe definitions (`op_*`) live in

@@ -2,11 +2,9 @@
 
 Canonical vendor: `stripe`
 
-## Empirical status — 2026-07-10
+## Verified — 2026-07-10
 
 - Status: bounded payouts API works.
-- June returned one payout totaling EUR 9,105.05 and no next page.
-- This is June bank-settlement evidence, not necessarily revenue earned in June.
 
 Use when:
 

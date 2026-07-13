@@ -2,14 +2,12 @@
 
 Canonical vendor: `deepinfra`
 
-## Empirical status — 2026-07-10
+## Verified — 2026-07-10
 
 - Status: usage and current-balance APIs work.
-- The bounded June response contained one month object and two usage items.
-- `total_cost` was 877 cents, which is USD 8.77. The account endpoint also
-  exposed the current Stripe-balance field.
-- The response labeled `initial_month` as `2026.04`; trust the explicit
-  epoch bounds and item interval rather than that lagging label.
+- The account endpoint exposed the current Stripe-balance field.
+- The `initial_month` label can lag; trust the explicit epoch bounds and
+  item interval rather than that lagging label.
 
 Use when:
 

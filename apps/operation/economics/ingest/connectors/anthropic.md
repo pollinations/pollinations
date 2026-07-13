@@ -2,13 +2,11 @@
 
 Canonical vendor: `anthropic`
 
-## Empirical status — 2026-07-10
+## Verified — 2026-07-10
 
 - Status: API authentication and bounded cost-report collection work.
-- June was collected in five week-sized requests: 30 daily buckets, zero
-  result rows, and zero reported cents for this admin key's organization.
-- The zero is a scoped API result, not proof that every Anthropic account or
-  Claude subscription had zero cost; cross-check the console and Wise.
+- A zero here is a scoped API result, not proof that every Anthropic account
+  or Claude subscription had zero cost; cross-check the console and Wise.
 
 Use when:
 
@@ -29,9 +27,8 @@ Required credential:
 Live validation:
 
 - Read-only API auth tested on 2026-07-10 with `x-api-key` and `anthropic-version: 2023-06-01`.
-- One-day and week-sized June/July 2026 windows returned HTTP 200.
-- A full June 2026 single request returned HTTP 500 during testing, so prefer week/day chunks and combine them locally.
-- Tested June/July windows returned zero cents for this key/org; if that is surprising, verify organization/account scope in the Anthropic console.
+- One-day and week-sized windows returned HTTP 200.
+- A full-month single request returned HTTP 500 during testing, so prefer week/day chunks and combine them locally.
 
 Collection steps:
 

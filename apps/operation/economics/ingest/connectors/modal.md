@@ -2,12 +2,11 @@
 
 Canonical vendor: `modal`
 
-## Empirical status — 2026-07-10
+## Verified — 2026-07-10
 
 - Status: bounded billing CLI works with the stored token pair.
-- June returned one billing row costing USD 0.1899.
-- July partial returned zero rows in the earlier same-day check; zero rows
-  can be valid for a quiet/open period and are not an authentication failure.
+- Zero rows can be valid for a quiet/open period and are not an
+  authentication failure.
 
 Use when:
 
@@ -29,7 +28,6 @@ Required credentials:
 Live validation:
 
 - Read-only Modal CLI billing report tested on 2026-07-10.
-- July 2026 partial call authenticated and returned zero billing rows.
 - The CLI path is usable, but a nonzero month should be tested before relying on Modal totals for closed-month reconciliation.
 
 Collection steps:

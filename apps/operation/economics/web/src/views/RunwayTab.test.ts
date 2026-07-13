@@ -1,27 +1,11 @@
 import { describe, expect, it } from "vitest";
-import type { RunwayAssumption } from "../lib/runway";
-import {
-    assumptionTitle,
-    forecastMethodLabel,
-    runwayText,
-    runwayValueClass,
-} from "./RunwayTab";
+import { forecastMethodLabel, runwayText, runwayValueClass } from "./RunwayTab";
 
 describe("RunwayTab labels", () => {
     it("marks a runway that extends beyond the authored horizon", () => {
         expect(runwayText(6, true)).toBe("6+ months");
         expect(runwayText(1, false)).toBe("1 month");
         expect(runwayText(null, false)).toBe("–");
-    });
-
-    it("shows forecast provenance in cell titles", () => {
-        const assumption = {
-            entry_id: "forecast-1",
-            source: "agent",
-            evidence: "approved plan",
-        } as RunwayAssumption;
-        expect(assumptionTitle([assumption])).toBe("agent: approved plan");
-        expect(assumptionTitle(undefined)).toBeUndefined();
     });
 
     it("uses compact labels for the two forecast methods", () => {

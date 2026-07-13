@@ -21,15 +21,17 @@ Use when:
 | `PLN_GPU_TOKEN` | gen image + enter (ACE-Step) → GPU workers | image `env.json`, enter `{dev,staging,prod}.vars.json` | Wrangler (production, staging), RunPod pods (Flux+Z-Image, Klein), Lambda Labs GH200 (LTX-2, ACE-Step, Sana) |
 | `TINYBIRD_INGEST_TOKEN` | enter+gen runtime → Tinybird append | enter+gen `{dev,staging,prod}.vars.json` | Wrangler (production, staging) |
 | `TINYBIRD_READ_TOKEN` | enter/KPI/observability/app metrics → Tinybird read | enter `{dev,staging,prod}.vars.json`, kpi `env.json`, observability `secrets.vars.json` | GitHub secret `TINYBIRD_READ_TOKEN` |
-| `TINYBIRD_SYNC_TOKEN` | GitHub Actions + enter admin route → Tinybird sync writes | enter `{dev,staging,prod}.vars.json` | GitHub secret `TINYBIRD_SYNC_TOKEN`, Wrangler (production, staging) |
+| `TINYBIRD_SYNC_TOKEN` | GitHub Actions → Tinybird snapshot writes | — | GitHub secret `TINYBIRD_SYNC_TOKEN` |
 
-Each token is workspace-scoped: `prod.vars.json` files hold tokens for the
+Each Tinybird runtime token is workspace-scoped: `prod.vars.json` files hold tokens for the
 `pollinations_enter` workspace; `staging.vars.json`/`dev.vars.json` hold
 tokens for `pollinations_enter_staging`. Rotating the prod-workspace tokens
 does not rotate the staging-workspace tokens — do that side manually until
-this gains explicit workspace handling (tracked in #11127). The
-`TINYBIRD_SYNC_TOKEN` in staging/dev files still points at the prod workspace
-because no staging sync token exists yet (also #11127).
+this gains explicit workspace handling (tracked in #11127).
+
+`TINYBIRD_SYNC_TOKEN` is a GitHub Actions credential for prod snapshot
+replacement. It is not an Enter Worker secret and does not belong in Enter
+SOPS files.
 
 `TINYBIRD_LEGACY_READ_TOKEN` (consumed by `apps/operation/observability`)
 lives in the retired `pollinations_ai` workspace and has no rotation path —
@@ -44,10 +46,12 @@ the token.
   (see below) placed *before* the Wrangler update, so GPUs accept the new
   token before enter starts sending it.
 - **Tinybird tokens**: `POST /tokens/{name}/refresh` (in-place, immediate
-  invalidation — no create-before-delete window) plus a live `wrangler secret
-  put` to close the ~5s propagation gap. Needs `TINYBIRD_ADMIN_TOKEN`
-  (`tb --cloud token copy "admin token"`). Verify by writing one event to
-  Tinybird with the new ingest token.
+  invalidation — no create-before-delete window). Update the targets listed in
+  the inventory: runtime ingest/read tokens may require Worker deployment;
+  `TINYBIRD_SYNC_TOKEN` updates only the GitHub secret. Needs
+  `TINYBIRD_ADMIN_TOKEN` (`tb --cloud token copy "admin token"`). Verify by
+  writing one event with a new ingest token or running the relevant sync
+  workflow with a new sync token.
 - **Both sides of a trust boundary must update together.** A token correct in
   Wrangler but not yet on the consuming side (or vice versa) causes 403s or
   silent failures — see the table below.

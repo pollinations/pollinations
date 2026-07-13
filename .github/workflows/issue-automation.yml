@@ -94,6 +94,16 @@ jobs:
             ];
 
             // --- JSON extractor ---
+            function isVerdict(value) {
+              return value && typeof value === 'object' && !Array.isArray(value)
+                && (typeof value.comment === 'string' || value.comment === null)
+                && typeof value.close === 'boolean'
+                && ['completed', 'not_planned', null].includes(value.close_reason)
+                && ['polly', null].includes(value.add_label)
+                && Number.isFinite(Number(value.confidence))
+                && typeof value.reason === 'string';
+            }
+
             function extractJSON(content) {
               if (!content?.trim()) return null;
               content = content.trim();
@@ -101,7 +111,7 @@ jobs:
               // Try 1: direct parse
               try {
                 const parsed = JSON.parse(content);
-                if (parsed?.action) return parsed;
+                if (isVerdict(parsed)) return parsed;
               } catch {}
 
               // Try 2: strip markdown code fences
@@ -109,7 +119,7 @@ jobs:
               if (fenced) {
                 try {
                   const parsed = JSON.parse(fenced[1]);
-                  if (parsed?.action) return parsed;
+                  if (isVerdict(parsed)) return parsed;
                 } catch {}
               }
 
@@ -118,7 +128,7 @@ jobs:
               if (braceMatch) {
                 try {
                   const parsed = JSON.parse(braceMatch[0]);
-                  if (parsed?.action) return parsed;
+                  if (isVerdict(parsed)) return parsed;
                 } catch {}
               }
 

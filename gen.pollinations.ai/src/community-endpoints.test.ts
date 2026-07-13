@@ -1,12 +1,14 @@
 import { createExecutionContext, env, SELF } from "cloudflare:test";
 import type { Logger } from "@logtape/logtape";
 import {
+    COMMUNITY_ENDPOINT_PRICE_FIELDS,
     type CommunityEndpointRuntime,
     communityChatCompletionsUrl,
     communityEndpointPrices,
     communityModelDefinition,
     communityModelId,
     communityOpenAIBaseUrl,
+    communityPriceDefinition,
     isCommunityEndpointOwnerAllowed,
     legacyCommunityModelId,
     normalizeCommunityEndpointBaseUrl,
@@ -235,6 +237,20 @@ describe("community endpoint helpers", () => {
         expect(modelDefinition.aliases).toEqual(["community/voodoohop/openai"]);
         expect(modelDefinition.description).toBe(
             "OpenAI via community endpoint",
+        );
+    });
+
+    it("keeps zero prices as explicit zero rates in the price definition", () => {
+        const definition = communityPriceDefinition(
+            communityEndpointPrices({ promptTextPrice: 0.5 }),
+        );
+
+        expect(definition.promptTextTokens).toBe(0.5);
+        expect(definition.completionTextTokens).toBe(0);
+        // Every usage type gets an explicit rate, so billing never treats an
+        // intentionally-free bucket as a missing conversion rate.
+        expect(Object.keys(definition)).toHaveLength(
+            COMMUNITY_ENDPOINT_PRICE_FIELDS.length,
         );
     });
 
@@ -1467,6 +1483,69 @@ fixtureTest(
             disabledReason: "was failing",
         });
 
+        // Partial updates persist the full effective visibility + price set,
+        // so a price-only patch keeps the other stored prices intact.
+        const priceOnlyResponse = await fetchEnterApi(
+            enterApi,
+            new Request(
+                `http://localhost:3000/api/account/my-models/${createdId}/update`,
+                {
+                    method: "POST",
+                    headers: {
+                        Authorization: `Bearer ${key}`,
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({ promptTextPrice: 0.3 }),
+                },
+            ),
+        );
+        expect(priceOnlyResponse.status).toBe(200);
+        await expect(priceOnlyResponse.json()).resolves.toMatchObject({
+            visibility: "public",
+            promptTextPrice: 0.3,
+            completionTextPrice: 0.2,
+        });
+
+        // Making the model private clears all owner-set prices.
+        const privatizeResponse = await fetchEnterApi(
+            enterApi,
+            new Request(
+                `http://localhost:3000/api/account/my-models/${createdId}/update`,
+                {
+                    method: "POST",
+                    headers: {
+                        Authorization: `Bearer ${key}`,
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({ visibility: "private" }),
+                },
+            ),
+        );
+        expect(privatizeResponse.status).toBe(200);
+        await expect(privatizeResponse.json()).resolves.toMatchObject({
+            visibility: "private",
+            promptTextPrice: 0,
+            completionTextPrice: 0,
+        });
+
+        // Republishing without prices must fail: the cleared prices no longer
+        // satisfy the public-requires-pricing rule.
+        const republishResponse = await fetchEnterApi(
+            enterApi,
+            new Request(
+                `http://localhost:3000/api/account/my-models/${createdId}/update`,
+                {
+                    method: "POST",
+                    headers: {
+                        Authorization: `Bearer ${key}`,
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({ visibility: "public" }),
+                },
+            ),
+        );
+        expect(republishResponse.status).toBe(400);
+
         const secondListResponse = await fetchEnterApi(
             enterApi,
             new Request("http://localhost:3000/api/account/my-models", {
@@ -1482,6 +1561,66 @@ fixtureTest(
         expect(secondList.data).toHaveLength(1);
         expect(secondList.data[0]).not.toHaveProperty("bearerToken");
         expect(secondList.data[0]).not.toHaveProperty("bearerTokenCiphertext");
+    },
+);
+
+fixtureTest(
+    "rejects an endpoint probe when the upstream responds with a redirect",
+    async () => {
+        // Probes are open to any authenticated account (not just allowlisted
+        // publishers), so the redirect refusal must hold for everyone.
+        const ownerUserId = await createTestUser({
+            githubId: COMMUNITY_ENDPOINT_DENIED_TEST_GITHUB_ID,
+            githubUsername: `redir-${crypto.randomUUID().slice(0, 8)}`,
+        });
+        const sessionToken = `session-${crypto.randomUUID()}`;
+        await db.insert(sessionTable).values({
+            id: `session-${crypto.randomUUID()}`,
+            token: sessionToken,
+            userId: ownerUserId,
+            expiresAt: new Date(Date.now() + 60 * 60 * 1000),
+            createdAt: new Date(),
+            updatedAt: new Date(),
+        });
+
+        const enterApi = await createEnterCommunityApi();
+        const fetchMock = vi.fn(async (input, init) => {
+            const request = new Request(input, init);
+            if (
+                request.url ===
+                "https://redirecting.example.com/v1/chat/completions"
+            ) {
+                // The redirect target never went through base-URL validation,
+                // so the probe must not follow it.
+                expect(init?.redirect).toBe("manual");
+                return new Response(null, {
+                    status: 302,
+                    headers: { Location: "http://127.0.0.1/admin" },
+                });
+            }
+            throw new Error(`Unexpected fetch: ${request.url}`);
+        });
+        vi.stubGlobal("fetch", fetchMock);
+
+        const testResponse = await fetchEnterApi(
+            enterApi,
+            new Request("http://localhost:3000/api/community-endpoints/test", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Cookie: await signedSessionCookie(sessionToken),
+                },
+                body: JSON.stringify({
+                    baseUrl: "https://redirecting.example.com/v1",
+                    bearerToken: "Bearer sk_upstream",
+                    model: "gpt-test",
+                }),
+            }),
+        );
+
+        expect(testResponse.status).toBe(400);
+        expect(await testResponse.text()).toContain("redirect");
+        expect(fetchMock).toHaveBeenCalledTimes(1);
     },
 );
 

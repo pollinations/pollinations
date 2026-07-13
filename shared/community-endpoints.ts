@@ -179,7 +179,10 @@ export function communityPriceDefinition(
     const pricing: PriceDefinition = {};
     for (const field of COMMUNITY_ENDPOINT_PRICE_FIELDS) {
         const price = endpoint[field.key];
-        if (Number.isFinite(price) && price > 0) {
+        // Zero is an intentional rate here (private models, unpriced usage
+        // buckets), not a missing one: keep it explicit so billing charges 0
+        // instead of warning about a missing conversion rate on every call.
+        if (Number.isFinite(price) && price >= 0) {
             pricing[field.usageType] = price;
         }
     }

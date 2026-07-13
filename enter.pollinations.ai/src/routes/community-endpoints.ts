@@ -581,22 +581,23 @@ export const communityEndpointsRoutes = new Hono<Env>()
             // the incoming visibility (or the stored one) plus prices merged
             // from the existing row and this update's changes.
             const effectiveVisibility = input.visibility ?? endpoint.visibility;
-            if (effectiveVisibility === "private") {
-                // A private model is owner-only, so owner-declared public
-                // pricing does not apply. This also clears prices when a
-                // published model is made private again.
-                Object.assign(update, communityEndpointPrices({}));
-            }
-            const effectivePrices = communityEndpointPrices({
-                ...endpoint,
-                ...update,
-            });
+            // A private model is owner-only, so owner-declared public pricing
+            // does not apply; making a published model private clears prices.
+            const effectivePrices =
+                effectiveVisibility === "private"
+                    ? communityEndpointPrices({})
+                    : communityEndpointPrices({ ...endpoint, ...update });
             await enforceSharingRules(
                 db,
                 user.id,
                 effectiveVisibility,
                 effectivePrices,
             );
+            // Persist visibility together with the complete effective price
+            // set on every update, so concurrent partial updates cannot
+            // interleave into a public row with cleared prices.
+            update.visibility = effectiveVisibility;
+            Object.assign(update, effectivePrices);
             const [row] = await db
                 .update(schema.communityEndpoint)
                 .set(update)

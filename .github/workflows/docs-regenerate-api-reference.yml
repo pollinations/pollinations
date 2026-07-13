@@ -6,10 +6,7 @@ name: Docs / Regenerate API reference
 # deploys from the `production` branch, not `main`).
 on:
   workflow_run:
-    # Keep the old name until production contains the renamed deploy workflow.
-    workflows:
-      - Deploy gen.pollinations.ai
-      - Deploy / gen.pollinations.ai
+    workflows: ["Deploy / gen.pollinations.ai"]
     types:
       - completed
     branches:

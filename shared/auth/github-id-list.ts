@@ -17,7 +17,6 @@ export const COMMUNITY_MODEL_ALLOWED_GITHUB_IDS = [
     45744798, // Minor-fun
     178960782, // morriszdweck
     219871313, // mikl-shortcuts
-    229514703, // sixfingerdev
     45357531, // cemalgnlts
     123343834, // LynxUnbanned
     244879637, // Catniti

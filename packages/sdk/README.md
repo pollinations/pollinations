@@ -418,7 +418,7 @@ const videos = await generateVideo('ocean waves', { n: 2, duration: 4 });
 
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
-| `model` | string | `'veo'` | `'veo'`, `'seedance'`, `'wan'`, `'ltx-2'`, etc. |
+| `model` | string | `'veo'` | `'veo'`, `'seedance'`, `'wan'`, etc. |
 | `duration` | number | - | Duration in seconds (1-30, varies by model) |
 | `aspectRatio` | string | - | e.g. `'16:9'`, `'9:16'`, `'1:1'` |
 | `seed` | number | random | Reproducible results |
@@ -457,7 +457,7 @@ audioEl.play();
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
 | `voice` | string | `'alloy'` | Voice to use (see voices below) |
-| `model` | string | `'elevenlabs'` | `'elevenlabs'`, `'elevenmusic'`, `'acestep'` |
+| `model` | string | `'elevenlabs'` | `'elevenlabs'`, `'elevenmusic'` |
 | `duration` | number | - | Duration in seconds (for music models) |
 | `seed` | number | random | Reproducible results |
 | `n` | number | `1` | Number of outputs |

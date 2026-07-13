@@ -7,7 +7,6 @@ interface CloudflareBindings {
     OVHCLOUD_API_KEY: string;
     PLN_ENTER_TOKEN: string;
     PLN_GPU_TOKEN: string;
-    MUSIC_SERVICE_URL: string;
     DASHSCOPE_API_KEY: string;
     FAL_KEY: string;
     INFERENCEPORT_API_KEY?: string;
@@ -53,7 +52,6 @@ interface CloudflareBindings {
     GOOGLE_PROJECT_ID: string;
     INCEPTION_API_KEY: string;
     KLEIN_URL: string;
-    LTX2_BASE_URL: string;
     NOVA_REEL_S3_BUCKET: string;
     OPENAI_API_KEY: string;
     OPENROUTER_API_KEY: string;

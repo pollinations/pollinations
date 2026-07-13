@@ -1,7 +1,6 @@
 import type { Modalities, ModelCapability, ModelPrice } from "./types.ts";
 
 const BRAND_LOGOS: Record<string, string> = {
-    "ACE-Step": "ace-step",
     Alibaba: "alibaba",
     Amazon: "amazon",
     Anthropic: "anthropic",
@@ -16,7 +15,6 @@ const BRAND_LOGOS: Record<string, string> = {
     Google: "google",
     Ideogram: "ideogram",
     Inception: "inception",
-    Lightricks: "lightricks",
     Meta: "meta",
     Microsoft: "microsoft",
     MiniMax: "minimax",

@@ -1,0 +1,35 @@
+{
+  "pr_number": 12384,
+  "title": "Add BOOK TO GAME to games",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/12384",
+  "merged_at": "2026-07-13T08:09:52Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds [BOOK TO GAME](https://gelfer1979.itch.io/book-to-game) to games\n- Convert book formats (txt, mobi, epub, docx, fb2) into gamebooks using cloud AI (web/mobile) and local AI via LMSTUDIO or llama; default uses polination AI. Web version does not save game state.\n\nFixes #12189",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "From Books to Gamebooks",
+    "blurb": "A new community app just dropped! 'BOOK TO GAME' turns your favorite e-books into interactive text adventures using Pollinations AI.",
+    "summary": "Added 'BOOK TO GAME' to the community apps directory, a tool that converts standard book formats (txt, mobi, epub, docx, fb2) into interactive gamebooks using Pollinations AI by default.",
+    "impact": "Users can now discover a community-built tool that transforms their static e-books into playable, AI-driven text adventures.",
+    "keywords": [
+      "community",
+      "apps",
+      "games",
+      "gamebook",
+      "interactive-fiction"
+    ],
+    "visual_concept": "The PR is about converting books into games. Visuals should include books, a retro game console or computer, and the Pollinations bee. The bee could be feeding a book into a magical retro computer that displays a game on its screen.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny wizard hat, placing a glowing book into a retro computer console that is displaying a text adventure game on its CRT screen. Soft lime green (#ecf874) and lavender gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-13/PR-12384.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny wizard hat, placing a glowing book into a retro computer console that is displaying a text adventure game on its CRT screen. Soft lime green (#ecf874) and lavender gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-07-13T08:10:55.335917+00:00",
+  "app_name": "BOOK TO GAME",
+  "app_url": "https://gelfer1979.itch.io/book-to-game"
+}

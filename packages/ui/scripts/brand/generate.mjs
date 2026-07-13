@@ -61,15 +61,13 @@ const beePng = await sharp(join(BRAND, "polli/polli.png"))
     .toBuffer();
 
 // --- tight ink bbox (in svg user units): align by ink, not viewBox padding ---
+// Slice the body between the opening <svg …> and the final </svg>; anything
+// before the tag (xml declaration, generator comments) is naturally excluded.
 function svgParts(svg) {
-    const s = svg
-        .replace(/<\?xml[\s\S]*?\?>/g, "")
-        .replace(/<!--[\s\S]*?-->/g, "")
-        .trim();
-    const vb = s.match(/<svg\b[^>]*>/i)[0].match(/viewBox="([^"]+)"/i)[1];
-    const inner = s
-        .replace(/<svg\b[^>]*>/i, "")
-        .replace(/<\/svg>\s*$/i, "")
+    const open = svg.match(/<svg\b[^>]*>/i);
+    const vb = open[0].match(/viewBox="([^"]+)"/i)[1];
+    const inner = svg
+        .slice(open.index + open[0].length, svg.lastIndexOf("</svg>"))
         .trim();
     return { vb, inner };
 }

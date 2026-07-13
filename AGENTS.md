@@ -82,7 +82,7 @@ curl "http://localhost:8788/v1/chat/completions" -H "Authorization: Bearer $TOKE
 
 - Two workspaces: `pollinations_enter` (prod) and `pollinations_enter_staging` (staging + dev + local). Pipes and datasources must be deployed to **both** — no CI auto-deploy yet, tracked in #11127.
 - Use the Tinybird **Forward CLI** as `tb` (not Classic).
-- Do not rely on `.tinyb` for workspace selection. Always pass `TB_TOKEN` from `secrets/{staging,prod}.vars.json` and `--host https://api.europe-west2.gcp.tinybird.co`.
+- Do not rely on `.tinyb` for workspace selection. Always pass an explicit workspace-scoped `TB_TOKEN` with `WORKSPACE:DEPLOY` and `--host https://api.europe-west2.gcp.tinybird.co`; never source deploy credentials from Enter runtime secrets.
 - Always validate and deploy to **staging first**, verify, then prod only when requested.
 - Validate first: `tb --cloud --host "$TB_HOST" deployment create --check --no-allow-destructive-operations`
 - Deploy staging: `tb --cloud --host "$TB_HOST" deployment create --wait --no-allow-destructive-operations`

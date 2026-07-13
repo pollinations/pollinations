@@ -1,0 +1,36 @@
+{
+  "pr_number": 12423,
+  "title": "fix: harden Vast Flux deployment and canary checks",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/12423",
+  "merged_at": "2026-07-13T22:00:22Z",
+  "labels": [
+    "DEV-INFRA"
+  ],
+  "pr_body_excerpt": "- Runs a pre-created, remotely managed Cloudflare Tunnel from a scoped token file instead of copying an account certificate onto Vast hosts.\n- Persists shell-escaped Flux settings, enables high-performance Hugging Face downloads, and ignores the secret-bearing `.env.flux` file.\n- Adds a deterministic production-path canary that compares direct Vast output with `gen.pollinations.ai` output so Fireworks cannot mask a broken route.\n- Updates the Flux runbook with the active RTX 5090, current listed rate, and canary-before-cutover procedure.\n\nChecks: `bash -n` on both scripts, validation failure-path tests, secret-pattern scan, `git diff --check`.",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "The canary gets a compass",
+    "blurb": "Vast Flux deployments now carry fewer secrets and more receipts. A deterministic canary checks the actual production route before the hive points traffic at it.",
+    "summary": "Hardened the Vast-hosted Flux deployment with scoped Cloudflare Tunnel tokens, persisted shell-escaped settings, accelerated Hugging Face downloads, and a new canary that compares direct Vast output against gen.pollinations.ai before cutover.",
+    "impact": "Image generation routing gains a repeatable pre-cutover check that verifies the Vast Flux path itself, rather than allowing a Fireworks fallback to hide a broken deployment.",
+    "keywords": [
+      "flux",
+      "vast",
+      "canary",
+      "cloudflare-tunnel",
+      "image-generation",
+      "deployment"
+    ],
+    "visual_concept": "Depict Polly as a careful deployment gardener using a tiny compass and checklist beside two cozy image-output terminals: one labeled Vast and one labeled gen.pollinations.ai, both showing matching pixel flowers. A small friendly canary bird and a protected tunnel pipe symbolize deterministic route verification and scoped secret handling, with code-plants and an RTX 5090 server nook grounding the scene.",
+    "image_prompt": "Cozy pixel art scene of Polly, a cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks, a small happy smile, and small rounded light blue translucent wings, wearing a tiny engineer tool belt as she compares matching pixel-flower images on two retro terminals labeled “VAST” and “GEN”; a friendly little canary holds a checklist beside a safely sealed tunnel pipe, with code-plants growing around a cozy RTX 5090 server shelf. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-13/PR-12423.jpg",
+    "prompt": "Cozy pixel art scene of Polly, a cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks, a small happy smile, and small rounded light blue translucent wings, wearing a tiny engineer tool belt as she compares matching pixel-flower images on two retro terminals labeled “VAST” and “GEN”; a friendly little canary holds a checklist beside a safely sealed tunnel pipe, with code-plants growing around a cozy RTX 5090 server shelf. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
+  },
+  "generated_at": "2026-07-13T22:01:21.482251+00:00"
+}

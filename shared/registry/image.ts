@@ -37,6 +37,7 @@ export const IMAGE_SERVICES = {
             // Gemini 2.5 Flash Image via Vertex AI
             promptTextTokens: perMillion(0.3), // per 1M tokens
             promptImageTokens: perMillion(0.3), // per 1M tokens
+            completionTextTokens: perMillion(2.5), // text output tokens
             completionImageTokens: perMillion(30), // per 1M tokens, 1290 tokens/image
         },
         title: "NanoBanana",
@@ -104,8 +105,8 @@ export const IMAGE_SERVICES = {
             // Gemini 3 Pro Image via Vertex AI
             // 1K/2K image: 1120 tokens = $0.134/image ($120/M tokens)
             // 4K image: 2000 tokens = $0.24/image
-            promptTextTokens: perMillion(1.25), // per 1M tokens
-            promptImageTokens: perMillion(1.25), // per 1M tokens
+            promptTextTokens: perMillion(2), // per 1M tokens
+            promptImageTokens: perMillion(2), // per 1M tokens
             completionTextTokens: perMillion(12), // text/reasoning output tokens
             completionImageTokens: perMillion(120), // per 1M tokens, 1120 tokens per 1K image
         },
@@ -573,6 +574,7 @@ export const IMAGE_SERVICES = {
         priceMultiplier: 1,
         paidOnly: true,
         cost: {
+            promptImageTokens: 0.002, // per input image on edits
             completionImageTokens: 0.02, // per image
         },
         title: "Grok Imagine",
@@ -582,7 +584,12 @@ export const IMAGE_SERVICES = {
         maxReferenceImages: 1, // xAI image edit route forwards one input image.
     },
     "grok-imagine-pro": {
-        aliases: ["grok-aurora", "aurora", "grok-imagine-image-pro"],
+        aliases: [
+            "grok-aurora",
+            "aurora",
+            "grok-imagine-image-quality",
+            "grok-imagine-image-pro",
+        ],
         modelId: "grok-imagine-pro",
         provider: "xai",
         brand: "xAI",
@@ -591,7 +598,8 @@ export const IMAGE_SERVICES = {
         priceMultiplier: 1,
         paidOnly: true,
         cost: {
-            completionImageTokens: 0.07, // per image
+            promptImageTokens: 0.01, // per input image on edits
+            completionImageTokens: 0.05, // per 1K image
         },
         title: "Grok Imagine Pro",
         description:
@@ -610,7 +618,8 @@ export const IMAGE_SERVICES = {
         priceMultiplier: 1,
         paidOnly: true,
         cost: {
-            completionVideoSeconds: 0.05, // per sec at 720p
+            promptImageTokens: 0.002, // per start-frame image
+            completionVideoSeconds: 0.07, // per sec at 720p
         },
         title: "Grok Video Pro",
         description:

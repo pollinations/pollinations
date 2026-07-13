@@ -4,14 +4,14 @@
 
 ```python
 from openai import OpenAI
-client = OpenAI(base_url="https://gen.pollinations.ai", api_key="YOUR_API_KEY")
+client = OpenAI(base_url="https://gen.pollinations.ai/v1", api_key="YOUR_API_KEY")
 response = client.chat.completions.create(model="openai", messages=[{"role": "user", "content": "Hello!"}])
 print(response.choices[0].message.content)
 ```
 
 ### Image (URL — no code needed)
 
-```
+```plaintext
 https://gen.pollinations.ai/image/a%20cat%20in%20space?model=flux
 ```
 

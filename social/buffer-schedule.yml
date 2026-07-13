@@ -8,7 +8,7 @@
 
 # ── Daily platforms (via Buffer) ─────────────────────────────────────
 # Generated Mon-Sat at 06:00 UTC (generate_daily.py).
-# Staged to Buffer immediately after generation (NEWS_summary.yml).
+# Staged to Buffer immediately after generation (news-generate-summary.yml).
 # No daily posts on Sundays — weekly replaces them.
 
 twitter:
@@ -22,7 +22,7 @@ instagram:
   preferred: "15:00"  # 15:00 UTC
 
 # ── Daily platforms (not via Buffer) ─────────────────────────────────
-# Reddit daily: deployed to VPS via SSH at 15:00 UTC cron (NEWS_publish.yml)
+# Reddit daily: deployed to VPS via SSH at 15:00 UTC cron (news-publish-social.yml)
 # Discord daily: realtime per-PR webhook only (publish_realtime.py)
 
 # ── Weekly (Sunday 18:00 UTC) ──────────────────────────────────────
@@ -52,14 +52,14 @@ linkedin:
 
 # How it works (3 workflows):
 #
-# NEWS_pr_gist.yml — on every PR merge:
+# news-create-pr-gist.yml — on every PR merge:
 #   generate_realtime.py creates gist JSON + pixel art image → news branch
 #   publish_realtime.py posts to Discord
 #
-# NEWS_summary.yml — daily 06:00 UTC cron:
+# news-generate-summary.yml — daily 06:00 UTC cron:
 #   Mon-Sat: generate_daily.py → commit to news → stage X + IG to Buffer → README PR to main
 #   Sunday:  generate_weekly.py → commit to news → stage X + LI + IG to Buffer
 #
-# NEWS_publish.yml — Mon-Sat 15:00 UTC + Sunday 18:00 UTC cron:
+# news-publish-social.yml — Mon-Sat 15:00 UTC + Sunday 18:00 UTC cron:
 #   Daily:  publish_daily.py deploys Reddit to VPS (PUBLISH_MODE=direct)
 #   Weekly: publish_weekly.py deploys Reddit to VPS + posts Discord (PUBLISH_MODE=direct)

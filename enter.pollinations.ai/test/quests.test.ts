@@ -833,7 +833,6 @@ test("D1 quest check only records the requested user", async ({
         updatedAt: new Date(),
         githubId: null,
         githubUsername: null,
-        tier: "spore",
         tierBalance: 0,
         packBalance: 0,
     });
@@ -915,7 +914,6 @@ test("app-listed quest records from Tinybird while other app-growth quests stay 
         updatedAt: new Date(),
         githubId: 555001,
         githubUsername: "external-user",
-        tier: "spore",
         tierBalance: 0,
         packBalance: 0,
     });
@@ -1234,7 +1232,6 @@ test("quest check records completed GitHub quest issue rewards through shared pa
         updatedAt: new Date(),
         githubId: otherGithubId,
         githubUsername: "other-dev",
-        tier: "spore",
         tierBalance: 0,
         packBalance: 0,
     });
@@ -1307,7 +1304,6 @@ test("two lazy GitHub issue bounties each record independently", async ({
         updatedAt: new Date(),
         githubId: secondGithubId,
         githubUsername: "second-dev",
-        tier: "spore",
         tierBalance: 0,
         packBalance: 0,
     });

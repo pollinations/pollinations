@@ -2,7 +2,7 @@
 
 ## App Submission Handling
 
-Two-phase review via `app-review-submission.yml` (AI + human). Source of truth: `apps/APPS.md`.
+Two-phase review via `apps-review-submissions.yml` (AI + human). Source of truth: `apps/APPS.md`.
 
 Flow: user opens issue with `TIER-APP` → workflow validates + AI generates preview → bot posts `APP_REVIEW_DATA` JSON + labels `TIER-APP-REVIEW` → maintainer adds `TIER-APP-APPROVED` → workflow prepends row to `apps/APPS.md`, opens PR with auto-merge, closes issue via `Fixes #NNN`.
 
@@ -39,8 +39,12 @@ Primary: `https://gen.pollinations.ai` → routes to `enter.pollinations.ai` for
 
 - Auth: `pk_` (frontend), `sk_` (backend). Keys: https://enter.pollinations.ai
 - Billing: Pollen credits ($1 ≈ 1 Pollen). Full docs: `./APIDOCS.md`
+- Pack checkout: Stripe. Polar is retired from runtime; do not add Polar SDKs,
+  Worker bindings, webhooks, or automated writes. Historical Polar handling
+  (pre-Stripe pack revenue, Nov 2025–Jan 2026) lives in the economics ingest
+  connector prompt (`apps/operation/economics/ingest/agent.system.txt`).
 - Services: Text (Portkey, multi-provider), Image (gen Worker dispatch to providers/GPU backends), Video (Wan/Veo/LTX), Audio (ElevenLabs, TTM)
-- Wallet: Pollen is earned by completing Quests; balances live in the `tier_balance` (shown as Quest Pollen) and `pack_balance` (Paid) buckets. The `tier` data model is kept for compatibility; see `enter.pollinations.ai/src/tier-config.ts`.
+- Wallet: Pollen is earned by completing Quests; balances live in the `tier_balance` (shown as Quest Pollen) and `pack_balance` (Paid) buckets. The legacy `tier` D1 column and `tier_balance` wire name are kept for compatibility; see `shared/db/better-auth.ts`.
 
 ### Local Development
 
@@ -77,13 +81,20 @@ curl "http://localhost:8788/v1/chat/completions" -H "Authorization: Bearer $TOKE
 **CRITICAL — These rules apply whenever deploying to Tinybird:**
 
 - Two workspaces: `pollinations_enter` (prod) and `pollinations_enter_staging` (staging + dev + local). Pipes and datasources must be deployed to **both** — no CI auto-deploy yet, tracked in #11127.
-- Always deploy to **staging first**, verify, then prod. `tb --cloud deploy --wait` defaults to whichever workspace `.tinyb` points to (prod by default); override with `TB_TOKEN=<staging_admin_token>` for staging.
-- Validate first: `tb --cloud deploy --check --wait` (against both workspaces if either schema is in doubt)
+- Use the Tinybird **Forward CLI** as `tb` (not Classic).
+- Do not rely on `.tinyb` for workspace selection. Always pass an explicit workspace-scoped `TB_TOKEN` with `WORKSPACE:DEPLOY` and `--host https://api.europe-west2.gcp.tinybird.co`; never source deploy credentials from Enter runtime secrets.
+- Always validate and deploy to **staging first**, verify, then prod only when requested.
+- Validate first: `tb --cloud --host "$TB_HOST" deployment create --check --no-allow-destructive-operations`
+- Deploy staging: `tb --cloud --host "$TB_HOST" deployment create --wait --no-allow-destructive-operations`
+- Verify staging: `tb --staging --cloud --host "$TB_HOST" endpoint ls` and `tb --cloud --host "$TB_HOST" deployment ls`
 - Never `--allow-destructive-operations` without explicit permission
-- Never `tb push` (deprecated); use `tb --cloud deploy --wait`
+- Never `tb push` (deprecated). Avoid `tb deploy`; use explicit `deployment create` commands so promotion is never accidental.
+- Never use `--auto` or `deployment promote` without explicit permission.
 - Always `--cloud` (otherwise CLI hits Tinybird Local/Docker)
 - Run from `enter.pollinations.ai/observability`
 - Verify all consumers within a workspace before modifying a pipe (pipes are NOT cross-workspace; each workspace has its own copy)
+- If validation reports datasource or pipe deletion, stop. Restore the missing definition or ask before deleting; do not override with destructive flags.
+- Forward materialized views cannot use `UNION`; split sources into separate materialized pipes writing to the same datasource.
 - Timeouts: use `uniq()` not `uniqExact()`; avoid CTE+JOIN; single-pass queries; for large time ranges use `start_date` parameter week-by-week
 - Full procedure: `.claude/skills/tinybird-deploy/SKILL.md`
 
@@ -131,7 +142,7 @@ npx vitest run test/file.test.ts
 - Test real code, not mocks — use direct imports. Don't create mock infrastructure.
 - Read existing tests before adding; prefer extending existing files; follow existing conventions.
 - Snapshots (enter): VCR-style, replayed by default. `TEST_VCR_MODE=record` to record; default `replay-or-record`.
-- `.testingtokens` contains: `ENTER_API_TOKEN_LOCAL`, `ENTER_API_TOKEN_REMOTE`, `ENTER_TOKEN`, `GITHUB_TOKEN`, `POLAR_ACCESS_TOKEN`.
+- `.testingtokens` contains: `ENTER_API_TOKEN_LOCAL`, `ENTER_API_TOKEN_REMOTE`, `ENTER_TOKEN`, `GITHUB_TOKEN`.
 - Production API tests should hit `gen.pollinations.ai`.
 
 ## Architecture & Common Tasks

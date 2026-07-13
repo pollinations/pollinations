@@ -37,6 +37,7 @@ export const IMAGE_SERVICES = {
             // Gemini 2.5 Flash Image via Vertex AI
             promptTextTokens: perMillion(0.3), // per 1M tokens
             promptImageTokens: perMillion(0.3), // per 1M tokens
+            completionTextTokens: perMillion(2.5), // text output tokens
             completionImageTokens: perMillion(30), // per 1M tokens, 1290 tokens/image
         },
         title: "NanoBanana",
@@ -104,8 +105,8 @@ export const IMAGE_SERVICES = {
             // Gemini 3 Pro Image via Vertex AI
             // 1K/2K image: 1120 tokens = $0.134/image ($120/M tokens)
             // 4K image: 2000 tokens = $0.24/image
-            promptTextTokens: perMillion(1.25), // per 1M tokens
-            promptImageTokens: perMillion(1.25), // per 1M tokens
+            promptTextTokens: perMillion(2), // per 1M tokens
+            promptImageTokens: perMillion(2), // per 1M tokens
             completionTextTokens: perMillion(12), // text/reasoning output tokens
             completionImageTokens: perMillion(120), // per 1M tokens, 1120 tokens per 1K image
         },
@@ -133,6 +134,24 @@ export const IMAGE_SERVICES = {
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
         maxReferenceImages: 14, // Pollinations route cap from Replicate schema.
+    },
+    "seedream5-pro": {
+        aliases: ["seedream-5-pro", "seedream-pro-5"],
+        modelId: "seedream5-pro",
+        provider: "replicate",
+        brand: "ByteDance",
+        category: "image",
+        addedDate: new Date("2026-07-10").getTime(),
+        priceMultiplier: 1,
+        paidOnly: true,
+        cost: {
+            completionImageTokens: 0.09, // per 2K image
+        },
+        title: "Seedream 5.0 Pro",
+        description: "Premium multimodal image generation and editing",
+        inputModalities: ["text", "image"],
+        outputModalities: ["image"],
+        maxReferenceImages: 10,
     },
     "seedream": {
         aliases: [],
@@ -298,7 +317,7 @@ export const IMAGE_SERVICES = {
     "flux": {
         aliases: [],
         modelId: "flux",
-        provider: "fireworks",
+        provider: "vast",
         brand: "Black Forest Labs",
         category: "image",
         addedDate: new Date("2025-10-07").getTime(),
@@ -307,8 +326,7 @@ export const IMAGE_SERVICES = {
             completionImageTokens: 0.0014, // per image
         },
         title: "Flux Schnell",
-        description:
-            "Flux Schnell - Fast high-quality image generation (Fireworks)",
+        description: "Flux Schnell - Fast high-quality image generation",
         inputModalities: ["text"],
         outputModalities: ["image"],
     },
@@ -379,7 +397,7 @@ export const IMAGE_SERVICES = {
         addedDate: new Date("2026-05-07").getTime(),
         priceMultiplier: 1,
         paidOnly: true,
-        // non_video_in tier @ 720p; see provider-billing/providers/replicate.md
+        // non_video_in tier @ 720p; see Economics' replicate connector guide
         cost: {
             completionVideoSeconds: 0.18,
         },
@@ -556,6 +574,7 @@ export const IMAGE_SERVICES = {
         priceMultiplier: 1,
         paidOnly: true,
         cost: {
+            promptImageTokens: 0.002, // per input image on edits
             completionImageTokens: 0.02, // per image
         },
         title: "Grok Imagine",
@@ -565,7 +584,12 @@ export const IMAGE_SERVICES = {
         maxReferenceImages: 1, // xAI image edit route forwards one input image.
     },
     "grok-imagine-pro": {
-        aliases: ["grok-aurora", "aurora", "grok-imagine-image-pro"],
+        aliases: [
+            "grok-aurora",
+            "aurora",
+            "grok-imagine-image-quality",
+            "grok-imagine-image-pro",
+        ],
         modelId: "grok-imagine-pro",
         provider: "xai",
         brand: "xAI",
@@ -574,7 +598,8 @@ export const IMAGE_SERVICES = {
         priceMultiplier: 1,
         paidOnly: true,
         cost: {
-            completionImageTokens: 0.07, // per image
+            promptImageTokens: 0.01, // per input image on edits
+            completionImageTokens: 0.05, // per 1K image
         },
         title: "Grok Imagine Pro",
         description:
@@ -593,7 +618,8 @@ export const IMAGE_SERVICES = {
         priceMultiplier: 1,
         paidOnly: true,
         cost: {
-            completionVideoSeconds: 0.05, // per sec at 720p
+            promptImageTokens: 0.002, // per start-frame image
+            completionVideoSeconds: 0.07, // per sec at 720p
         },
         title: "Grok Video Pro",
         description:

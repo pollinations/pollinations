@@ -35,9 +35,8 @@ Weekly KPI dashboard for pollinations.ai — the AI platform by Myceli.AI.
 
 | Source          | Data                            |
 | --------------- | ------------------------------- |
-| Tinybird        | Usage events, tokens, WAU       |
+| Tinybird        | Usage, Stripe revenue, tokens, WAU |
 | D1 (Cloudflare) | User registrations, activations |
-| Polar           | Revenue, pack purchases         |
 | GitHub API      | Stars, forks                    |
 
 ## Setup
@@ -92,6 +91,6 @@ sops secrets/env.json  # Edit encrypted file
 
 - [x] Create Tinybird pipes for weekly aggregations
 - [x] Add D1 API endpoints for registration/activation metrics
-- [x] Integrate Polar API for real revenue data
+- [x] Track Stripe revenue through Tinybird
 - [ ] Track GitHub star history over time
 - [ ] Real activation tracking (D1 + Tinybird cross-reference)

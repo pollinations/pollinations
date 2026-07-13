@@ -21,6 +21,7 @@ import {
 import { callQwenImageAPI } from "./models/qwenImageModel.ts";
 import { callSeedream5API } from "./models/seedream5ReplicateModel.ts";
 import {
+    callSeedream5ProAPI,
     callSeedreamAPI,
     callSeedreamProAPI,
 } from "./models/seedreamReplicateModel.ts";
@@ -711,6 +712,9 @@ const generateImage = async (
         case "seedream5":
             return await callSeedream5API(prompt, safeParams);
 
+        case "seedream5-pro":
+            return await callSeedream5ProAPI(prompt, safeParams);
+
         case "seedream":
             return await callSeedreamAPI(prompt, safeParams);
 
@@ -743,7 +747,7 @@ const generateImage = async (
             return await callXaiImageAPI(
                 prompt,
                 safeParams,
-                "grok-imagine-image-pro",
+                "grok-imagine-image-quality",
             );
 
         case "p-image-edit":

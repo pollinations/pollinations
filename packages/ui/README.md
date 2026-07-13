@@ -101,13 +101,29 @@ and generic `polli-ui-root`, `polli-ui-body`, and `polli-ui-shell` classes.
 Canonical Pollinations source SVGs are exported from the package:
 
 ```ts
-import logoUrl from "@pollinations/ui/assets/logo.svg";
-import logoWordmarkUrl from "@pollinations/ui/assets/logo-wordmark.svg";
+import markUrl from "@pollinations/ui/brand/mark.svg";
+import lockupUrl from "@pollinations/ui/brand/lockup-horizontal.svg";
 ```
 
 The SVG sources use `currentColor`. Apps control the rendered color by inlining
 them or using them as masks. Root-level favicon, PWA icon, and SEO files stay
 app-owned.
+
+The whole kit derives from two atomic sources — `mark.svg` and `wordmark.svg`
+(both `currentColor`) plus the raster bee `polli/polli.png`. One zero-config
+command rebuilds everything:
+
+```bash
+npm run brand
+```
+
+It refreshes the committed derivatives in `src/brand`, and writes every
+favicon / PWA / apple-touch / maskable / OG / social asset to `brand-out/`
+(gitignored) — copy those into a site's `public/`. Colours are fixed to the two
+brand themes matching enter.pollinations.ai (icons gold on transparent,
+OG/social dark on cream), resolved from `theme-palette.json`. Sizes and padding
+are data in `scripts/brand/presets.js` — `pad` keeps avatars clear of a circular
+mask; add a platform by adding a line.
 
 Wallet colors and utilities are bundled into the main stylesheet
 (`@pollinations/ui/styles.css`) — no separate import needed.
@@ -137,8 +153,9 @@ Wallet colors and utilities are bundled into the main stylesheet
 - `@pollinations/ui/gen` exports generation UI modules and modality helpers:
   `ModelSelector`, `ModalityChip`, `ModalityDot`, `ModalityTab`,
   `categoryLabel`, and `getModalityKey`.
-- `@pollinations/ui/assets/*` exports canonical Pollinations source SVGs:
-  `logo.svg` and `logo-wordmark.svg`.
+- `@pollinations/ui/brand/*` exports the canonical brand kit — `mark`,
+  `wordmark`, `lockup-horizontal`, `lockup-stacked` (currentColor SVG masters
+  plus `-black`/`-white` SVG + PNG), and the `polli/` mascot PNGs.
 - **Design primitives** — `Button`, `ButtonGroup`, `Chip`, `ChevronIcon`,
   `Dialog`, `DialogTitle`, `Dropdown`, `DropdownItem`, `Field`, `Heading`,
   `IconButton`, `InlineLink`, `Input`, `ScrollArea`, `Slider`, `Surface`,
@@ -222,9 +239,9 @@ Wallet tokens are public (bundled into `@pollinations/ui/styles.css`):
 | `--polli-color-paid-pale`     | Paid-balance wash.                            |
 | `--polli-color-paid-soft`     | Paid-balance marker.                          |
 | `--polli-color-paid-deep`     | Paid-balance text.                            |
-| `--polli-color-tier-pale`     | Tier-balance wash.                            |
-| `--polli-color-tier-soft`     | Tier-balance marker.                          |
-| `--polli-color-tier-deep`     | Tier-balance text.                            |
+| `--polli-color-tier-pale`     | Quest Pollen wash.                            |
+| `--polli-color-tier-soft`     | Quest Pollen marker.                          |
+| `--polli-color-tier-deep`     | Quest Pollen text.                            |
 
 **Intent (theme-independent):**
 

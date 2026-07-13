@@ -18,22 +18,22 @@ function mockContext(url: string, headers: Record<string, string>): Context {
     } as unknown as Context;
 }
 
-describe("proxied request client-IP resolution", () => {
-    // Reproduces the pollinations-myceli-proxy hop: the Worker is invoked on the
-    // public host (custom-domain route), and the proxy sets X-Forwarded-Host to
-    // that same public host plus X-Original-Client-IP with the real visitor IP.
+describe("forwarded request client-IP resolution", () => {
+    // Reproduces a trusted edge hop: the Worker is invoked on the public host,
+    // and the edge sets X-Forwarded-Host plus X-Original-Client-IP with the
+    // real visitor IP.
     const proxied = mockContext("https://gen.pollinations.ai/text/hi", {
         "x-forwarded-host": "gen.pollinations.ai",
         "x-forwarded-proto": "https",
         "x-original-client-ip": "46.142.212.69",
-        "cf-connecting-ip": "130.176.161.10", // proxy Worker egress IP
+        "cf-connecting-ip": "130.176.161.10", // edge egress IP
     });
 
-    it("trusts the proxy hop when X-Forwarded-Host is a known public host", () => {
+    it("trusts the edge hop when X-Forwarded-Host is a known public host", () => {
         expect(hasTrustedProxyHeaders(proxied)).toBe(true);
     });
 
-    it("resolves the real visitor IP, not the proxy egress IP", () => {
+    it("resolves the real visitor IP, not the edge egress IP", () => {
         expect(getRealClientIp(proxied)).toBe("46.142.212.69");
     });
 

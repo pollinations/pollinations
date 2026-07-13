@@ -30,7 +30,6 @@ import { PollenPackSlider } from "./pollen-pack-controls.tsx";
 type PollenBalanceProps = {
     tierBalance: number;
     packBalance: number;
-    tier?: string;
     paidWeek?: number;
     tierWeek?: number;
 };
@@ -41,18 +40,6 @@ const REFUND_POLICY_URL = "https://pollinations.ai/refunds";
 function normalizeDisplayBalance(value: number): number {
     return Math.abs(value) < BALANCE_DISPLAY_EPSILON ? 0 : value;
 }
-
-// Filled warning triangle — local since @pollinations/ui doesn't ship one yet.
-const AlertTriangleIcon: FC<{ className?: string }> = ({ className }) => (
-    <svg
-        className={className}
-        viewBox="0 0 16 16"
-        fill="currentColor"
-        aria-hidden="true"
-    >
-        <path d="M7.13 1.71a1 1 0 0 1 1.74 0l6.49 11.32a1 1 0 0 1-.87 1.5H1.51a1 1 0 0 1-.87-1.5L7.13 1.71ZM8 5.5a.75.75 0 0 0-.75.75v3.5a.75.75 0 0 0 1.5 0v-3.5A.75.75 0 0 0 8 5.5Zm0 7a.9.9 0 1 0 0-1.8.9.9 0 0 0 0 1.8Z" />
-    </svg>
-);
 
 const TooltipList: FC<{
     title: string;
@@ -87,7 +74,6 @@ const TooltipList: FC<{
 export const PollenBalance: FC<PollenBalanceProps> = ({
     tierBalance,
     packBalance,
-    tier = "spore",
     paidWeek = 0,
     tierWeek = 0,
 }) => {
@@ -97,18 +83,11 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
         displayTierBalance + displayPaidBalance,
     );
     const totalWeek = normalizeDisplayBalance(paidWeek + tierWeek);
-    const hideTierColumn = tier === "microbe" && displayTierBalance === 0;
 
     return (
         <div className="flex flex-col gap-3">
             {/* Twin headline numbers: Paid + Quest as tinted cards */}
-            <div
-                className={
-                    hideTierColumn
-                        ? "grid grid-cols-1 gap-3"
-                        : "grid grid-cols-2 gap-3"
-                }
-            >
+            <div className="grid grid-cols-2 gap-3">
                 <WalletBalanceCard
                     kind="paid"
                     label="Paid"
@@ -141,42 +120,38 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
                         ) : undefined
                     }
                 />
-                {!hideTierColumn && (
-                    <WalletBalanceCard
-                        kind="tier"
-                        label="Quest"
-                        value={formatPollen(displayTierBalance)}
-                        info={
-                            <InfoTip
-                                label="About Quest Pollen"
-                                text={
-                                    <TooltipList
-                                        title="Quest Pollen"
-                                        icon={
-                                            <SproutIcon className="h-4 w-4" />
-                                        }
-                                        items={[
-                                            "Pollen earned from completing Quests",
-                                            "Earnings credited from your apps",
-                                            "Used first for regular models, when it can cover",
-                                        ]}
-                                        earned={tierWeek}
-                                    />
-                                }
-                            />
-                        }
-                        footer={
-                            tierWeek > 0 ? (
-                                <>
-                                    +{formatPollen(tierWeek)}{" "}
-                                    <span className="font-medium text-theme-text-muted">
-                                        / 7d
-                                    </span>
-                                </>
-                            ) : undefined
-                        }
-                    />
-                )}
+                <WalletBalanceCard
+                    kind="tier"
+                    label="Quest"
+                    value={formatPollen(displayTierBalance)}
+                    info={
+                        <InfoTip
+                            label="About Quest Pollen"
+                            text={
+                                <TooltipList
+                                    title="Quest Pollen"
+                                    icon={<SproutIcon className="h-4 w-4" />}
+                                    items={[
+                                        "Pollen earned from completing Quests",
+                                        "Earnings credited from your apps",
+                                        "Used first for regular models, when it can cover",
+                                    ]}
+                                    earned={tierWeek}
+                                />
+                            }
+                        />
+                    }
+                    footer={
+                        tierWeek > 0 ? (
+                            <>
+                                +{formatPollen(tierWeek)}{" "}
+                                <span className="font-medium text-theme-text-muted">
+                                    / 7d
+                                </span>
+                            </>
+                        ) : undefined
+                    }
+                />
             </div>
 
             {/* Total + 7d earnings below */}
@@ -204,7 +179,7 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
                 </div>
             </div>
 
-            {/* Footer: learn more + tier-retirement notice */}
+            {/* Footer: learn more */}
             <div className="mt-4 space-y-2 border-t border-divider pt-4 text-[13px] leading-snug text-theme-text-muted">
                 <p className="flex items-start gap-1.5">
                     <WalletIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
@@ -230,13 +205,6 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
                         </InlineLink>
                     </span>
                 </p>
-                <p className="flex items-start gap-1.5">
-                    <AlertTriangleIcon className="mt-0.5 h-3.5 w-3.5 shrink-0 text-intent-danger-text" />
-                    <span>
-                        Tiers are going away. Pollen rewards now come from
-                        Quests — your balances and access are unchanged.
-                    </span>
-                </p>
             </div>
         </div>
     );
@@ -245,7 +213,6 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
 type SidebarWalletProps = {
     tierBalance: number;
     packBalance: number;
-    tier?: string;
     paidWeek?: number;
     tierWeek?: number;
     onClick?: () => void;
@@ -254,13 +221,11 @@ type SidebarWalletProps = {
 export const SidebarWallet: FC<SidebarWalletProps> = ({
     tierBalance,
     packBalance,
-    tier = "spore",
     paidWeek = 0,
     tierWeek = 0,
 }) => {
     const displayTierBalance = normalizeDisplayBalance(tierBalance);
     const displayPaidBalance = normalizeDisplayBalance(packBalance);
-    const hideTierSegment = tier === "microbe" && displayTierBalance === 0;
 
     return (
         <div data-theme="accent" className="px-3 py-1 flex flex-col gap-1">
@@ -280,24 +245,22 @@ export const SidebarWallet: FC<SidebarWalletProps> = ({
                     )}
                 </span>
             </div>
-            {!hideTierSegment && (
-                <div className="flex items-center justify-between gap-2">
-                    <span className="flex items-center gap-1.5 text-xs font-bold text-theme-text-soft">
-                        <WalletKindIcon kind="tier" />
-                        Quest
+            <div className="flex items-center justify-between gap-2">
+                <span className="flex items-center gap-1.5 text-xs font-bold text-theme-text-soft">
+                    <WalletKindIcon kind="tier" />
+                    Quest
+                </span>
+                <span className="flex items-baseline gap-1.5">
+                    <span className="text-sm font-bold tabular-nums text-theme-text-soft leading-none">
+                        {formatPollen(displayTierBalance)}
                     </span>
-                    <span className="flex items-baseline gap-1.5">
-                        <span className="text-sm font-bold tabular-nums text-theme-text-soft leading-none">
-                            {formatPollen(displayTierBalance)}
+                    {tierWeek > 0 && (
+                        <span className="text-micro font-bold tabular-nums text-intent-success-text">
+                            +{formatPollen(tierWeek)}
                         </span>
-                        {tierWeek > 0 && (
-                            <span className="text-micro font-bold tabular-nums text-intent-success-text">
-                                +{formatPollen(tierWeek)}
-                            </span>
-                        )}
-                    </span>
-                </div>
-            )}
+                    )}
+                </span>
+            </div>
         </div>
     );
 };

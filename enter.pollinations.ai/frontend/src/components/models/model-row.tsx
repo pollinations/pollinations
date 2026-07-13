@@ -203,7 +203,7 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
             </div>
 
             {/* Per pollen — fixed width; gold + card for paid-only models, green
-                + sprout for tier-eligible models (replaces the old PAID badge) */}
+                + sprout for models that can use Quest Pollen. */}
             <div className="w-[90px] text-center shrink-0">
                 <Tooltip content={perPollenTooltip} displayContents>
                     {showPaidOnly ? (

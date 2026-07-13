@@ -3,11 +3,9 @@ import { hasTrustedProxyHeaders } from "./public-origin.ts";
 
 /**
  * Resolve the real visitor IP. When the worker is reached through a trusted
- * proxy hop, CF-Connecting-IP is the proxy's egress IP — useless for rate
+ * edge hop, CF-Connecting-IP can be the edge's egress IP — useless for rate
  * limiting or abuse detection — so we prefer X-Original-Client-IP instead.
- * Two trusted proxies set that header (both gated by hasTrustedProxyHeaders,
- * which only trusts a known X-Forwarded-Host):
- *   - pollinations-myceli-proxy (old Cloudflare account Worker) forwards it.
+ * A trusted edge sets that header only with a known X-Forwarded-Host:
  *   - AWS CloudFront in front of gen.pollinations.ai injects it via the
  *     `pln-gen-viewer-ip` viewer-request function (event.viewer.ip). Without
  *     this, Origin Shield collapses every client to a handful of 64.252.x

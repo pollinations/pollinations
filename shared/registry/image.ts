@@ -326,7 +326,7 @@ export const IMAGE_SERVICES = {
             completionImageTokens: 0.0014, // per image
         },
         title: "Flux Schnell",
-        description: "Flux Schnell - Fast high-quality image generation (VAST)",
+        description: "Flux Schnell - Fast high-quality image generation",
         inputModalities: ["text"],
         outputModalities: ["image"],
     },

@@ -1,0 +1,168 @@
+name: Deploy Operation Cloudflare Apps
+
+on:
+  push:
+    branches:
+      - production
+    paths:
+      - "apps/operation/kpi/**"
+      - "apps/operation/quest-dashboard/**"
+      - "apps/operation/observability/**"
+      - ".github/workflows/deploy-operation-cloudflare.yml"
+  workflow_dispatch:
+    inputs:
+      app:
+        description: "Operation app to deploy"
+        required: true
+        type: choice
+        default: all
+        options:
+          - all
+          - kpi
+          - quest-dashboard
+          - observability
+
+permissions:
+  contents: read
+
+jobs:
+  detect:
+    runs-on: ubuntu-latest
+    outputs:
+      apps: ${{ steps.detect.outputs.apps }}
+      skip: ${{ steps.detect.outputs.skip }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Detect operation apps
+        id: detect
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          SELECTED_APP: ${{ github.event.inputs.app || 'all' }}
+          BEFORE_SHA: ${{ github.event.before }}
+          CURRENT_SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+
+          SUPPORTED_APPS="kpi quest-dashboard observability"
+
+          if [ "$EVENT_NAME" = "workflow_dispatch" ]; then
+            if [ "$SELECTED_APP" = "all" ]; then
+              APPS="$SUPPORTED_APPS"
+            else
+              APPS="$SELECTED_APP"
+            fi
+          else
+            if [ -n "$BEFORE_SHA" ] && [ "$BEFORE_SHA" != "0000000000000000000000000000000000000000" ]; then
+              git diff --name-only "$BEFORE_SHA" "$CURRENT_SHA" > changed.txt
+            else
+              git diff --name-only HEAD~1 HEAD > changed.txt
+            fi
+
+            if grep -qx ".github/workflows/deploy-operation-cloudflare.yml" changed.txt; then
+              APPS="$SUPPORTED_APPS"
+            else
+              APPS=$(
+                sed -n 's|^apps/operation/\([^/]*\)/.*|\1|p' changed.txt \
+                  | sort -u \
+                  | grep -E '^(kpi|quest-dashboard|observability)$' \
+                  | xargs || true
+              )
+            fi
+          fi
+
+          if [ -z "$APPS" ]; then
+            echo "No operation Cloudflare app changes detected"
+            echo "apps=[]" >> "$GITHUB_OUTPUT"
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          APPS_JSON=$(APPS="$APPS" node -e 'console.log(JSON.stringify(process.env.APPS.trim().split(/\s+/)))')
+          echo "Deploying operation apps: $APPS"
+          echo "apps=$APPS_JSON" >> "$GITHUB_OUTPUT"
+          echo "skip=false" >> "$GITHUB_OUTPUT"
+
+  deploy:
+    needs: detect
+    if: needs.detect.outputs.skip != 'true'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        app: ${{ fromJSON(needs.detect.outputs.apps) }}
+    concurrency:
+      group: operation-${{ matrix.app }}-production
+      cancel-in-progress: false
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN_MYCELI }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID_MYCELI }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+
+      - name: Setup SOPS
+        if: matrix.app == 'kpi' || matrix.app == 'observability'
+        uses: nhedger/setup-sops@v2
+
+      - name: Verify Docker
+        if: matrix.app == 'observability'
+        run: docker info
+
+      - name: Install dependencies
+        run: npm ci
+        working-directory: ./apps/operation/${{ matrix.app }}
+
+      - name: Deploy KPI Worker
+        if: matrix.app == 'kpi'
+        run: npm run deploy
+        working-directory: ./apps/operation/kpi
+
+      - name: Push KPI secrets
+        if: matrix.app == 'kpi'
+        env:
+          SOPS_AGE_KEY: ${{ secrets.SOPS_AGE_KEY }}
+        run: sops exec-file --no-fifo secrets/env.json 'npx wrangler secret bulk {}'
+        working-directory: ./apps/operation/kpi
+
+      - name: Deploy Quest Dashboard Worker
+        if: matrix.app == 'quest-dashboard'
+        run: npm run deploy
+        working-directory: ./apps/operation/quest-dashboard
+
+      - name: Validate Observability Worker configuration
+        if: matrix.app == 'observability'
+        run: npm run check
+        working-directory: ./apps/operation/observability
+
+      - name: Deploy Observability Grafana container Worker
+        if: matrix.app == 'observability'
+        run: npm run deploy
+        working-directory: ./apps/operation/observability
+
+      - name: Push Observability Grafana secrets
+        if: matrix.app == 'observability'
+        env:
+          SOPS_AGE_KEY: ${{ secrets.SOPS_AGE_KEY }}
+        run: npm run push-secrets
+        working-directory: ./apps/operation/observability
+
+      - name: Verify Observability Myceli origin health
+        if: matrix.app == 'observability'
+        run: |
+          curl --fail --retry 12 --retry-delay 10 --retry-all-errors \
+            https://observability.myceli.ai/api/health
+
+      - name: Verify Observability Pollinations public URL
+        if: matrix.app == 'observability'
+        run: |
+          curl --fail --retry 12 --retry-delay 10 --retry-all-errors \
+            https://observability.pollinations.ai/api/health

@@ -18,6 +18,7 @@ import type { ChatCompletion, RequestData, ServiceError } from "./types.js";
 type TextContext = Context<Env>;
 
 const TEXT_ENV_KEYS = [
+    "AI_GATEWAY_API_KEY",
     "AWS_ACCESS_KEY_ID",
     "AWS_REGION",
     "AWS_SECRET_ACCESS_KEY",

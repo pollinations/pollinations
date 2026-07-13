@@ -30,7 +30,8 @@ jobs:
       - name: Sync ${{ matrix.datasource }}
         env:
           DATASOURCE: ${{ matrix.datasource }}
-          SYNC_TOKEN: ${{ secrets.TINYBIRD_SYNC_TOKEN }}
+          EXPORT_TOKEN: ${{ secrets.D1_EXPORT_TOKEN }}
+          TINYBIRD_TOKEN: ${{ secrets.TINYBIRD_SYNC_TOKEN }}
           TINYBIRD_HOST: https://api.europe-west2.gcp.tinybird.co
         run: |
           set -euo pipefail
@@ -58,7 +59,7 @@ jobs:
 
             http_code=$(curl -sS --max-time 180 -o "$page_file" -w "%{http_code}" \
               -X POST "https://enter.pollinations.ai/api/admin/trigger-d1-sync" \
-              -H "Authorization: Bearer $SYNC_TOKEN" \
+              -H "Authorization: Bearer $EXPORT_TOKEN" \
               -H "Content-Type: application/json" \
               --data "$payload")
 
@@ -92,20 +93,25 @@ jobs:
             fi
           done
 
+          if [ "$total_rows" -eq 0 ]; then
+            echo "::error::$DATASOURCE export was empty; keeping the existing Tinybird snapshot"
+            exit 1
+          fi
+
           import_file="$RUNNER_TEMP/$DATASOURCE-import.json"
           http_code=$(curl -sS --max-time 300 -o "$import_file" -w "%{http_code}" \
             -X POST "$TINYBIRD_HOST/v0/datasources?name=$DATASOURCE&mode=replace&format=ndjson" \
-            -H "Authorization: Bearer $SYNC_TOKEN" \
+            -H "Authorization: Bearer $TINYBIRD_TOKEN" \
             -F "ndjson=@$snapshot;type=application/x-ndjson")
 
           if [ "$http_code" -lt 200 ] || [ "$http_code" -ge 300 ]; then
-            echo "::error::$DATASOURCE replacement failed with HTTP $http_code: $(cat "$import_file")"
+            echo "::error::$DATASOURCE replacement failed with HTTP $http_code"
             exit 1
           fi
 
           job_id=$(jq -r '.job_id // .import_id // .id // empty' "$import_file")
           if [ -z "$job_id" ]; then
-            echo "::error::$DATASOURCE replacement did not return a job ID: $(cat "$import_file")"
+            echo "::error::$DATASOURCE replacement did not return a job ID"
             exit 1
           fi
 
@@ -113,9 +119,9 @@ jobs:
             job_file="$RUNNER_TEMP/$DATASOURCE-job.json"
             http_code=$(curl -sS --max-time 30 -o "$job_file" -w "%{http_code}" \
               "$TINYBIRD_HOST/v0/jobs/$job_id" \
-              -H "Authorization: Bearer $SYNC_TOKEN")
+              -H "Authorization: Bearer $TINYBIRD_TOKEN")
             if [ "$http_code" != "200" ]; then
-              echo "::error::$DATASOURCE job check failed with HTTP $http_code: $(cat "$job_file")"
+              echo "::error::$DATASOURCE job check failed with HTTP $http_code"
               exit 1
             fi
 
@@ -126,18 +132,19 @@ jobs:
               invalid_lines=$(jq -r '.invalid_lines // -1' "$job_file")
               if [ "$imported_rows" -ne "$total_rows" ] || \
                  [ "$quarantine_rows" -ne 0 ] || [ "$invalid_lines" -ne 0 ]; then
-                echo "::error::$DATASOURCE replacement validation failed: $(cat "$job_file")"
+                echo "::error::$DATASOURCE validation failed: expected=$total_rows imported=$imported_rows quarantined=$quarantine_rows invalid=$invalid_lines"
                 exit 1
               fi
               echo "::notice::$DATASOURCE replaced atomically: $total_rows rows across $pages pages"
               exit 0
             fi
             if [ "$status" = "error" ] || [ "$status" = "cancelled" ]; then
-              echo "::error::$DATASOURCE replacement job $status: $(cat "$job_file")"
+              echo "::error::$DATASOURCE replacement job $status"
               exit 1
             fi
-            if [ "$status" != "waiting" ] && [ "$status" != "working" ]; then
-              echo "::error::$DATASOURCE replacement job returned status '$status': $(cat "$job_file")"
+            if [ "$status" != "waiting" ] && [ "$status" != "working" ] && \
+               [ "$status" != "cancelling" ]; then
+              echo "::error::$DATASOURCE replacement job returned status '$status'"
               exit 1
             fi
             sleep 5

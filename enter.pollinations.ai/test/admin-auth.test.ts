@@ -1,4 +1,4 @@
-import { env, SELF } from "cloudflare:test";
+import { SELF } from "cloudflare:test";
 import { describe, expect } from "vitest";
 import { test } from "./fixtures.ts";
 
@@ -18,14 +18,14 @@ describe("Admin authentication", () => {
         expect(response.status).toBe(401);
     });
 
-    test("should reject requests with invalid token", async () => {
+    test("should reject the Tinybird token", async () => {
         const response = await SELF.fetch(
             `${baseUrl}/api/admin/trigger-d1-sync`,
             {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
-                    Authorization: "Bearer invalid_token",
+                    Authorization: "Bearer test_tinybird_sync_token",
                 },
             },
         );
@@ -39,7 +39,7 @@ describe("Admin authentication", () => {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
-                    Authorization: `Bearer ${env.TINYBIRD_SYNC_TOKEN}`,
+                    Authorization: "Bearer test_d1_export_token",
                 },
                 body: JSON.stringify({
                     datasource: "d1_user",
@@ -76,7 +76,7 @@ describe("Admin authentication", () => {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
-                    Authorization: `Bearer ${env.TINYBIRD_SYNC_TOKEN}`,
+                    Authorization: "Bearer test_d1_export_token",
                 },
                 body: JSON.stringify(requestBody),
             },

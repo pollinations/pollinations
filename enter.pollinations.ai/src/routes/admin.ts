@@ -1,3 +1,4 @@
+import { bytesToHex } from "@shared/client-ip.ts";
 import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
 import type { Env } from "../env.ts";
@@ -22,12 +23,12 @@ export const adminRoutes = new Hono<Env>()
             return await next();
         }
 
-        // Allow the dedicated sync token only on the D1 export endpoint.
-        const syncToken = c.env.TINYBIRD_SYNC_TOKEN;
+        // The runner holds the token; the Worker stores only its hash.
+        const exportTokenHash = c.env.D1_EXPORT_TOKEN_SHA256;
         if (
-            syncToken &&
-            providedKey === syncToken &&
-            c.req.path.endsWith("/trigger-d1-sync")
+            exportTokenHash &&
+            c.req.path.endsWith("/trigger-d1-sync") &&
+            (await sha256(providedKey)) === exportTokenHash
         ) {
             return await next();
         }
@@ -80,3 +81,8 @@ export const adminRoutes = new Hono<Env>()
             done: result.done,
         });
     });
+
+async function sha256(value: string): Promise<string> {
+    const bytes = new TextEncoder().encode(value);
+    return bytesToHex(await crypto.subtle.digest("SHA-256", bytes));
+}

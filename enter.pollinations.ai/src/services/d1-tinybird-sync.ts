@@ -3,6 +3,8 @@
  *
  * GitHub Actions assembles the pages and atomically replaces each Tinybird
  * datasource. Sensitive columns are excluded here and never leave D1.
+ * Each page is a separate D1 read, so the export is not a point-in-time
+ * transaction and may include concurrent changes.
  */
 
 const PAGE_SIZE = 5000;

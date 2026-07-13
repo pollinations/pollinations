@@ -70,10 +70,10 @@ We've launched **https://gen.pollinations.ai** — a single endpoint for all you
 - 🤝 **Community-Built** — 500+ projects already using our APIs
 - 🌱 **Pollen Quests** — earn Pollen by completing Quests (in alpha)
 - 🖼️ **Image Generation** — Text-to-image and image editing
-- 📝 **Text Generation** - Chat, reasoning, vision, function calling, structured outputs 
+- 📝 **Text Generation** — Chat, reasoning, vision, function calling, structured outputs 
 - 🎬 **Video Generation** — Text-to-video and image-to-video
 - 🎵 **Audio** — Text-to-speech and speech-to-text
-- 🧊 **3D Generation** - Text-to-3D and Image-to-3D
+- 🧊 **3D Generation** — Text-to-3D and image-to-3D
 - 🔢 **Embeddings Creation** — Semantic search, retrieval, similarity matching
 - 🎣 **_Easy-to-use Packages_** ([Packages](packages/))
 

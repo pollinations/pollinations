@@ -1,0 +1,35 @@
+{
+  "pr_number": 12402,
+  "title": "fix: remove unused branch cleanup workflow",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/12402",
+  "merged_at": "2026-07-13T14:02:21Z",
+  "labels": [
+    "DEV-INFRA"
+  ],
+  "pr_body_excerpt": "- Removes the unused manual stale-branch cleanup workflow.\n- Deletes the obsolete maintenance page and its overview references.\n- Removes 226 lines tied to branch cleanup automation that has not run since December 2025.\n- Keeps GitHub's native merged-branch deletion setting unchanged.\n\nChecks:\n- `git diff --check`\n- Confirmed no stale branch-cleanup references remain under `.github/`",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "The broom retired",
+    "blurb": "The old stale-branch broom has been put back in the shed. GitHub’s native merged-branch cleanup remains quietly on duty.",
+    "summary": "Removed the unused manual stale-branch cleanup workflow, its maintenance documentation, and overview references, eliminating 226 lines of automation that had not run since December 2025.",
+    "impact": "Repository maintenance is now simpler, while GitHub’s existing native setting continues deleting merged branches as before.",
+    "keywords": [
+      "github-actions",
+      "branch-cleanup",
+      "maintenance",
+      "repository",
+      "workflow"
+    ],
+    "visual_concept": "Depict Polly tidying a cozy garden shed and placing an old unused broom beside a retired paper workflow checklist, while a small sign shows GitHub’s native merged-branch cleanup still working in the background. Include vines, flowers, and a neat stack of merged branch twigs to represent simpler repository maintenance.",
+    "image_prompt": "Cozy pixel art scene of Polly, the cute yellow-and-brown striped bee mascot wearing a tiny gardener scarf, gently retiring an old broom and a faded workflow checklist in a flower-filled garden shed while a small retro terminal quietly sorts merged branch twigs nearby. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, retro gaming vibes, subtle pixel-font sign reading “CLEANUP”. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-13/PR-12402.jpg",
+    "prompt": "Cozy pixel art scene of Polly, the cute yellow-and-brown striped bee mascot wearing a tiny gardener scarf, gently retiring an old broom and a faded workflow checklist in a flower-filled garden shed while a small retro terminal quietly sorts merged branch twigs nearby. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, retro gaming vibes, subtle pixel-font sign reading “CLEANUP”. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-07-13T14:03:19.766651+00:00"
+}

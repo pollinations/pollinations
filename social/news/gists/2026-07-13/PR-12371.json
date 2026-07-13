@@ -1,0 +1,33 @@
+{
+  "pr_number": 12371,
+  "title": "chore: update app metrics 2026-07-13",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/12371",
+  "merged_at": "2026-07-13T05:19:10Z",
+  "labels": [],
+  "pr_body_excerpt": "Daily automated update of app metrics, health checks, and greenhouse",
+  "gist": {
+    "category": "community",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Daily Greenhouse Check",
+    "blurb": "Our automated bot just watered the plants and updated the daily app metrics in the greenhouse.",
+    "summary": "Automated daily update of community app metrics and health checks in APPS.md and GREENHOUSE.md.",
+    "impact": "Developers can view the latest health and usage metrics for community apps in the repository.",
+    "keywords": [
+      "metrics",
+      "apps",
+      "greenhouse",
+      "automated",
+      "health-checks"
+    ],
+    "visual_concept": "The pollinations bee mascot checking on a digital greenhouse, holding a clipboard with a checklist. A cute robot companion watering pixelated code-plants.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot holding a tiny clipboard, inspecting a digital greenhouse where code-plants sprout from lime green (#ecf874) flower pots. A chunky robot with a CRT monitor head waters the plants. Soft pastel gradient background, warm lighting, lo-fi vibes like Stardew Valley. Cozy pixel art, 8-bit aesthetic."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-13/PR-12371.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot holding a tiny clipboard, inspecting a digital greenhouse where code-plants sprout from lime green (#ecf874) flower pots. A chunky robot with a CRT monitor head waters the plants. Soft pastel gradient background, warm lighting, lo-fi vibes like Stardew Valley. Cozy pixel art, 8-bit aesthetic."
+  },
+  "generated_at": "2026-07-13T05:20:10.287813+00:00"
+}

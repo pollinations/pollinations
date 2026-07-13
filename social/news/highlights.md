@@ -1,3 +1,6 @@
+- **2026-07-12** – **✨ The hive’s ledger** Track exact Pollen spend and earnings together in a fast Activity dashboard, with infinite event history and daily breakdowns.
+- **2026-07-12** – **🔍 Find a model without spelunking** The dashboard’s Models catalog now searches names, brands, and descriptions while keeping category tabs pinned.
+- **2026-07-12** – **🚀 Muse Spark 1.1** `muse-spark-1.1` is now available for paid text and vision generation, with always-on reasoning for harder prompts. [Browse models](https://gen.pollinations.ai/v1/models)
 - **2026-07-10** – **🚀 GPT 5.6 & Seedream 5 Pro** The GPT 5.6 family (Sol, Terra, Luna) is now live for text generation, alongside Seedream 5 Pro for high-quality images. Check the [Available Models](https://gen.pollinations.ai/v1/models).
 - **2026-07-10** – **✨ CLI Quest Rewards** Track your earned Pollen and quest progress directly from the terminal with the updated [Polli CLI](https://www.npmjs.com/package/@pollinations/cli).
 - **2026-07-06** – **🎮 Roblox Integration** Tomdacat brings Pollinations to Roblox creators with an OpenAI-compatible API powering 40+ models. [Try it](https://ai.tomdacat.com) <!-- app -->

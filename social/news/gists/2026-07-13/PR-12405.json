@@ -1,0 +1,35 @@
+{
+  "pr_number": 12405,
+  "title": "Add consistent GitHub workflow naming",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/12405",
+  "merged_at": "2026-07-13T16:23:44Z",
+  "labels": [
+    "DEV-INFRA"
+  ],
+  "pr_body_excerpt": "- Renames 27 workflow files into consistent functional groups.\n- Standardizes all 30 workflow display names across Apps, Build, CI, Data, Deploy, Docs, News, Release, and Repo.\n- Keeps both deploy workflow names in the API-reference `workflow_run` filter during the main-to-production rollout.\n- Updates repository documentation, agent guidance, and script references; generated `APIDOCS.md` is unchanged.\n- Preserves workflow triggers, permissions, jobs, and deployment behavior. Validated with `actionlint`, Biome, Bash, and Python syntax checks.\n",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "The workflows found their labels",
+    "blurb": "Thirty GitHub workflows have been sorted into tidy functional groups. Same busy hive, much clearer signposts.",
+    "summary": "Renamed 27 GitHub Actions workflow files and standardized all 30 workflow display names into Apps, Build, CI, Data, Deploy, Docs, News, Release, and Repo groups while preserving triggers, permissions, jobs, and deployment behavior.",
+    "impact": "Maintainers get consistently named automation and documentation references, with the API-reference deployment handoff retaining both workflow names during the main-to-production rollout.",
+    "keywords": [
+      "github-actions",
+      "workflows",
+      "automation",
+      "deployment",
+      "repository-maintenance"
+    ],
+    "visual_concept": "A cozy garden-shed automation board where Polly, wearing a tiny librarian visor, organizes labeled workflow seed packets into neat shelves for Apps, Build, CI, Data, Deploy, Docs, News, Release, and Repo. A friendly CRT monitor robot helps sort the packets, while code-vines and flowers show that the underlying garden machinery is still humming exactly as before.",
+    "image_prompt": "Cozy pixel art scene of Polly the cute yellow-and-brown striped bee mascot wearing a tiny librarian visor, carefully sorting lime green (#ecf874) workflow seed packets into a warm garden-shed shelf labeled in simple pixel text: “CI”, “DEPLOY”, and “DOCS”; a helpful CRT-monitor robot holds a tidy checklist beside code-plants and pastel flowers. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, dark purple (#110518) outlines, nostalgic and emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-13/PR-12405.jpg",
+    "prompt": "Cozy pixel art scene of Polly the cute yellow-and-brown striped bee mascot wearing a tiny librarian visor, carefully sorting lime green (#ecf874) workflow seed packets into a warm garden-shed shelf labeled in simple pixel text: “CI”, “DEPLOY”, and “DOCS”; a helpful CRT-monitor robot holds a tidy checklist beside code-plants and pastel flowers. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, dark purple (#110518) outlines, nostalgic and emotionally warm."
+  },
+  "generated_at": "2026-07-13T16:24:44.005634+00:00"
+}

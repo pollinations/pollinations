@@ -14,22 +14,22 @@
 
 </div>
 
-<p align="center"><img src="https://media.pollinations.ai/8d8dcfb9bd9905af" alt="Pixel art cozy hackerspace — robot at terminal, nomnom creature eating code, bee with glasses" width="800" height="340" /></p>
+<p align="center"><img src="https://media.pollinations.ai/eb3be88cf66d7491" alt="Pixel art cozy hackerspace — robot at terminal, nomnom creature eating code, bee with glasses" width="800" /></p>
 
 ## 🆕 Recent Apps
 
 | Name | Description | Author |
 |------|-------------|--------|
+| [🖼️ Pollinations Image Studio](https://housir2001.github.io/pollinations-image-demo/) | Generate images with Pollinations.ai in Pollinations Image Studio using a free, no-key, two-surface setup. | [@housir2001](https://github.com/housir2001) |
 | [🤖 LLM Playground](https://llmplayground.net) | LLM Playground is a chat workspace for GPT, Claude, Pollinations, and other AI models with markdown/LaTeX rendering. Add custom AI Characters and team servers with channels and per-member quotas. | [@voodoohop](https://github.com/voodoohop) |
 | [🖼️ /motion](https://motion-e93d3.web.app/) | /motion is a free, open-source generative graphics studio for designing WebGL shader visuals and looping motion backgrounds. It lets users tweak shader parameters, customize palettes, preview visuals | [@murderszn](https://github.com/murderszn) |
-| [🌱 Sprout](https://murderszn.github.io/sprout/) | Display the Sprout social card image at https://murderszn.github.io/sprout/public/og-image.png. | [@murderszn](https://github.com/murderszn) |
+| [🌱 Sprout](https://murderszn.github.io/sprout/) | Open-source CLI that diagnoses and fixes dev tool installs, config, and PATH issues. | [@murderszn](https://github.com/murderszn) |
 | [💬 Flow Linnom](https://flow.linnom.com) | Flow Linnom provides a chat interface to access multiple AI language models. | [@omarsenusi](https://github.com/omarsenusi) |
 | [🎙️ VoiceEnable Agent](https://metamysteries8.github.io/realtimed/) | Enable voice functionality for VoiceEnable Agent. | [@MetaMysteries8](https://github.com/MetaMysteries8) |
 | [📝 Textylize](https://textylize.vercel.app/) | Textylize is a mainly client-side text stylizer. It lets users apply text styling changes. | [@bytetilde](https://github.com/bytetilde) |
 | [🖼️ Poli image and chat](https://poli-sparkle-studio.lovable.app) | Use Poli image and chat to access free source providers and generate professional images or run chat tools. | [@malik4498](https://github.com/malik4498) |
 | [🎨 PolliArt Studio](https://github.com/wwishao/polli-art-studio) | Generate AI artwork from text prompts using the pollinations.ai API in PolliArt Studio. Choose Flux (free) or Turbo models and save generation history in local storage with a gallery view. | [@wwishao](https://github.com/wwishao) |
 | [📚 BeDream APP](https://bedream.xyz) | **BeDream APP** is a comprehensive AI roleplay and creative writing platform designed for immersive, unrestricted storytelling. Users can craft deeply detailed characters, build elaborate worlds and s | [@budibudi7](https://github.com/budibudi7) |
-| [🗺️ World Weaver](https://github.com/MrMegnis/world-generator) | Generate worlds with AI using GPT-5.4, render scenes with gpt-image-2, and create videos with ltx-2 via pollinations.ai unified API. | [@MrMegnis](https://github.com/MrMegnis) |
 
 [Browse all apps →](apps/GREENHOUSE.md)
 ## 🚀 New Unified API — Now Live
@@ -181,10 +181,8 @@ Get your API key at [enter.pollinations.ai](https://enter.pollinations.ai)
 
 | Key             | Prefix | Use Case                       | Rate Limits              | Status  |
 | --------------- | ------ | ------------------------------ | ------------------------ | ------- |
-| **Publishable** | `pk_`  | Client-side, demos, prototypes | 1 pollen per IP per hour | ⚠️ Beta |
+| **App Key** | `pk_`  | Browsers, mobile apps, public clients | Budget & permissions set at creation | Stable |
 | **Secret**      | `sk_`  | Server-side only               | No rate limits           | Stable  |
-
-> ⚠️ **Publishable keys:** Turnstile protection coming soon. Not recommended for production yet.
 
 > ⚠️ **Never expose `sk_` keys** in client-side code, git repos, or public URLs
 
@@ -227,9 +225,9 @@ Replace the description with your own, and you'll get a unique image based on yo
 
 Here's an example of a generated image:
 
-<p align="center"><img src="https://media.pollinations.ai/589dc7f43393c30a" alt="Pixel art robot and bee in a cozy digital garden — Stardew Valley vibes" width="800" height="340" /></p>
+<p align="center"><img src="https://media.pollinations.ai/9e0df3b04d27666c" alt="Pixel art robot and bee in a cozy digital garden — Stardew Valley vibes" width="800" /></p>
 
-<p align="center"><img src="https://media.pollinations.ai/7317bd94b97edde2" alt="Robot holding generated image saying I CAN SEE, nomnom creature eating prompt text" width="800" height="340" /></p>
+<p align="center"><img src="https://media.pollinations.ai/ec34c8a3c45c42d9" alt="Robot holding generated image saying I CAN SEE, nomnom creature eating prompt text" width="800" /></p>
 
 ## 🎨 Examples
 
@@ -394,7 +392,7 @@ For development setup and environment management, see [DEVELOP.md](./DEVELOP.md)
 
 > pollinations.ai is proud to be supported by:
 
-<p align="center"><img src="https://media.pollinations.ai/8d2067a54db29fbf" alt="Pixel art garden shelf — supporter plants in labeled pots, robot watering, bee with watering can" width="800" height="340" /></p>
+<p align="center"><img src="https://media.pollinations.ai/3f7405eb2d6f57b7" alt="Pixel art garden shelf — supporter plants in labeled pots, robot watering, bee with watering can" width="800" /></p>
 
 - [Perplexity AI](https://www.perplexity.ai/): AI-powered search and conversational answer engine
 - [AWS Activate](https://aws.amazon.com/): GPU Cloud Credits

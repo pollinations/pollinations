@@ -32,28 +32,55 @@ describe("Admin authentication", () => {
         expect(response.status).toBe(401);
     });
 
-    test("should allow full admin token access to trigger d1 sync", async ({
-        mocks,
-    }) => {
-        await mocks.enable("tinybird");
-
+    test("should allow the sync token to export a d1 page", async () => {
         const response = await SELF.fetch(
             `${baseUrl}/api/admin/trigger-d1-sync`,
             {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
-                    Authorization: `Bearer ${env.PLN_ENTER_TOKEN}`,
+                    Authorization: `Bearer ${env.TINYBIRD_SYNC_TOKEN}`,
                 },
+                body: JSON.stringify({
+                    datasource: "d1_user",
+                }),
             },
         );
         expect(response.status).toBe(200);
 
         const body = (await response.json()) as {
             success: boolean;
-            tables: Array<{ datasource: string; status: string }>;
+            datasource: string;
+            rows: unknown[];
+            done: boolean;
         };
         expect(body.success).toBe(true);
-        expect(body.tables.every((t) => t.status === "ok")).toBe(true);
+        expect(body.datasource).toBe("d1_user");
+        expect(body.rows).toEqual([]);
+        expect(body.done).toBe(true);
+    });
+
+    test.each([
+        ["unknown datasource", { datasource: "unknown" }],
+        [
+            "empty cursor",
+            {
+                datasource: "d1_user",
+                cursor: "",
+            },
+        ],
+    ])("should reject %s", async (_name, requestBody) => {
+        const response = await SELF.fetch(
+            `${baseUrl}/api/admin/trigger-d1-sync`,
+            {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${env.TINYBIRD_SYNC_TOKEN}`,
+                },
+                body: JSON.stringify(requestBody),
+            },
+        );
+        expect(response.status).toBe(400);
     });
 });

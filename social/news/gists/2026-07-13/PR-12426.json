@@ -1,0 +1,36 @@
+{
+  "pr_number": 12426,
+  "title": "Add Silenos Visual Production & Illustration Studio to image",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/12426",
+  "merged_at": "2026-07-13T23:51:40Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds [Silenos Visual Production & Illustration Studio](https://www.silenos.es/ilustrador/) to image\n- Centraliza literatura, contenido creativo y desarrollo técnico en la plataforma silenos.es con un enfoque minimalista y preciso, priorizando el contenido puro y arquitecturas lógicas.\n\nFixes #12394",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "A new studio blooms",
+    "blurb": "Silenos Visual Production & Illustration Studio has joined the garden. Literature, illustration, creative work, and tidy technical architecture now have a place on the Pollinations app map.",
+    "summary": "Added Silenos Visual Production & Illustration Studio, a minimal silenos.es platform bringing together literature, creative content, illustration, and technical development, to the image apps directory.",
+    "impact": "People exploring Pollinations-powered image projects can now discover Silenos and its focused visual-production and illustration work directly from the community listings.",
+    "keywords": [
+      "community",
+      "image",
+      "illustration",
+      "creative-tools",
+      "silenos",
+      "apps"
+    ],
+    "visual_concept": "Depict a cozy illustration studio as a small garden workshop: Polly is a friendly artist-bee in a painter's beret, tending an easel where a clean botanical illustration and a tiny architectural sketch grow together. Include a retro terminal, potted code-plants, sketchbooks, and soft minimal studio shelves to represent Silenos combining literature, creative production, illustration, and logical technical architecture.",
+    "image_prompt": "Cozy pixel art scene inside a warm minimalist illustration studio where Polly, a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings, wears a tiny painter's beret while painting a botanical illustration on an easel beside potted code-plants and a retro terminal; lime green (#ecf874) appears prominently in the canvas glow, plants, and studio accents. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, with subtle pixel-font text reading “SILENOS,” nostalgic but beautiful and emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-13/PR-12426.jpg",
+    "prompt": "Cozy pixel art scene inside a warm minimalist illustration studio where Polly, a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings, wears a tiny painter's beret while painting a botanical illustration on an easel beside potted code-plants and a retro terminal; lime green (#ecf874) appears prominently in the canvas glow, plants, and studio accents. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, with subtle pixel-font text reading “SILENOS,” nostalgic but beautiful and emotionally warm."
+  },
+  "generated_at": "2026-07-13T23:52:44.431966+00:00",
+  "app_name": "Silenos Visual Production & Illustration Studio",
+  "app_url": "https://www.silenos.es/ilustrador/"
+}

@@ -1,0 +1,36 @@
+{
+  "pr_number": 12398,
+  "title": "fix: verify D1 Tinybird sync with exact counts",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/12398",
+  "merged_at": "2026-07-13T13:10:24Z",
+  "labels": [
+    "DEV-INFRA"
+  ],
+  "pr_body_excerpt": "- Replaces the undocumented multipart-response row-count check that returned `imported=-1`.\n- Verifies the synchronous replacement response identifies the expected datasource.\n- Uses the existing `TINYBIRD_READ_TOKEN` to query exact datasource and quarantine counts after replacement.\n- Keeps Tinybird response bodies and D1 row contents out of public logs.\n- Validated with actionlint, embedded Bash syntax checks, response fixtures, and live aggregate-only Tinybird queries; the full branch workflow run is the merge gate.",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Count the seeds exactly",
+    "blurb": "The D1-to-Tinybird garden keeper now checks the actual rows after every synchronous replacement, rather than trusting a mysterious multipart whisper.",
+    "summary": "The D1–Tinybird sync workflow now verifies the replacement datasource identity and uses TINYBIRD_READ_TOKEN to query exact datasource and quarantine row counts after replacement.",
+    "impact": "Deployments gain more reliable aggregate-only sync validation while keeping Tinybird response bodies and D1 row contents out of public logs.",
+    "keywords": [
+      "D1",
+      "Tinybird",
+      "sync",
+      "GitHub Actions",
+      "validation",
+      "workflow"
+    ],
+    "visual_concept": "A cozy garden-shed data pipeline: Polly acts as a careful gardener with a tiny clipboard, comparing exact counts on two small retro terminal displays labeled D1 and Tinybird. Seed jars and code-plants represent datasource and quarantine rows, while the screens show only simple aggregate tally marks to emphasize private, exact verification.",
+    "image_prompt": "Cozy pixel art scene in a warm garden shed where Polly, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny accountant visor, checks matching tally marks on two retro terminals labeled “D1” and “TINYBIRD”; code-plants and seed jars sit nearby, with lime green (#ecf874) glowing prominently from the screens. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, subtle scanlines, dark purple (#110518) outlines, emotionally warm and careful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-13/PR-12398.jpg",
+    "prompt": "Cozy pixel art scene in a warm garden shed where Polly, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny accountant visor, checks matching tally marks on two retro terminals labeled “D1” and “TINYBIRD”; code-plants and seed jars sit nearby, with lime green (#ecf874) glowing prominently from the screens. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, subtle scanlines, dark purple (#110518) outlines, emotionally warm and careful."
+  },
+  "generated_at": "2026-07-13T13:11:27.641279+00:00"
+}

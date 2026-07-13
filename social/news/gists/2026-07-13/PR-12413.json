@@ -1,0 +1,36 @@
+{
+  "pr_number": 12413,
+  "title": "Add Blaze Prep to learn",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/12413",
+  "merged_at": "2026-07-13T16:34:51Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds [Blaze Prep](https://blazeprep.net) to learn\n- Manage FDNY Prep learning content in Blaze Prep, with AI-generated materials from Pollinations AI.\n\nFixes #11689",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Study sparks, no smoke",
+    "blurb": "Blaze Prep has joined the learning garden. FDNY Prep study material can now grow from a prompt, with Pollinations AI helping keep the practice pile well stocked.",
+    "summary": "Added Blaze Prep to the Pollinations learn directory, highlighting its FDNY Prep learning-content workflow with AI-generated study materials from Pollinations AI.",
+    "impact": "Learners and builders can now discover Blaze Prep as a Pollinations-powered tool for creating FDNY Prep practice materials.",
+    "keywords": [
+      "community",
+      "learn",
+      "Blaze Prep",
+      "FDNY Prep",
+      "education",
+      "AI study materials"
+    ],
+    "visual_concept": "Depict Blaze Prep as a cozy firefighter-study station rather than an emergency scene: a retro terminal produces friendly flashcards, a small firefighter helmet rests beside textbooks, and code-plants sprout from a nearby pot. Polly, wearing a tiny firefighter helmet and carrying a pencil, helps organize the AI-generated study cards; warm flames are represented only as gentle orange lamp-like glow, with lime green prominently used on the terminal and garden details.",
+    "image_prompt": "Cozy pixel art scene of Polly, a cute bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and rounded light blue translucent wings, wearing a tiny firefighter helmet and sorting AI-generated study flashcards beside a retro terminal glowing lime green (#ecf874); textbooks, a small helmet, and code-plants in flower pots make a warm Blaze Prep learning nook. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, with subtle pixel-font text reading “BLAZE PREP,” nostalgic but beautiful and emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-13/PR-12413.jpg",
+    "prompt": "Cozy pixel art scene of Polly, a cute bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and rounded light blue translucent wings, wearing a tiny firefighter helmet and sorting AI-generated study flashcards beside a retro terminal glowing lime green (#ecf874); textbooks, a small helmet, and code-plants in flower pots make a warm Blaze Prep learning nook. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, with subtle pixel-font text reading “BLAZE PREP,” nostalgic but beautiful and emotionally warm."
+  },
+  "generated_at": "2026-07-13T16:35:46.876100+00:00",
+  "app_name": "Blaze Prep",
+  "app_url": "https://blazeprep.net"
+}

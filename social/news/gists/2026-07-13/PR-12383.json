@@ -1,0 +1,35 @@
+{
+  "pr_number": 12383,
+  "title": "Add JadiKelas to learn",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/12383",
+  "merged_at": "2026-07-13T08:06:56Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds [JadiKelas](https://jadikelas.tech) to learn\n- Open https://JadiKelas.tech. Display “JadiKelas” content from the site.\n\nFixes #12199",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "JadiKelas joins the Greenhouse",
+    "blurb": "A new learning app has sprouted in the community garden! JadiKelas is now officially listed in the Pollinations ecosystem.",
+    "summary": "Added the JadiKelas learning platform to the community apps directory and Greenhouse showcase.",
+    "impact": "Users can now discover and explore JadiKelas alongside other community-built projects in the apps directory.",
+    "keywords": [
+      "community",
+      "apps",
+      "greenhouse",
+      "jadikelas",
+      "learning"
+    ],
+    "visual_concept": "The PR adds a learning app to the 'Greenhouse'. Depict Polly the bee in a cozy greenhouse setting, tending to a new plant that looks like a book or has glowing text, representing the new learning app taking root.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing tiny reading glasses, watering a glowing code-plant sprouting from an open book inside a lush digital greenhouse. Soft lime green (#ecf874) and pastel lavender gradient background. Chunky retro sprites, warm lighting, lo-fi Stardew Valley aesthetic. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-13/PR-12383.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing tiny reading glasses, watering a glowing code-plant sprouting from an open book inside a lush digital greenhouse. Soft lime green (#ecf874) and pastel lavender gradient background. Chunky retro sprites, warm lighting, lo-fi Stardew Valley aesthetic. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-07-13T08:08:14.747222+00:00",
+  "app_name": "JadiKelas",
+  "app_url": "https://jadikelas.tech"
+}

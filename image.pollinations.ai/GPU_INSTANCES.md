@@ -1,39 +1,40 @@
 # GPU Instances
 
-Last updated: 2026-07-02
+Last updated: 2026-07-13
 
 ## Capacity Summary
 
 | Model | Workers | GPUs | Provider | Cost/hr | Status |
 |-------|---------|------|----------|---------|--------|
-| Flux (FP4) | 1 (+1 stopped spare) | RTX 5090 | Vast.ai | ~$0.43/hr | **ACTIVE — production** (Fireworks fallback) |
+| Flux (FP4) | 1 | RTX 5090 | Vast.ai | $0.3744/hr | **ACTIVE — production** (Fireworks fallback) |
 | Z-Image | 3 | 4090 + 2x 3090 | RunPod | (see runpodctl) | **ACTIVE — production** |
 | Klein 4B | 1 | 1x RTX A5000 | RunPod | $0.27 | **ACTIVE** |
 | LTX-2 + ACE-Step + Sana | 1 | GH200 | Lambda Labs | — | **ACTIVE** |
 
 ## Provider: Vast.ai — Flux (RTX 5090, FP4)
 
-Two single-GPU instances on different hosts (host redundancy), each fronted by
-a Cloudflare Tunnel. Flux routes pool-first with automatic Fireworks fallback
+One single-GPU instance fronted by a Cloudflare Tunnel. Flux routes pool-first
+with automatic Fireworks fallback
 (`gen.pollinations.ai/src/image/createAndReturnImages.ts` → `callFluxWithFallback`).
 
-| Worker | Vast instance | Tunnel hostname | SSH |
-|--------|--------------|-----------------|-----|
-| flux-vast-01 | 43575766 (California) | `flux-vast-01.pollinations.ai` | `ssh -p 21972 -i ~/.ssh/pollinations_services_2026 root@192.220.55.116` |
-| flux-vast-02 | 43594918 (US) — **STOPPED spare** (2026-07-02; disk-only cost; provisioned + models cached; `vastai start instance` then start the `flux` screen — GPU may be taken while stopped, then re-provision) | `flux-vast-02.pollinations.ai` | `ssh -p 10576 -i ~/.ssh/pollinations_services_2026 root@137.175.76.24` (port changes on restart) |
+| Worker | Vast instance | GPU | Listed rate | Status |
+|--------|---------------|-----|-------------|--------|
+| flux-vast-03 | 44731147 | RTX 5090 | $0.374444/hr | Active; replace its temporary quick tunnel with a named tunnel before the next cutover |
 
 > Instance IDs/IPs/ports change on recreate — check `vastai show instances`.
-> CRITICAL: workers MUST be behind a Cloudflare tunnel; the gen worker cannot
-> fetch() raw-IP/non-standard-port origins (NAT'd `http://IP:PORT` URLs
-> silently fall back to Fireworks).
+> CRITICAL: workers MUST be behind a named Cloudflare tunnel created in the
+> authoritative Pollinations account. The gen Worker cannot fetch a Vast
+> raw-IP/non-standard-port origin, and a successful registry heartbeat alone
+> does not prove the data path works. Fireworks can hide either failure.
 
 **Provision a new instance** (see `nunchaku/setup-vast.sh` header for all env):
 ```bash
 vastai search offers 'gpu_name=RTX_5090 num_gpus=1 verified=true rentable=true reliability>0.99 duration>=30 inet_down>=500 cpu_cores>=8 disk_space>=60' --order dph_total
 vastai create instance <OFFER> --image "vastai/base-image:cuda-13.0.2-cudnn-devel-ubuntu24.04-py312" --disk 60 --ssh --direct --env '-p 8765:8765'
 vastai attach ssh <INSTANCE> "$(cat ~/.ssh/pollinations_services_2026.pub)"
-# copy the pollinations.ai account cert (e.g. from an existing worker) to ~/.cloudflared/cert.pem, then:
-PLN_GPU_TOKEN=... HF_TOKEN=... TUNNEL_NAME=flux-vast-NN GIT_BRANCH=main bash setup-vast.sh
+# First create a remote tunnel + hostname routing to localhost:8765 in Cloudflare, then:
+PLN_GPU_TOKEN=... HF_TOKEN=... CLOUDFLARED_TUNNEL_TOKEN=... \
+PUBLIC_HOSTNAME=flux-vast-NN.pollinations.ai GIT_BRANCH=main bash setup-vast.sh
 ```
 Gotchas (all hit in practice): rent hosts with `duration>=30`; verify
 `intended_status=running` after create (GPU can be taken between create/start);
@@ -48,13 +49,13 @@ instances and destroying the loser is cheap (~$0.40/hr each).
 
 **Health / restart:**
 ```bash
-curl -s https://flux-vast-01.pollinations.ai/docs -o /dev/null -w "%{http_code}\n"   # worker up
+curl -s https://<named-tunnel-hostname>/docs -o /dev/null -w "%{http_code}\n"   # control-plane only
 curl -s https://gen.pollinations.ai/register -H "Authorization: Bearer $PLN_GPU_TOKEN"  # registry
 # on the instance: screen -r flux / screen -r cloudflared; logs /tmp/flux.log /tmp/cloudflared.log
+POLLINATIONS_API_KEY=... bash image.pollinations.ai/nunchaku/verify-vast.sh  # required before cutover
 ```
 
 **Key behavior:** FP4 nunchaku, 4 steps, full 1024x1024 (`MAX_PIXELS=1048576`);
-~2.3s/image, ~1,900 img/hr sustained per GPU; baseline JPEG output;
 `QUEUE_LIMIT=10` sheds load with 503 → gateway falls back to Fireworks.
 
 ## Provider: RunPod

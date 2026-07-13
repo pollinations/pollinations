@@ -1,0 +1,25 @@
+# Economics
+
+Economics is Pollinations' private cash, runway, provider-cost, credit, and unit
+economics app. Its canonical public hostname is `economics.pollinations.ai`.
+
+Run locally from this directory:
+
+```bash
+npm run dev
+```
+
+The dev server is pinned to `127.0.0.1:4180`.
+
+Use fixtures mode for UI development without password or Tinybird access:
+
+```text
+http://127.0.0.1:4180/?fixtures=1
+```
+
+Live mode uses a password gate. The Tinybird read token lives only in
+`secrets/web.json` and is used by the Vite server-side proxy, never by the
+browser bundle.
+
+The OP Tinybird datasource and pipe definitions (`op_*`) live in
+[`enter.pollinations.ai/observability/`](../../../enter.pollinations.ai/observability/).

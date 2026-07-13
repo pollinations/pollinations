@@ -366,6 +366,16 @@ function isResponseExampleWorthwhile(ex: unknown): boolean {
     return true;
 }
 
+function operationBaseUrl(spec: Spec, path: string, op: Operation): string {
+    const pathItem = asObj(spec.paths[path]);
+    const server = [op.servers, pathItem.servers, spec.servers]
+        .flatMap(asArr)
+        .map(asObj)
+        .map((item) => asStr(item.url))
+        .find(Boolean);
+    return (server || BASE_URL).replace(/\/$/, "");
+}
+
 // ────────────────────────────────────────────────────────────────────────────
 // Curl example
 // ────────────────────────────────────────────────────────────────────────────
@@ -380,7 +390,7 @@ function buildCurl(
     const params = visibleParams(path, asArr(op.parameters) as Schema[]);
     const queryParams = params.filter((p) => asObj(p).in === "query");
     const pathParams = params.filter((p) => asObj(p).in === "path");
-    let url = `${BASE_URL}${path}`;
+    let url = `${operationBaseUrl(spec, path, op)}${path}`;
     // Substitute path placeholders with real, URL-encoded sample values so
     // curl examples are copy-pasteable. Falls back to `:name` only when the
     // spec provides no example for the parameter.
@@ -707,10 +717,10 @@ function renderHeader(spec: Spec): string {
     // `alt` carries the semantic title so screen readers and feeds still get it.
     out.push("<picture>");
     out.push(
-        '  <source media="(prefers-color-scheme: dark)" srcset="assets/logo-text-white.svg">',
+        '  <source media="(prefers-color-scheme: dark)" srcset="packages/ui/src/brand/lockup-horizontal-white.svg">',
     );
     out.push(
-        '  <img alt="Pollinations" src="assets/logo-text-black.svg" width="420">',
+        '  <img alt="Pollinations" src="packages/ui/src/brand/lockup-horizontal-black.svg" width="420">',
     );
     out.push("</picture>");
     out.push("");

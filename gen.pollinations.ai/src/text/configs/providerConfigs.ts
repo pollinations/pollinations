@@ -105,6 +105,16 @@ export function createOpenRouterModelConfig(
     );
 }
 
+export function createVercelAIGatewayModelConfig(
+    overrides: ModelOverride = {},
+): ProviderConfig {
+    return createOpenAICompatibleConfig(
+        "https://ai-gateway.vercel.sh/v1",
+        process.env.AI_GATEWAY_API_KEY,
+        overrides,
+    );
+}
+
 export function createInceptionModelConfig(
     overrides: ModelOverride = {},
 ): ProviderConfig {

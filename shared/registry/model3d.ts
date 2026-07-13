@@ -87,7 +87,7 @@ export const MODEL3D_SERVICES = {
         flatRate: true,
 
         cost: {
-            completionImageTokens: 0.4, // per generation
+            completionImageTokens: 0.1, // per generation
         },
         title: "Hyper3D Rodin 2.5",
         description: "Hyper3D Rodin 2.5 - Image/text-to-3D with textures",

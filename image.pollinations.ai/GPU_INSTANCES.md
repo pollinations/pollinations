@@ -68,7 +68,7 @@ port 8000 through a remotely managed Cloudflare Tunnel bound as the private
 |--------|---------------|-----|-------------|--------|--------|
 | klein-vast-01 | 44766948 | RTX 3090 24GB | $0.165556/hr including 60GB disk | `c340d8d9-c1f3-4a13-8115-38b59faac3d5` | Active; 4 HA connections |
 
-**Provisioning:** use `image.pollinations.ai/klein-vast/setup-vast.sh` with
+**Provisioning:** use `image.pollinations.ai/klein-runpod/setup-vast.sh` with
 `pytorch/pytorch:2.5.1-cuda12.1-cudnn9-devel`. The model is public and does not
 require `HF_TOKEN`. Pre-create a remotely managed tunnel with catch-all service
 `http://localhost:8000`, then pass only its scoped token to the Vast host.
@@ -81,7 +81,7 @@ vastai create instance <OFFER> \
 vastai attach ssh <INSTANCE> "$(cat ~/.ssh/id_ed25519.pub)"
 
 PLN_GPU_TOKEN=... CLOUDFLARED_TUNNEL_TOKEN=... \
-  bash image.pollinations.ai/klein-vast/setup-vast.sh
+  bash image.pollinations.ai/klein-runpod/setup-vast.sh
 ```
 
 **Routing and rollback:** when `KLEIN_VPC` exists, the Klein handler uses
@@ -138,7 +138,7 @@ runpodctl pod get <id>         # pod details
 - **HTTP**: `https://jmrbmje2fyuy46-8000.proxy.runpod.net`
 - **Service**: FLUX.2 Klein 4B manual rollback; not in the active production route
 - **Auth**: `x-backend-token` header with `PLN_GPU_TOKEN`
-- **Code**: `/workspace/handler.py` (mirrors `image.pollinations.ai/klein-vast/handler.py`)
+- **Code**: `/workspace/handler.py` (mirrors `image.pollinations.ai/klein-runpod/handler.py`)
 - **Logs**: `/workspace/klein.log`
 - **Restart**: `bash /workspace/restart.sh` (in-pod)
 

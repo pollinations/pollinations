@@ -44,7 +44,7 @@ else
         https://github.com/pollinations/pollinations.git "$WORK_DIR"
 fi
 
-KLEIN_DIR="$WORK_DIR/image.pollinations.ai/klein-vast"
+KLEIN_DIR="$WORK_DIR/image.pollinations.ai/klein-runpod"
 mkdir -p "$CACHE_DIR"
 
 if [ ! -d "$VENV" ]; then

@@ -6,8 +6,6 @@ import {
     communityEndpointPrices,
     communityModelId,
     isCommunityEndpointOwnerAllowed,
-    MIN_COMMUNITY_PRICE_PER_MILLION_TOKENS,
-    MIN_COMMUNITY_PRICE_PER_TOKEN,
     normalizeCommunityEndpointBaseUrl,
     normalizeCommunityEndpointBearerToken,
 } from "@shared/community-endpoints.ts";
@@ -29,14 +27,7 @@ import {
 } from "../services/community-endpoint-openai.ts";
 import { hasDirectAccountPermission } from "./account-permissions.ts";
 
-const PriceSchema = z
-    .number()
-    .finite()
-    .min(0)
-    .refine(
-        (price) => price === 0 || price >= MIN_COMMUNITY_PRICE_PER_TOKEN,
-        `Prices are per token and must be 0 or at least ${MIN_COMMUNITY_PRICE_PER_TOKEN} (${MIN_COMMUNITY_PRICE_PER_MILLION_TOKENS} Pollen per 1M tokens)`,
-    );
+const PriceSchema = z.number().finite().min(0);
 const UpdatePriceFieldsSchema = Object.fromEntries(
     COMMUNITY_ENDPOINT_PRICE_FIELDS.map((field) => [
         field.key,
@@ -50,7 +41,7 @@ const UpdatePriceFieldsSchema = Object.fromEntries(
 const VisibilitySchema = z
     .enum(COMMUNITY_ENDPOINT_VISIBILITIES)
     .describe(
-        '"private": owner-only, shown only to the owner, with no owner-set price. "public": anyone, listed in the catalog, priced. Publishing requires an allowlisted account and pricing.',
+        '"private": owner-only, shown only to the owner, with no owner-set price. "public": anyone and listed in the catalog; it may be free or priced. Publishing requires an allowlisted account.',
     );
 const EndpointFieldsSchema = {
     // No "/": the public model id is `<owner>/<name>`, so a slash in the name
@@ -258,31 +249,15 @@ function requireCommunityEndpointManagePermission(apiKey?: {
     }
 }
 
-// Prices a shared endpoint must carry so callers aren't billed zero. Base text
-// pricing is the minimum; other buckets can stay 0.
-const REQUIRED_SHARED_PRICE_KEYS: readonly CommunityEndpointPriceKey[] = [
-    "promptTextPrice",
-    "completionTextPrice",
-];
-
-// Enforce the publishing rules when an endpoint's effective visibility is
-// public: the account must be allowlisted and the endpoint must be priced.
-async function enforceSharingRules(
+// Publishing is allowlist-gated. Pricing is independent: public endpoints may
+// be free or owner-priced.
+async function enforcePublishingAccess(
     db: Db,
     userId: string,
     visibility: CommunityEndpointVisibility,
-    prices: Record<CommunityEndpointPriceKey, number>,
 ): Promise<void> {
     if (visibility !== "public") return;
     await requireCommunityEndpointPublishAccess(db, userId);
-    const missing = REQUIRED_SHARED_PRICE_KEYS.filter(
-        (key) => !(prices[key] >= MIN_COMMUNITY_PRICE_PER_TOKEN),
-    );
-    if (missing.length > 0) {
-        throw new HTTPException(400, {
-            message: `A public model must price base text usage at least ${MIN_COMMUNITY_PRICE_PER_MILLION_TOKENS} Pollen per 1M tokens: ${missing.join(", ")}`,
-        });
-    }
 }
 
 async function enforceEndpointProbeThrottle(
@@ -361,7 +336,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
             tags: ["👤 Account"],
             summary: "Create My Model",
             description:
-                "Register a private or public community text model. Private is the default. Public models require an allowlisted account with positive text pricing. API keys require `account:keys`. The upstream bearer token is encrypted and never returned.",
+                "Register a private or public community text model. Private is the default. Public models require an allowlisted account and may be free or priced. API keys require `account:keys`. The upstream bearer token is encrypted and never returned.",
             responses: {
                 200: {
                     description: "Created community text model",
@@ -391,7 +366,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
                 input.visibility === "public"
                     ? communityEndpointPrices(input)
                     : communityEndpointPrices({});
-            await enforceSharingRules(db, user.id, input.visibility, prices);
+            await enforcePublishingAccess(db, user.id, input.visibility);
             const id = crypto.randomUUID();
             const [row] = await db
                 .insert(schema.communityEndpoint)
@@ -515,7 +490,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
             tags: ["👤 Account"],
             summary: "Update My Model",
             description:
-                "Update a community text model owned by the authenticated account. Changing visibility to public publishes it and requires an allowlisted account with positive text pricing. API keys require `account:keys`.",
+                "Update a community text model owned by the authenticated account. Changing visibility to public publishes it and requires an allowlisted account; public models may be free or priced. API keys require `account:keys`.",
             responses: {
                 200: {
                     description: "Updated community text model",
@@ -579,9 +554,6 @@ export const communityEndpointsRoutes = new Hono<Env>()
                     update[field.key] = input[field.key];
                 }
             }
-            // Enforce sharing rules against the effective post-update state:
-            // the incoming visibility (or the stored one) plus prices merged
-            // from the existing row and this update's changes.
             const effectiveVisibility = input.visibility ?? endpoint.visibility;
             // A private model is owner-only, so owner-declared public pricing
             // does not apply; making a published model private clears prices.
@@ -589,12 +561,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
                 effectiveVisibility === "private"
                     ? communityEndpointPrices({})
                     : communityEndpointPrices({ ...endpoint, ...update });
-            await enforceSharingRules(
-                db,
-                user.id,
-                effectiveVisibility,
-                effectivePrices,
-            );
+            await enforcePublishingAccess(db, user.id, effectiveVisibility);
             // Persist visibility together with the complete effective price
             // set on every update, so concurrent partial updates cannot
             // interleave into a public row with cleared prices.

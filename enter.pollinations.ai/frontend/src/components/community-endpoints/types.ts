@@ -3,7 +3,6 @@ import {
     type CommunityEndpointPriceKey,
     type CommunityEndpointPrices,
     type CommunityEndpointVisibility,
-    MIN_COMMUNITY_PRICE_PER_MILLION_TOKENS,
 } from "@shared/community-endpoints.ts";
 import type { Usage } from "@shared/registry/registry.ts";
 
@@ -100,20 +99,7 @@ export function isValidPriceInput(value: string): boolean {
     if (!trimmed) return true;
     if (trimmed.includes(",")) return false;
     const parsed = Number(trimmed);
-    if (!Number.isFinite(parsed)) return false;
-    // Zero disables a bucket; any real price must meet the platform minimum.
-    return parsed === 0 || parsed >= MIN_COMMUNITY_PRICE_PER_MILLION_TOKENS;
-}
-
-export function isBelowMinimumPriceInput(value: string): boolean {
-    const trimmed = value.trim();
-    if (!trimmed || trimmed.includes(",")) return false;
-    const parsed = Number(trimmed);
-    return (
-        Number.isFinite(parsed) &&
-        parsed > 0 &&
-        parsed < MIN_COMMUNITY_PRICE_PER_MILLION_TOKENS
-    );
+    return Number.isFinite(parsed) && parsed >= 0;
 }
 
 export function endpointToForm(endpoint: CommunityEndpoint): EndpointFormState {
@@ -139,9 +125,7 @@ function formPricesToPayload(form: EndpointFormState): CommunityEndpointPrices {
     return Object.fromEntries(
         COMMUNITY_ENDPOINT_PRICE_FIELDS.map((field) => {
             if (!isValidPriceInput(form[field.key])) {
-                throw new Error(
-                    `Prices must use dot decimals of at least ${MIN_COMMUNITY_PRICE_PER_MILLION_TOKENS} per 1M tokens, or 0`,
-                );
+                throw new Error("Prices must be non-negative dot decimals");
             }
             return [field.key, pricePerMillionToPerToken(form[field.key])];
         }),

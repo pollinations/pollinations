@@ -13,19 +13,15 @@ import {
     ScrollArea,
     TabButton,
 } from "@pollinations/ui";
-import {
-    COMMUNITY_ENDPOINT_PRICE_FIELDS,
-    type CommunityEndpointVisibility,
-} from "@shared/community-endpoints.ts";
+import type { CommunityEndpointVisibility } from "@shared/community-endpoints.ts";
 import type { FormEvent, ReactNode } from "react";
 import { useEffect, useState } from "react";
 import { apiClient } from "../../api.ts";
 import {
+    BASE_TEXT_PRICE_KEYS,
     formWithVisiblePrices,
-    hasPositivePriceInput,
     hasValidVisibleFormPrices,
     PriceGroups,
-    REQUIRED_SHARED_PRICE_KEYS,
     returnedPriceFields,
     savedEndpointPriceKeys,
     visiblePriceFieldKeys,
@@ -216,12 +212,12 @@ export function CommunityEndpointDialog({
     // pricing (owner is the only caller).
     const isShared = form.visibility === "public";
     const returnedFields = isShared ? returnedPriceFields(testState) : [];
-    // Reveal the base text fields (always billed, and required to publish), plus
-    // whatever the test observed or the model already had saved.
+    // Reveal the optional base text prices plus whatever the test observed or
+    // the model already had saved. Blank and zero prices mean free.
     const visiblePriceKeys = new Set(
         isShared
             ? visiblePriceFieldKeys(savedPriceKeys, returnedFields, [
-                  ...REQUIRED_SHARED_PRICE_KEYS,
+                  ...BASE_TEXT_PRICE_KEYS,
               ])
             : [],
     );
@@ -229,17 +225,6 @@ export function CommunityEndpointDialog({
         form,
         visiblePriceKeys,
     );
-    // A public model must price the always-billed base text fields (public
-    // callers are never billed zero) plus every bucket a test observed.
-    const hasRequiredSharedPrices =
-        !isShared ||
-        [...REQUIRED_SHARED_PRICE_KEYS, ...returnedFields.map((f) => f.key)]
-            .map((key) =>
-                COMMUNITY_ENDPOINT_PRICE_FIELDS.find((f) => f.key === key),
-            )
-            .every(
-                (field) => field != null && hasPositivePriceInput(form, field),
-            );
     // First-time publishing of an external endpoint re-observes its billed
     // buckets, so it needs a successful test. A model already saved as public
     // has server-validated pricing, so re-editing it (e.g. a price or
@@ -265,7 +250,6 @@ export function CommunityEndpointDialog({
         form.name.trim() !== "" &&
         form.baseUrl.trim() !== "" &&
         hasValidVisiblePrices &&
-        hasRequiredSharedPrices &&
         saveRequirementMet;
 
     return (
@@ -340,7 +324,7 @@ export function CommunityEndpointDialog({
                         label="Visibility"
                         helper={
                             isShared
-                                ? "Public: listed in /models and callable by anyone. Test the endpoint and set your per-1M-token pricing below."
+                                ? "Public: listed in /models and callable by anyone. Set optional per-1M-token prices below, or leave them at 0 for free."
                                 : canPublish
                                   ? "Private: callable only by you and shown only in model lists authenticated with your API key."
                                   : "Private: callable only by you. Publishing publicly requires approval."

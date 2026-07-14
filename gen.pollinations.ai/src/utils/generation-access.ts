@@ -1,5 +1,6 @@
 import { createBalanceCheckResult } from "@shared/billing/balance.ts";
 import { canCoverEstimatedCharge } from "@shared/billing/bucket-selection.ts";
+import { COMMUNITY_ENDPOINT_PRICE_FIELDS } from "@shared/community-endpoints.ts";
 import { getModelStats } from "@shared/utils/model-stats.ts";
 import { createMiddleware } from "hono/factory";
 import { HTTPException } from "hono/http-exception";
@@ -31,14 +32,17 @@ export async function checkBalance(
         await getModelStats(env.KV, log),
         model.resolved,
     );
-    const isOwnerPrivateCommunityModel =
-        model.communityEndpoint?.visibility === "private" &&
-        model.communityEndpoint.ownerUserId === auth.user.id;
+    const communityEndpoint = model.communityEndpoint;
+    const isFreeCommunityModel =
+        communityEndpoint !== undefined &&
+        COMMUNITY_ENDPOINT_PRICE_FIELDS.every(
+            (field) => communityEndpoint[field.key] === 0,
+        );
 
     const apiKeyBudget = auth.apiKey?.pollenBalance;
     const requiredBudget = Math.max(0, estimatedCost);
     if (
-        !isOwnerPrivateCommunityModel &&
+        !isFreeCommunityModel &&
         typeof apiKeyBudget === "number" &&
         apiKeyBudget <= requiredBudget
     ) {
@@ -50,7 +54,7 @@ export async function checkBalance(
     const userBalance = await balance.getBalance(auth.user.id);
 
     if (
-        !isOwnerPrivateCommunityModel &&
+        !isFreeCommunityModel &&
         !canCoverEstimatedCharge(userBalance, estimatedCost, isPaidOnly)
     ) {
         const available = isPaidOnly

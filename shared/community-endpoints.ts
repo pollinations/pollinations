@@ -8,13 +8,6 @@ import {
 
 export const LEGACY_COMMUNITY_MODEL_PREFIX = "community/";
 export const COMMUNITY_MODEL_REWARD_RATE = 0.75;
-// Minimum owner-set price for a priced usage bucket (zero disables a bucket).
-// Anything lower advertises a price the ledger cannot bill: request totals
-// snap to POLLEN_BILLING_PRECISION (1e-8 Pollen), so sub-minimum rates round
-// to zero for typical requests. Matches the migration 0035 backfill. Stored
-// prices are per token; the dashboard shows and accepts them per 1M tokens.
-export const MIN_COMMUNITY_PRICE_PER_TOKEN = 0.0000000001;
-export const MIN_COMMUNITY_PRICE_PER_MILLION_TOKENS = 0.0001;
 const BEARER_PREFIX = /^Bearer(?:\s+|$)/i;
 
 const COMMUNITY_PRICE_FIELD_BY_USAGE_TYPE = {

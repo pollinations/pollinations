@@ -11,8 +11,6 @@ import {
     communityPriceDefinition,
     isCommunityEndpointOwnerAllowed,
     legacyCommunityModelId,
-    MIN_COMMUNITY_PRICE_PER_MILLION_TOKENS,
-    MIN_COMMUNITY_PRICE_PER_TOKEN,
     normalizeCommunityEndpointBaseUrl,
     normalizeCommunityEndpointBearerToken,
     parseCommunityModelId,
@@ -262,13 +260,6 @@ describe("community endpoint helpers", () => {
         );
     });
 
-    it("keeps the per-token and per-1M minimum price constants in sync", () => {
-        expect(MIN_COMMUNITY_PRICE_PER_TOKEN * 1_000_000).toBeCloseTo(
-            MIN_COMMUNITY_PRICE_PER_MILLION_TOKENS,
-            10,
-        );
-    });
-
     it("builds Portkey gateway context with the saved token", async () => {
         const secret = "test-secret";
         const endpoint: CommunityEndpointRuntime = {
@@ -447,11 +438,12 @@ fixtureTest(
 );
 
 fixtureTest(
-    "a private community model is callable by its owner but not by other callers",
+    "a private model is owner-only and a zero-priced public model is free",
     async ({ apiKey }) => {
         const ownerGithubUsername = `owner-${crypto.randomUUID().slice(0, 8)}`;
         const modelName = `private-${crypto.randomUUID().slice(0, 8)}`;
         const modelId = communityModelId(ownerGithubUsername, modelName);
+        const endpointId = `endpoint-${crypto.randomUUID()}`;
         const ownerUserId = await createTestUser({
             githubId: COMMUNITY_ENDPOINT_ALLOWED_TEST_GITHUB_ID,
             githubUsername: ownerGithubUsername,
@@ -465,7 +457,7 @@ fixtureTest(
             userId: ownerUserId,
         });
         await db.insert(communityEndpointTable).values({
-            id: `endpoint-${crypto.randomUUID()}`,
+            id: endpointId,
             ownerUserId,
             visibility: "private",
             name: modelName,
@@ -563,6 +555,34 @@ fixtureTest(
         await expect(catalogIncludesModel(ownerApiKey)).resolves.toBe(true);
         await expect(catalogIncludesModel(apiKey)).resolves.toBe(false);
         await expect(catalogIncludesModel()).resolves.toBe(false);
+
+        // Publishing the same zero-priced endpoint makes it globally callable
+        // without requiring a Pollinations balance.
+        await db
+            .update(communityEndpointTable)
+            .set({ visibility: "public" })
+            .where(eq(communityEndpointTable.id, endpointId));
+        resetGenerationModelRegistryCache();
+        const { key: zeroBalanceCallerKey } = await createTestApiKey({
+            user: { tierBalance: 0, packBalance: 0 },
+        });
+        const freePublicResponse = await SELF.fetch(
+            new Request("https://gen.pollinations.ai/v1/chat/completions", {
+                method: "POST",
+                headers: {
+                    Authorization: `Bearer ${zeroBalanceCallerKey}`,
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    model: modelId,
+                    messages: [{ role: "user", content: "free public" }],
+                }),
+            }),
+        );
+        expect(freePublicResponse.status).toBe(200);
+        await expect(freePublicResponse.json()).resolves.toMatchObject({
+            choices: [{ message: { content: "ok" } }],
+        });
     },
 );
 
@@ -1532,9 +1552,9 @@ fixtureTest(
             disabledReason: "was failing",
         });
 
-        // A nonzero price below the platform minimum (0.0001 Pollen per 1M
-        // tokens, stored per token) is rejected at the schema level.
-        const belowMinimumResponse = await fetchEnterApi(
+        // Minimum-price policy is independent of visibility: any non-negative
+        // owner price is accepted by this API.
+        const tinyPriceResponse = await fetchEnterApi(
             enterApi,
             new Request(
                 `http://localhost:3000/api/account/my-models/${createdId}/update`,
@@ -1548,7 +1568,26 @@ fixtureTest(
                 },
             ),
         );
-        expect(belowMinimumResponse.status).toBe(400);
+        expect(tinyPriceResponse.status).toBe(200);
+        await expect(tinyPriceResponse.json()).resolves.toMatchObject({
+            promptTextPrice: 1e-12,
+        });
+
+        const negativePriceResponse = await fetchEnterApi(
+            enterApi,
+            new Request(
+                `http://localhost:3000/api/account/my-models/${createdId}/update`,
+                {
+                    method: "POST",
+                    headers: {
+                        Authorization: `Bearer ${key}`,
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({ promptTextPrice: -1e-12 }),
+                },
+            ),
+        );
+        expect(negativePriceResponse.status).toBe(400);
 
         // Partial updates persist the full effective visibility + price set,
         // so a price-only patch keeps the other stored prices intact.
@@ -1595,8 +1634,8 @@ fixtureTest(
             completionTextPrice: 0,
         });
 
-        // Republishing without prices must fail: the cleared prices no longer
-        // satisfy the public-requires-pricing rule.
+        // Republishing without prices is allowed: zero makes the public model
+        // explicitly free while publishing remains allowlist-gated.
         const republishResponse = await fetchEnterApi(
             enterApi,
             new Request(
@@ -1611,7 +1650,12 @@ fixtureTest(
                 },
             ),
         );
-        expect(republishResponse.status).toBe(400);
+        expect(republishResponse.status).toBe(200);
+        await expect(republishResponse.json()).resolves.toMatchObject({
+            visibility: "public",
+            promptTextPrice: 0,
+            completionTextPrice: 0,
+        });
 
         const secondListResponse = await fetchEnterApi(
             enterApi,

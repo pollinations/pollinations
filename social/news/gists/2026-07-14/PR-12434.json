@@ -1,0 +1,36 @@
+{
+  "pr_number": 12434,
+  "title": "ci: isolate gen production deployment token",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/12434",
+  "merged_at": "2026-07-14T01:46:03Z",
+  "labels": [
+    "DEV-DOCS"
+  ],
+  "pr_body_excerpt": "- Routes the gen production deployment through a dedicated `CLOUDFLARE_API_TOKEN_GEN` GitHub Actions secret.\n- Leaves the shared Cloudflare token and all unrelated deployment workflows unchanged.\n- Requires production Cloudflare deployments to run through GitHub Actions, never local Wrangler or OAuth.\n- Documents manual workflow dispatch and post-deployment version/binding verification.\n\nRoot cause: the shared CI token lacked Workers VPC permission, and replacing it with a narrowly scoped gen token could break unrelated workflows.\n\nValidation:\n- GitHub secret presence verified without reading its value.\n- `actionlint .github/workflows/deploy-gen-cloudflare.yml`\n- `git diff --check`\n",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "A key for the right hive",
+    "blurb": "Gen production deploys now use their own carefully labeled key. The other Cloudflare workflows can keep peacefully doing their unrelated little jobs.",
+    "summary": "The gen production GitHub Actions workflow now deploys with a dedicated CLOUDFLARE_API_TOKEN_GEN secret, while AGENTS.md documents manual dispatch plus post-deployment version and binding checks.",
+    "impact": "Gen deployments gain the Workers VPC permission they need without changing the shared Cloudflare token or unrelated deployment workflows.",
+    "keywords": [
+      "ci",
+      "github-actions",
+      "cloudflare",
+      "gen",
+      "deployment",
+      "workers-vpc"
+    ],
+    "visual_concept": "Depict a cozy garden-shed deployment station where Polly carefully uses a clearly labeled GEN key to unlock a small Cloudflare-like worker terminal, while neighboring tools remain undisturbed; use a code-plant and a deployment checklist to represent documented verification.",
+    "image_prompt": "Cozy pixel art scene in a warm garden-shed hackerspace: Polly, the cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light blue translucent wings, wears a tiny mechanic tool belt and inserts a key labeled \"GEN\" into a retro deployment terminal glowing lime green (#ecf874), beside a sprouting code-plant and a small checklist. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, dark purple (#110518) outlines, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-14/PR-12434.jpg",
+    "prompt": "Cozy pixel art scene in a warm garden-shed hackerspace: Polly, the cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light blue translucent wings, wears a tiny mechanic tool belt and inserts a key labeled \"GEN\" into a retro deployment terminal glowing lime green (#ecf874), beside a sprouting code-plant and a small checklist. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, dark purple (#110518) outlines, nostalgic but beautiful."
+  },
+  "generated_at": "2026-07-14T01:46:55.727222+00:00"
+}

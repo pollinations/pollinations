@@ -1,14 +1,15 @@
 # media.pollinations.ai 📦
 
-> Content-addressed media upload service for Pollinations
+> Media upload service for Pollinations
 
-Upload files and get back a content-addressed URL to use with Pollinations models.
+Upload files and get back a URL to use with Pollinations models.
 
 ## 🎯 What it does
 
 - **Upload** media files via `POST /upload`
-- **Retrieve** media by hash via `GET /:hash`
-- **Deduplicate** - identical files return the same URL (SHA-256 content hashing)
+- **Retrieve** media by id via `GET /:id`
+- **Publish** an upload by tagging it — anyone can browse a tag's public gallery via `GET /media?tag=`
+- **Delete** your published items via `DELETE /media/:id`
 - **CORS enabled** for browser uploads
 
 ## 🚀 Quick Start
@@ -23,12 +24,6 @@ curl -X POST https://media.pollinations.ai/upload \
   -H "Authorization: Bearer <your-api-key>" \
   -F "file=@image.jpg"
 
-# Raw binary
-curl -X POST https://media.pollinations.ai/upload \
-  -H "Authorization: Bearer <your-api-key>" \
-  -H "Content-Type: image/jpeg" \
-  --data-binary "@image.jpg"
-
 # Base64 JSON
 curl -X POST https://media.pollinations.ai/upload \
   -H "Authorization: Bearer <your-api-key>" \
@@ -41,25 +36,45 @@ curl -X POST https://media.pollinations.ai/upload \
 
 # Returns:
 # {
-#   "id": "a3f2b1c4d5e6f7...",
-#   "url": "https://media.pollinations.ai/a3f2b1c4d5e6f7...",
+#   "id": "3f9c1e2a-7b4d-4e2f-9a1c-8d6b5e4f3a2b",
+#   "url": "https://media.pollinations.ai/3f9c1e2a-7b4d-4e2f-9a1c-8d6b5e4f3a2b",
 #   "contentType": "image/jpeg",
-#   "size": 123456,
-#   "duplicate": false
+#   "size": 123456
 # }
+```
+
+### Publish to a tag gallery (alpha)
+
+Tags are the publish action: add a `tags` field and the upload becomes publicly
+listed in each tag's gallery. Untagged uploads stay unlisted — reachable only
+by their unguessable id URL.
+
+```bash
+# Upload + publish
+curl -X POST https://media.pollinations.ai/upload \
+  -H "Authorization: Bearer <your-api-key>" \
+  -F "file=@image.jpg" \
+  -F "tags=sunset,landscape"
+
+# Browse a tag's gallery — public, no API key
+curl "https://media.pollinations.ai/media?tag=sunset"
+
+# Unpublish + remove (owner's secret sk_ key)
+curl -X DELETE https://media.pollinations.ai/media/<id> \
+  -H "Authorization: Bearer <your-sk-key>"
 ```
 
 ### Retrieve a file
 
 ```bash
-curl https://media.pollinations.ai/a3f2b1c4d5e6f7...
+curl https://media.pollinations.ai/3f9c1e2a-7b4d-4e2f-9a1c-8d6b5e4f3a2b
 # Returns: original file with correct content-type
 ```
 
 ### Check if file exists (HEAD request)
 
 ```bash
-curl -I https://media.pollinations.ai/a3f2b1c4d5e6f7...
+curl -I https://media.pollinations.ai/3f9c1e2a-7b4d-4e2f-9a1c-8d6b5e4f3a2b
 # Returns: 200 with headers, or 404 if not found
 ```
 
@@ -70,57 +85,93 @@ curl -I https://media.pollinations.ai/a3f2b1c4d5e6f7...
 Upload a media file. **Requires API key** via `Authorization: Bearer <key>` header or `?key=<key>` query parameter.
 
 **Request:**
-- `Content-Type: multipart/form-data` with `file` field
-- Or raw binary with a `Content-Type` header (e.g., `image/jpeg`)
+- `Content-Type: multipart/form-data` with `file` field (optional `tags` field: comma-separated)
 - Or JSON with `Content-Type: application/json`:
   ```json
   {
     "data": "base64-encoded-file-data",
     "contentType": "image/jpeg",
-    "name": "image.jpg"
+    "name": "image.jpg",
+    "tags": ["sunset", "landscape"]
   }
   ```
+
+Tagging **publishes** the upload to each tag's public gallery. `tags` accepts a
+comma-separated string (or a JSON array in the JSON format), max 8 tags,
+each `lowercase letters, digits, and _.:- (not leading), max 128 chars`.
+Publishing requires a key attached to a user account.
 
 **Response:**
 ```json
 {
-  "id": "sha256-hash-of-content-and-filename",
-  "url": "https://media.pollinations.ai/{hash}",
+  "id": "unique-media-id",
+  "url": "https://media.pollinations.ai/{id}",
   "contentType": "image/jpeg",
   "size": 123456,
-  "duplicate": false
+  "tags": ["sunset", "landscape"]
 }
 ```
 
+`tags` is present only when the upload was tagged.
+
 **Errors:**
-- `400` - No file provided, empty file, or invalid JSON/base64
-- `413` - File too large (max 50MB)
+- `400` - No file provided, empty file, invalid JSON/base64, or invalid tags
+- `413` - File too large (max 100MB of decoded/file bytes)
 
-### `GET /:hash`
+### `GET /:id`
 
-Retrieve a media file by its hash.
+Retrieve a media file by its id.
 
 **Response:**
 - Binary file with correct `Content-Type`
-- `Cache-Control: public, max-age=31536000, immutable`
+- Untagged uploads: `Cache-Control: public, max-age=31536000, immutable`
+- Published (tagged) uploads: `Cache-Control: no-store` so deletion takes effect immediately
 
 **Headers:**
 - `Content-Type` - MIME type
-- `Cache-Control` - `public, max-age=31536000, immutable`
-- `X-Content-Hash` - 16-char hex content hash
+- `Cache-Control` - immutable for untagged uploads; `no-store` for published uploads
+- `X-Content-Id` - Media id
 - `X-Content-Size` - File size in bytes
 
 **Errors:**
-- `400` - Invalid hash format
 - `404` - File not found
 
-### `HEAD /:hash`
+### `HEAD /:id`
 
 Check if a file exists without downloading.
 
 **Response:**
 - `200` with metadata headers if exists
 - `404` if not found
+
+### `GET /media?tag=<tag>` (alpha)
+
+List the public gallery for a tag: every published item carrying that tag, any
+owner, newest first. Fully public — no API key.
+
+**Query params:** `tag` (required), `limit` (1–100, default 20), `cursor` (opaque, from a prior response's `nextCursor`).
+
+**Response:** `{ items, nextCursor, hasMore }`. Pass `nextCursor` back as `?cursor=` while `hasMore` is true. Items never expose who uploaded them.
+
+**Errors:**
+- `400` - Missing/empty `tag`, or invalid `limit`/`cursor`
+
+### `DELETE /media/:id` (alpha)
+
+Delete a published item you own: removes the file, its catalog entry, and all
+its tags — it disappears from galleries and its URL 404s. **Requires your
+secret (`sk_`) API key**; publishable (`pk_`) keys are rejected since anyone
+can read them out of a public client.
+
+Untagged uploads were never published and can't be deleted — they expire on
+their own (see Retention Policy).
+
+**Response:** `{ "deleted": true, "id": "<id>" }`
+
+**Errors:**
+- `401` - Missing or invalid API key
+- `403` - Not a secret key, key has no user account, or you don't own the item
+- `404` - Unknown id, or an untagged (never published) upload
 
 ### `GET /`
 
@@ -166,23 +217,21 @@ npm run deploy:production
 
 ## 📊 Limits
 
-- **Max file size:** 50MB
+- **Max file size:** 100MB of decoded/file bytes
 - **Storage:** Cloudflare R2
-- **Default retention:** 30 days (re-uploading the same file resets the timer)
+- **Default retention:** 30-day lifecycle; a GET refreshes objects once they are at least 15 days old
 
-## 🔒 Content Addressing
+## 🆔 Identifiers
 
-Files are stored using a truncated SHA-256 hash (16 hex characters = 64 bits) as the key:
-- **Deduplication:** Uploading the same file twice returns the same URL
-- **Immutable:** Once uploaded, content cannot change (hash = content)
-- **Cacheable:** Files are served with `Cache-Control: public, max-age=31536000, immutable` — content-addressed URLs are safe to cache forever because the URL → bytes mapping is fixed
-- **Collision resistance:** Birthday-paradox collision expected around ~4 billion files
+Each upload gets a unique id. That single id is the storage key, the retrieval id (`GET /:id`), and — for published uploads — the catalog id you list and delete by. Re-uploading the same bytes yields a new id (no content deduplication).
+
+- **Immutable bytes:** an id is never reused for other content. Untagged uploads use long-lived immutable caching; published uploads use `no-store` because owners can delete them.
 
 ## 📌 Retention Policy
 
-- **30-day retention:** Files are retained for 30 days after upload. Re-uploading the same file resets the timer.
-- **No delete endpoint:** Content-addressed storage is append-only. Files cannot be deleted via the API.
-- **No user file listing:** There is no endpoint to list or manage your uploaded files.
+- **30-day lifecycle:** A GET refreshes an object once it is at least 15 days old, avoiding a storage rewrite on every access. **This applies to published (tagged) items too** — an expired published item keeps its catalog entry in the gallery, but the URL 404s.
+- **Delete (alpha):** Owners can delete their published items via `DELETE /media/:id` (secret key). Untagged uploads can't be deleted — they expire on their own.
+- **Publishing (alpha):** Tag uploads (via the `tags` field) to publish them, then list with `GET /media?tag=`. See the API Reference.
 - **Abuse/copyright:** For takedown requests, contact the Pollinations team.
 
 ## 🔑 Authentication
@@ -193,7 +242,7 @@ Pass the key via:
 - `Authorization: Bearer <key>` header (recommended)
 - `?key=<key>` query parameter
 
-Retrieval (`GET /:hash`, `HEAD /:hash`) is **public** — no authentication required.
+Retrieval (`GET /:id`, `HEAD /:id`) is **public** — no authentication required.
 
 ---
 

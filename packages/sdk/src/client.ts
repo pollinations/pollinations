@@ -1224,7 +1224,10 @@ export class Pollinations {
      * @example
      * ```ts
      * // Upload from ArrayBuffer
-     * const result = await pollinations.upload(imageBuffer, { contentType: 'image/jpeg' });
+     * const result = await pollinations.upload(imageBuffer, {
+     *   contentType: 'image/jpeg',
+     *   tags: ['cats'],
+     * });
      * console.log(result.url); // https://media.pollinations.ai/abc123...
      *
      * // Upload from Blob (browser)
@@ -1245,6 +1248,9 @@ export class Pollinations {
                   });
 
         formData.append("file", blob, options.name || "upload");
+        if (options.tags?.length) {
+            formData.append("tags", options.tags.join(","));
+        }
 
         const headers = this.getHeaders();
 

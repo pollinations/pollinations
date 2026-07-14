@@ -1,0 +1,36 @@
+{
+  "pr_number": 12428,
+  "title": "fix: reject gpt-image-2 transparent backgrounds",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/12428",
+  "merged_at": "2026-07-14T00:09:24Z",
+  "labels": [
+    "DEV-BUG"
+  ],
+  "pr_body_excerpt": "- Rejects `transparent=true` for `gpt-image-2` before calling the provider.\n- Keeps transparent backgrounds available for `gptimage` and `gptimage-large`.\n- Corrects the source image API schema; generated API documentation is left untouched.\n- Adds schema-level and HTTP-level regression coverage, including the client-facing 400 response.\n\nRoot cause: OpenAI documents that `gpt-image-2` does not support transparent backgrounds, but the gateway advertised and forwarded the parameter, causing provider-side failures.\n\nReference: https://developers.openai.com/api/docs/guides/tools-image-generation#tool-options\n\nChecks:\n- `npx vitest run test/image/params.test.ts`\n- `npx vitest run test/generation-vcr.test.ts -t \"gpt-image-2 rejects transparent backgrounds with 400\"`\n- `npm run typecheck`\n- `npx biome check --write ...`",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "No invisible bee surprises",
+    "blurb": "The image gateway now catches an unsupported transparency request before it wanders off to OpenAI and gets lost in the bushes. Transparency still blooms normally on gptimage and gptimage-large.",
+    "summary": "The image API now returns a client-facing 400 immediately when transparent=true is requested with gpt-image-2, while retaining transparent backgrounds for gptimage and gptimage-large.",
+    "impact": "Developers get a clear, predictable 400 response for the unsupported gpt-image-2 transparency combination instead of a provider-side generation failure.",
+    "keywords": [
+      "image-api",
+      "gpt-image-2",
+      "transparency",
+      "validation",
+      "openai",
+      "error-handling"
+    ],
+    "visual_concept": "Depict the API as a cozy garden gate that politely redirects an unsuitable transparent-background request before it reaches a gpt-image-2 art station. Polly, wearing a tiny gardener's visor, holds a small sign reading \"NO TRANSPARENCY HERE\" beside a healthy pair of transparent glass flower pots labeled gptimage and gptimage-large, with code-plants and warm flowers showing that supported options still grow.",
+    "image_prompt": "Cozy pixel art scene of Polly, the cute yellow-and-dark-brown striped bee mascot with black antennae, oval eyes, pink rectangular cheek blushes, a small smile, rounded light-blue translucent wings, and a tiny gardener visor, gently redirecting a transparent glass flower pot away from a retro terminal labeled \"gpt-image-2\" with a small pixel sign saying \"400\"; nearby, two glowing code-plants in clear pots labeled \"gptimage\" and \"gptimage-large\" bloom happily. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, flowers and vines, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-14/PR-12428.jpg",
+    "prompt": "Cozy pixel art scene of Polly, the cute yellow-and-dark-brown striped bee mascot with black antennae, oval eyes, pink rectangular cheek blushes, a small smile, rounded light-blue translucent wings, and a tiny gardener visor, gently redirecting a transparent glass flower pot away from a retro terminal labeled \"gpt-image-2\" with a small pixel sign saying \"400\"; nearby, two glowing code-plants in clear pots labeled \"gptimage\" and \"gptimage-large\" bloom happily. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, flowers and vines, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
+  },
+  "generated_at": "2026-07-14T00:10:28.019238+00:00"
+}

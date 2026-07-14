@@ -420,7 +420,7 @@ function generationDocumentation(): OpenApiSchema {
                     scheme: "bearer",
                     bearerFormat: "API Key",
                     description:
-                        "API key from [enter.pollinations.ai](https://enter.pollinations.ai)",
+                        "API key from [enter.pollinations.ai](https://enter.pollinations.ai/keys)",
                 },
             },
         },

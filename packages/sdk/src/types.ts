@@ -1,5 +1,5 @@
 export interface PollinationsConfig {
-    /** API key for authentication (get one at https://enter.pollinations.ai) */
+    /** API key for authentication (get one at https://enter.pollinations.ai/keys) */
     apiKey?: string;
     /** Base URL for the API (defaults to https://gen.pollinations.ai) */
     baseUrl?: string;

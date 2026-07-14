@@ -12,6 +12,7 @@ import {
     TokensIcon,
     TrendUpIcon,
 } from "@pollinations/ui";
+import { useNavigate, useSearch } from "@tanstack/react-router";
 import { type FC, useCallback, useEffect, useMemo, useState } from "react";
 import { CommunityEndpoints } from "../community-endpoints";
 import {
@@ -20,6 +21,7 @@ import {
     getModelPricesFromCatalog,
 } from "./model-catalog.ts";
 import { getModelDisplayName } from "./model-info.ts";
+import type { ModelSortDirection, ModelSortKey } from "./model-search.ts";
 import {
     type SectionType,
     sectionLabels,
@@ -56,6 +58,13 @@ const SEARCH_LABELS: Record<SectionType, string> = {
     embedding: "embedding",
 };
 
+const DEFAULT_SORT_DIRECTIONS: Record<ModelSortKey, ModelSortDirection> = {
+    name: "asc",
+    perPollen: "desc",
+    input: "asc",
+    output: "asc",
+};
+
 function matchesQuery(model: ModelPrice, query: string): boolean {
     if (!query) return true;
     const displayName = getModelDisplayName(model) ?? "";
@@ -81,10 +90,14 @@ function categorizeModels(
 }
 
 export const Models: FC<ModelsProps> = ({ showCommunityEndpoints = false }) => {
-    const [activeTab, setActiveTab] = useState<SectionType>("all");
+    const navigate = useNavigate({ from: "/models" });
+    const modelSearch = useSearch({ from: "/_dashboard/models" });
+    const activeTab = modelSearch.category ?? "all";
+    const search = modelSearch.q ?? "";
+    const sortKey = modelSearch.sort ?? "perPollen";
+    const sortDir = modelSearch.dir ?? DEFAULT_SORT_DIRECTIONS[sortKey];
     const [catalogModels, setCatalogModels] = useState<ApiModelInfo[]>([]);
     const [catalogError, setCatalogError] = useState<string | null>(null);
-    const [search, setSearch] = useState("");
     const { stats } = useModelStats();
     const allModels = useMemo(
         () => getModelPricesFromCatalog(catalogModels, stats),
@@ -135,9 +148,57 @@ export const Models: FC<ModelsProps> = ({ showCommunityEndpoints = false }) => {
 
     useEffect(() => {
         if (!availableSections.includes(activeTab)) {
-            setActiveTab(availableSections[0] ?? "all");
+            void navigate({
+                search: (previous) => ({
+                    ...previous,
+                    category:
+                        availableSections[0] === "all"
+                            ? undefined
+                            : availableSections[0],
+                }),
+                replace: true,
+            });
         }
-    }, [activeTab, availableSections]);
+    }, [activeTab, availableSections, navigate]);
+
+    const setActiveTab = (category: SectionType) => {
+        void navigate({
+            search: (previous) => ({
+                ...previous,
+                category: category === "all" ? undefined : category,
+            }),
+        });
+    };
+
+    const setSearch = (q: string) => {
+        void navigate({
+            search: (previous) => ({
+                ...previous,
+                q: q || undefined,
+            }),
+            replace: true,
+        });
+    };
+
+    const onSort = (key: ModelSortKey) => {
+        const nextDirection =
+            key === sortKey
+                ? sortDir === "asc"
+                    ? "desc"
+                    : "asc"
+                : DEFAULT_SORT_DIRECTIONS[key];
+
+        void navigate({
+            search: (previous) => ({
+                ...previous,
+                sort: key === "perPollen" ? undefined : key,
+                dir:
+                    nextDirection === DEFAULT_SORT_DIRECTIONS[key]
+                        ? undefined
+                        : nextDirection,
+            }),
+        });
+    };
 
     return (
         <div className="flex flex-col gap-6">
@@ -227,6 +288,9 @@ export const Models: FC<ModelsProps> = ({ showCommunityEndpoints = false }) => {
                             communityModels={sectionModels.community}
                             embeddingModels={sectionModels.embedding}
                             activeTab={activeTab}
+                            sortKey={sortKey}
+                            sortDir={sortDir}
+                            onSort={onSort}
                         />
                     </div>
                 )}

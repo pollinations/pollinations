@@ -43,11 +43,19 @@ const ACCOUNT_BLOCK_PATTERNS = [
     "your resource has been temporarily blocked", // Azure OpenAI deployment block
 ];
 
-/** True when the provider blocked our account/deployment, not the user's input. */
-function isAccountLevelBlock(lowerMessage: string): boolean {
-    return ACCOUNT_BLOCK_PATTERNS.some((pattern) =>
-        lowerMessage.includes(pattern),
-    );
+/**
+ * True when the provider blocked our account/deployment, not the user's input.
+ *
+ * Exported so the GPT Image endpoint failover can retry on another region: the
+ * block is per-resource, so a sibling deployment still serves. A genuine content
+ * rejection must NOT be retried — every region would refuse the same prompt.
+ */
+export function isAccountLevelBlock(
+    message: string | null | undefined,
+): boolean {
+    if (!message) return false;
+    const lower = message.toLowerCase();
+    return ACCOUNT_BLOCK_PATTERNS.some((pattern) => lower.includes(pattern));
 }
 
 /** True when an upstream error message indicates a content-policy rejection. */
@@ -55,8 +63,8 @@ export function isContentPolicyViolation(
     message: string | null | undefined,
 ): boolean {
     if (!message) return false;
+    if (isAccountLevelBlock(message)) return false;
     const lower = message.toLowerCase();
-    if (isAccountLevelBlock(lower)) return false;
     return MODERATION_PATTERNS.some((pattern) => lower.includes(pattern));
 }
 

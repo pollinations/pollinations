@@ -35,6 +35,7 @@ import {
     type ContentSafetyFlags,
     requireSafePrompt,
 } from "./utils/azureContentSafety.ts";
+import { isAccountLevelBlock } from "./utils/contentModeration.ts";
 import { logGptImageError } from "./utils/gptImageLogger.ts";
 import {
     base64ToBuffer,
@@ -311,6 +312,13 @@ const GPTIMAGE_CONFIGS: Record<string, GPTImageConfig[]> = {
     gptimage: [
         {
             baseUrl:
+                "https://myceli-prod-img-mini-swedencentral.cognitiveservices.azure.com/openai/deployments/gpt-image-1-mini",
+            modelName: "gpt-image-1-mini",
+            apiKeyEnv: "AZURE_MYCELI_PROD_IMG_MINI_SWEDEN_API_KEY",
+            region: "swedencentral",
+        },
+        {
+            baseUrl:
                 "https://myceli-prod-img-westus3.cognitiveservices.azure.com/openai/deployments/gpt-image-1-mini",
             modelName: "gpt-image-1-mini",
             apiKeyEnv: "AZURE_MYCELI_PROD_IMG_WESTUS3_API_KEY",
@@ -318,6 +326,13 @@ const GPTIMAGE_CONFIGS: Record<string, GPTImageConfig[]> = {
         },
     ],
     "gptimage-large": [
+        {
+            baseUrl:
+                "https://myceli-prod-img-15-swedencentral.cognitiveservices.azure.com/openai/deployments/gpt-image-1.5",
+            modelName: "gpt-image-1.5",
+            apiKeyEnv: "AZURE_MYCELI_PROD_IMG_15_SWEDEN_API_KEY",
+            region: "swedencentral",
+        },
         {
             baseUrl:
                 "https://myceli-prod-img-westus3.cognitiveservices.azure.com/openai/deployments/gpt-image-1.5",
@@ -379,6 +394,17 @@ function orderedGPTImageConfigs(model: string): GPTImageConfig[] {
 
 function isRetryableGPTImageError(error: unknown): boolean {
     if (error instanceof HttpError) {
+        // Azure blocks a resource (403) after aggregate abuse, and every prompt
+        // on it fails until the block lifts. The block is per-resource, so the
+        // sibling region still serves — fail over instead of failing the caller.
+        // A genuine content rejection is NOT retried: it would be refused in
+        // every region, so retrying only burns a second upstream call.
+        const blockText = `${error.message} ${
+            typeof error.details === "string"
+                ? error.details
+                : JSON.stringify(error.details ?? "")
+        }`;
+        if (isAccountLevelBlock(blockText)) return true;
         return error.status === 429 || error.status >= 500;
     }
     return (

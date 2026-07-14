@@ -37,6 +37,7 @@ const MODEL_TYPES = [
     { key: "video", title: "Video" },
     { key: "audio", title: "Audio" },
     { key: "realtime", title: "Realtime" },
+    { key: "3d", title: "3D" },
     { key: "text", title: "Text" },
     { key: "embedding", title: "Embedding" },
 ];

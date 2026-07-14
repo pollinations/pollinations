@@ -451,7 +451,7 @@ Browse all available models and their capabilities at [`/image/models`](https://
 | `safe` | `query` | `string` \| `boolean` | Safety features: comma-separated list of privacy, secrets, sexual, violence, shield, true, nsfw. true enables privacy,secrets; nsfw enables sexual,violence. Also accepted in the Pollinations-Safe header. Defaults to off; false and 0 are accepted as off. |
 | `quality` | `query` | `"low"` \| `"medium"` \| `"high"` \| `"hd"` | Image quality level. Only supported by `gptimage`, `gptimage-large`, and `gpt-image-2`. · default: `"medium"` |
 | `image` | `query` | `string` | Reference image URL(s) for image editing or video generation. Separate multiple URLs with `\|` or `,`. **Image models:** Used for editing/style reference (kontext, gptimage, seedream, klein, nanobanana). **Video models:** `image[0]` = starting frame (I2V); `image[1]` = ending frame for first+last-frame interpolation. End-frame supported by `veo`, `seedance`, `seedance-2.0`, and `wan-fast`; other video models silently drop `image[1]`. See `video_capabilities` on `/image/models` or `/models` for per-model support. |
-| `transparent` | `query` | `boolean` | Generate image with transparent background. Only supported by `gptimage` and `gptimage-large`. · default: `false` |
+| `transparent` | `query` | `boolean` | Generate image with transparent background. Only supported by `gptimage`, `gptimage-large`, and `gpt-image-2`. · default: `false` |
 
 <sub>`*` = required parameter</sub>
 

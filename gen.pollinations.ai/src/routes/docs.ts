@@ -642,7 +642,7 @@ async function fetchMediaSchema(
 function isPublicMediaRead(method: string, path: string): boolean {
     const lower = method.toLowerCase();
     if (lower !== "get" && lower !== "head") return false;
-    return path === "/{hash}" || path === "/{hash}/metadata";
+    return path === "/{id}" || path === "/{id}/metadata" || path === "/media";
 }
 
 function transformEnterSchema(schema: OpenApiSchema): OpenApiSchema {

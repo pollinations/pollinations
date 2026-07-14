@@ -523,6 +523,8 @@ export interface UploadOptions extends RequestOptions {
     name?: string;
     /** Content type (auto-detected if omitted) */
     contentType?: string;
+    /** Tags that publish the upload to public tag galleries */
+    tags?: string[];
 }
 
 /** Response from media upload */

@@ -116,7 +116,7 @@ Publishing requires a key attached to a user account.
 
 **Errors:**
 - `400` - No file provided, empty file, invalid JSON/base64, or invalid tags
-- `413` - File too large (max 50MB)
+- `413` - File too large (max 100MB of decoded/file bytes)
 
 ### `GET /:id`
 
@@ -124,11 +124,12 @@ Retrieve a media file by its id.
 
 **Response:**
 - Binary file with correct `Content-Type`
-- `Cache-Control: public, max-age=31536000, immutable`
+- Untagged uploads: `Cache-Control: public, max-age=31536000, immutable`
+- Published (tagged) uploads: `Cache-Control: no-store` so deletion takes effect immediately
 
 **Headers:**
 - `Content-Type` - MIME type
-- `Cache-Control` - `public, max-age=31536000, immutable`
+- `Cache-Control` - immutable for untagged uploads; `no-store` for published uploads
 - `X-Content-Id` - Media id
 - `X-Content-Size` - File size in bytes
 
@@ -216,19 +217,19 @@ npm run deploy:production
 
 ## 📊 Limits
 
-- **Max file size:** 50MB
+- **Max file size:** 100MB of decoded/file bytes
 - **Storage:** Cloudflare R2
-- **Default retention:** 30 days after upload (accessing a file resets its timer)
+- **Default retention:** 30-day lifecycle; a GET refreshes objects once they are at least 15 days old
 
 ## 🆔 Identifiers
 
 Each upload gets a unique id. That single id is the storage key, the retrieval id (`GET /:id`), and — for published uploads — the catalog id you list and delete by. Re-uploading the same bytes yields a new id (no content deduplication).
 
-- **Immutable:** an id maps to one fixed set of bytes; it's never reused for other content, so URLs are safe to cache forever (`Cache-Control: public, max-age=31536000, immutable`).
+- **Immutable bytes:** an id is never reused for other content. Untagged uploads use long-lived immutable caching; published uploads use `no-store` because owners can delete them.
 
 ## 📌 Retention Policy
 
-- **30-day retention:** Files are retained for 30 days after upload; accessing a file resets its timer. **This applies to published (tagged) items too** — a published item nobody accesses for 30 days loses its file (the catalog entry keeps its place in the gallery, but the URL 404s).
+- **30-day lifecycle:** A GET refreshes an object once it is at least 15 days old, avoiding a storage rewrite on every access. **This applies to published (tagged) items too** — an expired published item keeps its catalog entry in the gallery, but the URL 404s.
 - **Delete (alpha):** Owners can delete their published items via `DELETE /media/:id` (secret key). Untagged uploads can't be deleted — they expire on their own.
 - **Publishing (alpha):** Tag uploads (via the `tags` field) to publish them, then list with `GET /media?tag=`. See the API Reference.
 - **Abuse/copyright:** For takedown requests, contact the Pollinations team.

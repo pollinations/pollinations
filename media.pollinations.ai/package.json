@@ -1,7 +1,7 @@
 {
   "name": "media.pollinations.ai",
   "version": "1.0.0",
-  "description": "Media upload service for Pollinations - content-addressed storage for images, audio, and video",
+  "description": "Media upload service for Pollinations - unique-id storage for images, audio, and video",
   "type": "module",
   "scripts": {
     "dev": "wrangler dev",

@@ -27,12 +27,12 @@ const DOMAIN = "media.pollinations.ai";
 // gen.pollinations.ai proxies /account/* to enter — using the public path
 // keeps internal services consistent with the documented SDK/external usage.
 const KEY_VERIFY_URL = "https://gen.pollinations.ai/account/key";
-// Keep in sync with shared/http/cache-control.ts (IMMUTABLE_CACHE_CONTROL).
-// Each upload gets a unique id that is also its R2 key, so a given id maps to
-// one immutable set of bytes forever — safe to cache indefinitely. R2's 30-day
-// lifecycle may delete the object, but the id is never reused for other bytes.
-const CACHE_CONTROL = "public, max-age=31536000, immutable";
-const DEFAULT_MAX_SIZE = 52428800; // 50 MB
+// Untagged uploads cannot be deleted through the API, and each unique id always
+// maps to the same bytes, so they can be cached immutably. Tagged uploads are
+// deletable and must never be retained by downstream caches after deletion.
+const IMMUTABLE_CACHE_CONTROL = "public, max-age=31536000, immutable";
+const PUBLISHED_CACHE_CONTROL = "no-store";
+const DEFAULT_MAX_SIZE = 104857600; // 100 MB
 
 interface Env {
     MEDIA_BUCKET: R2Bucket;
@@ -87,9 +87,7 @@ function mediaUrl(id: string): string {
     return `https://${DOMAIN}/${id}`;
 }
 
-// Splits comma-separated `tags` values. Accepts the same field name whether it
-// came from a query string, multipart form field, or JSON body field. Non-string
-// entries (possible from an arbitrary JSON body) are ignored rather than throwing.
+// Splits comma-separated `tags` values from validated multipart or JSON input.
 function splitTags(values: unknown[]): string[] {
     const tags: string[] = [];
     for (const value of values) {
@@ -97,10 +95,6 @@ function splitTags(values: unknown[]): string[] {
         tags.push(...value.split(","));
     }
     return tags;
-}
-
-function collectTags(getAll: (key: string) => string[]): string[] {
-    return splitTags(getAll("tags"));
 }
 
 class TagValidationError extends Error {}
@@ -169,6 +163,31 @@ const UploadResponseSchema = z.object({
             "Tags the upload was published with; present only when tagged",
         ),
 });
+
+const JsonUploadRequestSchema = z.object({
+    data: z
+        .string()
+        .min(1)
+        .describe(
+            "Base64-encoded file bytes (with or without a data: prefix).",
+        ),
+    contentType: z
+        .string()
+        .optional()
+        .describe("MIME type; defaults to application/octet-stream."),
+    name: z
+        .string()
+        .optional()
+        .describe("Filename; used for the download Content-Disposition."),
+    tags: z
+        .union([z.string(), z.array(z.string())])
+        .optional()
+        .describe(
+            "Tags (publish the upload to those tags' public galleries): a comma-separated string or an array of strings.",
+        ),
+});
+const { $schema: _jsonSchemaDialect, ...JsonUploadOpenApiSchema } =
+    z.toJSONSchema(JsonUploadRequestSchema);
 
 const ErrorSchema = z.object({
     error: z.string(),
@@ -269,38 +288,10 @@ api.post(
                     },
                 },
                 "application/json": {
-                    schema: {
-                        type: "object",
-                        required: ["data"],
-                        properties: {
-                            data: {
-                                type: "string",
-                                description:
-                                    "Base64-encoded file bytes (with or without a data: prefix).",
-                            },
-                            contentType: {
-                                type: "string",
-                                description:
-                                    "MIME type; defaults to application/octet-stream.",
-                            },
-                            name: {
-                                type: "string",
-                                description:
-                                    "Filename; used for the download Content-Disposition.",
-                            },
-                            tags: {
-                                oneOf: [
-                                    { type: "string" },
-                                    {
-                                        type: "array",
-                                        items: { type: "string" },
-                                    },
-                                ],
-                                description:
-                                    "Tags (publish the upload to those tags' public galleries): a comma-separated string or an array of strings.",
-                            },
-                        },
-                    },
+                    // hono-openapi's request-body type does not accept Zod's
+                    // JSON Schema 2020-12 payload, although OpenAPI 3.1 does.
+                    // @ts-expect-error Valid OpenAPI 3.1 schema generated above.
+                    schema: JsonUploadOpenApiSchema,
                 },
             },
         },
@@ -327,7 +318,7 @@ api.post(
                 },
             },
             413: {
-                description: "File too large (max 50MB)",
+                description: "File too large (max 100MB)",
                 content: {
                     "application/json": { schema: resolver(ErrorSchema) },
                 },
@@ -351,22 +342,12 @@ api.post(
 
         const maxSize = parseInt(c.env.MAX_FILE_SIZE, 10) || DEFAULT_MAX_SIZE;
 
-        // Fail fast: reject oversized requests before reading the body into memory
-        const contentLength = parseInt(
-            c.req.header("content-length") || "0",
-            10,
-        );
-        if (contentLength > maxSize) {
-            return c.json(fileTooLargeError(maxSize), 413);
-        }
-
         let fileBuffer: ArrayBuffer;
         let contentType: string;
         let fileName: string | undefined;
 
         const requestContentType = c.req.header("content-type") || "";
-        const queryUrl = new URL(c.req.url);
-        const rawTags = collectTags((key) => queryUrl.searchParams.getAll(key));
+        const rawTags: string[] = [];
 
         try {
             if (requestContentType.includes("multipart/form-data")) {
@@ -393,35 +374,25 @@ api.post(
                 contentType = file.type || detectContentType(file.name);
                 fileName = file.name;
 
-                rawTags.push(
-                    ...collectTags((key) =>
-                        formData
-                            .getAll(key)
-                            .filter(
-                                (value): value is string =>
-                                    typeof value === "string",
-                            ),
-                    ),
-                );
+                rawTags.push(...splitTags(formData.getAll("tags")));
             } else if (requestContentType.includes("application/json")) {
-                let body: {
-                    data: string;
-                    contentType?: string;
-                    name?: string;
-                    tags?: string | string[];
-                };
+                let rawBody: unknown;
                 try {
-                    body = await c.req.json();
+                    rawBody = await c.req.json();
                 } catch {
                     return c.json({ error: "Invalid JSON body" }, 400);
                 }
 
-                if (!body.data) {
+                const parsedBody = JsonUploadRequestSchema.safeParse(rawBody);
+                if (!parsedBody.success) {
                     return c.json(
-                        { error: "Missing 'data' field in JSON body" },
+                        {
+                            error: `Invalid JSON body: ${parsedBody.error.issues[0]?.message ?? "validation failed"}`,
+                        },
                         400,
                     );
                 }
+                const body = parsedBody.data;
 
                 const base64Data = body.data.includes(",")
                     ? body.data.split(",")[1]
@@ -448,8 +419,6 @@ api.post(
                 contentType = body.contentType || "application/octet-stream";
                 fileName = body.name;
 
-                // Accept `tags` as either a comma-separated string or a JSON
-                // array of strings — both are natural in a JSON body.
                 if (body.tags) {
                     const tagValues = Array.isArray(body.tags)
                         ? body.tags
@@ -487,11 +456,15 @@ api.post(
             // One id for everything: the R2 storage key, the retrieval id,
             // and (for user uploads) the catalog row id.
             const id = crypto.randomUUID();
+            const cacheControl =
+                tags.length > 0
+                    ? PUBLISHED_CACHE_CONTROL
+                    : IMMUTABLE_CACHE_CONTROL;
 
             await c.env.MEDIA_BUCKET.put(id, fileBuffer, {
                 httpMetadata: {
                     contentType,
-                    cacheControl: CACHE_CONTROL,
+                    cacheControl,
                 },
                 customMetadata: {
                     uploadedAt: new Date().toISOString(),
@@ -552,7 +525,7 @@ api.get(
         tags: ["media.pollinations.ai"],
         summary: "List a public tag gallery",
         description:
-            "List the public gallery for a tag: every published item carrying that tag, any owner, newest first. Tagging an upload is what publishes it, so galleries are fully public — no API key needed. `tag` is required.\n\nItems reference storage that expires 30 days after last access — an expired item keeps its catalog entry, but its url 404s. **Alpha:** this endpoint is new and its API may still change.",
+            "List the public gallery for a tag: every published item carrying that tag, any owner, newest first. Tagging an upload is what publishes it, so galleries are fully public — no API key needed. `tag` is required.\n\nItems reference storage with a 30-day lifecycle. A GET refreshes the lifecycle once an object is at least 15 days old. An expired item keeps its catalog entry, but its url 404s. **Alpha:** this endpoint is new and its API may still change.",
         security: [],
         responses: {
             200: {
@@ -623,7 +596,7 @@ api.delete(
         tags: ["media.pollinations.ai"],
         summary: "Delete media",
         description:
-            "Delete a published media item you own: the file, its catalog entry, and all its tags are removed, so it disappears from galleries and its URL 404s. Requires your **secret (`sk_`)** API key. Untagged uploads were never published, have no catalog entry, and can't be deleted — they expire on their own 30 days after last access. **Alpha:** this endpoint is new and its API may still change.",
+            "Delete a published media item you own: the file, its catalog entry, and all its tags are removed, so it disappears from galleries and its URL 404s. Requires your **secret (`sk_`)** API key. Untagged uploads were never published, have no catalog entry, and can't be deleted — they use the same 30-day lifecycle, refreshed by a GET once they are at least 15 days old. **Alpha:** this endpoint is new and its API may still change.",
         parameters: [
             {
                 name: "id",
@@ -760,7 +733,10 @@ api.get(
                 "Content-Type",
                 object.httpMetadata?.contentType || "application/octet-stream",
             );
-            headers.set("Cache-Control", CACHE_CONTROL);
+            headers.set(
+                "Cache-Control",
+                object.httpMetadata?.cacheControl || IMMUTABLE_CACHE_CONTROL,
+            );
             headers.set("X-Content-Id", id);
             headers.set("X-Content-Size", object.size.toString());
 
@@ -827,7 +803,10 @@ api.get(
                 return c.json({ error: "Not found" }, 404);
             }
 
-            c.header("Cache-Control", CACHE_CONTROL);
+            c.header(
+                "Cache-Control",
+                object.httpMetadata?.cacheControl || IMMUTABLE_CACHE_CONTROL,
+            );
             return c.json({
                 id,
                 contentType:
@@ -878,7 +857,10 @@ api.on(
                 object.httpMetadata?.contentType || "application/octet-stream",
             );
             headers.set("Content-Length", object.size.toString());
-            headers.set("Cache-Control", CACHE_CONTROL);
+            headers.set(
+                "Cache-Control",
+                object.httpMetadata?.cacheControl || IMMUTABLE_CACHE_CONTROL,
+            );
             headers.set("X-Content-Id", id);
 
             if (object.customMetadata?.uploadedAt) {
@@ -918,7 +900,7 @@ app.get("/", (c) => {
             docs: "GET /openapi.json",
         },
         limits: {
-            maxFileSize: "50MB",
+            maxFileSize: "100MB",
         },
     });
 });

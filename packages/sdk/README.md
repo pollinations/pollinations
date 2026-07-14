@@ -21,7 +21,7 @@ Alpha (in-progress rebuild — pin an exact version):
 
 ```bash
 npm install @pollinations/sdk@alpha
-# or pin exactly: npm install @pollinations/sdk@5.1.0-alpha.4
+# or pin exactly: npm install @pollinations/sdk@5.1.0-alpha.5
 ```
 
 ### CDN / `<script>` tag
@@ -493,6 +493,23 @@ const imageModels = await getImageModels();
 console.log(textModels.map(m => m.name));
 ```
 
+## Media Upload
+
+Uploads use multipart form data, accept up to 100MB of file bytes, and return a
+public URL. Adding tags publishes the upload to those public tag galleries.
+
+```javascript
+import { upload } from '@pollinations/sdk';
+
+const media = await upload(imageBuffer, {
+  name: 'cat.png',
+  contentType: 'image/png',
+  tags: ['cats', 'gallery'],
+});
+
+console.log(media.url);
+```
+
 ## Error Handling
 
 ```javascript
@@ -554,7 +571,7 @@ import type {
 | `videoUrl(prompt, options?)` | Get video URL |
 | `generateAudio(text, options?)` | Text-to-speech / music |
 | `transcribe(audio, options?)` | Speech-to-text |
-| `upload(data, options?)` | Upload media |
+| `upload(data, options?)` | Upload media, optionally publishing it with `tags` |
 | `getTextModels()` | List text models |
 | `getImageModels()` | List image models |
 | `getModels()` | List all models |

@@ -107,7 +107,7 @@ const KEY_IDENTITIES: Record<
 function createMediaEnv(bucket = createTestR2Bucket()) {
     return {
         MEDIA_BUCKET: bucket,
-        MAX_FILE_SIZE: "52428800",
+        MAX_FILE_SIZE: "104857600",
         DB: env.DB,
     };
 }
@@ -326,6 +326,26 @@ describe("media.pollinations.ai", () => {
         expect(body.length).toBe(TINY_PNG.length);
     });
 
+    it("validates the documented JSON upload shape", async () => {
+        for (const body of [null, { data: "AAAA", tags: [42] }]) {
+            const res = await SELF.fetch(
+                "https://media.pollinations.ai/upload",
+                {
+                    method: "POST",
+                    headers: {
+                        Authorization: `Bearer ${VALID_KEY}`,
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify(body),
+                },
+            );
+            expect(res.status).toBe(400);
+            expect(((await res.json()) as { error: string }).error).toContain(
+                "Invalid JSON body",
+            );
+        }
+    });
+
     it("rejects an unsupported upload content type with 400", async () => {
         const res = await SELF.fetch("https://media.pollinations.ai/upload", {
             method: "POST",
@@ -338,6 +358,38 @@ describe("media.pollinations.ai", () => {
         expect(res.status).toBe(400);
         const body = (await res.json()) as { error: string };
         expect(body.error).toContain("multipart/form-data");
+    });
+
+    it("applies the size limit to file bytes, not total request bytes", async () => {
+        const bucket = createTestR2Bucket();
+        const form = new FormData();
+        form.append(
+            "file",
+            new File([new Uint8Array([1, 2])], "tiny.bin", {
+                type: "application/octet-stream",
+            }),
+        );
+
+        const ctx = createExecutionContext();
+        const res = await app.fetch(
+            new Request("https://media.pollinations.ai/upload", {
+                method: "POST",
+                body: form,
+                headers: {
+                    Authorization: `Bearer ${VALID_KEY}`,
+                    "Content-Length": "1000",
+                },
+            }),
+            {
+                ...createMediaEnv(bucket),
+                MAX_FILE_SIZE: "3",
+            },
+            ctx,
+        );
+        await waitOnExecutionContext(ctx);
+
+        expect(res.status).toBe(200);
+        expect(((await res.json()) as UploadResponse).size).toBe(2);
     });
 
     it("rejects empty files, invalid base64, and malformed JSON with 400", async () => {
@@ -492,6 +544,16 @@ describe("media.pollinations.ai", () => {
         const upload = body as UploadResponse;
         expect(upload.tags).toEqual(["sunset"]);
 
+        // Published uploads are deletable, so retrieval and metadata must not
+        // remain in browser or intermediary caches after deletion.
+        const getRes = await SELF.fetch(upload.url);
+        expect(getRes.headers.get("cache-control")).toBe("no-store");
+        await getRes.arrayBuffer();
+        const metadataRes = await SELF.fetch(`${upload.url}/metadata`);
+        expect(metadataRes.headers.get("cache-control")).toBe("no-store");
+        const headRes = await SELF.fetch(upload.url, { method: "HEAD" });
+        expect(headRes.headers.get("cache-control")).toBe("no-store");
+
         const galleryRes = await SELF.fetch(
             "https://media.pollinations.ai/media?tag=sunset",
         );
@@ -613,6 +675,28 @@ describe("media.pollinations.ai", () => {
         );
         const gallery = (await galleryRes.json()) as MediaPageResponse;
         expect(gallery.items.map((i) => i.url)).not.toContain(upload.url);
+    });
+
+    it("does not accept undocumented upload tags from the query string", async () => {
+        const form = new FormData();
+        form.append("file", pngFile("query-tag.png", variant(31)));
+        const res = await SELF.fetch(
+            "https://media.pollinations.ai/upload?tags=query-tag",
+            {
+                method: "POST",
+                body: form,
+                headers: { Authorization: `Bearer ${VALID_KEY}` },
+            },
+        );
+        expect(res.status).toBe(200);
+        const upload = (await res.json()) as UploadResponse;
+        expect(upload.tags).toBeUndefined();
+
+        const galleryRes = await SELF.fetch(
+            "https://media.pollinations.ai/media?tag=query-tag",
+        );
+        const gallery = (await galleryRes.json()) as MediaPageResponse;
+        expect(gallery.items.map((item) => item.id)).not.toContain(upload.id);
     });
 
     it("rejects more than 8 tags with 400", async () => {

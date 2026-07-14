@@ -138,6 +138,32 @@ describe("Pollinations request attempts", () => {
     });
 });
 
+describe("Pollinations media upload", () => {
+    it("serializes tags in the multipart request", async () => {
+        const client = newClient();
+        fetchMock.mockResolvedValue(
+            makeResponse({
+                id: "media-id",
+                url: "https://media.pollinations.ai/media-id",
+                contentType: "image/png",
+                size: 8,
+                tags: ["cats", "gallery"],
+            }),
+        );
+
+        const result = await client.upload(new ArrayBuffer(8), {
+            contentType: "image/png",
+            name: "cat.png",
+            tags: ["cats", "gallery"],
+        });
+
+        const request = fetchMock.mock.calls[0][1] as RequestInit;
+        const formData = request.body as FormData;
+        expect(formData.get("tags")).toBe("cats,gallery");
+        expect(result.tags).toEqual(["cats", "gallery"]);
+    });
+});
+
 describe("Pollinations seed handling", () => {
     it("passes seed and model-specific video duration through URL requests", async () => {
         const client = newClient();

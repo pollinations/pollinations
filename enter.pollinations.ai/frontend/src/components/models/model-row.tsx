@@ -158,10 +158,6 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                         />
                     </div>
                     <ModelId name={model.name} />
-                    <ModelHealthSummary
-                        health={model.health}
-                        showSpeed={false}
-                    />
                     {(inputModalities.length > 0 ||
                         capabilities.length > 0) && (
                         <div className="flex min-w-0 flex-wrap items-center gap-2">
@@ -223,7 +219,7 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
 
             {/* Per pollen — fixed width; gold + card for paid-only models, green
                 + sprout for models that can use Quest Pollen. */}
-            <div className="w-[90px] text-center shrink-0">
+            <div className="flex w-[90px] shrink-0 flex-col items-center gap-1 text-center">
                 <Tooltip content={perPollenTooltip} displayContents>
                     {showPaidOnly ? (
                         <PaidChip>
@@ -237,6 +233,12 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                         </TierChip>
                     )}
                 </Tooltip>
+                <ModelHealthSummary
+                    health={model.health}
+                    showSuccessLabel={false}
+                    showSpeed={false}
+                    limitedLabel="Low data"
+                />
             </div>
 
             {/* Input prices — fixed width */}

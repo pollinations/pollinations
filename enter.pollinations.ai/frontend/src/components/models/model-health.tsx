@@ -93,6 +93,7 @@ type ModelHealthSummaryProps = {
     className?: string;
     showTooltips?: boolean;
     showSuccess?: boolean;
+    showSuccessLabel?: boolean;
     showSpeed?: boolean;
     showSpeedUnit?: boolean;
     limitedLabel?: string;
@@ -146,6 +147,7 @@ export function ModelHealthSummary({
     className,
     showTooltips = true,
     showSuccess = true,
+    showSuccessLabel = true,
     showSpeed = true,
     showSpeedUnit = true,
     limitedLabel = "Limited traffic",
@@ -184,7 +186,9 @@ export function ModelHealthSummary({
             <span className="font-medium text-theme-text-base">
                 {metricFormatter.format(health.successRate)}%
             </span>
-            <span className="text-theme-text-muted">success</span>
+            {showSuccessLabel && (
+                <span className="text-theme-text-muted">success</span>
+            )}
         </span>
     ) : null;
     const speed = hasSpeed ? (

@@ -47,10 +47,7 @@ function createNanobananaMocks() {
                 "aiplatform.googleapis.com": async (request: Request) => {
                     vertexState.requests.push({
                         url: request.url,
-                        body: (await request.json()) as Record<
-                            string,
-                            unknown
-                        >,
+                        body: (await request.json()) as Record<string, unknown>,
                     });
                     return Response.json({
                         candidates: [

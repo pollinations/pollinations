@@ -365,17 +365,16 @@ const GPTIMAGE_CONFIGS: Record<string, GPTImageConfig[]> = {
     ],
 };
 
-let gptImageEndpointIndex =
-    crypto.getRandomValues(new Uint32Array(1))[0] %
-    GPTIMAGE_CONFIGS["gpt-image-2"].length;
+let gptImageEndpointIndex = 0;
 
 function orderedGPTImageConfigs(model: string): GPTImageConfig[] {
     const configs = GPTIMAGE_CONFIGS[model] || GPTIMAGE_CONFIGS.gptimage;
     if (configs.length === 1) return configs;
 
-    const start = gptImageEndpointIndex % configs.length;
-    gptImageEndpointIndex = (gptImageEndpointIndex + 1) % configs.length;
-    return configs.map((_, index) => configs[(start + index) % configs.length]);
+    const start = gptImageEndpointIndex;
+    gptImageEndpointIndex += 1;
+    if (gptImageEndpointIndex === configs.length) gptImageEndpointIndex = 0;
+    return [...configs.slice(start), ...configs.slice(0, start)];
 }
 
 function isRetryableGPTImageError(error: unknown): boolean {

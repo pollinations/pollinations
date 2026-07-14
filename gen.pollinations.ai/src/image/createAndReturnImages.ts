@@ -308,6 +308,9 @@ interface GPTImageConfig {
 
 const AZURE_API_VERSION = "2025-04-01-preview";
 
+// Every endpoint is a resource dedicated to a single model: Azure abuse blocks
+// are per-resource, so sharing one resource across models turns a block into a
+// multi-model outage (issue #12446). Keep it one model per resource.
 const GPTIMAGE_CONFIGS: Record<string, GPTImageConfig[]> = {
     gptimage: [
         {
@@ -319,9 +322,9 @@ const GPTIMAGE_CONFIGS: Record<string, GPTImageConfig[]> = {
         },
         {
             baseUrl:
-                "https://myceli-prod-img-westus3.cognitiveservices.azure.com/openai/deployments/gpt-image-1-mini",
+                "https://myceli-prod-img-mini-westus3.cognitiveservices.azure.com/openai/deployments/gpt-image-1-mini",
             modelName: "gpt-image-1-mini",
-            apiKeyEnv: "AZURE_MYCELI_PROD_IMG_WESTUS3_API_KEY",
+            apiKeyEnv: "AZURE_MYCELI_PROD_IMG_MINI_WESTUS3_API_KEY",
             region: "westus3",
         },
     ],
@@ -335,47 +338,26 @@ const GPTIMAGE_CONFIGS: Record<string, GPTImageConfig[]> = {
         },
         {
             baseUrl:
-                "https://myceli-prod-img-westus3.cognitiveservices.azure.com/openai/deployments/gpt-image-1.5",
+                "https://myceli-prod-img-15-westus3.cognitiveservices.azure.com/openai/deployments/gpt-image-1.5",
             modelName: "gpt-image-1.5",
-            apiKeyEnv: "AZURE_MYCELI_PROD_IMG_WESTUS3_API_KEY",
+            apiKeyEnv: "AZURE_MYCELI_PROD_IMG_15_WESTUS3_API_KEY",
             region: "westus3",
         },
     ],
     "gpt-image-2": [
         {
             baseUrl:
-                "https://eastus2.api.cognitive.microsoft.com/openai/deployments/gpt-image-2",
+                "https://myceli-prod-img-2-swedencentral.cognitiveservices.azure.com/openai/deployments/gpt-image-2",
             modelName: "gpt-image-2",
-            apiKeyEnv: "AZURE_MYCELI_PROD_EASTUS2_API_KEY",
-            region: "eastus2",
-        },
-        {
-            baseUrl:
-                "https://myceli-prod-swedencentral.cognitiveservices.azure.com/openai/deployments/gpt-image-2",
-            modelName: "gpt-image-2",
-            apiKeyEnv: "AZURE_MYCELI_PROD_SWEDEN_API_KEY",
+            apiKeyEnv: "AZURE_MYCELI_PROD_IMG_2_SWEDEN_API_KEY",
             region: "swedencentral",
         },
         {
             baseUrl:
-                "https://westus3.api.cognitive.microsoft.com/openai/deployments/gpt-image-2",
+                "https://myceli-prod-img-2-eastus2.cognitiveservices.azure.com/openai/deployments/gpt-image-2",
             modelName: "gpt-image-2",
-            apiKeyEnv: "AZURE_MYCELI_PROD_WESTUS3_API_KEY",
-            region: "westus3",
-        },
-        {
-            baseUrl:
-                "https://polandcentral.api.cognitive.microsoft.com/openai/deployments/gpt-image-2",
-            modelName: "gpt-image-2",
-            apiKeyEnv: "AZURE_MYCELI_PROD_POLANDCENTRAL_API_KEY",
-            region: "polandcentral",
-        },
-        {
-            baseUrl:
-                "https://uaenorth.api.cognitive.microsoft.com/openai/deployments/gpt-image-2",
-            modelName: "gpt-image-2",
-            apiKeyEnv: "AZURE_MYCELI_PROD_UAENORTH_API_KEY",
-            region: "uaenorth",
+            apiKeyEnv: "AZURE_MYCELI_PROD_IMG_2_EASTUS2_API_KEY",
+            region: "eastus2",
         },
     ],
 };

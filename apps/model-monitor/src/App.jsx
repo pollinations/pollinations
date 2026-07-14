@@ -564,7 +564,7 @@ function App() {
                     onChange={setTypeFilter}
                 />
 
-                <Surface variant="card" className="overflow-x-auto p-0">
+                <Surface variant="card" className="w-fit min-w-full p-0">
                     <Table>
                         <TableHead>
                             <tr>

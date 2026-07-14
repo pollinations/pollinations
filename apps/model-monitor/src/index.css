@@ -5,3 +5,8 @@
         font-size: 3rem;
     }
 }
+/* One scroll context: the window. If the table is wider than the screen the
+   whole page pans right; the shared shell's overflow-x: hidden would clip it. */
+html.polli-ui-root {
+    overflow-x: auto;
+}

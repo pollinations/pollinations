@@ -76,16 +76,18 @@ async function createEnterFrontendApi(): Promise<Hono<Env>> {
     const { frontendApi } = (await import(routePath)) as {
         frontendApi: Hono;
     };
-    return new Hono<Env>()
-        .use("*", async (c, next) => {
-            c.set("log", testLog);
-            await next();
-        })
-        .route("/api", frontendApi)
-        // Mirror production: enter's root app registers handleError
-        // (enter.pollinations.ai/src/index.ts), which maps ValidationError
-        // to a 400 instead of Hono's default 500.
-        .onError(handleError);
+    return (
+        new Hono<Env>()
+            .use("*", async (c, next) => {
+                c.set("log", testLog);
+                await next();
+            })
+            .route("/api", frontendApi)
+            // Mirror production: enter's root app registers handleError
+            // (enter.pollinations.ai/src/index.ts), which maps ValidationError
+            // to a 400 instead of Hono's default 500.
+            .onError(handleError)
+    );
 }
 
 async function fetchEnterApi(

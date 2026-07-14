@@ -14,18 +14,24 @@ import {
 } from "@pollinations/ui";
 import { COMMUNITY_ENDPOINT_PRICE_FIELDS } from "@shared/community-endpoints.ts";
 import type { ReactNode } from "react";
+import {
+    type ModelHealth,
+    ModelHealthSummary,
+} from "../models/model-health.tsx";
 import { PriceBadge, type PriceBadgeConfig } from "../models/price-badge.tsx";
 import type { PriceKind } from "../models/types.ts";
 import { type CommunityEndpoint, pricePerTokenToPerMillion } from "./types.ts";
 
 type CommunityEndpointCardProps = {
     endpoint: CommunityEndpoint;
+    health?: ModelHealth;
     onEdit: () => void;
     onDelete: () => void;
 };
 
 export function CommunityEndpointCard({
     endpoint,
+    health,
     onEdit,
     onDelete,
 }: CommunityEndpointCardProps) {
@@ -71,6 +77,10 @@ export function CommunityEndpointCard({
                     </IconButton>
                 </div>
             </div>
+
+            {!endpoint.disabled && (
+                <ModelHealthSummary health={health} className="mt-2" />
+            )}
 
             {endpoint.disabled && (
                 <Alert intent="danger" className="mt-3">

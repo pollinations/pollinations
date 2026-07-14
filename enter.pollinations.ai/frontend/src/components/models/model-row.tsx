@@ -10,6 +10,7 @@ import {
 import { PaidChip, TierChip, WalletKindIcon } from "@pollinations/ui/wallet";
 import type { FC } from "react";
 import { calculatePerPollen, unitLabels } from "./calculations.ts";
+import { ModelHealthSummary } from "./model-health.tsx";
 import { CAPABILITY_ICON, MODALITY_ICON } from "./model-icons.tsx";
 import {
     getModelBrandLogoPath,
@@ -202,9 +203,22 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                 </div>
             </div>
 
+            {/* Text generation speed — sortable in the table header. */}
+            <div className="flex w-[100px] shrink-0 justify-center">
+                {!model.health ? (
+                    <span className="text-sm text-theme-text-muted">—</span>
+                ) : (
+                    <ModelHealthSummary
+                        health={model.health}
+                        stacked
+                        limitedLabel="Low data"
+                    />
+                )}
+            </div>
+
             {/* Per pollen — fixed width; gold + card for paid-only models, green
                 + sprout for models that can use Quest Pollen. */}
-            <div className="w-[90px] text-center shrink-0">
+            <div className="flex w-[90px] shrink-0 flex-col items-center gap-1 text-center">
                 <Tooltip content={perPollenTooltip} displayContents>
                     {showPaidOnly ? (
                         <PaidChip>

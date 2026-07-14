@@ -8,6 +8,7 @@ import {
 } from "@pollinations/ui";
 import { useCallback, useEffect, useState } from "react";
 import { apiClient } from "../../api.ts";
+import type { ModelHealthByName } from "../models/model-health.tsx";
 import { CommunityEndpointCard } from "./community-endpoint-card.tsx";
 import { CommunityEndpointDeleteConfirmation } from "./community-endpoint-delete-confirmation.tsx";
 import { CommunityEndpointDialog } from "./community-endpoint-dialog.tsx";
@@ -18,10 +19,14 @@ import {
 } from "./types.ts";
 
 type CommunityEndpointsProps = {
+    healthByModel: ModelHealthByName;
     onChange?: () => void | Promise<void>;
 };
 
-export function CommunityEndpoints({ onChange }: CommunityEndpointsProps) {
+export function CommunityEndpoints({
+    healthByModel,
+    onChange,
+}: CommunityEndpointsProps) {
     const [endpoints, setEndpoints] = useState<CommunityEndpoint[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -144,6 +149,7 @@ export function CommunityEndpoints({ onChange }: CommunityEndpointsProps) {
                             <CommunityEndpointCard
                                 key={endpoint.id}
                                 endpoint={endpoint}
+                                health={healthByModel[endpoint.modelId]}
                                 onEdit={() => setEditing(endpoint)}
                                 onDelete={() => setDeleting(endpoint)}
                             />

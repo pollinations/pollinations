@@ -90,11 +90,10 @@ export const Models: FC<ModelsProps> = ({ showCommunityEndpoints = false }) => {
     const healthByModel = useModelHealth();
     const allModels = useMemo(
         () =>
-            getModelPricesFromCatalog(catalogModels, stats).map((model) =>
-                model.community
-                    ? { ...model, health: healthByModel[model.name] }
-                    : model,
-            ),
+            getModelPricesFromCatalog(catalogModels, stats).map((model) => ({
+                ...model,
+                health: healthByModel[model.name],
+            })),
         [catalogModels, healthByModel, stats],
     );
     const query = search.trim().toLowerCase();

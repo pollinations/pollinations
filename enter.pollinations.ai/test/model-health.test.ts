@@ -26,17 +26,16 @@ describe("mapModelHealthRows", () => {
         });
     });
 
-    it("keeps missing speed data while filtering unrelated health rows", () => {
+    it("includes official and non-text models while skipping empty samples", () => {
         expect(
             mapModelHealthRows([
                 row({ model: "openai" }),
-                row({ event_type: "generate.image" }),
                 row({
-                    model: "owner/quiet-model",
+                    model: "flux",
+                    event_type: "generate.image",
                     total_requests: 15,
                     status_2xx: 5,
                     errors_4xx: 10,
-                    tokens_per_second: null,
                 }),
                 row({
                     model: "owner/client-errors-only",
@@ -46,7 +45,13 @@ describe("mapModelHealthRows", () => {
                 }),
             ]),
         ).toEqual({
-            "owner/quiet-model": {
+            openai: {
+                eligibleRequests: 110,
+                successfulRequests: 99,
+                successRate: 90,
+                tokensPerSecond: 72.4,
+            },
+            flux: {
                 eligibleRequests: 5,
                 successfulRequests: 5,
                 successRate: 100,

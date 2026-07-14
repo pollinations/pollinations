@@ -30,10 +30,6 @@ export function mapModelHealthRows(rows: ModelHealthRow[]): ModelHealthByName {
     const healthByName: ModelHealthByName = {};
 
     for (const row of rows) {
-        if (row.event_type !== "generate.text" || !row.model.includes("/")) {
-            continue;
-        }
-
         const eligibleRequests = Math.max(
             row.total_requests - row.errors_4xx,
             0,
@@ -44,7 +40,10 @@ export function mapModelHealthRows(rows: ModelHealthRow[]): ModelHealthByName {
             eligibleRequests,
             successfulRequests: row.status_2xx,
             successRate: (row.status_2xx / eligibleRequests) * 100,
-            tokensPerSecond: row.tokens_per_second,
+            tokensPerSecond:
+                row.event_type === "generate.text"
+                    ? row.tokens_per_second
+                    : null,
         };
     }
 

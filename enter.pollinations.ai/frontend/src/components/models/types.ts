@@ -57,7 +57,7 @@ export type ModelPrice = {
     prices: ModelPriceLine[];
     // Real usage data from Tinybird (rolling 7-day average)
     realAvgCost?: number;
-    // Recent health data for community text models.
+    // Recent success and speed data when available.
     health?: ModelHealth;
 };
 

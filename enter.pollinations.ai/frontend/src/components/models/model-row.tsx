@@ -208,13 +208,14 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
             </div>
 
             {/* Text generation speed — sortable in the table header. */}
-            <div className="flex w-[120px] shrink-0 justify-center">
+            <div className="flex w-[80px] shrink-0 justify-center">
                 {model.health?.tokensPerSecond == null ? (
                     <span className="text-sm text-theme-text-muted">—</span>
                 ) : (
                     <ModelHealthSummary
                         health={model.health}
                         showSuccess={false}
+                        showSpeedUnit={false}
                         limitedLabel="Low data"
                     />
                 )}

@@ -416,7 +416,7 @@ export const UnifiedModelTable: FC<UnifiedModelTableProps> = ({
                 <button
                     type="button"
                     onClick={() => onSort("speed")}
-                    className="hidden md:block w-[120px] shrink-0 cursor-pointer text-center hover:text-theme-text-base"
+                    className="hidden md:block w-[80px] shrink-0 cursor-pointer text-center hover:text-theme-text-base"
                 >
                     <div className="text-sm font-bold text-ink-900">
                         Speed {sortArrow("speed")}

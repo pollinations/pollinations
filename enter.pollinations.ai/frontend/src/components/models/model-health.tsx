@@ -1,4 +1,4 @@
-import { cn, Tooltip, UsageIcon } from "@pollinations/ui";
+import { cn, Tooltip } from "@pollinations/ui";
 import { useEffect, useState } from "react";
 
 const HEALTH_WINDOW_MINUTES = 24 * 60;
@@ -94,6 +94,7 @@ type ModelHealthSummaryProps = {
     showTooltips?: boolean;
     showSuccess?: boolean;
     showSpeed?: boolean;
+    showSpeedUnit?: boolean;
     limitedLabel?: string;
 };
 
@@ -146,6 +147,7 @@ export function ModelHealthSummary({
     showTooltips = true,
     showSuccess = true,
     showSpeed = true,
+    showSpeedUnit = true,
     limitedLabel = "Limited traffic",
 }: ModelHealthSummaryProps) {
     if (!health) return null;
@@ -155,8 +157,8 @@ export function ModelHealthSummary({
     if (health.eligibleRequests < MIN_HEALTH_REQUESTS) {
         if (!showSuccess && !hasSpeed) return null;
         const limitedData = (
-            <span className="inline-flex items-center gap-1.5 rounded-full border border-theme-border bg-theme-bg-pale px-2 py-1 text-theme-text-muted">
-                <span className="h-2 w-2 rounded-full bg-theme-border" />
+            <span className="inline-flex items-center gap-1 text-theme-text-muted">
+                <span className="h-1.5 w-1.5 rounded-full bg-theme-border" />
                 {limitedLabel}
             </span>
         );
@@ -177,21 +179,22 @@ export function ModelHealthSummary({
     }
 
     const success = showSuccess ? (
-        <span className="inline-flex items-center gap-1.5 rounded-full border border-theme-border bg-theme-bg-pale px-2 py-1 tabular-nums">
+        <span className="inline-flex items-center gap-1 tabular-nums">
             <SuccessRing successRate={health.successRate} />
-            <span className="font-semibold text-theme-text-base">
+            <span className="font-medium text-theme-text-base">
                 {metricFormatter.format(health.successRate)}%
             </span>
             <span className="text-theme-text-muted">success</span>
         </span>
     ) : null;
     const speed = hasSpeed ? (
-        <span className="inline-flex items-center gap-1.5 rounded-full border border-theme-border bg-theme-bg-pale px-2 py-1 tabular-nums">
-            <UsageIcon className="h-3.5 w-3.5 text-theme-text-muted" />
-            <span className="font-semibold text-theme-text-base">
+        <span className="inline-flex items-baseline gap-1 tabular-nums">
+            <span className="font-medium text-theme-text-base">
                 {metricFormatter.format(tokensPerSecond)}
             </span>
-            <span className="text-theme-text-muted">tok/s</span>
+            {showSpeedUnit && (
+                <span className="text-theme-text-muted">tok/s</span>
+            )}
         </span>
     ) : null;
 
@@ -200,7 +203,7 @@ export function ModelHealthSummary({
     return (
         <span
             className={cn(
-                "inline-flex flex-wrap items-center gap-1.5 text-xs",
+                "inline-flex flex-wrap items-center gap-x-2.5 gap-y-1 text-xs",
                 className,
             )}
         >

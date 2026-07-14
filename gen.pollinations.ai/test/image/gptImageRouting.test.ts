@@ -80,7 +80,6 @@ describe("gpt-image-2 Azure routing", () => {
             EXPECTED_HOSTS,
         );
         expect(urls.every((url) => url.includes("api-version="))).toBe(true);
-        expect(urls.every((url) => !url.includes("api.openai.com"))).toBe(true);
     });
 
     it("tries the next Azure region after a retryable response", async () => {
@@ -120,6 +119,8 @@ describe("gpt-image-2 Azure routing", () => {
             callGPTImage("test", params, userInfo, "gpt-image-2"),
         ).rejects.toMatchObject({ status: 429 } satisfies Partial<HttpError>);
         expect(urls).toHaveLength(5);
-        expect(urls.every((url) => !url.includes("api.openai.com"))).toBe(true);
+        expect(new Set(urls.map((url) => new URL(url).host))).toEqual(
+            EXPECTED_HOSTS,
+        );
     });
 });

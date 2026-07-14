@@ -365,9 +365,9 @@ const GPTIMAGE_CONFIGS: Record<string, GPTImageConfig[]> = {
     ],
 };
 
-let gptImageEndpointIndex = Math.floor(
-    Math.random() * GPTIMAGE_CONFIGS["gpt-image-2"].length,
-);
+let gptImageEndpointIndex =
+    crypto.getRandomValues(new Uint32Array(1))[0] %
+    GPTIMAGE_CONFIGS["gpt-image-2"].length;
 
 function orderedGPTImageConfigs(model: string): GPTImageConfig[] {
     const configs = GPTIMAGE_CONFIGS[model] || GPTIMAGE_CONFIGS.gptimage;

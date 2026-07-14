@@ -1,0 +1,34 @@
+{
+  "pr_number": 12432,
+  "title": "docs: regenerate APIDOCS.md",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/12432",
+  "merged_at": "2026-07-14T00:56:52Z",
+  "labels": [
+    "DEV-DOCS"
+  ],
+  "pr_body_excerpt": "Auto-generated from OpenAPI spec changes after a successful production deploy.",
+  "gist": {
+    "category": "docs",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "The map got fresher",
+    "blurb": "The API map has been regenerated from the live OpenAPI spec. One less chance for the docs to wander off from the hive.",
+    "summary": "Regenerated APIDOCS.md from the production OpenAPI specification so the published API reference stays aligned with the deployed service.",
+    "impact": "Developers reading the API reference get documentation that matches the current production API.",
+    "keywords": [
+      "docs",
+      "api",
+      "openapi",
+      "reference"
+    ],
+    "visual_concept": "Depict Polly as a careful cartographer with a tiny explorer hat, updating a large API map beside a cozy retro terminal. The map has neat endpoint paths and code-plants growing around its edges, representing documentation staying in sync with the live API.",
+    "image_prompt": "Cozy pixel art scene of Polly, the cute yellow-and-brown striped bee mascot with pink blush and light blue wings, wearing a tiny explorer hat while updating a large API map beside a glowing retro terminal; code-plants and small flowers grow around the map, with a prominent lime green (#ecf874) glow. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, dark purple (#110518) pixel-font text on the map: 'API DOCS', nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-14/PR-12432.jpg",
+    "prompt": "Cozy pixel art scene of Polly, the cute yellow-and-brown striped bee mascot with pink blush and light blue wings, wearing a tiny explorer hat while updating a large API map beside a glowing retro terminal; code-plants and small flowers grow around the map, with a prominent lime green (#ecf874) glow. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, dark purple (#110518) pixel-font text on the map: 'API DOCS', nostalgic but beautiful."
+  },
+  "generated_at": "2026-07-14T00:57:49.399289+00:00"
+}

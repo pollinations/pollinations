@@ -1,6 +1,8 @@
 import {
     Alert,
     Button,
+    ButtonGroup,
+    CheckIcon,
     ChevronIcon,
     Dialog,
     DialogTitle,
@@ -9,6 +11,7 @@ import {
     FieldStack,
     Input,
     ScrollArea,
+    TabButton,
 } from "@pollinations/ui";
 import {
     COMMUNITY_ENDPOINT_PRICE_FIELDS,
@@ -41,38 +44,6 @@ import {
     readError,
     toEndpointPayload,
 } from "./types.ts";
-
-function ToggleButton({
-    active,
-    disabled = false,
-    onClick,
-    children,
-}: {
-    active: boolean;
-    disabled?: boolean;
-    onClick: () => void;
-    children: ReactNode;
-}) {
-    return (
-        <Button
-            type="button"
-            size="sm"
-            intent={active ? "info" : undefined}
-            aria-pressed={active}
-            className={
-                active
-                    ? "text-sm"
-                    : disabled
-                      ? "text-sm opacity-40"
-                      : "text-sm opacity-70"
-            }
-            disabled={disabled}
-            onClick={onClick}
-        >
-            {children}
-        </Button>
-    );
-}
 
 type CommunityEndpointDialogProps = {
     /** Present in edit mode (prefills the form); omit to create. */
@@ -376,21 +347,31 @@ export function CommunityEndpointDialog({
                         }
                         alignLabelRow
                     >
-                        <div className="flex gap-2">
-                            <ToggleButton
+                        <ButtonGroup aria-label="Model visibility">
+                            <TabButton
                                 active={form.visibility === "private"}
                                 onClick={() => updateVisibility("private")}
+                                size="sm"
+                                className="min-w-24 gap-1.5"
                             >
+                                {form.visibility === "private" && (
+                                    <CheckIcon className="h-3.5 w-3.5" />
+                                )}
                                 Private
-                            </ToggleButton>
-                            <ToggleButton
+                            </TabButton>
+                            <TabButton
                                 active={form.visibility === "public"}
                                 disabled={!canPublish}
                                 onClick={() => updateVisibility("public")}
+                                size="sm"
+                                className="min-w-24 gap-1.5"
                             >
+                                {form.visibility === "public" && (
+                                    <CheckIcon className="h-3.5 w-3.5" />
+                                )}
                                 Public
-                            </ToggleButton>
-                        </div>
+                            </TabButton>
+                        </ButtonGroup>
                     </FieldStack>
 
                     <div className="grid gap-4 sm:grid-cols-2">

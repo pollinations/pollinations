@@ -1,0 +1,71 @@
+{
+  "$schema": "https://floss.fund/schema/v1.0.0/funding.schema.json#",
+  "version": "v1.0.0",
+  "entity": {
+    "type": "organisation",
+    "role": "owner",
+    "name": "Myceli AI OÜ",
+    "email": "thomash@pollinations.ai",
+    "phone": "",
+    "description": "Myceli AI OÜ (Estonia, reg. 17186693) is the legal entity behind Pollinations.ai, an open-source generative AI API platform providing free, unified access to text, image, audio, and video generation models. Founded by Thomas Haferlach, the project serves roughly 100,000 registered developers and 500+ downstream community apps and integrations.",
+    "webpageUrl": {
+      "url": "https://pollinations.ai",
+      "wellKnown": ""
+    }
+  },
+  "projects": [
+    {
+      "guid": "pollinations",
+      "name": "Pollinations.ai",
+      "description": "Pollinations.ai is a free, open-source generative AI platform offering a unified API for text, image, audio, and video generation. It removes signup and billing friction (no API keys or credit cards required for core usage) so any developer, hobbyist, or student can build with generative AI. The project powers 500+ community-built apps, games, bots, and creative tools, and is maintained by a small core team plus 500+ open-source contributors.",
+      "webpageUrl": {
+        "url": "https://pollinations.ai",
+        "wellKnown": ""
+      },
+      "repositoryUrl": {
+        "url": "https://github.com/pollinations/pollinations",
+        "wellKnown": ""
+      },
+      "licenses": [
+        "spdx:MIT"
+      ],
+      "tags": [
+        "generative-ai",
+        "api",
+        "image-generation",
+        "text-generation",
+        "audio-generation",
+        "developer-tools",
+        "open-source",
+        "llm",
+        "no-code",
+        "creative-tools"
+      ]
+    }
+  ],
+  "funding": {
+    "channels": [
+      {
+        "guid": "myceli-bank",
+        "type": "bank",
+        "address": "Myceli AI OÜ, Tallinn, Estonia",
+        "description": "Primary business bank account for Myceli AI OÜ, the Estonian legal entity operating Pollinations.ai. Used to receive grants, sponsorships, and donations that fund infrastructure (GPU/inference compute), hosting, and continued open-source development."
+      }
+    ],
+    "plans": [
+      {
+        "guid": "infra-sustain",
+        "status": "active",
+        "name": "Infrastructure & compute sustainability",
+        "description": "Funds GPU inference compute, hosting, and bandwidth costs required to keep Pollinations.ai's free-tier API available to ~100,000 developers, plus engineering time for maintaining and extending the open-source codebase.",
+        "amount": 100000,
+        "currency": "USD",
+        "frequency": "yearly",
+        "channels": [
+          "myceli-bank"
+        ]
+      }
+    ],
+    "history": []
+  }
+}

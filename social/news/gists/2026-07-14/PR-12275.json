@@ -1,0 +1,36 @@
+{
+  "pr_number": 12275,
+  "title": "Refresh docs and fix broken links",
+  "author": "mikl-shortcuts",
+  "url": "https://github.com/pollinations/pollinations/pull/12275",
+  "merged_at": "2026-07-14T20:12:52Z",
+  "labels": [
+    "DEV-DOCS"
+  ],
+  "pr_body_excerpt": "Updated `README.md`:\r\n* Added mentions of 3D and Embeddings generation.\r\n* Fixed the Stargazers link used by the stars count badge.\r\n* Fixed the Project Submission Template link.\r\n\r\nUpdated `APIDOCS.md`:\r\n* Added a note that the documentation is also available at [https://gen.pollinations.ai/docs](https://gen.pollinations.ai/docs).",
+  "gist": {
+    "category": "docs",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "The map got pollenated",
+    "blurb": "The front-door docs now mention 3D and embeddings, and a couple of wandering links have been guided back to the garden path.",
+    "summary": "Refreshed README.md to mention 3D and embeddings generation, repaired the Stargazers badge and Project Submission Template links, and pointed API readers to gen.pollinations.ai/docs.",
+    "impact": "Newcomers can discover more of the platform's generation capabilities and reach the stars, submission template, and hosted API docs without chasing broken links.",
+    "keywords": [
+      "documentation",
+      "README",
+      "3D",
+      "embeddings",
+      "API docs",
+      "links"
+    ],
+    "visual_concept": "Polly acts as a tiny garden librarian, repairing a vine-covered signpost with directions to 3D, embeddings, stars, project submissions, and API docs. Friendly code-plants and glowing document pages make the documentation refresh feel like restoring a well-used community garden map.",
+    "image_prompt": "Cozy pixel art scene of Polly, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and tiny librarian glasses, carefully fixing a vine-covered garden signpost labeled in simple pixel text: '3D', 'EMBEDDINGS', and 'DOCS'. Lime green (#ecf874) code-plants, little flowers, glowing document pages, and a warm cream-and-lavender background surround her; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-14/PR-12275.jpg",
+    "prompt": "Cozy pixel art scene of Polly, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and tiny librarian glasses, carefully fixing a vine-covered garden signpost labeled in simple pixel text: '3D', 'EMBEDDINGS', and 'DOCS'. Lime green (#ecf874) code-plants, little flowers, glowing document pages, and a warm cream-and-lavender background surround her; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, nostalgic but beautiful."
+  },
+  "generated_at": "2026-07-14T20:13:45.496133+00:00"
+}

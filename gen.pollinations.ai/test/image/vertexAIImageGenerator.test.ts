@@ -1,5 +1,14 @@
 import { describe, expect, it } from "vitest";
+import type { VertexAIUsageMetadata } from "../../src/image/vertexAIClient.ts";
 import { mapVertexGeminiImageUsage } from "../../src/image/vertexAIImageGenerator.ts";
+
+const validUsage: VertexAIUsageMetadata = {
+    promptTokenCount: 11,
+    candidatesTokenCount: 1120,
+    totalTokenCount: 1131,
+    promptTokensDetails: [{ modality: "TEXT", tokenCount: 11 }],
+    candidatesTokensDetails: [{ modality: "IMAGE", tokenCount: 1120 }],
+};
 
 describe("vertexAIImageGenerator usage mapping", () => {
     it.each([
@@ -67,97 +76,40 @@ describe("vertexAIImageGenerator usage mapping", () => {
         expect(mapVertexGeminiImageUsage({ usage })).toEqual(expected);
     });
 
-    it("rejects missing usage metadata", () => {
-        expect(() => mapVertexGeminiImageUsage({})).toThrow(
-            "Vertex AI response missing billing usage metadata",
+    it.each([
+        ["missing metadata", undefined],
+        [
+            "missing modality details",
+            { ...validUsage, promptTokensDetails: undefined },
+        ],
+        [
+            "inconsistent aggregate",
+            { ...validUsage, promptTokenCount: 12, totalTokenCount: 1132 },
+        ],
+        [
+            "candidate without an image",
+            {
+                ...validUsage,
+                candidatesTokenCount: 23,
+                totalTokenCount: 34,
+                candidatesTokensDetails: [
+                    { modality: "TEXT" as const, tokenCount: 23 },
+                ],
+            },
+        ],
+        [
+            "unsupported modality",
+            {
+                ...validUsage,
+                candidatesTokensDetails: [
+                    { modality: "AUDIO" as const, tokenCount: 1120 },
+                ],
+            },
+        ],
+        ["inconsistent total", { ...validUsage, thoughtsTokenCount: 140 }],
+    ])("rejects %s", (_name, usage) => {
+        expect(() => mapVertexGeminiImageUsage({ usage })).toThrow(
+            "Vertex AI returned invalid billing usage metadata",
         );
-    });
-
-    it("rejects missing modality details", () => {
-        expect(() =>
-            mapVertexGeminiImageUsage({
-                usage: {
-                    promptTokenCount: 11,
-                    candidatesTokenCount: 1120,
-                    totalTokenCount: 1131,
-                    candidatesTokensDetails: [
-                        { modality: "IMAGE", tokenCount: 1120 },
-                    ],
-                },
-            }),
-        ).toThrow(
-            "Vertex AI response missing promptTokensDetails billing usage",
-        );
-    });
-
-    it("rejects modality details that do not match their aggregate", () => {
-        expect(() =>
-            mapVertexGeminiImageUsage({
-                usage: {
-                    promptTokenCount: 12,
-                    candidatesTokenCount: 1120,
-                    totalTokenCount: 1132,
-                    promptTokensDetails: [{ modality: "TEXT", tokenCount: 11 }],
-                    candidatesTokensDetails: [
-                        { modality: "IMAGE", tokenCount: 1120 },
-                    ],
-                },
-            }),
-        ).toThrow(
-            "Vertex AI prompt billing usage does not match its aggregate",
-        );
-    });
-
-    it("rejects candidate usage without an output image", () => {
-        expect(() =>
-            mapVertexGeminiImageUsage({
-                usage: {
-                    promptTokenCount: 11,
-                    candidatesTokenCount: 23,
-                    totalTokenCount: 34,
-                    promptTokensDetails: [{ modality: "TEXT", tokenCount: 11 }],
-                    candidatesTokensDetails: [
-                        { modality: "TEXT", tokenCount: 23 },
-                    ],
-                },
-            }),
-        ).toThrow(
-            "Vertex AI image response missing output image billing usage",
-        );
-    });
-
-    it("rejects unsupported completion modalities", () => {
-        expect(() =>
-            mapVertexGeminiImageUsage({
-                usage: {
-                    promptTokenCount: 11,
-                    candidatesTokenCount: 1120,
-                    totalTokenCount: 1131,
-                    promptTokensDetails: [{ modality: "TEXT", tokenCount: 11 }],
-                    candidatesTokensDetails: [
-                        { modality: "AUDIO", tokenCount: 1120 },
-                    ],
-                },
-            }),
-        ).toThrow(
-            "Vertex AI returned unsupported candidatesTokensDetails modality",
-        );
-    });
-
-    it("rejects totals that omit billable reasoning usage", () => {
-        expect(() =>
-            mapVertexGeminiImageUsage({
-                usage: {
-                    promptTokenCount: 11,
-                    candidatesTokenCount: 1120,
-                    totalTokenCount: 1131,
-                    thoughtsTokenCount: 140,
-                    promptTokensDetails: [{ modality: "TEXT", tokenCount: 11 }],
-                    candidatesTokensDetails: [
-                        { modality: "IMAGE", tokenCount: 1120 },
-                    ],
-                },
-            }),
-        ).toThrow("Vertex AI billing usage does not match its total");
     });
 });

@@ -58,14 +58,19 @@ const COMPLETION_MODALITY_TO_USAGE_KEY: Partial<
     IMAGE: "completionImageTokens",
 };
 
-function requireTokenCount(value: unknown, field: string): number {
-    if (!Number.isSafeInteger(value) || (value as number) < 0) {
-        throw new HttpError(
-            `Vertex AI returned invalid ${field} billing usage`,
-            502,
-        );
-    }
-    return value as number;
+function isTokenCount(value: unknown): value is number {
+    return Number.isSafeInteger(value) && (value as number) >= 0;
+}
+
+function invalidVertexUsage(usage: VertexAIUsageMetadata | undefined): never {
+    errorLog(
+        "Vertex AI returned invalid billing usage metadata:",
+        JSON.stringify(usage),
+    );
+    throw new HttpError(
+        "Vertex AI returned invalid billing usage metadata",
+        502,
+    );
 }
 
 function addUsage(usage: Usage, key: keyof Usage, amount: number) {
@@ -75,38 +80,18 @@ function addUsage(usage: Usage, key: keyof Usage, amount: number) {
 
 function mapModalityDetails(
     usage: Usage,
-    details: VertexAIModalityTokenCount[] | undefined,
+    details: VertexAIModalityTokenCount[],
     keyMap: Partial<Record<VertexAIModality, keyof Usage>>,
-    field: string,
+    providerUsage: VertexAIUsageMetadata,
 ): number {
-    if (!Array.isArray(details) || details.length === 0) {
-        throw new HttpError(
-            `Vertex AI response missing ${field} billing usage`,
-            502,
-        );
-    }
-
     let mappedTokens = 0;
     for (const detail of details) {
-        const amount = requireTokenCount(
-            detail.tokenCount,
-            `${field}.${detail.modality ?? "unknown"}`,
-        );
-        if (!detail.modality) {
-            throw new HttpError(
-                `Vertex AI returned unsupported ${field} modality`,
-                502,
-            );
+        const key = detail.modality && keyMap[detail.modality];
+        if (!key || !isTokenCount(detail.tokenCount)) {
+            invalidVertexUsage(providerUsage);
         }
-        const key = keyMap[detail.modality];
-        if (!key) {
-            throw new HttpError(
-                `Vertex AI returned unsupported ${field} modality`,
-                502,
-            );
-        }
-        addUsage(usage, key, amount);
-        mappedTokens += amount;
+        addUsage(usage, key, detail.tokenCount);
+        mappedTokens += detail.tokenCount;
     }
     return mappedTokens;
 }
@@ -116,69 +101,46 @@ export function mapVertexGeminiImageUsage({
 }: {
     usage?: VertexAIUsageMetadata;
 }): Usage {
-    if (!usage) {
-        throw new HttpError(
-            "Vertex AI response missing billing usage metadata",
-            502,
-        );
+    if (
+        !usage ||
+        !isTokenCount(usage.promptTokenCount) ||
+        !isTokenCount(usage.candidatesTokenCount) ||
+        !isTokenCount(usage.totalTokenCount) ||
+        (usage.thoughtsTokenCount !== undefined &&
+            !isTokenCount(usage.thoughtsTokenCount)) ||
+        !usage.promptTokensDetails?.length ||
+        !usage.candidatesTokensDetails?.length
+    ) {
+        invalidVertexUsage(usage);
     }
 
     const mappedUsage: Usage = {};
-    const promptTokens = requireTokenCount(
-        usage.promptTokenCount,
-        "promptTokenCount",
-    );
+    const promptTokens = usage.promptTokenCount;
     const mappedPromptTokens = mapModalityDetails(
         mappedUsage,
         usage.promptTokensDetails,
         PROMPT_MODALITY_TO_USAGE_KEY,
-        "promptTokensDetails",
+        usage,
     );
-    if (mappedPromptTokens !== promptTokens) {
-        throw new HttpError(
-            "Vertex AI prompt billing usage does not match its aggregate",
-            502,
-        );
-    }
 
-    const candidateTokens = requireTokenCount(
-        usage.candidatesTokenCount,
-        "candidatesTokenCount",
-    );
+    const candidateTokens = usage.candidatesTokenCount;
     const mappedCandidateTokens = mapModalityDetails(
         mappedUsage,
         usage.candidatesTokensDetails,
         COMPLETION_MODALITY_TO_USAGE_KEY,
-        "candidatesTokensDetails",
+        usage,
     );
-    if (mappedCandidateTokens !== candidateTokens) {
-        throw new HttpError(
-            "Vertex AI candidate billing usage does not match its aggregate",
-            502,
-        );
-    }
-    if (!mappedUsage.completionImageTokens) {
-        throw new HttpError(
-            "Vertex AI image response missing output image billing usage",
-            502,
-        );
-    }
-
-    const thoughtsTokens =
-        usage.thoughtsTokenCount === undefined
-            ? 0
-            : requireTokenCount(usage.thoughtsTokenCount, "thoughtsTokenCount");
+    const thoughtsTokens = usage.thoughtsTokenCount ?? 0;
     addUsage(mappedUsage, "completionReasoningTokens", thoughtsTokens);
 
-    const totalTokens = requireTokenCount(
-        usage.totalTokenCount,
-        "totalTokenCount",
-    );
-    if (promptTokens + candidateTokens + thoughtsTokens !== totalTokens) {
-        throw new HttpError(
-            "Vertex AI billing usage does not match its total",
-            502,
-        );
+    if (
+        mappedPromptTokens !== promptTokens ||
+        mappedCandidateTokens !== candidateTokens ||
+        !mappedUsage.completionImageTokens ||
+        promptTokens + candidateTokens + thoughtsTokens !==
+            usage.totalTokenCount
+    ) {
+        invalidVertexUsage(usage);
     }
 
     return mappedUsage;

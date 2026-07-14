@@ -25,5 +25,9 @@ export function buildTrackingHeaders(
         throw new Error(`Missing billable usage for ${model}`);
     }
     const modelUsed = trackingData?.actualModel || model;
-    return buildUsageHeaders(modelUsed, trackingData.usage);
+    const headers = buildUsageHeaders(modelUsed, trackingData.usage);
+    if (!Object.keys(headers).some((header) => header.startsWith("x-usage-"))) {
+        throw new Error(`Missing billable usage for ${model}`);
+    }
+    return headers;
 }

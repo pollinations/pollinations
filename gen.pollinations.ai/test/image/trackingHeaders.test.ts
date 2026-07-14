@@ -21,5 +21,8 @@ describe("buildTrackingHeaders", () => {
         expect(() =>
             buildTrackingHeaders("flux", { usage: undefined } as never),
         ).toThrow("Missing billable usage for flux");
+        expect(() => buildTrackingHeaders("flux", { usage: {} })).toThrow(
+            "Missing billable usage for flux",
+        );
     });
 });

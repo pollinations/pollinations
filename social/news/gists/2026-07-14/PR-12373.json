@@ -1,0 +1,36 @@
+{
+  "pr_number": 12373,
+  "title": "feat: community monitor — panel format, official-model alerts, daily leaderboard",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/12373",
+  "merged_at": "2026-07-14T21:05:14Z",
+  "labels": [
+    "DEV-UI-UX"
+  ],
+  "pr_body_excerpt": "## Summary\n- Boxed ASCII-panel format (code block, STATUS/MODEL/WHY/BY fields) for the community monitor's flag/deactivate/reactivate-confirm Discord posts\n- Duty 2c: monitor also watches official (non-community) models on a stricter 90% threshold, alert-only (never deactivates), pings thomash + elliot in #dev-product\n- Daily community-model leaderboard: new `apps/operation/community-monitor/leaderboard/build-leaderboard.mjs` renders a pixel-art token/speed/success board via chromium and posts it to #dev-community-models once/day (CYCLE.md duty 3b); design rationale in `.claude/skills/community-leaderboard`\n\n## Test plan\n- [x] Deployed CYCLE.md to EC2 monitor box, posted a live reactivation confirmation using the new panel format\n- [x] Verified duty 2c formula against live prod Tinybird data (no false positive)\n- [x] Ran build-leaderboard.mjs end-to-end on the box (Tinybird query -> chromium render -> PIL crop -> media upload), posted resulting image to #dev-community-models",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "The garden gets a scoreboard",
+    "blurb": "The community-model keeper now posts tidy status panels, keeps an extra eye on official models, and hangs a daily pixel scoreboard in the workshop. Someone taught the monitoring box presentation skills.",
+    "summary": "The community monitor now sends boxed STATUS/MODEL/WHY/BY Discord panels for model actions, alerts thomash and elliot when official models cross a 90% threshold without deactivating them, and publishes a daily Chromium-rendered leaderboard for community-model token volume, speed, and success rate.",
+    "impact": "Community model operators get clearer action notices and a daily performance snapshot, while official-model health receives a stricter alert-only check in #dev-product.",
+    "keywords": [
+      "community-models",
+      "monitoring",
+      "discord",
+      "leaderboard",
+      "model-health",
+      "tinybird"
+    ],
+    "visual_concept": "A cozy community-model operations garden with a chunky CRT monitor robot proudly displaying a pixel-art leaderboard for token volume, speed, and success. Polly, wearing a tiny moderator headset, pins a neat boxed STATUS panel beside the board while healthy code-plants grow around it; a small 90% alert bell represents the new official-model watch without suggesting shutdowns.",
+    "image_prompt": "Cozy pixel art scene in a warm community-model garden workshop: Polly, the cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks, a small happy smile, and small rounded light blue translucent wings, wears a tiny moderator headset while helping a cute CRT-monitor robot hang a daily leaderboard showing simple pixel text “TOKENS / SPEED / SUCCESS”; beside them is a tidy boxed “STATUS” panel and a gentle 90% alert bell, with code-plants and flowers growing from prominently lime green (#ecf874) pots. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, chunky retro sprites, dark purple (#110518) outlines, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-14/PR-12373.jpg",
+    "prompt": "Cozy pixel art scene in a warm community-model garden workshop: Polly, the cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks, a small happy smile, and small rounded light blue translucent wings, wears a tiny moderator headset while helping a cute CRT-monitor robot hang a daily leaderboard showing simple pixel text “TOKENS / SPEED / SUCCESS”; beside them is a tidy boxed “STATUS” panel and a gentle 90% alert bell, with code-plants and flowers growing from prominently lime green (#ecf874) pots. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, chunky retro sprites, dark purple (#110518) outlines, nostalgic but beautiful."
+  },
+  "generated_at": "2026-07-14T21:06:20.945527+00:00"
+}

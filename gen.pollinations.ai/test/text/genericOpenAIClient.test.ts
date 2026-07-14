@@ -282,24 +282,33 @@ describe("genericOpenAIClient", () => {
         expect(fetchSpy).not.toHaveBeenCalled();
     });
 
-    it("maps upstream 429 to 502 while preserving upstream status", async () => {
-        vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
-            Response.json(
-                { error: { message: "rate limited" } },
-                { status: 429, statusText: "Too Many Requests" },
-            ),
+    it("maps upstream 429 to 502 while preserving upstream status after retries exhausted", async () => {
+        vi.useFakeTimers();
+        
+        // Mock 11 calls (1 initial + 10 retries) all returning 429
+        for (let i = 0; i <= 10; i++) {
+            vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
+                Response.json(
+                    { error: { message: "rate limited" } },
+                    { status: 429, statusText: "Too Many Requests" },
+                ),
+            );
+        }
+
+        const promise = genericOpenAIClient(
+            [{ role: "user", content: "hello" }],
+            { model: "provider-model" },
+            { endpoint: "https://portkey.test/chat" },
         );
 
-        await expect(
-            genericOpenAIClient(
-                [{ role: "user", content: "hello" }],
-                { model: "provider-model" },
-                { endpoint: "https://portkey.test/chat" },
-            ),
-        ).rejects.toMatchObject({ status: 502, upstreamStatus: 429 });
-    });
+        // Advance timers through all retries
+        for (let i = 0; i <= 10; i++) {
+            await vi.advanceTimersByTime(60000); // max delay
+        }
 
-    it("passes through successful empty completions", async () => {
+        await expect(promise).rejects.toMatchObject({ status: 502, upstreamStatus: 429 });
+        
+        vi.useRealTimers();
         vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
             Response.json({
                 id: "chatcmpl_test",

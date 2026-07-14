@@ -60,7 +60,7 @@ function sleep(ms: number): Promise<void> {
 function calculateBackoffDelay(attempt: number): number {
     // attempt is 0-indexed for retries (0 = first retry)
     // Exponential: BASE_DELAY * 2^attempt, capped at MAX_DELAY
-    const delay = BASE_DELAY_MS * Math.pow(2, attempt);
+    const delay = BASE_DELAY_MS * 2 ** attempt;
     return Math.min(delay, MAX_DELAY_MS);
 }
 
@@ -246,7 +246,10 @@ export async function genericOpenAIClient(
                     );
 
                     // If this is the last attempt or error is not retryable, throw
-                    if (attempt === MAX_RETRIES || !isRetryableError(apiError)) {
+                    if (
+                        attempt === MAX_RETRIES ||
+                        !isRetryableError(apiError)
+                    ) {
                         throw apiError;
                     }
 
@@ -302,7 +305,8 @@ export async function genericOpenAIClient(
                     }`,
                 );
 
-                const formattedChoice = (data.choices?.[0] ?? {}) as CompletionChoice;
+                const formattedChoice = (data.choices?.[0] ??
+                    {}) as CompletionChoice;
 
                 // Force finish_reason to "tool_calls" when tool_calls are present.
                 // Some providers (e.g. Vertex AI) return "stop" for tool call responses.
@@ -323,7 +327,7 @@ export async function genericOpenAIClient(
                 const error = thrown as ServiceError;
 
                 // If it's an apiError we created (retryable), check if we should retry
-                if (error.status && isRetryableError(error)) {
+                if (isRetryableError(error)) {
                     if (attempt < MAX_RETRIES) {
                         lastError = error;
                         const delay = calculateBackoffDelay(attempt);

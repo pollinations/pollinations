@@ -9,6 +9,8 @@ import {
     communityOpenAIBaseUrl,
     isCommunityEndpointOwnerAllowed,
     legacyCommunityModelId,
+    MIN_COMMUNITY_PRICE_PER_MILLION_TOKENS,
+    MIN_COMMUNITY_PRICE_PER_TOKEN,
     normalizeCommunityEndpointBaseUrl,
     normalizeCommunityEndpointBearerToken,
     parseCommunityModelId,
@@ -1289,6 +1291,88 @@ fixtureTest(
         expect(secondList.data).toHaveLength(1);
         expect(secondList.data[0]).not.toHaveProperty("bearerToken");
         expect(secondList.data[0]).not.toHaveProperty("bearerTokenCiphertext");
+    },
+);
+
+fixtureTest(
+    "accepts free and minimum community prices while rejecting smaller positive prices",
+    async () => {
+        const ownerGithubUsername = `price-${crypto.randomUUID().slice(0, 8)}`;
+        const ownerUserId = await createTestUser({
+            githubId: COMMUNITY_ENDPOINT_ALLOWED_TEST_GITHUB_ID,
+            githubUsername: ownerGithubUsername,
+        });
+        const sessionToken = `session-${crypto.randomUUID()}`;
+        await db.insert(sessionTable).values({
+            id: `session-${crypto.randomUUID()}`,
+            token: sessionToken,
+            userId: ownerUserId,
+            expiresAt: new Date(Date.now() + 60 * 60 * 1000),
+            createdAt: new Date(),
+            updatedAt: new Date(),
+        });
+        const cookie = await signedSessionCookie(sessionToken);
+        const enterApi = await createEnterCommunityApi();
+        const createResponse = await fetchEnterApi(
+            enterApi,
+            new Request("http://localhost:3000/api/community-endpoints", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Cookie: cookie,
+                },
+                body: JSON.stringify({
+                    name: "price-floor-test",
+                    baseUrl: "https://api.example.com/v1",
+                    upstreamModel: "gpt-4.1-mini",
+                    bearerToken: "sk_saved_token",
+                    promptTextPrice: 0,
+                }),
+            }),
+        );
+        expect(createResponse.status).toBe(200);
+        const created = (await createResponse.json()) as {
+            id: string;
+            promptTextPrice: number;
+        };
+        expect(created.promptTextPrice).toBe(0);
+
+        const updatePrice = (price: number) =>
+            fetchEnterApi(
+                enterApi,
+                new Request(
+                    `http://localhost:3000/api/community-endpoints/${created.id}/update`,
+                    {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
+                            Cookie: cookie,
+                        },
+                        body: JSON.stringify({ promptTextPrice: price }),
+                    },
+                ),
+            );
+
+        const minimumResponse = await updatePrice(
+            MIN_COMMUNITY_PRICE_PER_TOKEN,
+        );
+        expect(minimumResponse.status).toBe(200);
+        await expect(minimumResponse.json()).resolves.toMatchObject({
+            promptTextPrice: MIN_COMMUNITY_PRICE_PER_TOKEN,
+        });
+
+        const belowMinimumResponse = await updatePrice(
+            MIN_COMMUNITY_PRICE_PER_TOKEN / 10,
+        );
+        expect(belowMinimumResponse.status).toBe(400);
+        expect(await belowMinimumResponse.text()).toContain(
+            `${MIN_COMMUNITY_PRICE_PER_MILLION_TOKENS} per 1M tokens`,
+        );
+
+        const negativeResponse = await updatePrice(
+            -MIN_COMMUNITY_PRICE_PER_TOKEN,
+        );
+        expect(negativeResponse.status).toBe(400);
     },
 );
 

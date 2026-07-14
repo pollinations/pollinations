@@ -1,5 +1,7 @@
 import {
     COMMUNITY_ENDPOINT_PRICE_FIELDS,
+    MIN_COMMUNITY_PRICE_PER_MILLION_TOKENS,
+    MIN_COMMUNITY_PRICE_PER_TOKEN,
     type CommunityEndpointPriceKey,
     communityEndpointPrices,
     communityModelId,
@@ -25,7 +27,17 @@ import {
 } from "../services/community-endpoint-openai.ts";
 import { hasDirectAccountPermission } from "./account-permissions.ts";
 
-const PriceSchema = z.number().finite().min(0);
+const PriceSchema = z
+    .number()
+    .finite()
+    .min(0)
+    .refine(
+        (price) =>
+            price === 0 || price >= MIN_COMMUNITY_PRICE_PER_TOKEN,
+        {
+            message: `Price must be 0 (free) or at least ${MIN_COMMUNITY_PRICE_PER_TOKEN} per token (${MIN_COMMUNITY_PRICE_PER_MILLION_TOKENS} per 1M tokens)`,
+        },
+    );
 const CreatePriceFieldsSchema = Object.fromEntries(
     COMMUNITY_ENDPOINT_PRICE_FIELDS.map((field) => [
         field.key,

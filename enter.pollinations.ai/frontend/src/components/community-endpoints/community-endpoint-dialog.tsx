@@ -15,7 +15,6 @@ import { useEffect, useState } from "react";
 import { apiClient } from "../../api.ts";
 import {
     formWithVisiblePrices,
-    hasPositivePriceInput,
     hasValidVisibleFormPrices,
     PriceGroups,
     returnedPriceFields,
@@ -198,13 +197,9 @@ export function CommunityEndpointDialog({
         savedPriceKeys,
         returnedFields,
     );
-    const hasVisiblePriceFields = visiblePriceKeys.size > 0;
     const hasValidVisiblePrices = hasValidVisibleFormPrices(
         form,
         visiblePriceKeys,
-    );
-    const hasRequiredReturnedPrices = returnedFields.every((field) =>
-        hasPositivePriceInput(form, field),
     );
     const testRequirementMet =
         testState.status === "success" && returnedFields.length > 0;
@@ -220,9 +215,7 @@ export function CommunityEndpointDialog({
         !isSubmitting &&
         form.name.trim() !== "" &&
         form.baseUrl.trim() !== "" &&
-        hasVisiblePriceFields &&
         hasValidVisiblePrices &&
-        hasRequiredReturnedPrices &&
         saveRequirementMet;
 
     return (

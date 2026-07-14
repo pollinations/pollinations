@@ -5,9 +5,3 @@
         font-size: 3rem;
     }
 }
-
-/* The page scrolls with the window in both axes; the shared shell's
-   overflow-x: hidden would clip the table on narrow viewports. */
-html.polli-ui-root {
-    overflow-x: auto;
-}

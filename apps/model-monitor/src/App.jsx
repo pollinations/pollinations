@@ -564,7 +564,7 @@ function App() {
                     onChange={setTypeFilter}
                 />
 
-                <Surface variant="card" className="overflow-hidden p-0">
+                <Surface variant="card" className="overflow-x-auto p-0">
                     <Table>
                         <TableHead>
                             <tr>
@@ -699,7 +699,7 @@ function App() {
                                                     {model.type}
                                                 </ModalityChip>
                                             </TableCell>
-                                            <TableCell className="w-full max-w-0">
+                                            <TableCell className="w-full min-w-[12rem] max-w-0">
                                                 <div className="flex min-w-0 items-center gap-2">
                                                     <span className="truncate font-medium text-theme-text-strong">
                                                         {model.name}

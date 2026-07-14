@@ -93,7 +93,7 @@ const GenerateImageRequestQueryParamsBaseSchema = z.object({
         }),
     transparent: z.coerce.boolean().optional().default(false).meta({
         description:
-            "Generate image with transparent background. Only supported by `gptimage`, `gptimage-large`, and `gpt-image-2`.",
+            "Generate image with transparent background. Only supported by `gptimage` and `gptimage-large`.",
     }),
 
     // Video-specific params

@@ -33,7 +33,7 @@ function resolveDisplayType(model) {
 }
 
 function eventTypeForDisplayType(type) {
-    return type === "video" ? "image" : type;
+    return ["video", "3d"].includes(type) ? "image" : type;
 }
 
 function normalizeCatalogModel(model) {

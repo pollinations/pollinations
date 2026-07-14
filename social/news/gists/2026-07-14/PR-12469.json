@@ -1,0 +1,36 @@
+{
+  "pr_number": 12469,
+  "title": "fix: push new Sweden Central gptimage secrets to gen worker",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/12469",
+  "merged_at": "2026-07-14T18:56:50Z",
+  "labels": [
+    "DEV-INFRA"
+  ],
+  "pr_body_excerpt": "- #12467 added the two Sweden Central Azure keys to sops secrets, but `push-generation-secrets.mjs`'s allowlist skipped them at deploy (\"Skipping non-generation secrets\")\n- Deployed worker therefore 500s: `AZURE_MYCELI_PROD_IMG_MINI_SWEDEN_API_KEY not found in environment variables`\n- Adds both keys to `REQUIRED_SECRET_KEYS`\n\nAddresses #12446\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Sweden gets the keys",
+    "blurb": "Two Sweden Central image keys made it into the worker’s travel bag. The generation hive can now find them instead of staring thoughtfully at a 500.",
+    "summary": "Added AZURE_MYCELI_PROD_IMG_MINI_SWEDEN_API_KEY and its second Sweden Central Azure image key to gen.pollinations.ai’s REQUIRED_SECRET_KEYS allowlist so deployment pushes both keys into the generation worker.",
+    "impact": "Azure Sweden Central image requests can now access their deployed credentials and generate normally instead of failing because the keys were absent from worker environment variables.",
+    "keywords": [
+      "azure",
+      "sweden-central",
+      "image-generation",
+      "secrets",
+      "gen-worker",
+      "deployment"
+    ],
+    "visual_concept": "Depict Polly helping a cozy CRT-worker robot place two labeled golden key sprites into a small Sweden Central server cabinet, with a previously sleepy image-generation terminal now glowing happily. The keys represent the two Azure credentials reaching the generation worker; include potted code-plants and tiny Nordic-style flowers to make the regional deployment feel warm rather than infrastructural.",
+    "image_prompt": "A cozy pixel art garden-server room where the main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears a tiny knit scarf and helps a chunky CRT monitor robot insert two golden key sprites into a Sweden Central server cabinet, while a lime green (#ecf874) image-generation terminal blooms back to life beside code-plants and small flowers. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, subtle pixel-font text: \"KEYS FOUND\", nostalgic but beautiful and emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-14/PR-12469.jpg",
+    "prompt": "A cozy pixel art garden-server room where the main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears a tiny knit scarf and helps a chunky CRT monitor robot insert two golden key sprites into a Sweden Central server cabinet, while a lime green (#ecf874) image-generation terminal blooms back to life beside code-plants and small flowers. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, subtle pixel-font text: \"KEYS FOUND\", nostalgic but beautiful and emotionally warm."
+  },
+  "generated_at": "2026-07-14T18:57:42.524701+00:00"
+}

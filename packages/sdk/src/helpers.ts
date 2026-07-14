@@ -519,7 +519,10 @@ export async function transcribe(
  *
  * @example
  * ```ts
- * const result = await upload(imageBuffer, { contentType: 'image/jpeg' });
+ * const result = await upload(imageBuffer, {
+ *   contentType: 'image/jpeg',
+ *   tags: ['cats'],
+ * });
  * console.log(result.url);
  * ```
  */

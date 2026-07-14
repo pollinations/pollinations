@@ -395,7 +395,10 @@ function buildCurl(
     // curl examples are copy-pasteable. Falls back to `:name` only when the
     // spec provides no example for the parameter.
     url = url.replace(/{(\w+)}/g, (_match, name: string) => {
-        const override = PATH_PARAM_OVERRIDES[name];
+        const override =
+            name === "id" && MEDIA_ID_PATHS.has(path)
+                ? MEDIA_ID_EXAMPLE
+                : PATH_PARAM_OVERRIDES[name];
         if (override !== undefined) return encodeURIComponent(override);
         const param = pathParams.find((p) => asStr(asObj(p).name) === name);
         if (param) {
@@ -478,7 +481,7 @@ function buildCurl(
 function isPublicMediaRead(method: string, path: string): boolean {
     const lower = method.toLowerCase();
     if (lower !== "get" && lower !== "head") return false;
-    return path === "/{hash}" || path === "/{hash}/metadata";
+    return path === "/{id}" || path === "/{id}/metadata" || path === "/media";
 }
 
 /**
@@ -972,8 +975,10 @@ const CURATED_BODIES: Record<string, Json> = {
  * useful `example`. Used to make every curl example copy-pasteable rather
  * than falling back to `:name`-style placeholders. Keyed by parameter name.
  */
+const MEDIA_ID_EXAMPLE = "550e8400-e29b-41d4-a716-446655440000";
+const MEDIA_ID_PATHS = new Set(["/{id}", "/{id}/metadata", "/media/{id}"]);
+
 const PATH_PARAM_OVERRIDES: Record<string, string> = {
-    hash: "a1b2c3d4e5f60718",
     id: "key_abc123",
 };
 

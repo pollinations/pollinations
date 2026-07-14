@@ -29,7 +29,6 @@ interface UploadResponse {
     url: string;
     contentType: string;
     size: number;
-    duplicate: boolean;
 }
 
 export const uploadCommand = new Command("upload")
@@ -76,7 +75,6 @@ export const uploadCommand = new Command("upload")
                 id: data.id,
                 contentType: data.contentType,
                 size: data.size,
-                duplicate: data.duplicate,
             });
         } else {
             process.stdout.write(`${JSON.stringify(data, null, 2)}\n`);

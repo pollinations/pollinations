@@ -64,6 +64,11 @@ export function refreshR2ObjectTtl(
                 httpMetadata: object.httpMetadata,
                 customMetadata: object.customMetadata,
                 storageClass: object.storageClass,
+                // Rewrite only while the object is still these exact bytes:
+                // a concurrent delete (or replacement) must win, or the
+                // refresh would silently resurrect an object that can no
+                // longer be deleted through any API.
+                onlyIf: { etagMatches: object.etag },
             }),
         ])
             .then(() => undefined)

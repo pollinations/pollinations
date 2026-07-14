@@ -55,6 +55,11 @@ const ROUTE_META: Record<string, { title: string; description: string }> = {
         title: "Refunds | pollinations.ai",
         description: "Refunds and cancellations policy for pollinations.ai",
     },
+    "/night": {
+        title: "Pollinations AI Night | 16 July 2026, Block1 Berlin",
+        description:
+            "An evening for people who don't know AI yet. Show & tell, real or fake? game, robot DJ. Thu 16 July 2026, 17:30-22:00, Block1, Gaswerksiedlung, Berlin.",
+    },
 };
 
 const JSON_LD_HOME = JSON.stringify({

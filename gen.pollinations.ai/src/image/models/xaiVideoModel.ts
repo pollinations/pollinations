@@ -107,6 +107,7 @@ export async function callXaiVideoAPI(
         trackingData: {
             actualModel: "grok-video-pro",
             usage: {
+                ...(safeParams.image?.length ? { promptImageTokens: 1 } : {}),
                 completionVideoSeconds: actualDuration,
             },
         },

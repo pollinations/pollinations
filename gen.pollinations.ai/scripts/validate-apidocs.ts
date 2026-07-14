@@ -35,8 +35,19 @@ const IMAGE_MODELS = new Set([
 ]);
 
 // Public read endpoints whose curl examples must not show Authorization.
-const PUBLIC_READ_PATHS = ["/:hash", "/:hash/metadata"];
-const MEDIA_PATHS = new Set(["/upload", "/:hash", "/:hash/metadata"]);
+const MEDIA_ID = "550e8400-e29b-41d4-a716-446655440000";
+const PUBLIC_READ_PATHS = new Set([
+    `/${MEDIA_ID}`,
+    `/${MEDIA_ID}/metadata`,
+    "/media",
+]);
+const MEDIA_PATHS = new Set([
+    "/upload",
+    `/${MEDIA_ID}`,
+    `/${MEDIA_ID}/metadata`,
+    "/media",
+    `/media/${MEDIA_ID}`,
+]);
 
 function slug(s: string): string {
     return s
@@ -147,7 +158,8 @@ function validate(md: string): Failure[] {
         }
 
         // 4. Public reads must not include Authorization.
-        const isPublicReadPath = PUBLIC_READ_PATHS.some((p) => url.endsWith(p));
+        const isPublicReadPath =
+            parsedUrl !== null && PUBLIC_READ_PATHS.has(parsedUrl.pathname);
         if (
             isPublicReadPath &&
             (method === "GET" || method === "HEAD") &&

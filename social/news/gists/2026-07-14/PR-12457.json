@@ -1,0 +1,36 @@
+{
+  "pr_number": 12457,
+  "title": "fix(sdk): remove automatic retries",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/12457",
+  "merged_at": "2026-07-14T15:51:03Z",
+  "labels": [
+    "DEV-BUG"
+  ],
+  "pr_body_excerpt": "- Removes automatic SDK retries and the public `maxRetries` option to avoid duplicate generation, upload, and billing after ambiguous failures.\n- Passes seeds through to Gen and removes stale client-side video duration validation.\n- Preserves server-provided `Retry-After` metadata without SDK-owned fallback policy.\n- Bumps `@pollinations/sdk` to `5.1.0-alpha.4`.\n- Checks: Biome, typecheck, 28 tests, and package build.",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "No more double buzzing",
+    "blurb": "The SDK has stopped retrying ambiguous requests on its own. One generation request now stays one generation request, which is a pleasantly non-surprising property for an API client.",
+    "summary": "@pollinations/sdk 5.1.0-alpha.4 removes automatic retries and the public maxRetries option to prevent duplicate generations, uploads, and billing after ambiguous failures; it also forwards seeds to Gen and drops stale client-side video-duration validation.",
+    "impact": "SDK developers get single-attempt request behavior while still receiving server-provided Retry-After metadata, plus seed values now reach Gen without an outdated video-duration check in the way.",
+    "keywords": [
+      "sdk",
+      "retries",
+      "billing",
+      "generation",
+      "seeds",
+      "api"
+    ],
+    "visual_concept": "A cozy garden workshop represents reliable request handling: Polly carefully sends one sealed pixel-letter through a single clear path to a retro Gen terminal, while duplicate letter sprouts are gently pruned away. The terminal displays a small seed packet icon and a Retry-After note, showing that server guidance remains available without the client repeatedly resending work.",
+    "image_prompt": "Cozy pixel art scene in a warm garden hackerspace: the main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears a tiny postmaster cap and carefully delivers one sealed pixel-letter to a lime green (#ecf874) glowing CRT terminal, while little duplicate letter sprouts are neatly clipped beside code-plants and a seed packet rests by the screen. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, subtle pixel-font terminal text: 'ONE REQUEST', nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-14/PR-12457.jpg",
+    "prompt": "Cozy pixel art scene in a warm garden hackerspace: the main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears a tiny postmaster cap and carefully delivers one sealed pixel-letter to a lime green (#ecf874) glowing CRT terminal, while little duplicate letter sprouts are neatly clipped beside code-plants and a seed packet rests by the screen. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, subtle pixel-font terminal text: 'ONE REQUEST', nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-07-14T15:51:58.062608+00:00"
+}

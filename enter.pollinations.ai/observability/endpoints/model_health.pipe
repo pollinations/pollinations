@@ -3,58 +3,25 @@ TOKEN tinybird_read READ
 
 DESCRIPTION >
 Model health statistics, grouped by model and event type.
-Returns request counts, 4xx/5xx error counts, response times, and a
-completion-token throughput estimate (tokens/sec) for monitoring dashboards.
+Returns request counts, 4xx/5xx error counts, and response times for monitoring dashboards.
 Time window is controlled by the `minutes` parameter (default 60).
 
-NODE model_health_stats
+NODE model_health_endpoint
 SQL >
-    %
     SELECT
-        resolved_model_requested as model,
+        model,
         event_type,
-        topK(1)(model_provider_used)[1] as provider,
-        topK(1)(model_used)[1] as model_used,
         count() as total_requests,
+        sum(total_tokens) as total_tokens,
         countIf(response_status >= 200 AND response_status < 300) as status_2xx,
         countIf(response_status >= 400 AND response_status < 500) as errors_4xx,
         countIf(response_status >= 500) as errors_5xx,
-        maxIf(start_time, response_status >= 500) as last_error_at,
-        round(quantileIf(0.5)(response_time, response_status >= 200 AND response_status < 300), 0) as latency_p50_ms,
-        round(quantileIf(0.95)(response_time, response_status >= 200 AND response_status < 300), 0) as latency_p95_ms,
+        maxIf(start_time, response_status >= 400) as last_error_at,
+        quantileIf(0.50)(response_time, response_status >= 200 AND response_status < 300) as latency_p50_ms,
+        quantileIf(0.95)(response_time, response_status >= 200 AND response_status < 300) as latency_p95_ms,
         round(avgIf(response_time, response_status >= 200 AND response_status < 300), 0) as avg_latency_ms,
-        max(start_time) as last_request_at,
-        -- Completion tokens per second of full request duration. response_time
-        -- now covers the whole streamed response (see #12378), so no separate
-        -- generation-only column is needed. Cache hits are excluded since they
-        -- return full token counts in near-zero time. The same condition is
-        -- used for both sums so numerator and denominator cover identical rows.
-        if(
-            sumIf(
-                response_time,
-                response_status >= 200 AND response_status < 300 AND cache_hit = false
-                AND (token_count_completion_text > 0 OR token_count_completion_reasoning > 0)
-                AND response_time > 0
-            ) > 0,
-            round(
-                sumIf(
-                    toUInt64(token_count_completion_text) + toUInt64(token_count_completion_reasoning),
-                    response_status >= 200 AND response_status < 300 AND cache_hit = false
-                    AND (token_count_completion_text > 0 OR token_count_completion_reasoning > 0)
-                    AND response_time > 0
-                )
-                / (
-                    sumIf(
-                        response_time,
-                        response_status >= 200 AND response_status < 300 AND cache_hit = false
-                        AND (token_count_completion_text > 0 OR token_count_completion_reasoning > 0)
-                        AND response_time > 0
-                    ) / 1000
-                ),
-                1
-            ),
-            NULL
-        ) as tokens_per_second
+        round(avgIf(total_tokens / (response_time / 1000), response_status >= 200 AND response_status < 300), 2) as tokens_per_second,
+        max(start_time) as last_request_at
     FROM generation_event
     WHERE start_time >= now() - interval {{Int32(minutes, 60)}} minute
     GROUP BY model, event_type

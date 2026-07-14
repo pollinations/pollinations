@@ -5,7 +5,6 @@ import {
     Button,
     Chip,
     ColorModeToggle,
-    cn,
     DiscordIcon,
     ExternalLinkButton,
     GitHubIcon,
@@ -507,11 +506,7 @@ function App() {
                 ))}
                 <ColorModeToggle />
             </AppHeader>
-            <main
-                className={cn(
-                    "mx-auto flex min-h-full w-full min-w-fit max-w-6xl flex-col gap-4 px-4 py-5 sm:px-6 md:py-7",
-                )}
-            >
+            <main className="mx-auto flex w-full min-w-fit max-w-6xl flex-col gap-4 px-4 py-5 sm:px-6 md:py-7">
                 <section className="flex flex-row items-end justify-between gap-3">
                     <div className="flex min-w-0 flex-col gap-1">
                         <Heading
@@ -563,7 +558,7 @@ function App() {
                     onChange={setTypeFilter}
                 />
 
-                <Surface variant="card" className="w-fit min-w-full p-0">
+                <Surface variant="card" className="p-0">
                     <Table>
                         <TableHead>
                             <tr>
@@ -594,7 +589,11 @@ function App() {
                                     />
                                 )}
                                 <SortableTh
-                                    label="Reqs"
+                                    label={
+                                        <span title="Requests excluding client errors (4xx)">
+                                            Reqs
+                                        </span>
+                                    }
                                     sortKey="requests"
                                     currentSort={sort}
                                     onSort={handleSort}
@@ -636,7 +635,11 @@ function App() {
                                     align="right"
                                 />
                                 <SortableTh
-                                    label="tok/s"
+                                    label={
+                                        <span title="Completion tokens per second over the full request duration (not pure decode speed). Cache hits excluded.">
+                                            tok/s
+                                        </span>
+                                    }
                                     sortKey="tps"
                                     currentSort={sort}
                                     onSort={handleSort}
@@ -692,11 +695,16 @@ function App() {
                                             </TableCell>
                                             <TableCell className="w-full min-w-[12rem] max-w-0">
                                                 <div className="flex min-w-0 items-center gap-2">
-                                                    <span className="truncate font-medium text-theme-text-strong">
+                                                    {/* The name is the row's identity — never truncate it;
+                                                        the muted title is the flexible part. */}
+                                                    <span className="whitespace-nowrap font-medium text-theme-text-strong">
                                                         {model.name}
                                                     </span>
                                                     {model.title && (
-                                                        <span className="truncate text-xs text-theme-text-muted">
+                                                        <span
+                                                            className="min-w-0 truncate text-xs text-theme-text-muted"
+                                                            title={model.title}
+                                                        >
                                                             {model.title}
                                                         </span>
                                                     )}

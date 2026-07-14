@@ -32,7 +32,10 @@ jobs:
         with:
           node-version: '24'
 
-      - name: Install dependencies
+      - name: Install shared dependencies
+        run: npm install --workspace shared --include-workspace-root=false
+
+      - name: Install media dependencies
         run: npm install
         working-directory: ./media.pollinations.ai
 

@@ -2,18 +2,23 @@ import { Section } from "@pollinations/ui";
 import {
     getPollenPackByAmount,
     getPollenPackByKey,
+    isPollenPackKey,
     POLLEN_PACKS,
+    type PollenPackKey,
 } from "@shared/pollen-packs.ts";
 import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
 import { BuyPollenPanel, PollenBalance } from "../components/pollen";
-import {
-    DEFAULT_POLLEN_PACK_KEY,
-    validatePollenSearch,
-} from "../components/pollen/pollen-search.ts";
 import { Route as DashboardRoute } from "./_dashboard.tsx";
 
 export const Route = createFileRoute("/_dashboard/pollen")({
-    validateSearch: validatePollenSearch,
+    validateSearch: (
+        search: Record<string, unknown>,
+    ): { pack?: PollenPackKey } => ({
+        pack:
+            typeof search.pack === "string" && isPollenPackKey(search.pack)
+                ? search.pack
+                : undefined,
+    }),
     beforeLoad: ({ context, location }) => {
         if (!context.user) {
             throw redirect({
@@ -26,26 +31,15 @@ export const Route = createFileRoute("/_dashboard/pollen")({
 });
 
 function PollenPage() {
-    const search = Route.useSearch();
+    const { pack } = Route.useSearch();
     const navigate = useNavigate({ from: "/pollen" });
     const { tierBalance, packBalance, paidWeek, tierWeek, billingState } =
         DashboardRoute.useLoaderData();
-    const selectedPack =
-        getPollenPackByKey(search.pack ?? DEFAULT_POLLEN_PACK_KEY) ??
-        POLLEN_PACKS[0];
+    const selectedPack = getPollenPackByKey(pack ?? "p5") ?? POLLEN_PACKS[0];
 
     function selectPack(amount: number): void {
-        const pack = getPollenPackByAmount(amount);
-        if (!pack) return;
-        void navigate({
-            search: (previous) => ({
-                ...previous,
-                pack:
-                    pack.packKey === DEFAULT_POLLEN_PACK_KEY
-                        ? undefined
-                        : pack.packKey,
-            }),
-        });
+        const selected = getPollenPackByAmount(amount);
+        if (selected) void navigate({ search: { pack: selected.packKey } });
     }
 
     return (

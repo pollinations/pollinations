@@ -1,7 +1,6 @@
 import { PUBLIC_URLS } from "./public-urls.ts";
 
 export type PollenPackKey = "p2" | "p5" | "p10" | "p20" | "p50" | "p100";
-export const DEFAULT_POLLEN_PACK_KEY: PollenPackKey = "p5";
 
 export type PollenPack = {
     packKey: PollenPackKey;

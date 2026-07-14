@@ -1,6 +1,5 @@
 import {
     calculateServiceFeeCents,
-    DEFAULT_POLLEN_PACK_KEY,
     describePollenPack,
     getPollenPackByKey,
     POLLEN_PACKS,
@@ -74,11 +73,8 @@ export const stripeRoutes = new Hono<Env>()
         const baseUrl =
             c.env.STRIPE_SUCCESS_URL || PUBLIC_URLS.enter.production;
         const pollenUrl = new URL("/pollen", baseUrl);
-        if (pack.packKey !== DEFAULT_POLLEN_PACK_KEY) {
-            pollenUrl.searchParams.set("pack", pack.packKey);
-        }
+        pollenUrl.searchParams.set("pack", pack.packKey);
         const pollenReturnUrl = pollenUrl.toString();
-        const pollenReturnSeparator = pollenUrl.search ? "&" : "?";
 
         // Resolve cohort from buyer IP for analytics. Checkout stays USD-native
         // and does not call FX at runtime.
@@ -175,8 +171,8 @@ export const stripeRoutes = new Hono<Env>()
                     },
                 },
                 metadata: packMetadata,
-                success_url: `${pollenReturnUrl}${pollenReturnSeparator}stripe_success=true&session_id={CHECKOUT_SESSION_ID}`,
-                cancel_url: `${pollenReturnUrl}${pollenReturnSeparator}stripe_canceled=true`,
+                success_url: `${pollenReturnUrl}&stripe_success=true&session_id={CHECKOUT_SESSION_ID}`,
+                cancel_url: `${pollenReturnUrl}&stripe_canceled=true`,
             });
 
             // Redirect to Stripe Checkout (will use checkout.pollinations.ai custom domain)

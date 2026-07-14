@@ -1,0 +1,36 @@
+{
+  "pr_number": 12433,
+  "title": "fix: restore Klein RunPod build path",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/12433",
+  "merged_at": "2026-07-14T01:13:37Z",
+  "labels": [
+    "DEV-BUG"
+  ],
+  "pr_body_excerpt": "- Restores `image.pollinations.ai/klein-runpod` as the stable Klein deployment directory.\n- Repairs the existing Klein container workflow by restoring its expected Docker build context.\n- Keeps the Vast provisioning script and operational guide aligned with the restored path.\n- Leaves the model registry provider as `vast` and does not change production routing or pricing.\n\nRoot cause: the Vast migration renamed the established directory without updating the hidden GitHub Actions workflow, causing the post-merge container build to fail because its context no longer existed.\n\nValidation:\n- `bash -n image.pollinations.ai/klein-runpod/setup-vast.sh`\n- `python3 -m py_compile image.pollinations.ai/klein-runpod/handler.py`\n- `git diff --check`\n- Confirmed the workflow context, Dockerfile, handler, and requirements files exist\n",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Klein found its way home",
+    "blurb": "The Klein container has its old nest back. Restoring the expected build path lets the post-merge image workflow hatch containers again.",
+    "summary": "Restored `image.pollinations.ai/klein-runpod` as Klein’s deployment directory so the hidden GitHub Actions container build can again find its Docker context, handler, requirements, and Vast setup script.",
+    "impact": "Klein deployments can build reliably again without changing the `vast` model provider, production routing, or pricing.",
+    "keywords": [
+      "Klein",
+      "image generation",
+      "RunPod",
+      "Vast",
+      "Docker",
+      "deployment"
+    ],
+    "visual_concept": "Depict Klein’s deployment files as a cozy little container workshop being returned to its clearly labeled `klein-runpod` garden shed. Polly, wearing a tiny tool belt, guides a chunky Docker crate along a path back to the shed while a CRT monitor robot verifies the restored build context; include code-plants and a subtle Vast-themed cloud or provisioning clipboard.",
+    "image_prompt": "Cozy pixel art scene of Polly, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny tool belt, guiding a chunky Docker crate back into a garden shed labeled `klein-runpod`; a helpful CRT monitor robot checks a glowing build checklist beside code-plants and small flowers. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, dark purple (#110518) outlines, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, nostalgic and emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-14/PR-12433.jpg",
+    "prompt": "Cozy pixel art scene of Polly, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny tool belt, guiding a chunky Docker crate back into a garden shed labeled `klein-runpod`; a helpful CRT monitor robot checks a glowing build checklist beside code-plants and small flowers. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, dark purple (#110518) outlines, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, nostalgic and emotionally warm."
+  },
+  "generated_at": "2026-07-14T01:14:29.352472+00:00"
+}

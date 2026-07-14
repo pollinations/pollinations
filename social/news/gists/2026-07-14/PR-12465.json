@@ -1,0 +1,36 @@
+{
+  "pr_number": 12465,
+  "title": "fix: generate runnable media upload docs",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/12465",
+  "merged_at": "2026-07-14T17:06:17Z",
+  "labels": [
+    "DEV-DOCS"
+  ],
+  "pr_body_excerpt": "- Prefers curated multipart examples when an endpoint also exposes JSON.\n- Regenerates `APIDOCS.md` from the live production schema.\n- Removes stale raw-binary/hash docs and adds UUID, gallery, delete, and server-attested identity contracts.",
+  "gist": {
+    "category": "docs",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Docs that actually upload",
+    "blurb": "The media-upload docs have been weeded, replanted, and tested against the living schema. Multipart examples now lead the way, with the useful little contracts gathered in one garden bed.",
+    "summary": "Regenerated APIDOCS.md from the live production schema, prioritizing curated multipart upload examples and documenting UUID, gallery, delete, and server-attested identity contracts.",
+    "impact": "Developers can now copy runnable media-upload examples and find the current identifiers, gallery, deletion, and identity behavior without navigating stale raw-binary or hash documentation.",
+    "keywords": [
+      "docs",
+      "media upload",
+      "multipart",
+      "APIDOCS",
+      "gallery",
+      "identity"
+    ],
+    "visual_concept": "Polly tends a cozy documentation garden beside a retro terminal displaying a clean multipart upload form, while stale raw-binary papers go into a compost bin. Fresh labeled sprouts represent UUID, gallery, delete, and verified identity contracts, making the documentation feel practical and alive.",
+    "image_prompt": "Cozy pixel art scene of Polly, the cute yellow-and-brown striped bee mascot with pink cheek blush, light blue wings, and tiny librarian glasses, watering a code-garden beside a retro CRT terminal showing a simple pixel-font label: 'MULTIPART UPLOAD'. Fresh sprouts are labeled UUID, GALLERY, DELETE, and IDENTITY while old papers rest in a small compost bin; lime green (#ecf874) appears prominently among warm cream, mint, lavender, and peach details. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, chunky sprites, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-14/PR-12465.jpg",
+    "prompt": "Cozy pixel art scene of Polly, the cute yellow-and-brown striped bee mascot with pink cheek blush, light blue wings, and tiny librarian glasses, watering a code-garden beside a retro CRT terminal showing a simple pixel-font label: 'MULTIPART UPLOAD'. Fresh sprouts are labeled UUID, GALLERY, DELETE, and IDENTITY while old papers rest in a small compost bin; lime green (#ecf874) appears prominently among warm cream, mint, lavender, and peach details. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, chunky sprites, emotionally warm."
+  },
+  "generated_at": "2026-07-14T17:07:12.976808+00:00"
+}

@@ -6,10 +6,10 @@ export async function budgetHint(
     bodyText: string,
 ): Promise<string | null> {
     if (status !== 402) return null;
-    const balance = await gen<{ balance?: number }>("/account/balance", {
+    const balance = await gen<{ total?: number; allowance?: number; pack?: number }>("/account/balance", {
         apiKey: requireKey(),
     })
-        .then((r) => r.balance)
+        .then((r) => r.total)
         .catch(() => null);
     const lines = [
         "Insufficient pollen balance.",

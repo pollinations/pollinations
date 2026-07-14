@@ -584,7 +584,10 @@ export interface AccountProfile {
 
 /** Account balance */
 export interface AccountBalance {
-    balance: number;
+    total: number;
+    allowance: number;
+    pack: number;
+    currency: "pollen";
 }
 
 /** Usage record */

@@ -35,7 +35,10 @@ interface DailyUsageResponse {
 }
 
 interface BalanceResponse {
-    balance: number;
+    total: number;
+    allowance: number;
+    pack: number;
+    currency: string;
 }
 
 export const usageCommand = new Command("usage")
@@ -55,14 +58,20 @@ export const usageCommand = new Command("usage")
                     apiKey: key,
                 });
                 if (getOutputMode() !== "human") {
-                    printResult({ pollen: data.balance });
+                    printResult({ total: data.total, allowance: data.allowance, pack: data.pack });
                     return;
                 }
-                const bal = data.balance;
+                const total = data.total;
+                const allowance = data.allowance;
+                const pack = data.pack;
                 let color = chalk.green;
-                if (bal <= 0) color = chalk.red;
-                else if (bal < 1) color = chalk.yellow;
-                printResult({ pollen: color(String(bal)) });
+                if (total <= 0) color = chalk.red;
+                else if (total < 1) color = chalk.yellow;
+                printResult({
+                    total: color(String(total)),
+                    allowance: chalk.cyan(String(allowance)),
+                    pack: chalk.yellow(String(pack)),
+                });
                 return;
             }
 

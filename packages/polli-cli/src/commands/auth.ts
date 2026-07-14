@@ -26,7 +26,10 @@ interface ProfileResponse {
 }
 
 interface BalanceResponse {
-    balance?: number;
+    total?: number;
+    allowance?: number;
+    pack?: number;
+    currency?: string;
 }
 
 interface DeviceCodeResponse {

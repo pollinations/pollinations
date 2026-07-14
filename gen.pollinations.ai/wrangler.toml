@@ -76,6 +76,11 @@ custom_domain = true
 binding = "ENTER"
 service = "pollinations-enter-production"
 
+[[env.production.vpc_networks]]
+binding = "KLEIN_VPC"
+tunnel_id = "c340d8d9-c1f3-4a13-8115-38b59faac3d5"
+remote = true
+
 [[env.production.d1_databases]]
 remote = true
 binding = "DB"

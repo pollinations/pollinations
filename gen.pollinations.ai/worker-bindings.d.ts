@@ -1,5 +1,6 @@
 interface CloudflareBindings {
     ENTER: Fetcher;
+    KLEIN_VPC?: Fetcher;
     BETTER_AUTH_SECRET: string;
     TINYBIRD_INGEST_TOKEN: string;
     ELEVENLABS_API_KEY: string;

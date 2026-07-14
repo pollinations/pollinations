@@ -13,9 +13,7 @@ describe("community endpoint price input", () => {
         expect(isValidPriceInput("")).toBe(true);
         expect(isValidPriceInput("0")).toBe(true);
         expect(
-            isValidPriceInput(
-                String(MIN_COMMUNITY_PRICE_PER_MILLION_TOKENS),
-            ),
+            isValidPriceInput(String(MIN_COMMUNITY_PRICE_PER_MILLION_TOKENS)),
         ).toBe(true);
         expect(
             pricePerMillionToPerToken(

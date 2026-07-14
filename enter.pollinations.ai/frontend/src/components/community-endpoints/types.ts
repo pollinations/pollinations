@@ -1,8 +1,8 @@
 import {
     COMMUNITY_ENDPOINT_PRICE_FIELDS,
-    MIN_COMMUNITY_PRICE_PER_MILLION_TOKENS,
     type CommunityEndpointPriceKey,
     type CommunityEndpointPrices,
+    MIN_COMMUNITY_PRICE_PER_MILLION_TOKENS,
 } from "@shared/community-endpoints.ts";
 import type { Usage } from "@shared/registry/registry.ts";
 

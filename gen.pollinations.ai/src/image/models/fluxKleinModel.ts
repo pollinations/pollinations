@@ -15,7 +15,7 @@ export function setKleinVpcBinding(binding: Fetcher | undefined): void {
     kleinVpc = binding;
 }
 
-// RunPod pod endpoint for Klein 4B (read lazily so dotenv has time to load)
+// Production uses the private Vast tunnel; other environments retain KLEIN_URL.
 const getKleinGenerateUrl = (): string => {
     if (kleinVpc) {
         return "http://127.0.0.1:8000/generate";

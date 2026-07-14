@@ -649,6 +649,7 @@ function App() {
                                             label={
                                                 <Tooltip
                                                     triggerAs="span"
+                                                    stopClickPropagation={false}
                                                     content="Completion tokens per second of full request duration. Cache hits are excluded."
                                                 >
                                                     Speed

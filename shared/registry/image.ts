@@ -632,7 +632,7 @@ export const IMAGE_SERVICES = {
     "klein": {
         aliases: ["flux-klein"],
         modelId: "klein",
-        provider: "runpod",
+        provider: "vast",
         brand: "Black Forest Labs",
         category: "image",
         addedDate: new Date("2026-01-17").getTime(),

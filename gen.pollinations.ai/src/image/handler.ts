@@ -23,6 +23,7 @@ import {
 } from "./createAndReturnVideos.ts";
 import { getImageEnv, syncImageEnv } from "./env.ts";
 import { HttpError } from "./httpError.ts";
+import { setKleinVpcBinding } from "./models/fluxKleinModel.ts";
 import { type ImageParams, ImageParamsSchema } from "./params.ts";
 import { sanitizeString, sleep } from "./util.ts";
 import {
@@ -65,6 +66,7 @@ const IMAGE_ENV_KEYS = [
 
 export function syncImageEnvironment(env: CloudflareBindings): void {
     syncImageEnv(env, IMAGE_ENV_KEYS);
+    setKleinVpcBinding(env.KLEIN_VPC);
     setServerRegistryBinding(env.KV, env.ENVIRONMENT);
     // The Workers test Images binding can return empty bodies; route tests cover provider flow, not CF transforms.
     setImagesBinding(env.ENVIRONMENT === "test" ? undefined : env.IMAGES);

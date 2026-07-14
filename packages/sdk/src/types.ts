@@ -3,8 +3,6 @@ export interface PollinationsConfig {
     apiKey?: string;
     /** Base URL for the API (defaults to https://gen.pollinations.ai) */
     baseUrl?: string;
-    /** Maximum number of retry attempts (default: 3) */
-    maxRetries?: number;
     /** Default timeout in ms for all requests (default: 300000 = 5min) */
     timeout?: number;
     /** Timeout in ms for text requests (default: 300000 = 5min) */
@@ -91,7 +89,7 @@ export interface ImageResponse {
 export interface VideoGenerateOptions extends RequestOptions {
     /** Video model to use (default: 'veo') */
     model?: VideoModel;
-    /** Duration in seconds (1-30, varies by model) */
+    /** Duration in seconds (supported range varies by model) */
     duration?: number;
     /** Aspect ratio (e.g., '16:9', '9:16', '1:1') */
     aspectRatio?: string;
@@ -924,7 +922,7 @@ export class PollinationsError extends Error {
     status: number;
     details?: Record<string, unknown>;
     requestId?: string;
-    /** Retry-After value in seconds (for 429 rate limit errors) */
+    /** Retry-After header value in seconds */
     retryAfter?: number;
 
     constructor(

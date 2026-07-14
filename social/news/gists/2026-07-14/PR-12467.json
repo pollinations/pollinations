@@ -1,0 +1,37 @@
+{
+  "pr_number": 12467,
+  "title": "fix(image): restore gptimage — new Azure resources + fail over on account blocks",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/12467",
+  "merged_at": "2026-07-14T18:45:28Z",
+  "labels": [
+    "DEV-BUG"
+  ],
+  "pr_body_excerpt": "Fixes the `gptimage` / `gptimage-large` outage (#12446) and the misleading error it produced.\n\n## What was broken\n\nAzure blocked our **westus3 image resource** for aggregate abuse. Three bugs turned that into a total outage:\n\n**1. No failover.** `gptimage` and `gptimage-large` each had exactly **one** endpoint, both pinned to the blocked resource. `gpt-image-2` stayed up only because it already had a multi-region list.\n\n**2. A block wouldn't have failed over anyway.** Azure returns **403**, and `isRetryableGPTImageError` only retried on `429` / `5xx`. Even with multiple regions configured, round-robin would have kept sending half of all traffic into the blocked resource.\n\n**3. Users were blamed for it.** The block message quotes \"content policy\", so it matched the moderation classifier and surfaced as `422 content_policy_violation` — telling every caller to \"adjust your input\" when no prompt could succeed. Being a 4xx, it also stayed invisible to model-health alarms.\n\n## Changes\n\n- **Provisioned one Azure resource per model version** (isolates blast radius — an abuse block on one model can't take down the other):\n  - `myceli-prod-img-mini-swedencentral` → `gpt-image-1-mini`\n  - `myceli-prod-img-15-swedencentral` → `gpt-image-1.5`\n  - Both verified serving real images (HTTP 200, ~2 MB PNGs).\n- **Point both models at the new resources**, keeping westus3 as failover for when Azure lifts the block.\n- **Fail over on account blocks.** Content rejections stay non-retryable — every region refuses the same prompt, so retrying only burns a second upstream call.\n- **Account blocks no longer masquerade as content violations** — they surface as a 5xx outage.\n- Move the `APIDOCS.md` → `/docs` link into the generator (#12275 edits the generated file, which the next regen would wipe).\n\n## Verification\n\n- 137/137 tests pass across the image suite (17 files); `tsc --noEmit` clean.\n- New resources confirmed serving before being wired in.\n- The block is **per-resource, not per-subscrip",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "The image garden reroutes",
+    "blurb": "The image bees found a blocked Azure gate and planted two new paths around it. gptimage is making pixels again, without accusing innocent prompts of wrongdoing.",
+    "summary": "Restored gptimage and gptimage-large by wiring model-specific Azure resources in Sweden Central with westus3 failover, retrying Azure account blocks, and reporting those blocks as 5xx outages rather than 422 content-policy errors.",
+    "impact": "Image requests can now continue through another Azure resource when an account-level block hits, while genuine prompt content rejections remain clearly distinguished from platform outages.",
+    "keywords": [
+      "gptimage",
+      "gptimage-large",
+      "azure",
+      "image-generation",
+      "failover",
+      "content-moderation",
+      "reliability"
+    ],
+    "visual_concept": "A cozy image-generation garden has two separate flowering image-resource plants, each with its own healthy watering pipe, while an old westus3 gate is gently marked as blocked and retained as a backup path. Polly, wearing a tiny repair tool belt, redirects glowing image-pixel water through the new routes; the CRT Monitor Robot happily watches successful PNGs bloom from a terminal.",
+    "image_prompt": "Cozy pixel art scene of Polly, a cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blush marks, a small happy smile, and small rounded light blue translucent wings, wearing a tiny repair tool belt as she redirects glowing pixel-water between two separate Azure image-resource flower pots; a blocked old gate sits safely in the background as a backup route, while a cute chunky CRT monitor robot displays successful image thumbnails beside blooming code-plants. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, subtle CRT glow and pixel-font text reading \"FAILOVER\", nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-14/PR-12467.jpg",
+    "prompt": "Cozy pixel art scene of Polly, a cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blush marks, a small happy smile, and small rounded light blue translucent wings, wearing a tiny repair tool belt as she redirects glowing pixel-water between two separate Azure image-resource flower pots; a blocked old gate sits safely in the background as a backup route, while a cute chunky CRT monitor robot displays successful image thumbnails beside blooming code-plants. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, subtle CRT glow and pixel-font text reading \"FAILOVER\", nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-07-14T18:46:33.927219+00:00"
+}

@@ -87,7 +87,7 @@ export class PollinationsService {
         } else if (response.status === 401) {
           throw new Error(`Authentication failed (401) - Check your API key`);
         } else if (response.status === 403) {
-          throw new Error(`Insufficient pollen balance (403) - Check https://enter.pollinations.ai/pollen`);
+          throw new Error(`Insufficient pollen balance (403) - Check https://enter.pollinations.ai`);
         } else {
           throw new Error(`Pollinations API error: ${response.status} ${response.statusText}`);
         }

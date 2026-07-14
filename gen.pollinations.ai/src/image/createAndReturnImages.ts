@@ -1,3 +1,7 @@
+import {
+    type TrackingData,
+    withFallbackTracking,
+} from "@shared/registry/usage-headers.ts";
 import debug from "debug";
 import {
     fetchFromWeightedServer,
@@ -46,7 +50,6 @@ import {
     resizeForGptImage,
     convertToJpeg as transformToJpeg,
 } from "./utils/imageTransform.ts";
-import type { TrackingData } from "./utils/trackingHeaders.ts";
 import { callVertexAIGemini } from "./vertexAIImageGenerator.js";
 import { writeExifMetadata } from "./writeExifMetadata.ts";
 
@@ -282,7 +285,11 @@ export const callFluxWithFallback = async (
         // Log the full error (not just message) so unexpected error types
         // (coding bugs vs operational failures) are not silently masked.
         logError("Self-hosted flux failed, falling back to Fireworks:", error);
-        return await callFireworksFluxSchnellAPI(prompt, safeParams);
+        const result = await callFireworksFluxSchnellAPI(prompt, safeParams);
+        return withFallbackTracking(result, {
+            model: "flux-1-schnell-fp8",
+            provider: "fireworks",
+        });
     }
 };
 

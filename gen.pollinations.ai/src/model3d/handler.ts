@@ -1,6 +1,6 @@
 import { remapUpstreamStatus, UpstreamError } from "@shared/error.ts";
 import { IMMUTABLE_CACHE_CONTROL } from "@shared/http/cache-control.ts";
-import { buildUsageHeaders } from "@shared/registry/usage-headers.ts";
+import { buildTrackingHeaders } from "@shared/registry/usage-headers.ts";
 import type { Context } from "hono";
 import type { Env } from "@/env.ts";
 import { HttpError } from "../image/httpError.ts";
@@ -113,9 +113,11 @@ export function mediaHeaders(
     });
     headers.set("Content-Disposition", contentDisposition(prompt));
 
-    const modelUsed = result.trackingData?.actualModel || safeParams.model;
-    const usage = result.trackingData?.usage || { completionImageTokens: 1 };
-    const trackingHeaders = buildUsageHeaders(modelUsed, usage);
+    const trackingHeaders = buildTrackingHeaders(
+        safeParams.model,
+        result.trackingData,
+        { completionImageTokens: 1 },
+    );
     for (const [key, value] of Object.entries(trackingHeaders)) {
         headers.set(key, value);
     }

@@ -2,7 +2,7 @@ import { remapUpstreamStatus, UpstreamError } from "@shared/error.ts";
 import { IMMUTABLE_CACHE_CONTROL } from "@shared/http/cache-control.ts";
 import type { ModelDefinition } from "@shared/registry/registry.ts";
 import {
-    buildUsageHeaders,
+    buildTrackingHeaders,
     FALLBACK_TARGET_HEADER,
     openaiUsageToUsage,
 } from "@shared/registry/usage-headers.ts";
@@ -116,12 +116,14 @@ function usageHeaders(
             >[0],
         );
         for (const [key, value] of Object.entries(
-            buildUsageHeaders(modelUsed, usage),
+            buildTrackingHeaders(modelUsed, {
+                fallbackTarget: completion.fallbackTarget,
+                usage,
+            }),
         )) {
             headers.set(key, String(value));
         }
-    }
-    if (completion?.fallbackTarget) {
+    } else if (completion?.fallbackTarget) {
         headers.set(FALLBACK_TARGET_HEADER, completion.fallbackTarget);
     }
     return headers;

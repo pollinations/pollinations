@@ -1,3 +1,4 @@
+import { buildTrackingHeaders } from "@shared/registry/usage-headers.ts";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
     __resetLatencyStateForTests,
@@ -7,7 +8,6 @@ import {
 import { callFluxWithFallback } from "../../src/image/createAndReturnImages.ts";
 import { syncImageEnv } from "../../src/image/env.ts";
 import type { ImageParams } from "../../src/image/params.ts";
-import { buildTrackingHeaders } from "../../src/image/utils/trackingHeaders.ts";
 
 // Minimal in-memory KV stub matching the subset of KVNamespace we use
 // (same shape as availableServers.test.ts).
@@ -120,7 +120,7 @@ describe("callFluxWithFallback", () => {
         expect(result.trackingData).toMatchObject({
             actualModel: "flux-1-schnell-fp8",
             actualProvider: "fireworks",
-            fallbackUsed: true,
+            fallbackTarget: "config.targets[1]",
         });
         expect(buildTrackingHeaders("flux", result.trackingData)).toMatchObject(
             {

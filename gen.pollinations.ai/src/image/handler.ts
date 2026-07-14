@@ -1,5 +1,6 @@
 import { remapUpstreamStatus, UpstreamError } from "@shared/error.ts";
 import { IMMUTABLE_CACHE_CONTROL } from "@shared/http/cache-control.ts";
+import { buildTrackingHeaders } from "@shared/registry/usage-headers.ts";
 import type { Context } from "hono";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
 import type { Env } from "@/env.ts";
@@ -33,7 +34,6 @@ import {
 } from "./utils/contentModeration.ts";
 import { bufferToUint8Array, detectMimeType } from "./utils/imageDownload.ts";
 import { setImagesBinding } from "./utils/imageTransform.ts";
-import { buildTrackingHeaders } from "./utils/trackingHeaders.ts";
 
 type ImageContext = Context<Env>;
 
@@ -147,6 +147,7 @@ function mediaHeaders(
     const trackingHeaders = buildTrackingHeaders(
         safeParams.model,
         result.trackingData,
+        { completionImageTokens: 1 },
     );
     for (const [key, value] of Object.entries(trackingHeaders)) {
         headers.set(key, value);

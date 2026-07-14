@@ -1,4 +1,4 @@
-import type { Usage } from "@shared/registry/registry.ts";
+import type { TrackingData } from "@shared/registry/usage-headers.ts";
 import { callRodinFalAPI } from "./models/rodinModel.ts";
 import { callTrellis2 } from "./models/trellis2Model.ts";
 import type { Model3dParams } from "./params.ts";
@@ -6,10 +6,7 @@ import type { Model3dParams } from "./params.ts";
 export interface Model3dGenerationResult {
     buffer: Buffer;
     contentType: string;
-    trackingData?: {
-        actualModel?: string;
-        usage?: Usage;
-    };
+    trackingData?: TrackingData;
 }
 
 export async function createAndReturnModel3d(

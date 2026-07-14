@@ -63,6 +63,39 @@ export const FALLBACK_TARGET_HEADER = "x-fallback-target";
  */
 export const MODEL_PROVIDER_USED_HEADER = "x-model-provider-used";
 
+export type TrackingData = {
+    actualModel?: string;
+    actualProvider?: string;
+    fallbackTarget?: string;
+    usage?: Usage & Record<string, unknown>;
+};
+
+type FallbackDetails = {
+    model: string;
+    provider: string;
+    targetIndex?: number;
+};
+
+/**
+ * Attach provider-agnostic fallback telemetry to any generation result.
+ * Fallback execution remains local to each modality; this only normalizes the
+ * metadata consumed by response headers and Tinybird tracking.
+ */
+export function withFallbackTracking<T extends { trackingData?: TrackingData }>(
+    result: T,
+    { model, provider, targetIndex = 1 }: FallbackDetails,
+) {
+    return {
+        ...result,
+        trackingData: {
+            ...result.trackingData,
+            actualModel: model,
+            actualProvider: provider,
+            fallbackTarget: `config.targets[${targetIndex}]`,
+        },
+    };
+}
+
 /**
  * Convert OpenAI usage format to Usage format.
  *
@@ -256,6 +289,25 @@ export function buildUsageHeaders(
         }
     }
 
+    return headers;
+}
+
+/** Build the internal response headers consumed by generation tracking. */
+export function buildTrackingHeaders(
+    model: string,
+    trackingData?: TrackingData,
+    defaultUsage: Usage = {},
+): Record<string, string> {
+    const headers = buildUsageHeaders(
+        trackingData?.actualModel ?? model,
+        trackingData?.usage ?? defaultUsage,
+    );
+    if (trackingData?.actualProvider) {
+        headers[MODEL_PROVIDER_USED_HEADER] = trackingData.actualProvider;
+    }
+    if (trackingData?.fallbackTarget) {
+        headers[FALLBACK_TARGET_HEADER] = trackingData.fallbackTarget;
+    }
     return headers;
 }
 

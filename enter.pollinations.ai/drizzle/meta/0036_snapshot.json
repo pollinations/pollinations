@@ -1,8 +1,8 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "5106ee3e-8f7f-4b57-869e-8d57646a3f00",
-  "prevId": "b06b2fc4-e749-4253-90ba-e8da6ee5f553",
+  "id": "adc29eb5-86d6-4428-b5e2-63f116bf22a3",
+  "prevId": "5106ee3e-8f7f-4b57-869e-8d57646a3f00",
   "tables": {
     "account": {
       "name": "account",
@@ -398,6 +398,14 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false
+        },
+        "visibility": {
+          "name": "visibility",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "'private'"
         },
         "prompt_text_price": {
           "name": "prompt_text_price",

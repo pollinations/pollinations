@@ -7,7 +7,7 @@ Official SDK for [pollinations.ai](https://pollinations.ai) - Generate images, t
 
 > [!WARNING]
 > **The `alpha` release line (`5.1.0-alpha.x`) is unstable and breakage-prone.**
-> It ships the in-progress rebuild (model-catalog helper, `./client` subpath, provider changes) and its API may change between alpha versions without notice. The stable `latest` line is `5.0.0`. Opt into the alpha only deliberately, and pin an exact version.
+> It ships the in-progress rebuild (model-catalog helper and provider changes) and its API may change between alpha versions without notice. The stable `latest` line is `5.0.0`. Opt into the alpha only deliberately, and pin an exact version.
 
 ## Installation
 
@@ -21,7 +21,7 @@ Alpha (in-progress rebuild — pin an exact version):
 
 ```bash
 npm install @pollinations/sdk@alpha
-# or pin exactly: npm install @pollinations/sdk@5.1.0-alpha.3
+# or pin exactly: npm install @pollinations/sdk@5.1.0-alpha.4
 ```
 
 ### CDN / `<script>` tag
@@ -419,7 +419,7 @@ const videos = await generateVideo('ocean waves', { n: 2, duration: 4 });
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
 | `model` | string | `'veo'` | `'veo'`, `'seedance'`, `'wan'`, `'ltx-2'`, etc. |
-| `duration` | number | - | Duration in seconds (1-30, varies by model) |
+| `duration` | number | - | Duration in seconds (supported range varies by model) |
 | `aspectRatio` | string | - | e.g. `'16:9'`, `'9:16'`, `'1:1'` |
 | `seed` | number | random | Reproducible results |
 | `audio` | boolean | `false` | Include audio (`wan` always has audio) |
@@ -593,15 +593,10 @@ Publishable keys (`pk_`) have rate limits. Use a secret key (`sk_`) for unlimite
 
 ### Network Errors
 
-The SDK automatically retries failed requests up to 3 times. To customize:
-
-```javascript
-import { Pollinations } from '@pollinations/sdk';
-
-const client = new Pollinations({
-  maxRetries: 5,  // Retry up to 5 times
-});
-```
+The SDK returns network and API errors directly and does not retry requests
+automatically. A timed-out generation may still complete and incur usage.
+Callers can inspect `PollinationsError.retryAfter` when deciding how to handle
+rate limits.
 
 ## Links
 

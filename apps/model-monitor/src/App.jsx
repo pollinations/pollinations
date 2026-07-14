@@ -595,7 +595,7 @@ function App() {
                                     />
                                 )}
                                 <SortableTh
-                                    label="Reqs (+4xx)"
+                                    label="Reqs"
                                     sortKey="requests"
                                     currentSort={sort}
                                     onSort={handleSort}
@@ -733,20 +733,9 @@ function App() {
                                                 numeric
                                                 muted
                                             >
-                                                {total > 0 ? (
-                                                    <>
-                                                        {nonUserErrorTotal.toLocaleString()}
-                                                        {total4xx > 0 && (
-                                                            <span className="ml-1 text-xs text-theme-text-muted">
-                                                                (
-                                                                {total.toLocaleString()}
-                                                                )
-                                                            </span>
-                                                        )}
-                                                    </>
-                                                ) : (
-                                                    "-"
-                                                )}
+                                                {total > 0
+                                                    ? nonUserErrorTotal.toLocaleString()
+                                                    : "-"}
                                             </TableCell>
                                             <TableCell
                                                 align="right"

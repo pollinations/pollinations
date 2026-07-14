@@ -1,0 +1,36 @@
+{
+  "pr_number": 12454,
+  "title": "fix: Model Monitor scrolls as one page (no nested scrollbars)",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/12454",
+  "merged_at": "2026-07-14T12:52:06Z",
+  "labels": [
+    "DEV-UI-UX"
+  ],
+  "pr_body_excerpt": "- Removes all nested scroll containers in the Model Monitor: the window is the only scroller (both axes)\n- Drops the `polli-ui-shell` body class — it sets `body{overflow:hidden; height:100dvh}`, which forced the app into an inner-scroller shell\n- Model column is the flexible one (`w-full min-w-[12rem] max-w-0` + truncate): on desktop the table fits the page exactly; on narrow screens the whole page pans right and the card grows with the table\n- **packages/ui**: removes `overflow-x: hidden` from `html.polli-ui-root` — audited every consumer (enter dashboard swaps to shell dynamically; enter document-flow routes use `polli-ui-body` which self-clips; playground/websim never set `polli-ui-root`; pollinations.ai doesn't use these classes) — no consumer relies on the html-level clip\n- Reqs column drops the \"(+4xx)\" bracket totals (the 4xx % column carries that); Speed column header is now \"tok/s\" so rows show bare numbers\n- Verified with Playwright at 375/900/1200/1440px: zero inner scrollers, no clipping, truncation and tok/s sorting work\n\nPreview deploy: https://fix-monitor-double-scroll.apps-model-monitor-52l.pages.dev\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "One scroll to rule them",
+    "blurb": "The Model Monitor has stopped nesting tiny scroll universes inside each other. Polly swept out the extra containers, so the page now moves like a page.",
+    "summary": "Model Monitor now uses the browser window as its only vertical and horizontal scroller, with a flexible truncating model column, page-level narrow-screen panning, simplified Reqs labels, and tok/s speed headers.",
+    "impact": "Users can scroll and sort the Model Monitor cleanly at 375px through desktop widths without clipped tables or competing nested scrollbars.",
+    "keywords": [
+      "model-monitor",
+      "ui-ux",
+      "scrolling",
+      "responsive-design",
+      "table",
+      "packages-ui"
+    ],
+    "visual_concept": "Depict the Model Monitor as one cozy, wide retro terminal table extending naturally across a garden workbench, rather than several boxes trapped inside one another. Polly, wearing a tiny janitor scarf and holding a broom, clears away small discarded scrollbars while a code-plant vine grows along the single page path; the monitor robot can happily point at the clean tok/s column.",
+    "image_prompt": "A cozy pixel art garden hackerspace where a single wide CRT Model Monitor table scrolls smoothly across a warm cream and prominently lime green (#ecf874) page, while tiny discarded nested scrollbar boxes sit in a tidy compost pile beside code-plants and flowers. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears a tiny janitor scarf and sweeps the extra scrollbars away as a chunky CRT robot points at a glowing \"tok/s\" header. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, subtle scanlines, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-14/PR-12454.jpg",
+    "prompt": "A cozy pixel art garden hackerspace where a single wide CRT Model Monitor table scrolls smoothly across a warm cream and prominently lime green (#ecf874) page, while tiny discarded nested scrollbar boxes sit in a tidy compost pile beside code-plants and flowers. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears a tiny janitor scarf and sweeps the extra scrollbars away as a chunky CRT robot points at a glowing \"tok/s\" header. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, subtle scanlines, emotionally warm."
+  },
+  "generated_at": "2026-07-14T12:53:08.947585+00:00"
+}

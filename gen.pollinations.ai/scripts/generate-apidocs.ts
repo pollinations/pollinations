@@ -454,7 +454,11 @@ function buildCurl(
 
     const curatedMultipart = CURATED_MULTIPART[operationId];
 
-    if (jsonBody.schema) {
+    if (curatedMultipart) {
+        for (const [name, value] of curatedMultipart) {
+            segments.push(`-F "${name}=${value}"`);
+        }
+    } else if (jsonBody.schema) {
         const ex =
             CURATED_BODIES[operationId] ??
             pickExample(spec, asObj(jsonBody.schema), { compact: true });
@@ -462,10 +466,8 @@ function buildCurl(
             segments.push(`-H "Content-Type: application/json"`);
             segments.push(`-d '${JSON.stringify(ex)}'`);
         }
-    } else if (multipartBody.schema || curatedMultipart) {
-        const fields =
-            curatedMultipart ??
-            buildMultipartFields(spec, asObj(multipartBody.schema));
+    } else if (multipartBody.schema) {
+        const fields = buildMultipartFields(spec, asObj(multipartBody.schema));
         for (const [name, value] of fields) {
             segments.push(`-F "${name}=${value}"`);
         }

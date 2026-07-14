@@ -92,10 +92,7 @@ type ModelHealthSummaryProps = {
     health?: ModelHealth;
     className?: string;
     showTooltips?: boolean;
-    showSuccess?: boolean;
-    showSuccessLabel?: boolean;
-    showSpeed?: boolean;
-    showSpeedUnit?: boolean;
+    stacked?: boolean;
     limitedLabel?: string;
 };
 
@@ -103,61 +100,31 @@ const metricFormatter = new Intl.NumberFormat("en-US", {
     maximumFractionDigits: 1,
 });
 
-function successColor(successRate: number): string {
-    if (successRate >= 99) return "text-intent-success-text";
-    if (successRate >= 95) return "text-intent-warning-text";
-    return "text-intent-danger-text";
-}
-
-function SuccessRing({ successRate }: { successRate: number }) {
-    const value = Math.min(Math.max(successRate, 0), 100);
-    return (
-        <svg
-            aria-hidden="true"
-            viewBox="0 0 16 16"
-            className="h-4 w-4 shrink-0 -rotate-90"
-        >
-            <circle
-                cx="8"
-                cy="8"
-                r="6"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2.5"
-                className="text-theme-border"
-            />
-            <circle
-                cx="8"
-                cy="8"
-                r="6"
-                fill="none"
-                pathLength="100"
-                stroke="currentColor"
-                strokeWidth="2.5"
-                strokeLinecap="round"
-                strokeDasharray={`${value} 100`}
-                className={successColor(successRate)}
-            />
-        </svg>
-    );
+function successStatus(successRate: number) {
+    if (successRate >= 100) {
+        return { label: "Perfect", color: "text-intent-success-text" };
+    }
+    if (successRate >= 99) {
+        return { label: "Healthy", color: "text-intent-success-text" };
+    }
+    if (successRate >= 95) {
+        return { label: "Unstable", color: "text-intent-warning-text" };
+    }
+    return { label: "Degraded", color: "text-intent-danger-text" };
 }
 
 export function ModelHealthSummary({
     health,
     className,
     showTooltips = true,
-    showSuccess = true,
-    showSuccessLabel = true,
-    showSpeed = true,
-    showSpeedUnit = true,
+    stacked = false,
     limitedLabel = "Limited traffic",
 }: ModelHealthSummaryProps) {
     if (!health) return null;
 
     const tokensPerSecond = health.tokensPerSecond;
-    const hasSpeed = showSpeed && tokensPerSecond != null;
+    const hasSpeed = tokensPerSecond != null;
     if (health.eligibleRequests < MIN_HEALTH_REQUESTS) {
-        if (!showSuccess && !hasSpeed) return null;
         const limitedData = (
             <span className="inline-flex items-center gap-1 text-theme-text-muted">
                 <span className="h-1.5 w-1.5 rounded-full bg-theme-border" />
@@ -180,59 +147,73 @@ export function ModelHealthSummary({
         );
     }
 
-    const success = showSuccess ? (
-        <span className="inline-flex items-center gap-1 tabular-nums">
-            <SuccessRing successRate={health.successRate} />
-            <span className="font-medium text-theme-text-base">
-                {metricFormatter.format(health.successRate)}%
-            </span>
-            {showSuccessLabel && (
-                <span className="text-theme-text-muted">success</span>
+    const status = successStatus(health.successRate);
+    const success = (
+        <span
+            className={cn(
+                "inline-flex items-center gap-1 font-medium",
+                status.color,
             )}
+        >
+            <span aria-hidden="true" className="text-[10px]">
+                ●
+            </span>
+            {status.label}
         </span>
-    ) : null;
+    );
     const speed = hasSpeed ? (
         <span className="inline-flex items-baseline gap-1 tabular-nums">
             <span className="font-medium text-theme-text-base">
                 {metricFormatter.format(tokensPerSecond)}
             </span>
-            {showSpeedUnit && (
-                <span className="text-theme-text-muted">tok/s</span>
-            )}
+            <span className="text-theme-text-muted">tok/s</span>
         </span>
     ) : null;
 
     if (!success && !speed) return null;
 
+    const successMetric =
+        success && showTooltips ? (
+            <Tooltip
+                triggerAs="span"
+                content={`${metricFormatter.format(health.successRate)}% success: ${health.successfulRequests.toLocaleString("en-US")} of ${health.eligibleRequests.toLocaleString("en-US")} eligible requests succeeded in the last 24 hours. Client errors are excluded.`}
+            >
+                {success}
+            </Tooltip>
+        ) : (
+            success
+        );
+    const speedMetric =
+        speed && showTooltips ? (
+            <Tooltip
+                triggerAs="span"
+                content="Completion tokens per second across successful, uncached text requests in the last 24 hours. Includes time to first token."
+            >
+                {speed}
+            </Tooltip>
+        ) : (
+            speed
+        );
+
     return (
         <span
             className={cn(
-                "inline-flex flex-wrap items-center gap-x-2.5 gap-y-1 text-xs",
+                "inline-flex items-center text-xs",
+                stacked ? "flex-col gap-0.5" : "flex-wrap gap-x-2.5 gap-y-1",
                 className,
             )}
         >
-            {success &&
-                (showTooltips ? (
-                    <Tooltip
-                        triggerAs="span"
-                        content={`${health.successfulRequests.toLocaleString("en-US")} of ${health.eligibleRequests.toLocaleString("en-US")} eligible requests succeeded in the last 24 hours. Client errors are excluded.`}
-                    >
-                        {success}
-                    </Tooltip>
-                ) : (
-                    success
-                ))}
-            {speed &&
-                (showTooltips ? (
-                    <Tooltip
-                        triggerAs="span"
-                        content="Completion tokens per second across successful, uncached text requests in the last 24 hours. Includes time to first token."
-                    >
-                        {speed}
-                    </Tooltip>
-                ) : (
-                    speed
-                ))}
+            {stacked ? (
+                <>
+                    {speedMetric}
+                    {successMetric}
+                </>
+            ) : (
+                <>
+                    {successMetric}
+                    {speedMetric}
+                </>
+            )}
         </span>
     );
 }

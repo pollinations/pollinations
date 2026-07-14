@@ -204,14 +204,13 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
             </div>
 
             {/* Text generation speed — sortable in the table header. */}
-            <div className="flex w-[80px] shrink-0 justify-center">
-                {model.health?.tokensPerSecond == null ? (
+            <div className="flex w-[100px] shrink-0 justify-center">
+                {!model.health ? (
                     <span className="text-sm text-theme-text-muted">—</span>
                 ) : (
                     <ModelHealthSummary
                         health={model.health}
-                        showSuccess={false}
-                        showSpeedUnit={false}
+                        stacked
                         limitedLabel="Low data"
                     />
                 )}
@@ -233,12 +232,6 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                         </TierChip>
                     )}
                 </Tooltip>
-                <ModelHealthSummary
-                    health={model.health}
-                    showSuccessLabel={false}
-                    showSpeed={false}
-                    limitedLabel="Low data"
-                />
             </div>
 
             {/* Input prices — fixed width */}

@@ -98,7 +98,16 @@ describe("vertexAIImageGenerator usage mapping", () => {
             },
         ],
         [
-            "unsupported modality",
+            "unsupported prompt modality",
+            {
+                ...validUsage,
+                promptTokensDetails: [
+                    { modality: "VIDEO" as const, tokenCount: 11 },
+                ],
+            },
+        ],
+        [
+            "unsupported completion modality",
             {
                 ...validUsage,
                 candidatesTokensDetails: [

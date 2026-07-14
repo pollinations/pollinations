@@ -47,8 +47,6 @@ const PROMPT_MODALITY_TO_USAGE_KEY: Partial<
 > = {
     TEXT: "promptTextTokens",
     IMAGE: "promptImageTokens",
-    AUDIO: "promptAudioTokens",
-    VIDEO: "promptVideoTokens",
 };
 
 const COMPLETION_MODALITY_TO_USAGE_KEY: Partial<

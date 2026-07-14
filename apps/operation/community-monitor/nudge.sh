@@ -95,20 +95,54 @@ fi
 
 echo "$(date -u +%FT%TZ) detected idle+stuck input, retyping+submitting: ${STUCK_LINE:0:100}" >> "$LOG"
 
+# Re-check helper: is the LIVE prompt box (last "o"-prefixed line in the
+# dump, not just anywhere in scrollback) still showing stuck text? A plain
+# `grep -qF` against the whole dump is WRONG here -- once text is typed it's
+# echoed into scrollback whether or not Enter actually submitted it, so a
+# whole-buffer substring search matches on success just as often as on
+# failure and can never tell the two apart. This is the exact same bug
+# watchdog.sh had and fixed (2026-07-13) via the last-matching-line
+# technique -- confirmed live there that a whole-buffer grep produces a
+# false-positive "still stuck" on a run that actually succeeded. Applying
+# the identical fix here: only the last "o"-line reflects current state.
+still_stuck() {
+    screen -S community-monitor -X hardcopy "$DUMP" 2>/dev/null
+    sleep 0.5
+    python3 - "$DUMP" <<'PY'
+import sys
+with open(sys.argv[1], encoding="utf-8", errors="replace") as f:
+    lines = [l.rstrip("\n") for l in f]
+stuck = None
+for l in lines:
+    if l.startswith("o"):
+        rest = l[1:].lstrip("�﻿ \t")
+        stuck = rest.strip() or None
+sys.exit(0 if stuck else 1)
+PY
+}
+
 # Retype the exact stuck text, then Enter as a SEPARATE stuff call with a
 # brief pause between -- mirrors the it2 send-text + send-key enter pattern
-# that's the only mechanism proven to reliably submit in this TUI.
-screen -S community-monitor -X stuff "$STUCK_LINE"
-sleep 0.5
-screen -S community-monitor -X stuff $'\r'
-sleep 2
+# that's the only mechanism proven to reliably submit in this TUI. Retry up
+# to 3 times within this single cron run (not just once) -- a single miss
+# left stalls sitting for up to a full 15-minute cron interval before the
+# next attempt, confirmed live (2026-07-13/14): the same "continue the
+# cycle" stall recurred 6 times across one session, each time needing a
+# human-triggered health check to catch it because the next scheduled
+# nudge.sh run was itself the thing failing to unstick it.
+resolved=false
+for attempt in 1 2 3; do
+    screen -S community-monitor -X stuff "$STUCK_LINE"
+    sleep 0.5
+    screen -S community-monitor -X stuff $'\r'
+    sleep 2
+    if ! still_stuck; then
+        resolved=true
+        break
+    fi
+    sleep 3
+done
 
-# Re-check: if the same line is still sitting there after retype+enter, log
-# it clearly rather than silently retrying forever -- something deeper is
-# wrong (e.g. text containing characters that don't round-trip through
-# `stuff` cleanly) and a human should look.
-screen -S community-monitor -X hardcopy "$DUMP" 2>/dev/null
-sleep 0.5
-if grep -qF "${STUCK_LINE:0:60}" "$DUMP" 2>/dev/null; then
-    echo "$(date -u +%FT%TZ) WARNING: stuck line still present after retype+enter -- may need manual intervention: ${STUCK_LINE:0:100}" >> "$LOG"
+if [ "$resolved" = false ]; then
+    echo "$(date -u +%FT%TZ) WARNING: stuck line still present after 3 retype+enter attempts -- may need manual intervention: ${STUCK_LINE:0:100}" >> "$LOG"
 fi

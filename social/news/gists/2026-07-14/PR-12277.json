@@ -1,0 +1,37 @@
+{
+  "pr_number": 12277,
+  "title": "feat: media catalog — public tag galleries (publish-only)",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/12277",
+  "merged_at": "2026-07-14T16:29:55Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "pr_body_excerpt": "Publish-only media catalog for media.pollinations.ai, backed by D1 (`media_item`/`media_tag` in enter's DB, migration 0035).\n\n**Surface**\n- `POST /upload` — optional `tags` field; **tags = publish**. Only tagged uploads get catalog rows; untagged uploads stay uncataloged blobs behind their unguessable UUID (pre-PR behavior). Owner/app identity is server-attested via `/account/key`.\n- `GET /media?tag=` — public gallery for a tag, newest first, keyset pagination. `tag` required; fully anonymous (no auth code on the route).\n- `DELETE /media/:id` — owner-only, secret (`sk_`) key; removes blob + catalog rows. Uncataloged ids answer 404 (they expire via the 30-day TTL).\n- `GET /:id`, `HEAD /:id`, `GET /:id/metadata` — unchanged.\n\n**Cut from this PR** (preserved at `ref/media-catalog-full` = a608ab003, incl. the auth hardening review fixes):\n- Private library listing (no-tag mode, sk_-only gate, BYOP app scoping) → planned follow-up PR\n- Reactions → planned follow-up PR, with a fixed vocabulary\n\nRationale: market comparison of 15+ media/AI APIs showed upload≠publish everywhere, a delete endpoint everywhere, and no open-vocabulary reactions anywhere; the cut features were ~40% of the diff and most of the review findings.\n\n- Tests: 25/25 (vitest, CF Workers pool)\n- Migration 0035 regenerated (never deployed): drops `media_reaction`, `media_tag` gets covering `(tag, item_id)` index\n- Docs: media README, gen media-storage.md + apidocs-recipes.md, SDK `UploadResponse` (drops stale `duplicate`)\n\nFixes #10832 (superseded by the publish-only catalog; configurable retention/storage billing continues as a follow-up)\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "The gallery doors open",
+    "blurb": "Tagged uploads can now leave the unguessable blob drawer and bloom into public galleries. Add tags when publishing, and the hive gets a tidy, browsable shelf for media.",
+    "summary": "media.pollinations.ai now treats optional upload tags as an explicit publish action, creating public anonymous `GET /media?tag=` galleries with newest-first keyset pagination and owner-only `DELETE /media/:id` cleanup.",
+    "impact": "Creators can publish tagged media into shareable public tag galleries while untagged uploads remain private-by-UUID blobs, and secret-key owners can remove published items along with their catalog records.",
+    "keywords": [
+      "media",
+      "catalog",
+      "public galleries",
+      "tags",
+      "upload",
+      "api",
+      "storage"
+    ],
+    "visual_concept": "A cozy public garden gallery represents the media catalog: tagged picture frames bloom from labeled flower beds while untagged seeds remain safely tucked in a small locked seed drawer. Polly, wearing a tiny curator beret, hangs a new tagged image in the gallery; a friendly CRT monitor robot helps sort the newest frames, with a subtle pixel sign for `/media?tag=`.",
+    "image_prompt": "A cozy pixel art public garden gallery where the cute pollinations bee mascot, with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light blue translucent wings, wears a tiny curator beret and hangs a tagged image frame among blooming code-plants; a cute CRT-monitor robot sorts newest-first frames beneath a small pixel sign reading \"/media?tag=\", while untagged seeds rest in a tucked-away locked drawer. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-14/PR-12277.jpg",
+    "prompt": "A cozy pixel art public garden gallery where the cute pollinations bee mascot, with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light blue translucent wings, wears a tiny curator beret and hangs a tagged image frame among blooming code-plants; a cute CRT-monitor robot sorts newest-first frames beneath a small pixel sign reading \"/media?tag=\", while untagged seeds rest in a tucked-away locked drawer. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
+  },
+  "generated_at": "2026-07-14T16:30:53.179984+00:00"
+}

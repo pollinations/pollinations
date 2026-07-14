@@ -643,7 +643,7 @@ function App() {
                                             stopClickPropagation={false}
                                             content="Completion tokens per second of full request duration. Cache hits are excluded."
                                         >
-                                            Speed
+                                            tok/s
                                         </Tooltip>
                                     }
                                     sortKey="tps"
@@ -811,7 +811,9 @@ function App() {
                                             >
                                                 {stats?.tokens_per_second !=
                                                 null
-                                                    ? `${stats.tokens_per_second.toFixed(1)} tok/s`
+                                                    ? stats.tokens_per_second.toFixed(
+                                                          1,
+                                                      )
                                                     : "-"}
                                             </TableCell>
                                         </TableRow>

@@ -1,3 +1,7 @@
+- **2026-07-13** – **🎯 New Pollen quests** Use an app through BYOP to earn `0.25` Pollen, or keep your app active to earn `7` Pollen. The garden now pays rent.  
+- **2026-07-13** – **🎵 Talkti: live voice translation** Speak across languages in real time with a new community-built voice translation app. [Try it](https://talktiweb.web.app) <!-- app -->
+- **2026-07-13** – **🎨 Turn books into gamebooks** Feed in `txt`, `mobi`, `epub`, `docx`, or `fb2` files and turn static reading into AI-driven interactive fiction. [Try it](https://gelfer1979.itch.io/book-to-game) <!-- app -->
+- **2026-07-13** – **🌟 Pollinations AI Night in Berlin** The hive is meeting at Block1 Berlin on July 16: flyer, location, and RSVP are now at [`/night`](https://pollinations.ai/night).
 - **2026-07-12** – **✨ The hive’s ledger** Track exact Pollen spend and earnings together in a fast Activity dashboard, with infinite event history and daily breakdowns.
 - **2026-07-12** – **🔍 Find a model without spelunking** The dashboard’s Models catalog now searches names, brands, and descriptions while keeping category tabs pinned.
 - **2026-07-12** – **🚀 Muse Spark 1.1** `muse-spark-1.1` is now available for paid text and vision generation, with always-on reasoning for harder prompts. [Browse models](https://gen.pollinations.ai/v1/models)

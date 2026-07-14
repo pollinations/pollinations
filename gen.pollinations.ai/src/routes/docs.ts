@@ -455,7 +455,7 @@ function generationDocumentation(): OpenApiSchema {
                     DOC_TAGS.image,
                     DOC_TAGS.video,
                     DOC_TAGS.realtime,
-                    DOC_TAGS.model3d
+                    DOC_TAGS.model3d,
                     DOC_TAGS.audio,
                     DOC_TAGS.embeddings,
                 ],

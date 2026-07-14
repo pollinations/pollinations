@@ -90,6 +90,26 @@ PY
 )
 
 if [ -z "$STUCK_LINE" ]; then
+    # No stuck TEXT in the prompt box -- but an empty, non-busy prompt can
+    # ALSO be a stall: confirmed live (2026-07-14) that the /compact the
+    # loop runs every 20 cycles sometimes leaves the prompt box completely
+    # empty afterward (not holding "continue the cycle" like the text-stuck
+    # case above), with no self-recovery -- sat idle 20+ minutes twice in one
+    # session until manually typing the continuation text from scratch. The
+    # text-retype path above can't catch this since there's nothing to
+    # retype. Guard against treating normal between-cycle gaps as stuck by
+    # requiring state.json to also be stale past the cycle cadence --
+    # healthcheck.sh uses 1800s for the same "genuinely stalled" judgment.
+    STATE=/home/ubuntu/monitor/state.json
+    if [ -f "$STATE" ]; then
+        state_age=$(( $(date -u +%s) - $(stat -c '%Y' "$STATE" 2>/dev/null || echo 0) ))
+        if [ "$state_age" -gt 1200 ]; then
+            echo "$(date -u +%FT%TZ) detected idle empty prompt with stale state.json (${state_age}s) -- typing continuation" >> "$LOG"
+            screen -S community-monitor -X stuff 'continue the cycle'
+            sleep 0.5
+            screen -S community-monitor -X stuff $'\r'
+        fi
+    fi
     exit 0
 fi
 

@@ -29,7 +29,7 @@ const getKleinGenerateUrl = (): string => {
 const MAX_INPUT_IMAGES = 10;
 
 /**
- * Calls the Flux Klein API for image generation via RunPod pod (4B)
+ * Calls the self-hosted Flux Klein 4B API. Production uses the Vast VPC binding.
  */
 export const callFluxKleinAPI = async (
     prompt: string,

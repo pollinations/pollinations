@@ -76,6 +76,15 @@ curl "http://localhost:8788/v1/chat/completions" -H "Authorization: Bearer $TOKE
 - No backward-compat fallbacks — clean breaks beat bloat. When changing tokens/headers/APIs, update all consumers at once.
 - When user says "keep it simple" — one function, one price, one config. Simplest thing that works.
 
+## Cloudflare Production Deployment Safety
+
+**CRITICAL — production Cloudflare deployments must always run through GitHub Actions:**
+
+- Use the service's production deployment workflow, such as `Deploy / gen.pollinations.ai`; use `workflow_dispatch` when path filters do not trigger it.
+- Never run `wrangler deploy --env production`, a production deployment npm script, or a direct production Worker upload from a local machine or agent session.
+- If CI credentials lack a required permission, update the scoped GitHub Actions secret and rerun the workflow. Never bypass CI with a local Cloudflare OAuth session.
+- After the workflow succeeds, verify the active Worker version and required bindings before testing production traffic.
+
 ## Tinybird Deployment Safety
 
 **CRITICAL — These rules apply whenever deploying to Tinybird:**

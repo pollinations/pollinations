@@ -10,18 +10,20 @@ type ValidServiceName = keyof typeof IMAGE_SERVICES;
 
 export interface TrackingData {
     actualModel?: string;
-    usage?: Usage & Record<string, unknown>; // Allow extra fields like totalTokenCount
+    usage: Usage & Record<string, unknown>; // Allow extra fields like totalTokenCount
 }
 
 /**
  * Build tracking headers for the enter service.
- * Passes usage directly to buildUsageHeaders - defaults to 1 image token if empty.
+ * Passes provider-reported usage directly to buildUsageHeaders.
  */
 export function buildTrackingHeaders(
     model: ValidServiceName,
-    trackingData?: TrackingData,
+    trackingData: TrackingData,
 ): Record<string, string> {
+    if (!trackingData?.usage) {
+        throw new Error(`Missing billable usage for ${model}`);
+    }
     const modelUsed = trackingData?.actualModel || model;
-    const usage: Usage = trackingData?.usage || { completionImageTokens: 1 };
-    return buildUsageHeaders(modelUsed, usage);
+    return buildUsageHeaders(modelUsed, trackingData.usage);
 }

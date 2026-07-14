@@ -9,57 +9,41 @@ import type { ImageGenerationResult } from "./createAndReturnImages.js";
 import { HttpError } from "./httpError.ts";
 import type { ImageParams } from "./params.js";
 import { base64ToBuffer, downloadUserImage } from "./utils/imageDownload.ts";
-import { generateImageWithVertexAI } from "./vertexAIClient.ts";
+import {
+    generateImageWithVertexAI,
+    type VertexAIImageData,
+    type VertexAIModality,
+    type VertexAIModalityTokenCount,
+    type VertexAISafetyRating,
+    type VertexAIUsageMetadata,
+} from "./vertexAIClient.ts";
 import { writeExifMetadata } from "./writeExifMetadata.js";
 
 const log = debug("pollinations:vertex-ai-generator");
 const errorLog = debug("pollinations:vertex-ai-generator:error");
 
 /** Mapping from pollinations model names to Vertex AI model IDs and display names */
-export const NANOBANANA_MODELS: Record<
-    string,
-    { vertex: string; name: string; fallbackPromptImageTokens: number }
-> = {
+const NANOBANANA_MODELS = {
     "nanobanana-pro": {
         vertex: "gemini-3-pro-image",
         name: "Vertex AI Gemini 3 Pro Image",
-        fallbackPromptImageTokens: 560,
     },
     "nanobanana-2": {
         vertex: "gemini-3.1-flash-image",
         name: "Vertex AI Gemini 3.1 Flash Image",
-        fallbackPromptImageTokens: 1120,
     },
     "nanobanana-2-lite": {
         vertex: "gemini-3.1-flash-lite-image",
         name: "Vertex AI Gemini 3.1 Flash-Lite Image",
-        fallbackPromptImageTokens: 1120,
     },
     "nanobanana": {
         vertex: "gemini-2.5-flash-image",
         name: "Vertex AI Gemini 2.5 Flash Image",
-        fallbackPromptImageTokens: 258,
     },
-};
-
-type GeminiModality = "TEXT" | "IMAGE" | "AUDIO" | "VIDEO";
-
-type ModalityTokenCount = {
-    modality?: GeminiModality;
-    tokenCount?: number;
-};
-
-type VertexUsageMetadata = {
-    promptTokenCount?: number;
-    candidatesTokenCount?: number;
-    totalTokenCount?: number;
-    thoughtsTokenCount?: number;
-    promptTokensDetails?: ModalityTokenCount[];
-    candidatesTokensDetails?: ModalityTokenCount[];
-};
+} as const;
 
 const PROMPT_MODALITY_TO_USAGE_KEY: Partial<
-    Record<GeminiModality, keyof Usage>
+    Record<VertexAIModality, keyof Usage>
 > = {
     TEXT: "promptTextTokens",
     IMAGE: "promptImageTokens",
@@ -68,34 +52,59 @@ const PROMPT_MODALITY_TO_USAGE_KEY: Partial<
 };
 
 const COMPLETION_MODALITY_TO_USAGE_KEY: Partial<
-    Record<GeminiModality, keyof Usage>
+    Record<VertexAIModality, keyof Usage>
 > = {
     TEXT: "completionTextTokens",
     IMAGE: "completionImageTokens",
 };
 
-function safeTokenCount(value: unknown): number {
-    return typeof value === "number" && Number.isFinite(value) && value > 0
-        ? value
-        : 0;
+function requireTokenCount(value: unknown, field: string): number {
+    if (!Number.isSafeInteger(value) || (value as number) < 0) {
+        throw new HttpError(
+            `Vertex AI returned invalid ${field} billing usage`,
+            502,
+        );
+    }
+    return value as number;
 }
 
-function addUsage(usage: Usage, key: keyof Usage | undefined, amount: number) {
-    if (!key || amount <= 0) return;
+function addUsage(usage: Usage, key: keyof Usage, amount: number) {
+    if (amount === 0) return;
     usage[key] = (usage[key] ?? 0) + amount;
 }
 
 function mapModalityDetails(
     usage: Usage,
-    details: ModalityTokenCount[] | undefined,
-    keyMap: Partial<Record<GeminiModality, keyof Usage>>,
+    details: VertexAIModalityTokenCount[] | undefined,
+    keyMap: Partial<Record<VertexAIModality, keyof Usage>>,
+    field: string,
 ): number {
+    if (!Array.isArray(details) || details.length === 0) {
+        throw new HttpError(
+            `Vertex AI response missing ${field} billing usage`,
+            502,
+        );
+    }
+
     let mappedTokens = 0;
-    for (const detail of details ?? []) {
-        const amount = safeTokenCount(detail.tokenCount);
-        if (!detail.modality || amount === 0) continue;
+    for (const detail of details) {
+        const amount = requireTokenCount(
+            detail.tokenCount,
+            `${field}.${detail.modality ?? "unknown"}`,
+        );
+        if (!detail.modality) {
+            throw new HttpError(
+                `Vertex AI returned unsupported ${field} modality`,
+                502,
+            );
+        }
         const key = keyMap[detail.modality];
-        if (!key) continue;
+        if (!key) {
+            throw new HttpError(
+                `Vertex AI returned unsupported ${field} modality`,
+                502,
+            );
+        }
         addUsage(usage, key, amount);
         mappedTokens += amount;
     }
@@ -104,56 +113,73 @@ function mapModalityDetails(
 
 export function mapVertexGeminiImageUsage({
     usage,
-    modelConfig,
-    referenceImageCount,
 }: {
-    usage?: VertexUsageMetadata;
-    modelConfig: { fallbackPromptImageTokens: number };
-    referenceImageCount: number;
+    usage?: VertexAIUsageMetadata;
 }): Usage {
+    if (!usage) {
+        throw new HttpError(
+            "Vertex AI response missing billing usage metadata",
+            502,
+        );
+    }
+
     const mappedUsage: Usage = {};
-    const promptTokens = safeTokenCount(usage?.promptTokenCount);
+    const promptTokens = requireTokenCount(
+        usage.promptTokenCount,
+        "promptTokenCount",
+    );
     const mappedPromptTokens = mapModalityDetails(
         mappedUsage,
-        usage?.promptTokensDetails,
+        usage.promptTokensDetails,
         PROMPT_MODALITY_TO_USAGE_KEY,
+        "promptTokensDetails",
     );
-
-    if (mappedPromptTokens === 0 && promptTokens > 0) {
-        const fallbackPromptImageTokens = Math.min(
-            promptTokens,
-            referenceImageCount * modelConfig.fallbackPromptImageTokens,
-        );
-        addUsage(mappedUsage, "promptImageTokens", fallbackPromptImageTokens);
-        addUsage(
-            mappedUsage,
-            "promptTextTokens",
-            promptTokens - fallbackPromptImageTokens,
+    if (mappedPromptTokens !== promptTokens) {
+        throw new HttpError(
+            "Vertex AI prompt billing usage does not match its aggregate",
+            502,
         );
     }
 
-    const candidateTokens = safeTokenCount(usage?.candidatesTokenCount);
+    const candidateTokens = requireTokenCount(
+        usage.candidatesTokenCount,
+        "candidatesTokenCount",
+    );
     const mappedCandidateTokens = mapModalityDetails(
         mappedUsage,
-        usage?.candidatesTokensDetails,
+        usage.candidatesTokensDetails,
         COMPLETION_MODALITY_TO_USAGE_KEY,
+        "candidatesTokensDetails",
     );
-
-    if (candidateTokens > mappedCandidateTokens) {
-        addUsage(
-            mappedUsage,
-            "completionImageTokens",
-            candidateTokens - mappedCandidateTokens,
+    if (mappedCandidateTokens !== candidateTokens) {
+        throw new HttpError(
+            "Vertex AI candidate billing usage does not match its aggregate",
+            502,
         );
-    } else if (candidateTokens === 0 && mappedCandidateTokens === 0) {
-        addUsage(mappedUsage, "completionImageTokens", 1);
+    }
+    if (!mappedUsage.completionImageTokens) {
+        throw new HttpError(
+            "Vertex AI image response missing output image billing usage",
+            502,
+        );
     }
 
-    addUsage(
-        mappedUsage,
-        "completionReasoningTokens",
-        safeTokenCount(usage?.thoughtsTokenCount),
+    const thoughtsTokens =
+        usage.thoughtsTokenCount === undefined
+            ? 0
+            : requireTokenCount(usage.thoughtsTokenCount, "thoughtsTokenCount");
+    addUsage(mappedUsage, "completionReasoningTokens", thoughtsTokens);
+
+    const totalTokens = requireTokenCount(
+        usage.totalTokenCount,
+        "totalTokenCount",
     );
+    if (promptTokens + candidateTokens + thoughtsTokens !== totalTokens) {
+        throw new HttpError(
+            "Vertex AI billing usage does not match its total",
+            502,
+        );
+    }
 
     return mappedUsage;
 }
@@ -166,7 +192,7 @@ export function mapVertexGeminiImageUsage({
 function buildNoImageDataError(result: {
     textResponse?: string;
     finishReason?: string;
-    safetyRatings?: any[];
+    safetyRatings?: VertexAISafetyRating[];
 }): HttpError {
     if (result.textResponse) {
         return new HttpError(`Gemini: ${result.textResponse}`, 400);
@@ -174,8 +200,8 @@ function buildNoImageDataError(result: {
 
     if (result.safetyRatings && result.safetyRatings.length > 0) {
         const blockedCategories = result.safetyRatings
-            .filter((r: any) => r.blocked)
-            .map((r: any) => r.category)
+            .filter((rating) => rating.blocked)
+            .map((rating) => rating.category)
             .join(", ");
 
         if (blockedCategories) {
@@ -187,10 +213,11 @@ function buildNoImageDataError(result: {
 
         const highProbCategories = result.safetyRatings
             .filter(
-                (r: any) =>
-                    r.probability === "HIGH" || r.probability === "MEDIUM",
+                (rating) =>
+                    rating.probability === "HIGH" ||
+                    rating.probability === "MEDIUM",
             )
-            .map((r: any) => `${r.category} (${r.probability})`)
+            .map((rating) => `${rating.category} (${rating.probability})`)
             .join(", ");
 
         if (highProbCategories) {
@@ -229,7 +256,7 @@ export async function callVertexAIGemini(
         });
 
         // Process reference image URLs into base64 format
-        const processedImages: any[] = [];
+        const processedImages: VertexAIImageData[] = [];
 
         if (safeParams.image && safeParams.image.length > 0) {
             log(`Processing ${safeParams.image.length} reference image URLs`);
@@ -268,8 +295,15 @@ export async function callVertexAIGemini(
 
         // Determine the Vertex AI model based on the model parameter
         const modelConfig =
-            NANOBANANA_MODELS[safeParams.model] ||
-            NANOBANANA_MODELS["nanobanana"];
+            NANOBANANA_MODELS[
+                safeParams.model as keyof typeof NANOBANANA_MODELS
+            ];
+        if (!modelConfig) {
+            throw new HttpError(
+                `Unsupported Vertex AI image model: ${safeParams.model}`,
+                400,
+            );
+        }
         const vertexModel = modelConfig.vertex;
 
         const vertexRequest = {
@@ -336,6 +370,8 @@ export async function callVertexAIGemini(
             throw buildNoImageDataError(result);
         }
 
+        const usage = mapVertexGeminiImageUsage({ usage: result.usage });
+
         // Convert base64 to buffer
         const imageBuffer = base64ToBuffer(result.imageData);
 
@@ -375,11 +411,7 @@ export async function callVertexAIGemini(
             // Include tracking data for enter service headers
             trackingData: {
                 actualModel: safeParams.model,
-                usage: mapVertexGeminiImageUsage({
-                    usage: result.usage,
-                    modelConfig,
-                    referenceImageCount: processedImages.length,
-                }),
+                usage,
             },
         };
     } catch (error) {

@@ -33,12 +33,30 @@ const MODERATION_PATTERNS = [
     "nsfw", // Replicate Qwen Image Edit "... contained NSFW content ..."
 ];
 
+// Provider-side blocks that quote content-policy wording but are NOT about this
+// request. Azure suspends the whole deployment (our account) after aggregate
+// abuse, and every prompt then fails identically until Azure lifts it. The
+// message says "content policy", so the patterns above would match it — these
+// take precedence so an outage stays a 5xx instead of telling each caller to
+// "adjust your input".
+const ACCOUNT_BLOCK_PATTERNS = [
+    "your resource has been temporarily blocked", // Azure OpenAI deployment block
+];
+
+/** True when the provider blocked our account/deployment, not the user's input. */
+function isAccountLevelBlock(lowerMessage: string): boolean {
+    return ACCOUNT_BLOCK_PATTERNS.some((pattern) =>
+        lowerMessage.includes(pattern),
+    );
+}
+
 /** True when an upstream error message indicates a content-policy rejection. */
 export function isContentPolicyViolation(
     message: string | null | undefined,
 ): boolean {
     if (!message) return false;
     const lower = message.toLowerCase();
+    if (isAccountLevelBlock(lower)) return false;
     return MODERATION_PATTERNS.some((pattern) => lower.includes(pattern));
 }
 

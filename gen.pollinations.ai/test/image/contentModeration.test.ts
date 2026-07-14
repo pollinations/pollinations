@@ -49,6 +49,12 @@ const NON_MODERATION_MESSAGES = [
     // matcher swallowing outages (and against re-adding a space-separated form).
     "moderation service unavailable",
     "Content moderation service temporarily unavailable",
+    // Azure blocks the whole DEPLOYMENT (our account), not this user's prompt.
+    // The wording mentions "content policy", but the request never reached
+    // moderation — every prompt fails identically until Azure unblocks the
+    // resource. Telling the caller to "adjust your input" is wrong and hides a
+    // real outage from model-health stats. Must stay 5xx. (Issue #12446)
+    '{"error":{"code":"Forbidden","message":"Your resource has been temporarily blocked because we detected behavior that may violate our content policy. For more details on Azure OpenAI service content policy, please visit https://aka.ms/aoaicodeofconduct"}}',
 ];
 
 describe("isContentPolicyViolation", () => {

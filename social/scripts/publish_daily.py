@@ -3,8 +3,8 @@
 Tier 2: Daily Publish
 
 Publishes daily content from the news branch. Two modes via PUBLISH_MODE env var:
-  - "buffer": Stage Twitter + Instagram to Buffer (called by NEWS_summary.yml after generation)
-  - "direct": Deploy Reddit to VPS (called by NEWS_publish.yml cron at 15:00 UTC)
+  - "buffer": Stage Twitter + Instagram to Buffer (called by news-generate-summary.yml after generation)
+  - "direct": Deploy Reddit to VPS (called by news-publish-social.yml cron at 15:00 UTC)
   - "all" (default): Both
 
 LinkedIn is weekly-only (no daily posts).

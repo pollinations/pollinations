@@ -274,7 +274,6 @@ export const TEXT_SERVICES = {
         priceMultiplier: 1,
         cost: {
             promptTextTokens: perMillion(0.075),
-            promptCachedTokens: perMillion(0.075),
             completionTextTokens: perMillion(0.2),
         },
         title: "Mistral Small 3.2",
@@ -302,7 +301,7 @@ export const TEXT_SERVICES = {
         priceMultiplier: 1,
         cost: {
             promptTextTokens: perMillion(0.15),
-            promptCachedTokens: perMillion(0.15),
+            promptCachedTokens: perMillion(0.015),
             completionTextTokens: perMillion(0.6),
         },
         title: "Mistral Small 4",
@@ -504,7 +503,7 @@ export const TEXT_SERVICES = {
         priceMultiplier: 1,
         cost: {
             promptTextTokens: perMillion(0.14),
-            promptCachedTokens: perMillion(0.014),
+            promptCachedTokens: perMillion(0.03),
             completionTextTokens: perMillion(0.28),
         },
         title: "DeepSeek V4 Flash (Lite)",
@@ -848,13 +847,11 @@ export const TEXT_SERVICES = {
         paidOnly: true,
         priceMultiplier: 1,
         cost: {
-            // Bedrock anthropic.claude-sonnet-5 standard rates.
-            // Intro $2/$10 through 2026-08-31; use standard $3/$15 to match
-            // siblings and avoid a price bump when the intro period ends.
-            promptTextTokens: perMillion(3),
-            promptCachedTokens: perMillion(0.3),
-            promptCacheWriteTokens: perMillion(3.75),
-            completionTextTokens: perMillion(15),
+            // Bedrock anthropic.claude-sonnet-5 promo rates through 2026-08-31.
+            promptTextTokens: perMillion(2),
+            promptCachedTokens: perMillion(0.2),
+            promptCacheWriteTokens: perMillion(2.5),
+            completionTextTokens: perMillion(10),
         },
         title: "Claude Sonnet 5",
         description: "Claude Sonnet 5 - Best balance of speed & intelligence",
@@ -1206,7 +1203,7 @@ export const TEXT_SERVICES = {
         priceMultiplier: 1,
         cost: {
             promptTextTokens: perMillion(1.4),
-            promptCachedTokens: perMillion(0.26),
+            promptCachedTokens: perMillion(0.14),
             completionTextTokens: perMillion(4.4),
         },
         title: "Z.ai GLM-5.2",
@@ -1281,7 +1278,7 @@ export const TEXT_SERVICES = {
         addedDate: new Date("2026-05-04").getTime(),
         priceMultiplier: 1,
         cost: {
-            promptTextTokens: perMillion(0.08),
+            promptTextTokens: perMillion(0.1),
             completionTextTokens: perMillion(0.3),
         },
         title: "Meta Llama 4 Scout",
@@ -1425,6 +1422,7 @@ export const TEXT_SERVICES = {
         // ~2.5x cheaper. OpenRouter routes to the cheapest live endpoint.
         cost: {
             promptTextTokens: perMillion(0.11), // per 1M tokens
+            promptCachedTokens: perMillion(0.07), // per 1M cached input tokens
             completionTextTokens: perMillion(0.8), // per 1M tokens
         },
         title: "Qwen3 Coder Next",
@@ -1556,10 +1554,9 @@ export const TEXT_SERVICES = {
         addedDate: new Date("2026-05-29").getTime(),
         priceMultiplier: 1,
         cost: {
-            // OpenRouter stepfun/step-3.5-flash posted rates (2026-05-29):
-            // prompt $0.09/M, completion $0.30/M, cache read $0.02/M
-            promptTextTokens: perMillion(0.09),
-            promptCachedTokens: perMillion(0.02),
+            // OpenRouter stepfun/step-3.5-flash posted rates (2026-07-10):
+            // prompt $0.10/M, completion $0.30/M
+            promptTextTokens: perMillion(0.1),
             completionTextTokens: perMillion(0.3),
         },
         title: "StepFun Step 3.5 Flash",

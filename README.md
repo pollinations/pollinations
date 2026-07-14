@@ -20,16 +20,16 @@
 
 | Name | Description | Author |
 |------|-------------|--------|
-| [🪄 Magic Story Image](https://msi.jieren.my.id/) | Changes images from drawings or pictures into a magical, children friendly picture. Uses a website interface for the conversion. | [@Rayantion](https://github.com/Rayantion) |
-| [🛋️ Deco Spacio](https://deco-spacio.vercel.app/) | Generates AI interior concepts using Next.js, TypeScript, and Tailwind CSS, with Pollinations imagery and optional Supabase storage. | [@LuthfanM](https://github.com/LuthfanM) |
-| [🛠️ Markitdown-for-Everyone](https://github.com/soyangelromero/Markitdown-for-Everyone) | Markitdown-for-Everyone is a command-line tool using Microsoft MarkItDown and the Pollinations API to convert many file formats into Markdown. | [@soyangelromero](https://github.com/soyangelromero) |
-| [🤖 worst AI](https://ai.cesustheteapot.dpdns.org/) | worst AI provides AI responses using pollinations.ai and requires pollinations auth to access the site. It combines generated content with user input, often including unhelpful information. | [@Guest453](https://github.com/Guest453) |
-| [🤖 NovAI](https://nov-ai.github.io/) | NovAI integrates Pollinations AI with Discord as an open-source project. It enables AI features via Discord. | [@JustScriptzz](https://github.com/JustScriptzz) |
-| [🖼️ Pollinations Image lab](https://raptorvampire.github.io/pollinations-image-lab/) | Generate and browse images using Pollinations Image Lab. | [@RaptorVampire](https://github.com/RaptorVampire) |
-| [🃏 Crestbound TCG (Server Assistant)](https://serverassistant.wandweb.co) | Run Crestbound TCG inside the Server Assistant Discord-bot portal, powered by Pollinations. Generate card art, menus, shop, packs, and soundtrack using FLUX and gen.pollinations. | [@WandWeb2](https://github.com/WandWeb2) |
-| [📚 BOOK TO GAME](https://gelfer1979.itch.io/book-to-game) | Convert book formats (txt, mobi, epub, docx, fb2) into gamebooks using cloud AI (web/mobile) and local AI via LMSTUDIO or llama; default uses polination AI. Web version does not save game state. | [@gelfer1979](https://github.com/gelfer1979) |
-| [🏫 JadiKelas](https://jadikelas.tech) | Open https://JadiKelas.tech. Display “JadiKelas” content from the site. | [@fikrifahrezi25](https://github.com/fikrifahrezi25) |
-| [🪝 Hookly](https://hookly-alpha.vercel.app) | Generate AI content ideas with hooks, angles, and ready-to-post drafts for 7 platforms in Hookly. Uses the Pollinations text API (DeepSeek via gen.pollinations.ai). | [@a2650040-dev](https://github.com/a2650040-dev) |
+| [🖼️ Silenos Visual Production & Illustration Studio](https://www.silenos.es/ilustrador/) | Centraliza literatura, contenido creativo y desarrollo técnico en la plataforma silenos.es con un enfoque minimalista y preciso, priorizando el contenido puro y arquitecturas lógicas. | [@todoh](https://github.com/todoh) |
+| [📚 studybuddy](https://studybuddy-deploy2026.streamlit.app/) | studybuddy is an AI-powered learner assistant that helps students study using their own notes. | [@jmwdpk](https://github.com/jmwdpk) |
+| [🧑‍💻 Code Canvas Complete](https://code-canvas-complete-production.up.railway.app/) | Code Canvas is an all-in-one browser-based IDE with a built-in AI assistant for code generation, debugging, and explanation. It integrates Pollinations.ai as a Bring-Your-Own-Key (BYOK) AI provider, a | [@TopProjectsCreator](https://github.com/TopProjectsCreator) |
+| [🧠 Blaze Prep](https://blazeprep.net) | Manage FDNY Prep learning content in Blaze Prep, with AI-generated materials from Pollinations AI. | [@beedieeyez](https://github.com/beedieeyez) |
+| [🧩 ScrollStop UGC Ad Studio](https://scrollstop-ugc-studio.vercel.app/) | ScrollStop UGC Studio is a web app that helps creators and marketers generate short-form UGC ad ideas for TikTok, Reels, and Shorts. Users enter product details, target audience, offer, and creative a | [@dreamm160-ops](https://github.com/dreamm160-ops) |
+| [🎉 Aventi](https://aventi-web.vercel.app/) | Aventi is a swipe-first discovery app for local events, nightlife, and experiences. It helps users find what to do nearby. | [@Erics1337](https://github.com/Erics1337) |
+| [📹 Affiliate Video Maker](https://github.com/falconafk31/affiliate-video-maker) | Generate AI-Powered affiliate videos with Affiliate Video Maker. | [@falconafk31](https://github.com/falconafk31) |
+| [🧠 AINewsForge](Not public) | AINewsForge is an agentic system built with LangGraph that fetches news, generates LinkedIn posts, verifies claims, creates cover images, reviews quality, and publishes to LinkedIn. | [@Ravnoor17](https://github.com/Ravnoor17) |
+| [📝 Subtitle Studio (SubCap)](https://subtitle-studio-eta.vercel.app/) | Subtitle Studio (SubCap) is a browser-based video captioning tool that uses AI transcription to generate styled subtitles from speech without manual typing. | [@somjaina142](https://github.com/somjaina142) |
+| [🎬 Thumbsnare](https://thumbsnare.vercel.app/) | Thumbsnare generates YouTube thumbnail concepts from a video idea, using title, creative angle, target audience, and visual direction to create structured options for review and export. | [@sompongna141](https://github.com/sompongna141) |
 
 [Browse all apps →](apps/GREENHOUSE.md)
 ## 🚀 New Unified API — Now Live
@@ -48,16 +48,16 @@ We've launched **https://gen.pollinations.ai** — a single endpoint for all you
 
 ## 🆕 Latest News
 
+- **2026-07-13** – **🎯 New Pollen quests** Use an app through BYOP to earn `0.25` Pollen, or keep your app active to earn `7` Pollen. The garden now pays rent.
+- **2026-07-13** – **🎵 Talkti: live voice translation** Speak across languages in real time with a new community-built voice translation app. [Try it](https://talktiweb.web.app) <!-- app -->
+- **2026-07-13** – **🎨 Turn books into gamebooks** Feed in `txt`, `mobi`, `epub`, `docx`, or `fb2` files and turn static reading into AI-driven interactive fiction. [Try it](https://gelfer1979.itch.io/book-to-game) <!-- app -->
+- **2026-07-13** – **🌟 Pollinations AI Night in Berlin** The hive is meeting at Block1 Berlin on July 16: flyer, location, and RSVP are now at [`/night`](https://pollinations.ai/night).
+- **2026-07-12** – **✨ The hive’s ledger** Track exact Pollen spend and earnings together in a fast Activity dashboard, with infinite event history and daily breakdowns.
+- **2026-07-12** – **🔍 Find a model without spelunking** The dashboard’s Models catalog now searches names, brands, and descriptions while keeping category tabs pinned.
+- **2026-07-12** – **🚀 Muse Spark 1.1** `muse-spark-1.1` is now available for paid text and vision generation, with always-on reasoning for harder prompts. [Browse models](https://gen.pollinations.ai/v1/models)
 - **2026-07-10** – **🚀 GPT 5.6 & Seedream 5 Pro** The GPT 5.6 family (Sol, Terra, Luna) is now live for text generation, alongside Seedream 5 Pro for high-quality images. Check the [Available Models](https://gen.pollinations.ai/v1/models).
 - **2026-07-10** – **✨ CLI Quest Rewards** Track your earned Pollen and quest progress directly from the terminal with the updated [Polli CLI](https://www.npmjs.com/package/@pollinations/cli).
 - **2026-07-06** – **🎮 Roblox Integration** Tomdacat brings Pollinations to Roblox creators with an OpenAI-compatible API powering 40+ models. [Try it](https://ai.tomdacat.com) <!-- app -->
-- **2026-07-05** – **⚡ Gemini Prompt Caching** Send `cache_control` markers with your Gemini requests to cache large contexts. Deterministic hits, faster responses, and significantly cheaper repeated queries via the [Unified API](https://gen.pollinations.ai).
-- **2026-07-05** – **🌟 Sprout** A new community creation has landed in the Greenhouse directory. [Try it](https://murderszn.github.io/sprout/) <!-- app -->
-- **2026-07-05** – **🎨 /motion** An open-source generative graphics studio for designing WebGL shader visuals and looping motion backgrounds. [Try it](https://motion-e93d3.web.app/) <!-- app -->
-- **2026-07-05** – **🤖 LLM Playground** A new chat workspace supporting multiple models, custom AI characters, and team servers with per-member quotas. [Try it](https://llmplayground.net) <!-- app -->
-- **2026-07-03** – **🤖 Flow Linnom** A new multi-model chat interface joins the community directory. For when querying just one LLM isn't enough. [Try it](https://flow.linnom.com) <!-- app -->
-- **2026-07-02** – **🚀 3D Generation API** Send a text prompt to `/3d/{prompt}`, get a downloadable GLB file back. Powered by Trellis 2 and Rodin 2.5. [API Docs](https://gen.pollinations.ai/docs)
-- **2026-07-02** – **⚡ RTX 5090s for Flux** Image generation now routes to a self-hosted 5090 pool. Median generation time for 1024x1024 is down to 2.25s. [Try it](https://pollinations.ai/play)
 ---
 
 ## 🌱 Introduction

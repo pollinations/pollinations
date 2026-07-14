@@ -18,8 +18,9 @@ import type {
 } from "../services/quests/types.ts";
 import { hasAccountReadPermission } from "./account-permissions.ts";
 
-// Bumped to v22: app_listed is now available instead of coming_soon.
-const CACHE_KEY = "quests:catalog:v22";
+// Bumped to v23: use_app and app_active (7 Pollen) are now available;
+// app_paid_request reward set to 15 while still coming_soon.
+const CACHE_KEY = "quests:catalog:v23";
 const CACHE_TTL = 60;
 const QUEST_CHECK_THROTTLE_SECONDS = 60;
 

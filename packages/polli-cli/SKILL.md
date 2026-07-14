@@ -62,7 +62,7 @@ Defaults: `zimage`, 1024x1024. Pick a different model with `--model flux` (see `
 URL=$(polli upload cat.png)
 polli gen image "make the cat purple" --image "$URL" --output purple.png
 ```
-`polli upload <file>` posts to `media.pollinations.ai` (10MB max, 14-day TTL, content-addressed so duplicates dedupe). Human mode: URL on stdout, id/size/contentType/duplicate on stderr. `--json`: full upload response on stdout. The returned URL is public (no auth to fetch) and works anywhere `--image` is accepted — `gen image`, `gen video`, etc.
+`polli upload <file>` posts a multipart upload to `media.pollinations.ai` (100MB max; 30-day lifecycle, refreshed by GETs once the object is at least 15 days old). Each upload receives a unique id. Human mode: URL on stdout and id/size/contentType on stderr. `--json`: full upload response on stdout. The returned URL is public (no auth to fetch) and works anywhere `--image` is accepted — `gen image`, `gen video`, etc.
 
 ### Generate text
 ```bash

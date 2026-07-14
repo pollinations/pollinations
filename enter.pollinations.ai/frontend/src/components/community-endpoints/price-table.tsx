@@ -9,7 +9,10 @@ import {
     TableHeaderCell,
     TableRow,
 } from "@pollinations/ui";
-import { COMMUNITY_ENDPOINT_PRICE_FIELDS } from "@shared/community-endpoints.ts";
+import {
+    COMMUNITY_ENDPOINT_PRICE_FIELDS,
+    MIN_COMMUNITY_PRICE_PER_MILLION_TOKENS,
+} from "@shared/community-endpoints.ts";
 import { PRICE_ICON } from "../models/model-icons.tsx";
 import type { PriceKind } from "../models/types.ts";
 import {
@@ -17,6 +20,7 @@ import {
     type CommunityEndpoint,
     type EndpointFormState,
     hasObservedPriceField,
+    isBelowMinimumPriceInput,
     isValidPriceInput,
     observedUsageValue,
 } from "./types.ts";
@@ -36,6 +40,7 @@ type PriceCellState = {
     observed: boolean;
     missing: boolean;
     nonPositive: boolean;
+    belowMinimum: boolean;
     invalid: boolean;
 };
 
@@ -115,12 +120,14 @@ function PriceRow({
         Boolean(
             inputState?.invalid ||
                 inputState?.missing ||
-                inputState?.nonPositive,
+                inputState?.nonPositive ||
+                inputState?.belowMinimum,
         ) ||
         Boolean(
             outputState?.invalid ||
                 outputState?.missing ||
-                outputState?.nonPositive,
+                outputState?.nonPositive ||
+                outputState?.belowMinimum,
         );
     const returned = Boolean(inputState?.observed || outputState?.observed);
 
@@ -180,7 +187,11 @@ function PriceInputCell({
     }
 
     const inputId = `community-${field.key}`;
-    const hasError = state.invalid || state.missing || state.nonPositive;
+    const hasError =
+        state.invalid ||
+        state.missing ||
+        state.nonPositive ||
+        state.belowMinimum;
 
     return (
         <TableCell align="right" className="w-40 align-top">
@@ -207,8 +218,8 @@ function PriceInputCell({
                     <p className="mt-1 text-right text-xs text-intent-danger-text">
                         {state.invalid
                             ? "Use a dot decimal like 0.1"
-                            : state.nonPositive
-                              ? "Must be greater than 0"
+                            : state.belowMinimum || state.nonPositive
+                              ? `Minimum is ${MIN_COMMUNITY_PRICE_PER_MILLION_TOKENS} per 1M tokens`
                               : "Required for returned usage"}
                     </p>
                 )}
@@ -227,7 +238,8 @@ function priceCellState(
         null;
     const value = form[field.key];
     const trimmedValue = value.trim();
-    const invalid = !isValidPriceInput(value);
+    const belowMinimum = isBelowMinimumPriceInput(value);
+    const invalid = !isValidPriceInput(value) && !belowMinimum;
     return {
         observed,
         missing: observed && trimmedValue === "",
@@ -235,7 +247,9 @@ function priceCellState(
             observed &&
             trimmedValue !== "" &&
             !invalid &&
+            !belowMinimum &&
             Number(trimmedValue) <= 0,
+        belowMinimum,
         invalid,
     };
 }

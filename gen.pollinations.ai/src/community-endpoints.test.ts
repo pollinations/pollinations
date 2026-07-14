@@ -11,6 +11,8 @@ import {
     communityPriceDefinition,
     isCommunityEndpointOwnerAllowed,
     legacyCommunityModelId,
+    MIN_COMMUNITY_PRICE_PER_MILLION_TOKENS,
+    MIN_COMMUNITY_PRICE_PER_TOKEN,
     normalizeCommunityEndpointBaseUrl,
     normalizeCommunityEndpointBearerToken,
     parseCommunityModelId,
@@ -79,7 +81,11 @@ async function createEnterFrontendApi(): Promise<Hono<Env>> {
             c.set("log", testLog);
             await next();
         })
-        .route("/api", frontendApi);
+        .route("/api", frontendApi)
+        // Mirror production: enter's root app registers handleError
+        // (enter.pollinations.ai/src/index.ts), which maps ValidationError
+        // to a 400 instead of Hono's default 500.
+        .onError(handleError);
 }
 
 async function fetchEnterApi(
@@ -251,6 +257,13 @@ describe("community endpoint helpers", () => {
         // intentionally-free bucket as a missing conversion rate.
         expect(Object.keys(definition)).toHaveLength(
             COMMUNITY_ENDPOINT_PRICE_FIELDS.length,
+        );
+    });
+
+    it("keeps the per-token and per-1M minimum price constants in sync", () => {
+        expect(MIN_COMMUNITY_PRICE_PER_TOKEN * 1_000_000).toBeCloseTo(
+            MIN_COMMUNITY_PRICE_PER_MILLION_TOKENS,
+            10,
         );
     });
 
@@ -1516,6 +1529,24 @@ fixtureTest(
             disabled: true,
             disabledReason: "was failing",
         });
+
+        // A nonzero price below the platform minimum (0.0001 Pollen per 1M
+        // tokens, stored per token) is rejected at the schema level.
+        const belowMinimumResponse = await fetchEnterApi(
+            enterApi,
+            new Request(
+                `http://localhost:3000/api/account/my-models/${createdId}/update`,
+                {
+                    method: "POST",
+                    headers: {
+                        Authorization: `Bearer ${key}`,
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({ promptTextPrice: 1e-12 }),
+                },
+            ),
+        );
+        expect(belowMinimumResponse.status).toBe(400);
 
         // Partial updates persist the full effective visibility + price set,
         // so a price-only patch keeps the other stored prices intact.

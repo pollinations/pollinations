@@ -6,6 +6,8 @@ import {
     communityEndpointPrices,
     communityModelId,
     isCommunityEndpointOwnerAllowed,
+    MIN_COMMUNITY_PRICE_PER_MILLION_TOKENS,
+    MIN_COMMUNITY_PRICE_PER_TOKEN,
     normalizeCommunityEndpointBaseUrl,
     normalizeCommunityEndpointBearerToken,
 } from "@shared/community-endpoints.ts";
@@ -27,7 +29,14 @@ import {
 } from "../services/community-endpoint-openai.ts";
 import { hasDirectAccountPermission } from "./account-permissions.ts";
 
-const PriceSchema = z.number().finite().min(0);
+const PriceSchema = z
+    .number()
+    .finite()
+    .min(0)
+    .refine(
+        (price) => price === 0 || price >= MIN_COMMUNITY_PRICE_PER_TOKEN,
+        `Prices are per token and must be 0 or at least ${MIN_COMMUNITY_PRICE_PER_TOKEN} (${MIN_COMMUNITY_PRICE_PER_MILLION_TOKENS} Pollen per 1M tokens)`,
+    );
 const UpdatePriceFieldsSchema = Object.fromEntries(
     COMMUNITY_ENDPOINT_PRICE_FIELDS.map((field) => [
         field.key,
@@ -267,11 +276,11 @@ async function enforceSharingRules(
     if (visibility !== "public") return;
     await requireCommunityEndpointPublishAccess(db, userId);
     const missing = REQUIRED_SHARED_PRICE_KEYS.filter(
-        (key) => !(prices[key] > 0),
+        (key) => !(prices[key] >= MIN_COMMUNITY_PRICE_PER_TOKEN),
     );
     if (missing.length > 0) {
         throw new HTTPException(400, {
-            message: `A public model must set positive pricing: ${missing.join(", ")}`,
+            message: `A public model must price base text usage at least ${MIN_COMMUNITY_PRICE_PER_MILLION_TOKENS} Pollen per 1M tokens: ${missing.join(", ")}`,
         });
     }
 }

@@ -158,7 +158,10 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                         />
                     </div>
                     <ModelId name={model.name} />
-                    <ModelHealthSummary health={model.health} />
+                    <ModelHealthSummary
+                        health={model.health}
+                        showSpeed={false}
+                    />
                     {(inputModalities.length > 0 ||
                         capabilities.length > 0) && (
                         <div className="flex min-w-0 flex-wrap items-center gap-2">
@@ -202,6 +205,19 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                         </div>
                     )}
                 </div>
+            </div>
+
+            {/* Text generation speed — sortable in the table header. */}
+            <div className="flex w-[120px] shrink-0 justify-center">
+                {model.health?.tokensPerSecond == null ? (
+                    <span className="text-sm text-theme-text-muted">—</span>
+                ) : (
+                    <ModelHealthSummary
+                        health={model.health}
+                        showSuccess={false}
+                        limitedLabel="Low data"
+                    />
+                )}
             </div>
 
             {/* Per pollen — fixed width; gold + card for paid-only models, green

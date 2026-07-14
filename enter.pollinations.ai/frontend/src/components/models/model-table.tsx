@@ -9,7 +9,7 @@ import {
 import { PaidChip, TierChip } from "@pollinations/ui/wallet";
 import { type FC, useState } from "react";
 import { calculatePerPollen, calculatePerPollenValue } from "./calculations.ts";
-import { ModelHealthSummary } from "./model-health.tsx";
+import { MIN_HEALTH_REQUESTS, ModelHealthSummary } from "./model-health.tsx";
 import { CAPABILITY_ICON, MODALITY_ICON } from "./model-icons.tsx";
 import {
     type DisplayCapability,
@@ -52,11 +52,12 @@ type UnifiedModelTableProps = {
     activeTab: SectionType;
 };
 
-type SortKey = "name" | "perPollen" | "input" | "output";
+type SortKey = "name" | "speed" | "perPollen" | "input" | "output";
 type SortDir = "asc" | "desc";
 
 const DEFAULT_DIR: Record<SortKey, SortDir> = {
     name: "asc",
+    speed: "desc",
     perPollen: "desc",
     input: "asc",
     output: "asc",
@@ -73,6 +74,19 @@ const sortModels = (
             const an = (getModelDisplayName(a) ?? a.name).toLowerCase();
             const bn = (getModelDisplayName(b) ?? b.name).toLowerCase();
             return an < bn ? -sign : an > bn ? sign : 0;
+        }
+        if (sortKey === "speed") {
+            const av =
+                a.health && a.health.eligibleRequests >= MIN_HEALTH_REQUESTS
+                    ? (a.health.tokensPerSecond ?? -1)
+                    : -1;
+            const bv =
+                b.health && b.health.eligibleRequests >= MIN_HEALTH_REQUESTS
+                    ? (b.health.tokensPerSecond ?? -1)
+                    : -1;
+            if (av < 0 && bv >= 0) return 1;
+            if (bv < 0 && av >= 0) return -1;
+            return (av - bv) * sign;
         }
         const av =
             sortKey === "perPollen"
@@ -398,6 +412,18 @@ export const UnifiedModelTable: FC<UnifiedModelTableProps> = ({
                     <span className="text-sm font-bold text-ink-900">
                         Model {sortArrow("name")}
                     </span>
+                </button>
+                <button
+                    type="button"
+                    onClick={() => onSort("speed")}
+                    className="hidden md:block w-[120px] shrink-0 cursor-pointer text-center hover:text-theme-text-base"
+                >
+                    <div className="text-sm font-bold text-ink-900">
+                        Speed {sortArrow("speed")}
+                    </div>
+                    <div className="text-xs font-normal text-ink-700 opacity-70 italic">
+                        tok/s
+                    </div>
                 </button>
                 <Tooltip
                     triggerAs="span"

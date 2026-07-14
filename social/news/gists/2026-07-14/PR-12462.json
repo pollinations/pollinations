@@ -1,0 +1,36 @@
+{
+  "pr_number": 12462,
+  "title": "fix: install shared media deploy dependencies",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/12462",
+  "merged_at": "2026-07-14T16:51:14Z",
+  "labels": [
+    "DEV-INFRA"
+  ],
+  "pr_body_excerpt": "- Installs the `shared` workspace dependencies before the Media package dependencies.\n- Lets Wrangler resolve `drizzle-orm` imports from sibling `shared/` schema files.\n- Verified in a clean checkout: Media 29/29 and production Wrangler dry-run pass.",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": true,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "The media hive packs first",
+    "blurb": "Media deploys now bring the shared toolbox along before heading to Cloudflare. Wrangler can find its Drizzle schema pollen again.",
+    "summary": "The Media Cloudflare deploy workflow now installs the shared workspace dependencies before Media dependencies, allowing Wrangler to resolve drizzle-orm imports from sibling shared schema files.",
+    "impact": "Production Media deployments now pass from clean checkouts, with all 29 Media checks and the Wrangler production dry-run verified.",
+    "keywords": [
+      "media",
+      "cloudflare",
+      "wrangler",
+      "drizzle-orm",
+      "deployment",
+      "github-actions"
+    ],
+    "visual_concept": "Depict Polly as a careful deployment beekeeper packing a shared supply crate before a small media-server garden is sent toward a cozy Cloudflare-like cloud. Include a retro terminal showing a resolved dependency path, with code-plants connecting the shared crate to the Media workstation.",
+    "image_prompt": "Polly, the cute yellow-and-brown striped pixel bee with pink cheek blush and light blue wings, wears a tiny tool belt while placing a glowing shared dependency crate beside a retro Media terminal; neat code-vines connect it to a soft pastel cloud deployment station, with small flowers growing around the cables. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, retro gaming vibes, subtle CRT glow and pixel-font terminal text: 'DEPENDENCIES FOUND'."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-14/PR-12462.jpg",
+    "prompt": "Polly, the cute yellow-and-brown striped pixel bee with pink cheek blush and light blue wings, wears a tiny tool belt while placing a glowing shared dependency crate beside a retro Media terminal; neat code-vines connect it to a soft pastel cloud deployment station, with small flowers growing around the cables. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, retro gaming vibes, subtle CRT glow and pixel-font terminal text: 'DEPENDENCIES FOUND'."
+  },
+  "generated_at": "2026-07-14T16:52:15.710721+00:00"
+}

@@ -19,13 +19,26 @@ with automatic Fireworks fallback
 
 | Worker | Vast instance | GPU | Listed rate | Status |
 |--------|---------------|-----|-------------|--------|
-| flux-vast-03 | 44731147 | RTX 5090 | $0.374444/hr | Active; replace its temporary quick tunnel with a named tunnel before the next cutover |
+| flux-vast-03 | 44731147 | RTX 5090 | $0.374444/hr | OUT OF ROTATION (2026-07-14) — host network degraded; needs reprovision. All Flux traffic is on the Fireworks fallback (~$70/day) |
 
 > Instance IDs/IPs/ports change on recreate — check `vastai show instances`.
 > CRITICAL: workers MUST be behind a named Cloudflare tunnel created in the
 > authoritative Pollinations account. The gen Worker cannot fetch a Vast
 > raw-IP/non-standard-port origin, and a successful registry heartbeat alone
 > does not prove the data path works. Fireworks can hide either failure.
+
+**The quick-tunnel warning above is not theoretical — it caused the #12254
+outage.** flux-vast-03 was left on a `trycloudflare.com` quick tunnel (free,
+rate-limited, no SLA). Under production load it degraded until a static `/docs`
+fetch took 15–39s while the worker itself served a 1024×1024 image in 3.9s on
+localhost. Requests exceeded the CloudFront timeout, so users saw indefinite
+hangs, not errors — and the worker kept heartbeating green the whole time.
+Never point production at a quick tunnel; use a named tunnel.
+
+When reprovisioning, check the host's HuggingFace throughput before committing
+to it (`curl -r 0-5000000 -L <hf-model-url>`): this host managed 384 KB/s, so
+the worker could never finish loading its weights and stalled indefinitely
+mid-download.
 
 **Provision a new instance** (see `nunchaku/setup-vast.sh` header for all env):
 ```bash

@@ -733,6 +733,8 @@ function renderHeader(spec: Spec): string {
     out.push("");
     out.push("# API docs");
     out.push("");
+    out.push(`Also available at [${BASE_URL}/docs](${BASE_URL}/docs)`);
+    out.push("");
     out.push(
         `**Version:** \`${spec.info.version}\` · **OpenAPI:** \`${spec.openapi}\` · **Base URL:** \`${BASE_URL}\``,
     );

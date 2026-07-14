@@ -1,0 +1,36 @@
+{
+  "pr_number": 12448,
+  "title": "docs: finalize Klein Vast cutover",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/12448",
+  "merged_at": "2026-07-14T10:01:33Z",
+  "labels": [
+    "DEV-DOCS"
+  ],
+  "pr_body_excerpt": "- Corrects the stale RunPod-specific Klein handler comment.\n- Records the final Vast production soak verification and zero-5xx result.\n- Marks the warm RunPod rollback as safe to stop and documents post-stop checks.\n- Keeps `KLEIN_URL`, the existing image assets, and the resumable rollback path intact.\n\nValidation:\n- `npx biome check --write gen.pollinations.ai/src/image/models/fluxKleinModel.ts`\n- `npm run typecheck --workspace pollinations-gen`\n- Production status reported `provider=vast`, `model_used=klein`, successful traffic, and zero 5xx.\n- Vast instance `44766948` was healthy with 521 backend requests and no recent 5xx.\n",
+  "gist": {
+    "category": "docs",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Klein found its Vast meadow",
+    "blurb": "The Klein image route has finished its Vast production soak with clean traffic and zero 5xx responses. RunPod can rest warm on the rollback bench, with the path back still carefully labeled.",
+    "summary": "Documented the completed Klein cutover to Vast after production verification reported provider=vast, model_used=klein, 521 healthy backend requests, and zero recent 5xx responses; the existing KLEIN_URL, image assets, and resumable RunPod rollback path remain intact.",
+    "impact": "Klein image traffic now has a documented, verified Vast production path, while operators retain clear post-stop checks and a safe rollback route if it is ever needed.",
+    "keywords": [
+      "Klein",
+      "Vast",
+      "RunPod",
+      "image-generation",
+      "production-verification",
+      "rollback"
+    ],
+    "visual_concept": "Depict Klein's image-generation route as a cozy garden path leading to a sturdy Vast greenhouse/server, with a small warm RunPod shelter resting nearby under a clearly preserved rollback sign. Polly should inspect the healthy route with a tiny clipboard, surrounded by code-plants and a quiet zero-error status display.",
+    "image_prompt": "A cozy pixel art garden-server scene where the cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings wears a tiny operator clipboard and checks a flourishing code-plant route leading to a Vast greenhouse server; a warm little RunPod shelter nearby has a pixel sign reading “ROLLBACK READY,” while a CRT status panel reads “VAST · KLEIN · 0 5XX.” Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, retro gaming vibes, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-14/PR-12448.jpg",
+    "prompt": "A cozy pixel art garden-server scene where the cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings wears a tiny operator clipboard and checks a flourishing code-plant route leading to a Vast greenhouse server; a warm little RunPod shelter nearby has a pixel sign reading “ROLLBACK READY,” while a CRT status panel reads “VAST · KLEIN · 0 5XX.” Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, retro gaming vibes, nostalgic but beautiful."
+  },
+  "generated_at": "2026-07-14T10:02:25.707512+00:00"
+}

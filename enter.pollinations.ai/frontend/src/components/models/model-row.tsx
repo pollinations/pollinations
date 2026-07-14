@@ -10,6 +10,7 @@ import {
 import { PaidChip, TierChip, WalletKindIcon } from "@pollinations/ui/wallet";
 import type { FC } from "react";
 import { calculatePerPollen, unitLabels } from "./calculations.ts";
+import { ModelHealthSummary } from "./model-health.tsx";
 import { CAPABILITY_ICON, MODALITY_ICON } from "./model-icons.tsx";
 import {
     getModelBrandLogoPath,
@@ -157,6 +158,7 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                         />
                     </div>
                     <ModelId name={model.name} />
+                    <ModelHealthSummary health={model.health} />
                     {(inputModalities.length > 0 ||
                         capabilities.length > 0) && (
                         <div className="flex min-w-0 flex-wrap items-center gap-2">

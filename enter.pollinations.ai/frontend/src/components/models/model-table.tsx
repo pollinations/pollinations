@@ -9,6 +9,7 @@ import {
 import { PaidChip, TierChip } from "@pollinations/ui/wallet";
 import { type FC, useState } from "react";
 import { calculatePerPollen, calculatePerPollenValue } from "./calculations.ts";
+import { ModelHealthSummary } from "./model-health.tsx";
 import { CAPABILITY_ICON, MODALITY_ICON } from "./model-icons.tsx";
 import {
     type DisplayCapability,
@@ -211,6 +212,10 @@ const MobileModelRow: FC<MobileModelRowProps> = ({ model }) => {
                             </CopyButton>
                         </div>
                         <ModelId name={model.name} />
+                        <ModelHealthSummary
+                            health={model.health}
+                            showTooltips={false}
+                        />
                         {(inputModalities.length > 0 ||
                             capabilities.length > 0) && (
                             <div className="flex min-w-0 flex-wrap items-center gap-1.5">

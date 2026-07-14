@@ -19,6 +19,7 @@ import {
     fetchModelCatalog,
     getModelPricesFromCatalog,
 } from "./model-catalog.ts";
+import { useModelHealth } from "./model-health.tsx";
 import { getModelDisplayName } from "./model-info.ts";
 import {
     type SectionType,
@@ -86,9 +87,15 @@ export const Models: FC<ModelsProps> = ({ showCommunityEndpoints = false }) => {
     const [catalogError, setCatalogError] = useState<string | null>(null);
     const [search, setSearch] = useState("");
     const { stats } = useModelStats();
+    const healthByModel = useModelHealth();
     const allModels = useMemo(
-        () => getModelPricesFromCatalog(catalogModels, stats),
-        [catalogModels, stats],
+        () =>
+            getModelPricesFromCatalog(catalogModels, stats).map((model) =>
+                model.community
+                    ? { ...model, health: healthByModel[model.name] }
+                    : model,
+            ),
+        [catalogModels, healthByModel, stats],
     );
     const query = search.trim().toLowerCase();
     const filteredModels = useMemo(
@@ -255,6 +262,7 @@ export const Models: FC<ModelsProps> = ({ showCommunityEndpoints = false }) => {
             </Section>
             {showCommunityEndpoints && (
                 <CommunityEndpoints
+                    healthByModel={healthByModel}
                     onChange={() => {
                         void loadModelCatalog({ refresh: true });
                     }}

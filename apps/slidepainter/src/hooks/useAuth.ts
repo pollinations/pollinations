@@ -100,7 +100,7 @@ export function useAuth(): UseAuthReturn {
                 try {
                     const data = await balanceRes.value.json();
                     setBalance(
-                        typeof data.balance === "number" ? data.balance : null,
+                        typeof data.total === "number" ? data.total : null,
                     );
                 } catch {
                     /* ignore */

@@ -308,7 +308,7 @@ response = requests.get(
     "https://gen.pollinations.ai/account/balance",
     headers={"Authorization": "Bearer YOUR_API_KEY"},
 )
-print(response.json())  # {"balance": 42.5}`,
+print(response.json())  # {"total": 42.5, "allowance": 0.4, "pack": 42.1, "currency": "pollen"}`,
         },
         {
             label: "JavaScript",
@@ -317,8 +317,8 @@ print(response.json())  # {"balance": 42.5}`,
   "https://gen.pollinations.ai/account/balance",
   { headers: { Authorization: "Bearer YOUR_API_KEY" } },
 );
-const { balance } = await response.json();
-console.log(balance);`,
+const { total, allowance, pack, currency } = await response.json();
+console.log(`Total: ${total} ${currency} (allowance: ${allowance}, pack: ${pack})`);`,
         },
     ],
     "get /account/profile": [
@@ -542,7 +542,10 @@ export const RESPONSE_EXAMPLES: Record<string, unknown> = {
         ],
     },
     "get /account/balance": {
-        balance: 42.5,
+        total: 42.5,
+        allowance: 0.4,
+        pack: 42.1,
+        currency: "pollen",
     },
     "get /account/profile": {
         githubUsername: "janedeveloper",

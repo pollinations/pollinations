@@ -1,4 +1,4 @@
-## Image Generation
+## 3D Generation
 
 Generate 3D models from text prompts and images via a simple GET request. Returns GTLF Binary in the GLB Format.
 Depending on the model, certain models ignore text inputs. For example, any text prompt you pass to the Trellis 2

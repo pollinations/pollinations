@@ -1,0 +1,36 @@
+{
+  "pr_number": 12470,
+  "title": "fix: dedicated Azure resource per gptimage model, drop blocked endpoints",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/12470",
+  "merged_at": "2026-07-14T19:52:22Z",
+  "labels": [
+    "DEV-BUG"
+  ],
+  "pr_body_excerpt": "- Removes blocked endpoints from GPT Image failover lists: `myceli-prod-img-westus3` (gptimage + gptimage-large failover) and the eastus2/swedencentral shared `gpt-image-2` deployments — all returned the Azure resource-block 403\n- Each model now runs on resources dedicated to it (Azure blocks are per-resource; sharing turns one block into a multi-model outage):\n  - `gptimage`: mini-swedencentral + **new** mini-westus3\n  - `gptimage-large`: 15-swedencentral + **new** 15-westus3\n  - `gpt-image-2`: **new** img-2-swedencentral + **new** img-2-eastus2 (previously 5 shared regional resources)\n- All 4 new resources provisioned and verified serving 200; keys added to prod/staging/dev sops vars, push allowlist, bindings type, and IMAGE_ENV_KEYS\n- Quota was freed by deleting dead deployments on blocked resources (they could not serve anyway); blocked `myceli-prod-img-westus3` deleted + purged\n- Note: gpt-image-2 keeps serving from the working shared westus3/poland/uaenorth deployments until this deploys; those unused deployments can be cleaned up after cutover\n\nAddresses #12446\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Image routes get their own gardens",
+    "blurb": "The image bees stopped sharing flower beds. GPT Image models now have dedicated Azure resources, so one grumpy resource block cannot take the whole pollination line down with it.",
+    "summary": "Reworked Azure routing for gptimage, gptimage-large, and gpt-image-2 by removing resource-blocked 403 failovers and assigning each model dedicated verified resources across Sweden Central, West US 3, and East US 2.",
+    "impact": "Image requests now avoid the blocked Azure deployments, while dedicated per-model resources prevent a single Azure resource block from interrupting multiple GPT Image models.",
+    "keywords": [
+      "image-generation",
+      "gptimage",
+      "gpt-image-2",
+      "azure",
+      "failover",
+      "reliability"
+    ],
+    "visual_concept": "A cozy image-generation garden with three separate, well-labeled greenhouse paths for gptimage, gptimage-large, and gpt-image-2. Polly, wearing a tiny gardener tool belt, redirects glowing image-pollen through healthy dedicated pipes while a few crossed-out blocked signposts sit safely outside the garden; code-plants and warm CRT status screens show successful 200 responses.",
+    "image_prompt": "Cozy pixel art scene of Polly, a cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light blue translucent wings, wearing a tiny gardener tool belt as she tends three separate glowing code-greenhouses labeled in simple pixel font “GPTIMAGE”, “LARGE”, and “IMAGE-2”; healthy pipes lead to CRT screens showing “200”, while crossed-out old route signs sit beyond a flower-lined fence. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, subtle scanlines, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-14/PR-12470.jpg",
+    "prompt": "Cozy pixel art scene of Polly, a cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light blue translucent wings, wearing a tiny gardener tool belt as she tends three separate glowing code-greenhouses labeled in simple pixel font “GPTIMAGE”, “LARGE”, and “IMAGE-2”; healthy pipes lead to CRT screens showing “200”, while crossed-out old route signs sit beyond a flower-lined fence. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, subtle scanlines, nostalgic but beautiful."
+  },
+  "generated_at": "2026-07-14T19:53:15.300252+00:00"
+}

@@ -18,6 +18,52 @@ const log = debug("pollinations:genericopenai");
 const errorLog = debug("pollinations:error");
 const DONE_EVENT_PATTERN = /data:\s*\[DONE\]/;
 
+// Retry configuration for NVIDIA NIM free tier rate limits
+const MAX_RETRIES = 10;
+const BASE_DELAY_MS = 5000; // 5 seconds
+const MAX_DELAY_MS = 60000; // 60 seconds (cap for the 10th retry)
+
+/**
+ * Determines if an error is retryable (rate limit, server error, network error)
+ */
+function isRetryableError(error: ServiceError): boolean {
+    // Retry on rate limit (429), server errors (5xx), or network errors
+    if (error.status === 429) return true;
+    if (error.status && error.status >= 500 && error.status < 600) return true;
+    // Network errors may not have a status
+    if (!error.status && error.message) {
+        const msg = error.message.toLowerCase();
+        if (
+            msg.includes("network") ||
+            msg.includes("timeout") ||
+            msg.includes("econnrefused") ||
+            msg.includes("etimedout") ||
+            msg.includes("eai_again") ||
+            msg.includes("fetch failed")
+        ) {
+            return true;
+        }
+    }
+    return false;
+}
+
+/**
+ * Sleep for the specified milliseconds
+ */
+function sleep(ms: number): Promise<void> {
+    return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+/**
+ * Calculate exponential backoff delay with cap
+ */
+function calculateBackoffDelay(attempt: number): number {
+    // attempt is 0-indexed for retries (0 = first retry)
+    // Exponential: BASE_DELAY * 2^attempt, capped at MAX_DELAY
+    const delay = BASE_DELAY_MS * Math.pow(2, attempt);
+    return Math.min(delay, MAX_DELAY_MS);
+}
+
 // Attach Portkey's served fallback target as internal, non-enumerable metadata
 // so tracking can read completion.fallbackTarget while it stays out of every
 // JSON.stringify({ ...completion }) response body (the OpenAI-compatible body
@@ -174,77 +220,134 @@ export async function genericOpenAIClient(
 
         log(`[${requestId}] Header keys:`, Object.keys(headers));
 
-        const response = await fetch(endpointUrl, {
-            method: "POST",
-            headers,
-            body: JSON.stringify(requestBody),
-        });
+        // Retry loop with exponential backoff for rate limits and server errors
+        let lastError: ServiceError | null = null;
 
-        if (!response.ok) {
-            const errorText = await response.text();
-            const errorDetails = parseJsonSafe(errorText) || errorText;
-            errorLog(
-                `[${requestId}] API error (${response.status}):`,
-                errorDetails,
-            );
-            throw createApiError(response, errorDetails, modelName);
-        }
+        for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+            try {
+                const response = await fetch(endpointUrl, {
+                    method: "POST",
+                    headers,
+                    body: JSON.stringify(requestBody),
+                });
 
-        // Portkey reports which fallback target served the call via this header
-        // (e.g. "config.targets[0]" = primary, "config.targets[1]" = first
-        // fallback). Surface it so tracking can record whether a fallback fired.
-        const fallbackTarget =
-            response.headers.get("x-portkey-last-used-option-index") ??
-            undefined;
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    const errorDetails = parseJsonSafe(errorText) || errorText;
+                    errorLog(
+                        `[${requestId}] API error (${response.status}):`,
+                        errorDetails,
+                    );
 
-        if (normalizedOptions.stream) {
-            log(
-                `[${requestId}] Streaming response, status: ${response.status}`,
-            );
+                    const apiError = createApiError(
+                        response,
+                        errorDetails,
+                        modelName,
+                    );
 
-            const streamToReturn = ensureOpenAISseDone(response.body);
-            return withFallbackTarget(
-                {
-                    id: `genericopenai-${requestId}`,
-                    object: "chat.completion.chunk",
-                    created: Math.floor(startTime / 1000),
-                    model: modelName,
-                    stream: true,
-                    responseStream: streamToReturn,
-                    choices: [
+                    // If this is the last attempt or error is not retryable, throw
+                    if (attempt === MAX_RETRIES || !isRetryableError(apiError)) {
+                        throw apiError;
+                    }
+
+                    // Log retry attempt
+                    lastError = apiError;
+                    const delay = calculateBackoffDelay(attempt);
+                    log(
+                        `[${requestId}] Retryable error (attempt ${attempt + 1}/${MAX_RETRIES}), waiting ${delay}ms before retry:`,
+                        apiError.message,
+                    );
+                    await sleep(delay);
+                    continue;
+                }
+
+                // Success - process the response
+                // Portkey reports which fallback target served the call via this header
+                // (e.g. "config.targets[0]" = primary, "config.targets[1]" = first
+                // fallback). Surface it so tracking can record whether a fallback fired.
+                const fallbackTarget =
+                    response.headers.get("x-portkey-last-used-option-index") ??
+                    undefined;
+
+                if (normalizedOptions.stream) {
+                    log(
+                        `[${requestId}] Streaming response, status: ${response.status}`,
+                    );
+
+                    const streamToReturn = ensureOpenAISseDone(response.body);
+                    return withFallbackTarget(
                         {
-                            delta: { content: "" },
-                            finish_reason: null,
-                            index: 0,
+                            id: `genericopenai-${requestId}`,
+                            object: "chat.completion.chunk",
+                            created: Math.floor(startTime / 1000),
+                            model: modelName,
+                            stream: true,
+                            responseStream: streamToReturn,
+                            choices: [
+                                {
+                                    delta: { content: "" },
+                                    finish_reason: null,
+                                    index: 0,
+                                },
+                            ],
                         },
-                    ],
-                },
-                fallbackTarget,
-            );
+                        fallbackTarget,
+                    );
+                }
+
+                const data = (await response.json()) as ChatCompletion;
+                log(
+                    `[${requestId}] Completed in ${Date.now() - startTime}ms, model: ${
+                        data.model || modelName
+                    }`,
+                );
+
+                const formattedChoice = (data.choices?.[0] ?? {}) as CompletionChoice;
+
+                // Force finish_reason to "tool_calls" when tool_calls are present.
+                // Some providers (e.g. Vertex AI) return "stop" for tool call responses.
+                if (formattedChoice.message?.tool_calls?.length) {
+                    formattedChoice.finish_reason = "tool_calls";
+                }
+
+                return withFallbackTarget(
+                    {
+                        ...data,
+                        id: data.id || `genericopenai-${requestId}`,
+                        object: data.object || "chat.completion",
+                        choices: [formattedChoice],
+                    },
+                    fallbackTarget,
+                );
+            } catch (thrown: unknown) {
+                const error = thrown as ServiceError;
+
+                // If it's an apiError we created (retryable), check if we should retry
+                if (error.status && isRetryableError(error)) {
+                    if (attempt < MAX_RETRIES) {
+                        lastError = error;
+                        const delay = calculateBackoffDelay(attempt);
+                        log(
+                            `[${requestId}] Retryable error (attempt ${attempt + 1}/${MAX_RETRIES}), waiting ${delay}ms before retry:`,
+                            error.message,
+                        );
+                        await sleep(delay);
+                        continue;
+                    }
+                }
+
+                // Non-retryable error or max retries exceeded
+                errorLog(`[${requestId}] Error:`, {
+                    error: error.message,
+                    status: error.status,
+                    model: modelName,
+                });
+                throw error;
+            }
         }
 
-        const data = (await response.json()) as ChatCompletion;
-        log(
-            `[${requestId}] Completed in ${Date.now() - startTime}ms, model: ${data.model || modelName}`,
-        );
-
-        const formattedChoice = (data.choices?.[0] ?? {}) as CompletionChoice;
-
-        // Force finish_reason to "tool_calls" when tool_calls are present.
-        // Some providers (e.g. Vertex AI) return "stop" for tool call responses.
-        if (formattedChoice.message?.tool_calls?.length) {
-            formattedChoice.finish_reason = "tool_calls";
-        }
-
-        return withFallbackTarget(
-            {
-                ...data,
-                id: data.id || `genericopenai-${requestId}`,
-                object: data.object || "chat.completion",
-                choices: [formattedChoice],
-            },
-            fallbackTarget,
-        );
+        // This should never be reached, but just in case
+        throw lastError || new Error("Max retries exceeded");
     } catch (thrown: unknown) {
         const error = thrown as ServiceError;
         errorLog(`[${requestId}] Error:`, {

@@ -4,6 +4,7 @@ import {
     createBedrockNativeConfig,
     createFireworksModelConfig,
     createInceptionModelConfig,
+    createNvidiaNimModelConfig,
     createOpenRouterModelConfig,
     createOVHcloudMistralConfig,
     createOVHcloudModelConfig,
@@ -334,5 +335,9 @@ export const portkeyConfig: PortkeyConfigMap = {
     "polly": () =>
         createPollyConfig({
             model: "polly",
+        }),
+    "nemotron-3-ultra": () =>
+        createNvidiaNimModelConfig({
+            model: "nvidia/nemotron-3-super-120b-a12b-fp8",
         }),
 };

@@ -169,3 +169,17 @@ export function createPollyConfig(
         ...overrides,
     };
 }
+
+/**
+ * Creates a NVIDIA NIM model configuration.
+ * Uses NVIDIA NIM API (build.nvidia.com) for free tier access to models like Nemotron.
+ */
+export function createNvidiaNimModelConfig(
+    overrides: ModelOverride = {},
+): ProviderConfig {
+    return createOpenAICompatibleConfig(
+        "https://integrate.api.nvidia.com/v1",
+        process.env.NVIDIA_API_KEY,
+        overrides,
+    );
+}

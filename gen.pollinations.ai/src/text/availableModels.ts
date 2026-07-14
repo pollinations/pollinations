@@ -375,6 +375,11 @@ const models: ModelDefinition[] = [
         // Safety/guard model, no reasoning mode.
         transform: stripReasoning,
     },
+    {
+        name: "nemotron-3-ultra",
+        config: portkeyConfig["nemotron-3-ultra"],
+        // NVIDIA NIM - Free tier with rate limits, 10 retries with exponential backoff
+    },
 ];
 
 export const availableModels = models;

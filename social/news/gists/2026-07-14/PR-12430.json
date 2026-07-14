@@ -1,0 +1,36 @@
+{
+  "pr_number": 12430,
+  "title": "fix: route gpt-image-2 through Azure",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/12430",
+  "merged_at": "2026-07-14T00:49:46Z",
+  "labels": [
+    "DEV-BUG"
+  ],
+  "pr_body_excerpt": "- Routes `gpt-image-2` exclusively through five Azure deployments with per-worker round robin.\n- Retries 429, network, and 5xx failures across Azure regions; client errors stop immediately. There is no OpenAI fallback.\n- Sets `priceMultiplier: 0.75` and `paidOnly: false` in the source registry.\n- Adds regional keys to encrypted dev/staging/prod secrets, secret sync, Worker bindings, and the image registry.\n- Fixes the direct OpenAI unsupported-region failure and resolves the PR's CodeQL alerts.\n\nValidated with gen typecheck, 130 image tests, 28 pricing tests, real local generation/edit E2E, and clean 5/15/30 concurrent Azure bursts.",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Five hives, one image",
+    "blurb": "gpt-image-2 has moved into a small constellation of Azure hives. Polly now sends image requests around the garden when one region is busy, instead of letting an unsupported route spoil the picnic.",
+    "summary": "Routed gpt-image-2 exclusively through five Azure deployments with per-worker round robin and cross-region retries for 429, network, and 5xx failures, while setting its registry priceMultiplier to 0.75 and paidOnly to false.",
+    "impact": "gpt-image-2 image generation and edits now avoid the direct OpenAI unsupported-region failure, remain available through regional retry bursts, and are accessible without paid-only gating at the 0.75 price multiplier.",
+    "keywords": [
+      "gpt-image-2",
+      "azure",
+      "image-generation",
+      "regional-routing",
+      "retries",
+      "pricing"
+    ],
+    "visual_concept": "Depict gpt-image-2 as a cozy image-making terminal connected by five little flower-like Azure region stations, with request packets traveling between them when one station is busy. Polly, wearing a tiny postal-worker cap, calmly routes glowing picture-seeds across the stations while code-plants and a warm garden show the system staying resilient.",
+    "image_prompt": "Cozy pixel art scene of Polly, the cute bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light blue translucent wings, wearing a tiny postal-worker cap as she routes glowing image-seed packets from a retro gpt-image-2 terminal to five small Azure-blue pastel flower stations; one busy station has a gentle \"429\" sign while the packets happily travel to another, surrounded by code-plants and pixel flowers. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, retro gaming vibes, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-14/PR-12430.jpg",
+    "prompt": "Cozy pixel art scene of Polly, the cute bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light blue translucent wings, wearing a tiny postal-worker cap as she routes glowing image-seed packets from a retro gpt-image-2 terminal to five small Azure-blue pastel flower stations; one busy station has a gentle \"429\" sign while the packets happily travel to another, surrounded by code-plants and pixel flowers. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, retro gaming vibes, nostalgic but beautiful."
+  },
+  "generated_at": "2026-07-14T00:50:39.179791+00:00"
+}

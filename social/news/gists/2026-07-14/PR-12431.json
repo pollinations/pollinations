@@ -1,0 +1,37 @@
+{
+  "pr_number": 12431,
+  "title": "feat: route FLUX.2 Klein to Vast",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/12431",
+  "merged_at": "2026-07-14T01:02:00Z",
+  "labels": [
+    "DEV-INFRA"
+  ],
+  "pr_body_excerpt": "- Routes production FLUX.2 Klein through a Cloudflare Workers VPC binding to the Indiana Vast tunnel while retaining `KLEIN_URL` for manual RunPod rollback.\n- Updates the public image registry provider from `runpod` to `vast` without changing the model’s Pollen price.\n- Adds a restart-safe Vast setup script using scoped token files and `/root/onstart.sh` supervision.\n- Records the instance, tunnel, cost, routing, rollback, health, restart, and successful canary sequence in `GPU_INSTANCES.md`.\n- Validated generation, single- and two-image editing, 1024×1024 output, three concurrent requests, real production traffic, four healthy tunnel connections, and zero proxy errors.",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Klein found a new tunnel",
+    "blurb": "FLUX.2 Klein has moved through a fresh Indiana tunnel, with a RunPod rollback path tucked safely in the tool shed. The bees tested edits, full-size images, and a small request stampede; the tunnel kept humming.",
+    "summary": "Production FLUX.2 Klein image generation now routes through a Cloudflare Workers VPC binding to a Vast-hosted Indiana tunnel, while retaining KLEIN_URL for manual RunPod rollback and keeping the model's Pollen price unchanged.",
+    "impact": "Users can keep generating and editing FLUX.2 Klein images, including 1024×1024 outputs and concurrent requests, through a validated Vast route with four healthy tunnel connections and zero observed proxy errors.",
+    "keywords": [
+      "FLUX.2 Klein",
+      "Vast",
+      "image generation",
+      "Cloudflare Workers",
+      "VPC",
+      "reliability",
+      "routing"
+    ],
+    "visual_concept": "Depict FLUX.2 Klein's infrastructure move as a cozy garden tunnel connecting a retro image workstation to a Vast-hosted greenhouse in Indiana. Polly, wearing a tiny network technician cap, checks four glowing tunnel connections while image canvases and edit tools travel safely through the route; code-plants and flowers make the migration feel cared for rather than industrial.",
+    "image_prompt": "Cozy pixel art scene of Polly, the cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks, a small happy smile, and small rounded light blue translucent wings, wearing a tiny network technician cap as she inspects four glowing garden-tunnel connections between a retro image terminal and a cozy Vast greenhouse; pixel image canvases, editing tools, flowers, and code-plants travel through the tunnel, with a prominent lime green (#ecf874) glow. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, with subtle CRT scanlines and pixel-font text: \"KLEIN ROUTE OK\"."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-14/PR-12431.jpg",
+    "prompt": "Cozy pixel art scene of Polly, the cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks, a small happy smile, and small rounded light blue translucent wings, wearing a tiny network technician cap as she inspects four glowing garden-tunnel connections between a retro image terminal and a cozy Vast greenhouse; pixel image canvases, editing tools, flowers, and code-plants travel through the tunnel, with a prominent lime green (#ecf874) glow. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, with subtle CRT scanlines and pixel-font text: \"KLEIN ROUTE OK\"."
+  },
+  "generated_at": "2026-07-14T01:02:56.148691+00:00"
+}

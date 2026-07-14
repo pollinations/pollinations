@@ -1,12 +1,11 @@
 import { Section } from "@pollinations/ui";
 import { createFileRoute, useRouter } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { apiClient } from "../api.ts";
 import { authClient, getUserOrRedirect } from "../auth.ts";
 import {
     currentUsagePeriod,
     EarningsGraph,
-    getEarningsEnabledApps,
     PeriodPicker,
     type UsagePeriodSelection,
     UsageSection,
@@ -27,6 +26,7 @@ import { Models } from "../components/models";
 import { NewsFaq } from "../components/news-faq";
 import {
     BuyPollenPanel,
+    LastEventsPanel,
     PollenBalance,
     SidebarWallet,
 } from "../components/pollen";
@@ -56,14 +56,12 @@ export const Route = createFileRoute("/")({
     loader: async ({ context }) => {
         // Parallelize independent API calls for faster loading
         const [
-            tierData,
             apiKeysResult,
             d1BalanceResult,
             profileResult,
             billingState,
             earningsTodayResult,
         ] = await Promise.all([
-            apiClient.tiers.view.$get().then((r) => (r.ok ? r.json() : null)),
             apiClient["api-keys"]
                 .$get()
                 .then((r) => (r.ok ? r.json() : { data: [] })),
@@ -96,7 +94,6 @@ export const Route = createFileRoute("/")({
             user: context.user,
             githubUsername,
             apiKeys,
-            tierData,
             tierBalance,
             packBalance,
             communityEndpointsAllowed:
@@ -114,7 +111,6 @@ function RouteComponent() {
         user,
         githubUsername,
         apiKeys,
-        tierData,
         tierBalance,
         packBalance,
         communityEndpointsAllowed,
@@ -128,19 +124,6 @@ function RouteComponent() {
     const [activityPeriod, setActivityPeriod] =
         useState<UsagePeriodSelection>(currentUsagePeriod);
     const showCommunityEndpoints = communityEndpointsAllowed;
-
-    const selectableKeys = useMemo(
-        () =>
-            apiKeys
-                .filter((k): k is typeof k & { name: string } => !!k.name)
-                .map((k) => ({ id: k.id, name: k.name })),
-        [apiKeys],
-    );
-
-    const earningsEnabledApps = useMemo(
-        () => getEarningsEnabledApps(apiKeys),
-        [apiKeys],
-    );
 
     async function handleSignOut(): Promise<void> {
         if (isSigningOut) return;
@@ -255,7 +238,6 @@ function RouteComponent() {
                 <SidebarWallet
                     tierBalance={tierBalance}
                     packBalance={packBalance}
-                    tier={tierData?.active?.tier}
                     paidWeek={paidWeek}
                     tierWeek={tierWeek}
                 />
@@ -268,7 +250,6 @@ function RouteComponent() {
                         <PollenBalance
                             tierBalance={tierBalance}
                             packBalance={packBalance}
-                            tier={tierData?.active?.tier}
                             paidWeek={paidWeek}
                             tierWeek={tierWeek}
                         />
@@ -280,24 +261,23 @@ function RouteComponent() {
             )}
             {activePage === "activity" && (
                 <div className="flex flex-col gap-6">
-                    <div className="flex flex-col gap-1">
-                        <PeriodPicker
-                            value={activityPeriod}
-                            onChange={setActivityPeriod}
-                            minDate={ACTIVITY_MIN_DATE}
-                        />
-                        <p className="text-micro text-theme-text-muted">
-                            Usage refreshes hourly. Times are shown in UTC.
-                        </p>
-                    </div>
-                    <UsageSection
-                        period={activityPeriod}
-                        apiKeys={selectableKeys}
-                    />
-                    <EarningsGraph
-                        period={activityPeriod}
-                        apps={earningsEnabledApps}
-                    />
+                    <Section title="Events over time" framed>
+                        <div className="flex flex-col gap-1">
+                            <PeriodPicker
+                                value={activityPeriod}
+                                onChange={setActivityPeriod}
+                                minDate={ACTIVITY_MIN_DATE}
+                            />
+                            <p className="text-micro text-theme-text-muted">
+                                Usage refreshes hourly. Times are shown in UTC.
+                            </p>
+                        </div>
+                        <UsageSection period={activityPeriod} />
+                        <EarningsGraph period={activityPeriod} />
+                    </Section>
+                    <Section title="Last events" framed>
+                        <LastEventsPanel />
+                    </Section>
                 </div>
             )}
             {activePage === "quests" && <QuestOverview />}

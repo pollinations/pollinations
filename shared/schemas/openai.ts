@@ -83,6 +83,9 @@ const CacheControlSchema = z
     .object({
         type: z.enum(["ephemeral"]),
     })
+    .describe(
+        "Marks the end of a static prompt prefix to cache (Gemini, Claude, and Nova models). Place on the final content block of the prefix; repeat requests bill the cached prefix at ~10% of the input rate. See Text Generation → Prompt caching.",
+    )
     .optional()
     .meta({ $id: "CacheControl" });
 
@@ -302,13 +305,7 @@ export const CreateChatCompletionRequestSchema = z
             .optional()
             .default(0),
         response_format: ResponseFormatUnionSchema.optional(),
-        seed: z
-            .number()
-            .int()
-            .min(-1)
-            .max(Number.MAX_SAFE_INTEGER)
-            .nullable()
-            .optional(),
+        seed: z.number().int().min(-1).max(2147483647).nullable().optional(),
         stop: z
             .union([z.string().nullable(), z.array(z.string()).min(1).max(4)])
             .optional(),

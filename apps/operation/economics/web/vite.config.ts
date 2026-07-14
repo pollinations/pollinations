@@ -1,0 +1,207 @@
+import { execFileSync } from "node:child_process";
+import { createHmac, timingSafeEqual } from "node:crypto";
+import type { IncomingMessage, ServerResponse } from "node:http";
+import { fileURLToPath } from "node:url";
+import tailwindcss from "@tailwindcss/vite";
+import react from "@vitejs/plugin-react";
+import { defineConfig, type Plugin } from "vite";
+
+const TB_HOST = "https://api.europe-west2.gcp.tinybird.co";
+const SECRETS_PATH = fileURLToPath(
+    new URL("../secrets/web.json", import.meta.url),
+);
+const SESSION_COOKIE = "economics_session";
+const READ_PIPES = new Set([
+    "op_transactions_api",
+    "op_cloud_api",
+    "op_pollen_api",
+    "op_runway_api",
+]);
+
+type EconomicsSecrets = {
+    ECONOMICS_PASSWORD: string;
+    TINYBIRD_ECONOMICS_READ_TOKEN: string;
+};
+
+let secretsCache: EconomicsSecrets | null = null;
+
+function readSecrets(): EconomicsSecrets {
+    if (secretsCache) return secretsCache;
+
+    const out = execFileSync("sops", ["-d", SECRETS_PATH], {
+        stdio: ["ignore", "pipe", "pipe"],
+    }).toString();
+    const secrets = JSON.parse(out) as Partial<EconomicsSecrets>;
+
+    if (!secrets.ECONOMICS_PASSWORD || !secrets.TINYBIRD_ECONOMICS_READ_TOKEN) {
+        throw new Error(
+            "Economics secrets missing password or Tinybird read token",
+        );
+    }
+
+    secretsCache = {
+        ECONOMICS_PASSWORD: secrets.ECONOMICS_PASSWORD,
+        TINYBIRD_ECONOMICS_READ_TOKEN: secrets.TINYBIRD_ECONOMICS_READ_TOKEN,
+    };
+    return secretsCache;
+}
+
+function json(res: ServerResponse, status: number, body: unknown) {
+    res.statusCode = status;
+    res.setHeader("Content-Type", "application/json");
+    res.end(JSON.stringify(body));
+}
+
+function parseCookies(req: IncomingMessage) {
+    const header = req.headers.cookie ?? "";
+    return new Map(
+        header
+            .split(";")
+            .map((part) => part.trim())
+            .filter(Boolean)
+            .map((part) => {
+                const [key, ...rest] = part.split("=");
+                return [key, decodeURIComponent(rest.join("="))] as const;
+            }),
+    );
+}
+
+function signSession(password: string) {
+    const payload = "economics";
+    const signature = createHmac("sha256", password)
+        .update(payload)
+        .digest("base64url");
+    return `${payload}.${signature}`;
+}
+
+function safeEqual(a: string, b: string) {
+    const left = Buffer.from(a);
+    const right = Buffer.from(b);
+    return left.length === right.length && timingSafeEqual(left, right);
+}
+
+function isAuthenticated(req: IncomingMessage, secrets: EconomicsSecrets) {
+    return safeEqual(
+        parseCookies(req).get(SESSION_COOKIE) ?? "",
+        signSession(secrets.ECONOMICS_PASSWORD),
+    );
+}
+
+async function readBody(req: IncomingMessage) {
+    const chunks: Buffer[] = [];
+    for await (const chunk of req) {
+        chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
+    }
+    return Buffer.concat(chunks).toString("utf8");
+}
+
+async function handleApi(req: IncomingMessage, res: ServerResponse) {
+    if (!req.url?.startsWith("/api/")) return false;
+
+    let secrets: EconomicsSecrets;
+    try {
+        secrets = readSecrets();
+    } catch {
+        json(res, 500, { error: "Economics secrets unavailable" });
+        return true;
+    }
+
+    const url = new URL(req.url, "http://127.0.0.1");
+
+    if (url.pathname === "/api/auth/session") {
+        json(res, 200, { authenticated: isAuthenticated(req, secrets) });
+        return true;
+    }
+
+    if (url.pathname === "/api/auth/logout" && req.method === "POST") {
+        res.statusCode = 204;
+        res.setHeader(
+            "Set-Cookie",
+            `${SESSION_COOKIE}=; HttpOnly; SameSite=Lax; Path=/; Max-Age=0`,
+        );
+        res.end();
+        return true;
+    }
+
+    if (url.pathname === "/api/auth/login" && req.method === "POST") {
+        const raw = await readBody(req);
+        let body: { password?: string };
+        try {
+            body = JSON.parse(raw) as { password?: string };
+        } catch {
+            json(res, 400, { error: "Invalid JSON body" });
+            return true;
+        }
+        if (!safeEqual(body.password ?? "", secrets.ECONOMICS_PASSWORD)) {
+            json(res, 401, { error: "Unauthorized" });
+            return true;
+        }
+
+        res.statusCode = 204;
+        res.setHeader(
+            "Set-Cookie",
+            `${SESSION_COOKIE}=${encodeURIComponent(
+                signSession(secrets.ECONOMICS_PASSWORD),
+            )}; HttpOnly; SameSite=Lax; Path=/; Max-Age=43200`,
+        );
+        res.end();
+        return true;
+    }
+
+    if (!isAuthenticated(req, secrets)) {
+        json(res, 401, { error: "Unauthorized" });
+        return true;
+    }
+
+    if (url.pathname.startsWith("/api/pipes/") && req.method === "GET") {
+        const pipe = decodeURIComponent(
+            url.pathname.slice("/api/pipes/".length),
+        );
+        if (!READ_PIPES.has(pipe)) {
+            json(res, 404, { error: "Unknown pipe" });
+            return true;
+        }
+
+        const upstream = await fetch(`${TB_HOST}/v0/pipes/${pipe}.json`, {
+            headers: {
+                Authorization: `Bearer ${secrets.TINYBIRD_ECONOMICS_READ_TOKEN}`,
+            },
+        });
+        res.statusCode = upstream.status;
+        res.setHeader(
+            "Content-Type",
+            upstream.headers.get("content-type") ?? "application/json",
+        );
+        res.end(await upstream.text());
+        return true;
+    }
+
+    json(res, 404, { error: "Not found" });
+    return true;
+}
+
+function economicsApiPlugin(): Plugin {
+    return {
+        name: "economics-api",
+        configureServer(server) {
+            server.middlewares.use(async (req, res, next) => {
+                if (await handleApi(req, res)) return;
+                next();
+            });
+        },
+        configurePreviewServer(server) {
+            server.middlewares.use(async (req, res, next) => {
+                if (await handleApi(req, res)) return;
+                next();
+            });
+        },
+    };
+}
+
+export default defineConfig({
+    plugins: [economicsApiPlugin(), react(), tailwindcss()],
+    server: { host: "127.0.0.1", port: 4180, strictPort: true },
+    resolve: {
+        dedupe: ["react", "react-dom"],
+    },
+});

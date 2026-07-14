@@ -440,9 +440,9 @@ fixtureTest(
         const ownerUserId = await createTestUser({
             githubId: COMMUNITY_ENDPOINT_ALLOWED_TEST_GITHUB_ID,
             githubUsername: ownerGithubUsername,
-            // Generation preflight requires an account balance even though
-            // private models have no owner-set usage price.
-            tierBalance: 1000,
+            // Owner-only private models have no Pollinations charge and remain
+            // callable without a Pollinations balance.
+            tierBalance: 0,
         });
         // A key belonging to the endpoint owner — its calls are owner calls.
         const { key: ownerApiKey } = await createTestApiKey({
@@ -965,7 +965,7 @@ fixtureTest(
 );
 
 fixtureTest(
-    "lets a non-allowlisted user register a private model but blocks publishing it",
+    "lets a non-allowlisted user register a private model but blocks publishing tools",
     async ({ apiKey }) => {
         const ownerGithubUsername = `owner-${crypto.randomUUID().slice(0, 8)}`;
         const modelName = `denied-${crypto.randomUUID().slice(0, 8)}`;
@@ -986,6 +986,40 @@ fixtureTest(
         });
 
         const enterApi = await createEnterCommunityApi();
+        for (const probe of [
+            {
+                path: "models",
+                body: {
+                    baseUrl: "https://api.example.com/v1",
+                    bearerToken: "sk_saved_token",
+                },
+            },
+            {
+                path: "test",
+                body: {
+                    baseUrl: "https://api.example.com/v1",
+                    bearerToken: "sk_saved_token",
+                    model: "gpt-4.1-mini",
+                },
+            },
+        ]) {
+            const probeResponse = await fetchEnterApi(
+                enterApi,
+                new Request(
+                    `http://localhost:3000/api/community-endpoints/${probe.path}`,
+                    {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
+                            Cookie: await signedSessionCookie(sessionToken),
+                        },
+                        body: JSON.stringify(probe.body),
+                    },
+                ),
+            );
+            expect(probeResponse.status).toBe(403);
+        }
+
         const directPublishResponse = await fetchEnterApi(
             enterApi,
             new Request("http://localhost:3000/api/community-endpoints", {
@@ -1567,10 +1601,10 @@ fixtureTest(
 fixtureTest(
     "rejects an endpoint probe when the upstream responds with a redirect",
     async () => {
-        // Probes are open to any authenticated account (not just allowlisted
-        // publishers), so the redirect refusal must hold for everyone.
+        // Use an approved publisher so the request reaches the outbound probe;
+        // non-allowlisted accounts are rejected before any fetch occurs.
         const ownerUserId = await createTestUser({
-            githubId: COMMUNITY_ENDPOINT_DENIED_TEST_GITHUB_ID,
+            githubId: COMMUNITY_ENDPOINT_ALLOWED_TEST_GITHUB_ID,
             githubUsername: `redir-${crypto.randomUUID().slice(0, 8)}`,
         });
         const sessionToken = `session-${crypto.randomUUID()}`;

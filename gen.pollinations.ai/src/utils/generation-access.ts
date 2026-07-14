@@ -31,10 +31,17 @@ export async function checkBalance(
         await getModelStats(env.KV, log),
         model.resolved,
     );
+    const isOwnerPrivateCommunityModel =
+        model.communityEndpoint?.visibility === "private" &&
+        model.communityEndpoint.ownerUserId === auth.user.id;
 
     const apiKeyBudget = auth.apiKey?.pollenBalance;
     const requiredBudget = Math.max(0, estimatedCost);
-    if (typeof apiKeyBudget === "number" && apiKeyBudget <= requiredBudget) {
+    if (
+        !isOwnerPrivateCommunityModel &&
+        typeof apiKeyBudget === "number" &&
+        apiKeyBudget <= requiredBudget
+    ) {
         throw new HTTPException(402, {
             message: `API key budget too low. This request costs ~${estimatedCost.toFixed(4)} pollen, but this key has ${Math.max(0, apiKeyBudget).toFixed(4)}.`,
         });
@@ -42,7 +49,10 @@ export async function checkBalance(
 
     const userBalance = await balance.getBalance(auth.user.id);
 
-    if (!canCoverEstimatedCharge(userBalance, estimatedCost, isPaidOnly)) {
+    if (
+        !isOwnerPrivateCommunityModel &&
+        !canCoverEstimatedCharge(userBalance, estimatedCost, isPaidOnly)
+    ) {
         const available = isPaidOnly
             ? userBalance.packBalance
             : Math.max(userBalance.tierBalance, userBalance.packBalance);

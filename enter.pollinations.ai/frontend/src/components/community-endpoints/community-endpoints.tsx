@@ -172,7 +172,28 @@ export function CommunityEndpoints({
                             <>
                                 Your models are private — callable only by you
                                 and shown only when <strong>/models</strong> is
-                                authenticated with your API key.
+                                authenticated with your API key. Enter the
+                                upstream model ID manually, then test the saved
+                                model by calling its model ID. To request public
+                                publishing access, open a{" "}
+                                <a
+                                    href="https://github.com/pollinations/pollinations/issues/new?title=Community%20model%20publishing%20request"
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="underline hover:text-theme-text-strong"
+                                >
+                                    GitHub issue
+                                </a>{" "}
+                                or ask in{" "}
+                                <a
+                                    href="https://discord.gg/pollinations-ai-885844321461485618"
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="underline hover:text-theme-text-strong"
+                                >
+                                    Discord
+                                </a>
+                                .
                             </>
                         )}
                     </span>

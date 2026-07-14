@@ -123,11 +123,6 @@ function RouteComponent() {
     const [activePage, setActivePage] = usePageFromHash(pageFromHash);
     const [activityPeriod, setActivityPeriod] =
         useState<UsagePeriodSelection>(currentUsagePeriod);
-    // Registering a private, owner-only model is open to every logged-in user;
-    // the allowlist only gates making a model public.
-    const showCommunityEndpoints = true;
-    const canPublishCommunityEndpoints = communityEndpointsAllowed;
-
     async function handleSignOut(): Promise<void> {
         if (isSigningOut) return;
         setIsSigningOut(true);
@@ -294,8 +289,8 @@ function RouteComponent() {
             )}
             {activePage === "models" && (
                 <Models
-                    showCommunityEndpoints={showCommunityEndpoints}
-                    canPublish={canPublishCommunityEndpoints}
+                    showCommunityEndpoints
+                    canPublish={communityEndpointsAllowed}
                 />
             )}
         </DashboardShell>

@@ -74,9 +74,6 @@ export const COMMUNITY_ENDPOINT_VISIBILITIES = ["private", "public"] as const;
 export type CommunityEndpointVisibility =
     (typeof COMMUNITY_ENDPOINT_VISIBILITIES)[number];
 
-export const DEFAULT_COMMUNITY_ENDPOINT_VISIBILITY: CommunityEndpointVisibility =
-    "private";
-
 export type CommunityEndpointRuntime = {
     id: string;
     ownerUserId: string;

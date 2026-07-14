@@ -142,10 +142,9 @@ function normalizeInputBearerToken(value: string): string {
     }
 }
 
-// The allowlist now gates SHARING (exposing an endpoint to any caller other
-// than its owner), not creation. Anyone may register private endpoints for
-// their own use; publishing requires an allowlisted account.
-async function requireCommunitySharingAllowed(
+// Anyone may register private endpoints for their own use. Publishing and raw
+// upstream probes require an allowlisted account.
+async function requireCommunityEndpointPublishAccess(
     db: Db,
     userId: string,
 ): Promise<void> {
@@ -157,7 +156,7 @@ async function requireCommunitySharingAllowed(
     if (!isCommunityEndpointOwnerAllowed(user)) {
         throw new HTTPException(403, {
             message:
-                "Publishing a community model is invite-only. It can stay private for your own use.",
+                "Community model publishing tools require approval. Models can stay private for your own use.",
         });
     }
 }
@@ -250,16 +249,6 @@ function requireCommunityEndpointManagePermission(apiKey?: {
     }
 }
 
-// Managing endpoints (create/update/delete/probe) is open to any account with
-// the API-key permission — the allowlist only applies when sharing (see
-// requireCommunitySharingAllowed).
-function requireCommunityEndpointManageAccess(apiKey?: {
-    permissions?: Record<string, string[]>;
-    metadata?: Record<string, unknown>;
-}): void {
-    requireCommunityEndpointManagePermission(apiKey);
-}
-
 // Prices a shared endpoint must carry so callers aren't billed zero. Base text
 // pricing is the minimum; other buckets can stay 0.
 const REQUIRED_SHARED_PRICE_KEYS: readonly CommunityEndpointPriceKey[] = [
@@ -276,7 +265,7 @@ async function enforceSharingRules(
     prices: Record<CommunityEndpointPriceKey, number>,
 ): Promise<void> {
     if (visibility !== "public") return;
-    await requireCommunitySharingAllowed(db, userId);
+    await requireCommunityEndpointPublishAccess(db, userId);
     const missing = REQUIRED_SHARED_PRICE_KEYS.filter(
         (key) => !(prices[key] > 0),
     );
@@ -343,7 +332,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
         async (c) => {
             const user = c.var.auth.requireUser();
             const db = drizzle(c.env.DB, { schema });
-            requireCommunityEndpointManageAccess(c.var.auth.apiKey);
+            requireCommunityEndpointManagePermission(c.var.auth.apiKey);
             const ownerGithubUsername = await requireOwnerGithubUsername(
                 db,
                 user.id,
@@ -383,7 +372,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
             const user = c.var.auth.requireUser();
             const input = c.req.valid("json");
             const db = drizzle(c.env.DB, { schema });
-            requireCommunityEndpointManageAccess(c.var.auth.apiKey);
+            requireCommunityEndpointManagePermission(c.var.auth.apiKey);
             const ownerGithubUsername = await requireOwnerGithubUsername(
                 db,
                 user.id,
@@ -423,7 +412,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
             tags: ["👤 Account"],
             summary: "List Upstream Models",
             description:
-                "Fetch OpenAI-compatible upstream model IDs before registering a My Models endpoint. API keys require `account:keys`.",
+                "Fetch OpenAI-compatible upstream model IDs before publishing a My Models endpoint. Requires community model publishing approval; API keys also require `account:keys`.",
             responses: {
                 200: {
                     description: "Upstream model IDs",
@@ -445,7 +434,9 @@ export const communityEndpointsRoutes = new Hono<Env>()
         async (c) => {
             const user = c.var.auth.requireUser();
             const input = c.req.valid("json");
-            requireCommunityEndpointManageAccess(c.var.auth.apiKey);
+            const db = drizzle(c.env.DB, { schema });
+            requireCommunityEndpointManagePermission(c.var.auth.apiKey);
+            await requireCommunityEndpointPublishAccess(db, user.id);
             const throttled = await enforceEndpointProbeThrottle(
                 c,
                 user.id,
@@ -466,7 +457,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
             tags: ["👤 Account"],
             summary: "Test My Model Endpoint",
             description:
-                "Test an OpenAI-compatible upstream model before registering it. API keys require `account:keys`.",
+                "Test an OpenAI-compatible upstream model before publishing it. Requires community model publishing approval; API keys also require `account:keys`.",
             responses: {
                 200: {
                     description: "Endpoint test result",
@@ -488,7 +479,9 @@ export const communityEndpointsRoutes = new Hono<Env>()
         async (c) => {
             const user = c.var.auth.requireUser();
             const input = c.req.valid("json");
-            requireCommunityEndpointManageAccess(c.var.auth.apiKey);
+            const db = drizzle(c.env.DB, { schema });
+            requireCommunityEndpointManagePermission(c.var.auth.apiKey);
+            await requireCommunityEndpointPublishAccess(db, user.id);
             const throttled = await enforceEndpointProbeThrottle(
                 c,
                 user.id,
@@ -535,7 +528,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
             const input = c.req.valid("json");
             const { id } = c.req.param();
             const db = drizzle(c.env.DB, { schema });
-            requireCommunityEndpointManageAccess(c.var.auth.apiKey);
+            requireCommunityEndpointManagePermission(c.var.auth.apiKey);
             const ownerGithubUsername = await requireOwnerGithubUsername(
                 db,
                 user.id,
@@ -638,7 +631,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
             const user = c.var.auth.requireUser();
             const { id } = c.req.param();
             const db = drizzle(c.env.DB, { schema });
-            requireCommunityEndpointManageAccess(c.var.auth.apiKey);
+            requireCommunityEndpointManagePermission(c.var.auth.apiKey);
             await requireOwnedEndpoint(db, id, user.id);
             await db
                 .delete(schema.communityEndpoint)

@@ -416,28 +416,34 @@ export function CommunityEndpointDialog({
                         </FieldStack>
                         <FieldStack
                             label="Provider model ID"
-                            helper={providerModelHelper(
-                                modelOptions,
-                                modelListState,
-                            )}
+                            helper={
+                                canPublish
+                                    ? providerModelHelper(
+                                          modelOptions,
+                                          modelListState,
+                                      )
+                                    : "Enter the upstream model ID manually."
+                            }
                             alignLabelRow
                             action={
-                                <Button
-                                    type="button"
-                                    size="sm"
-                                    intent="info"
-                                    className="shrink-0 text-sm"
-                                    disabled={
-                                        !hasToken ||
-                                        form.baseUrl.trim() === "" ||
-                                        modelListState.status === "loading"
-                                    }
-                                    onClick={() => void handleFetchModels()}
-                                >
-                                    {modelListState.status === "loading"
-                                        ? "Fetching…"
-                                        : "Fetch models"}
-                                </Button>
+                                canPublish ? (
+                                    <Button
+                                        type="button"
+                                        size="sm"
+                                        intent="info"
+                                        className="shrink-0 text-sm"
+                                        disabled={
+                                            !hasToken ||
+                                            form.baseUrl.trim() === "" ||
+                                            modelListState.status === "loading"
+                                        }
+                                        onClick={() => void handleFetchModels()}
+                                    >
+                                        {modelListState.status === "loading"
+                                            ? "Fetching…"
+                                            : "Fetch models"}
+                                    </Button>
+                                ) : undefined
                             }
                         >
                             {modelOptions.length > 0 ? (
@@ -563,27 +569,30 @@ export function CommunityEndpointDialog({
                         />
                     </FieldStack>
 
-                    <div className="flex flex-wrap items-center gap-3">
-                        <Button
-                            type="button"
-                            intent="info"
-                            onClick={() => void handleTest()}
-                            disabled={
-                                !hasToken ||
-                                form.baseUrl.trim() === "" ||
-                                testState.status === "loading"
-                            }
-                        >
-                            {testState.status === "loading"
-                                ? "Testing…"
-                                : "Test endpoint"}
-                        </Button>
-                        {testState.status === "error" && testState.message && (
-                            <p className="text-sm text-intent-danger-text">
-                                {testState.message}
-                            </p>
-                        )}
-                    </div>
+                    {canPublish && (
+                        <div className="flex flex-wrap items-center gap-3">
+                            <Button
+                                type="button"
+                                intent="info"
+                                onClick={() => void handleTest()}
+                                disabled={
+                                    !hasToken ||
+                                    form.baseUrl.trim() === "" ||
+                                    testState.status === "loading"
+                                }
+                            >
+                                {testState.status === "loading"
+                                    ? "Testing…"
+                                    : "Test endpoint"}
+                            </Button>
+                            {testState.status === "error" &&
+                                testState.message && (
+                                    <p className="text-sm text-intent-danger-text">
+                                        {testState.message}
+                                    </p>
+                                )}
+                        </div>
+                    )}
 
                     {isShared && (
                         <PriceGroups

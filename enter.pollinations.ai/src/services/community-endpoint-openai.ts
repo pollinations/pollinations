@@ -20,7 +20,7 @@ export type CommunityEndpointTestResult = {
     billableUsage: Usage;
 };
 
-const REQUEST_TIMEOUT_MS = 10_000;
+const REQUEST_TIMEOUT_MS = 90_000;
 
 function authorizationHeaders(bearerToken: string): HeadersInit {
     return {

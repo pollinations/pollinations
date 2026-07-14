@@ -18,7 +18,6 @@ import {
     TableHead,
     TableHeaderCell,
     TableRow,
-    Tooltip,
 } from "@pollinations/ui";
 import { ModalityChip } from "@pollinations/ui/gen";
 import { useState } from "react";
@@ -497,11 +496,11 @@ function App() {
         : sortedModels;
 
     return (
-        <div className="min-h-dvh bg-app-bg text-theme-text-base">
+        <div className="min-h-dvh min-w-fit bg-app-bg text-theme-text-base">
             <AppHeader
                 navLabel="Model Monitor links"
                 autoHide
-                innerClassName="polli:max-w-6xl"
+                innerClassName="polli:max-w-6xl polli:flex-row polli:items-center polli:justify-between"
             >
                 {EXTERNAL_LINKS.map((link) => (
                     <HeaderLink key={link.href} {...link} />
@@ -510,10 +509,10 @@ function App() {
             </AppHeader>
             <main
                 className={cn(
-                    "mx-auto flex min-h-full w-full min-w-0 max-w-6xl flex-col gap-4 px-4 py-5 sm:px-6 md:py-7",
+                    "mx-auto flex min-h-full w-full min-w-fit max-w-6xl flex-col gap-4 px-4 py-5 sm:px-6 md:py-7",
                 )}
             >
-                <section className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+                <section className="flex flex-row items-end justify-between gap-3">
                     <div className="flex min-w-0 flex-col gap-1">
                         <Heading
                             as="h1"
@@ -637,15 +636,7 @@ function App() {
                                     align="right"
                                 />
                                 <SortableTh
-                                    label={
-                                        <Tooltip
-                                            triggerAs="span"
-                                            stopClickPropagation={false}
-                                            content="Completion tokens per second of full request duration. Cache hits are excluded."
-                                        >
-                                            tok/s
-                                        </Tooltip>
-                                    }
+                                    label="tok/s"
                                     sortKey="tps"
                                     currentSort={sort}
                                     onSort={handleSort}

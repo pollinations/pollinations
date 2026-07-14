@@ -36,8 +36,8 @@ export interface VertexAIImageRequest {
     height?: number;
     seed?: number;
     referenceImages?: VertexAIImageData[];
-    model?: string; // Model ID: gemini-2.5-flash-image (default) or gemini-3-pro-image-preview
-    imageSize?: string; // "1K", "2K", "4K" - supported by gemini-3-pro-image-preview and gemini-3.1-flash-image-preview
+    model?: string; // Model ID: gemini-2.5-flash-image (default) or gemini-3-pro-image
+    imageSize?: string; // "1K", "2K", "4K" - supported by gemini-3-pro-image and gemini-3.1-flash-image
     safe?: boolean; // When true, use stricter safety settings; when false, use BLOCK_ONLY_HIGH
     reasoning?: string; // "fast" | "balanced" | "pro" - controls CoT depth per model
 }
@@ -117,13 +117,13 @@ export async function generateImageWithVertexAI(
         }
 
         // Determine image size based on pixel count
-        // Both gemini-3-pro-image-preview and gemini-3.1-flash-image-preview support imageSize.
+        // Both gemini-3-pro-image and gemini-3.1-flash-image support imageSize.
         // gemini-3.1-flash-lite-image only outputs 1K (Vertex 400s on imageSize 2K/4K),
         // so it is intentionally omitted — it defaults to 1K.
         let imageSize: string | undefined;
         if (
-            (modelId === "gemini-3-pro-image-preview" ||
-                modelId === "gemini-3.1-flash-image-preview") &&
+            (modelId === "gemini-3-pro-image" ||
+                modelId === "gemini-3.1-flash-image") &&
             request.width &&
             request.height
         ) {
@@ -189,7 +189,7 @@ export async function generateImageWithVertexAI(
                 }
                 return { thinkingConfig: { thinkingLevel: "HIGH" } };
             }
-            // For all other models (e.g. gemini-2.5-flash-image, gemini-3-pro-image-preview)
+            // For all other models (e.g. gemini-2.5-flash-image, gemini-3-pro-image)
             // we do NOT send an explicit thinkingConfig to avoid 400 errors,
             // relying on the provider's defaults instead.
             return {};

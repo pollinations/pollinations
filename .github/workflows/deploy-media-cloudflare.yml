@@ -1,4 +1,4 @@
-name: Deploy media.pollinations.ai
+name: Deploy / media.pollinations.ai
 
 on:
   push:

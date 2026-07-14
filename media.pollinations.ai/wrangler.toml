@@ -33,6 +33,11 @@ pattern = "media.myceli.ai"
 zone_name = "myceli.ai"
 custom_domain = true
 
+[[env.production.routes]]
+pattern = "media.pollinations.ai"
+zone_name = "pollinations.ai"
+custom_domain = true
+
 [[env.production.r2_buckets]]
 binding = "MEDIA_BUCKET"
 bucket_name = "pollinations-media"

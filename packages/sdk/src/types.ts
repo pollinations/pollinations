@@ -576,10 +576,6 @@ export interface AuthorizeOptions {
 export interface AccountProfile {
     githubUsername: string | null;
     image: string | null;
-    /** Current tier level (e.g. `"spore"`, `"seed"`, `"flower"`, `"nectar"`). */
-    tier: string;
-    /** ISO 8601 timestamp of the next pollen refill. `null` for tiers with no refill. */
-    nextResetAt: string | null;
     /** Only returned when the API key has the `profile` permission */
     name?: string | null;
     /** Only returned when the API key has the `profile` permission */
@@ -695,7 +691,6 @@ export interface AccountKey {
     expiresAt: string | null;
     lastRequest: string | null;
     permissions: {
-        tier?: string[];
         models?: string[];
         account?: string[];
     } | null;
@@ -763,8 +758,6 @@ export interface CreatedKey {
 // Model Information
 // ============================================================================
 
-/** Model tier levels */
-export type ModelTier = "anonymous" | "seed" | "flower" | "nectar";
 /** Known model categories, in catalog display order. The canonical enum lives
  * in shared/registry (ModelInfoSchema); categories the SDK doesn't know yet
  * pass through the model catalog unfiltered and sort last. */
@@ -804,7 +797,6 @@ export interface ModelInfo {
     brand?: string;
     description?: string;
     aliases?: string[];
-    tier?: ModelTier;
     community?: boolean;
     input_modalities?: string[];
     output_modalities?: string[];
@@ -875,8 +867,9 @@ export interface UserInfo {
     sub?: string;
     name?: string;
     email?: string;
+    picture?: string;
+    preferred_username?: string;
     githubUsername?: string;
-    tier?: string;
     [key: string]: unknown;
 }
 

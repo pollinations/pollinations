@@ -21,7 +21,7 @@ import {
     WalletIcon,
     XIcon,
 } from "@pollinations/ui";
-import logoWordmarkUrl from "@pollinations/ui/assets/logo-wordmark.svg";
+import logoWordmarkUrl from "@pollinations/ui/brand/lockup-horizontal.svg";
 import type {
     ComponentType,
     CSSProperties,

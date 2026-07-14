@@ -13,7 +13,8 @@ const XAI_EDITS_URL = "https://api.x.ai/v1/images/edits";
 
 /**
  * Calls the xAI official image API.
- * modelId should be "grok-imagine-image" (basic) or "grok-imagine-image-pro" (pro).
+ * modelId should be "grok-imagine-image" (basic) or
+ * "grok-imagine-image-quality" (pro).
  *
  * When `safeParams.image` contains a reference image URL, the request is
  * routed to /v1/images/edits for image-to-image generation. xAI's edits
@@ -97,10 +98,12 @@ export async function callXaiImageAPI(
         isChild: false,
         trackingData: {
             actualModel:
+                modelId === "grok-imagine-image-quality" ||
                 modelId === "grok-imagine-image-pro"
                     ? "grok-imagine-pro"
                     : "grok-imagine",
             usage: {
+                ...(isEditMode ? { promptImageTokens: 1 } : {}),
                 completionImageTokens: 1,
             },
         },

@@ -219,7 +219,7 @@ test("catalog returns quest definitions without ledger stats", async ({
     sessionToken: _sessionToken,
 }) => {
     await mocks.enable("github");
-    await env.KV.delete("quests:catalog:v22");
+    await env.KV.delete("quests:catalog:v23");
 
     const response = await SELF.fetch(
         "http://localhost:3000/api/quests/catalog",
@@ -282,6 +282,21 @@ test("catalog returns quest definitions without ledger stats", async ({
         rewardAmount: 10,
         balanceBucket: "tier",
     });
+    expectStableCatalogFields("use_app", {
+        state: "available",
+        rewardAmount: 0.25,
+        balanceBucket: "tier",
+    });
+    expectStableCatalogFields("app_active", {
+        state: "available",
+        rewardAmount: 7,
+        balanceBucket: "tier",
+    });
+    expectStableCatalogFields("app_paid_request", {
+        state: "coming_soon",
+        rewardAmount: 15,
+        balanceBucket: "tier",
+    });
 });
 
 test("catalog includes coming-soon GitHub issue placeholder", async ({
@@ -289,7 +304,7 @@ test("catalog includes coming-soon GitHub issue placeholder", async ({
     sessionToken: _sessionToken,
 }) => {
     await mocks.enable("github");
-    await env.KV.delete("quests:catalog:v22");
+    await env.KV.delete("quests:catalog:v23");
 
     const response = await SELF.fetch(
         "http://localhost:3000/api/quests/catalog",
@@ -327,7 +342,7 @@ test("catalog excludes closed GitHub quest issues without merged PRs", async ({
     sessionToken: _sessionToken,
 }) => {
     await mocks.enable("github");
-    await env.KV.delete("quests:catalog:v22");
+    await env.KV.delete("quests:catalog:v23");
 
     seedQuestIssue(mocks.github.state, {
         issueNumber: 801,
@@ -373,7 +388,7 @@ test("account quests merge earned rewards into completed status", async ({
 }) => {
     const db = drizzle(env.DB, { schema });
     await mocks.enable("github", "tinybird");
-    await env.KV.delete("quests:catalog:v22");
+    await env.KV.delete("quests:catalog:v23");
     const user = await getOnlyUser();
 
     const createKeyResponse = await SELF.fetch(
@@ -833,7 +848,6 @@ test("D1 quest check only records the requested user", async ({
         updatedAt: new Date(),
         githubId: null,
         githubUsername: null,
-        tier: "spore",
         tierBalance: 0,
         packBalance: 0,
     });
@@ -893,7 +907,7 @@ test("six-month account quest is coming_soon and never records", async ({
     expect(rewards).toHaveLength(0);
 });
 
-test("app-listed quest records from Tinybird while other app-growth quests stay coming_soon", async ({
+test("app-listed, app-active, and use-app quests record while app_paid_request stays coming_soon", async ({
     mocks,
     sessionToken: _sessionToken,
 }) => {
@@ -915,7 +929,6 @@ test("app-listed quest records from Tinybird while other app-growth quests stay 
         updatedAt: new Date(),
         githubId: 555001,
         githubUsername: "external-user",
-        tier: "spore",
         tierBalance: 0,
         packBalance: 0,
     });
@@ -950,19 +963,24 @@ test("app-listed quest records from Tinybird while other app-growth quests stay 
             userId: schema.rewards.userId,
         })
         .from(schema.rewards);
-    // The listed-app quest is live; the other app-growth quests are still inert
+    // app_listed and app_active are live; app_paid_request is still inert
     // even though the source data qualifies.
-    for (const questId of ["app_active", "app_paid_request"]) {
-        expect(ownerRewards.some((reward) => reward.questId === questId)).toBe(
-            false,
-        );
-    }
+    expect(
+        ownerRewards.some(
+            (reward) =>
+                reward.questId === "app_active" && reward.userId === user.id,
+        ),
+    ).toBe(true);
+    expect(
+        ownerRewards.some((reward) => reward.questId === "app_paid_request"),
+    ).toBe(false);
     expect(
         ownerRewards.some(
             (reward) =>
                 reward.questId === "app_listed" && reward.userId === user.id,
         ),
     ).toBe(true);
+    // use_app is live, but the owner has no BYOP-attributed key of their own.
     expect(
         ownerRewards.some(
             (reward) =>
@@ -980,7 +998,7 @@ test("app-listed quest records from Tinybird while other app-growth quests stay 
         ),
     ).toBe(true);
 
-    // byop_login is coming_soon (inert), so the group never evaluates it.
+    // use_app is live: the external user's BYOP-attributed key earns it.
     mocks.tinybird.state.pipeCalls = [];
     await checkQuestsForUser(env, "byop-external-user");
     const externalRewards = await db
@@ -990,7 +1008,9 @@ test("app-listed quest records from Tinybird while other app-growth quests stay 
         })
         .from(schema.rewards)
         .where(eq(schema.rewards.questId, "use_app"));
-    expect(externalRewards).toHaveLength(0);
+    expect(externalRewards).toEqual([
+        { questId: "use_app", userId: "byop-external-user" },
+    ]);
 });
 
 test("quest check records model-usage rewards per modality", async ({
@@ -1234,7 +1254,6 @@ test("quest check records completed GitHub quest issue rewards through shared pa
         updatedAt: new Date(),
         githubId: otherGithubId,
         githubUsername: "other-dev",
-        tier: "spore",
         tierBalance: 0,
         packBalance: 0,
     });
@@ -1307,7 +1326,6 @@ test("two lazy GitHub issue bounties each record independently", async ({
         updatedAt: new Date(),
         githubId: secondGithubId,
         githubUsername: "second-dev",
-        tier: "spore",
         tierBalance: 0,
         packBalance: 0,
     });

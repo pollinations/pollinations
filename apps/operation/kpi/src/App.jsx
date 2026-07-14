@@ -12,7 +12,7 @@ import {
 import { useEffect, useState } from "react";
 import { getWeeklyRegistrations } from "./api/enter";
 import { getGitHubStats } from "./api/github";
-import { getWeeklyRevenue } from "./api/polar";
+import { getWeeklyRevenue } from "./api/revenue";
 import {
     getWeeklyActivations,
     getWeeklyActiveUsers,
@@ -73,12 +73,11 @@ export default function App() {
             try {
                 // Fetch non-TinyBird data in parallel
                 setActiveStep("GitHub stars");
-                const [github, d1Registrations, polarRevenue] =
-                    await Promise.all([
-                        step("GitHub stars", () => getGitHubStats()),
-                        step("Registrations", () => getWeeklyRegistrations(12)),
-                        step("Revenue", () => getWeeklyRevenue(12)),
-                    ]);
+                const [github, d1Registrations, revenue] = await Promise.all([
+                    step("GitHub stars", () => getGitHubStats()),
+                    step("Registrations", () => getWeeklyRegistrations(12)),
+                    step("Revenue", () => getWeeklyRevenue(12)),
+                ]);
 
                 // Serialize TinyBird calls to avoid rate limits (429)
                 const tinybirdHealth = await step("Health stats", () =>
@@ -111,8 +110,8 @@ export default function App() {
                 if (!d1Registrations) missing.push("D1 (registrations)");
                 if (!tinybirdWAU) missing.push("Tinybird (WAU)");
                 if (!tinybirdUsage) missing.push("Tinybird (usage)");
-                if (!polarRevenue || polarRevenue.length === 0)
-                    missing.push("Revenue (Stripe/Polar)");
+                if (!revenue || revenue.length === 0)
+                    missing.push("Revenue (Stripe)");
 
                 if (missing.length > 0) {
                     setError(
@@ -167,9 +166,9 @@ export default function App() {
                     }
                 }
 
-                // Polar: revenue, purchases
-                if (polarRevenue) {
-                    for (const row of polarRevenue) {
+                // Stripe: revenue, purchases
+                if (revenue) {
+                    for (const row of revenue) {
                         const existing = weekMap.get(row.week) || {
                             week: row.week,
                         };
@@ -593,7 +592,7 @@ export default function App() {
                         )}
                         icon={DollarSign}
                         format="currency"
-                        tooltip="Pollen pack purchases (Stripe + Polar legacy)"
+                        tooltip="Pollen pack purchases through Stripe"
                     />
                     <StatCard
                         title="GitHub Stars"

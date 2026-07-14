@@ -28,7 +28,7 @@ const GenerateImageRequestQueryParamsBaseSchema = z.object({
         )
         .meta({
             description:
-                "Model to use. **Image:** flux, zimage, gptimage, kontext, seedream5, nanobanana, nanobanana-pro, klein. **Video:** veo, seedance, seedance-pro, wan, nova-reel. See /image/models for full list.",
+                "Model to use. **Image:** flux, zimage, gptimage, kontext, seedream5, seedream5-pro, nanobanana, nanobanana-pro, klein. **Video:** veo, seedance, seedance-pro, wan, nova-reel. See /image/models for full list.",
         }),
     width: z.coerce.number().int().nonnegative().optional().default(1024).meta({
         description:
@@ -93,7 +93,7 @@ const GenerateImageRequestQueryParamsBaseSchema = z.object({
         }),
     transparent: z.coerce.boolean().optional().default(false).meta({
         description:
-            "Generate image with transparent background. Only supported by `gptimage`, `gptimage-large`, and `gpt-image-2`.",
+            "Generate image with transparent background. Only supported by `gptimage` and `gptimage-large`.",
     }),
 
     // Video-specific params

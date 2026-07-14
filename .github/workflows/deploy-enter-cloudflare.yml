@@ -1,4 +1,4 @@
-name: Deploy enter.pollinations.ai
+name: Deploy / enter.pollinations.ai
 
 on:
   push:

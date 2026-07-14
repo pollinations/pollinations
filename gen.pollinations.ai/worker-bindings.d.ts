@@ -1,5 +1,6 @@
 interface CloudflareBindings {
     ENTER: Fetcher;
+    KLEIN_VPC?: Fetcher;
     BETTER_AUTH_SECRET: string;
     TINYBIRD_INGEST_TOKEN: string;
     ELEVENLABS_API_KEY: string;
@@ -28,9 +29,9 @@ interface CloudflareBindings {
     LOG_LEVEL?: "trace" | "debug";
     LOG_FORMAT?: "text" | "json";
     TINYBIRD_INGEST_URL: string;
-    TINYBIRD_TIER_INGEST_URL?: string;
     IMAGES?: ImagesBinding;
     PORTKEY_GATEWAY_URL: string;
+    AI_GATEWAY_API_KEY?: string;
     AWS_ACCESS_KEY_ID: string;
     AWS_SECRET_ACCESS_KEY: string;
     AWS_REGION: string;
@@ -42,7 +43,10 @@ interface CloudflareBindings {
     AZURE_MYCELI_PROD_API_KEY: string;
     AZURE_MYCELI_PROD_EASTUS2_API_KEY: string;
     AZURE_MYCELI_PROD_IMG_WESTUS3_API_KEY: string;
+    AZURE_MYCELI_PROD_POLANDCENTRAL_API_KEY: string;
     AZURE_MYCELI_PROD_SWEDEN_API_KEY: string;
+    AZURE_MYCELI_PROD_UAENORTH_API_KEY: string;
+    AZURE_MYCELI_PROD_WESTUS3_API_KEY: string;
     AZURE_CONTENT_SAFETY_API_KEY: string;
     AZURE_CONTENT_SAFETY_ENDPOINT: string;
     FIREWORKS_API_KEY: string;

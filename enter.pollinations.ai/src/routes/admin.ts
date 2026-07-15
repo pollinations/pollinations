@@ -6,6 +6,10 @@ import {
     exportD1TinybirdPage,
     isD1TinybirdDatasource,
 } from "../services/d1-tinybird-sync.ts";
+import {
+    attachDeploymentDomain,
+    detachDeploymentDomain,
+} from "../services/deployment-domain.ts";
 
 export const adminRoutes = new Hono<Env>()
     .use("*", async (c, next) => {
@@ -34,6 +38,32 @@ export const adminRoutes = new Hono<Env>()
         }
 
         throw new HTTPException(401, { message: "Unauthorized" });
+    })
+    .post("/deployment-domains/:slug", async (c) => {
+        try {
+            await attachDeploymentDomain(c.env, c.req.param("slug"));
+        } catch (error) {
+            throw new HTTPException(502, {
+                message:
+                    error instanceof Error
+                        ? error.message
+                        : "Could not attach deployment domain",
+            });
+        }
+        return c.json({ success: true });
+    })
+    .delete("/deployment-domains/:slug", async (c) => {
+        try {
+            await detachDeploymentDomain(c.env, c.req.param("slug"));
+        } catch (error) {
+            throw new HTTPException(502, {
+                message:
+                    error instanceof Error
+                        ? error.message
+                        : "Could not detach deployment domain",
+            });
+        }
+        return c.body(null, 204);
     })
     .post("/trigger-d1-sync", async (c) => {
         let body: unknown;

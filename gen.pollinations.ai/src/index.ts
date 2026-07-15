@@ -27,10 +27,10 @@ import type { Env } from "@/env.ts";
 import { logger } from "@/middleware/logger.ts";
 import { audioRoutes } from "./routes/audio.ts";
 import {
-    deploymentRoutes,
     deploymentSlugFromHostname,
     serveDeployment,
-} from "./routes/deployments.ts";
+} from "./routes/deployment-assets.ts";
+import { deploymentRoutes } from "./routes/deployments.ts";
 import { buildMergedOpenApiSpec, createDocsRoutes } from "./routes/docs.ts";
 import { modelStatusRoutes } from "./routes/model-status.ts";
 import { proxyRoutes } from "./routes/proxy.ts";
@@ -115,7 +115,7 @@ app.use("*", cors(PERMISSIVE_CORS_OPTIONS))
     .use("*", async (c, next) => {
         const slug = deploymentSlugFromHostname(
             new URL(c.req.url).hostname,
-            c.env.APP_DEPLOY_HOST || "apps.pollinations.ai",
+            c.env.APP_DEPLOY_HOST || "pollinations.ai",
         );
         if (slug) return serveDeployment(c, slug, c.req.path);
         await next();

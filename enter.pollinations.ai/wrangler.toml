@@ -121,6 +121,9 @@ BETTER_AUTH_URL = "https://enter.pollinations.ai"
 STRIPE_AUTO_TOP_UP_PMC_ID = "pmc_1TVU4T7rcjS3l7trqtBuve71"
 # Single broad checkout PMC; Stripe filters methods by buyer currency/country.
 STRIPE_PMC = "pmc_1SrY4O7rcjS3l7trnGXDTuat"
+APP_DEPLOY_HOST = "pollinations.ai"
+APP_DEPLOY_SERVICE = "pollinations-app-host-production"
+APP_DEPLOY_ZONE_ID = "1815735e6400a65d924e0e9f9eb6e18a"
 [env.staging]
 
 # See production note above: explicit empty crons detaches the schedule.
@@ -167,6 +170,9 @@ STRIPE_PMC = "pmc_1SrYT96O03AauPe8ijLy6sZU"
 # team access when the exact GitHub account is unknown. Issue #11137.
 STAGING_ALLOWED_GITHUB_IDS = "36901823,5099901,235942848,248917639,241978997,118118458"
 STAGING_ALLOWED_EMAILS = "elliot@pollinations.ai"
+APP_DEPLOY_HOST = "pollinations.ai"
+APP_DEPLOY_SERVICE = "pollinations-app-host-staging"
+APP_DEPLOY_ZONE_ID = "1815735e6400a65d924e0e9f9eb6e18a"
 [env.dev]
 
 [[env.dev.routes]]

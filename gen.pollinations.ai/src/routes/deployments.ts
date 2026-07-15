@@ -9,13 +9,14 @@ import { describeRoute, resolver } from "hono-openapi";
 import { z } from "zod";
 import type { Env } from "@/env.ts";
 import { auth } from "@/middleware/auth.ts";
+import { normalizeDeploymentPath } from "./deployment-assets.ts";
 
 const MAX_FILES = 256;
 const MAX_FILE_BYTES = 5 * 1024 * 1024;
 const MAX_DEPLOYMENT_BYTES = 10 * 1024 * 1024;
 const MAX_REQUEST_BYTES = 14 * 1024 * 1024;
 const MAX_DEPLOYMENTS_PER_USER = 20;
-const DEFAULT_DEPLOY_HOST = "apps.pollinations.ai";
+const DEFAULT_DEPLOY_HOST = "pollinations.ai";
 
 const DeploymentFileSchema = z.object({
     path: z.string().min(1).max(512),
@@ -51,28 +52,6 @@ type PreparedFile = {
 
 function badRequest(message: string): never {
     throw new HTTPException(400, { message });
-}
-
-export function normalizeDeploymentPath(path: string): string {
-    if (
-        path.startsWith("/") ||
-        path.endsWith("/") ||
-        path.includes("\\") ||
-        path.includes("\0")
-    ) {
-        return badRequest(`Invalid deployment path: ${path}`);
-    }
-
-    const segments = path.split("/");
-    if (
-        segments.some(
-            (segment) =>
-                segment.length === 0 || segment === "." || segment === "..",
-        )
-    ) {
-        return badRequest(`Invalid deployment path: ${path}`);
-    }
-    return path;
 }
 
 function decodeBase64(content: string, path: string): Uint8Array {
@@ -208,6 +187,28 @@ async function deletePrefix(bucket: R2Bucket, prefix: string): Promise<void> {
     } while (cursor);
 }
 
+async function syncDeploymentDomain(
+    c: Context<Env>,
+    slug: string,
+    method: "POST" | "DELETE",
+): Promise<void> {
+    if (c.env.ENVIRONMENT !== "production" && c.env.ENVIRONMENT !== "staging") {
+        return;
+    }
+    const response = await c.env.ENTER.fetch(
+        `https://enter.pollinations.ai/api/admin/deployment-domains/${slug}`,
+        {
+            method,
+            headers: { Authorization: `Bearer ${c.env.PLN_ENTER_TOKEN}` },
+        },
+    );
+    if (!response.ok) {
+        throw new HTTPException(502, {
+            message: `Could not ${method === "POST" ? "attach" : "detach"} deployment domain`,
+        });
+    }
+}
+
 const deploymentBodyLimit = bodyLimit({
     maxSize: MAX_REQUEST_BYTES,
     onError: (c) => c.json({ error: "Deployment request exceeds 14 MB" }, 413),
@@ -301,10 +302,15 @@ export const deploymentRoutes = new Hono<Env>()
             const files = prepareFiles(body.files);
             const id = crypto.randomUUID();
             const version = crypto.randomUUID();
-            const slug = `${slugify(body.name)}-${id.slice(0, 8)}`;
+            const environmentPrefix =
+                c.env.ENVIRONMENT === "staging" ? "stg-" : "";
+            const slug = `${environmentPrefix}${slugify(body.name)}-${id.slice(0, 8)}`;
 
             await uploadFiles(c.env.APP_BUCKET, id, version, files);
+            let domainAttached = false;
             try {
+                await syncDeploymentDomain(c, slug, "POST");
+                domainAttached = true;
                 await drizzle(c.env.DB).insert(appDeployment).values({
                     id,
                     slug,
@@ -312,6 +318,11 @@ export const deploymentRoutes = new Hono<Env>()
                     version,
                 });
             } catch (error) {
+                if (domainAttached) {
+                    c.executionCtx.waitUntil(
+                        syncDeploymentDomain(c, slug, "DELETE").catch(() => {}),
+                    );
+                }
                 await deletePrefix(c.env.APP_BUCKET, `deployments/${id}/`);
                 throw error;
             }
@@ -410,6 +421,7 @@ export const deploymentRoutes = new Hono<Env>()
             const [deployment] = await drizzle(c.env.DB)
                 .select({
                     id: appDeployment.id,
+                    slug: appDeployment.slug,
                     userId: appDeployment.userId,
                 })
                 .from(appDeployment)
@@ -421,6 +433,7 @@ export const deploymentRoutes = new Hono<Env>()
                 });
             }
 
+            await syncDeploymentDomain(c, deployment.slug, "DELETE");
             await drizzle(c.env.DB)
                 .delete(appDeployment)
                 .where(eq(appDeployment.id, deployment.id));
@@ -430,57 +443,3 @@ export const deploymentRoutes = new Hono<Env>()
             return c.body(null, 204);
         },
     );
-
-export function deploymentSlugFromHostname(
-    hostname: string,
-    deploymentHost: string,
-): string | null {
-    const suffix = `.${deploymentHost.toLowerCase()}`;
-    const normalized = hostname.toLowerCase();
-    if (!normalized.endsWith(suffix)) return null;
-    const slug = normalized.slice(0, -suffix.length);
-    return slug && !slug.includes(".") ? slug : null;
-}
-
-export async function serveDeployment(
-    c: Context<Env>,
-    slug: string,
-    rawPath: string,
-): Promise<Response> {
-    if (c.req.method !== "GET" && c.req.method !== "HEAD") {
-        throw new HTTPException(405);
-    }
-
-    const [deployment] = await drizzle(c.env.DB)
-        .select({ id: appDeployment.id, version: appDeployment.version })
-        .from(appDeployment)
-        .where(eq(appDeployment.slug, slug))
-        .limit(1);
-    if (!deployment) throw new HTTPException(404);
-
-    let path = rawPath.replace(/^\/+/, "") || "index.html";
-    try {
-        path = normalizeDeploymentPath(path);
-    } catch {
-        throw new HTTPException(404);
-    }
-
-    const key = `deployments/${deployment.id}/${deployment.version}/${path}`;
-    let object = await c.env.APP_BUCKET.get(key);
-    if (!object && c.req.header("Accept")?.includes("text/html")) {
-        path = "index.html";
-        object = await c.env.APP_BUCKET.get(
-            `deployments/${deployment.id}/${deployment.version}/index.html`,
-        );
-    }
-    if (!object) throw new HTTPException(404);
-
-    const headers = new Headers();
-    object.writeHttpMetadata(headers);
-    headers.set("ETag", object.httpEtag);
-    headers.set("X-Content-Type-Options", "nosniff");
-    headers.set("Cache-Control", "no-cache");
-    return new Response(c.req.method === "HEAD" ? null : object.body, {
-        headers,
-    });
-}

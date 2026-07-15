@@ -219,16 +219,41 @@ export function communityModelDefinition(
 }
 
 function isBlockedHostname(hostname: string): boolean {
-    const host = hostname.toLowerCase();
+    const host = hostname.toLowerCase().replace(/^\[|\]$/g, "");
     if (host === "localhost" || host.endsWith(".localhost")) return true;
     if (host.endsWith(".local")) return true;
-    if (host === "::1" || host === "[::1]") return true;
-    if (host.startsWith("127.") || host.startsWith("10.")) return true;
-    if (host.startsWith("192.168.")) return true;
-    const match172 = host.match(/^172\.(\d+)\./);
-    if (match172) {
-        const second = Number(match172[1]);
-        if (second >= 16 && second <= 31) return true;
+    if (host === "::1") return true;
+    if (host === "0.0.0.0") return true;
+
+    const mappedIpv4 = host.match(/^::ffff:([0-9a-f]{1,4}):([0-9a-f]{1,4})$/);
+    const ipv4 =
+        host.match(/^::ffff:(\d+\.\d+\.\d+\.\d+)$/)?.[1] ??
+        (mappedIpv4
+            ? [
+                  Number.parseInt(mappedIpv4[1], 16) >> 8,
+                  Number.parseInt(mappedIpv4[1], 16) & 255,
+                  Number.parseInt(mappedIpv4[2], 16) >> 8,
+                  Number.parseInt(mappedIpv4[2], 16) & 255,
+              ].join(".")
+            : host);
+    const octets = ipv4.split(".").map(Number);
+    if (
+        octets.length === 4 &&
+        octets.every(
+            (octet) => Number.isInteger(octet) && octet >= 0 && octet <= 255,
+        )
+    ) {
+        const [first, second] = octets;
+        if (first === 10 || first === 127) return true;
+        if (first === 169 && second === 254) return true;
+        if (first === 172 && second >= 16 && second <= 31) return true;
+        if (first === 192 && second === 168) return true;
     }
+
+    if (host.includes(":")) {
+        if (host.startsWith("fc") || host.startsWith("fd")) return true;
+        if (host.startsWith("fe80:")) return true;
+    }
+
     return false;
 }

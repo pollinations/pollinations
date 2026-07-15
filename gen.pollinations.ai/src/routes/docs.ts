@@ -6,7 +6,10 @@ import {
     getVideoModelIds,
     IMAGE_SERVICES,
 } from "@shared/registry/image.ts";
-import { getRealtimeModelsInfo } from "@shared/registry/model-info.ts";
+import {
+    getModel3dModelsInfo,
+    getRealtimeModelsInfo,
+} from "@shared/registry/model-info.ts";
 import { TEXT_SERVICES } from "@shared/registry/text.ts";
 import type { Context } from "hono";
 import { Hono } from "hono";
@@ -14,7 +17,7 @@ import { generateSpecs } from "hono-openapi";
 import { marked } from "marked";
 import { stringify as yamlStringify } from "yaml";
 import type { Env } from "@/env.ts";
-import LOGO_WHITE_SVG from "../../../assets/logo-text-white.svg?raw";
+import LOGO_WHITE_SVG from "../../../packages/ui/src/brand/lockup-horizontal-white.svg?raw";
 import { CODE_SAMPLES, RESPONSE_EXAMPLES } from "./docs-samples.ts";
 import {
     API_REFERENCE_CUSTOM_CSS,
@@ -34,6 +37,7 @@ const FAVICON_DATA_URI =
 import BYOP_MD from "../../../BRING_YOUR_OWN_POLLEN.md?raw";
 import MCP_README from "../../../packages/mcp/README.md?raw";
 import CLI_README from "../../../packages/polli-cli/README.md?raw";
+import MODEL3D_GENERATION_MD from "../docs/3d-generation.md?raw";
 import ACCOUNT_MD from "../docs/account.md?raw";
 import AUDIO_GENERATION_MD from "../docs/audio-generation.md?raw";
 import AUTHENTICATION_MD from "../docs/authentication.md?raw";
@@ -63,6 +67,7 @@ const DOC_TAGS = {
     image: "Image",
     video: "Video",
     realtime: "Realtime",
+    model3d: "3D",
     audio: "Audio",
     embeddings: "Embeddings",
     models: "Models",
@@ -84,6 +89,7 @@ const LEGACY_DOC_TAGS: Record<string, string> = {
     "🖼️ Image": DOC_TAGS.image,
     "🎬 Video": DOC_TAGS.video,
     "🎙️ Realtime": DOC_TAGS.realtime,
+    "🧊 3D": DOC_TAGS.model3d,
     "🔊 Audio": DOC_TAGS.audio,
     "🔢 Embeddings": DOC_TAGS.embeddings,
     "🤖 Models": DOC_TAGS.models,
@@ -127,6 +133,9 @@ const DOC_TAG_ICON_HTML: Record<string, string> = {
     [DOC_TAGS.realtime]: docsIcon(
         '<path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z" /><path d="M19 10v2a7 7 0 0 1-14 0v-2" /><path d="M12 19v3" />',
     ),
+    [DOC_TAGS.model3d]: docsIcon(
+        '<path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" /><path d="m3.3 7 8.7 5 8.7-5" /><path d="M12 22V12" />',
+    ),
     [DOC_TAGS.audio]: docsIcon(
         '<path d="M11 5 6 9H2v6h4l5 4z" /><path d="M15.54 8.46a5 5 0 0 1 0 7.07" /><path d="M19.07 4.93a10 10 0 0 1 0 14.14" />',
     ),
@@ -162,9 +171,7 @@ const DOC_TAG_NAV_ICON_HTML: Record<string, string> = Object.fromEntries(
 
 const BYOP_DOCS = BYOP_MD.trim();
 
-const CLI_DOCS = CLI_README.replace(/^# .*\n+/, "")
-    .replace(/^https:\/\/github\.com\/user-attachments\/assets\/[^\n]+\n+/m, "")
-    .trim();
+const CLI_DOCS = CLI_README.replace(/^# .*\n+/, "").trim();
 
 const MCP_DOCS = MCP_README.replace(/^# .*\n+/, "").trim();
 
@@ -216,7 +223,9 @@ const embeddingModelDisplayNames = Object.keys(EMBEDDING_SERVICES).join(", ");
 const realtimeModelDisplayNames = getRealtimeModelsInfo()
     .map((model) => model.name)
     .join(", ");
-
+const model3dModelDisplayNames = getModel3dModelsInfo()
+    .map((model) => model.name)
+    .join(", ");
 function filterAliases(schema: OpenApiSchema): OpenApiSchema {
     return JSON.parse(
         JSON.stringify(schema, (key, value) => {
@@ -237,6 +246,7 @@ const MODEL_VARS: Record<string, string> = {
     IMAGE_MODELS: imageModelDisplayNames,
     VIDEO_MODELS: videoModelDisplayNames,
     REALTIME_MODELS: realtimeModelDisplayNames,
+    "3D_MODELS": model3dModelDisplayNames,
     AUDIO_MODELS: audioModelDisplayNames,
     EMBEDDING_MODELS: embeddingModelDisplayNames,
     ELEVENLABS_VOICES: ELEVENLABS_VOICES.join(", "),
@@ -253,6 +263,10 @@ const VIDEO_GENERATION_DOCS = interpolate(
 );
 const AUDIO_GENERATION_DOCS = interpolate(
     AUDIO_GENERATION_MD.trim(),
+    MODEL_VARS,
+);
+const MODEL3D_GENERATION_DOCS = interpolate(
+    MODEL3D_GENERATION_MD.trim(),
     MODEL_VARS,
 );
 const REALTIME_DOCS = [
@@ -304,6 +318,7 @@ const GEN_API_DOCS = [
     IMAGE_GENERATION_DOCS,
     VIDEO_GENERATION_DOCS,
     REALTIME_DOCS,
+    MODEL3D_GENERATION_DOCS,
     AUDIO_GENERATION_DOCS,
     EMBEDDINGS_DOCS,
     MODELS_DOCS,
@@ -420,7 +435,7 @@ function generationDocumentation(): OpenApiSchema {
                     scheme: "bearer",
                     bearerFormat: "API Key",
                     description:
-                        "API key from [enter.pollinations.ai](https://enter.pollinations.ai)",
+                        "API key from [enter.pollinations.ai](https://enter.pollinations.ai/keys)",
                 },
             },
         },
@@ -441,6 +456,7 @@ function generationDocumentation(): OpenApiSchema {
                     DOC_TAGS.image,
                     DOC_TAGS.video,
                     DOC_TAGS.realtime,
+                    DOC_TAGS.model3d,
                     DOC_TAGS.audio,
                     DOC_TAGS.embeddings,
                 ],
@@ -502,6 +518,10 @@ function generationDocumentation(): OpenApiSchema {
             {
                 name: DOC_TAGS.realtime,
                 description: stripLeadingHeading(REALTIME_DOCS),
+            },
+            {
+                name: DOC_TAGS.model3d,
+                description: stripLeadingHeading(MODEL3D_GENERATION_DOCS),
             },
             {
                 name: DOC_TAGS.audio,
@@ -602,16 +622,22 @@ async function fetchEnterSchema(c: Context<Env>) {
     return transformEnterSchema(stripGenerationPaths(schema));
 }
 
-async function fetchMediaSchema(): Promise<OpenApiSchema | undefined> {
-    const response = await fetch("https://media.pollinations.ai/openapi.json");
+async function fetchMediaSchema(
+    c: Context<Env>,
+): Promise<OpenApiSchema | undefined> {
+    // Local dev merges the local media worker (port 8790, its wrangler [dev]
+    // port) so schema changes are visible before a media prod deploy.
+    const mediaOrigin =
+        c.env.ENVIRONMENT === "development"
+            ? "http://localhost:8790"
+            : "https://media.pollinations.ai";
+    const response = await fetch(`${mediaOrigin}/openapi.json`);
     if (!response.ok) return undefined;
     const schema = (await response.json()) as OpenApiSchema;
 
     for (const [path, operations] of Object.entries(asRecord(schema.paths))) {
         if (!operations || typeof operations !== "object") continue;
-        (operations as OpenApiSchema).servers = [
-            { url: "https://media.pollinations.ai" },
-        ];
+        (operations as OpenApiSchema).servers = [{ url: mediaOrigin }];
         for (const [method, operation] of Object.entries(
             operations as OpenApiSchema,
         )) {
@@ -636,7 +662,7 @@ async function fetchMediaSchema(): Promise<OpenApiSchema | undefined> {
 function isPublicMediaRead(method: string, path: string): boolean {
     const lower = method.toLowerCase();
     if (lower !== "get" && lower !== "head") return false;
-    return path === "/{hash}" || path === "/{hash}/metadata";
+    return path === "/{id}" || path === "/{id}/metadata" || path === "/media";
 }
 
 function transformEnterSchema(schema: OpenApiSchema): OpenApiSchema {
@@ -951,7 +977,7 @@ export async function buildMergedOpenApiSpec(
     const [generationSchema, enterSchema, mediaSchema] = await Promise.all([
         getGenerationSchema(genApp),
         fetchEnterSchema(c).catch(() => undefined),
-        fetchMediaSchema().catch(() => undefined),
+        fetchMediaSchema(c).catch(() => undefined),
     ]);
     return injectSamples(
         mergeSchemas(generationSchema, enterSchema, mediaSchema),

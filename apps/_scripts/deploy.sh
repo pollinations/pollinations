@@ -44,8 +44,8 @@ echo "🌐 Subdomain: $SUBDOMAIN"
 echo "📁 Output: $OUTPUT_DIR"
 echo "🎯 Target: $DEPLOY_TARGET"
 
-# Apps ship committed brand assets (favicons/icons/OG/manifest). After an app
-# migrates to the design-system logo, regenerate them via tools/icons.
+# Apps ship committed brand assets (favicons/icons/OG/manifest).
+# Source of truth: packages/ui/src/brand/ (@pollinations/ui/brand).
 
 # Install dependencies
 echo ""
@@ -105,10 +105,14 @@ for i in $(seq 1 30); do
     sleep 10
 done
 
-# Step 7: Public cutover after origin verification
-echo ""
-echo "🔀 Cutting over public domain..."
-node "$SCRIPT_DIR/deploy-app.js" "$APP_NAME" --phase=cutover
+# Step 7: Public cutover after origin verification. Pages apps only —
+# worker apps bind <sub>.pollinations.ai via their own wrangler.toml routes,
+# so the Pages cutover (deploy-app.js) doesn't apply to them.
+if [ "$DEPLOY_TARGET" != "worker" ]; then
+    echo ""
+    echo "🔀 Cutting over public domain..."
+    node "$SCRIPT_DIR/deploy-app.js" "$APP_NAME" --phase=cutover
+fi
 
 # Step 8: Verify the public URL serves through the direct Pages custom domain
 echo ""

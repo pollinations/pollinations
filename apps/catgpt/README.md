@@ -71,7 +71,7 @@ This app has been migrated from the legacy `image.pollinations.ai` to the new `g
 **Key Changes**:
 
 - Model remains `nanobanana` (Gemini 2.5 Flash Image - high-quality, pollen-based)
-- Authentication now uses API keys from [enter.pollinations.ai](https://enter.pollinations.ai)
+- Authentication now uses API keys from [enter.pollinations.ai](https://enter.pollinations.ai/keys)
 - Better rate limiting and reliability
 - Improved image quality with `enhance=true` parameter
 

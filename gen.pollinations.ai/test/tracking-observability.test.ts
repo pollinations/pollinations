@@ -106,6 +106,7 @@ function createCommunityEndpoint(
         baseUrl: "https://community.example.test/openai",
         upstreamModel: "upstream-test-model",
         bearerTokenCiphertext: "encrypted",
+        visibility: "public",
         disabledAt: null,
         disabledReason: null,
         ...communityEndpointPrices({
@@ -147,6 +148,76 @@ function createWrongContentTypeApp(
         await next();
     });
     app.all("/upstream", track(eventType), () => response.clone());
+
+    return app;
+}
+
+// App that streams an SSE completion whose chunks arrive with real delays,
+// used to assert that endTime/responseTime cover the whole stream duration
+// rather than just time-to-first-byte.
+function createSseStreamApp(chunkDelayMs: number) {
+    const app = new Hono<Env>();
+
+    app.use("*", requestId());
+    app.use("*", logger);
+    app.use("*", async (c, next) => {
+        c.set("auth", {
+            user: undefined,
+            requireAuthorization: async () => {},
+            requireUser: () => {
+                throw new Error("user should not be required in this test");
+            },
+            requireModelAccess: () => {},
+        });
+        c.set("balance", {
+            getBalance: async () => ({ tierBalance: 1, packBalance: 0 }),
+        });
+        c.set("frontendKeyRateLimit", { consumePollen: async () => {} });
+        c.set("model", {
+            requested: "openai",
+            resolved: "openai",
+            definition: getRegistryModelDefinition("openai"),
+        });
+        await next();
+    });
+    app.post("/v1/chat/completions", track("generate.text"), () => {
+        const encoder = new TextEncoder();
+        const sse = (data: object) => `data: ${JSON.stringify(data)}\n\n`;
+        const chunks = [
+            sse({
+                model: "gpt-5-nano-2025-08-07",
+                choices: [{ delta: { content: "hel" } }],
+            }),
+            sse({
+                model: "gpt-5-nano-2025-08-07",
+                choices: [{ delta: { content: "lo" } }],
+            }),
+            sse({
+                model: "gpt-5-nano-2025-08-07",
+                choices: [],
+                usage: {
+                    prompt_tokens: 1000,
+                    completion_tokens: 500,
+                    total_tokens: 1500,
+                },
+            }),
+            "data: [DONE]\n\n",
+        ];
+        const body = new ReadableStream<Uint8Array>({
+            async start(controller) {
+                for (const chunk of chunks) {
+                    await new Promise((resolve) =>
+                        setTimeout(resolve, chunkDelayMs),
+                    );
+                    controller.enqueue(encoder.encode(chunk));
+                }
+                controller.close();
+            },
+        });
+        return new Response(body, {
+            headers: { "content-type": "text/event-stream" },
+        });
+    });
 
     return app;
 }
@@ -629,6 +700,61 @@ describe("tracking observability", () => {
             isBilledUsage: false,
         });
         expect(consumePollen).toHaveBeenCalledWith(0);
+    });
+
+    it("captures endTime at stream completion so responseTime covers the whole request", async () => {
+        const tinybirdRequests: Request[] = [];
+        vi.spyOn(globalThis, "fetch").mockImplementation(
+            async (input, init) => {
+                tinybirdRequests.push(new Request(input, init));
+                return new Response("ok");
+            },
+        );
+
+        // 4 chunks × 50ms upstream delay; first-byte capture would record ~0ms.
+        const ctx = createExecutionContext();
+        const response = await createSseStreamApp(50).fetch(
+            new Request("https://gen.pollinations.ai/v1/chat/completions", {
+                method: "POST",
+                headers: { "content-type": "application/json" },
+                body: JSON.stringify({
+                    model: "openai",
+                    stream: true,
+                    messages: [{ role: "user", content: "test" }],
+                }),
+            }),
+            {
+                ENVIRONMENT: "test",
+                LOG_LEVEL: "debug",
+                LOG_FORMAT: "text",
+                BETTER_AUTH_SECRET: "test_secret",
+                TINYBIRD_INGEST_URL:
+                    "https://tinybird.test/v0/events?name=generation_event",
+                TINYBIRD_INGEST_TOKEN: "test_tinybird_token",
+            } as CloudflareBindings,
+            ctx,
+        );
+
+        await waitOnExecutionContext(ctx);
+
+        expect(response.status).toBe(200);
+        expect(tinybirdRequests).toHaveLength(1);
+        const event = (await tinybirdRequests[0].json()) as {
+            responseTime: number;
+            startTime: string;
+            endTime: string;
+            tokenCountCompletionText: number;
+            modelUsed: string;
+            isBilledUsage: boolean;
+        };
+        expect(event.responseTime).toBeGreaterThanOrEqual(100);
+        expect(
+            new Date(event.endTime).getTime() -
+                new Date(event.startTime).getTime(),
+        ).toBeGreaterThanOrEqual(100);
+        expect(event.tokenCountCompletionText).toBe(500);
+        expect(event.modelUsed).toBe("gpt-5-nano-2025-08-07");
+        expect(event.isBilledUsage).toBe(true);
     });
 
     it("records fallbackUsed=true when Portkey served a non-primary target", async () => {

@@ -230,7 +230,12 @@
  * the `.ts` / `.tsx` files is picked up. Add `@source inline(...)` here
  * only if you introduce a class constructed dynamically (template
  * literal, runtime concatenation) that can't be detected statically.
+ *
+ * Exception: classes that apps pass INTO package components (e.g.
+ * AppHeader innerClassName) live in app source, which this build never
+ * scans — polli:* utilities used that way must be listed here.
  */
+@source inline("polli:max-w-6xl polli:flex-row");
 
 /* Respect the OS "reduce motion" setting app-wide: collapse transitions and
    animations to near-instant (the drawer slide, slider transforms, etc.). */

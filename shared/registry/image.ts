@@ -37,6 +37,7 @@ export const IMAGE_SERVICES = {
             // Gemini 2.5 Flash Image via Vertex AI
             promptTextTokens: perMillion(0.3), // per 1M tokens
             promptImageTokens: perMillion(0.3), // per 1M tokens
+            completionTextTokens: perMillion(2.5), // text output tokens
             completionImageTokens: perMillion(30), // per 1M tokens, 1290 tokens/image
         },
         title: "NanoBanana",
@@ -104,8 +105,8 @@ export const IMAGE_SERVICES = {
             // Gemini 3 Pro Image via Vertex AI
             // 1K/2K image: 1120 tokens = $0.134/image ($120/M tokens)
             // 4K image: 2000 tokens = $0.24/image
-            promptTextTokens: perMillion(1.25), // per 1M tokens
-            promptImageTokens: perMillion(1.25), // per 1M tokens
+            promptTextTokens: perMillion(2), // per 1M tokens
+            promptImageTokens: perMillion(2), // per 1M tokens
             completionTextTokens: perMillion(12), // text/reasoning output tokens
             completionImageTokens: perMillion(120), // per 1M tokens, 1120 tokens per 1K image
         },
@@ -294,12 +295,12 @@ export const IMAGE_SERVICES = {
     "gpt-image-2": {
         aliases: [],
         modelId: "gpt-image-2",
-        provider: "openai",
+        provider: "azure",
         brand: "OpenAI",
         category: "image",
         addedDate: new Date("2026-04-22").getTime(),
-        paidOnly: true,
-        priceMultiplier: 1,
+        paidOnly: false,
+        priceMultiplier: 0.75,
         cost: {
             promptTextTokens: perMillion(5), // per 1M tokens
             promptCachedTokens: perMillion(1.25), // per 1M tokens
@@ -346,7 +347,7 @@ export const IMAGE_SERVICES = {
         outputModalities: ["image"],
     },
     "veo": {
-        aliases: ["veo-3.1-fast", "video"],
+        aliases: ["veo-3.1-fast", "veo-720p", "video"],
         modelId: "veo",
         provider: "google",
         brand: "Google",
@@ -355,10 +356,31 @@ export const IMAGE_SERVICES = {
         paidOnly: true,
         priceMultiplier: 1,
         cost: {
-            completionVideoSeconds: 0.15, // per sec
+            completionVideoSeconds: 0.08, // per sec (720p video)
+            completionAudioSeconds: 0.02, // per sec when audio is enabled
         },
-        title: "Veo 3.1 Fast",
-        description: "Veo 3.1 Fast - Fast text-to-video with audio (preview)",
+        title: "Veo 3.1 Fast 720p",
+        description: "Fast text-to-video with optional audio at 720p",
+        inputModalities: ["text", "image"],
+        outputModalities: ["video"],
+        videoCapabilities: ["start_frame", "end_frame", "audio_output"],
+        maxReferenceImages: 2, // Video keyframe slots: start + end.
+    },
+    "veo-1080p": {
+        aliases: ["veo-3.1-fast-1080p", "veo-1080"],
+        modelId: "veo-1080p",
+        provider: "google",
+        brand: "Google",
+        category: "video",
+        addedDate: new Date("2026-07-15").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1,
+        cost: {
+            completionVideoSeconds: 0.1, // per sec (1080p video)
+            completionAudioSeconds: 0.02, // per sec when audio is enabled
+        },
+        title: "Veo 3.1 Fast 1080p",
+        description: "Fast text-to-video with optional audio at 1080p",
         inputModalities: ["text", "image"],
         outputModalities: ["video"],
         videoCapabilities: ["start_frame", "end_frame", "audio_output"],
@@ -396,7 +418,7 @@ export const IMAGE_SERVICES = {
         addedDate: new Date("2026-05-07").getTime(),
         priceMultiplier: 1,
         paidOnly: true,
-        // non_video_in tier @ 720p; see provider-billing/providers/replicate.md
+        // non_video_in tier @ 720p; see Economics' replicate connector guide
         cost: {
             completionVideoSeconds: 0.18,
         },
@@ -573,6 +595,7 @@ export const IMAGE_SERVICES = {
         priceMultiplier: 1,
         paidOnly: true,
         cost: {
+            promptImageTokens: 0.002, // per input image on edits
             completionImageTokens: 0.02, // per image
         },
         title: "Grok Imagine",
@@ -582,7 +605,12 @@ export const IMAGE_SERVICES = {
         maxReferenceImages: 1, // xAI image edit route forwards one input image.
     },
     "grok-imagine-pro": {
-        aliases: ["grok-aurora", "aurora", "grok-imagine-image-pro"],
+        aliases: [
+            "grok-aurora",
+            "aurora",
+            "grok-imagine-image-quality",
+            "grok-imagine-image-pro",
+        ],
         modelId: "grok-imagine-pro",
         provider: "xai",
         brand: "xAI",
@@ -591,7 +619,8 @@ export const IMAGE_SERVICES = {
         priceMultiplier: 1,
         paidOnly: true,
         cost: {
-            completionImageTokens: 0.07, // per image
+            promptImageTokens: 0.01, // per input image on edits
+            completionImageTokens: 0.05, // per 1K image
         },
         title: "Grok Imagine Pro",
         description:
@@ -610,7 +639,8 @@ export const IMAGE_SERVICES = {
         priceMultiplier: 1,
         paidOnly: true,
         cost: {
-            completionVideoSeconds: 0.05, // per sec at 720p
+            promptImageTokens: 0.002, // per start-frame image
+            completionVideoSeconds: 0.07, // per sec at 720p
         },
         title: "Grok Video Pro",
         description:
@@ -623,7 +653,7 @@ export const IMAGE_SERVICES = {
     "klein": {
         aliases: ["flux-klein"],
         modelId: "klein",
-        provider: "runpod",
+        provider: "vast",
         brand: "Black Forest Labs",
         category: "image",
         addedDate: new Date("2026-01-17").getTime(),

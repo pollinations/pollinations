@@ -884,6 +884,44 @@ test("flux image generation uses Fireworks serverless from gen", async ({
     });
 });
 
+test("gpt-image-2 rejects transparent backgrounds with 400", async ({
+    paidApiKey,
+    mocks,
+}) => {
+    await mocks.enable("tinybird");
+
+    const { response, wait } = await fetchWorker("/v1/images/generations", {
+        method: "POST",
+        headers: {
+            "content-type": "application/json",
+            authorization: `Bearer ${paidApiKey}`,
+        },
+        body: JSON.stringify({
+            model: "gpt-image-2",
+            prompt: "transparent",
+            transparent: true,
+        }),
+    });
+
+    expect(response.status).toBe(400);
+    await expect(response.json()).resolves.toMatchObject({
+        success: false,
+        error: {
+            code: "BAD_REQUEST",
+            message:
+                "Invalid parameters: Transparent backgrounds are not supported by gpt-image-2.",
+        },
+    });
+    await wait();
+
+    expect(mocks.tinybird.state.events).toHaveLength(1);
+    expect(mocks.tinybird.state.events[0]).toMatchObject({
+        eventType: "generate.image",
+        modelRequested: "gpt-image-2",
+        responseStatus: 400,
+    });
+});
+
 test("image backend validation errors return client-facing 400", async ({
     paidApiKey,
     mocks,

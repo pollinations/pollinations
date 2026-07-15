@@ -1,0 +1,23 @@
+{
+  "platform": "instagram",
+  "scope": "daily",
+  "date": "2026-07-14",
+  "period_start": "2026-07-14",
+  "period_end": "2026-07-14",
+  "generated_at": "2026-07-15T06:54:42.012635+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-07-14/images/instagram-1.jpg"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-07-14/images/instagram-2.jpg"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-07-14/images/instagram-3.jpg"
+    }
+  ],
+  "text": "16 PRs wandered into the garden today. 🌱\n\nGPT Image and FLUX.2 Klein got sturdier routes, failover, and fewer blocked-endpoint surprises. Media uploads can now grow into public tag galleries. Model Monitor learned tokens/sec, so it can report speed instead of vibes.\n\nAlso: runnable upload docs, repaired links, fewer scrollbars, and SDK retries stopped being mysterious.\n\nEverything is in the repo: github.com/pollinations/pollinations\n\n#pollinations #opensource #aitools #pixelart #creativecoding #buildinpublic #indiedev #generativeart #aiimages #developertools #openinfra #webdevelopment",
+  "metadata": {
+    "post_type": "carousel"
+  }
+}

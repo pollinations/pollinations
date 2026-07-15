@@ -155,7 +155,7 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                             tooltipAlign="start"
                             className={(copied) =>
                                 cn(
-                                    "flex min-w-0 cursor-pointer items-center gap-1.5 text-left text-base font-medium leading-none transition-colors",
+                                    "flex min-w-0 flex-1 cursor-pointer items-center gap-1.5 text-left text-base font-medium leading-none transition-colors",
                                     copied
                                         ? "text-intent-success-text"
                                         : "hover:text-theme-text-soft",
@@ -166,6 +166,10 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                                 {publicModelName}
                             </span>
                         </CopyButton>
+                        <BalanceAccessChip
+                            access={balanceAccess}
+                            className="whitespace-nowrap"
+                        />
                         <ModelStatusChips
                             showNew={showNew}
                             showAlpha={showAlpha}
@@ -173,10 +177,6 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                     </div>
                     <div className="flex min-w-0 flex-wrap items-center gap-2">
                         <ModelId name={model.name} />
-                        <BalanceAccessChip
-                            access={balanceAccess}
-                            className="whitespace-nowrap"
-                        />
                     </div>
                     {(inputModalities.length > 0 ||
                         capabilities.length > 0) && (

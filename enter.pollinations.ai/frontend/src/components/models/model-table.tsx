@@ -193,7 +193,7 @@ const MobileModelRow: FC<MobileModelRowProps> = ({ model }) => {
                                 tooltipAlign="start"
                                 className={(copied) =>
                                     cn(
-                                        "pointer-events-auto flex min-w-0 cursor-pointer items-center gap-1.5 text-left text-sm font-medium leading-none transition-colors",
+                                        "pointer-events-auto flex min-w-0 flex-1 cursor-pointer items-center gap-1.5 text-left text-sm font-medium leading-none transition-colors",
                                         copied
                                             ? "text-intent-success-text"
                                             : "hover:text-theme-text-soft",
@@ -204,13 +204,13 @@ const MobileModelRow: FC<MobileModelRowProps> = ({ model }) => {
                                     {publicModelName}
                                 </span>
                             </CopyButton>
-                        </div>
-                        <div className="flex min-w-0 flex-wrap items-center gap-2">
-                            <ModelId name={model.name} />
                             <BalanceAccessChip
                                 access={balanceAccess}
                                 className="whitespace-nowrap"
                             />
+                        </div>
+                        <div className="flex min-w-0 flex-wrap items-center gap-2">
+                            <ModelId name={model.name} />
                         </div>
                         {(inputModalities.length > 0 ||
                             capabilities.length > 0) && (

@@ -51,19 +51,37 @@ export interface VertexAIPart {
     };
 }
 
+export interface VertexAISafetyRating {
+    blocked?: boolean;
+    category?: string;
+    probability?: string;
+}
+
+export type VertexAIModality = "TEXT" | "IMAGE" | "AUDIO" | "VIDEO";
+
+export interface VertexAIModalityTokenCount {
+    modality?: VertexAIModality;
+    tokenCount?: number;
+}
+
+export interface VertexAIUsageMetadata {
+    promptTokenCount?: number;
+    candidatesTokenCount?: number;
+    totalTokenCount?: number;
+    thoughtsTokenCount?: number;
+    promptTokensDetails?: VertexAIModalityTokenCount[];
+    candidatesTokensDetails?: VertexAIModalityTokenCount[];
+}
+
 export interface VertexAIResponse {
-    candidates: Array<{
-        content: {
+    candidates?: Array<{
+        content?: {
             parts: Array<VertexAIPart>;
         };
-        finishReason: string;
+        finishReason?: string;
+        safetyRatings?: VertexAISafetyRating[];
     }>;
-    usageMetadata: {
-        promptTokenCount: number;
-        candidatesTokenCount: number;
-        totalTokenCount: number;
-        thoughtsTokenCount?: number;
-    };
+    usageMetadata?: VertexAIUsageMetadata;
 }
 
 /**
@@ -76,9 +94,9 @@ export async function generateImageWithVertexAI(
     mimeType: string | null;
     textResponse?: string;
     finishReason?: string;
-    safetyRatings?: any[];
-    usage: any;
-    fullResponse?: any;
+    safetyRatings?: VertexAISafetyRating[];
+    usage?: VertexAIUsageMetadata;
+    fullResponse?: VertexAIResponse;
 }> {
     try {
         log(
@@ -333,14 +351,14 @@ export async function generateImageWithVertexAI(
         let mimeType: string | null = null;
         let textResponse: string | null = null;
         let finishReason: string | undefined;
-        let safetyRatings: any[] | undefined;
+        let safetyRatings: VertexAISafetyRating[] | undefined;
 
         if (data.candidates && data.candidates.length > 0) {
             const candidate = data.candidates[0];
 
             // Extract finish reason and safety ratings for error reporting
             finishReason = candidate.finishReason;
-            safetyRatings = (candidate as any).safetyRatings;
+            safetyRatings = candidate.safetyRatings;
 
             // Check if content and parts exist before iterating
             // When safety blocks content, candidate.content or parts may be undefined

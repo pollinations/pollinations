@@ -43,7 +43,7 @@ Restart the model rename from current `main` with small, reviewable PRs. Preserv
 
 - [x] Phase 0 — Close the two superseded PRs and restart from current `main`
 - [ ] Phase 1 — Update the model-management skill with a mandatory confirmation gate
-- [ ] Phase 2 — Approve the rename and compatibility contract
+- [x] Phase 2 — Approve the rename and compatibility contract
 - [ ] Phase 3 — Announce the rename
 - [ ] Phase 4 — Implement the rename in a fresh compatibility-focused PR
 - [ ] Phase 5 — Update documentation in a fresh documentation-only PR
@@ -64,7 +64,7 @@ Restart the model rename from current `main` with small, reviewable PRs. Preserv
 ### Establish the new baseline
 
 - [x] Fetch the latest `main` and verify its current checks have no failures.
-- [ ] Record model, routing, registry, SDK, MCP, and documentation changes that landed after the old PRs were opened.
+- [x] Record model, routing, registry, SDK, MCP, and documentation changes that landed after the old PRs were opened.
 - [x] Create each new branch from the latest `main` using the `codex/` prefix.
 - [x] Treat current `main` as the source of truth when old PR code conflicts with it.
 
@@ -117,39 +117,43 @@ Complete this review before editing model identifiers.
 
 ### Naming decisions
 
-- [ ] Approve the canonical name for every affected model.
-- [ ] Preserve every current public name as an alias.
-- [ ] Include exact upstream identifiers as aliases where they differ and are useful.
-- [ ] Keep alias collisions as a CI failure.
-- [ ] Decide whether responses echo the requested alias or the resolved canonical name.
-- [ ] Decide how responses identify a genuinely different fallback model.
+- [x] Approve the canonical name for every affected model.
+- [x] Preserve every current public name as an alias.
+- [x] Include exact upstream identifiers as aliases where they differ and are useful.
+- [x] Keep alias collisions as a CI failure.
+- [x] Use flat canonical names without mandatory `vendor/model` prefixes.
+- [x] Use lowercase kebab-case with dots inside version numbers.
+- [x] Prefer recognizable official/versioned names; use Pollinations SKU suffixes only for intentional product or pricing tiers.
+- [x] Return the resolved canonical name in public model fields when no different fallback model served the request.
+- [x] Return the actually used model's canonical name when a genuinely different fallback model served the request.
+- [x] Keep the exact requested alias in internal requested-model tracking.
 
 ### Model confirmation matrix
 
 For every affected model, record and explicitly approve:
 
-- [ ] Old public name
-- [ ] New canonical name
-- [ ] Preserved aliases
-- [ ] Price multiplier
-- [ ] Paid-only status
-- [ ] Pollinations-operated GPU: yes or no
-- [ ] Registry provider
-- [ ] Primary route and upstream model ID
-- [ ] Fallback route and model ID, or none
+- [x] Old public name
+- [x] New canonical name
+- [x] Preserved aliases
+- [x] Price multiplier
+- [x] Paid-only status
+- [x] Pollinations-operated GPU: yes or no
+- [x] Registry provider
+- [x] Primary route and upstream model ID
+- [x] Fallback route and model ID, or none
 
 ### Scope boundaries
 
-- [ ] No family or version fields.
-- [ ] No changes to existing brand, category, or modality metadata unless a separately identified factual error must be fixed in another PR.
-- [ ] No Tinybird schema or ingestion changes.
-- [ ] No audio-second pricing changes.
+- [x] No family or version fields.
+- [x] No changes to existing brand, category, or modality metadata unless a separately identified factual error must be fixed in another PR.
+- [x] No Tinybird schema or ingestion changes.
+- [x] No audio-second pricing changes.
 
 ### Exit criteria
 
-- [ ] Every affected model has an approved row.
-- [ ] Naming and response-label behavior have no unresolved decisions.
-- [ ] Registry metadata and runtime routing agree before the rename begins.
+- [x] Every affected model has an approved row.
+- [x] Naming and response-label behavior have no unresolved decisions.
+- [x] Registry metadata and runtime routing agree before the rename begins.
 
 ---
 
@@ -344,3 +348,6 @@ effective provider = model_provider_used ?? model_provider_configured
 - 2026-07-15: Keep the two audio-second price columns in a separate PR.
 - 2026-07-15: Retain only five new runtime/policy Tinybird columns, added last with actual consumers.
 - 2026-07-15: Add `selfHosted` only when the GPU telemetry consumer is implemented.
+- 2026-07-15: Complete the 73-row rename contract through explicit confirmations in chat; the separate contract PR #12489 remains closed.
+- 2026-07-15: Confirm flat canonical names, kebab-case with dotted versions, permanent legacy aliases, and exact upstream identifiers as aliases where useful.
+- 2026-07-15: Confirm public response labels use the resolved canonical model, or the actually used canonical fallback model when different; requested aliases remain internal tracking data.

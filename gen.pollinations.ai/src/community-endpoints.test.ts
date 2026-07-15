@@ -166,6 +166,12 @@ describe("community endpoint helpers", () => {
                 githubId: COMMUNITY_ENDPOINT_DENIED_TEST_GITHUB_ID,
             }),
         ).toBe(false);
+        expect(isCommunityEndpointOwnerAllowed({ githubId: 101795137 })).toBe(
+            true,
+        );
+        expect(isCommunityEndpointOwnerAllowed({ githubId: 235942848 })).toBe(
+            false,
+        );
         expect(isCommunityEndpointOwnerAllowed({ githubId: null })).toBe(false);
     });
 

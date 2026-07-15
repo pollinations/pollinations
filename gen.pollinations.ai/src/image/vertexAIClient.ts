@@ -6,6 +6,7 @@
 import debug from "debug";
 import googleCloudAuth from "@/text/auth/googleCloudAuth.ts";
 import { getImageEnv } from "./env.ts";
+import { HttpError } from "./httpError.ts";
 import { closestByRatio } from "./utils/aspectRatio.ts";
 
 // Standard aspect ratios supported by Vertex AI Gemini image generation.
@@ -303,21 +304,12 @@ export async function generateImageWithVertexAI(
                 errorText,
             );
 
-            // Try to parse error response for content policy violations
-            let errorData = null;
-            try {
-                errorData = JSON.parse(errorText);
-            } catch (parseError) {
-                // Ignore parse errors, use raw text
-            }
-
-            const error = new Error(
+            throw new HttpError(
                 `Vertex AI API error: ${response.status} ${response.statusText} - ${errorText}`,
+                response.status,
+                { body: errorText },
+                endpoint,
             );
-            // Attach error response data for logging
-            (error as any).responseData = errorData;
-            (error as any).statusCode = response.status;
-            throw error;
         }
 
         const data = (await response.json()) as VertexAIResponse;

@@ -1,0 +1,36 @@
+{
+  "pr_number": 12461,
+  "title": "fix: track audio-second prices in Tinybird",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/12461",
+  "merged_at": "2026-07-15T10:44:50Z",
+  "labels": [
+    "DEV-BUG"
+  ],
+  "pr_body_excerpt": "- Adds prompt and completion audio-second registry price rates to generation-event pricing payloads.\n- Adds `token_price_prompt_audio_seconds` and `token_price_completion_audio_seconds` to the Tinybird datasource.\n- Adds a focused regression test proving both values are preserved.\n- Leaves model prices, costs, multipliers, usage calculations, canonical names, aliases, and other telemetry unchanged.\n\nChecks:\n- `npm run decrypt-vars`\n- `npx vitest run test/track-image.test.ts --testNamePattern=\"audio-second event prices are preserved\"`\n- `npx biome check --write shared/schemas/generation-event.ts enter.pollinations.ai/test/track-image.test.ts`\n- `tb fmt --dry-run datasources/generation_event.datasource`\n\nThe staging deployment check was skipped because no workspace-scoped staging token was available. Deployment to both Tinybird workspaces remains required after review and explicit approval.",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Audio prices find their ledger",
+    "blurb": "The accounting garden now keeps audio-second rates alongside the rest of each generation event. Two small fields, fewer mysterious gaps in the hive ledger.",
+    "summary": "Generation-event pricing payloads and the Tinybird generation_event datasource now preserve prompt and completion audio-second registry rates in token_price_prompt_audio_seconds and token_price_completion_audio_seconds.",
+    "impact": "Audio generation telemetry can now report both prompt and completion per-second prices accurately while leaving existing model prices, costs, multipliers, usage calculations, names, aliases, and other fields unchanged.",
+    "keywords": [
+      "tinybird",
+      "audio",
+      "pricing",
+      "telemetry",
+      "generation-events",
+      "observability"
+    ],
+    "visual_concept": "A cozy garden-accounting scene: Polly records two audio-duration price entries in a glowing retro ledger beside a Tinybird-inspired pixel bird and a terminal showing prompt and completion audio seconds. Small code-plants and labeled jars represent the newly preserved telemetry fields, with the monitor robot helping verify both entries.",
+    "image_prompt": "Cozy pixel art scene in a warm garden workshop where Polly, the cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, black oval eyes, pink rectangular blush, light blue rounded wings, and a tiny accountant visor, carefully writes two glowing entries labeled “PROMPT s” and “COMPLETION s” into a retro ledger beside a friendly tiny pixel bird and CRT terminal; code-plants sprout from lime green (#ecf874) pots while a helpful monitor robot checks the numbers. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, subtle CRT glow, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-15/PR-12461.jpg",
+    "prompt": "Cozy pixel art scene in a warm garden workshop where Polly, the cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, black oval eyes, pink rectangular blush, light blue rounded wings, and a tiny accountant visor, carefully writes two glowing entries labeled “PROMPT s” and “COMPLETION s” into a retro ledger beside a friendly tiny pixel bird and CRT terminal; code-plants sprout from lime green (#ecf874) pots while a helpful monitor robot checks the numbers. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, subtle CRT glow, nostalgic but beautiful."
+  },
+  "generated_at": "2026-07-15T10:45:42.620164+00:00"
+}

@@ -51,7 +51,7 @@ curl https://gen.pollinations.ai/v1/models \
   - [Account](#account)
   - [Quests](#quests)
   - [📊 Monitor](#-monitor)
-  - [🧊 3D](#-3d)
+  - [3D](#3d)
 - [⚠️ Error Responses](#-error-responses)
 - [🧩 Schemas](#-schemas)
 
@@ -1933,7 +1933,7 @@ curl "https://gen.pollinations.ai/v1/models/status" \
   -H "Authorization: Bearer $POLLINATIONS_KEY"
 ```
 
-### 🧊 3D
+### 3D
 
 #### `GET` `/3d/{prompt}` — Generate 3D Model
 

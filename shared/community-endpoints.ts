@@ -8,6 +8,10 @@ import {
 
 export const LEGACY_COMMUNITY_MODEL_PREFIX = "community/";
 export const COMMUNITY_MODEL_REWARD_RATE = 0.75;
+// Zero is free; positive owner-declared prices start at this floor.
+export const MIN_COMMUNITY_PRICE_PER_MILLION_TOKENS = 0.000001;
+export const MIN_COMMUNITY_PRICE_PER_TOKEN =
+    MIN_COMMUNITY_PRICE_PER_MILLION_TOKENS / 1_000_000;
 const BEARER_PREFIX = /^Bearer(?:\s+|$)/i;
 
 const COMMUNITY_PRICE_FIELD_BY_USAGE_TYPE = {

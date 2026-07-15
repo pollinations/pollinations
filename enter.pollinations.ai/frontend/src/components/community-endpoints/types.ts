@@ -3,6 +3,7 @@ import {
     type CommunityEndpointPriceKey,
     type CommunityEndpointPrices,
     type CommunityEndpointVisibility,
+    MIN_COMMUNITY_PRICE_PER_MILLION_TOKENS,
 } from "@shared/community-endpoints.ts";
 import type { Usage } from "@shared/registry/registry.ts";
 
@@ -99,7 +100,10 @@ export function isValidPriceInput(value: string): boolean {
     if (!trimmed) return true;
     if (trimmed.includes(",")) return false;
     const parsed = Number(trimmed);
-    return Number.isFinite(parsed) && parsed >= 0;
+    return (
+        Number.isFinite(parsed) &&
+        (parsed === 0 || parsed >= MIN_COMMUNITY_PRICE_PER_MILLION_TOKENS)
+    );
 }
 
 export function endpointToForm(endpoint: CommunityEndpoint): EndpointFormState {
@@ -125,7 +129,9 @@ function formPricesToPayload(form: EndpointFormState): CommunityEndpointPrices {
     return Object.fromEntries(
         COMMUNITY_ENDPOINT_PRICE_FIELDS.map((field) => {
             if (!isValidPriceInput(form[field.key])) {
-                throw new Error("Prices must be non-negative dot decimals");
+                throw new Error(
+                    `Prices must be 0 (free) or at least ${MIN_COMMUNITY_PRICE_PER_MILLION_TOKENS} per 1M tokens, using a dot decimal`,
+                );
             }
             return [field.key, pricePerMillionToPerToken(form[field.key])];
         }),

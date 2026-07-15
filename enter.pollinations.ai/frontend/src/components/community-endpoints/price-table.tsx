@@ -9,7 +9,10 @@ import {
     TableHeaderCell,
     TableRow,
 } from "@pollinations/ui";
-import { COMMUNITY_ENDPOINT_PRICE_FIELDS } from "@shared/community-endpoints.ts";
+import {
+    COMMUNITY_ENDPOINT_PRICE_FIELDS,
+    MIN_COMMUNITY_PRICE_PER_MILLION_TOKENS,
+} from "@shared/community-endpoints.ts";
 import { PRICE_ICON } from "../models/model-icons.tsx";
 import type { PriceKind } from "../models/types.ts";
 import {
@@ -193,7 +196,8 @@ function PriceInputCell({
                 />
                 {hasError && (
                     <p className="mt-1 text-right text-xs text-intent-danger-text">
-                        Use a non-negative dot decimal like 0.1
+                        0 (free) or at least{" "}
+                        {MIN_COMMUNITY_PRICE_PER_MILLION_TOKENS} per 1M
                     </p>
                 )}
             </div>

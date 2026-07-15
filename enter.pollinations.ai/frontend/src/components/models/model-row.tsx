@@ -153,6 +153,7 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                             copiedTooltip="Copied model id"
                             aria-label={`Copy model id ${model.name}`}
                             tooltipAlign="start"
+                            tooltipClassName="min-w-0 flex-1"
                             className={(copied) =>
                                 cn(
                                     "flex min-w-0 flex-1 cursor-pointer items-center gap-1.5 text-left text-base font-medium leading-none transition-colors",

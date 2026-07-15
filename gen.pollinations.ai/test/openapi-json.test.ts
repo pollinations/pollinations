@@ -81,6 +81,8 @@ describe("/openapi.json", () => {
         expect(Object.keys(schema.paths).length).toBeGreaterThan(0);
         // Gen-owned merged paths prove the real merge ran (not a stub/404).
         expect(schema.paths["/v1/chat/completions"]).toBeDefined();
+        expect(schema.paths["/v1/deployments"]).toBeDefined();
+        expect(schema.paths["/v1/deployments/{id}"]).toBeDefined();
         expect(schema.paths["/image/{prompt}"]).toBeDefined();
         expect(schema.paths["/account/key"]).toBeDefined();
 

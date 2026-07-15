@@ -688,6 +688,19 @@ export function Authorize() {
                                     </li>
                                 )}
                                 {keyPermissions.permissions.accountPermissions?.includes(
+                                    "deploy",
+                                ) && (
+                                    <li className="flex items-start gap-2">
+                                        <span className="w-4 shrink-0 text-theme-text-soft">
+                                            &#x1F680;
+                                        </span>
+                                        <span>
+                                            Publish static frontend apps to
+                                            Pollinations subdomains.
+                                        </span>
+                                    </li>
+                                )}
+                                {keyPermissions.permissions.accountPermissions?.includes(
                                     "keys",
                                 ) && (
                                     <li className="flex items-start gap-2">

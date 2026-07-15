@@ -1,4 +1,4 @@
-export type AccountPermission = "profile" | "usage" | "keys";
+export type AccountPermission = "profile" | "usage" | "deploy" | "keys";
 
 export type AccountPermissionApiKey = {
     permissions?: Record<string, string[]>;
@@ -16,7 +16,7 @@ export function hasDirectAccountPermission(
  */
 export function hasAccountReadPermission(
     apiKey: AccountPermissionApiKey | undefined,
-    permission: Exclude<AccountPermission, "keys">,
+    permission: "profile" | "usage",
 ): boolean {
     if (!apiKey) return true;
     return hasDirectAccountPermission(apiKey, permission);

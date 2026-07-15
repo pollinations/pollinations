@@ -37,7 +37,7 @@ export type CreateApiKey = {
     pollenBudget?: number | null;
     /** Days until expiry. null = no expiry */
     expiryDays?: number | null;
-    /** Account permissions: ["profile", "usage", "keys"]. null = no permissions */
+    /** Account permissions: ["profile", "usage", "deploy", "keys"]. null = no permissions */
     accountPermissions?: string[] | null;
     /** Allowed OAuth redirect URLs for publishable keys (RFC 8252 port-agnostic loopback) */
     redirectUris?: string[];

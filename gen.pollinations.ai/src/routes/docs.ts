@@ -71,6 +71,7 @@ const DOC_TAGS = {
     audio: "Audio",
     embeddings: "Embeddings",
     models: "Models",
+    deployments: "Deployments",
     quests: "Quests",
     mediaStorage: "Media Storage",
     account: "Account",
@@ -467,6 +468,7 @@ function generationDocumentation(): OpenApiSchema {
                 name: "Resources",
                 tags: [
                     DOC_TAGS.models,
+                    DOC_TAGS.deployments,
                     DOC_TAGS.quests,
                     DOC_TAGS.mediaStorage,
                     DOC_TAGS.account,
@@ -536,6 +538,11 @@ function generationDocumentation(): OpenApiSchema {
             {
                 name: DOC_TAGS.models,
                 description: stripLeadingHeading(MODELS_DOCS),
+            },
+            {
+                name: DOC_TAGS.deployments,
+                description:
+                    "Publish pre-built static frontend assets to isolated Pollinations subdomains.",
             },
             {
                 name: DOC_TAGS.quests,

@@ -546,7 +546,7 @@ export interface UploadResponse {
 // ============================================================================
 
 /** Account permission scopes */
-export type AccountPermission = "profile" | "usage" | "keys";
+export type AccountPermission = "profile" | "usage" | "deploy" | "keys";
 
 /** Options for building a BYOP authorization URL */
 export interface AuthorizeOptions {
@@ -700,7 +700,12 @@ export interface AccountKey {
 }
 
 /** Key-scope permissions that can be granted on created keys. */
-export type KeyAccountPermission = "profile" | "usage" | "keys" | string;
+export type KeyAccountPermission =
+    | "profile"
+    | "usage"
+    | "deploy"
+    | "keys"
+    | string;
 
 /** Options for POST /account/keys */
 export interface CreateKeyOptions {
@@ -715,7 +720,7 @@ export interface CreateKeyOptions {
     /** Pollen budget cap */
     pollenBudget?: number;
     /**
-     * Account permissions to grant (e.g. `["profile", "usage"]`).
+     * Account permissions to grant (e.g. `["profile", "usage", "deploy"]`).
      * Without this, scoped keys cannot read account state beyond their
      * own key metadata, budget, and per-key usage.
      * `"keys"` is auto-stripped server-side on the BYOP flow.

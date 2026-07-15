@@ -16,6 +16,7 @@ interface CloudflareBindings {
     KV: KVNamespace;
     IMAGE_BUCKET: R2Bucket;
     TEXT_BUCKET: R2Bucket;
+    APP_BUCKET: R2Bucket;
     DB: D1Database;
     ENVIRONMENT:
         | "local"
@@ -72,6 +73,7 @@ interface CloudflareBindings {
     POLLEN_REFILL_PER_HOUR?: number;
     POLLEN_RATE_LIMITER?: DurableObjectNamespace;
     EDGE_RATE_LIMITER?: RateLimit;
+    APP_DEPLOY_HOST?: string;
 }
 
 declare namespace Cloudflare {

@@ -106,11 +106,12 @@ describe("sanitizeAuthorizeAccountPermissions", () => {
                 "offline_access",
                 "usage",
                 "profile",
+                "deploy",
                 "keys",
                 "usage",
                 "admin",
             ]),
-        ).toEqual(["usage", "profile", "keys"]);
+        ).toEqual(["usage", "profile", "deploy", "keys"]);
     });
 
     it("returns null when no safe permissions remain", () => {

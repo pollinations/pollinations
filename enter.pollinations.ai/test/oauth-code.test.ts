@@ -80,6 +80,12 @@ describe("OAuth authorization server metadata", () => {
         ]);
         expect(meta.code_challenge_methods_supported).toEqual(["S256"]);
         expect(meta.token_endpoint_auth_methods_supported).toEqual(["none"]);
+        expect(meta.scopes_supported).toEqual([
+            "profile",
+            "usage",
+            "deploy",
+            "keys",
+        ]);
     });
 });
 

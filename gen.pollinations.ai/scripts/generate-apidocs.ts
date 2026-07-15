@@ -1048,6 +1048,7 @@ const TAG_ORDER = [
     "Embeddings",
     "Models",
     "Media Storage",
+    "Deployments",
     "Account",
 ];
 

@@ -234,6 +234,24 @@ export const communityEndpoint = sqliteTable("community_endpoint", {
   ),
 ]);
 
+export const appDeployment = sqliteTable("app_deployment", {
+  id: text("id").primaryKey(),
+  slug: text("slug").notNull().unique(),
+  userId: text("user_id")
+    .notNull()
+    .references(() => user.id, { onDelete: "cascade" }),
+  version: text("version").notNull(),
+  createdAt: integer("created_at", { mode: "timestamp" })
+    .defaultNow()
+    .notNull(),
+  updatedAt: integer("updated_at", { mode: "timestamp" })
+    .defaultNow()
+    .$onUpdate(() => /* @__PURE__ */ new Date())
+    .notNull(),
+}, (table) => [
+  index("idx_app_deployment_user_id").on(table.userId),
+]);
+
 // Drizzle relations for query builder joins
 export const userRelations = relations(user, ({ many }) => ({
   apikeys: many(apikey),
@@ -242,6 +260,7 @@ export const userRelations = relations(user, ({ many }) => ({
   stripeAutoTopUpAttempts: many(stripeAutoTopUpAttempt),
   stripeCardFingerprintAttempts: many(stripeCardFingerprintAttempt),
   communityEndpoints: many(communityEndpoint),
+  appDeployments: many(appDeployment),
 }));
 
 export const apikeyRelations = relations(apikey, ({ one }) => ({
@@ -288,6 +307,13 @@ export const stripeCardFingerprintAttemptRelations = relations(
 export const communityEndpointRelations = relations(communityEndpoint, ({ one }) => ({
   owner: one(user, {
     fields: [communityEndpoint.ownerUserId],
+    references: [user.id],
+  }),
+}));
+
+export const appDeploymentRelations = relations(appDeployment, ({ one }) => ({
+  user: one(user, {
+    fields: [appDeployment.userId],
     references: [user.id],
   }),
 }));

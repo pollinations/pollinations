@@ -30,6 +30,10 @@ bucket_name = "pollinations-images"
 binding = "TEXT_BUCKET"
 bucket_name = "pollinations-text-enter"
 
+[[r2_buckets]]
+binding = "APP_BUCKET"
+bucket_name = "pollinations-apps-development"
+
 [[durable_objects.bindings]]
 name = "POLLEN_RATE_LIMITER"
 class_name = "PollenRateLimiter"
@@ -46,6 +50,7 @@ TINYBIRD_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=g
 AWS_BEDROCK_REGION = "us-east-1"
 BEDROCK_GUARDRAIL_ID = "utmttwfzrzp8"
 BEDROCK_GUARDRAIL_VERSION = "2"
+APP_DEPLOY_HOST = "apps.pollinations.ai"
 [dev]
 port = 8788
 
@@ -71,6 +76,10 @@ custom_domain = true
 pattern = "gen.pollinations.ai"
 zone_name = "pollinations.ai"
 custom_domain = true
+
+[[env.production.routes]]
+pattern = "*.apps.pollinations.ai/*"
+zone_name = "pollinations.ai"
 
 [[env.production.services]]
 binding = "ENTER"
@@ -100,6 +109,10 @@ bucket_name = "pollinations-images"
 binding = "TEXT_BUCKET"
 bucket_name = "pollinations-text-enter"
 
+[[env.production.r2_buckets]]
+binding = "APP_BUCKET"
+bucket_name = "pollinations-apps"
+
 [[env.production.ratelimits]]
 name = "EDGE_RATE_LIMITER"
 namespace_id = "1001"
@@ -122,6 +135,7 @@ POLLEN_REFILL_PER_HOUR = 1
 AWS_BEDROCK_REGION = "us-east-1"
 BEDROCK_GUARDRAIL_ID = "utmttwfzrzp8"
 BEDROCK_GUARDRAIL_VERSION = "2"
+APP_DEPLOY_HOST = "apps.pollinations.ai"
 # Staging routes
 [env.staging]
 
@@ -137,6 +151,10 @@ custom_domain = true
 pattern = "staging.gen.pollinations.ai"
 zone_name = "pollinations.ai"
 custom_domain = true
+
+[[env.staging.routes]]
+pattern = "*.apps-staging.pollinations.ai/*"
+zone_name = "pollinations.ai"
 
 [[env.staging.services]]
 binding = "ENTER"
@@ -160,6 +178,10 @@ bucket_name = "pollinations-images"
 binding = "TEXT_BUCKET"
 bucket_name = "pollinations-text-enter"
 
+[[env.staging.r2_buckets]]
+binding = "APP_BUCKET"
+bucket_name = "pollinations-apps-staging"
+
 [[env.staging.ratelimits]]
 name = "EDGE_RATE_LIMITER"
 namespace_id = "1001"
@@ -181,6 +203,7 @@ TINYBIRD_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=g
 AWS_BEDROCK_REGION = "us-east-1"
 BEDROCK_GUARDRAIL_ID = "utmttwfzrzp8"
 BEDROCK_GUARDRAIL_VERSION = "2"
+APP_DEPLOY_HOST = "apps-staging.pollinations.ai"
 # Staging OAuth lockdown — must match enter.pollinations.ai staging allowlist.
 # Request-time gate in shared/auth/api-key.ts fails closed without it. Issue #11137.
 STAGING_ALLOWED_GITHUB_IDS = "36901823,5099901,235942848,248917639,241978997,118118458"
@@ -211,6 +234,10 @@ bucket_name = "pollinations-images"
 [[env.test.r2_buckets]]
 binding = "TEXT_BUCKET"
 bucket_name = "pollinations-text-enter"
+
+[[env.test.r2_buckets]]
+binding = "APP_BUCKET"
+bucket_name = "pollinations-apps-test"
 
 [[env.test.ratelimits]]
 name = "EDGE_RATE_LIMITER"
@@ -266,4 +293,5 @@ POLLEN_REFILL_PER_HOUR = 1
 XAI_API_KEY = "not-a-secret-workers-test-only"
 AWS_BEDROCK_REGION = "us-east-1"
 BEDROCK_GUARDRAIL_ID = "test-guardrail"
+APP_DEPLOY_HOST = "apps.test.pollinations.ai"
 BEDROCK_GUARDRAIL_VERSION = "1"

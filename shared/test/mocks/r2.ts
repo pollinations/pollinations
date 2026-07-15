@@ -30,6 +30,38 @@ export function createTestR2Bucket(): TestR2Bucket {
             customMetadata: object.customMetadata,
             storageClass: object.storageClass,
             checksums: {},
+            writeHttpMetadata(headers: Headers) {
+                if (object.httpMetadata?.contentType) {
+                    headers.set(
+                        "Content-Type",
+                        object.httpMetadata.contentType,
+                    );
+                }
+                if (object.httpMetadata?.cacheControl) {
+                    headers.set(
+                        "Cache-Control",
+                        object.httpMetadata.cacheControl,
+                    );
+                }
+                if (object.httpMetadata?.contentDisposition) {
+                    headers.set(
+                        "Content-Disposition",
+                        object.httpMetadata.contentDisposition,
+                    );
+                }
+                if (object.httpMetadata?.contentEncoding) {
+                    headers.set(
+                        "Content-Encoding",
+                        object.httpMetadata.contentEncoding,
+                    );
+                }
+                if (object.httpMetadata?.contentLanguage) {
+                    headers.set(
+                        "Content-Language",
+                        object.httpMetadata.contentLanguage,
+                    );
+                }
+            },
         } as unknown as R2Object;
     }
 
@@ -62,6 +94,29 @@ export function createTestR2Bucket(): TestR2Bucket {
                 uploaded: new Date(uploadTime),
             });
             return null;
+        },
+        list: async (options: R2ListOptions = {}) => {
+            const start = Number(options.cursor ?? "0");
+            const limit = options.limit ?? 1000;
+            const keys = [...objects.keys()]
+                .filter((key) => key.startsWith(options.prefix ?? ""))
+                .sort();
+            const selected = keys.slice(start, start + limit);
+            const next = start + selected.length;
+            return {
+                objects: selected.flatMap((key) => {
+                    const object = objects.get(key);
+                    return object ? [createR2Object(key, object)] : [];
+                }),
+                truncated: next < keys.length,
+                cursor: next < keys.length ? String(next) : undefined,
+                delimitedPrefixes: [],
+            };
+        },
+        delete: async (keys: string | string[]) => {
+            for (const key of Array.isArray(keys) ? keys : [keys]) {
+                objects.delete(key);
+            }
         },
         getObject: (key: string) => objects.get(key),
         get putCount() {

@@ -12,7 +12,7 @@ import { normalizeAllowedModelSelection } from "./model-selection.ts";
 import { PERMISSION_UI_THEME } from "./permission-ui.ts";
 
 type AccountPermissionOption = {
-    id: "profile" | "usage" | "keys";
+    id: "profile" | "usage" | "deploy" | "keys";
     label: string;
     shortLabel?: string;
     tooltip: string;
@@ -40,6 +40,12 @@ export const ACCOUNT_PERMISSIONS: readonly AccountPermissionOption[] = [
         id: "usage",
         label: "Usage",
         tooltip: "account balance and usage",
+    },
+    {
+        id: "deploy",
+        label: "Deploy Apps",
+        shortLabel: "Deploy",
+        tooltip: "publish static frontend apps",
     },
     {
         id: "keys",

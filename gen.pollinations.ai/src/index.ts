@@ -26,6 +26,11 @@ import { requestId } from "hono/request-id";
 import type { Env } from "@/env.ts";
 import { logger } from "@/middleware/logger.ts";
 import { audioRoutes } from "./routes/audio.ts";
+import {
+    deploymentRoutes,
+    deploymentSlugFromHostname,
+    serveDeployment,
+} from "./routes/deployments.ts";
 import { buildMergedOpenApiSpec, createDocsRoutes } from "./routes/docs.ts";
 import { modelStatusRoutes } from "./routes/model-status.ts";
 import { proxyRoutes } from "./routes/proxy.ts";
@@ -107,6 +112,14 @@ function redirectLegacyDocs(c: Context<Env>): Response {
 app.use("*", cors(PERMISSIVE_CORS_OPTIONS))
     .use("*", requestId())
     .use("*", logger)
+    .use("*", async (c, next) => {
+        const slug = deploymentSlugFromHostname(
+            new URL(c.req.url).hostname,
+            c.env.APP_DEPLOY_HOST || "apps.pollinations.ai",
+        );
+        if (slug) return serveDeployment(c, slug, c.req.path);
+        await next();
+    })
     .get("/robots.txt", () => robotsTxt())
     .get("/manifest.webmanifest", () => manifestResponse())
     .get("/", (c) => c.html(docsLandingHtml(c)))
@@ -142,6 +155,18 @@ app.use("*", cors(PERMISSIVE_CORS_OPTIONS))
         }
     })
     .route("/docs", createDocsRoutes(app))
+    .get("/apps/:slug", (c) =>
+        serveDeployment(c, c.req.param("slug"), "index.html"),
+    )
+    .get("/apps/:slug/*", (c) => {
+        const slug = c.req.param("slug");
+        return serveDeployment(
+            c,
+            slug,
+            c.req.path.slice(`/apps/${slug}/`.length),
+        );
+    })
+    .route("/v1/deployments", deploymentRoutes)
     .route("/v1/audio", audioRoutes)
     // Conventional, discoverable alias for the merged OpenAPI spec. JSON-only;
     // the ?format=yaml passthrough stays on /docs/open-api/generate-schema.

@@ -1,0 +1,37 @@
+{
+  "pr_number": 12499,
+  "title": "feat: promote GPT-5.6 models",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/12499",
+  "merged_at": "2026-07-15T23:07:48Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "pr_body_excerpt": "- Sets GPT-5.6 Sol, Terra, and Luna pricing to 0.5× provider cost.\n- Adds a limited-time Enter dashboard announcement with the promotional rates.\n- Updates pricing assertions and effective-price snapshots.\n- Validates all three models with live local requests and focused billing tests.",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Three moons, half price",
+    "blurb": "Sol, Terra, and Luna are getting a little extra sunlight. GPT-5.6 now lands at promotional 0.5× provider-cost rates, with the Enter dashboard carrying the good news.",
+    "summary": "GPT-5.6 Sol, Terra, and Luna now use limited-time promotional pricing at 0.5× provider cost, with the rates announced in the Enter dashboard and covered by updated billing snapshots and tests.",
+    "impact": "Developers can use all three GPT-5.6 variants at the new promotional rates, while the dashboard and billing checks keep the displayed and charged prices aligned.",
+    "keywords": [
+      "GPT-5.6",
+      "Sol",
+      "Terra",
+      "Luna",
+      "pricing",
+      "Enter dashboard",
+      "text models"
+    ],
+    "visual_concept": "Depict the three GPT-5.6 model variants as three friendly pastel celestial bodies—sun-like Sol, leafy earth-like Terra, and a soft moon-like Luna—hovering over a cozy pricing garden. Polly, wearing tiny astronomer glasses and holding a small price-tag telescope, observes their matching half-price signs beside a warm retro Enter dashboard terminal; include code-plants and flowers to make the promotion feel like a seasonal bloom.",
+    "image_prompt": "Cozy pixel art scene of Polly, a cute yellow bee with dark brown stripes, black oval eyes, pink rectangular cheek blushes, a happy smile, light blue rounded wings, and tiny astronomer glasses, using a price-tag telescope to admire three friendly pastel celestial sprites labeled “SOL”, “TERRA”, and “LUNA” above a retro Enter dashboard terminal showing simple pixel text “0.5×”. Lime green (#ecf874) code-plants and flowers bloom around the terminal in a warm cream, mint, lavender, and peach garden; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-15/PR-12499.jpg",
+    "prompt": "Cozy pixel art scene of Polly, a cute yellow bee with dark brown stripes, black oval eyes, pink rectangular cheek blushes, a happy smile, light blue rounded wings, and tiny astronomer glasses, using a price-tag telescope to admire three friendly pastel celestial sprites labeled “SOL”, “TERRA”, and “LUNA” above a retro Enter dashboard terminal showing simple pixel text “0.5×”. Lime green (#ecf874) code-plants and flowers bloom around the terminal in a warm cream, mint, lavender, and peach garden; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, nostalgic but beautiful."
+  },
+  "generated_at": "2026-07-15T23:08:41.160381+00:00"
+}

@@ -1,5 +1,118 @@
 # Pollinations Model Changelog
 
+## 2026-07-15
+
+### Added
+- `gpt-5.6-sol` (OpenAI, text) — text/image input; tool calling and reasoning.
+- `gpt-5.6-terra` (OpenAI, text) — text/image input; tool calling and reasoning.
+- `gpt-5.6-luna` (OpenAI, text) — text/image input; tool calling and reasoning.
+- `claude-fable-5` (Anthropic, text) — text/image input; tool calling; paid-only.
+- `muse-spark-1.1` (Meta, text) — text/image input; tool calling and reasoning; paid-only.
+- `Spit-fires/diffusiongemma-26b-a4b-it` (Community, text) — alpha; text input/output.
+- `morriszdweck/qwen-3.7-plus-cheap` (Community, text) — alpha; text input/output.
+- `sharktide/inferenceport-ai-gpt-4.1` (Community, text) — alpha; text input/output.
+- `Minor-fun/deepseek-v3.2` (Community, text) — alpha; text input/output.
+- `Minor-fun/deepseek-v4-flash` (Community, text) — alpha; text input/output.
+- `Spit-fires/step-3.5-flash-free` (Community, text) — alpha; text input/output.
+- `Spit-fires/gpt-oss-20b-free` (Community, text) — alpha; text input/output.
+- `MarcosFRG/glm-4.6v-flash` (Community, text) — alpha; text input/output.
+- `smplstuff/falcon-h1-tiny` (Community, text) — alpha; text input/output.
+- `Bakhshi7889/gemma-4-31b-it` (Community, text) — alpha; text input/output.
+- `vendouple/kimi-k2.6` (Community, text) — alpha; text input/output.
+- `Spit-fires/bonsai-image-512x512-4` (Community, text) — alpha; text input/output.
+- `morriszdweck/kimi-k2.6-cheap` (Community, text) — alpha; text input/output.
+- `Catniti/gpt-4.0` (Community, text) — alpha; text input/output.
+- `vendouple/deepseek-v3.2` (Community, text) — alpha; text input/output.
+- `Catniti/nemotron-3-ultra-550b-a55b` (Community, text) — alpha; text input/output.
+- `Catniti/Laguna-xs-2.1` (Community, text) — alpha; text input/output.
+- `MarcosFRG/minimax-m2.7` (Community, text) — alpha; text input/output.
+- `mikl-shortcuts/ministral-3` (Community, text) — alpha; text input/output.
+- `vendouple/gpt-5.6-sol` (Community, text) — alpha; text input/output.
+- `MarcosFRG/gemini-3.1-pro-preview` (Community, text) — alpha; text input/output.
+- `MarcosFRG/gemini-3.1-flash-lite` (Community, text) — alpha; text input/output.
+- `Circuit-Overtime/lixsearch` (Community, text) — alpha; text input/output.
+- `Catniti/openai-o4-mini` (Community, text) — alpha; text input/output.
+- `Catniti/glm-4.7-flash` (Community, text) — alpha; text input/output.
+- `vendouple/deepseek-v4-flash` (Community, text) — alpha; text input/output.
+- `solarnode-developement/hy3` (Community, text) — alpha; text input/output.
+- `Catniti/glm-4.7` (Community, text) — alpha; text input/output.
+- `Catniti/agnes-2.0-flash` (Community, text) — alpha; text input/output.
+- `vendouple/nemotron-3-ultra` (Community, text) — alpha; text input/output.
+- `solarnode-developement/free` (Community, text) — alpha; text input/output.
+- `vendouple/unlocked-deepseek` (Community, text) — alpha; text input/output.
+- `vendouple/deepseek-v4-pro` (Community, text) — alpha; text input/output.
+- `Catniti/claude-sonnet-4.6` (Community, text) — alpha; text input/output.
+- `Catniti/gpt-oss-120b` (Community, text) — alpha; text input/output.
+- `YoannDev90/diffusiongemma-26b-a4b-it` (Community, text) — alpha; text input/output.
+- `solarnode-developement/glm-5.2-cheap` (Community, text) — alpha; text input/output.
+- `MarcosFRG/glm-5.2` (Community, text) — alpha; text input/output.
+- `Catniti/gpt-5.6-luna` (Community, text) — alpha; text input/output.
+- `Spit-fires/free` (Community, text) — alpha; text input/output.
+- `vendouple/gpt-5.6-terra` (Community, text) — alpha; text input/output.
+- `vendouple/gemma-4-31B` (Community, text) — alpha; text input/output.
+- `Minor-fun/gemma-4-31B-it` (Community, text) — alpha; text input/output.
+- `Minor-fun/LongCat-2.0` (Community, text) — alpha; text input/output.
+- `seedream5-pro` (ByteDance, image) — text/image input; image output; paid-only.
+
+### Changed
+- `gpt-image-2` — now free.
+- `claude-sonnet-5` — price cut ~35%.
+- `CloudCompile/gemma-4-e2b` — price cut ~90%.
+- `MarcosFRG/mimo-v2.5` — price cut ~30%.
+- `grok-imagine-pro` — image price cut ~30%.
+- `eleven-sfx` — audio price cut 50%.
+- `qwen-tts` — audio price cut ~25%.
+- `qwen-tts-instruct` — audio price cut ~10%.
+- `mistral-small-3.2` — removed cached-input pricing.
+- `mistral` — cached-input price cut 90%.
+- `gemini-3-flash` — added prompt cache-write pricing.
+- `gemini` — added prompt cache-write pricing.
+- `gemini-flash-lite-3.1` — added prompt cache-write pricing.
+- `gemini-fast` — added prompt cache-write pricing.
+- `deepseek` — cached-input price increased ~115%.
+- `gemini-search` — added prompt cache-write pricing.
+- `gemini-search-fast` — added prompt cache-write pricing.
+- `gemini-search-large` — added prompt cache-write pricing.
+- `gemini-large` — added prompt cache-write, audio, image, and video input pricing.
+- `nova-fast` — added cached-input pricing.
+- `nova` — added cached-input pricing.
+- `glm` — cached-input price cut 50%.
+- `llama-scout` — prompt price +25%.
+- `qwen-coder-large` — added cached-input pricing.
+- `step-3.5-flash` — prompt price +10%; removed cached-input pricing.
+- `tomdacatto/ezra` — price +100%.
+- `MarcosFRG/gemma-4-31b` — price +~190%.
+- `MarcosFRG/deepseek-v4-flash` — price +~180%.
+- `MarcosFRG/gemini-2.5-flash-lite` — price +50%.
+- `MarcosFRG/deepseek-v4-pro` — price +~105%.
+- `MarcosFRG/gemini-3-flash-preview` — price +50%.
+- `MarcosFRG/minimax-m3` — price +200%.
+- `MarcosFRG/deepseek-v3.2` — price +5%.
+- `MarcosFRG/gemma-3-27b` — price +~80%.
+- `MarcosFRG/step-3.5-flash` — price +25%.
+- `nanobanana` — added completion text pricing.
+- `nanobanana-pro` — prompt input pricing increased 60%.
+- `grok-imagine` — added image-input pricing.
+- `grok-video-pro` — video output price +40%; added image-input pricing.
+
+### Removed
+- `Spit-fires/LFM2.5-230M` (was: text)
+- `smplstuff/qwen3-0.6b` (was: text)
+- `skullcrushercmd/gemini-3.1-pro-preview` (was: text)
+- `MarcosFRG/llama-4-scout` (was: text)
+- `Spit-fires/Supra-1.5-50M-instruct` (was: text)
+- `MarcosFRG/cosmosrp-2.1` (was: text)
+- `MarcosFRG/qwen3-coder-30b-a3b` (was: text)
+- `MarcosFRG/grok-4.20-non-reasoning` (was: text)
+- `MarcosFRG/grok-4.20-reasoning` (was: text)
+- `MarcosFRG/grok-4.3` (was: text)
+- `MarcosFRG/step-3.7-flash` (was: text)
+- `MarcosFRG/gpt-5-nano` (was: text)
+- `MarcosFRG/gpt-5.4-nano` (was: text)
+- `MarcosFRG/mistral-large-3` (was: text)
+- `MarcosFRG/kimi-k2.6` (was: text)
+- `sharktide/inferenceport-ai-kimi-k2.6` (was: text)
+
 ## 2026-07-01
 
 ### Added

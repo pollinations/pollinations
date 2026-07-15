@@ -1,8 +1,8 @@
 # Economics Web
 
-Economics UI for `economics.pollinations.ai`, backed by OP Tinybird pipe outputs
-in `enter.pollinations.ai/observability/`, deployed to the `pollinations_enter`
-(prod) workspace.
+Economics UI for `economics.myceli.ai` and `economics.pollinations.ai`, backed
+by OP Tinybird pipe outputs in `enter.pollinations.ai/observability/`, deployed
+to the `pollinations_enter` (prod) workspace.
 Insights include cash P&L, cash runway, credit runway, and unit economics. Raw
 tabs: Data Quality, Transactions, Pollen, and Cloud.
 
@@ -15,9 +15,9 @@ npm run dev
 
 The dev server is pinned to `http://127.0.0.1:4180`.
 
-Auth uses a password gate backed by the Vite server. The pipe-scoped Tinybird
-read token is decrypted from `../secrets/web.json` on the server and is never
-bundled or stored in the browser.
+Auth uses a password gate backed by the Cloudflare Worker. For local development,
+the pipe-scoped Tinybird read token is decrypted from `../secrets/web.json` into
+the ignored `.dev.vars` file and is never bundled or stored in the browser.
 
 ## Fixtures Mode
 
@@ -31,8 +31,7 @@ Reads OP pipes from `enter.pollinations.ai/observability/endpoints/`:
 Write-side conventions (entry_id, idempotent corrections) live in the
 Economics ingest agent's own system prompt.
 
-The app is a read-only mirror; all reads go through the local server
-proxy.
+The app is a read-only mirror; all reads go through the Worker proxy.
 
 Runway keeps the open month as two independent columns: Current Wise cash and
 the agent-authored full-month Forecast. Closed months are actuals; future months

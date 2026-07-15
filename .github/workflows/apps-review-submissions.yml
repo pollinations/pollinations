@@ -57,14 +57,17 @@ jobs:
           # For workflow_dispatch, fetch author from API (input takes priority)
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
             if [ -n "${{ github.event.inputs.issue_author }}" ]; then
-              echo "author=${{ github.event.inputs.issue_author }}" >> "$GITHUB_OUTPUT"
+              AUTHOR="${{ github.event.inputs.issue_author }}"
             else
               AUTHOR=$(gh api repos/${{ github.repository }}/issues/$ISSUE_NUM --jq .user.login)
-              echo "author=$AUTHOR" >> "$GITHUB_OUTPUT"
             fi
           else
-            echo "author=${{ github.event.issue.user.login }}" >> "$GITHUB_OUTPUT"
+            AUTHOR="${{ github.event.issue.user.login }}"
           fi
+
+          AUTHOR_ID=$(gh api "/users/$AUTHOR" --jq .id)
+          echo "author=$AUTHOR" >> "$GITHUB_OUTPUT"
+          echo "author-id=$AUTHOR_ID" >> "$GITHUB_OUTPUT"
         env:
           GH_TOKEN: ${{ steps.token.outputs.token }}
 
@@ -151,6 +154,7 @@ jobs:
           GH_TOKEN: ${{ steps.token.outputs.token }}
           ISSUE_NUMBER: ${{ steps.issue.outputs.number }}
           ISSUE_AUTHOR: ${{ steps.issue.outputs.author }}
+          ISSUE_AUTHOR_ID: ${{ steps.issue.outputs.author-id }}
           COMMENT_AUTHOR: ${{ github.event.comment.user.login || '' }}
           COMMENT_AUTHOR_ASSOCIATION: ${{ github.event.comment.author_association || '' }}
           GITHUB_EVENT_NAME: ${{ github.event_name }}

@@ -243,11 +243,13 @@ describe("community endpoint helpers", () => {
             "172.16.0.1",
             "172.31.255.255",
             "192.168.1.1",
+            "[::]",
             "[::1]",
             "[::ffff:127.0.0.1]",
             "[fc00::1]",
             "[fd00::1]",
             "[fe80::1]",
+            "[fe8f::1]",
         ]) {
             expect(() =>
                 normalizeCommunityEndpointBaseUrl(`https://${hostname}/v1`),

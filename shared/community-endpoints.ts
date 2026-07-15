@@ -222,7 +222,7 @@ function isBlockedHostname(hostname: string): boolean {
     const host = hostname.toLowerCase().replace(/^\[|\]$/g, "");
     if (host === "localhost" || host.endsWith(".localhost")) return true;
     if (host.endsWith(".local")) return true;
-    if (host === "::1") return true;
+    if (host === "::" || host === "::1") return true;
     if (host === "0.0.0.0") return true;
 
     const mappedIpv4 = host.match(/^::ffff:([0-9a-f]{1,4}):([0-9a-f]{1,4})$/);
@@ -252,7 +252,7 @@ function isBlockedHostname(hostname: string): boolean {
 
     if (host.includes(":")) {
         if (host.startsWith("fc") || host.startsWith("fd")) return true;
-        if (host.startsWith("fe80:")) return true;
+        if (/^fe8[0-9a-f]:/.test(host)) return true;
     }
 
     return false;

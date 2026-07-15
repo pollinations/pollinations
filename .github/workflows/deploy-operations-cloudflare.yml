@@ -7,6 +7,7 @@ on:
     paths:
       - "apps/operation/kpi/**"
       - "apps/operation/quest-dashboard/**"
+      - "apps/operation/economics/**"
       - "apps/operation/observability/**"
       - ".github/workflows/deploy-operations-cloudflare.yml"
   workflow_dispatch:
@@ -20,6 +21,7 @@ on:
           - all
           - kpi
           - quest-dashboard
+          - economics
           - observability
 
 permissions:
@@ -47,7 +49,7 @@ jobs:
         run: |
           set -euo pipefail
 
-          SUPPORTED_APPS="kpi quest-dashboard observability"
+          SUPPORTED_APPS="kpi quest-dashboard economics observability"
 
           if [ "$EVENT_NAME" = "workflow_dispatch" ]; then
             if [ "$SELECTED_APP" = "all" ]; then
@@ -68,7 +70,7 @@ jobs:
               APPS=$(
                 sed -n 's|^apps/operation/\([^/]*\)/.*|\1|p' changed.txt \
                   | sort -u \
-                  | grep -E '^(kpi|quest-dashboard|observability)$' \
+                  | grep -E '^(kpi|quest-dashboard|economics|observability)$' \
                   | xargs || true
               )
             fi
@@ -110,16 +112,21 @@ jobs:
           node-version: "24"
 
       - name: Setup SOPS
-        if: matrix.app == 'kpi' || matrix.app == 'observability'
+        if: matrix.app == 'kpi' || matrix.app == 'economics' || matrix.app == 'observability'
         uses: nhedger/setup-sops@v2
 
       - name: Verify Docker
         if: matrix.app == 'observability'
         run: docker info
 
-      - name: Install dependencies
+      - name: Install operation app dependencies
+        if: matrix.app != 'economics'
         run: npm ci
         working-directory: ./apps/operation/${{ matrix.app }}
+
+      - name: Install Economics dependencies
+        if: matrix.app == 'economics'
+        run: npm ci
 
       - name: Deploy KPI Worker
         if: matrix.app == 'kpi'
@@ -132,6 +139,25 @@ jobs:
           SOPS_AGE_KEY: ${{ secrets.SOPS_AGE_KEY }}
         run: sops exec-file --no-fifo secrets/env.json 'npx wrangler secret bulk {}'
         working-directory: ./apps/operation/kpi
+
+      - name: Deploy Economics Worker
+        if: matrix.app == 'economics'
+        env:
+          SOPS_AGE_KEY: ${{ secrets.SOPS_AGE_KEY_ECONOMICS }}
+        run: sops exec-file --no-fifo secrets/web.json 'npm run deploy -- --secrets-file {}'
+        working-directory: ./apps/operation/economics
+
+      - name: Verify Economics Myceli origin
+        if: matrix.app == 'economics'
+        run: |
+          curl --fail --retry 12 --retry-delay 10 --retry-all-errors \
+            https://economics.myceli.ai/api/auth/session
+
+      - name: Verify Economics Pollinations public URL
+        if: matrix.app == 'economics'
+        run: |
+          curl --fail --retry 12 --retry-delay 10 --retry-all-errors \
+            https://economics.pollinations.ai/api/auth/session
 
       - name: Deploy Quest Dashboard Worker
         if: matrix.app == 'quest-dashboard'

@@ -7,11 +7,13 @@
 
 # API docs
 
+Also available at [https://gen.pollinations.ai/docs](https://gen.pollinations.ai/docs)
+
 **Version:** `0.3.0` · **OpenAPI:** `3.1.0` · **Base URL:** `https://gen.pollinations.ai`
 
 ## 🚀 Getting Started
 
-**1. Get an API key** at [enter.pollinations.ai](https://enter.pollinations.ai). Two key types are available:
+**1. Get an API key** at [enter.pollinations.ai](https://enter.pollinations.ai/keys). Two key types are available:
 
 - `sk_*` — secret key for backend use (full account access)
 - `pk_*` — publishable key, safe to ship in browsers and mobile apps
@@ -49,7 +51,7 @@ curl https://gen.pollinations.ai/v1/models \
   - [Account](#account)
   - [Quests](#quests)
   - [📊 Monitor](#-monitor)
-  - [🧊 3D](#-3d)
+  - [3D](#3d)
 - [⚠️ Error Responses](#-error-responses)
 - [🧩 Schemas](#-schemas)
 
@@ -78,7 +80,7 @@ The header is preferred for everything except browser flows that can't set custo
 
 | Endpoint | Auth |
 |---|---|
-| `GET /{hash}`, `GET /{hash}/metadata`, `HEAD /{hash}` | None — content-addressed media URLs are public reads |
+| `GET /{id}`, `GET /{id}/metadata`, `HEAD /{id}` | None — media URLs are public reads |
 | `GET /models`, `GET /v1/models`, `GET /image/models`, `GET /text/models`, `GET /audio/models`, `GET /embeddings/models` | None — model catalogue is public. Sending a bearer key returns the same data; some endpoints add per-account fields when authenticated. |
 | Everything else | Bearer key required unless the endpoint documents `?key=` support |
 
@@ -86,7 +88,7 @@ The header is preferred for everything except browser flows that can't set custo
 
 ## 🔓 Sign in with Pollinations (OAuth 2.1)
 
-Third-party apps can obtain an API key on behalf of a Pollinations user — the OAuth 2.1 authorization-code flow with PKCE (S256) for web apps, or the device flow (RFC 8628) for CLIs. Register a **publishable App Key** (`pk_…`) with your redirect URIs at [enter.pollinations.ai](https://enter.pollinations.ai); the `pk_` key is your `client_id` (public client, no secret), and the issued access token is an opaque `sk_` key bound to the budget, expiry, and scopes the user approved.
+Third-party apps can obtain an API key on behalf of a Pollinations user — the OAuth 2.1 authorization-code flow with PKCE (S256) for web apps, or the device flow (RFC 8628) for CLIs. Register a **publishable App Key** (`pk_…`) with your redirect URIs at [enter.pollinations.ai](https://enter.pollinations.ai/keys); the `pk_` key is your `client_id` (public client, no secret), and the issued access token is an opaque `sk_` key bound to the budget, expiry, and scopes the user approved.
 
 Endpoints are discoverable via RFC 8414 metadata — resolve them from there rather than hardcoding:
 
@@ -221,7 +223,7 @@ curl -X POST "https://gen.pollinations.ai/v1/images/edits" \
 
 Repeat `-F "image=@…"` to pass multiple reference images on models that accept them (`seedream`, `nanobanana`, `klein`).
 
-**Upload arbitrary media** to the content-addressed store. Returns a `https://media.pollinations.ai/<hash>` URL you can pass anywhere a remote image, audio, or video URL is accepted.
+**Upload arbitrary media** to the media store (a separate host: `media.pollinations.ai`). Returns a `https://media.pollinations.ai/<id>` URL you can pass anywhere a remote image, audio, or video URL is accepted.
 
 ```bash
 curl -X POST "https://media.pollinations.ai/upload" \
@@ -229,7 +231,7 @@ curl -X POST "https://media.pollinations.ai/upload" \
   -F "file=@./asset.png"
 ```
 
-The hash is derived from the bytes **and** the filename, so the same content uploaded under different names yields different URLs. Files are retained for 30 days. Re-uploading resets the timer, while the `duplicate` field reports whether the file already existed. Retrieving a file keeps it active.
+Each upload gets its own unique id — re-uploading the same bytes yields a new URL. Files use a 30-day lifecycle from upload or the latest refresh. Retrieving the file body refreshes that lifecycle only when the object is at least 15 days old; metadata and HEAD requests do not refresh it. An optional `-F "tags=..."` field publishes the upload to those tags' public galleries (`GET https://media.pollinations.ai/media?tag=...`); untagged uploads stay unlisted.
 
 ## 💡 Tips
 
@@ -809,7 +811,7 @@ curl -X POST "https://gen.pollinations.ai/v1/embeddings" \
 
 #### `GET` `/v1/models` — List Models (OpenAI-compatible)
 
-Returns available models (text, community text, image, realtime, audio, embeddings) in the OpenAI-compatible format (`{object: "list", data: [...]}`). Use this endpoint if you're using an OpenAI SDK. For richer metadata including pricing and capabilities, use `/models`, `/text/models`, `/image/models`, `/audio/models`, or `/embeddings/models` instead. When authenticated: models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance.
+Returns available models (text, community text, image, realtime, audio, embeddings) in the OpenAI-compatible format (`{object: "list", data: [...]}`). Use this endpoint if you're using an OpenAI SDK. For richer metadata including pricing and capabilities, use `/models`, `/text/models`, `/image/models`, `/audio/models`, or `/embeddings/models` instead. When authenticated: the owner's private community models are included, models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance.
 
 📤 **Response** · `200` · `application/json` — Success
 
@@ -866,7 +868,7 @@ curl "https://gen.pollinations.ai/v1/models" \
 
 #### `GET` `/models` — List Models
 
-Returns all available text, community text, image, video, 3D, realtime, audio, and embedding models with pricing, capabilities, and metadata. When authenticated: models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance.
+Returns all available text, community text, image, video, 3D, realtime, audio, and embedding models with pricing, capabilities, and metadata. When authenticated: the owner's private community models are included, models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance.
 
 📤 **Response** · `200` · `application/json` — Success
 
@@ -926,7 +928,7 @@ curl "https://gen.pollinations.ai/video/models" \
 
 #### `GET` `/text/models` — List Text Models (Detailed)
 
-Returns all available text generation and community text models with pricing, capabilities, and metadata including context window size, supported modalities, and tool support. When authenticated: models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance.
+Returns all available text generation and community text models with pricing, capabilities, and metadata including context window size, supported modalities, and tool support. When authenticated: the owner's private community models are included, models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance.
 
 📤 **Response** · `200` · `application/json` — Success
 
@@ -956,17 +958,30 @@ curl "https://gen.pollinations.ai/audio/models" \
 
 #### `POST` `/upload` — Upload media
 
-Upload an image, audio, or video file. Supports multipart/form-data, raw binary, or base64 JSON. Returns a content-addressed hash URL. The hash includes the filename, so the same content with different filenames gets different URLs. Files are retained for 30 days; re-uploading resets the timer.
+Upload an image, audio, or video file via multipart/form-data (field `file`) or application/json (base64 `data`). Returns a unique id and its retrieval URL; each upload gets its own id (re-uploading the same bytes yields a new one). Files are retained for 30 days.
+
+**Tags publish.** An optional `tags` field publishes the upload into each tag's public gallery (GET /media?tag=…), where anyone can see it. Untagged uploads stay unlisted: reachable only by their unguessable id URL, never listed anywhere. **Alpha:** the publish tagging is new and may still change.
+
+📥 **Request body** · `application/json`
+
+| Field | Type | Description |
+|---|---|---|
+| `data` * | `string` | Base64-encoded file bytes (with or without a data: prefix). |
+| `contentType` | `string` | MIME type; defaults to application/octet-stream. |
+| `name` | `string` | Filename; used for the download Content-Disposition. |
+| `tags` | `string` \| `string`[] | Tags (publish the upload to those tags' public galleries): a comma-separated string or an array of strings. |
+
+<sub>`*` = required field</sub>
 
 📤 **Response** · `200` · `application/json` — Upload successful
 
 | Field | Type | Description |
 |---|---|---|
-| `id` * | `string` | — |
-| `url` * | `string` | — |
+| `id` * | `string` | Unique media id (also the retrieval id) |
+| `url` * | `string` | Public retrieval URL |
 | `contentType` * | `string` | — |
-| `size` * | `integer` | — |
-| `duplicate` * | `boolean` | — |
+| `size` * | `integer` | File size in bytes |
+| `tags` | `string`[] | Tags the upload was published with; present only when tagged |
 
 <sub>`*` = required field</sub>
 
@@ -980,15 +995,85 @@ curl -X POST "https://media.pollinations.ai/upload" \
 
 ---
 
-#### `GET` `/{hash}` — Retrieve media
+#### `GET` `/media` — List a public tag gallery
 
-Get a file by its content hash. Access keeps files from expiring.
+List the public gallery for a tag: every published item carrying that tag, any owner, newest first. Tagging an upload is what publishes it, so galleries are fully public — no API key needed. `tag` is required.
+
+Items reference storage with a 30-day lifecycle. A GET refreshes the lifecycle once an object is at least 15 days old. An expired item keeps its catalog entry, but its url 404s. **Alpha:** this endpoint is new and its API may still change.
 
 ⚙️ **Parameters**
 
 | Param | In | Type | Description |
 |---|---|---|---|
-| `hash` * | `path` | `string` | — |
+| `tag` * | `query` | `string` | Required. The public gallery to list: items carrying this tag, any owner. |
+| `limit` | `query` | `integer` | Page size, 1–100. Omitted → 20. · range: `1…100` |
+| `cursor` | `query` | `string` | Opaque pagination cursor from a previous response's nextCursor. |
+
+<sub>`*` = required parameter</sub>
+
+📤 **Response** · `200` · `application/json` — Page of media items
+
+| Field | Type | Description |
+|---|---|---|
+| `items` * | `object`[] | — |
+| `items[].id` * | `string` | Catalog item id |
+| `items[].url` * | `string` | Public retrieval URL |
+| `items[].contentType` * | `string` | — |
+| `items[].size` * | `integer` \| `null` | File size in bytes |
+| `items[].tags` * | `string`[] | — |
+| `items[].createdAt` * | `string` | ISO-8601 timestamp |
+| `nextCursor` * | `string` \| `null` | Opaque cursor for the next page, null when exhausted. Treat it as a token: pass it back verbatim as `?cursor=` to fetch the next page — do not parse or construct it. |
+| `hasMore` * | `boolean` | true when more pages exist (nextCursor is non-null). Loop while hasMore is true. |
+
+<sub>`*` = required field</sub>
+
+💻 **Example**
+
+```bash
+curl "https://media.pollinations.ai/media?tag=:tag&limit=:limit"
+```
+
+---
+
+#### `DELETE` `/media/{id}` — Delete media
+
+Delete a published media item you own: the file, its catalog entry, and all its tags are removed, so it disappears from galleries and its URL 404s. Requires your **secret (`sk_`)** API key. Untagged uploads were never published, have no catalog entry, and can't be deleted — they use the same 30-day lifecycle, refreshed by a GET once they are at least 15 days old. **Alpha:** this endpoint is new and its API may still change.
+
+⚙️ **Parameters**
+
+| Param | In | Type | Description |
+|---|---|---|---|
+| `id` * | `path` | `string` | Media id (from the upload response or GET /media). |
+
+<sub>`*` = required parameter</sub>
+
+📤 **Response** · `200` · `application/json` — Item deleted
+
+| Field | Type | Description |
+|---|---|---|
+| `deleted` * | `"true"` | — |
+| `id` * | `string` | Id of the deleted media item |
+
+<sub>`*` = required field</sub>
+
+💻 **Example**
+
+```bash
+curl -X DELETE "https://media.pollinations.ai/media/550e8400-e29b-41d4-a716-446655440000" \
+  -H "Authorization: Bearer $POLLINATIONS_KEY"
+```
+
+---
+
+#### `GET` `/{id}` — Retrieve media
+
+Get a file by its id. Access keeps files from expiring.
+
+⚙️ **Parameters**
+
+| Param | In | Type | Description |
+|---|---|---|---|
+| `id` * | `path` | `string` | — |
 
 <sub>`*` = required parameter</sub>
 
@@ -997,12 +1082,12 @@ Get a file by its content hash. Access keeps files from expiring.
 💻 **Example**
 
 ```bash
-curl "https://media.pollinations.ai/a1b2c3d4e5f60718"
+curl "https://media.pollinations.ai/550e8400-e29b-41d4-a716-446655440000"
 ```
 
 ---
 
-#### `HEAD` `/{hash}` — Check if media exists
+#### `HEAD` `/{id}` — Check if media exists
 
 Check existence and metadata without downloading the file.
 
@@ -1010,29 +1095,29 @@ Check existence and metadata without downloading the file.
 
 | Param | In | Type | Description |
 |---|---|---|---|
-| `hash` * | `path` | `string` | — |
+| `id` * | `path` | `string` | — |
 
 <sub>`*` = required parameter</sub>
 
-📤 **Response** · `200` — File exists (headers include Content-Type, Content-Length, X-Content-Hash)
+📤 **Response** · `200` — File exists (headers include Content-Type, Content-Length, X-Content-Id)
 
 💻 **Example**
 
 ```bash
-curl -X HEAD "https://media.pollinations.ai/a1b2c3d4e5f60718"
+curl -X HEAD "https://media.pollinations.ai/550e8400-e29b-41d4-a716-446655440000"
 ```
 
 ---
 
-#### `GET` `/{hash}/metadata` — Get file metadata
+#### `GET` `/{id}/metadata` — Get file metadata
 
-Return file metadata (hash, content type, size, upload timestamp) as JSON without downloading the file body.
+Return file metadata (id, content type, size, upload timestamp) as JSON without downloading the file body.
 
 ⚙️ **Parameters**
 
 | Param | In | Type | Description |
 |---|---|---|---|
-| `hash` * | `path` | `string` | — |
+| `id` * | `path` | `string` | — |
 
 <sub>`*` = required parameter</sub>
 
@@ -1040,24 +1125,24 @@ Return file metadata (hash, content type, size, upload timestamp) as JSON withou
 
 | Field | Type | Description |
 |---|---|---|
-| `hash` * | `string` | — |
+| `id` * | `string` | Unique media id |
 | `contentType` * | `string` | — |
-| `size` * | `integer` | — |
-| `uploadedAt` | `string` | — |
+| `size` * | `integer` | File size in bytes |
+| `uploadedAt` | `string` | ISO-8601 upload timestamp, when recorded |
 
 <sub>`*` = required field</sub>
 
 💻 **Example**
 
 ```bash
-curl "https://media.pollinations.ai/a1b2c3d4e5f60718/metadata"
+curl "https://media.pollinations.ai/550e8400-e29b-41d4-a716-446655440000/metadata"
 ```
 
 ### Account
 
 #### `GET` `/account/my-models` — List My Models
 
-List invite-only community text models owned by the authenticated account. API keys require `account:keys` and an account with `communityEndpointsAllowed: true`; dashboard sessions can manage models directly when enabled.
+List private and public community text models owned by the authenticated account. API keys require `account:keys`.
 
 📤 **Response** · `200` · `application/json` — Registered community text models
 
@@ -1070,6 +1155,7 @@ List invite-only community text models owned by the authenticated account. API k
 | `data[].description` * | `string` \| `null` | — |
 | `data[].baseUrl` * | `string` | — |
 | `data[].upstreamModel` * | `string` | — |
+| `data[].visibility` * | `"private"` \| `"public"` | "private": owner-only, shown only to the owner, with no owner-set price. "public": anyone and listed in the catalog; it may be free or priced. Publishing requires an allowlisted account. |
 | `data[].promptTextPrice` * | `number` | — |
 | `data[].promptCachedPrice` * | `number` | — |
 | `data[].promptCacheWritePrice` * | `number` | — |
@@ -1097,7 +1183,7 @@ curl "https://gen.pollinations.ai/account/my-models" \
 
 #### `POST` `/account/my-models` — Create My Model
 
-Register an invite-only community text model. API keys require `account:keys` and an account with `communityEndpointsAllowed: true`. The upstream bearer token is encrypted and never returned.
+Register a private or public community text model. Private is the default. Public models require an allowlisted account and may be free or priced. API keys require `account:keys`. The upstream bearer token is encrypted and never returned.
 
 📥 **Request body** · `application/json`
 
@@ -1108,14 +1194,15 @@ Register an invite-only community text model. API keys require `account:keys` an
 | `baseUrl` * | `string · uri` | — |
 | `upstreamModel` | `string` | length: `1…253` |
 | `bearerToken` * | `string` | — |
-| `promptTextPrice` | `number` | default: `0` |
-| `promptCachedPrice` | `number` | default: `0` |
-| `promptCacheWritePrice` | `number` | default: `0` |
-| `promptAudioPrice` | `number` | default: `0` |
-| `promptImagePrice` | `number` | default: `0` |
-| `completionTextPrice` | `number` | default: `0` |
-| `completionReasoningPrice` | `number` | default: `0` |
-| `completionAudioPrice` | `number` | default: `0` |
+| `visibility` | `"private"` \| `"public"` | "private": owner-only, shown only to the owner, with no owner-set price. "public": anyone and listed in the catalog; it may be free or priced. Publishing requires an allowlisted account. · default: `"private"` |
+| `promptTextPrice` | `number` | — |
+| `promptCachedPrice` | `number` | — |
+| `promptCacheWritePrice` | `number` | — |
+| `promptAudioPrice` | `number` | — |
+| `promptImagePrice` | `number` | — |
+| `completionTextPrice` | `number` | — |
+| `completionReasoningPrice` | `number` | — |
+| `completionAudioPrice` | `number` | — |
 
 <sub>`*` = required field</sub>
 
@@ -1129,6 +1216,7 @@ Register an invite-only community text model. API keys require `account:keys` an
 | `description` * | `string` \| `null` | — |
 | `baseUrl` * | `string` | — |
 | `upstreamModel` * | `string` | — |
+| `visibility` * | `"private"` \| `"public"` | "private": owner-only, shown only to the owner, with no owner-set price. "public": anyone and listed in the catalog; it may be free or priced. Publishing requires an allowlisted account. |
 | `promptTextPrice` * | `number` | — |
 | `promptCachedPrice` * | `number` | — |
 | `promptCacheWritePrice` * | `number` | — |
@@ -1158,7 +1246,7 @@ curl -X POST "https://gen.pollinations.ai/account/my-models" \
 
 #### `POST` `/account/my-models/models` — List Upstream Models
 
-Fetch OpenAI-compatible upstream model IDs before registering a My Models endpoint. API keys require `account:keys` and an account with `communityEndpointsAllowed: true`.
+Fetch OpenAI-compatible upstream model IDs before publishing a My Models endpoint. Requires community model publishing approval; API keys also require `account:keys`.
 
 📥 **Request body** · `application/json`
 
@@ -1190,7 +1278,7 @@ curl -X POST "https://gen.pollinations.ai/account/my-models/models" \
 
 #### `POST` `/account/my-models/test` — Test My Model Endpoint
 
-Test an OpenAI-compatible upstream model before registering it. API keys require `account:keys` and an account with `communityEndpointsAllowed: true`.
+Test an OpenAI-compatible upstream model before publishing it. Requires community model publishing approval; API keys also require `account:keys`.
 
 📥 **Request body** · `application/json`
 
@@ -1224,7 +1312,7 @@ curl -X POST "https://gen.pollinations.ai/account/my-models/test" \
 
 #### `POST` `/account/my-models/{id}/update` — Update My Model
 
-Update an invite-only community text model owned by the authenticated account. API keys require `account:keys` and an account with `communityEndpointsAllowed: true`.
+Update a community text model owned by the authenticated account. Changing visibility to public publishes it and requires an allowlisted account; public models may be free or priced. API keys require `account:keys`.
 
 ⚙️ **Parameters**
 
@@ -1243,6 +1331,7 @@ Update an invite-only community text model owned by the authenticated account. A
 | `baseUrl` | `string · uri` | — |
 | `upstreamModel` | `string` | length: `1…253` |
 | `bearerToken` | `string` | — |
+| `visibility` | `"private"` \| `"public"` | "private": owner-only, shown only to the owner, with no owner-set price. "public": anyone and listed in the catalog; it may be free or priced. Publishing requires an allowlisted account. |
 | `promptTextPrice` | `number` | — |
 | `promptCachedPrice` | `number` | — |
 | `promptCacheWritePrice` | `number` | — |
@@ -1264,6 +1353,7 @@ Update an invite-only community text model owned by the authenticated account. A
 | `description` * | `string` \| `null` | — |
 | `baseUrl` * | `string` | — |
 | `upstreamModel` * | `string` | — |
+| `visibility` * | `"private"` \| `"public"` | "private": owner-only, shown only to the owner, with no owner-set price. "public": anyone and listed in the catalog; it may be free or priced. Publishing requires an allowlisted account. |
 | `promptTextPrice` * | `number` | — |
 | `promptCachedPrice` * | `number` | — |
 | `promptCacheWritePrice` * | `number` | — |
@@ -1293,7 +1383,7 @@ curl -X POST "https://gen.pollinations.ai/account/my-models/key_abc123/update" \
 
 #### `DELETE` `/account/my-models/{id}` — Delete My Model
 
-Delete an invite-only community text model owned by the authenticated account. API keys require `account:keys` and an account with `communityEndpointsAllowed: true`.
+Delete a community text model owned by the authenticated account. API keys require `account:keys`.
 
 ⚙️ **Parameters**
 
@@ -1708,6 +1798,8 @@ Returns information about the API key used in the request: validity, type (secre
 | `permissions.account` * | `string`[] \| `null` | List of account permissions, null = no account access |
 | `pollenBudget` * | `number` \| `null` | Remaining pollen budget for this key, null = unlimited (uses user balance) |
 | `rateLimitEnabled` * | `boolean` | Whether rate limiting is enabled for this key |
+| `userId` * | `string` \| `null` | Stable id of the user that owns this key — server-attested. |
+| `byopClientKeyId` * | `string` \| `null` | Publishable app key that minted this key via the BYOP authorize flow. Server-attested; clients cannot forge. |
 
 <sub>`*` = required field</sub>
 
@@ -1841,7 +1933,7 @@ curl "https://gen.pollinations.ai/v1/models/status" \
   -H "Authorization: Bearer $POLLINATIONS_KEY"
 ```
 
-### 🧊 3D
+### 3D
 
 #### `GET` `/3d/{prompt}` — Generate 3D Model
 

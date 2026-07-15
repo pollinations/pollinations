@@ -1,14 +1,18 @@
 import { createExecutionContext, env, SELF } from "cloudflare:test";
 import type { Logger } from "@logtape/logtape";
 import {
+    COMMUNITY_ENDPOINT_PRICE_FIELDS,
     type CommunityEndpointRuntime,
     communityChatCompletionsUrl,
     communityEndpointPrices,
     communityModelDefinition,
     communityModelId,
     communityOpenAIBaseUrl,
+    communityPriceDefinition,
     isCommunityEndpointOwnerAllowed,
     legacyCommunityModelId,
+    MIN_COMMUNITY_PRICE_PER_MILLION_TOKENS,
+    MIN_COMMUNITY_PRICE_PER_TOKEN,
     normalizeCommunityEndpointBaseUrl,
     normalizeCommunityEndpointBearerToken,
     parseCommunityModelId,
@@ -72,12 +76,18 @@ async function createEnterFrontendApi(): Promise<Hono<Env>> {
     const { frontendApi } = (await import(routePath)) as {
         frontendApi: Hono;
     };
-    return new Hono<Env>()
-        .use("*", async (c, next) => {
-            c.set("log", testLog);
-            await next();
-        })
-        .route("/api", frontendApi);
+    return (
+        new Hono<Env>()
+            .use("*", async (c, next) => {
+                c.set("log", testLog);
+                await next();
+            })
+            .route("/api", frontendApi)
+            // Mirror production: enter's root app registers handleError
+            // (enter.pollinations.ai/src/index.ts), which maps ValidationError
+            // to a 400 instead of Hono's default 500.
+            .onError(handleError)
+    );
 }
 
 async function fetchEnterApi(
@@ -156,6 +166,12 @@ describe("community endpoint helpers", () => {
                 githubId: COMMUNITY_ENDPOINT_DENIED_TEST_GITHUB_ID,
             }),
         ).toBe(false);
+        expect(isCommunityEndpointOwnerAllowed({ githubId: 101795137 })).toBe(
+            true,
+        );
+        expect(isCommunityEndpointOwnerAllowed({ githubId: 235942848 })).toBe(
+            false,
+        );
         expect(isCommunityEndpointOwnerAllowed({ githubId: null })).toBe(false);
     });
 
@@ -238,6 +254,20 @@ describe("community endpoint helpers", () => {
         );
     });
 
+    it("keeps zero prices as explicit zero rates in the price definition", () => {
+        const definition = communityPriceDefinition(
+            communityEndpointPrices({ promptTextPrice: 0.5 }),
+        );
+
+        expect(definition.promptTextTokens).toBe(0.5);
+        expect(definition.completionTextTokens).toBe(0);
+        // Every usage type gets an explicit rate, so billing never treats an
+        // intentionally-free bucket as a missing conversion rate.
+        expect(Object.keys(definition)).toHaveLength(
+            COMMUNITY_ENDPOINT_PRICE_FIELDS.length,
+        );
+    });
+
     it("builds Portkey gateway context with the saved token", async () => {
         const secret = "test-secret";
         const endpoint: CommunityEndpointRuntime = {
@@ -248,6 +278,7 @@ describe("community endpoint helpers", () => {
             description: null,
             baseUrl: "https://api.example.com/v1",
             upstreamModel: "gpt-4.1-mini",
+            visibility: "public",
             disabledAt: null,
             disabledReason: null,
             bearerTokenCiphertext: await encryptSecret(
@@ -303,6 +334,7 @@ fixtureTest(
         await db.insert(communityEndpointTable).values({
             id: `endpoint-${crypto.randomUUID()}`,
             ownerUserId,
+            visibility: "public",
             name: modelName,
             description: "OpenAI via community endpoint",
             baseUrl: "https://api.example.com/v1",
@@ -414,6 +446,155 @@ fixtureTest(
 );
 
 fixtureTest(
+    "a private model is owner-only and a zero-priced public model is free",
+    async ({ apiKey }) => {
+        const ownerGithubUsername = `owner-${crypto.randomUUID().slice(0, 8)}`;
+        const modelName = `private-${crypto.randomUUID().slice(0, 8)}`;
+        const modelId = communityModelId(ownerGithubUsername, modelName);
+        const endpointId = `endpoint-${crypto.randomUUID()}`;
+        const ownerUserId = await createTestUser({
+            githubId: COMMUNITY_ENDPOINT_ALLOWED_TEST_GITHUB_ID,
+            githubUsername: ownerGithubUsername,
+            // Owner-only private models have no Pollinations charge and remain
+            // callable without a Pollinations balance.
+            tierBalance: 0,
+        });
+        // A key belonging to the endpoint owner — its calls are owner calls.
+        const { key: ownerApiKey } = await createTestApiKey({
+            name: "owner-key",
+            userId: ownerUserId,
+        });
+        await db.insert(communityEndpointTable).values({
+            id: endpointId,
+            ownerUserId,
+            visibility: "private",
+            name: modelName,
+            description: "Private community endpoint",
+            baseUrl: "https://api.example.com/v1",
+            upstreamModel: "gpt-4.1-mini",
+            bearerTokenCiphertext: await encryptSecret(
+                "Bearer sk_saved_token",
+                env.BETTER_AUTH_SECRET,
+            ),
+            // A private endpoint is free (billed to its owner); prices are 0.
+            promptTextPrice: 0,
+            completionTextPrice: 0,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+        });
+
+        const fetchMock = vi.fn(async (input, init) => {
+            const request = new Request(input, init);
+            if (isPortkeyChatCompletionsRequest(request)) {
+                return Response.json({
+                    id: "chatcmpl_private",
+                    object: "chat.completion",
+                    model: "gpt-4.1-mini",
+                    choices: [
+                        {
+                            index: 0,
+                            message: { role: "assistant", content: "ok" },
+                            finish_reason: "stop",
+                        },
+                    ],
+                    usage: {
+                        prompt_tokens: 2,
+                        completion_tokens: 3,
+                        total_tokens: 5,
+                    },
+                });
+            }
+            if (isBillingFetch(request)) return Response.json({ data: [] });
+            throw new Error(`Unexpected fetch: ${request.url}`);
+        });
+        vi.stubGlobal("fetch", fetchMock);
+
+        // A non-owner caller: the private model resolves to "invalid model",
+        // indistinguishable from an unknown name so it isn't discoverable.
+        const otherResponse = await SELF.fetch(
+            new Request("https://gen.pollinations.ai/v1/chat/completions", {
+                method: "POST",
+                headers: {
+                    Authorization: `Bearer ${apiKey}`,
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    model: modelId,
+                    messages: [{ role: "user", content: "hello" }],
+                }),
+            }),
+        );
+        expect(otherResponse.status).toBe(400);
+
+        // The owner reaches their own private model.
+        const ownerResponse = await SELF.fetch(
+            new Request("https://gen.pollinations.ai/v1/chat/completions", {
+                method: "POST",
+                headers: {
+                    Authorization: `Bearer ${ownerApiKey}`,
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    model: modelId,
+                    messages: [{ role: "user", content: "hello" }],
+                }),
+            }),
+        );
+        expect(ownerResponse.status).toBe(200);
+        await expect(ownerResponse.json()).resolves.toMatchObject({
+            choices: [{ message: { content: "ok" } }],
+        });
+
+        const catalogIncludesModel = async (authorization?: string) => {
+            const modelsResponse = await SELF.fetch(
+                new Request("https://gen.pollinations.ai/text/models", {
+                    headers: authorization
+                        ? { Authorization: `Bearer ${authorization}` }
+                        : undefined,
+                }),
+            );
+            expect(modelsResponse.status).toBe(200);
+            const models = (await modelsResponse.json()) as { name: string }[];
+            return models.some((model) => model.name === modelId);
+        };
+
+        // The owner's authenticated catalog includes the private model, while
+        // anonymous and other authenticated callers cannot discover it.
+        await expect(catalogIncludesModel(ownerApiKey)).resolves.toBe(true);
+        await expect(catalogIncludesModel(apiKey)).resolves.toBe(false);
+        await expect(catalogIncludesModel()).resolves.toBe(false);
+
+        // Publishing the same zero-priced endpoint makes it globally callable
+        // without requiring a Pollinations balance.
+        await db
+            .update(communityEndpointTable)
+            .set({ visibility: "public" })
+            .where(eq(communityEndpointTable.id, endpointId));
+        resetGenerationModelRegistryCache();
+        const { key: zeroBalanceCallerKey } = await createTestApiKey({
+            user: { tierBalance: 0, packBalance: 0 },
+        });
+        const freePublicResponse = await SELF.fetch(
+            new Request("https://gen.pollinations.ai/v1/chat/completions", {
+                method: "POST",
+                headers: {
+                    Authorization: `Bearer ${zeroBalanceCallerKey}`,
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    model: modelId,
+                    messages: [{ role: "user", content: "free public" }],
+                }),
+            }),
+        );
+        expect(freePublicResponse.status).toBe(200);
+        await expect(freePublicResponse.json()).resolves.toMatchObject({
+            choices: [{ message: { content: "ok" } }],
+        });
+    },
+);
+
+fixtureTest(
     "streams chat completions through a registered community endpoint",
     async ({ apiKey }) => {
         const ownerGithubUsername = `owner-${crypto.randomUUID().slice(0, 8)}`;
@@ -426,6 +607,7 @@ fixtureTest(
         await db.insert(communityEndpointTable).values({
             id: `endpoint-${crypto.randomUUID()}`,
             ownerUserId,
+            visibility: "public",
             name: modelName,
             description: "Streaming community endpoint",
             baseUrl: "https://api.example.com/v1",
@@ -524,6 +706,7 @@ fixtureTest(
         await db.insert(communityEndpointTable).values({
             id: `endpoint-${crypto.randomUUID()}`,
             ownerUserId,
+            visibility: "public",
             name: modelName,
             description: "Simple text community endpoint",
             baseUrl: "https://api.example.com/v1",
@@ -621,6 +804,7 @@ fixtureTest(
         await db.insert(communityEndpointTable).values({
             id: `endpoint-${crypto.randomUUID()}`,
             ownerUserId,
+            visibility: "public",
             name: modelName,
             description: "Public community model",
             baseUrl: "https://api.example.com/v1",
@@ -716,6 +900,7 @@ fixtureTest(
         await db.insert(communityEndpointTable).values({
             id: `endpoint-${crypto.randomUUID()}`,
             ownerUserId,
+            visibility: "public",
             name: modelName,
             description: "Deactivated community model",
             baseUrl: "https://api.example.com/v1",
@@ -777,6 +962,7 @@ fixtureTest(
         await db.insert(communityEndpointTable).values({
             id: `endpoint-${crypto.randomUUID()}`,
             ownerUserId,
+            visibility: "public",
             name: modelName,
             description: "Deactivated community model",
             baseUrl: "https://api.example.com/v1",
@@ -822,10 +1008,11 @@ fixtureTest(
 );
 
 fixtureTest(
-    "rejects registration outside the allowlist without blocking saved endpoints",
+    "lets a non-allowlisted user register a private model but blocks publishing tools",
     async ({ apiKey }) => {
         const ownerGithubUsername = `owner-${crypto.randomUUID().slice(0, 8)}`;
         const modelName = `denied-${crypto.randomUUID().slice(0, 8)}`;
+        const privateModelName = `${modelName}-private`;
         const modelId = communityModelId(ownerGithubUsername, modelName);
         const ownerUserId = await createTestUser({
             githubId: COMMUNITY_ENDPOINT_DENIED_TEST_GITHUB_ID,
@@ -842,6 +1029,64 @@ fixtureTest(
         });
 
         const enterApi = await createEnterCommunityApi();
+        for (const probe of [
+            {
+                path: "models",
+                body: {
+                    baseUrl: "https://api.example.com/v1",
+                    bearerToken: "sk_saved_token",
+                },
+            },
+            {
+                path: "test",
+                body: {
+                    baseUrl: "https://api.example.com/v1",
+                    bearerToken: "sk_saved_token",
+                    model: "gpt-4.1-mini",
+                },
+            },
+        ]) {
+            const probeResponse = await fetchEnterApi(
+                enterApi,
+                new Request(
+                    `http://localhost:3000/api/community-endpoints/${probe.path}`,
+                    {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
+                            Cookie: await signedSessionCookie(sessionToken),
+                        },
+                        body: JSON.stringify(probe.body),
+                    },
+                ),
+            );
+            expect(probeResponse.status).toBe(403);
+        }
+
+        const directPublishResponse = await fetchEnterApi(
+            enterApi,
+            new Request("http://localhost:3000/api/community-endpoints", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Cookie: await signedSessionCookie(sessionToken),
+                },
+                body: JSON.stringify({
+                    name: `${modelName}-direct-public`,
+                    description: "Denied public community endpoint",
+                    baseUrl: "https://api.example.com/v1",
+                    upstreamModel: "gpt-4.1-mini",
+                    bearerToken: "sk_saved_token",
+                    visibility: "public",
+                    promptTextPrice: 0.1,
+                    completionTextPrice: 0.1,
+                }),
+            }),
+        );
+        expect(directPublishResponse.status).toBe(403);
+
+        // Creation is open to everyone: a non-allowlisted user can register a
+        // private model for their own use.
         const registerResponse = await fetchEnterApi(
             enterApi,
             new Request("http://localhost:3000/api/community-endpoints", {
@@ -851,21 +1096,52 @@ fixtureTest(
                     Cookie: await signedSessionCookie(sessionToken),
                 },
                 body: JSON.stringify({
-                    name: modelName,
-                    description: "Denied community endpoint",
+                    name: privateModelName,
+                    description: "Private community endpoint",
                     baseUrl: "https://api.example.com/v1",
                     upstreamModel: "gpt-4.1-mini",
                     bearerToken: "sk_saved_token",
-                    promptTextPrice: 0.1,
-                    completionTextPrice: 0.1,
                 }),
             }),
         );
-        expect(registerResponse.status).toBe(403);
+        expect(registerResponse.status).toBe(200);
+        const registered = (await registerResponse.json()) as {
+            id: string;
+            visibility: string;
+            promptTextPrice: number;
+            completionTextPrice: number;
+        };
+        expect(registered).toMatchObject({
+            visibility: "private",
+            promptTextPrice: 0,
+            completionTextPrice: 0,
+        });
+
+        // Publishing is a separate, allowlist-gated action.
+        const publishResponse = await fetchEnterApi(
+            enterApi,
+            new Request(
+                `http://localhost:3000/api/community-endpoints/${registered.id}/update`,
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Cookie: await signedSessionCookie(sessionToken),
+                    },
+                    body: JSON.stringify({
+                        visibility: "public",
+                        promptTextPrice: 0.1,
+                        completionTextPrice: 0.1,
+                    }),
+                },
+            ),
+        );
+        expect(publishResponse.status).toBe(403);
 
         await db.insert(communityEndpointTable).values({
             id: `endpoint-${crypto.randomUUID()}`,
             ownerUserId,
+            visibility: "public",
             name: modelName,
             description: "Denied community model",
             baseUrl: "https://api.example.com/v1",
@@ -1058,6 +1334,7 @@ fixtureTest(
                     baseUrl: "https://gen.pollinations.ai/v1",
                     upstreamModel: "openai",
                     bearerToken: "Bearer sk_pollinations_upstream",
+                    visibility: "public",
                     promptTextPrice: 0.1,
                     completionTextPrice: 0.1,
                 }),
@@ -1070,11 +1347,17 @@ fixtureTest(
             modelId: string;
             baseUrl: string;
             upstreamModel: string;
+            visibility: string;
+            promptTextPrice: number;
+            completionTextPrice: number;
         };
         expect(registered).toMatchObject({
             modelId: communityModelId(ownerGithubUsername, modelName),
             baseUrl: "https://gen.pollinations.ai/v1",
             upstreamModel: "openai",
+            visibility: "public",
+            promptTextPrice: 0.1,
+            completionTextPrice: 0.1,
         });
 
         const testResponse = await fetchEnterApi(
@@ -1215,8 +1498,6 @@ fixtureTest(
                     baseUrl: "https://api.example.com/v1",
                     upstreamModel: "gpt-4.1-mini",
                     bearerToken: "sk_saved_token",
-                    promptTextPrice: 0.1,
-                    completionTextPrice: 0.2,
                 }),
             }),
         );
@@ -1230,8 +1511,9 @@ fixtureTest(
             name: "my-test-model",
             baseUrl: "https://api.example.com/v1",
             upstreamModel: "gpt-4.1-mini",
-            promptTextPrice: 0.1,
-            completionTextPrice: 0.2,
+            visibility: "private",
+            promptTextPrice: 0,
+            completionTextPrice: 0,
             disabled: false,
             disabledReason: null,
             disabledAt: null,
@@ -1261,6 +1543,9 @@ fixtureTest(
                     },
                     body: JSON.stringify({
                         description: "Updated description",
+                        visibility: "public",
+                        promptTextPrice: 0.1,
+                        completionTextPrice: 0.2,
                     }),
                 },
             ),
@@ -1268,10 +1553,116 @@ fixtureTest(
         expect(updateResponse.status).toBe(200);
         await expect(updateResponse.json()).resolves.toMatchObject({
             description: "Updated description",
+            visibility: "public",
             promptTextPrice: 0.1,
             completionTextPrice: 0.2,
             disabled: true,
             disabledReason: "was failing",
+        });
+
+        // Minimum-price policy is independent of visibility: any non-negative
+        // owner price is accepted by this API.
+        const tinyPriceResponse = await fetchEnterApi(
+            enterApi,
+            new Request(
+                `http://localhost:3000/api/account/my-models/${createdId}/update`,
+                {
+                    method: "POST",
+                    headers: {
+                        Authorization: `Bearer ${key}`,
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({ promptTextPrice: 1e-12 }),
+                },
+            ),
+        );
+        expect(tinyPriceResponse.status).toBe(200);
+        await expect(tinyPriceResponse.json()).resolves.toMatchObject({
+            promptTextPrice: 1e-12,
+        });
+
+        const negativePriceResponse = await fetchEnterApi(
+            enterApi,
+            new Request(
+                `http://localhost:3000/api/account/my-models/${createdId}/update`,
+                {
+                    method: "POST",
+                    headers: {
+                        Authorization: `Bearer ${key}`,
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({ promptTextPrice: -1e-12 }),
+                },
+            ),
+        );
+        expect(negativePriceResponse.status).toBe(400);
+
+        // Partial updates persist the full effective visibility + price set,
+        // so a price-only patch keeps the other stored prices intact.
+        const priceOnlyResponse = await fetchEnterApi(
+            enterApi,
+            new Request(
+                `http://localhost:3000/api/account/my-models/${createdId}/update`,
+                {
+                    method: "POST",
+                    headers: {
+                        Authorization: `Bearer ${key}`,
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({ promptTextPrice: 0.3 }),
+                },
+            ),
+        );
+        expect(priceOnlyResponse.status).toBe(200);
+        await expect(priceOnlyResponse.json()).resolves.toMatchObject({
+            visibility: "public",
+            promptTextPrice: 0.3,
+            completionTextPrice: 0.2,
+        });
+
+        // Making the model private clears all owner-set prices.
+        const privatizeResponse = await fetchEnterApi(
+            enterApi,
+            new Request(
+                `http://localhost:3000/api/account/my-models/${createdId}/update`,
+                {
+                    method: "POST",
+                    headers: {
+                        Authorization: `Bearer ${key}`,
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({ visibility: "private" }),
+                },
+            ),
+        );
+        expect(privatizeResponse.status).toBe(200);
+        await expect(privatizeResponse.json()).resolves.toMatchObject({
+            visibility: "private",
+            promptTextPrice: 0,
+            completionTextPrice: 0,
+        });
+
+        // Republishing without prices is allowed: zero makes the public model
+        // explicitly free while publishing remains allowlist-gated.
+        const republishResponse = await fetchEnterApi(
+            enterApi,
+            new Request(
+                `http://localhost:3000/api/account/my-models/${createdId}/update`,
+                {
+                    method: "POST",
+                    headers: {
+                        Authorization: `Bearer ${key}`,
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({ visibility: "public" }),
+                },
+            ),
+        );
+        expect(republishResponse.status).toBe(200);
+        await expect(republishResponse.json()).resolves.toMatchObject({
+            visibility: "public",
+            promptTextPrice: 0,
+            completionTextPrice: 0,
         });
 
         const secondListResponse = await fetchEnterApi(
@@ -1289,6 +1680,149 @@ fixtureTest(
         expect(secondList.data).toHaveLength(1);
         expect(secondList.data[0]).not.toHaveProperty("bearerToken");
         expect(secondList.data[0]).not.toHaveProperty("bearerTokenCiphertext");
+    },
+);
+
+fixtureTest(
+    "accepts free and minimum public community prices while rejecting smaller positive prices",
+    async () => {
+        const ownerGithubUsername = `price-${crypto.randomUUID().slice(0, 8)}`;
+        const ownerUserId = await createTestUser({
+            githubId: COMMUNITY_ENDPOINT_ALLOWED_TEST_GITHUB_ID,
+            githubUsername: ownerGithubUsername,
+        });
+        const sessionToken = `session-${crypto.randomUUID()}`;
+        await db.insert(sessionTable).values({
+            id: `session-${crypto.randomUUID()}`,
+            token: sessionToken,
+            userId: ownerUserId,
+            expiresAt: new Date(Date.now() + 60 * 60 * 1000),
+            createdAt: new Date(),
+            updatedAt: new Date(),
+        });
+        const cookie = await signedSessionCookie(sessionToken);
+        const enterApi = await createEnterCommunityApi();
+        const createResponse = await fetchEnterApi(
+            enterApi,
+            new Request("http://localhost:3000/api/community-endpoints", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Cookie: cookie,
+                },
+                body: JSON.stringify({
+                    name: "price-floor-test",
+                    baseUrl: "https://api.example.com/v1",
+                    upstreamModel: "gpt-4.1-mini",
+                    bearerToken: "sk_saved_token",
+                    visibility: "public",
+                    promptTextPrice: 0,
+                }),
+            }),
+        );
+        expect(createResponse.status).toBe(200);
+        const created = (await createResponse.json()) as {
+            id: string;
+            promptTextPrice: number;
+        };
+        expect(created.promptTextPrice).toBe(0);
+
+        const updatePrice = (price: number) =>
+            fetchEnterApi(
+                enterApi,
+                new Request(
+                    `http://localhost:3000/api/community-endpoints/${created.id}/update`,
+                    {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
+                            Cookie: cookie,
+                        },
+                        body: JSON.stringify({ promptTextPrice: price }),
+                    },
+                ),
+            );
+
+        const minimumResponse = await updatePrice(
+            MIN_COMMUNITY_PRICE_PER_TOKEN,
+        );
+        expect(minimumResponse.status).toBe(200);
+        await expect(minimumResponse.json()).resolves.toMatchObject({
+            promptTextPrice: MIN_COMMUNITY_PRICE_PER_TOKEN,
+        });
+
+        const belowMinimumResponse = await updatePrice(
+            MIN_COMMUNITY_PRICE_PER_TOKEN / 10,
+        );
+        expect(belowMinimumResponse.status).toBe(400);
+        expect(await belowMinimumResponse.text()).toContain(
+            `${MIN_COMMUNITY_PRICE_PER_MILLION_TOKENS} per 1M tokens`,
+        );
+
+        const negativeResponse = await updatePrice(
+            -MIN_COMMUNITY_PRICE_PER_TOKEN,
+        );
+        expect(negativeResponse.status).toBe(400);
+    },
+);
+
+fixtureTest(
+    "rejects an endpoint probe when the upstream responds with a redirect",
+    async () => {
+        // Use an approved publisher so the request reaches the outbound probe;
+        // non-allowlisted accounts are rejected before any fetch occurs.
+        const ownerUserId = await createTestUser({
+            githubId: COMMUNITY_ENDPOINT_ALLOWED_TEST_GITHUB_ID,
+            githubUsername: `redir-${crypto.randomUUID().slice(0, 8)}`,
+        });
+        const sessionToken = `session-${crypto.randomUUID()}`;
+        await db.insert(sessionTable).values({
+            id: `session-${crypto.randomUUID()}`,
+            token: sessionToken,
+            userId: ownerUserId,
+            expiresAt: new Date(Date.now() + 60 * 60 * 1000),
+            createdAt: new Date(),
+            updatedAt: new Date(),
+        });
+
+        const enterApi = await createEnterCommunityApi();
+        const fetchMock = vi.fn(async (input, init) => {
+            const request = new Request(input, init);
+            if (
+                request.url ===
+                "https://redirecting.example.com/v1/chat/completions"
+            ) {
+                // The redirect target never went through base-URL validation,
+                // so the probe must not follow it.
+                expect(init?.redirect).toBe("manual");
+                return new Response(null, {
+                    status: 302,
+                    headers: { Location: "http://127.0.0.1/admin" },
+                });
+            }
+            throw new Error(`Unexpected fetch: ${request.url}`);
+        });
+        vi.stubGlobal("fetch", fetchMock);
+
+        const testResponse = await fetchEnterApi(
+            enterApi,
+            new Request("http://localhost:3000/api/community-endpoints/test", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Cookie: await signedSessionCookie(sessionToken),
+                },
+                body: JSON.stringify({
+                    baseUrl: "https://redirecting.example.com/v1",
+                    bearerToken: "Bearer sk_upstream",
+                    model: "gpt-test",
+                }),
+            }),
+        );
+
+        expect(testResponse.status).toBe(400);
+        expect(await testResponse.text()).toContain("redirect");
+        expect(fetchMock).toHaveBeenCalledTimes(1);
     },
 );
 

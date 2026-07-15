@@ -35,6 +35,7 @@ import {
     type ContentSafetyFlags,
     requireSafePrompt,
 } from "./utils/azureContentSafety.ts";
+import { isAccountLevelBlock } from "./utils/contentModeration.ts";
 import { logGptImageError } from "./utils/gptImageLogger.ts";
 import {
     base64ToBuffer,
@@ -307,60 +308,56 @@ interface GPTImageConfig {
 
 const AZURE_API_VERSION = "2025-04-01-preview";
 
+// Every endpoint is a resource dedicated to a single model: Azure abuse blocks
+// are per-resource, so sharing one resource across models turns a block into a
+// multi-model outage (issue #12446). Keep it one model per resource.
 const GPTIMAGE_CONFIGS: Record<string, GPTImageConfig[]> = {
     gptimage: [
         {
             baseUrl:
-                "https://myceli-prod-img-westus3.cognitiveservices.azure.com/openai/deployments/gpt-image-1-mini",
+                "https://myceli-prod-img-mini-swedencentral.cognitiveservices.azure.com/openai/deployments/gpt-image-1-mini",
             modelName: "gpt-image-1-mini",
-            apiKeyEnv: "AZURE_MYCELI_PROD_IMG_WESTUS3_API_KEY",
+            apiKeyEnv: "AZURE_MYCELI_PROD_IMG_MINI_SWEDEN_API_KEY",
+            region: "swedencentral",
+        },
+        {
+            baseUrl:
+                "https://myceli-prod-img-mini-westus3.cognitiveservices.azure.com/openai/deployments/gpt-image-1-mini",
+            modelName: "gpt-image-1-mini",
+            apiKeyEnv: "AZURE_MYCELI_PROD_IMG_MINI_WESTUS3_API_KEY",
             region: "westus3",
         },
     ],
     "gptimage-large": [
         {
             baseUrl:
-                "https://myceli-prod-img-westus3.cognitiveservices.azure.com/openai/deployments/gpt-image-1.5",
+                "https://myceli-prod-img-15-swedencentral.cognitiveservices.azure.com/openai/deployments/gpt-image-1.5",
             modelName: "gpt-image-1.5",
-            apiKeyEnv: "AZURE_MYCELI_PROD_IMG_WESTUS3_API_KEY",
+            apiKeyEnv: "AZURE_MYCELI_PROD_IMG_15_SWEDEN_API_KEY",
+            region: "swedencentral",
+        },
+        {
+            baseUrl:
+                "https://myceli-prod-img-15-westus3.cognitiveservices.azure.com/openai/deployments/gpt-image-1.5",
+            modelName: "gpt-image-1.5",
+            apiKeyEnv: "AZURE_MYCELI_PROD_IMG_15_WESTUS3_API_KEY",
             region: "westus3",
         },
     ],
     "gpt-image-2": [
         {
             baseUrl:
-                "https://eastus2.api.cognitive.microsoft.com/openai/deployments/gpt-image-2",
+                "https://myceli-prod-img-2-swedencentral.cognitiveservices.azure.com/openai/deployments/gpt-image-2",
             modelName: "gpt-image-2",
-            apiKeyEnv: "AZURE_MYCELI_PROD_EASTUS2_API_KEY",
-            region: "eastus2",
-        },
-        {
-            baseUrl:
-                "https://myceli-prod-swedencentral.cognitiveservices.azure.com/openai/deployments/gpt-image-2",
-            modelName: "gpt-image-2",
-            apiKeyEnv: "AZURE_MYCELI_PROD_SWEDEN_API_KEY",
+            apiKeyEnv: "AZURE_MYCELI_PROD_IMG_2_SWEDEN_API_KEY",
             region: "swedencentral",
         },
         {
             baseUrl:
-                "https://westus3.api.cognitive.microsoft.com/openai/deployments/gpt-image-2",
+                "https://myceli-prod-img-2-eastus2.cognitiveservices.azure.com/openai/deployments/gpt-image-2",
             modelName: "gpt-image-2",
-            apiKeyEnv: "AZURE_MYCELI_PROD_WESTUS3_API_KEY",
-            region: "westus3",
-        },
-        {
-            baseUrl:
-                "https://polandcentral.api.cognitive.microsoft.com/openai/deployments/gpt-image-2",
-            modelName: "gpt-image-2",
-            apiKeyEnv: "AZURE_MYCELI_PROD_POLANDCENTRAL_API_KEY",
-            region: "polandcentral",
-        },
-        {
-            baseUrl:
-                "https://uaenorth.api.cognitive.microsoft.com/openai/deployments/gpt-image-2",
-            modelName: "gpt-image-2",
-            apiKeyEnv: "AZURE_MYCELI_PROD_UAENORTH_API_KEY",
-            region: "uaenorth",
+            apiKeyEnv: "AZURE_MYCELI_PROD_IMG_2_EASTUS2_API_KEY",
+            region: "eastus2",
         },
     ],
 };
@@ -379,6 +376,17 @@ function orderedGPTImageConfigs(model: string): GPTImageConfig[] {
 
 function isRetryableGPTImageError(error: unknown): boolean {
     if (error instanceof HttpError) {
+        // Azure blocks a resource (403) after aggregate abuse, and every prompt
+        // on it fails until the block lifts. The block is per-resource, so the
+        // sibling region still serves — fail over instead of failing the caller.
+        // A genuine content rejection is NOT retried: it would be refused in
+        // every region, so retrying only burns a second upstream call.
+        const blockText = `${error.message} ${
+            typeof error.details === "string"
+                ? error.details
+                : JSON.stringify(error.details ?? "")
+        }`;
+        if (isAccountLevelBlock(blockText)) return true;
         return error.status === 429 || error.status >= 500;
     }
     return (

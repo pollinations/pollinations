@@ -1,7 +1,7 @@
 export const COMMUNITY_MODEL_ALLOWED_GITHUB_IDS = [
     36901823, // ElliotEtag
     5099901, // voodoohop
-    235942848, // thomashmyceli
+    101795137, // lizzieliza
     248917639, // fouchyelliot-rgb
     241978997, // pollen-router
     189873015, // sharktide

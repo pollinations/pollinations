@@ -50,6 +50,54 @@ Live-only on the box, never committed:
   off git; the agent both reads and appends to it in place on the box.
 - `probe-results.json`, `loop.log`, `watchdog.log` — generated output.
 
+## Provisioning / reproducing the box
+
+The live box's real infra details (host, instance id, region, AMI, security
+group, key pair) plus the actual SSH private key are SOPS-encrypted at
+`secrets/secrets.vars.json` in this directory — decrypt with:
+
+```bash
+sops -d apps/operation/community-monitor/secrets/secrets.vars.json
+```
+
+This lets another agent/maintainer administer the box (SSH in, redeploy
+CYCLE.md, restart the loop) without needing an out-of-band copy of
+`~/.ssh/thomashkey` or having to ask around for the current host IP. The key
+itself (`thomashkey`) is shared across several pieces of infra (this box,
+Lambda Labs, ionet GPU boxes) — it is not unique to community-monitor, but
+storing a copy here means this box's access doesn't depend on that key
+surviving elsewhere.
+
+To reproduce the box from scratch (e.g. if it's terminated and needs
+recreating) using the same networking/AMI/key as today:
+
+```bash
+eval "$(sops -d apps/operation/community-monitor/secrets/secrets.vars.json | \
+  python3 -c 'import json,sys; d=json.load(sys.stdin); print("\n".join(f"{k}={v!r}" for k,v in d.items() if k.startswith("EC2_")))')"
+
+aws ec2 run-instances --profile admin \
+  --image-id "$EC2_AMI_ID" \
+  --instance-type "$EC2_INSTANCE_TYPE" \
+  --key-name "$EC2_KEY_NAME" \
+  --security-group-ids "$EC2_SECURITY_GROUP_ID" \
+  --subnet-id "$EC2_SUBNET_ID" \
+  --block-device-mappings '[{"DeviceName":"/dev/sda1","Ebs":{"VolumeSize":10,"VolumeType":"gp3"}}]' \
+  --tag-specifications 'ResourceType=instance,Tags=[{Key=Name,Value=community-model-monitor}]'
+```
+
+Then SSH in with the key from the same secrets file, install Node + the
+`claude` CLI, clone/copy this directory, populate `.env` (see
+`.env.example`), install/run `watchdog.sh` via cron, attach via `screen -r
+community-monitor`, and arm the loop per "Deploying a watchdog.sh" below.
+Re-pull the current AMI id before reproducing for real — `EC2_AMI_ID` here
+is a point-in-time snapshot of what the live box was provisioned with, not a
+guarantee the AMI is still the recommended Ubuntu ARM64 image at
+reproduction time.
+
+`.gitignore` in this repo does **not** exempt `secrets/secrets.vars.json`
+from the SOPS encryption-at-rest requirement — never decrypt to a plaintext
+file inside the repo tree, and never commit the decrypted output anywhere.
+
 ## Deploying a CYCLE.md change
 
 ```bash

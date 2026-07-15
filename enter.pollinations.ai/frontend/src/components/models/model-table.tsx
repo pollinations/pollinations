@@ -1,10 +1,6 @@
 import { ChevronIcon, CopyButton, cn, Tooltip } from "@pollinations/ui";
 import { type FC, useState } from "react";
-import {
-    calculatePerPollen,
-    calculatePerPollenValue,
-    unitLabels,
-} from "./calculations.ts";
+import { calculatePerPollen, calculatePerPollenValue } from "./calculations.ts";
 import { CAPABILITY_ICON, MODALITY_ICON } from "./model-icons.tsx";
 import {
     type DisplayCapability,
@@ -19,6 +15,11 @@ import {
     isPaidOnly,
 } from "./model-info.ts";
 import { ModelId, ModelRow } from "./model-row.tsx";
+import type {
+    ModelCategory,
+    ModelSortDirection,
+    ModelSortKey,
+} from "./model-search.ts";
 import {
     type BalanceAccess,
     BalanceAccessChip,
@@ -27,17 +28,10 @@ import {
 import { getModelPriceBadges, PriceBadgeList } from "./price-badge.tsx";
 import type { ModelPrice, PriceDirection } from "./types.ts";
 
-export type SectionType =
-    | "image"
-    | "video"
-    | "3d"
-    | "audio"
-    | "realtime"
-    | "text"
-    | "community"
-    | "embedding";
+export type SectionType = ModelCategory;
 
 type UnifiedModelTableProps = {
+    allModels: ModelPrice[];
     imageModels: ModelPrice[];
     videoModels: ModelPrice[];
     model3dModels: ModelPrice[];
@@ -47,22 +41,15 @@ type UnifiedModelTableProps = {
     realtimeModels: ModelPrice[];
     embeddingModels: ModelPrice[];
     activeTab: SectionType;
-};
-
-type SortKey = "name" | "perPollen" | "input" | "output";
-type SortDir = "asc" | "desc";
-
-const DEFAULT_DIR: Record<SortKey, SortDir> = {
-    name: "asc",
-    perPollen: "desc",
-    input: "asc",
-    output: "asc",
+    sortKey: ModelSortKey;
+    sortDir: ModelSortDirection;
+    onSort: (key: ModelSortKey) => void;
 };
 
 const sortModels = (
     models: ModelPrice[],
-    sortKey: SortKey,
-    sortDir: SortDir,
+    sortKey: ModelSortKey,
+    sortDir: ModelSortDirection,
 ) => {
     const sign = sortDir === "asc" ? 1 : -1;
     return [...models].sort((a, b) => {
@@ -91,6 +78,7 @@ const sortModels = (
 };
 
 export const sectionLabels: Record<SectionType, string> = {
+    all: "All",
     image: "Image",
     video: "Video",
     "3d": "3D",
@@ -105,8 +93,8 @@ export const sectionLabels: Record<SectionType, string> = {
 
 type TabContentProps = {
     models: ModelPrice[];
-    sortKey: SortKey;
-    sortDir: SortDir;
+    sortKey: ModelSortKey;
+    sortDir: ModelSortDirection;
 };
 
 const TabContent: FC<TabContentProps> = ({ models, sortKey, sortDir }) => {
@@ -347,6 +335,7 @@ const MobileMetadataBadges: FC<MobileMetadataBadgesProps> = ({
 // --- Main export ---
 
 export const UnifiedModelTable: FC<UnifiedModelTableProps> = ({
+    allModels,
     imageModels,
     videoModels,
     model3dModels,
@@ -356,8 +345,12 @@ export const UnifiedModelTable: FC<UnifiedModelTableProps> = ({
     realtimeModels,
     embeddingModels,
     activeTab,
+    sortKey,
+    sortDir,
+    onSort,
 }) => {
     const sections: { type: SectionType; models: ModelPrice[] }[] = [
+        { type: "all", models: allModels },
         { type: "image", models: imageModels },
         { type: "video", models: videoModels },
         { type: "3d", models: model3dModels },
@@ -368,20 +361,9 @@ export const UnifiedModelTable: FC<UnifiedModelTableProps> = ({
         { type: "embedding", models: embeddingModels },
     ];
 
-    const [sortKey, setSortKey] = useState<SortKey>("perPollen");
-    const [sortDir, setSortDir] = useState<SortDir>("desc");
     const activeSection = sections.find((s) => s.type === activeTab);
 
-    const onSort = (key: SortKey) => {
-        if (key === sortKey) {
-            setSortDir(sortDir === "asc" ? "desc" : "asc");
-        } else {
-            setSortKey(key);
-            setSortDir(DEFAULT_DIR[key]);
-        }
-    };
-
-    const sortArrow = (key: SortKey) =>
+    const sortArrow = (key: ModelSortKey) =>
         sortKey === key ? (sortDir === "asc" ? "↑" : "↓") : null;
 
     return (
@@ -403,7 +385,7 @@ export const UnifiedModelTable: FC<UnifiedModelTableProps> = ({
                         <span className="block w-[220px] whitespace-normal leading-snug">
                             Based on{" "}
                             <span className="font-semibold text-theme-text-strong">
-                                average community usage
+                                average usage
                             </span>
                             . Actual costs vary with modality and output.
                         </span>
@@ -418,10 +400,7 @@ export const UnifiedModelTable: FC<UnifiedModelTableProps> = ({
                             1 pollen {sortArrow("perPollen")}
                         </div>
                         <div className="text-xs font-normal text-ink-700 opacity-70 italic">
-                            ≈{" "}
-                            {activeSection
-                                ? unitLabels[activeSection.type]
-                                : ""}
+                            ≈ gen
                         </div>
                     </button>
                 </Tooltip>

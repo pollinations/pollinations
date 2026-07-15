@@ -72,7 +72,7 @@ PR merge ──→ generate_realtime.py
                             └──→ README-only PR to main (Latest News section)
                                   (LinkedIn = weekly only, no daily posts)
 
-             15:00 UTC ──→ NEWS_publish.yml (cron, PUBLISH_MODE=direct)
+             15:00 UTC ──→ news-publish-social.yml (cron, PUBLISH_MODE=direct)
                             └──→ Reddit VPS deployment
 
              Images generated: 5 (1 twitter + 3 instagram + 1 reddit)
@@ -94,7 +94,7 @@ PR merge ──→ generate_realtime.py
                                       ├──→ Commit all to news branch
                                       └──→ Buffer stages X + LI + IG immediately (PUBLISH_MODE=buffer)
 
-             Sunday 18:00 UTC ──→ NEWS_publish.yml (cron, PUBLISH_MODE=direct)
+             Sunday 18:00 UTC ──→ news-publish-social.yml (cron, PUBLISH_MODE=direct)
                                     ├──→ Reddit VPS deployment
                                     └──→ Discord webhook post (with image)
 
@@ -234,9 +234,9 @@ Daily and weekly platform JSON now share one persisted shape:
 
 | Workflow | Trigger | What it does |
 |---|---|---|
-| `NEWS_pr_gist.yml` | `pull_request_target: closed+merged` | Per-PR gist + Discord |
-| `NEWS_summary.yml` | `cron: 0 6 * * *` | Generate content → commit to news → Buffer staging (`PUBLISH_MODE=buffer`) |
-| `NEWS_publish.yml` | Mon-Sat 15:00 UTC, Sun 18:00 UTC | Direct channels only (`PUBLISH_MODE=direct`): Reddit daily, Reddit+Discord weekly |
+| `news-create-pr-gist.yml` | `pull_request_target: closed+merged` | Per-PR gist + Discord |
+| `news-generate-summary.yml` | `cron: 0 6 * * *` | Generate content → commit to news → Buffer staging (`PUBLISH_MODE=buffer`) |
+| `news-publish-social.yml` | Mon-Sat 15:00 UTC, Sun 18:00 UTC | Direct channels only (`PUBLISH_MODE=direct`): Reddit daily, Reddit+Discord weekly |
 
 ### PUBLISH_MODE
 
@@ -244,13 +244,13 @@ The `PUBLISH_MODE` env var controls which channels fire:
 
 | Mode | Channels | Used by |
 |---|---|---|
-| `buffer` | Twitter, Instagram (daily), + LinkedIn (weekly) → Buffer queue | `NEWS_summary.yml` (immediately after generation) |
-| `direct` | Reddit → VPS, Discord → webhook | `NEWS_publish.yml` (cron) |
+| `buffer` | Twitter, Instagram (daily), + LinkedIn (weekly) → Buffer queue | `news-generate-summary.yml` (immediately after generation) |
+| `direct` | Reddit → VPS, Discord → webhook | `news-publish-social.yml` (cron) |
 | `all` | Both (default) | Manual / testing |
 
 ### Workflow overlay
 
-Both `NEWS_summary.yml` and `NEWS_publish.yml` overlay the `news` branch data onto the checkout:
+Both `news-generate-summary.yml` and `news-publish-social.yml` overlay the `news` branch data onto the checkout:
 
 ```bash
 git fetch origin news && git checkout origin/news -- social/news/
@@ -268,7 +268,7 @@ This makes all generated content available locally for scripts that read files (
 | `generate_weekly.py` | Weekly: read gists directly (Sun→Sat) → synthesize themes → all 5 platform posts + images → commit to news |
 | `publish_daily.py` | PUBLISH_MODE=buffer: stage X + IG to Buffer. PUBLISH_MODE=direct: Reddit VPS deployment. |
 | `publish_weekly.py` | PUBLISH_MODE=buffer: stage X + LI + IG to Buffer. PUBLISH_MODE=direct: Reddit VPS + Discord webhook. |
-| `update_readme.py` | Utility functions: `get_top_highlights()`, `update_readme_news_section()` (called by `readme-daily-update.yml`) |
+| `update_readme.py` | Utility functions: `get_top_highlights()`, `update_readme_news_section()` (called by `docs-update-readme-news.yml`) |
 | `common.py` | Shared utils: prompt loading, brand injection, API calls, gist I/O, retry logic, `read_news_file()`, constants |
 | `buffer_publish.py` | Buffer API staging with scheduled delivery |
 | `buffer_utils.py` | Buffer GraphQL API helpers |
@@ -308,9 +308,9 @@ Discord posting (`publish_realtime.py`) runs as a **separate workflow step** aft
 ### Re-triggering
 
 All workflows support `workflow_dispatch` for manual re-triggering:
-- `NEWS_pr_gist.yml`: accepts `pr_number` input to regenerate a specific gist
-- `NEWS_summary.yml`: accepts `date` input (Mon-Sat runs daily, Sunday runs weekly)
-- `NEWS_publish.yml`: accepts `mode` + `target_date` for manual publish of direct channels
+- `news-create-pr-gist.yml`: accepts `pr_number` input to regenerate a specific gist
+- `news-generate-summary.yml`: accepts `date` input (Mon-Sat runs daily, Sunday runs weekly)
+- `news-publish-social.yml`: accepts `mode` + `target_date` for manual publish of direct channels
 
 ---
 
@@ -344,7 +344,7 @@ The daily summary runs at 06:00 UTC. A PR merged at 05:59 UTC might have its gis
 
 6. **Tier 1 fails loud instead of degrading** — if PR analysis, validation, image generation, or Discord delivery breaks, the realtime workflow goes red. That keeps problems visible and makes manual re-triggering explicit.
 
-7. **Buffer staging immediately after generation** — `NEWS_summary.yml` generates content and immediately stages to Buffer (`PUBLISH_MODE=buffer`). Buffer handles delivery scheduling. Direct channels (Reddit, Discord) use separate cron.
+7. **Buffer staging immediately after generation** — `news-generate-summary.yml` generates content and immediately stages to Buffer (`PUBLISH_MODE=buffer`). Buffer handles delivery scheduling. Direct channels (Reddit, Discord) use separate cron.
 
 8. **Daily summary clusters related PRs into 3-5 story arcs** — 5 PRs about the same subsystem become one narrative beat. Editorial quality, not a changelog.
 
@@ -399,10 +399,10 @@ AI calls scale as N+1 (N per-PR gists + 1 daily summary), not N×platforms. Imag
 3. **Tier 2 — happy path**: Manually trigger daily workflow → verify platform posts + images committed to `news` branch + README PR to main
 4. **Tier 2 — zero PRs**: Run daily workflow on a day with 0 gists → verify workflow exits cleanly with no content generated
 5. **Tier 3 — happy path**: Manually trigger weekly workflow → verify all 5 platform posts + images committed to `news` branch
-6. **Daily publish — Buffer**: Verify `NEWS_summary.yml` stages X/IG to Buffer immediately after generation
-7. **Daily publish — Reddit**: Verify `NEWS_publish.yml` cron at 15:00 UTC deploys Reddit to VPS
-8. **Weekly publish — Buffer**: Verify `NEWS_summary.yml` stages X/LI/IG to Buffer immediately after generation
-9. **Weekly publish — Reddit+Discord**: Verify `NEWS_publish.yml` Sunday 18:00 UTC cron publishes Reddit + Discord
+6. **Daily publish — Buffer**: Verify `news-generate-summary.yml` stages X/IG to Buffer immediately after generation
+7. **Daily publish — Reddit**: Verify `news-publish-social.yml` cron at 15:00 UTC deploys Reddit to VPS
+8. **Weekly publish — Buffer**: Verify `news-generate-summary.yml` stages X/LI/IG to Buffer immediately after generation
+9. **Weekly publish — Reddit+Discord**: Verify `news-publish-social.yml` Sunday 18:00 UTC cron publishes Reddit + Discord
 10. **Publish tier gating**: Merge a non-user-facing PR → verify `publish_tier: discord_only` → verify absent from daily summary
 11. **Clustering**: Day with 5+ related PRs → verify daily summary groups them into narrative arcs (not a flat list)
 12. **Concurrent merges**: Merge 3 PRs within 30 seconds → verify all 3 gists committed without conflicts

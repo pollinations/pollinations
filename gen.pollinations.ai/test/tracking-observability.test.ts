@@ -11,7 +11,12 @@ import {
     communityModelDefinition,
 } from "@shared/community-endpoints.ts";
 import { user as userTable } from "@shared/db/better-auth.ts";
-import { getRegistryModelDefinition } from "@shared/registry/registry.ts";
+import {
+    type BillingAdjustment,
+    getRegistryModelDefinition,
+} from "@shared/registry/registry.ts";
+import type { TinybirdEvent } from "@shared/schemas/generation-event.ts";
+import { removeUnset } from "@shared/util.ts";
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { Hono } from "hono";
@@ -20,7 +25,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import type { Env } from "@/env.ts";
 import { logger } from "@/middleware/logger.ts";
 import type { ModelVariables } from "@/middleware/model.ts";
-import { track } from "@/middleware/track.ts";
+import { reduceAdjustmentsToEventFields, track } from "@/middleware/track.ts";
 
 afterEach(() => {
     vi.restoreAllMocks();
@@ -101,6 +106,7 @@ function createCommunityEndpoint(
         baseUrl: "https://community.example.test/openai",
         upstreamModel: "upstream-test-model",
         bearerTokenCiphertext: "encrypted",
+        visibility: "public",
         disabledAt: null,
         disabledReason: null,
         ...communityEndpointPrices({
@@ -142,6 +148,76 @@ function createWrongContentTypeApp(
         await next();
     });
     app.all("/upstream", track(eventType), () => response.clone());
+
+    return app;
+}
+
+// App that streams an SSE completion whose chunks arrive with real delays,
+// used to assert that endTime/responseTime cover the whole stream duration
+// rather than just time-to-first-byte.
+function createSseStreamApp(chunkDelayMs: number) {
+    const app = new Hono<Env>();
+
+    app.use("*", requestId());
+    app.use("*", logger);
+    app.use("*", async (c, next) => {
+        c.set("auth", {
+            user: undefined,
+            requireAuthorization: async () => {},
+            requireUser: () => {
+                throw new Error("user should not be required in this test");
+            },
+            requireModelAccess: () => {},
+        });
+        c.set("balance", {
+            getBalance: async () => ({ tierBalance: 1, packBalance: 0 }),
+        });
+        c.set("frontendKeyRateLimit", { consumePollen: async () => {} });
+        c.set("model", {
+            requested: "openai",
+            resolved: "openai",
+            definition: getRegistryModelDefinition("openai"),
+        });
+        await next();
+    });
+    app.post("/v1/chat/completions", track("generate.text"), () => {
+        const encoder = new TextEncoder();
+        const sse = (data: object) => `data: ${JSON.stringify(data)}\n\n`;
+        const chunks = [
+            sse({
+                model: "gpt-5-nano-2025-08-07",
+                choices: [{ delta: { content: "hel" } }],
+            }),
+            sse({
+                model: "gpt-5-nano-2025-08-07",
+                choices: [{ delta: { content: "lo" } }],
+            }),
+            sse({
+                model: "gpt-5-nano-2025-08-07",
+                choices: [],
+                usage: {
+                    prompt_tokens: 1000,
+                    completion_tokens: 500,
+                    total_tokens: 1500,
+                },
+            }),
+            "data: [DONE]\n\n",
+        ];
+        const body = new ReadableStream<Uint8Array>({
+            async start(controller) {
+                for (const chunk of chunks) {
+                    await new Promise((resolve) =>
+                        setTimeout(resolve, chunkDelayMs),
+                    );
+                    controller.enqueue(encoder.encode(chunk));
+                }
+                controller.close();
+            },
+        });
+        return new Response(body, {
+            headers: { "content-type": "text/event-stream" },
+        });
+    });
 
     return app;
 }
@@ -303,7 +379,6 @@ describe("tracking observability", () => {
             id: userId,
             email: `${userId}@test.local`,
             name: "Track Auto Top Up Test",
-            tier: "flower",
             tierBalance: 0,
             packBalance: 100,
             autoTopUpEnabled: true,
@@ -371,7 +446,6 @@ describe("tracking observability", () => {
                 id: payerId,
                 email: `${payerId}@test.local`,
                 name: "Track Community Payer",
-                tier: "flower",
                 tierBalance: 1,
                 packBalance: 0,
                 createdAt: new Date(),
@@ -381,7 +455,6 @@ describe("tracking observability", () => {
                 id: ownerId,
                 email: `${ownerId}@test.local`,
                 name: "Track Community Owner",
-                tier: "flower",
                 tierBalance: 0,
                 packBalance: 0,
                 createdAt: new Date(),
@@ -629,6 +702,61 @@ describe("tracking observability", () => {
         expect(consumePollen).toHaveBeenCalledWith(0);
     });
 
+    it("captures endTime at stream completion so responseTime covers the whole request", async () => {
+        const tinybirdRequests: Request[] = [];
+        vi.spyOn(globalThis, "fetch").mockImplementation(
+            async (input, init) => {
+                tinybirdRequests.push(new Request(input, init));
+                return new Response("ok");
+            },
+        );
+
+        // 4 chunks × 50ms upstream delay; first-byte capture would record ~0ms.
+        const ctx = createExecutionContext();
+        const response = await createSseStreamApp(50).fetch(
+            new Request("https://gen.pollinations.ai/v1/chat/completions", {
+                method: "POST",
+                headers: { "content-type": "application/json" },
+                body: JSON.stringify({
+                    model: "openai",
+                    stream: true,
+                    messages: [{ role: "user", content: "test" }],
+                }),
+            }),
+            {
+                ENVIRONMENT: "test",
+                LOG_LEVEL: "debug",
+                LOG_FORMAT: "text",
+                BETTER_AUTH_SECRET: "test_secret",
+                TINYBIRD_INGEST_URL:
+                    "https://tinybird.test/v0/events?name=generation_event",
+                TINYBIRD_INGEST_TOKEN: "test_tinybird_token",
+            } as CloudflareBindings,
+            ctx,
+        );
+
+        await waitOnExecutionContext(ctx);
+
+        expect(response.status).toBe(200);
+        expect(tinybirdRequests).toHaveLength(1);
+        const event = (await tinybirdRequests[0].json()) as {
+            responseTime: number;
+            startTime: string;
+            endTime: string;
+            tokenCountCompletionText: number;
+            modelUsed: string;
+            isBilledUsage: boolean;
+        };
+        expect(event.responseTime).toBeGreaterThanOrEqual(100);
+        expect(
+            new Date(event.endTime).getTime() -
+                new Date(event.startTime).getTime(),
+        ).toBeGreaterThanOrEqual(100);
+        expect(event.tokenCountCompletionText).toBe(500);
+        expect(event.modelUsed).toBe("gpt-5-nano-2025-08-07");
+        expect(event.isBilledUsage).toBe(true);
+    });
+
     it("records fallbackUsed=true when Portkey served a non-primary target", async () => {
         const event = await captureFallbackEvent({
             "x-fallback-target": "config.targets[1]",
@@ -646,5 +774,97 @@ describe("tracking observability", () => {
     it("records fallbackUsed=false when no fallback header is present", async () => {
         const event = await captureFallbackEvent({});
         expect(event.fallbackUsed).toBe(false);
+    });
+});
+
+function makeAdjustment(
+    ruleId: string,
+    cost: number,
+    units: number,
+): BillingAdjustment {
+    return {
+        ruleId,
+        kind: "search_query",
+        unit: "query",
+        units,
+        unitCost: units === 0 ? 0 : cost / units,
+        cost,
+        price: cost,
+    };
+}
+
+describe("reduceAdjustmentsToEventFields", () => {
+    it("returns undefined map fields when there are no adjustments", () => {
+        expect(reduceAdjustmentsToEventFields(undefined)).toEqual({});
+        expect(reduceAdjustmentsToEventFields([])).toEqual({});
+    });
+
+    it("maps a single adjustment to keyed cost/units records", () => {
+        expect(
+            reduceAdjustmentsToEventFields([
+                makeAdjustment("google.gemini_3.search_query.v1", 0.042, 3),
+            ]),
+        ).toEqual({
+            adjustmentCosts: { "google.gemini_3.search_query.v1": 0.042 },
+            adjustmentUnits: { "google.gemini_3.search_query.v1": 3 },
+        });
+    });
+
+    it("maps two distinct rule ids into both records", () => {
+        expect(
+            reduceAdjustmentsToEventFields([
+                makeAdjustment("google.gemini_3.search_query.v1", 0.042, 3),
+                makeAdjustment(
+                    "perplexity.sonar_low.search_request.v1",
+                    0.006,
+                    1,
+                ),
+            ]),
+        ).toEqual({
+            adjustmentCosts: {
+                "google.gemini_3.search_query.v1": 0.042,
+                "perplexity.sonar_low.search_request.v1": 0.006,
+            },
+            adjustmentUnits: {
+                "google.gemini_3.search_query.v1": 3,
+                "perplexity.sonar_low.search_request.v1": 1,
+            },
+        });
+    });
+
+    it("survives the JSON.stringify(removeUnset(event)) ingestion round-trip", () => {
+        // Mirror shared/events.ts sendToTinybird: body = JSON.stringify(removeUnset(event)).
+        const withAdjustments = {
+            id: "evt_with",
+            isBilledUsage: true,
+            ...reduceAdjustmentsToEventFields([
+                makeAdjustment("google.gemini_3.search_query.v1", 0.042, 3),
+            ]),
+        } as unknown as TinybirdEvent;
+        const parsedWith = JSON.parse(
+            JSON.stringify(removeUnset(withAdjustments)),
+        );
+        expect(parsedWith.adjustmentCosts).toEqual({
+            "google.gemini_3.search_query.v1": 0.042,
+        });
+        expect(parsedWith.adjustmentUnits).toEqual({
+            "google.gemini_3.search_query.v1": 3,
+        });
+
+        // No adjustments → neither key is present in the serialized payload
+        // (removeUnset drops undefined; ClickHouse DEFAULT map() fills them).
+        const withoutAdjustments = {
+            id: "evt_without",
+            isBilledUsage: true,
+            ...reduceAdjustmentsToEventFields([]),
+        } as unknown as TinybirdEvent;
+        const serializedWithout = JSON.stringify(
+            removeUnset(withoutAdjustments),
+        );
+        expect(serializedWithout).not.toContain("adjustmentCosts");
+        expect(serializedWithout).not.toContain("adjustmentUnits");
+        const parsedWithout = JSON.parse(serializedWithout);
+        expect(parsedWithout).not.toHaveProperty("adjustmentCosts");
+        expect(parsedWithout).not.toHaveProperty("adjustmentUnits");
     });
 });

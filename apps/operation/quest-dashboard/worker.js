@@ -33,6 +33,21 @@ const TOP_SQL = `
     FROM rewards r LEFT JOIN user u ON u.id = r.user_id
    GROUP BY r.user_id ORDER BY pollen DESC LIMIT 8`;
 
+const ASSET_PATHS = new Set([
+    "/styles.css",
+    "/bundle.js",
+    "/favicon.ico",
+    "/favicon-16x16.png",
+    "/favicon-32x32.png",
+    "/apple-touch-icon.png",
+    "/android-chrome-192x192.png",
+    "/android-chrome-512x512.png",
+    "/icon-192.png",
+    "/icon-512.png",
+    "/manifest.json",
+    "/og-image.png",
+]);
+
 // rewards timestamps can be seconds or ms. Normalize to ms for the client.
 function normMs(v) {
     if (v == null) return null;
@@ -67,6 +82,18 @@ const HTML = `<!doctype html>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Quests — Live</title>
+<meta name="description" content="Pollinations operations dashboards">
+<meta property="og:title" content="pollinations.ai">
+<meta property="og:description" content="Pollinations operations dashboards">
+<meta property="og:image" content="/og-image.png">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="/og-image.png">
+<link rel="icon" type="image/x-icon" href="/favicon.ico">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<link rel="manifest" href="/manifest.json">
 <link rel="stylesheet" href="/styles.css">
 <style>
   html,body{margin:0;background:var(--polli-color-app-bg);min-height:100%}
@@ -222,7 +249,7 @@ export default {
                 },
             });
         }
-        if (url.pathname === "/styles.css" || url.pathname === "/bundle.js") {
+        if (ASSET_PATHS.has(url.pathname)) {
             return env.ASSETS.fetch(request);
         }
         return new Response(HTML, {

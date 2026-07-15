@@ -43,6 +43,13 @@ export type TinybirdEvent = {
     selectedMeterSlug?: string;
     balances?: Record<string, number>;
 
+    // Billing adjustments (search/tool fees). Keyed by versioned rule id
+    // (e.g. "google.gemini_3.search_query.v1"). Left undefined when the request
+    // had no adjustments so ClickHouse's DEFAULT map() fills them; a literal {}
+    // would serialize on every event since removeUnset only strips null/undefined.
+    adjustmentCosts?: Record<string, number>; // rule id → USD cost
+    adjustmentUnits?: Record<string, number>; // rule id → units charged (fractional-capable)
+
     // Network
     ipSubnet?: string;
     ipHash?: string;
@@ -65,11 +72,13 @@ export type TinybirdEvent = {
     tokenPricePromptCached: number;
     tokenPricePromptCacheWrite: number;
     tokenPricePromptAudio: number;
+    tokenPricePromptAudioSeconds: number;
     tokenPricePromptImage: number;
     tokenPricePromptVideo: number;
     tokenPriceCompletionText: number;
     tokenPriceCompletionReasoning: number;
     tokenPriceCompletionAudio: number;
+    tokenPriceCompletionAudioSeconds: number;
     tokenPriceCompletionImage: number;
     tokenPriceCompletionVideoSeconds: number;
     tokenPriceCompletionVideoTokens: number;
@@ -129,11 +138,13 @@ export type GenerationEventPriceParams = {
     tokenPricePromptCached: number;
     tokenPricePromptCacheWrite: number;
     tokenPricePromptAudio: number;
+    tokenPricePromptAudioSeconds: number;
     tokenPricePromptImage: number;
     tokenPricePromptVideo: number;
     tokenPriceCompletionText: number;
     tokenPriceCompletionReasoning: number;
     tokenPriceCompletionAudio: number;
+    tokenPriceCompletionAudioSeconds: number;
     tokenPriceCompletionImage: number;
     tokenPriceCompletionVideoSeconds: number;
     tokenPriceCompletionVideoTokens: number;
@@ -170,6 +181,8 @@ export function priceToEventParams(
             priceDefinition?.promptCacheWriteTokens || 0,
         tokenPricePromptAudio: 
             priceDefinition?.promptAudioTokens || 0,
+        tokenPricePromptAudioSeconds:
+            priceDefinition?.promptAudioSeconds || 0,
         tokenPricePromptImage:
             priceDefinition?.promptImageTokens || 0,
         tokenPricePromptVideo:
@@ -182,6 +195,8 @@ export function priceToEventParams(
             0,
         tokenPriceCompletionAudio:
             priceDefinition?.completionAudioTokens || 0,
+        tokenPriceCompletionAudioSeconds:
+            priceDefinition?.completionAudioSeconds || 0,
         tokenPriceCompletionImage:
             priceDefinition?.completionImageTokens || 0,
         tokenPriceCompletionVideoSeconds:

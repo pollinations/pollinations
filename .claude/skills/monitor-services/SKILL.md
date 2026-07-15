@@ -301,11 +301,18 @@ one-liner, and host gotchas live in `image.pollinations.ai/GPU_INSTANCES.md`
 
 **Check:**
 ```bash
-# flux worker(s) registered:
+# flux worker(s) registered — the `url` field is the tunnel to probe, and
+# `lastMs` is the last request's duration (a healthy 5090 is single-digit
+# seconds; tens of seconds means the tunnel is degrading, see below):
 curl -s https://gen.pollinations.ai/register | grep -o '"type":"flux"[^}]*'
-# tunnel + worker up (expect 200):
-curl -s -o /dev/null -w "%{http_code}\n" https://flux-vast-01.pollinations.ai/docs
+# then probe THAT url (expect 200 in ~1s):
+curl -s -o /dev/null -w "%{http_code} %{time_total}s\n" "<url-from-registry>/docs"
 ```
+
+Registry health is NOT data-path health: the worker heartbeats fine even when
+the tunnel in front of it is too slow to serve. Always time the probe. If
+`/docs` (a static page) takes >5s, the tunnel is the problem, not the GPU —
+compare against the worker on localhost via SSH to confirm.
 
 **Pool vs Fireworks split** — invisible in Tinybird (`model_provider_used` is
 static registry data); read it from the worker log (SSH coords from

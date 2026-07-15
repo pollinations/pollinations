@@ -1,0 +1,75 @@
+DESCRIPTION >
+    Activity API usage transactions for table pagination and detailed CSV export.
+
+TOKEN "tinybird_read" READ
+
+NODE activity_usage_transactions_node
+SQL >
+    %
+    SELECT
+        event_timestamp AS timestamp,
+        cursor_event_id,
+        type,
+        resolved_model as model,
+        api_key_id,
+        api_key,
+        api_key_type,
+        meter_source,
+        input_text_tokens,
+        input_cached_tokens,
+        input_audio_tokens,
+        input_audio_seconds,
+        input_image_tokens,
+        output_text_tokens,
+        output_reasoning_tokens,
+        output_audio_tokens,
+        output_audio_seconds,
+        output_image_tokens,
+        output_video_seconds,
+        price_usd as cost_usd,
+        response_time_ms
+    FROM (
+        SELECT
+            any(timestamp) AS event_timestamp,
+            event_id AS cursor_event_id,
+            any(type) AS type,
+            any(resolved_model) AS resolved_model,
+            any(api_key_id) AS api_key_id,
+            any(api_key) AS api_key,
+            any(api_key_type) AS api_key_type,
+            any(meter_source) AS meter_source,
+            any(input_text_tokens) AS input_text_tokens,
+            any(input_cached_tokens) AS input_cached_tokens,
+            any(input_audio_tokens) AS input_audio_tokens,
+            any(input_audio_seconds) AS input_audio_seconds,
+            any(input_image_tokens) AS input_image_tokens,
+            any(output_text_tokens) AS output_text_tokens,
+            any(output_reasoning_tokens) AS output_reasoning_tokens,
+            any(output_audio_tokens) AS output_audio_tokens,
+            any(output_audio_seconds) AS output_audio_seconds,
+            any(output_image_tokens) AS output_image_tokens,
+            any(output_video_seconds) AS output_video_seconds,
+            any(price_usd) AS price_usd,
+            any(response_time_ms) AS response_time_ms
+        FROM activity_usage_events
+        WHERE
+            user_id = {{ String(user_id, '') }}
+            {% if defined(api_key_ids) %} AND api_key_id IN {{ Array(api_key_ids, 'String') }} {% end %}
+            {% if defined(models) %} AND resolved_model IN {{ Array(models, 'String') }} {% end %}
+            {% if defined(since) %} AND timestamp >= {{ DateTime(since) }}
+            {% else %} AND timestamp >= now() - INTERVAL 30 DAY
+            {% end %}
+            {% if defined(until) %} AND timestamp < {{ DateTime(until) }} {% end %}
+            {% if defined(before) and defined(before_event_id) %}
+                AND (
+                    timestamp < {{ DateTime(before) }}
+                    OR (timestamp = {{ DateTime(before) }} AND event_id < {{ String(before_event_id) }})
+                )
+            {% elif defined(before) %} AND timestamp < {{ DateTime(before) }}
+            {% end %}
+        GROUP BY user_id, event_id
+    )
+    ORDER BY event_timestamp DESC, cursor_event_id DESC
+    LIMIT {{ Int32(limit, 100) }}
+
+TYPE endpoint

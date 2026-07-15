@@ -1,0 +1,36 @@
+{
+  "pr_number": 12488,
+  "title": "docs: require explicit model change confirmation",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/12488",
+  "merged_at": "2026-07-15T16:50:03Z",
+  "labels": [
+    "DEV-DOCS"
+  ],
+  "pr_body_excerpt": "- Adds a mandatory pre-edit confirmation gate to the model-management skill.\n- Requires explicit approval of multiplier, paid status, GPU ownership, provider, and primary/fallback inference routes.\n- Defines configured versus actually used provider/GPU semantics.\n- Tracks the clean restart plan after closing #12342 and #12343.\n\nValidation: `quick_validate.py .claude/skills/model-management`",
+  "gist": {
+    "category": "docs",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Measure twice, route once",
+    "blurb": "The model garden now asks for a clear nod before anyone moves the irrigation pipes. Providers, GPUs, pricing status, and fallback routes all get checked before the edit lands.",
+    "summary": "Updated the internal model-management skill with a mandatory confirmation gate covering multipliers, paid status, GPU ownership, providers, and primary/fallback inference routes, while defining configured versus actually used infrastructure semantics.",
+    "impact": "Maintainers get a clearer pre-edit checklist for model routing changes, reducing ambiguity around which provider and GPU configuration will actually serve requests.",
+    "keywords": [
+      "documentation",
+      "model-management",
+      "inference-routing",
+      "providers",
+      "gpu",
+      "confirmation"
+    ],
+    "visual_concept": "A cozy model-routing garden map: Polly, wearing tiny librarian glasses and holding a checklist, pauses beside labeled primary and fallback water pipes feeding code-plants. A small CRT monitor robot points at two clearly marked routes, representing explicit confirmation before changing provider or GPU settings.",
+    "image_prompt": "Cozy pixel art scene of Polly the cute yellow-and-brown striped bee mascot wearing tiny librarian glasses, carefully checking a clipboard beside a garden of code-plants fed by labeled primary and fallback irrigation pipes; a cheerful CRT monitor robot points at a routing map. Prominent lime green (#ecf874) pipes and glow, warm cream and lavender pastels, soft flowers and vines, cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with pixel-font text: \"CONFIRM ROUTE\"."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-15/PR-12488.jpg",
+    "prompt": "Cozy pixel art scene of Polly the cute yellow-and-brown striped bee mascot wearing tiny librarian glasses, carefully checking a clipboard beside a garden of code-plants fed by labeled primary and fallback irrigation pipes; a cheerful CRT monitor robot points at a routing map. Prominent lime green (#ecf874) pipes and glow, warm cream and lavender pastels, soft flowers and vines, cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with pixel-font text: \"CONFIRM ROUTE\"."
+  },
+  "generated_at": "2026-07-15T16:50:56.377109+00:00"
+}

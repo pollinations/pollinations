@@ -1,0 +1,36 @@
+{
+  "pr_number": 12490,
+  "title": "feat: deploy economics on Cloudflare Workers",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/12490",
+  "merged_at": "2026-07-15T16:45:52Z",
+  "labels": [
+    "DEV-INFRA"
+  ],
+  "pr_body_excerpt": "- Moves the Economics password gate and allowlisted Tinybird proxy into a Cloudflare Worker.\n- Serves the React app at `economics.myceli.ai` and `economics.pollinations.ai` from one Myceli-account Worker.\n- Adds the Economics app, dedicated SOPS key, deployment, and endpoint checks to the operations workflow.\n- Keeps the legacy Grafana droplet untouched until the Worker cutover and Observability alerting are verified.\n\nValidation:\n- 163 Vitest tests pass.\n- TypeScript check passes.\n- Wrangler production build and deploy dry-run pass.\n- Local Worker preview returns the app and unauthenticated session response.",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Economics grows worker wings",
+    "blurb": "The Economics dashboard packed its password gate and Tinybird proxy into a Cloudflare Worker. One small worker now tends both Myceli and Pollinations garden gates.",
+    "summary": "Moved the Economics React app, password gate, and allowlisted Tinybird proxy into a single Myceli-account Cloudflare Worker serving economics.myceli.ai and economics.pollinations.ai, with deployment and endpoint checks added to operations.",
+    "impact": "Operations can deploy and verify the Economics app from Cloudflare Workers while the existing Grafana droplet remains available through the cutover and alerting validation.",
+    "keywords": [
+      "cloudflare-workers",
+      "economics",
+      "operations",
+      "tinybird",
+      "deployment",
+      "myceli"
+    ],
+    "visual_concept": "A cozy garden operations shed where Polly helps a friendly CRT monitor robot move the Economics dashboard from an old Grafana droplet-shaped planter into a compact Cloudflare Worker beehive. Show two small signposts for economics.myceli.ai and economics.pollinations.ai, a protected gate, Tinybird data slips, and sprouting code-plants to represent the migrated app, proxy, and deployment checks.",
+    "image_prompt": "Cozy pixel art scene of Polly, the cute yellow-and-brown striped bee with pink blush, light blue wings, and a tiny operations helmet, guiding a cheerful CRT monitor robot as it carries glowing Tinybird data slips into a small Cloudflare Worker beehive beside two garden signposts reading “economics.myceli.ai” and “economics.pollinations.ai”; an old droplet-shaped planter rests safely nearby, with code-plants and flowers growing around it. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-15/PR-12490.jpg",
+    "prompt": "Cozy pixel art scene of Polly, the cute yellow-and-brown striped bee with pink blush, light blue wings, and a tiny operations helmet, guiding a cheerful CRT monitor robot as it carries glowing Tinybird data slips into a small Cloudflare Worker beehive beside two garden signposts reading “economics.myceli.ai” and “economics.pollinations.ai”; an old droplet-shaped planter rests safely nearby, with code-plants and flowers growing around it. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
+  },
+  "generated_at": "2026-07-15T16:46:52.579299+00:00"
+}

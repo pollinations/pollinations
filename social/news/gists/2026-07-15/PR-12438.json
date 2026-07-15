@@ -1,0 +1,35 @@
+{
+  "pr_number": 12438,
+  "title": "Fixes #12220: Document 3D Generation End-to-End",
+  "author": "sharktide",
+  "url": "https://github.com/pollinations/pollinations/pull/12438",
+  "merged_at": "2026-07-15T09:55:13Z",
+  "labels": [
+    "DEV-DOCS"
+  ],
+  "pr_body_excerpt": "self explanatory, documents the new 3d generation that was introduced in #12048, #12179, #12188, and #12190",
+  "gist": {
+    "category": "docs",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "The third dimension has docs",
+    "blurb": "3D generation now has a proper trail of breadcrumbs, from quick start to model details. The hive has labeled the extra axis.",
+    "summary": "Documented Pollinations 3D generation end-to-end with a dedicated guide, model reference entry, quick-start examples, and updated docs routes.",
+    "impact": "Developers can now find the 3D generation workflow, available model information, and starter requests directly in the Pollinations documentation.",
+    "keywords": [
+      "documentation",
+      "3d-generation",
+      "api",
+      "models",
+      "quick-start"
+    ],
+    "visual_concept": "Depict Polly as a tiny explorer wearing round cartographer glasses, following a clearly marked pixel path from a retro terminal into a cozy miniature 3D garden of blocky cubes, spheres, and code-plants. A friendly CRT monitor robot holds an unfolded guide map, while flowers and vines make the formerly mysterious third dimension feel approachable.",
+    "image_prompt": "Cozy pixel art scene of Polly, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and tiny cartographer glasses, studying a glowing 3D generation guide beside a friendly CRT monitor robot holding a map; blocky cubes, spheres, and code-plants bloom from a lime green (#ecf874) garden path. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley, with simple pixel-font text: \"3D GUIDE\"."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-15/PR-12438.jpg",
+    "prompt": "Cozy pixel art scene of Polly, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and tiny cartographer glasses, studying a glowing 3D generation guide beside a friendly CRT monitor robot holding a map; blocky cubes, spheres, and code-plants bloom from a lime green (#ecf874) garden path. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley, with simple pixel-font text: \"3D GUIDE\"."
+  },
+  "generated_at": "2026-07-15T09:56:06.293055+00:00"
+}

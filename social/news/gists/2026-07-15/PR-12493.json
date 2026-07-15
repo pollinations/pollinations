@@ -1,0 +1,36 @@
+{
+  "pr_number": 12493,
+  "title": "night: align page copy and flyer with current event",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/12493",
+  "merged_at": "2026-07-15T17:18:43Z",
+  "labels": [
+    "DEV-UI-UX"
+  ],
+  "pr_body_excerpt": "## What changed\n\n- align the Night page extras, RSVP wording, form option, metadata, and worker route metadata with the current flyer\n- replace the direct flyer and 4:5 flyer endpoints with the current event flyer\n\n## Why\n\nThe page still described a separate personalized-cocktail item and used the more aggressive \"hate for AI\" wording. Its social preview image was also the prior flyer.\n\n## Validation\n\n`npm run build --prefix pollinations.ai`\n",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Night gets the right flyer",
+    "blurb": "The Night page and its little corners now all point at the same party. RSVP copy, event details, and social previews have stopped living in separate timelines.",
+    "summary": "Updated the Night page’s extras, RSVP wording, form option, metadata, worker route metadata, and both flyer image endpoints to match the current event flyer.",
+    "impact": "Visitors and shared links now see consistent current-event details and the updated flyer across the Night page, social preview, and 4:5 image routes.",
+    "keywords": [
+      "night",
+      "event",
+      "flyer",
+      "rsvp",
+      "metadata",
+      "frontend"
+    ],
+    "visual_concept": "A cozy nighttime event noticeboard where Polly helps replace an older poster with the current Night flyer, while a friendly CRT robot checks that matching RSVP cards and social-preview frames are aligned. Use paper flyers, a small garden vine around the board, and warm lantern light to represent consistent page copy and metadata.",
+    "image_prompt": "Cozy pixel art scene of Polly, a cute pixel bee mascot with a yellow body, dark brown horizontal stripes, black antennae and oval eyes, bright pink rectangular cheek blushes, a happy smile, and rounded light-blue translucent wings, wearing a tiny event lanyard as she pins a fresh Night flyer onto a garden noticeboard; a chunky CRT monitor robot holds matching RSVP cards and preview frames nearby. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, code-vines and pixel flowers, warm lantern lighting, retro gaming vibes like Stardew Valley or A Short Hike, with simple pixel-font text: \"NIGHT\"."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-15/PR-12493.jpg",
+    "prompt": "Cozy pixel art scene of Polly, a cute pixel bee mascot with a yellow body, dark brown horizontal stripes, black antennae and oval eyes, bright pink rectangular cheek blushes, a happy smile, and rounded light-blue translucent wings, wearing a tiny event lanyard as she pins a fresh Night flyer onto a garden noticeboard; a chunky CRT monitor robot holds matching RSVP cards and preview frames nearby. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, code-vines and pixel flowers, warm lantern lighting, retro gaming vibes like Stardew Valley or A Short Hike, with simple pixel-font text: \"NIGHT\"."
+  },
+  "generated_at": "2026-07-15T17:19:43.427685+00:00"
+}

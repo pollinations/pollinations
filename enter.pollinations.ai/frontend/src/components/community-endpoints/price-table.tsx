@@ -34,8 +34,6 @@ type PriceFormRow = {
 
 type PriceCellState = {
     observed: boolean;
-    missing: boolean;
-    nonPositive: boolean;
     invalid: boolean;
 };
 
@@ -111,17 +109,7 @@ function PriceRow({
     const outputState = row.outputField
         ? priceCellState(row.outputField, form, testState)
         : null;
-    const hasError =
-        Boolean(
-            inputState?.invalid ||
-                inputState?.missing ||
-                inputState?.nonPositive,
-        ) ||
-        Boolean(
-            outputState?.invalid ||
-                outputState?.missing ||
-                outputState?.nonPositive,
-        );
+    const hasError = Boolean(inputState?.invalid || outputState?.invalid);
     const returned = Boolean(inputState?.observed || outputState?.observed);
 
     return (
@@ -180,7 +168,7 @@ function PriceInputCell({
     }
 
     const inputId = `community-${field.key}`;
-    const hasError = state.invalid || state.missing || state.nonPositive;
+    const hasError = state.invalid;
 
     return (
         <TableCell align="right" className="w-40 align-top">
@@ -205,11 +193,7 @@ function PriceInputCell({
                 />
                 {hasError && (
                     <p className="mt-1 text-right text-xs text-intent-danger-text">
-                        {state.invalid
-                            ? "Use a dot decimal like 0.1"
-                            : state.nonPositive
-                              ? "Must be greater than 0"
-                              : "Required for returned usage"}
+                        Use a non-negative dot decimal like 0.1
                     </p>
                 )}
             </div>
@@ -225,18 +209,9 @@ function priceCellState(
     const observed =
         observedUsageValue(testState.usage, testState.billableUsage, field) !==
         null;
-    const value = form[field.key];
-    const trimmedValue = value.trim();
-    const invalid = !isValidPriceInput(value);
     return {
         observed,
-        missing: observed && trimmedValue === "",
-        nonPositive:
-            observed &&
-            trimmedValue !== "" &&
-            !invalid &&
-            Number(trimmedValue) <= 0,
-        invalid,
+        invalid: !isValidPriceInput(form[field.key]),
     };
 }
 
@@ -299,6 +274,13 @@ export function savedEndpointPriceKeys(
     );
 }
 
+// Show the base text prices as soon as a model is made public. They remain
+// optional: blank or zero publishes the model for free.
+export const BASE_TEXT_PRICE_KEYS: PriceFieldKey[] = [
+    "promptTextPrice",
+    "completionTextPrice",
+];
+
 export function returnedPriceFields(testState: ActionState): PriceField[] {
     if (testState.status !== "success") return [];
     return COMMUNITY_ENDPOINT_PRICE_FIELDS.filter((field) =>
@@ -309,8 +291,11 @@ export function returnedPriceFields(testState: ActionState): PriceField[] {
 export function visiblePriceFieldKeys(
     savedPriceKeys: Set<PriceFieldKey>,
     returnedFields: PriceField[],
+    // Fields that should be visible before any endpoint test has run.
+    alwaysVisible: PriceFieldKey[] = [],
 ): Set<PriceFieldKey> {
     return new Set([
+        ...alwaysVisible,
         ...savedPriceKeys,
         ...returnedFields.map((field) => field.key),
     ]);
@@ -327,14 +312,6 @@ export function formWithVisiblePrices(
         }
     }
     return next;
-}
-
-export function hasPositivePriceInput(
-    form: EndpointFormState,
-    field: PriceField,
-): boolean {
-    const value = form[field.key].trim();
-    return value !== "" && isValidPriceInput(value) && Number(value) > 0;
 }
 
 export function hasValidVisibleFormPrices(

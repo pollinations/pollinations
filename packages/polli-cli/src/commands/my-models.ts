@@ -43,6 +43,7 @@ interface MyModel {
     description: string | null;
     baseUrl: string;
     upstreamModel: string;
+    visibility: "private" | "public";
     createdAt: string;
     updatedAt: string;
     [key: string]: unknown;
@@ -87,6 +88,14 @@ function modelBody(opts: Record<string, unknown>, includeRequired: boolean) {
         if (opts[optionKey] !== undefined) body[bodyKey] = opts[optionKey];
     }
 
+    if (opts.visibility !== undefined) {
+        if (opts.visibility !== "private" && opts.visibility !== "public") {
+            printError("--visibility must be 'private' or 'public'");
+            process.exit(1);
+        }
+        body.visibility = opts.visibility;
+    }
+
     if (includeRequired) {
         for (const required of ["name", "baseUrl", "bearerToken"]) {
             if (!body[required]) {
@@ -110,11 +119,12 @@ function printModels(models: MyModel[]) {
         models.map((model) => ({
             id: chalk.dim(model.id),
             model: chalk.hex("#a78bfa").bold(model.modelId),
+            visibility: model.visibility,
             upstream: model.upstreamModel,
             base_url: model.baseUrl,
             description: model.description ?? "-",
         })),
-        ["id", "model", "upstream", "base_url", "description"],
+        ["id", "model", "visibility", "upstream", "base_url", "description"],
     );
 }
 
@@ -142,7 +152,11 @@ const create = addPriceOptions(
         .option("--description <text>", "Model description")
         .requiredOption("--base-url <url>", "OpenAI-compatible base URL")
         .option("--upstream-model <model>", "Upstream model id")
-        .requiredOption("--bearer-token <token>", "Upstream bearer token"),
+        .requiredOption("--bearer-token <token>", "Upstream bearer token")
+        .option(
+            "--visibility <visibility>",
+            "Model visibility: private (default) or public",
+        ),
 ).action(async (opts) => {
     const key = requireKey();
     try {
@@ -172,7 +186,11 @@ const update = addPriceOptions(
         .option("--description <text>", "Model description")
         .option("--base-url <url>", "OpenAI-compatible base URL")
         .option("--upstream-model <model>", "Upstream model id")
-        .option("--bearer-token <token>", "Upstream bearer token"),
+        .option("--bearer-token <token>", "Upstream bearer token")
+        .option(
+            "--visibility <visibility>",
+            "Model visibility: private or public",
+        ),
 ).action(async (id, opts) => {
     const key = requireKey();
     try {
@@ -283,7 +301,7 @@ const test = new Command("test")
     });
 
 export const myModelsCommand = new Command("my-models")
-    .description("Manage your invite-only community text models")
+    .description("Manage private and published community text models")
     .addCommand(list)
     .addCommand(create)
     .addCommand(update)

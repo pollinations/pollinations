@@ -123,8 +123,6 @@ function RouteComponent() {
     const [activePage, setActivePage] = usePageFromHash(pageFromHash);
     const [activityPeriod, setActivityPeriod] =
         useState<UsagePeriodSelection>(currentUsagePeriod);
-    const showCommunityEndpoints = communityEndpointsAllowed;
-
     async function handleSignOut(): Promise<void> {
         if (isSigningOut) return;
         setIsSigningOut(true);
@@ -290,7 +288,10 @@ function RouteComponent() {
                 />
             )}
             {activePage === "models" && (
-                <Models showCommunityEndpoints={showCommunityEndpoints} />
+                <Models
+                    showCommunityEndpoints
+                    canPublish={communityEndpointsAllowed}
+                />
             )}
         </DashboardShell>
     );

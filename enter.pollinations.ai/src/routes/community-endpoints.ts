@@ -1,6 +1,8 @@
 import {
     COMMUNITY_ENDPOINT_PRICE_FIELDS,
+    COMMUNITY_ENDPOINT_VISIBILITIES,
     type CommunityEndpointPriceKey,
+    type CommunityEndpointVisibility,
     communityEndpointPrices,
     communityModelId,
     isCommunityEndpointOwnerAllowed,
@@ -26,12 +28,6 @@ import {
 import { hasDirectAccountPermission } from "./account-permissions.ts";
 
 const PriceSchema = z.number().finite().min(0);
-const CreatePriceFieldsSchema = Object.fromEntries(
-    COMMUNITY_ENDPOINT_PRICE_FIELDS.map((field) => [
-        field.key,
-        PriceSchema.optional().default(0),
-    ]),
-) as unknown as Record<CommunityEndpointPriceKey, z.ZodType<number>>;
 const UpdatePriceFieldsSchema = Object.fromEntries(
     COMMUNITY_ENDPOINT_PRICE_FIELDS.map((field) => [
         field.key,
@@ -42,6 +38,11 @@ const UpdatePriceFieldsSchema = Object.fromEntries(
     z.ZodType<number | undefined>
 >;
 
+const VisibilitySchema = z
+    .enum(COMMUNITY_ENDPOINT_VISIBILITIES)
+    .describe(
+        '"private": owner-only, shown only to the owner, with no owner-set price. "public": anyone and listed in the catalog; it may be free or priced. Publishing requires an allowlisted account.',
+    );
 const EndpointFieldsSchema = {
     // No "/": the public model id is `<owner>/<name>`, so a slash in the name
     // would inject a second separator and let one model spoof another's id.
@@ -59,7 +60,8 @@ const EndpointFieldsSchema = {
 
 const CreateEndpointSchema = z.object({
     ...EndpointFieldsSchema,
-    ...CreatePriceFieldsSchema,
+    visibility: VisibilitySchema.optional().default("private"),
+    ...UpdatePriceFieldsSchema,
 });
 const UpdateEndpointSchema = z.object({
     name: EndpointFieldsSchema.name.optional(),
@@ -67,6 +69,7 @@ const UpdateEndpointSchema = z.object({
     baseUrl: EndpointFieldsSchema.baseUrl.optional(),
     upstreamModel: EndpointFieldsSchema.upstreamModel,
     bearerToken: EndpointFieldsSchema.bearerToken.optional(),
+    visibility: VisibilitySchema.optional(),
     ...UpdatePriceFieldsSchema,
 });
 const ModelListSchema = z.object({
@@ -88,6 +91,7 @@ const CommunityEndpointResponseSchema = z.object({
     description: z.string().nullable(),
     baseUrl: z.string(),
     upstreamModel: z.string(),
+    visibility: VisibilitySchema,
     ...ResponsePriceFieldsSchema,
     disabled: z.boolean(),
     disabledReason: z.string().nullable(),
@@ -138,7 +142,9 @@ function normalizeInputBearerToken(value: string): string {
     }
 }
 
-async function requireCommunityEndpointAccess(
+// Anyone may register private endpoints for their own use. Publishing and raw
+// upstream probes require an allowlisted account.
+async function requireCommunityEndpointPublishAccess(
     db: Db,
     userId: string,
 ): Promise<void> {
@@ -149,7 +155,8 @@ async function requireCommunityEndpointAccess(
 
     if (!isCommunityEndpointOwnerAllowed(user)) {
         throw new HTTPException(403, {
-            message: "Community endpoints are invite-only",
+            message:
+                "Community model publishing tools require approval. Models can stay private for your own use.",
         });
     }
 }
@@ -177,6 +184,7 @@ function toResponse(row: CommunityEndpointRow, ownerGithubUsername: string) {
         description: row.description,
         baseUrl: row.baseUrl,
         upstreamModel: row.upstreamModel,
+        visibility: row.visibility,
         ...communityEndpointPrices(row),
         disabled: row.disabledAt !== null,
         disabledReason: row.disabledReason,
@@ -241,16 +249,15 @@ function requireCommunityEndpointManagePermission(apiKey?: {
     }
 }
 
-async function requireCommunityEndpointManageAccess(
+// Publishing is allowlist-gated. Pricing is independent: public endpoints may
+// be free or owner-priced.
+async function enforcePublishingAccess(
     db: Db,
     userId: string,
-    apiKey?: {
-        permissions?: Record<string, string[]>;
-        metadata?: Record<string, unknown>;
-    },
+    visibility: CommunityEndpointVisibility,
 ): Promise<void> {
-    requireCommunityEndpointManagePermission(apiKey);
-    await requireCommunityEndpointAccess(db, userId);
+    if (visibility !== "public") return;
+    await requireCommunityEndpointPublishAccess(db, userId);
 }
 
 async function enforceEndpointProbeThrottle(
@@ -290,7 +297,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
             tags: ["👤 Account"],
             summary: "List My Models",
             description:
-                "List invite-only community text models owned by the authenticated account. API keys require `account:keys` and an account with `communityEndpointsAllowed: true`; dashboard sessions can manage models directly when enabled.",
+                "List private and public community text models owned by the authenticated account. API keys require `account:keys`.",
             responses: {
                 200: {
                     description: "Registered community text models",
@@ -309,11 +316,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
         async (c) => {
             const user = c.var.auth.requireUser();
             const db = drizzle(c.env.DB, { schema });
-            await requireCommunityEndpointManageAccess(
-                db,
-                user.id,
-                c.var.auth.apiKey,
-            );
+            requireCommunityEndpointManagePermission(c.var.auth.apiKey);
             const ownerGithubUsername = await requireOwnerGithubUsername(
                 db,
                 user.id,
@@ -333,7 +336,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
             tags: ["👤 Account"],
             summary: "Create My Model",
             description:
-                "Register an invite-only community text model. API keys require `account:keys` and an account with `communityEndpointsAllowed: true`. The upstream bearer token is encrypted and never returned.",
+                "Register a private or public community text model. Private is the default. Public models require an allowlisted account and may be free or priced. API keys require `account:keys`. The upstream bearer token is encrypted and never returned.",
             responses: {
                 200: {
                     description: "Created community text model",
@@ -353,16 +356,17 @@ export const communityEndpointsRoutes = new Hono<Env>()
             const user = c.var.auth.requireUser();
             const input = c.req.valid("json");
             const db = drizzle(c.env.DB, { schema });
-            await requireCommunityEndpointManageAccess(
-                db,
-                user.id,
-                c.var.auth.apiKey,
-            );
+            requireCommunityEndpointManagePermission(c.var.auth.apiKey);
             const ownerGithubUsername = await requireOwnerGithubUsername(
                 db,
                 user.id,
             );
             await ensureModelNameAvailable(db, user.id, input.name);
+            const prices =
+                input.visibility === "public"
+                    ? communityEndpointPrices(input)
+                    : communityEndpointPrices({});
+            await enforcePublishingAccess(db, user.id, input.visibility);
             const id = crypto.randomUUID();
             const [row] = await db
                 .insert(schema.communityEndpoint)
@@ -377,7 +381,8 @@ export const communityEndpointsRoutes = new Hono<Env>()
                         normalizeInputBearerToken(input.bearerToken),
                         c.env.BETTER_AUTH_SECRET,
                     ),
-                    ...communityEndpointPrices(input),
+                    visibility: input.visibility,
+                    ...prices,
                     createdAt: new Date(),
                     updatedAt: new Date(),
                 })
@@ -391,7 +396,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
             tags: ["👤 Account"],
             summary: "List Upstream Models",
             description:
-                "Fetch OpenAI-compatible upstream model IDs before registering a My Models endpoint. API keys require `account:keys` and an account with `communityEndpointsAllowed: true`.",
+                "Fetch OpenAI-compatible upstream model IDs before publishing a My Models endpoint. Requires community model publishing approval; API keys also require `account:keys`.",
             responses: {
                 200: {
                     description: "Upstream model IDs",
@@ -414,11 +419,8 @@ export const communityEndpointsRoutes = new Hono<Env>()
             const user = c.var.auth.requireUser();
             const input = c.req.valid("json");
             const db = drizzle(c.env.DB, { schema });
-            await requireCommunityEndpointManageAccess(
-                db,
-                user.id,
-                c.var.auth.apiKey,
-            );
+            requireCommunityEndpointManagePermission(c.var.auth.apiKey);
+            await requireCommunityEndpointPublishAccess(db, user.id);
             const throttled = await enforceEndpointProbeThrottle(
                 c,
                 user.id,
@@ -439,7 +441,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
             tags: ["👤 Account"],
             summary: "Test My Model Endpoint",
             description:
-                "Test an OpenAI-compatible upstream model before registering it. API keys require `account:keys` and an account with `communityEndpointsAllowed: true`.",
+                "Test an OpenAI-compatible upstream model before publishing it. Requires community model publishing approval; API keys also require `account:keys`.",
             responses: {
                 200: {
                     description: "Endpoint test result",
@@ -462,11 +464,8 @@ export const communityEndpointsRoutes = new Hono<Env>()
             const user = c.var.auth.requireUser();
             const input = c.req.valid("json");
             const db = drizzle(c.env.DB, { schema });
-            await requireCommunityEndpointManageAccess(
-                db,
-                user.id,
-                c.var.auth.apiKey,
-            );
+            requireCommunityEndpointManagePermission(c.var.auth.apiKey);
+            await requireCommunityEndpointPublishAccess(db, user.id);
             const throttled = await enforceEndpointProbeThrottle(
                 c,
                 user.id,
@@ -491,7 +490,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
             tags: ["👤 Account"],
             summary: "Update My Model",
             description:
-                "Update an invite-only community text model owned by the authenticated account. API keys require `account:keys` and an account with `communityEndpointsAllowed: true`.",
+                "Update a community text model owned by the authenticated account. Changing visibility to public publishes it and requires an allowlisted account; public models may be free or priced. API keys require `account:keys`.",
             responses: {
                 200: {
                     description: "Updated community text model",
@@ -513,11 +512,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
             const input = c.req.valid("json");
             const { id } = c.req.param();
             const db = drizzle(c.env.DB, { schema });
-            await requireCommunityEndpointManageAccess(
-                db,
-                user.id,
-                c.var.auth.apiKey,
-            );
+            requireCommunityEndpointManagePermission(c.var.auth.apiKey);
             const ownerGithubUsername = await requireOwnerGithubUsername(
                 db,
                 user.id,
@@ -551,11 +546,27 @@ export const communityEndpointsRoutes = new Hono<Env>()
                     c.env.BETTER_AUTH_SECRET,
                 );
             }
+            if (input.visibility !== undefined) {
+                update.visibility = input.visibility;
+            }
             for (const field of COMMUNITY_ENDPOINT_PRICE_FIELDS) {
                 if (input[field.key] !== undefined) {
                     update[field.key] = input[field.key];
                 }
             }
+            const effectiveVisibility = input.visibility ?? endpoint.visibility;
+            // A private model is owner-only, so owner-declared public pricing
+            // does not apply; making a published model private clears prices.
+            const effectivePrices =
+                effectiveVisibility === "private"
+                    ? communityEndpointPrices({})
+                    : communityEndpointPrices({ ...endpoint, ...update });
+            await enforcePublishingAccess(db, user.id, effectiveVisibility);
+            // Persist visibility together with the complete effective price
+            // set on every update, so concurrent partial updates cannot
+            // interleave into a public row with cleared prices.
+            update.visibility = effectiveVisibility;
+            Object.assign(update, effectivePrices);
             const [row] = await db
                 .update(schema.communityEndpoint)
                 .set(update)
@@ -575,7 +586,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
             tags: ["👤 Account"],
             summary: "Delete My Model",
             description:
-                "Delete an invite-only community text model owned by the authenticated account. API keys require `account:keys` and an account with `communityEndpointsAllowed: true`.",
+                "Delete a community text model owned by the authenticated account. API keys require `account:keys`.",
             responses: {
                 200: {
                     description: "Deleted community text model",
@@ -596,11 +607,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
             const user = c.var.auth.requireUser();
             const { id } = c.req.param();
             const db = drizzle(c.env.DB, { schema });
-            await requireCommunityEndpointManageAccess(
-                db,
-                user.id,
-                c.var.auth.apiKey,
-            );
+            requireCommunityEndpointManagePermission(c.var.auth.apiKey);
             await requireOwnedEndpoint(db, id, user.id);
             await db
                 .delete(schema.communityEndpoint)

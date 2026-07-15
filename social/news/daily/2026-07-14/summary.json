@@ -1,0 +1,75 @@
+{
+  "date": "2026-07-14",
+  "period_start": "2026-07-14",
+  "period_end": "2026-07-14",
+  "title": "GPT Image and FLUX.2 Klein got sturdier routes",
+  "summary": "A reliability-heavy day: sturdier image routes, public media galleries, honest model-speed metrics, and an SDK that retries less creatively.\n\nImage generation received a fairly determined reliability pass: gpt-image-2 now runs through dedicated Azure deployments with regional retries, while gptimage and gptimage-large gained model-specific Sweden Central resources and failover paths. FLUX.2 Klein moved onto a validated Vast tunnel route, and its deployment build path was restored. Unsupported gpt-image-2 transparency requests now fail early with a useful 400 instead of wandering off to a provider error.\n\nTagged uploads at media.pollinations.ai now act as an explicit publishing step, creating anonymous, shareable tag galleries with newest-first pagination. Untagged files remain private UUID-addressed blobs, and upload owners can remove published media. The API docs now include runnable multipart upload examples for the whole UUID, gallery, deletion, and identity arrangement.\n\nThe monitor now reports sortable tokens-per-second throughput based on full streamed request duration, replacing the older TTFT fields. Its table also stopped fighting the browser with nested scrollbars, so it behaves cleanly from narrow phones through desktop screens. A rare case of UX becoming less theatrical.",
+  "pr_count": 16,
+  "prs": [
+    {
+      "number": 12275,
+      "date": "2026-07-14"
+    },
+    {
+      "number": 12277,
+      "date": "2026-07-14"
+    },
+    {
+      "number": 12287,
+      "date": "2026-07-14"
+    },
+    {
+      "number": 12428,
+      "date": "2026-07-14"
+    },
+    {
+      "number": 12430,
+      "date": "2026-07-14"
+    },
+    {
+      "number": 12431,
+      "date": "2026-07-14"
+    },
+    {
+      "number": 12432,
+      "date": "2026-07-14"
+    },
+    {
+      "number": 12433,
+      "date": "2026-07-14"
+    },
+    {
+      "number": 12444,
+      "date": "2026-07-14"
+    },
+    {
+      "number": 12454,
+      "date": "2026-07-14"
+    },
+    {
+      "number": 12457,
+      "date": "2026-07-14"
+    },
+    {
+      "number": 12465,
+      "date": "2026-07-14"
+    },
+    {
+      "number": 12467,
+      "date": "2026-07-14"
+    },
+    {
+      "number": 12468,
+      "date": "2026-07-14"
+    },
+    {
+      "number": 12469,
+      "date": "2026-07-14"
+    },
+    {
+      "number": 12470,
+      "date": "2026-07-14"
+    }
+  ],
+  "generated_at": "2026-07-15T06:54:42.012635+00:00"
+}

@@ -171,9 +171,7 @@ const DOC_TAG_NAV_ICON_HTML: Record<string, string> = Object.fromEntries(
 
 const BYOP_DOCS = BYOP_MD.trim();
 
-const CLI_DOCS = CLI_README.replace(/^# .*\n+/, "")
-    .replace(/^https:\/\/github\.com\/user-attachments\/assets\/[^\n]+\n+/m, "")
-    .trim();
+const CLI_DOCS = CLI_README.replace(/^# .*\n+/, "").trim();
 
 const MCP_DOCS = MCP_README.replace(/^# .*\n+/, "").trim();
 

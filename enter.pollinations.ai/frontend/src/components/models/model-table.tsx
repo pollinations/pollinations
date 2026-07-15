@@ -229,9 +229,12 @@ const MobileModelRow: FC<MobileModelRowProps> = ({ model }) => {
                             </div>
                         )}
                     </div>
-                    <div className="flex shrink-0 flex-col items-end gap-1">
+                    <div className="flex w-[72px] shrink-0 flex-col items-end gap-0.5 text-right">
                         <span className="text-sm font-semibold leading-none tabular-nums text-theme-text-strong">
                             {perPollen}
+                        </span>
+                        <span className="text-[10px] font-medium leading-none text-theme-text-muted">
+                            gen/pollen
                         </span>
                     </div>
                 </div>
@@ -397,10 +400,13 @@ export const UnifiedModelTable: FC<UnifiedModelTableProps> = ({
                         className="text-right min-[500px]:text-center shrink-0 w-[90px] translate-x-[14px] cursor-pointer hover:text-theme-text-base"
                     >
                         <div className="text-sm font-bold text-ink-900">
-                            1 pollen {sortArrow("perPollen")}
+                            <span className="md:hidden">Gen</span>
+                            <span className="hidden md:inline">1 pollen</span>{" "}
+                            {sortArrow("perPollen")}
                         </div>
                         <div className="text-xs font-normal text-ink-700 opacity-70 italic">
-                            ≈ gen
+                            <span className="md:hidden">/pollen</span>
+                            <span className="hidden md:inline">≈ gen</span>
                         </div>
                     </button>
                 </Tooltip>

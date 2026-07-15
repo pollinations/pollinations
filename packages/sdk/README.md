@@ -44,7 +44,7 @@ app already has a build step.
 
 ## Quick Start
 
-First, get your API key at **https://enter.pollinations.ai** and set it:
+First, get your API key at **https://enter.pollinations.ai/keys** and set it:
 
 ```bash
 export POLLINATIONS_API_KEY=your_api_key
@@ -122,7 +122,7 @@ node my-first-ai.mjs
 
 ## API Key
 
-An API key is required. Get one for free at **https://enter.pollinations.ai**
+An API key is required. Get one for free at **https://enter.pollinations.ai/keys**
 
 ```javascript
 import { configure } from '@pollinations/sdk';
@@ -619,7 +619,7 @@ rate limits.
 
 - [Pollinations.AI](https://pollinations.ai)
 - [API Documentation](https://gen.pollinations.ai/docs) - Full API reference
-- [Get API Key](https://enter.pollinations.ai)
+- [Get API Key](https://enter.pollinations.ai/keys)
 - [Discord](https://discord.gg/pollinations-ai-885844321461485618)
 - [GitHub](https://github.com/pollinations/pollinations)
 

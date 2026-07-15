@@ -27,7 +27,7 @@ Tool calling supported: openai (all), claude (all), gemini (non-search), deepsee
 
 ## Quests (earn Pollen by completing tasks)
 
-Complete quests from the Quests dashboard at enter.pollinations.ai → rewards land as Quest Pollen.
+Complete quests from the Quests dashboard at enter.pollinations.ai/quests → rewards land as Quest Pollen.
 - Lanes: onboarding, model usage, app growth, GitHub contributions
 - Contribute quests: comment on a POLLEN-QUEST GitHub issue to claim; fixed reward paid when merged
 - In alpha — rewards and availability evolve
@@ -36,7 +36,7 @@ Complete quests from the Quests dashboard at enter.pollinations.ai → rewards l
 ## Auth & Keys
 
 pk_ (publishable, 16ch): client-side, rate-limited 1 pollen/IP/hour | sk_ (secret, 32ch): server-only, unlimited
-Usage: `Authorization: Bearer <key>` or `?key=<key>` | Get keys: enter.pollinations.ai
+Usage: `Authorization: Bearer <key>` or `?key=<key>` | Get keys: enter.pollinations.ai/keys
 Per-key features: model restrictions, pollen budget cap, expiry (0-365 days)
 Balances (spent in order): Quest Pollen → Paid Pollen
 Empty balance: HTTP 402 | Rate limited: HTTP 429 with Retry-After

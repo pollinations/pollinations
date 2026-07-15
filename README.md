@@ -88,7 +88,7 @@ We've launched **https://gen.pollinations.ai** — a single endpoint for all you
 ### Quick Start (3 Steps)
 
 1️⃣ **Get your API key**  
-Sign up at [enter.pollinations.ai](https://enter.pollinations.ai) to generate your key.
+Sign up at [enter.pollinations.ai](https://enter.pollinations.ai/keys) to generate your key.
 
 2️⃣ **Choose what you want to generate**  
 Pollinations supports:
@@ -180,7 +180,7 @@ AI assistants can:
 
 ## 🔐 Authentication
 
-Get your API key at [enter.pollinations.ai](https://enter.pollinations.ai)
+Get your API key at [enter.pollinations.ai](https://enter.pollinations.ai/keys)
 
 ### Key Types
 
@@ -195,7 +195,7 @@ Get your API key at [enter.pollinations.ai](https://enter.pollinations.ai)
 
 ### Model Restrictions
 
-Each API key can be scoped to specific models. When creating a key at [enter.pollinations.ai](https://enter.pollinations.ai), you can:
+Each API key can be scoped to specific models. When creating a key at [enter.pollinations.ai](https://enter.pollinations.ai/keys), you can:
 
 - **Allow all models** — key works with any available model
 - **Restrict to specific models** — select exactly which models the key can access (e.g., only `flux` and `openai`, or just `gptimage-large`)
@@ -413,10 +413,10 @@ For development setup and environment management, see [DEVELOP.md](./DEVELOP.md)
 
 ## 💚 Support Us
 
-The best way to support pollinations.ai is by using our product! Get your API key and start building at **[enter.pollinations.ai](https://enter.pollinations.ai)**.
+The best way to support pollinations.ai is by using our product! Get your API key and start building at **[enter.pollinations.ai](https://enter.pollinations.ai/keys)**.
 
 ## 📣 Stay Connected
-[News & FAQ](https://enter.pollinations.ai/#news-faq) ·
+[News & FAQ](https://enter.pollinations.ai/news) ·
 [𝕏 Twitter](https://twitter.com/pollinations_ai) · [Instagram](https://instagram.com/pollinations_ai) · [LinkedIn](https://www.linkedin.com/company/pollinations-ai) · [Facebook](https://facebook.com/pollinations) · [Reddit](https://www.reddit.com/r/pollinations_ai/) · [YouTube](https://www.youtube.com/c/pollinations)
 
 ## 📜 License

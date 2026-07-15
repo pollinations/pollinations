@@ -23,20 +23,16 @@ import {
     isPaidOnly,
 } from "./model-info.ts";
 import { ModelId, ModelRow } from "./model-row.tsx";
+import type {
+    ModelCategory,
+    ModelSortDirection,
+    ModelSortKey,
+} from "./model-search.ts";
 import { ModelStatusChips } from "./model-status-chips.tsx";
 import { getModelPriceBadges, PriceBadgeList } from "./price-badge.tsx";
 import type { ModelPrice, PriceDirection } from "./types.ts";
 
-export type SectionType =
-    | "all"
-    | "image"
-    | "video"
-    | "3d"
-    | "audio"
-    | "realtime"
-    | "text"
-    | "community"
-    | "embedding";
+export type SectionType = ModelCategory;
 
 type UnifiedModelTableProps = {
     allModels: ModelPrice[];
@@ -49,22 +45,15 @@ type UnifiedModelTableProps = {
     realtimeModels: ModelPrice[];
     embeddingModels: ModelPrice[];
     activeTab: SectionType;
-};
-
-type SortKey = "name" | "perPollen" | "input" | "output";
-type SortDir = "asc" | "desc";
-
-const DEFAULT_DIR: Record<SortKey, SortDir> = {
-    name: "asc",
-    perPollen: "desc",
-    input: "asc",
-    output: "asc",
+    sortKey: ModelSortKey;
+    sortDir: ModelSortDirection;
+    onSort: (key: ModelSortKey) => void;
 };
 
 const sortModels = (
     models: ModelPrice[],
-    sortKey: SortKey,
-    sortDir: SortDir,
+    sortKey: ModelSortKey,
+    sortDir: ModelSortDirection,
 ) => {
     const sign = sortDir === "asc" ? 1 : -1;
     return [...models].sort((a, b) => {
@@ -108,8 +97,8 @@ export const sectionLabels: Record<SectionType, string> = {
 
 type TabContentProps = {
     models: ModelPrice[];
-    sortKey: SortKey;
-    sortDir: SortDir;
+    sortKey: ModelSortKey;
+    sortDir: ModelSortDirection;
 };
 
 const TabContent: FC<TabContentProps> = ({ models, sortKey, sortDir }) => {
@@ -352,6 +341,9 @@ export const UnifiedModelTable: FC<UnifiedModelTableProps> = ({
     realtimeModels,
     embeddingModels,
     activeTab,
+    sortKey,
+    sortDir,
+    onSort,
 }) => {
     const sections: { type: SectionType; models: ModelPrice[] }[] = [
         { type: "all", models: allModels },
@@ -365,20 +357,9 @@ export const UnifiedModelTable: FC<UnifiedModelTableProps> = ({
         { type: "embedding", models: embeddingModels },
     ];
 
-    const [sortKey, setSortKey] = useState<SortKey>("perPollen");
-    const [sortDir, setSortDir] = useState<SortDir>("desc");
     const activeSection = sections.find((s) => s.type === activeTab);
 
-    const onSort = (key: SortKey) => {
-        if (key === sortKey) {
-            setSortDir(sortDir === "asc" ? "desc" : "asc");
-        } else {
-            setSortKey(key);
-            setSortDir(DEFAULT_DIR[key]);
-        }
-    };
-
-    const sortArrow = (key: SortKey) =>
+    const sortArrow = (key: ModelSortKey) =>
         sortKey === key ? (sortDir === "asc" ? "↑" : "↓") : null;
 
     return (

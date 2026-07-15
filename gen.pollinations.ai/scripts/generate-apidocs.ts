@@ -756,7 +756,7 @@ function loadIntroductionTagline(): string {
 function renderGettingStarted(): string {
     return `## ${sectionHeading(SECTIONS.start)}
 
-**1. Get an API key** at [enter.pollinations.ai](https://enter.pollinations.ai). Two key types are available:
+**1. Get an API key** at [enter.pollinations.ai](https://enter.pollinations.ai/keys). Two key types are available:
 
 - \`sk_*\` — secret key for backend use (full account access)
 - \`pk_*\` — publishable key, safe to ship in browsers and mobile apps

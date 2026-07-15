@@ -49,7 +49,7 @@
 **For testing, use Secret Keys** for better rate limits and pollen spending.
 
 ```bash
-# Get your API key from: https://enter.pollinations.ai
+# Get your API key from: https://enter.pollinations.ai/keys
 export TOKEN="your_secret_key_here"  # sk_...
 
 # Set base URL
@@ -484,7 +484,7 @@ echo "✅ Done!"
 ### 403 Forbidden
 
 - **Insufficient pollen balance** - paid models require pollen
-  - Check your pollen balance at https://enter.pollinations.ai
+  - Check your pollen balance at https://enter.pollinations.ai/pollen
   - Add pollen to your account to use paid models
 - **Text models may have tier requirements** - check the error message
 - Note: Image models have NO tier requirements, only pollen balance
@@ -571,7 +571,7 @@ curl "$BASE_URL/generate/v1/chat/completions" \
 - **Test single requests first** before running batch tests
 - **Check response headers** for cache status: `x-cache: HIT` or `MISS`
 - **Use small images** (256x256) for quick tests
-- **Monitor your balance** at https://enter.pollinations.ai after tests
+- **Monitor your balance** at https://enter.pollinations.ai/pollen after tests
 
 ---
 

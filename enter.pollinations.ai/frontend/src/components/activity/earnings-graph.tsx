@@ -13,7 +13,6 @@ import {
 } from "@pollinations/ui";
 import { PaidChip, TierChip } from "@pollinations/ui/wallet";
 import type { FC } from "react";
-import { useState } from "react";
 import { Chart } from "./chart";
 import { formatActivityPollen } from "./format-activity-pollen";
 import { MetricTabs } from "./metric-tabs";
@@ -22,13 +21,23 @@ import { useEarningsData } from "./use-earnings-data";
 
 type EarningsGraphProps = {
     period: UsagePeriodSelection;
+    metric: Metric;
+    selectedAppKeyIds: string[];
+    selectedModelIds: string[];
+    onMetricChange: (metric: Metric) => void;
+    onSelectedAppKeyIdsChange: (keyIds: string[]) => void;
+    onSelectedModelIdsChange: (modelIds: string[]) => void;
 };
 
-export const EarningsGraph: FC<EarningsGraphProps> = ({ period }) => {
-    const [metric, setMetric] = useState<Metric>("pollen");
-    const [selectedAppKeyIds, setSelectedAppKeyIds] = useState<string[]>([]);
-    const [selectedModelIds, setSelectedModelIds] = useState<string[]>([]);
-
+export const EarningsGraph: FC<EarningsGraphProps> = ({
+    period,
+    metric,
+    selectedAppKeyIds,
+    selectedModelIds,
+    onMetricChange,
+    onSelectedAppKeyIdsChange,
+    onSelectedModelIdsChange,
+}) => {
     const {
         loading,
         error,
@@ -126,7 +135,7 @@ export const EarningsGraph: FC<EarningsGraphProps> = ({ period }) => {
                                     <MultiSelect
                                         options={appSelectOptions}
                                         selected={selectedAppKeyIds}
-                                        onChange={setSelectedAppKeyIds}
+                                        onChange={onSelectedAppKeyIdsChange}
                                         placeholder="All"
                                         align="start"
                                     />
@@ -146,14 +155,14 @@ export const EarningsGraph: FC<EarningsGraphProps> = ({ period }) => {
                                     <MultiSelect
                                         options={modelSelectOptions}
                                         selected={selectedModelIds}
-                                        onChange={setSelectedModelIds}
+                                        onChange={onSelectedModelIdsChange}
                                         placeholder="All"
                                         align="start"
                                     />
                                 )}
                             </div>
                         </div>
-                        <MetricTabs value={metric} onChange={setMetric} />
+                        <MetricTabs value={metric} onChange={onMetricChange} />
                     </div>
 
                     <div className="min-h-[180px]">
@@ -293,7 +302,7 @@ const EarningsEmptyState: FC = () => (
     <p className="text-sm text-ink-600">
         No earnings in this selected period. Once users start spending pollen
         through your apps or community models, earnings will appear here.{" "}
-        <InlineLink href="#keys" showIcon={false}>
+        <InlineLink href="/keys" showIcon={false}>
             Create an App key
         </InlineLink>
         .

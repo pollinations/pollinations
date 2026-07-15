@@ -1,0 +1,35 @@
+{
+  "pr_number": 12475,
+  "title": "chore: update app metrics 2026-07-15",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/12475",
+  "merged_at": "2026-07-15T05:04:00Z",
+  "labels": [
+    "DEV-CHORE"
+  ],
+  "pr_body_excerpt": "Daily automated update of app metrics, health checks, and greenhouse",
+  "gist": {
+    "category": "community",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "The greenhouse got measured",
+    "blurb": "The garden ledger received its daily pass: app metrics, health checks, and greenhouse notes are freshly counted. The bees remain extremely committed to spreadsheets.",
+    "summary": "Automated daily refresh of apps/APPS.md and apps/GREENHOUSE.md updates community app metrics, health checks, and greenhouse status for 2026-07-15.",
+    "impact": "Community maintainers have current app-health and greenhouse records to track the growing ecosystem.",
+    "keywords": [
+      "community",
+      "app metrics",
+      "health checks",
+      "greenhouse",
+      "automation"
+    ],
+    "visual_concept": "A cozy community greenhouse where Polly inspects a clipboard of app-health readings beside code-plants labeled with tiny status lights; the scene represents automated ecosystem monitoring rather than a new product capability.",
+    "image_prompt": "Cozy pixel art scene of Polly, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny gardener visor, checking a clipboard of healthy code-plant metrics inside a warm greenhouse. Lime green (#ecf874) grows prominently through leafy status vines around retro monitors, with soft mint, lavender, peach, and cream gradients; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-15/PR-12475.jpg",
+    "prompt": "Cozy pixel art scene of Polly, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny gardener visor, checking a clipboard of healthy code-plant metrics inside a warm greenhouse. Lime green (#ecf874) grows prominently through leafy status vines around retro monitors, with soft mint, lavender, peach, and cream gradients; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, nostalgic but beautiful."
+  },
+  "generated_at": "2026-07-15T05:04:57.190911+00:00"
+}

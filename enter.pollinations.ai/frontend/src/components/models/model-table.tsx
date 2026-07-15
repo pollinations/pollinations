@@ -151,6 +151,14 @@ const MobileModelRow: FC<MobileModelRowProps> = ({ model }) => {
     const balanceAccess: BalanceAccess = showPaidOnly ? "paid" : "quest";
 
     const perPollen = calculatePerPollen(model);
+    const modelNameTooltip = (
+        <span className="flex max-w-[260px] flex-col gap-1.5 text-left leading-snug">
+            {modelDescription && <span>{modelDescription}</span>}
+            <span className="font-mono text-xs text-theme-text-muted">
+                Click to copy {model.name}
+            </span>
+        </span>
+    );
 
     return (
         <div className="rounded-xl mb-1 bg-surface-opaque shadow-well transition-colors hover:bg-surface-opaque/90">
@@ -191,9 +199,10 @@ const MobileModelRow: FC<MobileModelRowProps> = ({ model }) => {
                         <div className="flex min-w-0 items-center gap-2">
                             <CopyButton
                                 value={model.name}
-                                tooltip={`Copy "${model.name}"`}
-                                copiedTooltip={null}
+                                tooltip={modelNameTooltip}
+                                copiedTooltip="Copied model id"
                                 aria-label={`Copy model id ${model.name}`}
+                                tooltipAlign="start"
                                 className={(copied) =>
                                     cn(
                                         "pointer-events-auto flex min-w-0 cursor-pointer items-center gap-1.5 text-left text-sm font-medium leading-none transition-colors",
@@ -207,6 +216,10 @@ const MobileModelRow: FC<MobileModelRowProps> = ({ model }) => {
                                     {publicModelName}
                                 </span>
                             </CopyButton>
+                            <BalanceAccessChip
+                                access={balanceAccess}
+                                className="whitespace-nowrap"
+                            />
                         </div>
                         <ModelId name={model.name} />
                         {(inputModalities.length > 0 ||
@@ -229,10 +242,6 @@ const MobileModelRow: FC<MobileModelRowProps> = ({ model }) => {
                         )}
                     </div>
                     <div className="flex shrink-0 flex-col items-end gap-1">
-                        <BalanceAccessChip
-                            access={balanceAccess}
-                            className="whitespace-nowrap"
-                        />
                         <span className="text-sm font-semibold leading-none tabular-nums text-theme-text-strong">
                             {perPollen}
                         </span>

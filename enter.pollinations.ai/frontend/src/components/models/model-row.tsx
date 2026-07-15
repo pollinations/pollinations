@@ -1,4 +1,4 @@
-import { CopyButton, cn, InfoTip, Surface, Tooltip } from "@pollinations/ui";
+import { CopyButton, cn, Surface, Tooltip } from "@pollinations/ui";
 import { WalletKindIcon } from "@pollinations/ui/wallet";
 import type { FC } from "react";
 import { calculatePerPollen, unitLabels } from "./calculations.ts";
@@ -81,6 +81,14 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
         );
     const inputPriceBadges = getModelPriceBadges(model, "input");
     const outputPriceBadges = getModelPriceBadges(model, "output");
+    const modelNameTooltip = (
+        <span className="flex max-w-[260px] flex-col gap-1.5 text-left leading-snug">
+            {modelDescription && <span>{modelDescription}</span>}
+            <span className="font-mono text-xs text-theme-text-muted">
+                Click to copy {model.name}
+            </span>
+        </span>
+    );
 
     return (
         <Surface className="flex items-center transition-colors hover:bg-surface-opaque/90">
@@ -126,9 +134,10 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                     <div className="flex min-w-0 items-center gap-2">
                         <CopyButton
                             value={model.name}
-                            tooltip={`Copy "${model.name}"`}
-                            copiedTooltip={null}
+                            tooltip={modelNameTooltip}
+                            copiedTooltip="Copied model id"
                             aria-label={`Copy model id ${model.name}`}
+                            tooltipAlign="start"
                             className={(copied) =>
                                 cn(
                                     "flex min-w-0 cursor-pointer items-center gap-1.5 text-left text-base font-medium leading-none transition-colors",
@@ -142,15 +151,13 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                                 {publicModelName}
                             </span>
                         </CopyButton>
-                        {modelDescription && (
-                            <InfoTip
-                                content={modelDescription}
-                                label={`About ${publicModelName}`}
-                            />
-                        )}
                         <ModelStatusChips
                             showNew={showNew}
                             showAlpha={showAlpha}
+                        />
+                        <BalanceAccessChip
+                            access={balanceAccess}
+                            className="whitespace-nowrap"
                         />
                     </div>
                     <ModelId name={model.name} />
@@ -199,14 +206,10 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                 </div>
             </div>
 
-            {/* Per pollen — fixed width; color and icon mirror the balance source. */}
+            {/* Per pollen — fixed width; keep the number itself visually neutral. */}
             <div className="w-[90px] text-center shrink-0">
                 <Tooltip content={perPollenTooltip} displayContents>
                     <span className="inline-flex flex-col items-center gap-1">
-                        <BalanceAccessChip
-                            access={balanceAccess}
-                            className="whitespace-nowrap"
-                        />
                         <span className="text-sm font-semibold leading-none tabular-nums text-theme-text-strong">
                             {genPerPollen}
                         </span>

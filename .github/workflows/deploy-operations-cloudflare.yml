@@ -140,12 +140,17 @@ jobs:
         run: sops exec-file --no-fifo secrets/env.json 'npx wrangler secret bulk {}'
         working-directory: ./apps/operation/kpi
 
+      - name: Build Economics Worker
+        if: matrix.app == 'economics'
+        run: npm run build
+        working-directory: ./apps/operation/economics/web
+
       - name: Deploy Economics Worker
         if: matrix.app == 'economics'
         env:
           SOPS_AGE_KEY: ${{ secrets.SOPS_AGE_KEY_ECONOMICS }}
-        run: sops exec-file --no-fifo secrets/web.json 'npm run deploy -- --secrets-file {}'
-        working-directory: ./apps/operation/economics
+        run: sops exec-file --no-fifo ../secrets/web.json 'npx wrangler deploy --secrets-file {}'
+        working-directory: ./apps/operation/economics/web
 
       - name: Verify Economics Myceli origin
         if: matrix.app == 'economics'

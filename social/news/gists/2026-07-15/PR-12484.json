@@ -1,0 +1,35 @@
+{
+  "pr_number": 12484,
+  "title": "docs: embed polli CLI demo video in Scalar docs + README",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/12484",
+  "merged_at": "2026-07-15T13:57:55Z",
+  "labels": [
+    "DEV-DOCS"
+  ],
+  "pr_body_excerpt": "Embeds the polli CLI demo video in the Scalar API docs (it was stripped before) while keeping it working on the GitHub README.\n\n- README: bare attachment URL → `<video>` tag with a fallback `<a>` inside it. Player renders on GitHub + Scalar; the link only surfaces where the tag is stripped (e.g. npm).\n- `docs.ts`: dropped the `CLI_DOCS` strip that removed the video line, so it flows into the Scalar CLI tag (`/docs#tag/cli`) and the `/docs/guides/cli` page.\n\n**Verified:** GitHub Markdown API preserves the `<video>` tag; `marked` keeps the block intact for the guide page.\n\n**Follow-up (needs a manual upload):** the current asset is `.mov` (QuickTime) — plays only in Safari, broken in Chrome/Firefox. A remuxed web MP4 (H.264/AAC, faststart, no quality loss) is ready. Drag it into a comment here to get a fresh `user-attachments` URL and I'll swap it in.\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)",
+  "gist": {
+    "category": "docs",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "The CLI gets a screen test",
+    "blurb": "The polli CLI demo now makes it all the way into the Scalar docs instead of vanishing somewhere between Markdown and rendering. A fallback link remains for places that decide video tags are too interesting.",
+    "summary": "Embedded the polli CLI demo as an HTML video block with a fallback link in the CLI README, and removed the docs.ts CLI_DOCS filter so it appears in Scalar's /docs#tag/cli and /docs/guides/cli pages.",
+    "impact": "Developers can now find the polli CLI walkthrough directly in both GitHub's README and the Scalar API documentation, with a direct asset link available where embedded video is stripped.",
+    "keywords": [
+      "documentation",
+      "polli-cli",
+      "scalar",
+      "video",
+      "developer-experience"
+    ],
+    "visual_concept": "Depict Polly as a cozy CLI guide in a tiny headset, pointing at a retro CRT terminal that is playing a simple polli command-line demo. The monitor robot eagerly watches the video while code-plants and small flowers grow around the documentation desk, representing the demo finally flowing through the docs renderer.",
+    "image_prompt": "Cozy pixel art scene in a warm documentation nook: Polly, the cute pixel art bee mascot with a yellow body, dark brown stripes, black oval eyes, pink rectangular cheek blushes, light blue translucent wings, and a tiny headset, points at a chunky CRT terminal playing a polli CLI demo while a monitor-headed robot watches with delighted square eyes. Lime green (#ecf874) glows prominently from the terminal and code-plants sprout among pastel flowers; pixel-font text reads \"polli CLI\". Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, lo-fi Stardew Valley-like warmth."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-15/PR-12484.jpg",
+    "prompt": "Cozy pixel art scene in a warm documentation nook: Polly, the cute pixel art bee mascot with a yellow body, dark brown stripes, black oval eyes, pink rectangular cheek blushes, light blue translucent wings, and a tiny headset, points at a chunky CRT terminal playing a polli CLI demo while a monitor-headed robot watches with delighted square eyes. Lime green (#ecf874) glows prominently from the terminal and code-plants sprout among pastel flowers; pixel-font text reads \"polli CLI\". Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, lo-fi Stardew Valley-like warmth."
+  },
+  "generated_at": "2026-07-15T13:58:53.737817+00:00"
+}

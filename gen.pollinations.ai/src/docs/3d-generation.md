@@ -5,7 +5,7 @@ Returns glTF Binary in GLB format. Depending on the model, certain models
 ignore text inputs — any text prompt passed to the Trellis 2 family will be
 ignored; only the image URL is used.
 
-https://gen.pollinations.ai/3d/your_prompt_here?model=trellis-2-low&key=YOUR_KEY_HERE&image=IMAGE_URL_HERE
+https://gen.pollinations.ai/3d/no_prompt_for_trellis_needed?model=trellis-2-low&key=YOUR_KEY_HERE&image=IMAGE_URL_HERE
 
 **Available models:** {{3D_MODELS}}
 

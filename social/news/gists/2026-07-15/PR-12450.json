@@ -1,0 +1,36 @@
+{
+  "pr_number": 12450,
+  "title": "fix: remove Vertex image billing fallbacks",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/12450",
+  "merged_at": "2026-07-15T17:15:07Z",
+  "labels": [
+    "DEV-BUG"
+  ],
+  "pr_body_excerpt": "- Removes hardcoded Vertex prompt-token estimates, candidate residual inference, and default output usage.\n- Bills image requests only from complete usage metadata reported by Vertex.\n- Treats missing, unsupported, or inconsistent usage as one invalid upstream response—without estimation or reconstruction.\n- Requires successful image and video responses to emit at least one explicit billable usage header.\n- Adds real-response fixtures and a worker-level test asserting exact headers, Tinybird token counts, provider cost, user price, and 502 failure behavior.\n\nChecks:\n- `npx biome check --write <changed files>`\n- `npm run typecheck`\n- `npx vitest run test/image/nanobanana-e2e.test.ts test/image/vertexAIImageGenerator.test.ts test/image/trackingHeaders.test.ts`\n- `npx vitest run test/generation-vcr.test.ts`",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "No more guesswork pollen",
+    "blurb": "The Vertex billing bee has put away its abacus. Image and video requests now carry only the usage facts Vertex actually reported.",
+    "summary": "Vertex image billing now uses only complete, internally consistent usage metadata from upstream responses, rejecting responses without an explicit billable usage header instead of estimating prompt tokens, candidate residuals, or output usage.",
+    "impact": "Developers get exact Vertex usage headers, Tinybird token records, provider costs, and user prices when metadata is available, while incomplete upstream billing data returns a clear 502 rather than reconstructed numbers.",
+    "keywords": [
+      "vertex",
+      "image-generation",
+      "billing",
+      "usage-metadata",
+      "tracking-headers",
+      "tinybird"
+    ],
+    "visual_concept": "A cozy garden accounting scene: Polly checks a precise glowing usage receipt from a Vertex-powered image terminal while a tiny abacus and guessed scribbles are tidily set aside. Pixel code-plants and labeled billable-header slips represent exact upstream accounting and reliable tracking.",
+    "image_prompt": "Cozy pixel art scene of Polly, a cute bee mascot with a yellow body, dark brown horizontal stripes, black antennae and oval eyes, bright pink rectangular cheek blushes, a happy smile, and rounded light-blue translucent wings, wearing tiny accountant glasses as she carefully checks a glowing \"USAGE OK\" receipt from a retro image-generation terminal; an unused little abacus rests beside neatly growing code-plants and pastel flowers. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, subtle CRT glow, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-15/PR-12450.jpg",
+    "prompt": "Cozy pixel art scene of Polly, a cute bee mascot with a yellow body, dark brown horizontal stripes, black antennae and oval eyes, bright pink rectangular cheek blushes, a happy smile, and rounded light-blue translucent wings, wearing tiny accountant glasses as she carefully checks a glowing \"USAGE OK\" receipt from a retro image-generation terminal; an unused little abacus rests beside neatly growing code-plants and pastel flowers. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, subtle CRT glow, nostalgic but beautiful."
+  },
+  "generated_at": "2026-07-15T17:16:05.042604+00:00"
+}

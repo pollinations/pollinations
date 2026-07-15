@@ -19,14 +19,14 @@ https://gen.pollinations.ai/image/a%20cat%20in%20space?model=flux
 
 ```bash
 curl "https://gen.pollinations.ai/audio/Hello%20world?voice=nova" \
-  -H "Authorization: Bearer YOUR_API_KEY" -o model.glb
+  -H "Authorization: Bearer YOUR_API_KEY" -o speech.mp3
 ```
 
 ### 3D (cURL)
 
 ```bash
 curl "https://gen.pollinations.ai/3d/no_prompt_for_trellis_needed?image=https://inferenceport.ai/img/trellis.jpg&model=trellis-2-low" \
-  -H "Authorization: Bearer YOUR_API_KEY" -o speech.mp3
+  -H "Authorization: Bearer YOUR_API_KEY" -o model.glb
 ```
 
 ### Embeddings (OpenAI-compatible)

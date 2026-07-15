@@ -1,4 +1,5 @@
 import { Markdown, Surface } from "@pollinations/ui";
+import { useNavigate, useRouterState } from "@tanstack/react-router";
 import type { FC } from "react";
 import { useEffect, useState } from "react";
 import faqMarkdown from "../../../../POLLEN_FAQ.md?raw";
@@ -66,8 +67,12 @@ type FAQProps = {
 
 export const FAQ: FC<FAQProps> = ({ showTitle = true }) => {
     const [openIndices, setOpenIndices] = useState<Set<number>>(new Set());
+    const hash = useRouterState({ select: (state) => state.location.hash });
+    const navigate = useNavigate();
 
     const toggleQuestion = (index: number) => {
+        const slug = generateSlug(faqData[index]?.question ?? "");
+        const isOpen = openIndices.has(index);
         setOpenIndices((prev) => {
             const next = new Set(prev);
             if (next.has(index)) {
@@ -77,45 +82,31 @@ export const FAQ: FC<FAQProps> = ({ showTitle = true }) => {
             }
             return next;
         });
+        if (!isOpen || hash === slug) {
+            void navigate({
+                to: "/news",
+                hash: isOpen ? "" : slug,
+            });
+        }
     };
 
     // Auto-expand FAQ item when navigating via anchor link
     useEffect(() => {
-        const handleHashChange = () => {
-            const hash = window.location.hash.slice(1); // Remove #
-            if (hash) {
-                const index = faqData.findIndex(
-                    (item) => generateSlug(item.question) === hash,
-                );
-                if (index !== -1) {
-                    // Expand the FAQ item
-                    setOpenIndices((prev) => {
-                        const next = new Set(prev);
-                        next.add(index);
-                        return next;
-                    });
+        if (!hash) return;
+        const index = faqData.findIndex(
+            (item) => generateSlug(item.question) === hash,
+        );
+        if (index === -1) return;
 
-                    // Scroll to the element after a brief delay to ensure it's rendered
-                    setTimeout(() => {
-                        const element = document.getElementById(hash);
-                        if (element) {
-                            element.scrollIntoView({
-                                behavior: "smooth",
-                                block: "start",
-                            });
-                        }
-                    }, 500);
-                }
-            }
-        };
-
-        // Check on mount
-        handleHashChange();
-
-        // Listen for hash changes
-        window.addEventListener("hashchange", handleHashChange);
-        return () => window.removeEventListener("hashchange", handleHashChange);
-    }, []);
+        setOpenIndices((prev) => new Set(prev).add(index));
+        const timeout = window.setTimeout(() => {
+            document.getElementById(hash)?.scrollIntoView({
+                behavior: "smooth",
+                block: "start",
+            });
+        }, 500);
+        return () => window.clearTimeout(timeout);
+    }, [hash]);
 
     return (
         <>

@@ -13,7 +13,7 @@ import {
 } from "@pollinations/ui";
 import { PaidChip, TierChip } from "@pollinations/ui/wallet";
 import type { FC } from "react";
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { Chart } from "./chart";
 import { formatActivityPollen } from "./format-activity-pollen";
 import { MetricTabs } from "./metric-tabs";
@@ -24,15 +24,29 @@ const DETAILED_USAGE_DOWNLOAD_LIMIT = 50_000;
 
 type UsageSectionProps = {
     period: UsagePeriodSelection;
+    metric: Metric;
+    selectedKeyIds: string[];
+    selectedModels: string[];
+    onMetricChange: (metric: Metric) => void;
+    onSelectedKeyIdsChange: (keyIds: string[]) => void;
+    onSelectedModelsChange: (models: string[]) => void;
 };
 
-export const UsageSection: FC<UsageSectionProps> = ({ period }) => {
-    const [filters, setFilters] = useState<Omit<FilterState, "period">>({
-        metric: "pollen",
-        selectedKeyIds: [],
-        selectedModels: [],
-    });
-
+export const UsageSection: FC<UsageSectionProps> = ({
+    period,
+    metric,
+    selectedKeyIds,
+    selectedModels,
+    onMetricChange,
+    onSelectedKeyIdsChange,
+    onSelectedModelsChange,
+}) => {
+    const filters: FilterState = {
+        period,
+        metric,
+        selectedKeyIds,
+        selectedModels,
+    };
     const {
         loading,
         error,
@@ -41,10 +55,7 @@ export const UsageSection: FC<UsageSectionProps> = ({ period }) => {
         usedApiKeys,
         chartData,
         stats,
-    } = useUsageData({
-        ...filters,
-        period,
-    });
+    } = useUsageData(filters);
 
     const effectiveKeyIds = useMemo(() => {
         const valid = new Set(usedApiKeys.map((k) => k.id));
@@ -144,13 +155,8 @@ export const UsageSection: FC<UsageSectionProps> = ({ period }) => {
                                 ) : (
                                     <MultiSelect
                                         options={keySelectOptions}
-                                        selected={filters.selectedKeyIds}
-                                        onChange={(v) =>
-                                            setFilters((f) => ({
-                                                ...f,
-                                                selectedKeyIds: v,
-                                            }))
-                                        }
+                                        selected={selectedKeyIds}
+                                        onChange={onSelectedKeyIdsChange}
                                         placeholder="All"
                                         align="start"
                                     />
@@ -169,25 +175,15 @@ export const UsageSection: FC<UsageSectionProps> = ({ period }) => {
                                 ) : (
                                     <MultiSelect
                                         options={modelSelectOptions}
-                                        selected={filters.selectedModels}
-                                        onChange={(v) =>
-                                            setFilters((f) => ({
-                                                ...f,
-                                                selectedModels: v,
-                                            }))
-                                        }
+                                        selected={selectedModels}
+                                        onChange={onSelectedModelsChange}
                                         placeholder="All"
                                         align="start"
                                     />
                                 )}
                             </div>
                         </div>
-                        <MetricTabs
-                            value={filters.metric}
-                            onChange={(metric) =>
-                                setFilters((f) => ({ ...f, metric }))
-                            }
-                        />
+                        <MetricTabs value={metric} onChange={onMetricChange} />
                     </div>
 
                     <UsageChartView
@@ -195,7 +191,7 @@ export const UsageSection: FC<UsageSectionProps> = ({ period }) => {
                         error={error}
                         fetchUsage={fetchUsage}
                         chartData={chartData}
-                        metric={filters.metric}
+                        metric={metric}
                         showModelBreakdown={showModelBreakdown}
                         stats={stats}
                     />
@@ -339,7 +335,7 @@ const UsageEmptyState: FC = () => (
     <p className="text-sm text-ink-600">
         No transactions in this selected period. Once you start using the API,
         your deductions will appear here.{" "}
-        <InlineLink href="#keys" showIcon={false}>
+        <InlineLink href="/keys" showIcon={false}>
             Create an API key
         </InlineLink>
         .

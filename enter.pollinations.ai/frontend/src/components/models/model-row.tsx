@@ -32,12 +32,27 @@ type ModelIdProps = {
 };
 
 export const ModelId: FC<ModelIdProps> = ({ name }) => (
-    <span
-        className="min-w-0 truncate font-mono text-xs font-medium text-theme-text-muted"
-        title={name}
+    <CopyButton
+        value={name}
+        tooltip={
+            <span className="font-mono text-xs text-theme-text-muted">
+                Click to copy {name}
+            </span>
+        }
+        copiedTooltip="Copied model id"
+        aria-label={`Copy model id ${name}`}
+        tooltipAlign="start"
+        className={(copied) =>
+            cn(
+                "pointer-events-auto flex min-w-0 cursor-pointer text-left font-mono text-xs font-medium transition-colors",
+                copied
+                    ? "text-intent-success-text"
+                    : "text-theme-text-muted hover:text-theme-text-soft",
+            )
+        }
     >
-        {name}
-    </span>
+        <span className="min-w-0 truncate">{name}</span>
+    </CopyButton>
 );
 
 export const ModelRow: FC<ModelRowProps> = ({ model }) => {

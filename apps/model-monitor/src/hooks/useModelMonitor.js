@@ -32,8 +32,9 @@ function resolveDisplayType(model) {
     return "unknown";
 }
 
+const IMAGE_EVENT_TYPES = ["video", "3d"];
 function eventTypeForDisplayType(type) {
-    return ["video", "3d"].includes(type) ? "image" : type;
+    return IMAGE_EVENT_TYPES.includes(type) ? "image" : type;
 }
 
 function normalizeCatalogModel(model) {

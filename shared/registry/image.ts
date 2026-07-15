@@ -360,7 +360,7 @@ export const IMAGE_SERVICES = {
             completionAudioSeconds: 0.02, // per sec when audio is enabled
         },
         title: "Veo 3.1 Fast 720p",
-        description: "Veo 3.1 Fast - Fast text-to-video with audio (720p)",
+        description: "Fast text-to-video with optional audio at 720p",
         inputModalities: ["text", "image"],
         outputModalities: ["video"],
         videoCapabilities: ["start_frame", "end_frame", "audio_output"],
@@ -380,7 +380,7 @@ export const IMAGE_SERVICES = {
             completionAudioSeconds: 0.02, // per sec when audio is enabled
         },
         title: "Veo 3.1 Fast 1080p",
-        description: "Veo 3.1 Fast - Fast text-to-video with audio (1080p)",
+        description: "Fast text-to-video with optional audio at 1080p",
         inputModalities: ["text", "image"],
         outputModalities: ["video"],
         videoCapabilities: ["start_frame", "end_frame", "audio_output"],

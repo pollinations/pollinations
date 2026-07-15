@@ -133,7 +133,8 @@ curl "http://localhost:8788/v1/chat/completions" -H "Authorization: Bearer $TOKE
 - Don't modify test files to make tests pass — fix the code.
 - Run `npm run decrypt-vars` before tests in enter.pollinations.ai.
 - Test API keys in `enter.pollinations.ai/.testingtokens`.
-- Request PR reviews by including lowercase `polly` in a PR comment.
+- Before model changes, read and follow `.claude/skills/model-management/SKILL.md`.
+- Don't request PR reviews or comment `polly` unless the user explicitly asks.
 
 ## Testing
 

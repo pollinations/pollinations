@@ -204,12 +204,14 @@ const MobileModelRow: FC<MobileModelRowProps> = ({ model }) => {
                                     {publicModelName}
                                 </span>
                             </CopyButton>
+                        </div>
+                        <div className="flex min-w-0 flex-wrap items-center gap-2">
+                            <ModelId name={model.name} />
                             <BalanceAccessChip
                                 access={balanceAccess}
                                 className="whitespace-nowrap"
                             />
                         </div>
-                        <ModelId name={model.name} />
                         {(inputModalities.length > 0 ||
                             capabilities.length > 0) && (
                             <div className="flex min-w-0 flex-wrap items-center gap-1.5">

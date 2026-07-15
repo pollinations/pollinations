@@ -1,0 +1,35 @@
+{
+  "pr_number": 12473,
+  "title": "feat: add community model price floor",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/12473",
+  "merged_at": "2026-07-15T03:44:41Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "pr_body_excerpt": "## What\n\n- Adds one shared positive price floor: `0.000001` Pollen per 1M tokens (`1e-12` per token).\n- Keeps `0` and blank dashboard prices explicitly free.\n- Enforces the floor in the API and dashboard, so CLI and direct callers receive the same server validation.\n- Adds API and form boundary tests for free, exact-floor, below-floor, negative, and malformed values.\n\n## Why\n\nPrevents misleading non-zero prices that are effectively too small to be meaningful while preserving free community models.\n\n## Impact\n\nNo migration or repricing. Existing rows are unchanged; the floor applies when a price is created or updated.\n\n## Checks\n\n- `npx vitest run src/community-endpoints.test.ts`\n- `npx vitest run test/community-endpoint-price-input.test.ts`\n- Enter and Gen typechecks\n- Biome formatting and diff checks",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Tiny prices, proper roots",
+    "blurb": "Community model prices now have a sensible minimum once they stop being free. Zero remains zero; everything else gets enough soil to grow in.",
+    "summary": "Added a shared minimum non-zero community-model price of 0.000001 Pollen per 1M tokens (1e-12 per token), enforced consistently by the dashboard and API while preserving blank and 0 prices as free.",
+    "impact": "Model creators and API callers now get the same validation for free, exact-floor, below-floor, negative, and malformed prices, with existing model prices left unchanged.",
+    "keywords": [
+      "community models",
+      "pricing",
+      "Pollen",
+      "API validation",
+      "dashboard"
+    ],
+    "visual_concept": "A cozy community-model price garden: Polly carefully places a tiny but visible price seed at a marked minimum line, while a clearly labeled FREE flower pot remains open and flourishing. A retro terminal and dashboard price panel show that both direct API callers and the web form follow the same garden boundary.",
+    "image_prompt": "Cozy pixel art scene of Polly, a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings, wearing tiny gardener glasses while measuring a tiny price seed above a glowing minimum line beside a flourishing flower pot labeled \"FREE\"; a friendly CRT monitor robot displays matching API and dashboard price fields, with code-plants and soft flowers around them. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, pixel-font text: \"0.000001 POLLEN / 1M\", nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-15/PR-12473.jpg",
+    "prompt": "Cozy pixel art scene of Polly, a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings, wearing tiny gardener glasses while measuring a tiny price seed above a glowing minimum line beside a flourishing flower pot labeled \"FREE\"; a friendly CRT monitor robot displays matching API and dashboard price fields, with code-plants and soft flowers around them. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, pixel-font text: \"0.000001 POLLEN / 1M\", nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-07-15T03:45:43.879373+00:00"
+}

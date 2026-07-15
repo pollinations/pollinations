@@ -1,0 +1,15 @@
+{
+  "platform": "reddit",
+  "scope": "daily",
+  "date": "2026-07-14",
+  "period_start": "2026-07-14",
+  "period_end": "2026-07-14",
+  "generated_at": "2026-07-15T06:54:42.012635+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-07-14/images/reddit.jpg"
+    }
+  ],
+  "title": "16 merges: image routing, galleries, and metrics",
+  "text": "16 PRs landed today. Most of the work was unglamorous routing and docs maintenance, which is usually where availability goes to either live or die.\n\nGPT Image now has dedicated Azure resources per model, newly provisioned Sweden Central secrets on the generation worker, failover when an account is blocked, and blocked endpoints removed from rotation. `gpt-image-2` is routed through Azure and now rejects transparent-background requests rather than failing later in a less interpretable place.\n\nFLUX.2 Klein has a Vast route, while the Klein RunPod build path was restored. Redundancy: still less exciting than a demo, still useful when a provider has opinions.\n\nMedia uploads can now be published into public tag galleries. This is publish-only for now; the relevant docs include runnable upload examples. The Model Monitor also gained tokens/second, and its page scroll behavior was fixed so it no longer contains a smaller, angrier scrollbar.\n\nThe SDK no longer retries automatically. That makes request behavior more predictable for callers that already have retry policy, idempotency handling, or both.\n\nDocs, README links, and generated API docs were refreshed as part of the same batch.\n\nRepo: https://github.com/pollinations/pollinations\nDocs: https://pollinations.ai/docs\nAPI docs: https://github.com/pollinations/pollinations/blob/main/APIDOCS.md"
+}

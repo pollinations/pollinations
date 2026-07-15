@@ -8,10 +8,7 @@ import {
 } from "./sync-github-usernames.mjs";
 
 test("encodes a numeric GitHub account ID as its legacy global node ID", () => {
-    assert.equal(
-        legacyGithubNodeId(133474899),
-        "MDQ6VXNlcjEzMzQ3NDg5OQ==",
-    );
+    assert.equal(legacyGithubNodeId(133474899), "MDQ6VXNlcjEzMzQ3NDg5OQ==");
 });
 
 test("selects only changed usernames from resolved GitHub users", () => {
@@ -32,7 +29,10 @@ test("selects only changed usernames from resolved GitHub users", () => {
 });
 
 test("keeps GraphQL requests within the requested batch size", () => {
-    const batches = chunk(Array.from({ length: 101 }, (_, index) => index), 100);
+    const batches = chunk(
+        Array.from({ length: 101 }, (_, index) => index),
+        100,
+    );
     assert.deepEqual(
         batches.map((batch) => batch.length),
         [100, 1],

@@ -9,8 +9,7 @@
  *
  * Required environment variables:
  * - GITHUB_TOKEN              GitHub App installation token
- * - CLOUDFLARE_API_TOKEN      D1 edit token
- * - CLOUDFLARE_ACCOUNT_ID     D1 account
+ * - Wrangler-authenticated Cloudflare credentials with D1 write access
  *
  * Usage:
  *   node .github/scripts/sync-github-usernames.mjs
@@ -255,7 +254,10 @@ function updateSql(updates) {
 }
 
 async function applyUpdates(updates) {
-    for (const [index, batch] of chunk(updates, D1_WRITE_BATCH_SIZE).entries()) {
+    for (const [index, batch] of chunk(
+        updates,
+        D1_WRITE_BATCH_SIZE,
+    ).entries()) {
         await executeD1(updateSql(batch));
         console.log(
             `Updated D1 batch ${index + 1}/${Math.ceil(updates.length / D1_WRITE_BATCH_SIZE)} (${batch.length} users)`,
@@ -267,13 +269,6 @@ async function main() {
     if (!githubToken) {
         throw new Error("GITHUB_TOKEN is required");
     }
-    if (!process.env.CLOUDFLARE_API_TOKEN) {
-        throw new Error("CLOUDFLARE_API_TOKEN is required");
-    }
-    if (!process.env.CLOUDFLARE_ACCOUNT_ID) {
-        throw new Error("CLOUDFLARE_ACCOUNT_ID is required");
-    }
-
     console.log(`GitHub username sync (${dryRun ? "dry run" : "live"})`);
     const users = await loadUsers();
     if (users.length === 0) {

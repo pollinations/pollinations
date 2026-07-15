@@ -101,6 +101,33 @@ export function CommunityEndpoints({
         }
     }
 
+    const privateModelGuidance = (
+        <>
+            Your models are private — callable only by you and shown only when{" "}
+            <strong>/models</strong> is authenticated with your API key. Enter
+            the upstream model ID manually, then test the saved model by calling
+            its model ID. To request public publishing access, open a{" "}
+            <a
+                href="https://github.com/pollinations/pollinations/issues/new?title=Community%20model%20publishing%20request"
+                target="_blank"
+                rel="noreferrer"
+                className="underline hover:text-theme-text-strong"
+            >
+                GitHub issue
+            </a>{" "}
+            or ask in{" "}
+            <a
+                href="https://discord.gg/pollinations-ai-885844321461485618"
+                target="_blank"
+                rel="noreferrer"
+                className="underline hover:text-theme-text-strong"
+            >
+                Discord
+            </a>
+            .
+        </>
+    );
+
     return (
         <>
             <Section
@@ -142,8 +169,8 @@ export function CommunityEndpoints({
                             </p>
                             <p className="text-sm text-theme-text-muted">
                                 {canPublish
-                                    ? "Register an OpenAI-compatible endpoint for yourself, or test and publish it immediately with your own per-1M-token pricing."
-                                    : "Register an OpenAI-compatible endpoint as a private model callable only by you."}
+                                    ? "Publish an OpenAI-compatible endpoint with your own per-1M-token pricing."
+                                    : privateModelGuidance}
                             </p>
                         </Surface>
                     ) : (
@@ -157,47 +184,24 @@ export function CommunityEndpoints({
                         ))
                     )}
                 </div>
-                <p className="mt-4 flex items-start gap-1.5 border-t border-divider pt-4 text-[13px] leading-snug text-theme-text-muted">
-                    <TokensIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-                    <span>
-                        {canPublish ? (
-                            <>
-                                Private models are callable only by you and
-                                shown only when model lists use your API key.
-                                Make one public to list it for everyone in{" "}
-                                <strong>/models</strong> and bill callers at
-                                your per-1M-token pricing.
-                            </>
-                        ) : (
-                            <>
-                                Your models are private — callable only by you
-                                and shown only when <strong>/models</strong> is
-                                authenticated with your API key. Enter the
-                                upstream model ID manually, then test the saved
-                                model by calling its model ID. To request public
-                                publishing access, open a{" "}
-                                <a
-                                    href="https://github.com/pollinations/pollinations/issues/new?title=Community%20model%20publishing%20request"
-                                    target="_blank"
-                                    rel="noreferrer"
-                                    className="underline hover:text-theme-text-strong"
-                                >
-                                    GitHub issue
-                                </a>{" "}
-                                or ask in{" "}
-                                <a
-                                    href="https://discord.gg/pollinations-ai-885844321461485618"
-                                    target="_blank"
-                                    rel="noreferrer"
-                                    className="underline hover:text-theme-text-strong"
-                                >
-                                    Discord
-                                </a>
-                                .
-                            </>
-                        )}
-                    </span>
-                </p>
+                {!isLoading && endpoints.length > 0 && (
+                    <p className="mt-4 flex items-start gap-1.5 border-t border-divider pt-4 text-[13px] leading-snug text-theme-text-muted">
+                        <TokensIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                        <span>
+                            {canPublish ? (
+                                <>
+                                    Private models are callable only by you and
+                                    shown only when model lists use your API
+                                    key. Make one public to list it for everyone
+                                    in <strong>/models</strong> and bill callers
+                                    at your per-1M-token pricing.
+                                </>
+                            ) : (
+                                privateModelGuidance
+                            )}
+                        </span>
+                    </p>
+                )}
             </Section>
 
             <CommunityEndpointDialog

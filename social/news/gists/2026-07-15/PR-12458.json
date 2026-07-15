@@ -1,0 +1,34 @@
+{
+  "pr_number": 12458,
+  "title": "refactor: use URL routes in Enter dashboard",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/12458",
+  "merged_at": "2026-07-15T08:09:38Z",
+  "labels": [],
+  "pr_body_excerpt": "- Replaces Enter dashboard hash navigation with TanStack path routes and router links.\n- Persists Models, Activity, and Pollen view state in validated URL search parameters.\n- Preserves sign-in and Stripe return destinations, metadata, and in-page anchors.\n- Updates repository callers to destination-specific dashboard URLs.\n- Validates with Enter typecheck/build, direct route probes, the pollinations.ai build, and 66 Stripe integration tests.",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "The dashboard grew paths",
+    "blurb": "The Enter dashboard has stopped navigating by mysterious hash fragments and started using proper routes. Models, Activity, and Pollen now keep their place in shareable URLs, like tidy little garden paths.",
+    "summary": "Replaced Enter dashboard hash navigation with TanStack path routes for Models, Activity, Keys, News, Pollen, and Quests, with validated URL search parameters preserving view state, sign-in returns, Stripe returns, metadata, and page anchors.",
+    "impact": "Dashboard links now point directly to the right destination and retain relevant Models, Activity, and Pollen state when users navigate, sign in, return from Stripe, or share a URL.",
+    "keywords": [
+      "enter dashboard",
+      "routing",
+      "TanStack Router",
+      "URL state",
+      "Stripe return",
+      "navigation"
+    ],
+    "visual_concept": "A cozy garden-path metaphor for the Enter dashboard's new destination-specific URLs: Polly acts as a small park guide, placing clear signposts for Models, Activity, Pollen, Keys, Quests, and News around a retro terminal garden. The monitor robot happily follows a glowing route map while code-plants and flowers grow beside the paths, representing dashboard state that now persists in the URL instead of disappearing into hash fragments.",
+    "image_prompt": "Cozy pixel art scene of Polly, a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks, a small happy smile, and small rounded light blue translucent wings, wearing a tiny park ranger hat as she places clear pixel signposts labeled “MODELS,” “ACTIVITY,” and “POLLEN” along a garden path leading to a warm CRT dashboard; a cute chunky monitor robot follows a glowing route map, surrounded by code-plants, flowers, and vines. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, subtle CRT glow, retro gaming vibes, nostalgic but beautiful and emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-15/PR-12458.jpg",
+    "prompt": "Cozy pixel art scene of Polly, a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks, a small happy smile, and small rounded light blue translucent wings, wearing a tiny park ranger hat as she places clear pixel signposts labeled “MODELS,” “ACTIVITY,” and “POLLEN” along a garden path leading to a warm CRT dashboard; a cute chunky monitor robot follows a glowing route map, surrounded by code-plants, flowers, and vines. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, subtle CRT glow, retro gaming vibes, nostalgic but beautiful and emotionally warm."
+  },
+  "generated_at": "2026-07-15T08:10:36.544795+00:00"
+}

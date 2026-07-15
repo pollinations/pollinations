@@ -532,6 +532,7 @@ This is acceptable. What's NOT acceptable is silently dropping a separately-bill
 - [ ] No 5xx in [error-path matrix](#76-error-paths--every-malformed-request-must-return-4xx-never-opaque-5xx)
 - [ ] Burst test passed at expected production concurrency
 - [ ] PR description notes any docs/upstream discrepancies found and any bundled-modality choices
+- [ ] `APIDOCS.md` is untouched. It is regenerated from the live OpenAPI schema after production deploy; update source schemas/routes instead.
 
 ---
 

@@ -1,0 +1,34 @@
+{
+  "pr_number": 12492,
+  "title": "fix: sync renamed GitHub usernames",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/12492",
+  "merged_at": "2026-07-15T18:04:49Z",
+  "labels": [],
+  "pr_body_excerpt": "- Sync GitHub usernames twice daily in 100-user GraphQL batches.\n- Update only changed D1 usernames in write batches.\n- Fixes #12456.",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Names that keep blooming",
+    "blurb": "GitHub name changes now find their way back to the hive twice a day. Less stale identity pollen, more correctly labeled contributors.",
+    "summary": "Added a twice-daily GitHub Actions sync that fetches GitHub usernames in 100-user GraphQL batches and updates only changed usernames in D1 write batches.",
+    "impact": "Contributors who rename their GitHub accounts will see their updated username reflected across Pollinations data without manual cleanup.",
+    "keywords": [
+      "github",
+      "usernames",
+      "data-sync",
+      "d1",
+      "graphql",
+      "contributors"
+    ],
+    "visual_concept": "A cozy contributor garden where name tags on blooming code-plants are gently refreshed: Polly, wearing a tiny gardener hat, compares a GitHub-style profile card against a neat D1 seed ledger while a CRT monitor robot helps stamp updated labels. The repeated batch process is represented by orderly trays of 100 tiny seed packets, with only the changed labels being replanted.",
+    "image_prompt": "Cozy pixel art scene of Polly the cute yellow-and-brown striped bee mascot wearing a tiny gardener hat, carefully replacing a changed username label on a blooming code-plant while a chunky CRT monitor robot holds a GitHub-style profile card beside a small seed ledger; neat trays of tiny labeled seeds suggest batched syncing. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, retro gaming vibes, subtle pixel-font text: 'SYNCED'."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-15/PR-12492.jpg",
+    "prompt": "Cozy pixel art scene of Polly the cute yellow-and-brown striped bee mascot wearing a tiny gardener hat, carefully replacing a changed username label on a blooming code-plant while a chunky CRT monitor robot holds a GitHub-style profile card beside a small seed ledger; neat trays of tiny labeled seeds suggest batched syncing. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, retro gaming vibes, subtle pixel-font text: 'SYNCED'."
+  },
+  "generated_at": "2026-07-15T18:05:49.117946+00:00"
+}

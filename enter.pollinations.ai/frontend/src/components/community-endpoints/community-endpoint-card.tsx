@@ -2,10 +2,13 @@ import {
     Alert,
     CardIcon,
     CheckIcon,
+    Chip,
     ClipboardIcon,
     CopyButton,
     ExternalLinkIcon,
+    GlobeIcon,
     IconButton,
+    LockIcon,
     PencilIcon,
     Surface,
     TerminalIcon,
@@ -16,7 +19,11 @@ import { COMMUNITY_ENDPOINT_PRICE_FIELDS } from "@shared/community-endpoints.ts"
 import type { ReactNode } from "react";
 import { PriceBadge, type PriceBadgeConfig } from "../models/price-badge.tsx";
 import type { PriceKind } from "../models/types.ts";
-import { type CommunityEndpoint, pricePerTokenToPerMillion } from "./types.ts";
+import {
+    type CommunityEndpoint,
+    pricePerTokenToPerMillion,
+    VISIBILITY_LABELS,
+} from "./types.ts";
 
 type CommunityEndpointCardProps = {
     endpoint: CommunityEndpoint;
@@ -29,6 +36,7 @@ export function CommunityEndpointCard({
     onEdit,
     onDelete,
 }: CommunityEndpointCardProps) {
+    const isPublic = endpoint.visibility === "public";
     const priceGroups = communityPriceGroups(endpoint);
 
     return (
@@ -43,6 +51,14 @@ export function CommunityEndpointCard({
                         <h3 className="min-w-0 truncate text-base font-semibold text-theme-text-strong">
                             {endpoint.name}
                         </h3>
+                        <Chip intent={isPublic ? "news" : "neutral"} size="sm">
+                            {isPublic ? (
+                                <GlobeIcon className="h-3 w-3" />
+                            ) : (
+                                <LockIcon className="h-3 w-3" />
+                            )}
+                            {VISIBILITY_LABELS[endpoint.visibility]}
+                        </Chip>
                     </div>
                     {endpoint.description && (
                         <p className="mt-1 text-sm text-theme-text-muted">

@@ -1,6 +1,8 @@
 import {
     Alert,
     Button,
+    ButtonGroup,
+    CheckIcon,
     ChevronIcon,
     Dialog,
     DialogTitle,
@@ -9,11 +11,14 @@ import {
     FieldStack,
     Input,
     ScrollArea,
+    TabButton,
 } from "@pollinations/ui";
+import type { CommunityEndpointVisibility } from "@shared/community-endpoints.ts";
 import type { FormEvent, ReactNode } from "react";
 import { useEffect, useState } from "react";
 import { apiClient } from "../../api.ts";
 import {
+    BASE_TEXT_PRICE_KEYS,
     formWithVisiblePrices,
     hasValidVisibleFormPrices,
     PriceGroups,
@@ -39,6 +44,9 @@ import {
 type CommunityEndpointDialogProps = {
     /** Present in edit mode (prefills the form); omit to create. */
     endpoint?: CommunityEndpoint;
+    // Allowlisted owners can choose Public. Everyone else sees the same
+    // lifecycle control with Public disabled.
+    canPublish: boolean;
     open: boolean;
     onOpenChange: (open: boolean) => void;
     onSubmit: (payload: EndpointPayload, bearerToken: string) => Promise<void>;
@@ -48,6 +56,7 @@ type CommunityEndpointDialogProps = {
 
 export function CommunityEndpointDialog({
     endpoint,
+    canPublish,
     open,
     onOpenChange,
     onSubmit,
@@ -97,6 +106,11 @@ export function CommunityEndpointDialog({
         if (key === "upstreamModel" && modelOptions.length > 0) {
             setProviderModelMenuOpen(true);
         }
+    }
+
+    function updateVisibility(visibility: CommunityEndpointVisibility): void {
+        setForm((current) => ({ ...current, visibility }));
+        setError(null);
     }
 
     async function handleFetchModels(): Promise<void> {
@@ -192,18 +206,38 @@ export function CommunityEndpointDialog({
         }
     }
 
-    const returnedFields = returnedPriceFields(testState);
-    const visiblePriceKeys = visiblePriceFieldKeys(
-        savedPriceKeys,
-        returnedFields,
+    // Pricing is only meaningful when the model is (or is being made) public —
+    // keyed off the LIVE form value so flipping Visibility to Public in place
+    // reveals the test + pricing section immediately. Private models carry no
+    // pricing (owner is the only caller).
+    const isShared = form.visibility === "public";
+    const returnedFields = isShared ? returnedPriceFields(testState) : [];
+    // Reveal the optional base text prices plus whatever the test observed or
+    // the model already had saved. Blank and zero prices mean free.
+    const visiblePriceKeys = new Set(
+        isShared
+            ? visiblePriceFieldKeys(savedPriceKeys, returnedFields, [
+                  ...BASE_TEXT_PRICE_KEYS,
+              ])
+            : [],
     );
     const hasValidVisiblePrices = hasValidVisibleFormPrices(
         form,
         visiblePriceKeys,
     );
+    // First-time publishing of an external endpoint re-observes its billed
+    // buckets, so it needs a successful test. A model already saved as public
+    // has server-validated pricing, so re-editing it (e.g. a price or
+    // description tweak) does not force another test. Private models defer
+    // pricing entirely. External endpoints always need a token to be callable
+    // at all.
+    const alreadyPublic = isEdit && endpoint?.visibility === "public";
+    const needsTest = isShared && !alreadyPublic;
     const testRequirementMet =
         testState.status === "success" && returnedFields.length > 0;
-    const saveRequirementMet = isEdit || (testRequirementMet && hasToken);
+    const saveRequirementMet = needsTest
+        ? testRequirementMet && (isEdit || hasToken)
+        : isEdit || hasToken;
     const providerModelQuery = form.upstreamModel.trim().toLowerCase();
     const visibleModelOptions =
         providerModelQuery === ""
@@ -236,7 +270,7 @@ export function CommunityEndpointDialog({
                     <code>
                         {"{username}"}/{"{model-id}"}
                     </code>{" "}
-                    model with your own per-1M-token pricing.
+                    model.
                 </p>
             </div>
 
@@ -286,6 +320,44 @@ export function CommunityEndpointDialog({
                         </FieldStack>
                     </div>
 
+                    <FieldStack
+                        label="Visibility"
+                        helper={
+                            isShared
+                                ? "Public: listed in /models and callable by anyone. Set optional per-1M-token prices below, or leave them at 0 for free."
+                                : canPublish
+                                  ? "Private: callable only by you and shown only in model lists authenticated with your API key."
+                                  : "Private: callable only by you. Publishing publicly requires approval."
+                        }
+                        alignLabelRow
+                    >
+                        <ButtonGroup aria-label="Model visibility">
+                            <TabButton
+                                active={form.visibility === "private"}
+                                onClick={() => updateVisibility("private")}
+                                size="sm"
+                                className="min-w-24 gap-1.5"
+                            >
+                                {form.visibility === "private" && (
+                                    <CheckIcon className="h-3.5 w-3.5" />
+                                )}
+                                Private
+                            </TabButton>
+                            <TabButton
+                                active={form.visibility === "public"}
+                                disabled={!canPublish}
+                                onClick={() => updateVisibility("public")}
+                                size="sm"
+                                className="min-w-24 gap-1.5"
+                            >
+                                {form.visibility === "public" && (
+                                    <CheckIcon className="h-3.5 w-3.5" />
+                                )}
+                                Public
+                            </TabButton>
+                        </ButtonGroup>
+                    </FieldStack>
+
                     <div className="grid gap-4 sm:grid-cols-2">
                         <FieldStack
                             label="Endpoint URL"
@@ -309,28 +381,34 @@ export function CommunityEndpointDialog({
                         </FieldStack>
                         <FieldStack
                             label="Provider model ID"
-                            helper={providerModelHelper(
-                                modelOptions,
-                                modelListState,
-                            )}
+                            helper={
+                                canPublish
+                                    ? providerModelHelper(
+                                          modelOptions,
+                                          modelListState,
+                                      )
+                                    : "Enter the upstream model ID manually."
+                            }
                             alignLabelRow
                             action={
-                                <Button
-                                    type="button"
-                                    size="sm"
-                                    intent="info"
-                                    className="shrink-0 text-sm"
-                                    disabled={
-                                        !hasToken ||
-                                        form.baseUrl.trim() === "" ||
-                                        modelListState.status === "loading"
-                                    }
-                                    onClick={() => void handleFetchModels()}
-                                >
-                                    {modelListState.status === "loading"
-                                        ? "Fetching…"
-                                        : "Fetch models"}
-                                </Button>
+                                canPublish ? (
+                                    <Button
+                                        type="button"
+                                        size="sm"
+                                        intent="info"
+                                        className="shrink-0 text-sm"
+                                        disabled={
+                                            !hasToken ||
+                                            form.baseUrl.trim() === "" ||
+                                            modelListState.status === "loading"
+                                        }
+                                        onClick={() => void handleFetchModels()}
+                                    >
+                                        {modelListState.status === "loading"
+                                            ? "Fetching…"
+                                            : "Fetch models"}
+                                    </Button>
+                                ) : undefined
                             }
                         >
                             {modelOptions.length > 0 ? (
@@ -456,34 +534,39 @@ export function CommunityEndpointDialog({
                         />
                     </FieldStack>
 
-                    <div className="flex flex-wrap items-center gap-3">
-                        <Button
-                            type="button"
-                            intent="info"
-                            onClick={() => void handleTest()}
-                            disabled={
-                                !hasToken ||
-                                form.baseUrl.trim() === "" ||
-                                testState.status === "loading"
-                            }
-                        >
-                            {testState.status === "loading"
-                                ? "Testing…"
-                                : "Test endpoint"}
-                        </Button>
-                        {testState.status === "error" && testState.message && (
-                            <p className="text-sm text-intent-danger-text">
-                                {testState.message}
-                            </p>
-                        )}
-                    </div>
+                    {canPublish && (
+                        <div className="flex flex-wrap items-center gap-3">
+                            <Button
+                                type="button"
+                                intent="info"
+                                onClick={() => void handleTest()}
+                                disabled={
+                                    !hasToken ||
+                                    form.baseUrl.trim() === "" ||
+                                    testState.status === "loading"
+                                }
+                            >
+                                {testState.status === "loading"
+                                    ? "Testing…"
+                                    : "Test endpoint"}
+                            </Button>
+                            {testState.status === "error" &&
+                                testState.message && (
+                                    <p className="text-sm text-intent-danger-text">
+                                        {testState.message}
+                                    </p>
+                                )}
+                        </div>
+                    )}
 
-                    <PriceGroups
-                        form={form}
-                        testState={testState}
-                        visiblePriceKeys={visiblePriceKeys}
-                        onChange={updateForm}
-                    />
+                    {isShared && (
+                        <PriceGroups
+                            form={form}
+                            testState={testState}
+                            visiblePriceKeys={visiblePriceKeys}
+                            onChange={updateForm}
+                        />
+                    )}
                 </ScrollArea>
 
                 <div className="flex shrink-0 justify-end gap-2 p-6 pt-4">
@@ -504,7 +587,9 @@ export function CommunityEndpointDialog({
                             ? "Saving…"
                             : isEdit
                               ? "Save Model"
-                              : "Add Model"}
+                              : isShared
+                                ? "Publish Model"
+                                : "Add Private Model"}
                     </Button>
                 </div>
             </form>

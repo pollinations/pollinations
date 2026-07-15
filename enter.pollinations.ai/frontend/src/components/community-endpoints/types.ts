@@ -2,6 +2,7 @@ import {
     COMMUNITY_ENDPOINT_PRICE_FIELDS,
     type CommunityEndpointPriceKey,
     type CommunityEndpointPrices,
+    type CommunityEndpointVisibility,
     MIN_COMMUNITY_PRICE_PER_MILLION_TOKENS,
 } from "@shared/community-endpoints.ts";
 import type { Usage } from "@shared/registry/registry.ts";
@@ -15,6 +16,9 @@ export type CommunityEndpoint = {
     description: string | null;
     baseUrl: string;
     upstreamModel: string;
+    // private → owner-only, shown only to the owner, no owner-set price;
+    // public → globally listed + billed to callers.
+    visibility: CommunityEndpointVisibility;
     disabled: boolean;
     disabledReason: string | null;
     disabledAt: string | null;
@@ -23,6 +27,10 @@ export type CommunityEndpoint = {
 export type EndpointFormState = {
     name: string;
     description: string;
+    // private → owner-only, shown only to the owner, no owner-set price;
+    // public → globally listed + billed to callers.
+    // Public is selectable only by allowlisted owners; defaults private.
+    visibility: CommunityEndpointVisibility;
     baseUrl: string;
     upstreamModel: string;
     bearerToken: string;
@@ -33,6 +41,7 @@ export type EndpointPayload = {
     description: string;
     baseUrl: string;
     upstreamModel: string;
+    visibility: CommunityEndpointVisibility;
 } & CommunityEndpointPrices;
 
 export type CommunityEndpointUsage = Record<string, unknown>;
@@ -58,6 +67,7 @@ const emptyPriceForm = Object.fromEntries(
 export const emptyForm: EndpointFormState = {
     name: "",
     description: "",
+    visibility: "private",
     baseUrl: "",
     upstreamModel: "",
     bearerToken: "",
@@ -65,6 +75,11 @@ export const emptyForm: EndpointFormState = {
 };
 
 export const idleAction: ActionState = { status: "idle" };
+
+export const VISIBILITY_LABELS: Record<CommunityEndpointVisibility, string> = {
+    private: "Private",
+    public: "Public",
+};
 
 const TOKENS_PER_MILLION = 1_000_000;
 
@@ -95,6 +110,7 @@ export function endpointToForm(endpoint: CommunityEndpoint): EndpointFormState {
     return {
         name: endpoint.name,
         description: endpoint.description ?? "",
+        visibility: endpoint.visibility,
         baseUrl: endpoint.baseUrl,
         upstreamModel: endpoint.upstreamModel,
         bearerToken: "",
@@ -161,6 +177,7 @@ export function toEndpointPayload(form: EndpointFormState): EndpointPayload {
     return {
         name: modelName,
         description: form.description.trim(),
+        visibility: form.visibility,
         baseUrl: form.baseUrl.trim(),
         upstreamModel: form.upstreamModel.trim() || modelName,
         ...formPricesToPayload(form),

@@ -278,6 +278,13 @@ export function savedEndpointPriceKeys(
     );
 }
 
+// Show the base text prices as soon as a model is made public. They remain
+// optional: blank or zero publishes the model for free.
+export const BASE_TEXT_PRICE_KEYS: PriceFieldKey[] = [
+    "promptTextPrice",
+    "completionTextPrice",
+];
+
 export function returnedPriceFields(testState: ActionState): PriceField[] {
     if (testState.status !== "success") return [];
     return COMMUNITY_ENDPOINT_PRICE_FIELDS.filter((field) =>
@@ -288,8 +295,11 @@ export function returnedPriceFields(testState: ActionState): PriceField[] {
 export function visiblePriceFieldKeys(
     savedPriceKeys: Set<PriceFieldKey>,
     returnedFields: PriceField[],
+    // Fields that should be visible before any endpoint test has run.
+    alwaysVisible: PriceFieldKey[] = [],
 ): Set<PriceFieldKey> {
     return new Set([
+        ...alwaysVisible,
         ...savedPriceKeys,
         ...returnedFields.map((field) => field.key),
     ]);

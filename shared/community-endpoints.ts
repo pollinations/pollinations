@@ -69,6 +69,15 @@ export function communityEndpointPrices(
     ) as CommunityEndpointPrices;
 }
 
+// Access/visibility of a registered endpoint. Private is the default; choosing
+// public on create or update is allowlist-gated.
+//   private → owner-only callable, shown only to the owner, no owner-set price
+//   public  → anyone callable, listed in the model catalog, priced
+export const COMMUNITY_ENDPOINT_VISIBILITIES = ["private", "public"] as const;
+
+export type CommunityEndpointVisibility =
+    (typeof COMMUNITY_ENDPOINT_VISIBILITIES)[number];
+
 export type CommunityEndpointRuntime = {
     id: string;
     ownerUserId: string;
@@ -78,6 +87,7 @@ export type CommunityEndpointRuntime = {
     baseUrl: string;
     upstreamModel: string;
     bearerTokenCiphertext: string;
+    visibility: CommunityEndpointVisibility;
     disabledAt: number | null;
     disabledReason: string | null;
 } & CommunityEndpointPrices;
@@ -170,7 +180,10 @@ export function communityPriceDefinition(
     const pricing: PriceDefinition = {};
     for (const field of COMMUNITY_ENDPOINT_PRICE_FIELDS) {
         const price = endpoint[field.key];
-        if (Number.isFinite(price) && price > 0) {
+        // Zero is an intentional rate here (private models, unpriced usage
+        // buckets), not a missing one: keep it explicit so billing charges 0
+        // instead of warning about a missing conversion rate on every call.
+        if (Number.isFinite(price) && price >= 0) {
             pricing[field.usageType] = price;
         }
     }

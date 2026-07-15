@@ -154,9 +154,7 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                         <ModelStatusChips
                             showNew={showNew}
                             showAlpha={showAlpha}
-                            balanceAccess={
-                                showPaidOnly ? "paid-only" : "quest-paid"
-                            }
+                            balanceAccess={showPaidOnly ? "paid" : "quest"}
                         />
                     </div>
                     <ModelId name={model.name} />

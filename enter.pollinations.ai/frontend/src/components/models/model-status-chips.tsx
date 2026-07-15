@@ -1,8 +1,8 @@
 import { Chip, Tooltip } from "@pollinations/ui";
-import { PaidChip, TierChip } from "@pollinations/ui/wallet";
+import { PaidChip, TierChip, WalletKindIcon } from "@pollinations/ui/wallet";
 import type { FC } from "react";
 
-type BalanceAccess = "quest-paid" | "paid-only";
+type BalanceAccess = "quest" | "paid";
 
 type ModelStatusChipsProps = {
     showNew: boolean;
@@ -24,19 +24,21 @@ export const ModelStatusChips: FC<ModelStatusChipsProps> = ({
     }
 
     const balanceChip =
-        balanceAccess === "paid-only" ? (
+        balanceAccess === "paid" ? (
             <PaidChip size="sm" className="whitespace-nowrap">
-                Paid only
+                <WalletKindIcon kind="paid" />
+                Paid
             </PaidChip>
-        ) : balanceAccess === "quest-paid" ? (
+        ) : balanceAccess === "quest" ? (
             <TierChip size="sm" className="whitespace-nowrap">
-                Quest + Paid
+                <WalletKindIcon kind="tier" />
+                Quest
             </TierChip>
         ) : null;
 
     const balanceTooltipText =
-        balanceAccess === "paid-only"
-            ? "Paid Pollen only. Quest Pollen is not used for this model."
+        balanceAccess === "paid"
+            ? "Uses Paid Pollen. Quest Pollen is not used for this model."
             : "Uses Quest Pollen first, then Paid Pollen when Quest balance cannot cover the request.";
 
     return (

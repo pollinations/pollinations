@@ -225,9 +225,7 @@ const MobileModelRow: FC<MobileModelRowProps> = ({ model }) => {
                             <ModelStatusChips
                                 showNew={showNew}
                                 showAlpha={showAlpha}
-                                balanceAccess={
-                                    showPaidOnly ? "paid-only" : "quest-paid"
-                                }
+                                balanceAccess={showPaidOnly ? "paid" : "quest"}
                                 alphaTooltip={false}
                                 balanceTooltip={false}
                             />

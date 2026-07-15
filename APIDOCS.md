@@ -13,7 +13,7 @@ Also available at [https://gen.pollinations.ai/docs](https://gen.pollinations.ai
 
 ## 🚀 Getting Started
 
-**1. Get an API key** at [enter.pollinations.ai](https://enter.pollinations.ai). Two key types are available:
+**1. Get an API key** at [enter.pollinations.ai](https://enter.pollinations.ai/keys). Two key types are available:
 
 - `sk_*` — secret key for backend use (full account access)
 - `pk_*` — publishable key, safe to ship in browsers and mobile apps
@@ -88,7 +88,7 @@ The header is preferred for everything except browser flows that can't set custo
 
 ## 🔓 Sign in with Pollinations (OAuth 2.1)
 
-Third-party apps can obtain an API key on behalf of a Pollinations user — the OAuth 2.1 authorization-code flow with PKCE (S256) for web apps, or the device flow (RFC 8628) for CLIs. Register a **publishable App Key** (`pk_…`) with your redirect URIs at [enter.pollinations.ai](https://enter.pollinations.ai); the `pk_` key is your `client_id` (public client, no secret), and the issued access token is an opaque `sk_` key bound to the budget, expiry, and scopes the user approved.
+Third-party apps can obtain an API key on behalf of a Pollinations user — the OAuth 2.1 authorization-code flow with PKCE (S256) for web apps, or the device flow (RFC 8628) for CLIs. Register a **publishable App Key** (`pk_…`) with your redirect URIs at [enter.pollinations.ai](https://enter.pollinations.ai/keys); the `pk_` key is your `client_id` (public client, no secret), and the issued access token is an opaque `sk_` key bound to the budget, expiry, and scopes the user approved.
 
 Endpoints are discoverable via RFC 8414 metadata — resolve them from there rather than hardcoding:
 
@@ -811,7 +811,7 @@ curl -X POST "https://gen.pollinations.ai/v1/embeddings" \
 
 #### `GET` `/v1/models` — List Models (OpenAI-compatible)
 
-Returns available models (text, community text, image, realtime, audio, embeddings) in the OpenAI-compatible format (`{object: "list", data: [...]}`). Use this endpoint if you're using an OpenAI SDK. For richer metadata including pricing and capabilities, use `/models`, `/text/models`, `/image/models`, `/audio/models`, or `/embeddings/models` instead. When authenticated: models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance.
+Returns available models (text, community text, image, realtime, audio, embeddings) in the OpenAI-compatible format (`{object: "list", data: [...]}`). Use this endpoint if you're using an OpenAI SDK. For richer metadata including pricing and capabilities, use `/models`, `/text/models`, `/image/models`, `/audio/models`, or `/embeddings/models` instead. When authenticated: the owner's private community models are included, models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance.
 
 📤 **Response** · `200` · `application/json` — Success
 
@@ -868,7 +868,7 @@ curl "https://gen.pollinations.ai/v1/models" \
 
 #### `GET` `/models` — List Models
 
-Returns all available text, community text, image, video, 3D, realtime, audio, and embedding models with pricing, capabilities, and metadata. When authenticated: models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance.
+Returns all available text, community text, image, video, 3D, realtime, audio, and embedding models with pricing, capabilities, and metadata. When authenticated: the owner's private community models are included, models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance.
 
 📤 **Response** · `200` · `application/json` — Success
 
@@ -928,7 +928,7 @@ curl "https://gen.pollinations.ai/video/models" \
 
 #### `GET` `/text/models` — List Text Models (Detailed)
 
-Returns all available text generation and community text models with pricing, capabilities, and metadata including context window size, supported modalities, and tool support. When authenticated: models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance.
+Returns all available text generation and community text models with pricing, capabilities, and metadata including context window size, supported modalities, and tool support. When authenticated: the owner's private community models are included, models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance.
 
 📤 **Response** · `200` · `application/json` — Success
 
@@ -1142,7 +1142,7 @@ curl "https://media.pollinations.ai/550e8400-e29b-41d4-a716-446655440000/metadat
 
 #### `GET` `/account/my-models` — List My Models
 
-List invite-only community text models owned by the authenticated account. API keys require `account:keys` and an account with `communityEndpointsAllowed: true`; dashboard sessions can manage models directly when enabled.
+List private and public community text models owned by the authenticated account. API keys require `account:keys`.
 
 📤 **Response** · `200` · `application/json` — Registered community text models
 
@@ -1155,6 +1155,7 @@ List invite-only community text models owned by the authenticated account. API k
 | `data[].description` * | `string` \| `null` | — |
 | `data[].baseUrl` * | `string` | — |
 | `data[].upstreamModel` * | `string` | — |
+| `data[].visibility` * | `"private"` \| `"public"` | "private": owner-only, shown only to the owner, with no owner-set price. "public": anyone and listed in the catalog; it may be free or priced. Publishing requires an allowlisted account. |
 | `data[].promptTextPrice` * | `number` | — |
 | `data[].promptCachedPrice` * | `number` | — |
 | `data[].promptCacheWritePrice` * | `number` | — |
@@ -1182,7 +1183,7 @@ curl "https://gen.pollinations.ai/account/my-models" \
 
 #### `POST` `/account/my-models` — Create My Model
 
-Register an invite-only community text model. API keys require `account:keys` and an account with `communityEndpointsAllowed: true`. The upstream bearer token is encrypted and never returned.
+Register a private or public community text model. Private is the default. Public models require an allowlisted account and may be free or priced. API keys require `account:keys`. The upstream bearer token is encrypted and never returned.
 
 📥 **Request body** · `application/json`
 
@@ -1193,14 +1194,15 @@ Register an invite-only community text model. API keys require `account:keys` an
 | `baseUrl` * | `string · uri` | — |
 | `upstreamModel` | `string` | length: `1…253` |
 | `bearerToken` * | `string` | — |
-| `promptTextPrice` | `number` | default: `0` |
-| `promptCachedPrice` | `number` | default: `0` |
-| `promptCacheWritePrice` | `number` | default: `0` |
-| `promptAudioPrice` | `number` | default: `0` |
-| `promptImagePrice` | `number` | default: `0` |
-| `completionTextPrice` | `number` | default: `0` |
-| `completionReasoningPrice` | `number` | default: `0` |
-| `completionAudioPrice` | `number` | default: `0` |
+| `visibility` | `"private"` \| `"public"` | "private": owner-only, shown only to the owner, with no owner-set price. "public": anyone and listed in the catalog; it may be free or priced. Publishing requires an allowlisted account. · default: `"private"` |
+| `promptTextPrice` | `number` | — |
+| `promptCachedPrice` | `number` | — |
+| `promptCacheWritePrice` | `number` | — |
+| `promptAudioPrice` | `number` | — |
+| `promptImagePrice` | `number` | — |
+| `completionTextPrice` | `number` | — |
+| `completionReasoningPrice` | `number` | — |
+| `completionAudioPrice` | `number` | — |
 
 <sub>`*` = required field</sub>
 
@@ -1214,6 +1216,7 @@ Register an invite-only community text model. API keys require `account:keys` an
 | `description` * | `string` \| `null` | — |
 | `baseUrl` * | `string` | — |
 | `upstreamModel` * | `string` | — |
+| `visibility` * | `"private"` \| `"public"` | "private": owner-only, shown only to the owner, with no owner-set price. "public": anyone and listed in the catalog; it may be free or priced. Publishing requires an allowlisted account. |
 | `promptTextPrice` * | `number` | — |
 | `promptCachedPrice` * | `number` | — |
 | `promptCacheWritePrice` * | `number` | — |
@@ -1243,7 +1246,7 @@ curl -X POST "https://gen.pollinations.ai/account/my-models" \
 
 #### `POST` `/account/my-models/models` — List Upstream Models
 
-Fetch OpenAI-compatible upstream model IDs before registering a My Models endpoint. API keys require `account:keys` and an account with `communityEndpointsAllowed: true`.
+Fetch OpenAI-compatible upstream model IDs before publishing a My Models endpoint. Requires community model publishing approval; API keys also require `account:keys`.
 
 📥 **Request body** · `application/json`
 
@@ -1275,7 +1278,7 @@ curl -X POST "https://gen.pollinations.ai/account/my-models/models" \
 
 #### `POST` `/account/my-models/test` — Test My Model Endpoint
 
-Test an OpenAI-compatible upstream model before registering it. API keys require `account:keys` and an account with `communityEndpointsAllowed: true`.
+Test an OpenAI-compatible upstream model before publishing it. Requires community model publishing approval; API keys also require `account:keys`.
 
 📥 **Request body** · `application/json`
 
@@ -1309,7 +1312,7 @@ curl -X POST "https://gen.pollinations.ai/account/my-models/test" \
 
 #### `POST` `/account/my-models/{id}/update` — Update My Model
 
-Update an invite-only community text model owned by the authenticated account. API keys require `account:keys` and an account with `communityEndpointsAllowed: true`.
+Update a community text model owned by the authenticated account. Changing visibility to public publishes it and requires an allowlisted account; public models may be free or priced. API keys require `account:keys`.
 
 ⚙️ **Parameters**
 
@@ -1328,6 +1331,7 @@ Update an invite-only community text model owned by the authenticated account. A
 | `baseUrl` | `string · uri` | — |
 | `upstreamModel` | `string` | length: `1…253` |
 | `bearerToken` | `string` | — |
+| `visibility` | `"private"` \| `"public"` | "private": owner-only, shown only to the owner, with no owner-set price. "public": anyone and listed in the catalog; it may be free or priced. Publishing requires an allowlisted account. |
 | `promptTextPrice` | `number` | — |
 | `promptCachedPrice` | `number` | — |
 | `promptCacheWritePrice` | `number` | — |
@@ -1349,6 +1353,7 @@ Update an invite-only community text model owned by the authenticated account. A
 | `description` * | `string` \| `null` | — |
 | `baseUrl` * | `string` | — |
 | `upstreamModel` * | `string` | — |
+| `visibility` * | `"private"` \| `"public"` | "private": owner-only, shown only to the owner, with no owner-set price. "public": anyone and listed in the catalog; it may be free or priced. Publishing requires an allowlisted account. |
 | `promptTextPrice` * | `number` | — |
 | `promptCachedPrice` * | `number` | — |
 | `promptCacheWritePrice` * | `number` | — |
@@ -1378,7 +1383,7 @@ curl -X POST "https://gen.pollinations.ai/account/my-models/key_abc123/update" \
 
 #### `DELETE` `/account/my-models/{id}` — Delete My Model
 
-Delete an invite-only community text model owned by the authenticated account. API keys require `account:keys` and an account with `communityEndpointsAllowed: true`.
+Delete a community text model owned by the authenticated account. API keys require `account:keys`.
 
 ⚙️ **Parameters**
 

@@ -284,7 +284,7 @@ describe("genericOpenAIClient", () => {
 
     it("maps upstream 429 to 502 while preserving upstream status after retries exhausted", async () => {
         vi.useFakeTimers();
-        
+
         // Mock 11 calls (1 initial + 10 retries) all returning 429
         for (let i = 0; i <= 10; i++) {
             vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
@@ -306,8 +306,11 @@ describe("genericOpenAIClient", () => {
             await vi.advanceTimersByTime(60000); // max delay
         }
 
-        await expect(promise).rejects.toMatchObject({ status: 502, upstreamStatus: 429 });
-        
+        await expect(promise).rejects.toMatchObject({
+            status: 502,
+            upstreamStatus: 429,
+        });
+
         vi.useRealTimers();
         vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
             Response.json({

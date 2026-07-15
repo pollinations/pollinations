@@ -1268,10 +1268,22 @@ exports[`effective cost and price per model — snapshot 1`] = `
   },
   "veo": {
     "cost": {
-      "completionVideoSeconds": 0.15,
+      "completionAudioSeconds": 0.02,
+      "completionVideoSeconds": 0.08,
     },
     "price": {
-      "completionVideoSeconds": 0.15,
+      "completionAudioSeconds": 0.02,
+      "completionVideoSeconds": 0.08,
+    },
+  },
+  "veo-1080p": {
+    "cost": {
+      "completionAudioSeconds": 0.02,
+      "completionVideoSeconds": 0.1,
+    },
+    "price": {
+      "completionAudioSeconds": 0.02,
+      "completionVideoSeconds": 0.1,
     },
   },
   "wan": {

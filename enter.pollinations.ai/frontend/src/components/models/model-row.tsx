@@ -1,13 +1,5 @@
-import {
-    CardIcon,
-    CopyButton,
-    cn,
-    InfoTip,
-    SproutIcon,
-    Surface,
-    Tooltip,
-} from "@pollinations/ui";
-import { PaidChip, TierChip, WalletKindIcon } from "@pollinations/ui/wallet";
+import { CopyButton, cn, InfoTip, Surface, Tooltip } from "@pollinations/ui";
+import { WalletKindIcon } from "@pollinations/ui/wallet";
 import type { FC } from "react";
 import { calculatePerPollen, unitLabels } from "./calculations.ts";
 import { CAPABILITY_ICON, MODALITY_ICON } from "./model-icons.tsx";
@@ -23,7 +15,11 @@ import {
     isNewModel,
     isPaidOnly,
 } from "./model-info.ts";
-import { ModelStatusChips } from "./model-status-chips.tsx";
+import {
+    type BalanceAccess,
+    BalanceAccessChip,
+    ModelStatusChips,
+} from "./model-status-chips.tsx";
 import { getModelPriceBadges, PriceBadgeList } from "./price-badge.tsx";
 import type { ModelPrice } from "./types.ts";
 
@@ -56,18 +52,19 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
     const showNew = isNewModel(model);
     const showPaidOnly = isPaidOnly(model);
     const showAlpha = isAlpha(model);
+    const balanceAccess: BalanceAccess = showPaidOnly ? "paid" : "quest";
 
     const genPerPollen = calculatePerPollen(model);
     const balanceLabel = showPaidOnly ? (
         <span className="inline-flex items-center gap-1">
             <WalletKindIcon kind="paid" />
-            Paid Pollen only
+            Paid Pollen
         </span>
     ) : (
-        <span className="inline-flex items-center gap-1">
+        <span className="inline-flex flex-wrap items-center gap-1">
             <WalletKindIcon kind="tier" />
-            Quest or <WalletKindIcon kind="paid" />
-            Paid Pollen
+            Quest Pollen first, then <WalletKindIcon kind="paid" />
+            Paid Pollen if needed
         </span>
     );
     const perPollenTooltip =
@@ -154,7 +151,6 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                         <ModelStatusChips
                             showNew={showNew}
                             showAlpha={showAlpha}
-                            balanceAccess={showPaidOnly ? "paid" : "quest"}
                         />
                     </div>
                     <ModelId name={model.name} />
@@ -206,17 +202,15 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
             {/* Per pollen — fixed width; color and icon mirror the balance source. */}
             <div className="w-[90px] text-center shrink-0">
                 <Tooltip content={perPollenTooltip} displayContents>
-                    {showPaidOnly ? (
-                        <PaidChip>
-                            <CardIcon className="h-3.5 w-3.5" />
+                    <span className="inline-flex flex-col items-center gap-1">
+                        <BalanceAccessChip
+                            access={balanceAccess}
+                            className="whitespace-nowrap"
+                        />
+                        <span className="text-sm font-semibold leading-none tabular-nums text-theme-text-strong">
                             {genPerPollen}
-                        </PaidChip>
-                    ) : (
-                        <TierChip>
-                            <SproutIcon className="h-3.5 w-3.5" />
-                            {genPerPollen}
-                        </TierChip>
-                    )}
+                        </span>
+                    </span>
                 </Tooltip>
             </div>
 

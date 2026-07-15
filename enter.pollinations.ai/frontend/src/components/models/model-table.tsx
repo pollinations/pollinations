@@ -1,12 +1,4 @@
-import {
-    CardIcon,
-    ChevronIcon,
-    CopyButton,
-    cn,
-    SproutIcon,
-    Tooltip,
-} from "@pollinations/ui";
-import { PaidChip, TierChip } from "@pollinations/ui/wallet";
+import { ChevronIcon, CopyButton, cn, Tooltip } from "@pollinations/ui";
 import { type FC, useState } from "react";
 import {
     calculatePerPollen,
@@ -27,7 +19,11 @@ import {
     isPaidOnly,
 } from "./model-info.ts";
 import { ModelId, ModelRow } from "./model-row.tsx";
-import { ModelStatusChips } from "./model-status-chips.tsx";
+import {
+    type BalanceAccess,
+    BalanceAccessChip,
+    ModelStatusChips,
+} from "./model-status-chips.tsx";
 import { getModelPriceBadges, PriceBadgeList } from "./price-badge.tsx";
 import type { ModelPrice, PriceDirection } from "./types.ts";
 
@@ -152,6 +148,7 @@ const MobileModelRow: FC<MobileModelRowProps> = ({ model }) => {
     const showNew = isNewModel(model);
     const showPaidOnly = isPaidOnly(model);
     const showAlpha = isAlpha(model);
+    const balanceAccess: BalanceAccess = showPaidOnly ? "paid" : "quest";
 
     const perPollen = calculatePerPollen(model);
 
@@ -221,27 +218,25 @@ const MobileModelRow: FC<MobileModelRowProps> = ({ model }) => {
                                 />
                             </div>
                         )}
-                        <div className="flex min-w-0 flex-wrap items-center gap-1.5">
-                            <ModelStatusChips
-                                showNew={showNew}
-                                showAlpha={showAlpha}
-                                balanceAccess={showPaidOnly ? "paid" : "quest"}
-                                alphaTooltip={false}
-                                balanceTooltip={false}
-                            />
-                        </div>
+                        {(showNew || showAlpha) && (
+                            <div className="flex min-w-0 flex-wrap items-center gap-1.5">
+                                <ModelStatusChips
+                                    showNew={showNew}
+                                    showAlpha={showAlpha}
+                                    alphaTooltip={false}
+                                />
+                            </div>
+                        )}
                     </div>
-                    {showPaidOnly ? (
-                        <PaidChip className="shrink-0">
-                            <CardIcon className="h-3.5 w-3.5" />
+                    <div className="flex shrink-0 flex-col items-end gap-1">
+                        <BalanceAccessChip
+                            access={balanceAccess}
+                            className="whitespace-nowrap"
+                        />
+                        <span className="text-sm font-semibold leading-none tabular-nums text-theme-text-strong">
                             {perPollen}
-                        </PaidChip>
-                    ) : (
-                        <TierChip className="shrink-0">
-                            <SproutIcon className="h-3.5 w-3.5" />
-                            {perPollen}
-                        </TierChip>
-                    )}
+                        </span>
+                    </div>
                 </div>
             </div>
 

@@ -7,7 +7,7 @@ Official SDK for [pollinations.ai](https://pollinations.ai) - Generate images, t
 
 > [!WARNING]
 > **The `alpha` release line (`5.1.0-alpha.x`) is unstable and breakage-prone.**
-> It ships the in-progress rebuild (model-catalog helper, `./client` subpath, provider changes) and its API may change between alpha versions without notice. The stable `latest` line is `5.0.0`. Opt into the alpha only deliberately, and pin an exact version.
+> It ships the in-progress rebuild (model-catalog helper and provider changes) and its API may change between alpha versions without notice. The stable `latest` line is `5.0.0`. Opt into the alpha only deliberately, and pin an exact version.
 
 ## Installation
 
@@ -21,7 +21,7 @@ Alpha (in-progress rebuild — pin an exact version):
 
 ```bash
 npm install @pollinations/sdk@alpha
-# or pin exactly: npm install @pollinations/sdk@5.1.0-alpha.3
+# or pin exactly: npm install @pollinations/sdk@5.1.0-alpha.5
 ```
 
 ### CDN / `<script>` tag
@@ -44,7 +44,7 @@ app already has a build step.
 
 ## Quick Start
 
-First, get your API key at **https://enter.pollinations.ai** and set it:
+First, get your API key at **https://enter.pollinations.ai/keys** and set it:
 
 ```bash
 export POLLINATIONS_API_KEY=your_api_key
@@ -122,7 +122,7 @@ node my-first-ai.mjs
 
 ## API Key
 
-An API key is required. Get one for free at **https://enter.pollinations.ai**
+An API key is required. Get one for free at **https://enter.pollinations.ai/keys**
 
 ```javascript
 import { configure } from '@pollinations/sdk';
@@ -419,7 +419,7 @@ const videos = await generateVideo('ocean waves', { n: 2, duration: 4 });
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
 | `model` | string | `'veo'` | `'veo'`, `'seedance'`, `'wan'`, `'ltx-2'`, etc. |
-| `duration` | number | - | Duration in seconds (1-30, varies by model) |
+| `duration` | number | - | Duration in seconds (supported range varies by model) |
 | `aspectRatio` | string | - | e.g. `'16:9'`, `'9:16'`, `'1:1'` |
 | `seed` | number | random | Reproducible results |
 | `audio` | boolean | `false` | Include audio (`wan` always has audio) |
@@ -493,6 +493,23 @@ const imageModels = await getImageModels();
 console.log(textModels.map(m => m.name));
 ```
 
+## Media Upload
+
+Uploads use multipart form data, accept up to 100MB of file bytes, and return a
+public URL. Adding tags publishes the upload to those public tag galleries.
+
+```javascript
+import { upload } from '@pollinations/sdk';
+
+const media = await upload(imageBuffer, {
+  name: 'cat.png',
+  contentType: 'image/png',
+  tags: ['cats', 'gallery'],
+});
+
+console.log(media.url);
+```
+
 ## Error Handling
 
 ```javascript
@@ -554,7 +571,7 @@ import type {
 | `videoUrl(prompt, options?)` | Get video URL |
 | `generateAudio(text, options?)` | Text-to-speech / music |
 | `transcribe(audio, options?)` | Speech-to-text |
-| `upload(data, options?)` | Upload media |
+| `upload(data, options?)` | Upload media, optionally publishing it with `tags` |
 | `getTextModels()` | List text models |
 | `getImageModels()` | List image models |
 | `getModels()` | List all models |
@@ -593,21 +610,16 @@ Publishable keys (`pk_`) have rate limits. Use a secret key (`sk_`) for unlimite
 
 ### Network Errors
 
-The SDK automatically retries failed requests up to 3 times. To customize:
-
-```javascript
-import { Pollinations } from '@pollinations/sdk';
-
-const client = new Pollinations({
-  maxRetries: 5,  // Retry up to 5 times
-});
-```
+The SDK returns network and API errors directly and does not retry requests
+automatically. A timed-out generation may still complete and incur usage.
+Callers can inspect `PollinationsError.retryAfter` when deciding how to handle
+rate limits.
 
 ## Links
 
 - [Pollinations.AI](https://pollinations.ai)
 - [API Documentation](https://gen.pollinations.ai/docs) - Full API reference
-- [Get API Key](https://enter.pollinations.ai)
+- [Get API Key](https://enter.pollinations.ai/keys)
 - [Discord](https://discord.gg/pollinations-ai-885844321461485618)
 - [GitHub](https://github.com/pollinations/pollinations)
 

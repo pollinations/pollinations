@@ -1,32 +1,51 @@
 import { refreshR2ObjectTtl } from "@shared/r2-storage.ts";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
-import { describeRoute, openAPIRouteHandler, resolver } from "hono-openapi";
+import {
+    describeRoute,
+    openAPIRouteHandler,
+    resolver,
+    validator,
+} from "hono-openapi";
 import { z } from "zod";
+import type { CatalogItem, CatalogPage } from "./catalog.ts";
+import {
+    catalogItemOwner,
+    DEFAULT_LIMIT,
+    decodeCursor,
+    deleteCatalogItem,
+    getDb,
+    insertUploadCatalogItem,
+    listMedia,
+    MAX_LIMIT,
+    normalizeTags,
+    TagError,
+    tagsForItems,
+} from "./catalog.ts";
 
 const DOMAIN = "media.pollinations.ai";
 // gen.pollinations.ai proxies /account/* to enter — using the public path
 // keeps internal services consistent with the documented SDK/external usage.
 const KEY_VERIFY_URL = "https://gen.pollinations.ai/account/key";
-// Keep in sync with shared/http/cache-control.ts (IMMUTABLE_CACHE_CONTROL).
-// Content-addressed storage means the URL → bytes mapping is fixed forever:
-// re-uploading the
-// same content reproduces the same URL, and there is no other content the URL
-// could ever point to. R2's 30-day lifecycle can delete the underlying object,
-// but a fresh upload restores byte-identical content, so `immutable` is safe.
-const CACHE_CONTROL = "public, max-age=31536000, immutable";
-const HASH_PATTERN = /^[a-f0-9]{16}$/i;
-const DEFAULT_MAX_SIZE = 52428800; // 50 MB
+// Untagged uploads cannot be deleted through the API, and each unique id always
+// maps to the same bytes, so they can be cached immutably. Tagged uploads are
+// deletable and must never be retained by downstream caches after deletion.
+const IMMUTABLE_CACHE_CONTROL = "public, max-age=31536000, immutable";
+const PUBLISHED_CACHE_CONTROL = "no-store";
+const DEFAULT_MAX_SIZE = 104857600; // 100 MB
 
 interface Env {
     MEDIA_BUCKET: R2Bucket;
     MAX_FILE_SIZE: string;
+    DB: D1Database;
 }
 
 interface AuthResult {
     valid: boolean;
     type: string;
     name: string | null;
+    userId: string | null;
+    byopClientKeyId: string | null;
 }
 
 async function verifyApiKey(apiKey: string): Promise<AuthResult | null> {
@@ -36,7 +55,17 @@ async function verifyApiKey(apiKey: string): Promise<AuthResult | null> {
         });
         if (!res.ok) return null;
         const data = await res.json<AuthResult>();
-        return data.valid ? data : null;
+        if (!data.valid) return null;
+        // Normalize: an enter deployment that predates the identity fields
+        // omits them, and `undefined` would slip past the `=== null` guards
+        // downstream — never treat an unattested key as user-attached.
+        return {
+            valid: true,
+            type: data.type,
+            name: data.name ?? null,
+            userId: data.userId ?? null,
+            byopClientKeyId: data.byopClientKeyId ?? null,
+        };
     } catch {
         return null;
     }
@@ -54,30 +83,179 @@ function fileTooLargeError(maxSize: number): { error: string } {
     return { error: `File too large. Max size: ${maxSize / 1024 / 1024}MB` };
 }
 
-function mediaUrl(hash: string): string {
-    return `https://${DOMAIN}/${hash}`;
+function mediaUrl(id: string): string {
+    return `https://${DOMAIN}/${id}`;
+}
+
+// Splits comma-separated `tags` values from validated multipart or JSON input.
+function splitTags(values: unknown[]): string[] {
+    const tags: string[] = [];
+    for (const value of values) {
+        if (typeof value !== "string") continue;
+        tags.push(...value.split(","));
+    }
+    return tags;
+}
+
+class TagValidationError extends Error {}
+
+function validateTags(rawTags: string[]): string[] {
+    try {
+        return normalizeTags(rawTags);
+    } catch (error) {
+        if (error instanceof TagError) {
+            throw new TagValidationError(error.message);
+        }
+        throw error;
+    }
+}
+
+// Item shape returned by GET /media — never exposes ownerUserId/appKeyId.
+interface MediaItemResponse {
+    id: string;
+    url: string;
+    contentType: string;
+    size: number | null;
+    tags: string[];
+    createdAt: string;
+}
+
+function toItemResponse(
+    item: CatalogItem,
+    tagsByItem: Map<string, string[]>,
+): MediaItemResponse {
+    return {
+        id: item.id,
+        url: mediaUrl(item.id),
+        contentType: item.contentType,
+        size: item.size,
+        tags: tagsByItem.get(item.id) ?? [],
+        createdAt: item.createdAt.toISOString(),
+    };
+}
+
+async function toPageResponse(
+    db: ReturnType<typeof getDb>,
+    page: CatalogPage,
+): Promise<{
+    items: MediaItemResponse[];
+    nextCursor: string | null;
+    hasMore: boolean;
+}> {
+    const itemIds = page.items.map((item) => item.id);
+    const tagsByItem = await tagsForItems(db, itemIds);
+    return {
+        items: page.items.map((item) => toItemResponse(item, tagsByItem)),
+        nextCursor: page.nextCursor,
+        hasMore: page.hasMore,
+    };
 }
 
 const UploadResponseSchema = z.object({
-    id: z.string().describe("16-char hex content hash"),
+    id: z.string().describe("Unique media id (also the retrieval id)"),
     url: z.string().describe("Public retrieval URL"),
     contentType: z.string(),
     size: z.number().int().describe("File size in bytes"),
-    duplicate: z.boolean().describe("true if file already existed"),
+    tags: z
+        .array(z.string())
+        .optional()
+        .describe(
+            "Tags the upload was published with; present only when tagged",
+        ),
 });
+
+const JsonUploadRequestSchema = z.object({
+    data: z
+        .string()
+        .min(1)
+        .describe(
+            "Base64-encoded file bytes (with or without a data: prefix).",
+        ),
+    contentType: z
+        .string()
+        .optional()
+        .describe("MIME type; defaults to application/octet-stream."),
+    name: z
+        .string()
+        .optional()
+        .describe("Filename; used for the download Content-Disposition."),
+    tags: z
+        .union([z.string(), z.array(z.string())])
+        .optional()
+        .describe(
+            "Tags (publish the upload to those tags' public galleries): a comma-separated string or an array of strings.",
+        ),
+});
+const { $schema: _jsonSchemaDialect, ...JsonUploadOpenApiSchema } =
+    z.toJSONSchema(JsonUploadRequestSchema);
 
 const ErrorSchema = z.object({
     error: z.string(),
 });
 
 const MetadataResponseSchema = z.object({
-    hash: z.string().describe("16-char hex content hash"),
+    id: z.string().describe("Unique media id"),
     contentType: z.string(),
     size: z.number().int().describe("File size in bytes"),
     uploadedAt: z
         .string()
         .optional()
         .describe("ISO-8601 upload timestamp, when recorded"),
+});
+
+const MediaItemResponseSchema = z.object({
+    id: z.string().describe("Catalog item id"),
+    url: z.string().describe("Public retrieval URL"),
+    contentType: z.string(),
+    size: z.number().int().nullable().describe("File size in bytes"),
+    tags: z.array(z.string()),
+    createdAt: z.string().describe("ISO-8601 timestamp"),
+});
+
+const MediaPageResponseSchema = z.object({
+    items: z.array(MediaItemResponseSchema),
+    nextCursor: z
+        .string()
+        .nullable()
+        .describe(
+            "Opaque cursor for the next page, null when exhausted. Treat it as a token: pass it back verbatim as `?cursor=` to fetch the next page — do not parse or construct it.",
+        ),
+    hasMore: z
+        .boolean()
+        .describe(
+            "true when more pages exist (nextCursor is non-null). Loop while hasMore is true.",
+        ),
+});
+
+const DeleteResponseSchema = z.object({
+    deleted: z.literal(true),
+    id: z.string().describe("Id of the deleted media item"),
+});
+
+// Query-param schema for GET /media, used with validator("query", …): one
+// schema that both validates and documents. `limit` is a coerced integer
+// (query values arrive as strings) bounded to [1, MAX_LIMIT]; non-numeric,
+// out-of-range, or repeated values are rejected with a 400 — the standard
+// behavior for a scalar param. `cursor` is a plain optional string.
+const MediaListQuerySchema = z.object({
+    tag: z
+        .string()
+        .describe(
+            "Required. The public gallery to list: items carrying this tag, any owner.",
+        ),
+    limit: z.coerce
+        .number()
+        .int()
+        .min(1)
+        .max(MAX_LIMIT)
+        .optional()
+        .describe(`Page size, 1–${MAX_LIMIT}. Omitted → ${DEFAULT_LIMIT}.`),
+    cursor: z
+        .string()
+        .optional()
+        .describe(
+            "Opaque pagination cursor from a previous response's nextCursor.",
+        ),
 });
 
 const api = new Hono<{ Bindings: Env }>();
@@ -88,7 +266,35 @@ api.post(
         tags: ["media.pollinations.ai"],
         summary: "Upload media",
         description:
-            "Upload an image, audio, or video file. Supports multipart/form-data, raw binary, or base64 JSON. Returns a content-addressed hash URL. The hash includes the filename, so the same content with different filenames gets different URLs. Files are retained for 30 days; re-uploading resets the timer.",
+            "Upload an image, audio, or video file via multipart/form-data (field `file`) or application/json (base64 `data`). Returns a unique id and its retrieval URL; each upload gets its own id (re-uploading the same bytes yields a new one). Files are retained for 30 days.\n\n**Tags publish.** An optional `tags` field publishes the upload into each tag's public gallery (GET /media?tag=…), where anyone can see it. Untagged uploads stay unlisted: reachable only by their unguessable id URL, never listed anywhere. **Alpha:** the publish tagging is new and may still change.",
+        requestBody: {
+            content: {
+                "multipart/form-data": {
+                    schema: {
+                        type: "object",
+                        required: ["file"],
+                        properties: {
+                            file: {
+                                type: "string",
+                                format: "binary",
+                                description: "The media file to upload.",
+                            },
+                            tags: {
+                                type: "string",
+                                description:
+                                    "Comma-separated tags. Tagging publishes the upload to those tags' public galleries.",
+                            },
+                        },
+                    },
+                },
+                "application/json": {
+                    // hono-openapi's request-body type does not accept Zod's
+                    // JSON Schema 2020-12 payload, although OpenAPI 3.1 does.
+                    // @ts-expect-error Valid OpenAPI 3.1 schema generated above.
+                    schema: JsonUploadOpenApiSchema,
+                },
+            },
+        },
         responses: {
             200: {
                 description: "Upload successful",
@@ -98,6 +304,13 @@ api.post(
                     },
                 },
             },
+            400: {
+                description:
+                    "No/empty file, invalid JSON/base64, invalid tags, or tags on a key with no user account",
+                content: {
+                    "application/json": { schema: resolver(ErrorSchema) },
+                },
+            },
             401: {
                 description: "Missing or invalid API key",
                 content: {
@@ -105,7 +318,7 @@ api.post(
                 },
             },
             413: {
-                description: "File too large (max 50MB)",
+                description: "File too large (max 100MB)",
                 content: {
                     "application/json": { schema: resolver(ErrorSchema) },
                 },
@@ -129,20 +342,12 @@ api.post(
 
         const maxSize = parseInt(c.env.MAX_FILE_SIZE, 10) || DEFAULT_MAX_SIZE;
 
-        // Fail fast: reject oversized requests before reading the body into memory
-        const contentLength = parseInt(
-            c.req.header("content-length") || "0",
-            10,
-        );
-        if (contentLength > maxSize) {
-            return c.json(fileTooLargeError(maxSize), 413);
-        }
-
         let fileBuffer: ArrayBuffer;
         let contentType: string;
         let fileName: string | undefined;
 
         const requestContentType = c.req.header("content-type") || "";
+        const rawTags: string[] = [];
 
         try {
             if (requestContentType.includes("multipart/form-data")) {
@@ -161,28 +366,43 @@ api.post(
                 if (file.size > maxSize) {
                     return c.json(fileTooLargeError(maxSize), 413);
                 }
+                if (file.size === 0) {
+                    return c.json({ error: "Empty file" }, 400);
+                }
 
                 fileBuffer = await file.arrayBuffer();
                 contentType = file.type || detectContentType(file.name);
                 fileName = file.name;
-            } else if (requestContentType.includes("application/json")) {
-                const body = await c.req.json<{
-                    data: string;
-                    contentType?: string;
-                    name?: string;
-                }>();
 
-                if (!body.data) {
+                rawTags.push(...splitTags(formData.getAll("tags")));
+            } else if (requestContentType.includes("application/json")) {
+                let rawBody: unknown;
+                try {
+                    rawBody = await c.req.json();
+                } catch {
+                    return c.json({ error: "Invalid JSON body" }, 400);
+                }
+
+                const parsedBody = JsonUploadRequestSchema.safeParse(rawBody);
+                if (!parsedBody.success) {
                     return c.json(
-                        { error: "Missing 'data' field in JSON body" },
+                        {
+                            error: `Invalid JSON body: ${parsedBody.error.issues[0]?.message ?? "validation failed"}`,
+                        },
                         400,
                     );
                 }
+                const body = parsedBody.data;
 
                 const base64Data = body.data.includes(",")
                     ? body.data.split(",")[1]
                     : body.data;
-                const binaryString = atob(base64Data);
+                let binaryString: string;
+                try {
+                    binaryString = atob(base64Data);
+                } catch {
+                    return c.json({ error: "Invalid base64 data" }, 400);
+                }
                 const bytes = new Uint8Array(binaryString.length);
                 for (let i = 0; i < binaryString.length; i++) {
                     bytes[i] = binaryString.charCodeAt(i);
@@ -198,28 +418,53 @@ api.post(
 
                 contentType = body.contentType || "application/octet-stream";
                 fileName = body.name;
+
+                if (body.tags) {
+                    const tagValues = Array.isArray(body.tags)
+                        ? body.tags
+                        : [body.tags];
+                    rawTags.push(...splitTags(tagValues));
+                }
             } else {
-                fileBuffer = await c.req.arrayBuffer();
-
-                if (fileBuffer.byteLength > maxSize) {
-                    return c.json(fileTooLargeError(maxSize), 413);
-                }
-                if (fileBuffer.byteLength === 0) {
-                    return c.json({ error: "Empty file" }, 400);
-                }
-
-                contentType = requestContentType || "application/octet-stream";
+                return c.json(
+                    {
+                        error: "Unsupported content type. Use multipart/form-data (field `file`) or application/json (base64 `data`).",
+                    },
+                    400,
+                );
             }
 
-            const hash = await generateHash(fileBuffer, fileName);
+            let tags: string[];
+            try {
+                tags = validateTags(rawTags);
+            } catch (error) {
+                if (error instanceof TagValidationError) {
+                    return c.json({ error: error.message }, 400);
+                }
+                throw error;
+            }
 
-            const existing = await c.env.MEDIA_BUCKET.head(hash);
+            if (authResult.userId === null && tags.length > 0) {
+                return c.json(
+                    {
+                        error: "publishing (tags) requires a user-owned API key",
+                    },
+                    400,
+                );
+            }
 
-            // Always re-PUT to reset the R2 object timestamp (resets lifecycle TTL).
-            await c.env.MEDIA_BUCKET.put(hash, fileBuffer, {
+            // One id for everything: the R2 storage key, the retrieval id,
+            // and (for user uploads) the catalog row id.
+            const id = crypto.randomUUID();
+            const cacheControl =
+                tags.length > 0
+                    ? PUBLISHED_CACHE_CONTROL
+                    : IMMUTABLE_CACHE_CONTROL;
+
+            await c.env.MEDIA_BUCKET.put(id, fileBuffer, {
                 httpMetadata: {
                     contentType,
-                    cacheControl: CACHE_CONTROL,
+                    cacheControl,
                 },
                 customMetadata: {
                     uploadedAt: new Date().toISOString(),
@@ -229,24 +474,43 @@ api.post(
                 },
             });
 
+            // Tags are the publish action: only tagged uploads get catalog
+            // rows (untagged uploads stay uncataloged blobs behind their
+            // unguessable id). The write is awaited inline (not waitUntil):
+            // a D1 failure must surface as a 500, not be silently swallowed.
+            // `tags` non-empty implies a user-attached key (rejected above
+            // otherwise), so ownerUserId is always real here.
+            let storedTags: string[] | undefined;
+            if (tags.length > 0 && authResult.userId !== null) {
+                const db = getDb(c.env.DB);
+                await insertUploadCatalogItem(db, {
+                    id,
+                    ownerUserId: authResult.userId,
+                    appKeyId: authResult.byopClientKeyId,
+                    contentType,
+                    size: fileBuffer.byteLength,
+                    tags,
+                });
+                storedTags = tags;
+            }
+
             console.log(
                 JSON.stringify({
                     event: "upload",
-                    hash,
+                    id,
                     size: fileBuffer.byteLength,
                     contentType,
                     keyType: authResult.type,
                     uploadedBy: authResult.name || "unknown",
-                    duplicate: !!existing,
                 }),
             );
 
             return c.json({
-                id: hash,
-                url: mediaUrl(hash),
+                id,
+                url: mediaUrl(id),
                 contentType,
                 size: fileBuffer.byteLength,
-                duplicate: !!existing,
+                ...(storedTags ? { tags: storedTags } : {}),
             });
         } catch (error) {
             console.error("Upload error:", error);
@@ -256,21 +520,196 @@ api.post(
 );
 
 api.get(
-    "/:hash",
+    "/media",
     describeRoute({
         tags: ["media.pollinations.ai"],
-        summary: "Retrieve media",
+        summary: "List a public tag gallery",
         description:
-            "Get a file by its content hash. Access keeps files from expiring.",
+            "List the public gallery for a tag: every published item carrying that tag, any owner, newest first. Tagging an upload is what publishes it, so galleries are fully public — no API key needed. `tag` is required.\n\nItems reference storage with a 30-day lifecycle. A GET refreshes the lifecycle once an object is at least 15 days old. An expired item keeps its catalog entry, but its url 404s. **Alpha:** this endpoint is new and its API may still change.",
         security: [],
         responses: {
-            200: { description: "File content with appropriate Content-Type" },
+            200: {
+                description: "Page of media items",
+                content: {
+                    "application/json": {
+                        schema: resolver(MediaPageResponseSchema),
+                    },
+                },
+            },
             400: {
-                description: "Invalid hash format",
+                description: "Missing/empty tag, or invalid cursor or limit",
                 content: {
                     "application/json": { schema: resolver(ErrorSchema) },
                 },
             },
+        },
+    }),
+    validator("query", MediaListQuerySchema, (result, c) => {
+        // Emit validation failures in the same {error} shape as every other
+        // error response instead of the validator's default body.
+        if (!result.success) {
+            const issue = result.error[0];
+            const path = issue?.path
+                ?.map((p) =>
+                    typeof p === "object" ? String(p.key) : String(p),
+                )
+                .join(".");
+            return c.json(
+                {
+                    error: `Invalid query${path ? ` (${path})` : ""}: ${issue?.message ?? "validation failed"}`,
+                },
+                400,
+            );
+        }
+    }),
+    async (c) => {
+        const query = c.req.valid("query");
+        const limit = query.limit ?? DEFAULT_LIMIT;
+        let cursor: { createdAt: Date; id: string } | undefined;
+        if (query.cursor) {
+            try {
+                cursor = decodeCursor(query.cursor);
+            } catch {
+                return c.json({ error: "Invalid cursor" }, 400);
+            }
+        }
+
+        // Stored tags are trimmed + lowercased (normalizeTags), so the
+        // lookup must match or exact-case queries silently return nothing.
+        const tag = query.tag.trim().toLowerCase();
+        if (tag === "") {
+            return c.json(
+                { error: "Invalid query (tag): must not be empty" },
+                400,
+            );
+        }
+
+        const db = getDb(c.env.DB);
+        const page = await listMedia(db, { tag, limit, cursor });
+        return c.json(await toPageResponse(db, page));
+    },
+);
+
+api.delete(
+    "/media/:id",
+    describeRoute({
+        tags: ["media.pollinations.ai"],
+        summary: "Delete media",
+        description:
+            "Delete a published media item you own: the file, its catalog entry, and all its tags are removed, so it disappears from galleries and its URL 404s. Requires your **secret (`sk_`)** API key. Untagged uploads were never published, have no catalog entry, and can't be deleted — they use the same 30-day lifecycle, refreshed by a GET once they are at least 15 days old. **Alpha:** this endpoint is new and its API may still change.",
+        parameters: [
+            {
+                name: "id",
+                in: "path",
+                required: true,
+                description:
+                    "Media id (from the upload response or GET /media).",
+                schema: { type: "string" },
+            },
+        ],
+        responses: {
+            200: {
+                description: "Item deleted",
+                content: {
+                    "application/json": {
+                        schema: resolver(DeleteResponseSchema),
+                    },
+                },
+            },
+            401: {
+                description: "Missing or invalid API key",
+                content: {
+                    "application/json": { schema: resolver(ErrorSchema) },
+                },
+            },
+            403: {
+                description:
+                    "Key is not a secret (`sk_`) key, is not attached to a user account, or the item belongs to someone else",
+                content: {
+                    "application/json": { schema: resolver(ErrorSchema) },
+                },
+            },
+            404: {
+                description: "No published media item with this id",
+                content: {
+                    "application/json": { schema: resolver(ErrorSchema) },
+                },
+            },
+        },
+    }),
+    async (c) => {
+        const apiKey = extractApiKey(c.req.raw);
+        if (!apiKey) {
+            return c.json(
+                {
+                    error: "API key required. Pass via Authorization: Bearer <key> or ?key=<key>",
+                },
+                401,
+            );
+        }
+        const auth = await verifyApiKey(apiKey);
+        if (!auth) {
+            return c.json({ error: "Invalid or expired API key" }, 401);
+        }
+        if (auth.userId === null) {
+            return c.json(
+                { error: "This API key is not attached to a user account" },
+                403,
+            );
+        }
+        // Publishable keys ship inside public clients — anyone holding one
+        // could delete the owner's published media, so deletion is
+        // secret-key only.
+        if (auth.type !== "secret") {
+            return c.json(
+                { error: "Deleting media requires a secret (sk_) API key" },
+                403,
+            );
+        }
+
+        const id = c.req.param("id");
+        const db = getDb(c.env.DB);
+        // Only cataloged (published) items are deletable: an uncataloged id
+        // has no owner record to authorize against, so it answers 404 just
+        // like an unknown id.
+        const owner = await catalogItemOwner(db, id);
+        if (owner === undefined) {
+            return c.json({ error: "Media item not found" }, 404);
+        }
+        if (owner !== auth.userId) {
+            return c.json({ error: "You do not own this media item" }, 403);
+        }
+
+        // Blob first, then catalog rows: if either step fails the item is
+        // still cataloged (owner still resolvable), so the DELETE can simply
+        // be retried — R2 delete is idempotent. The reverse order would
+        // strand an undeletable public blob behind a 404ing retry. In the
+        // brief gap a gallery may list an item whose URL already 404s.
+        await c.env.MEDIA_BUCKET.delete(id);
+        await deleteCatalogItem(db, id);
+
+        console.log(
+            JSON.stringify({
+                event: "delete",
+                id,
+                keyType: auth.type,
+                deletedBy: auth.name || "unknown",
+            }),
+        );
+
+        return c.json({ deleted: true, id });
+    },
+);
+
+api.get(
+    "/:id",
+    describeRoute({
+        tags: ["media.pollinations.ai"],
+        summary: "Retrieve media",
+        description: "Get a file by its id. Access keeps files from expiring.",
+        security: [],
+        responses: {
+            200: { description: "File content with appropriate Content-Type" },
             404: {
                 description: "File not found",
                 content: {
@@ -280,14 +719,10 @@ api.get(
         },
     }),
     async (c) => {
-        const hash = c.req.param("hash");
-
-        if (!HASH_PATTERN.test(hash)) {
-            return c.json({ error: "Invalid hash format" }, 400);
-        }
+        const id = c.req.param("id");
 
         try {
-            const object = await c.env.MEDIA_BUCKET.get(hash);
+            const object = await c.env.MEDIA_BUCKET.get(id);
 
             if (!object) {
                 return c.json({ error: "Not found" }, 404);
@@ -298,8 +733,11 @@ api.get(
                 "Content-Type",
                 object.httpMetadata?.contentType || "application/octet-stream",
             );
-            headers.set("Cache-Control", CACHE_CONTROL);
-            headers.set("X-Content-Hash", hash);
+            headers.set(
+                "Cache-Control",
+                object.httpMetadata?.cacheControl || IMMUTABLE_CACHE_CONTROL,
+            );
+            headers.set("X-Content-Id", id);
             headers.set("X-Content-Size", object.size.toString());
 
             const originalName = object.customMetadata?.originalName;
@@ -314,7 +752,7 @@ api.get(
 
             const responseBody = refreshR2ObjectTtl(
                 c.env.MEDIA_BUCKET,
-                hash,
+                id,
                 object,
                 (promise) => c.executionCtx.waitUntil(promise),
                 (error) => {
@@ -331,12 +769,12 @@ api.get(
 );
 
 api.get(
-    "/:hash/metadata",
+    "/:id/metadata",
     describeRoute({
         tags: ["media.pollinations.ai"],
         summary: "Get file metadata",
         description:
-            "Return file metadata (hash, content type, size, upload timestamp) as JSON without downloading the file body.",
+            "Return file metadata (id, content type, size, upload timestamp) as JSON without downloading the file body.",
         security: [],
         responses: {
             200: {
@@ -345,12 +783,6 @@ api.get(
                     "application/json": {
                         schema: resolver(MetadataResponseSchema),
                     },
-                },
-            },
-            400: {
-                description: "Invalid hash format",
-                content: {
-                    "application/json": { schema: resolver(ErrorSchema) },
                 },
             },
             404: {
@@ -362,22 +794,21 @@ api.get(
         },
     }),
     async (c) => {
-        const hash = c.req.param("hash");
-
-        if (!HASH_PATTERN.test(hash)) {
-            return c.json({ error: "Invalid hash format" }, 400);
-        }
+        const id = c.req.param("id");
 
         try {
-            const object = await c.env.MEDIA_BUCKET.head(hash);
+            const object = await c.env.MEDIA_BUCKET.head(id);
 
             if (!object) {
                 return c.json({ error: "Not found" }, 404);
             }
 
-            c.header("Cache-Control", CACHE_CONTROL);
+            c.header(
+                "Cache-Control",
+                object.httpMetadata?.cacheControl || IMMUTABLE_CACHE_CONTROL,
+            );
             return c.json({
-                hash,
+                id,
                 contentType:
                     object.httpMetadata?.contentType ||
                     "application/octet-stream",
@@ -395,7 +826,7 @@ api.get(
 
 api.on(
     "HEAD",
-    "/:hash",
+    "/:id",
     describeRoute({
         tags: ["media.pollinations.ai"],
         summary: "Check if media exists",
@@ -405,21 +836,16 @@ api.on(
         responses: {
             200: {
                 description:
-                    "File exists (headers include Content-Type, Content-Length, X-Content-Hash)",
+                    "File exists (headers include Content-Type, Content-Length, X-Content-Id)",
             },
-            400: { description: "Invalid hash format" },
             404: { description: "File not found" },
         },
     }),
     async (c) => {
-        const hash = c.req.param("hash");
-
-        if (!HASH_PATTERN.test(hash)) {
-            return new Response(null, { status: 400 });
-        }
+        const id = c.req.param("id");
 
         try {
-            const object = await c.env.MEDIA_BUCKET.head(hash);
+            const object = await c.env.MEDIA_BUCKET.head(id);
 
             if (!object) {
                 return new Response(null, { status: 404 });
@@ -431,8 +857,11 @@ api.on(
                 object.httpMetadata?.contentType || "application/octet-stream",
             );
             headers.set("Content-Length", object.size.toString());
-            headers.set("Cache-Control", CACHE_CONTROL);
-            headers.set("X-Content-Hash", hash);
+            headers.set(
+                "Cache-Control",
+                object.httpMetadata?.cacheControl || IMMUTABLE_CACHE_CONTROL,
+            );
+            headers.set("X-Content-Id", id);
 
             if (object.customMetadata?.uploadedAt) {
                 headers.set("X-Uploaded-At", object.customMetadata.uploadedAt);
@@ -451,9 +880,9 @@ app.use(
     "*",
     cors({
         origin: "*",
-        allowMethods: ["GET", "POST", "HEAD", "OPTIONS"],
+        allowMethods: ["GET", "POST", "DELETE", "HEAD", "OPTIONS"],
         allowHeaders: ["Content-Type", "Authorization"],
-        exposeHeaders: ["X-Content-Hash", "X-Content-Size"],
+        exposeHeaders: ["X-Content-Id", "X-Content-Size"],
     }),
 );
 
@@ -462,12 +891,16 @@ app.get("/", (c) => {
         service: DOMAIN,
         version: "1.0.0",
         endpoints: {
-            upload: "POST /upload (requires API key)",
-            retrieve: "GET /:hash",
+            upload: "POST /upload (requires API key; optional tags — tags publish to public galleries)",
+            retrieve: "GET /:id",
+            metadata: "GET /:id/metadata",
+            listMedia: "GET /media?tag=<tag> (public tag gallery; no auth)",
+            deleteMedia:
+                "DELETE /media/:id (owner's secret sk_ API key required)",
             docs: "GET /openapi.json",
         },
         limits: {
-            maxFileSize: "50MB",
+            maxFileSize: "100MB",
         },
     });
 });
@@ -479,7 +912,7 @@ app.get("/openapi.json", async (c, next) => {
                 title: "media.pollinations.ai",
                 version: "1.0.0",
                 description:
-                    "Content-addressed media storage. Upload images, audio, and video with deduplication via SHA-256 hashing. Uploads require a pollinations.ai API key (`pk_` or `sk_`). Retrieval is public.",
+                    "Media storage for Pollinations. Upload images, audio, and video and get back a unique id and URL. Uploads require a pollinations.ai API key (`pk_` or `sk_`). Retrieval is public. Tagging an upload publishes it to that tag's public gallery; the gallery features (tags, listing, delete) are **alpha** — their API may still change.",
             },
             servers: [{ url: `https://${DOMAIN}` }],
             components: {
@@ -502,34 +935,6 @@ app.get("/openapi.json", async (c, next) => {
 });
 
 app.route("/", api);
-
-// 16 hex chars = 64 bits -- collision expected around ~4B files (birthday paradox)
-// Hash includes filename so the same content with different names gets different URLs.
-async function generateHash(
-    buffer: ArrayBuffer,
-    fileName?: string,
-): Promise<string> {
-    const nameBytes = new TextEncoder().encode(fileName || "");
-    const separator = new Uint8Array([0x00]); // null byte for domain separation
-    const combined = new Uint8Array(
-        buffer.byteLength + separator.length + nameBytes.length,
-    );
-    combined.set(new Uint8Array(buffer), 0);
-    combined.set(separator, buffer.byteLength);
-    combined.set(nameBytes, buffer.byteLength + separator.length);
-    const hashBuffer = await crypto.subtle.digest(
-        "SHA-256",
-        combined.buffer.slice(
-            combined.byteOffset,
-            combined.byteOffset + combined.byteLength,
-        ),
-    );
-    const hashArray = Array.from(new Uint8Array(hashBuffer));
-    return hashArray
-        .map((b) => b.toString(16).padStart(2, "0"))
-        .join("")
-        .substring(0, 16);
-}
 
 const MIME_TYPES: Record<string, string> = {
     jpg: "image/jpeg",

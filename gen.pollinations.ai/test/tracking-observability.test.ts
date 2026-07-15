@@ -106,6 +106,7 @@ function createCommunityEndpoint(
         baseUrl: "https://community.example.test/openai",
         upstreamModel: "upstream-test-model",
         bearerTokenCiphertext: "encrypted",
+        visibility: "public",
         disabledAt: null,
         disabledReason: null,
         ...communityEndpointPrices({
@@ -299,8 +300,8 @@ async function captureFallbackEvent(extraHeaders: Record<string, string>) {
 
     expect(tinybirdRequests).toHaveLength(1);
     return (await tinybirdRequests[0].json()) as {
-        fallbackUsed?: boolean;
-        modelProviderUsed?: string;
+        fallbackUsed: boolean;
+        modelProviderUsed: string;
     };
 }
 
@@ -363,6 +364,7 @@ describe("tracking observability", () => {
             resolvedModelRequested: "openai",
             modelUsed: "gpt-5-nano-2025-08-07",
             modelProviderUsed: expect.any(String),
+            fallbackUsed: false,
             isBilledUsage: true,
             tokenCountPromptText: 1000,
             tokenCountCompletionText: 500,
@@ -776,13 +778,16 @@ describe("tracking observability", () => {
     it("records fallbackUsed=false when no fallback header is present", async () => {
         const event = await captureFallbackEvent({});
         expect(event.fallbackUsed).toBe(false);
+        expect(event.modelProviderUsed).toBe("azure");
     });
 
-    it("records a response-level provider override", async () => {
+    it("records the provider that served a fallback", async () => {
         const event = await captureFallbackEvent({
             "x-model-provider-used": "fireworks",
+            "x-fallback-target": "config.targets[1]",
         });
         expect(event.modelProviderUsed).toBe("fireworks");
+        expect(event.fallbackUsed).toBe(true);
     });
 });
 

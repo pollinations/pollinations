@@ -1,4 +1,3 @@
-import { buildTrackingHeaders } from "@shared/registry/usage-headers.ts";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
     __resetLatencyStateForTests,
@@ -122,13 +121,6 @@ describe("callFluxWithFallback", () => {
             actualProvider: "fireworks",
             fallbackTarget: "config.targets[1]",
         });
-        expect(buildTrackingHeaders("flux", result.trackingData)).toMatchObject(
-            {
-                "x-model-used": "flux-1-schnell-fp8",
-                "x-model-provider-used": "fireworks",
-                "x-fallback-target": "config.targets[1]",
-            },
-        );
     });
 
     it("falls back to Fireworks when the pool request fails", async () => {
@@ -147,5 +139,10 @@ describe("callFluxWithFallback", () => {
         expect(Buffer.from(result.buffer).equals(Buffer.from(JPEG_BYTES))).toBe(
             true,
         );
+        expect(result.trackingData).toMatchObject({
+            actualModel: "flux-1-schnell-fp8",
+            actualProvider: "fireworks",
+            fallbackTarget: "config.targets[1]",
+        });
     });
 });

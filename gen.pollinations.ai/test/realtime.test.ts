@@ -488,6 +488,7 @@ test("deducts aggregate session usage from paid pack balance on close", async ()
     expect(telemetry.responseStatus).toBe(200);
     expect(telemetry.resolvedModelRequested).toBe("gpt-realtime-2");
     expect(telemetry.modelProviderUsed).toBe("azure");
+    expect(telemetry.fallbackUsed).toBe(false);
     expect(telemetry.tokenCountPromptText).toBe(200);
     expect(telemetry.tokenCountPromptCached).toBe(40);
     expect(telemetry.tokenCountPromptAudio).toBe(20);

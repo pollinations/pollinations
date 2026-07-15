@@ -93,7 +93,7 @@ export type ModelUsage = {
 type RequestTrackingData = {
     modelRequested: string | null;
     resolvedModelRequested: string;
-    modelProvider?: string;
+    modelProvider: string;
     modelDefinition: ModelDefinition<string>;
     modelCostDefinition: CostDefinition;
     modelPriceDefinition: PriceDefinition;
@@ -108,7 +108,7 @@ type ResponseTrackingData = {
     isBilledUsage: boolean;
     fallbackUsed: boolean;
     modelUsed?: string;
-    modelProviderUsed?: string;
+    modelProviderUsed: string;
     usage?: Usage;
     cost?: UsageCost;
     price?: UsagePrice;
@@ -245,12 +245,16 @@ export const track = (eventType: EventType) =>
                         apiKeyPollenBalance: c.var.auth?.apiKey?.pollenBalance,
                         byopClientKeyId,
                         modelPaidOnly: c.var.model?.definition.paidOnly,
-                        communityModelReward: communityEndpoint
-                            ? {
-                                  userId: communityEndpoint.ownerUserId,
-                                  rewardRate: COMMUNITY_MODEL_REWARD_RATE,
-                              }
-                            : null,
+                        // Only public endpoints pay their owner a reward: a
+                        // private endpoint is owner-called (base cost billed to
+                        // the owner, no markup, no self-credit).
+                        communityModelReward:
+                            communityEndpoint?.visibility === "public"
+                                ? {
+                                      userId: communityEndpoint.ownerUserId,
+                                      rewardRate: COMMUNITY_MODEL_REWARD_RATE,
+                                  }
+                                : null,
                     });
                     markup = deduction.markup;
                     communityModelReward = deduction.communityModelReward;
@@ -455,7 +459,8 @@ async function trackResponse(
     const cacheInfo = extractCacheHeaders(response);
     const fallbackUsed = parseFallbackUsed(response);
     const modelProviderUsed =
-        response.headers.get(MODEL_PROVIDER_USED_HEADER) || undefined;
+        response.headers.get(MODEL_PROVIDER_USED_HEADER) ??
+        requestTracking.modelProvider;
     const notBilled = (
         extra?: Partial<ResponseTrackingData>,
     ): ResponseTrackingData => ({
@@ -527,9 +532,9 @@ async function trackResponse(
     };
 }
 
-// Providers report the served target as "config.targets[N]" via the
-// x-fallback-target header. A fallback fired whenever the served target is not
-// the primary (index 0).
+// Portkey reports the served target as "config.targets[N]"; local fallback
+// paths mirror that value in x-fallback-target. Any non-primary target means a
+// fallback served the response.
 function parseFallbackUsed(response: Response): boolean {
     const target = response.headers.get(FALLBACK_TARGET_HEADER);
     if (!target) return false;
@@ -709,8 +714,7 @@ function createTrackingEvent({
         modelRequested: requestTracking.modelRequested,
         resolvedModelRequested: requestTracking.resolvedModelRequested,
         modelUsed: responseTracking.modelUsed,
-        modelProviderUsed:
-            responseTracking.modelProviderUsed ?? requestTracking.modelProvider,
+        modelProviderUsed: responseTracking.modelProviderUsed,
         fallbackUsed: responseTracking.fallbackUsed,
 
         isBilledUsage: responseTracking.isBilledUsage,

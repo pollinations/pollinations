@@ -50,17 +50,58 @@ export const OPENAI_CHAT_USAGE_PATHS: Record<
     completionAudioTokens: ["completion_tokens_details.audio_tokens"],
 };
 
-/**
- * Internal worker header carrying the served fallback target. Portkey emits
- * values such as "config.targets[1]"; local fallback paths mirror that format.
- */
+/** Portkey's served fallback target, such as "config.targets[1]". */
 export const FALLBACK_TARGET_HEADER = "x-fallback-target";
+
+/** Provider-agnostic signal that a fallback served the response. */
+export const FALLBACK_USED_HEADER = "x-fallback-used";
 
 /**
  * Internal response header carrying the provider that actually served a
  * request when it differs from the model registry's configured provider.
  */
 export const MODEL_PROVIDER_USED_HEADER = "x-model-provider-used";
+
+export type ResponseTrackingMetadata = {
+    actualModel?: string;
+    actualProvider?: string;
+    fallbackUsed?: boolean;
+};
+
+type FallbackDetails = {
+    model: string;
+    provider: string;
+};
+
+/** Attach served-model metadata without changing modality-specific usage. */
+export function withFallbackTracking<T extends { trackingData: object }>(
+    result: T,
+    { model, provider }: FallbackDetails,
+) {
+    return {
+        ...result,
+        trackingData: {
+            ...result.trackingData,
+            actualModel: model,
+            actualProvider: provider,
+            fallbackUsed: true,
+        },
+    };
+}
+
+/** Build billing-neutral response headers consumed by generation tracking. */
+export function buildResponseTrackingHeaders(
+    trackingData?: ResponseTrackingMetadata,
+): Record<string, string> {
+    const headers: Record<string, string> = {};
+    if (trackingData?.actualProvider) {
+        headers[MODEL_PROVIDER_USED_HEADER] = trackingData.actualProvider;
+    }
+    if (trackingData?.fallbackUsed !== undefined) {
+        headers[FALLBACK_USED_HEADER] = String(trackingData.fallbackUsed);
+    }
+    return headers;
+}
 
 /**
  * Convert OpenAI usage format to Usage format.

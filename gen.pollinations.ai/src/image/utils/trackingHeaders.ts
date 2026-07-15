@@ -5,17 +5,14 @@
 import type { IMAGE_SERVICES } from "@shared/registry/image.ts";
 import type { Usage } from "@shared/registry/registry.ts";
 import {
+    buildResponseTrackingHeaders,
     buildUsageHeaders,
-    FALLBACK_TARGET_HEADER,
-    MODEL_PROVIDER_USED_HEADER,
+    type ResponseTrackingMetadata,
 } from "@shared/registry/usage-headers.ts";
 
 type ValidServiceName = keyof typeof IMAGE_SERVICES;
 
-export interface TrackingData {
-    actualModel?: string;
-    actualProvider?: string;
-    fallbackTarget?: string;
+export interface TrackingData extends ResponseTrackingMetadata {
     usage: Usage & Record<string, unknown>; // Allow extra fields like totalTokenCount
 }
 
@@ -35,11 +32,5 @@ export function buildTrackingHeaders(
     if (!Object.keys(headers).some((header) => header.startsWith("x-usage-"))) {
         throw new Error(`Missing billable usage for ${model}`);
     }
-    if (trackingData.actualProvider) {
-        headers[MODEL_PROVIDER_USED_HEADER] = trackingData.actualProvider;
-    }
-    if (trackingData.fallbackTarget) {
-        headers[FALLBACK_TARGET_HEADER] = trackingData.fallbackTarget;
-    }
-    return headers;
+    return { ...headers, ...buildResponseTrackingHeaders(trackingData) };
 }

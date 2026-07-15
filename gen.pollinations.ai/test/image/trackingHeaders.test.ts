@@ -7,13 +7,13 @@ describe("buildTrackingHeaders", () => {
             buildTrackingHeaders("flux", {
                 actualModel: "flux-1-schnell-fp8",
                 actualProvider: "fireworks",
-                fallbackTarget: "config.targets[1]",
+                fallbackUsed: true,
                 usage: { completionImageTokens: 1 },
             }),
         ).toMatchObject({
             "x-model-used": "flux-1-schnell-fp8",
             "x-model-provider-used": "fireworks",
-            "x-fallback-target": "config.targets[1]",
+            "x-fallback-used": "true",
             "x-usage-completion-image-tokens": "1",
         });
     });

@@ -1,3 +1,4 @@
+import { withFallbackTracking } from "@shared/registry/usage-headers.ts";
 import debug from "debug";
 import {
     fetchFromWeightedServer,
@@ -284,15 +285,10 @@ export const callFluxWithFallback = async (
         // (coding bugs vs operational failures) are not silently masked.
         logError("Self-hosted flux failed, falling back to Fireworks:", error);
         const result = await callFireworksFluxSchnellAPI(prompt, safeParams);
-        return {
-            ...result,
-            trackingData: {
-                ...result.trackingData,
-                actualModel: "flux-1-schnell-fp8",
-                actualProvider: "fireworks",
-                fallbackTarget: "config.targets[1]",
-            },
-        };
+        return withFallbackTracking(result, {
+            model: "flux-1-schnell-fp8",
+            provider: "fireworks",
+        });
     }
 };
 

@@ -39,6 +39,7 @@ import {
 } from "@shared/registry/registry.ts";
 import {
     FALLBACK_TARGET_HEADER,
+    FALLBACK_USED_HEADER,
     MODEL_PROVIDER_USED_HEADER,
     openaiUsageToUsage,
     parseUsageHeaders,
@@ -532,10 +533,12 @@ async function trackResponse(
     };
 }
 
-// Portkey reports the served target as "config.targets[N]"; local fallback
-// paths mirror that value in x-fallback-target. Any non-primary target means a
-// fallback served the response.
+// Local fallback paths emit an explicit boolean. Portkey reports the served
+// target as "config.targets[N]", where any non-primary target is a fallback.
 function parseFallbackUsed(response: Response): boolean {
+    const explicitFallback = response.headers.get(FALLBACK_USED_HEADER);
+    if (explicitFallback !== null) return explicitFallback === "true";
+
     const target = response.headers.get(FALLBACK_TARGET_HEADER);
     if (!target) return false;
     const match = target.match(/\[(\d+)\]/);

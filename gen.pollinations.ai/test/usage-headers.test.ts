@@ -1,8 +1,10 @@
 import type { Usage } from "@shared/registry/registry.ts";
 import {
+    buildResponseTrackingHeaders,
     buildUsageHeaders,
     openaiUsageToUsage,
     parseUsageHeaders,
+    withFallbackTracking,
 } from "@shared/registry/usage-headers.ts";
 import { describe, expect, it } from "vitest";
 
@@ -56,6 +58,34 @@ describe("buildUsageHeaders", () => {
         expect(headers["x-usage-prompt-audio-tokens"]).toBe("500");
         expect(headers["x-usage-completion-audio-seconds"]).toBe("3.5");
         expect(headers["x-usage-completion-video-seconds"]).toBe("10.2");
+    });
+});
+
+describe("fallback response tracking", () => {
+    it("adds reusable metadata without changing usage", () => {
+        const original = {
+            buffer: "result",
+            trackingData: { usage: { completionImageTokens: 1 } },
+        };
+
+        const result = withFallbackTracking(original, {
+            model: "secondary-model",
+            provider: "secondary-provider",
+        });
+
+        expect(original.trackingData).toEqual({
+            usage: { completionImageTokens: 1 },
+        });
+        expect(result.trackingData).toEqual({
+            usage: { completionImageTokens: 1 },
+            actualModel: "secondary-model",
+            actualProvider: "secondary-provider",
+            fallbackUsed: true,
+        });
+        expect(buildResponseTrackingHeaders(result.trackingData)).toEqual({
+            "x-model-provider-used": "secondary-provider",
+            "x-fallback-used": "true",
+        });
     });
 });
 

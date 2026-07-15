@@ -784,7 +784,7 @@ describe("tracking observability", () => {
     it("records the provider that served a fallback", async () => {
         const event = await captureFallbackEvent({
             "x-model-provider-used": "fireworks",
-            "x-fallback-target": "config.targets[1]",
+            "x-fallback-used": "true",
         });
         expect(event.modelProviderUsed).toBe("fireworks");
         expect(event.fallbackUsed).toBe(true);

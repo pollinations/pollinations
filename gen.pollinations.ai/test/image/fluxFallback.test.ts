@@ -119,7 +119,7 @@ describe("callFluxWithFallback", () => {
         expect(result.trackingData).toMatchObject({
             actualModel: "flux-1-schnell-fp8",
             actualProvider: "fireworks",
-            fallbackTarget: "config.targets[1]",
+            fallbackUsed: true,
         });
     });
 
@@ -142,7 +142,7 @@ describe("callFluxWithFallback", () => {
         expect(result.trackingData).toMatchObject({
             actualModel: "flux-1-schnell-fp8",
             actualProvider: "fireworks",
-            fallbackTarget: "config.targets[1]",
+            fallbackUsed: true,
         });
     });
 });

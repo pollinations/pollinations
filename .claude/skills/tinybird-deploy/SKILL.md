@@ -26,7 +26,18 @@ Two workspaces, same region (`gcp-europe-west2`). Pipes and datasources must be 
 
 Workspace routing is token-scoped: the same regional host serves both workspaces, and the token selects the workspace.
 
-The local `.tinyb` is gitignored and must not be trusted for prod/staging selection. Set `TB_TOKEN` from an operator or CI secret store, not from Enter runtime SOPS files. Use a staging-workspace deploy token for staging and a prod-workspace deploy token for prod. Keep tokens out of logs.
+The local `.tinyb` is gitignored and must not be trusted for prod/staging selection. Set `TB_TOKEN` from the macOS Keychain, not from Enter runtime SOPS files (those only hold read/ingest tokens for the Worker). Use a staging-workspace deploy token for staging and a prod-workspace deploy token for prod. Keep tokens out of logs.
+
+Operator deploy tokens live in the macOS Keychain (same pattern as the SOPS age key):
+
+```bash
+# staging (pollinations_enter_staging)
+TB_TOKEN="$(security find-generic-password -a "$USER" -s tinybird-staging-deploy -w)"
+# prod (pollinations_enter)
+TB_TOKEN="$(security find-generic-password -a "$USER" -s tinybird-prod-deploy -w)"
+```
+
+Always sanity-check which workspace a token targets before deploying: `tb --cloud --host "$TB_HOST" info` prints `workspace_name`.
 
 ## Directory Structure
 
@@ -48,12 +59,12 @@ enter.pollinations.ai/observability/
 
 # Commands
 
-Set the region once per shell session and require the staging deploy token to
-already be present in the environment:
+Set the region once per shell session and pull the staging deploy token from
+the Keychain:
 
 ```bash
 TB_HOST="https://api.europe-west2.gcp.tinybird.co"
-: "${TB_TOKEN:?Set TB_TOKEN to a pollinations_enter_staging WORKSPACE:DEPLOY token}"
+TB_TOKEN="$(security find-generic-password -a "$USER" -s tinybird-staging-deploy -w)"
 export TB_HOST TB_TOKEN
 ```
 
@@ -82,7 +93,7 @@ tb --cloud --host "$TB_HOST" deployment create --wait --no-allow-destructive-ope
 
 Never pass `--auto` or run `deployment promote` unless the user explicitly asks for promotion.
 
-Prod deploys use the same command shape after explicitly replacing `TB_TOKEN` with a `pollinations_enter` deploy token, but only after staging validation and verification. Deploying to both workspaces is still manual until #11127 is resolved.
+Prod deploys use the same command shape after explicitly replacing `TB_TOKEN` with the `tinybird-prod-deploy` Keychain token, but only after staging validation and verification. Deploying to both workspaces is still manual until #11127 is resolved.
 
 ## Step 3: Verify
 

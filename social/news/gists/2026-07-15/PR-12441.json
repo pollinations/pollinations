@@ -1,0 +1,35 @@
+{
+  "pr_number": 12441,
+  "title": "Fixes #12442: Add 3D Generation to the Model Monitor",
+  "author": "sharktide",
+  "url": "https://github.com/pollinations/pollinations/pull/12441",
+  "merged_at": "2026-07-15T09:57:54Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "pr_body_excerpt": "",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "The monitor grew depth",
+    "blurb": "The Model Monitor has learned a new dimension: 3D generation. Polly brought tiny wizard glasses, because apparently flat dashboards were not enough.",
+    "summary": "Added 3D generation to the community-built Model Monitor, so its model listings and monitoring hooks now include 3D-capable models.",
+    "impact": "Model Monitor users can now discover and track 3D generation alongside image, text, audio, and video models from the same cozy control room.",
+    "keywords": [
+      "model-monitor",
+      "3d-generation",
+      "community-app",
+      "models",
+      "dashboard"
+    ],
+    "visual_concept": "Depict the Model Monitor as a friendly retro CRT dashboard gaining a small rotating pixel-art 3D cube or sculpted object. Polly, wearing tiny wizard glasses, adjusts the new 3D control while code-plants and flowers grow around the monitor; the monitor robot can enthusiastically inspect the dimensional model.",
+    "image_prompt": "Cozy pixel art scene in a warm garden hackerspace where Polly, the cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks, a small happy smile, and small rounded light blue translucent wings, wears tiny wizard glasses while tuning a retro Model Monitor CRT that displays a rotating 3D pixel cube; a helpful monitor robot points at it as code-plants bloom from lime green (#ecf874) pots. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, retro gaming vibes, with subtle pixel-font text: \"3D ONLINE\"; nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-15/PR-12441.jpg",
+    "prompt": "Cozy pixel art scene in a warm garden hackerspace where Polly, the cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks, a small happy smile, and small rounded light blue translucent wings, wears tiny wizard glasses while tuning a retro Model Monitor CRT that displays a rotating 3D pixel cube; a helpful monitor robot points at it as code-plants bloom from lime green (#ecf874) pots. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, retro gaming vibes, with subtle pixel-font text: \"3D ONLINE\"; nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-07-15T09:58:47.570552+00:00"
+}

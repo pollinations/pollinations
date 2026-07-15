@@ -1,0 +1,35 @@
+{
+  "pr_number": 12480,
+  "title": "fix: clarify My Models access and update publishers",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/12480",
+  "merged_at": "2026-07-15T11:39:17Z",
+  "labels": [
+    "DEV-UI-UX"
+  ],
+  "pr_body_excerpt": "- Shows one permission-specific My Models empty message instead of mixing private and publishing guidance.\n- Hides the duplicate publishing footer until a model exists.\n- Replaces `thomashmyceli` (235942848) with `lizzieliza` (101795137) in the community publishing allowlist.\n- Adds explicit allow/deny coverage for both IDs.\n\nNeither account currently owns a production community model, so no model rows or migration are affected.\n\nChecks:\n- Biome 2.3.10\n- Enter typecheck\n- Gen community endpoint tests (20)",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "One signpost, no duplicates",
+    "blurb": "My Models now gives each visitor one clear next step instead of handing them two different maps. The publishing garden also has its duplicate footer quietly pruned.",
+    "summary": "Clarified the permission-specific empty state in My Models, hid the duplicate publishing footer until a model exists, and updated the community publishing allowlist from GitHub user thomashmyceli (235942848) to lizzieliza (101795137).",
+    "impact": "People visiting My Models now see guidance that matches their access level, while lizzieliza can use the community publishing path with explicit allow/deny test coverage for both GitHub IDs.",
+    "keywords": [
+      "my-models",
+      "community-publishing",
+      "permissions",
+      "ui-ux",
+      "github-allowlist"
+    ],
+    "visual_concept": "A cozy garden noticeboard represents the My Models empty state: Polly replaces two confusing overlapping signs with one clear permission-specific sign, while a small publishing gate receives an updated nameplate. A tiny code-plant and flowers reinforce that community models only appear once they have grown.",
+    "image_prompt": "Cozy pixel art scene in a warm community garden where Polly, a cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light blue translucent wings, wears a tiny gardener scarf while replacing two overlapping noticeboard signs with one clear sign reading \"MY MODELS\"; beside her, a small publishing gate has a fresh nameplate and code-plants sprout from flower pots. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, subtle CRT glow, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-15/PR-12480.jpg",
+    "prompt": "Cozy pixel art scene in a warm community garden where Polly, a cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light blue translucent wings, wears a tiny gardener scarf while replacing two overlapping noticeboard signs with one clear sign reading \"MY MODELS\"; beside her, a small publishing gate has a fresh nameplate and code-plants sprout from flower pots. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, subtle CRT glow, emotionally warm."
+  },
+  "generated_at": "2026-07-15T11:40:09.522137+00:00"
+}

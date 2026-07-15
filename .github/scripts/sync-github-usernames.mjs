@@ -17,9 +17,13 @@
  */
 
 import { execFile } from "node:child_process";
+import { fileURLToPath } from "node:url";
 import { promisify } from "node:util";
 
 const execFileAsync = promisify(execFile);
+export const enterWorkdir = fileURLToPath(
+    new URL("../../enter.pollinations.ai/", import.meta.url),
+);
 
 const D1_PAGE_SIZE = 5_000;
 const GITHUB_BATCH_SIZE = 100;
@@ -86,6 +90,7 @@ async function executeD1(sql) {
             "--json",
         ],
         {
+            cwd: enterWorkdir,
             env: process.env,
             maxBuffer: 64 * 1024 * 1024,
         },

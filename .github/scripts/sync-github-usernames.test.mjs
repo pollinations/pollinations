@@ -3,6 +3,7 @@ import test from "node:test";
 
 import {
     chunk,
+    enterWorkdir,
     legacyGithubNodeId,
     selectUsernameChanges,
 } from "./sync-github-usernames.mjs";
@@ -37,4 +38,8 @@ test("keeps GraphQL requests within the requested batch size", () => {
         batches.map((batch) => batch.length),
         [100, 1],
     );
+});
+
+test("runs Wrangler from the Enter service directory", () => {
+    assert.match(enterWorkdir, /enter\.pollinations\.ai\/$/);
 });

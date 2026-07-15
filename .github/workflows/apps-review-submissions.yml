@@ -179,6 +179,7 @@ jobs:
           POLLINATIONS_API_KEY: ${{ secrets.PLN_GITHUB_POLLY_KEY }}
           ISSUE_NUMBER: ${{ steps.issue.outputs.number }}
           ISSUE_AUTHOR: ${{ steps.issue.outputs.author }}
+          ISSUE_AUTHOR_ID: ${{ steps.issue.outputs.author-id }}
           VALIDATION_RESULT: ${{ steps.validate.outputs.result }}
 
   app-approve:
@@ -299,7 +300,7 @@ jobs:
             const safeName = d.name.replace(/["`$\\]/g, '');
             const safeCategory = d.category.replace(/[^a-z_]/g, '');
             run('git add -A');
-            run(`git commit -m "Add ${safeName} to ${safeCategory}\n\nCo-authored-by: ${issueAuthor} <${issueAuthor}@users.noreply.github.com>"`);
+            run(`git commit -m "Add ${safeName} to ${safeCategory}\n\nCo-authored-by: ${issueAuthor} <${d.github_user_id}+${issueAuthor}@users.noreply.github.com>"`);
             run(`git push origin ${branch}`);
 
             core.setOutput('branch', branch);

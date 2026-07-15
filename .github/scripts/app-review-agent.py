@@ -22,6 +22,7 @@ GH_TOKEN = os.environ.get("GH_TOKEN")
 POLLINATIONS_API_KEY = os.environ.get("POLLINATIONS_API_KEY", "")
 VALIDATION_RESULT = os.environ.get("VALIDATION_RESULT", "{}")
 ISSUE_AUTHOR = os.environ.get("ISSUE_AUTHOR", "")
+ISSUE_AUTHOR_ID = os.environ.get("ISSUE_AUTHOR_ID", "")
 
 POLLINATIONS_API = "https://gen.pollinations.ai/v1/chat/completions"
 MODEL = "openai"
@@ -81,19 +82,6 @@ def gh_api(endpoint, method="GET", data=None):
         resp = requests.get(url, headers=headers)
 
     return resp.json() if resp.text else {}
-
-def get_github_user_id(username):
-    """Fetch GitHub user ID for a username."""
-    if not username:
-        return ""
-    # Remove @ prefix if present
-    username = username.lstrip('@')
-    try:
-        user_data = gh_api(f"/users/{username}")
-        return str(user_data.get("id", ""))
-    except Exception as e:
-        print(f"  Warning: Could not fetch GitHub user ID for {username}: {e}")
-        return ""
 
 def call_llm(system_prompt, user_message):
     """Call Pollinations API for a single completion."""
@@ -211,6 +199,9 @@ def main():
         sys.exit(1)
     if not ISSUE_AUTHOR:
         print("❌ Error: ISSUE_AUTHOR environment variable is required")
+        sys.exit(1)
+    if not ISSUE_AUTHOR_ID.isdigit():
+        print("❌ Error: ISSUE_AUTHOR_ID must be a numeric GitHub user ID")
         sys.exit(1)
 
     print(f"🚀 App Review Agent")
@@ -345,8 +336,7 @@ Respond with ONLY a JSON object (no markdown, no explanation):
     repo_url = parsed['repo'] if parsed['repo'] and parsed['repo'] != "_No response_" else ""
     discord = parsed['discord'] if parsed['discord'] and parsed['discord'] != "_No response_" else ""
 
-    # Fetch GitHub user ID
-    github_user_id = get_github_user_id(ISSUE_AUTHOR)
+    github_user_id = ISSUE_AUTHOR_ID
     print(f"   GitHub User ID: {github_user_id}")
 
     # Determine if app URL is a GitHub repo or a web URL

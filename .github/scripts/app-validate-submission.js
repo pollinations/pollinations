@@ -101,6 +101,7 @@ async function main() {
                 const dupResult = await new Promise((resolve, reject) => {
                     const env = { ...process.env };
                     env.GITHUB_USERNAME = ISSUE_AUTHOR;
+                    env.GITHUB_USER_ID = ISSUE_AUTHOR_ID;
                     env.PROJECT_JSON = projectJson;
 
                     const proc = spawn(

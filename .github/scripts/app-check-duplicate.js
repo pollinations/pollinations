@@ -6,6 +6,7 @@ const { parseApps } = require("./lib/parse-apps.js");
 // Parse environment variables
 const projectJson = process.env.PROJECT_JSON;
 const githubUsername = process.env.GITHUB_USERNAME;
+const githubUserId = process.env.GITHUB_USER_ID;
 const githubOutput = process.env.GITHUB_OUTPUT;
 
 if (!projectJson) {
@@ -15,6 +16,11 @@ if (!projectJson) {
 
 if (!githubUsername) {
     console.error("Error: GITHUB_USERNAME environment variable is required");
+    process.exit(1);
+}
+
+if (!/^\d+$/.test(githubUserId || "")) {
+    console.error("Error: GITHUB_USER_ID must be a numeric GitHub user ID");
     process.exit(1);
 }
 
@@ -52,7 +58,7 @@ function loadApps(filePath) {
             name,
             url: url || app.webUrl,
             desc: app.description,
-            github: app.githubUsername.replace(/^@/, ""),
+            githubUserId: app.githubUserId,
             repo: app.repoUrl,
         };
     });
@@ -91,7 +97,7 @@ function checkRepoMatch(apps, targetRepo) {
 /**
  * Check for name + user match
  */
-function checkNameUserMatch(apps, targetName, username) {
+function checkNameUserMatch(apps, targetName, userId) {
     const normalizedTarget = targetName
         .toLowerCase()
         .replace(/[^a-z0-9 ]/g, "")
@@ -102,9 +108,7 @@ function checkNameUserMatch(apps, targetName, username) {
             .replace(/[^a-z0-9 ]/g, "")
             .trim();
         return (
-            normalizedApp === normalizedTarget &&
-            app.github.toLowerCase().trim().replace(/^@/, "") ===
-                username.toLowerCase().trim().replace(/^@/, "")
+            normalizedApp === normalizedTarget && app.githubUserId === userId
         );
     });
 }
@@ -112,10 +116,8 @@ function checkNameUserMatch(apps, targetName, username) {
 /**
  * Get user's previous submissions
  */
-function getUserPreviousApps(apps, username) {
-    return apps.filter(
-        (app) => app.github.toLowerCase() === username.toLowerCase(),
-    );
+function getUserPreviousApps(apps, userId) {
+    return apps.filter((app) => app.githubUserId === userId);
 }
 
 /**
@@ -165,7 +167,7 @@ if (!duplicateFound && appRepo) {
 
 // 3. Check for name + user match (HARD MATCH)
 if (!duplicateFound) {
-    const nameUserMatch = checkNameUserMatch(apps, appName, githubUsername);
+    const nameUserMatch = checkNameUserMatch(apps, appName, githubUserId);
     if (nameUserMatch) {
         duplicateFound = appsFile;
         matchType = "name_user_exact";
@@ -178,7 +180,7 @@ writeOutput("duplicate_found", duplicateFound);
 writeOutput("match_type", matchType);
 
 // Get user's previous apps for semantic similarity check (done externally via API)
-const userPreviousApps = getUserPreviousApps(apps, githubUsername);
+const userPreviousApps = getUserPreviousApps(apps, githubUserId);
 if (userPreviousApps.length > 0 && !duplicateFound) {
     console.error(
         `Found ${userPreviousApps.length} previous apps by @${githubUsername}`,

@@ -19,9 +19,15 @@ import {
 
 type CommunityEndpointsProps = {
     onChange?: () => void | Promise<void>;
+    // Allowlisted owners can make models public (set prices, list in /models).
+    // Everyone else can only create and edit private, owner-only models.
+    canPublish: boolean;
 };
 
-export function CommunityEndpoints({ onChange }: CommunityEndpointsProps) {
+export function CommunityEndpoints({
+    onChange,
+    canPublish,
+}: CommunityEndpointsProps) {
     const [endpoints, setEndpoints] = useState<CommunityEndpoint[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -105,6 +111,7 @@ export function CommunityEndpoints({ onChange }: CommunityEndpointsProps) {
                         open={createOpen}
                         onOpenChange={setCreateOpen}
                         onSubmit={handleCreate}
+                        canPublish={canPublish}
                         trigger={
                             <Button
                                 type="button"
@@ -134,9 +141,9 @@ export function CommunityEndpoints({ onChange }: CommunityEndpointsProps) {
                                 Register your first model
                             </p>
                             <p className="text-sm text-theme-text-muted">
-                                Expose an OpenAI-compatible endpoint as a
-                                community model with your own per-1M-token
-                                pricing.
+                                {canPublish
+                                    ? "Register an OpenAI-compatible endpoint for yourself, or test and publish it immediately with your own per-1M-token pricing."
+                                    : "Register an OpenAI-compatible endpoint as a private model callable only by you."}
                             </p>
                         </Surface>
                     ) : (
@@ -153,9 +160,42 @@ export function CommunityEndpoints({ onChange }: CommunityEndpointsProps) {
                 <p className="mt-4 flex items-start gap-1.5 border-t border-divider pt-4 text-[13px] leading-snug text-theme-text-muted">
                     <TokensIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                     <span>
-                        Published community models appear in{" "}
-                        <strong>/models</strong> and are billed to callers at
-                        your per-1M-token pricing.
+                        {canPublish ? (
+                            <>
+                                Private models are callable only by you and
+                                shown only when model lists use your API key.
+                                Make one public to list it for everyone in{" "}
+                                <strong>/models</strong> and bill callers at
+                                your per-1M-token pricing.
+                            </>
+                        ) : (
+                            <>
+                                Your models are private — callable only by you
+                                and shown only when <strong>/models</strong> is
+                                authenticated with your API key. Enter the
+                                upstream model ID manually, then test the saved
+                                model by calling its model ID. To request public
+                                publishing access, open a{" "}
+                                <a
+                                    href="https://github.com/pollinations/pollinations/issues/new?title=Community%20model%20publishing%20request"
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="underline hover:text-theme-text-strong"
+                                >
+                                    GitHub issue
+                                </a>{" "}
+                                or ask in{" "}
+                                <a
+                                    href="https://discord.gg/pollinations-ai-885844321461485618"
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="underline hover:text-theme-text-strong"
+                                >
+                                    Discord
+                                </a>
+                                .
+                            </>
+                        )}
                     </span>
                 </p>
             </Section>
@@ -166,6 +206,7 @@ export function CommunityEndpoints({ onChange }: CommunityEndpointsProps) {
                 open={!!editing}
                 onOpenChange={(open) => !open && setEditing(null)}
                 onSubmit={handleUpdate}
+                canPublish={canPublish}
             />
 
             <CommunityEndpointDeleteConfirmation

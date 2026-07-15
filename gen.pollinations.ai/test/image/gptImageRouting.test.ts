@@ -8,11 +8,8 @@ import type { HttpError } from "../../src/image/httpError.ts";
 import type { ImageParams } from "../../src/image/params.ts";
 
 const AZURE_KEY_ENV = {
-    AZURE_MYCELI_PROD_EASTUS2_API_KEY: "eastus2-key",
-    AZURE_MYCELI_PROD_SWEDEN_API_KEY: "sweden-key",
-    AZURE_MYCELI_PROD_WESTUS3_API_KEY: "westus3-key",
-    AZURE_MYCELI_PROD_POLANDCENTRAL_API_KEY: "poland-key",
-    AZURE_MYCELI_PROD_UAENORTH_API_KEY: "uae-key",
+    AZURE_MYCELI_PROD_IMG_2_SWEDEN_API_KEY: "img-2-sweden-key",
+    AZURE_MYCELI_PROD_IMG_2_EASTUS2_API_KEY: "img-2-eastus2-key",
 } as const;
 
 const AZURE_KEY_NAMES = Object.keys(
@@ -20,11 +17,8 @@ const AZURE_KEY_NAMES = Object.keys(
 ) as (keyof typeof AZURE_KEY_ENV)[];
 
 const EXPECTED_HOSTS = new Set([
-    "eastus2.api.cognitive.microsoft.com",
-    "myceli-prod-swedencentral.cognitiveservices.azure.com",
-    "westus3.api.cognitive.microsoft.com",
-    "polandcentral.api.cognitive.microsoft.com",
-    "uaenorth.api.cognitive.microsoft.com",
+    "myceli-prod-img-2-swedencentral.cognitiveservices.azure.com",
+    "myceli-prod-img-2-eastus2.cognitiveservices.azure.com",
 ]);
 
 const params: ImageParams = {
@@ -65,14 +59,14 @@ afterEach(() => {
 });
 
 describe("gpt-image-2 Azure routing", () => {
-    it("round robins across all five Azure regions", async () => {
+    it("round robins across all Azure endpoints", async () => {
         const urls: string[] = [];
         vi.spyOn(globalThis, "fetch").mockImplementation(async (input) => {
             urls.push(String(input));
             return successResponse();
         });
 
-        for (let index = 0; index < 5; index++) {
+        for (let index = 0; index < EXPECTED_HOSTS.size; index++) {
             await callGPTImage("test", params, userInfo, "gpt-image-2");
         }
 
@@ -118,7 +112,7 @@ describe("gpt-image-2 Azure routing", () => {
         await expect(
             callGPTImage("test", params, userInfo, "gpt-image-2"),
         ).rejects.toMatchObject({ status: 429 } satisfies Partial<HttpError>);
-        expect(urls).toHaveLength(5);
+        expect(urls).toHaveLength(EXPECTED_HOSTS.size);
         expect(new Set(urls.map((url) => new URL(url).host))).toEqual(
             EXPECTED_HOSTS,
         );

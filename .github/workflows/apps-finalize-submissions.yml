@@ -93,7 +93,7 @@ jobs:
             const closePattern = /(?:closes?|fixes?|resolves?)\s+#(\d+)/gi;
             const issueNumbers = [...prBody.matchAll(closePattern)].map(m => parseInt(m[1]));
 
-            const questNote = 'Your merged PR unlocks the **Contribute a pull request** quest — claim it from your [enter.pollinations.ai](https://enter.pollinations.ai) dashboard for 5 Quest Pollen.';
+            const questNote = 'Your merged PR unlocks the **Contribute a pull request** quest — claim it from your [enter.pollinations.ai](https://enter.pollinations.ai/quests) dashboard for 5 Quest Pollen.';
 
             if (issueNumbers.length > 0) {
               const { data: issue } = await github.rest.issues.get({

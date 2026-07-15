@@ -37,7 +37,7 @@ Guild ID `885844321461485618` (https://discord.gg/pollinations-ai-88584432146148
 
 Primary: `https://gen.pollinations.ai` → routes to `enter.pollinations.ai` for auth/billing.
 
-- Auth: `pk_` (frontend), `sk_` (backend). Keys: https://enter.pollinations.ai
+- Auth: `pk_` (frontend), `sk_` (backend). Keys: https://enter.pollinations.ai/keys
 - Billing: Pollen credits ($1 ≈ 1 Pollen). Full docs: `./APIDOCS.md`
 - Pack checkout: Stripe. Polar is retired from runtime; do not add Polar SDKs,
   Worker bindings, webhooks, or automated writes. Historical Polar handling

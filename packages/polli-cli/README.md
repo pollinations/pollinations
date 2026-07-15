@@ -33,7 +33,7 @@ polli auth login                         # device-flow via enter.pollinations.ai
 printf '%s' "$POLLINATIONS_API_KEY" | polli auth login --with-token
 ```
 
-Credentials land at `~/.pollinations/credentials.json`. For one-off runs pass `--key sk_...` or set `POLLINATIONS_API_KEY`. Get keys at [enter.pollinations.ai](https://enter.pollinations.ai).
+Credentials land at `~/.pollinations/credentials.json`. For one-off runs pass `--key sk_...` or set `POLLINATIONS_API_KEY`. Get keys at [enter.pollinations.ai](https://enter.pollinations.ai/keys).
 
 ## Generate
 

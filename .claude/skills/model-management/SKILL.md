@@ -229,7 +229,7 @@ Provider/runtime secrets (Azure, OpenAI, OpenRouter API keys, etc.) belong in `g
 
 ### `priceMultiplier`
 
-Every cost block requires `priceMultiplier`. Current values in the registry: **`1` or `1.5`**, no others. `1.5` is our standard markup for retail; `1` is at-cost or strategically subsidized. Set it explicitly on every new model. Final billed price = `usage × cost × priceMultiplier`.
+Every cost block requires `priceMultiplier`. Do not assume a fixed set of allowed multipliers: inspect the current registry value and obtain explicit user confirmation before keeping or changing it. Set it explicitly on every new model. Final billed price = `usage × cost × priceMultiplier`.
 
 ---
 
@@ -568,7 +568,7 @@ This is acceptable. What's NOT acceptable is silently dropping a separately-bill
 - [ ] [Field-parity audit](#9-field-parity-audit--mandatory-on-new-model--provider-change) passed (new model or provider change)
 - [ ] `/v1/models` returns the model with correct pricing + modalities
 - [ ] `addedDate` set on first add, **untouched** on later edits
-- [ ] `priceMultiplier` set (1 or 1.5)
+- [ ] `priceMultiplier` is set to the explicitly confirmed value
 - [ ] No 5xx in [error-path matrix](#76-error-paths--every-malformed-request-must-return-4xx-never-opaque-5xx)
 - [ ] Burst test passed at expected production concurrency
 - [ ] PR description notes any docs/upstream discrepancies found and any bundled-modality choices

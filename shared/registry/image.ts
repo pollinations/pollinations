@@ -347,7 +347,7 @@ export const IMAGE_SERVICES = {
         outputModalities: ["image"],
     },
     "veo": {
-        aliases: ["veo-3.1-fast", "video"],
+        aliases: ["veo-3.1-fast", "veo-720p", "video"],
         modelId: "veo",
         provider: "google",
         brand: "Google",
@@ -356,10 +356,31 @@ export const IMAGE_SERVICES = {
         paidOnly: true,
         priceMultiplier: 1,
         cost: {
-            completionVideoSeconds: 0.15, // per sec
+            completionVideoSeconds: 0.08, // per sec (720p video)
+            completionAudioSeconds: 0.02, // per sec when audio is enabled
         },
-        title: "Veo 3.1 Fast",
-        description: "Veo 3.1 Fast - Fast text-to-video with audio (preview)",
+        title: "Veo 3.1 Fast 720p",
+        description: "Veo 3.1 Fast - Fast text-to-video with audio (720p)",
+        inputModalities: ["text", "image"],
+        outputModalities: ["video"],
+        videoCapabilities: ["start_frame", "end_frame", "audio_output"],
+        maxReferenceImages: 2, // Video keyframe slots: start + end.
+    },
+    "veo-1080p": {
+        aliases: ["veo-3.1-fast-1080p", "veo-1080"],
+        modelId: "veo-1080p",
+        provider: "google",
+        brand: "Google",
+        category: "video",
+        addedDate: new Date("2026-07-15").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1,
+        cost: {
+            completionVideoSeconds: 0.1, // per sec (1080p video)
+            completionAudioSeconds: 0.02, // per sec when audio is enabled
+        },
+        title: "Veo 3.1 Fast 1080p",
+        description: "Veo 3.1 Fast - Fast text-to-video with audio (1080p)",
         inputModalities: ["text", "image"],
         outputModalities: ["video"],
         videoCapabilities: ["start_frame", "end_frame", "audio_output"],

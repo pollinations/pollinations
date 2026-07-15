@@ -31,7 +31,11 @@ import type { ModelPrice } from "./types.ts";
 import { useModelStats } from "./use-model-stats.ts";
 
 type ModelsProps = {
+    // Render the owner-scoped "My Models" section (logged-in dashboard only).
     showCommunityEndpoints?: boolean;
+    // Allowlisted owners can make their models public; everyone else is limited
+    // to private, owner-only models.
+    canPublish?: boolean;
 };
 
 const SECTION_ORDER: SectionType[] = [
@@ -89,7 +93,10 @@ function categorizeModels(
     };
 }
 
-export const Models: FC<ModelsProps> = ({ showCommunityEndpoints = false }) => {
+export const Models: FC<ModelsProps> = ({
+    showCommunityEndpoints = false,
+    canPublish = false,
+}) => {
     const navigate = useNavigate({ from: "/models" });
     const modelSearch = useSearch({ from: "/_dashboard/models" });
     const activeTab = modelSearch.category ?? "all";
@@ -319,6 +326,7 @@ export const Models: FC<ModelsProps> = ({ showCommunityEndpoints = false }) => {
             </Section>
             {showCommunityEndpoints && (
                 <CommunityEndpoints
+                    canPublish={canPublish}
                     onChange={() => {
                         void loadModelCatalog({ refresh: true });
                     }}

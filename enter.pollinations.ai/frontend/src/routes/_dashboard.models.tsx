@@ -9,6 +9,11 @@ export const Route = createFileRoute("/_dashboard/models")({
 });
 
 function ModelsPage() {
-    const { communityEndpointsAllowed } = DashboardRoute.useLoaderData();
-    return <Models showCommunityEndpoints={communityEndpointsAllowed} />;
+    const { user, communityEndpointsAllowed } = DashboardRoute.useLoaderData();
+    return (
+        <Models
+            showCommunityEndpoints={Boolean(user)}
+            canPublish={communityEndpointsAllowed}
+        />
+    );
 }

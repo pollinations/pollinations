@@ -47,6 +47,7 @@ export async function getCommunityModelRegistryEntries(
             upstreamModel: schema.communityEndpoint.upstreamModel,
             bearerTokenCiphertext:
                 schema.communityEndpoint.bearerTokenCiphertext,
+            visibility: schema.communityEndpoint.visibility,
             promptTextPrice: schema.communityEndpoint.promptTextPrice,
             promptCachedPrice: schema.communityEndpoint.promptCachedPrice,
             promptCacheWritePrice:
@@ -79,6 +80,7 @@ export async function getCommunityModelRegistryEntries(
             baseUrl: row.baseUrl,
             upstreamModel: row.upstreamModel,
             bearerTokenCiphertext: row.bearerTokenCiphertext,
+            visibility: row.visibility,
             disabledAt: row.disabledAt ? row.disabledAt.getTime() : null,
             disabledReason: row.disabledReason,
             ...communityEndpointPrices(row),

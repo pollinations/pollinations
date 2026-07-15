@@ -21,7 +21,7 @@ describe("ImageParamsSchema", () => {
     it("keeps transparent backgrounds available for gptimage models", () => {
         expect(
             ImageParamsSchema.safeParse({
-                model: "gptimage",
+                model: "gpt-image-1-mini",
                 transparent: true,
             }).success,
         ).toBe(true);

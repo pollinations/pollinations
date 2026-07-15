@@ -249,6 +249,7 @@ function sendTextStreamResponse(completion: ChatCompletion): Response {
     if (completion.fallbackTarget) {
         headers.set(FALLBACK_TARGET_HEADER, completion.fallbackTarget);
     }
+    if (completion.model) headers.set("x-model-used", completion.model);
 
     if (completion.responseStream instanceof ReadableStream) {
         return new Response(completion.responseStream, { headers });

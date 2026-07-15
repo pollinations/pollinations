@@ -148,7 +148,7 @@ async function processItems(
         `✨ [PRETTIFY] Processing ${items.length} items (lang: ${language})`,
     );
     const prompt = buildPrompt(items, language);
-    const response = await generateText(prompt, undefined, "openai-fast");
+    const response = await generateText(prompt, undefined, "gpt-5-nano");
     const result = parseNumberedEntries(response, items);
     writeCache(key, result);
     console.log("✅ [PRETTIFY] Done");

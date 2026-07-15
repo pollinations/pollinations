@@ -36,8 +36,8 @@ function createTestApp(
     user?: AuthUser,
     model: ModelVariables["model"] = {
         requested: "openai",
-        resolved: "openai",
-        definition: getRegistryModelDefinition("openai"),
+        resolved: "gpt-5.4-nano",
+        definition: getRegistryModelDefinition("gpt-5.4-nano"),
     },
 ) {
     const app = new Hono<Env>();
@@ -142,8 +142,8 @@ function createWrongContentTypeApp(
         c.set("frontendKeyRateLimit", { consumePollen });
         c.set("model", {
             requested: "openai",
-            resolved: "openai",
-            definition: getRegistryModelDefinition("openai"),
+            resolved: "gpt-5.4-nano",
+            definition: getRegistryModelDefinition("gpt-5.4-nano"),
         });
         await next();
     });
@@ -175,8 +175,8 @@ function createSseStreamApp(chunkDelayMs: number) {
         c.set("frontendKeyRateLimit", { consumePollen: async () => {} });
         c.set("model", {
             requested: "openai",
-            resolved: "openai",
-            definition: getRegistryModelDefinition("openai"),
+            resolved: "gpt-5.4-nano",
+            definition: getRegistryModelDefinition("gpt-5.4-nano"),
         });
         await next();
     });
@@ -244,8 +244,8 @@ function createHeaderApp(extraHeaders: Record<string, string>) {
         c.set("frontendKeyRateLimit", { consumePollen: async () => {} });
         c.set("model", {
             requested: "openai",
-            resolved: "openai",
-            definition: getRegistryModelDefinition("openai"),
+            resolved: "gpt-5.4-nano",
+            definition: getRegistryModelDefinition("gpt-5.4-nano"),
         });
         await next();
     });
@@ -358,7 +358,7 @@ describe("tracking observability", () => {
             eventType: "generate.text",
             responseStatus: 200,
             modelRequested: "openai",
-            resolvedModelRequested: "openai",
+            resolvedModelRequested: "gpt-5.4-nano",
             modelUsed: "gpt-5-nano-2025-08-07",
             modelProviderUsed: expect.any(String),
             isBilledUsage: true,

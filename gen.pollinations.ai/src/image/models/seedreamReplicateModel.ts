@@ -52,10 +52,10 @@ type Seedream4Size = "1K" | "2K" | "4K";
 type Seedream45Size = "2K" | "4K";
 type Seedream5Size = "2K" | "3K";
 type SeedreamVariantKey =
-    | "seedream"
-    | "seedream-pro"
-    | "seedream5"
-    | "seedream5-pro";
+    | "seedream-4"
+    | "seedream-4.5-pro"
+    | "seedream-5-lite"
+    | "seedream-5-pro";
 
 // seedream-4 (4.0) supports two payload shapes; 4.5 and 5.0 do NOT support
 // custom.
@@ -110,10 +110,10 @@ interface SeedreamVariantConfig {
 }
 
 const SEEDREAM_VARIANTS: Record<SeedreamVariantKey, SeedreamVariantConfig> = {
-    seedream: {
+    "seedream-4": {
         replicateModel: "bytedance/seedream-4",
         displayName: "Seedream 4.0",
-        trackingLabel: "seedream",
+        trackingLabel: "seedream-4",
         maxReferenceImages: 10,
         resolveSize(longerSide) {
             if (longerSide > 2048) return "4K";
@@ -122,10 +122,10 @@ const SEEDREAM_VARIANTS: Record<SeedreamVariantKey, SeedreamVariantConfig> = {
         },
         supportsCustom: true,
     },
-    "seedream-pro": {
+    "seedream-4.5-pro": {
         replicateModel: "bytedance/seedream-4.5",
         displayName: "Seedream 4.5 Pro",
-        trackingLabel: "seedream-pro",
+        trackingLabel: "seedream-4.5-pro",
         maxReferenceImages: 14,
         resolveSize(longerSide) {
             return longerSide > 2048 ? "4K" : "2K";
@@ -133,10 +133,10 @@ const SEEDREAM_VARIANTS: Record<SeedreamVariantKey, SeedreamVariantConfig> = {
         // 4.5's size enum is ["2K", "4K"] only — verified against live schema.
         supportsCustom: false,
     },
-    seedream5: {
+    "seedream-5-lite": {
         replicateModel: "bytedance/seedream-5-lite",
         displayName: "Seedream 5.0 Lite",
-        trackingLabel: "seedream5",
+        trackingLabel: "seedream-5-lite",
         maxReferenceImages: 14,
         // 5.0's size enum is ["2K", "3K"] only — no pixel dimensions, no custom.
         resolveSize(longerSide) {
@@ -145,10 +145,10 @@ const SEEDREAM_VARIANTS: Record<SeedreamVariantKey, SeedreamVariantConfig> = {
         supportsCustom: false,
         outputFormat: "png",
     },
-    "seedream5-pro": {
+    "seedream-5-pro": {
         replicateModel: "bytedance/seedream-5-pro",
         displayName: "Seedream 5.0 Pro",
-        trackingLabel: "seedream5-pro",
+        trackingLabel: "seedream-5-pro",
         maxReferenceImages: 10,
         // Pro's Replicate schema supports ["1K", "2K"]. The registry has one
         // flat per-image price, so always request the 2K tier it prices.
@@ -360,7 +360,7 @@ export function callSeedreamAPI(
     prompt: string,
     safeParams: ImageParams,
 ): Promise<ImageGenerationResult> {
-    return callSeedreamReplicateAPI("seedream", prompt, safeParams);
+    return callSeedreamReplicateAPI("seedream-4", prompt, safeParams);
 }
 
 /** Seedream 4.5 Pro via Replicate (bytedance/seedream-4.5). */
@@ -368,7 +368,7 @@ export function callSeedreamProAPI(
     prompt: string,
     safeParams: ImageParams,
 ): Promise<ImageGenerationResult> {
-    return callSeedreamReplicateAPI("seedream-pro", prompt, safeParams);
+    return callSeedreamReplicateAPI("seedream-4.5-pro", prompt, safeParams);
 }
 
 /** Seedream 5.0 Lite via Replicate (bytedance/seedream-5-lite). */
@@ -376,7 +376,7 @@ export function callSeedream5API(
     prompt: string,
     safeParams: ImageParams,
 ): Promise<ImageGenerationResult> {
-    return callSeedreamReplicateAPI("seedream5", prompt, safeParams);
+    return callSeedreamReplicateAPI("seedream-5-lite", prompt, safeParams);
 }
 
 /** Seedream 5.0 Pro via Replicate (bytedance/seedream-5-pro). */
@@ -384,5 +384,5 @@ export function callSeedream5ProAPI(
     prompt: string,
     safeParams: ImageParams,
 ): Promise<ImageGenerationResult> {
-    return callSeedreamReplicateAPI("seedream5-pro", prompt, safeParams);
+    return callSeedreamReplicateAPI("seedream-5-pro", prompt, safeParams);
 }

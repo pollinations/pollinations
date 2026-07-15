@@ -18,7 +18,7 @@ async function generateText(params) {
 
     const {
         prompt,
-        model = "openai",
+        model = "gpt-5.4-nano",
         seed,
         system,
         temperature,
@@ -80,7 +80,7 @@ async function chatCompletion(params) {
 
     const {
         messages,
-        model = "openai",
+        model = "gpt-5.4-nano",
         temperature,
         max_tokens,
         top_p,
@@ -259,7 +259,7 @@ async function listTextModels(_params) {
         const audioModels = models.filter(
             (m) =>
                 m.output_modalities?.includes("audio") ||
-                m.name === "openai-audio",
+                m.name === "gpt-audio-mini",
         );
         const visionModels = models.filter(
             (m) => m.input_modalities?.includes("image") || m.vision,
@@ -321,20 +321,22 @@ async function listTextModels(_params) {
 async function webSearch(params) {
     requireApiKey();
 
-    const { query, model = "perplexity-fast", detailed = false } = params;
+    const { query, model = "sonar", detailed = false } = params;
 
     if (!query || typeof query !== "string") {
         throw new Error("Query is required and must be a string");
     }
 
-    const searchModels = [
-        "perplexity-fast",
-        "perplexity-reasoning",
-        "gemini-search",
-    ];
-    if (!searchModels.includes(model)) {
+    const validation = await validateTextModel(model);
+    if (!validation.valid) {
         throw new Error(
-            `Model "${model}" doesn't support web search. Use: ${searchModels.join(", ")}`,
+            `${validation.error} Did you mean: ${validation.suggestions.join(", ")}? ` +
+                `Use listTextModels to see all ${validation.availableCount} available models.`,
+        );
+    }
+    if (!validation.model.capabilities?.includes("web_search")) {
+        throw new Error(
+            `Model "${model}" doesn't support web search. Use listTextModels to see search-capable models.`,
         );
     }
 
@@ -433,14 +435,7 @@ const textParamsSchema = {
         .string()
         .optional()
         .describe(
-            "Text model to use (default: 'openai'). Popular options:\n" +
-                "- openai/openai-fast/openai-large: GPT models (balanced/fast/powerful)\n" +
-                "- claude/claude-fast/claude-large: Anthropic Claude models\n" +
-                "- gemini/gemini-fast/gemini-large: Google Gemini models\n" +
-                "- deepseek: Advanced reasoning model\n" +
-                "- grok: xAI's Grok model\n" +
-                "- mistral, qwen-coder, perplexity-fast, perplexity-reasoning\n" +
-                "Use listTextModels for complete list.",
+            "Text model to use (default: 'gpt-5.4-nano'). Canonical names and aliases are accepted; use listTextModels for the live list.",
         ),
     seed: z
         .number()
@@ -596,7 +591,7 @@ const chatParamsSchema = {
         .string()
         .optional()
         .describe(
-            "Text model (default: 'openai'). See listTextModels for all options",
+            "Text model (default: 'gpt-5.4-nano'). See listTextModels for the live list; canonical names and aliases are accepted.",
         ),
     temperature: z
         .number()
@@ -758,14 +753,10 @@ export const textTools = [
         {
             query: z.string().describe("The search query or question"),
             model: z
-                .enum([
-                    "perplexity-fast",
-                    "perplexity-reasoning",
-                    "gemini-search",
-                ])
+                .string()
                 .optional()
                 .describe(
-                    "Search model (default: 'perplexity-fast'):\n- perplexity-fast: Quick answers with web search\n- perplexity-reasoning: Deeper analysis with web search\n- gemini-search: Google's Gemini with Google Search",
+                    "Search-enabled text model (default: 'sonar'). Use listTextModels for the live list; canonical names and aliases are accepted.",
                 ),
             detailed: z
                 .boolean()

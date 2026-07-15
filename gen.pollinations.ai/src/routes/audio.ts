@@ -58,7 +58,7 @@ const CreateSpeechRequestSchema = z
             }),
         duration: z.number().min(0.5).max(300).optional().meta({
             description:
-                "Output duration in seconds (elevenmusic/acestep 3-300; eleven-sfx 0.5-30)",
+                "Output duration in seconds (eleven-music/acestep 3-300; eleven-sfx 0.5-30)",
             example: 30,
         }),
         seconds: z.number().min(1).max(380).optional().meta({
@@ -86,12 +86,12 @@ const CreateSpeechRequestSchema = z
         }),
         instrumental: z.boolean().optional().meta({
             description:
-                "If true, guarantees instrumental output (elevenmusic only)",
+                "If true, guarantees instrumental output (eleven-music only)",
             example: false,
         }),
         store_for_inpainting: z.boolean().optional().meta({
             description:
-                "If true, stores the generated elevenmusic song and returns its song ID for later inpainting.",
+                "If true, stores the generated eleven-music song and returns its song ID for later inpainting.",
             example: false,
         }),
         extract_composition_plan: z.boolean().optional().meta({
@@ -119,7 +119,7 @@ const CreateSpeechRequestSchema = z
         }),
         instruct: z.string().optional().meta({
             description:
-                "Emotion/style instruction (qwen-tts-instruct only). e.g. 'excited and cheerful'.",
+                "Emotion/style instruction (qwen3-tts-instruct only). e.g. 'excited and cheerful'.",
             example: "speak softly and warmly",
         }),
     })
@@ -413,7 +413,7 @@ export async function transcribeWithElevenLabs(opts: {
     }
 
     const usageHeaders = buildUsageHeaders(
-        "scribe",
+        "scribe-v2",
         createAudioSecondsUsage(duration),
     );
 
@@ -599,7 +599,7 @@ export async function generateMusic(
         });
     }
 
-    const modelId = AUDIO_SERVICES.elevenmusic.modelId;
+    const modelId = AUDIO_SERVICES["eleven-music"].modelId;
     let uploadedSongId: string | undefined;
     let compositionPlan = opts.compositionPlan;
     let conditioningRef = opts.conditioningRef;
@@ -701,7 +701,7 @@ export async function generateMusic(
         audioBuffer.byteLength / MUSIC_MP3_BYTES_PER_SECOND;
 
     const usageHeaders = buildUsageHeaders(
-        "elevenmusic",
+        "eleven-music",
         createCompletionAudioSecondsUsage(estimatedDuration),
     );
     const responseHeaders: Record<string, string> = {
@@ -820,8 +820,8 @@ const QWEN_TTS_ENDPOINT =
     "https://dashscope-intl.aliyuncs.com/api/v1/services/aigc/multimodal-generation/generation";
 
 const QWEN_TTS_MODELS = [
-    "qwen-tts",
-    "qwen-tts-instruct",
+    "qwen3-tts-flash",
+    "qwen3-tts-instruct",
 ] as const satisfies readonly AudioModelName[];
 
 type QwenTtsModelName = (typeof QWEN_TTS_MODELS)[number];
@@ -872,8 +872,8 @@ function requireElevenMusicOptions(
         extractCompositionPlan?: boolean;
     },
 ): void {
-    // elevenmusic supports every conditioning option.
-    if (model === "elevenmusic") return;
+    // eleven-music supports every conditioning option.
+    if (model === "eleven-music") return;
 
     // ElevenLabs-only options (everything except a plain reference clip).
     const usesElevenOnlyOptions =
@@ -889,7 +889,7 @@ function requireElevenMusicOptions(
         if (usesElevenOnlyOptions) {
             throw new UpstreamError(400 as ContentfulStatusCode, {
                 message:
-                    "conditioning_ref, composition_plan, store_for_inpainting, and extract_composition_plan are only supported with model=elevenmusic.",
+                    "conditioning_ref, composition_plan, store_for_inpainting, and extract_composition_plan are only supported with model=eleven-music.",
             });
         }
         return;
@@ -900,7 +900,7 @@ function requireElevenMusicOptions(
 
     throw new UpstreamError(400 as ContentfulStatusCode, {
         message:
-            "reference_audio, conditioning_ref, composition_plan, store_for_inpainting, and extract_composition_plan are only supported with model=elevenmusic (stable-audio-3-medium and stable-audio-3-large also accept reference_audio).",
+            "reference_audio, conditioning_ref, composition_plan, store_for_inpainting, and extract_composition_plan are only supported with model=eleven-music (stable-audio-3-medium and stable-audio-3-large also accept reference_audio).",
     });
 }
 
@@ -1061,10 +1061,10 @@ export async function generateQwenTts(opts: {
         });
     }
 
-    if (instruct && modelName !== "qwen-tts-instruct") {
+    if (instruct && modelName !== "qwen3-tts-instruct") {
         throw new UpstreamError(400 as ContentfulStatusCode, {
             message:
-                "The instruct parameter is only supported by qwen-tts-instruct",
+                "The instruct parameter is only supported by qwen3-tts-instruct",
         });
     }
 
@@ -1080,7 +1080,7 @@ export async function generateQwenTts(opts: {
         model: modelId,
         input: { text, voice: qwenVoice },
         parameters:
-            modelName === "qwen-tts-instruct" && instruct ? { instruct } : {},
+            modelName === "qwen3-tts-instruct" && instruct ? { instruct } : {},
     };
 
     const rawResponse = await fetch(QWEN_TTS_ENDPOINT, {
@@ -1643,7 +1643,7 @@ async function dispatchAudioGeneration(
         );
     }
 
-    if (c.var.model.resolved === "elevenmusic") {
+    if (c.var.model.resolved === "eleven-music") {
         return withSafetyHeaders(
             c,
             await generateMusic({
@@ -1838,15 +1838,15 @@ export const audioRoutes = new Hono<Env>()
                 ...errorResponseDescriptions(400, 401, 402, 403, 500),
             },
         }),
-        resolveModel("generate.audio", { defaultModel: "elevenmusic" }),
+        resolveModel("generate.audio", { defaultModel: "eleven-music" }),
         track("generate.audio"),
         async (c) => {
             const log = c.get("log").getChild("music-upload");
             await requireGenerationAccess(c.var, c.env);
 
-            if (c.var.model.resolved !== "elevenmusic") {
+            if (c.var.model.resolved !== "eleven-music") {
                 throw new UpstreamError(400 as ContentfulStatusCode, {
-                    message: "Music upload only supports model=elevenmusic",
+                    message: "Music upload only supports model=eleven-music",
                 });
             }
 
@@ -1879,7 +1879,7 @@ export const audioRoutes = new Hono<Env>()
                 log,
             });
             const usageHeaders = buildUsageHeaders(
-                "elevenmusic",
+                "eleven-music",
                 createCompletionAudioSecondsUsage(file.size / 16000),
             );
 
@@ -1901,7 +1901,7 @@ export const audioRoutes = new Hono<Env>()
             description: [
                 "Generate speech or music from text. Compatible with the OpenAI TTS API for JSON requests.",
                 "",
-                "Set `model` to `elevenmusic`, `acestep`, `stable-audio-3-medium`, or `stable-audio-3-large` to generate music. Send multipart/form-data with `reference_audio` plus `input` to run audio-to-audio (style transfer) on `stable-audio-3-medium` or `stable-audio-3-large`, or reference-audio conditioning on `elevenmusic`; for ElevenLabs inpainting, pass a `composition_plan`.",
+                "Set `model` to `eleven-music`, `acestep`, `stable-audio-3-medium`, or `stable-audio-3-large` to generate music. Send multipart/form-data with `reference_audio` plus `input` to run audio-to-audio (style transfer) on `stable-audio-3-medium` or `stable-audio-3-large`, or reference-audio conditioning on `eleven-music`; for ElevenLabs inpainting, pass a `composition_plan`.",
                 "",
                 `**Available voices:** ${ELEVENLABS_VOICES.join(", ")}`,
                 "",
@@ -2016,7 +2016,7 @@ export const audioRoutes = new Hono<Env>()
                 "**Models:**",
                 "- `whisper-large-v3` (default) — OpenAI Whisper via OVHcloud",
                 "- `whisper-1` — Alias for whisper-large-v3",
-                "- `scribe` — ElevenLabs Scribe (90+ languages, word-level timestamps)",
+                "- `scribe-v2` — ElevenLabs Scribe (alias: `scribe`; 90+ languages, word-level timestamps)",
                 "- `universal-2` — AssemblyAI Universal-2 (99 languages)",
                 "- `universal-3-pro` — AssemblyAI Universal-3 Pro (highest accuracy, prompting)",
             ].join("\n"),
@@ -2038,7 +2038,7 @@ export const audioRoutes = new Hono<Env>()
                                     type: "string",
                                     default: "whisper-large-v3",
                                     description:
-                                        "The model to use. Options: `whisper-large-v3`, `whisper-1`, `scribe`, `universal-2`, `universal-3-pro`.",
+                                        "The model to use. Options: `whisper-large-v3`, `scribe-v2`, `universal-2`, `universal-3-pro`; aliases are also accepted.",
                                 },
                                 language: {
                                     type: "string",
@@ -2171,7 +2171,7 @@ export const audioRoutes = new Hono<Env>()
             }
 
             // Route to ElevenLabs Scribe or Whisper based on model
-            if (c.var.model.resolved === "scribe") {
+            if (c.var.model.resolved === "scribe-v2") {
                 const elevenLabsApiKey = (
                     c.env as unknown as { ELEVENLABS_API_KEY: string }
                 ).ELEVENLABS_API_KEY;

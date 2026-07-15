@@ -87,7 +87,7 @@ export async function callWanImageAPI(
     const hasImage = images.length > 0;
     const model = isPro ? WAN_IMAGE_PRO_MODEL : WAN_IMAGE_MODEL;
     const modelLabel = isPro ? "Wan 2.7 Image Pro" : "Wan 2.7 Image";
-    const trackingLabel = isPro ? "wan-image-pro" : "wan-image";
+    const trackingLabel = isPro ? "wan-2.7-image-pro" : "wan-2.7-image";
 
     // 4K is available only for pro text-to-image; pro editing and the standard
     // model cap at 2K (matches the prior DashScope pixel limits).

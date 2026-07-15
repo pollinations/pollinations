@@ -37,7 +37,7 @@ export type ImageReasoningMode = "fast" | "balanced" | "pro";
 
 /** Options for image generation */
 export interface ImageGenerateOptions extends RequestOptions {
-    /** Image model to use (default: 'zimage') */
+    /** Image model to use (default: 'z-image-turbo') */
     model?: ImageModel;
     /** Image width in pixels (default: 1024) */
     width?: number;
@@ -65,7 +65,7 @@ export interface ImageGenerateOptions extends RequestOptions {
 
 /** Options for image editing (POST /v1/images/edits) */
 export interface ImageEditOptions extends RequestOptions {
-    /** Image model to use (default: 'flux') */
+    /** Image model to use (default: 'flux-schnell') */
     model?: ImageModel;
     /** Source image URL(s) for editing */
     image?: string | string[];
@@ -198,7 +198,7 @@ export interface Message {
 
 /** Options for simple text generation */
 export interface TextGenerateOptions extends RequestOptions {
-    /** Text model to use (default: 'openai') */
+    /** Text model to use (default: 'gpt-5.4-nano') */
     model?: TextModel;
     /** System prompt to set context */
     systemPrompt?: string;
@@ -256,7 +256,7 @@ export type BuiltInToolType =
 
 /** Options for chat completions (POST endpoint) */
 export interface ChatOptions extends RequestOptions {
-    /** Text model to use (default: 'openai') */
+    /** Text model to use (default: 'gpt-5.4-nano') */
     model?: TextModel;
     /** Temperature 0-2 (default: 1) */
     temperature?: number;
@@ -429,15 +429,15 @@ export type AudioVoice = string;
 export type AudioFormat = "wav" | "mp3" | "flac" | "opus" | "pcm16";
 
 /** Dedicated audio/music model */
-export type AudioModel = "elevenlabs" | "elevenmusic" | "acestep" | string;
+export type AudioModel = "eleven-v3" | "eleven-music" | "acestep" | string;
 
 /** Options for text-to-speech generation (GET /audio/{text} or POST /v1/audio/speech) */
 export interface AudioGenerateOptions extends RequestOptions {
     /** Voice to use (default: 'alloy') */
     voice?: AudioVoice;
-    /** Audio model to use (default: 'elevenlabs') */
+    /** Audio model to use (default: 'eleven-v3') */
     model?: AudioModel;
-    /** Duration in seconds (for music models like elevenmusic, acestep) */
+    /** Duration in seconds (for music models like eleven-music, acestep) */
     duration?: number;
     /** Seed for reproducibility */
     seed?: number;
@@ -471,7 +471,7 @@ export interface AudioResponse {
 export type TranscriptionModel =
     | "whisper-large-v3"
     | "whisper-1"
-    | "scribe"
+    | "scribe-v2"
     | "universal-2"
     | "universal-3-pro"
     | string;
@@ -879,7 +879,7 @@ export interface UserInfo {
 
 /** Options for POST /v1/images/generations */
 export interface ImageGenerateV1Options extends RequestOptions {
-    /** Image model to use (default: 'zimage') */
+    /** Image model to use (default: 'z-image-turbo') */
     model?: ImageModel;
     /** Size string like "1024x1024". Alternative to width + height. */
     size?: string;

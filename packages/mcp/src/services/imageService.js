@@ -83,12 +83,12 @@ async function prepareImageRequest(params) {
  * encoded prompt + query params. Shared by generateVideo and generateVideoUrl.
  *
  * @param {Object} params - Raw tool params
- * @returns {Promise<{encodedPrompt: string, queryParams: Object}>}
+ * @returns {Promise<{encodedPrompt: string, queryParams: Object, model: string}>}
  */
 async function prepareVideoRequest(params) {
     const {
         prompt,
-        model = "veo",
+        model: requestedModel = "veo-3.1-fast",
         duration,
         aspectRatio,
         audio,
@@ -101,18 +101,19 @@ async function prepareVideoRequest(params) {
         throw new Error("Prompt is required and must be a string");
     }
 
-    const validation = await validateVideoModel(model);
+    const validation = await validateVideoModel(requestedModel);
     if (!validation.valid) {
         throw new Error(
             `${validation.error} Did you mean: ${validation.suggestions.join(", ")}? ` +
                 `Use listImageModels to see all ${validation.availableCount} available video models.`,
         );
     }
+    const model = validation.model.name;
 
     if (duration !== undefined) {
-        if (model === "veo" && ![4, 6, 8].includes(duration)) {
+        if (model === "veo-3.1-fast" && ![4, 6, 8].includes(duration)) {
             throw new Error(
-                "veo model only supports duration of 4, 6, or 8 seconds",
+                "veo-3.1-fast only supports duration of 4, 6, or 8 seconds",
             );
         }
         if (
@@ -136,7 +137,7 @@ async function prepareVideoRequest(params) {
         safe,
     });
 
-    return { encodedPrompt, queryParams };
+    return { encodedPrompt, queryParams, model };
 }
 
 async function generateImageUrl(params) {
@@ -185,7 +186,7 @@ async function generateImageUrl(params) {
             {
                 imageUrl: shareableUrl,
                 prompt,
-                model: model || "flux",
+                model: model || "z-image-turbo",
                 width: width || 1024,
                 height: height || 1024,
                 seed,
@@ -210,7 +211,7 @@ async function generateImage(params) {
 
         const metadata = {
             prompt,
-            model: model || "flux",
+            model: model || "z-image-turbo",
             width: width || 1024,
             height: height || 1024,
             seed,
@@ -319,7 +320,7 @@ async function generateImageBatch(params) {
                 },
                 successful,
                 failed: failed.length > 0 ? failed : undefined,
-                model: model || "flux",
+                model: model || "z-image-turbo",
                 width: width || 1024,
                 height: height || 1024,
             },
@@ -333,16 +334,9 @@ async function generateImageBatch(params) {
 async function generateVideo(params) {
     requireApiKey();
 
-    const {
-        prompt,
-        model = "veo",
-        duration,
-        aspectRatio,
-        audio,
-        image,
-        seed,
-    } = params;
-    const { encodedPrompt, queryParams } = await prepareVideoRequest(params);
+    const { prompt, duration, aspectRatio, audio, image, seed } = params;
+    const { encodedPrompt, queryParams, model } =
+        await prepareVideoRequest(params);
 
     const url = buildUrl(`/image/${encodedPrompt}`, queryParams);
 
@@ -355,7 +349,7 @@ async function generateVideo(params) {
             model,
             duration,
             aspectRatio,
-            audio: model === "veo" ? audio || false : undefined,
+            audio: model === "veo-3.1-fast" ? audio || false : undefined,
             hasReferenceImage: !!image,
             seed,
         };
@@ -382,16 +376,9 @@ async function generateVideo(params) {
 async function generateVideoUrl(params) {
     requireApiKey();
 
-    const {
-        prompt,
-        model = "veo",
-        duration,
-        aspectRatio,
-        audio,
-        image,
-        seed,
-    } = params;
-    const { encodedPrompt, queryParams } = await prepareVideoRequest(params);
+    const { prompt, duration, aspectRatio, audio, image, seed } = params;
+    const { encodedPrompt, queryParams, model } =
+        await prepareVideoRequest(params);
 
     const authUrl = buildUrl(`/image/${encodedPrompt}`, queryParams, true);
 
@@ -425,7 +412,7 @@ async function generateVideoUrl(params) {
                 model,
                 duration,
                 aspectRatio,
-                audio: model === "veo" ? audio || false : undefined,
+                audio: model === "veo-3.1-fast" ? audio || false : undefined,
                 hasReferenceImage: !!image,
                 seed,
             },
@@ -440,7 +427,7 @@ async function describeImage(params) {
     const {
         imageUrl,
         prompt = "Describe this image in detail.",
-        model = "openai",
+        model = "gpt-5.4-nano",
     } = params;
 
     if (!imageUrl || typeof imageUrl !== "string") {
@@ -478,7 +465,7 @@ async function analyzeVideo(params) {
     const {
         videoUrl,
         prompt = "Describe what happens in this video in detail.",
-        model = "gemini-large",
+        model = "gemini-3.1-pro",
     } = params;
 
     if (!videoUrl || typeof videoUrl !== "string") {
@@ -791,8 +778,7 @@ export const imageTools = [
                 .string()
                 .optional()
                 .describe(
-                    "Vision-capable model to use (default: 'openai'). " +
-                        "Options: openai, gemini, claude, grok - all support vision",
+                    "Vision-capable model to use (default: 'gpt-5.4-nano'). Use listTextModels for the live list.",
                 ),
         },
         describeImage,
@@ -800,7 +786,7 @@ export const imageTools = [
     [
         "analyzeVideo",
         "Analyze a video using AI. Supports YouTube URLs and direct video links. " +
-            "Uses gemini-large for native video understanding (frames + audio). " +
+            "Uses gemini-3.1-pro for native video understanding (frames + audio). " +
             "Great for video summarization, content analysis, and Q&A about videos.",
         {
             videoUrl: z
@@ -820,8 +806,7 @@ export const imageTools = [
                 .string()
                 .optional()
                 .describe(
-                    "Model to use (default: 'gemini-large'). " +
-                        "gemini-large and gemini support native video input",
+                    "Model to use (default: 'gemini-3.1-pro'). Use listTextModels for video-capable alternatives.",
                 ),
         },
         analyzeVideo,

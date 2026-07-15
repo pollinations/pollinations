@@ -36,7 +36,7 @@ function makeKv() {
 const JPEG_BYTES = new Uint8Array([0xff, 0xd8, 0xff, 0xe0, 0x00, 0x10]);
 
 const fluxParams: ImageParams = {
-    model: "flux",
+    model: "flux-schnell",
     width: 1024,
     height: 1024,
     dimensionsExplicit: false,
@@ -100,7 +100,7 @@ describe("callFluxWithFallback", () => {
         expect(Buffer.from(result.buffer).equals(Buffer.from(JPEG_BYTES))).toBe(
             true,
         );
-        expect(result.trackingData?.actualModel).toBe("flux");
+        expect(result.trackingData?.actualModel).toBe("flux-schnell");
     });
 
     it("falls back to Fireworks when no flux worker is registered", async () => {

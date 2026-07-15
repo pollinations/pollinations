@@ -312,7 +312,7 @@ const AZURE_API_VERSION = "2025-04-01-preview";
 // are per-resource, so sharing one resource across models turns a block into a
 // multi-model outage (issue #12446). Keep it one model per resource.
 const GPTIMAGE_CONFIGS: Record<string, GPTImageConfig[]> = {
-    gptimage: [
+    "gpt-image-1-mini": [
         {
             baseUrl:
                 "https://myceli-prod-img-mini-swedencentral.cognitiveservices.azure.com/openai/deployments/gpt-image-1-mini",
@@ -328,7 +328,7 @@ const GPTIMAGE_CONFIGS: Record<string, GPTImageConfig[]> = {
             region: "westus3",
         },
     ],
-    "gptimage-large": [
+    "gpt-image-1.5": [
         {
             baseUrl:
                 "https://myceli-prod-img-15-swedencentral.cognitiveservices.azure.com/openai/deployments/gpt-image-1.5",
@@ -365,7 +365,8 @@ const GPTIMAGE_CONFIGS: Record<string, GPTImageConfig[]> = {
 let gptImageEndpointIndex = 0;
 
 function orderedGPTImageConfigs(model: string): GPTImageConfig[] {
-    const configs = GPTIMAGE_CONFIGS[model] || GPTIMAGE_CONFIGS.gptimage;
+    const configs =
+        GPTIMAGE_CONFIGS[model] || GPTIMAGE_CONFIGS["gpt-image-1-mini"];
     if (configs.length === 1) return configs;
 
     const start = gptImageEndpointIndex;
@@ -400,7 +401,7 @@ const callGPTImageWithEndpoint = async (
     prompt: string,
     safeParams: ImageParams,
     userInfo: AuthResult,
-    config: GPTImageConfig = GPTIMAGE_CONFIGS.gptimage[0],
+    config: GPTImageConfig = GPTIMAGE_CONFIGS["gpt-image-1-mini"][0],
 ): Promise<ImageGenerationResult> => {
     const apiKey = getImageEnv(config.apiKeyEnv);
 
@@ -662,7 +663,7 @@ export const callGPTImage = async (
     prompt: string,
     safeParams: ImageParams,
     userInfo: AuthResult,
-    model: string = "gptimage",
+    model: string = "gpt-image-1-mini",
 ): Promise<ImageGenerationResult> => {
     const configs = orderedGPTImageConfigs(model);
     let lastError: unknown;
@@ -706,8 +707,8 @@ const generateImage = async (
     userInfo: AuthResult,
 ): Promise<ImageGenerationResult> => {
     switch (safeParams.model) {
-        case "gptimage":
-        case "gptimage-large":
+        case "gpt-image-1-mini":
+        case "gpt-image-1.5":
         case "gpt-image-2": {
             const [gptConfig] = GPTIMAGE_CONFIGS[safeParams.model];
             logError(
@@ -758,7 +759,7 @@ const generateImage = async (
             }
         }
 
-        case "kontext": {
+        case "flux-kontext": {
             try {
                 return await callAzureFluxKontext(prompt, safeParams, userInfo);
             } catch (error) {
@@ -771,16 +772,16 @@ const generateImage = async (
             }
         }
 
-        case "seedream5":
+        case "seedream-5-lite":
             return await callSeedream5API(prompt, safeParams);
 
-        case "seedream5-pro":
+        case "seedream-5-pro":
             return await callSeedream5ProAPI(prompt, safeParams);
 
-        case "seedream":
+        case "seedream-4":
             return await callSeedreamAPI(prompt, safeParams);
 
-        case "seedream-pro":
+        case "seedream-4.5-pro":
             return await callSeedreamProAPI(prompt, safeParams);
 
         case "ideogram-v4-turbo":
@@ -792,7 +793,7 @@ const generateImage = async (
         case "ideogram-v4-quality":
             return await callIdeogramQualityAPI(prompt, safeParams);
 
-        case "klein":
+        case "flux-klein":
             return await callFluxKleinAPI(prompt, safeParams);
 
         case "p-image":
@@ -818,16 +819,16 @@ const generateImage = async (
         case "nova-canvas":
             return await callNovaCanvasAPI(prompt, safeParams);
 
-        case "wan-image":
+        case "wan-2.7-image":
             return await callWanImageAPI(prompt, safeParams, false);
 
-        case "wan-image-pro":
+        case "wan-2.7-image-pro":
             return await callWanImageAPI(prompt, safeParams, true);
 
-        case "qwen-image":
+        case "qwen-image-plus":
             return await callQwenImageAPI(prompt, safeParams);
 
-        case "flux":
+        case "flux-schnell":
             return await callFluxWithFallback(prompt, safeParams);
 
         default:

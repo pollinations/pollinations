@@ -281,7 +281,7 @@ export class Pollinations {
         options: ImageGenerateOptions = {},
     ): string {
         const params: Record<string, unknown> = {
-            model: options.model || "zimage",
+            model: options.model || "z-image-turbo",
             width: options.width,
             height: options.height,
             seed: options.seed,
@@ -369,7 +369,7 @@ export class Pollinations {
      * ```ts
      * const result = await pollinations.imageEdit('Make the sky purple', {
      *   image: 'https://example.com/photo.jpg',
-     *   model: 'flux',
+     *   model: 'flux-schnell',
      * });
      * ```
      */
@@ -387,7 +387,7 @@ export class Pollinations {
 
         const body: Record<string, unknown> = {
             prompt,
-            model: options.model || "flux",
+            model: options.model || "flux-schnell",
         };
 
         if (options.image) {
@@ -445,7 +445,7 @@ export class Pollinations {
      * // Single image, size string (OpenAI style)
      * const img = await pollinations.imageGenerate('A cute robot', {
      *   size: '1024x1024',
-     *   model: 'flux',
+     *   model: 'flux-schnell',
      * });
      *
      * // Multiple images
@@ -472,7 +472,7 @@ export class Pollinations {
 
         const body: Record<string, unknown> = {
             prompt,
-            model: options.model || "zimage",
+            model: options.model || "z-image-turbo",
         };
         if (size) body.size = size;
         if (options.n !== undefined) body.n = options.n;
@@ -568,7 +568,7 @@ export class Pollinations {
         prompt: string,
         options: VideoGenerateOptions = {},
     ): string {
-        const model = options.model || "veo";
+        const model = options.model || "veo-3.1-fast";
 
         const params: Record<string, unknown> = {
             model,
@@ -592,7 +592,7 @@ export class Pollinations {
      *
      * @example
      * ```ts
-     * const url = await pollinations.videoUrl('A cat playing piano', { model: 'veo', duration: 4 });
+     * const url = await pollinations.videoUrl('A cat playing piano', { model: 'veo-3.1-fast', duration: 4 });
      * ```
      */
     async videoUrl(
@@ -679,7 +679,7 @@ export class Pollinations {
 
         const body: Record<string, unknown> = {
             messages,
-            model: options.model || "openai",
+            model: options.model || "gpt-5.4-nano",
             temperature: options.temperature,
             max_tokens: options.maxTokens,
             frequency_penalty: options.frequencyPenalty,
@@ -745,7 +745,7 @@ export class Pollinations {
 
         const body: Record<string, unknown> = {
             messages,
-            model: options.model || "openai",
+            model: options.model || "gpt-5.4-nano",
             temperature: options.temperature,
             max_tokens: options.maxTokens,
             frequency_penalty: options.frequencyPenalty,
@@ -817,7 +817,7 @@ export class Pollinations {
     ): Record<string, unknown> {
         return this.stripUndefined({
             messages,
-            model: options.model || "openai",
+            model: options.model || "gpt-5.4-nano",
             temperature: options.temperature,
             top_p: options.topP,
             max_tokens: options.maxTokens,
@@ -969,7 +969,7 @@ export class Pollinations {
      * const { buffer } = await pollinations.audio('Hello, how are you today?', { voice: 'nova' });
      *
      * // Music generation
-     * const { buffer } = await pollinations.audio('upbeat jazz', { model: 'elevenmusic', duration: 30 });
+     * const { buffer } = await pollinations.audio('upbeat jazz', { model: 'eleven-music', duration: 30 });
      * ```
      */
     async audio(
@@ -1036,7 +1036,7 @@ export class Pollinations {
         const body = {
             input: text,
             voice: options.voice || "alloy",
-            model: options.model || "elevenlabs",
+            model: options.model || "eleven-v3",
         };
 
         const response = await fetchWithTimeout(
@@ -1284,7 +1284,7 @@ export class Pollinations {
      * ```ts
      * const url = pollinations.authorizeUrl({
      *   redirectUrl: 'https://myapp.com/callback',
-     *   models: ['flux', 'openai'],
+     *   models: ['flux-schnell', 'gpt-5.4-nano'],
      *   budget: 10,
      *   permissions: ['profile', 'usage'],
      * });

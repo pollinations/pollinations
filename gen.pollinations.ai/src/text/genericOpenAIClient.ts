@@ -16,7 +16,6 @@ import { cleanNullAndUndefined } from "./utils/objectCleaners.js";
 
 const log = debug("pollinations:genericopenai");
 const errorLog = debug("pollinations:error");
-const DONE_EVENT_PATTERN = /data:\s*\[DONE\]/;
 
 // Attach Portkey's served fallback target as internal, non-enumerable metadata
 // so tracking can read completion.fallbackTarget while it stays out of every
@@ -38,30 +37,67 @@ function withFallbackTarget(
 
 function ensureOpenAISseDone(
     source: ReadableStream<Uint8Array> | null,
+    publicModel: string,
 ): ReadableStream<Uint8Array> | null {
     if (!source) return source;
 
     const decoder = new TextDecoder();
     const encoder = new TextEncoder();
     let seenDone = false;
-    let tail = "";
+    let buffer = "";
+
+    const emitLine = (
+        line: string,
+        controller: TransformStreamDefaultController<Uint8Array>,
+    ) => {
+        const newline = line.endsWith("\n") ? "\n" : "";
+        const withoutNewline = newline ? line.slice(0, -1) : line;
+        const carriageReturn = withoutNewline.endsWith("\r") ? "\r" : "";
+        const content = carriageReturn
+            ? withoutNewline.slice(0, -1)
+            : withoutNewline;
+        const match = content.match(/^(\s*data:\s*)(.*)$/);
+        if (!match) {
+            controller.enqueue(encoder.encode(line));
+            return;
+        }
+
+        const [, prefix, payload] = match;
+        if (payload.trim() === "[DONE]") {
+            seenDone = true;
+        } else {
+            try {
+                const event = JSON.parse(payload) as Record<string, unknown>;
+                if (event && typeof event === "object" && "model" in event) {
+                    event.model = publicModel;
+                    controller.enqueue(
+                        encoder.encode(
+                            `${prefix}${JSON.stringify(event)}${carriageReturn}${newline}`,
+                        ),
+                    );
+                    return;
+                }
+            } catch {
+                // Preserve malformed/non-JSON upstream data; tracking handles it.
+            }
+        }
+        controller.enqueue(encoder.encode(line));
+    };
 
     return source.pipeThrough(
         new TransformStream<Uint8Array, Uint8Array>({
             transform(chunk, controller) {
-                const text = decoder.decode(chunk, { stream: true });
-                const check = `${tail}${text}`;
-                if (DONE_EVENT_PATTERN.test(check)) seenDone = true;
-                tail = check.slice(-64);
-                controller.enqueue(chunk);
+                buffer += decoder.decode(chunk, { stream: true });
+                let lineEnd = buffer.indexOf("\n");
+                while (lineEnd !== -1) {
+                    emitLine(buffer.slice(0, lineEnd + 1), controller);
+                    buffer = buffer.slice(lineEnd + 1);
+                    lineEnd = buffer.indexOf("\n");
+                }
             },
             flush(controller) {
-                const finalText = decoder.decode();
-                if (finalText) {
-                    const check = `${tail}${finalText}`;
-                    if (DONE_EVENT_PATTERN.test(check)) seenDone = true;
-                    controller.enqueue(encoder.encode(finalText));
-                }
+                buffer += decoder.decode();
+                if (buffer) emitLine(buffer, controller);
                 if (!seenDone) {
                     controller.enqueue(encoder.encode("data: [DONE]\n\n"));
                 }
@@ -202,13 +238,17 @@ export async function genericOpenAIClient(
                 `[${requestId}] Streaming response, status: ${response.status}`,
             );
 
-            const streamToReturn = ensureOpenAISseDone(response.body);
+            const publicModel = normalizedOptions.requestedModel || modelName;
+            const streamToReturn = ensureOpenAISseDone(
+                response.body,
+                publicModel,
+            );
             return withFallbackTarget(
                 {
                     id: `genericopenai-${requestId}`,
                     object: "chat.completion.chunk",
                     created: Math.floor(startTime / 1000),
-                    model: modelName,
+                    model: publicModel,
                     stream: true,
                     responseStream: streamToReturn,
                     choices: [
@@ -241,6 +281,7 @@ export async function genericOpenAIClient(
                 ...data,
                 id: data.id || `genericopenai-${requestId}`,
                 object: data.object || "chat.completion",
+                model: normalizedOptions.requestedModel || modelName,
                 choices: [formattedChoice],
             },
             fallbackTarget,

@@ -40,13 +40,13 @@ describe("genericOpenAIClient", () => {
             },
         );
 
-        await genericOpenAIClient(
+        const completion = await genericOpenAIClient(
             [{ role: "user", content: "hello" }],
             {
                 model: "provider-model",
                 modelConfig: { provider: "azure-openai" },
-                modelDef: { name: "openai-fast" },
-                requestedModel: "openai-fast",
+                modelDef: { name: "gpt-5-nano" },
+                requestedModel: "gpt-5-nano",
                 userApiKey: "sk_should_not_leak",
                 portkeyGatewayUrl: "https://portkey.test",
                 additionalHeaders: { Authorization: "Bearer secret" },
@@ -69,6 +69,7 @@ describe("genericOpenAIClient", () => {
         expect(upstreamBody).not.toHaveProperty("portkeyGatewayUrl");
         expect(upstreamBody).not.toHaveProperty("requestedModel");
         expect(upstreamBody).not.toHaveProperty("userApiKey");
+        expect(completion.model).toBe("gpt-5-nano");
     });
 
     it("strips top-level null options while preserving nested provider payloads", async () => {
@@ -338,6 +339,7 @@ describe("genericOpenAIClient", () => {
                         controller.enqueue(
                             encoder.encode(
                                 `data: ${JSON.stringify({
+                                    model: "provider-model",
                                     choices: [
                                         {
                                             index: 0,
@@ -363,6 +365,7 @@ describe("genericOpenAIClient", () => {
             [{ role: "user", content: "hello" }],
             {
                 model: "provider-model",
+                requestedModel: "gpt-5-nano",
                 stream: true,
             },
             {
@@ -375,7 +378,9 @@ describe("genericOpenAIClient", () => {
         ).text();
 
         expect(text).toContain('"content":"ok"');
+        expect(text).toContain('"model":"gpt-5-nano"');
         expect(text).toContain("data: [DONE]\n\n");
+        expect(completion.model).toBe("gpt-5-nano");
     });
 
     it("captures the Portkey fallback target header on non-streaming responses", async () => {

@@ -35,6 +35,7 @@ import {
     DEFAULT_3D_MODEL,
     getModel3dModelIds,
 } from "@shared/registry/model3d.ts";
+import { resolveModelNameSafe } from "@shared/registry/registry.ts";
 import {
     type CreateChatCompletionRequest,
     CreateChatCompletionRequestSchema,
@@ -203,9 +204,11 @@ function filterEntriesByPermissions(
     allowedModels: string[] | undefined,
     hasPaidBalance?: boolean,
 ): GenerationModelEntry[] {
+    const allowed = allowedModels?.length
+        ? new Set(allowedModels.map(resolveModelNameSafe))
+        : null;
     return entries.filter((entry) => {
-        if (allowedModels?.length && !allowedModels.includes(entry.id))
-            return false;
+        if (allowed && !allowed.has(entry.id)) return false;
         if (entry.info.paid_only && hasPaidBalance === false) return false;
         return true;
     });
@@ -337,6 +340,7 @@ export const proxyRoutes = new Hono<Env>()
 
             const toModelEntry = (entry: GenerationModelEntry) => ({
                 id: entry.info.name,
+                aliases: entry.aliases,
                 object: "model" as const,
                 created: now,
                 input_modalities: entry.info.input_modalities,
@@ -620,13 +624,13 @@ export const proxyRoutes = new Hono<Env>()
             description: [
                 "Generate vector embeddings with an OpenAI-compatible response format.",
                 "",
-                "**Models:** `gemini-2` supports text, image, audio, and video inputs. `openai-3-small` and `openai-3-large` are text-only models.",
+                "**Models:** `gemini-embedding-2` supports text, image, audio, and video inputs. `text-embedding-3-small` and `text-embedding-3-large` are text-only models.",
                 "",
                 "**Input:** Pass a string, an array of up to 32 strings, or Gemini multimodal content parts (`text`, `image_url`, `input_audio`, `video_url`) in the `input` field.",
                 "",
-                "**Task types:** `task_type` is Gemini-only. For example, use `RETRIEVAL_QUERY` or `CLASSIFICATION` with `gemini-2`.",
+                "**Task types:** `task_type` is Gemini-only. For example, use `RETRIEVAL_QUERY` or `CLASSIFICATION` with `gemini-embedding-2`.",
                 "",
-                "**Dimensions:** Defaults are model-specific. `qwen3-embedding-8b` supports up to 4096 dimensions; `gemini-2` and `openai-3-large` support up to 3072; `openai-3-small` supports up to 1536.",
+                "**Dimensions:** Defaults are model-specific. `qwen3-embedding-8b` supports up to 4096 dimensions; `gemini-embedding-2` and `text-embedding-3-large` support up to 3072; `text-embedding-3-small` supports up to 1536.",
             ].join("\n"),
             responses: {
                 200: {
@@ -926,7 +930,7 @@ export const proxyRoutes = new Hono<Env>()
             z.object({
                 text: z.string().min(1).meta({
                     description:
-                        "Text to convert to speech, or a music description when model=elevenmusic",
+                        "Text to convert to speech, or a music description when model=eleven-music",
                     example: "Hello, welcome to Pollinations!",
                 }),
             }),
@@ -952,8 +956,8 @@ export const proxyRoutes = new Hono<Env>()
                     }),
                 model: z.string().optional().meta({
                     description:
-                        "Audio model: TTS (default) or elevenmusic for music generation",
-                    example: "tts-1",
+                        "Audio model: TTS (default) or eleven-music for music generation",
+                    example: "eleven-v3",
                 }),
                 duration: z
                     .string()

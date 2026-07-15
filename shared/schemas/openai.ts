@@ -509,6 +509,7 @@ export type CreateChatCompletionResponse = z.infer<
 const OpenAIModelSchema = z
     .object({
         id: z.string(),
+        aliases: z.array(z.string()).optional(),
         object: z.literal("model"),
         created: z.number(),
         input_modalities: z.array(z.string()).optional(),
@@ -534,7 +535,7 @@ export const GetModelsResponseSchema = z
 // OpenAI Images API Schemas
 
 // Shared fields between image generation and editing requests
-const imageModelField = z.string().optional().default("flux").meta({
+const imageModelField = z.string().optional().default("flux-schnell").meta({
     description: "The model to use for image generation",
 });
 const imageNField = z

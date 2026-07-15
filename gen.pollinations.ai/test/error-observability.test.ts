@@ -25,8 +25,8 @@ function createTestApp() {
         await c.req.json();
         c.set("model", {
             requested: "openai",
-            resolved: "openai",
-            definition: getRegistryModelDefinition("openai"),
+            resolved: "gpt-5.4-nano",
+            definition: getRegistryModelDefinition("gpt-5.4-nano"),
         });
         throw new UpstreamError(502, {
             message:
@@ -143,7 +143,7 @@ describe("error observability", () => {
             upstream_status: 200,
             upstream_body: "application/json",
             model_requested: "openai",
-            resolved_model_requested: "openai",
+            resolved_model_requested: "gpt-5.4-nano",
             request_inputs: expect.any(String),
         });
         expect(

@@ -330,6 +330,18 @@ export function resolveModelName(model: string): ModelName {
 }
 
 /**
+ * Resolve a built-in model name or alias, leaving dynamic/community model ids
+ * unchanged. Useful for compatibility comparisons against stored values.
+ */
+export function resolveModelNameSafe(model: string): string {
+    try {
+        return resolveModelName(model);
+    } catch {
+        return model;
+    }
+}
+
+/**
  * Get all public model names
  */
 export function getModels(): ModelName[] {

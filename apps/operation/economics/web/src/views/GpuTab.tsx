@@ -44,8 +44,11 @@ import { signedToneOrSoft, usageMatchTone } from "../lib/tone";
 import type { Data } from "../types";
 
 const REGISTRY_UNIT_PRICES: Record<string, { price: number; unit: string }> = {
+    "z-image-turbo": { price: 0.002, unit: "img" },
     zimage: { price: 0.002, unit: "img" },
+    "flux-klein": { price: 0.01, unit: "img" },
     klein: { price: 0.01, unit: "img" },
+    "ltx-2.3": { price: 0.005, unit: "s" },
     "ltx-2": { price: 0.005, unit: "s" },
 };
 

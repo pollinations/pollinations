@@ -5,6 +5,7 @@ import {
     BannedAccountError,
     StagingAccessDeniedError,
 } from "@shared/auth/api-key.ts";
+import { resolveModelNameSafe } from "@shared/registry/registry.ts";
 import { createMiddleware } from "hono/factory";
 import { HTTPException } from "hono/http-exception";
 import type { LoggerVariables } from "./logger.ts";
@@ -74,7 +75,11 @@ export const auth = () =>
             const model = c.var.model;
             if (!model) return;
 
-            if (!apiKey.permissions.models.includes(model.resolved)) {
+            const allowed = apiKey.permissions.models.some(
+                (allowedModel) =>
+                    resolveModelNameSafe(allowedModel) === model.resolved,
+            );
+            if (!allowed) {
                 throw new HTTPException(403, {
                     message: `Model '${model.requested}' is not allowed for this API key`,
                 });

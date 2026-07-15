@@ -2,7 +2,7 @@
 
 ## Core Websites
 - **Main Website:** https://pollinations.ai
-- **Dashboard & API Keys:** https://enter.pollinations.ai
+- **Dashboard & API Keys:** https://enter.pollinations.ai/keys
 - **Interactive Playground:** https://pollinations.ai/play
 
 ## API

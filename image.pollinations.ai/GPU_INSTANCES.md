@@ -8,7 +8,7 @@ Last updated: 2026-07-14
 |-------|---------|------|----------|---------|--------|
 | Flux (FP4) | 1 | RTX 5090 | Vast.ai | $0.3744/hr | **ACTIVE — production** (Fireworks fallback) |
 | Z-Image | 3 | 4090 + 2x 3090 | RunPod | (see runpodctl) | **ACTIVE — production** |
-| Klein 4B | 1 active + 1 rollback | RTX 3090 + A5000 | Vast.ai + RunPod | $0.1656 active + $0.27 rollback | **ACTIVE — production on Vast** |
+| Klein 4B | 1 active + 1 rollback | RTX 3090 + A5000 | Vast.ai + RunPod | $0.1656 + $0.27 while rollback runs | **ACTIVE — Vast production; RunPod stop-ready** |
 | LTX-2 + ACE-Step + Sana | 1 | GH200 | Lambda Labs | — | **ACTIVE** |
 
 ## Provider: Vast.ai — Flux (RTX 5090, FP4)
@@ -19,13 +19,26 @@ with automatic Fireworks fallback
 
 | Worker | Vast instance | GPU | Listed rate | Status |
 |--------|---------------|-----|-------------|--------|
-| flux-vast-03 | 44731147 | RTX 5090 | $0.374444/hr | Active; replace its temporary quick tunnel with a named tunnel before the next cutover |
+| flux-vast-03 | 44731147 | RTX 5090 | $0.374444/hr | OUT OF ROTATION (2026-07-14) — host network degraded; needs reprovision. All Flux traffic is on the Fireworks fallback (~$70/day) |
 
 > Instance IDs/IPs/ports change on recreate — check `vastai show instances`.
 > CRITICAL: workers MUST be behind a named Cloudflare tunnel created in the
 > authoritative Pollinations account. The gen Worker cannot fetch a Vast
 > raw-IP/non-standard-port origin, and a successful registry heartbeat alone
 > does not prove the data path works. Fireworks can hide either failure.
+
+**The quick-tunnel warning above is not theoretical — it caused the #12254
+outage.** flux-vast-03 was left on a `trycloudflare.com` quick tunnel (free,
+rate-limited, no SLA). Under production load it degraded until a static `/docs`
+fetch took 15–39s while the worker itself served a 1024×1024 image in 3.9s on
+localhost. Requests exceeded the CloudFront timeout, so users saw indefinite
+hangs, not errors — and the worker kept heartbeating green the whole time.
+Never point production at a quick tunnel; use a named tunnel.
+
+When reprovisioning, check the host's HuggingFace throughput before committing
+to it (`curl -r 0-5000000 -L <hf-model-url>`): this host managed 384 KB/s, so
+the worker could never finish loading its weights and stalled indefinitely
+mid-download.
 
 **Provision a new instance** (see `nunchaku/setup-vast.sh` header for all env):
 ```bash
@@ -113,6 +126,9 @@ curl -s http://127.0.0.1:8000/health
 - Three concurrent 512x512 requests all returned valid images.
 - Real 850x1100 production requests completed in 2.37–2.39s.
 - Cloudflare showed 4 healthy connections and 0 origin proxy errors.
+- Final soak verification observed `provider=vast`, `model_used=klein`,
+  successful production traffic, and zero 5xx; the Vast backend had accepted
+  521 requests with no recent 5xx.
 
 The successful canary sequence is: local health, authenticated generation,
 single-reference edit, multi-reference edit, 1024x1024 render, concurrent
@@ -150,6 +166,11 @@ curl -s https://jmrbmje2fyuy46-8000.proxy.runpod.net/health
 Keeping this pod running costs $0.27/hr in addition to Vast. Once the Vast
 deployment has met the desired soak period, stop the pod to remove that cost;
 retain its `KLEIN_URL` value for a manual restart-and-redeploy rollback.
+
+**Shutdown checklist:** stop the pod; do not terminate it. Then confirm Klein
+still reports `provider=vast`, a successful request reaches instance `44766948`,
+and the production status window remains free of 5xx. To roll back, restart the
+pod, verify its health endpoint, remove `KLEIN_VPC`, and deploy gen through CI.
 
 ### Z-Image pods
 

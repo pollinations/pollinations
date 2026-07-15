@@ -5,12 +5,10 @@ import {
     Button,
     Chip,
     ColorModeToggle,
-    cn,
     DiscordIcon,
     ExternalLinkButton,
     GitHubIcon,
     Heading,
-    ScrollArea,
     Surface,
     TabButton,
     Table,
@@ -21,7 +19,7 @@ import {
     TableRow,
 } from "@pollinations/ui";
 import { ModalityChip } from "@pollinations/ui/gen";
-import { useRef, useState } from "react";
+import { useState } from "react";
 import { useModelMonitor } from "./hooks/useModelMonitor";
 
 const WINDOW_OPTIONS = [
@@ -369,7 +367,6 @@ function App() {
 
     const [sort, setSort] = useState({ key: "requests", asc: false });
     const [typeFilter, setTypeFilter] = useState(null);
-    const scrollAreaRef = useRef(null);
     const catalogUnavailable = endpointStatus.catalog === false;
 
     const handleSort = (key) => {
@@ -470,6 +467,14 @@ function App() {
                     ((a.stats?.latency_p95_ms || 0) -
                         (b.stats?.latency_p95_ms || 0))
                 );
+            case "tps": {
+                const aTps = a.stats?.tokens_per_second;
+                const bTps = b.stats?.tokens_per_second;
+                if (aTps == null && bTps == null) return 0;
+                if (aTps == null) return 1;
+                if (bTps == null) return -1;
+                return dir * (aTps - bTps);
+            }
             case "user4xx": {
                 const aTotal = a.stats?.total_requests || 1;
                 const bTotal = b.stats?.total_requests || 1;
@@ -491,341 +496,334 @@ function App() {
         : sortedModels;
 
     return (
-        <div className="h-dvh bg-app-bg text-theme-text-base">
-            <ScrollArea ref={scrollAreaRef} axis="y" className="h-full">
-                <AppHeader
-                    navLabel="Model Monitor links"
-                    autoHide
-                    scrollTargetRef={scrollAreaRef}
-                    innerClassName={adminMode ? "polli:max-w-6xl" : undefined}
-                >
-                    {EXTERNAL_LINKS.map((link) => (
-                        <HeaderLink key={link.href} {...link} />
-                    ))}
-                    <ColorModeToggle />
-                </AppHeader>
-                <main
-                    className={cn(
-                        "mx-auto flex min-h-full w-full min-w-0 flex-col gap-4 px-4 py-5 sm:px-6 md:py-7",
-                        adminMode ? "max-w-6xl" : "max-w-5xl",
-                    )}
-                >
-                    <section className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-                        <div className="flex min-w-0 flex-col gap-1">
-                            <Heading
-                                as="h1"
-                                size="title"
-                                className="polli-model-monitor-title polli:m-0 polli:text-theme-text-strong"
-                            >
-                                Model Monitor
-                            </Heading>
-                            <p className="m-0 max-w-3xl text-base leading-relaxed text-theme-text-base">
-                                Real-time health monitoring for Pollinations AI
-                                models.
-                            </p>
-                        </div>
-                        <div className="flex flex-col items-start gap-2 sm:items-end">
-                            <WindowTabs
-                                value={aggregationWindow}
-                                onChange={setAggregationWindow}
-                            />
-                            <p className="m-0 text-xs leading-normal text-theme-text-soft">
-                                Data as of:{" "}
-                                {lastUpdated?.toLocaleTimeString("en-GB", {
-                                    timeZone: "UTC",
-                                    hour: "2-digit",
-                                    minute: "2-digit",
-                                    second: "2-digit",
-                                }) || "-"}{" "}
-                                UTC
-                            </p>
-                        </div>
-                    </section>
-
-                    {error && (
-                        <Alert intent="danger" title="Monitor error">
-                            {error}
-                        </Alert>
-                    )}
-
-                    {catalogUnavailable && (
-                        <Alert
-                            intent="warning"
-                            title="Model catalog unavailable"
+        <div className="min-h-dvh min-w-fit bg-app-bg text-theme-text-base">
+            <AppHeader
+                navLabel="Model Monitor links"
+                autoHide
+                innerClassName="polli:max-w-6xl polli:flex-row polli:items-center polli:justify-between"
+            >
+                {EXTERNAL_LINKS.map((link) => (
+                    <HeaderLink key={link.href} {...link} />
+                ))}
+                <ColorModeToggle />
+            </AppHeader>
+            <main className="mx-auto flex w-full min-w-fit max-w-6xl flex-col gap-4 px-4 py-5 sm:px-6 md:py-7">
+                <section className="flex flex-row items-end justify-between gap-3">
+                    <div className="flex min-w-0 flex-col gap-1">
+                        <Heading
+                            as="h1"
+                            size="title"
+                            className="polli-model-monitor-title polli:m-0 polli:text-theme-text-strong"
                         >
-                            Showing observed Tinybird traffic only until the
-                            live model catalog responds.
-                        </Alert>
-                    )}
+                            Model Monitor
+                        </Heading>
+                        <p className="m-0 max-w-3xl text-base leading-relaxed text-theme-text-base">
+                            Real-time health monitoring for Pollinations AI
+                            models.
+                        </p>
+                    </div>
+                    <div className="flex flex-col items-start gap-2 sm:items-end">
+                        <WindowTabs
+                            value={aggregationWindow}
+                            onChange={setAggregationWindow}
+                        />
+                        <p className="m-0 text-xs leading-normal text-theme-text-soft">
+                            Data as of:{" "}
+                            {lastUpdated?.toLocaleTimeString("en-GB", {
+                                timeZone: "UTC",
+                                hour: "2-digit",
+                                minute: "2-digit",
+                                second: "2-digit",
+                            }) || "-"}{" "}
+                            UTC
+                        </p>
+                    </div>
+                </section>
 
-                    <CategoryTabs
-                        models={models}
-                        value={typeFilter}
-                        onChange={setTypeFilter}
-                    />
+                {error && (
+                    <Alert intent="danger" title="Monitor error">
+                        {error}
+                    </Alert>
+                )}
 
-                    <Surface variant="card" className="overflow-hidden p-0">
-                        <ScrollArea axis="x">
-                            <Table className="min-w-[960px]">
-                                <TableHead>
-                                    <tr>
-                                        <SortableTh
-                                            label="Type"
-                                            sortKey="type"
-                                            currentSort={sort}
-                                            onSort={handleSort}
-                                        />
-                                        <SortableTh
-                                            label="Model"
-                                            sortKey="name"
-                                            currentSort={sort}
-                                            onSort={handleSort}
-                                        />
-                                        <SortableTh
-                                            label="Status"
-                                            sortKey="status"
-                                            currentSort={sort}
-                                            onSort={handleSort}
-                                        />
-                                        {adminMode && (
-                                            <SortableTh
-                                                label="Provider"
-                                                sortKey="provider"
-                                                currentSort={sort}
-                                                onSort={handleSort}
-                                            />
-                                        )}
-                                        <SortableTh
-                                            label="Reqs (+4xx)"
-                                            sortKey="requests"
-                                            currentSort={sort}
-                                            onSort={handleSort}
-                                            align="right"
-                                        />
-                                        <SortableTh
-                                            label="Success"
-                                            sortKey="ok2xx"
-                                            currentSort={sort}
-                                            onSort={handleSort}
-                                            align="right"
-                                        />
-                                        <SortableTh
-                                            label="5xx"
-                                            sortKey="errors"
-                                            currentSort={sort}
-                                            onSort={handleSort}
-                                            align="right"
-                                        />
-                                        <SortableTh
-                                            label="4xx"
-                                            sortKey="user4xx"
-                                            currentSort={sort}
-                                            onSort={handleSort}
-                                            align="right"
-                                        />
-                                        <SortableTh
-                                            label="Avg"
-                                            sortKey="avg"
-                                            currentSort={sort}
-                                            onSort={handleSort}
-                                            align="right"
-                                        />
-                                        <SortableTh
-                                            label="P95"
-                                            sortKey="p95"
-                                            currentSort={sort}
-                                            onSort={handleSort}
-                                            align="right"
-                                        />
-                                    </tr>
-                                </TableHead>
-                                <TableBody>
-                                    {filteredModels.length === 0 ? (
-                                        <TableRow>
+                {catalogUnavailable && (
+                    <Alert intent="warning" title="Model catalog unavailable">
+                        Showing observed Tinybird traffic only until the live
+                        model catalog responds.
+                    </Alert>
+                )}
+
+                <CategoryTabs
+                    models={models}
+                    value={typeFilter}
+                    onChange={setTypeFilter}
+                />
+
+                <Surface variant="card" className="p-0">
+                    <Table>
+                        <TableHead>
+                            <tr>
+                                <SortableTh
+                                    label="Type"
+                                    sortKey="type"
+                                    currentSort={sort}
+                                    onSort={handleSort}
+                                />
+                                <SortableTh
+                                    label="Model"
+                                    sortKey="name"
+                                    currentSort={sort}
+                                    onSort={handleSort}
+                                />
+                                <SortableTh
+                                    label="Status"
+                                    sortKey="status"
+                                    currentSort={sort}
+                                    onSort={handleSort}
+                                />
+                                {adminMode && (
+                                    <SortableTh
+                                        label="Provider"
+                                        sortKey="provider"
+                                        currentSort={sort}
+                                        onSort={handleSort}
+                                    />
+                                )}
+                                <SortableTh
+                                    label={
+                                        <span title="Requests excluding client errors (4xx)">
+                                            Reqs
+                                        </span>
+                                    }
+                                    sortKey="requests"
+                                    currentSort={sort}
+                                    onSort={handleSort}
+                                    align="right"
+                                />
+                                <SortableTh
+                                    label="Success"
+                                    sortKey="ok2xx"
+                                    currentSort={sort}
+                                    onSort={handleSort}
+                                    align="right"
+                                />
+                                <SortableTh
+                                    label="5xx"
+                                    sortKey="errors"
+                                    currentSort={sort}
+                                    onSort={handleSort}
+                                    align="right"
+                                />
+                                <SortableTh
+                                    label="4xx"
+                                    sortKey="user4xx"
+                                    currentSort={sort}
+                                    onSort={handleSort}
+                                    align="right"
+                                />
+                                <SortableTh
+                                    label="Avg"
+                                    sortKey="avg"
+                                    currentSort={sort}
+                                    onSort={handleSort}
+                                    align="right"
+                                />
+                                <SortableTh
+                                    label="P95"
+                                    sortKey="p95"
+                                    currentSort={sort}
+                                    onSort={handleSort}
+                                    align="right"
+                                />
+                                <SortableTh
+                                    label={
+                                        <span title="Completion tokens per second over the full request duration (not pure decode speed). Cache hits excluded.">
+                                            tok/s
+                                        </span>
+                                    }
+                                    sortKey="tps"
+                                    currentSort={sort}
+                                    onSort={handleSort}
+                                    align="right"
+                                />
+                            </tr>
+                        </TableHead>
+                        <TableBody>
+                            {filteredModels.length === 0 ? (
+                                <TableRow>
+                                    <TableCell
+                                        colSpan={adminMode ? 11 : 10}
+                                        align="center"
+                                        className="py-8 text-theme-text-muted"
+                                    >
+                                        {lastUpdated
+                                            ? "No models found"
+                                            : "Loading models..."}
+                                    </TableCell>
+                                </TableRow>
+                            ) : (
+                                filteredModels.map((model) => {
+                                    const stats = model.stats;
+                                    const total = stats?.total_requests || 0;
+                                    const total5xx = stats?.errors_5xx || 0;
+                                    const total4xx = stats?.errors_4xx || 0;
+                                    const nonUserErrorTotal = total - total4xx;
+                                    const pct4xx =
+                                        total > 0
+                                            ? (total4xx / total) * 100
+                                            : 0;
+                                    const avgSec = stats?.avg_latency_ms
+                                        ? stats.avg_latency_ms / 1000
+                                        : null;
+                                    const p95Sec = stats?.latency_p95_ms
+                                        ? stats.latency_p95_ms / 1000
+                                        : null;
+                                    const health = computeHealthStatus(stats);
+
+                                    return (
+                                        <TableRow
+                                            key={`${model.type}-${model.name}`}
+                                            intent={rowIntent(health)}
+                                        >
+                                            <TableCell>
+                                                <ModalityChip
+                                                    modality={model.type}
+                                                    size="sm"
+                                                    className="text-micro font-bold uppercase tracking-wide"
+                                                >
+                                                    {model.type}
+                                                </ModalityChip>
+                                            </TableCell>
+                                            <TableCell className="w-full min-w-[12rem] max-w-0">
+                                                <div className="flex min-w-0 items-center gap-2">
+                                                    {/* The name is the row's identity — never truncate it;
+                                                        the muted title is the flexible part. */}
+                                                    <span className="whitespace-nowrap font-medium text-theme-text-strong">
+                                                        {model.name}
+                                                    </span>
+                                                    {model.title && (
+                                                        <span
+                                                            className="min-w-0 truncate text-xs text-theme-text-muted"
+                                                            title={model.title}
+                                                        >
+                                                            {model.title}
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            </TableCell>
+                                            <TableCell>
+                                                <div className="flex flex-wrap items-center gap-1">
+                                                    <StatusBadge
+                                                        stats={stats}
+                                                    />
+                                                    <CatalogStatusBadge
+                                                        status={
+                                                            model.catalogStatus
+                                                        }
+                                                    />
+                                                </div>
+                                            </TableCell>
+                                            {adminMode && (
+                                                <TableCell muted>
+                                                    {model.provider || "-"}
+                                                </TableCell>
+                                            )}
                                             <TableCell
-                                                colSpan={adminMode ? 10 : 9}
-                                                align="center"
-                                                className="py-8 text-theme-text-muted"
+                                                align="right"
+                                                numeric
+                                                muted
                                             >
-                                                {lastUpdated
-                                                    ? "No models found"
-                                                    : "Loading models..."}
+                                                {total > 0
+                                                    ? nonUserErrorTotal.toLocaleString()
+                                                    : "-"}
+                                            </TableCell>
+                                            <TableCell
+                                                align="right"
+                                                numeric
+                                                className={get2xxColor(
+                                                    stats?.status_2xx || 0,
+                                                    nonUserErrorTotal,
+                                                )}
+                                            >
+                                                {formatPercent(
+                                                    stats?.status_2xx || 0,
+                                                    nonUserErrorTotal,
+                                                    true,
+                                                )}
+                                            </TableCell>
+                                            <TableCell align="right" numeric>
+                                                {total5xx > 0 ? (
+                                                    <span className="font-semibold text-intent-danger-text">
+                                                        {total5xx}
+                                                    </span>
+                                                ) : (
+                                                    <span className="text-theme-text-muted">
+                                                        -
+                                                    </span>
+                                                )}
+                                            </TableCell>
+                                            <TableCell
+                                                align="right"
+                                                numeric
+                                                muted
+                                            >
+                                                {pct4xx > 0
+                                                    ? pct4xx < 1
+                                                        ? `${pct4xx.toFixed(1)}%`
+                                                        : `${Math.round(pct4xx)}%`
+                                                    : "-"}
+                                            </TableCell>
+                                            <TableCell
+                                                align="right"
+                                                numeric
+                                                className={
+                                                    avgSec
+                                                        ? getLatencyColor(
+                                                              avgSec,
+                                                          )
+                                                        : "text-theme-text-muted"
+                                                }
+                                            >
+                                                {avgSec
+                                                    ? `${avgSec.toFixed(1)}s`
+                                                    : "-"}
+                                            </TableCell>
+                                            <TableCell
+                                                align="right"
+                                                numeric
+                                                className={
+                                                    p95Sec
+                                                        ? getLatencyColor(
+                                                              p95Sec,
+                                                          )
+                                                        : "text-theme-text-muted"
+                                                }
+                                            >
+                                                {p95Sec
+                                                    ? `${p95Sec.toFixed(1)}s`
+                                                    : "-"}
+                                            </TableCell>
+                                            <TableCell
+                                                align="right"
+                                                numeric
+                                                muted
+                                                className="whitespace-nowrap"
+                                            >
+                                                {stats?.tokens_per_second !=
+                                                null
+                                                    ? stats.tokens_per_second.toFixed(
+                                                          1,
+                                                      )
+                                                    : "-"}
                                             </TableCell>
                                         </TableRow>
-                                    ) : (
-                                        filteredModels.map((model) => {
-                                            const stats = model.stats;
-                                            const total =
-                                                stats?.total_requests || 0;
-                                            const total5xx =
-                                                stats?.errors_5xx || 0;
-                                            const total4xx =
-                                                stats?.errors_4xx || 0;
-                                            const nonUserErrorTotal =
-                                                total - total4xx;
-                                            const pct4xx =
-                                                total > 0
-                                                    ? (total4xx / total) * 100
-                                                    : 0;
-                                            const avgSec = stats?.avg_latency_ms
-                                                ? stats.avg_latency_ms / 1000
-                                                : null;
-                                            const p95Sec = stats?.latency_p95_ms
-                                                ? stats.latency_p95_ms / 1000
-                                                : null;
-                                            const health =
-                                                computeHealthStatus(stats);
-
-                                            return (
-                                                <TableRow
-                                                    key={`${model.type}-${model.name}`}
-                                                    intent={rowIntent(health)}
-                                                >
-                                                    <TableCell>
-                                                        <ModalityChip
-                                                            modality={
-                                                                model.type
-                                                            }
-                                                            size="sm"
-                                                            className="text-micro font-bold uppercase tracking-wide"
-                                                        >
-                                                            {model.type}
-                                                        </ModalityChip>
-                                                    </TableCell>
-                                                    <TableCell>
-                                                        <div className="flex items-center gap-2">
-                                                            <span className="font-medium text-theme-text-strong">
-                                                                {model.name}
-                                                            </span>
-                                                            {model.title && (
-                                                                <span className="max-w-[24rem] truncate text-xs text-theme-text-muted">
-                                                                    {
-                                                                        model.title
-                                                                    }
-                                                                </span>
-                                                            )}
-                                                        </div>
-                                                    </TableCell>
-                                                    <TableCell>
-                                                        <div className="flex flex-wrap items-center gap-1">
-                                                            <StatusBadge
-                                                                stats={stats}
-                                                            />
-                                                            <CatalogStatusBadge
-                                                                status={
-                                                                    model.catalogStatus
-                                                                }
-                                                            />
-                                                        </div>
-                                                    </TableCell>
-                                                    {adminMode && (
-                                                        <TableCell muted>
-                                                            {model.provider ||
-                                                                "-"}
-                                                        </TableCell>
-                                                    )}
-                                                    <TableCell
-                                                        align="right"
-                                                        numeric
-                                                        muted
-                                                    >
-                                                        {total > 0 ? (
-                                                            <>
-                                                                {nonUserErrorTotal.toLocaleString()}
-                                                                {total4xx >
-                                                                    0 && (
-                                                                    <span className="ml-1 text-xs text-theme-text-muted">
-                                                                        (
-                                                                        {total.toLocaleString()}
-                                                                        )
-                                                                    </span>
-                                                                )}
-                                                            </>
-                                                        ) : (
-                                                            "-"
-                                                        )}
-                                                    </TableCell>
-                                                    <TableCell
-                                                        align="right"
-                                                        numeric
-                                                        className={get2xxColor(
-                                                            stats?.status_2xx ||
-                                                                0,
-                                                            nonUserErrorTotal,
-                                                        )}
-                                                    >
-                                                        {formatPercent(
-                                                            stats?.status_2xx ||
-                                                                0,
-                                                            nonUserErrorTotal,
-                                                            true,
-                                                        )}
-                                                    </TableCell>
-                                                    <TableCell
-                                                        align="right"
-                                                        numeric
-                                                    >
-                                                        {total5xx > 0 ? (
-                                                            <span className="font-semibold text-intent-danger-text">
-                                                                {total5xx}
-                                                            </span>
-                                                        ) : (
-                                                            <span className="text-theme-text-muted">
-                                                                -
-                                                            </span>
-                                                        )}
-                                                    </TableCell>
-                                                    <TableCell
-                                                        align="right"
-                                                        numeric
-                                                        muted
-                                                    >
-                                                        {pct4xx > 0
-                                                            ? pct4xx < 1
-                                                                ? `${pct4xx.toFixed(1)}%`
-                                                                : `${Math.round(pct4xx)}%`
-                                                            : "-"}
-                                                    </TableCell>
-                                                    <TableCell
-                                                        align="right"
-                                                        numeric
-                                                        className={
-                                                            avgSec
-                                                                ? getLatencyColor(
-                                                                      avgSec,
-                                                                  )
-                                                                : "text-theme-text-muted"
-                                                        }
-                                                    >
-                                                        {avgSec
-                                                            ? `${avgSec.toFixed(1)}s`
-                                                            : "-"}
-                                                    </TableCell>
-                                                    <TableCell
-                                                        align="right"
-                                                        numeric
-                                                        className={
-                                                            p95Sec
-                                                                ? getLatencyColor(
-                                                                      p95Sec,
-                                                                  )
-                                                                : "text-theme-text-muted"
-                                                        }
-                                                    >
-                                                        {p95Sec
-                                                            ? `${p95Sec.toFixed(1)}s`
-                                                            : "-"}
-                                                    </TableCell>
-                                                </TableRow>
-                                            );
-                                        })
-                                    )}
-                                </TableBody>
-                            </Table>
-                        </ScrollArea>
-                    </Surface>
-                </main>
-            </ScrollArea>
+                                    );
+                                })
+                            )}
+                        </TableBody>
+                    </Table>
+                </Surface>
+            </main>
         </div>
     );
 }

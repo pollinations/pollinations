@@ -16,7 +16,7 @@ Upload files and get back a URL to use with Pollinations models.
 
 ### Upload a file
 
-Uploads require a pollinations.ai API key. Get one at [enter.pollinations.ai](https://enter.pollinations.ai).
+Uploads require a pollinations.ai API key. Get one at [enter.pollinations.ai](https://enter.pollinations.ai/keys).
 
 ```bash
 # Multipart form-data
@@ -236,7 +236,7 @@ Each upload gets a unique id. That single id is the storage key, the retrieval i
 
 ## 🔑 Authentication
 
-Uploads require a pollinations.ai API key (`pk_` or `sk_`). Get one at [enter.pollinations.ai](https://enter.pollinations.ai).
+Uploads require a pollinations.ai API key (`pk_` or `sk_`). Get one at [enter.pollinations.ai](https://enter.pollinations.ai/keys).
 
 Pass the key via:
 - `Authorization: Bearer <key>` header (recommended)

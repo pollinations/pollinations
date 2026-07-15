@@ -253,6 +253,13 @@
       "when": 1783712598018,
       "tag": "0035_media_catalog",
       "breakpoints": true
+    },
+    {
+      "idx": 36,
+      "version": "6",
+      "when": 1784063115626,
+      "tag": "0036_community_endpoint_visibility",
+      "breakpoints": true
     }
   ]
 }

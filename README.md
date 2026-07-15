@@ -6,7 +6,7 @@
   
   <p><strong>Open-source AI for people who make things.</strong></p>
 
-[![Stars](https://img.shields.io/github/stars/pollinations/pollinations?style=flat-square&logo=github)](https://github.com/pollinations/pollinations)
+[![Stars](https://img.shields.io/github/stars/pollinations/pollinations?style=flat-square&logo=github)](https://github.com/pollinations/pollinations/stargazers)
 [![License](https://img.shields.io/github/license/pollinations/pollinations?style=flat-square)](LICENSE)
 [![Discord](https://img.shields.io/discord/885844321461485618?style=flat-square&logo=discord&label=Discord&color=5865F2)](https://discord.gg/pollinations-ai-885844321461485618)
 
@@ -34,7 +34,7 @@
 [Browse all apps →](apps/GREENHOUSE.md)
 ## 🚀 New Unified API — Now Live
 
-We've launched **https://gen.pollinations.ai** — a single endpoint for all your AI generation needs: text, images, audio, video — all in one place.
+We've launched **https://gen.pollinations.ai** — a single endpoint for all your AI generation needs: text, images, audio, video, 3D, embeddings — all in one place.
 
 ### What's New
 
@@ -48,30 +48,33 @@ We've launched **https://gen.pollinations.ai** — a single endpoint for all you
 
 ## 🆕 Latest News
 
+- **2026-07-14** – **✨ Public media galleries** Tag an upload to publish it in a shareable, newest-first gallery at `GET /media?tag=`; leave it untagged and it stays private. [API Docs](https://gen.pollinations.ai/docs)
+- **2026-07-14** – **🚀 GPT Image models rerouted** `gptimage`, `gptimage-large`, and `gpt-image-2` now use dedicated Azure routes with regional failover, so image generations and edits have somewhere else to go when one garden closes.
+- **2026-07-14** – **🌟 Model speed, measured properly** Model Monitor now sorts models by streamed completion throughput in tokens per second. Less folklore, more `tok/s`. [Check the monitor](https://model-monitor.pollinations.ai)
+- **2026-07-14** – **💡 Seeds reach the SDK API** `@pollinations/sdk` now forwards seeds to Gen, giving SDK users reproducible generations without client-side retry roulette. [View package](https://www.npmjs.com/package/@pollinations/sdk)
 - **2026-07-13** – **🎯 New Pollen quests** Use an app through BYOP to earn `0.25` Pollen, or keep your app active to earn `7` Pollen. The garden now pays rent.
 - **2026-07-13** – **🎵 Talkti: live voice translation** Speak across languages in real time with a new community-built voice translation app. [Try it](https://talktiweb.web.app) <!-- app -->
 - **2026-07-13** – **🎨 Turn books into gamebooks** Feed in `txt`, `mobi`, `epub`, `docx`, or `fb2` files and turn static reading into AI-driven interactive fiction. [Try it](https://gelfer1979.itch.io/book-to-game) <!-- app -->
 - **2026-07-13** – **🌟 Pollinations AI Night in Berlin** The hive is meeting at Block1 Berlin on July 16: flyer, location, and RSVP are now at [`/night`](https://pollinations.ai/night).
 - **2026-07-12** – **✨ The hive’s ledger** Track exact Pollen spend and earnings together in a fast Activity dashboard, with infinite event history and daily breakdowns.
 - **2026-07-12** – **🔍 Find a model without spelunking** The dashboard’s Models catalog now searches names, brands, and descriptions while keeping category tabs pinned.
-- **2026-07-12** – **🚀 Muse Spark 1.1** `muse-spark-1.1` is now available for paid text and vision generation, with always-on reasoning for harder prompts. [Browse models](https://gen.pollinations.ai/v1/models)
-- **2026-07-10** – **🚀 GPT 5.6 & Seedream 5 Pro** The GPT 5.6 family (Sol, Terra, Luna) is now live for text generation, alongside Seedream 5 Pro for high-quality images. Check the [Available Models](https://gen.pollinations.ai/v1/models).
-- **2026-07-10** – **✨ CLI Quest Rewards** Track your earned Pollen and quest progress directly from the terminal with the updated [Polli CLI](https://www.npmjs.com/package/@pollinations/cli).
-- **2026-07-06** – **🎮 Roblox Integration** Tomdacat brings Pollinations to Roblox creators with an OpenAI-compatible API powering 40+ models. [Try it](https://ai.tomdacat.com) <!-- app -->
 ---
 
 ## 🌱 Introduction
 
-[pollinations.ai](https://pollinations.ai) is an open-source generative AI platform based in Berlin, powering 500+ community projects with accessible text, image, video, and audio generation APIs. We build in the open and keep AI accessible to everyone—thanks to our amazing supporters.
+[pollinations.ai](https://pollinations.ai) is an open-source generative AI platform based in Berlin, powering 500+ community projects with accessible text, image, video, audio, 3D and embeddings generation APIs. We build in the open and keep AI accessible to everyone—thanks to our amazing supporters.
 
 ## 🚀 Key Features
 
 - 🔓 **100% Open Source** — code, decisions, roadmap all public
 - 🤝 **Community-Built** — 500+ projects already using our APIs
 - 🌱 **Pollen Quests** — earn Pollen by completing Quests (in alpha)
-- 🖼️ **Image Generation** — Flux, GPT Image, Seedream, Kontext
-- 🎬 **Video Generation** — Seedance, Veo (alpha)
+- 🖼️ **Image Generation** — Text-to-image and image editing
+- 📝 **Text Generation** — Chat, reasoning, vision, function calling, structured outputs 
+- 🎬 **Video Generation** — Text-to-video and image-to-video
 - 🎵 **Audio** — Text-to-speech and speech-to-text
+- 🧊 **3D Generation** — Text-to-3D and image-to-3D
+- 🔢 **Embeddings Creation** — Semantic search, retrieval, similarity matching
 - 🎣 **_Easy-to-use Packages_** ([Packages](packages/))
 
 <a href="https://star-history.com/#pollinations/pollinations&Date">
@@ -85,14 +88,16 @@ We've launched **https://gen.pollinations.ai** — a single endpoint for all you
 ### Quick Start (3 Steps)
 
 1️⃣ **Get your API key**  
-Sign up at [enter.pollinations.ai](https://enter.pollinations.ai) to generate your key.
+Sign up at [enter.pollinations.ai](https://enter.pollinations.ai/keys) to generate your key.
 
 2️⃣ **Choose what you want to generate**  
 Pollinations supports:
 - 🖼 Images  
 - 📝 Text  
 - 🔊 Audio  
-- 🎬 Video  
+- 🎬 Video
+- 🧊 3D
+- 🔢 Embeddings
 
 3️⃣ **Make your first request**  
 Use one of the examples below to generate your first AI output in seconds.
@@ -171,11 +176,11 @@ AI assistants can:
 - Access all pollinations.ai models and services
 - List available models, voices, and capabilities
 
-For more advanced usage, check out our [API documentation](APIDOCS.md).
+**For more advanced usage, check out our [API documentation](APIDOCS.md).**
 
 ## 🔐 Authentication
 
-Get your API key at [enter.pollinations.ai](https://enter.pollinations.ai)
+Get your API key at [enter.pollinations.ai](https://enter.pollinations.ai/keys)
 
 ### Key Types
 
@@ -190,7 +195,7 @@ Get your API key at [enter.pollinations.ai](https://enter.pollinations.ai)
 
 ### Model Restrictions
 
-Each API key can be scoped to specific models. When creating a key at [enter.pollinations.ai](https://enter.pollinations.ai), you can:
+Each API key can be scoped to specific models. When creating a key at [enter.pollinations.ai](https://enter.pollinations.ai/keys), you can:
 
 - **Allow all models** — key works with any available model
 - **Restrict to specific models** — select exactly which models the key can access (e.g., only `flux` and `openai`, or just `gptimage-large`)
@@ -353,7 +358,7 @@ We believe in community-driven development. You can contribute to pollinations.a
 
 1. **Coding Assistant**: The easiest way to contribute! Just [create a GitHub issue](https://github.com/pollinations/pollinations/issues/new) describing the feature you'd like to see implemented. The [MentatBot AI assistant](https://mentat.ai/) will analyze and implement it directly! No coding required - just describe what you want.
 
-2. **Project Submissions**: Have you built something with pollinations.ai? [Use our project submission template](https://github.com/pollinations/pollinations/issues/new?template=project-submission.yml) (labeled as **APPS**) to share it with the community and get it featured in our README.
+2. **Project Submissions**: Have you built something with pollinations.ai? [Use our project submission template](https://github.com/pollinations/pollinations/issues/new?template=tier-app-submission.yml) (labeled as **APPS**) to share it with the community and get it featured in our README.
 
 3. **Feature Requests & Bug Reports**: Have an idea or found a bug? [Open an issue](https://github.com/pollinations/pollinations/issues/new) and let us know. Our team and the MentatBot assistant will review it.
 
@@ -408,10 +413,10 @@ For development setup and environment management, see [DEVELOP.md](./DEVELOP.md)
 
 ## 💚 Support Us
 
-The best way to support pollinations.ai is by using our product! Get your API key and start building at **[enter.pollinations.ai](https://enter.pollinations.ai)**.
+The best way to support pollinations.ai is by using our product! Get your API key and start building at **[enter.pollinations.ai](https://enter.pollinations.ai/keys)**.
 
 ## 📣 Stay Connected
-[News & FAQ](https://enter.pollinations.ai/#news-faq) ·
+[News & FAQ](https://enter.pollinations.ai/news) ·
 [𝕏 Twitter](https://twitter.com/pollinations_ai) · [Instagram](https://instagram.com/pollinations_ai) · [LinkedIn](https://www.linkedin.com/company/pollinations-ai) · [Facebook](https://facebook.com/pollinations) · [Reddit](https://www.reddit.com/r/pollinations_ai/) · [YouTube](https://www.youtube.com/c/pollinations)
 
 ## 📜 License

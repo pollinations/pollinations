@@ -196,7 +196,7 @@ export class Pollinations {
 
         if (!apiKey) {
             throw new PollinationsError(
-                "API key is required. Get one for free at https://enter.pollinations.ai",
+                "API key is required. Get one for free at https://enter.pollinations.ai/keys",
                 "API_KEY",
                 401,
             );

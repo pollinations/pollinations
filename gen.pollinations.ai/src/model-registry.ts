@@ -41,7 +41,7 @@ export type GenerationModelEntry = {
 
 export type GenerationModelRegistry = {
     resolve: (model: string) => GenerationModelEntry | null;
-    visibleEntries: () => GenerationModelEntry[];
+    visibleEntries: (callerUserId?: string) => GenerationModelEntry[];
 };
 
 type CachedRegistry = {
@@ -99,7 +99,11 @@ function communityEntryToGenerationEntry(
         definition: entry.definition,
         info: entry.info,
         communityEndpoint: entry.communityEndpoint,
-        visible: entry.communityEndpoint.disabledAt === null,
+        // Public endpoints appear for everyone. Private endpoints are added
+        // back for their owner by visibleEntries().
+        visible:
+            entry.communityEndpoint.disabledAt === null &&
+            entry.communityEndpoint.visibility === "public",
     };
 }
 
@@ -130,7 +134,16 @@ function buildRegistry(
             if (entry?.communityEndpoint?.disabledAt) return null;
             return entry;
         },
-        visibleEntries: () => entries.filter((entry) => entry.visible),
+        visibleEntries: (callerUserId) =>
+            entries.filter((entry) => {
+                if (entry.visible) return true;
+                const endpoint = entry.communityEndpoint;
+                return (
+                    endpoint?.disabledAt === null &&
+                    endpoint.visibility === "private" &&
+                    endpoint.ownerUserId === callerUserId
+                );
+            }),
     };
 }
 

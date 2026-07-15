@@ -3,7 +3,7 @@
 GPU backend assets and deployment scripts for image/video generation.
 The public API and gateway code live in `gen.pollinations.ai`.
 
-📚 **[API Documentation](../APIDOCS.md)** | 🔑 **[Get API Key](https://enter.pollinations.ai)**
+📚 **[API Documentation](../APIDOCS.md)** | 🔑 **[Get API Key](https://enter.pollinations.ai/keys)**
 
 ## Development Setup
 

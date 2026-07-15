@@ -454,7 +454,11 @@ function buildCurl(
 
     const curatedMultipart = CURATED_MULTIPART[operationId];
 
-    if (jsonBody.schema) {
+    if (curatedMultipart) {
+        for (const [name, value] of curatedMultipart) {
+            segments.push(`-F "${name}=${value}"`);
+        }
+    } else if (jsonBody.schema) {
         const ex =
             CURATED_BODIES[operationId] ??
             pickExample(spec, asObj(jsonBody.schema), { compact: true });
@@ -462,10 +466,8 @@ function buildCurl(
             segments.push(`-H "Content-Type: application/json"`);
             segments.push(`-d '${JSON.stringify(ex)}'`);
         }
-    } else if (multipartBody.schema || curatedMultipart) {
-        const fields =
-            curatedMultipart ??
-            buildMultipartFields(spec, asObj(multipartBody.schema));
+    } else if (multipartBody.schema) {
+        const fields = buildMultipartFields(spec, asObj(multipartBody.schema));
         for (const [name, value] of fields) {
             segments.push(`-F "${name}=${value}"`);
         }
@@ -731,6 +733,8 @@ function renderHeader(spec: Spec): string {
     out.push("");
     out.push("# API docs");
     out.push("");
+    out.push(`Also available at [${BASE_URL}/docs](${BASE_URL}/docs)`);
+    out.push("");
     out.push(
         `**Version:** \`${spec.info.version}\` · **OpenAPI:** \`${spec.openapi}\` · **Base URL:** \`${BASE_URL}\``,
     );
@@ -752,7 +756,7 @@ function loadIntroductionTagline(): string {
 function renderGettingStarted(): string {
     return `## ${sectionHeading(SECTIONS.start)}
 
-**1. Get an API key** at [enter.pollinations.ai](https://enter.pollinations.ai). Two key types are available:
+**1. Get an API key** at [enter.pollinations.ai](https://enter.pollinations.ai/keys). Two key types are available:
 
 - \`sk_*\` — secret key for backend use (full account access)
 - \`pk_*\` — publishable key, safe to ship in browsers and mobile apps

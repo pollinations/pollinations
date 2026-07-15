@@ -1,0 +1,36 @@
+{
+  "pr_number": 12491,
+  "title": "fix: split Veo pricing by resolution",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/12491",
+  "merged_at": "2026-07-15T16:43:50Z",
+  "labels": [
+    "DEV-BUG"
+  ],
+  "pr_body_excerpt": "- Splits Veo 3.1 Fast into fixed `veo` (720p) and `veo-1080p` tiers.\n- Meters official Google rates exactly: $0.08/s or $0.10/s video plus $0.02/s only when audio is enabled.\n- Locks upstream resolution to the selected model and records audio usage only for audio-enabled output.\n- Uses capability-only model descriptions and updates OpenAPI source schemas without touching generated `APIDOCS.md`.\n- Requires the model-management skill for model changes and makes automated review requests opt-in.\n- Validated with Biome, TypeScript, docs checks, 281 focused tests, and real local-token E2E generations: 720p audio $0.40, 1080p audio $0.48, and 720p silent $0.32.",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Every pixel gets its pollen",
+    "blurb": "Veo now knows whether it is making a 720p or 1080p movie, and bills the matching official Google rate. Audio is counted only when the soundtrack actually joins the picnic.",
+    "summary": "Split Veo 3.1 Fast into fixed 720p `veo` and 1080p `veo-1080p` tiers, locking each model to its selected upstream resolution and metering video at $0.08/s or $0.10/s plus $0.02/s only for audio-enabled output.",
+    "impact": "Video creators get resolution-specific Veo generation with accurately recorded audio usage, validated at $0.40 for 720p audio, $0.48 for 1080p audio, and $0.32 for 720p silent output.",
+    "keywords": [
+      "veo",
+      "video",
+      "pricing",
+      "resolution",
+      "audio",
+      "google"
+    ],
+    "visual_concept": "A cozy video garden has two clearly labeled film-projectors or retro monitors: one rendering a 720p flower meadow and one rendering a more detailed 1080p meadow, with separate little pollen-meter jars. Polly, wearing a tiny director beret and holding a clapboard, checks that the audio musical-note jar is connected only to the audio-enabled projector; code-plants and flowers make the technical accounting feel friendly.",
+    "image_prompt": "Cozy pixel art scene in a warm garden editing studio: the main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears a tiny director beret and holds a clapboard while inspecting two retro video monitors labeled in simple pixel font “720p” and “1080p,” each with its own little lime green (#ecf874) pollen meter, while musical notes flow only into the audio-enabled monitor. Code-plants, flowering vines, and a small film reel surround her; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-15/PR-12491.jpg",
+    "prompt": "Cozy pixel art scene in a warm garden editing studio: the main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears a tiny director beret and holds a clapboard while inspecting two retro video monitors labeled in simple pixel font “720p” and “1080p,” each with its own little lime green (#ecf874) pollen meter, while musical notes flow only into the audio-enabled monitor. Code-plants, flowering vines, and a small film reel surround her; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, nostalgic but beautiful."
+  },
+  "generated_at": "2026-07-15T16:44:46.908611+00:00"
+}

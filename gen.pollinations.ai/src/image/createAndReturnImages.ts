@@ -80,7 +80,7 @@ export type ImageGenerationResult = {
     isMature: boolean;
     isChild: boolean;
     // Tracking data for enter service headers
-    trackingData?: TrackingData;
+    trackingData: TrackingData;
 };
 
 export type AuthResult = {

@@ -1,0 +1,35 @@
+{
+  "pr_number": 12481,
+  "title": "fix: preserve Vertex upstream error metadata",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/12481",
+  "merged_at": "2026-07-15T11:00:14Z",
+  "labels": [
+    "DEV-BUG"
+  ],
+  "pr_body_excerpt": "- Preserve Vertex AI response status, body, and endpoint through the image error funnel.\n- Populate Tinybird error records with upstream host/status/body instead of `undefined`.\n- Add a regression test for a Vertex 502 response.\n\nRoot cause: Vertex failures were wrapped in a plain `Error`, discarding HTTP metadata before tracking.\n\nTests: `npx vitest run test/image/vertexAIClient.test.ts test/image/vertexAIImageGenerator.test.ts test/image/contentModeration.test.ts`",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Vertex keeps the receipts",
+    "blurb": "Vertex image errors now arrive with their useful little labels still attached. The hive can see the upstream status, response body, and endpoint instead of a mysterious blank stare.",
+    "summary": "Preserved Vertex AI HTTP status, response body, and endpoint metadata through the image error funnel so Tinybird records upstream host/status/body for failures such as 502 responses.",
+    "impact": "Vertex image-generation failures now carry actionable upstream diagnostics, helping the team identify and resolve provider-side issues faster.",
+    "keywords": [
+      "vertex-ai",
+      "image-generation",
+      "error-observability",
+      "tinybird",
+      "regression-test"
+    ],
+    "visual_concept": "A cozy garden workshop where Polly helps the eager CRT Monitor Robot sort clearly labeled Vertex error parcels: a 502 tag, a tiny response scroll, and an endpoint signpost. Code-plants and flowers represent observability growing from previously blank error records.",
+    "image_prompt": "Cozy pixel art scene in a warm garden hackerspace: the main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears tiny detective glasses and helps a cute chunky CRT-monitor robot file labeled error parcels beside a retro terminal showing a clear \"502\" tag, response scroll, and endpoint signpost, with code-plants blooming nearby. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, dark purple (#110518) outlines, nostalgic but beautiful and emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-15/PR-12481.jpg",
+    "prompt": "Cozy pixel art scene in a warm garden hackerspace: the main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears tiny detective glasses and helps a cute chunky CRT-monitor robot file labeled error parcels beside a retro terminal showing a clear \"502\" tag, response scroll, and endpoint signpost, with code-plants blooming nearby. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, dark purple (#110518) outlines, nostalgic but beautiful and emotionally warm."
+  },
+  "generated_at": "2026-07-15T11:01:10.263511+00:00"
+}

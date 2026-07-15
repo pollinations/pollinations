@@ -1,0 +1,37 @@
+{
+  "pr_number": 12333,
+  "title": "feat: private/public visibility for community models (standalone)",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/12333",
+  "merged_at": "2026-07-15T03:21:00Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "pr_body_excerpt": "Extracts the visibility slice onto current main, independent of the agents work.\n\n- Adds `visibility` (`private | public`) to community endpoints; new models default private and existing models are backfilled public without changing their prices\n- Any authenticated owner can register and use private models\n- Private models are owner-only and appear in model catalogs only when authenticated with the owner API key\n- Allowlisted owners can select Public during creation or later editing; public models may be free (`0`) or owner-priced\n- Public models are globally callable/listed; priced usage retains the existing community-owner reward\n- Dashboard shows the same Private/Public control on create and edit; Public is disabled with an approval explanation for non-allowlisted owners\n- Polli CLI supports visibility and pricing on both create and update\n- Excludes agent kinds, capability flags, tool pricing, uploaded source, prompt agents, worker deployment, and minimum-price policy\n\nValidation: community endpoint + tracking integration tests 33/33; Gen and Enter typechecks; Drizzle migration check; Biome clean; migration dry-run preserves zero and positive legacy prices.\n\n## Review hardening\n\n- Endpoint probes are allowlist-gated and refuse redirects, preventing a validated base URL from redirecting to an unvalidated destination\n- Updates persist visibility + the complete effective price set atomically under concurrent updates\n- Community price definitions keep explicit zero rates; free private/public calls bill and reward 0 without missing-conversion-rate warnings\n- Zero-priced community models bypass the balance preflight; paid public models retain normal budget and balance checks\n\n## Known behavior\n\n- Visibility changes propagate to gen within ≤60s (per-isolate registry cache TTL, pre-existing design)\n\n## Rollout\n\n1. `npm run migrate:production` (adds `visibility`, backfills existing rows public without changing prices) — staging already migrated\n2. Deploy enter + gen\n3. C",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "A little privacy hedge",
+    "blurb": "Community models can now grow behind a private garden wall or bloom in the public catalog. Owners get a proper workshop before opening the gate.",
+    "summary": "Community endpoints now support private and public visibility: new models default to owner-only private access, while allowlisted owners can publish globally callable models with either free (0) or owner-set pricing through the dashboard or Polli CLI.",
+    "impact": "Model builders can register and test private models with their own API key before publishing, while public models remain discoverable to everyone and retain the existing community-owner reward flow for priced usage.",
+    "keywords": [
+      "community-models",
+      "visibility",
+      "private-models",
+      "public-models",
+      "polli-cli",
+      "pricing",
+      "dashboard"
+    ],
+    "visual_concept": "A cozy community-model garden with two neighboring plots: a private plot behind a small hedge and owner-key gate, and a public plot opening onto a shared path. Polly acts as the observant gardener, using a tiny tool belt to tend code-plants while a CRT monitor robot helps display Private/Public controls; flowering model capsules and small price tags represent free and owner-priced public models.",
+    "image_prompt": "Cozy pixel art scene of a community model garden with one code-plant safely behind a small hedge and key-marked gate labeled \"PRIVATE,\" beside a blooming shared plot labeled \"PUBLIC\" with tiny 0 and pollen price tags; Polly, the cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, black oval eyes, bright pink rectangular cheek blushes, small happy smile, light blue translucent wings, and a tiny gardener tool belt, carefully opens the public garden gate while a friendly CRT monitor robot holds a settings panel. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, with flowers and vines around the code-plants, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-15/PR-12333.jpg",
+    "prompt": "Cozy pixel art scene of a community model garden with one code-plant safely behind a small hedge and key-marked gate labeled \"PRIVATE,\" beside a blooming shared plot labeled \"PUBLIC\" with tiny 0 and pollen price tags; Polly, the cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, black oval eyes, bright pink rectangular cheek blushes, small happy smile, light blue translucent wings, and a tiny gardener tool belt, carefully opens the public garden gate while a friendly CRT monitor robot holds a settings panel. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, with flowers and vines around the code-plants, nostalgic but beautiful."
+  },
+  "generated_at": "2026-07-15T03:22:05.974443+00:00"
+}

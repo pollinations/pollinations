@@ -221,7 +221,7 @@
           },
           "format": 0,
           "range": true,
-          "rawSql": "WITH banned_users AS (\n  SELECT github_username\n  FROM d1_user\n  WHERE banned = 1\n  GROUP BY github_username\n)\nSELECT\n  toStartOfInterval(start_time, INTERVAL 1 DAY) as time,\n  SUM(total_price) as daily_cost\nFROM generation_event\nWHERE start_time >= $__fromTime AND start_time < $__toTime\n  AND selected_meter_slug = 'v1:meter:tier'\n  AND is_billed_usage = true\n  AND response_status >= 200 AND response_status < 300\n    AND user_github_username NOT IN (SELECT github_username FROM banned_users)\nGROUP BY time\nORDER BY time",
+          "rawSql": "WITH banned_users AS (\n  SELECT id AS user_id FROM d1_user WHERE banned = 1 GROUP BY id\n)\nSELECT\n  toStartOfInterval(start_time, INTERVAL 1 DAY) as time,\n  SUM(total_price) as daily_cost\nFROM generation_event\nWHERE start_time >= $__fromTime AND start_time < $__toTime\n  AND selected_meter_slug = 'v1:meter:tier'\n  AND is_billed_usage = true\n  AND response_status >= 200 AND response_status < 300\n    AND user_id NOT IN (SELECT user_id FROM banned_users)\nGROUP BY time\nORDER BY time",
           "refId": "A"
         }
       ],
@@ -284,7 +284,7 @@
           },
           "format": 0,
           "range": true,
-          "rawSql": "WITH banned_users AS (\n  SELECT github_username\n  FROM d1_user\n  WHERE banned = 1\n  GROUP BY github_username\n)\nSELECT toStartOfInterval(start_time, INTERVAL 1 DAY) as time, SUM(total_price) as daily_cost FROM generation_event WHERE start_time >= $__fromTime AND start_time < $__toTime AND selected_meter_slug = 'v1:meter:tier' AND is_billed_usage = true AND response_status >= 200 AND response_status < 300\n    AND user_github_username NOT IN (SELECT github_username FROM banned_users) GROUP BY time ORDER BY time",
+          "rawSql": "WITH banned_users AS (\n  SELECT id AS user_id FROM d1_user WHERE banned = 1 GROUP BY id\n)\nSELECT toStartOfInterval(start_time, INTERVAL 1 DAY) as time, SUM(total_price) as daily_cost FROM generation_event WHERE start_time >= $__fromTime AND start_time < $__toTime AND selected_meter_slug = 'v1:meter:tier' AND is_billed_usage = true AND response_status >= 200 AND response_status < 300\n    AND user_id NOT IN (SELECT user_id FROM banned_users) GROUP BY time ORDER BY time",
           "refId": "A"
         }
       ],
@@ -616,7 +616,7 @@
           },
           "format": 0,
           "range": true,
-          "rawSql": "WITH banned_users AS (\n  SELECT github_username\n  FROM d1_user\n  WHERE banned = 1\n  GROUP BY github_username\n)\nSELECT\n  toStartOfInterval(start_time, INTERVAL 1 DAY) as time,\n  sumIf(total_price, user_tier = 'microbe') as microbe,\n  sumIf(total_price, user_tier = 'spore') as spore,\n  sumIf(total_price, user_tier = 'seed') as seed,\n  sumIf(total_price, user_tier = 'flower') as flower,\n  sumIf(total_price, user_tier = 'nectar') as nectar\nFROM generation_event\nWHERE start_time >= $__fromTime AND start_time < $__toTime\n  AND selected_meter_slug = 'v1:meter:tier'\n  AND is_billed_usage = true\n  AND response_status >= 200 AND response_status < 300\n  AND user_tier IN ('microbe', 'spore', 'seed', 'flower', 'nectar')\n    AND user_github_username NOT IN (SELECT github_username FROM banned_users)\nGROUP BY time\nORDER BY time",
+          "rawSql": "WITH banned_users AS (\n  SELECT id AS user_id FROM d1_user WHERE banned = 1 GROUP BY id\n)\nSELECT\n  toStartOfInterval(start_time, INTERVAL 1 DAY) as time,\n  sumIf(total_price, user_tier = 'microbe') as microbe,\n  sumIf(total_price, user_tier = 'spore') as spore,\n  sumIf(total_price, user_tier = 'seed') as seed,\n  sumIf(total_price, user_tier = 'flower') as flower,\n  sumIf(total_price, user_tier = 'nectar') as nectar\nFROM generation_event\nWHERE start_time >= $__fromTime AND start_time < $__toTime\n  AND selected_meter_slug = 'v1:meter:tier'\n  AND is_billed_usage = true\n  AND response_status >= 200 AND response_status < 300\n  AND user_tier IN ('microbe', 'spore', 'seed', 'flower', 'nectar')\n    AND user_id NOT IN (SELECT user_id FROM banned_users)\nGROUP BY time\nORDER BY time",
           "refId": "A"
         }
       ],
@@ -757,7 +757,7 @@
           },
           "format": 1,
           "range": true,
-          "rawSql": "WITH banned_users AS (\n  SELECT github_username\n  FROM d1_user\n  WHERE banned = 1\n  GROUP BY github_username\n)\nSELECT\n  round(sumIf(total_price, user_tier = 'microbe'), 2) as Microbe,\n  round(sumIf(total_price, user_tier = 'spore'), 2) as Spore,\n  round(sumIf(total_price, user_tier = 'seed'), 2) as Seed,\n  round(sumIf(total_price, user_tier = 'flower'), 2) as Flower,\n  round(sumIf(total_price, user_tier = 'nectar'), 2) as Nectar\nFROM generation_event\nWHERE start_time >= $__fromTime AND start_time < $__toTime\n  AND selected_meter_slug = 'v1:meter:tier'\n  AND is_billed_usage = true\n  AND response_status >= 200 AND response_status < 300\n  AND user_tier IN ('microbe', 'spore', 'seed', 'flower', 'nectar')\n  AND user_github_username NOT IN (SELECT github_username FROM banned_users)",
+          "rawSql": "WITH banned_users AS (\n  SELECT id AS user_id FROM d1_user WHERE banned = 1 GROUP BY id\n)\nSELECT\n  round(sumIf(total_price, user_tier = 'microbe'), 2) as Microbe,\n  round(sumIf(total_price, user_tier = 'spore'), 2) as Spore,\n  round(sumIf(total_price, user_tier = 'seed'), 2) as Seed,\n  round(sumIf(total_price, user_tier = 'flower'), 2) as Flower,\n  round(sumIf(total_price, user_tier = 'nectar'), 2) as Nectar\nFROM generation_event\nWHERE start_time >= $__fromTime AND start_time < $__toTime\n  AND selected_meter_slug = 'v1:meter:tier'\n  AND is_billed_usage = true\n  AND response_status >= 200 AND response_status < 300\n  AND user_tier IN ('microbe', 'spore', 'seed', 'flower', 'nectar')\n  AND user_id NOT IN (SELECT user_id FROM banned_users)",
           "refId": "A"
         }
       ],
@@ -1000,7 +1000,7 @@
           },
           "format": 1,
           "range": true,
-          "rawSql": "WITH banned_users AS (\n  SELECT github_username\n  FROM d1_user\n  WHERE banned = 1\n  GROUP BY github_username\n)\nSELECT (SUM(total_price) / NULLIF(uniq(user_github_username) * GREATEST(1, dateDiff('day', min(toDate(start_time)), max(toDate(start_time))) + 1) * 0, 0)) * 100 as Microbe FROM generation_event WHERE start_time >= $__fromTime AND start_time < $__toTime AND user_tier = 'microbe' AND is_billed_usage = true\n    AND user_github_username NOT IN (SELECT github_username FROM banned_users) AND selected_meter_slug = 'v1:meter:tier'",
+          "rawSql": "WITH banned_users AS (\n  SELECT id AS user_id FROM d1_user WHERE banned = 1 GROUP BY id\n)\nSELECT (SUM(total_price) / NULLIF(uniq(user_id) * GREATEST(1, dateDiff('day', min(toDate(start_time)), max(toDate(start_time))) + 1) * 0, 0)) * 100 as Microbe FROM generation_event WHERE start_time >= $__fromTime AND start_time < $__toTime AND user_tier = 'microbe' AND is_billed_usage = true\n    AND user_id NOT IN (SELECT user_id FROM banned_users) AND selected_meter_slug = 'v1:meter:tier'",
           "refId": "E"
         },
         {
@@ -1010,7 +1010,7 @@
           },
           "format": 1,
           "range": true,
-          "rawSql": "WITH banned_users AS (\n  SELECT github_username\n  FROM d1_user\n  WHERE banned = 1\n  GROUP BY github_username\n)\nSELECT (SUM(total_price) / (uniq(user_github_username) * GREATEST(1, dateDiff('day', min(toDate(start_time)), max(toDate(start_time))) + 1) * 0.24)) * 100 as Spore FROM generation_event WHERE start_time >= $__fromTime AND start_time < $__toTime AND user_tier = 'spore' AND is_billed_usage = true\n    AND user_github_username NOT IN (SELECT github_username FROM banned_users) AND selected_meter_slug = 'v1:meter:tier'",
+          "rawSql": "WITH banned_users AS (\n  SELECT id AS user_id FROM d1_user WHERE banned = 1 GROUP BY id\n)\nSELECT (SUM(total_price) / (uniq(user_id) * GREATEST(1, dateDiff('day', min(toDate(start_time)), max(toDate(start_time))) + 1) * 0.24)) * 100 as Spore FROM generation_event WHERE start_time >= $__fromTime AND start_time < $__toTime AND user_tier = 'spore' AND is_billed_usage = true\n    AND user_id NOT IN (SELECT user_id FROM banned_users) AND selected_meter_slug = 'v1:meter:tier'",
           "refId": "A"
         },
         {
@@ -1020,7 +1020,7 @@
           },
           "format": 1,
           "range": true,
-          "rawSql": "WITH banned_users AS (\n  SELECT github_username\n  FROM d1_user\n  WHERE banned = 1\n  GROUP BY github_username\n)\nSELECT (SUM(total_price) / (uniq(user_github_username) * GREATEST(1, dateDiff('day', min(toDate(start_time)), max(toDate(start_time))) + 1) * 3.6)) * 100 as Seed FROM generation_event WHERE start_time >= $__fromTime AND start_time < $__toTime AND user_tier = 'seed' AND is_billed_usage = true\n    AND user_github_username NOT IN (SELECT github_username FROM banned_users) AND selected_meter_slug = 'v1:meter:tier'",
+          "rawSql": "WITH banned_users AS (\n  SELECT id AS user_id FROM d1_user WHERE banned = 1 GROUP BY id\n)\nSELECT (SUM(total_price) / (uniq(user_id) * GREATEST(1, dateDiff('day', min(toDate(start_time)), max(toDate(start_time))) + 1) * 3.6)) * 100 as Seed FROM generation_event WHERE start_time >= $__fromTime AND start_time < $__toTime AND user_tier = 'seed' AND is_billed_usage = true\n    AND user_id NOT IN (SELECT user_id FROM banned_users) AND selected_meter_slug = 'v1:meter:tier'",
           "refId": "B"
         },
         {
@@ -1030,7 +1030,7 @@
           },
           "format": 1,
           "range": true,
-          "rawSql": "WITH banned_users AS (\n  SELECT github_username\n  FROM d1_user\n  WHERE banned = 1\n  GROUP BY github_username\n)\nSELECT (SUM(total_price) / (uniq(user_github_username) * GREATEST(1, dateDiff('day', min(toDate(start_time)), max(toDate(start_time))) + 1) * 9.6)) * 100 as Flower FROM generation_event WHERE start_time >= $__fromTime AND start_time < $__toTime AND user_tier = 'flower' AND is_billed_usage = true\n    AND user_github_username NOT IN (SELECT github_username FROM banned_users) AND selected_meter_slug = 'v1:meter:tier'",
+          "rawSql": "WITH banned_users AS (\n  SELECT id AS user_id FROM d1_user WHERE banned = 1 GROUP BY id\n)\nSELECT (SUM(total_price) / (uniq(user_id) * GREATEST(1, dateDiff('day', min(toDate(start_time)), max(toDate(start_time))) + 1) * 9.6)) * 100 as Flower FROM generation_event WHERE start_time >= $__fromTime AND start_time < $__toTime AND user_tier = 'flower' AND is_billed_usage = true\n    AND user_id NOT IN (SELECT user_id FROM banned_users) AND selected_meter_slug = 'v1:meter:tier'",
           "refId": "C"
         },
         {
@@ -1040,7 +1040,7 @@
           },
           "format": 1,
           "range": true,
-          "rawSql": "WITH banned_users AS (\n  SELECT github_username\n  FROM d1_user\n  WHERE banned = 1\n  GROUP BY github_username\n)\nSELECT (SUM(total_price) / (uniq(user_github_username) * GREATEST(1, dateDiff('day', min(toDate(start_time)), max(toDate(start_time))) + 1) * 19.2)) * 100 as Nectar FROM generation_event WHERE start_time >= $__fromTime AND start_time < $__toTime AND user_tier = 'nectar' AND is_billed_usage = true\n    AND user_github_username NOT IN (SELECT github_username FROM banned_users) AND selected_meter_slug = 'v1:meter:tier'",
+          "rawSql": "WITH banned_users AS (\n  SELECT id AS user_id FROM d1_user WHERE banned = 1 GROUP BY id\n)\nSELECT (SUM(total_price) / (uniq(user_id) * GREATEST(1, dateDiff('day', min(toDate(start_time)), max(toDate(start_time))) + 1) * 19.2)) * 100 as Nectar FROM generation_event WHERE start_time >= $__fromTime AND start_time < $__toTime AND user_tier = 'nectar' AND is_billed_usage = true\n    AND user_id NOT IN (SELECT user_id FROM banned_users) AND selected_meter_slug = 'v1:meter:tier'",
           "refId": "D"
         }
       ],
@@ -1136,7 +1136,7 @@
           },
           "format": 1,
           "range": true,
-          "rawSql": "WITH banned_users AS (\n  SELECT github_username\n  FROM d1_user\n  WHERE banned = 1\n  GROUP BY github_username\n)\nSELECT\n  round(sumIf(total_price, selected_meter_slug = 'v1:meter:tier'), 2) as Tier,\n  round(sumIf(total_price, selected_meter_slug = 'v1:meter:pack'), 2) as Pack\nFROM generation_event\nWHERE start_time >= $__fromTime AND start_time < $__toTime\n  AND user_tier = 'microbe'\n  AND is_billed_usage = true\n  AND response_status >= 200 AND response_status < 300\n  AND user_github_username NOT IN (SELECT github_username FROM banned_users)",
+          "rawSql": "WITH banned_users AS (\n  SELECT id AS user_id FROM d1_user WHERE banned = 1 GROUP BY id\n)\nSELECT\n  round(sumIf(total_price, selected_meter_slug = 'v1:meter:tier'), 2) as Tier,\n  round(sumIf(total_price, selected_meter_slug = 'v1:meter:pack'), 2) as Pack\nFROM generation_event\nWHERE start_time >= $__fromTime AND start_time < $__toTime\n  AND user_tier = 'microbe'\n  AND is_billed_usage = true\n  AND response_status >= 200 AND response_status < 300\n  AND user_id NOT IN (SELECT user_id FROM banned_users)",
           "refId": "A"
         }
       ],
@@ -1240,7 +1240,7 @@
           },
           "format": 1,
           "range": true,
-          "rawSql": "WITH banned_users AS (\n  SELECT github_username\n  FROM d1_user\n  WHERE banned = 1\n  GROUP BY github_username\n)\nSELECT\n  round(sumIf(total_price, selected_meter_slug = 'v1:meter:tier'), 2) as Tier,\n  round(sumIf(total_price, selected_meter_slug = 'v1:meter:pack'), 2) as Pack\nFROM generation_event\nWHERE start_time >= $__fromTime AND start_time < $__toTime\n  AND user_tier = 'spore'\n  AND is_billed_usage = true\n  AND response_status >= 200 AND response_status < 300\n  AND user_github_username NOT IN (SELECT github_username FROM banned_users)",
+          "rawSql": "WITH banned_users AS (\n  SELECT id AS user_id FROM d1_user WHERE banned = 1 GROUP BY id\n)\nSELECT\n  round(sumIf(total_price, selected_meter_slug = 'v1:meter:tier'), 2) as Tier,\n  round(sumIf(total_price, selected_meter_slug = 'v1:meter:pack'), 2) as Pack\nFROM generation_event\nWHERE start_time >= $__fromTime AND start_time < $__toTime\n  AND user_tier = 'spore'\n  AND is_billed_usage = true\n  AND response_status >= 200 AND response_status < 300\n  AND user_id NOT IN (SELECT user_id FROM banned_users)",
           "refId": "A"
         }
       ],
@@ -1344,7 +1344,7 @@
           },
           "format": 1,
           "range": true,
-          "rawSql": "WITH banned_users AS (\n  SELECT github_username\n  FROM d1_user\n  WHERE banned = 1\n  GROUP BY github_username\n)\nSELECT\n  round(sumIf(total_price, selected_meter_slug = 'v1:meter:tier'), 2) as Tier,\n  round(sumIf(total_price, selected_meter_slug = 'v1:meter:pack'), 2) as Pack\nFROM generation_event\nWHERE start_time >= $__fromTime AND start_time < $__toTime\n  AND user_tier = 'seed'\n  AND is_billed_usage = true\n  AND response_status >= 200 AND response_status < 300\n  AND user_github_username NOT IN (SELECT github_username FROM banned_users)",
+          "rawSql": "WITH banned_users AS (\n  SELECT id AS user_id FROM d1_user WHERE banned = 1 GROUP BY id\n)\nSELECT\n  round(sumIf(total_price, selected_meter_slug = 'v1:meter:tier'), 2) as Tier,\n  round(sumIf(total_price, selected_meter_slug = 'v1:meter:pack'), 2) as Pack\nFROM generation_event\nWHERE start_time >= $__fromTime AND start_time < $__toTime\n  AND user_tier = 'seed'\n  AND is_billed_usage = true\n  AND response_status >= 200 AND response_status < 300\n  AND user_id NOT IN (SELECT user_id FROM banned_users)",
           "refId": "A"
         }
       ],
@@ -1448,7 +1448,7 @@
           },
           "format": 1,
           "range": true,
-          "rawSql": "WITH banned_users AS (\n  SELECT github_username\n  FROM d1_user\n  WHERE banned = 1\n  GROUP BY github_username\n)\nSELECT\n  round(sumIf(total_price, selected_meter_slug = 'v1:meter:tier'), 2) as Tier,\n  round(sumIf(total_price, selected_meter_slug = 'v1:meter:pack'), 2) as Pack\nFROM generation_event\nWHERE start_time >= $__fromTime AND start_time < $__toTime\n  AND user_tier = 'flower'\n  AND is_billed_usage = true\n  AND response_status >= 200 AND response_status < 300\n  AND user_github_username NOT IN (SELECT github_username FROM banned_users)",
+          "rawSql": "WITH banned_users AS (\n  SELECT id AS user_id FROM d1_user WHERE banned = 1 GROUP BY id\n)\nSELECT\n  round(sumIf(total_price, selected_meter_slug = 'v1:meter:tier'), 2) as Tier,\n  round(sumIf(total_price, selected_meter_slug = 'v1:meter:pack'), 2) as Pack\nFROM generation_event\nWHERE start_time >= $__fromTime AND start_time < $__toTime\n  AND user_tier = 'flower'\n  AND is_billed_usage = true\n  AND response_status >= 200 AND response_status < 300\n  AND user_id NOT IN (SELECT user_id FROM banned_users)",
           "refId": "A"
         }
       ],
@@ -1552,7 +1552,7 @@
           },
           "format": 1,
           "range": true,
-          "rawSql": "WITH banned_users AS (\n  SELECT github_username\n  FROM d1_user\n  WHERE banned = 1\n  GROUP BY github_username\n)\nSELECT\n  round(sumIf(total_price, selected_meter_slug = 'v1:meter:tier'), 2) as Tier,\n  round(sumIf(total_price, selected_meter_slug = 'v1:meter:pack'), 2) as Pack\nFROM generation_event\nWHERE start_time >= $__fromTime AND start_time < $__toTime\n  AND user_tier = 'nectar'\n  AND is_billed_usage = true\n  AND response_status >= 200 AND response_status < 300\n  AND user_github_username NOT IN (SELECT github_username FROM banned_users)",
+          "rawSql": "WITH banned_users AS (\n  SELECT id AS user_id FROM d1_user WHERE banned = 1 GROUP BY id\n)\nSELECT\n  round(sumIf(total_price, selected_meter_slug = 'v1:meter:tier'), 2) as Tier,\n  round(sumIf(total_price, selected_meter_slug = 'v1:meter:pack'), 2) as Pack\nFROM generation_event\nWHERE start_time >= $__fromTime AND start_time < $__toTime\n  AND user_tier = 'nectar'\n  AND is_billed_usage = true\n  AND response_status >= 200 AND response_status < 300\n  AND user_id NOT IN (SELECT user_id FROM banned_users)",
           "refId": "A"
         }
       ],
@@ -1749,7 +1749,7 @@
           },
           "format": 0,
           "range": true,
-          "rawSql": "WITH banned_users AS (\n  SELECT github_username\n  FROM d1_user\n  WHERE banned = 1\n  GROUP BY github_username\n)\nSELECT day as time, round(sumIf(last_balance, user_tier = 'microbe'), 2) as microbe, round(sumIf(last_balance, user_tier = 'spore'), 2) as spore, round(sumIf(last_balance, user_tier = 'seed'), 2) as seed, round(sumIf(last_balance, user_tier = 'flower'), 2) as flower, round(sumIf(last_balance, user_tier = 'nectar'), 2) as nectar FROM (SELECT toStartOfDay(start_time) as day, user_id, user_tier, argMax(balances['v1:meter:tier'], start_time) as last_balance FROM generation_event WHERE start_time >= $__fromTime AND start_time < $__toTime AND is_billed_usage = true AND response_status >= 200 AND response_status < 300 AND user_tier IN ('microbe', 'spore', 'seed', 'flower', 'nectar')\n    AND user_github_username NOT IN (SELECT github_username FROM banned_users) GROUP BY day, user_id, user_tier) GROUP BY day ORDER BY day",
+          "rawSql": "WITH banned_users AS (\n  SELECT id AS user_id FROM d1_user WHERE banned = 1 GROUP BY id\n)\nSELECT day as time, round(sumIf(last_balance, user_tier = 'microbe'), 2) as microbe, round(sumIf(last_balance, user_tier = 'spore'), 2) as spore, round(sumIf(last_balance, user_tier = 'seed'), 2) as seed, round(sumIf(last_balance, user_tier = 'flower'), 2) as flower, round(sumIf(last_balance, user_tier = 'nectar'), 2) as nectar FROM (SELECT toStartOfDay(start_time) as day, user_id, user_tier, argMax(balances['v1:meter:tier'], start_time) as last_balance FROM generation_event WHERE start_time >= $__fromTime AND start_time < $__toTime AND is_billed_usage = true AND response_status >= 200 AND response_status < 300 AND user_tier IN ('microbe', 'spore', 'seed', 'flower', 'nectar')\n    AND user_id NOT IN (SELECT user_id FROM banned_users) GROUP BY day, user_id, user_tier) GROUP BY day ORDER BY day",
           "refId": "A"
         }
       ],
@@ -1903,7 +1903,7 @@
           },
           "format": 1,
           "range": true,
-          "rawSql": "WITH banned_users AS (\n  SELECT github_username FROM d1_user WHERE banned = 1 GROUP BY github_username\n),\ndays AS (\n  SELECT GREATEST(1, dateDiff('day', min(toDate(start_time)), max(toDate(start_time))) + 1) as num_days\n  FROM generation_event\n  WHERE start_time >= $__fromTime AND start_time < $__toTime\n    AND is_billed_usage = true AND response_status >= 200 AND response_status < 300\n    AND selected_meter_slug = 'v1:meter:tier'\n    AND user_github_username NOT IN (SELECT github_username FROM banned_users)\n)\nSELECT\n  round(sumIf(total_price, user_tier = 'nectar') / nullIf(uniqIf(user_github_username, user_tier = 'nectar'), 0) / (SELECT num_days FROM days), 3) as Nectar,\n  round(sumIf(total_price, user_tier = 'flower') / nullIf(uniqIf(user_github_username, user_tier = 'flower'), 0) / (SELECT num_days FROM days), 3) as Flower,\n  round(sumIf(total_price, user_tier = 'seed') / nullIf(uniqIf(user_github_username, user_tier = 'seed'), 0) / (SELECT num_days FROM days), 3) as Seed,\n  round(sumIf(total_price, user_tier = 'spore') / nullIf(uniqIf(user_github_username, user_tier = 'spore'), 0) / (SELECT num_days FROM days), 3) as Spore,\n  round(sumIf(total_price, user_tier = 'microbe') / nullIf(uniqIf(user_github_username, user_tier = 'microbe'), 0) / (SELECT num_days FROM days), 3) as Microbe\nFROM generation_event\nWHERE start_time >= $__fromTime AND start_time < $__toTime\n  AND selected_meter_slug = 'v1:meter:tier'\n  AND is_billed_usage = true AND response_status >= 200 AND response_status < 300\n  AND user_tier IN ('microbe', 'spore', 'seed', 'flower', 'nectar')\n  AND user_github_username NOT IN (SELECT github_username FROM banned_users)",
+          "rawSql": "WITH banned_users AS (\n  SELECT id AS user_id FROM d1_user WHERE banned = 1 GROUP BY id\n),\ndays AS (\n  SELECT GREATEST(1, dateDiff('day', min(toDate(start_time)), max(toDate(start_time))) + 1) as num_days\n  FROM generation_event\n  WHERE start_time >= $__fromTime AND start_time < $__toTime\n    AND is_billed_usage = true AND response_status >= 200 AND response_status < 300\n    AND selected_meter_slug = 'v1:meter:tier'\n    AND user_id NOT IN (SELECT user_id FROM banned_users)\n)\nSELECT\n  round(sumIf(total_price, user_tier = 'nectar') / nullIf(uniqIf(user_id, user_tier = 'nectar'), 0) / (SELECT num_days FROM days), 3) as Nectar,\n  round(sumIf(total_price, user_tier = 'flower') / nullIf(uniqIf(user_id, user_tier = 'flower'), 0) / (SELECT num_days FROM days), 3) as Flower,\n  round(sumIf(total_price, user_tier = 'seed') / nullIf(uniqIf(user_id, user_tier = 'seed'), 0) / (SELECT num_days FROM days), 3) as Seed,\n  round(sumIf(total_price, user_tier = 'spore') / nullIf(uniqIf(user_id, user_tier = 'spore'), 0) / (SELECT num_days FROM days), 3) as Spore,\n  round(sumIf(total_price, user_tier = 'microbe') / nullIf(uniqIf(user_id, user_tier = 'microbe'), 0) / (SELECT num_days FROM days), 3) as Microbe\nFROM generation_event\nWHERE start_time >= $__fromTime AND start_time < $__toTime\n  AND selected_meter_slug = 'v1:meter:tier'\n  AND is_billed_usage = true AND response_status >= 200 AND response_status < 300\n  AND user_tier IN ('microbe', 'spore', 'seed', 'flower', 'nectar')\n  AND user_id NOT IN (SELECT user_id FROM banned_users)",
           "refId": "A"
         }
       ],
@@ -2057,7 +2057,7 @@
           },
           "format": 1,
           "range": true,
-          "rawSql": "WITH banned_users AS (\n  SELECT github_username FROM d1_user WHERE banned = 1 GROUP BY github_username\n),\ndays AS (\n  SELECT GREATEST(1, dateDiff('day', min(toDate(start_time)), max(toDate(start_time))) + 1) as num_days\n  FROM generation_event\n  WHERE start_time >= $__fromTime AND start_time < $__toTime\n    AND is_billed_usage = true AND response_status >= 200 AND response_status < 300\n    AND selected_meter_slug = 'v1:meter:pack'\n    AND user_github_username NOT IN (SELECT github_username FROM banned_users)\n)\nSELECT\n  round(sumIf(total_price, user_tier = 'nectar') / nullIf(uniqIf(user_github_username, user_tier = 'nectar'), 0) / (SELECT num_days FROM days), 3) as Nectar,\n  round(sumIf(total_price, user_tier = 'flower') / nullIf(uniqIf(user_github_username, user_tier = 'flower'), 0) / (SELECT num_days FROM days), 3) as Flower,\n  round(sumIf(total_price, user_tier = 'seed') / nullIf(uniqIf(user_github_username, user_tier = 'seed'), 0) / (SELECT num_days FROM days), 3) as Seed,\n  round(sumIf(total_price, user_tier = 'spore') / nullIf(uniqIf(user_github_username, user_tier = 'spore'), 0) / (SELECT num_days FROM days), 3) as Spore,\n  round(sumIf(total_price, user_tier = 'microbe') / nullIf(uniqIf(user_github_username, user_tier = 'microbe'), 0) / (SELECT num_days FROM days), 3) as Microbe\nFROM generation_event\nWHERE start_time >= $__fromTime AND start_time < $__toTime\n  AND selected_meter_slug = 'v1:meter:pack'\n  AND is_billed_usage = true AND response_status >= 200 AND response_status < 300\n  AND user_tier IN ('microbe', 'spore', 'seed', 'flower', 'nectar')\n  AND user_github_username NOT IN (SELECT github_username FROM banned_users)",
+          "rawSql": "WITH banned_users AS (\n  SELECT id AS user_id FROM d1_user WHERE banned = 1 GROUP BY id\n),\ndays AS (\n  SELECT GREATEST(1, dateDiff('day', min(toDate(start_time)), max(toDate(start_time))) + 1) as num_days\n  FROM generation_event\n  WHERE start_time >= $__fromTime AND start_time < $__toTime\n    AND is_billed_usage = true AND response_status >= 200 AND response_status < 300\n    AND selected_meter_slug = 'v1:meter:pack'\n    AND user_id NOT IN (SELECT user_id FROM banned_users)\n)\nSELECT\n  round(sumIf(total_price, user_tier = 'nectar') / nullIf(uniqIf(user_id, user_tier = 'nectar'), 0) / (SELECT num_days FROM days), 3) as Nectar,\n  round(sumIf(total_price, user_tier = 'flower') / nullIf(uniqIf(user_id, user_tier = 'flower'), 0) / (SELECT num_days FROM days), 3) as Flower,\n  round(sumIf(total_price, user_tier = 'seed') / nullIf(uniqIf(user_id, user_tier = 'seed'), 0) / (SELECT num_days FROM days), 3) as Seed,\n  round(sumIf(total_price, user_tier = 'spore') / nullIf(uniqIf(user_id, user_tier = 'spore'), 0) / (SELECT num_days FROM days), 3) as Spore,\n  round(sumIf(total_price, user_tier = 'microbe') / nullIf(uniqIf(user_id, user_tier = 'microbe'), 0) / (SELECT num_days FROM days), 3) as Microbe\nFROM generation_event\nWHERE start_time >= $__fromTime AND start_time < $__toTime\n  AND selected_meter_slug = 'v1:meter:pack'\n  AND is_billed_usage = true AND response_status >= 200 AND response_status < 300\n  AND user_tier IN ('microbe', 'spore', 'seed', 'flower', 'nectar')\n  AND user_id NOT IN (SELECT user_id FROM banned_users)",
           "refId": "A"
         }
       ],
@@ -2215,7 +2215,7 @@
           },
           "format": 1,
           "range": true,
-          "rawSql": "WITH banned_users AS (\n  SELECT github_username FROM d1_user WHERE banned = 1 GROUP BY github_username\n),\ndays AS (\n  SELECT GREATEST(1, dateDiff('day', min(toDate(start_time)), max(toDate(start_time))) + 1) as num_days\n  FROM generation_event\n  WHERE start_time >= $__fromTime AND start_time < $__toTime\n    AND is_billed_usage = true AND response_status >= 200 AND response_status < 300\n    AND user_github_username NOT IN (SELECT github_username FROM banned_users)\n)\nSELECT\n  round((sumIf(total_price, user_tier = 'nectar' AND selected_meter_slug = 'v1:meter:pack') - sumIf(total_price, user_tier = 'nectar' AND selected_meter_slug = 'v1:meter:tier')) / nullIf(uniqIf(user_github_username, user_tier = 'nectar'), 0) / (SELECT num_days FROM days), 3) as Nectar,\n  round((sumIf(total_price, user_tier = 'flower' AND selected_meter_slug = 'v1:meter:pack') - sumIf(total_price, user_tier = 'flower' AND selected_meter_slug = 'v1:meter:tier')) / nullIf(uniqIf(user_github_username, user_tier = 'flower'), 0) / (SELECT num_days FROM days), 3) as Flower,\n  round((sumIf(total_price, user_tier = 'seed' AND selected_meter_slug = 'v1:meter:pack') - sumIf(total_price, user_tier = 'seed' AND selected_meter_slug = 'v1:meter:tier')) / nullIf(uniqIf(user_github_username, user_tier = 'seed'), 0) / (SELECT num_days FROM days), 3) as Seed,\n  round((sumIf(total_price, user_tier = 'spore' AND selected_meter_slug = 'v1:meter:pack') - sumIf(total_price, user_tier = 'spore' AND selected_meter_slug = 'v1:meter:tier')) / nullIf(uniqIf(user_github_username, user_tier = 'spore'), 0) / (SELECT num_days FROM days), 3) as Spore,\n  round((sumIf(total_price, user_tier = 'microbe' AND selected_meter_slug = 'v1:meter:pack') - sumIf(total_price, user_tier = 'microbe' AND selected_meter_slug = 'v1:meter:tier')) / nullIf(uniqIf(user_github_username, user_tier = 'microbe'), 0) / (SELECT num_days FROM days), 3) as Microbe\nFROM generation_event\nWHERE start_time >= $__fromTime AND start_time < $__toTime\n  AND is_billed_usage = true AND response_status >= 200 AND response_status < 300\n  AND user_tier IN ('microbe', 'spore', 'seed', 'flower', 'nectar')\n  AND user_github_username NOT IN (SELECT github_username FROM banned_users)",
+          "rawSql": "WITH banned_users AS (\n  SELECT id AS user_id FROM d1_user WHERE banned = 1 GROUP BY id\n),\ndays AS (\n  SELECT GREATEST(1, dateDiff('day', min(toDate(start_time)), max(toDate(start_time))) + 1) as num_days\n  FROM generation_event\n  WHERE start_time >= $__fromTime AND start_time < $__toTime\n    AND is_billed_usage = true AND response_status >= 200 AND response_status < 300\n    AND user_id NOT IN (SELECT user_id FROM banned_users)\n)\nSELECT\n  round((sumIf(total_price, user_tier = 'nectar' AND selected_meter_slug = 'v1:meter:pack') - sumIf(total_price, user_tier = 'nectar' AND selected_meter_slug = 'v1:meter:tier')) / nullIf(uniqIf(user_id, user_tier = 'nectar'), 0) / (SELECT num_days FROM days), 3) as Nectar,\n  round((sumIf(total_price, user_tier = 'flower' AND selected_meter_slug = 'v1:meter:pack') - sumIf(total_price, user_tier = 'flower' AND selected_meter_slug = 'v1:meter:tier')) / nullIf(uniqIf(user_id, user_tier = 'flower'), 0) / (SELECT num_days FROM days), 3) as Flower,\n  round((sumIf(total_price, user_tier = 'seed' AND selected_meter_slug = 'v1:meter:pack') - sumIf(total_price, user_tier = 'seed' AND selected_meter_slug = 'v1:meter:tier')) / nullIf(uniqIf(user_id, user_tier = 'seed'), 0) / (SELECT num_days FROM days), 3) as Seed,\n  round((sumIf(total_price, user_tier = 'spore' AND selected_meter_slug = 'v1:meter:pack') - sumIf(total_price, user_tier = 'spore' AND selected_meter_slug = 'v1:meter:tier')) / nullIf(uniqIf(user_id, user_tier = 'spore'), 0) / (SELECT num_days FROM days), 3) as Spore,\n  round((sumIf(total_price, user_tier = 'microbe' AND selected_meter_slug = 'v1:meter:pack') - sumIf(total_price, user_tier = 'microbe' AND selected_meter_slug = 'v1:meter:tier')) / nullIf(uniqIf(user_id, user_tier = 'microbe'), 0) / (SELECT num_days FROM days), 3) as Microbe\nFROM generation_event\nWHERE start_time >= $__fromTime AND start_time < $__toTime\n  AND is_billed_usage = true AND response_status >= 200 AND response_status < 300\n  AND user_tier IN ('microbe', 'spore', 'seed', 'flower', 'nectar')\n  AND user_id NOT IN (SELECT user_id FROM banned_users)",
           "refId": "A"
         }
       ],

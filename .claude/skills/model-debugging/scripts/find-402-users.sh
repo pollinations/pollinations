@@ -16,13 +16,13 @@ if [ -z "$TINYBIRD_TOKEN" ] || [ "$TINYBIRD_TOKEN" = "null" ]; then
     exit 1
 fi
 
-QUERY="SELECT user_github_username, count() as error_count
-FROM generation_event 
-WHERE response_status = 402 
-  AND start_time > now() - interval $HOURS hour 
-  AND user_github_username != '' 
-  AND user_github_username != 'undefined'
-GROUP BY user_github_username
+QUERY="SELECT user_id, argMax(user_github_username, start_time) as github_username, count() as error_count
+FROM generation_event
+WHERE response_status = 402
+  AND start_time > now() - interval $HOURS hour
+  AND user_id != ''
+  AND user_id != 'undefined'
+GROUP BY user_id
 HAVING error_count >= $MIN_ERRORS
 ORDER BY error_count DESC"
 

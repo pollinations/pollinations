@@ -14,11 +14,11 @@ TOKEN tinybird_read READ
 
 NODE banned_users
 SQL >
-    SELECT github_username
+    SELECT id AS user_id
     FROM d1_user
     WHERE synced_at = (SELECT max(synced_at) FROM d1_user)
       AND banned = 1
-    GROUP BY github_username
+    GROUP BY id
 
 NODE registered_apps
 SQL >
@@ -50,21 +50,22 @@ SQL >
     WHERE ge.start_time > now() - INTERVAL 7 DAY
       AND ge.response_status >= 200 AND ge.response_status < 300
       AND ge.total_price > 0
-      AND ge.user_github_username NOT IN (SELECT github_username FROM banned_users)
+      AND ge.user_id NOT IN (SELECT user_id FROM banned_users)
 
 NODE latest_users
 SQL >
     SELECT
         id AS user_id,
+        github_id,
         github_username
     FROM d1_user
     WHERE synced_at = (SELECT max(synced_at) FROM d1_user)
 
 NODE published_owners
 SQL >
-    SELECT DISTINCT github_username
+    SELECT DISTINCT github_user_id
     FROM app_directory
-    WHERE github_username != ''
+    WHERE github_user_id != ''
 
 NODE app_top_weekly_node
 SQL >
@@ -76,8 +77,8 @@ SQL >
         max(requests.start_time) AS last_seen
     FROM byop_requests requests
     INNER JOIN latest_users users ON requests.owner_user_id = users.user_id
-    INNER JOIN published_owners pub ON users.github_username = pub.github_username
-    GROUP BY requests.app_url, users.github_username
+    INNER JOIN published_owners pub ON toString(users.github_id) = pub.github_user_id
+    GROUP BY requests.app_url, users.user_id, users.github_username
     ORDER BY request_count DESC, last_seen DESC
     LIMIT 10
 

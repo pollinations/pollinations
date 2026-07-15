@@ -19,7 +19,7 @@ https://gen.pollinations.ai/image/a%20cat%20in%20space?model=flux
 
 ```bash
 curl "https://gen.pollinations.ai/audio/Hello%20world?voice=nova" \
-  -H "Authorization: Bearer YOUR_API_KEY" -o speech.mp3
+  -H "Authorization: Bearer YOUR_API_KEY" -o model.glb
 ```
 
 ### 3D (cURL)

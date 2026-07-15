@@ -1,3 +1,7 @@
+- **2026-07-14** – **✨ Public media galleries** Tag an upload to publish it in a shareable, newest-first gallery at `GET /media?tag=`; leave it untagged and it stays private. [API Docs](https://gen.pollinations.ai/docs)
+- **2026-07-14** – **🚀 GPT Image models rerouted** `gptimage`, `gptimage-large`, and `gpt-image-2` now use dedicated Azure routes with regional failover, so image generations and edits have somewhere else to go when one garden closes.
+- **2026-07-14** – **🌟 Model speed, measured properly** Model Monitor now sorts models by streamed completion throughput in tokens per second. Less folklore, more `tok/s`. [Check the monitor](https://model-monitor.pollinations.ai)
+- **2026-07-14** – **💡 Seeds reach the SDK API** `@pollinations/sdk` now forwards seeds to Gen, giving SDK users reproducible generations without client-side retry roulette. [View package](https://www.npmjs.com/package/@pollinations/sdk)
 - **2026-07-13** – **🎯 New Pollen quests** Use an app through BYOP to earn `0.25` Pollen, or keep your app active to earn `7` Pollen. The garden now pays rent.  
 - **2026-07-13** – **🎵 Talkti: live voice translation** Speak across languages in real time with a new community-built voice translation app. [Try it](https://talktiweb.web.app) <!-- app -->
 - **2026-07-13** – **🎨 Turn books into gamebooks** Feed in `txt`, `mobi`, `epub`, `docx`, or `fb2` files and turn static reading into AI-driven interactive fiction. [Try it](https://gelfer1979.itch.io/book-to-game) <!-- app -->

@@ -9,6 +9,7 @@ import {
     type TestR2Bucket,
 } from "@shared/test/mocks/r2.ts";
 import { expect } from "vitest";
+import appHost from "../src/app-host.ts";
 import worker from "../src/index.ts";
 
 async function request(
@@ -105,7 +106,7 @@ test("publishes and updates a static frontend", async () => {
     await expect(spaResponse.text()).resolves.toContain("Version one");
 
     const hostContext = createExecutionContext();
-    const hostResponse = await worker.fetch(
+    const hostResponse = await appHost.fetch(
         new Request(
             `https://${created.slug}.${env.APP_DEPLOY_HOST as string}/`,
         ),

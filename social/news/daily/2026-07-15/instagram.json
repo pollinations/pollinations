@@ -1,0 +1,23 @@
+{
+  "platform": "instagram",
+  "scope": "daily",
+  "date": "2026-07-15",
+  "period_start": "2026-07-15",
+  "period_end": "2026-07-15",
+  "generated_at": "2026-07-16T06:58:36.544614+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-07-15/images/instagram-1.jpg"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-07-15/images/instagram-2.jpg"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-07-15/images/instagram-3.jpg"
+    }
+  ],
+  "text": "17 PRs merged today. Community models can now grow behind the curtain before going public; 3D generation joined the model monitor; the Enter dashboard learned URL routes; and image/video accounting got less interpretive. Docs, CLI demos, publisher info, and GPT-5.6 listings also caught up with the present. The garden shed remains operational. 🐝🌱\n\nDetails in the repo: github.com/pollinations\n\n#pollinations #opensource #openai #aitools #generativeai #3dgeneration #creativecoding #buildinpublic #indiedev #developertools #apidocs #pixelart",
+  "metadata": {
+    "post_type": "carousel"
+  }
+}

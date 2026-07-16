@@ -1,0 +1,35 @@
+{
+  "pr_number": 12506,
+  "title": "docs: update README — 2026-07-16",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/12506",
+  "merged_at": "2026-07-16T07:48:00Z",
+  "labels": [
+    "NEWS"
+  ],
+  "pr_body_excerpt": "Daily README update: Latest News section. (Recent Apps is refreshed by Apps / Update metrics.)",
+  "gist": {
+    "category": "docs",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Fresh news in the flowerbed",
+    "blurb": "The README's Latest News patch got its daily watering. The front page now points wandering bees toward the newest happenings.",
+    "summary": "Refreshed the README's Latest News section for July 16, 2026, keeping the project homepage current with recent pollinations.ai updates.",
+    "impact": "Visitors and contributors get a more current snapshot of what is happening across the open-source hive.",
+    "keywords": [
+      "readme",
+      "documentation",
+      "news",
+      "community",
+      "project-updates"
+    ],
+    "visual_concept": "A cozy open-source garden noticeboard represents the refreshed README news section: Polly, wearing tiny editor glasses, pins a fresh pixel-paper update onto a retro terminal-shaped bulletin board while small code-plants and flowers grow around it.",
+    "image_prompt": "Cozy pixel art scene of Polly, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and tiny editor glasses, pinning a fresh news note onto a retro CRT terminal bulletin board in a blooming code garden. The board glows prominently lime green (#ecf874) and reads \"LATEST NEWS\" in simple dark purple (#110518) pixel text, with warm cream, mint, lavender, and peach pastel gradients, soft lighting, subtle scanlines, cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-16/PR-12506.jpg",
+    "prompt": "Cozy pixel art scene of Polly, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and tiny editor glasses, pinning a fresh news note onto a retro CRT terminal bulletin board in a blooming code garden. The board glows prominently lime green (#ecf874) and reads \"LATEST NEWS\" in simple dark purple (#110518) pixel text, with warm cream, mint, lavender, and peach pastel gradients, soft lighting, subtle scanlines, cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "generated_at": "2026-07-16T07:48:59.884756+00:00"
+}

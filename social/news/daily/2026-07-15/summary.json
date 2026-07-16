@@ -1,0 +1,79 @@
+{
+  "date": "2026-07-15",
+  "period_start": "2026-07-15",
+  "period_end": "2026-07-15",
+  "title": "Community models can now grow in private before going public",
+  "summary": "A busy garden: private community models, documented 3D generation, linkable dashboard routes, and more exact generation tracking.\n\nModel builders can register owner-only community models, test them with their own API key, then publish globally when ready. The dashboard and API now share validation for free and paid model settings, My Models explains access states more clearly, and contributor identity sync keeps renamed GitHub accounts current.\n\n3D generation now has an end-to-end documentation guide, quick-start requests, and model reference material. The community-built Model Monitor also lists and tracks 3D-capable models alongside text, image, audio, and video.\n\nEnter moved from hash navigation to proper path-based routes for Models, Activity, Keys, News, Pollen, and Quests. Shared links, sign-in returns, Stripe returns, page anchors, and view state now land people where they meant to go. GPT-5.6 Sol, Terra, and Luna are also surfaced with the current promotional model settings.",
+  "pr_count": 17,
+  "prs": [
+    {
+      "number": 12333,
+      "date": "2026-07-15"
+    },
+    {
+      "number": 12438,
+      "date": "2026-07-15"
+    },
+    {
+      "number": 12441,
+      "date": "2026-07-15"
+    },
+    {
+      "number": 12450,
+      "date": "2026-07-15"
+    },
+    {
+      "number": 12458,
+      "date": "2026-07-15"
+    },
+    {
+      "number": 12473,
+      "date": "2026-07-15"
+    },
+    {
+      "number": 12478,
+      "date": "2026-07-15"
+    },
+    {
+      "number": 12479,
+      "date": "2026-07-15"
+    },
+    {
+      "number": 12480,
+      "date": "2026-07-15"
+    },
+    {
+      "number": 12481,
+      "date": "2026-07-15"
+    },
+    {
+      "number": 12482,
+      "date": "2026-07-15"
+    },
+    {
+      "number": 12484,
+      "date": "2026-07-15"
+    },
+    {
+      "number": 12491,
+      "date": "2026-07-15"
+    },
+    {
+      "number": 12492,
+      "date": "2026-07-15"
+    },
+    {
+      "number": 12493,
+      "date": "2026-07-15"
+    },
+    {
+      "number": 12494,
+      "date": "2026-07-15"
+    },
+    {
+      "number": 12499,
+      "date": "2026-07-15"
+    }
+  ],
+  "generated_at": "2026-07-16T06:58:36.544614+00:00"
+}

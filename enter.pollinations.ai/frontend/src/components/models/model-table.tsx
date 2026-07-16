@@ -191,7 +191,7 @@ const MobileModelRow: FC<MobileModelRowProps> = ({ model }) => {
                                 copiedTooltip="Copied model id"
                                 aria-label={`Copy model id ${model.name}`}
                                 tooltipAlign="start"
-                                tooltipClassName="min-w-0 flex-1"
+                                tooltipClassName="min-w-0"
                                 className={(copied) =>
                                     cn(
                                         "pointer-events-auto flex min-w-0 flex-1 cursor-pointer items-center gap-1.5 text-left text-sm font-medium leading-none transition-colors",

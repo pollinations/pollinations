@@ -1,5 +1,5 @@
 # Pollinations AI - AI assistant via Pollinations AI
-# Trigger: polly | Whitelist: voodoohop, ElliotEtag, Circuit-Overtime, Itachi-1824
+# Trigger: polly | Authorized by immutable GitHub user ID
 
 name: Repo / Polly assistant
 
@@ -58,9 +58,10 @@ jobs:
               return; 
             }
 
-            const whitelist = ['voodoohop', 'ElliotEtag', 'Circuit-Overtime', 'Itachi-1824'];
+            const authorizedUserIds = new Set([5099901, 36901823, 74301576, 158852059]);
             const actor = context.actor;
-            if (!whitelist.includes(actor)) {
+            const actorId = context.payload.sender?.id;
+            if (!authorizedUserIds.has(actorId)) {
               await github.rest.issues.createComment({
                 owner: context.repo.owner,
                 repo: context.repo.repo,

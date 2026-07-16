@@ -72,13 +72,13 @@ SQL >
     SELECT
         requests.app_url,
         any(requests.app_name) AS app_name,
-        users.github_username AS owner,
+        any(users.github_username) AS owner,
         count() AS request_count,
         max(requests.start_time) AS last_seen
     FROM byop_requests requests
     INNER JOIN latest_users users ON requests.owner_user_id = users.user_id
     INNER JOIN published_owners pub ON toString(users.github_id) = pub.github_user_id
-    GROUP BY requests.app_url, users.user_id, users.github_username
+    GROUP BY requests.app_url, users.user_id
     ORDER BY request_count DESC, last_seen DESC
     LIMIT 10
 

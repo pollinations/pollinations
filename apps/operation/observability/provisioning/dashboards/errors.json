@@ -1379,7 +1379,7 @@
           {
             "matcher": {
               "id": "byName",
-              "options": "user_github_username"
+              "options": "user"
             },
             "properties": [
               {
@@ -1427,7 +1427,7 @@
           },
           "format": 1,
           "range": true,
-          "rawSql": "WITH banned_users AS (\n  SELECT id AS user_id FROM d1_user WHERE banned = 1 GROUP BY id\n)\nSELECT\n  start_time,\n  concat(model_provider_used, ' - ', CASE WHEN resolved_model_requested != 'undefined' AND resolved_model_requested != '' THEN resolved_model_requested ELSE model_used END) AS provider_model,\n  response_status,\n  error_source,\n  error_message,\n  user_github_username,\n  request_path,\n  request_id\nFROM generation_event\nWHERE\n  $__timeFilter(start_time)\n  AND user_id NOT IN (SELECT user_id FROM banned_users)\n  AND concat(model_provider_used, ' - ', CASE WHEN resolved_model_requested != 'undefined' AND resolved_model_requested != '' THEN resolved_model_requested ELSE model_used END) IN (${provider_model:singlequote})\n  AND response_status >= 400\n  AND response_status != 403\nORDER BY start_time DESC\nLIMIT 200",
+          "rawSql": "WITH banned_users AS (\n  SELECT id AS user_id FROM d1_user WHERE banned = 1 GROUP BY id\n)\nSELECT\n  start_time,\n  concat(model_provider_used, ' - ', CASE WHEN resolved_model_requested != 'undefined' AND resolved_model_requested != '' THEN resolved_model_requested ELSE model_used END) AS provider_model,\n  response_status,\n  error_source,\n  error_message,\n  coalesce(nullIf(du.github_username, ''), generation_event.user_id) AS user,\n  request_path,\n  request_id\nFROM generation_event\nLEFT JOIN (\n  SELECT id, github_username\n  FROM d1_user\n  WHERE synced_at = (SELECT max(synced_at) FROM d1_user)\n) du ON generation_event.user_id = du.id\nWHERE\n  $__timeFilter(start_time)\n  AND user_id NOT IN (SELECT user_id FROM banned_users)\n  AND concat(model_provider_used, ' - ', CASE WHEN resolved_model_requested != 'undefined' AND resolved_model_requested != '' THEN resolved_model_requested ELSE model_used END) IN (${provider_model:singlequote})\n  AND response_status >= 400\n  AND response_status != 403\nORDER BY start_time DESC\nLIMIT 200",
           "refId": "A"
         }
       ],

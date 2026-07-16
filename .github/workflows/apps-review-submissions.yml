@@ -110,9 +110,11 @@ jobs:
         run: |
           ASSOCIATION="${{ github.event.comment.author_association }}"
           COMMENT_AUTHOR="${{ github.event.comment.user.login }}"
+          COMMENT_AUTHOR_ID="${{ github.event.comment.user.id }}"
           ISSUE_AUTHOR="${{ github.event.issue.user.login }}"
+          ISSUE_AUTHOR_ID="${{ github.event.issue.user.id }}"
 
-          if [[ "$ASSOCIATION" == "MEMBER" || "$ASSOCIATION" == "OWNER" || "$ASSOCIATION" == "COLLABORATOR" || "$COMMENT_AUTHOR" == "$ISSUE_AUTHOR" ]]; then
+          if [[ "$ASSOCIATION" == "MEMBER" || "$ASSOCIATION" == "OWNER" || "$ASSOCIATION" == "COLLABORATOR" || "$COMMENT_AUTHOR_ID" == "$ISSUE_AUTHOR_ID" ]]; then
             echo "authorized=true" >> $GITHUB_OUTPUT
           else
             echo "authorized=false" >> $GITHUB_OUTPUT
@@ -244,10 +246,10 @@ jobs:
             });
 
             // Find the latest bot comment with JSON code block
-            const botSlug = '${{ steps.token.outputs.app-slug }}[bot]';
+            const botUserId = Number('${{ steps.setup.outputs.user-id }}');
             let rowData = null;
             for (const c of comments.data.reverse()) {
-              if (c.user.login === botSlug || c.user.type === 'Bot') {
+              if (c.user.id === botUserId) {
                 const match = c.body.match(/<!-- APP_REVIEW_DATA -->\s*```json\n([\s\S]+?)\n```/);
                 if (match) {
                   rowData = match[1].trim();

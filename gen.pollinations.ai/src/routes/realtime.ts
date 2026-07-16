@@ -61,8 +61,6 @@ type RealtimeDeduction = Awaited<ReturnType<typeof handleBalanceDeduction>>;
 type RealtimeBillingContext = {
     userId: string;
     userTier?: string;
-    userGithubId?: string;
-    userGithubUsername?: string;
     apiKeyId?: string;
     apiKeyName?: string;
     apiKeyType?: "secret" | "publishable";
@@ -408,8 +406,6 @@ function createRealtimeTrackingEvent(args: {
         ipHash: args.tracking.ipHash,
         userId: args.tracking.userId,
         userTier: args.tracking.userTier,
-        userGithubId: args.tracking.userGithubId,
-        userGithubUsername: args.tracking.userGithubUsername,
         apiKeyId: args.tracking.apiKeyId,
         apiKeyName: args.tracking.apiKeyName,
         apiKeyType: args.tracking.apiKeyType,
@@ -631,8 +627,6 @@ async function createRealtimeBillingContext(
     return {
         userId: user.id,
         userTier: user.tier,
-        userGithubId: user.githubId ? String(user.githubId) : undefined,
-        userGithubUsername: user.githubUsername ?? undefined,
         apiKeyId: c.var.auth.apiKey?.id,
         apiKeyName: c.var.auth.apiKey?.name,
         apiKeyType: apiKeyMetadata?.keyType as "secret" | "publishable",

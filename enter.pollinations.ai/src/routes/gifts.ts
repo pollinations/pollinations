@@ -7,7 +7,7 @@ import {
     SERVICE_FEE_TAX_CODE,
 } from "@shared/pollen-packs.ts";
 import { PUBLIC_URLS } from "@shared/public-urls.ts";
-import { eq } from "drizzle-orm";
+import { sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { Hono } from "hono";
 import type { Env } from "../env.ts";
@@ -20,6 +20,10 @@ import {
 } from "../utils/stripe-card-gate.ts";
 import { requireSessionUser } from "./stripe.ts";
 
+// GitHub usernames are case-insensitive (github.com/OctoCat === /octocat),
+// but the stored value preserves whatever case the account was created
+// with. Compare case-insensitively so a differently-cased lookup still
+// resolves.
 async function findRecipientByGithubUsername(
     db: ReturnType<typeof drizzle>,
     githubUsername: string,
@@ -32,7 +36,9 @@ async function findRecipientByGithubUsername(
             githubUsername: userTable.githubUsername,
         })
         .from(userTable)
-        .where(eq(userTable.githubUsername, githubUsername))
+        .where(
+            sql`lower(${userTable.githubUsername}) = lower(${githubUsername})`,
+        )
         .limit(1);
 
     return recipient;

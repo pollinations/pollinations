@@ -526,12 +526,17 @@ const handleGiftCheckoutSessionCompleted = async (
         return { success: false, message: "Missing required gift metadata" };
     }
 
-    const presentmentSubtotal = Math.round(
-        (session.amount_subtotal || 0) / 100,
-    );
-    if (presentmentSubtotal <= 0) {
-        console.error("Invalid payment amount:", session.amount_total);
-        return { success: false, message: "Invalid payment amount" };
+    // Belt-and-suspenders: the only current caller (checkout.session.completed)
+    // already gates on payment_status === "paid" before dispatching here, and
+    // async_payment_succeeded implies a paid session. Checking again here means
+    // a future dispatch-site change can't accidentally credit an unpaid gift.
+    if (session.payment_status !== "paid") {
+        console.error(
+            "Gift checkout session not paid:",
+            session.id,
+            session.payment_status,
+        );
+        return { success: false, message: "Payment not completed" };
     }
 
     const pack = getPollenPackByKey(packKey);
@@ -541,6 +546,31 @@ const handleGiftCheckoutSessionCompleted = async (
             packKey,
         });
         return { success: false, message: "Missing or invalid pack metadata" };
+    }
+
+    const presentmentSubtotal = Math.round(
+        (session.amount_subtotal || 0) / 100,
+    );
+    if (presentmentSubtotal <= 0) {
+        console.error("Invalid payment amount for gift:", {
+            sessionId: session.id,
+            presentmentSubtotal,
+        });
+        return { success: false, message: "Invalid payment amount" };
+    }
+    // amount_subtotal is localized by Adaptive Pricing to the buyer's
+    // presentment currency, so it isn't comparable to pack.amountUsd (USD)
+    // in general — that's why it's never used as a credit source. Only when
+    // the session settled in USD (no localization applied) can it double as
+    // a sanity floor catching a tampered/mismatched packKey.
+    if (session.currency === "usd" && presentmentSubtotal < pack.amountUsd) {
+        console.error("Gift payment amount below pack price:", {
+            sessionId: session.id,
+            packKey,
+            expectedAmountUsd: pack.amountUsd,
+            presentmentSubtotal,
+        });
+        return { success: false, message: "Invalid payment amount" };
     }
 
     const db = drizzle(env.DB);
@@ -580,7 +610,7 @@ const handleGiftCheckoutSessionCompleted = async (
     }
 
     console.log(
-        `Stripe: Credited ${pack.amountUsd} pollen gift from ${senderUserId} to ${recipientUserId} (pack: $${pack.amountUsd}, session: ${session.id})`,
+        `Stripe: Credited ${pack.amountUsd} pollen gift from ${senderUserId} to ${recipientUserId} (pack: $${pack.amountUsd}, presentment: ${presentment.presentmentAmount} ${presentment.presentmentCurrency}, session: ${session.id})`,
     );
 
     return {

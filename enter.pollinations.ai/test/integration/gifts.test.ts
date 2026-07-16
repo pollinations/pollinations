@@ -75,15 +75,17 @@ function checkoutSessionEvent({
     sessionId,
     metadata,
     amountUsd,
+    type = "checkout.session.completed",
 }: {
     eventId: string;
     sessionId: string;
     metadata: Record<string, string>;
     amountUsd: number;
+    type?: string;
 }) {
     return {
         id: eventId,
-        type: "checkout.session.completed",
+        type,
         livemode: false,
         data: {
             object: {
@@ -163,6 +165,30 @@ test("GET /api/gifts/lookup/:githubUsername returns recipient profile without le
         name: "Octocat",
         image: "https://avatars.example/octocat.png",
         githubUsername: "octocat-gift",
+    });
+});
+
+test("GET /api/gifts/lookup/:githubUsername matches regardless of case", async ({
+    sessionToken,
+    mocks,
+}) => {
+    await mocks.enable("tinybird");
+    await insertRecipient({
+        id: "recipient-case",
+        githubUsername: "OctoCat-Case",
+        name: "Octocat",
+    });
+
+    const response = await SELF.fetch(`${base}/lookup/octocat-case`, {
+        method: "GET",
+        headers: { cookie: `better-auth.session_token=${sessionToken}` },
+    });
+    expect(response.status).toBe(200);
+    const data = await response.json();
+    expect(data).toEqual({
+        name: "Octocat",
+        image: null,
+        githubUsername: "OctoCat-Case",
     });
 });
 
@@ -370,6 +396,47 @@ test("POST /api/webhooks/stripe gift credit is idempotent on replay", async ({
         .select({ packBalance: userTable.packBalance })
         .from(userTable)
         .where(eq(userTable.id, "recipient-webhook-replay"))
+        .limit(1);
+    expect(recipient?.packBalance).toBe(5);
+});
+
+test("POST /api/webhooks/stripe credits a gift on checkout.session.async_payment_succeeded too", async ({
+    sessionToken,
+    mocks,
+}) => {
+    void sessionToken;
+    await mocks.enable("tinybird");
+
+    const senderId = await getSeededUserId();
+    await insertRecipient({
+        id: "recipient-webhook-async",
+        githubUsername: "recipient-webhook-async",
+        packBalance: 0,
+    });
+
+    const response = await postSignedStripeWebhook(
+        checkoutSessionEvent({
+            eventId: "evt_gift_async",
+            sessionId: "cs_gift_async",
+            amountUsd: 5,
+            type: "checkout.session.async_payment_succeeded",
+            metadata: {
+                type: "gift",
+                userId: senderId,
+                senderUserId: senderId,
+                recipientUserId: "recipient-webhook-async",
+                recipientGithubUsername: "recipient-webhook-async",
+                packKey: "p5",
+            },
+        }),
+    );
+    expect(response.status).toBe(200);
+
+    const db = drizzle(env.DB);
+    const [recipient] = await db
+        .select({ packBalance: userTable.packBalance })
+        .from(userTable)
+        .where(eq(userTable.id, "recipient-webhook-async"))
         .limit(1);
     expect(recipient?.packBalance).toBe(5);
 });

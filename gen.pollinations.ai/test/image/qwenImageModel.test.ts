@@ -82,7 +82,9 @@ describe("qwenImageModel tracking", () => {
         });
 
         expect(
-            requestUrls.find((url) => url.includes("api.replicate.com")),
+            requestUrls.find(
+                (url) => new URL(url).hostname === "api.replicate.com",
+            ),
         ).toContain("/models/qwen/qwen-image-edit-plus/predictions");
         expect(result.trackingData?.actualModel).toBe("qwen-image-edit-plus");
     });

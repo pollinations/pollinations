@@ -1,13 +1,5 @@
-import {
-    CardIcon,
-    CopyButton,
-    cn,
-    InfoTip,
-    SproutIcon,
-    Surface,
-    Tooltip,
-} from "@pollinations/ui";
-import { PaidChip, TierChip, WalletKindIcon } from "@pollinations/ui/wallet";
+import { CopyButton, cn, Surface, Tooltip } from "@pollinations/ui";
+import { WalletKindIcon } from "@pollinations/ui/wallet";
 import type { FC } from "react";
 import { calculatePerPollen, unitLabels } from "./calculations.ts";
 import { CAPABILITY_ICON, MODALITY_ICON } from "./model-icons.tsx";
@@ -23,7 +15,11 @@ import {
     isNewModel,
     isPaidOnly,
 } from "./model-info.ts";
-import { ModelStatusChips } from "./model-status-chips.tsx";
+import {
+    type BalanceAccess,
+    BalanceAccessChip,
+    ModelStatusChips,
+} from "./model-status-chips.tsx";
 import { getModelPriceBadges, PriceBadgeList } from "./price-badge.tsx";
 import type { ModelPrice } from "./types.ts";
 
@@ -36,12 +32,27 @@ type ModelIdProps = {
 };
 
 export const ModelId: FC<ModelIdProps> = ({ name }) => (
-    <span
-        className="min-w-0 truncate font-mono text-xs font-medium text-theme-text-muted"
-        title={name}
+    <CopyButton
+        value={name}
+        tooltip={
+            <span className="font-mono text-xs text-theme-text-muted">
+                Click to copy {name}
+            </span>
+        }
+        copiedTooltip="Copied model id"
+        aria-label={`Copy model id ${name}`}
+        tooltipAlign="start"
+        className={(copied) =>
+            cn(
+                "pointer-events-auto flex min-w-0 cursor-pointer text-left font-mono text-xs font-medium transition-colors",
+                copied
+                    ? "text-intent-success-text"
+                    : "text-theme-text-muted hover:text-theme-text-soft",
+            )
+        }
     >
-        {name}
-    </span>
+        <span className="min-w-0 truncate">{name}</span>
+    </CopyButton>
 );
 
 export const ModelRow: FC<ModelRowProps> = ({ model }) => {
@@ -56,18 +67,19 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
     const showNew = isNewModel(model);
     const showPaidOnly = isPaidOnly(model);
     const showAlpha = isAlpha(model);
+    const balanceAccess: BalanceAccess = showPaidOnly ? "paid" : "quest";
 
     const genPerPollen = calculatePerPollen(model);
     const balanceLabel = showPaidOnly ? (
         <span className="inline-flex items-center gap-1">
             <WalletKindIcon kind="paid" />
-            Paid Pollen only
+            Paid Pollen
         </span>
     ) : (
-        <span className="inline-flex items-center gap-1">
+        <span className="inline-flex flex-wrap items-center gap-1">
             <WalletKindIcon kind="tier" />
-            Quest or <WalletKindIcon kind="paid" />
-            Paid Pollen
+            Quest Pollen first, then <WalletKindIcon kind="paid" />
+            Paid Pollen if needed
         </span>
     );
     const perPollenTooltip =
@@ -84,6 +96,14 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
         );
     const inputPriceBadges = getModelPriceBadges(model, "input");
     const outputPriceBadges = getModelPriceBadges(model, "output");
+    const modelNameTooltip = (
+        <span className="flex max-w-[260px] flex-col gap-1.5 text-left leading-snug">
+            {modelDescription && <span>{modelDescription}</span>}
+            <span className="font-mono text-xs text-theme-text-muted">
+                Click to copy {model.name}
+            </span>
+        </span>
+    );
 
     return (
         <Surface className="flex items-center transition-colors hover:bg-surface-opaque/90">
@@ -129,12 +149,14 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                     <div className="flex min-w-0 items-center gap-2">
                         <CopyButton
                             value={model.name}
-                            tooltip={`Copy "${model.name}"`}
-                            copiedTooltip={null}
+                            tooltip={modelNameTooltip}
+                            copiedTooltip="Copied model id"
                             aria-label={`Copy model id ${model.name}`}
+                            tooltipAlign="start"
+                            tooltipClassName="min-w-0 flex-1"
                             className={(copied) =>
                                 cn(
-                                    "flex min-w-0 cursor-pointer items-center gap-1.5 text-left text-base font-medium leading-none transition-colors",
+                                    "flex min-w-0 flex-1 cursor-pointer items-center gap-1.5 text-left text-base font-medium leading-none transition-colors",
                                     copied
                                         ? "text-intent-success-text"
                                         : "hover:text-theme-text-soft",
@@ -145,18 +167,18 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                                 {publicModelName}
                             </span>
                         </CopyButton>
-                        {modelDescription && (
-                            <InfoTip
-                                content={modelDescription}
-                                label={`About ${publicModelName}`}
-                            />
-                        )}
+                        <BalanceAccessChip
+                            access={balanceAccess}
+                            className="whitespace-nowrap"
+                        />
                         <ModelStatusChips
                             showNew={showNew}
                             showAlpha={showAlpha}
                         />
                     </div>
-                    <ModelId name={model.name} />
+                    <div className="flex min-w-0 flex-wrap items-center gap-2">
+                        <ModelId name={model.name} />
+                    </div>
                     {(inputModalities.length > 0 ||
                         capabilities.length > 0) && (
                         <div className="flex min-w-0 flex-wrap items-center gap-2">
@@ -202,21 +224,14 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                 </div>
             </div>
 
-            {/* Per pollen — fixed width; gold + card for paid-only models, green
-                + sprout for models that can use Quest Pollen. */}
+            {/* Per pollen — fixed width; keep the number itself visually neutral. */}
             <div className="w-[90px] text-center shrink-0">
                 <Tooltip content={perPollenTooltip} displayContents>
-                    {showPaidOnly ? (
-                        <PaidChip>
-                            <CardIcon className="h-3.5 w-3.5" />
+                    <span className="inline-flex flex-col items-center gap-1">
+                        <span className="text-sm font-semibold leading-none tabular-nums text-theme-text-strong">
                             {genPerPollen}
-                        </PaidChip>
-                    ) : (
-                        <TierChip>
-                            <SproutIcon className="h-3.5 w-3.5" />
-                            {genPerPollen}
-                        </TierChip>
-                    )}
+                        </span>
+                    </span>
                 </Tooltip>
             </div>
 

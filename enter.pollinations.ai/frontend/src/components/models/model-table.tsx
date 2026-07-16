@@ -1,12 +1,4 @@
-import {
-    CardIcon,
-    ChevronIcon,
-    CopyButton,
-    cn,
-    SproutIcon,
-    Tooltip,
-} from "@pollinations/ui";
-import { PaidChip, TierChip } from "@pollinations/ui/wallet";
+import { ChevronIcon, CopyButton, cn, Tooltip } from "@pollinations/ui";
 import { type FC, useState } from "react";
 import { calculatePerPollen, calculatePerPollenValue } from "./calculations.ts";
 import { CAPABILITY_ICON, MODALITY_ICON } from "./model-icons.tsx";
@@ -28,7 +20,11 @@ import type {
     ModelSortDirection,
     ModelSortKey,
 } from "./model-search.ts";
-import { ModelStatusChips } from "./model-status-chips.tsx";
+import {
+    type BalanceAccess,
+    BalanceAccessChip,
+    ModelStatusChips,
+} from "./model-status-chips.tsx";
 import { getModelPriceBadges, PriceBadgeList } from "./price-badge.tsx";
 import type { ModelPrice, PriceDirection } from "./types.ts";
 
@@ -140,8 +136,17 @@ const MobileModelRow: FC<MobileModelRowProps> = ({ model }) => {
     const showNew = isNewModel(model);
     const showPaidOnly = isPaidOnly(model);
     const showAlpha = isAlpha(model);
+    const balanceAccess: BalanceAccess = showPaidOnly ? "paid" : "quest";
 
     const perPollen = calculatePerPollen(model);
+    const modelNameTooltip = (
+        <span className="flex max-w-[260px] flex-col gap-1.5 text-left leading-snug">
+            {modelDescription && <span>{modelDescription}</span>}
+            <span className="font-mono text-xs text-theme-text-muted">
+                Click to copy {model.name}
+            </span>
+        </span>
+    );
 
     return (
         <div className="rounded-xl mb-1 bg-surface-opaque shadow-well transition-colors hover:bg-surface-opaque/90">
@@ -182,12 +187,14 @@ const MobileModelRow: FC<MobileModelRowProps> = ({ model }) => {
                         <div className="flex min-w-0 items-center gap-2">
                             <CopyButton
                                 value={model.name}
-                                tooltip={`Copy "${model.name}"`}
-                                copiedTooltip={null}
+                                tooltip={modelNameTooltip}
+                                copiedTooltip="Copied model id"
                                 aria-label={`Copy model id ${model.name}`}
+                                tooltipAlign="start"
+                                tooltipClassName="min-w-0 flex-1"
                                 className={(copied) =>
                                     cn(
-                                        "pointer-events-auto flex min-w-0 cursor-pointer items-center gap-1.5 text-left text-sm font-medium leading-none transition-colors",
+                                        "pointer-events-auto flex min-w-0 flex-1 cursor-pointer items-center gap-1.5 text-left text-sm font-medium leading-none transition-colors",
                                         copied
                                             ? "text-intent-success-text"
                                             : "hover:text-theme-text-soft",
@@ -198,8 +205,14 @@ const MobileModelRow: FC<MobileModelRowProps> = ({ model }) => {
                                     {publicModelName}
                                 </span>
                             </CopyButton>
+                            <BalanceAccessChip
+                                access={balanceAccess}
+                                className="whitespace-nowrap"
+                            />
                         </div>
-                        <ModelId name={model.name} />
+                        <div className="flex min-w-0 flex-wrap items-center gap-2">
+                            <ModelId name={model.name} />
+                        </div>
                         {(inputModalities.length > 0 ||
                             capabilities.length > 0) && (
                             <div className="flex min-w-0 flex-wrap items-center gap-1.5">
@@ -219,17 +232,14 @@ const MobileModelRow: FC<MobileModelRowProps> = ({ model }) => {
                             </div>
                         )}
                     </div>
-                    {showPaidOnly ? (
-                        <PaidChip className="shrink-0">
-                            <CardIcon className="h-3.5 w-3.5" />
+                    <div className="flex w-[72px] shrink-0 flex-col items-end gap-0.5 text-right">
+                        <span className="text-sm font-semibold leading-none tabular-nums text-theme-text-strong">
                             {perPollen}
-                        </PaidChip>
-                    ) : (
-                        <TierChip className="shrink-0">
-                            <SproutIcon className="h-3.5 w-3.5" />
-                            {perPollen}
-                        </TierChip>
-                    )}
+                        </span>
+                        <span className="text-[10px] font-medium leading-none text-theme-text-muted">
+                            gen/pollen
+                        </span>
+                    </div>
                 </div>
             </div>
 
@@ -393,10 +403,13 @@ export const UnifiedModelTable: FC<UnifiedModelTableProps> = ({
                         className="text-right min-[500px]:text-center shrink-0 w-[90px] translate-x-[14px] cursor-pointer hover:text-theme-text-base"
                     >
                         <div className="text-sm font-bold text-ink-900">
-                            1 pollen {sortArrow("perPollen")}
+                            <span className="md:hidden">Gen</span>
+                            <span className="hidden md:inline">1 pollen</span>{" "}
+                            {sortArrow("perPollen")}
                         </div>
                         <div className="text-xs font-normal text-ink-700 opacity-70 italic">
-                            ≈ gen
+                            <span className="md:hidden">/pollen</span>
+                            <span className="hidden md:inline">≈ gen</span>
                         </div>
                     </button>
                 </Tooltip>

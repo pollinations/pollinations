@@ -304,7 +304,7 @@ export const stripeRoutes = new Hono<Env>()
         return c.json(await processAutoTopUpForUser(c.env, body.userId));
     });
 
-async function requireSessionUser(c: Context<Env>) {
+export async function requireSessionUser(c: Context<Env>) {
     const auth = createAuth(c.env, c.executionCtx);
     const session = await auth.api.getSession({
         headers: c.req.raw.headers,

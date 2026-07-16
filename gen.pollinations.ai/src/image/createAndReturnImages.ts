@@ -781,7 +781,7 @@ const generateImage = async (
         case "seedream-4":
             return await callSeedreamAPI(prompt, safeParams);
 
-        case "seedream-4.5-pro":
+        case "seedream-4.5":
             return await callSeedreamProAPI(prompt, safeParams);
 
         case "ideogram-v4-turbo":
@@ -825,7 +825,7 @@ const generateImage = async (
         case "wan-2.7-image-pro":
             return await callWanImageAPI(prompt, safeParams, true);
 
-        case "qwen-image-plus":
+        case "qwen-image":
             return await callQwenImageAPI(prompt, safeParams);
 
         case "flux-schnell":

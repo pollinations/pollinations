@@ -37,7 +37,7 @@ function withFallbackTarget(
 
 function ensureOpenAISseDone(
     source: ReadableStream<Uint8Array> | null,
-    publicModel: string,
+    publicModel?: string,
 ): ReadableStream<Uint8Array> | null {
     if (!source) return source;
 
@@ -65,7 +65,7 @@ function ensureOpenAISseDone(
         const [, prefix, payload] = match;
         if (payload.trim() === "[DONE]") {
             seenDone = true;
-        } else {
+        } else if (publicModel) {
             try {
                 const event = JSON.parse(payload) as Record<string, unknown>;
                 if (event && typeof event === "object" && "model" in event) {
@@ -181,6 +181,7 @@ export async function genericOpenAIClient(
             modelConfig: _modelConfig,
             modelDef: _modelDef,
             portkeyGatewayUrl: _portkeyGatewayUrl,
+            preserveUpstreamModel: _preserveUpstreamModel,
             requestedModel: _requestedModel,
             userApiKey: _userApiKey,
             ...cleanedOptions
@@ -238,7 +239,9 @@ export async function genericOpenAIClient(
                 `[${requestId}] Streaming response, status: ${response.status}`,
             );
 
-            const publicModel = normalizedOptions.requestedModel || modelName;
+            const publicModel = normalizedOptions.preserveUpstreamModel
+                ? undefined
+                : normalizedOptions.requestedModel || modelName;
             const streamToReturn = ensureOpenAISseDone(
                 response.body,
                 publicModel,
@@ -248,7 +251,7 @@ export async function genericOpenAIClient(
                     id: `genericopenai-${requestId}`,
                     object: "chat.completion.chunk",
                     created: Math.floor(startTime / 1000),
-                    model: publicModel,
+                    model: publicModel || modelName,
                     stream: true,
                     responseStream: streamToReturn,
                     choices: [
@@ -281,7 +284,11 @@ export async function genericOpenAIClient(
                 ...data,
                 id: data.id || `genericopenai-${requestId}`,
                 object: data.object || "chat.completion",
-                model: normalizedOptions.requestedModel || modelName,
+                ...(normalizedOptions.preserveUpstreamModel
+                    ? {}
+                    : {
+                          model: normalizedOptions.requestedModel || modelName,
+                      }),
                 choices: [formattedChoice],
             },
             fallbackTarget,

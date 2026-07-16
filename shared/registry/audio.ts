@@ -324,8 +324,8 @@ export const AUDIO_SERVICES = {
         inputModalities: ["text"],
         outputModalities: ["audio"],
     },
-    "qwen3-tts-instruct": {
-        aliases: ["qwen-tts-instruct", "qwen3-tts-instruct-flash"],
+    "qwen3-tts-instruct-flash": {
+        aliases: ["qwen-tts-instruct", "qwen3-tts-instruct"],
         modelId: "qwen3-tts-instruct-flash",
         provider: "alibaba",
         brand: "Qwen",

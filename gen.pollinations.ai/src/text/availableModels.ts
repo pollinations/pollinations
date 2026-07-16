@@ -137,13 +137,13 @@ const models: ModelDefinition[] = [
         transform: fireworksThinking,
     },
     {
-        name: "grok-4.20",
+        name: "grok-4.20-non-reasoning",
         config: portkeyConfig["grok-4-20-non-reasoning"],
         // Non-reasoning deployment 500s if reasoning_effort is forwarded.
         transform: pipe(stripCacheControl, stripReasoning),
     },
     {
-        name: "grok-4.20-reasoning",
+        name: "grok-4.20",
         config: portkeyConfig["grok-4-20-reasoning"],
         transform: stripCacheControl,
     },
@@ -278,7 +278,7 @@ const models: ModelDefinition[] = [
         transform: createPerplexitySearchTransform("low"),
     },
     {
-        name: "sonar-deep",
+        name: "sonar-high",
         config: portkeyConfig["sonar"],
         transform: createPerplexitySearchTransform("high"),
     },

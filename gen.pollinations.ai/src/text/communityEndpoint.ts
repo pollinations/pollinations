@@ -31,6 +31,7 @@ export async function communityEndpointGatewayContext(
         },
         modelDef: modelDefinition,
         requestedModel: endpoint.modelId,
+        preserveUpstreamModel: true,
         portkeyGatewayUrl,
         userApiKey,
     };

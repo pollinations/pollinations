@@ -53,7 +53,7 @@ type Seedream45Size = "2K" | "4K";
 type Seedream5Size = "2K" | "3K";
 type SeedreamVariantKey =
     | "seedream-4"
-    | "seedream-4.5-pro"
+    | "seedream-4.5"
     | "seedream-5-lite"
     | "seedream-5-pro";
 
@@ -122,10 +122,10 @@ const SEEDREAM_VARIANTS: Record<SeedreamVariantKey, SeedreamVariantConfig> = {
         },
         supportsCustom: true,
     },
-    "seedream-4.5-pro": {
+    "seedream-4.5": {
         replicateModel: "bytedance/seedream-4.5",
-        displayName: "Seedream 4.5 Pro",
-        trackingLabel: "seedream-4.5-pro",
+        displayName: "Seedream 4.5",
+        trackingLabel: "seedream-4.5",
         maxReferenceImages: 14,
         resolveSize(longerSide) {
             return longerSide > 2048 ? "4K" : "2K";
@@ -363,12 +363,12 @@ export function callSeedreamAPI(
     return callSeedreamReplicateAPI("seedream-4", prompt, safeParams);
 }
 
-/** Seedream 4.5 Pro via Replicate (bytedance/seedream-4.5). */
+/** Seedream 4.5 via Replicate (bytedance/seedream-4.5). */
 export function callSeedreamProAPI(
     prompt: string,
     safeParams: ImageParams,
 ): Promise<ImageGenerationResult> {
-    return callSeedreamReplicateAPI("seedream-4.5-pro", prompt, safeParams);
+    return callSeedreamReplicateAPI("seedream-4.5", prompt, safeParams);
 }
 
 /** Seedream 5.0 Lite via Replicate (bytedance/seedream-5-lite). */

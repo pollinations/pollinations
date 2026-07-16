@@ -21,6 +21,7 @@ export interface TransformOptions {
     modelDef?: unknown;
     modelConfig?: Record<string, unknown>;
     requestedModel?: string;
+    preserveUpstreamModel?: boolean;
     stream?: boolean;
     temperature?: number;
     top_p?: number;

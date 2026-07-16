@@ -476,7 +476,7 @@ test("Perplexity request search fees are added by declarative billing rules", ()
     };
     const cases = [
         ["sonar", 2.005],
-        ["sonar-deep", 2.012],
+        ["sonar-high", 2.012],
         ["sonar-pro", 18.014],
         ["sonar-reasoning-pro", 10.014],
     ] as const;
@@ -615,7 +615,7 @@ test("Gemini grounding is detected on streamed chunk output", () => {
 test("Perplexity billing rules carry per-tier request fees privately only", () => {
     const perplexityFees = [
         ["sonar", "perplexity.sonar_low.search_request.v1", 5 / 1000],
-        ["sonar-deep", "perplexity.sonar_high.search_request.v1", 12 / 1000],
+        ["sonar-high", "perplexity.sonar_high.search_request.v1", 12 / 1000],
         ["sonar-pro", "perplexity.sonar_pro_high.search_request.v1", 14 / 1000],
         [
             "sonar-reasoning-pro",

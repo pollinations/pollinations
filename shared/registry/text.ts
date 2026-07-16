@@ -562,7 +562,7 @@ export const TEXT_SERVICES = {
         contextLength: 1048576,
         isSpecialized: false,
     },
-    "grok-4.20": {
+    "grok-4.20-non-reasoning": {
         aliases: [
             "grok",
             "grok-fast",
@@ -595,8 +595,9 @@ export const TEXT_SERVICES = {
         contextLength: 262144,
         isSpecialized: false,
     },
-    "grok-4.20-reasoning": {
+    "grok-4.20": {
         aliases: [
+            "grok-4.20-reasoning",
             "grok-4-20-reasoning",
             "grok-4-20",
             "grok-4-1-fast-reasoning",
@@ -986,8 +987,8 @@ export const TEXT_SERVICES = {
         contextLength: 128000,
         isSpecialized: false,
     },
-    "sonar-deep": {
-        aliases: ["perplexity-deep"],
+    "sonar-high": {
+        aliases: ["perplexity-deep", "sonar-deep"],
         modelId: "sonar",
         provider: "perplexity",
         brand: "Perplexity",
@@ -1000,7 +1001,7 @@ export const TEXT_SERVICES = {
             completionTextTokens: perMillion(1.0),
         },
         title: "Perplexity Sonar",
-        description: "Perplexity Sonar - Deep web search with broad grounding",
+        description: "High-context web search with broad grounding",
         inputModalities: ["text"],
         outputModalities: ["text"],
         tools: false,

@@ -150,7 +150,7 @@ export async function callQwenImageAPI(
         isMature: false,
         isChild: false,
         trackingData: {
-            actualModel: "qwen-image-plus",
+            actualModel: hasImage ? "qwen-image-edit-plus" : "qwen-image",
             // Flat per-image pricing on Replicate; report 1 image token.
             usage: {
                 completionImageTokens: 1,

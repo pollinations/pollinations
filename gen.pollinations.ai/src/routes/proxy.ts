@@ -35,11 +35,11 @@ import {
     DEFAULT_3D_MODEL,
     getModel3dModelIds,
 } from "@shared/registry/model3d.ts";
-import { resolveModelNameSafe } from "@shared/registry/registry.ts";
 import {
     DEFAULT_REALTIME_MODEL,
     REALTIME_MODEL_NAMES,
 } from "@shared/registry/realtime.ts";
+import { resolveModelNameSafe } from "@shared/registry/registry.ts";
 import {
     type CreateChatCompletionRequest,
     CreateChatCompletionRequestSchema,

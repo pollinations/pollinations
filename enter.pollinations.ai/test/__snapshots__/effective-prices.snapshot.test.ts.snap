@@ -596,7 +596,7 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.000002,
     },
   },
-  "grok-4.20-reasoning": {
+  "grok-4.20-non-reasoning": {
     "cost": {
       "completionTextTokens": 0.000006,
       "promptCachedTokens": 0.0000002,
@@ -996,7 +996,7 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0,
     },
   },
-  "qwen-image-plus": {
+  "qwen-image": {
     "cost": {
       "completionImageTokens": 0.03,
     },
@@ -1042,7 +1042,7 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "completionAudioTokens": 0.00001,
     },
   },
-  "qwen3-tts-instruct": {
+  "qwen3-tts-instruct-flash": {
     "cost": {
       "completionAudioTokens": 0.0000115,
     },
@@ -1124,7 +1124,7 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "completionImageTokens": 0.03,
     },
   },
-  "seedream-4.5-pro": {
+  "seedream-4.5": {
     "cost": {
       "completionImageTokens": 0.04,
     },
@@ -1158,7 +1158,7 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.000001,
     },
   },
-  "sonar-deep": {
+  "sonar-high": {
     "cost": {
       "completionTextTokens": 0.000001,
       "promptTextTokens": 0.000001,

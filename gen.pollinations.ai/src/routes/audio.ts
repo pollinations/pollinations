@@ -119,7 +119,7 @@ const CreateSpeechRequestSchema = z
         }),
         instruct: z.string().optional().meta({
             description:
-                "Emotion/style instruction (qwen3-tts-instruct only). e.g. 'excited and cheerful'.",
+                "Emotion/style instruction (qwen3-tts-instruct-flash only). e.g. 'excited and cheerful'.",
             example: "speak softly and warmly",
         }),
     })
@@ -821,7 +821,7 @@ const QWEN_TTS_ENDPOINT =
 
 const QWEN_TTS_MODELS = [
     "qwen3-tts-flash",
-    "qwen3-tts-instruct",
+    "qwen3-tts-instruct-flash",
 ] as const satisfies readonly AudioModelName[];
 
 type QwenTtsModelName = (typeof QWEN_TTS_MODELS)[number];
@@ -1061,10 +1061,10 @@ export async function generateQwenTts(opts: {
         });
     }
 
-    if (instruct && modelName !== "qwen3-tts-instruct") {
+    if (instruct && modelName !== "qwen3-tts-instruct-flash") {
         throw new UpstreamError(400 as ContentfulStatusCode, {
             message:
-                "The instruct parameter is only supported by qwen3-tts-instruct",
+                "The instruct parameter is only supported by qwen3-tts-instruct-flash",
         });
     }
 
@@ -1080,7 +1080,9 @@ export async function generateQwenTts(opts: {
         model: modelId,
         input: { text, voice: qwenVoice },
         parameters:
-            modelName === "qwen3-tts-instruct" && instruct ? { instruct } : {},
+            modelName === "qwen3-tts-instruct-flash" && instruct
+                ? { instruct }
+                : {},
     };
 
     const rawResponse = await fetch(QWEN_TTS_ENDPOINT, {

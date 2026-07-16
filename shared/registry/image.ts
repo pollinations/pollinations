@@ -171,7 +171,7 @@ export const IMAGE_SERVICES = {
         outputModalities: ["image"],
         maxReferenceImages: 10, // Pollinations route cap from Replicate schema.
     },
-    "seedream-4.5-pro": {
+    "seedream-4.5": {
         aliases: ["seedream-pro"],
         modelId: "seedream-pro",
         provider: "replicate",
@@ -183,9 +183,8 @@ export const IMAGE_SERVICES = {
         cost: {
             completionImageTokens: 0.04, // per image
         },
-        title: "Seedream 4.5 Pro",
-        description:
-            "Seedream 4.5 Pro - Premium photorealistic image generation",
+        title: "Seedream 4.5",
+        description: "Photorealistic image generation and editing",
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
         maxReferenceImages: 14, // Pollinations route cap from Replicate schema.
@@ -559,9 +558,9 @@ export const IMAGE_SERVICES = {
         outputModalities: ["image"],
         maxReferenceImages: 9, // Pollinations route cap.
     },
-    "qwen-image-plus": {
+    "qwen-image": {
         aliases: [
-            "qwen-image",
+            "qwen-image-plus",
             "qwen-image-2512",
             "qwen-image-edit",
             "qwen-image-edit-plus",
@@ -578,9 +577,8 @@ export const IMAGE_SERVICES = {
         cost: {
             completionImageTokens: 0.03, // per image
         },
-        title: "Qwen Image Plus",
-        description:
-            "Qwen Image Plus - Alibaba text-to-image and image editing",
+        title: "Qwen Image",
+        description: "Text-to-image generation and multi-image editing",
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
         maxReferenceImages: 3, // DashScope Qwen Image Edit route cap.

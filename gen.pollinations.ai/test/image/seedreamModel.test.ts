@@ -130,14 +130,14 @@ describe("seedreamReplicateModel - seedream 4.0", () => {
     });
 });
 
-describe("seedreamReplicateModel - seedream-pro 4.5", () => {
+describe("seedreamReplicateModel - seedream 4.5", () => {
     it("posts to bytedance/seedream-4.5 with size resolved from dimensions", async () => {
         const requests: ReplicateRequest[] = [];
         mockReplicateFetch(requests);
 
         const params: ImageParams = {
             ...baseParams,
-            model: "seedream-4.5-pro",
+            model: "seedream-4.5",
             width: 2048,
             height: 2048,
         };
@@ -161,7 +161,7 @@ describe("seedreamReplicateModel - seedream-pro 4.5", () => {
 
         const params: ImageParams = {
             ...baseParams,
-            model: "seedream-4.5-pro",
+            model: "seedream-4.5",
             image: ["https://example.com/ref.jpg"],
         };
         await callSeedreamProAPI("test prompt", params);
@@ -183,16 +183,16 @@ describe("seedreamReplicateModel - seedream-pro 4.5", () => {
         expect(input.aspect_ratio).toBe("match_input_image");
     });
 
-    it("returns seedream-pro as actualModel", async () => {
+    it("returns seedream-4.5 as actualModel", async () => {
         mockReplicateFetch([]);
 
         const params: ImageParams = {
             ...baseParams,
-            model: "seedream-4.5-pro",
+            model: "seedream-4.5",
         };
         const result = await callSeedreamProAPI("test prompt", params);
 
-        expect(result.trackingData?.actualModel).toBe("seedream-4.5-pro");
+        expect(result.trackingData?.actualModel).toBe("seedream-4.5");
     });
 });
 
@@ -362,13 +362,13 @@ describe("seedreamReplicateModel - seedream 4.0 custom-size mode", () => {
         });
     });
 
-    it("seedream-pro (4.5) ignores dimensionsExplicit — no custom mode", async () => {
+    it("seedream 4.5 ignores dimensionsExplicit — no custom mode", async () => {
         const requests: ReplicateRequest[] = [];
         mockReplicateFetch(requests);
 
         const params: ImageParams = {
             ...baseParams,
-            model: "seedream-4.5-pro",
+            model: "seedream-4.5",
             width: 1792,
             height: 1024,
             dimensionsExplicit: true,

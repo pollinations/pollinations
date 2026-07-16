@@ -10,7 +10,7 @@ export const IMAGE_DEFAULT_SIDE_LENGTHS: Partial<
 > = {
     "seedream-5-lite": 2048,
     "seedream-5-pro": 2048,
-    "seedream-4.5-pro": 2048,
+    "seedream-4.5": 2048,
     "ideogram-v4-turbo": 2048,
     "ideogram-v4-balanced": 2048,
     "ideogram-v4-quality": 2048,

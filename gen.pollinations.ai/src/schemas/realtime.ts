@@ -1,15 +1,17 @@
-import { DEFAULT_REALTIME_MODEL } from "@shared/registry/realtime.ts";
+import {
+    DEFAULT_REALTIME_MODEL,
+    REALTIME_MODEL_NAMES,
+} from "@shared/registry/realtime.ts";
 import { z } from "zod";
 
 export const RealtimeRequestQueryParamsSchema = z
     .object({
         model: z
-            .literal(DEFAULT_REALTIME_MODEL)
+            .enum(REALTIME_MODEL_NAMES as [string, ...string[]])
             .optional()
             .default(DEFAULT_REALTIME_MODEL)
             .meta({
-                description:
-                    "Realtime model to use. Currently only gpt-realtime-2 is supported.",
+                description: `Realtime model to use. Supported models: ${REALTIME_MODEL_NAMES.join(", ")}.`,
             }),
         key: z.string().optional().meta({
             description:

@@ -7,7 +7,6 @@ export type BalanceAccess = "quest" | "paid";
 type ModelStatusChipsProps = {
     showNew: boolean;
     showAlpha: boolean;
-    alphaTooltip?: boolean;
 };
 
 type BalanceAccessChipProps = {
@@ -18,7 +17,6 @@ type BalanceAccessChipProps = {
 export const ModelStatusChips: FC<ModelStatusChipsProps> = ({
     showNew,
     showAlpha,
-    alphaTooltip = true,
 }) => {
     if (!showNew && !showAlpha) {
         return null;
@@ -31,21 +29,17 @@ export const ModelStatusChips: FC<ModelStatusChipsProps> = ({
                     NEW
                 </Chip>
             )}
-            {showAlpha &&
-                (alphaTooltip ? (
-                    <Tooltip
-                        triggerAs="span"
-                        content="Alpha model — experimental, may be unstable"
-                    >
-                        <Chip intent="alpha" size="sm">
-                            ALPHA
-                        </Chip>
-                    </Tooltip>
-                ) : (
+            {showAlpha && (
+                <Tooltip
+                    triggerAs="span"
+                    content="Alpha model — experimental, may be unstable"
+                    className="pointer-events-auto shrink-0"
+                >
                     <Chip intent="alpha" size="sm">
-                        ALPHA
+                        Alpha
                     </Chip>
-                ))}
+                </Tooltip>
+            )}
         </span>
     );
 };

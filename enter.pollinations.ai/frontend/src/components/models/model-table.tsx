@@ -184,7 +184,7 @@ const MobileModelRow: FC<MobileModelRowProps> = ({ model }) => {
                         />
                     )}
                     <div className="flex min-w-0 flex-1 flex-col gap-1">
-                        <div className="flex min-w-0 items-center gap-2">
+                        <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
                             <CopyButton
                                 value={model.name}
                                 tooltip={modelNameTooltip}
@@ -209,6 +209,10 @@ const MobileModelRow: FC<MobileModelRowProps> = ({ model }) => {
                                 access={balanceAccess}
                                 className="whitespace-nowrap"
                             />
+                            <ModelStatusChips
+                                showNew={showNew}
+                                showAlpha={showAlpha}
+                            />
                         </div>
                         <div className="flex min-w-0 flex-wrap items-center gap-2">
                             <ModelId name={model.name} />
@@ -219,15 +223,6 @@ const MobileModelRow: FC<MobileModelRowProps> = ({ model }) => {
                                 <MobileMetadataBadges
                                     inputModalities={inputModalities}
                                     capabilities={capabilities}
-                                />
-                            </div>
-                        )}
-                        {(showNew || showAlpha) && (
-                            <div className="flex min-w-0 flex-wrap items-center gap-1.5">
-                                <ModelStatusChips
-                                    showNew={showNew}
-                                    showAlpha={showAlpha}
-                                    alphaTooltip={false}
                                 />
                             </div>
                         )}

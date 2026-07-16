@@ -20,9 +20,16 @@ const POLL_INTERVAL_MS = 5000;
 const POLL_MAX_ATTEMPTS = 60;
 
 export class ReplicateError extends Error {
+    /**
+     * `url` is the Replicate endpoint the failing request targeted. Callers
+     * thread it into HttpError.upstreamUrl so error tracking records an
+     * upstream host even for network-level failures ("Network connection
+     * lost"), which otherwise surface as bare TypeErrors with no context.
+     */
     constructor(
         message: string,
         readonly status?: number,
+        readonly url?: string,
     ) {
         super(message);
         this.name = "ReplicateError";
@@ -145,11 +152,21 @@ async function replicateFetch<T>(
     if (args.body) headers["Content-Type"] = "application/json";
     if (args.prefer) headers.Prefer = args.prefer;
 
-    const response = await fetch(args.url, {
-        method: args.method,
-        headers,
-        body: args.body ? JSON.stringify(args.body) : undefined,
-    });
+    let response: Response;
+    try {
+        response = await fetch(args.url, {
+            method: args.method,
+            headers,
+            body: args.body ? JSON.stringify(args.body) : undefined,
+        });
+    } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        throw new ReplicateError(
+            `Replicate ${args.method} ${args.url} network failure: ${message}`,
+            502,
+            args.url,
+        );
+    }
 
     if (!response.ok) {
         const text = await response.text().catch(() => "<no body>");
@@ -159,9 +176,19 @@ async function replicateFetch<T>(
         throw new ReplicateError(
             `Replicate ${args.method} ${args.url} failed (HTTP ${response.status}): ${text.slice(0, 300)}`,
             classifyReplicateHttpStatus(response.status),
+            args.url,
         );
     }
-    return (await response.json()) as T;
+    try {
+        return (await response.json()) as T;
+    } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        throw new ReplicateError(
+            `Replicate ${args.method} ${args.url} response read failed: ${message}`,
+            502,
+            args.url,
+        );
+    }
 }
 
 export function classifyReplicateHttpStatus(httpStatus: number): number {

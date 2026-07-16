@@ -260,6 +260,21 @@ describe("runReplicatePrediction", () => {
         vi.useRealTimers();
     });
 
+    it("wraps network-level fetch failures with the endpoint URL", async () => {
+        vi.spyOn(globalThis, "fetch").mockRejectedValue(
+            new TypeError("Network connection lost"),
+        );
+
+        await expect(
+            runReplicatePrediction({ model: MODEL, input: { prompt: "x" } }),
+        ).rejects.toMatchObject({
+            name: "ReplicateError",
+            status: 502,
+            url: OFFICIAL_PREDICTION_URL,
+            message: `Replicate POST ${OFFICIAL_PREDICTION_URL} network failure: Network connection lost`,
+        });
+    });
+
     it("maps Replicate auth/infra HTTP errors to 502", async () => {
         vi.spyOn(globalThis, "fetch").mockResolvedValue(
             new Response(JSON.stringify({ detail: "Invalid token" }), {

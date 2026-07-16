@@ -1,0 +1,36 @@
+{
+  "pr_number": 12208,
+  "title": "fix: clarify model balance labels",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/12208",
+  "merged_at": "2026-07-16T06:51:40Z",
+  "labels": [
+    "DEV-UI-UX"
+  ],
+  "pr_body_excerpt": "- Shows compact `Quest` / `Paid` labels beside model names without crowding the mobile metric.\n- Moves model descriptions into the model-name hover tooltip with the copy affordance.\n- Makes display names and model ids copy the model id on click.\n- Keeps per-pollen counts visually neutral on desktop and labels the mobile estimate as `gen/pollen`.\n- Adds balance-rule hover text on the `Quest` / `Paid` labels.\n- Checks: `biome check --write`, `tsc --noEmit -p enter.pollinations.ai/frontend/src/tsconfig.json`, `git diff --check origin/main...HEAD`.",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Model math, less mysterious",
+    "blurb": "The model list got a small field guide: Quest and Paid labels now explain themselves, and model IDs are one click away. Tiny UI changes, fewer tabs open in confusion.",
+    "summary": "The model table now adds compact Quest/Paid balance labels with rule tooltips, moves descriptions into copyable name hover cards, makes model names and IDs copy the model ID on click, and labels mobile usage estimates as gen/pollen.",
+    "impact": "Users can more quickly tell how each model is funded, inspect its description without crowding the table, and copy the exact model ID from either its name or identifier.",
+    "keywords": [
+      "models",
+      "dashboard",
+      "ui",
+      "pollen",
+      "quests",
+      "copy"
+    ],
+    "visual_concept": "Polly acts as a careful garden librarian in front of a cozy model catalog: neat seed packets labeled Quest and Paid sit beside small code-plants, while a CRT monitor robot eagerly copies a model ID onto a clipboard. Tooltip-style pixel notes hover over the labels, representing the newly explained balance rules and compact mobile-friendly details.",
+    "image_prompt": "Cozy pixel art scene of Polly, the cute yellow-and-brown striped bee with pink blush, light-blue wings, and tiny librarian glasses, organizing a retro model catalog of code-plant seed packets marked “QUEST” and “PAID” while a chunky CRT monitor robot copies a small model ID onto a clipboard. Soft lime green (#ecf874) and warm cream pastel gradient background, subtle tooltip notes and flowers around the terminal; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-16/PR-12208.jpg",
+    "prompt": "Cozy pixel art scene of Polly, the cute yellow-and-brown striped bee with pink blush, light-blue wings, and tiny librarian glasses, organizing a retro model catalog of code-plant seed packets marked “QUEST” and “PAID” while a chunky CRT monitor robot copies a small model ID onto a clipboard. Soft lime green (#ecf874) and warm cream pastel gradient background, subtle tooltip notes and flowers around the terminal; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, nostalgic but beautiful."
+  },
+  "generated_at": "2026-07-16T06:52:36.904422+00:00"
+}

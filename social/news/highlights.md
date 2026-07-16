@@ -1,3 +1,7 @@
+- **2026-07-15** – **🚀 Private community models** Register a model, test it with your own key, then publish it when it is ready to meet the outdoors. Public models can be free or priced by their owner.
+- **2026-07-15** – **✨ 3D generation, now easier to find** 3D-capable models have joined the [Model Monitor](https://model-monitor.pollinations.ai), with quick-start requests and model details in the [API docs](https://gen.pollinations.ai/docs).
+- **2026-07-15** – **📱 Shareable dashboard routes** Links to Models, Activity, Keys, Pollen, Quests, and News now open exactly where they should, retaining useful view state instead of dumping everyone at the lobby.
+- **2026-07-15** – **🎨 Veo in 720p or 1080p** Video generation now has dedicated Veo 3.1 Fast tiers for 720p and 1080p output, so resolution is explicit rather than a small upstream mystery.
 - **2026-07-14** – **✨ Public media galleries** Tag an upload to publish it in a shareable, newest-first gallery at `GET /media?tag=`; leave it untagged and it stays private. [API Docs](https://gen.pollinations.ai/docs)
 - **2026-07-14** – **🚀 GPT Image models rerouted** `gptimage`, `gptimage-large`, and `gpt-image-2` now use dedicated Azure routes with regional failover, so image generations and edits have somewhere else to go when one garden closes.
 - **2026-07-14** – **🌟 Model speed, measured properly** Model Monitor now sorts models by streamed completion throughput in tokens per second. Less folklore, more `tok/s`. [Check the monitor](https://model-monitor.pollinations.ai)

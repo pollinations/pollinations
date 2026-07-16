@@ -61,7 +61,7 @@ export const WalletBalanceCard: FC<WalletBalanceCardProps> = ({
 }) => (
     <div
         className={cn(
-            "polli:rounded-xl polli:p-4",
+            "polli:rounded-xl polli:p-4 polli-surface-border",
             walletPanelClasses[kind],
             className,
         )}

@@ -4,7 +4,8 @@ import type { FC, ReactNode } from "react";
 import { useState } from "react";
 import { cn } from "../lib/cn.ts";
 
-const DEFAULT_PANEL = "polli:rounded-lg polli:bg-theme-bg-pale polli:shadow-lg";
+const DEFAULT_PANEL =
+    "polli:rounded-lg polli:border polli:border-theme-border polli:bg-theme-bg-pale";
 
 export type DropdownProps = {
     /** Trigger element; receives the current open state (e.g. to rotate a chevron). */

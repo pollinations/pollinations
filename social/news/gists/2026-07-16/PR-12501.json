@@ -1,0 +1,36 @@
+{
+  "pr_number": 12501,
+  "title": "feat: add GPT Realtime 2.1",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/12501",
+  "merged_at": "2026-07-16T00:09:35Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "pr_body_excerpt": "- Adds `gpt-realtime-2.1` as the default realtime model while keeping `gpt-realtime-2` available.\n- Routes both models through the verified Azure Realtime endpoint and maps 2.1 to the `gpt-realtime-2-1` deployment.\n- Updates realtime schema, model discovery, API docs, tests, and pricing snapshot.\n- Validates Azure `session.created`, 17 realtime tests, 6 docs tests, typecheck, Biome, and pricing snapshot.",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "The hive talks faster",
+    "blurb": "Realtime got a fresh set of vocal cords. GPT Realtime 2.1 is now the default, while the previous model remains on the branch for anyone who needs it.",
+    "summary": "Added gpt-realtime-2.1 as the default realtime model, routed through the verified Azure Realtime endpoint as the gpt-realtime-2-1 deployment, while keeping gpt-realtime-2 available.",
+    "impact": "Realtime API builders now get GPT Realtime 2.1 by default with validated Azure session creation, updated model discovery and schema support, and continued access to gpt-realtime-2.",
+    "keywords": [
+      "realtime",
+      "gpt-realtime-2.1",
+      "azure",
+      "voice",
+      "api",
+      "models"
+    ],
+    "visual_concept": "Polly is a cozy radio host or sound engineer tuning a retro lime-green CRT audio console labeled \"REALTIME 2.1.\" Glowing waveform flowers grow from pots around the console, while the eager monitor robot watches a clean Azure-blue-pastel signal arrive and confirms the connection; this represents a new default realtime voice model with the older channel still available.",
+    "image_prompt": "Cozy pixel art scene of Polly, the cute yellow-and-brown striped bee mascot with pink cheek blush, light blue wings, and tiny studio headphones, tuning a retro CRT audio console glowing prominently lime green (#ecf874) with a small pixel label reading \"REALTIME 2.1\"; beside her, a chunky monitor robot happily watches warm sound-wave flowers bloom from code-planters. Cozy 8-bit pixel art aesthetic, soft lime green and pastel lavender-to-cream gradients, warm lighting, subtle CRT scanlines, retro gaming vibes like Stardew Valley or A Short Hike, emotionally warm and nostalgic."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-16/PR-12501.jpg",
+    "prompt": "Cozy pixel art scene of Polly, the cute yellow-and-brown striped bee mascot with pink cheek blush, light blue wings, and tiny studio headphones, tuning a retro CRT audio console glowing prominently lime green (#ecf874) with a small pixel label reading \"REALTIME 2.1\"; beside her, a chunky monitor robot happily watches warm sound-wave flowers bloom from code-planters. Cozy 8-bit pixel art aesthetic, soft lime green and pastel lavender-to-cream gradients, warm lighting, subtle CRT scanlines, retro gaming vibes like Stardew Valley or A Short Hike, emotionally warm and nostalgic."
+  },
+  "generated_at": "2026-07-16T00:10:35.767878+00:00"
+}

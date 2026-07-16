@@ -10,6 +10,7 @@ import {
     getModel3dModelsInfo,
     getRealtimeModelsInfo,
 } from "@shared/registry/model-info.ts";
+import { DEFAULT_REALTIME_MODEL } from "@shared/registry/realtime.ts";
 import { TEXT_SERVICES } from "@shared/registry/text.ts";
 import type { Context } from "hono";
 import { Hono } from "hono";
@@ -276,7 +277,7 @@ const REALTIME_DOCS = [
     "",
     "| Endpoint | Description |",
     "|----------|-------------|",
-    "| `GET /v1/realtime` | WebSocket Realtime session (`model=gpt-realtime-2`) |",
+    `| \`GET /v1/realtime\` | WebSocket Realtime session (\`model=${DEFAULT_REALTIME_MODEL}\`) |`,
     "",
     "Requires an API key with positive balance. Server clients can use `Authorization: Bearer <key>`; browser WebSocket clients can use `?key=pk_...`.",
     "",
@@ -289,7 +290,7 @@ const REALTIME_DOCS = [
     "",
     "// Server: Bearer auth. Browser: append `&key=pk_...` instead (headers aren't settable).",
     "const ws = new WebSocket(",
-    '    "wss://gen.pollinations.ai/v1/realtime?model=gpt-realtime-2",',
+    `    "wss://gen.pollinations.ai/v1/realtime?model=${DEFAULT_REALTIME_MODEL}",`,
     // biome-ignore lint/suspicious/noTemplateCurlyInString: literal JS snippet shown in docs
     "    { headers: { Authorization: `Bearer ${process.env.POLLINATIONS_API_KEY}` } },",
     ");",

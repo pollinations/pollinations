@@ -41,7 +41,7 @@ const ROUTE_META: Record<string, { title: string; description: string }> = {
     },
     "/community": {
         title: "Community | pollinations.ai",
-        description: "Contributors, voting, and build diary",
+        description: "Contributors, voting, and supporters",
     },
     "/terms": {
         title: "Terms | pollinations.ai",

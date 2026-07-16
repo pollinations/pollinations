@@ -17,7 +17,6 @@ Given a PR's title, description, labels, and file changes, produce a JSON object
   "publish_tier": "daily",
   "importance": "major",
   "headline": "The hive has ears",
-  "blurb": "Added Whisper Large V3 to the API. Now we can turn your spoken buzzing into perfectly transcribed text.",
   "summary": "One sentence explaining what changed and why it matters.",
   "impact": "One sentence explaining what users/devs will notice.",
   "keywords": ["billing", "api", "models"],
@@ -87,10 +86,6 @@ Binary classification:
 Short, creative, playful headline for this PR. Dev-meme energy, bee/garden metaphors welcome.
 Not a PR title — a fun name for what happened. 3-8 words.
 Examples: "The hive has ears", "Rectangles are free", "Welcome, Polly!", "Fresh coat of paint"
-
-### `blurb`
-Whimsical 1-2 sentence description for the website diary. Fun and approachable, not corporate.
-Bee/nature metaphors fit the brand. Skip negativity — keep it celebratory.
 
 ### `summary`
 One clear sentence. Focus on WHAT changed and WHY. Written for a technical audience who follows the project.

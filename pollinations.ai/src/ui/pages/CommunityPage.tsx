@@ -5,7 +5,6 @@ import { useDocumentMeta } from "../../hooks/useDocumentMeta";
 import { usePageCopy } from "../../hooks/usePageCopy";
 import { useTranslate } from "../../hooks/useTranslate";
 import { ExternalLinkIcon } from "../assets/ExternalLinkIcon";
-import { BuildDiary } from "../components/BuildDiary";
 import { ImageGenerator } from "../components/ImageGenerator";
 import { TopContributors } from "../components/TopContributors";
 import { Button } from "../components/ui/button";
@@ -330,17 +329,6 @@ export default function CommunityPage() {
                 <Divider />
 
                 <TopContributors />
-
-                {/* Section 5 — Build Diary + Supporters */}
-                <div className="mb-12">
-                    <Heading variant="section">
-                        {pageCopy.buildDiaryTitle}
-                    </Heading>
-                    <Body size="sm" spacing="comfortable">
-                        {pageCopy.buildDiarySubtitle}
-                    </Body>
-                    <BuildDiary />
-                </div>
 
                 <Divider />
 

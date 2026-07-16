@@ -137,6 +137,26 @@ describe("runReplicatePrediction", () => {
         });
     });
 
+    it("classifies provider capacity errors (E003) as 503", async () => {
+        vi.spyOn(globalThis, "fetch").mockResolvedValue(
+            new Response(
+                JSON.stringify({
+                    id: "pred_capacity",
+                    status: "failed",
+                    error: "ModelError: Service is currently unavailable due to high demand. Please try again later. (E003) (1cah9wlWR9)",
+                }),
+                { status: 201 },
+            ),
+        );
+
+        await expect(
+            runReplicatePrediction({ model: MODEL, input: { prompt: "x" } }),
+        ).rejects.toMatchObject({
+            name: "ReplicateError",
+            status: 503,
+        });
+    });
+
     it("treats aborted predictions as terminal failures", async () => {
         vi.spyOn(globalThis, "fetch").mockResolvedValue(
             new Response(

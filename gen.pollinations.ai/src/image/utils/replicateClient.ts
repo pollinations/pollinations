@@ -207,10 +207,13 @@ export function classifyReplicateHttpStatus(httpStatus: number): number {
  * structured code field. Patterns observed in our prod logs:
  * - E005 / "flagged as sensitive" — Seedance content filter (400)
  * - "Input validation error:" — Replicate's input URL fetcher (400)
+ * - E003 / "unavailable due to high demand" — Alibaba capacity for WAN
+ *   models (503, so monitoring separates provider capacity from our bugs)
  * Default 500 keeps new failure modes loud.
  */
 export function classifyReplicatePredictionError(message: string): number {
     if (/\bE005\b|flagged as sensitive/i.test(message)) return 400;
     if (/^Input validation error:/i.test(message)) return 400;
+    if (/\bE003\b|unavailable due to high demand/i.test(message)) return 503;
     return 500;
 }

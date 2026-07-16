@@ -1,0 +1,35 @@
+{
+  "pr_number": 12508,
+  "title": "fix: keep model access label near title",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/12508",
+  "merged_at": "2026-07-16T09:08:19Z",
+  "labels": [
+    "DEV-UI-UX"
+  ],
+  "pr_body_excerpt": "- Keeps the `Quest` / `Paid` label directly after the model title.\n- Preserves title truncation when the model column is narrow.",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Labels Stay With Their Models",
+    "blurb": "The little Quest and Paid badges have stopped wandering off across the model table. Even in a narrow column, they now stay politely beside the model they describe.",
+    "summary": "Fixed the model table so Quest and Paid access labels remain directly beside each model title while long titles still truncate in narrow columns.",
+    "impact": "Users browsing models can now immediately see each model's access type without the label drifting away from its title.",
+    "keywords": [
+      "model-table",
+      "ui",
+      "quest",
+      "paid-models",
+      "frontend"
+    ],
+    "visual_concept": "A cozy model-library shelf where Polly, wearing tiny librarian glasses, carefully clips a Quest/Paid badge directly onto a neatly trimmed model-name card. A small code-plant and retro terminal make the interface setting feel alive; the visual metaphor is labels staying attached to their proper titles.",
+    "image_prompt": "Cozy pixel art scene of Polly the cute yellow-and-brown striped bee mascot wearing tiny librarian glasses, pinning a small pixel badge labeled \"QUEST\" beside a neatly shortened model-name card on a glowing retro computer table; include code-plants, tiny flowers, and a warm lime green (#ecf874) monitor glow. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with dark purple (#110518) outlines and a calm organized library feeling."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-16/PR-12508.jpg",
+    "prompt": "Cozy pixel art scene of Polly the cute yellow-and-brown striped bee mascot wearing tiny librarian glasses, pinning a small pixel badge labeled \"QUEST\" beside a neatly shortened model-name card on a glowing retro computer table; include code-plants, tiny flowers, and a warm lime green (#ecf874) monitor glow. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with dark purple (#110518) outlines and a calm organized library feeling."
+  },
+  "generated_at": "2026-07-16T09:09:12.032566+00:00"
+}

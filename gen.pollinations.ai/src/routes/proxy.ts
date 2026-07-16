@@ -37,6 +37,10 @@ import {
 } from "@shared/registry/model3d.ts";
 import { resolveModelNameSafe } from "@shared/registry/registry.ts";
 import {
+    DEFAULT_REALTIME_MODEL,
+    REALTIME_MODEL_NAMES,
+} from "@shared/registry/realtime.ts";
+import {
     type CreateChatCompletionRequest,
     CreateChatCompletionRequestSchema,
     type CreateChatCompletionResponse,
@@ -563,10 +567,10 @@ export const proxyRoutes = new Hono<Env>()
             description: [
                 "OpenAI-compatible Realtime WebSocket proxy.",
                 "",
-                "Connect with `wss://gen.pollinations.ai/v1/realtime?model=gpt-realtime-2` and send/receive Realtime JSON events over the socket.",
+                `Connect with \`wss://gen.pollinations.ai/v1/realtime?model=${DEFAULT_REALTIME_MODEL}\` and send/receive Realtime JSON events over the socket.`,
                 "Server clients can authenticate with `Authorization: Bearer <key>`. Browser WebSocket clients can use `?key=pk_...` because they cannot set custom authorization headers.",
                 "",
-                "**Model:** `gpt-realtime-2`.",
+                `**Models:** ${REALTIME_MODEL_NAMES.map((model) => `\`${model}\``).join(", ")}.`,
                 "",
                 "**Billing:** requires a positive balance. Gen proxies the WebSocket, aggregates observed `response.done` usage, and deducts one session total when the socket closes. Input transcription sessions are not supported yet.",
             ].join("\n"),

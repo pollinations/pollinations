@@ -144,7 +144,7 @@ test("GPT-5.5 is available without paid-only gating", () => {
     expect(definition.paidOnly).toBeUndefined();
 });
 
-test("GPT-5.6 ChatGPT models are quest-eligible at the Azure multiplier", () => {
+test("GPT-5.6 models are quest-eligible at the promotional multiplier", () => {
     for (const model of [
         "gpt-5.6-sol",
         "gpt-5.6-terra",
@@ -154,7 +154,7 @@ test("GPT-5.6 ChatGPT models are quest-eligible at the Azure multiplier", () => 
 
         expect(definition.provider).toBe("azure");
         expect(definition.paidOnly).toBeUndefined();
-        expect(definition.priceMultiplier).toBe(0.75);
+        expect(definition.priceMultiplier).toBe(0.5);
     }
 });
 

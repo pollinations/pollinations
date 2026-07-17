@@ -1,0 +1,36 @@
+{
+  "pr_number": 12521,
+  "title": "feat: add Sana image model",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/12521",
+  "merged_at": "2026-07-17T22:01:17Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "pr_body_excerpt": "- Adds Sana Sprint 1.6B to the shared image registry at 0.0001 Pollen per image, close to the estimated 0.0000926 GPU cost at full utilization.\n- Routes Sana requests through the existing authenticated self-hosted GPU pool.\n- Adds model-list, backend registration, dispatch, and billing coverage.\n\nChecks:\n- `npm run typecheck` in `gen.pollinations.ai`\n- 55 relevant Vitest tests passed; focused Sana pricing tests rerun after the final price change",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "A swift new petal printer",
+    "blurb": "Sana Sprint 1.6B has joined the image garden. It makes pixels through the shared GPU hive for 0.0001 Pollen per image.",
+    "summary": "Added Sana Sprint 1.6B to the shared image registry, routed it through the authenticated self-hosted GPU pool, and priced generation at 0.0001 Pollen per image.",
+    "impact": "Developers can now select Sana Sprint 1.6B alongside existing image models, with model listing, dispatch, and billing all handled by the usual API path.",
+    "keywords": [
+      "Sana Sprint 1.6B",
+      "image generation",
+      "image models",
+      "GPU pool",
+      "registry",
+      "Pollen billing"
+    ],
+    "visual_concept": "Depict Sana Sprint as a fast, compact pixel-image printer in a cozy garden workshop, producing small finished landscape tiles from a lime-green glowing terminal. Polly wears tiny mechanic goggles and helps feed prompt cards into the printer while code-vines and flowers grow around the authenticated GPU cabinet, making the new model feel like a welcome tool added to the shared creative greenhouse.",
+    "image_prompt": "Cozy pixel art scene in a warm garden workshop where Polly, the cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blush, a small happy smile, and small rounded light blue translucent wings, wears tiny mechanic goggles while feeding prompt cards into a compact Sana Sprint image printer; the printer makes little pixel landscape tiles beside a retro GPU terminal glowing prominently lime green (#ecf874), with code-plants, flowers, and soft lavender-to-peach walls. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, chunky retro sprites, subtle CRT glow, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-17/PR-12521.jpg",
+    "prompt": "Cozy pixel art scene in a warm garden workshop where Polly, the cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blush, a small happy smile, and small rounded light blue translucent wings, wears tiny mechanic goggles while feeding prompt cards into a compact Sana Sprint image printer; the printer makes little pixel landscape tiles beside a retro GPU terminal glowing prominently lime green (#ecf874), with code-plants, flowers, and soft lavender-to-peach walls. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, chunky retro sprites, subtle CRT glow, emotionally warm."
+  },
+  "generated_at": "2026-07-17T22:02:12.146940+00:00"
+}

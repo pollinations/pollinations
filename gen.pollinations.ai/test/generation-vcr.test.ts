@@ -922,6 +922,49 @@ test("gpt-image-2 rejects transparent backgrounds with 400", async ({
     });
 });
 
+test("sana uses the registered backend pool and records its flat price", async ({
+    paidApiKey,
+    mocks,
+}) => {
+    const existing = await env.KV.list({ prefix: "image:server:test:sana:" });
+    await Promise.all(existing.keys.map((key) => env.KV.delete(key.name)));
+
+    const { response: registerResponse } = await fetchWorker("/register", {
+        method: "POST",
+        headers: {
+            "content-type": "application/json",
+            authorization: `Bearer ${env.PLN_GPU_TOKEN}`,
+        },
+        body: JSON.stringify({
+            url: `https://${imageBackendHost}`,
+            type: "sana",
+        }),
+    });
+    expect(registerResponse.status).toBe(200);
+    await mocks.enable("tinybird", "imageBackend");
+
+    const { response, wait } = await fetchWorker(
+        "/image/fast%20flower?model=sana&width=512&height=512&seed=42",
+        {
+            headers: { authorization: `Bearer ${paidApiKey}` },
+        },
+    );
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get("x-model-used")).toBe("sana");
+    await wait();
+
+    expect(mocks.tinybird.state.events).toHaveLength(1);
+    expect(mocks.tinybird.state.events[0]).toMatchObject({
+        eventType: "generate.image",
+        modelRequested: "sana",
+        modelUsed: "sana",
+        tokenCountCompletionImage: 1,
+        tokenPriceCompletionImage: 0.0002,
+        isBilledUsage: true,
+    });
+});
+
 test("image backend validation errors return client-facing 400", async ({
     paidApiKey,
     mocks,

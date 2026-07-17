@@ -271,6 +271,23 @@ describe("gen worker routing", () => {
         expect(models.every((m) => m.category === "video")).toBe(true);
     });
 
+    it("lists Sana with flat per-image pricing", async () => {
+        const response = await fetchWorker("/image/models", envWithEnter());
+
+        expect(response.status).toBe(200);
+        const models = (await response.json()) as {
+            name: string;
+            pricing: Record<string, string>;
+        }[];
+        expect(models.find((model) => model.name === "sana")).toMatchObject({
+            name: "sana",
+            pricing: {
+                completionImageTokens: "0.0002",
+                currency: "pollen",
+            },
+        });
+    });
+
     it("serves OpenAI-compatible models without auth", async () => {
         const response = await fetchWorker("/v1/models", envWithEnter());
 

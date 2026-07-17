@@ -7,6 +7,22 @@ export type ImageModelName = keyof typeof IMAGE_SERVICES;
 export type ImageModelId = (typeof IMAGE_SERVICES)[ImageModelName]["modelId"];
 
 export const IMAGE_SERVICES = {
+    "sana": {
+        aliases: [],
+        modelId: "sana",
+        provider: "lambda",
+        brand: "NVIDIA",
+        category: "image",
+        addedDate: new Date("2026-07-17").getTime(),
+        priceMultiplier: 1,
+        cost: {
+            completionImageTokens: 0.0001, // per image
+        },
+        title: "Sana Sprint 1.6B",
+        description: "Sana Sprint 1.6B - Fast, low-cost image generation",
+        inputModalities: ["text"],
+        outputModalities: ["image"],
+    },
     "kontext": {
         aliases: [],
         modelId: "kontext",

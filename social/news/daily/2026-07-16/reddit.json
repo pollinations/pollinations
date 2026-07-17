@@ -1,0 +1,15 @@
+{
+  "platform": "reddit",
+  "scope": "daily",
+  "date": "2026-07-16",
+  "period_start": "2026-07-16",
+  "period_end": "2026-07-16",
+  "generated_at": "2026-07-17T06:56:28.272165+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-07-16/images/reddit.jpg"
+    }
+  ],
+  "title": "GPT Realtime 2.1 and model table fixes",
+  "text": "Four PRs merged today, mostly aimed at making the model list less cryptic and bringing the docs back into the present.\n\n- #12501 adds GPT Realtime 2.1 and makes it the default realtime option. This should reduce the amount of configuration needed for the common voice/realtime path.\n- #12208 clarifies the model balance labels in the table. The labels were technically present, but not doing enough work to explain what they meant.\n- #12508 keeps the model access label next to its title instead of letting it drift away in the layout. Small UI fix, disproportionately useful when scanning a long table.\n- #12506 updates the README through 2026-07-16, so the front door now matches the hive more closely.\n\nThe practical result: the model table should be easier to read without already knowing the terminology, and the default realtime model is current.\n\nPRs: https://github.com/pollinations/pollinations/pull/12208, https://github.com/pollinations/pollinations/pull/12501, https://github.com/pollinations/pollinations/pull/12506, https://github.com/pollinations/pollinations/pull/12508\n\nRepo and README: https://github.com/pollinations/pollinations\n\nIf the revised labels still leave an obvious interpretation gap, that is useful feedback. Tables have a remarkable ability to become a second undocumented API."
+}

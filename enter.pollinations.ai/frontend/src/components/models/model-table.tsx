@@ -14,7 +14,7 @@ import {
     isNewModel,
     isPaidOnly,
 } from "./model-info.ts";
-import { ModelId, ModelRow } from "./model-row.tsx";
+import { ModelRow } from "./model-row.tsx";
 import type {
     ModelCategory,
     ModelSortDirection,
@@ -139,17 +139,8 @@ const MobileModelRow: FC<MobileModelRowProps> = ({ model }) => {
     const balanceAccess: BalanceAccess = showPaidOnly ? "paid" : "quest";
 
     const perPollen = calculatePerPollen(model);
-    const modelNameTooltip = (
-        <span className="flex max-w-[260px] flex-col gap-1.5 text-left leading-snug">
-            {modelDescription && <span>{modelDescription}</span>}
-            <span className="font-mono text-xs text-theme-text-muted">
-                Click to copy {model.name}
-            </span>
-        </span>
-    );
-
     return (
-        <div className="rounded-xl mb-1 bg-surface-opaque shadow-well transition-colors hover:bg-surface-opaque/90">
+        <div className="rounded-xl mb-1 bg-surface-opaque shadow-sm transition-colors hover:bg-surface-opaque/90">
             {/* Clickable header */}
             <div className="relative">
                 <button
@@ -163,14 +154,10 @@ const MobileModelRow: FC<MobileModelRowProps> = ({ model }) => {
                     onClick={() => setExpanded(!expanded)}
                 />
                 <div className="relative z-10 pointer-events-none flex items-center gap-2.5 p-4">
-                    <ChevronIcon
-                        expanded={expanded}
-                        className="h-3.5 w-3.5 shrink-0 text-theme-text-muted"
-                    />
                     {brandLogoPath && (
                         <span
                             aria-hidden="true"
-                            className="h-[1.35rem] w-[1.35rem] shrink-0 bg-current opacity-55"
+                            className="h-8 w-8 shrink-0 bg-current opacity-55"
                             style={{
                                 maskImage: `url(${brandLogoPath})`,
                                 WebkitMaskImage: `url(${brandLogoPath})`,
@@ -183,15 +170,12 @@ const MobileModelRow: FC<MobileModelRowProps> = ({ model }) => {
                             }}
                         />
                     )}
-                    <div className="flex min-w-0 flex-1 flex-col gap-1">
-                        <div className="flex min-w-0 items-center gap-2">
+                    <div className="flex min-w-0 flex-1 flex-col gap-1.5">
+                        <div className="flex min-w-0 items-center">
                             <CopyButton
                                 value={model.name}
-                                tooltip={modelNameTooltip}
-                                copiedTooltip="Copied model id"
+                                tooltip={null}
                                 aria-label={`Copy model id ${model.name}`}
-                                tooltipAlign="start"
-                                tooltipClassName="min-w-0"
                                 className={(copied) =>
                                     cn(
                                         "pointer-events-auto flex min-w-0 flex-1 cursor-pointer items-center gap-1.5 text-left text-sm font-medium leading-none transition-colors",
@@ -205,48 +189,49 @@ const MobileModelRow: FC<MobileModelRowProps> = ({ model }) => {
                                     {publicModelName}
                                 </span>
                             </CopyButton>
-                            <BalanceAccessChip
-                                access={balanceAccess}
-                                className="whitespace-nowrap"
+                        </div>
+                        <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1.5">
+                            <MobileMetadataBadges
+                                inputModalities={inputModalities}
+                                capabilities={capabilities}
                             />
-                        </div>
-                        <div className="flex min-w-0 flex-wrap items-center gap-2">
-                            <ModelId name={model.name} />
-                        </div>
-                        {(inputModalities.length > 0 ||
-                            capabilities.length > 0) && (
-                            <div className="flex min-w-0 flex-wrap items-center gap-1.5">
-                                <MobileMetadataBadges
-                                    inputModalities={inputModalities}
-                                    capabilities={capabilities}
+                            <ModelStatusChips
+                                showNew={showNew}
+                                showAlpha={showAlpha}
+                                alphaTooltip={false}
+                            />
+                            <span className="inline-flex shrink-0 items-center gap-1">
+                                <BalanceAccessChip
+                                    access={balanceAccess}
+                                    className="whitespace-nowrap"
                                 />
-                            </div>
-                        )}
-                        {(showNew || showAlpha) && (
-                            <div className="flex min-w-0 flex-wrap items-center gap-1.5">
-                                <ModelStatusChips
-                                    showNew={showNew}
-                                    showAlpha={showAlpha}
-                                    alphaTooltip={false}
-                                />
-                            </div>
-                        )}
+                                <span className="inline-flex items-baseline gap-1 whitespace-nowrap">
+                                    <span className="text-sm font-semibold leading-none tabular-nums text-theme-text-strong">
+                                        {perPollen}
+                                    </span>
+                                    <span className="text-[10px] font-medium leading-none text-theme-text-muted">
+                                        gen/pollen
+                                    </span>
+                                </span>
+                            </span>
+                        </div>
                     </div>
-                    <div className="flex w-[72px] shrink-0 flex-col items-end gap-0.5 text-right">
-                        <span className="text-sm font-semibold leading-none tabular-nums text-theme-text-strong">
-                            {perPollen}
-                        </span>
-                        <span className="text-[10px] font-medium leading-none text-theme-text-muted">
-                            gen/pollen
-                        </span>
-                    </div>
+                    <ChevronIcon
+                        expanded={expanded}
+                        className="h-3.5 w-3.5 shrink-0 text-theme-text-muted"
+                    />
                 </div>
             </div>
 
             {/* Expanded: description + full pricing */}
             {expanded && (
                 <div className="px-4 pb-4 pt-0">
-                    <div className="flex min-w-0 flex-col gap-2 pl-6">
+                    <div
+                        className={cn(
+                            "flex min-w-0 flex-col gap-2",
+                            brandLogoPath ? "pl-[42px]" : "pl-0",
+                        )}
+                    >
                         {modelDescription && (
                             <p className="mb-2 text-sm leading-relaxed text-theme-text-muted">
                                 {modelDescription}
@@ -314,9 +299,9 @@ const MobileMetadataBadges: FC<MobileMetadataBadgesProps> = ({
     }
 
     return (
-        <div className="inline-flex items-center gap-2.5 text-theme-text-muted">
+        <div className="inline-flex items-center gap-1.5 text-theme-text-muted">
             {inputModalities.length > 0 && (
-                <span className="inline-flex items-center gap-2">
+                <span className="inline-flex items-center gap-1">
                     {inputModalities.map((key) => {
                         const Icon = MODALITY_ICON[key];
                         return <Icon key={key} className="h-4 w-4" />;
@@ -327,7 +312,7 @@ const MobileMetadataBadges: FC<MobileMetadataBadgesProps> = ({
                 <span className="h-3.5 w-px bg-current opacity-30" />
             )}
             {capabilities.length > 0 && (
-                <span className="inline-flex items-center gap-2 text-theme-text-soft">
+                <span className="inline-flex items-center gap-1 text-theme-text-soft">
                     {capabilities.map((key) => {
                         const Icon = CAPABILITY_ICON[key];
                         return <Icon key={key} className="h-4 w-4" />;
@@ -375,7 +360,7 @@ export const UnifiedModelTable: FC<UnifiedModelTableProps> = ({
     return (
         <div>
             {/* Column headers (sortable) */}
-            <div className="flex items-center pb-2 pr-4 md:pr-8">
+            <div className="hidden items-center pb-2 pr-8 md:flex">
                 <button
                     type="button"
                     onClick={() => onSort("name")}

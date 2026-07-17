@@ -253,7 +253,7 @@ export const Models: FC<ModelsProps> = ({
                                     {sectionLabels[section]}
                                     {section === "community" && (
                                         <Chip intent="alpha" size="sm">
-                                            ALPHA
+                                            Alpha
                                         </Chip>
                                     )}
                                 </span>

@@ -960,7 +960,7 @@ test("sana uses the registered backend pool and records its flat price", async (
         modelRequested: "sana",
         modelUsed: "sana",
         tokenCountCompletionImage: 1,
-        tokenPriceCompletionImage: 0.0002,
+        tokenPriceCompletionImage: 0.00001,
         isBilledUsage: true,
     });
 });

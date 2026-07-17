@@ -167,13 +167,13 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                                 {publicModelName}
                             </span>
                         </CopyButton>
-                        <BalanceAccessChip
-                            access={balanceAccess}
-                            className="whitespace-nowrap"
-                        />
                         <ModelStatusChips
                             showNew={showNew}
                             showAlpha={showAlpha}
+                        />
+                        <BalanceAccessChip
+                            access={balanceAccess}
+                            className="whitespace-nowrap"
                         />
                     </div>
                     <div className="flex min-w-0 flex-wrap items-center gap-2">

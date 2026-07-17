@@ -13,7 +13,7 @@ body:
         1. Comment on this issue if you'd like to take it on — multiple devs can express interest
         2. A maintainer picks one dev and assigns the issue to them — please wait until you're assigned before starting work
         3. Once assigned, open a PR against `main` — **start the description with `Fixes #N`** so GitHub links it to this quest
-        4. After merge, open [enter.pollinations.ai](https://enter.pollinations.ai), check quests, and claim the pending reward
+        4. After merge, open [enter.pollinations.ai](https://enter.pollinations.ai/quests), check quests, and claim the pending reward
 
         Need help? Drop a comment here or ask in [Discord #dev-talk](https://discord.com/channels/885844321461485618/920274483896516609).
     validations:

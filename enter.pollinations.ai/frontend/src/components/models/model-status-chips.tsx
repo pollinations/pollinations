@@ -1,10 +1,18 @@
 import { Chip, Tooltip } from "@pollinations/ui";
+import { PaidChip, TierChip, WalletKindIcon } from "@pollinations/ui/wallet";
 import type { FC } from "react";
+
+export type BalanceAccess = "quest" | "paid";
 
 type ModelStatusChipsProps = {
     showNew: boolean;
     showAlpha: boolean;
     alphaTooltip?: boolean;
+};
+
+type BalanceAccessChipProps = {
+    access: BalanceAccess;
+    className?: string;
 };
 
 export const ModelStatusChips: FC<ModelStatusChipsProps> = ({
@@ -39,5 +47,39 @@ export const ModelStatusChips: FC<ModelStatusChipsProps> = ({
                     </Chip>
                 ))}
         </span>
+    );
+};
+
+export const BalanceAccessChip: FC<BalanceAccessChipProps> = ({
+    access,
+    className,
+}) => {
+    const tooltipContent =
+        access === "paid"
+            ? "Paid Pollen only."
+            : "Uses Quest Pollen first, then Paid Pollen if needed.";
+
+    const chip =
+        access === "paid" ? (
+            <PaidChip size="sm" className={className}>
+                <WalletKindIcon kind="paid" />
+                Paid
+            </PaidChip>
+        ) : (
+            <TierChip size="sm" className={className}>
+                <WalletKindIcon kind="tier" />
+                Quest
+            </TierChip>
+        );
+
+    return (
+        <Tooltip
+            triggerAs="span"
+            content={tooltipContent}
+            ariaLabel={tooltipContent}
+            className="pointer-events-auto shrink-0"
+        >
+            {chip}
+        </Tooltip>
     );
 };

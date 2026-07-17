@@ -20,7 +20,7 @@ export type CommunityEndpointTestResult = {
     billableUsage: Usage;
 };
 
-const REQUEST_TIMEOUT_MS = 10_000;
+const REQUEST_TIMEOUT_MS = 90_000;
 
 function authorizationHeaders(bearerToken: string): HeadersInit {
     return {
@@ -35,8 +35,12 @@ function communityModelsUrl(baseUrl: string): string {
 async function fetchJson(url: string, init: RequestInit): Promise<unknown> {
     let response: Response;
     try {
+        // The base URL is validated against https + the private-host blocklist
+        // before we fetch; following redirects would let the endpoint bounce
+        // the probe to an unvalidated destination.
         response = await fetch(url, {
             ...init,
+            redirect: "manual",
             signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
         });
     } catch {
@@ -55,7 +59,9 @@ function endpointErrorMessage(status: number, body: unknown): string {
     const prefix =
         status === 401
             ? "Endpoint responded 401 after we sent Authorization"
-            : `Endpoint responded ${status}`;
+            : status >= 300 && status < 400
+              ? `Endpoint responded ${status} with a redirect, which is not supported`
+              : `Endpoint responded ${status}`;
     return message ? `${prefix}: ${message}` : prefix;
 }
 

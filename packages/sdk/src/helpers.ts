@@ -519,7 +519,10 @@ export async function transcribe(
  *
  * @example
  * ```ts
- * const result = await upload(imageBuffer, { contentType: 'image/jpeg' });
+ * const result = await upload(imageBuffer, {
+ *   contentType: 'image/jpeg',
+ *   tags: ['cats'],
+ * });
  * console.log(result.url);
  * ```
  */
@@ -576,7 +579,7 @@ export async function authorizeDevice(
  * @example
  * ```ts
  * const user = await userInfo();
- * console.log(user.name, user.tier);
+ * console.log(user.name, user.preferred_username);
  * ```
  */
 export async function userInfo(): Promise<UserInfo> {

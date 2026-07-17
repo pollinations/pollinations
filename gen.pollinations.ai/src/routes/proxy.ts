@@ -36,6 +36,10 @@ import {
     getModel3dModelIds,
 } from "@shared/registry/model3d.ts";
 import {
+    DEFAULT_REALTIME_MODEL,
+    REALTIME_MODEL_NAMES,
+} from "@shared/registry/realtime.ts";
+import {
     type CreateChatCompletionRequest,
     CreateChatCompletionRequestSchema,
     type CreateChatCompletionResponse,
@@ -242,7 +246,9 @@ const modelsListHandler =
     };
 
 async function getVisibleModelEntries(c: Context<Env>) {
-    return (await getGenerationModelRegistry(c.env)).visibleEntries();
+    return (await getGenerationModelRegistry(c.env)).visibleEntries(
+        c.var.auth?.user?.id,
+    );
 }
 
 async function getVisibleModelEntriesForEventType(
@@ -250,7 +256,7 @@ async function getVisibleModelEntriesForEventType(
     eventType: GenerationModelEntry["eventType"],
 ) {
     return (await getGenerationModelRegistry(c.env))
-        .visibleEntries()
+        .visibleEntries(c.var.auth?.user?.id)
         .filter((entry) => entry.eventType === eventType);
 }
 
@@ -310,7 +316,7 @@ export const proxyRoutes = new Hono<Env>()
             tags: ["🤖 Models"],
             summary: "List Models (OpenAI-compatible)",
             description:
-                'Returns available models (text, community text, image, realtime, audio, embeddings) in the OpenAI-compatible format (`{object: "list", data: [...]}`). Use this endpoint if you\'re using an OpenAI SDK. For richer metadata including pricing and capabilities, use `/models`, `/text/models`, `/image/models`, `/audio/models`, or `/embeddings/models` instead. When authenticated: models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance.',
+                "Returns available models (text, community text, image, realtime, audio, embeddings) in the OpenAI-compatible format (`{object: \"list\", data: [...]}`). Use this endpoint if you're using an OpenAI SDK. For richer metadata including pricing and capabilities, use `/models`, `/text/models`, `/image/models`, `/audio/models`, or `/embeddings/models` instead. When authenticated: the owner's private community models are included, models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance.",
             responses: {
                 200: {
                     description: "Success",
@@ -361,7 +367,7 @@ export const proxyRoutes = new Hono<Env>()
             tags: ["🤖 Models"],
             summary: "List Models",
             description:
-                "Returns all available text, community text, image, video, 3D, realtime, audio, and embedding models with pricing, capabilities, and metadata. When authenticated: models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance.",
+                "Returns all available text, community text, image, video, 3D, realtime, audio, and embedding models with pricing, capabilities, and metadata. When authenticated: the owner's private community models are included, models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance.",
             responses: {
                 200: {
                     description: "Success",
@@ -465,7 +471,7 @@ export const proxyRoutes = new Hono<Env>()
             tags: ["🤖 Models"],
             summary: "List Text Models (Detailed)",
             description:
-                "Returns all available text generation and community text models with pricing, capabilities, and metadata including context window size, supported modalities, and tool support. When authenticated: models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance.",
+                "Returns all available text generation and community text models with pricing, capabilities, and metadata including context window size, supported modalities, and tool support. When authenticated: the owner's private community models are included, models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance.",
             responses: {
                 200: {
                     description: "Success",
@@ -557,10 +563,10 @@ export const proxyRoutes = new Hono<Env>()
             description: [
                 "OpenAI-compatible Realtime WebSocket proxy.",
                 "",
-                "Connect with `wss://gen.pollinations.ai/v1/realtime?model=gpt-realtime-2` and send/receive Realtime JSON events over the socket.",
+                `Connect with \`wss://gen.pollinations.ai/v1/realtime?model=${DEFAULT_REALTIME_MODEL}\` and send/receive Realtime JSON events over the socket.`,
                 "Server clients can authenticate with `Authorization: Bearer <key>`. Browser WebSocket clients can use `?key=pk_...` because they cannot set custom authorization headers.",
                 "",
-                "**Model:** `gpt-realtime-2`.",
+                `**Models:** ${REALTIME_MODEL_NAMES.map((model) => `\`${model}\``).join(", ")}.`,
                 "",
                 "**Billing:** requires a positive balance. Gen proxies the WebSocket, aggregates observed `response.done` usage, and deducts one session total when the socket closes. Input transcription sessions are not supported yet.",
             ].join("\n"),

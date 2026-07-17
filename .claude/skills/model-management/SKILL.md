@@ -1,9 +1,9 @@
 ---
 name: model-management
-description: "Add, update, or remove text/image/video/audio/embeddings models. Covers the full lifecycle: files to touch, what to verify, and how to test empirically before merging."
+description: "Add, update, rename, or remove text/image/video/audio/embeddings models. Requires explicit user confirmation of pricing, paid status, provider, GPU ownership, and primary/fallback inference routes before editing, then covers files, empirical verification, and tests."
 ---
 
-> **Read top to bottom on first use.** Then bookmark §6 ([Change matrix](#6-change-matrix--if-you-change-x-verify-y)) and §7 ([Test matrix](#7-test-matrix--if-model-claims-x-run-y)) — those are the daily-driver tables. §9 ([Field-parity audit](#9-field-parity-audit--mandatory-on-new-model--provider-change)) is **mandatory** for new model and provider-change PRs.
+> **Read top to bottom on first use.** The [confirmation gate](#mandatory-confirmation-gate--before-any-model-edit) applies to every model change. Then bookmark §6 ([Change matrix](#6-change-matrix--if-you-change-x-verify-y)) and §7 ([Test matrix](#7-test-matrix--if-model-claims-x-run-y)) — those are the daily-driver tables. §9 ([Field-parity audit](#9-field-parity-audit--mandatory-on-new-model--provider-change)) is **mandatory** for new model and provider-change PRs.
 
 ---
 
@@ -20,6 +20,43 @@ description: "Add, update, or remove text/image/video/audio/embeddings models. C
 | Deleting a model | §6 (row "Delete") |
 | Debugging a live issue | See `model-debugging` skill (currently stale — scheduled for rewrite) |
 
+## Mandatory confirmation gate — before any model edit
+
+Do not edit a model until the user explicitly confirms its business and inference contract. This gate applies to additions, removals, renames, aliases, descriptions, capabilities, modalities, prices, providers, and routing. A change that appears metadata-only does not bypass it.
+
+First inspect the registry and every reachable runtime route. Present the values you found; do not ask the user to discover them for you.
+
+| Confirm | Exact meaning |
+|---|---|
+| Canonical name and aliases | Public name after the change and every compatibility/upstream alias |
+| `priceMultiplier` | Exact multiplier applied after provider cost calculation |
+| `paidOnly` | Whether the model requires purchased pack balance |
+| Pollinations-operated GPU | **Yes** only when Pollinations operates the production inference hardware; a managed provider API is **No**, even though that provider uses GPUs |
+| Registry provider | Primary provider configured for the model; this is not the model brand and not a fallback that happened to serve one request |
+| Primary inference route | Runtime handler/config, deployment or host, and upstream `modelId` |
+| Fallback route | Fallback provider, deployment/host, and upstream `modelId`, or explicitly `none` |
+
+Ask this explicit question, filled with the discovered values:
+
+> Please confirm: the price multiplier is **X**, paid-only is **yes/no**, Pollinations-operated GPU is **yes/no**, the registry provider is **Y**, the primary inference route is **Z**, and the fallback route is **A/none**. Are all of these correct?
+
+Also show the canonical name and aliases immediately above the question. Do not proceed on a general approval such as “looks good” if any value is missing from what was shown.
+
+If a value is unknown, inferred, conflicting, or route-dependent:
+
+1. Label it `UNKNOWN` or describe the conflict.
+2. Ask the user to resolve that exact value.
+3. Wait for explicit confirmation before editing the model.
+
+For batch work, use one table row per model with every field above. The user may approve the complete table in one response, but no blank or inherited cells are allowed.
+
+Keep these concepts separate:
+
+- **Configured** provider/GPU describes the registry's intended primary route.
+- **Used** provider/GPU describes the backend proven to have served a specific request.
+- A fallback can make configured and used values different. Never overwrite the configured registry provider with an observed fallback provider.
+- When the registry has a `selfHosted` field, `selfHosted: true` means the configured primary route uses Pollinations-operated production inference GPUs. It does not prove which backend served an individual request.
+
 ## Related skills — when to hand off
 
 This skill is self-contained for the model lifecycle. Hand off to a dedicated skill when the work clearly belongs elsewhere:
@@ -28,7 +65,7 @@ This skill is self-contained for the model lifecycle. Hand off to a dedicated sk
 |---|---|---|
 | Adding/modifying a Tinybird **pipe or datasource schema** | `tinybird-deploy` | Querying existing pipes/SQL to verify billing rows |
 | Investigating a live model error in prod (logs, error patterns, affected users) | `model-debugging` | Pre-merge empirical testing |
-| Verifying provider invoice ↔ our cost block math, monthly spend rollups | `provider-billing` | Setting the cost block from provider's posted rates |
+| Verifying provider invoice ↔ our cost block math, monthly spend rollups | Economics `apps/operation/economics/ingest/connectors/<provider>.md` | Setting the cost block from provider's posted rates |
 | Deploying gen/enter workers themselves | `enter-services` | Local-only testing before merge |
 
 **Things kept inline (not extracted into their own skills) on purpose:**
@@ -73,7 +110,6 @@ Implication: **local gen alone covers ~90% of model-management work** — includ
 **Boot Enter locally only if the change touches any of:**
 - Dashboard, auth routes, account APIs (Stripe portal, webhook handlers, login)
 - Pollen pack / `packBalance` mutation logic, auto-top-up flow itself
-- Tier configs (the source of truth in enter — `enter.pollinations.ai/src/tier-config.ts`)
 - Tinybird event schema (the event SHAPE / new datasource column — not the data inside it; gen writes the data)
 - DB seeding / migrations
 
@@ -193,7 +229,7 @@ Provider/runtime secrets (Azure, OpenAI, OpenRouter API keys, etc.) belong in `g
 
 ### `priceMultiplier`
 
-Every cost block requires `priceMultiplier`. Current values in the registry: **`1` or `1.5`**, no others. `1.5` is our standard markup for retail; `1` is at-cost or strategically subsidized. Set it explicitly on every new model. Final billed price = `usage × cost × priceMultiplier`.
+Every cost block requires `priceMultiplier`. Do not assume a fixed set of allowed multipliers: inspect the current registry value and obtain explicit user confirmation before keeping or changing it. Set it explicitly on every new model. Final billed price = `usage × cost × priceMultiplier`.
 
 ---
 
@@ -201,6 +237,8 @@ Every cost block requires `priceMultiplier`. Current values in the registry: **`
 
 > Pricing depends on **both model AND provider.** Always verify pricing on the provider's own website before writing the cost block.
 > `addedDate` is set **once** and **never updated.** Drives the 7-day NEW chip on the dashboard. Use `new Date("YYYY-MM-DD").getTime()` with today's date on first add; do not touch it for later pricing/endpoint/provider changes.
+
+Every row below starts with the [mandatory confirmation gate](#mandatory-confirmation-gate--before-any-model-edit). Verification after editing does not replace confirmation before editing.
 
 | If you change… | …in these files | …re-verify |
 |---|---|---|
@@ -521,6 +559,7 @@ This is acceptable. What's NOT acceptable is silently dropping a separately-bill
 
 ## Empirical (must all pass against `localhost:8788`)
 
+- [ ] PR links or includes the explicitly approved confirmation row(s): name, aliases, `priceMultiplier`, `paidOnly`, Pollinations-operated GPU, registry provider, primary route, and fallback route
 - [ ] All [Change matrix](#6-change-matrix--if-you-change-x-verify-y) rows for this change type re-verified
 - [ ] All [Test matrix](#7-test-matrix--if-model-claims-x-run-y) rows for declared capabilities passed (not from docs)
 - [ ] [Output cache](#72-image) tested with **byte-identical requests** if the modality caches
@@ -529,10 +568,11 @@ This is acceptable. What's NOT acceptable is silently dropping a separately-bill
 - [ ] [Field-parity audit](#9-field-parity-audit--mandatory-on-new-model--provider-change) passed (new model or provider change)
 - [ ] `/v1/models` returns the model with correct pricing + modalities
 - [ ] `addedDate` set on first add, **untouched** on later edits
-- [ ] `priceMultiplier` set (1 or 1.5)
+- [ ] `priceMultiplier` is set to the explicitly confirmed value
 - [ ] No 5xx in [error-path matrix](#76-error-paths--every-malformed-request-must-return-4xx-never-opaque-5xx)
 - [ ] Burst test passed at expected production concurrency
 - [ ] PR description notes any docs/upstream discrepancies found and any bundled-modality choices
+- [ ] `APIDOCS.md` is untouched. It is regenerated from the live OpenAPI schema after production deploy; update source schemas/routes instead.
 
 ---
 

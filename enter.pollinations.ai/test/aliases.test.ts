@@ -106,7 +106,7 @@ test("calculatePrice derives the total from cost via priceMultiplier", () => {
     expect(price.totalPrice).toBeCloseTo(cost.totalCost * priceMultiplier, 8);
 });
 
-test("GPT-5.5 is available on the free tier", () => {
+test("GPT-5.5 is available without paid-only gating", () => {
     // GPT-5.5 is the flagship behind the `openai-large` clean slug; `gpt-5.5`
     // remains a back-compat alias. Resolve before the direct registry lookup.
     const definition = getRegistryModelDefinition(resolveModelName("gpt-5.5"));
@@ -114,7 +114,7 @@ test("GPT-5.5 is available on the free tier", () => {
     expect(definition.paidOnly).toBeUndefined();
 });
 
-test("GPT-5.6 ChatGPT models are quest-eligible at the Azure multiplier", () => {
+test("GPT-5.6 models are quest-eligible at the promotional multiplier", () => {
     for (const model of [
         "gpt-5.6-sol",
         "gpt-5.6-terra",
@@ -124,7 +124,7 @@ test("GPT-5.6 ChatGPT models are quest-eligible at the Azure multiplier", () => 
 
         expect(definition.provider).toBe("azure");
         expect(definition.paidOnly).toBeUndefined();
-        expect(definition.priceMultiplier).toBe(0.75);
+        expect(definition.priceMultiplier).toBe(0.5);
     }
 });
 

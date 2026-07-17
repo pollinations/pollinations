@@ -4,7 +4,9 @@ The Pollinations CLI — for humans, AI agents, and everything in between.
 
 Generate text, images, audio, video from the terminal. Backed by the [Pollinations API](https://gen.pollinations.ai).
 
-https://github.com/user-attachments/assets/6b200d95-d734-469c-9fe5-3e63549778fe
+<video src="https://github.com/user-attachments/assets/c3ff5c45-672c-4c45-9027-7743d32f9785" controls muted loop playsinline width="720">
+  <a href="https://github.com/user-attachments/assets/c3ff5c45-672c-4c45-9027-7743d32f9785">▶️ Watch the demo</a>
+</video>
 
 ```bash
 npx @pollinations/cli gen image "a cat in space" --output cat.png
@@ -33,7 +35,7 @@ polli auth login                         # device-flow via enter.pollinations.ai
 printf '%s' "$POLLINATIONS_API_KEY" | polli auth login --with-token
 ```
 
-Credentials land at `~/.pollinations/credentials.json`. For one-off runs pass `--key sk_...` or set `POLLINATIONS_API_KEY`. Get keys at [enter.pollinations.ai](https://enter.pollinations.ai).
+Credentials land at `~/.pollinations/credentials.json`. For one-off runs pass `--key sk_...` or set `POLLINATIONS_API_KEY`. Get keys at [enter.pollinations.ai](https://enter.pollinations.ai/keys).
 
 ## Generate
 

@@ -28,7 +28,7 @@ export const ModelStatusChips: FC<ModelStatusChipsProps> = ({
         <span className="inline-flex shrink-0 items-center gap-1.5">
             {showNew && (
                 <Chip intent="news" size="sm">
-                    NEW
+                    New
                 </Chip>
             )}
             {showAlpha &&
@@ -36,14 +36,15 @@ export const ModelStatusChips: FC<ModelStatusChipsProps> = ({
                     <Tooltip
                         triggerAs="span"
                         content="Alpha model — experimental, may be unstable"
+                        displayContents
                     >
                         <Chip intent="alpha" size="sm">
-                            ALPHA
+                            Alpha
                         </Chip>
                     </Tooltip>
                 ) : (
                     <Chip intent="alpha" size="sm">
-                        ALPHA
+                        Alpha
                     </Chip>
                 ))}
         </span>
@@ -78,6 +79,7 @@ export const BalanceAccessChip: FC<BalanceAccessChipProps> = ({
             content={tooltipContent}
             ariaLabel={tooltipContent}
             className="pointer-events-auto shrink-0"
+            displayContents
         >
             {chip}
         </Tooltip>

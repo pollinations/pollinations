@@ -1,0 +1,14 @@
+{
+  "platform": "twitter",
+  "scope": "daily",
+  "date": "2026-07-16",
+  "period_start": "2026-07-16",
+  "period_end": "2026-07-16",
+  "generated_at": "2026-07-17T06:56:28.272165+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-07-16/images/twitter.jpg"
+    }
+  ],
+  "text": "shipped: GPT Realtime 2.1 is now the default. The model table explains its balance/access labels without sending you on a small documentation expedition, and the README is current again. 4 PRs merged."
+}

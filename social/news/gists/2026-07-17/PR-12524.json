@@ -1,0 +1,36 @@
+{
+  "pr_number": 12524,
+  "title": "fix: route Sana through fixed tunnel",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/12524",
+  "merged_at": "2026-07-17T22:53:10Z",
+  "labels": [
+    "DEV-BUG"
+  ],
+  "pr_body_excerpt": "- Routes Sana directly through the existing Lambda media tunnel instead of requiring backend registration.\n- Keeps Flux and Z-Image on the dynamic GPU registry.\n- Updates the Sana generation test to prove the fixed endpoint path and billing.\n\nThe tunnel maps `ltx2-backend.pollinations.ai/generate` to Sana on localhost:8766; existing LTX2 routes are unchanged.\n\nChecks:\n- Focused Sana generation and billing test passed\n- Gen typecheck passed\n- Live tunnel generation returned HTTP 200",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Sana found the tunnel",
+    "blurb": "Sana now takes the sturdy little media tunnel straight to generation, rather than waiting around for a registry introduction. Flux and Z-Image keep their usual GPU registry route; everyone has a path home.",
+    "summary": "Sana image requests in gen.pollinations.ai now route directly to the fixed Lambda media tunnel at ltx2-backend.pollinations.ai/generate (mapped to localhost:8766), while Flux and Z-Image remain on the dynamic GPU registry.",
+    "impact": "Sana generation and billing now work through a tested fixed endpoint path, with live tunnel requests returning HTTP 200 and no changes to existing LTX2 routes.",
+    "keywords": [
+      "sana",
+      "image-generation",
+      "routing",
+      "lambda-tunnel",
+      "billing",
+      "gen-api"
+    ],
+    "visual_concept": "Depict Sana as a glowing pixel-art image seed traveling safely through a cozy underground garden tunnel toward a retro generation terminal. Polly wears a tiny tunnel-worker helmet and guides the seed along the fixed route, while separate signposted garden paths lead Flux and Z-Image toward a dynamic GPU greenhouse; include flowers and code-vines to show reliable routing.",
+    "image_prompt": "Cozy pixel art scene of Polly, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny miner helmet, guiding a glowing image seed through a sturdy lime green (#ecf874) garden tunnel into a retro terminal labeled \"SANA\". Nearby, signposts point Flux and Z-Image toward a softly glowing GPU greenhouse amid code-plants and flowers; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-17/PR-12524.jpg",
+    "prompt": "Cozy pixel art scene of Polly, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny miner helmet, guiding a glowing image seed through a sturdy lime green (#ecf874) garden tunnel into a retro terminal labeled \"SANA\". Nearby, signposts point Flux and Z-Image toward a softly glowing GPU greenhouse amid code-plants and flowers; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, nostalgic but beautiful."
+  },
+  "generated_at": "2026-07-17T22:54:04.193847+00:00"
+}

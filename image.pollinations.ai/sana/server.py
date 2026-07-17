@@ -68,7 +68,7 @@ async def send_heartbeat():
         return
     port = int(os.getenv("PORT", "8765"))
     url = f"http://{public_ip}:{port}"
-    register_url = os.getenv("REGISTER_URL", "http://57.130.31.42:16384/register")
+    register_url = os.getenv("REGISTER_URL", "https://gen.pollinations.ai/register")
     headers = {}
     token = os.getenv("PLN_GPU_TOKEN")
     if token:

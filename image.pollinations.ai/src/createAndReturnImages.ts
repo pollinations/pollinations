@@ -6,10 +6,6 @@ import { fileTypeFromBuffer } from "file-type";
 import sharp from "sharp";
 import { hasSufficientTier } from "../../shared/tier-gating.js";
 import {
-    fetchFromLeastBusyFluxServer,
-    fetchFromLeastBusyServer,
-} from "./availableServers.ts";
-import {
     addPollinationsLogoWithImagemagick,
     getLogoPath,
 } from "./imageOperations.ts";
@@ -102,32 +98,17 @@ export function calculateScaledDimensions(
 }
 
 /**
- * Calls the ComfyUI API to generate images.
+ * Calls the authenticated Gen API to generate Sana images.
  * @param {string} prompt - The prompt for image generation.
  * @param {Object} safeParams - The parameters for image generation.
- * @param {number} concurrentRequests - The number of concurrent requests.
  * @returns {Promise<Array>} - The generated images.
  */
-export const callComfyUI = async (
+export const callGenSana = async (
     prompt: string,
     safeParams: ImageParams,
-    concurrentRequests: number,
 ): Promise<ImageGenerationResult> => {
     try {
-        logOps(
-            "concurrent requests",
-            concurrentRequests,
-            "safeParams",
-            safeParams,
-        );
-
-        // Scale steps from 4 down to 1, dropping more gradually
-        // 4 steps up to 20 concurrent, then gradually down to 1 at 50+ concurrent
-        const steps = Math.max(
-            1,
-            Math.round(4 - Math.max(0, concurrentRequests - 20) / 10)
-        );
-        logOps("calculated_steps", steps);
+        logOps("safeParams", safeParams);
 
         prompt = sanitizeString(prompt);
 
@@ -135,49 +116,42 @@ export const callComfyUI = async (
         const { scaledWidth, scaledHeight, scalingFactor } =
             calculateScaledDimensions(safeParams.width, safeParams.height);
 
-        const body = {
-            prompts: [prompt],
-            width: scaledWidth,
-            height: scaledHeight,
-            seed: safeParams.seed,
-            negative_prompt: safeParams.negative_prompt,
-            steps: steps,
-        };
+        const apiKey = process.env.GEN_API_KEY;
+        if (!apiKey) {
+            throw new Error("GEN_API_KEY is required for Sana generation");
+        }
+
+        const url = new URL(
+            `/image/${encodeURIComponent(prompt)}`,
+            "https://gen.pollinations.ai",
+        );
+        url.searchParams.set("model", "sana");
+        url.searchParams.set("width", String(scaledWidth));
+        url.searchParams.set("height", String(scaledHeight));
+        url.searchParams.set("seed", String(safeParams.seed));
+        url.searchParams.set("safe", String(safeParams.safe));
+        url.searchParams.set("private", "true");
 
         logOps(
             "calling prompt",
-            body.prompts,
+            prompt,
             "width",
-            body.width,
+            scaledWidth,
             "height",
-            body.height,
+            scaledHeight,
         );
 
         // Start timing for fetch
         const fetchStartTime = Date.now();
 
-        let response = null;
+        let response: Response;
 
-        // Single attempt - no retry logic
         try {
-            // Route all requests to sana server
-            const fetchFunction = (opts: RequestInit) => fetchFromLeastBusyServer("sana", opts);
-            
-            // Build headers with optional ENTER_TOKEN for backend authentication
-            const headers: Record<string, string> = {
-                "Content-Type": "application/json",
-            };
-            if (process.env.ENTER_TOKEN) {
-                headers["x-enter-token"] = process.env.ENTER_TOKEN;
-            }
-            if (process.env.PLN_GPU_TOKEN) {
-                headers["x-backend-token"] = process.env.PLN_GPU_TOKEN;
-            }
-
-            response = await fetchFunction({
-                method: "POST",
-                headers,
-                body: JSON.stringify(body),
+            response = await fetch(url, {
+                headers: {
+                    Accept: "image/jpeg",
+                    Authorization: `Bearer ${apiKey}`,
+                },
             });
         } catch (error) {
             logError(`Fetch failed: ${error.message}`);
@@ -199,24 +173,16 @@ export const callComfyUI = async (
         logPerf(`Fetch time percentage: ${fetchPercentage}%`);
 
         if (!response.ok) {
-            logError("Error from server. input was", body);
-            throw new Error(`Server responded with ${response.status}`);
+            const errorBody = (await response.text()).slice(0, 500);
+            throw new Error(
+                `Gen Sana request failed with ${response.status}: ${errorBody}`,
+            );
         }
 
-        const jsonResponse = await response.json();
-
-        const { image, ...rest } = Array.isArray(jsonResponse)
-            ? jsonResponse[0]
-            : jsonResponse;
-
-        if (!image) {
-            logError("image is null");
-            throw new Error("image is null");
+        const buffer = Buffer.from(await response.arrayBuffer());
+        if (buffer.length === 0) {
+            throw new Error("Gen Sana returned an empty image");
         }
-
-        logOps("decoding base64 image");
-
-        const buffer = Buffer.from(image, "base64");
 
         // Resize back to original dimensions if scaling was applied
         if (scalingFactor > 1) {
@@ -227,16 +193,17 @@ export const callComfyUI = async (
                 })
                 .jpeg()
                 .toBuffer();
-            return { 
-                buffer: resizedBuffer, 
-                ...rest,
+            return {
+                buffer: resizedBuffer,
+                isMature: false,
+                isChild: false,
                 trackingData: {
-                    actualModel: 'sana',
+                    actualModel: "sana",
                     usage: {
                         completionImageTokens: 1,
-                        totalTokenCount: 1
-                    }
-                }
+                        totalTokenCount: 1,
+                    },
+                },
             };
         }
 
@@ -248,19 +215,20 @@ export const callComfyUI = async (
             })
             .toBuffer();
 
-        return { 
-            buffer: jpegBuffer, 
-            ...rest,
+        return {
+            buffer: jpegBuffer,
+            isMature: false,
+            isChild: false,
             trackingData: {
-                actualModel: 'sana',
+                actualModel: "sana",
                 usage: {
                     completionImageTokens: 1,
-                    totalTokenCount: 1
-                }
-            }
+                    totalTokenCount: 1,
+                },
+            },
         };
     } catch (e) {
-        logError("Error in callComfyUI:", e);
+        logError("Error in callGenSana:", e);
         throw e;
     }
 };
@@ -803,7 +771,6 @@ export const callAzureGPTImage = async (
  * Generates an image using the appropriate model based on safeParams
  * @param {string} prompt - The prompt for image generation
  * @param {Object} safeParams - Parameters for image generation
- * @param {number} concurrentRequests - Number of concurrent requests
  * @param {Object} progress - Progress tracking object
  * @param {string} requestId - Request ID for progress tracking
  * @param {Object} userInfo - Complete user authentication info object with authenticated, userId, tier, etc.
@@ -812,7 +779,6 @@ export const callAzureGPTImage = async (
 const generateImage = async (
     prompt: string,
     safeParams: ImageParams,
-    concurrentRequests: number,
     progress: ProgressManager,
     requestId: string,
     userInfo: AuthResult,
@@ -999,7 +965,7 @@ const generateImage = async (
 
     // Default: route to sana servers
     progress.updateBar(requestId, 25, "Processing", "Using registered servers");
-    return await callComfyUI(prompt, safeParams, concurrentRequests);
+    return await callGenSana(prompt, safeParams);
 };
 
 // GPT Image logging functions have been moved to utils/gptImageLogger.js
@@ -1134,7 +1100,7 @@ const processImageBuffer = async (
 export async function createAndReturnImageCached(
     prompt: string,
     safeParams: ImageParams,
-    concurrentRequests: number,
+    _concurrentRequests: number,
     originalPrompt: string,
     progress: ProgressManager,
     requestId: string,
@@ -1150,7 +1116,6 @@ export async function createAndReturnImageCached(
         const result = await generateImage(
             prompt,
             safeParams,
-            concurrentRequests,
             progress,
             requestId,
             userInfo,

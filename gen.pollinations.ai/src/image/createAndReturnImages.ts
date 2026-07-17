@@ -827,6 +827,9 @@ const generateImage = async (
         case "qwen-image":
             return await callQwenImageAPI(prompt, safeParams);
 
+        case "sana":
+            return await callSelfHostedServer(prompt, safeParams, "sana");
+
         case "flux":
             return await callFluxWithFallback(prompt, safeParams);
 

@@ -146,7 +146,7 @@ export const TEXT_SERVICES = {
         brand: "OpenAI",
         category: "text",
         addedDate: new Date("2026-07-10").getTime(),
-        priceMultiplier: 0.75,
+        priceMultiplier: 0.5,
         cost: {
             promptTextTokens: perMillion(5.0),
             promptCachedTokens: perMillion(0.5),
@@ -169,7 +169,7 @@ export const TEXT_SERVICES = {
         brand: "OpenAI",
         category: "text",
         addedDate: new Date("2026-07-10").getTime(),
-        priceMultiplier: 0.75,
+        priceMultiplier: 0.5,
         cost: {
             promptTextTokens: perMillion(2.5),
             promptCachedTokens: perMillion(0.25),
@@ -192,7 +192,7 @@ export const TEXT_SERVICES = {
         brand: "OpenAI",
         category: "text",
         addedDate: new Date("2026-07-10").getTime(),
-        priceMultiplier: 0.75,
+        priceMultiplier: 0.5,
         cost: {
             promptTextTokens: perMillion(1.0),
             promptCachedTokens: perMillion(0.1),

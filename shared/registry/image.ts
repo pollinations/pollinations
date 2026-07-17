@@ -6,6 +6,21 @@ export const DEFAULT_IMAGE_MODEL = "zimage" as const;
 export type ImageModelName = keyof typeof IMAGE_SERVICES;
 
 export const IMAGE_SERVICES = {
+    "sana": {
+        aliases: [],
+        provider: "lambda",
+        brand: "NVIDIA",
+        category: "image",
+        addedDate: new Date("2026-07-17").getTime(),
+        priceMultiplier: 1,
+        cost: {
+            completionImageTokens: 0.0001, // per image
+        },
+        title: "Sana Sprint 1.6B",
+        description: "Sana Sprint 1.6B - Fast, low-cost image generation",
+        inputModalities: ["text"],
+        outputModalities: ["image"],
+    },
     "kontext": {
         aliases: [],
         provider: "azure",
@@ -329,7 +344,7 @@ export const IMAGE_SERVICES = {
         outputModalities: ["image"],
     },
     "veo": {
-        aliases: ["veo-3.1-fast", "video"],
+        aliases: ["veo-3.1-fast", "veo-720p", "video"],
         provider: "google",
         brand: "Google",
         category: "video",
@@ -337,10 +352,30 @@ export const IMAGE_SERVICES = {
         paidOnly: true,
         priceMultiplier: 1,
         cost: {
-            completionVideoSeconds: 0.15, // per sec
+            completionVideoSeconds: 0.08, // per sec (720p video)
+            completionAudioSeconds: 0.02, // per sec when audio is enabled
         },
-        title: "Veo 3.1 Fast",
-        description: "Veo 3.1 Fast - Fast text-to-video with audio (preview)",
+        title: "Veo 3.1 Fast 720p",
+        description: "Fast text-to-video with optional audio at 720p",
+        inputModalities: ["text", "image"],
+        outputModalities: ["video"],
+        videoCapabilities: ["start_frame", "end_frame", "audio_output"],
+        maxReferenceImages: 2, // Video keyframe slots: start + end.
+    },
+    "veo-1080p": {
+        aliases: ["veo-3.1-fast-1080p", "veo-1080"],
+        provider: "google",
+        brand: "Google",
+        category: "video",
+        addedDate: new Date("2026-07-15").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1,
+        cost: {
+            completionVideoSeconds: 0.1, // per sec (1080p video)
+            completionAudioSeconds: 0.02, // per sec when audio is enabled
+        },
+        title: "Veo 3.1 Fast 1080p",
+        description: "Fast text-to-video with optional audio at 1080p",
         inputModalities: ["text", "image"],
         outputModalities: ["video"],
         videoCapabilities: ["start_frame", "end_frame", "audio_output"],

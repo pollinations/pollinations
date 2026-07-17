@@ -51,6 +51,8 @@ import type { TrackingData } from "./utils/trackingHeaders.ts";
 import { callVertexAIGemini } from "./vertexAIImageGenerator.js";
 import { writeExifMetadata } from "./writeExifMetadata.ts";
 
+const SANA_BACKEND_URL = "https://ltx2-backend.pollinations.ai/generate";
+
 // Loggers
 const logError = debug("pollinations:error");
 const logPerf = debug("pollinations:perf");
@@ -80,7 +82,7 @@ export type ImageGenerationResult = {
     isMature: boolean;
     isChild: boolean;
     // Tracking data for enter service headers
-    trackingData?: TrackingData;
+    trackingData: TrackingData;
 };
 
 export type AuthResult = {
@@ -207,7 +209,7 @@ export const callSelfHostedServer = async (
 
         // Single attempt - no retry logic
         try {
-            response = await fetchFromWeightedServer(poolType, {
+            const requestInit = {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
@@ -216,7 +218,11 @@ export const callSelfHostedServer = async (
                     }),
                 },
                 body: JSON.stringify(body),
-            });
+            };
+            response =
+                poolType === "sana"
+                    ? await fetch(SANA_BACKEND_URL, requestInit)
+                    : await fetchFromWeightedServer(poolType, requestInit);
         } catch (error) {
             logError(`Fetch failed for ${safeParams.model}:`, error.message);
             logError("Request body:", JSON.stringify(body, null, 2));
@@ -826,6 +832,9 @@ const generateImage = async (
 
         case "qwen-image":
             return await callQwenImageAPI(prompt, safeParams);
+
+        case "sana":
+            return await callSelfHostedServer(prompt, safeParams, "sana");
 
         case "flux":
             return await callFluxWithFallback(prompt, safeParams);

@@ -17,6 +17,7 @@ const snapshotServerUrl = inject("snapshotServerUrl");
 const png1x1Base64 =
     "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAFgwJ/lPFCAAAAAABJRU5ErkJggg==";
 const imageBackendHost = "image-backend.test";
+const sanaBackendHost = "ltx2-backend.pollinations.ai";
 const fireworksHost = "api.fireworks.ai";
 
 afterEach(async () => {
@@ -56,6 +57,7 @@ function createGenerationMocks() {
             state: {},
             handlerMap: {
                 [imageBackendHost]: fakeImageBackendResponse,
+                [sanaBackendHost]: fakeImageBackendResponse,
             },
             reset: () => {},
         },
@@ -919,6 +921,34 @@ test("gpt-image-2 rejects transparent backgrounds with 400", async ({
         eventType: "generate.image",
         modelRequested: "gpt-image-2",
         responseStatus: 400,
+    });
+});
+
+test("sana uses its fixed backend and records its flat price", async ({
+    paidApiKey,
+    mocks,
+}) => {
+    await mocks.enable("tinybird", "imageBackend");
+
+    const { response, wait } = await fetchWorker(
+        "/image/fast%20flower?model=sana&width=512&height=512&seed=42",
+        {
+            headers: { authorization: `Bearer ${paidApiKey}` },
+        },
+    );
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get("x-model-used")).toBe("sana");
+    await wait();
+
+    expect(mocks.tinybird.state.events).toHaveLength(1);
+    expect(mocks.tinybird.state.events[0]).toMatchObject({
+        eventType: "generate.image",
+        modelRequested: "sana",
+        modelUsed: "sana",
+        tokenCountCompletionImage: 1,
+        tokenPriceCompletionImage: 0.0001,
+        isBilledUsage: true,
     });
 });
 

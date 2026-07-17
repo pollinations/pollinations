@@ -1,0 +1,23 @@
+{
+  "platform": "instagram",
+  "scope": "daily",
+  "date": "2026-07-16",
+  "period_start": "2026-07-16",
+  "period_end": "2026-07-16",
+  "generated_at": "2026-07-17T06:56:28.272165+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-07-16/images/instagram-1.jpg"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-07-16/images/instagram-2.jpg"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-07-16/images/instagram-3.jpg"
+    }
+  ],
+  "text": "Four PRs landed in the hive today.\n\nThe model table now explains itself, access labels remain near the thing they describe, GPT Realtime 2.1 is the default, and the README has been gently brought into the present.\n\nMostly small maintenance work. Which is how software avoids becoming an archaeological site. 🌱🐝\n\nDetails in the repo: github.com/pollinations/pollinations\n\n#pollinations #opensource #aitools #pixelart #creativecoding #buildinpublic #indiedev #generativeai #aidevelopers #api #gpt #realtimeai #github #cozygaming",
+  "metadata": {
+    "post_type": "carousel"
+  }
+}

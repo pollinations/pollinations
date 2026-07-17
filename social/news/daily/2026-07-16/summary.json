@@ -1,0 +1,27 @@
+{
+  "date": "2026-07-16",
+  "period_start": "2026-07-16",
+  "period_end": "2026-07-16",
+  "title": "The model table now explains itself",
+  "summary": "A model-focused day: clearer access and copy controls in the dashboard, plus GPT Realtime 2.1 as the new default.\n\nModel browsing got less archaeological: compact Quest/Paid labels now stay beside model names, tooltips explain the rules, descriptions live in hover cards instead of clogging the table, and clicking a name or ID copies the exact model identifier. Mobile usage estimates also now say gen/pollen, because units should not require divination.\n\nRealtime API builders now land on GPT Realtime 2.1 by default, using a verified Azure Realtime deployment for session creation. GPT Realtime 2 remains available for anyone keeping an older setup alive.\n\nThe project homepage's Latest News section was refreshed so visitors and contributors get a current view of what is happening in the open.",
+  "pr_count": 4,
+  "prs": [
+    {
+      "number": 12208,
+      "date": "2026-07-16"
+    },
+    {
+      "number": 12501,
+      "date": "2026-07-16"
+    },
+    {
+      "number": 12506,
+      "date": "2026-07-16"
+    },
+    {
+      "number": 12508,
+      "date": "2026-07-16"
+    }
+  ],
+  "generated_at": "2026-07-17T06:56:28.272165+00:00"
+}

@@ -1,0 +1,35 @@
+{
+  "pr_number": 12317,
+  "title": "Update InferencePort AI Base URL",
+  "author": "sharktide",
+  "url": "https://github.com/pollinations/pollinations/pull/12317",
+  "merged_at": "2026-07-17T22:29:37Z",
+  "labels": [
+    "DEV-CHORE"
+  ],
+  "pr_body_excerpt": "Change the InferencePort AI base URL for 3D generation from https://sharktide-lightning.hf.space/v1 to https://api.inferenceport.ai/v1",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "3D takes the scenic route",
+    "blurb": "The 3D generator now talks directly to InferencePort's proper API address. One less mysterious detour for the little polygon seedlings.",
+    "summary": "Updated the InferencePort client used by 3D generation from the sharktide-lightning Hugging Face Space URL to the official https://api.inferenceport.ai/v1 endpoint.",
+    "impact": "3D generation requests now use InferencePort's dedicated API endpoint, giving the integration a cleaner and more reliable route to the service.",
+    "keywords": [
+      "3d-generation",
+      "inferenceport",
+      "api",
+      "model3d",
+      "routing"
+    ],
+    "visual_concept": "Depict Polly tending a small garden of chunky low-poly 3D shapes growing from an API pipe that has been rerouted from a tiny cloud sign to a neat InferencePort terminal. The route change should feel like a cozy, well-marked garden path; include glowing endpoint arrows, flowers, and a helpful CRT robot checking the connection.",
+    "image_prompt": "Cozy pixel art scene of Polly, the cute yellow-and-dark-brown striped bee with pink rectangular blush, black oval eyes, light blue rounded wings, and a tiny technician tool belt, carefully connecting a glowing lime green (#ecf874) API pipe to a friendly retro terminal labeled \"INFERENCEPORT\" while low-poly cube and sphere flowers sprout nearby; a chunky CRT monitor robot happily verifies the new route. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, subtle scanlines, warm cream and lavender garden background, dark purple (#110518) outlines, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-17/PR-12317.jpg",
+    "prompt": "Cozy pixel art scene of Polly, the cute yellow-and-dark-brown striped bee with pink rectangular blush, black oval eyes, light blue rounded wings, and a tiny technician tool belt, carefully connecting a glowing lime green (#ecf874) API pipe to a friendly retro terminal labeled \"INFERENCEPORT\" while low-poly cube and sphere flowers sprout nearby; a chunky CRT monitor robot happily verifies the new route. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, subtle scanlines, warm cream and lavender garden background, dark purple (#110518) outlines, nostalgic but beautiful."
+  },
+  "generated_at": "2026-07-17T22:30:36.372041+00:00"
+}

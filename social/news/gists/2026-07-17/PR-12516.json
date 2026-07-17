@@ -1,0 +1,35 @@
+{
+  "pr_number": 12516,
+  "title": "docs: update README — 2026-07-17",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/12516",
+  "merged_at": "2026-07-17T07:47:08Z",
+  "labels": [
+    "NEWS"
+  ],
+  "pr_body_excerpt": "Daily README update: Latest News section. (Recent Apps is refreshed by Apps / Update metrics.)",
+  "gist": {
+    "category": "docs",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "News, freshly pollinated",
+    "blurb": "The README's Latest News patch got its daily watering. The front door now points visitors at the newest things growing in the hive.",
+    "summary": "Refreshed the root README's Latest News section for 2026-07-17 so repository visitors see current pollinations.ai updates.",
+    "impact": "People discovering the project through GitHub now get a more current snapshot of recent pollinations.ai news.",
+    "keywords": [
+      "README",
+      "news",
+      "documentation",
+      "GitHub",
+      "community"
+    ],
+    "visual_concept": "A cozy open-source garden noticeboard represents the README's refreshed Latest News section. Polly, wearing a tiny librarian cap, pins a fresh lime-green news card onto a retro terminal-shaped bulletin board amid flowers and code-plants.",
+    "image_prompt": "Cozy pixel art scene of Polly, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny librarian cap, pinning a fresh news card to a retro terminal bulletin board labeled 'LATEST NEWS'; code-plants and small flowers grow around it. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-17/PR-12516.jpg",
+    "prompt": "Cozy pixel art scene of Polly, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny librarian cap, pinning a fresh news card to a retro terminal bulletin board labeled 'LATEST NEWS'; code-plants and small flowers grow around it. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
+  },
+  "generated_at": "2026-07-17T07:50:07.403434+00:00"
+}

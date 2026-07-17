@@ -370,6 +370,19 @@ We believe in community-driven development. You can contribute to pollinations.a
 
 For any questions or support, please visit our [Discord channel](https://discord.gg/pollinations-ai-885844321461485618) or create an issue on our [GitHub repository](https://github.com/pollinations/pollinations).
 
+## 🛠️ Maintainers
+
+Pollinations is maintained by people with ongoing responsibility for reviewing contributions, triaging issues, and keeping the platform and its community tooling healthy.
+
+| Maintainer | Primary responsibilities |
+| --- | --- |
+| [@voodoohop](https://github.com/voodoohop) | Project direction and platform architecture |
+| [@ElliotEtag](https://github.com/ElliotEtag) | Platform engineering and operations |
+| [@Circuit-Overtime](https://github.com/Circuit-Overtime) | Developer ecosystem, community contribution programs, and SDK/MCP/CLI tooling |
+| [@Itachi-1824](https://github.com/Itachi-1824) | Polly, repository automation, and contributor operations |
+
+Area ownership is recorded in [CODEOWNERS](./.github/CODEOWNERS). Maintainers collaborate across the repository, and ownership does not limit who can contribute.
+
 ## 🗂️ Project Structure
 
 Our codebase is organized into several key folders, each serving a specific purpose in the pollinations.ai ecosystem:

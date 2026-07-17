@@ -1,0 +1,10 @@
+# Developer ecosystem and community contribution programs
+/apps/gsoc/ @Circuit-Overtime
+/packages/mcp/ @Circuit-Overtime
+/packages/polli-cli/ @Circuit-Overtime
+/packages/sdk/ @Circuit-Overtime
+
+# Repository and community automation
+/.github/ @Circuit-Overtime @Itachi-1824
+/apps/polly/ @Itachi-1824
+/social/ @Circuit-Overtime @Itachi-1824

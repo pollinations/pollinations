@@ -282,7 +282,7 @@ describe("gen worker routing", () => {
         expect(models.find((model) => model.name === "sana")).toMatchObject({
             name: "sana",
             pricing: {
-                completionImageTokens: "0.00001",
+                completionImageTokens: "0.0001",
                 currency: "pollen",
             },
         });

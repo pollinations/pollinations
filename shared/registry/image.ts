@@ -16,7 +16,7 @@ export const IMAGE_SERVICES = {
         addedDate: new Date("2026-07-17").getTime(),
         priceMultiplier: 1,
         cost: {
-            completionImageTokens: 0.00001, // per image
+            completionImageTokens: 0.0001, // per image
         },
         title: "Sana Sprint 1.6B",
         description: "Sana Sprint 1.6B - Fast, low-cost image generation",

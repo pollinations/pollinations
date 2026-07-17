@@ -17,6 +17,7 @@ const snapshotServerUrl = inject("snapshotServerUrl");
 const png1x1Base64 =
     "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAFgwJ/lPFCAAAAAABJRU5ErkJggg==";
 const imageBackendHost = "image-backend.test";
+const sanaBackendHost = "ltx2-backend.pollinations.ai";
 const fireworksHost = "api.fireworks.ai";
 
 afterEach(async () => {
@@ -56,6 +57,7 @@ function createGenerationMocks() {
             state: {},
             handlerMap: {
                 [imageBackendHost]: fakeImageBackendResponse,
+                [sanaBackendHost]: fakeImageBackendResponse,
             },
             reset: () => {},
         },
@@ -922,25 +924,10 @@ test("gpt-image-2 rejects transparent backgrounds with 400", async ({
     });
 });
 
-test("sana uses the registered backend pool and records its flat price", async ({
+test("sana uses its fixed backend and records its flat price", async ({
     paidApiKey,
     mocks,
 }) => {
-    const existing = await env.KV.list({ prefix: "image:server:test:sana:" });
-    await Promise.all(existing.keys.map((key) => env.KV.delete(key.name)));
-
-    const { response: registerResponse } = await fetchWorker("/register", {
-        method: "POST",
-        headers: {
-            "content-type": "application/json",
-            authorization: `Bearer ${env.PLN_GPU_TOKEN}`,
-        },
-        body: JSON.stringify({
-            url: `https://${imageBackendHost}`,
-            type: "sana",
-        }),
-    });
-    expect(registerResponse.status).toBe(200);
     await mocks.enable("tinybird", "imageBackend");
 
     const { response, wait } = await fetchWorker(

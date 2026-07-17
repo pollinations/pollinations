@@ -1,4 +1,4 @@
-import { type ModelId, resolveModelName } from "@shared/registry/registry.ts";
+import { resolveModelName } from "@shared/registry/registry.ts";
 import { portkeyConfig } from "./configs/modelConfigs.js";
 import midijourneyPrompt from "./personas/midijourney.js";
 import { BASE_PROMPTS } from "./prompts/systemPrompts.js";
@@ -28,7 +28,7 @@ const claudeAdaptiveThinking = createClaudeThinkingTransform("adaptive");
 
 interface ModelDefinition {
     name: string;
-    config: (typeof portkeyConfig)[ModelId];
+    config: (typeof portkeyConfig)[string];
     transform?: TransformFn;
 }
 

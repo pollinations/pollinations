@@ -1,3 +1,4 @@
+import type { EmbeddingServiceId } from "@shared/registry/embeddings.ts";
 import type { ModelDefinition, Usage } from "@shared/registry/registry.ts";
 import { buildUsageHeaders } from "@shared/registry/usage-headers.ts";
 import {
@@ -24,6 +25,27 @@ type EmbeddingData = {
     embedding: number[] | string;
     index: number;
 };
+
+// Provider-facing model IDs (what the upstream APIs expect), keyed by
+// registry model name. The registry only carries public names and pricing.
+const EMBEDDING_PROVIDER_MODEL_IDS: Record<EmbeddingServiceId, string> = {
+    "gemini-2": "gemini-embedding-2-preview",
+    "openai-3-small": "text-embedding-3-small",
+    "openai-3-large": "text-embedding-3-large",
+    "cohere-embed-v4": "embed-v-4-0",
+    "qwen3-embedding-8b": "accounts/fireworks/models/qwen3-embedding-8b",
+};
+
+export function getEmbeddingProviderModelId(modelName: string): string {
+    const modelId =
+        EMBEDDING_PROVIDER_MODEL_IDS[modelName as EmbeddingServiceId];
+    if (!modelId) {
+        throw new Error(
+            `No provider model ID configured for embedding model: ${modelName}`,
+        );
+    }
+    return modelId;
+}
 
 const OPENAI_MAX_DIMENSIONS: Record<string, number> = {
     "text-embedding-3-small": 1536,

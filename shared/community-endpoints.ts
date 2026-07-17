@@ -192,7 +192,7 @@ export function communityPriceDefinition(
 
 export function communityModelDefinition(
     endpoint: CommunityModelDefinitionInput,
-): ModelDefinition<string> {
+): ModelDefinition {
     const parsed = parseCommunityModelId(endpoint.modelId);
     const description = endpoint.description?.trim();
     const legacyAlias = parsed
@@ -202,7 +202,6 @@ export function communityModelDefinition(
         legacyAlias && legacyAlias !== endpoint.modelId ? [legacyAlias] : [];
     return {
         aliases,
-        modelId: endpoint.modelId,
         provider: "community",
         brand: "Community",
         category: "text",

@@ -1,7 +1,10 @@
 import { type Context, Hono } from "hono";
 import { bodyLimit } from "hono/body-limit";
 import { resolver as baseResolver, describeRoute } from "hono-openapi";
-import { generateEmbeddings } from "@/embeddings/handler.ts";
+import {
+    generateEmbeddings,
+    getEmbeddingProviderModelId,
+} from "@/embeddings/handler.ts";
 import type { Env } from "@/env.ts";
 import { handleImagePrompt, handleRegisterServer } from "@/image/handler.ts";
 import { auth } from "@/middleware/auth.ts";
@@ -652,7 +655,10 @@ export const proxyRoutes = new Hono<Env>()
             const serviceDef = c.var.model.definition;
             return generateEmbeddings(
                 c.env,
-                { ...requestBody, model: serviceDef.modelId },
+                {
+                    ...requestBody,
+                    model: getEmbeddingProviderModelId(c.var.model.resolved),
+                },
                 serviceDef,
                 c.var.model.resolved,
             );

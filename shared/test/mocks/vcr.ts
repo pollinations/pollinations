@@ -66,12 +66,12 @@ async function getSnapshotHash(request: Request): Promise<string> {
         hash.update(`${body.model}` || "");
         hash.update(`${body.stream}` || "");
         hash.update(`${body.tool_choice}` || "");
-        // Include provider + modelId so snapshots auto-invalidate when a model
+        // Include the provider so snapshots auto-invalidate when a model
         // migrates to a different backend (e.g. fireworks → azure).
         try {
             const modelName = resolveModelName(body.model);
             const def = getRegistryModelDefinition(modelName);
-            hash.update(`${def.provider}:${def.modelId}`);
+            hash.update(`${def.provider}`);
         } catch {
             // Unknown model — hash stays request-only
         }

@@ -4,12 +4,10 @@ import type { ModelDefinition } from "./registry";
 export const DEFAULT_IMAGE_MODEL = "zimage" as const;
 
 export type ImageModelName = keyof typeof IMAGE_SERVICES;
-export type ImageModelId = (typeof IMAGE_SERVICES)[ImageModelName]["modelId"];
 
 export const IMAGE_SERVICES = {
     "kontext": {
         aliases: [],
-        modelId: "kontext",
         provider: "azure",
         brand: "Black Forest Labs",
         category: "image",
@@ -26,7 +24,6 @@ export const IMAGE_SERVICES = {
     },
     "nanobanana": {
         aliases: [],
-        modelId: "nanobanana",
         provider: "google",
         brand: "Google",
         category: "image",
@@ -48,7 +45,6 @@ export const IMAGE_SERVICES = {
     },
     "nanobanana-2": {
         aliases: ["nanobanana2"],
-        modelId: "nanobanana-2",
         provider: "google",
         brand: "Google",
         category: "image",
@@ -71,7 +67,6 @@ export const IMAGE_SERVICES = {
     },
     "nanobanana-2-lite": {
         aliases: ["nanobanana2lite", "nanobanana-lite"],
-        modelId: "nanobanana-2-lite",
         provider: "google",
         brand: "Google",
         category: "image",
@@ -94,7 +89,6 @@ export const IMAGE_SERVICES = {
     },
     "nanobanana-pro": {
         aliases: [],
-        modelId: "nanobanana-pro",
         provider: "google",
         brand: "Google",
         category: "image",
@@ -118,7 +112,6 @@ export const IMAGE_SERVICES = {
     },
     "seedream5": {
         aliases: [],
-        modelId: "seedream5",
         provider: "replicate",
         brand: "ByteDance",
         category: "image",
@@ -137,7 +130,6 @@ export const IMAGE_SERVICES = {
     },
     "seedream5-pro": {
         aliases: ["seedream-5-pro", "seedream-pro-5"],
-        modelId: "seedream5-pro",
         provider: "replicate",
         brand: "ByteDance",
         category: "image",
@@ -155,7 +147,6 @@ export const IMAGE_SERVICES = {
     },
     "seedream": {
         aliases: [],
-        modelId: "seedream",
         provider: "replicate",
         brand: "ByteDance",
         category: "image",
@@ -173,7 +164,6 @@ export const IMAGE_SERVICES = {
     },
     "seedream-pro": {
         aliases: [],
-        modelId: "seedream-pro",
         provider: "replicate",
         brand: "ByteDance",
         category: "image",
@@ -198,7 +188,6 @@ export const IMAGE_SERVICES = {
     // flat per-image cost is correct regardless of aspect ratio / resolution.
     "ideogram-v4-turbo": {
         aliases: [],
-        modelId: "ideogram-v4-turbo",
         provider: "replicate",
         brand: "Ideogram",
         category: "image",
@@ -216,7 +205,6 @@ export const IMAGE_SERVICES = {
     },
     "ideogram-v4-balanced": {
         aliases: [],
-        modelId: "ideogram-v4-balanced",
         provider: "replicate",
         brand: "Ideogram",
         category: "image",
@@ -234,7 +222,6 @@ export const IMAGE_SERVICES = {
     },
     "ideogram-v4-quality": {
         aliases: [],
-        modelId: "ideogram-v4-quality",
         provider: "replicate",
         brand: "Ideogram",
         category: "image",
@@ -252,7 +239,6 @@ export const IMAGE_SERVICES = {
     },
     "gptimage": {
         aliases: ["gpt-image", "gpt-image-1-mini"],
-        modelId: "gptimage",
         provider: "azure",
         brand: "OpenAI",
         category: "image",
@@ -272,7 +258,6 @@ export const IMAGE_SERVICES = {
     },
     "gptimage-large": {
         aliases: ["gpt-image-1.5", "gpt-image-large"],
-        modelId: "gptimage-large",
         provider: "azure",
         brand: "OpenAI",
         category: "image",
@@ -294,7 +279,6 @@ export const IMAGE_SERVICES = {
     },
     "gpt-image-2": {
         aliases: [],
-        modelId: "gpt-image-2",
         provider: "azure",
         brand: "OpenAI",
         category: "image",
@@ -316,7 +300,6 @@ export const IMAGE_SERVICES = {
     },
     "flux": {
         aliases: [],
-        modelId: "flux",
         provider: "vast",
         brand: "Black Forest Labs",
         category: "image",
@@ -332,7 +315,6 @@ export const IMAGE_SERVICES = {
     },
     "zimage": {
         aliases: ["z-image", "z-image-turbo"],
-        modelId: "zimage",
         provider: "runpod",
         brand: "Alibaba",
         category: "image",
@@ -348,7 +330,6 @@ export const IMAGE_SERVICES = {
     },
     "veo": {
         aliases: ["veo-3.1-fast", "video"],
-        modelId: "veo",
         provider: "google",
         brand: "Google",
         category: "video",
@@ -367,7 +348,6 @@ export const IMAGE_SERVICES = {
     },
     "seedance-pro": {
         aliases: [],
-        modelId: "seedance-pro",
         provider: "replicate",
         brand: "ByteDance",
         category: "video",
@@ -390,7 +370,6 @@ export const IMAGE_SERVICES = {
     },
     "seedance-2.0": {
         aliases: ["seedance-2"],
-        modelId: "seedance-2.0",
         provider: "replicate",
         brand: "ByteDance",
         category: "video",
@@ -411,7 +390,6 @@ export const IMAGE_SERVICES = {
     },
     "wan": {
         aliases: ["wan2.6", "wan-i2v"],
-        modelId: "wan",
         provider: "replicate",
         brand: "Alibaba",
         category: "video",
@@ -433,7 +411,6 @@ export const IMAGE_SERVICES = {
     },
     "wan-fast": {
         aliases: ["wan2.2", "wan-2.2"],
-        modelId: "wan-fast",
         provider: "replicate",
         brand: "Alibaba",
         category: "video",
@@ -454,7 +431,6 @@ export const IMAGE_SERVICES = {
     },
     "wan-pro": {
         aliases: ["wan2.7", "wan-2.7"],
-        modelId: "wan-pro",
         provider: "replicate",
         brand: "Alibaba",
         category: "video",
@@ -476,7 +452,6 @@ export const IMAGE_SERVICES = {
     },
     "wan-pro-1080p": {
         aliases: ["wan2.7-1080p", "wan-pro-1080"],
-        modelId: "wan-pro-1080p",
         provider: "replicate",
         brand: "Alibaba",
         category: "video",
@@ -499,7 +474,6 @@ export const IMAGE_SERVICES = {
     },
     "wan-image": {
         aliases: ["wan2.7-image", "wan-img"],
-        modelId: "wan-image",
         provider: "replicate",
         brand: "Alibaba",
         category: "image",
@@ -519,7 +493,6 @@ export const IMAGE_SERVICES = {
     },
     "wan-image-pro": {
         aliases: ["wan2.7-image-pro", "wan-img-pro"],
-        modelId: "wan-image-pro",
         provider: "replicate",
         brand: "Alibaba",
         category: "image",
@@ -545,7 +518,6 @@ export const IMAGE_SERVICES = {
             "qwen-image-edit",
             "qwen-image-edit-plus",
         ],
-        modelId: "qwen-image",
         provider: "replicate",
         brand: "Qwen",
         category: "image",
@@ -566,7 +538,6 @@ export const IMAGE_SERVICES = {
     },
     "grok-imagine": {
         aliases: ["grok-imagine-image"],
-        modelId: "grok-imagine",
         provider: "xai",
         brand: "xAI",
         category: "image",
@@ -590,7 +561,6 @@ export const IMAGE_SERVICES = {
             "grok-imagine-image-quality",
             "grok-imagine-image-pro",
         ],
-        modelId: "grok-imagine-pro",
         provider: "xai",
         brand: "xAI",
         category: "image",
@@ -610,7 +580,6 @@ export const IMAGE_SERVICES = {
     },
     "grok-video-pro": {
         aliases: ["grok-imagine-video"],
-        modelId: "grok-video-pro",
         provider: "xai",
         brand: "xAI",
         category: "video",
@@ -631,7 +600,6 @@ export const IMAGE_SERVICES = {
     },
     "klein": {
         aliases: ["flux-klein"],
-        modelId: "klein",
         provider: "vast",
         brand: "Black Forest Labs",
         category: "image",
@@ -648,7 +616,6 @@ export const IMAGE_SERVICES = {
     },
     "ltx-2": {
         aliases: ["ltx2", "ltx-2.3", "ltxvideo", "ltx-video"],
-        modelId: "ltx-2",
         provider: "lambda",
         brand: "Lightricks",
         category: "video",
@@ -668,7 +635,6 @@ export const IMAGE_SERVICES = {
     },
     "p-image": {
         aliases: ["pruna-image", "pruna"],
-        modelId: "p-image",
         provider: "replicate",
         brand: "Pruna",
         category: "image",
@@ -685,7 +651,6 @@ export const IMAGE_SERVICES = {
     },
     "p-image-edit": {
         aliases: ["pruna-edit", "pruna-image-edit"],
-        modelId: "p-image-edit",
         provider: "replicate",
         brand: "Pruna",
         category: "image",
@@ -707,7 +672,6 @@ export const IMAGE_SERVICES = {
     // its real per-second cost. `p-video` aliases to the 720p tier.
     "p-video-720p": {
         aliases: ["p-video", "pruna-video"],
-        modelId: "p-video-720p",
         provider: "replicate",
         brand: "Pruna",
         category: "video",
@@ -726,7 +690,6 @@ export const IMAGE_SERVICES = {
     },
     "p-video-1080p": {
         aliases: ["pruna-video-1080p"],
-        modelId: "p-video-1080p",
         provider: "replicate",
         brand: "Pruna",
         category: "video",
@@ -745,7 +708,6 @@ export const IMAGE_SERVICES = {
     },
     "nova-canvas": {
         aliases: ["amazon-nova-canvas"],
-        modelId: "nova-canvas",
         provider: "aws",
         brand: "Amazon",
         category: "image",
@@ -762,7 +724,6 @@ export const IMAGE_SERVICES = {
     },
     "nova-reel": {
         aliases: ["amazon-nova-reel"],
-        modelId: "nova-reel",
         provider: "aws",
         brand: "Amazon",
         category: "video",
@@ -778,7 +739,7 @@ export const IMAGE_SERVICES = {
         videoCapabilities: ["start_frame"],
         maxReferenceImages: 1, // Video keyframe slots: start only.
     },
-} as const satisfies Record<string, ModelDefinition<string>>;
+} as const satisfies Record<string, ModelDefinition>;
 
 const isVideoService = (svc: {
     outputModalities?: readonly string[];

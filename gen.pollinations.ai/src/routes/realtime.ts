@@ -74,7 +74,7 @@ type RealtimeBillingContext = {
     byopClientKeyId?: string | null;
     modelRequested: string;
     resolvedModelRequested: string;
-    modelDefinition: ModelDefinition<string>;
+    modelDefinition: ModelDefinition;
     modelCostDefinition: CostDefinition;
     modelPriceDefinition: PriceDefinition;
     requestId: string;

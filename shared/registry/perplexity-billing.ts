@@ -66,18 +66,18 @@ function getReportedSearchContextSize(output: unknown): string | undefined {
 // the pinned tier means the pin drifted — logged as WARN.
 function resolvePerplexityRequestCost(args: {
     output: unknown;
-    modelId: string;
+    model: string;
     ruleId: string;
     staticFee: number;
     expectedSearchContextSize: string;
 }): number {
-    const { output, modelId, ruleId, staticFee, expectedSearchContextSize } =
+    const { output, model, ruleId, staticFee, expectedSearchContextSize } =
         args;
 
     const reported = getReportedSearchContextSize(output);
     if (reported && reported !== expectedSearchContextSize) {
         console.warn(
-            `[billing] perplexity search_context_size drift: model=${modelId} rule=${ruleId} expected=${expectedSearchContextSize} reported=${reported} — static fee assumed the expected tier`,
+            `[billing] perplexity search_context_size drift: model=${model} rule=${ruleId} expected=${expectedSearchContextSize} reported=${reported} — static fee assumed the expected tier`,
         );
     }
 
@@ -86,19 +86,19 @@ function resolvePerplexityRequestCost(args: {
         // Expected for non-stream Perplexity until the gateway cost-preserving
         // fix deploys. WARN so a persistent absence is visible without paging.
         console.warn(
-            `[billing] provider request_cost absent for model=${modelId} rule=${ruleId} — using static fee ${staticFee}`,
+            `[billing] provider request_cost absent for model=${model} rule=${ruleId} — using static fee ${staticFee}`,
         );
         return staticFee;
     }
     if (read.status === "malformed") {
         console.error(
-            `[billing] malformed provider request_cost (${JSON.stringify(read.raw) ?? String(read.raw)}) for model=${modelId} rule=${ruleId} — using static fee ${staticFee}`,
+            `[billing] malformed provider request_cost (${JSON.stringify(read.raw) ?? String(read.raw)}) for model=${model} rule=${ruleId} — using static fee ${staticFee}`,
         );
         return staticFee;
     }
     if (read.value > staticFee * PROVIDER_COST_CLAMP_FACTOR) {
         console.error(
-            `[billing] provider request_cost ${read.value} exceeds 10× static fee ${staticFee} for model=${modelId} rule=${ruleId} — clamped to static fee`,
+            `[billing] provider request_cost ${read.value} exceeds 10× static fee ${staticFee} for model=${model} rule=${ruleId} — clamped to static fee`,
         );
         return staticFee;
     }
@@ -120,10 +120,10 @@ function createPerplexitySearchBilling(
                 unit: "request",
                 unitCost,
                 countUnits: () => 1,
-                resolveUnitCost: (output, modelId) =>
+                resolveUnitCost: (output, model) =>
                     resolvePerplexityRequestCost({
                         output,
-                        modelId,
+                        model,
                         ruleId: id,
                         staticFee: unitCost,
                         expectedSearchContextSize,

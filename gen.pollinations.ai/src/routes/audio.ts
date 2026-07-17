@@ -1,7 +1,6 @@
 import type { Logger } from "@logtape/logtape";
 import { ensureUpstreamOk, UpstreamError } from "@shared/error.ts";
 import {
-    AUDIO_SERVICES,
     type AudioModelName,
     ELEVENLABS_VOICES,
     resolveElevenLabsVoiceId,
@@ -31,6 +30,32 @@ import { arrayBufferToBase64 } from "@/util.ts";
 import { requireGenerationAccess } from "@/utils/generation-access.ts";
 import { transcribeWithAssemblyAi } from "./assemblyai-transcription.ts";
 import { buildTranscriptionResponse } from "./transcription-response.ts";
+
+// Provider-facing model IDs (what the upstream APIs expect), keyed by
+// registry model name. The registry only carries public names and pricing.
+// Only models whose handlers send an explicit model ID upstream are listed.
+const AUDIO_PROVIDER_MODEL_IDS = {
+    elevenlabs: "eleven_v3",
+    elevenflash: "eleven_flash_v2_5",
+    "eleven-multilingual-v2": "eleven_multilingual_v2",
+    elevenmusic: "music_v2",
+    "eleven-sfx": "eleven_text_to_sound_v2",
+    "qwen-tts": "qwen3-tts-flash",
+    "qwen-tts-instruct": "qwen3-tts-instruct-flash",
+} as const satisfies Partial<Record<AudioModelName, string>>;
+
+function getAudioProviderModelId(modelName: string): string {
+    const modelId =
+        AUDIO_PROVIDER_MODEL_IDS[
+            modelName as keyof typeof AUDIO_PROVIDER_MODEL_IDS
+        ];
+    if (!modelId) {
+        throw new UpstreamError(500 as ContentfulStatusCode, {
+            message: `No provider model ID configured for audio model: ${modelName}`,
+        });
+    }
+    return modelId;
+}
 
 const CreateSpeechRequestSchema = z
     .object({
@@ -599,7 +624,7 @@ export async function generateMusic(
         });
     }
 
-    const modelId = AUDIO_SERVICES.elevenmusic.modelId;
+    const modelId = AUDIO_PROVIDER_MODEL_IDS.elevenmusic;
     let uploadedSongId: string | undefined;
     let compositionPlan = opts.compositionPlan;
     let conditioningRef = opts.conditioningRef;
@@ -771,7 +796,7 @@ export async function generateSoundEffect(opts: {
         });
     }
 
-    const modelId = AUDIO_SERVICES["eleven-sfx"].modelId;
+    const modelId = AUDIO_PROVIDER_MODEL_IDS["eleven-sfx"];
     const elevenLabsUrl = "https://api.elevenlabs.io/v1/sound-generation";
 
     const body: Record<string, unknown> = { text: prompt, model_id: modelId };
@@ -850,7 +875,7 @@ export function isQwenTtsModel(model: string): model is QwenTtsModelName {
 
 function requireTextToAudioModel(
     model: string,
-    definition: ModelDefinition<string>,
+    definition: ModelDefinition,
 ): void {
     const acceptsText = definition.inputModalities?.includes("text");
     const returnsAudio = definition.outputModalities?.includes("audio");
@@ -1714,7 +1739,7 @@ async function dispatchAudioGeneration(
             c,
             await generateQwenTts({
                 modelName: c.var.model.resolved as QwenTtsModelName,
-                modelId: c.var.model.definition.modelId,
+                modelId: getAudioProviderModelId(c.var.model.resolved),
                 text,
                 voice,
                 instruct,
@@ -1728,7 +1753,7 @@ async function dispatchAudioGeneration(
         c,
         await generateSpeech({
             modelName: c.var.model.resolved,
-            modelId: c.var.model.definition.modelId,
+            modelId: getAudioProviderModelId(c.var.model.resolved),
             text,
             voice,
             responseFormat,

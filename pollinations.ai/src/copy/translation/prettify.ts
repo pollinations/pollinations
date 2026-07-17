@@ -41,7 +41,7 @@ async function prettifyOne(item: CopyItem, apiKey?: string): Promise<CopyItem> {
         const response = await generateText(
             prompt,
             undefined,
-            "gpt-5-nano",
+            "openai/gpt-5-nano",
             apiKey,
         );
         const text = response.replace(/^\[title:\s*[^\]]*\]\s*/, "").trim();

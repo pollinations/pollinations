@@ -468,7 +468,9 @@ fixtureTest(
 
         expect(response.status).toBe(200);
         expect(response.headers.get("content-type")).toBe("audio/wav");
-        expect(response.headers.get("x-model-used")).toBe("qwen3-tts-flash");
+        expect(response.headers.get("x-model-used")).toBe(
+            "qwen/qwen3-tts-flash",
+        );
         expect(response.headers.get("x-usage-completion-audio-tokens")).toBe(
             "10",
         );

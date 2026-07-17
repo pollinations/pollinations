@@ -130,7 +130,7 @@ export async function fetchJsonWithAuth(url, options = {}) {
  * Consolidates the shared boilerplate across describeImage/analyzeVideo/transcribeAudio.
  *
  * @param {Object} args
- * @param {string} args.model - Model name (e.g. "gpt-5.4-nano", "gemini-3.1-pro")
+ * @param {string} args.model - Model name (e.g. "openai/gpt-5.4-nano", "google/gemini-3.1-pro-preview")
  * @param {string} args.prompt - Text prompt to pair with the media
  * @param {"image_url"|"video_url"|"input_audio"} args.mediaType - Content-block kind
  * @param {string} args.mediaUrl - URL of the media to analyze

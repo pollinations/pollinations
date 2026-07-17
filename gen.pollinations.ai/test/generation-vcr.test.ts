@@ -421,9 +421,9 @@ test("chat completions use local text generation with VCR-backed Portkey", async
     });
 
     expect(response.status).toBe(200);
-    expect(response.headers.get("x-model-used")).toBe("gpt-5-nano");
+    expect(response.headers.get("x-model-used")).toBe("openai/gpt-5-nano");
     await expect(response.json()).resolves.toMatchObject({
-        model: "gpt-5-nano",
+        model: "openai/gpt-5-nano",
         choices: [
             {
                 message: {
@@ -439,8 +439,8 @@ test("chat completions use local text generation with VCR-backed Portkey", async
         eventType: "generate.text",
         responseStatus: 200,
         modelRequested: "openai-fast",
-        resolvedModelRequested: "gpt-5-nano",
-        modelUsed: "gpt-5-nano",
+        resolvedModelRequested: "openai/gpt-5-nano",
+        modelUsed: "openai/gpt-5-nano",
         tokenCountPromptText: 7,
         tokenCountCompletionText: 3,
         isBilledUsage: true,
@@ -640,18 +640,18 @@ test("streaming chat completions replay through VCR", async ({
 
     expect(response.status).toBe(200);
     expect(response.headers.get("content-type")).toContain("text/event-stream");
-    expect(response.headers.get("x-model-used")).toBe("gpt-5-nano");
+    expect(response.headers.get("x-model-used")).toBe("openai/gpt-5-nano");
     const responseBody = await response.text();
     expect(responseBody).toContain("snapshot stream");
-    expect(responseBody).toContain('"model":"gpt-5-nano"');
+    expect(responseBody).toContain('"model":"openai/gpt-5-nano"');
     await wait();
 
     expect(mocks.tinybird.state.events).toHaveLength(1);
     expect(mocks.tinybird.state.events[0]).toMatchObject({
         eventType: "generate.text",
         modelRequested: "openai-fast",
-        resolvedModelRequested: "gpt-5-nano",
-        modelUsed: "gpt-5-nano",
+        resolvedModelRequested: "openai/gpt-5-nano",
+        modelUsed: "openai/gpt-5-nano",
         tokenCountPromptText: 7,
         tokenCountCompletionText: 3,
         isBilledUsage: true,
@@ -867,7 +867,9 @@ test("flux image generation uses Fireworks serverless from gen", async ({
         response.status === 200 ? "" : await response.clone().text();
     expect(response.status, failureBody).toBe(200);
     expect(response.headers.get("content-type")).toMatch(/^image\//);
-    expect(response.headers.get("x-model-used")).toBe("flux-schnell");
+    expect(response.headers.get("x-model-used")).toBe(
+        "black-forest-labs/flux.1-schnell",
+    );
     expect((await response.arrayBuffer()).byteLength).toBeGreaterThan(0);
     await wait();
 
@@ -890,8 +892,8 @@ test("flux image generation uses Fireworks serverless from gen", async ({
     expect(mocks.tinybird.state.events[0]).toMatchObject({
         eventType: "generate.image",
         modelRequested: "flux",
-        resolvedModelRequested: "flux-schnell",
-        modelUsed: "flux-schnell",
+        resolvedModelRequested: "black-forest-labs/flux.1-schnell",
+        modelUsed: "black-forest-labs/flux.1-schnell",
         tokenCountCompletionImage: 1,
         isBilledUsage: true,
     });

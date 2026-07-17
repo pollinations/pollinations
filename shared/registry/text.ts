@@ -29,13 +29,13 @@ export const AUDIO_VOICES = [
     "dan",
 ] as const;
 
-export const DEFAULT_TEXT_MODEL = "gpt-5.4-nano" as const;
+export const DEFAULT_TEXT_MODEL = "openai/gpt-5.4-nano" as const;
 export type TextModelName = keyof typeof TEXT_SERVICES;
 export type TextModelId = (typeof TEXT_SERVICES)[TextModelName]["modelId"];
 
 export const TEXT_SERVICES = {
-    "gpt-5.4-nano": {
-        aliases: ["openai"],
+    "openai/gpt-5.4-nano": {
+        aliases: ["gpt-5.4-nano", "openai"],
         modelId: "gpt-5.4-nano",
         provider: "azure",
         brand: "OpenAI",
@@ -56,8 +56,8 @@ export const TEXT_SERVICES = {
         contextLength: 400000,
         isSpecialized: false,
     },
-    "gpt-5-nano": {
-        aliases: ["openai-fast", "gpt-5-nano-2025-08-07"],
+    "openai/gpt-5-nano": {
+        aliases: ["gpt-5-nano", "openai-fast", "gpt-5-nano-2025-08-07"],
         modelId: "gpt-5-nano-2025-08-07",
         provider: "azure",
         brand: "OpenAI",
@@ -123,8 +123,13 @@ export const TEXT_SERVICES = {
         contextLength: 400000,
         isSpecialized: false,
     },
-    "gpt-5.5": {
-        aliases: ["openai-large", "gpt-5.5-reasoning", "openai-reasoning"],
+    "openai/gpt-5.5": {
+        aliases: [
+            "gpt-5.5",
+            "openai-large",
+            "gpt-5.5-reasoning",
+            "openai-reasoning",
+        ],
         modelId: "gpt-5.5",
         provider: "azure",
         brand: "OpenAI",
@@ -218,8 +223,8 @@ export const TEXT_SERVICES = {
         contextLength: 1050000,
         isSpecialized: false,
     },
-    "mercury-2": {
-        aliases: ["mercury", "inception", "inception-mercury"],
+    "inception/mercury-2": {
+        aliases: ["mercury-2", "mercury", "inception", "inception-mercury"],
         modelId: "mercury-2",
         provider: "inception",
         brand: "Inception",
@@ -240,8 +245,8 @@ export const TEXT_SERVICES = {
         contextLength: 128000,
         isSpecialized: false,
     },
-    "qwen3-coder": {
-        aliases: ["qwen-coder", "qwen3-coder-30b-a3b-instruct"],
+    "qwen/qwen3-coder-30b-a3b-instruct": {
+        aliases: ["qwen3-coder", "qwen-coder", "qwen3-coder-30b-a3b-instruct"],
         modelId: "qwen3-coder-30b-a3b-instruct",
         provider: "ovhcloud",
         brand: "Qwen",
@@ -286,8 +291,9 @@ export const TEXT_SERVICES = {
         contextLength: 128000,
         isSpecialized: false,
     },
-    "mistral-small-4": {
+    "mistralai/mistral-small-2603": {
         aliases: [
+            "mistral-small-4",
             "mistral",
             "mistral-4",
             "mistral-small",
@@ -314,8 +320,9 @@ export const TEXT_SERVICES = {
         contextLength: 262144,
         isSpecialized: false,
     },
-    "gpt-audio-mini": {
+    "openai/gpt-audio-mini": {
         aliases: [
+            "gpt-audio-mini",
             "openai-audio",
             "gpt-audio-mini-2025-12-15",
             "gpt-4o-mini-audio-preview",
@@ -342,8 +349,13 @@ export const TEXT_SERVICES = {
         contextLength: 128000,
         isSpecialized: false,
     },
-    "gpt-audio-1.5": {
-        aliases: ["openai-audio-large", "gpt-audio", "gpt-audio-2025-12-15"],
+    "openai/gpt-audio-1.5": {
+        aliases: [
+            "gpt-audio-1.5",
+            "openai-audio-large",
+            "gpt-audio",
+            "gpt-audio-2025-12-15",
+        ],
         modelId: "gpt-audio-1.5",
         provider: "azure",
         brand: "OpenAI",
@@ -394,8 +406,8 @@ export const TEXT_SERVICES = {
         contextLength: 1048576,
         isSpecialized: false,
     },
-    "gemini-3.5-flash": {
-        aliases: ["gemini"],
+    "google/gemini-3.5-flash": {
+        aliases: ["gemini-3.5-flash", "gemini"],
         modelId: "gemini-3.5-flash",
         provider: "google",
         brand: "Google",
@@ -425,8 +437,9 @@ export const TEXT_SERVICES = {
         contextLength: 1048576,
         isSpecialized: false,
     },
-    "gemini-3.1-flash-lite": {
+    "google/gemini-3.1-flash-lite": {
         aliases: [
+            "gemini-3.1-flash-lite",
             "gemini-flash-lite-3.1",
             "gemini-3.1-flash-lite-preview",
             "gemini-flash-lite",
@@ -458,8 +471,8 @@ export const TEXT_SERVICES = {
         contextLength: 1048576,
         isSpecialized: false,
     },
-    "gemini-2.5-flash-lite": {
-        aliases: ["gemini-fast"],
+    "google/gemini-2.5-flash-lite": {
+        aliases: ["gemini-2.5-flash-lite", "gemini-fast"],
         modelId: "gemini-2.5-flash-lite",
         provider: "google",
         brand: "Google",
@@ -487,8 +500,9 @@ export const TEXT_SERVICES = {
         contextLength: 1048576,
         isSpecialized: false,
     },
-    "deepseek-v4-flash": {
+    "deepseek/deepseek-v4-flash": {
         aliases: [
+            "deepseek-v4-flash",
             "deepseek",
             "deepseek-v4",
             "deepseek-v4-lite",
@@ -515,8 +529,14 @@ export const TEXT_SERVICES = {
         contextLength: 1048576,
         isSpecialized: false,
     },
-    "gemma-4-26b": {
-        aliases: ["gemma", "gemma-4", "gemma-4-26b-a4b", "gemma-4-26b-a4b-it"],
+    "google/gemma-4-26b-a4b-it": {
+        aliases: [
+            "gemma-4-26b",
+            "gemma",
+            "gemma-4",
+            "gemma-4-26b-a4b",
+            "gemma-4-26b-a4b-it",
+        ],
         modelId: "google/gemma-4-26b-a4b-it",
         provider: "openrouter",
         addedDate: new Date("2026-05-08").getTime(),
@@ -540,8 +560,8 @@ export const TEXT_SERVICES = {
         contextLength: 262144,
         isSpecialized: false,
     },
-    "deepseek-v4-pro": {
-        aliases: ["deepseek-pro"],
+    "deepseek/deepseek-v4-pro": {
+        aliases: ["deepseek-v4-pro", "deepseek-pro"],
         modelId: "accounts/fireworks/models/deepseek-v4-pro",
         provider: "fireworks",
         brand: "DeepSeek",
@@ -562,8 +582,9 @@ export const TEXT_SERVICES = {
         contextLength: 1048576,
         isSpecialized: false,
     },
-    "grok-4.20-non-reasoning": {
+    "x-ai/grok-4.20-non-reasoning": {
         aliases: [
+            "grok-4.20-non-reasoning",
             "grok",
             "grok-fast",
             "grok-4-1-fast",
@@ -595,8 +616,9 @@ export const TEXT_SERVICES = {
         contextLength: 262144,
         isSpecialized: false,
     },
-    "grok-4.20": {
+    "x-ai/grok-4.20": {
         aliases: [
+            "grok-4.20",
             "grok-4.20-reasoning",
             "grok-4-20-reasoning",
             "grok-4-20",
@@ -625,8 +647,8 @@ export const TEXT_SERVICES = {
         contextLength: 262144,
         isSpecialized: false,
     },
-    "grok-4.3": {
-        aliases: ["grok-large", "grok-4-3", "grok-reasoning"],
+    "x-ai/grok-4.3": {
+        aliases: ["grok-4.3", "grok-large", "grok-4-3", "grok-reasoning"],
         modelId: "grok-4.3",
         provider: "azure",
         brand: "xAI",
@@ -651,8 +673,8 @@ export const TEXT_SERVICES = {
         contextLength: 1048576, // xAI Grok 4.3 context window.
         isSpecialized: false,
     },
-    "gemini-2.5-flash-lite-search": {
-        aliases: ["gemini-search", "gemini-2.5-flash-search"],
+    "gemini-search": {
+        aliases: ["gemini-2.5-flash-search", "gemini-2.5-flash-lite-search"],
         modelId: "gemini-2.5-flash-lite",
         provider: "google",
         brand: "Google",
@@ -683,8 +705,8 @@ export const TEXT_SERVICES = {
         contextLength: 1048576,
         isSpecialized: false,
     },
-    "gemini-3.1-flash-lite-search": {
-        aliases: ["gemini-search-fast"],
+    "gemini-search-fast": {
+        aliases: ["gemini-3.1-flash-lite-search"],
         modelId: "gemini-3.1-flash-lite",
         provider: "google",
         brand: "Google",
@@ -717,8 +739,8 @@ export const TEXT_SERVICES = {
         contextLength: 1048576,
         isSpecialized: false,
     },
-    "gemini-3.5-flash-search": {
-        aliases: ["gemini-search-large"],
+    "gemini-search-large": {
+        aliases: ["gemini-3.5-flash-search"],
         modelId: "gemini-3.5-flash",
         provider: "google",
         brand: "Google",
@@ -788,8 +810,8 @@ export const TEXT_SERVICES = {
         tools: true,
         isSpecialized: true,
     },
-    "claude-haiku-4.5": {
-        aliases: ["claude-fast", "claude-haiku"],
+    "anthropic/claude-haiku-4.5": {
+        aliases: ["claude-haiku-4.5", "claude-fast", "claude-haiku"],
         modelId: "claude-haiku-4-5-20251001",
         provider: "bedrock",
         brand: "Anthropic",
@@ -813,8 +835,8 @@ export const TEXT_SERVICES = {
         contextLength: 200000,
         isSpecialized: false,
     },
-    "claude-sonnet-4.6": {
-        aliases: ["claude", "claude-sonnet"],
+    "anthropic/claude-sonnet-4.6": {
+        aliases: ["claude-sonnet-4.6", "claude", "claude-sonnet"],
         modelId: "claude-sonnet-4-6",
         provider: "bedrock",
         brand: "Anthropic",
@@ -913,8 +935,8 @@ export const TEXT_SERVICES = {
         contextLength: 1000000, // Bedrock global Claude Opus 4.7 context window.
         isSpecialized: false,
     },
-    "claude-opus-4.8": {
-        aliases: ["claude-large", "claude-opus"],
+    "anthropic/claude-opus-4.8": {
+        aliases: ["claude-opus-4.8", "claude-large", "claude-opus"],
         modelId: "claude-opus-4-8",
         provider: "bedrock",
         brand: "Anthropic",
@@ -963,8 +985,8 @@ export const TEXT_SERVICES = {
         contextLength: 1000000,
         isSpecialized: false,
     },
-    "sonar": {
-        aliases: ["perplexity-fast"],
+    "perplexity/sonar": {
+        aliases: ["sonar", "perplexity-fast"],
         modelId: "sonar",
         provider: "perplexity",
         brand: "Perplexity",
@@ -987,8 +1009,8 @@ export const TEXT_SERVICES = {
         contextLength: 128000,
         isSpecialized: false,
     },
-    "sonar-high": {
-        aliases: ["perplexity-deep", "sonar-deep"],
+    "perplexity-deep": {
+        aliases: ["sonar-deep"],
         modelId: "sonar",
         provider: "perplexity",
         brand: "Perplexity",
@@ -1009,8 +1031,8 @@ export const TEXT_SERVICES = {
         contextLength: 128000,
         isSpecialized: false,
     },
-    "sonar-pro": {
-        aliases: ["perplexity", "perplexity-pro"],
+    "perplexity/sonar-pro": {
+        aliases: ["sonar-pro", "perplexity", "perplexity-pro"],
         modelId: "sonar-pro",
         provider: "perplexity",
         brand: "Perplexity",
@@ -1031,8 +1053,12 @@ export const TEXT_SERVICES = {
         contextLength: 200000,
         isSpecialized: false,
     },
-    "sonar-reasoning-pro": {
-        aliases: ["perplexity-reasoning", "sonar-reasoning"],
+    "perplexity/sonar-reasoning-pro": {
+        aliases: [
+            "sonar-reasoning-pro",
+            "perplexity-reasoning",
+            "sonar-reasoning",
+        ],
         modelId: "sonar-reasoning-pro",
         provider: "perplexity",
         brand: "Perplexity",
@@ -1055,8 +1081,9 @@ export const TEXT_SERVICES = {
         contextLength: 128000,
         isSpecialized: false,
     },
-    "kimi-k2.6": {
+    "moonshotai/kimi-k2.6": {
         aliases: [
+            "kimi-k2.6",
             "kimi",
             "kimi-k2p6",
             "kimi-reasoning",
@@ -1085,8 +1112,8 @@ export const TEXT_SERVICES = {
         contextLength: 262000,
         isSpecialized: false,
     },
-    "kimi-k2.7-code": {
-        aliases: ["kimi-code", "kimi-k2.7", "kimi-k2p7"],
+    "moonshotai/kimi-k2.7-code": {
+        aliases: ["kimi-k2.7-code", "kimi-code", "kimi-k2.7", "kimi-k2p7"],
         modelId: "accounts/fireworks/models/kimi-k2p7-code",
         provider: "fireworks",
         brand: "Moonshot AI",
@@ -1111,8 +1138,8 @@ export const TEXT_SERVICES = {
         contextLength: 262144,
         isSpecialized: false,
     },
-    "gemini-3.1-pro": {
-        aliases: ["gemini-large", "gemini-2.5-pro"],
+    "google/gemini-3.1-pro-preview": {
+        aliases: ["gemini-3.1-pro", "gemini-large", "gemini-2.5-pro"],
         modelId: "gemini-3.1-pro-preview",
         provider: "google",
         brand: "Google",
@@ -1144,8 +1171,8 @@ export const TEXT_SERVICES = {
         contextLength: 1048576,
         isSpecialized: false,
     },
-    "nova-micro": {
-        aliases: ["nova-fast", "amazon-nova-micro"],
+    "amazon/nova-micro-v1": {
+        aliases: ["nova-micro", "nova-fast", "amazon-nova-micro"],
         modelId: "amazon.nova-micro-v1:0",
         provider: "bedrock",
         brand: "Amazon",
@@ -1168,8 +1195,8 @@ export const TEXT_SERVICES = {
         contextLength: 128000,
         isSpecialized: false,
     },
-    "nova-2-lite": {
-        aliases: ["nova", "amazon-nova-2-lite", "nova-2"],
+    "amazon/nova-2-lite-v1": {
+        aliases: ["nova-2-lite", "nova", "amazon-nova-2-lite", "nova-2"],
         modelId: "us.amazon.nova-2-lite-v1:0",
         provider: "bedrock",
         brand: "Amazon",
@@ -1194,8 +1221,8 @@ export const TEXT_SERVICES = {
         contextLength: 1048576,
         isSpecialized: false,
     },
-    "glm-5.2": {
-        aliases: ["glm", "glm-5p2"],
+    "z-ai/glm-5.2": {
+        aliases: ["glm-5.2", "glm", "glm-5p2"],
         modelId: "accounts/fireworks/models/glm-5p2",
         provider: "fireworks",
         brand: "Z.ai",
@@ -1217,8 +1244,13 @@ export const TEXT_SERVICES = {
         contextLength: 1048576,
         isSpecialized: false,
     },
-    "llama-3.3-70b": {
-        aliases: ["llama", "llama-3.3", "llama-v3p3-70b-instruct"],
+    "meta-llama/llama-3.3-70b-instruct": {
+        aliases: [
+            "llama-3.3-70b",
+            "llama",
+            "llama-3.3",
+            "llama-v3p3-70b-instruct",
+        ],
         modelId: "Llama-3.3-70B-Instruct",
         provider: "azure",
         brand: "Meta",
@@ -1238,8 +1270,9 @@ export const TEXT_SERVICES = {
         contextLength: 131072,
         isSpecialized: false,
     },
-    "llama-4-maverick": {
+    "meta-llama/llama-4-maverick": {
         aliases: [
+            "llama-4-maverick",
             "llama-maverick",
             "llama-4",
             "llama-maverick-17b",
@@ -1266,8 +1299,9 @@ export const TEXT_SERVICES = {
         isSpecialized: false,
         paidOnly: true,
     },
-    "llama-4-scout": {
+    "meta-llama/llama-4-scout": {
         aliases: [
+            "llama-4-scout",
             "llama-scout",
             "llama-scout-17b",
             "llama-4-scout-17b-16e-instruct",
@@ -1314,8 +1348,8 @@ export const TEXT_SERVICES = {
         contextLength: 200000,
         isSpecialized: false,
     },
-    "minimax-m3": {
-        aliases: ["minimax", "minimax3", "minimax-3"],
+    "minimax/minimax-m3": {
+        aliases: ["minimax-m3", "minimax", "minimax3", "minimax-3"],
         modelId: "accounts/fireworks/models/minimax-m3",
         provider: "fireworks",
         brand: "MiniMax",
@@ -1363,8 +1397,8 @@ export const TEXT_SERVICES = {
         contextLength: 1048576,
         isSpecialized: false,
     },
-    "mistral-large-3": {
-        aliases: ["mistral-large"],
+    "mistralai/mistral-large-2512": {
+        aliases: ["mistral-large-3", "mistral-large"],
         modelId: "Mistral-Large-3",
         provider: "azure",
         brand: "Mistral",
@@ -1410,8 +1444,8 @@ export const TEXT_SERVICES = {
         search: true,
         isSpecialized: false,
     },
-    "qwen3-coder-next": {
-        aliases: ["qwen-coder-large"],
+    "qwen/qwen3-coder-next": {
+        aliases: ["qwen3-coder-next", "qwen-coder-large"],
         modelId: "qwen/qwen3-coder-next",
         provider: "openrouter",
         brand: "Qwen",
@@ -1434,8 +1468,9 @@ export const TEXT_SERVICES = {
         contextLength: 262144,
         isSpecialized: false,
     },
-    "qwen3.7-plus": {
+    "qwen/qwen3.7-plus": {
         aliases: [
+            "qwen3.7-plus",
             "qwen-large",
             "qwen3.7",
             "qwen3p7-plus",
@@ -1464,8 +1499,9 @@ export const TEXT_SERVICES = {
         contextLength: 262000,
         isSpecialized: false,
     },
-    "qwen3-vl-30b": {
+    "qwen/qwen3-vl-30b-a3b-instruct": {
         aliases: [
+            "qwen3-vl-30b",
             "qwen-vision",
             "qwen3-vl",
             "qwen3-vl-30b-a3b-instruct",
@@ -1493,8 +1529,9 @@ export const TEXT_SERVICES = {
         contextLength: 131072,
         isSpecialized: false,
     },
-    "qwen3-vl-235b": {
+    "qwen/qwen3-vl-235b-a22b-thinking": {
         aliases: [
+            "qwen3-vl-235b",
             "qwen-vision-pro",
             "qwen3-vl-pro",
             "qwen3-vl-235b-a22b-thinking",
@@ -1520,8 +1557,13 @@ export const TEXT_SERVICES = {
         contextLength: 262144,
         isSpecialized: false,
     },
-    "step-3.7-flash": {
-        aliases: ["step-flash", "stepfun-flash", "step-flash-3.7"],
+    "stepfun/step-3.7-flash": {
+        aliases: [
+            "step-3.7-flash",
+            "step-flash",
+            "stepfun-flash",
+            "step-flash-3.7",
+        ],
         modelId: "stepfun/step-3.7-flash",
         provider: "openrouter",
         brand: "StepFun",
@@ -1570,8 +1612,8 @@ export const TEXT_SERVICES = {
         contextLength: 262144,
         isSpecialized: false,
     },
-    "qwen3guard": {
-        aliases: ["qwen-safety", "qwen3guard-gen-8b"],
+    "qwen/qwen3guard-gen-8b": {
+        aliases: ["qwen3guard", "qwen-safety", "qwen3guard-gen-8b"],
         modelId: "Qwen3Guard-Gen-8B",
         provider: "ovhcloud",
         brand: "Qwen",

@@ -59,7 +59,7 @@ export const CreateEmbeddingRequestSchema = z
     .object({
         model: z.string().default(DEFAULT_EMBEDDING_MODEL).meta({
             description: "Embedding model to use",
-            example: "gemini-embedding-2",
+            example: "google/gemini-embedding-2",
         }),
         input: z
             .union([

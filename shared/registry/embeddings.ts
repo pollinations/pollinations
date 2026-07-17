@@ -3,9 +3,9 @@ import type { ModelDefinition } from "./registry";
 
 // Embedding model IDs as returned by providers
 type EmbeddingModelDefinitions = {
-    "gemini-embedding-2": ModelDefinition<"gemini-embedding-2-preview">;
-    "text-embedding-3-small": ModelDefinition<"text-embedding-3-small">;
-    "text-embedding-3-large": ModelDefinition<"text-embedding-3-large">;
+    "google/gemini-embedding-2": ModelDefinition<"gemini-embedding-2-preview">;
+    "openai/text-embedding-3-small": ModelDefinition<"text-embedding-3-small">;
+    "openai/text-embedding-3-large": ModelDefinition<"text-embedding-3-large">;
     "cohere-embed-v4": ModelDefinition<"embed-v-4-0">;
     "qwen3-embedding-8b": ModelDefinition<"accounts/fireworks/models/qwen3-embedding-8b">;
 };
@@ -15,11 +15,11 @@ export type EmbeddingModelId =
     EmbeddingModelDefinitions[EmbeddingServiceId]["modelId"];
 
 export const DEFAULT_EMBEDDING_MODEL: EmbeddingServiceId =
-    "text-embedding-3-small";
+    "openai/text-embedding-3-small";
 
 export const EMBEDDING_SERVICES: EmbeddingModelDefinitions = {
-    "gemini-embedding-2": {
-        aliases: ["gemini-2", "embedding"],
+    "google/gemini-embedding-2": {
+        aliases: ["gemini-embedding-2", "gemini-2", "embedding"],
         modelId: "gemini-embedding-2-preview",
         provider: "google",
         brand: "Google",
@@ -40,8 +40,12 @@ export const EMBEDDING_SERVICES: EmbeddingModelDefinitions = {
         outputModalities: ["embedding"],
         contextLength: 8192,
     },
-    "text-embedding-3-small": {
-        aliases: ["openai-3-small", "embedding-small"],
+    "openai/text-embedding-3-small": {
+        aliases: [
+            "text-embedding-3-small",
+            "openai-3-small",
+            "embedding-small",
+        ],
         modelId: "text-embedding-3-small",
         provider: "openai",
         brand: "OpenAI",
@@ -58,8 +62,12 @@ export const EMBEDDING_SERVICES: EmbeddingModelDefinitions = {
         outputModalities: ["embedding"],
         contextLength: 8192,
     },
-    "text-embedding-3-large": {
-        aliases: ["openai-3-large", "embedding-large"],
+    "openai/text-embedding-3-large": {
+        aliases: [
+            "text-embedding-3-large",
+            "openai-3-large",
+            "embedding-large",
+        ],
         modelId: "text-embedding-3-large",
         provider: "openai",
         brand: "OpenAI",

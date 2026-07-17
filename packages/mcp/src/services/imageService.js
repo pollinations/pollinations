@@ -88,7 +88,7 @@ async function prepareImageRequest(params) {
 async function prepareVideoRequest(params) {
     const {
         prompt,
-        model: requestedModel = "veo-3.1-fast",
+        model: requestedModel = "google/veo-3.1-fast",
         duration,
         aspectRatio,
         audio,
@@ -111,7 +111,7 @@ async function prepareVideoRequest(params) {
     const model = validation.model.name;
 
     if (duration !== undefined) {
-        if (model === "veo-3.1-fast" && ![4, 6, 8].includes(duration)) {
+        if (model === "google/veo-3.1-fast" && ![4, 6, 8].includes(duration)) {
             throw new Error(
                 "veo-3.1-fast only supports duration of 4, 6, or 8 seconds",
             );
@@ -186,7 +186,7 @@ async function generateImageUrl(params) {
             {
                 imageUrl: shareableUrl,
                 prompt,
-                model: model || "z-image-turbo",
+                model: model || "tongyi-mai/z-image-turbo",
                 width: width || 1024,
                 height: height || 1024,
                 seed,
@@ -211,7 +211,7 @@ async function generateImage(params) {
 
         const metadata = {
             prompt,
-            model: model || "z-image-turbo",
+            model: model || "tongyi-mai/z-image-turbo",
             width: width || 1024,
             height: height || 1024,
             seed,
@@ -320,7 +320,7 @@ async function generateImageBatch(params) {
                 },
                 successful,
                 failed: failed.length > 0 ? failed : undefined,
-                model: model || "z-image-turbo",
+                model: model || "tongyi-mai/z-image-turbo",
                 width: width || 1024,
                 height: height || 1024,
             },
@@ -349,7 +349,7 @@ async function generateVideo(params) {
             model,
             duration,
             aspectRatio,
-            audio: model === "veo-3.1-fast" ? audio || false : undefined,
+            audio: model === "google/veo-3.1-fast" ? audio || false : undefined,
             hasReferenceImage: !!image,
             seed,
         };
@@ -412,7 +412,10 @@ async function generateVideoUrl(params) {
                 model,
                 duration,
                 aspectRatio,
-                audio: model === "veo-3.1-fast" ? audio || false : undefined,
+                audio:
+                    model === "google/veo-3.1-fast"
+                        ? audio || false
+                        : undefined,
                 hasReferenceImage: !!image,
                 seed,
             },
@@ -427,7 +430,7 @@ async function describeImage(params) {
     const {
         imageUrl,
         prompt = "Describe this image in detail.",
-        model = "gpt-5.4-nano",
+        model = "openai/gpt-5.4-nano",
     } = params;
 
     if (!imageUrl || typeof imageUrl !== "string") {
@@ -465,7 +468,7 @@ async function analyzeVideo(params) {
     const {
         videoUrl,
         prompt = "Describe what happens in this video in detail.",
-        model = "gemini-3.1-pro",
+        model = "google/gemini-3.1-pro-preview",
     } = params;
 
     if (!videoUrl || typeof videoUrl !== "string") {
@@ -778,7 +781,7 @@ export const imageTools = [
                 .string()
                 .optional()
                 .describe(
-                    "Vision-capable model to use (default: 'gpt-5.4-nano'). Use listTextModels for the live list.",
+                    "Vision-capable model to use (default: 'openai/gpt-5.4-nano'). Use listTextModels for the live list.",
                 ),
         },
         describeImage,
@@ -806,7 +809,7 @@ export const imageTools = [
                 .string()
                 .optional()
                 .describe(
-                    "Model to use (default: 'gemini-3.1-pro'). Use listTextModels for video-capable alternatives.",
+                    "Model to use (default: 'google/gemini-3.1-pro-preview'). Use listTextModels for video-capable alternatives.",
                 ),
         },
         analyzeVideo,

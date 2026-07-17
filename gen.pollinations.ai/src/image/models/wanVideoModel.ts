@@ -104,7 +104,7 @@ function withSeed(
 const WAN_FAST_CONFIG: WanVariantConfig = {
     t2vModel: "wan-video/wan-2.2-t2v-fast",
     i2vModel: "wan-video/wan-2.2-i2v-fast",
-    trackingName: "wan-2.2",
+    trackingName: "alibaba/wan-2.2",
     displayName: "Wan 2.2",
     resolveDuration: () => WAN_FAST_FIXED_SECONDS,
     buildInput(mode, prompt, safeParams, frames) {
@@ -133,7 +133,7 @@ const WAN_FAST_CONFIG: WanVariantConfig = {
 const WAN_26_CONFIG: WanVariantConfig = {
     t2vModel: "wan-video/wan-2.6-t2v",
     i2vModel: "wan-video/wan-2.6-i2v",
-    trackingName: "wan-2.6",
+    trackingName: "alibaba/wan-2.6",
     displayName: "Wan 2.6",
     resolveDuration: (p) => snapDuration(p.duration, WAN_26_DURATIONS),
     buildInput(mode, prompt, safeParams, frames) {
@@ -197,8 +197,8 @@ function makeWan27Config(
     };
 }
 
-const WAN_27_CONFIG = makeWan27Config("720p", "wan-2.7");
-const WAN_27_1080P_CONFIG = makeWan27Config("1080p", "wan-2.7-1080p");
+const WAN_27_CONFIG = makeWan27Config("720p", "alibaba/wan-2.7");
+const WAN_27_1080P_CONFIG = makeWan27Config("1080p", "wan-pro-1080p");
 
 async function generateWanVideo(
     config: WanVariantConfig,

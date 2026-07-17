@@ -48,7 +48,7 @@ function fakeLog() {
     };
 }
 
-function testModel(model: ModelName = "gpt-5.4-nano") {
+function testModel(model: ModelName = "openai/gpt-5.4-nano") {
     return {
         requested: model,
         resolved: model,
@@ -287,7 +287,7 @@ describe("BYOP markup", () => {
                     packBalance: 1,
                 }),
             },
-            model: testModel("llama-4-maverick"),
+            model: testModel("meta-llama/llama-4-maverick"),
             log: fakeLog(),
         } as unknown as Parameters<typeof checkBalance>[0];
 

@@ -535,9 +535,13 @@ export const GetModelsResponseSchema = z
 // OpenAI Images API Schemas
 
 // Shared fields between image generation and editing requests
-const imageModelField = z.string().optional().default("flux-schnell").meta({
-    description: "The model to use for image generation",
-});
+const imageModelField = z
+    .string()
+    .optional()
+    .default("black-forest-labs/flux.1-schnell")
+    .meta({
+        description: "The model to use for image generation",
+    });
 const imageNField = z
     .number()
     .int()

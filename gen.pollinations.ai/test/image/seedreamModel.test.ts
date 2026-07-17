@@ -52,7 +52,7 @@ function mockReplicateFetch(requests: ReplicateRequest[]) {
 }
 
 const baseParams: ImageParams = {
-    model: "seedream-4",
+    model: "bytedance/seedream-4",
     width: 1024,
     height: 1024,
     dimensionsExplicit: false,
@@ -109,7 +109,7 @@ describe("seedreamReplicateModel - seedream 4.0", () => {
 
         const result = await callSeedreamAPI("test prompt", baseParams);
 
-        expect(result.trackingData?.actualModel).toBe("seedream-4");
+        expect(result.trackingData?.actualModel).toBe("bytedance/seedream-4");
         expect(result.trackingData?.usage?.completionImageTokens).toBe(1);
     });
 
@@ -137,7 +137,7 @@ describe("seedreamReplicateModel - seedream 4.5", () => {
 
         const params: ImageParams = {
             ...baseParams,
-            model: "seedream-4.5",
+            model: "bytedance/seedream-4.5",
             width: 2048,
             height: 2048,
         };
@@ -161,7 +161,7 @@ describe("seedreamReplicateModel - seedream 4.5", () => {
 
         const params: ImageParams = {
             ...baseParams,
-            model: "seedream-4.5",
+            model: "bytedance/seedream-4.5",
             image: ["https://example.com/ref.jpg"],
         };
         await callSeedreamProAPI("test prompt", params);
@@ -188,11 +188,11 @@ describe("seedreamReplicateModel - seedream 4.5", () => {
 
         const params: ImageParams = {
             ...baseParams,
-            model: "seedream-4.5",
+            model: "bytedance/seedream-4.5",
         };
         const result = await callSeedreamProAPI("test prompt", params);
 
-        expect(result.trackingData?.actualModel).toBe("seedream-4.5");
+        expect(result.trackingData?.actualModel).toBe("bytedance/seedream-4.5");
     });
 });
 
@@ -368,7 +368,7 @@ describe("seedreamReplicateModel - seedream 4.0 custom-size mode", () => {
 
         const params: ImageParams = {
             ...baseParams,
-            model: "seedream-4.5",
+            model: "bytedance/seedream-4.5",
             width: 1792,
             height: 1024,
             dimensionsExplicit: true,
@@ -394,7 +394,7 @@ describe("seedreamReplicateModel - seedream5 5.0 Lite", () => {
 
         const params: ImageParams = {
             ...baseParams,
-            model: "seedream-5-lite",
+            model: "bytedance/seedream-5-lite",
             width: 2048,
             height: 2048,
         };
@@ -423,7 +423,7 @@ describe("seedreamReplicateModel - seedream5 5.0 Lite", () => {
 
         const params: ImageParams = {
             ...baseParams,
-            model: "seedream-5-lite",
+            model: "bytedance/seedream-5-lite",
             width: 4096,
             height: 2048,
         };
@@ -440,7 +440,7 @@ describe("seedreamReplicateModel - seedream5 5.0 Lite", () => {
 
         const params: ImageParams = {
             ...baseParams,
-            model: "seedream-5-lite",
+            model: "bytedance/seedream-5-lite",
             width: 1792,
             height: 1024,
             dimensionsExplicit: true,
@@ -464,7 +464,7 @@ describe("seedreamReplicateModel - seedream5 5.0 Lite", () => {
 
         const params: ImageParams = {
             ...baseParams,
-            model: "seedream-5-lite",
+            model: "bytedance/seedream-5-lite",
             image: Array.from(
                 { length: 15 },
                 (_, i) => `https://example.com/${i}.jpg`,
@@ -479,10 +479,15 @@ describe("seedreamReplicateModel - seedream5 5.0 Lite", () => {
     it("returns seedream5 as actualModel", async () => {
         mockReplicateFetch([]);
 
-        const params: ImageParams = { ...baseParams, model: "seedream-5-lite" };
+        const params: ImageParams = {
+            ...baseParams,
+            model: "bytedance/seedream-5-lite",
+        };
         const result = await callSeedream5API("test prompt", params);
 
-        expect(result.trackingData?.actualModel).toBe("seedream-5-lite");
+        expect(result.trackingData?.actualModel).toBe(
+            "bytedance/seedream-5-lite",
+        );
         expect(result.trackingData?.usage?.completionImageTokens).toBe(1);
     });
 });
@@ -494,7 +499,7 @@ describe("seedreamReplicateModel - seedream5 5.0 Pro", () => {
 
         const params: ImageParams = {
             ...baseParams,
-            model: "seedream-5-pro",
+            model: "bytedance/seedream-5-pro",
             width: 2048,
             height: 2048,
         };
@@ -510,7 +515,9 @@ describe("seedreamReplicateModel - seedream5 5.0 Pro", () => {
         expect(input.output_format).toBe("png");
         expect(input.sequential_image_generation).toBe("disabled");
         expect(input.max_images).toBe(1);
-        expect(result.trackingData?.actualModel).toBe("seedream-5-pro");
+        expect(result.trackingData?.actualModel).toBe(
+            "bytedance/seedream-5-pro",
+        );
     });
 
     it("always requests the 2K tier that matches static registry pricing", async () => {
@@ -519,7 +526,7 @@ describe("seedreamReplicateModel - seedream5 5.0 Pro", () => {
 
         const params: ImageParams = {
             ...baseParams,
-            model: "seedream-5-pro",
+            model: "bytedance/seedream-5-pro",
             width: 1024,
             height: 1024,
         };
@@ -535,7 +542,7 @@ describe("seedreamReplicateModel - seedream5 5.0 Pro", () => {
 
         const params: ImageParams = {
             ...baseParams,
-            model: "seedream-5-pro",
+            model: "bytedance/seedream-5-pro",
             image: Array.from(
                 { length: 11 },
                 (_, i) => `https://example.com/${i}.jpg`,

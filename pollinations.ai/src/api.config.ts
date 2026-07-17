@@ -17,8 +17,8 @@ export const API = {
 // ==============================================
 
 export const DEFAULTS = {
-    IMAGE_MODEL: "flux-schnell",
-    TEXT_MODEL: "nova-micro",
+    IMAGE_MODEL: "black-forest-labs/flux.1-schnell",
+    TEXT_MODEL: "amazon/nova-micro-v1",
     IMAGE_WIDTH: 400,
     IMAGE_HEIGHT: 400,
     SEED: 42,

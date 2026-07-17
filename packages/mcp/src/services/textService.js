@@ -18,7 +18,7 @@ async function generateText(params) {
 
     const {
         prompt,
-        model = "gpt-5.4-nano",
+        model = "openai/gpt-5.4-nano",
         seed,
         system,
         temperature,
@@ -80,7 +80,7 @@ async function chatCompletion(params) {
 
     const {
         messages,
-        model = "gpt-5.4-nano",
+        model = "openai/gpt-5.4-nano",
         temperature,
         max_tokens,
         top_p,
@@ -259,7 +259,7 @@ async function listTextModels(_params) {
         const audioModels = models.filter(
             (m) =>
                 m.output_modalities?.includes("audio") ||
-                m.name === "gpt-audio-mini",
+                m.name === "openai/gpt-audio-mini",
         );
         const visionModels = models.filter(
             (m) => m.input_modalities?.includes("image") || m.vision,
@@ -321,7 +321,7 @@ async function listTextModels(_params) {
 async function webSearch(params) {
     requireApiKey();
 
-    const { query, model = "sonar", detailed = false } = params;
+    const { query, model = "perplexity/sonar", detailed = false } = params;
 
     if (!query || typeof query !== "string") {
         throw new Error("Query is required and must be a string");
@@ -435,7 +435,7 @@ const textParamsSchema = {
         .string()
         .optional()
         .describe(
-            "Text model to use (default: 'gpt-5.4-nano'). Canonical names and aliases are accepted; use listTextModels for the live list.",
+            "Text model to use (default: 'openai/gpt-5.4-nano'). Canonical names and aliases are accepted; use listTextModels for the live list.",
         ),
     seed: z
         .number()
@@ -591,7 +591,7 @@ const chatParamsSchema = {
         .string()
         .optional()
         .describe(
-            "Text model (default: 'gpt-5.4-nano'). See listTextModels for the live list; canonical names and aliases are accepted.",
+            "Text model (default: 'openai/gpt-5.4-nano'). See listTextModels for the live list; canonical names and aliases are accepted.",
         ),
     temperature: z
         .number()
@@ -756,7 +756,7 @@ export const textTools = [
                 .string()
                 .optional()
                 .describe(
-                    "Search-enabled text model (default: 'sonar'). Use listTextModels for the live list; canonical names and aliases are accepted.",
+                    "Search-enabled text model (default: 'perplexity/sonar'). Use listTextModels for the live list; canonical names and aliases are accepted.",
                 ),
             detailed: z
                 .boolean()

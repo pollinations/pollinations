@@ -15,7 +15,7 @@ import type { ImageParams } from "../../src/image/params.ts";
 const OUTPUT_URL = "https://replicate.delivery/x/qwen-output.png";
 
 const baseParams: ImageParams = {
-    model: "qwen-image",
+    model: "qwen/qwen-image",
     width: 1024,
     height: 1024,
     dimensionsExplicit: false,
@@ -69,7 +69,7 @@ describe("qwenImageModel tracking", () => {
         const result = await callQwenImageAPI("test prompt", baseParams);
 
         expect(requestUrls[0]).toContain("/models/qwen/qwen-image/predictions");
-        expect(result.trackingData?.actualModel).toBe("qwen-image");
+        expect(result.trackingData?.actualModel).toBe("qwen/qwen-image");
     });
 
     it("reports qwen-image-edit-plus for editing", async () => {

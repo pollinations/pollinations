@@ -86,20 +86,16 @@ test("gemini-search applies grounding cost on top of shared token rates", () => 
         promptTextTokens: 1_000_000,
         completionTextTokens: 1_000_000,
     };
-    const geminiFastCost = calculateCost("gemini-2.5-flash-lite", usage);
-    const geminiSearchCost = calculateCost(
-        "gemini-2.5-flash-lite-search",
-        usage,
-        {
-            choices: [
-                {
-                    groundingMetadata: {
-                        webSearchQueries: ["latest Gemini pricing"],
-                    },
+    const geminiFastCost = calculateCost("google/gemini-2.5-flash-lite", usage);
+    const geminiSearchCost = calculateCost("gemini-search", usage, {
+        choices: [
+            {
+                groundingMetadata: {
+                    webSearchQueries: ["latest Gemini pricing"],
                 },
-            ],
-        },
-    );
+            },
+        ],
+    });
 
     expect(geminiSearchCost.totalCost).toBeGreaterThan(
         geminiFastCost.totalCost,
@@ -129,9 +125,11 @@ test("calculatePrice derives the total from cost via priceMultiplier", () => {
     // cost × priceMultiplier. Assert the runtime aggregation honours that for a
     // single-field model, at whatever multiplier the model currently uses.
     const usage = { completionImageTokens: 1 };
-    const { priceMultiplier } = getRegistryModelDefinition("flux-schnell");
-    const cost = calculateCost("flux-schnell", usage);
-    const price = calculatePrice("flux-schnell", usage);
+    const { priceMultiplier } = getRegistryModelDefinition(
+        "black-forest-labs/flux.1-schnell",
+    );
+    const cost = calculateCost("black-forest-labs/flux.1-schnell", usage);
+    const price = calculatePrice("black-forest-labs/flux.1-schnell", usage);
 
     expect(price.totalPrice).toBeCloseTo(cost.totalCost * priceMultiplier, 8);
 });
@@ -159,7 +157,7 @@ test("GPT-5.6 models are quest-eligible at the promotional multiplier", () => {
 });
 
 test("Seedream 5 Pro uses Replicate and requires paid balance at provider cost", () => {
-    const definition = getRegistryModelDefinition("seedream-5-pro");
+    const definition = getRegistryModelDefinition("bytedance/seedream-5-pro");
 
     expect(definition.provider).toBe("replicate");
     expect(definition.paidOnly).toBe(true);
@@ -174,15 +172,18 @@ test("DeepSeek V4 models are billed at provider cost", () => {
     };
 
     const expectedProviders = {
-        "deepseek-v4-flash": "fireworks",
-        "deepseek-v4-pro": "fireworks",
+        "deepseek/deepseek-v4-flash": "fireworks",
+        "deepseek/deepseek-v4-pro": "fireworks",
     } as const;
     const expectedPaidOnly = {
-        "deepseek-v4-flash": undefined,
-        "deepseek-v4-pro": undefined,
+        "deepseek/deepseek-v4-flash": undefined,
+        "deepseek/deepseek-v4-pro": undefined,
     } as const;
 
-    for (const model of ["deepseek-v4-flash", "deepseek-v4-pro"] as const) {
+    for (const model of [
+        "deepseek/deepseek-v4-flash",
+        "deepseek/deepseek-v4-pro",
+    ] as const) {
         const definition = getRegistryModelDefinition(model);
         const cost = calculateCost(model, usage);
         const price = calculatePrice(model, usage);

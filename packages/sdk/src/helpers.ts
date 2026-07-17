@@ -406,7 +406,7 @@ export async function* chatStream(
  *
  * @example
  * ```ts
- * const convo = conversation({ model: 'gpt-5.4-nano' });
+ * const convo = conversation({ model: 'openai/gpt-5.4-nano' });
  * convo.system('You are a helpful assistant');
  * const response = await convo.say('Hello!');
  * ```
@@ -429,7 +429,7 @@ export function conversation(options?: ChatOptions): Conversation {
  * await audio.saveToFile('speech.mp3');
  *
  * // Music generation
- * const music = await generateAudio('upbeat jazz', { model: 'eleven-music', duration: 30 });
+ * const music = await generateAudio('upbeat jazz', { model: 'elevenlabs/music-v2', duration: 30 });
  * await music.saveToFile('jazz.mp3');
  *
  * // Multiple variations
@@ -544,7 +544,7 @@ export async function upload(
  * ```ts
  * const url = authorizeUrl({
  *   redirectUrl: 'https://myapp.com/callback',
- *   models: ['flux-schnell', 'gpt-5.4-nano'],
+ *   models: ['black-forest-labs/flux.1-schnell', 'openai/gpt-5.4-nano'],
  *   budget: 10,
  * });
  * ```

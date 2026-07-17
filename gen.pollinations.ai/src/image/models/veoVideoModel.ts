@@ -75,14 +75,14 @@ interface VeoOperationResponse {
  * Resolution is selected by model name, not inferred from dimensions, so the
  * upstream request always matches the registry rate.
  * @param {"720p" | "1080p"} resolution - Fixed upstream resolution
- * @param {"veo-3.1-fast" | "veo-1080p"} actualModel - Registry model used for billing
+ * @param {"google/veo-3.1-fast" | "veo-1080p"} actualModel - Registry model used for billing
  * @param {string} prompt - The prompt for video generation
  * @param {ImageParams} safeParams - The parameters for video generation
  * @returns {Promise<VideoGenerationResult>}
  */
 const generateVeoVideo = async (
     resolution: "720p" | "1080p",
-    actualModel: "veo-3.1-fast" | "veo-1080p",
+    actualModel: "google/veo-3.1-fast" | "veo-1080p",
     prompt: string,
     safeParams: ImageParams,
 ): Promise<VideoGenerationResult> => {
@@ -239,7 +239,7 @@ export const callVeoAPI = (
     prompt: string,
     safeParams: ImageParams,
 ): Promise<VideoGenerationResult> =>
-    generateVeoVideo("720p", "veo-3.1-fast", prompt, safeParams);
+    generateVeoVideo("720p", "google/veo-3.1-fast", prompt, safeParams);
 
 /** Veo 3.1 Fast at 1080p ($0.10/s video + $0.02/s audio when enabled). */
 export const callVeo1080pAPI = (

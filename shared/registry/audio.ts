@@ -45,13 +45,14 @@ export const VOICE_MAPPING: Record<string, string> = {
 
 export const ELEVENLABS_VOICES = Object.keys(VOICE_MAPPING);
 
-export const DEFAULT_AUDIO_MODEL = "eleven-v3" as const;
+export const DEFAULT_AUDIO_MODEL = "elevenlabs/eleven-v3" as const;
 export type AudioModelName = keyof typeof AUDIO_SERVICES;
 export type AudioModelId = (typeof AUDIO_SERVICES)[AudioModelName]["modelId"];
 
 export const AUDIO_SERVICES = {
-    "eleven-v3": {
+    "elevenlabs/eleven-v3": {
         aliases: [
+            "eleven-v3",
             "elevenlabs",
             "tts",
             "text-to-speech",
@@ -79,8 +80,14 @@ export const AUDIO_SERVICES = {
         outputModalities: ["audio"],
         voices: ELEVENLABS_VOICES as string[],
     },
-    "eleven-flash-v2.5": {
-        aliases: ["elevenflash", "tts-flash", "eleven-flash", "flash"],
+    "elevenlabs/eleven-flash-v2.5": {
+        aliases: [
+            "eleven-flash-v2.5",
+            "elevenflash",
+            "tts-flash",
+            "eleven-flash",
+            "flash",
+        ],
         modelId: "eleven_flash_v2_5",
         provider: "elevenlabs",
         brand: "ElevenLabs",
@@ -123,8 +130,8 @@ export const AUDIO_SERVICES = {
         outputModalities: ["audio"],
         voices: ELEVENLABS_VOICES as string[],
     },
-    "eleven-music": {
-        aliases: ["elevenmusic", "music"],
+    "elevenlabs/music-v2": {
+        aliases: ["eleven-music", "elevenmusic", "music"],
         modelId: "music_v2",
         provider: "elevenlabs",
         brand: "ElevenLabs",
@@ -163,8 +170,8 @@ export const AUDIO_SERVICES = {
         inputModalities: ["text"],
         outputModalities: ["audio"],
     },
-    "whisper-large-v3": {
-        aliases: ["whisper", "whisper-1"],
+    "openai/whisper-large-v3": {
+        aliases: ["whisper-large-v3", "whisper", "whisper-1"],
         modelId: "whisper-large-v3",
         provider: "ovhcloud",
         brand: "OpenAI",
@@ -180,8 +187,8 @@ export const AUDIO_SERVICES = {
         inputModalities: ["audio"],
         outputModalities: ["text"],
     },
-    "scribe-v2": {
-        aliases: ["scribe", "scribe_v2"],
+    "elevenlabs/scribe-v2": {
+        aliases: ["scribe-v2", "scribe", "scribe_v2"],
         modelId: "scribe_v2",
         provider: "elevenlabs",
         brand: "ElevenLabs",
@@ -306,8 +313,8 @@ export const AUDIO_SERVICES = {
         inputModalities: ["text"],
         outputModalities: ["audio"],
     },
-    "qwen3-tts-flash": {
-        aliases: ["qwen-tts", "qwen3-tts"],
+    "qwen/qwen3-tts-flash": {
+        aliases: ["qwen3-tts-flash", "qwen-tts", "qwen3-tts"],
         modelId: "qwen3-tts-flash",
         provider: "alibaba",
         brand: "Qwen",
@@ -324,8 +331,12 @@ export const AUDIO_SERVICES = {
         inputModalities: ["text"],
         outputModalities: ["audio"],
     },
-    "qwen3-tts-instruct-flash": {
-        aliases: ["qwen-tts-instruct", "qwen3-tts-instruct"],
+    "qwen/qwen3-tts-instruct-flash": {
+        aliases: [
+            "qwen3-tts-instruct-flash",
+            "qwen-tts-instruct",
+            "qwen3-tts-instruct",
+        ],
         modelId: "qwen3-tts-instruct-flash",
         provider: "alibaba",
         brand: "Qwen",

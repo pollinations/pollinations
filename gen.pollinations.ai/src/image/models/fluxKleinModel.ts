@@ -117,7 +117,7 @@ export const callFluxKleinAPI = async (
             isMature: false,
             isChild: false,
             trackingData: {
-                actualModel: "flux-klein",
+                actualModel: "black-forest-labs/flux.2-klein-4b",
                 usage: {
                     completionImageTokens: 1,
                     totalTokenCount: 1,

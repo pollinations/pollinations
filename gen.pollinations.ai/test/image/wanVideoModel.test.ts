@@ -22,7 +22,7 @@ interface ReplicateCall {
 }
 
 const baseParams: ImageParams = {
-    model: "wan-2.7",
+    model: "alibaba/wan-2.7",
     width: 1280,
     height: 720,
     dimensionsExplicit: false,
@@ -116,7 +116,7 @@ describe("wanVideoModel billing usage", () => {
         expect(result.mimeType).toBe("video/mp4");
         // No separate completionAudioSeconds — audio is bundled into the rate.
         expect(result.trackingData).toEqual({
-            actualModel: "wan-2.7",
+            actualModel: "alibaba/wan-2.7",
             usage: { completionVideoSeconds: 5 },
         });
     });
@@ -128,13 +128,13 @@ describe("wanVideoModel billing usage", () => {
 
         const result = await callWanPro1080pAPI("a calm ocean at sunrise", {
             ...baseParams,
-            model: "wan-2.7-1080p",
+            model: "wan-pro-1080p",
         });
 
         expect(calls[0].model).toBe("wan-video/wan-2.7-t2v");
         expect(calls[0].input.resolution).toBe("1080p");
         expect(result.trackingData).toEqual({
-            actualModel: "wan-2.7-1080p",
+            actualModel: "wan-pro-1080p",
             usage: { completionVideoSeconds: 5 },
         });
     });
@@ -146,7 +146,7 @@ describe("wanVideoModel billing usage", () => {
 
         const result = await callWanAPI("a calm ocean at sunrise", {
             ...baseParams,
-            model: "wan-2.6",
+            model: "alibaba/wan-2.6",
             duration: 3, // snaps to nearest allowed (5)
         });
 
@@ -155,7 +155,7 @@ describe("wanVideoModel billing usage", () => {
         expect(calls[0].input.size).toBe("1280*720");
         expect(calls[0].input.duration).toBe(5);
         expect(result.trackingData).toEqual({
-            actualModel: "wan-2.6",
+            actualModel: "alibaba/wan-2.6",
             usage: { completionVideoSeconds: 5 },
         });
     });
@@ -167,13 +167,13 @@ describe("wanVideoModel billing usage", () => {
 
         const result = await callWanFastAPI("a calm ocean at sunrise", {
             ...baseParams,
-            model: "wan-2.2",
+            model: "alibaba/wan-2.2",
         });
 
         expect(calls[0].model).toBe("wan-video/wan-2.2-t2v-fast");
         expect(calls[0].input.resolution).toBe("480p");
         expect(result.trackingData).toEqual({
-            actualModel: "wan-2.2",
+            actualModel: "alibaba/wan-2.2",
             usage: { completionVideoSeconds: 5 },
         });
     });
@@ -202,7 +202,7 @@ describe("wanVideoModel image-to-video routing", () => {
 
         await callWanFastAPI("a cat walking", {
             ...baseParams,
-            model: "wan-2.2",
+            model: "alibaba/wan-2.2",
             image: [INPUT_IMAGE_URL],
         });
 

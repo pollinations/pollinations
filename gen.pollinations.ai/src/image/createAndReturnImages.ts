@@ -312,34 +312,34 @@ const AZURE_API_VERSION = "2025-04-01-preview";
 // are per-resource, so sharing one resource across models turns a block into a
 // multi-model outage (issue #12446). Keep it one model per resource.
 const GPTIMAGE_CONFIGS: Record<string, GPTImageConfig[]> = {
-    "gpt-image-1-mini": [
+    "openai/gpt-image-1-mini": [
         {
             baseUrl:
                 "https://myceli-prod-img-mini-swedencentral.cognitiveservices.azure.com/openai/deployments/gpt-image-1-mini",
-            modelName: "gpt-image-1-mini",
+            modelName: "openai/gpt-image-1-mini",
             apiKeyEnv: "AZURE_MYCELI_PROD_IMG_MINI_SWEDEN_API_KEY",
             region: "swedencentral",
         },
         {
             baseUrl:
                 "https://myceli-prod-img-mini-westus3.cognitiveservices.azure.com/openai/deployments/gpt-image-1-mini",
-            modelName: "gpt-image-1-mini",
+            modelName: "openai/gpt-image-1-mini",
             apiKeyEnv: "AZURE_MYCELI_PROD_IMG_MINI_WESTUS3_API_KEY",
             region: "westus3",
         },
     ],
-    "gpt-image-1.5": [
+    "openai/gpt-image-1.5": [
         {
             baseUrl:
                 "https://myceli-prod-img-15-swedencentral.cognitiveservices.azure.com/openai/deployments/gpt-image-1.5",
-            modelName: "gpt-image-1.5",
+            modelName: "openai/gpt-image-1.5",
             apiKeyEnv: "AZURE_MYCELI_PROD_IMG_15_SWEDEN_API_KEY",
             region: "swedencentral",
         },
         {
             baseUrl:
                 "https://myceli-prod-img-15-westus3.cognitiveservices.azure.com/openai/deployments/gpt-image-1.5",
-            modelName: "gpt-image-1.5",
+            modelName: "openai/gpt-image-1.5",
             apiKeyEnv: "AZURE_MYCELI_PROD_IMG_15_WESTUS3_API_KEY",
             region: "westus3",
         },
@@ -366,7 +366,7 @@ let gptImageEndpointIndex = 0;
 
 function orderedGPTImageConfigs(model: string): GPTImageConfig[] {
     const configs =
-        GPTIMAGE_CONFIGS[model] || GPTIMAGE_CONFIGS["gpt-image-1-mini"];
+        GPTIMAGE_CONFIGS[model] || GPTIMAGE_CONFIGS["openai/gpt-image-1-mini"];
     if (configs.length === 1) return configs;
 
     const start = gptImageEndpointIndex;
@@ -401,7 +401,7 @@ const callGPTImageWithEndpoint = async (
     prompt: string,
     safeParams: ImageParams,
     userInfo: AuthResult,
-    config: GPTImageConfig = GPTIMAGE_CONFIGS["gpt-image-1-mini"][0],
+    config: GPTImageConfig = GPTIMAGE_CONFIGS["openai/gpt-image-1-mini"][0],
 ): Promise<ImageGenerationResult> => {
     const apiKey = getImageEnv(config.apiKeyEnv);
 
@@ -638,7 +638,7 @@ const callGPTImageWithEndpoint = async (
 
     const usage = mapAzureGPTImageUsage(
         data.usage,
-        config.modelName === "gpt-image-1.5",
+        config.modelName === "openai/gpt-image-1.5",
     );
 
     logCloudflare("GPT Image full usage:", data.usage);
@@ -663,7 +663,7 @@ export const callGPTImage = async (
     prompt: string,
     safeParams: ImageParams,
     userInfo: AuthResult,
-    model: string = "gpt-image-1-mini",
+    model: string = "openai/gpt-image-1-mini",
 ): Promise<ImageGenerationResult> => {
     const configs = orderedGPTImageConfigs(model);
     let lastError: unknown;
@@ -707,8 +707,8 @@ const generateImage = async (
     userInfo: AuthResult,
 ): Promise<ImageGenerationResult> => {
     switch (safeParams.model) {
-        case "gpt-image-1-mini":
-        case "gpt-image-1.5":
+        case "openai/gpt-image-1-mini":
+        case "openai/gpt-image-1.5":
         case "gpt-image-2": {
             const [gptConfig] = GPTIMAGE_CONFIGS[safeParams.model];
             logError(
@@ -759,7 +759,7 @@ const generateImage = async (
             }
         }
 
-        case "flux-kontext": {
+        case "black-forest-labs/flux.1-kontext-pro": {
             try {
                 return await callAzureFluxKontext(prompt, safeParams, userInfo);
             } catch (error) {
@@ -772,16 +772,16 @@ const generateImage = async (
             }
         }
 
-        case "seedream-5-lite":
+        case "bytedance/seedream-5-lite":
             return await callSeedream5API(prompt, safeParams);
 
-        case "seedream-5-pro":
+        case "bytedance/seedream-5-pro":
             return await callSeedream5ProAPI(prompt, safeParams);
 
-        case "seedream-4":
+        case "bytedance/seedream-4":
             return await callSeedreamAPI(prompt, safeParams);
 
-        case "seedream-4.5":
+        case "bytedance/seedream-4.5":
             return await callSeedreamProAPI(prompt, safeParams);
 
         case "ideogram-v4-turbo":
@@ -793,7 +793,7 @@ const generateImage = async (
         case "ideogram-v4-quality":
             return await callIdeogramQualityAPI(prompt, safeParams);
 
-        case "flux-klein":
+        case "black-forest-labs/flux.2-klein-4b":
             return await callFluxKleinAPI(prompt, safeParams);
 
         case "p-image":
@@ -819,16 +819,16 @@ const generateImage = async (
         case "nova-canvas":
             return await callNovaCanvasAPI(prompt, safeParams);
 
-        case "wan-2.7-image":
+        case "alibaba/wan-2.7-image":
             return await callWanImageAPI(prompt, safeParams, false);
 
-        case "wan-2.7-image-pro":
+        case "alibaba/wan-2.7-image-pro":
             return await callWanImageAPI(prompt, safeParams, true);
 
-        case "qwen-image":
+        case "qwen/qwen-image":
             return await callQwenImageAPI(prompt, safeParams);
 
-        case "flux-schnell":
+        case "black-forest-labs/flux.1-schnell":
             return await callFluxWithFallback(prompt, safeParams);
 
         default:

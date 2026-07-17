@@ -308,7 +308,7 @@ export const callLtx2API = async (
         mimeType: "video/mp4",
         durationSeconds: actualDurationSeconds,
         trackingData: {
-            actualModel: "ltx-2.3",
+            actualModel: "lightricks/ltx-2.3",
             usage: {
                 completionVideoSeconds: actualDurationSeconds,
             },

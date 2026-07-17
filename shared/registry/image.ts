@@ -1,14 +1,14 @@
 import { perMillion } from "./price-helpers";
 import type { ModelDefinition } from "./registry";
 
-export const DEFAULT_IMAGE_MODEL = "z-image-turbo" as const;
+export const DEFAULT_IMAGE_MODEL = "tongyi-mai/z-image-turbo" as const;
 
 export type ImageModelName = keyof typeof IMAGE_SERVICES;
 export type ImageModelId = (typeof IMAGE_SERVICES)[ImageModelName]["modelId"];
 
 export const IMAGE_SERVICES = {
-    "flux-kontext": {
-        aliases: ["kontext"],
+    "black-forest-labs/flux.1-kontext-pro": {
+        aliases: ["flux-kontext", "kontext"],
         modelId: "kontext",
         provider: "azure",
         brand: "Black Forest Labs",
@@ -116,8 +116,8 @@ export const IMAGE_SERVICES = {
         outputModalities: ["image"],
         maxReferenceImages: 14, // Gemini 3 Pro Image provider limit.
     },
-    "seedream-5-lite": {
-        aliases: ["seedream5"],
+    "bytedance/seedream-5-lite": {
+        aliases: ["seedream-5-lite", "seedream5"],
         modelId: "seedream5",
         provider: "replicate",
         brand: "ByteDance",
@@ -135,8 +135,8 @@ export const IMAGE_SERVICES = {
         outputModalities: ["image"],
         maxReferenceImages: 14, // Pollinations route cap from Replicate schema.
     },
-    "seedream-5-pro": {
-        aliases: ["seedream5-pro", "seedream-pro-5"],
+    "bytedance/seedream-5-pro": {
+        aliases: ["seedream-5-pro", "seedream5-pro", "seedream-pro-5"],
         modelId: "seedream5-pro",
         provider: "replicate",
         brand: "ByteDance",
@@ -153,8 +153,8 @@ export const IMAGE_SERVICES = {
         outputModalities: ["image"],
         maxReferenceImages: 10,
     },
-    "seedream-4": {
-        aliases: ["seedream"],
+    "bytedance/seedream-4": {
+        aliases: ["seedream-4", "seedream"],
         modelId: "seedream",
         provider: "replicate",
         brand: "ByteDance",
@@ -171,8 +171,8 @@ export const IMAGE_SERVICES = {
         outputModalities: ["image"],
         maxReferenceImages: 10, // Pollinations route cap from Replicate schema.
     },
-    "seedream-4.5": {
-        aliases: ["seedream-pro"],
+    "bytedance/seedream-4.5": {
+        aliases: ["seedream-4.5", "seedream-pro"],
         modelId: "seedream-pro",
         provider: "replicate",
         brand: "ByteDance",
@@ -249,8 +249,8 @@ export const IMAGE_SERVICES = {
         inputModalities: ["text"],
         outputModalities: ["image"],
     },
-    "gpt-image-1-mini": {
-        aliases: ["gptimage", "gpt-image"],
+    "openai/gpt-image-1-mini": {
+        aliases: ["gpt-image-1-mini", "gptimage", "gpt-image"],
         modelId: "gptimage",
         provider: "azure",
         brand: "OpenAI",
@@ -269,8 +269,8 @@ export const IMAGE_SERVICES = {
         outputModalities: ["image"],
         maxReferenceImages: 16, // GPT Image edit endpoint accepts up to 16 input images.
     },
-    "gpt-image-1.5": {
-        aliases: ["gptimage-large", "gpt-image-large"],
+    "openai/gpt-image-1.5": {
+        aliases: ["gpt-image-1.5", "gptimage-large", "gpt-image-large"],
         modelId: "gptimage-large",
         provider: "azure",
         brand: "OpenAI",
@@ -313,8 +313,8 @@ export const IMAGE_SERVICES = {
         outputModalities: ["image"],
         maxReferenceImages: 16, // GPT Image edit endpoint accepts up to 16 input images.
     },
-    "flux-schnell": {
-        aliases: ["flux"],
+    "black-forest-labs/flux.1-schnell": {
+        aliases: ["flux-schnell", "flux"],
         modelId: "flux",
         provider: "vast",
         brand: "Black Forest Labs",
@@ -329,8 +329,8 @@ export const IMAGE_SERVICES = {
         inputModalities: ["text"],
         outputModalities: ["image"],
     },
-    "z-image-turbo": {
-        aliases: ["zimage", "z-image"],
+    "tongyi-mai/z-image-turbo": {
+        aliases: ["z-image-turbo", "zimage", "z-image"],
         modelId: "zimage",
         provider: "runpod",
         brand: "Alibaba",
@@ -345,8 +345,8 @@ export const IMAGE_SERVICES = {
         inputModalities: ["text"],
         outputModalities: ["image"],
     },
-    "veo-3.1-fast": {
-        aliases: ["veo", "veo-720p", "video"],
+    "google/veo-3.1-fast": {
+        aliases: ["veo-3.1-fast", "veo", "veo-720p", "video"],
         modelId: "veo",
         provider: "google",
         brand: "Google",
@@ -429,8 +429,8 @@ export const IMAGE_SERVICES = {
         videoCapabilities: ["start_frame", "end_frame", "audio_output"],
         maxReferenceImages: 2, // Video keyframe slots: start + end.
     },
-    "wan-2.6": {
-        aliases: ["wan", "wan2.6", "wan-i2v"],
+    "alibaba/wan-2.6": {
+        aliases: ["wan-2.6", "wan", "wan2.6", "wan-i2v"],
         modelId: "wan",
         provider: "replicate",
         brand: "Alibaba",
@@ -451,8 +451,8 @@ export const IMAGE_SERVICES = {
         videoCapabilities: ["start_frame", "audio_output"],
         maxReferenceImages: 1, // Video keyframe slots: start only.
     },
-    "wan-2.2": {
-        aliases: ["wan-fast", "wan2.2"],
+    "alibaba/wan-2.2": {
+        aliases: ["wan-2.2", "wan-fast", "wan2.2"],
         modelId: "wan-fast",
         provider: "replicate",
         brand: "Alibaba",
@@ -472,8 +472,8 @@ export const IMAGE_SERVICES = {
         videoCapabilities: ["start_frame", "end_frame"],
         maxReferenceImages: 2, // Video keyframe slots: start + end.
     },
-    "wan-2.7": {
-        aliases: ["wan-pro", "wan2.7"],
+    "alibaba/wan-2.7": {
+        aliases: ["wan-2.7", "wan-pro", "wan2.7"],
         modelId: "wan-pro",
         provider: "replicate",
         brand: "Alibaba",
@@ -494,8 +494,8 @@ export const IMAGE_SERVICES = {
         videoCapabilities: ["start_frame", "end_frame", "audio_output"],
         maxReferenceImages: 2, // Video keyframe slots: start + end.
     },
-    "wan-2.7-1080p": {
-        aliases: ["wan-pro-1080p", "wan2.7-1080p", "wan-pro-1080"],
+    "wan-pro-1080p": {
+        aliases: ["wan2.7-1080p", "wan-pro-1080"],
         modelId: "wan-pro-1080p",
         provider: "replicate",
         brand: "Alibaba",
@@ -517,8 +517,8 @@ export const IMAGE_SERVICES = {
         videoCapabilities: ["start_frame", "end_frame", "audio_output"],
         maxReferenceImages: 2, // Video keyframe slots: start + end.
     },
-    "wan-2.7-image": {
-        aliases: ["wan-image", "wan2.7-image", "wan-img"],
+    "alibaba/wan-2.7-image": {
+        aliases: ["wan-2.7-image", "wan-image", "wan2.7-image", "wan-img"],
         modelId: "wan-image",
         provider: "replicate",
         brand: "Alibaba",
@@ -537,8 +537,13 @@ export const IMAGE_SERVICES = {
         outputModalities: ["image"],
         maxReferenceImages: 9, // Pollinations route cap.
     },
-    "wan-2.7-image-pro": {
-        aliases: ["wan-image-pro", "wan2.7-image-pro", "wan-img-pro"],
+    "alibaba/wan-2.7-image-pro": {
+        aliases: [
+            "wan-2.7-image-pro",
+            "wan-image-pro",
+            "wan2.7-image-pro",
+            "wan-img-pro",
+        ],
         modelId: "wan-image-pro",
         provider: "replicate",
         brand: "Alibaba",
@@ -558,8 +563,9 @@ export const IMAGE_SERVICES = {
         outputModalities: ["image"],
         maxReferenceImages: 9, // Pollinations route cap.
     },
-    "qwen-image": {
+    "qwen/qwen-image": {
         aliases: [
+            "qwen-image",
             "qwen-image-plus",
             "qwen-image-2512",
             "qwen-image-edit",
@@ -648,8 +654,8 @@ export const IMAGE_SERVICES = {
         videoCapabilities: ["start_frame"],
         maxReferenceImages: 1, // Video keyframe slots: start only.
     },
-    "flux-klein": {
-        aliases: ["klein"],
+    "black-forest-labs/flux.2-klein-4b": {
+        aliases: ["flux-klein", "klein"],
         modelId: "klein",
         provider: "vast",
         brand: "Black Forest Labs",
@@ -665,8 +671,8 @@ export const IMAGE_SERVICES = {
         outputModalities: ["image"],
         maxReferenceImages: 10, // Pollinations self-hosted route cap.
     },
-    "ltx-2.3": {
-        aliases: ["ltx-2", "ltx2", "ltxvideo", "ltx-video"],
+    "lightricks/ltx-2.3": {
+        aliases: ["ltx-2.3", "ltx-2", "ltx2", "ltxvideo", "ltx-video"],
         modelId: "ltx-2",
         provider: "lambda",
         brand: "Lightricks",

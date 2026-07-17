@@ -112,7 +112,7 @@ describe("billing deduction", () => {
     });
 
     it("deducts an Azure paid-only model only from pack balance", async () => {
-        const modelResolved = "llama-4-maverick";
+        const modelResolved = "meta-llama/llama-4-maverick";
         const model = getRegistryModelDefinition(modelResolved);
         expect(model.provider).toBe("azure");
         expect(model.paidOnly).toBe(true);

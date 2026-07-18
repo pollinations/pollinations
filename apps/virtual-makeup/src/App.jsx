@@ -14,7 +14,7 @@ import { useEffect, useRef, useState } from "react";
 
 const APP_KEY = "pk_pollinations_virtual_makeup";
 const POLLINATIONS_AUTH_URL = "https://enter.pollinations.ai/authorize";
-const POLLINATIONS_MEDIA_API = "https://gen.pollinations.ai/media";
+const POLLINATIONS_MEDIA_API = "https://media.pollinations.ai/upload";
 const POLLINATIONS_IMAGE_API = "https://gen.pollinations.ai/image";
 
 const MAKEUP_STYLES = [
@@ -117,9 +117,10 @@ function App() {
         }
     };
 
-    const uploadToPollinations = async (file) => {
+    const uploadToPollinations = async (file, tag) => {
         const formData = new FormData();
         formData.append("file", file);
+        if (tag) formData.append("tags", tag);
 
         const response = await fetch(POLLINATIONS_MEDIA_API, {
             method: "POST",
@@ -172,8 +173,19 @@ function App() {
             }
 
             const blob = await response.blob();
-            const blobUrl = URL.createObjectURL(blob);
-            setMakeupImage(blobUrl);
+            let resultUrl;
+            try {
+                resultUrl = await uploadToPollinations(
+                    new File([blob], "virtual-makeup-result.png", {
+                        type: blob.type,
+                    }),
+                    "virtual-makeup",
+                );
+            } catch (error) {
+                console.error("Failed to publish makeup result:", error);
+                resultUrl = URL.createObjectURL(blob);
+            }
+            setMakeupImage(resultUrl);
             setImageLoaded(true);
             setIsLoading(false);
         } catch (error) {

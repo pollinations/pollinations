@@ -20,7 +20,7 @@ import {
 type CommunityEndpointsProps = {
     onChange?: () => void | Promise<void>;
     // Allowlisted owners can make models public (set prices, list in /models).
-    // Everyone else can only create and edit private, owner-only models.
+    // Everyone else can only create and edit private models.
     canPublish: boolean;
 };
 
@@ -103,10 +103,11 @@ export function CommunityEndpoints({
 
     const privateModelGuidance = (
         <>
-            Your models are private — callable only by you and shown only when{" "}
-            <strong>/models</strong> is authenticated with your API key. Enter
-            the upstream model ID manually, then test the saved model by calling
-            its model ID. To request public publishing access, open a{" "}
+            Your models are private — callable by you and users of your apps,
+            and shown only when <strong>/models</strong> is authenticated with
+            your API key or an API key created through your app. Enter the
+            upstream model ID manually, then test the saved model by calling its
+            model ID. To request public publishing access, open a{" "}
             <a
                 href="https://github.com/pollinations/pollinations/issues/new?title=Community%20model%20publishing%20request"
                 target="_blank"
@@ -190,11 +191,12 @@ export function CommunityEndpoints({
                         <span>
                             {canPublish ? (
                                 <>
-                                    Private models are callable only by you and
-                                    shown only when model lists use your API
-                                    key. Make one public to list it for everyone
-                                    in <strong>/models</strong> and bill callers
-                                    at your per-1M-token pricing.
+                                    Private models are callable by you and users
+                                    of your apps, and shown only when model
+                                    lists use those API keys. Make one public to
+                                    list it for everyone in{" "}
+                                    <strong>/models</strong> and bill callers at
+                                    your per-1M-token pricing.
                                 </>
                             ) : (
                                 privateModelGuidance

@@ -71,7 +71,7 @@ export function communityEndpointPrices(
 
 // Access/visibility of a registered endpoint. Private is the default; choosing
 // public on create or update is allowlist-gated.
-//   private → owner-only callable, shown only to the owner, no owner-set price
+//   private → owner/app-user callable, shown only to them, no owner-set price
 //   public  → anyone callable, listed in the model catalog, priced
 export const COMMUNITY_ENDPOINT_VISIBILITIES = ["private", "public"] as const;
 

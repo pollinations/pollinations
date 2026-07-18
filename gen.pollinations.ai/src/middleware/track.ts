@@ -243,9 +243,8 @@ export const track = (eventType: EventType) =>
                         apiKeyPollenBalance: c.var.auth?.apiKey?.pollenBalance,
                         byopClientKeyId,
                         modelPaidOnly: c.var.model?.definition.paidOnly,
-                        // Only public endpoints pay their owner a reward: a
-                        // private endpoint is owner-called (base cost billed to
-                        // the owner, no markup, no self-credit).
+                        // Only public endpoints pay their owner a reward;
+                        // private endpoints are free and have no supplier payout.
                         communityModelReward:
                             communityEndpoint?.visibility === "public"
                                 ? {

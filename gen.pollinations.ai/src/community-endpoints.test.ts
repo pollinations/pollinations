@@ -446,7 +446,7 @@ fixtureTest(
 );
 
 fixtureTest(
-    "a private model is owner-only and a zero-priced public model is free",
+    "a private model is available to its owner and app users, while a zero-priced public model is free",
     async ({ apiKey }) => {
         const ownerGithubUsername = `owner-${crypto.randomUUID().slice(0, 8)}`;
         const modelName = `private-${crypto.randomUUID().slice(0, 8)}`;
@@ -455,14 +455,28 @@ fixtureTest(
         const ownerUserId = await createTestUser({
             githubId: COMMUNITY_ENDPOINT_ALLOWED_TEST_GITHUB_ID,
             githubUsername: ownerGithubUsername,
-            // Owner-only private models have no Pollinations charge and remain
-            // callable without a Pollinations balance.
+            // Private models have no Pollinations charge and remain callable
+            // without a Pollinations balance.
             tierBalance: 0,
         });
         // A key belonging to the endpoint owner — its calls are owner calls.
         const { key: ownerApiKey } = await createTestApiKey({
             name: "owner-key",
             userId: ownerUserId,
+        });
+        const redirectUri = "https://private-model-app.test/callback";
+        const { key: appApiKey } = await createTestApiKey({
+            name: "private-model-app",
+            userId: ownerUserId,
+            type: "publishable",
+            metadata: { redirectUris: [redirectUri] },
+        });
+        const { key: appUserApiKey } = await createTestApiKey({
+            name: "app-user-key",
+            metadata: {
+                requestedClientId: appApiKey,
+                redirectUri,
+            },
         });
         await db.insert(communityEndpointTable).values({
             id: endpointId,
@@ -526,6 +540,23 @@ fixtureTest(
         );
         expect(otherResponse.status).toBe(400);
 
+        // A key issued through an app owned by the model developer can use the
+        // private model without making it visible to unrelated callers.
+        const appUserResponse = await SELF.fetch(
+            new Request("https://gen.pollinations.ai/v1/chat/completions", {
+                method: "POST",
+                headers: {
+                    Authorization: `Bearer ${appUserApiKey}`,
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    model: modelId,
+                    messages: [{ role: "user", content: "hello" }],
+                }),
+            }),
+        );
+        expect(appUserResponse.status).toBe(200);
+
         // The owner reaches their own private model.
         const ownerResponse = await SELF.fetch(
             new Request("https://gen.pollinations.ai/v1/chat/completions", {
@@ -558,9 +589,10 @@ fixtureTest(
             return models.some((model) => model.name === modelId);
         };
 
-        // The owner's authenticated catalog includes the private model, while
-        // anonymous and other authenticated callers cannot discover it.
+        // The owner and their app user can discover the private model, while
+        // anonymous and unrelated authenticated callers cannot.
         await expect(catalogIncludesModel(ownerApiKey)).resolves.toBe(true);
+        await expect(catalogIncludesModel(appUserApiKey)).resolves.toBe(true);
         await expect(catalogIncludesModel(apiKey)).resolves.toBe(false);
         await expect(catalogIncludesModel()).resolves.toBe(false);
 
@@ -571,6 +603,8 @@ fixtureTest(
             .set({ visibility: "public" })
             .where(eq(communityEndpointTable.id, endpointId));
         resetGenerationModelRegistryCache();
+        await expect(catalogIncludesModel(apiKey)).resolves.toBe(true);
+        await expect(catalogIncludesModel()).resolves.toBe(true);
         const { key: zeroBalanceCallerKey } = await createTestApiKey({
             user: { tierBalance: 0, packBalance: 0 },
         });

@@ -16,7 +16,7 @@ export type CommunityEndpoint = {
     description: string | null;
     baseUrl: string;
     upstreamModel: string;
-    // private → owner-only, shown only to the owner, no owner-set price;
+    // private → owner/app-user access, shown only to them, no owner-set price;
     // public → globally listed + billed to callers.
     visibility: CommunityEndpointVisibility;
     disabled: boolean;
@@ -27,7 +27,7 @@ export type CommunityEndpoint = {
 export type EndpointFormState = {
     name: string;
     description: string;
-    // private → owner-only, shown only to the owner, no owner-set price;
+    // private → owner/app-user access, shown only to them, no owner-set price;
     // public → globally listed + billed to callers.
     // Public is selectable only by allowlisted owners; defaults private.
     visibility: CommunityEndpointVisibility;

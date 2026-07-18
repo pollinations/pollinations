@@ -34,7 +34,7 @@ type ModelsProps = {
     // Render the owner-scoped "My Models" section (logged-in dashboard only).
     showCommunityEndpoints?: boolean;
     // Allowlisted owners can make their models public; everyone else is limited
-    // to private, owner-only models.
+    // to private models available to them and their app users.
     canPublish?: boolean;
 };
 

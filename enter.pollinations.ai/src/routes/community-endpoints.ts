@@ -49,7 +49,7 @@ const UpdatePriceFieldsSchema = Object.fromEntries(
 const VisibilitySchema = z
     .enum(COMMUNITY_ENDPOINT_VISIBILITIES)
     .describe(
-        '"private": owner-only, shown only to the owner, with no owner-set price. "public": anyone and listed in the catalog; it may be free or priced. Publishing requires an allowlisted account.',
+        '"private": available only to the owner and users of their apps, with no owner-set price. "public": anyone and listed in the catalog; it may be free or priced. Publishing requires an allowlisted account.',
     );
 const EndpointFieldsSchema = {
     // No "/": the public model id is `<owner>/<name>`, so a slash in the name
@@ -563,8 +563,8 @@ export const communityEndpointsRoutes = new Hono<Env>()
                 }
             }
             const effectiveVisibility = input.visibility ?? endpoint.visibility;
-            // A private model is owner-only, so owner-declared public pricing
-            // does not apply; making a published model private clears prices.
+            // Owner-declared public pricing does not apply to private models;
+            // making a published model private clears prices.
             const effectivePrices =
                 effectiveVisibility === "private"
                     ? communityEndpointPrices({})

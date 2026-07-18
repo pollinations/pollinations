@@ -8,7 +8,11 @@ import { DEFAULT_TEXT_MODEL } from "@shared/registry/text.ts";
 import type { EventType } from "@shared/schemas/generation-event.ts";
 import { createMiddleware } from "hono/factory";
 import { HTTPException } from "hono/http-exception";
-import { getGenerationModelRegistry } from "../model-registry.ts";
+import {
+    canAccessCommunityModel,
+    type GenerationModelAccess,
+    getGenerationModelRegistry,
+} from "../model-registry.ts";
 import type { AuthVariables } from "./auth.ts";
 
 const ENDPOINT_LABEL: Record<EventType, string> = {
@@ -54,7 +58,7 @@ export async function resolveModelDefinition(
     model: string,
     eventType: EventType,
     env: CloudflareBindings,
-    callerUserId?: string,
+    access?: GenerationModelAccess,
 ): Promise<ModelVariables["model"]> {
     const registry = await getGenerationModelRegistry(env);
     const entry = registry.resolve(model);
@@ -64,15 +68,11 @@ export async function resolveModelDefinition(
         });
     }
 
-    // A private community endpoint is owner-only: to everyone else it doesn't
-    // exist. Reuse the same "invalid model" response as an unknown name so
-    // private models aren't discoverable by probing.
+    // A private community endpoint exists only for its owner and keys issued
+    // through an app owned by that developer. Keep the unknown-model response
+    // for everyone else so private models aren't discoverable by probing.
     const community = entry.communityEndpoint;
-    if (
-        community &&
-        community.visibility !== "public" &&
-        community.ownerUserId !== callerUserId
-    ) {
+    if (community && !canAccessCommunityModel(community, access)) {
         throw new HTTPException(400, {
             message: `Invalid model or alias: "${model}". Must be a valid model name or alias.`,
         });
@@ -97,7 +97,7 @@ export async function resolveModelDefinition(
 
 /**
  * Middleware that extracts, defaults, and resolves the model from the request.
- * Must run after auth and before track so private endpoints can be owner-gated.
+ * Must run after auth and before track so private endpoints can be access-gated.
  */
 export function resolveModel(
     eventType: EventType,
@@ -153,17 +153,14 @@ export function resolveModel(
                       : DEFAULT_IMAGE_MODEL);
         const model = rawModel || defaultModel;
         // auth() runs before resolveModel on the authenticated generation
-        // routes, so the caller identity is available to gate private
-        // endpoints. If it isn't (unauthenticated path), callerUserId is
-        // undefined and a private endpoint fails closed — never exposed.
+        // routes, so caller and app ownership are available to gate private
+        // endpoints. Without auth, both are undefined and access fails closed.
         c.set(
             "model",
-            await resolveModelDefinition(
-                model,
-                eventType,
-                c.env,
-                c.var.auth?.user?.id,
-            ),
+            await resolveModelDefinition(model, eventType, c.env, {
+                callerUserId: c.var.auth?.user?.id,
+                appOwnerUserId: c.var.auth?.apiKey?.byopClientUserId,
+            }),
         );
         await next();
     });

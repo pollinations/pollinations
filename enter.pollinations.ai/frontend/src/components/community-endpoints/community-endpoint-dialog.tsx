@@ -326,8 +326,8 @@ export function CommunityEndpointDialog({
                             isShared
                                 ? "Public: listed in /models and callable by anyone. Set optional per-1M-token prices below, or leave them at 0 for free."
                                 : canPublish
-                                  ? "Private: callable only by you and shown only in model lists authenticated with your API key."
-                                  : "Private: callable only by you. Publishing publicly requires approval."
+                                  ? "Private: callable by you and users of your apps; shown only in model lists authenticated with those API keys."
+                                  : "Private: callable by you and users of your apps. Publishing publicly requires approval."
                         }
                         alignLabelRow
                     >

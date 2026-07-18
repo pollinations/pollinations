@@ -41,7 +41,12 @@ export type GenerationModelEntry = {
 
 export type GenerationModelRegistry = {
     resolve: (model: string) => GenerationModelEntry | null;
-    visibleEntries: (callerUserId?: string) => GenerationModelEntry[];
+    visibleEntries: (access?: GenerationModelAccess) => GenerationModelEntry[];
+};
+
+export type GenerationModelAccess = {
+    callerUserId?: string;
+    appOwnerUserId?: string | null;
 };
 
 type CachedRegistry = {
@@ -107,6 +112,17 @@ function communityEntryToGenerationEntry(
     };
 }
 
+export function canAccessCommunityModel(
+    endpoint: CommunityEndpointRuntime,
+    access?: GenerationModelAccess,
+): boolean {
+    return (
+        endpoint.visibility === "public" ||
+        endpoint.ownerUserId === access?.callerUserId ||
+        endpoint.ownerUserId === access?.appOwnerUserId
+    );
+}
+
 function buildRegistry(
     entries: GenerationModelEntry[],
 ): GenerationModelRegistry {
@@ -134,14 +150,13 @@ function buildRegistry(
             if (entry?.communityEndpoint?.disabledAt) return null;
             return entry;
         },
-        visibleEntries: (callerUserId) =>
+        visibleEntries: (access) =>
             entries.filter((entry) => {
                 if (entry.visible) return true;
                 const endpoint = entry.communityEndpoint;
                 return (
                     endpoint?.disabledAt === null &&
-                    endpoint.visibility === "private" &&
-                    endpoint.ownerUserId === callerUserId
+                    canAccessCommunityModel(endpoint, access)
                 );
             }),
     };

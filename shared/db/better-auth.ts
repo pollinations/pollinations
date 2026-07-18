@@ -203,8 +203,8 @@ export const communityEndpoint = sqliteTable("community_endpoint", {
   baseUrl: text("base_url").notNull(),
   upstreamModel: text("upstream_model").notNull(),
   bearerTokenCiphertext: text("bearer_token_ciphertext").notNull(),
-  // Models default to private (owner-only and free). Public visibility is
-  // allowlist-gated and may be free or owner-priced.
+  // Models default to private (owner/app-user access and free). Public
+  // visibility is allowlist-gated and may be free or owner-priced.
   visibility: text("visibility", { enum: ["private", "public"] })
     .default("private")
     .notNull(),

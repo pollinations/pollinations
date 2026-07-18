@@ -9,6 +9,7 @@ import {
     createMCPResponse,
     createTextContent,
     fetchBinaryWithAuth,
+    fetchWithAuth,
 } from "../utils/coreUtils.js";
 import {
     getImageModels,
@@ -16,6 +17,8 @@ import {
     validateImageModel,
     validateVideoModel,
 } from "../utils/models.js";
+
+const VIDEO_GENERATION_TIMEOUT_MS = 10 * 60 * 1000;
 
 function buildQueryParams(params) {
     const result = {};
@@ -347,7 +350,9 @@ async function generateVideo(params) {
     const url = buildUrl(`/image/${encodedPrompt}`, queryParams);
 
     try {
-        const { buffer, contentType } = await fetchBinaryWithAuth(url);
+        const { buffer, contentType } = await fetchBinaryWithAuth(url, {
+            timeoutMs: VIDEO_GENERATION_TIMEOUT_MS,
+        });
         const base64Data = arrayBufferToBase64(buffer);
 
         const metadata = {
@@ -396,9 +401,9 @@ async function generateVideoUrl(params) {
     const authUrl = buildUrl(`/image/${encodedPrompt}`, queryParams, true);
 
     try {
-        const headResponse = await fetch(authUrl, {
+        const headResponse = await fetchWithAuth(authUrl, {
             method: "HEAD",
-            headers: getAuthHeaders(),
+            timeoutMs: VIDEO_GENERATION_TIMEOUT_MS,
         });
         if (!headResponse.ok) {
             console.warn(

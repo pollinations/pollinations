@@ -157,7 +157,11 @@ function billingSanityFlags(usage, content) {
         flags.push("no usage object returned");
         return flags;
     }
-    const { prompt_tokens: p, completion_tokens: c } = usage;
+    const {
+        prompt_tokens: p,
+        completion_tokens: c,
+        total_tokens: total,
+    } = usage;
     const cached =
         usage.prompt_tokens_details?.cached_tokens ??
         usage.cached_input_tokens ??
@@ -168,6 +172,16 @@ function billingSanityFlags(usage, content) {
         flags.push("cached tokens on a cache-busted single-message prompt");
     if (p != null && cached > p)
         flags.push("cached_tokens exceeds prompt_tokens");
+    const reasoning =
+        usage.completion_tokens_details?.reasoning_tokens ??
+        usage.reasoning_tokens ??
+        0;
+    if (c != null && reasoning > c)
+        flags.push("reasoning_tokens exceeds completion_tokens");
+    if (p != null && c != null && total != null && total !== p + c)
+        flags.push(
+            "total_tokens differs from prompt_tokens + completion_tokens",
+        );
     const uncached = p != null && cached <= p ? p - cached : undefined;
     if (uncached != null && uncached > 100)
         flags.push("implausible uncached prompt token count");

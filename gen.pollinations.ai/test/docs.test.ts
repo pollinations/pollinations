@@ -31,8 +31,23 @@ describe("docs routes", () => {
             new Response(
                 JSON.stringify({
                     paths: {
-                        "/{hash}": {
+                        "/{id}": {
                             get: {
+                                tags: ["media.pollinations.ai"],
+                            },
+                        },
+                        "/{id}/metadata": {
+                            get: {
+                                tags: ["media.pollinations.ai"],
+                            },
+                        },
+                        "/media": {
+                            get: {
+                                tags: ["media.pollinations.ai"],
+                            },
+                        },
+                        "/media/{id}": {
+                            delete: {
                                 tags: ["media.pollinations.ai"],
                             },
                         },
@@ -146,7 +161,10 @@ describe("docs routes", () => {
         expect(schema.paths["/api/customer/portal"]).toBeUndefined();
         expect(schema.paths["/api-keys"]).toBeUndefined();
         expect(schema.paths["/generate/text/{prompt}"]).toBeUndefined();
-        expect(schema.paths["/{hash}"]).toBeDefined();
+        expect(schema.paths["/{id}"]).toBeDefined();
+        expect(schema.paths["/{id}/metadata"]).toBeDefined();
+        expect(schema.paths["/media"]).toBeDefined();
+        expect(schema.paths["/media/{id}"]).toBeDefined();
         // BYOP, CLI, MCP are surfaced as plain tags in the Integrations group;
         // the drawer icons are presentation, not part of the OpenAPI names.
         expect(schema.tags.map((tag) => tag.name)).toContain("BYOP");
@@ -161,6 +179,15 @@ describe("docs routes", () => {
         expect(schema.tags.map((tag) => tag.name)).not.toContain("Customer");
         expect(schema.components.schemas.EnterOnly).toBeDefined();
         expect(schema.components.schemas.MediaOnly).toBeDefined();
+
+        const mediaGet = (schema.paths["/{id}"] as Record<string, unknown>)
+            ?.get as Record<string, unknown> | undefined;
+        expect(mediaGet?.security).toEqual([]);
+
+        const mediaGalleryGet = (
+            schema.paths["/media"] as Record<string, unknown>
+        )?.get as Record<string, unknown> | undefined;
+        expect(mediaGalleryGet?.security).toEqual([]);
 
         // Code samples are injected post-merge on both gen-owned and
         // enter-owned paths.

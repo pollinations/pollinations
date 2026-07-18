@@ -17,6 +17,7 @@ const snapshotServerUrl = inject("snapshotServerUrl");
 const png1x1Base64 =
     "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAFgwJ/lPFCAAAAAABJRU5ErkJggg==";
 const imageBackendHost = "image-backend.test";
+const sanaBackendHost = "ltx2-backend.pollinations.ai";
 const fireworksHost = "api.fireworks.ai";
 
 afterEach(async () => {
@@ -56,6 +57,7 @@ function createGenerationMocks() {
             state: {},
             handlerMap: {
                 [imageBackendHost]: fakeImageBackendResponse,
+                [sanaBackendHost]: fakeImageBackendResponse,
             },
             reset: () => {},
         },
@@ -880,6 +882,109 @@ test("flux image generation uses Fireworks serverless from gen", async ({
         eventType: "generate.image",
         modelRequested: "flux",
         tokenCountCompletionImage: 1,
+        isBilledUsage: true,
+    });
+});
+
+test("OpenAI image generation returns token usage", async ({
+    paidApiKey,
+    mocks,
+}) => {
+    await mocks.enable("tinybird", "fireworks");
+
+    const { response, wait } = await fetchWorker("/v1/images/generations", {
+        method: "POST",
+        headers: {
+            authorization: `Bearer ${paidApiKey}`,
+            "content-type": "application/json",
+        },
+        body: JSON.stringify({
+            model: "flux",
+            prompt: "vcr red square",
+            size: "1280x720",
+            seed: 42,
+            response_format: "b64_json",
+        }),
+    });
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toMatchObject({
+        data: [{ b64_json: expect.any(String) }],
+        usage: {
+            input_tokens: 0,
+            output_tokens: 1,
+            total_tokens: 1,
+            input_tokens_details: {
+                text_tokens: 0,
+                image_tokens: 0,
+            },
+        },
+    });
+    await wait();
+});
+
+test("gpt-image-2 rejects transparent backgrounds with 400", async ({
+    paidApiKey,
+    mocks,
+}) => {
+    await mocks.enable("tinybird");
+
+    const { response, wait } = await fetchWorker("/v1/images/generations", {
+        method: "POST",
+        headers: {
+            "content-type": "application/json",
+            authorization: `Bearer ${paidApiKey}`,
+        },
+        body: JSON.stringify({
+            model: "gpt-image-2",
+            prompt: "transparent",
+            transparent: true,
+        }),
+    });
+
+    expect(response.status).toBe(400);
+    await expect(response.json()).resolves.toMatchObject({
+        success: false,
+        error: {
+            code: "BAD_REQUEST",
+            message:
+                "Invalid parameters: Transparent backgrounds are not supported by gpt-image-2.",
+        },
+    });
+    await wait();
+
+    expect(mocks.tinybird.state.events).toHaveLength(1);
+    expect(mocks.tinybird.state.events[0]).toMatchObject({
+        eventType: "generate.image",
+        modelRequested: "gpt-image-2",
+        responseStatus: 400,
+    });
+});
+
+test("sana uses its fixed backend and records its flat price", async ({
+    paidApiKey,
+    mocks,
+}) => {
+    await mocks.enable("tinybird", "imageBackend");
+
+    const { response, wait } = await fetchWorker(
+        "/image/fast%20flower?model=sana&width=512&height=512&seed=42",
+        {
+            headers: { authorization: `Bearer ${paidApiKey}` },
+        },
+    );
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get("x-model-used")).toBe("sana");
+    await wait();
+
+    expect(mocks.tinybird.state.events).toHaveLength(1);
+    expect(mocks.tinybird.state.events[0]).toMatchObject({
+        eventType: "generate.image",
+        modelRequested: "sana",
+        modelUsed: "sana",
+        tokenCountCompletionImage: 1,
+        tokenPriceCompletionImage: 0.0001,
         isBilledUsage: true,
     });
 });

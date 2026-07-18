@@ -23,6 +23,7 @@ import {
 } from "./createAndReturnVideos.ts";
 import { getImageEnv, syncImageEnv } from "./env.ts";
 import { HttpError } from "./httpError.ts";
+import { setKleinVpcBinding } from "./models/fluxKleinModel.ts";
 import { type ImageParams, ImageParamsSchema } from "./params.ts";
 import { sanitizeString, sleep } from "./util.ts";
 import {
@@ -43,8 +44,12 @@ const IMAGE_ENV_KEYS = [
     "AWS_SECRET_ACCESS_KEY",
     "AZURE_CONTENT_SAFETY_API_KEY",
     "AZURE_CONTENT_SAFETY_ENDPOINT",
-    "AZURE_MYCELI_PROD_EASTUS2_API_KEY",
-    "AZURE_MYCELI_PROD_IMG_WESTUS3_API_KEY",
+    "AZURE_MYCELI_PROD_IMG_15_SWEDEN_API_KEY",
+    "AZURE_MYCELI_PROD_IMG_15_WESTUS3_API_KEY",
+    "AZURE_MYCELI_PROD_IMG_2_EASTUS2_API_KEY",
+    "AZURE_MYCELI_PROD_IMG_2_SWEDEN_API_KEY",
+    "AZURE_MYCELI_PROD_IMG_MINI_SWEDEN_API_KEY",
+    "AZURE_MYCELI_PROD_IMG_MINI_WESTUS3_API_KEY",
     "AZURE_MYCELI_PROD_SWEDEN_API_KEY",
     "DASHSCOPE_API_KEY",
     "FIREWORKS_API_KEY",
@@ -54,7 +59,6 @@ const IMAGE_ENV_KEYS = [
     "GOOGLE_PROJECT_ID",
     "KLEIN_URL",
     "NOVA_REEL_S3_BUCKET",
-    "OPENAI_API_KEY",
     "PLN_GPU_TOKEN",
     "REPLICATE_API_TOKEN",
     "XAI_API_KEY",
@@ -62,6 +66,7 @@ const IMAGE_ENV_KEYS = [
 
 export function syncImageEnvironment(env: CloudflareBindings): void {
     syncImageEnv(env, IMAGE_ENV_KEYS);
+    setKleinVpcBinding(env.KLEIN_VPC);
     setServerRegistryBinding(env.KV, env.ENVIRONMENT);
     // The Workers test Images binding can return empty bodies; route tests cover provider flow, not CF transforms.
     setImagesBinding(env.ENVIRONMENT === "test" ? undefined : env.IMAGES);

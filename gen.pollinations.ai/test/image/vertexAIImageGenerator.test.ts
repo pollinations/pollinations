@@ -1,111 +1,124 @@
 import { describe, expect, it } from "vitest";
-import {
-    mapVertexGeminiImageUsage,
-    NANOBANANA_MODELS,
-} from "../../src/image/vertexAIImageGenerator.ts";
+import type { VertexAIUsageMetadata } from "../../src/image/vertexAIClient.ts";
+import { mapVertexGeminiImageUsage } from "../../src/image/vertexAIImageGenerator.ts";
+
+const validUsage: VertexAIUsageMetadata = {
+    promptTokenCount: 11,
+    candidatesTokenCount: 1120,
+    totalTokenCount: 1131,
+    promptTokensDetails: [{ modality: "TEXT", tokenCount: 11 }],
+    candidatesTokensDetails: [{ modality: "IMAGE", tokenCount: 1120 }],
+};
 
 describe("vertexAIImageGenerator usage mapping", () => {
     it.each([
         {
-            model: "nanobanana",
-            vertexModel: "gemini-2.5-flash-image",
-            promptTokenCount: 300,
-            promptImageTokens: 258,
-            promptTextTokens: 42,
+            name: "Gemini 2.5 text-to-image",
+            usage: {
+                promptTokenCount: 11,
+                candidatesTokenCount: 1290,
+                totalTokenCount: 1301,
+                promptTokensDetails: [
+                    { modality: "TEXT" as const, tokenCount: 11 },
+                ],
+                candidatesTokensDetails: [
+                    { modality: "IMAGE" as const, tokenCount: 1290 },
+                ],
+            },
+            expected: {
+                promptTextTokens: 11,
+                completionImageTokens: 1290,
+            },
         },
         {
-            model: "nanobanana-2",
-            vertexModel: "gemini-3.1-flash-image",
-            promptTokenCount: 1200,
-            promptImageTokens: 1120,
-            promptTextTokens: 80,
+            name: "Gemini 3.1 image edit",
+            usage: {
+                promptTokenCount: 1131,
+                candidatesTokenCount: 1120,
+                totalTokenCount: 2251,
+                promptTokensDetails: [
+                    { modality: "IMAGE" as const, tokenCount: 1120 },
+                    { modality: "TEXT" as const, tokenCount: 11 },
+                ],
+                candidatesTokensDetails: [
+                    { modality: "IMAGE" as const, tokenCount: 1120 },
+                ],
+            },
+            expected: {
+                promptImageTokens: 1120,
+                promptTextTokens: 11,
+                completionImageTokens: 1120,
+            },
         },
         {
-            model: "nanobanana-2-lite",
-            vertexModel: "gemini-3.1-flash-lite-image",
-            promptTokenCount: 1200,
-            promptImageTokens: 1120,
-            promptTextTokens: 80,
+            name: "Gemini 3 Pro image edit with reasoning",
+            usage: {
+                promptTokenCount: 571,
+                candidatesTokenCount: 1120,
+                totalTokenCount: 1831,
+                thoughtsTokenCount: 140,
+                promptTokensDetails: [
+                    { modality: "IMAGE" as const, tokenCount: 560 },
+                    { modality: "TEXT" as const, tokenCount: 11 },
+                ],
+                candidatesTokensDetails: [
+                    { modality: "IMAGE" as const, tokenCount: 1120 },
+                ],
+            },
+            expected: {
+                promptImageTokens: 560,
+                promptTextTokens: 11,
+                completionImageTokens: 1120,
+                completionReasoningTokens: 140,
+            },
         },
-        {
-            model: "nanobanana-pro",
-            vertexModel: "gemini-3-pro-image",
-            promptTokenCount: 600,
-            promptImageTokens: 560,
-            promptTextTokens: 40,
-        },
-    ] as const)("$model maps aggregate prompt usage into billable fields", ({
-        model,
-        vertexModel,
-        promptTokenCount,
-        promptImageTokens,
-        promptTextTokens,
-    }) => {
-        const modelConfig = NANOBANANA_MODELS[model];
-
-        expect(modelConfig.vertex).toBe(vertexModel);
-        expect(
-            mapVertexGeminiImageUsage({
-                usage: {
-                    promptTokenCount,
-                    candidatesTokenCount: 1120,
-                    totalTokenCount: promptTokenCount + 1137,
-                    thoughtsTokenCount: 17,
-                },
-                modelConfig,
-                referenceImageCount: 1,
-            }),
-        ).toEqual({
-            promptImageTokens,
-            promptTextTokens,
-            completionImageTokens: 1120,
-            completionReasoningTokens: 17,
-        });
+    ])("maps exact provider usage for $name", ({ usage, expected }) => {
+        expect(mapVertexGeminiImageUsage({ usage })).toEqual(expected);
     });
 
-    it("uses Vertex modality details when present", () => {
-        expect(
-            mapVertexGeminiImageUsage({
-                usage: {
-                    promptTokenCount: 999,
-                    promptTokensDetails: [
-                        { modality: "TEXT", tokenCount: 13 },
-                        { modality: "IMAGE", tokenCount: 560 },
-                    ],
-                    candidatesTokenCount: 1205,
-                    candidatesTokensDetails: [
-                        { modality: "TEXT", tokenCount: 5 },
-                        { modality: "IMAGE", tokenCount: 1200 },
-                    ],
-                    totalTokenCount: 2211,
-                    thoughtsTokenCount: 6,
-                },
-                modelConfig: NANOBANANA_MODELS["nanobanana-pro"],
-                referenceImageCount: 0,
-            }),
-        ).toEqual({
-            promptTextTokens: 13,
-            promptImageTokens: 560,
-            completionTextTokens: 5,
-            completionImageTokens: 1200,
-            completionReasoningTokens: 6,
-        });
-    });
-
-    it("maps prompt-only generations to prompt text tokens", () => {
-        expect(
-            mapVertexGeminiImageUsage({
-                usage: {
-                    promptTokenCount: 31,
-                    candidatesTokenCount: 1120,
-                    totalTokenCount: 1151,
-                },
-                modelConfig: NANOBANANA_MODELS["nanobanana-pro"],
-                referenceImageCount: 0,
-            }),
-        ).toEqual({
-            promptTextTokens: 31,
-            completionImageTokens: 1120,
-        });
+    it.each([
+        ["missing metadata", undefined],
+        [
+            "missing modality details",
+            { ...validUsage, promptTokensDetails: undefined },
+        ],
+        [
+            "inconsistent aggregate",
+            { ...validUsage, promptTokenCount: 12, totalTokenCount: 1132 },
+        ],
+        [
+            "candidate without an image",
+            {
+                ...validUsage,
+                candidatesTokenCount: 23,
+                totalTokenCount: 34,
+                candidatesTokensDetails: [
+                    { modality: "TEXT" as const, tokenCount: 23 },
+                ],
+            },
+        ],
+        [
+            "unsupported prompt modality",
+            {
+                ...validUsage,
+                promptTokensDetails: [
+                    { modality: "VIDEO" as const, tokenCount: 11 },
+                ],
+            },
+        ],
+        [
+            "unsupported completion modality",
+            {
+                ...validUsage,
+                candidatesTokensDetails: [
+                    { modality: "AUDIO" as const, tokenCount: 1120 },
+                ],
+            },
+        ],
+        ["inconsistent total", { ...validUsage, thoughtsTokenCount: 140 }],
+    ])("rejects %s", (_name, usage) => {
+        expect(() => mapVertexGeminiImageUsage({ usage })).toThrow(
+            "Vertex AI returned invalid billing usage metadata",
+        );
     });
 });

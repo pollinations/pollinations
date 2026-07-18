@@ -380,10 +380,10 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.000001,
     },
     "price": {
-      "completionTextTokens": 0.0000045,
-      "promptCacheWriteTokens": 0.0000009375,
-      "promptCachedTokens": 0.000000075,
-      "promptTextTokens": 0.00000075,
+      "completionTextTokens": 0.000003,
+      "promptCacheWriteTokens": 0.000000625,
+      "promptCachedTokens": 0.00000005,
+      "promptTextTokens": 0.0000005,
     },
   },
   "gpt-5.6-sol": {
@@ -394,10 +394,10 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.000005,
     },
     "price": {
-      "completionTextTokens": 0.0000225,
-      "promptCacheWriteTokens": 0.0000046875,
-      "promptCachedTokens": 0.000000375,
-      "promptTextTokens": 0.00000375,
+      "completionTextTokens": 0.000015,
+      "promptCacheWriteTokens": 0.000003125,
+      "promptCachedTokens": 0.00000025,
+      "promptTextTokens": 0.0000025,
     },
   },
   "gpt-5.6-terra": {
@@ -408,10 +408,10 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.0000025,
     },
     "price": {
-      "completionTextTokens": 0.00001125,
-      "promptCacheWriteTokens": 0.00000234375,
-      "promptCachedTokens": 0.0000001875,
-      "promptTextTokens": 0.000001875,
+      "completionTextTokens": 0.0000075,
+      "promptCacheWriteTokens": 0.0000015625,
+      "promptCachedTokens": 0.000000125,
+      "promptTextTokens": 0.00000125,
     },
   },
   "gpt-image-2": {
@@ -422,13 +422,41 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.000005,
     },
     "price": {
-      "completionImageTokens": 0.00003,
-      "promptCachedTokens": 0.00000125,
-      "promptImageTokens": 0.000008,
-      "promptTextTokens": 0.000005,
+      "completionImageTokens": 0.0000225,
+      "promptCachedTokens": 0.0000009375,
+      "promptImageTokens": 0.000006,
+      "promptTextTokens": 0.00000375,
+    },
+  },
+  "gpt-oss": {
+    "cost": {
+      "completionTextTokens": 0.00000018,
+      "promptTextTokens": 0.00000005,
+    },
+    "price": {
+      "completionTextTokens": 0.00000018,
+      "promptTextTokens": 0.00000005,
     },
   },
   "gpt-realtime-2": {
+    "cost": {
+      "completionAudioTokens": 0.000064,
+      "completionTextTokens": 0.000024,
+      "promptAudioTokens": 0.000032,
+      "promptCachedTokens": 0.0000004,
+      "promptImageTokens": 0.000005,
+      "promptTextTokens": 0.000004,
+    },
+    "price": {
+      "completionAudioTokens": 0.000064,
+      "completionTextTokens": 0.000024,
+      "promptAudioTokens": 0.000032,
+      "promptCachedTokens": 0.0000004,
+      "promptImageTokens": 0.000005,
+      "promptTextTokens": 0.000004,
+    },
+  },
+  "gpt-realtime-2.1": {
     "cost": {
       "completionAudioTokens": 0.000064,
       "completionTextTokens": 0.000024,
@@ -1114,6 +1142,14 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.0000001,
     },
   },
+  "sana": {
+    "cost": {
+      "completionImageTokens": 0.0001,
+    },
+    "price": {
+      "completionImageTokens": 0.0001,
+    },
+  },
   "scribe": {
     "cost": {
       "promptAudioSeconds": 0.0000611111111111111,
@@ -1252,10 +1288,22 @@ exports[`effective cost and price per model — snapshot 1`] = `
   },
   "veo": {
     "cost": {
-      "completionVideoSeconds": 0.15,
+      "completionAudioSeconds": 0.02,
+      "completionVideoSeconds": 0.08,
     },
     "price": {
-      "completionVideoSeconds": 0.15,
+      "completionAudioSeconds": 0.02,
+      "completionVideoSeconds": 0.08,
+    },
+  },
+  "veo-1080p": {
+    "cost": {
+      "completionAudioSeconds": 0.02,
+      "completionVideoSeconds": 0.1,
+    },
+    "price": {
+      "completionAudioSeconds": 0.02,
+      "completionVideoSeconds": 0.1,
     },
   },
   "wan": {

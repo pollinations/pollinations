@@ -22,6 +22,7 @@ import {
     XIcon,
 } from "@pollinations/ui";
 import logoWordmarkUrl from "@pollinations/ui/brand/lockup-horizontal.svg";
+import { Link, useRouterState } from "@tanstack/react-router";
 import type {
     ComponentType,
     CSSProperties,
@@ -32,12 +33,17 @@ import type {
 } from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { genDocsUrl } from "../../config.ts";
-import { DASHBOARD_NAV_ITEMS, type DashboardPage } from "./dashboard-theme.ts";
+import {
+    DASHBOARD_NAV_ITEMS,
+    type DashboardPage,
+    type DashboardPath,
+} from "./dashboard-theme.ts";
 
 export type { DashboardPage } from "./dashboard-theme.ts";
 
 type DashboardNavItem = {
     id: DashboardPage;
+    to: DashboardPath;
     label: string;
     icon: ComponentType<{ className?: string }>;
 };
@@ -48,11 +54,9 @@ const brandWordmarkMask: CSSProperties = {
 };
 
 type DashboardShellProps = PropsWithChildren<{
-    activePage: DashboardPage;
     navItems?: readonly DashboardNavItem[];
     githubUsername?: string;
     githubAvatarUrl?: string;
-    onPageChange: (page: DashboardPage) => void;
     onSignOut?: () => void;
     accountArea?: ReactNode;
     walletArea?: ReactNode;
@@ -132,11 +136,9 @@ const accountMenuLinks: readonly AccountMenuLink[] = [
 ];
 
 export const DashboardShell: FC<DashboardShellProps> = ({
-    activePage,
     navItems = DASHBOARD_NAV_ITEMS,
     githubUsername,
     githubAvatarUrl,
-    onPageChange,
     onSignOut,
     accountArea,
     walletArea,
@@ -146,9 +148,35 @@ export const DashboardShell: FC<DashboardShellProps> = ({
     const drawerRef = useRef<HTMLDivElement>(null);
     const menuButtonRef = useRef<HTMLButtonElement>(null);
     const mainScrollRef = useRef<HTMLDivElement>(null);
+    const location = useRouterState({ select: (state) => state.location });
+    const activeNavItem =
+        DASHBOARD_NAV_ITEMS.find((item) => item.to === location.pathname) ??
+        DASHBOARD_NAV_ITEMS[0];
+    const activePage = activeNavItem.id;
 
     useDashboardShellBodyClass();
     useScrollLock(isDrawerOpen);
+
+    useEffect(() => {
+        const canonicalUrl = new URL(
+            location.pathname,
+            window.location.origin,
+        ).toString();
+        const title = `${activeNavItem.label} | pollinations.ai`;
+        document.title = title;
+        document
+            .querySelector('link[rel="canonical"]')
+            ?.setAttribute("href", canonicalUrl);
+        document
+            .querySelector('meta[property="og:url"]')
+            ?.setAttribute("content", canonicalUrl);
+        document
+            .querySelector('meta[property="og:title"]')
+            ?.setAttribute("content", title);
+        document
+            .querySelector('meta[name="twitter:title"]')
+            ?.setAttribute("content", title);
+    }, [activeNavItem.label, location.pathname]);
 
     const closeDrawer = useCallback(() => {
         const activeElement = document.activeElement;
@@ -177,7 +205,7 @@ export const DashboardShell: FC<DashboardShellProps> = ({
         const scrollElement = mainScrollRef.current;
         if (!scrollElement) return;
 
-        if (activePage === "pollen" && window.location.hash === "#buy-pollen") {
+        if (activePage === "pollen" && location.hash === "buy-pollen") {
             const target = scrollElement.querySelector("#buy-pollen");
             if (target instanceof HTMLElement) {
                 const scrollRect = scrollElement.getBoundingClientRect();
@@ -194,12 +222,7 @@ export const DashboardShell: FC<DashboardShellProps> = ({
         }
 
         scrollElement.scrollTo({ top: 0, behavior: "auto" });
-    }, [activePage]);
-
-    function handleItemChange(page: DashboardPage): void {
-        onPageChange(page);
-        closeDrawer();
-    }
+    }, [activePage, location.hash]);
 
     const supportLinks: readonly SupportLink[] = [
         {
@@ -266,17 +289,17 @@ export const DashboardShell: FC<DashboardShellProps> = ({
             supportLinks={supportLinks}
             accountArea={effectiveAccountArea}
             walletArea={walletArea}
-            onPageChange={handleItemChange}
+            onNavigate={closeDrawer}
         />
     );
 
     return (
         <div className="flex h-dvh overflow-hidden bg-app-bg text-theme-text-strong">
-            <div className="hidden md:block">{rail}</div>
+            <div className="hidden lg:block">{rail}</div>
             <div
                 ref={drawerRef}
                 className={cn(
-                    "fixed inset-0 z-40 transition-[visibility] md:hidden",
+                    "fixed inset-0 z-40 transition-[visibility] lg:hidden",
                     isDrawerOpen
                         ? "pointer-events-auto visible delay-0"
                         : "pointer-events-none invisible delay-[420ms]",
@@ -320,14 +343,14 @@ export const DashboardShell: FC<DashboardShellProps> = ({
                     </div>
                 </div>
             </div>
-            <div className="flex min-w-0 flex-1 flex-col md:ml-60">
+            <div className="flex min-w-0 flex-1 flex-col lg:ml-60">
                 <MobileMenuButton
                     buttonRef={menuButtonRef}
                     onOpen={() => setIsDrawerOpen(true)}
                 />
                 <ScrollArea
                     ref={mainScrollRef}
-                    className="min-h-0 min-w-0 flex-1 overscroll-contain px-4 pt-14 pb-8 md:px-6 md:pt-10"
+                    className="min-h-0 min-w-0 flex-1 overscroll-contain px-4 pt-14 pb-8 lg:px-6 lg:pt-10"
                 >
                     <main className="mx-auto flex max-w-[800px] flex-col gap-6">
                         {children}
@@ -356,7 +379,7 @@ type DashboardRailProps = {
     supportLinks: readonly SupportLink[];
     accountArea?: ReactNode;
     walletArea?: ReactNode;
-    onPageChange: (page: DashboardPage) => void;
+    onNavigate: () => void;
 };
 
 const DashboardRail: FC<DashboardRailProps> = ({
@@ -366,14 +389,14 @@ const DashboardRail: FC<DashboardRailProps> = ({
     supportLinks,
     accountArea,
     walletArea,
-    onPageChange,
+    onNavigate,
 }) => (
     <aside
         data-theme="neutral"
-        className="flex min-h-0 flex-1 flex-col px-2 py-4 md:fixed md:inset-y-0 md:left-0 md:z-30 md:w-60 md:border-r md:border-theme-text-strong/10"
+        className="flex min-h-0 flex-1 flex-col px-2 py-4 lg:fixed lg:inset-y-0 lg:left-0 lg:z-30 lg:w-60 lg:border-r lg:border-theme-text-strong/10"
         aria-label="Dashboard navigation"
     >
-        <div className="hidden shrink-0 flex-col gap-2 border-b border-theme-text-strong/10 pb-4 pl-1 md:flex">
+        <div className="hidden shrink-0 flex-col gap-2 border-b border-theme-text-strong/10 pb-4 pl-1 lg:flex">
             <BrandMark size="desktop" />
             <BrandLinks links={brandLinks} />
         </div>
@@ -389,12 +412,13 @@ const DashboardRail: FC<DashboardRailProps> = ({
             <nav className="flex flex-col gap-1 pr-2">
                 {navItems.map((item) => (
                     <NavItem
+                        as={Link}
                         key={item.id}
-                        type="button"
+                        to={item.to}
                         data-theme="accent"
                         icon={item.icon}
                         active={activePage === item.id}
-                        onClick={() => onPageChange(item.id)}
+                        onClick={onNavigate}
                     >
                         {item.label}
                         {item.id === "quests" && (
@@ -426,7 +450,7 @@ const MobileMenuButton: FC<{
     <button
         ref={buttonRef}
         type="button"
-        className="fixed left-3 top-3 z-30 flex h-9 w-9 items-center justify-center rounded-full bg-surface-opaque text-theme-text-strong shadow-md ring-1 ring-theme-text-strong/10 hover:bg-surface-opaque md:hidden"
+        className="fixed left-3 top-3 z-30 flex h-9 w-9 items-center justify-center rounded-full bg-surface-opaque text-theme-text-strong shadow-md ring-1 ring-theme-text-strong/10 hover:bg-surface-opaque lg:hidden"
         onClick={onOpen}
         aria-label="Open navigation"
     >

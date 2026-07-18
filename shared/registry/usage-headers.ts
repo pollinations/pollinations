@@ -50,6 +50,36 @@ export const OPENAI_CHAT_USAGE_PATHS: Record<
     completionAudioTokens: ["completion_tokens_details.audio_tokens"],
 };
 
+export type OpenAIImageUsage = {
+    input_tokens: number;
+    output_tokens: number;
+    total_tokens: number;
+    input_tokens_details: {
+        text_tokens: number;
+        image_tokens: number;
+    };
+};
+
+export function usageToOpenAIImageUsage(usage: Usage): OpenAIImageUsage {
+    const inputTextTokens =
+        (usage.promptTextTokens ?? 0) +
+        (usage.promptCachedTokens ?? 0) +
+        (usage.promptCacheWriteTokens ?? 0);
+    const inputImageTokens = usage.promptImageTokens ?? 0;
+    const inputTokens = inputTextTokens + inputImageTokens;
+    const outputTokens =
+        (usage.completionTextTokens ?? 0) + (usage.completionImageTokens ?? 0);
+    return {
+        input_tokens: inputTokens,
+        output_tokens: outputTokens,
+        total_tokens: inputTokens + outputTokens,
+        input_tokens_details: {
+            text_tokens: inputTextTokens,
+            image_tokens: inputImageTokens,
+        },
+    };
+}
+
 /**
  * Internal worker header carrying Portkey's served fallback target (e.g.
  * "config.targets[1]"), re-emitted from x-portkey-last-used-option-index so

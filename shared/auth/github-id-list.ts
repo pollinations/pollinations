@@ -1,7 +1,7 @@
 export const COMMUNITY_MODEL_ALLOWED_GITHUB_IDS = [
     36901823, // ElliotEtag
     5099901, // voodoohop
-    235942848, // thomashmyceli
+    101795137, // lizzieliza
     248917639, // fouchyelliot-rgb
     241978997, // pollen-router
     189873015, // sharktide
@@ -26,6 +26,7 @@ export const COMMUNITY_MODEL_ALLOWED_GITHUB_IDS = [
     195966113, // JustScriptzz
     113566110, // riofndev
     188266626, // solarnode-developement
+    183505255, // timemachine-studio
 ] as const;
 
 const COMMUNITY_MODEL_ALLOWED_GITHUB_ID_SET = new Set<number>(

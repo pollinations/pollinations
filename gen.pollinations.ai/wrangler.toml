@@ -76,6 +76,11 @@ custom_domain = true
 binding = "ENTER"
 service = "pollinations-enter-production"
 
+[[env.production.vpc_networks]]
+binding = "KLEIN_VPC"
+tunnel_id = "c340d8d9-c1f3-4a13-8115-38b59faac3d5"
+remote = true
+
 [[env.production.d1_databases]]
 remote = true
 binding = "DB"
@@ -235,7 +240,10 @@ AWS_REGION = "us-east-1"
 AZURE_MYCELI_PROD_API_KEY = "not-a-secret-workers-test-only"
 AZURE_MYCELI_PROD_EASTUS2_API_KEY = "not-a-secret-workers-test-only"
 AZURE_MYCELI_PROD_IMG_WESTUS3_API_KEY = "not-a-secret-workers-test-only"
+AZURE_MYCELI_PROD_POLANDCENTRAL_API_KEY = "not-a-secret-workers-test-only"
 AZURE_MYCELI_PROD_SWEDEN_API_KEY = "not-a-secret-workers-test-only"
+AZURE_MYCELI_PROD_UAENORTH_API_KEY = "not-a-secret-workers-test-only"
+AZURE_MYCELI_PROD_WESTUS3_API_KEY = "not-a-secret-workers-test-only"
 AZURE_CONTENT_SAFETY_API_KEY = "not-a-secret-workers-test-only"
 AZURE_CONTENT_SAFETY_ENDPOINT = "https://content-safety.test"
 FIREWORKS_API_KEY = "not-a-secret-workers-test-only"

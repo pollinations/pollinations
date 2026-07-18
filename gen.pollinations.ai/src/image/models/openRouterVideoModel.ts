@@ -12,6 +12,8 @@ const logError = debug("pollinations:openrouter-video:error");
 
 const OPENROUTER_VIDEO_URL = "https://openrouter.ai/api/v1/videos";
 const HAPPYHORSE_MODEL = "alibaba/happyhorse-1.1";
+const POLL_INTERVAL_MS = 3000;
+const MAX_POLL_DELAY_MS = 30000;
 const HAPPYHORSE_ASPECT_RATIOS = [
     "16:9",
     "9:16",
@@ -166,7 +168,11 @@ async function pollVideo(
         if (!response.ok) {
             const body = await response.text();
             logError("OpenRouter video poll failed", response.status, body);
-            if (response.status >= 400 && response.status < 500) {
+            if (
+                response.status !== 429 &&
+                response.status >= 400 &&
+                response.status < 500
+            ) {
                 throw new HttpError(
                     `OpenRouter video poll failed: ${body}`,
                     response.status,
@@ -174,7 +180,7 @@ async function pollVideo(
                     url,
                 );
             }
-            await sleep(3000);
+            await sleep(getPollRetryDelay(response));
             continue;
         }
 
@@ -188,7 +194,7 @@ async function pollVideo(
                 url,
             );
         }
-        await sleep(3000);
+        await sleep(POLL_INTERVAL_MS);
     }
 
     throw new HttpError(
@@ -197,4 +203,20 @@ async function pollVideo(
         undefined,
         url,
     );
+}
+
+function getPollRetryDelay(response: Response): number {
+    if (response.status !== 429) return POLL_INTERVAL_MS;
+
+    const retryAfter = response.headers.get("Retry-After");
+    if (!retryAfter) return POLL_INTERVAL_MS;
+
+    const seconds = Number(retryAfter);
+    const delay = Number.isFinite(seconds)
+        ? seconds * 1000
+        : Date.parse(retryAfter) - Date.now();
+
+    return Number.isFinite(delay)
+        ? Math.max(0, Math.min(delay, MAX_POLL_DELAY_MS))
+        : POLL_INTERVAL_MS;
 }

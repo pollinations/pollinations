@@ -307,6 +307,35 @@ describe("community endpoint OpenAI service", () => {
         );
     });
 
+    it("offers fixed pricing when embedding usage is absent", async () => {
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async () =>
+                Response.json({
+                    object: "list",
+                    data: [
+                        {
+                            object: "embedding",
+                            embedding: [0.1],
+                            index: 0,
+                        },
+                    ],
+                }),
+            ),
+        );
+
+        await expect(
+            testCommunityEmbeddingEndpoint({
+                baseUrl: "https://api.example.com/v1",
+                bearerToken: "sk_saved_token",
+                model: "text-embedding-3-small",
+            }),
+        ).resolves.toEqual({
+            usage: { requests: 1 },
+            billableUsage: { completionTextTokens: 1 },
+        });
+    });
+
     it("tests OpenAI-compatible speech endpoints", async () => {
         const fetchMock = vi.fn(async (input, init) => {
             const request = new Request(input, init);
@@ -333,12 +362,12 @@ describe("community endpoint OpenAI service", () => {
                 model: "gpt-4o-mini-tts",
             }),
         ).resolves.toEqual({
-            usage: { characters: 22 },
-            billableUsage: { completionAudioTokens: 22 },
+            usage: { requests: 1 },
+            billableUsage: { completionAudioTokens: 1 },
         });
     });
 
-    it("tests duration-billed OpenAI-compatible transcription endpoints", async () => {
+    it("tests token-billed OpenAI-compatible transcription endpoints", async () => {
         const fetchMock = vi.fn(async (input, init) => {
             const request = new Request(input, init);
             expect(request.url).toBe(
@@ -348,13 +377,21 @@ describe("community endpoint OpenAI service", () => {
                 "Bearer sk_saved_token",
             );
             const form = await request.formData();
-            expect(form.get("model")).toBe("whisper-1");
-            expect(form.get("response_format")).toBe("verbose_json");
+            expect(form.get("model")).toBe("gpt-4o-transcribe");
+            expect(form.get("response_format")).toBe("json");
             expect(form.get("file")).toBeInstanceOf(File);
             return Response.json({
-                text: "",
-                duration: 1,
-                segments: [],
+                text: "Hello",
+                usage: {
+                    type: "tokens",
+                    input_tokens: 20,
+                    output_tokens: 3,
+                    total_tokens: 23,
+                    input_token_details: {
+                        audio_tokens: 18,
+                        text_tokens: 2,
+                    },
+                },
             });
         });
         vi.stubGlobal("fetch", fetchMock);
@@ -363,15 +400,28 @@ describe("community endpoint OpenAI service", () => {
             testCommunityTranscriptionEndpoint({
                 baseUrl: "https://api.example.com/v1/audio/transcriptions",
                 bearerToken: "sk_saved_token",
-                model: "whisper-1",
+                model: "gpt-4o-transcribe",
             }),
         ).resolves.toEqual({
-            usage: { seconds: 1 },
-            billableUsage: { promptAudioSeconds: 1 },
+            usage: {
+                type: "tokens",
+                input_tokens: 20,
+                output_tokens: 3,
+                total_tokens: 23,
+                input_token_details: {
+                    audio_tokens: 18,
+                    text_tokens: 2,
+                },
+            },
+            billableUsage: {
+                promptTextTokens: 2,
+                promptAudioTokens: 18,
+                completionTextTokens: 3,
+            },
         });
     });
 
-    it("rejects transcription endpoints without duration", async () => {
+    it("offers fixed pricing when transcription usage is absent", async () => {
         vi.stubGlobal(
             "fetch",
             vi.fn(async () => Response.json({ text: "hello" })),
@@ -383,7 +433,50 @@ describe("community endpoint OpenAI service", () => {
                 bearerToken: "sk_saved_token",
                 model: "whisper-1",
             }),
-        ).rejects.toThrow("verbose transcription with duration");
+        ).resolves.toEqual({
+            usage: { requests: 1 },
+            billableUsage: { completionAudioTokens: 1 },
+        });
+    });
+
+    it("rejects inconsistent transcription token usage", async () => {
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async () =>
+                Response.json({
+                    text: "hello",
+                    usage: {
+                        type: "tokens",
+                        input_tokens: 20,
+                        output_tokens: 3,
+                        total_tokens: 22,
+                    },
+                }),
+            ),
+        );
+
+        await expect(
+            testCommunityTranscriptionEndpoint({
+                baseUrl: "https://api.example.com/v1",
+                bearerToken: "sk_saved_token",
+                model: "gpt-4o-transcribe",
+            }),
+        ).rejects.toThrow("invalid transcription token usage");
+    });
+
+    it("rejects invalid transcription responses", async () => {
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async () => Response.json({})),
+        );
+
+        await expect(
+            testCommunityTranscriptionEndpoint({
+                baseUrl: "https://api.example.com/v1",
+                bearerToken: "sk_saved_token",
+                model: "whisper-1",
+            }),
+        ).rejects.toThrow("OpenAI transcription");
     });
 
     it("clarifies upstream 401s after sending Authorization", async () => {

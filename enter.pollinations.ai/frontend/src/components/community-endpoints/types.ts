@@ -190,8 +190,8 @@ function formPricesToPayload(
                 const unit =
                     modalityField.priceUnit === "image"
                         ? "image"
-                        : modalityField.priceUnit === "second"
-                          ? "audio second"
+                        : modalityField.priceUnit === "request"
+                          ? "request"
                           : "1M units";
                 throw new Error(
                     `Prices must be 0 (free) or a positive amount per ${unit}, using a dot decimal`,

@@ -2,6 +2,8 @@ import type { Usage } from "@shared/registry/registry.ts";
 import {
     buildUsageHeaders,
     getOpenAITranscriptionDuration,
+    getOpenAITranscriptionTokenUsage,
+    openaiTranscriptionUsageToUsage,
     openaiUsageToUsage,
     parseUsageHeaders,
 } from "@shared/registry/usage-headers.ts";
@@ -394,6 +396,77 @@ describe("getOpenAITranscriptionDuration", () => {
         expect(getOpenAITranscriptionDuration({ duration: 0 })).toBeNull();
         expect(
             getOpenAITranscriptionDuration({ usage: { seconds: Infinity } }),
+        ).toBeNull();
+    });
+});
+
+describe("getOpenAITranscriptionTokenUsage", () => {
+    it("validates and converts OpenAI transcription token usage", () => {
+        const response = {
+            usage: {
+                type: "tokens" as const,
+                input_tokens: 20,
+                output_tokens: 3,
+                total_tokens: 23,
+                input_token_details: {
+                    audio_tokens: 18,
+                    text_tokens: 2,
+                },
+            },
+        };
+
+        const usage = getOpenAITranscriptionTokenUsage(response);
+        expect(usage).toEqual(response.usage);
+        if (!usage) throw new Error("Expected token usage");
+        expect(openaiTranscriptionUsageToUsage(usage)).toEqual({
+            promptTextTokens: 2,
+            promptAudioTokens: 18,
+            completionTextTokens: 3,
+        });
+    });
+
+    it("treats unspecified transcription input tokens as audio", () => {
+        const usage = getOpenAITranscriptionTokenUsage({
+            usage: {
+                type: "tokens",
+                input_tokens: 20,
+                output_tokens: 3,
+                total_tokens: 23,
+            },
+        });
+
+        if (!usage) throw new Error("Expected token usage");
+        expect(openaiTranscriptionUsageToUsage(usage)).toEqual({
+            promptTextTokens: 0,
+            promptAudioTokens: 20,
+            completionTextTokens: 3,
+        });
+    });
+
+    it("rejects inconsistent transcription token usage", () => {
+        expect(
+            getOpenAITranscriptionTokenUsage({
+                usage: {
+                    type: "tokens",
+                    input_tokens: 20,
+                    output_tokens: 3,
+                    total_tokens: 22,
+                },
+            }),
+        ).toBeNull();
+        expect(
+            getOpenAITranscriptionTokenUsage({
+                usage: {
+                    type: "tokens",
+                    input_tokens: 20,
+                    output_tokens: 3,
+                    total_tokens: 23,
+                    input_token_details: {
+                        audio_tokens: 19,
+                        text_tokens: 2,
+                    },
+                },
+            }),
         ).toBeNull();
     });
 });

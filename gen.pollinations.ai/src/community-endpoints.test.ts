@@ -376,7 +376,29 @@ describe("community endpoint helpers", () => {
         });
     });
 
-    it("builds speech and transcription definitions with native audio pricing", () => {
+    it("builds a fixed-price embedding definition", () => {
+        const definition = communityModelDefinition({
+            modelId: "voodoohop/embedding",
+            description: "Community embeddings",
+            modality: "embedding",
+            ...communityEndpointPrices({ completionTextPrice: 0.02 }),
+        });
+
+        expect(definition).toMatchObject({
+            category: "embedding",
+            flatRate: true,
+            cost: { completionTextTokens: 0.02 },
+        });
+        expect(
+            calculateUsageBilling(
+                definition.modelId,
+                { completionTextTokens: 1 },
+                definition,
+            ).price.totalPrice,
+        ).toBe(0.02);
+    });
+
+    it("builds fixed speech and token-priced transcription definitions", () => {
         const speech = communityModelDefinition({
             modelId: "voodoohop/speech",
             description: "Community speech",
@@ -387,21 +409,63 @@ describe("community endpoint helpers", () => {
             modelId: "voodoohop/transcription",
             description: "Community transcription",
             modality: "transcription",
-            ...communityEndpointPrices({ promptAudioPrice: 0.02 }),
+            ...communityEndpointPrices({
+                promptAudioPrice: 0.000002,
+                completionTextPrice: 0.00001,
+            }),
         });
 
         expect(speech).toMatchObject({
             category: "audio",
             inputModalities: ["text"],
             outputModalities: ["audio"],
+            flatRate: true,
             cost: { completionAudioTokens: 0.01 },
         });
         expect(transcription).toMatchObject({
             category: "audio",
             inputModalities: ["audio"],
             outputModalities: ["text"],
-            cost: { promptAudioSeconds: 0.02 },
+            cost: {
+                promptAudioTokens: 0.000002,
+                completionTextTokens: 0.00001,
+            },
         });
+        expect(
+            calculateUsageBilling(
+                speech.modelId,
+                { completionAudioTokens: 1 },
+                speech,
+            ).price.totalPrice,
+        ).toBe(0.01);
+        expect(
+            calculateUsageBilling(
+                transcription.modelId,
+                { promptAudioTokens: 20, completionTextTokens: 3 },
+                transcription,
+            ).price.totalPrice,
+        ).toBeCloseTo(0.00007);
+    });
+
+    it("builds fixed-price transcription definitions", () => {
+        const definition = communityModelDefinition({
+            modelId: "voodoohop/transcription",
+            description: "Community transcription",
+            modality: "transcription",
+            ...communityEndpointPrices({ completionAudioPrice: 0.02 }),
+        });
+
+        expect(definition).toMatchObject({
+            flatRate: true,
+            cost: { completionAudioTokens: 0.02 },
+        });
+        expect(
+            calculateUsageBilling(
+                definition.modelId,
+                { completionAudioTokens: 1 },
+                definition,
+            ).price.totalPrice,
+        ).toBe(0.02);
     });
 
     it("builds community image models with one fixed per-image price", () => {
@@ -2017,7 +2081,7 @@ fixtureTest(
                     upstreamModel: "text-embedding-3-small",
                     bearerToken: "Bearer sk_embedding_upstream",
                     promptTextPrice: 0.000002,
-                    completionTextPrice: 0.5,
+                    completionAudioPrice: 0.5,
                 }),
             }),
         );
@@ -2029,7 +2093,7 @@ fixtureTest(
             baseUrl: string;
             upstreamModel: string;
             promptTextPrice: number;
-            completionTextPrice: number;
+            completionAudioPrice: number;
         };
         expect(registered).toMatchObject({
             modelId: communityModelId(ownerGithubUsername, modelName),
@@ -2037,7 +2101,7 @@ fixtureTest(
             baseUrl: "https://api.example.com/v1/embeddings",
             upstreamModel: "text-embedding-3-small",
             promptTextPrice: 0.000002,
-            completionTextPrice: 0,
+            completionAudioPrice: 0,
         });
 
         const testResponse = await fetchEnterApi(
@@ -2212,7 +2276,8 @@ fixtureTest(
             ),
             promptTextPrice: 0,
             completionTextPrice: 0,
-            promptAudioPrice: 0.02,
+            promptAudioPrice: 0,
+            completionAudioPrice: 0.02,
             createdAt: now,
             updatedAt: now,
         });
@@ -2288,7 +2353,7 @@ fixtureTest(
         expect(speechResponse.headers.get("x-model-used")).toBe(speechModelId);
         expect(
             speechResponse.headers.get("x-usage-completion-audio-tokens"),
-        ).toBe("11");
+        ).toBe("1");
         expect(new Uint8Array(await speechResponse.arrayBuffer())).toEqual(
             new Uint8Array([73, 68, 51]),
         );
@@ -2315,12 +2380,13 @@ fixtureTest(
             transcriptionModelId,
         );
         expect(
-            transcriptionResponse.headers.get("x-usage-prompt-audio-seconds"),
-        ).toBe("2.5");
+            transcriptionResponse.headers.get(
+                "x-usage-completion-audio-tokens",
+            ),
+        ).toBe("1");
         await expect(transcriptionResponse.json()).resolves.toMatchObject({
             text: "Hello audio",
             duration: 2.5,
-            usage: { seconds: 2.5 },
         });
 
         const audioModelsResponse = await SELF.fetch(
@@ -2362,8 +2428,9 @@ fixtureTest(
             output_modalities: ["text"],
             pricing: {
                 currency: "pollen",
-                promptAudioSeconds: "0.02",
+                completionAudioTokens: "0.02",
             },
+            flat_rate: true,
         });
         expect(
             openaiModels.data.find((model) => model.id === speechModelId)

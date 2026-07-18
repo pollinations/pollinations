@@ -12,7 +12,8 @@ import { detectImageMimeType } from "@shared/image-mime.ts";
 import type { Usage } from "@shared/registry/registry.ts";
 import {
     getOpenAIEmbeddingUsage,
-    getOpenAITranscriptionDuration,
+    getOpenAITranscriptionTokenUsage,
+    openaiTranscriptionUsageToUsage,
     openaiUsageToUsage,
 } from "@shared/registry/usage-headers.ts";
 
@@ -251,13 +252,26 @@ export async function testCommunityEmbeddingEndpoint({
     }
 
     const usage = getOpenAIEmbeddingUsage(body);
-    if (!usage || usage.prompt_tokens <= 0) {
+    if (usage && usage.prompt_tokens > 0) {
+        return {
+            usage,
+            billableUsage: { promptTextTokens: usage.prompt_tokens },
+        };
+    }
+    if (
+        !usage &&
+        body &&
+        typeof body === "object" &&
+        "usage" in body &&
+        body.usage !== undefined &&
+        body.usage !== null
+    ) {
         throw new Error("Endpoint did not return billable OpenAI token usage");
     }
 
     return {
-        usage,
-        billableUsage: { promptTextTokens: usage.prompt_tokens },
+        usage: { requests: 1 },
+        billableUsage: { completionTextTokens: 1 },
     };
 }
 
@@ -289,8 +303,8 @@ export async function testCommunitySpeechEndpoint({
     }
 
     return {
-        usage: { characters: input.length },
-        billableUsage: { completionAudioTokens: input.length },
+        usage: { requests: 1 },
+        billableUsage: { completionAudioTokens: 1 },
     };
 }
 
@@ -308,28 +322,41 @@ export async function testCommunityTranscriptionEndpoint({
         }),
     );
     form.append("model", model);
-    form.append("response_format", "verbose_json");
+    form.append("response_format", "json");
     const body = await fetchJson(communityTranscriptionsUrl(baseUrl), {
         method: "POST",
         headers: authorizationHeaders(bearerToken),
         body: form,
     });
-    const seconds = getOpenAITranscriptionDuration(body);
     if (
         !body ||
         typeof body !== "object" ||
         !("text" in body) ||
-        typeof body.text !== "string" ||
-        !seconds
+        typeof body.text !== "string"
     ) {
-        throw new Error(
-            "Endpoint did not return an OpenAI verbose transcription with duration",
-        );
+        throw new Error("Endpoint did not return an OpenAI transcription");
+    }
+
+    const usage = getOpenAITranscriptionTokenUsage(body);
+    if (usage && usage.total_tokens > 0) {
+        return {
+            usage,
+            billableUsage: openaiTranscriptionUsageToUsage(usage),
+        };
+    }
+    if (
+        "usage" in body &&
+        body.usage &&
+        typeof body.usage === "object" &&
+        "type" in body.usage &&
+        body.usage.type === "tokens"
+    ) {
+        throw new Error("Endpoint returned invalid transcription token usage");
     }
 
     return {
-        usage: { seconds },
-        billableUsage: { promptAudioSeconds: seconds },
+        usage: { requests: 1 },
+        billableUsage: { completionAudioTokens: 1 },
     };
 }
 

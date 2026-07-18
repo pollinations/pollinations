@@ -182,8 +182,8 @@ function PriceInputCell({
     const unitLabel =
         field.priceUnit === "image"
             ? "/image"
-            : field.priceUnit === "second"
-              ? "/sec"
+            : field.priceUnit === "request"
+              ? "/request"
               : "/1M";
     const minimum =
         field.priceUnit === "million"

@@ -115,25 +115,53 @@ const COMMUNITY_EMBEDDING_ENDPOINT_PRICE_FIELDS = [
         usageType: "promptTextTokens",
         rawUsagePaths: OPENAI_EMBEDDING_USAGE_PATHS.promptTextTokens,
     },
+    {
+        key: "completionTextPrice",
+        usageType: "completionTextTokens",
+        label: "Embedding request",
+        priceUnit: "request",
+        rawUsagePaths: ["requests"],
+    },
 ] as const;
 
 const COMMUNITY_SPEECH_ENDPOINT_PRICE_FIELDS = [
     {
         key: "completionAudioPrice",
         usageType: "completionAudioTokens",
-        label: "Input characters",
-        priceUnit: "million",
-        rawUsagePaths: ["characters"],
+        label: "Speech request",
+        priceUnit: "request",
+        rawUsagePaths: ["requests"],
     },
 ] as const;
 
 const COMMUNITY_TRANSCRIPTION_ENDPOINT_PRICE_FIELDS = [
     {
+        key: "promptTextPrice",
+        usageType: "promptTextTokens",
+        label: "Input text",
+        priceUnit: "million",
+        rawUsagePaths: ["input_token_details.text_tokens"],
+    },
+    {
         key: "promptAudioPrice",
-        usageType: "promptAudioSeconds",
+        usageType: "promptAudioTokens",
         label: "Input audio",
-        priceUnit: "second",
-        rawUsagePaths: ["seconds", "duration", "usage.seconds"],
+        priceUnit: "million",
+        rawUsagePaths: ["input_token_details.audio_tokens", "input_tokens"],
+    },
+    {
+        key: "completionTextPrice",
+        usageType: "completionTextTokens",
+        label: "Output text",
+        priceUnit: "million",
+        rawUsagePaths: ["output_tokens"],
+    },
+    {
+        key: "completionAudioPrice",
+        usageType: "completionAudioTokens",
+        label: "Transcription request",
+        priceUnit: "request",
+        rawUsagePaths: ["requests"],
     },
 ] as const;
 
@@ -382,6 +410,11 @@ export function communityModelDefinition(
         legacyAlias && legacyAlias !== endpoint.modelId ? [legacyAlias] : [];
     const modality = normalizeCommunityEndpointModality(endpoint.modality);
     const definition = COMMUNITY_MODEL_MODALITY_DEFINITIONS[modality];
+    const flatRate =
+        modality === "image" ||
+        modality === "speech" ||
+        (modality === "embedding" && endpoint.completionTextPrice > 0) ||
+        (modality === "transcription" && endpoint.completionAudioPrice > 0);
     return {
         aliases,
         modelId: endpoint.modelId,
@@ -397,7 +430,7 @@ export function communityModelDefinition(
         outputModalities: [...definition.outputModalities],
         paidOnly: false,
         alpha: true,
-        ...(modality === "image" ? { flatRate: true } : {}),
+        ...(flatRate ? { flatRate: true } : {}),
     };
 }
 

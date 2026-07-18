@@ -43,9 +43,9 @@ describe("community endpoint price input", () => {
         expect(storedPriceToFormValue(0.00003)).toBe("30");
     });
 
-    it("keeps per-second transcription prices unscaled", () => {
-        expect(formPriceToStoredPrice("0.00004", "second")).toBe(0.00004);
-        expect(storedPriceToFormValue(0.00004, "second")).toBe("0.00004");
+    it("keeps fixed per-request prices unscaled", () => {
+        expect(formPriceToStoredPrice("0.03", "request")).toBe(0.03);
+        expect(storedPriceToFormValue(0.03, "request")).toBe("0.03");
     });
 
     it("keeps fixed per-image prices unscaled", () => {

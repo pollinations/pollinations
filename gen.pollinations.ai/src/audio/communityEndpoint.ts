@@ -7,9 +7,10 @@ import {
 import { ensureUpstreamOk, UpstreamError } from "@shared/error.ts";
 import {
     buildUsageHeaders,
-    createAudioSecondsUsage,
     createAudioTokenUsage,
     getOpenAITranscriptionDuration,
+    getOpenAITranscriptionTokenUsage,
+    openaiTranscriptionUsageToUsage,
 } from "@shared/registry/usage-headers.ts";
 import { decryptSecret } from "@shared/secret-encryption.ts";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
@@ -64,10 +65,7 @@ export async function generateCommunitySpeech(
 
     const headers = {
         "Content-Type": contentType,
-        ...buildUsageHeaders(
-            responseModel,
-            createAudioTokenUsage(request.input.length),
-        ),
+        ...buildUsageHeaders(responseModel, createAudioTokenUsage(1)),
         ...(contentLength ? { "Content-Length": contentLength } : {}),
     };
     return new Response(response.body, { headers });
@@ -89,7 +87,13 @@ export async function generateCommunityTranscription(
         file.name && file.name !== "blob" ? file.name : "audio.wav",
     );
     upstreamForm.append("model", endpoint.upstreamModel);
-    upstreamForm.append("response_format", "verbose_json");
+    const upstreamResponseFormat =
+        responseFormat === "verbose_json" ||
+        responseFormat === "srt" ||
+        responseFormat === "vtt"
+            ? "verbose_json"
+            : "json";
+    upstreamForm.append("response_format", upstreamResponseFormat);
     copyStringField(requestForm, upstreamForm, "language");
     copyStringField(requestForm, upstreamForm, "prompt");
     copyStringField(requestForm, upstreamForm, "temperature");
@@ -110,12 +114,11 @@ export async function generateCommunityTranscription(
         !body ||
         typeof body !== "object" ||
         !("text" in body) ||
-        typeof body.text !== "string" ||
-        !seconds
+        typeof body.text !== "string"
     ) {
         throw invalidResponse(
             upstreamUrl,
-            "Community transcription endpoint returned invalid verbose JSON or duration",
+            "Community transcription endpoint returned an invalid response",
         );
     }
     const segments = "segments" in body ? body.segments : undefined;
@@ -132,16 +135,31 @@ export async function generateCommunityTranscription(
     const normalized: WhisperVerboseJson = {
         ...(body as Record<string, unknown>),
         text: body.text,
-        duration: seconds,
-        usage: { seconds },
+        ...(seconds ? { duration: seconds } : {}),
         ...(Array.isArray(segments)
             ? { segments: segments as WhisperSegment[] }
             : {}),
     };
+    const tokenUsage = getOpenAITranscriptionTokenUsage(body);
+    const usesFixedPrice = endpoint.completionAudioPrice > 0;
+    const hasTokenPrice =
+        endpoint.promptTextPrice > 0 ||
+        endpoint.promptAudioPrice > 0 ||
+        endpoint.completionTextPrice > 0;
+    if (!usesFixedPrice && hasTokenPrice && !tokenUsage) {
+        throw invalidResponse(
+            upstreamUrl,
+            "Community transcription endpoint did not return token usage required by its pricing",
+        );
+    }
+    const billableUsage =
+        !usesFixedPrice && tokenUsage
+            ? openaiTranscriptionUsageToUsage(tokenUsage)
+            : createAudioTokenUsage(1);
     return formatWhisperResponse(
         normalized,
         responseFormat,
-        buildUsageHeaders(responseModel, createAudioSecondsUsage(seconds)),
+        buildUsageHeaders(responseModel, billableUsage),
     );
 }
 

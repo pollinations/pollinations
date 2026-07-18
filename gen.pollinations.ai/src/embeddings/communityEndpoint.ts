@@ -4,6 +4,7 @@ import {
     normalizeCommunityEndpointBearerToken,
 } from "@shared/community-endpoints.ts";
 import { ensureUpstreamOk, UpstreamError } from "@shared/error.ts";
+import type { Usage } from "@shared/registry/registry.ts";
 import {
     buildUsageHeaders,
     getOpenAIEmbeddingUsage,
@@ -27,7 +28,7 @@ export async function generateCommunityEmbeddings(
 
     const inputs = normalizeInputs(request.input).map(inputToText);
     if (inputs.length === 0) {
-        return embeddingResponse(responseModel, [], 0);
+        return embeddingResponse(responseModel, [], 0, {});
     }
 
     const bearerToken = await decryptSecret(
@@ -68,16 +69,11 @@ export async function generateCommunityEmbeddings(
     await ensureUpstreamOk(response, upstreamUrl);
     const body = await response.json().catch(() => null);
     const usage = getOpenAIEmbeddingUsage(body);
-    if (!usage || usage.prompt_tokens <= 0) {
-        throw invalidResponse(
-            upstreamUrl,
-            "Community embedding endpoint did not return billable OpenAI token usage",
-        );
-    }
 
     const parsed = CreateEmbeddingResponseSchema.safeParse({
         ...(body && typeof body === "object" ? body : {}),
         model: responseModel,
+        usage: usage ?? { prompt_tokens: 0, total_tokens: 0 },
     });
     if (!parsed.success) {
         throw invalidResponse(
@@ -106,7 +102,23 @@ export async function generateCommunityEmbeddings(
         );
     }
 
-    return embeddingResponse(responseModel, data, usage.prompt_tokens);
+    const usesFixedPrice = endpoint.completionTextPrice > 0;
+    if (!usesFixedPrice && endpoint.promptTextPrice > 0 && !usage) {
+        throw invalidResponse(
+            upstreamUrl,
+            "Community embedding endpoint did not return token usage required by its pricing",
+        );
+    }
+    const billableUsage: Usage =
+        !usesFixedPrice && usage
+            ? { promptTextTokens: usage.prompt_tokens }
+            : { completionTextTokens: 1 };
+    return embeddingResponse(
+        responseModel,
+        data,
+        usage?.prompt_tokens ?? 0,
+        billableUsage,
+    );
 }
 
 function isValidEmbedding(
@@ -138,6 +150,7 @@ function embeddingResponse(
     model: string,
     data: unknown[],
     promptTokens: number,
+    billableUsage: Usage,
 ): Response {
     return Response.json(
         {
@@ -150,9 +163,7 @@ function embeddingResponse(
             },
         },
         {
-            headers: buildUsageHeaders(model, {
-                promptTextTokens: promptTokens,
-            }),
+            headers: buildUsageHeaders(model, billableUsage),
         },
     );
 }

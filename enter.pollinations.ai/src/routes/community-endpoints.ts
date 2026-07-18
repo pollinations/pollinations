@@ -177,6 +177,49 @@ function normalizeInputBearerToken(value: string): string {
     }
 }
 
+function validatePricesForModality(
+    input: Partial<Record<CommunityEndpointPriceKey, number | undefined>>,
+    modality: CommunityEndpointModality,
+): void {
+    for (const field of communityEndpointPriceFieldsForModality(modality)) {
+        const price = input[field.key];
+        if (!price) continue;
+        const minimum =
+            field.priceUnit === "million"
+                ? MIN_COMMUNITY_PRICE_PER_TOKEN
+                : MIN_COMMUNITY_PRICE_PER_UNIT;
+        if (price < minimum) {
+            throw new HTTPException(400, {
+                message: `${field.label} price must be 0 (free) or at least ${minimum} per billable unit`,
+            });
+        }
+    }
+}
+
+function validatePricingMode(
+    prices: Partial<Record<CommunityEndpointPriceKey, number | undefined>>,
+    modality: CommunityEndpointModality,
+): void {
+    let fixedPrice = 0;
+    let hasTokenPrice = false;
+    if (modality === "embedding") {
+        fixedPrice = prices.completionTextPrice ?? 0;
+        hasTokenPrice = Boolean(prices.promptTextPrice);
+    } else if (modality === "transcription") {
+        fixedPrice = prices.completionAudioPrice ?? 0;
+        hasTokenPrice = Boolean(
+            prices.promptTextPrice ||
+                prices.promptAudioPrice ||
+                prices.completionTextPrice,
+        );
+    }
+    if (fixedPrice && hasTokenPrice) {
+        throw new HTTPException(400, {
+            message: "Choose either token pricing or one fixed request price",
+        });
+    }
+}
+
 // Anyone may register private endpoints for their own use. Publishing and raw
 // upstream probes require an allowlisted account.
 async function requireCommunityEndpointPublishAccess(
@@ -398,11 +441,13 @@ export const communityEndpointsRoutes = new Hono<Env>()
                 db,
                 user.id,
             );
+            validatePricesForModality(input, input.modality);
             await ensureModelNameAvailable(db, user.id, input.name);
             const prices =
                 input.visibility === "public"
                     ? communityEndpointPricesForModality(input, input.modality)
                     : communityEndpointPrices({});
+            validatePricingMode(prices, input.modality);
             await enforcePublishingAccess(db, user.id, input.visibility);
             const id = crypto.randomUUID();
             const [row] = await db
@@ -576,6 +621,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
             const modality = normalizeCommunityEndpointModality(
                 endpoint.modality,
             );
+            validatePricesForModality(input, modality);
             await ensureModelNameAvailable(
                 db,
                 user.id,
@@ -624,6 +670,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
                           { ...endpoint, ...update },
                           modality,
                       );
+            validatePricingMode(effectivePrices, modality);
             await enforcePublishingAccess(db, user.id, effectiveVisibility);
             // Persist visibility together with the complete effective price
             // set on every update, so concurrent partial updates cannot

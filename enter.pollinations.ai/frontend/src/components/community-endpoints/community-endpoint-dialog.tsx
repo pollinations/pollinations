@@ -72,9 +72,9 @@ const BASE_PRICE_KEYS: Record<
 > = {
     text: BASE_TEXT_PRICE_KEYS,
     image: ["completionImagePrice"],
-    embedding: ["promptTextPrice"],
+    embedding: [],
     speech: ["completionAudioPrice"],
-    transcription: ["promptAudioPrice"],
+    transcription: [],
 };
 
 const MODEL_PLACEHOLDERS: Record<CommunityEndpointModality, string> = {

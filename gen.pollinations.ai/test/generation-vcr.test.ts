@@ -174,15 +174,11 @@ async function fakePortkeyResponse(request: Request) {
     const model = body.model || "openai-fast";
 
     if (path === "/v1/responses") {
-        if (
-            request.headers.get("x-portkey-azure-api-version") !==
-            "2025-03-01-preview"
-        ) {
+        if (request.headers.get("x-portkey-azure-api-version") !== "v1") {
             return Response.json(
                 {
                     error: {
-                        message:
-                            "Azure OpenAI Responses API is enabled only for api-version 2025-03-01-preview and later",
+                        message: "Azure OpenAI Responses API requires v1",
                     },
                 },
                 { status: 400 },

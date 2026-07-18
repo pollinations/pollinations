@@ -318,7 +318,7 @@ export const fetchFromLeastBusyServer = async (
     const queueLoad = server.queue.size + server.queue.pending;
     if (queueLoad >= MAX_QUEUE_SIZE) {
         throw new Error(
-            `Queue full (${queueLoad}/${MAX_QUEUE_SIZE}). This legacy endpoint is overloaded. Please use https://enter.pollinations.ai for faster, more reliable image generation.`
+            `Queue full (${queueLoad}/${MAX_QUEUE_SIZE}). This legacy endpoint is overloaded. Please use https://enter.pollinations.ai/api/referral?ref=legacy-image-error for faster, more reliable image generation.`
         );
     }
 

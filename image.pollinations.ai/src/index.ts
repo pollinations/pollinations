@@ -480,12 +480,12 @@ const checkCacheAndGenerate = async (
                 
                 // Block models that are only available on enter.pollinations.ai
                 if (modelName === "nanobanana" || modelName === "kontext" || modelName === "gptimage" || modelName === "seedream") {
-                    throw new Error(`${modelName} model is only available on enter.pollinations.ai. Visit https://enter.pollinations.ai to get started.`);
+                    throw new Error(`${modelName} model is only available on enter.pollinations.ai. Visit https://enter.pollinations.ai/api/referral?ref=legacy-image-error to get started.`);
                 }
                 
                 // Block authenticated users (token or referrer) - they should use enter.pollinations.ai
                 if (hasValidToken || authResult.referrerAuth) {
-                    throw new Error("Authenticated users should use enter.pollinations.ai for image generation. This legacy endpoint is for anonymous requests only.");
+                    throw new Error("Authenticated users should use https://enter.pollinations.ai/api/referral?ref=legacy-image-error for image generation. This legacy endpoint is for anonymous requests only.");
                 }
                 
                 // Anonymous sana requests only

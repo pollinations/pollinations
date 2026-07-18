@@ -789,7 +789,7 @@ const generateImage = async (
     // GPT Image model - gpt-image-1-mini (disabled - only available via enter.pollinations.ai)
     if (safeParams.model === "gptimage") {
         const errorText =
-            "GPT Image (gpt-image-1-mini) is only available via enter.pollinations.ai. Please use https://enter.pollinations.ai for access.";
+            "GPT Image (gpt-image-1-mini) is only available via enter.pollinations.ai. Please use https://enter.pollinations.ai/api/referral?ref=legacy-image-error for access.";
         logError(errorText);
         progress.updateBar(
             requestId,
@@ -815,7 +815,7 @@ const generateImage = async (
         // Restrict Nano Banana model to enter.pollinations.ai requests ONLY
         if (!fromEnter) {
             const errorText =
-                "Access to nanobanana is currently limited to enter.pollinations.ai. Direct access is not available.";
+                "Access to nanobanana is currently limited to enter.pollinations.ai. Please use https://enter.pollinations.ai/api/referral?ref=legacy-image-error.";
             logError(errorText);
             progress.updateBar(
                 requestId,
@@ -898,7 +898,7 @@ const generateImage = async (
         // Kontext model is only available on enter.pollinations.ai
         if (!fromEnter) {
             const errorText =
-                "Kontext model is only available on enter.pollinations.ai. Visit https://enter.pollinations.ai to get started.";
+                "Kontext model is only available on enter.pollinations.ai. Visit https://enter.pollinations.ai/api/referral?ref=legacy-image-error to get started.";
             logError(errorText);
             progress.updateBar(
                 requestId,
@@ -940,7 +940,7 @@ const generateImage = async (
         // Seedream model is only available from enter.pollinations.ai
         if (!fromEnter) {
             const errorText =
-                "Seedream model is only available from enter.pollinations.ai";
+                "Seedream model is only available from enter.pollinations.ai. Visit https://enter.pollinations.ai/api/referral?ref=legacy-image-error.";
             logError(errorText);
             progress.updateBar(
                 requestId,

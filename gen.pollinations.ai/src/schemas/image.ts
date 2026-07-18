@@ -55,6 +55,10 @@ const GenerateImageRequestQueryParamsBaseSchema = z.object({
             description:
                 "Seed for reproducible results. Use -1 for random. Supported by: flux, zimage, seedream, klein, seedance, nova-reel. Other models ignore this parameter.",
         }),
+    "no-cache": z.literal("true").optional().meta({
+        description:
+            "Authenticated cache repair: regenerate the media and replace any existing cached response for the same prompt and parameters.",
+    }),
     safe: SafeSchema,
     quality: z
         .enum(QUALITIES as unknown as [string, ...string[]])

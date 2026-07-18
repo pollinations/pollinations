@@ -12,7 +12,7 @@ import {
     TokensIcon,
     TrendUpIcon,
 } from "@pollinations/ui";
-import { useNavigate, useSearch } from "@tanstack/react-router";
+import { useNavigate, useRouterState, useSearch } from "@tanstack/react-router";
 import { type FC, useCallback, useEffect, useMemo, useState } from "react";
 import { CommunityEndpoints } from "../community-endpoints";
 import {
@@ -100,10 +100,9 @@ export const Models: FC<ModelsProps> = ({
     const navigate = useNavigate({ from: "/models" });
     const modelSearch = useSearch({ from: "/_dashboard/models" });
     const activeTab = modelSearch.category ?? "all";
-    const activeView =
-        showCommunityEndpoints && modelSearch.view === "mine"
-            ? "mine"
-            : "browse";
+    const activeHash = useRouterState({
+        select: (state) => state.location.hash,
+    });
     const search = modelSearch.q ?? "";
     const sortKey = modelSearch.sort ?? "perPollen";
     const sortDir = modelSearch.dir ?? DEFAULT_SORT_DIRECTIONS[sortKey];
@@ -181,15 +180,6 @@ export const Models: FC<ModelsProps> = ({
         });
     };
 
-    const setActiveView = (view: "browse" | "mine") => {
-        void navigate({
-            search: (previous) => ({
-                ...previous,
-                view: view === "mine" ? "mine" : undefined,
-            }),
-        });
-    };
-
     const setSearch = (q: string) => {
         void navigate({
             search: (previous) => ({
@@ -228,21 +218,21 @@ export const Models: FC<ModelsProps> = ({
                     aria-label="Models sections"
                 >
                     <TabButton
-                        active={activeView === "browse"}
-                        onClick={() => setActiveView("browse")}
+                        active={!activeHash || activeHash === "models"}
+                        onClick={() => void navigate({ hash: "models" })}
                     >
                         Browse Models
                     </TabButton>
                     <TabButton
-                        active={activeView === "mine"}
-                        onClick={() => setActiveView("mine")}
+                        active={activeHash === "my-models"}
+                        onClick={() => void navigate({ hash: "my-models" })}
                     >
                         My Models
                     </TabButton>
                 </nav>
             )}
             <Section
-                className={activeView === "browse" ? undefined : "hidden"}
+                id="models"
                 title="Models"
                 framed
                 actionClassName="w-full sm:ml-auto sm:w-auto"
@@ -357,7 +347,7 @@ export const Models: FC<ModelsProps> = ({
                     </p>
                 </div>
             </Section>
-            {showCommunityEndpoints && activeView === "mine" && (
+            {showCommunityEndpoints && (
                 <CommunityEndpoints
                     canPublish={canPublish}
                     onChange={() => {

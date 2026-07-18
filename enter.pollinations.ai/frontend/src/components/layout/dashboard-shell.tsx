@@ -155,10 +155,7 @@ export const DashboardShell: FC<DashboardShellProps> = ({
         DASHBOARD_NAV_ITEMS.find((item) => item.to === location.pathname) ??
         DASHBOARD_NAV_ITEMS[0];
     const activePage = activeNavItem.id;
-    const activeContextualView =
-        typeof location.search.view === "string"
-            ? location.search.view
-            : undefined;
+    const activeContextualHash = location.hash;
 
     useDashboardShellBodyClass();
     useScrollLock(isDrawerOpen);
@@ -211,8 +208,8 @@ export const DashboardShell: FC<DashboardShellProps> = ({
         const scrollElement = mainScrollRef.current;
         if (!scrollElement) return;
 
-        if (activePage === "pollen" && location.hash === "buy-pollen") {
-            const target = scrollElement.querySelector("#buy-pollen");
+        if (location.hash) {
+            const target = document.getElementById(location.hash);
             if (target instanceof HTMLElement) {
                 const scrollRect = scrollElement.getBoundingClientRect();
                 const targetRect = target.getBoundingClientRect();
@@ -297,7 +294,7 @@ export const DashboardShell: FC<DashboardShellProps> = ({
             walletArea={walletArea}
             onNavigate={closeDrawer}
             showContextualNav={showContextualNav}
-            activeContextualView={activeContextualView}
+            activeContextualHash={activeContextualHash}
         />
     );
 
@@ -389,7 +386,7 @@ type DashboardRailProps = {
     walletArea?: ReactNode;
     onNavigate: () => void;
     showContextualNav: boolean;
-    activeContextualView?: string;
+    activeContextualHash: string;
 };
 
 const DashboardRail: FC<DashboardRailProps> = ({
@@ -401,7 +398,7 @@ const DashboardRail: FC<DashboardRailProps> = ({
     walletArea,
     onNavigate,
     showContextualNav,
-    activeContextualView,
+    activeContextualHash,
 }) => (
     <aside
         data-theme="neutral"
@@ -452,7 +449,7 @@ const DashboardRail: FC<DashboardRailProps> = ({
                                     <ContextualSubnav
                                         to={item.to}
                                         items={contextualItems}
-                                        activeView={activeContextualView}
+                                        activeHash={activeContextualHash}
                                         onNavigate={onNavigate}
                                     />
                                 )}
@@ -472,30 +469,38 @@ const DashboardRail: FC<DashboardRailProps> = ({
 
 type ContextualNavItem = {
     label: string;
-    view?: "mine" | "apps";
+    hash: string;
 };
 
 const CONTEXTUAL_NAV_ITEMS: Partial<
     Record<DashboardPage, readonly ContextualNavItem[]>
 > = {
-    models: [{ label: "Browse Models" }, { label: "My Models", view: "mine" }],
-    keys: [{ label: "API Keys" }, { label: "App Keys", view: "apps" }],
+    models: [
+        { label: "Browse Models", hash: "models" },
+        { label: "My Models", hash: "my-models" },
+    ],
+    keys: [
+        { label: "API Keys", hash: "api-keys" },
+        { label: "App Keys", hash: "app-keys" },
+    ],
 };
 
 const ContextualSubnav: FC<{
     to: DashboardPath;
     items: readonly ContextualNavItem[];
-    activeView?: string;
+    activeHash: string;
     onNavigate: () => void;
-}> = ({ to, items, activeView, onNavigate }) => (
+}> = ({ to, items, activeHash, onNavigate }) => (
     <div className="ml-7 mt-1 flex flex-col gap-0.5 border-l border-theme-text-strong/10 pl-2">
         {items.map((item) => {
-            const isActive = item.view === activeView;
+            const isActive = activeHash
+                ? item.hash === activeHash
+                : item === items[0];
             return (
                 <Link
                     key={item.label}
                     to={to}
-                    search={item.view ? { view: item.view } : {}}
+                    hash={item.hash}
                     aria-current={isActive ? "page" : undefined}
                     className={cn(
                         "rounded-full px-3 py-1.5 text-xs font-medium transition-colors",

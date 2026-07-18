@@ -131,6 +131,7 @@ export function CommunityEndpoints({
     return (
         <>
             <Section
+                id="my-models"
                 title="My Models"
                 framed
                 action={

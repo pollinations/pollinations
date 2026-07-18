@@ -15,7 +15,7 @@ import {
     Tooltip,
     XIcon,
 } from "@pollinations/ui";
-import { useNavigate, useSearch } from "@tanstack/react-router";
+import { useNavigate, useRouterState } from "@tanstack/react-router";
 import { formatDistanceToNowStrict } from "date-fns";
 import type { FC } from "react";
 import { useState } from "react";
@@ -52,8 +52,9 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
     onDelete,
 }) => {
     const navigate = useNavigate({ from: "/keys" });
-    const keySearch = useSearch({ from: "/_dashboard/keys" });
-    const activeView = keySearch.view === "apps" ? "apps" : "api";
+    const activeHash = useRouterState({
+        select: (state) => state.location.hash,
+    });
     const [deleteId, setDeleteId] = useState<string | null>(null);
     const [editingKey, setEditingKey] = useState<ApiKey | null>(null);
 
@@ -74,14 +75,6 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
     );
     const sortedApiKeys = sortedKeys.filter((apiKey) => !isAppKey(apiKey));
     const sortedAppKeys = sortedKeys.filter(isAppKey);
-
-    const setActiveView = (view: "api" | "apps") => {
-        void navigate({
-            search: {
-                view: view === "apps" ? "apps" : undefined,
-            },
-        });
-    };
 
     function renderKeyCard(apiKey: ApiKey) {
         const isPublishable = isPublishableKey(apiKey);
@@ -264,20 +257,20 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                     aria-label="Key sections"
                 >
                     <TabButton
-                        active={activeView === "api"}
-                        onClick={() => setActiveView("api")}
+                        active={!activeHash || activeHash === "api-keys"}
+                        onClick={() => void navigate({ hash: "api-keys" })}
                     >
                         API Keys
                     </TabButton>
                     <TabButton
-                        active={activeView === "apps"}
-                        onClick={() => setActiveView("apps")}
+                        active={activeHash === "app-keys"}
+                        onClick={() => void navigate({ hash: "app-keys" })}
                     >
                         App Keys
                     </TabButton>
                 </nav>
                 <Section
-                    className={activeView === "api" ? undefined : "hidden"}
+                    id="api-keys"
                     title="API Keys"
                     framed
                     action={
@@ -317,7 +310,7 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                     </p>
                 </Section>
                 <Section
-                    className={activeView === "apps" ? undefined : "hidden"}
+                    id="app-keys"
                     title="App Keys"
                     framed
                     action={

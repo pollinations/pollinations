@@ -32,15 +32,16 @@ const DEFAULT_OPTIONS = {
  * Configuration object for the Portkey client
  */
 const clientConfig = {
-    // Use Portkey API Gateway URL from .env with fallback to localhost
+    // Route the legacy public API through the authenticated Gen gateway.
     endpoint: () =>
-        `${process.env.PORTKEY_GATEWAY_URL || "http://localhost:8787"}/v1/chat/completions`,
+        process.env.GEN_API_URL ||
+        "https://gen.pollinations.ai/v1/chat/completions",
 
     // Auth header configuration
     authHeaderName: "Authorization",
     authHeaderValue: () => {
-        // Use the actual Portkey API key from environment variables
-        return `Bearer ${process.env.PORTKEY_API_KEY}`;
+        const apiKey = process.env.GEN_API_KEY;
+        return apiKey ? `Bearer ${apiKey}` : null;
     },
 
     // Additional headers will be dynamically set in transformRequest
@@ -147,6 +148,10 @@ export async function generateTextPortkey(messages, options = {}) {
     if (processedOptions.additionalHeaders) {
         delete processedOptions.additionalHeaders;
     }
+
+    // The legacy model aliases all resolve to this inexpensive community
+    // model. Gen handles provider routing, usage accounting, and billing.
+    processedOptions.model = "sharktide/inferenceport.ai-gpt-oss-20b";
 
     return await genericOpenAIClient(
         processedMessages,

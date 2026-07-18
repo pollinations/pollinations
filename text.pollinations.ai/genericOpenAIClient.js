@@ -68,11 +68,24 @@ export async function genericOpenAIClient(messages, options = {}, config) {
         // System message handling is now done via transforms before reaching this client
         const processedMessages = validatedMessages;
 
-        // Build request body using spread - normalization already handled upstream
+        // Internal legacy metadata is used for local telemetry only and must not
+        // be forwarded as unsupported OpenAI request parameters.
+        const {
+            modelConfig: _modelConfig,
+            modelDef: _modelDef,
+            requestedModel: _requestedModel,
+            userInfo: _userInfo,
+            isPrivate: _isPrivate,
+            private: _private,
+            referrer: _referrer,
+            ...apiOptions
+        } = normalizedOptions;
+
+        // Build request body using only OpenAI-compatible options.
         const requestBody = {
             model: modelName,
             messages: processedMessages,
-            ...normalizedOptions,
+            ...apiOptions,
         };
 
         // Clean undefined and null values
@@ -269,7 +282,7 @@ export async function genericOpenAIClient(messages, options = {}, config) {
             startTime: new Date(startTime),
             endTime,
             // Use requestedModel for the originally requested model
-            model: normalizedOptions.requestedModel,
+            model: normalizedOptions?.requestedModel,
             // model_used should be the provider-returned model identifier
             modelUsed: data.model,
             duration: completionTime,
@@ -344,7 +357,7 @@ export async function genericOpenAIClient(messages, options = {}, config) {
             endTime,
             requestId,
             // Use requestedModel for the originally requested model
-            model: normalizedOptions.requestedModel,
+            model: normalizedOptions?.requestedModel,
             duration: completionTime,
             status: "error",
             error,
@@ -352,16 +365,16 @@ export async function genericOpenAIClient(messages, options = {}, config) {
             environment: process.env.NODE_ENV || "production",
             // Include user information if available - prioritize username for better identification
             user:
-                normalizedOptions.userInfo?.username ||
-                normalizedOptions.userInfo?.userId ||
+                normalizedOptions?.userInfo?.username ||
+                normalizedOptions?.userInfo?.userId ||
                 "anonymous",
-            username: normalizedOptions.userInfo?.username, // Explicitly include username field
-            referrer: normalizedOptions.userInfo?.referrer || "unknown",
-            cf_ray: normalizedOptions.userInfo?.cf_ray || "",
-            organization: normalizedOptions.userInfo?.userId
+            username: normalizedOptions?.userInfo?.username, // Explicitly include username field
+            referrer: normalizedOptions?.userInfo?.referrer || "unknown",
+            cf_ray: normalizedOptions?.userInfo?.cf_ray || "",
+            organization: normalizedOptions?.userInfo?.userId
                 ? "pollinations"
                 : undefined,
-            tier: normalizedOptions.userInfo?.tier || "seed",
+            tier: normalizedOptions?.userInfo?.tier || "seed",
         }).catch((err) => {
             errorLog(
                 `[${requestId}] Failed to send error telemetry to Tinybird`,

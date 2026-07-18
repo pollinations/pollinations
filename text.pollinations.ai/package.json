@@ -6,7 +6,7 @@
         "dev": "DEBUG=pollinations:* tsx --watch startServer.js",
         "type-check": "tsc --noEmit",
         "validate-configs": "tsx configs/validateConfigKeys.ts",
-        "test": "echo \"Error: no test specified\" && exit 1",
+        "test": "tsx --test test/gen-bridge.test.js",
         "dev": "clear && DEBUG=pollinations:* tsx startServer.js"
     },
     "keywords": [],

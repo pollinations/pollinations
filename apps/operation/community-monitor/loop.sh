@@ -19,7 +19,7 @@ while true; do
     echo "=== cycle start $(date -u +%FT%TZ) ===" | tee -a "$LOG"
     node probe.mjs 2>&1 | tee -a "$LOG"
     claude -p "$(cat CYCLE.md)" \
-        --model sonnet --effort low \
+        --model sonnet --effort medium \
         --allowedTools "Bash,Read,Write,mcp__discord__discord_read_messages,mcp__discord__discord_send" \
         2>&1 | tee -a "$LOG"
     echo "=== cycle end $(date -u +%FT%TZ) — sleeping 30m ===" | tee -a "$LOG"

@@ -13,6 +13,7 @@
 // state.json so next cycle's budget self-corrects (overspend -> undershoot).
 // Writes /home/ubuntu/monitor/probe-results.json and prints a summary table.
 import fs from "node:fs";
+import { randomUUID } from "node:crypto";
 
 const TOKEN = process.env.POLLI_TOKEN;
 if (!TOKEN) {
@@ -28,7 +29,6 @@ const TARGET_POLLEN = 0.5;
 // cycle (e.g. a model timing out after burning tokens) can't spiral.
 const MIN_BUDGET = TARGET_POLLEN * 0.4;
 const MAX_BUDGET = TARGET_POLLEN * 1.6;
-const PROMPT = "Reply with the single word: ok";
 const MAX_TOKENS = 10;
 // Rough estimate for planning only -- actual spend is reconciled from real
 // `usage` in each response, not from these constants.
@@ -157,9 +157,23 @@ function billingSanityFlags(usage, content) {
         return flags;
     }
     const { prompt_tokens: p, completion_tokens: c } = usage;
+    const cached =
+        usage.prompt_tokens_details?.cached_tokens ??
+        usage.cached_input_tokens ??
+        usage.cache_read_input_tokens ??
+        0;
     if (p === 0) flags.push("prompt_tokens=0 for a non-empty prompt");
-    else if (p != null && p > 100)
-        flags.push(`prompt_tokens=${p}, implausible for a 7-word prompt`);
+    if (cached > 0)
+        flags.push(
+            `cached_tokens=${cached} on a cache-busted single-message prompt`,
+        );
+    if (p != null && cached > p)
+        flags.push(`cached_tokens=${cached} exceeds prompt_tokens=${p}`);
+    const uncached = p != null && cached <= p ? p - cached : undefined;
+    if (uncached != null && uncached > 100)
+        flags.push(
+            `uncached_prompt_tokens=${uncached}, implausible for the short probe`,
+        );
     if (c === 0) flags.push("completion_tokens=0 despite a successful reply");
     if (!content?.trim()) flags.push("empty completion content");
     return flags;
@@ -167,6 +181,8 @@ function billingSanityFlags(usage, content) {
 
 async function probe(model) {
     const started = Date.now();
+    const marker = `ok-${randomUUID().slice(0, 8)}`;
+    const prompt = `Reply with exactly: ${marker}`;
     try {
         const ctrl = new AbortController();
         const t = setTimeout(() => ctrl.abort(), TIMEOUT_MS);
@@ -178,7 +194,7 @@ async function probe(model) {
             },
             body: JSON.stringify({
                 model,
-                messages: [{ role: "user", content: PROMPT }],
+                messages: [{ role: "user", content: prompt }],
                 max_tokens: MAX_TOKENS,
             }),
             signal: ctrl.signal,
@@ -202,6 +218,7 @@ async function probe(model) {
             status: res.status,
             ms: Date.now() - started,
             usage,
+            probeMarker: marker,
             detail: res.ok ? undefined : body.slice(0, 300),
         };
         if (res.ok) result.billingFlags = billingSanityFlags(usage, content);

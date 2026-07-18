@@ -1,6 +1,6 @@
 # Community model monitor
 
-Headless Claude Code agent that watches community text models (the `owner/model`
+Headless coding agent that watches community text models (the `owner/model`
 endpoints registered via My Models), probes them, reads Tinybird health, and
 deactivates ones with sustained failures. Runs on a standalone EC2 box
 (`community-monitor`), not in this repo's CI.
@@ -154,10 +154,16 @@ needed on the box) and allocates probe requests per model:
 
 ## Model/effort
 
-Pinned to `--model sonnet --effort low` in `watchdog.sh` — this is a
-15-minute-cadence health-check loop with mechanical rules, not a task that
-needs frontier reasoning. Revisit if the agent starts making judgment calls
-that need more capability.
+The deployed Claude fallback is pinned to `--model sonnet --effort medium` in
+`watchdog.sh`, with `CYCLE.md` loaded as an appended system prompt. Medium
+effort is intentional: routine checks are mechanical, but owner replies and
+billing diagnostics require controlled comparisons and careful interpretation.
+
+Codex 5.6 Sol at medium effort is the preferred replacement once the EC2 box
+has its own non-personal Codex authentication. Do not copy a maintainer's local
+Codex credentials onto the shared server. Until that service credential is
+available, keep the medium-effort Claude runtime rather than silently leaving
+the monitor offline.
 
 ## Authority split (hard rule, do not relax)
 

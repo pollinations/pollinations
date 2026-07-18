@@ -316,7 +316,7 @@ export const proxyRoutes = new Hono<Env>()
             tags: ["🤖 Models"],
             summary: "List Models (OpenAI-compatible)",
             description:
-                'Returns available models (text, community text, image, realtime, audio, embeddings) in the OpenAI-compatible format (`{object: "list", data: [...]}`). Entries include Pollinations billing extensions (`pricing` and `paid_only`) alongside capability metadata. Use `/models`, `/text/models`, `/image/models`, `/audio/models`, or `/embeddings/models` for richer descriptions and model-specific metadata. When authenticated: the owner\'s private community models are included, models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance.',
+                'Returns available models (text, community text, image, realtime, audio, embeddings) in the OpenAI-compatible format (`{object: "list", data: [...]}`). Entries use the OpenRouter-compatible `pricing` field name plus the Pollinations `requires_paid_balance` extension alongside capability metadata. Use `/models`, `/text/models`, `/image/models`, `/audio/models`, or `/embeddings/models` for richer descriptions and model-specific metadata. When authenticated: the owner\'s private community models are included, models are filtered by API key permissions, and models requiring paid balance are hidden if the account has no paid balance.',
             responses: {
                 200: {
                     description: "Success",
@@ -354,7 +354,9 @@ export const proxyRoutes = new Hono<Env>()
                     context_length: entry.info.context_length,
                 }),
                 pricing: entry.info.pricing,
-                ...(entry.info.paid_only && { paid_only: true }),
+                ...(entry.info.paid_only && {
+                    requires_paid_balance: true,
+                }),
             });
 
             return c.json({

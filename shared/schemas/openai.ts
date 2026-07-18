@@ -521,7 +521,7 @@ const OpenAIModelSchema = z
             .record(z.string(), z.string())
             .and(z.object({ currency: z.literal("pollen") }))
             .optional(),
-        paid_only: z.boolean().optional(),
+        requires_paid_balance: z.boolean().optional(),
     })
     .meta({
         description:

@@ -43,14 +43,14 @@ test("includes billing metadata in the OpenAI-compatible model list", async ({
         data: {
             id: string;
             pricing?: Record<string, string> & { currency: "pollen" };
-            paid_only?: boolean;
+            requires_paid_balance?: boolean;
         }[];
     };
-    const paidModel = body.data.find((model) => model.paid_only);
+    const paidModel = body.data.find((model) => model.requires_paid_balance);
 
     expect(paidModel).toMatchObject({
         id: expect.any(String),
-        paid_only: true,
+        requires_paid_balance: true,
         pricing: expect.objectContaining({ currency: "pollen" }),
     });
 });

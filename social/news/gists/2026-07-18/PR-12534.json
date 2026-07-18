@@ -1,0 +1,35 @@
+{
+  "pr_number": 12534,
+  "title": "docs: regenerate APIDOCS.md",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/12534",
+  "merged_at": "2026-07-18T03:53:48Z",
+  "labels": [
+    "DEV-DOCS"
+  ],
+  "pr_body_excerpt": "Auto-generated from OpenAPI spec changes after a successful production deploy.",
+  "gist": {
+    "category": "docs",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "The map caught up",
+    "blurb": "The API reference got its post-deploy pollen dusting. Five fresh lines, one less reason to guess at an endpoint.",
+    "summary": "Regenerated APIDOCS.md from the production OpenAPI specification so the published API reference reflects the latest deployed endpoints and schema details.",
+    "impact": "Developers can rely on the API docs to match the production service without cross-checking the live specification.",
+    "keywords": [
+      "documentation",
+      "api",
+      "openapi",
+      "reference",
+      "developer-experience"
+    ],
+    "visual_concept": "Polly, wearing tiny librarian glasses, updates a glowing API reference book beside a retro terminal that has just sprouted a few new code-leaves; the scene represents documentation synchronizing with the deployed API.",
+    "image_prompt": "Cozy pixel art scene of the cute pixel bee mascot with a yellow body, dark brown stripes, black antennae, oval eyes, bright pink rectangular cheek blushes, a happy smile, light blue rounded wings, and tiny librarian glasses carefully adding fresh code-leaves to a glowing API reference book beside a retro terminal. Lime green (#ecf874) shines prominently from the screen and code-plants grow from warm cream pots around the desk; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with subtle pixel-font text: 'API DOCS'."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-18/PR-12534.jpg",
+    "prompt": "Cozy pixel art scene of the cute pixel bee mascot with a yellow body, dark brown stripes, black antennae, oval eyes, bright pink rectangular cheek blushes, a happy smile, light blue rounded wings, and tiny librarian glasses carefully adding fresh code-leaves to a glowing API reference book beside a retro terminal. Lime green (#ecf874) shines prominently from the screen and code-plants grow from warm cream pots around the desk; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with subtle pixel-font text: 'API DOCS'."
+  },
+  "generated_at": "2026-07-18T03:54:45.762989+00:00"
+}

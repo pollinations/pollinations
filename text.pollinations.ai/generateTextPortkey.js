@@ -138,8 +138,8 @@ export async function generateTextPortkey(messages, options = {}) {
         delete processedOptions.additionalHeaders;
     }
 
-    // The legacy model aliases all resolve to this inexpensive community
-    // model. Gen handles provider routing, usage accounting, and billing.
+    // The legacy model aliases all resolve to the canonical Gen model. Gen
+    // handles provider routing, usage accounting, and billing.
     processedOptions.model = "gpt-oss";
 
     return await genericOpenAIClient(

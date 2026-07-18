@@ -1,11 +1,12 @@
 // Pollinations API Service
 
-import {
+import type {
+  ImageGenerationResponse,
   PollinationsRequest,
-  ImageGenerationResponse
 } from './types';
 
 const POLLINATIONS_API_BASE = 'https://gen.pollinations.ai';
+const POLLINATIONS_MEDIA_API = 'https://media.pollinations.ai/upload';
 const DEFAULT_CONFIG = {
   model: 'gptimage' as const,
   enhance: true,
@@ -93,8 +94,29 @@ export class PollinationsService {
         }
       }
 
+      let resultUrl = url.toString();
+      if (token) {
+        try {
+          const form = new FormData();
+          form.append('file', await response.blob(), 'slidepainter.png');
+          form.append('tags', 'slidepainter');
+          const upload = await fetch(POLLINATIONS_MEDIA_API, {
+            method: 'POST',
+            headers: { Authorization: `Bearer ${token}` },
+            body: form,
+            signal: AbortSignal.timeout(30000),
+          });
+          if (upload.ok) {
+            const published = await upload.json();
+            if (published.url) resultUrl = published.url;
+          }
+        } catch (error) {
+          console.warn('Could not publish SlidePainter image:', error);
+        }
+      }
+
       const result: ImageGenerationResponse = {
-        url: url.toString(),
+        url: resultUrl,
         provider: 'pollinations',
         seed: payload.seed,
         cached: false,

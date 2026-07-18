@@ -1,7 +1,7 @@
 import { env } from "cloudflare:test";
 import { getUserBalance } from "@shared/billing/balance.ts";
 import { atomicDeductUserBalance } from "@shared/billing/deduction.ts";
-import { handleBalanceDeduction } from "@shared/billing/track-helpers.ts";
+import { settleGeneration } from "@shared/billing/generation-settlement.ts";
 import { user as userTable } from "@shared/db/better-auth.ts";
 import { getRegistryModelDefinition } from "@shared/registry/registry.ts";
 import { drizzle } from "drizzle-orm/d1";
@@ -122,22 +122,24 @@ describe("billing deduction", () => {
             packBalance: 0.01,
         });
 
-        await handleBalanceDeduction({
-            db,
+        await settleGeneration({
+            d1: env.DB,
+            requestId: crypto.randomUUID(),
             isBilledUsage: true,
-            totalPrice: 0.01,
-            userId,
+            baseCharge: 0.01,
+            payerUserId: userId,
             modelPaidOnly: model.paidOnly,
         });
         let balance = await getUserBalance(db, userId);
         expect(balance.tierBalance).toBeCloseTo(0.01, 10);
         expect(balance.packBalance).toBeCloseTo(0, 10);
 
-        await handleBalanceDeduction({
-            db,
+        await settleGeneration({
+            d1: env.DB,
+            requestId: crypto.randomUUID(),
             isBilledUsage: true,
-            totalPrice: 0.01,
-            userId,
+            baseCharge: 0.01,
+            payerUserId: userId,
             modelPaidOnly: model.paidOnly,
         });
         balance = await getUserBalance(db, userId);

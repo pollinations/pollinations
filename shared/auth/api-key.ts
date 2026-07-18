@@ -20,6 +20,7 @@ export interface AuthenticatedApiKey {
     byopClientKeyId?: string | null;
     byopClientName?: string | null;
     byopClientUserId?: string | null;
+    creatorEarningsEnabled?: boolean;
     rawKey?: string;
 }
 
@@ -231,6 +232,10 @@ export async function authenticateApiKeyRequest(opts: {
                 byopClientKeyId: schema.apikey.byopClientKeyId,
                 byopClientName: byopClientKey.name,
                 byopClientUserId: byopClientKey.userId,
+                byopClientPrefix: byopClientKey.prefix,
+                byopClientEnabled: byopClientKey.enabled,
+                byopClientExpiresAt: byopClientKey.expiresAt,
+                byopClientMetadata: byopClientKey.metadata,
             })
             .from(schema.apikey)
             .leftJoin(
@@ -264,10 +269,44 @@ export async function authenticateApiKeyRequest(opts: {
             byopClientKeyId: apiKeyExtra?.byopClientKeyId ?? null,
             byopClientName: apiKeyExtra?.byopClientName ?? null,
             byopClientUserId: apiKeyExtra?.byopClientUserId ?? null,
+            creatorEarningsEnabled: isByopEarningsEnabled(apiKeyExtra, userId),
             rawKey: rawApiKey,
         },
         rawApiKey,
     };
+}
+
+function isByopEarningsEnabled(
+    client:
+        | {
+              byopClientUserId: string | null;
+              byopClientPrefix: string | null;
+              byopClientEnabled: boolean | null;
+              byopClientExpiresAt: Date | null;
+              byopClientMetadata: string | null;
+          }
+        | undefined,
+    payerUserId: string | undefined,
+): boolean {
+    if (!client || !payerUserId) return false;
+    if (client.byopClientUserId === payerUserId) return false;
+    if (
+        client.byopClientPrefix !== PUBLISHABLE_KEY_PREFIX ||
+        client.byopClientEnabled !== true ||
+        (client.byopClientExpiresAt !== null &&
+            client.byopClientExpiresAt <= new Date())
+    ) {
+        return false;
+    }
+
+    try {
+        const metadata = client.byopClientMetadata
+            ? JSON.parse(client.byopClientMetadata)
+            : null;
+        return metadata?.earningsEnabled === true;
+    } catch {
+        return false;
+    }
 }
 
 function normalizePermissions(

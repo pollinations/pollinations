@@ -1,8 +1,8 @@
 import { getUserBalance, payerBucketToMeter } from "@shared/billing/balance.ts";
 import {
-    handleBalanceDeduction,
-    type MarkupResolution,
-} from "@shared/billing/track-helpers.ts";
+    type GenerationSettlement,
+    settleGeneration,
+} from "@shared/billing/generation-settlement.ts";
 import {
     bytesToHex,
     getRealClientIp,
@@ -20,7 +20,6 @@ import {
     type PriceDefinition,
     type Usage,
     type UsageCost,
-    type UsagePrice,
     type UsageType,
 } from "@shared/registry/registry.ts";
 import {
@@ -52,7 +51,6 @@ const UNSUPPORTED_TRANSCRIPTION_MESSAGE =
     "Realtime input transcription is not supported yet.";
 type WebSocketResponse = Response & { webSocket?: WebSocket };
 type WebSocketResponseInit = ResponseInit & { webSocket?: WebSocket };
-type RealtimeDeduction = Awaited<ReturnType<typeof handleBalanceDeduction>>;
 type RealtimeBillingContext = {
     userId: string;
     userTier?: string;
@@ -84,7 +82,7 @@ type RealtimeBillingContext = {
     settlementInFlight: boolean;
     settlementAttempts: number;
     settled: boolean;
-    deduction?: RealtimeDeduction;
+    settlement?: GenerationSettlement;
     rateLimitConsumed: boolean;
 };
 
@@ -391,11 +389,12 @@ function createRealtimeTrackingEvent(args: {
     endTime: Date;
     usage: Usage;
     cost: UsageCost;
-    price: UsagePrice;
-    markup: MarkupResolution | null;
-    payerBucket: "tier" | "pack" | null;
+    settlement: GenerationSettlement;
     balances: { tierBalance: number; packBalance: number };
 }): TinybirdEvent {
+    const creatorPayout = args.settlement.payouts.find(
+        (payout) => payout.kind === "creator",
+    );
     return {
         id: generateRandomId(),
         requestId: args.tracking.requestId,
@@ -426,13 +425,13 @@ function createRealtimeTrackingEvent(args: {
         modelUsed: args.tracking.resolvedModelRequested,
         modelProviderUsed: args.tracking.modelDefinition.provider,
         isBilledUsage: true,
-        ...getPostDeductionBalances(args.payerBucket, args.balances),
+        ...getPostDeductionBalances(args.settlement.payerBucket, args.balances),
         ...priceToEventParams(args.tracking.modelPriceDefinition),
         ...usageToEventParams(args.usage),
         totalCost: args.cost.totalCost,
-        totalPrice: args.price.totalPrice + (args.markup?.devCredit ?? 0),
-        devPrice: args.price.totalPrice,
-        markupRate: args.markup?.markupRate ?? 0,
+        totalPrice: args.settlement.payerCharge,
+        devPrice: args.settlement.baseCharge,
+        markupRate: creatorPayout?.rate ?? 0,
     };
 }
 
@@ -465,18 +464,17 @@ async function settleRealtimeSession(
     }
 
     const eventEndTime = new Date();
-    const db = drizzle(c.env.DB) as unknown as Parameters<
-        typeof handleBalanceDeduction
-    >[0]["db"];
+    const db = drizzle(c.env.DB);
 
-    tracking.deduction ??= await handleBalanceDeduction({
-        db,
+    tracking.settlement ??= await settleGeneration({
+        d1: c.env.DB,
+        requestId: tracking.requestId,
         isBilledUsage: true,
-        totalPrice: price.totalPrice,
-        userId: tracking.userId,
+        baseCharge: price.totalPrice,
+        payerUserId: tracking.userId,
         apiKeyId: tracking.apiKeyId,
         apiKeyPollenBalance: tracking.apiKeyPollenBalance,
-        byopClientKeyId: tracking.byopClientKeyId,
+        creatorKeyId: tracking.byopClientKeyId,
         modelPaidOnly: tracking.modelDefinition.paidOnly,
     });
 
@@ -493,9 +491,7 @@ async function settleRealtimeSession(
             endTime: eventEndTime,
             usage,
             cost,
-            price,
-            markup: tracking.deduction.markup,
-            payerBucket: tracking.deduction.payerBucket,
+            settlement: tracking.settlement,
             balances,
         }),
         c.env.TINYBIRD_INGEST_URL,

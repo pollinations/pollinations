@@ -151,6 +151,20 @@ export const apikey = sqliteTable("apikey", {
   index("idx_apikey_byop_client_key_id").on(table.byopClientKeyId),
 ]);
 
+// One row per billed generation. The request id is both the audit identity and
+// the idempotency gate for the atomic payer debit + creator/supplier payouts.
+export const generationSettlement = sqliteTable("generation_settlement", {
+  requestId: text("request_id").primaryKey(),
+  payerUserId: text("payer_user_id").notNull(),
+  apiKeyId: text("api_key_id"),
+  baseCharge: real("base_charge").notNull(),
+  payerCharge: real("payer_charge").notNull(),
+  payerBucket: text("payer_bucket", { enum: ["tier", "pack"] }).notNull(),
+  payoutsJson: text("payouts_json").notNull(),
+  postSettlementPackBalance: real("post_settlement_pack_balance"),
+  createdAt: integer("created_at").notNull(),
+});
+
 export const stripeAutoTopUpAttempt = sqliteTable("stripe_auto_top_up_attempt", {
   id: text("id").primaryKey(),
   userId: text("user_id")

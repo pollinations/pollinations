@@ -137,9 +137,8 @@ export async function chatWithMedia({ model, prompt, mediaType, mediaUrl }) {
 
 /**
  * POST a chat-completion request body to /v1/chat/completions.
- * Strips null/undefined keys, reuses the 30s timeout in fetchWithAuth, and maps
- * errors (with the dedicated rate-limit message). Returns the raw Response so
- * callers can shape the JSON themselves.
+ * Strips null/undefined keys, reuses the 30s timeout in fetchWithAuth, and
+ * preserves upstream errors. Returns the checked Response.
  *
  * @param {Object} body - Request body (null/undefined fields are stripped)
  * @returns {Promise<Response>} - Raw fetch response (already checked for !ok)

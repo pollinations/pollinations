@@ -14,6 +14,7 @@ const OPENROUTER_VIDEO_URL = "https://openrouter.ai/api/v1/videos";
 const HAPPYHORSE_MODEL = "alibaba/happyhorse-1.1";
 const POLL_INTERVAL_MS = 3000;
 const MAX_POLL_DELAY_MS = 30000;
+const POLL_TIMEOUT_MS = 5 * 60 * 1000;
 const HAPPYHORSE_ASPECT_RATIOS = [
     "16:9",
     "9:16",
@@ -160,11 +161,14 @@ async function pollVideo(
     apiKey: string,
 ): Promise<OpenRouterVideoResponse> {
     const url = new URL(pollingUrl, OPENROUTER_VIDEO_URL).toString();
+    const deadline = Date.now() + POLL_TIMEOUT_MS;
 
-    for (let attempt = 1; attempt <= 90; attempt++) {
+    while (Date.now() < deadline) {
         const response = await fetch(url, {
             headers: { Authorization: `Bearer ${apiKey}` },
         });
+        let delay = POLL_INTERVAL_MS;
+
         if (!response.ok) {
             const body = await response.text();
             logError("OpenRouter video poll failed", response.status, body);
@@ -180,21 +184,23 @@ async function pollVideo(
                     url,
                 );
             }
-            await sleep(getPollRetryDelay(response));
-            continue;
+            delay = getPollRetryDelay(response);
+        } else {
+            const result = (await response.json()) as OpenRouterVideoResponse;
+            if (result.status === "completed") return result;
+            if (["failed", "cancelled", "expired"].includes(result.status)) {
+                throw new HttpError(
+                    `OpenRouter video generation ${result.status}: ${result.error ?? "unknown error"}`,
+                    502,
+                    result,
+                    url,
+                );
+            }
         }
 
-        const result = (await response.json()) as OpenRouterVideoResponse;
-        if (result.status === "completed") return result;
-        if (["failed", "cancelled", "expired"].includes(result.status)) {
-            throw new HttpError(
-                `OpenRouter video generation ${result.status}: ${result.error ?? "unknown error"}`,
-                502,
-                result,
-                url,
-            );
-        }
-        await sleep(POLL_INTERVAL_MS);
+        const remaining = deadline - Date.now();
+        if (remaining <= 0) break;
+        await sleep(Math.min(delay, remaining));
     }
 
     throw new HttpError(
@@ -211,12 +217,15 @@ function getPollRetryDelay(response: Response): number {
     const retryAfter = response.headers.get("Retry-After");
     if (!retryAfter) return POLL_INTERVAL_MS;
 
-    const seconds = Number(retryAfter);
-    const delay = Number.isFinite(seconds)
-        ? seconds * 1000
-        : Date.parse(retryAfter) - Date.now();
+    if (/^\d+$/.test(retryAfter)) {
+        const delay = Number(retryAfter) * 1000;
+        return Number.isFinite(delay)
+            ? Math.min(delay, MAX_POLL_DELAY_MS)
+            : POLL_INTERVAL_MS;
+    }
 
-    return Number.isFinite(delay)
-        ? Math.max(0, Math.min(delay, MAX_POLL_DELAY_MS))
+    const delay = Date.parse(retryAfter) - Date.now();
+    return Number.isFinite(delay) && delay > 0
+        ? Math.min(delay, MAX_POLL_DELAY_MS)
         : POLL_INTERVAL_MS;
 }

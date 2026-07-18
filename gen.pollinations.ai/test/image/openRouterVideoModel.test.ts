@@ -60,7 +60,9 @@ describe("openRouterVideoModel", () => {
                 if (pollAttempts === 1) {
                     return new Response("rate limited", {
                         status: 429,
-                        headers: { "Retry-After": "0" },
+                        headers: {
+                            "Retry-After": "Thu, 01 Jan 1970 00:00:00 GMT",
+                        },
                     });
                 }
                 if (pollAttempts === 2) {
@@ -96,7 +98,7 @@ describe("openRouterVideoModel", () => {
             "a calm ocean at sunrise",
             baseParams,
         );
-        await vi.advanceTimersByTimeAsync(3000);
+        await vi.advanceTimersByTimeAsync(6000);
         const result = await resultPromise;
 
         expect(pollAttempts).toBe(3);
@@ -105,6 +107,49 @@ describe("openRouterVideoModel", () => {
             actualModel: "happyhorse-1.1",
             usage: { completionVideoSeconds: 5 },
         });
+    });
+
+    it("times out after five minutes of rate-limited polls", async () => {
+        vi.useFakeTimers();
+        setOpenRouterEnv();
+
+        let pollAttempts = 0;
+        vi.spyOn(globalThis, "fetch").mockImplementation(async (url) => {
+            const href = typeof url === "string" ? url : url.toString();
+
+            if (href === SUBMIT_URL) {
+                return new Response(
+                    JSON.stringify({
+                        id: "job-happyhorse-test",
+                        polling_url: POLL_URL,
+                        status: "pending",
+                    }),
+                    { status: 200 },
+                );
+            }
+
+            if (href === POLL_URL) {
+                pollAttempts++;
+                return new Response("rate limited", {
+                    status: 429,
+                    headers: { "Retry-After": "30" },
+                });
+            }
+
+            return new Response("unexpected URL", { status: 404 });
+        });
+
+        const resultPromise = callHappyHorseAPI(
+            "a calm ocean at sunrise",
+            baseParams,
+        );
+        const rejection = expect(resultPromise).rejects.toMatchObject({
+            status: 504,
+        });
+
+        await vi.advanceTimersByTimeAsync(5 * 60 * 1000);
+        await rejection;
+        expect(pollAttempts).toBe(10);
     });
 
     it("rejects non-integer durations before submitting a job", async () => {

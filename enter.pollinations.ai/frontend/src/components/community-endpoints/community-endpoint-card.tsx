@@ -15,7 +15,7 @@ import {
     TokensIcon,
     XIcon,
 } from "@pollinations/ui";
-import { COMMUNITY_ENDPOINT_PRICE_FIELDS } from "@shared/community-endpoints.ts";
+import { communityEndpointPriceFieldsForModality } from "@shared/community-endpoints.ts";
 import type { ReactNode } from "react";
 import { PriceBadge, type PriceBadgeConfig } from "../models/price-badge.tsx";
 import type { PriceKind } from "../models/types.ts";
@@ -220,7 +220,9 @@ function communityPriceGroups(
         output: [],
     };
 
-    for (const field of COMMUNITY_ENDPOINT_PRICE_FIELDS) {
+    for (const field of communityEndpointPriceFieldsForModality(
+        endpoint.modality,
+    )) {
         const price = endpoint[field.key];
         if (price <= 0) continue;
         const groupKey = communityPriceGroupKey(field.usageType);
@@ -228,10 +230,10 @@ function communityPriceGroups(
         const kind = communityPriceKind(field.usageType);
         groups[groupKey].push({
             badge: {
-                price: storedPriceToFormValue(price),
+                price: storedPriceToFormValue(price, field.priceUnit),
                 kind,
                 subKinds: [kind],
-                unit: "token",
+                unit: field.priceUnit === "million" ? "token" : "request",
             },
         });
     }

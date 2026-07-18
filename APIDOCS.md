@@ -536,7 +536,7 @@ curl -X POST "https://gen.pollinations.ai/v1/images/edits" \
 
 Generate a video from a text prompt. Returns MP4.
 
-**Available models:** `veo`, `veo-1080p`, `seedance-pro`, `seedance-2.0`, `wan`, `wan-fast`, `wan-pro`, `wan-pro-1080p`, `grok-video-pro`, `p-video-720p`, `p-video-1080p`, `nova-reel`.
+**Available models:** `veo`, `veo-1080p`, `seedance-pro`, `seedance-2.0`, `wan`, `wan-fast`, `wan-pro`, `wan-pro-1080p`, `grok-video-pro`, `happyhorse-1.1`, `p-video-720p`, `p-video-1080p`, `nova-reel`.
 
 Use `duration` to set video length, `aspectRatio` for orientation, and `audio` where the selected model supports audio output.
 

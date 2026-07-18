@@ -38,20 +38,25 @@ export function createMediaCache(config: MediaCacheConfig) {
     return createMiddleware<MediaCacheEnv>(async (c, next) => {
         const log = c.get("log").getChild(config.label);
 
-        const seedParam = new URL(c.req.url).searchParams.get("seed");
+        const url = new URL(c.req.url);
+        const seedParam = url.searchParams.get("seed");
         if (seedParam === "-1") {
             log.debug("seed=-1 detected, skipping cache");
             return next();
         }
 
+        const bypassRead = url.searchParams.get("no-cache") === "true";
+
         const cacheKey = generateCacheKey(
-            new URL(c.req.url),
+            url,
             c.req.header(SAFETY_HEADER_NAME),
         );
         log.debug("Cache key: {key}", { key: cacheKey });
 
         try {
-            const cached = await c.env.IMAGE_BUCKET.get(cacheKey);
+            const cached = bypassRead
+                ? null
+                : await c.env.IMAGE_BUCKET.get(cacheKey);
             if (cached) {
                 log.info("Cache HIT");
                 setHttpMetadataHeaders(
@@ -79,7 +84,11 @@ export function createMediaCache(config: MediaCacheConfig) {
                 );
             }
 
-            log.debug("Cache MISS");
+            log.debug(
+                bypassRead
+                    ? "no-cache=true detected, bypassing cache read"
+                    : "Cache MISS",
+            );
             c.header("X-Cache", "MISS");
         } catch (error) {
             log.error("Error retrieving cached response: {error}", { error });

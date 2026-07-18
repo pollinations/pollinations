@@ -45,7 +45,7 @@ fi
 
 echo "$(date -u +%FT%TZ) session missing, restarting" >> "$LOG"
 cd /home/ubuntu/monitor
-screen -dmS community-monitor bash -lc 'cd /home/ubuntu/monitor && set -a && source .env && set +a && exec claude --remote-control community-monitor --model sonnet --effort medium --append-system-prompt "$(cat CYCLE.md)" --dangerously-skip-permissions'
+screen -dmS community-monitor bash -lc 'cd /home/ubuntu/monitor && set -a && source .env && set +a && exec claude --remote-control community-monitor --model claude-opus-4-8 --effort medium --append-system-prompt "$(cat CYCLE.md)" --dangerously-skip-permissions'
 
 ready=false
 for _ in $(seq 1 20); do

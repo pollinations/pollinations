@@ -1,4 +1,7 @@
 #!/usr/bin/env node
+import { randomUUID } from "node:crypto";
+import fs from "node:fs";
+
 // One probe sweep across all active community models via gen.pollinations.ai.
 // Cost-weighted: cheap models get more requests than expensive ones (see
 // planRequestCounts), every model capped at MAX_REQUESTS_PER_MODEL so no
@@ -12,8 +15,6 @@
 // Actual spend is reconciled from real `usage` tokens and fed back into
 // state.json so next cycle's budget self-corrects (overspend -> undershoot).
 // Writes /home/ubuntu/monitor/probe-results.json and prints a summary table.
-import fs from "node:fs";
-import { randomUUID } from "node:crypto";
 
 const TOKEN = process.env.POLLI_TOKEN;
 if (!TOKEN) {

@@ -15,7 +15,9 @@ on:
   workflow_dispatch:
 
 concurrency:
-  group: pollinations-cloudflare-production
+  # Per-workflow group: a shared group lets GitHub cancel queued sibling
+  # deploys when several workflows fire on the same production push.
+  group: pollinations-cloudflare-production-${{ github.workflow }}
   cancel-in-progress: false
 
 jobs:

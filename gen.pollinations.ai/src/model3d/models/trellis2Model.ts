@@ -4,7 +4,7 @@ import { requireImages, toHttpError } from "../modelUtils.ts";
 import type { Model3dParams } from "../params.ts";
 import {
     InferenceportError,
-    runInferenceportSync,
+    runInferenceportJob,
 } from "./inferenceportClient.ts";
 
 // Confirmed model value per inferenceport docs: "trellis2" (no hyphen).
@@ -26,7 +26,7 @@ export async function callTrellis2(
     requireImages(params, "trellis-2");
 
     try {
-        const result = await runInferenceportSync({
+        const result = await runInferenceportJob({
             model: TRELLIS2_INFERENCEPORT_MODEL_ID,
             imageUrls: [params.image[0]],
             resolution:

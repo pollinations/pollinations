@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { syncModel3dEnvironment } from "../../src/model3d/env.ts";
 import {
     InferenceportError,
-    runInferenceportSync,
+    runInferenceportJob,
 } from "../../src/model3d/models/inferenceportClient.ts";
 
 beforeEach(() => {
@@ -19,7 +19,7 @@ afterEach(() => {
 
 const SUBMIT_URL = "https://api.inferenceport.ai/v1/3d/generations";
 
-describe("runInferenceportSync", () => {
+describe("runInferenceportJob", () => {
     it("POSTs to ?sync=true and returns GLB from data[0]", async () => {
         const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValue(
             new Response(
@@ -30,7 +30,7 @@ describe("runInferenceportSync", () => {
             ),
         );
 
-        const result = await runInferenceportSync({
+        const result = await runInferenceportJob({
             model: "trellis2",
             imageUrls: ["https://example.com/ref.jpg"],
             resolution: "medium",
@@ -55,7 +55,7 @@ describe("runInferenceportSync", () => {
         );
 
         await expect(
-            runInferenceportSync({
+            runInferenceportJob({
                 model: "trellis2",
                 imageUrls: ["https://example.com/a.jpg"],
             }),
@@ -70,7 +70,7 @@ describe("runInferenceportSync", () => {
         );
 
         await expect(
-            runInferenceportSync({
+            runInferenceportJob({
                 model: "trellis2",
                 imageUrls: ["https://example.com/a.jpg"],
             }),
@@ -85,7 +85,7 @@ describe("runInferenceportSync", () => {
         );
 
         await expect(
-            runInferenceportSync({
+            runInferenceportJob({
                 model: "trellis2",
                 imageUrls: ["https://example.com/a.jpg"],
             }),
@@ -100,7 +100,7 @@ describe("runInferenceportSync", () => {
         );
 
         await expect(
-            runInferenceportSync({
+            runInferenceportJob({
                 model: "trellis2",
                 imageUrls: ["https://example.com/a.jpg"],
             }),

@@ -42,6 +42,10 @@ const models: ModelDefinition[] = [
         config: portkeyConfig["gpt-5-nano-2025-08-07"],
     },
     {
+        name: "gpt-oss",
+        config: portkeyConfig["gpt-oss-20b"],
+    },
+    {
         name: "gpt-5.4",
         config: portkeyConfig["gpt-5.4"],
     },

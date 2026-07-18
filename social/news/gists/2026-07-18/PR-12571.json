@@ -1,0 +1,35 @@
+{
+  "pr_number": 12571,
+  "title": "fix: show model slug on mobile",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/12571",
+  "merged_at": "2026-07-18T12:01:31Z",
+  "labels": [
+    "DEV-UI-UX"
+  ],
+  "pr_body_excerpt": "## What changed\n\n- Adds the copyable model slug to expanded mobile model cards.\n- Places the slug above the description in a subtle monospace code-style surface.\n- Reuses the desktop `ModelId` component for consistent copy behavior and accessibility.\n\n## Why\n\nThe mobile card showed the display name but hid the exact model identifier users need in API requests. This makes the slug available without adding noise to the collapsed card.\n\n## Checks\n\n- `biome check --write`\n- `tsc --noEmit`\n- Local frontend/worker build\n- Browser verification at 390 × 844",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "The slug fits in pocket",
+    "blurb": "Mobile model cards now keep the important little incantation handy. Expand a card, copy the exact model slug, continue summoning pixels and prose.",
+    "summary": "Expanded model cards on mobile now show the copyable API model slug above the description, reusing the desktop ModelId component for consistent accessible copy behavior.",
+    "impact": "Mobile users can now find and copy the exact model identifier needed for API requests without leaving the model card.",
+    "keywords": [
+      "mobile",
+      "models",
+      "model-slug",
+      "api",
+      "ui-ux"
+    ],
+    "visual_concept": "Polly is in a cozy garden-side hackerspace, holding a tiny phone with an expanded model card. A clearly labeled pixel-code slug sits above a short description, while a small copy button glows; code-plants and flowers reinforce that the precise identifier is now easy to pick up on mobile.",
+    "image_prompt": "Cozy pixel art scene of Polly, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny developer headset, happily copying a model slug from an expanded phone-sized model card above its description. A retro terminal and code-plants bloom beside her, with lime green (#ecf874) prominent on the screen and garden pots; simple pixel text reads \"COPY SLUG\". Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, emotionally warm and friendly."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-18/PR-12571.jpg",
+    "prompt": "Cozy pixel art scene of Polly, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny developer headset, happily copying a model slug from an expanded phone-sized model card above its description. A retro terminal and code-plants bloom beside her, with lime green (#ecf874) prominent on the screen and garden pots; simple pixel text reads \"COPY SLUG\". Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, emotionally warm and friendly."
+  },
+  "generated_at": "2026-07-18T12:02:22.433607+00:00"
+}

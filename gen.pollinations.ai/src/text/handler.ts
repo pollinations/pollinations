@@ -1,22 +1,23 @@
+import { remapUpstreamStatus, UpstreamError } from "@shared/error.ts";
 import { IMMUTABLE_CACHE_CONTROL } from "@shared/http/cache-control.ts";
-import {
-    getModelDefinition,
-    type ModelName,
-} from "@shared/registry/registry.ts";
+import type { ModelDefinition } from "@shared/registry/registry.ts";
 import {
     buildUsageHeaders,
+    FALLBACK_TARGET_HEADER,
     openaiUsageToUsage,
     responsesUsageToUsage,
 } from "@shared/registry/usage-headers.ts";
-import type {
-    CreateResponseRequest,
-    CreateResponseResponse,
-    ResponseUsage,
+import {
+    type CreateResponseRequest,
+    type CreateResponseResponse,
+    CreateResponseResponseSchema,
+    type ResponseUsage,
 } from "@shared/schemas/openai.ts";
 import type { Context } from "hono";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
 import type { Env } from "@/env.ts";
-import { remapUpstreamStatus, UpstreamError } from "@/error.ts";
+import { fixWavHeader } from "../routes/audio.js";
+import { communityEndpointGatewayContext } from "./communityEndpoint.ts";
 import { generateResponsePortkey } from "./generateResponsePortkey.js";
 import { generateTextPortkey } from "./generateTextPortkey.js";
 import { type ExpressLikeRequest, getRequestData } from "./requestUtils.js";
@@ -25,18 +26,19 @@ import type { ChatCompletion, RequestData, ServiceError } from "./types.js";
 type TextContext = Context<Env>;
 
 const TEXT_ENV_KEYS = [
+    "AI_GATEWAY_API_KEY",
     "AWS_ACCESS_KEY_ID",
     "AWS_REGION",
     "AWS_SECRET_ACCESS_KEY",
     "AZURE_MYCELI_PROD_API_KEY",
     "AZURE_MYCELI_PROD_SWEDEN_API_KEY",
     "DASHSCOPE_API_KEY",
-    "DEEPINFRA_API_KEY",
-    "FIREWORKS_API_KEY",
+    "FIREWORKS_NEO_API_KEY",
     "GOOGLE_CLIENT_EMAIL",
     "GOOGLE_PRIVATE_KEY",
     "GOOGLE_PRIVATE_KEY_ID",
     "GOOGLE_PROJECT_ID",
+    "INCEPTION_API_KEY",
     "OPENROUTER_API_KEY",
     "OVHCLOUD_API_KEY",
     "PERPLEXITY_API_KEY",
@@ -76,18 +78,15 @@ function createExpressLikeRequest(
     };
 }
 
-function prepareRequestParameters(requestParams: RequestData): RequestData {
-    let isAudioModel = false;
-    try {
-        const serviceDef = getModelDefinition(requestParams.model as ModelName);
-        isAudioModel = serviceDef?.outputModalities?.includes("audio") ?? false;
-    } catch {
-        // Model not in registry.
-    }
-
+function prepareRequestParameters(
+    requestParams: RequestData,
+    modelDefinition: ModelDefinition<string>,
+): RequestData {
+    const isAudioModel =
+        modelDefinition.outputModalities?.includes("audio") ?? false;
     if (!isAudioModel) return requestParams;
 
-    const voice = requestParams.voice || requestParams.audio?.voice || "amuch";
+    const voice = requestParams.voice || requestParams.audio?.voice || "alloy";
     const audioFormat = requestParams.stream ? "pcm16" : "mp3";
 
     return {
@@ -107,50 +106,72 @@ function withGatewayContext(c: TextContext, requestData: RequestData) {
 
     return {
         ...requestDataWithoutMessages,
-        userInfo: {
-            userId: c.var.auth?.user?.id,
-            username: c.var.auth?.user?.githubUsername,
-            tier: c.var.auth?.user?.tier,
-            referrer: requestData.referrer || "unknown",
-            cf_ray: c.req.header("cf-ray") || "",
-        },
         userApiKey: c.var.auth?.apiKey?.rawKey || "",
         portkeyGatewayUrl: c.env.PORTKEY_GATEWAY_URL,
     };
 }
 
-function usageHeaders(completion: ChatCompletion): Headers {
+function usageHeaders(
+    completion: ChatCompletion,
+    fallbackModel?: string,
+): Headers {
     const headers = new Headers();
-    if (completion?.usage && completion?.model) {
+    const modelUsed = completion?.model || fallbackModel;
+    if (completion?.usage && modelUsed) {
         const usage = openaiUsageToUsage(
             completion.usage as unknown as Parameters<
                 typeof openaiUsageToUsage
             >[0],
         );
         for (const [key, value] of Object.entries(
-            buildUsageHeaders(completion.model, usage),
+            buildUsageHeaders(modelUsed, usage),
         )) {
             headers.set(key, String(value));
         }
     }
-    return headers;
-}
-
-function responseUsageHeaders(response: CreateResponseResponse): Headers {
-    const headers = new Headers();
-    if (response.usage && response.model) {
-        const usage = responsesUsageToUsage(response.usage as ResponseUsage);
-        for (const [key, value] of Object.entries(
-            buildUsageHeaders(response.model, usage),
-        )) {
-            headers.set(key, String(value));
-        }
+    if (completion?.fallbackTarget) {
+        headers.set(FALLBACK_TARGET_HEADER, completion.fallbackTarget);
     }
     return headers;
 }
 
-function sendOpenAIResponse(completion: ChatCompletion): Response {
-    const headers = usageHeaders(completion);
+const PUBLIC_USAGE_FIELDS = new Set([
+    "cache_creation_input_tokens",
+    "cache_read_input_tokens",
+    "completion_tokens",
+    "completion_tokens_details",
+    "prompt_tokens",
+    "prompt_tokens_details",
+    "total_tokens",
+]);
+
+function publicCompletionUsage(
+    usage: ChatCompletion["usage"],
+): ChatCompletion["usage"] {
+    if (!usage || (!("cost" in usage) && !("search_context_size" in usage))) {
+        return usage;
+    }
+
+    return Object.fromEntries(
+        Object.entries(usage).filter(([key]) => PUBLIC_USAGE_FIELDS.has(key)),
+    );
+}
+
+function publicChatCompletion(completion: ChatCompletion): ChatCompletion {
+    const usage = publicCompletionUsage(completion.usage);
+    if (usage === completion.usage) return completion;
+
+    return {
+        ...completion,
+        usage,
+    };
+}
+
+function sendOpenAIResponse(
+    completion: ChatCompletion,
+    fallbackModel?: string,
+): Response {
+    const headers = usageHeaders(completion, fallbackModel);
     headers.set("Content-Type", "application/json; charset=utf-8");
 
     return new Response(
@@ -166,15 +187,48 @@ function sendOpenAIResponse(completion: ChatCompletion): Response {
 
 function sendResponsesApiResponse(
     responseBody: CreateResponseResponse,
+    upstreamHeaders: Headers,
 ): Response {
-    const headers = responseUsageHeaders(responseBody);
+    const headers = new Headers();
+    if (responseBody.usage && responseBody.model) {
+        const usage = responsesUsageToUsage(
+            responseBody.usage as ResponseUsage,
+        );
+        for (const [key, value] of Object.entries(
+            buildUsageHeaders(responseBody.model, usage),
+        )) {
+            headers.set(key, String(value));
+        }
+    }
+    const fallbackTarget = upstreamHeaders.get(
+        "x-portkey-last-used-option-index",
+    );
+    if (fallbackTarget) headers.set(FALLBACK_TARGET_HEADER, fallbackTarget);
     headers.set("Content-Type", "application/json; charset=utf-8");
 
     return new Response(JSON.stringify(responseBody), { headers });
 }
 
-function sendTextContentResponse(completion: ChatCompletion): Response {
-    const headers = usageHeaders(completion);
+function sendResponsesApiStream(upstream: Response): Response {
+    const headers = new Headers({
+        "Content-Type":
+            upstream.headers.get("content-type") ||
+            "text/event-stream; charset=utf-8",
+        "Cache-Control": "no-cache",
+        Connection: "keep-alive",
+    });
+    const fallbackTarget = upstream.headers.get(
+        "x-portkey-last-used-option-index",
+    );
+    if (fallbackTarget) headers.set(FALLBACK_TARGET_HEADER, fallbackTarget);
+    return new Response(upstream.body, { headers });
+}
+
+function sendTextContentResponse(
+    completion: ChatCompletion,
+    fallbackModel?: string,
+): Response {
+    const headers = usageHeaders(completion, fallbackModel);
     headers.set("Cache-Control", IMMUTABLE_CACHE_CONTROL);
 
     if (!completion.choices?.[0]) {
@@ -193,8 +247,20 @@ function sendTextContentResponse(completion: ChatCompletion): Response {
 
     const audio = message.audio as Record<string, unknown> | undefined;
     if (typeof audio?.data === "string") {
-        headers.set("Content-Type", "audio/mpeg");
-        return new Response(base64ToArrayBuffer(audio.data), { headers });
+        const buffer = base64ToArrayBuffer(audio.data);
+        const isWav =
+            buffer.byteLength >= 12 &&
+            new Uint8Array(buffer, 0, 4).reduce(
+                (s, b) => s + String.fromCharCode(b),
+                "",
+            ) === "RIFF";
+        if (isWav) {
+            fixWavHeader(buffer);
+            headers.set("Content-Type", "audio/wav");
+        } else {
+            headers.set("Content-Type", "audio/mpeg");
+        }
+        return new Response(buffer, { headers });
     }
 
     if (message.content !== undefined && message.content !== null) {
@@ -225,58 +291,30 @@ function sendTextStreamResponse(completion: ChatCompletion): Response {
         "Cache-Control": "no-cache",
         Connection: "keep-alive",
     });
+    // sendTextStreamResponse bypasses usageHeaders(), so set the fallback
+    // header here too — tracking reads it off the worker response for streams.
+    if (completion.fallbackTarget) {
+        headers.set(FALLBACK_TARGET_HEADER, completion.fallbackTarget);
+    }
 
     if (completion.responseStream instanceof ReadableStream) {
         return new Response(completion.responseStream, { headers });
     }
 
-    return new Response(asyncIterableToStream(completion.responseStream), {
-        headers,
-    });
-}
-
-function asyncIterableToStream(
-    iterable: AsyncIterable<unknown> | null | undefined,
-): ReadableStream<Uint8Array> {
+    // Defensive: upstream produced a null stream body.
     const encoder = new TextEncoder();
-    return new ReadableStream({
-        async start(controller) {
-            if (!iterable) {
-                controller.enqueue(
-                    encoder.encode(
-                        `data: ${JSON.stringify({ choices: [{ delta: { content: "Streaming response could not be processed." }, finish_reason: "stop", index: 0 }] })}\n\n`,
-                    ),
-                );
-                controller.enqueue(encoder.encode("data: [DONE]\n\n"));
-                controller.close();
-                return;
-            }
-
-            try {
-                for await (const chunk of iterable) {
-                    if (typeof chunk === "string") {
-                        controller.enqueue(encoder.encode(chunk));
-                    } else if (chunk instanceof Uint8Array) {
-                        controller.enqueue(chunk);
-                    } else {
-                        controller.enqueue(encoder.encode(String(chunk)));
-                    }
-                }
-            } catch (thrown) {
-                const message =
-                    thrown instanceof Error
-                        ? thrown.message
-                        : "Streaming response failed";
-                controller.enqueue(
-                    encoder.encode(
-                        `data: ${JSON.stringify({ error: { message } })}\n\n`,
-                    ),
-                );
-            }
+    const fallbackStream = new ReadableStream<Uint8Array>({
+        start(controller) {
+            controller.enqueue(
+                encoder.encode(
+                    `data: ${JSON.stringify({ choices: [{ delta: { content: "Streaming response could not be processed." }, finish_reason: "stop", index: 0 }] })}\n\n`,
+                ),
+            );
             controller.enqueue(encoder.encode("data: [DONE]\n\n"));
             controller.close();
         },
     });
+    return new Response(fallbackStream, { headers });
 }
 
 function base64ToArrayBuffer(value: string): ArrayBuffer {
@@ -322,9 +360,20 @@ async function generateTextResponse(
     syncTextEnvironment(c.env);
 
     try {
+        const communityEndpoint = c.var.model?.communityEndpoint;
+        const gatewayContext = communityEndpoint
+            ? await communityEndpointGatewayContext(
+                  communityEndpoint,
+                  c.var.model.definition,
+                  requestData,
+                  c.env.BETTER_AUTH_SECRET,
+                  c.env.PORTKEY_GATEWAY_URL,
+                  c.var.auth?.apiKey?.rawKey || "",
+              )
+            : withGatewayContext(c, requestData);
         const completion = await generateTextPortkey(
             requestData.messages,
-            withGatewayContext(c, requestData),
+            gatewayContext,
         );
         completion.id = completion.id || generatePollinationsId();
 
@@ -345,8 +394,17 @@ async function generateTextResponse(
         }
 
         if (requestData.stream) return sendTextStreamResponse(completion);
-        if (contentResponse) return sendTextContentResponse(completion);
-        return sendOpenAIResponse(completion);
+        const fallbackModel = c.var.model?.resolved;
+        // Provider-reported cost is read post-response in track (clamp-and-alert
+        // in the registry) — malformed/absent cost never fails the request.
+        const trackingResponse = sendOpenAIResponse(completion, fallbackModel);
+        const publicCompletion = publicChatCompletion(completion);
+        if (contentResponse) {
+            c.var.track?.overrideResponseTracking(trackingResponse.clone());
+            return sendTextContentResponse(publicCompletion, fallbackModel);
+        }
+        c.var.track?.overrideResponseTracking(trackingResponse.clone());
+        return sendOpenAIResponse(publicCompletion, fallbackModel);
     } catch (thrown: unknown) {
         throwTextError(thrown as ServiceError, c);
     }
@@ -368,11 +426,29 @@ export async function handleCreateResponseLocal(
     syncTextEnvironment(c.env);
 
     try {
-        const responseBody = (await generateResponsePortkey(body, {
+        const upstream = await generateResponsePortkey(body, {
             userApiKey: c.var.auth?.apiKey?.rawKey || "",
             portkeyGatewayUrl: c.env.PORTKEY_GATEWAY_URL,
-        })) as CreateResponseResponse;
-        return sendResponsesApiResponse(responseBody);
+        });
+        if (body.stream === true) return sendResponsesApiStream(upstream);
+
+        const responseText = await upstream.text();
+        let responseBody: CreateResponseResponse;
+        try {
+            responseBody = CreateResponseResponseSchema.parse(
+                JSON.parse(responseText),
+                { reportInput: true },
+            );
+        } catch (error) {
+            const invalidResponse = new Error(
+                `Upstream returned an invalid Responses API object: ${error instanceof Error ? error.message : String(error)}`,
+            ) as ServiceError;
+            invalidResponse.status = 502;
+            invalidResponse.upstreamStatus = 200;
+            invalidResponse.details = responseText;
+            throw invalidResponse;
+        }
+        return sendResponsesApiResponse(responseBody, upstream.headers);
     } catch (thrown: unknown) {
         throwTextError(thrown as ServiceError, c);
     }
@@ -383,7 +459,10 @@ export async function handleTextContentLocal(
     body: Record<string, unknown>,
 ): Promise<Response> {
     const req = createExpressLikeRequest(c, body, c.req.path);
-    const requestData = prepareRequestParameters(getRequestData(req));
+    const requestData = prepareRequestParameters(
+        getRequestData(req),
+        c.var.model.definition,
+    );
     return generateTextResponse(c, requestData, true);
 }
 
@@ -397,9 +476,12 @@ export async function handleSimpleTextLocal(
         ...c.req.param(),
         0: prompt,
     });
-    const requestData = prepareRequestParameters({
-        ...getRequestData(req),
-        model,
-    });
+    const requestData = prepareRequestParameters(
+        {
+            ...getRequestData(req),
+            model,
+        },
+        c.var.model.definition,
+    );
     return generateTextResponse(c, requestData, true);
 }

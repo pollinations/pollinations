@@ -1,14 +1,26 @@
 import { z } from "zod";
 import {
-    getModelDefinition,
-    getPriceDefinition,
+    getPriceDefinitionForModel,
+    getRegistryModelDefinition,
     getVisibleAudioModels,
     getVisibleEmbeddingModels,
     getVisibleImageModels,
+    getVisibleModel3dModels,
     getVisibleRealtimeModels,
     getVisibleTextModels,
+    type ModelDefinition,
     type ModelName,
+    type PriceDefinition,
 } from "./registry";
+
+export const ModelCapabilitySchema = z.enum([
+    "tool_calling",
+    "reasoning",
+    "web_search",
+    "code_execution",
+]);
+
+export type ModelCapability = z.infer<typeof ModelCapabilitySchema>;
 
 // Pricing uses registry field names directly, filtering out zero/undefined values
 // Fields: promptTextTokens, promptCachedTokens, promptCacheWriteTokens,
@@ -18,23 +30,37 @@ import {
 export const ModelInfoSchema = z.object({
     name: z.string(),
     aliases: z.array(z.string()),
+    category: z.enum([
+        "text",
+        "image",
+        "audio",
+        "video",
+        "3d",
+        "embedding",
+        "realtime",
+    ]),
+    brand: z.string(),
+    community: z.boolean().optional(),
     pricing: z
         .record(z.string(), z.string())
         .and(z.object({ currency: z.literal("pollen") })),
+    title: z.string(),
     description: z.string().optional(),
     input_modalities: z.array(z.string()).optional(),
     output_modalities: z.array(z.string()).optional(),
     video_capabilities: z.array(z.string()).optional(),
+    max_reference_images: z.number().int().positive().optional(),
+    max_reference_videos: z.number().int().positive().optional(),
+    capabilities: z.array(ModelCapabilitySchema),
     tools: z.boolean().optional(),
     reasoning: z.boolean().optional(),
-    responses: z.boolean().optional(),
-    responses_reasoning_summary: z.boolean().optional(),
-    responses_reasoning_text: z.boolean().optional(),
-    responses_reasoning_effort: z.boolean().optional(),
     context_length: z.number().optional(),
     voices: z.array(z.string()).optional(),
     is_specialized: z.boolean().optional(),
     paid_only: z.boolean().optional(),
+    alpha: z.boolean().optional(),
+    flat_rate: z.boolean().optional(),
+    added_date: z.number().optional(),
 });
 
 export type ModelInfo = z.infer<typeof ModelInfoSchema>;
@@ -47,16 +73,22 @@ function toFixedPoint(n: number): string {
     return n.toFixed(12).replace(/\.?0+$/, "");
 }
 
-/**
- * Get enriched model information for a service
- * Combines pricing from price definitions with metadata from service definition
- */
-export function getModelInfo(modelName: ModelName): ModelInfo {
-    const service = getModelDefinition(modelName);
-    const priceDefinition = getPriceDefinition(modelName);
-    if (!priceDefinition) {
-        throw new Error(`No price definition found for model: ${modelName}`);
-    }
+function getCapabilities(service: ModelDefinition<string>): ModelCapability[] {
+    const capabilities: ModelCapability[] = [];
+    if (service.tools) capabilities.push("tool_calling");
+    if (service.reasoning) capabilities.push("reasoning");
+    if (service.search) capabilities.push("web_search");
+    if (service.codeExecution) capabilities.push("code_execution");
+    return capabilities;
+}
+
+type ModelInfoOptions = {
+    community?: boolean;
+};
+
+function pricingInfoFromDefinition(
+    priceDefinition: PriceDefinition,
+): Record<string, string> & { currency: "pollen" } {
     const pricing: Record<string, string> & { currency: "pollen" } = {
         currency: "pollen",
     };
@@ -65,27 +97,49 @@ export function getModelInfo(modelName: ModelName): ModelInfo {
             pricing[key] = toFixedPoint(value);
         }
     }
+    return pricing;
+}
 
+export function modelInfoFromDefinition(
+    name: string,
+    service: ModelDefinition<string>,
+    options: ModelInfoOptions = {},
+): ModelInfo {
     return {
-        name: modelName as string,
+        name,
         aliases: service.aliases,
-        pricing,
+        category: service.category,
+        brand: service.brand,
+        community: options.community || undefined,
+        pricing: pricingInfoFromDefinition(getPriceDefinitionForModel(service)),
         // User-facing metadata from service definition
+        title: service.title,
         description: service.description,
         input_modalities: service.inputModalities,
         output_modalities: service.outputModalities,
         video_capabilities: service.videoCapabilities,
+        max_reference_images: service.maxReferenceImages,
+        max_reference_videos: service.maxReferenceVideos,
+        capabilities: getCapabilities(service),
         tools: service.tools,
         reasoning: service.reasoning,
-        responses: service.responses,
-        responses_reasoning_summary: service.responsesReasoningSummary,
-        responses_reasoning_text: service.responsesReasoningText,
-        responses_reasoning_effort: service.responsesReasoningEffort,
         context_length: service.contextLength,
         voices: service.voices,
         is_specialized: service.isSpecialized,
         paid_only: service.paidOnly,
+        alpha: service.alpha,
+        flat_rate: service.flatRate,
+        added_date: service.addedDate,
     };
+}
+
+/**
+ * Get enriched model information for a service
+ * Combines pricing from price definitions with metadata from service definition
+ */
+function getModelInfo(modelName: ModelName): ModelInfo {
+    const service = getRegistryModelDefinition(modelName);
+    return modelInfoFromDefinition(modelName, service);
 }
 
 /**
@@ -121,4 +175,11 @@ export function getEmbeddingModelsInfo(): ModelInfo[] {
  */
 export function getRealtimeModelsInfo(): ModelInfo[] {
     return getVisibleRealtimeModels().map(getModelInfo);
+}
+
+/**
+ * Get all 3D models with enriched information
+ */
+export function getModel3dModelsInfo(): ModelInfo[] {
+    return getVisibleModel3dModels().map(getModelInfo);
 }

@@ -155,7 +155,7 @@ const login = new Command("login")
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
                 client_id: "pk_VZF38YW4tQX36SEn",
-                scope: "generate keys usage",
+                scope: "generate profile usage keys",
             }),
         }).catch((err) => {
             printError(
@@ -164,7 +164,7 @@ const login = new Command("login")
             printInfo(
                 "Fallback: printf '%s' '<your-key>' | polli auth login --with-token",
             );
-            printInfo("Get your key at: https://enter.pollinations.ai");
+            printInfo("Get your key at: https://enter.pollinations.ai/keys");
             process.exit(1);
         });
 

@@ -1,5 +1,5 @@
 import os, sys, io, base64, logging, torch, time, threading, warnings, asyncio, aiohttp
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Header, Depends
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 from contextlib import asynccontextmanager
@@ -41,6 +41,7 @@ def clamp_dims(w, h):
     return w, h
 
 pipe = None
+BACKEND_TOKEN = os.getenv("PLN_GPU_TOKEN")
 
 # --- Heartbeat registration ---
 
@@ -89,6 +90,9 @@ async def periodic_heartbeat():
 async def lifespan(app: FastAPI):
     global pipe
     from diffusers import SanaSprintPipeline
+    if not BACKEND_TOKEN:
+        logger.critical("PLN_GPU_TOKEN not configured - refusing to start")
+        raise RuntimeError("PLN_GPU_TOKEN must be configured")
     logger.info("Loading %s...", MODEL_ID)
     t0 = time.time()
     pipe = SanaSprintPipeline.from_pretrained(MODEL_ID, torch_dtype=torch.bfloat16, cache_dir=MODEL_CACHE).to("cuda")
@@ -116,8 +120,16 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title="SANA-Sprint", lifespan=lifespan)
 
+def verify_backend_token(
+    x_backend_token: str = Header(None, alias="x-backend-token"),
+):
+    if x_backend_token != BACKEND_TOKEN:
+        logger.warning("Invalid or missing backend token")
+        raise HTTPException(status_code=403, detail="Unauthorized")
+    return True
+
 @app.post("/generate")
-def generate(request: ImageRequest):
+def generate(request: ImageRequest, _auth: bool = Depends(verify_backend_token)):
     if pipe is None:
         raise HTTPException(status_code=503, detail="Model not loaded")
     seed = request.seed if request.seed is not None else int.from_bytes(os.urandom(8), "big")

@@ -1,38 +1,41 @@
-import { createApiKeyForUser } from "@shared/auth/api-key-creation.ts";
+import type { Logger } from "@logtape/logtape";
+import {
+    type ApiKeyType,
+    createApiKeyForUser,
+} from "@shared/auth/api-key-creation.ts";
+import { isCommunityEndpointOwnerAllowed } from "@shared/community-endpoints.ts";
+import * as schema from "@shared/db/better-auth.ts";
 import {
     apikey as apikeyTable,
+    rewards as rewardsTable,
     user as userTable,
 } from "@shared/db/better-auth.ts";
-import type { ApiKeyType } from "@shared/schemas/generation-event.ts";
-import { getTierCadence, tierNames } from "@shared/tier-config.ts";
-import { and, eq } from "drizzle-orm";
+import { validator } from "@shared/middleware/validator.ts";
+import { and, desc, eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
+import type { Context } from "hono";
 import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
 import { describeRoute, resolver } from "hono-openapi";
 import { z } from "zod";
 import type { Env } from "../env.ts";
 import { auth } from "../middleware/auth.ts";
-import { validator } from "../middleware/validator.ts";
+import { QUEST_CATEGORIES } from "../services/quests/definitions.ts";
+import { listQuestCards } from "../services/quests/index.ts";
+import {
+    fetchTinybirdRows,
+    requireTinybirdReadToken,
+} from "../services/tinybird.ts";
+import {
+    hasAccountReadPermission,
+    hasDirectAccountPermission,
+} from "./account-permissions.ts";
+import { communityEndpointsRoutes } from "./community-endpoints.ts";
 import { parseMetadata } from "./metadata-utils.ts";
 
-// Calculate next tier refill time (null for tiers with no refill).
-// Matches the `0 * * * *` cron in wrangler.toml — top of the next UTC hour.
-function getNextRefillAt(tier?: string | null): string | null {
-    const cadence = tier ? getTierCadence(tier) : "none";
-    if (cadence === "none") return null;
-    const next = new Date();
-    next.setUTCMinutes(0, 0, 0);
-    next.setUTCHours(next.getUTCHours() + 1);
-    return next.toISOString();
-}
-
-// Cache TTL in seconds
-const CACHE_TTL = 60 * 60; // 1 hour
 const DEFAULT_USAGE_DAYS = 30;
 const DEFAULT_DAILY_USAGE_DAYS = 90;
 const MAX_USAGE_DAYS = 90;
-const USAGE_CHUNK_DAYS = 30;
 const MAX_USAGE_EXPORT_ROWS = 50_000;
 
 const SECONDS_PER_DAY = 86400;
@@ -78,7 +81,7 @@ export function resolveUsageTargetUserId(
 }
 
 /**
- * Require that the caller has `account:keys` permission and is using a secret key.
+ * Require that the caller has `account:keys` permission.
  * Session-authenticated users (no apiKey) are always allowed.
  */
 function requireKeysPermission(apiKey?: {
@@ -86,15 +89,20 @@ function requireKeysPermission(apiKey?: {
     metadata?: Record<string, unknown>;
 }): void {
     if (!apiKey) return; // session auth — always allowed
-    const keyType = (apiKey.metadata?.keyType as string) || "secret";
-    if (keyType !== "secret") {
-        throw new HTTPException(403, {
-            message: "Only secret keys (sk_) can manage API keys",
-        });
-    }
-    if (!apiKey.permissions?.account?.includes("keys")) {
+    if (!hasDirectAccountPermission(apiKey, "keys")) {
         throw new HTTPException(403, {
             message: "API key does not have 'account:keys' permission",
+        });
+    }
+}
+
+function requireUsagePermission(apiKey?: {
+    permissions?: Record<string, string[]>;
+    metadata?: Record<string, unknown>;
+}): void {
+    if (apiKey && !hasAccountReadPermission(apiKey, "usage")) {
+        throw new HTTPException(403, {
+            message: "API key does not have 'account:usage' permission",
         });
     }
 }
@@ -137,7 +145,7 @@ const CreateKeySchema = z.object({
         .array(z.string())
         .optional()
         .describe(
-            "Allowed OAuth redirect URIs for publishable app keys. Required for OAuth app flows. Matching pins scheme, host, port, and path; one trailing slash is ignored. If the registered URI has no query, incoming query params are allowed; if it has a query, the query must match exactly. Loopback ports are matched port-agnostically.",
+            "Allowed OAuth redirect URIs for publishable app keys. Required for OAuth app flows. Must be https:// except http:// loopback URIs for local apps. Matching pins scheme, host, port, and path; one trailing slash is ignored. If the registered URI has no query, incoming query params are allowed; if it has a query, the query must match exactly. Loopback ports are matched port-agnostically.",
         ),
     earningsEnabled: z
         .boolean()
@@ -150,22 +158,26 @@ const CreateKeySchema = z.object({
 // CSV escape helper
 const escapeCSV = (val: string | number | boolean | null) => {
     if (val === null || val === undefined) return "";
-    const str = String(val);
+    if (typeof val === "number") return String(val);
+    const raw = String(val);
+    const str = /^[\t\r\n]|^\s*[=+\-@]/.test(raw) ? `'${raw}` : raw;
     if (str.includes(",") || str.includes('"') || str.includes("\n")) {
         return `"${str.replace(/"/g, '""')}"`;
     }
     return str;
 };
 
-function formatTinybirdDateTime(date: Date): string {
-    return date.toISOString().slice(0, 19).replace("T", " ");
-}
-
-function startOfNextUtcDay(now = new Date()): Date {
-    const next = new Date(now);
-    next.setUTCHours(0, 0, 0, 0);
-    next.setUTCDate(next.getUTCDate() + 1);
-    return next;
+function toCsv<T>(columns: readonly (keyof T & string)[], rows: T[]): string {
+    return [
+        columns.join(","),
+        ...rows.map((row) =>
+            columns
+                .map((col) =>
+                    escapeCSV(row[col] as string | number | boolean | null),
+                )
+                .join(","),
+        ),
+    ].join("\n");
 }
 
 function addUtcDays(date: Date, days: number): Date {
@@ -177,6 +189,7 @@ function addUtcDays(date: Date, days: number): Date {
 type UsageWindow = {
     since: string;
     until: string;
+    filenamePart: string;
 };
 
 type UsageWindowDates = {
@@ -189,25 +202,8 @@ type UsagePeriod = {
     period?: string;
 };
 
-function formatUsageWindow(window: UsageWindowDates): UsageWindow {
-    return {
-        since: formatTinybirdDateTime(window.sinceDate),
-        until: formatTinybirdDateTime(window.untilDate),
-    };
-}
-
-function buildUsageWindow(days: number): UsageWindowDates {
-    const untilDate = startOfNextUtcDay();
-    const sinceDate = addUtcDays(untilDate, -days);
-    return { sinceDate, untilDate };
-}
-
 function startOfUtcDay(year: number, monthIndex: number, day: number): Date {
     return new Date(Date.UTC(year, monthIndex, day, 0, 0, 0, 0));
-}
-
-function usageMinDate(): Date {
-    return new Date(`${USAGE_MIN_DATE}T00:00:00.000Z`);
 }
 
 function parseUtcDayPeriod(period: string): UsageWindowDates | null {
@@ -293,105 +289,68 @@ function buildUsageWindowFromPeriod({
     return null;
 }
 
-function resolveUsageWindow(
-    days: number,
-    period: UsagePeriod,
-): UsageWindowDates {
+function resolveUsageWindow(days: number, period: UsagePeriod): UsageWindow {
     const hasPeriodParam = period.granularity || period.period;
-    const usageWindow = buildUsageWindowFromPeriod(period);
-    if (hasPeriodParam && !usageWindow) {
+    const periodWindow = buildUsageWindowFromPeriod(period);
+    if (hasPeriodParam && !periodWindow) {
         throw new HTTPException(400, {
             message:
                 "Invalid usage period. Use granularity=day&period=YYYY-MM-DD, granularity=week&period=YYYY-WNN, or granularity=month&period=YYYY-MM.",
         });
     }
-    if (usageWindow) {
-        const now = new Date();
-        const today = startOfUtcDay(
-            now.getUTCFullYear(),
-            now.getUTCMonth(),
-            now.getUTCDate(),
-        );
+
+    const now = new Date();
+    const today = startOfUtcDay(
+        now.getUTCFullYear(),
+        now.getUTCMonth(),
+        now.getUTCDate(),
+    );
+    if (periodWindow) {
+        const minDate = new Date(`${USAGE_MIN_DATE}T00:00:00.000Z`);
         if (
-            usageWindow.untilDate <= usageMinDate() ||
-            usageWindow.sinceDate > today
+            periodWindow.untilDate <= minDate ||
+            periodWindow.sinceDate > today
         ) {
             throw new HTTPException(400, {
                 message: `Usage period must overlap ${USAGE_MIN_DATE} through today.`,
             });
         }
     }
-    return usageWindow || buildUsageWindow(days);
+
+    const { sinceDate, untilDate } = periodWindow ?? {
+        sinceDate: addUtcDays(today, 1 - days),
+        untilDate: addUtcDays(today, 1),
+    };
+    const toTinybirdDateTime = (date: Date) =>
+        date.toISOString().slice(0, 19).replace("T", " ");
+
+    return {
+        since: toTinybirdDateTime(sinceDate),
+        until: toTinybirdDateTime(untilDate),
+        filenamePart:
+            period.granularity && period.period
+                ? `${period.granularity}-${period.period}`
+                : `${days}d`,
+    };
 }
 
-function usageWindowFilenamePart(days: number, period: UsagePeriod): string {
-    return period.granularity && period.period
-        ? `${period.granularity}-${period.period}`
-        : `${days}d`;
+function parseCommaSeparatedQueryList(value?: string): string[] {
+    return value
+        ? Array.from(
+              new Set(
+                  value
+                      .split(",")
+                      .map((id) => id.trim())
+                      .filter((id) => id.length > 0),
+              ),
+          ).sort()
+        : [];
 }
 
-function buildUsageWindows(
-    days: number,
-    period: UsagePeriod = {},
-    chunkDays = USAGE_CHUNK_DAYS,
-    newestFirst = false,
-): UsageWindow[] {
-    const overallWindow = resolveUsageWindow(days, period);
-    const windows: UsageWindow[] = [];
-    let cursor = overallWindow.sinceDate;
-    const end = overallWindow.untilDate;
-
-    while (cursor < end) {
-        const next = addUtcDays(cursor, chunkDays);
-        const boundedNext = next < end ? next : end;
-        windows.push(
-            formatUsageWindow({ sinceDate: cursor, untilDate: boundedNext }),
-        );
-        cursor = boundedNext;
-    }
-
-    return newestFirst ? windows.reverse() : windows;
-}
-
-async function fetchTinybirdRows<T>(
-    origin: string,
-    path: string,
-    token: string,
-    params: Record<string, string | undefined>,
-): Promise<T[]> {
-    const url = new URL(path, origin);
-    for (const [key, value] of Object.entries(params)) {
-        if (value) {
-            url.searchParams.set(key, value);
-        }
-    }
-
-    const response = await fetch(url.toString(), {
-        headers: {
-            Authorization: `Bearer ${token}`,
-        },
-    });
-
-    if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(
-            `Tinybird error: ${response.status} ${errorText || "(empty response)"}`,
-        );
-    }
-
-    const data = (await response.json()) as { data: T[] };
-    return data.data;
-}
-
-function requireTinybirdReadToken(env: CloudflareBindings): string {
-    if (!env.TINYBIRD_READ_TOKEN) {
-        throw new HTTPException(500, {
-            message: "Tinybird read token is not configured",
-        });
-    }
-    return env.TINYBIRD_READ_TOKEN;
-}
-
+const commaSeparatedQueryList = z
+    .string()
+    .optional()
+    .transform(parseCommaSeparatedQueryList);
 // Query params schema for usage
 const usageQuerySchema = z.object({
     format: z.enum(["json", "csv"]).optional().default("json"),
@@ -402,6 +361,7 @@ const usageQuerySchema = z.object({
         .optional()
         .default(100),
     before: z.string().optional(), // ISO timestamp cursor for pagination
+    before_event_id: z.string().optional(), // Stable tie-breaker for same-second timestamps
     days: z.coerce
         .number()
         .int()
@@ -411,6 +371,8 @@ const usageQuerySchema = z.object({
         .default(DEFAULT_USAGE_DAYS),
     granularity: z.enum(PERIOD_GRANULARITIES).optional(),
     period: z.string().optional(),
+    api_key_ids: commaSeparatedQueryList,
+    models: commaSeparatedQueryList,
 });
 
 // Query params schema for daily usage
@@ -425,71 +387,38 @@ const usageDailyQuerySchema = z.object({
         .default(DEFAULT_DAILY_USAGE_DAYS),
     granularity: z.enum(PERIOD_GRANULARITIES).optional(),
     period: z.string().optional(),
-    api_key_ids: z
-        .string()
-        .optional()
-        .transform((value) =>
-            value
-                ? Array.from(
-                      new Set(
-                          value
-                              .split(",")
-                              .map((id) => id.trim())
-                              .filter((id) => id.length > 0),
-                      ),
-                  ).sort()
-                : [],
-        ),
+    api_key_ids: commaSeparatedQueryList,
 });
 
-type DailyUsageRecord = {
-    date: string;
-    model: string | null;
-    meter_source: string | null;
-    requests: number;
-    cost_usd: number;
-};
+const earningsQuerySchema = usageDailyQuerySchema.omit({ api_key_ids: true });
 
-type UsageRecord = {
-    timestamp: string;
-    type: string;
-    model: string | null;
-    api_key_id: string | null;
-    api_key: string | null;
-    api_key_type: string | null;
-    meter_source: string | null;
-    input_text_tokens: number;
-    input_cached_tokens: number;
-    input_audio_tokens: number;
-    input_audio_seconds: number;
-    input_image_tokens: number;
-    output_text_tokens: number;
-    output_reasoning_tokens: number;
-    output_audio_tokens: number;
-    output_audio_seconds: number;
-    output_image_tokens: number;
-    output_video_seconds: number;
-    cost_usd: number;
-    response_time_ms: number | null;
-};
-
-type UsageRecordWithCursor = UsageRecord & {
-    cursor_event_id: string;
-};
+const earningsTransactionsQuerySchema = usageQuerySchema.pick({
+    limit: true,
+    days: true,
+    granularity: true,
+    period: true,
+});
 
 // Response schema for daily usage OpenAPI documentation
 const dailyUsageRecordSchema = z.object({
     date: z.string().describe("Date (YYYY-MM-DD format)"),
+    api_key_id: z.string().describe("API key id used for these requests"),
+    api_key: z
+        .string()
+        .nullable()
+        .describe("API key name used for these requests"),
     model: z.string().nullable().describe("Model used"),
     meter_source: z
         .string()
         .nullable()
         .describe(
-            "Billing source: 'tier' = tier balance, 'pack' = paid balance",
+            "Billing source: 'tier' = Quest Pollen balance, 'pack' = paid balance",
         ),
     requests: z.number().describe("Number of requests"),
     cost_usd: z.number().describe("Total cost in USD"),
 });
+
+type DailyUsageRecord = z.infer<typeof dailyUsageRecordSchema>;
 
 const dailyUsageResponseSchema = z.object({
     usage: z
@@ -498,42 +427,51 @@ const dailyUsageResponseSchema = z.object({
     count: z.number().describe("Number of records returned"),
 });
 
-function sortDailyUsageRecords(usage: DailyUsageRecord[]): DailyUsageRecord[] {
-    return usage.toSorted((left, right) => {
-        if (left.date !== right.date) {
-            return right.date.localeCompare(left.date);
-        }
-        if (right.requests !== left.requests) {
-            return right.requests - left.requests;
-        }
-        if ((left.model || "") !== (right.model || "")) {
-            return (left.model || "").localeCompare(right.model || "");
-        }
-        return (left.meter_source || "").localeCompare(
-            right.meter_source || "",
-        );
-    });
-}
+const USAGE_CSV_COLUMNS = [
+    "timestamp",
+    "type",
+    "model",
+    "api_key",
+    "api_key_type",
+    "meter_source",
+    "input_text_tokens",
+    "input_cached_tokens",
+    "input_audio_tokens",
+    "input_audio_seconds",
+    "input_image_tokens",
+    "output_text_tokens",
+    "output_reasoning_tokens",
+    "output_audio_tokens",
+    "output_audio_seconds",
+    "output_image_tokens",
+    "output_video_seconds",
+    "cost_usd",
+    "response_time_ms",
+] as const;
 
-function usageRecordToCsvRow(row: UsageRecord): string {
-    return `${escapeCSV(row.timestamp)},${escapeCSV(row.type)},${escapeCSV(row.model)},${escapeCSV(row.api_key)},${escapeCSV(row.api_key_type)},${escapeCSV(row.meter_source)},${row.input_text_tokens},${row.input_cached_tokens},${row.input_audio_tokens},${row.input_audio_seconds},${row.input_image_tokens},${row.output_text_tokens},${row.output_reasoning_tokens},${row.output_audio_tokens},${row.output_audio_seconds},${row.output_image_tokens},${row.output_video_seconds},${row.cost_usd},${escapeCSV(row.response_time_ms)}`;
-}
+const DAILY_USAGE_CSV_COLUMNS = [
+    "date",
+    "api_key_id",
+    "api_key",
+    "model",
+    "meter_source",
+    "requests",
+    "cost_usd",
+] as const;
 
-function dailyUsageRecordToCsvRow(row: DailyUsageRecord): string {
-    return `${escapeCSV(row.date)},${escapeCSV(row.model)},${escapeCSV(row.meter_source)},${row.requests},${row.cost_usd}`;
-}
-
-type DeveloperEarningsRow = {
-    date: string;
-    app_key_id: string;
-    app_name: string;
-    requests: number;
-    baseline_price: number;
-    pollen_earned: number;
-    cost_usd: number;
-    markup_rate: number;
-    unique_users: number;
-};
+const EARNINGS_CSV_COLUMNS = [
+    "date",
+    "source",
+    "entity_id",
+    "entity_name",
+    "requests",
+    "baseline_price",
+    "pollen_earned",
+    "paid_earned",
+    "tier_earned",
+    "cost_usd",
+    "reward_rate",
+] as const;
 
 const developerEarningsRowSchema = z.object({
     date: z
@@ -541,78 +479,177 @@ const developerEarningsRowSchema = z.object({
         .describe(
             "Date bucket (YYYY-MM-DD or hourly); empty string on rollup rows",
         ),
-    app_key_id: z
+    entity_id: z
         .string()
-        .describe("BYOP app key id; empty string on the global rollup row"),
-    app_name: z.string().describe("App display name"),
+        .describe("Earning entity id (BYOP app key or community model)"),
+    entity_name: z.string().describe("Earning entity display name"),
+    source: z
+        .enum(["byop_markup", "community_model"])
+        .describe("Reward source, such as byop_markup or community_model"),
     requests: z.number().describe("Number of billed requests"),
+    paid_requests: z
+        .number()
+        .describe("Billed requests paid from paid balance"),
+    tier_requests: z
+        .number()
+        .describe("Billed requests paid from tier balance"),
     baseline_price: z
         .number()
         .describe("Model cost before markup (sum over the bucket)"),
     pollen_earned: z
         .number()
-        .describe("Developer credit — markup take (cost_usd − baseline_price)"),
+        .describe("Developer credit earned over the bucket"),
+    paid_earned: z
+        .number()
+        .describe("Developer credit earned from paid-balance spend"),
+    tier_earned: z
+        .number()
+        .describe("Developer credit earned from Quest Pollen spend"),
     cost_usd: z
         .number()
         .describe(
-            "Markup-inclusive total charged to payers (sum over the bucket)",
+            "Reward basis total for the bucket; BYOP rows use payer charge, community model rows use model price",
         ),
-    markup_rate: z.number().describe("Average markup rate applied"),
-    unique_users: z
-        .number()
-        .describe(
-            "Distinct end-users who paid. Always 0 on daily/hourly bucket rows by design — meaningful only on rollup rows (where date='').",
-        ),
+    reward_rate: z.number().describe("Average reward or markup rate applied"),
 });
+
+type DeveloperEarningsRow = z.infer<typeof developerEarningsRowSchema>;
 
 const developerEarningsResponseSchema = z.object({
     daily: z
         .array(developerEarningsRowSchema)
-        .describe("Per-(date, app) buckets for the period"),
-    perApp: z
+        .describe("Per-(date, earning entity) buckets for the period"),
+    perEntity: z
         .array(developerEarningsRowSchema)
-        .describe("Per-app rollups for the period"),
-    global: developerEarningsRowSchema
-        .nullable()
-        .describe("Global rollup across all apps for the period"),
+        .describe("Per-earning-entity rollups for the period"),
 });
 
-function dailyEarningsRowToCsvRow(row: DeveloperEarningsRow): string {
-    return `${escapeCSV(row.date)},${escapeCSV(row.app_key_id)},${escapeCSV(row.app_name)},${row.requests},${row.baseline_price},${row.pollen_earned},${row.cost_usd},${row.markup_rate}`;
+const developerEarningsTransactionSchema = z.object({
+    timestamp: z
+        .string()
+        .describe("Request timestamp (YYYY-MM-DD HH:mm:ss format)"),
+    cursor_event_id: z.string().describe("Stable event id"),
+    entity_name: z.string().describe("Earning entity display name"),
+    model: z.string().nullable().describe("Model used for generation"),
+    meter_source: z
+        .string()
+        .nullable()
+        .describe(
+            "Billing source: 'tier' = tier balance, 'pack' = paid balance",
+        ),
+    pollen_earned: z.number().describe("Developer credit earned"),
+});
+
+type DeveloperEarningsTransaction = z.infer<
+    typeof developerEarningsTransactionSchema
+>;
+
+const developerEarningsTransactionsResponseSchema = z.object({
+    transactions: z
+        .array(developerEarningsTransactionSchema)
+        .describe("Earning transaction records"),
+    count: z.number().describe("Number of records returned"),
+});
+
+// Per-entity rollups derived from the daily buckets; reward_rate is the
+// request-weighted average.
+function rollupEarningsByEntity(
+    daily: DeveloperEarningsRow[],
+): DeveloperEarningsRow[] {
+    const byEntity = new Map<
+        string,
+        DeveloperEarningsRow & { weightedRate: number }
+    >();
+    for (const row of daily) {
+        const key = `${row.source}:${row.entity_id}`;
+        const entry = byEntity.get(key);
+        if (!entry) {
+            byEntity.set(key, {
+                ...row,
+                date: "",
+                weightedRate: row.reward_rate * row.requests,
+            });
+            continue;
+        }
+        entry.requests += row.requests;
+        entry.paid_requests += row.paid_requests;
+        entry.tier_requests += row.tier_requests;
+        entry.baseline_price += row.baseline_price;
+        entry.pollen_earned += row.pollen_earned;
+        entry.paid_earned += row.paid_earned;
+        entry.tier_earned += row.tier_earned;
+        entry.cost_usd += row.cost_usd;
+        entry.weightedRate += row.reward_rate * row.requests;
+    }
+    return Array.from(byEntity.values())
+        .map(({ weightedRate, ...row }) => ({
+            ...row,
+            reward_rate: row.requests > 0 ? weightedRate / row.requests : 0,
+        }))
+        .sort((left, right) => right.pollen_earned - left.pollen_earned);
 }
 
-async function fetchDetailedUsagePage(
-    origin: string,
-    token: string,
+// Shared tail for the detailed-usage endpoints (/usage, /key/usage):
+// fetch a page from the activity usage transactions pipe, return the cursor for
+// JSON pagination, but keep CSV output on its established public columns.
+async function respondDetailedUsage(
+    c: Pick<Context<Env>, "env" | "json">,
+    log: Logger,
     params: {
         userId: string;
-        apiKeyId?: string;
+        apiKeyIds?: string[];
+        models?: string[];
+        filenamePrefix: string;
+        filenamePeriod: string;
+        format: "json" | "csv";
         limit: number;
         since: string;
         until: string;
         before?: string;
         beforeEventId?: string;
     },
-): Promise<UsageRecordWithCursor[]> {
-    return fetchTinybirdRows<UsageRecordWithCursor>(
-        origin,
-        "/v0/pipes/user_usage.json",
-        token,
-        {
-            user_id: params.userId,
-            api_key_id: params.apiKeyId,
-            limit: params.limit.toString(),
-            since: params.since,
-            until: params.until,
-            before: params.before,
-            before_event_id: params.beforeEventId,
-        },
-    );
-}
+): Promise<Response> {
+    const tinybirdOrigin = new URL(c.env.TINYBIRD_INGEST_URL).origin;
+    const tinybirdToken = requireTinybirdReadToken(c.env);
 
-function stripUsageCursor(row: UsageRecordWithCursor): UsageRecord {
-    const { cursor_event_id: _, ...usage } = row;
-    return usage;
+    try {
+        const usage = await fetchTinybirdRows<UsageRecordWithCursor>(
+            tinybirdOrigin,
+            "/v0/pipes/activity_usage_transactions.json",
+            tinybirdToken,
+            {
+                user_id: params.userId,
+                api_key_ids:
+                    params.apiKeyIds && params.apiKeyIds.length > 0
+                        ? params.apiKeyIds.join(",")
+                        : undefined,
+                models:
+                    params.models && params.models.length > 0
+                        ? params.models.join(",")
+                        : undefined,
+                limit: params.limit.toString(),
+                since: params.since,
+                until: params.until,
+                before: params.before,
+                before_event_id: params.beforeEventId,
+            },
+        );
+
+        if (params.format === "csv") {
+            const csv = toCsv(USAGE_CSV_COLUMNS, usage);
+            return new Response(csv, {
+                headers: {
+                    "Content-Type": "text/csv",
+                    "Content-Disposition": `attachment; filename="${params.filenamePrefix}-${usage.length}-rows-${params.filenamePeriod}-${new Date().toISOString().split("T")[0]}.csv"`,
+                },
+            });
+        }
+
+        return c.json({ usage, count: usage.length });
+    } catch (error) {
+        log.error("Error fetching usage: {error}", { error });
+        return c.json({ error: "Failed to fetch usage data" }, 500);
+    }
 }
 
 // Response schemas for OpenAPI documentation
@@ -622,28 +659,24 @@ const profileResponseSchema = z.object({
         .string()
         .nullable()
         .describe("Profile picture URL (e.g. GitHub avatar)"),
-    tier: z
-        .enum(["anonymous", ...tierNames])
-        .describe("User's current tier level"),
-    nextResetAt: z.iso
-        .datetime()
-        .nullable()
+    communityEndpointsAllowed: z
+        .boolean()
         .describe(
-            "Next pollen refill timestamp (ISO 8601). `null` for tiers with no refill.",
+            "Whether the account is allowed to manage community endpoints.",
         ),
     name: z
         .string()
         .nullable()
         .optional()
         .describe(
-            "User's display name (only returned when the key has `account:profile`)",
+            "User's display name (only returned when the key has `account:profile` or `account:keys`)",
         ),
     email: z
         .email()
         .nullable()
         .optional()
         .describe(
-            "User's email address (only returned when the key has `account:profile`)",
+            "User's email address (only returned when the key has `account:profile` or `account:keys`)",
         ),
 });
 
@@ -651,19 +684,59 @@ const balanceResponseSchema = z.object({
     balance: z
         .number()
         .describe(
-            "Remaining pollen balance (sum of tier balance + paid balance)",
+            "Remaining pollen balance (sum of Quest Pollen + paid balance)",
         ),
 });
+
+const accountQuestRewardSchema = z.object({
+    id: z.string(),
+    questId: z.string().nullable(),
+    title: z.string(),
+    pollenAmount: z.number(),
+    balanceBucket: z.string(),
+    earnedAt: z.string(),
+    claimedAt: z.string().nullable(),
+});
+
+const accountQuestSchema = z.object({
+    id: z.string(),
+    title: z.string(),
+    description: z.string(),
+    category: z.enum(QUEST_CATEGORIES),
+    state: z.enum(["available", "completed", "coming_soon"]),
+    status: z.enum(["open", "completed", "coming_soon"]),
+    rewardAmount: z.number(),
+    balanceBucket: z.enum(["tier", "pack"]),
+    url: z.string().nullable(),
+    reward: accountQuestRewardSchema.nullable(),
+});
+
+const accountQuestsResponseSchema = z.object({
+    quests: z.array(accountQuestSchema),
+});
+
+function formatRewardTimestamp(value: Date | number | string): string {
+    return value instanceof Date
+        ? value.toISOString()
+        : new Date(value).toISOString();
+}
 
 const usageRecordSchema = z.object({
     timestamp: z
         .string()
         .describe("Request timestamp (YYYY-MM-DD HH:mm:ss format)"),
+    cursor_event_id: z
+        .string()
+        .describe("Event id used with `before_event_id` for stable pagination"),
     type: z
         .string()
         .describe("Request type (e.g., 'generate.image', 'generate.text')"),
     model: z.string().nullable().describe("Model used for generation"),
-    api_key: z.string().nullable().describe("API key identifier used (masked)"),
+    api_key_id: z
+        .string()
+        .nullable()
+        .describe("API key id used for generation"),
+    api_key: z.string().nullable().describe("API key display name"),
     api_key_type: z
         .string()
         .nullable()
@@ -672,7 +745,7 @@ const usageRecordSchema = z.object({
         .string()
         .nullable()
         .describe(
-            "Billing source: 'tier' = tier balance, 'pack' = paid balance",
+            "Billing source: 'tier' = Quest Pollen balance, 'pack' = paid balance",
         ),
     input_text_tokens: z.number().describe("Number of input text tokens"),
     input_cached_tokens: z.number().describe("Number of cached input tokens"),
@@ -706,6 +779,8 @@ const usageRecordSchema = z.object({
         .describe("Response time in milliseconds"),
 });
 
+type UsageRecordWithCursor = z.infer<typeof usageRecordSchema>;
+
 const usageResponseSchema = z.object({
     usage: z.array(usageRecordSchema).describe("Array of usage records"),
     count: z.number().describe("Number of records returned"),
@@ -717,13 +792,14 @@ const usageResponseSchema = z.object({
  */
 export const accountRoutes = new Hono<Env>()
     .use(auth({ allowApiKey: true, allowSessionCookie: true }))
+    .route("/my-models", communityEndpointsRoutes)
     .get(
         "/profile",
         describeRoute({
             tags: ["👤 Account"],
             summary: "Get Profile",
             description:
-                "Returns your account profile. GitHub username, profile image, current tier, and next pollen refill timestamp are always returned. Name and email are returned only when the API key has the `account:profile` permission.",
+                "Returns your account profile. GitHub username, profile image, and community model access are always returned. Name and email are returned only when the API key has `account:profile`.",
             responses: {
                 200: {
                     description: "User profile",
@@ -741,14 +817,14 @@ export const accountRoutes = new Hono<Env>()
             const user = c.var.auth.requireUser();
             const apiKey = c.var.auth.apiKey;
             const includeProfilePII =
-                !apiKey || !!apiKey.permissions?.account?.includes("profile");
+                !apiKey || hasAccountReadPermission(apiKey, "profile");
 
             const db = drizzle(c.env.DB);
             const users = await db
                 .select({
+                    githubId: userTable.githubId,
                     githubUsername: userTable.githubUsername,
                     image: userTable.image,
-                    tier: userTable.tier,
                     name: userTable.name,
                     email: userTable.email,
                 })
@@ -764,8 +840,8 @@ export const accountRoutes = new Hono<Env>()
             return c.json({
                 githubUsername: profile.githubUsername ?? null,
                 image: profile.image ?? null,
-                tier: profile.tier,
-                nextResetAt: getNextRefillAt(profile.tier),
+                communityEndpointsAllowed:
+                    isCommunityEndpointOwnerAllowed(profile),
                 ...(includeProfilePII && {
                     name: profile.name ?? null,
                     email: profile.email ?? null,
@@ -774,12 +850,99 @@ export const accountRoutes = new Hono<Env>()
         },
     )
     .get(
+        "/quests",
+        describeRoute({
+            tags: ["👤 Account"],
+            summary: "Get Quest Status",
+            description:
+                "Returns the quest catalog with the authenticated account's read-only status. Globally completed quests and quests earned by the account are both returned as `completed`. API keys require the read-only `account:usage` permission. Claiming rewards remains dashboard-only.",
+            responses: {
+                200: {
+                    description: "Quest status for the authenticated account",
+                    content: {
+                        "application/json": {
+                            schema: resolver(accountQuestsResponseSchema),
+                        },
+                    },
+                },
+                401: { description: "Unauthorized" },
+                403: {
+                    description:
+                        "Permission denied - API key missing `account:usage` permission",
+                },
+            },
+        }),
+        async (c) => {
+            await c.var.auth.requireAuthorization();
+            const user = c.var.auth.requireUser();
+            requireUsagePermission(c.var.auth.apiKey);
+
+            const db = drizzle(c.env.DB, { schema });
+            const [cards, rewardRows] = await Promise.all([
+                listQuestCards({ db, env: c.env }),
+                db
+                    .select({
+                        id: rewardsTable.id,
+                        questId: rewardsTable.questId,
+                        title: rewardsTable.title,
+                        pollenAmount: rewardsTable.pollenAmount,
+                        balanceBucket: rewardsTable.balanceBucket,
+                        earnedAt: rewardsTable.earnedAt,
+                        claimedAt: rewardsTable.claimedAt,
+                    })
+                    .from(rewardsTable)
+                    .where(eq(rewardsTable.userId, user.id))
+                    .orderBy(desc(rewardsTable.earnedAt)),
+            ]);
+
+            const rewardsByQuestId = new Map<
+                string,
+                (typeof rewardRows)[number]
+            >();
+            for (const reward of rewardRows) {
+                if (reward.questId && !rewardsByQuestId.has(reward.questId)) {
+                    rewardsByQuestId.set(reward.questId, reward);
+                }
+            }
+
+            const quests = cards.map((card) => {
+                const reward = rewardsByQuestId.get(card.id) ?? null;
+                const status =
+                    card.state === "coming_soon"
+                        ? "coming_soon"
+                        : card.state === "completed" || reward
+                          ? "completed"
+                          : "open";
+
+                return {
+                    ...card,
+                    status,
+                    reward: reward
+                        ? {
+                              id: reward.id,
+                              questId: reward.questId,
+                              title: reward.title,
+                              pollenAmount: reward.pollenAmount,
+                              balanceBucket: reward.balanceBucket,
+                              earnedAt: formatRewardTimestamp(reward.earnedAt),
+                              claimedAt: reward.claimedAt
+                                  ? formatRewardTimestamp(reward.claimedAt)
+                                  : null,
+                          }
+                        : null,
+                };
+            });
+
+            return c.json({ quests });
+        },
+    )
+    .get(
         "/balance",
         describeRoute({
             tags: ["👤 Account"],
             summary: "Get Balance",
             description:
-                "Returns the pollen balance visible to the caller. API keys with a budget always see their remaining budget (no scope needed). Session auth or API keys with the `account:usage` scope see the full account balance.",
+                "Returns the pollen balance visible to the caller. API keys with a budget always see their remaining budget (no scope needed). Full account balance requires the read-only `account:usage` permission.",
             responses: {
                 200: {
                     description: "Pollen balance",
@@ -792,7 +955,7 @@ export const accountRoutes = new Hono<Env>()
                 401: { description: "Unauthorized" },
                 403: {
                     description:
-                        "Permission denied - API key has no budget and is missing the `account:usage` scope",
+                        "Permission denied - API key has no budget and is missing `account:usage` permission",
                 },
             },
         }),
@@ -806,11 +969,11 @@ export const accountRoutes = new Hono<Env>()
                 return c.json({ balance: apiKey.pollenBalance });
             }
 
-            // Beyond that, reading account balance requires the `usage` scope.
-            if (apiKey && !apiKey.permissions?.account?.includes("usage")) {
+            // Beyond that, reading account balance requires usage or admin.
+            if (apiKey && !hasAccountReadPermission(apiKey, "usage")) {
                 throw new HTTPException(403, {
                     message:
-                        "API key does not have 'account:usage' scope and no budget of its own. Add `account:usage` to read account balance, or set a budget on the key.",
+                        "API key does not have 'account:usage' permission and no budget of its own. Add `account:usage` or set a budget on the key.",
                 });
             }
 
@@ -836,7 +999,7 @@ export const accountRoutes = new Hono<Env>()
             tags: ["👤 Account"],
             summary: "Get Usage History",
             description:
-                "Returns your request history with per-request details: model used, token counts, cost, and response time. Defaults to the last 30 days, supports up to 90 days via `days`, or exact day/week/month periods via `granularity` and `period`. Supports JSON and CSV export. Each response is capped at 50,000 rows. Use `before` for cursor-based pagination. Requires `account:usage` permission when using API keys.",
+                "Returns your request history with per-request details: model used, token counts, cost, and response time. Defaults to the last 30 days, supports up to 90 days via `days`, or exact day/week/month periods via `granularity` and `period`. Supports JSON and CSV export. Each response is capped at 50,000 rows. Use `before` with `before_event_id` for stable cursor-based pagination. API keys require the read-only `account:usage` permission.",
             responses: {
                 200: {
                     description: "Usage records",
@@ -864,34 +1027,28 @@ export const accountRoutes = new Hono<Env>()
             const user = c.var.auth.requireUser();
             const apiKey = c.var.auth.apiKey;
 
-            // Check permission for API key access
-            if (apiKey && !apiKey.permissions?.account?.includes("usage")) {
-                throw new HTTPException(403, {
-                    message: "API key does not have 'account:usage' permission",
-                });
-            }
+            requireUsagePermission(apiKey);
 
-            const { format, limit, before, days, granularity, period } =
-                c.req.valid("query");
+            const {
+                format,
+                limit,
+                before,
+                before_event_id: beforeEventId,
+                days,
+                granularity,
+                period,
+                api_key_ids: apiKeyIds,
+                models,
+            } = c.req.valid("query");
             const { userId: usageUserId, overridden: usageUserOverridden } =
                 resolveUsageTargetUserId(c.env, user.id, apiKey);
-            const usageWindow = formatUsageWindow(
-                resolveUsageWindow(days, {
-                    granularity,
-                    period,
-                }),
-            );
-            const filenamePeriod = usageWindowFilenamePart(days, {
+            const usageWindow = resolveUsageWindow(days, {
                 granularity,
                 period,
             });
-            const tinybirdOrigin = new URL(c.env.TINYBIRD_INGEST_URL).origin;
-            const tinybirdToken = requireTinybirdReadToken(c.env);
-            const header =
-                "timestamp,type,model,api_key,api_key_type,meter_source,input_text_tokens,input_cached_tokens,input_audio_tokens,input_audio_seconds,input_image_tokens,output_text_tokens,output_reasoning_tokens,output_audio_tokens,output_audio_seconds,output_image_tokens,output_video_seconds,cost_usd,response_time_ms";
 
             log.debug(
-                "Fetching usage: requesterUserId={requesterUserId} targetUserId={targetUserId} override={override} format={format} limit={limit} before={before} days={days}",
+                "Fetching usage: requesterUserId={requesterUserId} targetUserId={targetUserId} override={override} format={format} limit={limit} before={before} beforeEventId={beforeEventId} days={days}",
                 {
                     requesterUserId: user.id,
                     targetUserId: usageUserId,
@@ -899,50 +1056,24 @@ export const accountRoutes = new Hono<Env>()
                     format,
                     limit,
                     before,
+                    beforeEventId,
                     days,
                 },
             );
 
-            try {
-                const usage = (
-                    await fetchDetailedUsagePage(
-                        tinybirdOrigin,
-                        tinybirdToken,
-                        {
-                            userId: usageUserId,
-                            limit,
-                            since: usageWindow.since,
-                            until: usageWindow.until,
-                            before,
-                        },
-                    )
-                ).map(stripUsageCursor);
-
-                log.debug("Fetched {count} usage records", {
-                    count: usage.length,
-                });
-
-                // Return CSV if requested
-                if (format === "csv") {
-                    const rows = usage.map(usageRecordToCsvRow);
-                    const csv = [header, ...rows].join("\n");
-
-                    return new Response(csv, {
-                        headers: {
-                            "Content-Type": "text/csv",
-                            "Content-Disposition": `attachment; filename="pollinations-usage-latest-${usage.length}-rows-${filenamePeriod}-${new Date().toISOString().split("T")[0]}.csv"`,
-                        },
-                    });
-                }
-
-                return c.json({
-                    usage,
-                    count: usage.length,
-                });
-            } catch (error) {
-                log.error("Error fetching usage: {error}", { error });
-                return c.json({ error: "Failed to fetch usage data" }, 500);
-            }
+            return respondDetailedUsage(c, log, {
+                userId: usageUserId,
+                filenamePrefix: "pollinations-usage-latest",
+                filenamePeriod: usageWindow.filenamePart,
+                format,
+                limit,
+                apiKeyIds,
+                models,
+                since: usageWindow.since,
+                until: usageWindow.until,
+                before,
+                beforeEventId,
+            });
         },
     )
     .get(
@@ -951,10 +1082,11 @@ export const accountRoutes = new Hono<Env>()
             tags: ["👤 Account"],
             summary: "Get Daily Usage",
             description:
-                "Returns daily aggregated usage for the requested time window, grouped by date and model. Use `days` for rolling windows or `granularity` and `period` for exact day/week/month periods. Useful for dashboards and spending analysis. Supports JSON and CSV export. Results are cached for 1 hour. Requires `account:usage` permission when using API keys.",
+                "Returns aggregated usage for the requested time window, grouped by date, API key, model, and billing source. Use `days` for rolling windows or `granularity` and `period` for exact day/week/month periods. Useful for dashboards and spending analysis. Supports JSON and CSV export. Requires `account:usage` permission when using API keys.",
             responses: {
                 200: {
-                    description: "Daily usage records aggregated by date/model",
+                    description:
+                        "Usage records aggregated by date/API key/model/source",
                     content: {
                         "application/json": {
                             schema: resolver(dailyUsageResponseSchema),
@@ -979,11 +1111,7 @@ export const accountRoutes = new Hono<Env>()
             const user = c.var.auth.requireUser();
             const apiKey = c.var.auth.apiKey;
 
-            if (apiKey && !apiKey.permissions?.account?.includes("usage")) {
-                throw new HTTPException(403, {
-                    message: "API key does not have 'account:usage' permission",
-                });
-            }
+            requireUsagePermission(apiKey);
 
             const {
                 format,
@@ -997,69 +1125,27 @@ export const accountRoutes = new Hono<Env>()
                 resolveUsageTargetUserId(c.env, user.id, apiKey);
             const tinybirdOrigin = new URL(c.env.TINYBIRD_INGEST_URL).origin;
             const tinybirdToken = requireTinybirdReadToken(c.env);
-            const kv = c.env.KV;
-            const cacheKeyPrefix = usageUserOverridden
-                ? `usage:daily:debug:${usageUserId}`
-                : `usage:daily:${usageUserId}`;
-            const periodCacheKey =
-                granularity && period ? `${granularity}:${period}` : `${days}d`;
-            const filenamePeriod = usageWindowFilenamePart(days, {
-                granularity,
-                period,
-            });
-            const cacheKey = `${cacheKeyPrefix}:${periodCacheKey}:grain:${grain}:${apiKeyIds.length > 0 ? `keys:${apiKeyIds.join(",")}` : "all"}`;
-            const windows = buildUsageWindows(days, { granularity, period });
+            const window = resolveUsageWindow(days, { granularity, period });
 
             try {
-                let usage: DailyUsageRecord[] | null = null;
-                let cached = false;
-
-                try {
-                    const cachedData = await kv.get<DailyUsageRecord[]>(
-                        cacheKey,
-                        "json",
-                    );
-                    if (cachedData) {
-                        usage = cachedData;
-                        cached = true;
-                    }
-                } catch (err) {
-                    log.trace("KV get error: {err}", { err });
-                }
-
-                if (!usage) {
-                    const chunkResults = await Promise.all(
-                        windows.map((window) =>
-                            fetchTinybirdRows<DailyUsageRecord>(
-                                tinybirdOrigin,
-                                "/v0/pipes/user_usage_daily_filtered.json",
-                                tinybirdToken,
-                                {
-                                    user_id: usageUserId,
-                                    since: window.since,
-                                    until: window.until,
-                                    grain,
-                                    api_key_ids:
-                                        apiKeyIds.length > 0
-                                            ? apiKeyIds.join(",")
-                                            : undefined,
-                                },
-                            ),
-                        ),
-                    );
-                    usage = sortDailyUsageRecords(chunkResults.flat());
-
-                    try {
-                        await kv.put(cacheKey, JSON.stringify(usage), {
-                            expirationTtl: CACHE_TTL,
-                        });
-                    } catch (err) {
-                        log.trace("KV put error: {err}", { err });
-                    }
-                }
+                const usage = await fetchTinybirdRows<DailyUsageRecord>(
+                    tinybirdOrigin,
+                    "/v0/pipes/activity_usage_chart.json",
+                    tinybirdToken,
+                    {
+                        user_id: usageUserId,
+                        since: window.since,
+                        until: window.until,
+                        grain,
+                        api_key_ids:
+                            apiKeyIds.length > 0
+                                ? apiKeyIds.join(",")
+                                : undefined,
+                    },
+                );
 
                 log.debug(
-                    "Fetched daily usage: requesterUserId={requesterUserId} targetUserId={targetUserId} override={override} days={days} apiKeyIds={apiKeyIds} count={count} cached={cached}",
+                    "Fetched daily usage: requesterUserId={requesterUserId} targetUserId={targetUserId} override={override} days={days} apiKeyIds={apiKeyIds} count={count}",
                     {
                         requesterUserId: user.id,
                         targetUserId: usageUserId,
@@ -1067,19 +1153,16 @@ export const accountRoutes = new Hono<Env>()
                         days,
                         apiKeyIds,
                         count: usage.length,
-                        cached,
                     },
                 );
 
                 if (format === "csv") {
-                    const header = "date,model,meter_source,requests,cost_usd";
-                    const rows = usage.map(dailyUsageRecordToCsvRow);
-                    const csv = [header, ...rows].join("\n");
+                    const csv = toCsv(DAILY_USAGE_CSV_COLUMNS, usage);
 
                     return new Response(csv, {
                         headers: {
                             "Content-Type": "text/csv",
-                            "Content-Disposition": `attachment; filename="pollinations-usage-daily-${filenamePeriod}-${new Date().toISOString().split("T")[0]}.csv"`,
+                            "Content-Disposition": `attachment; filename="pollinations-usage-daily-${window.filenamePart}-${new Date().toISOString().split("T")[0]}.csv"`,
                         },
                     });
                 }
@@ -1095,15 +1178,89 @@ export const accountRoutes = new Hono<Env>()
         },
     )
     .get(
+        "/earnings/transactions",
+        describeRoute({
+            tags: ["👤 Account"],
+            summary: "Get Earnings Transactions",
+            description:
+                "Returns recent per-request earnings transactions, newest first. Requires `account:usage` permission when using API keys.",
+            responses: {
+                200: {
+                    description: "Earnings transaction records",
+                    content: {
+                        "application/json": {
+                            schema: resolver(
+                                developerEarningsTransactionsResponseSchema,
+                            ),
+                        },
+                    },
+                },
+                401: { description: "Unauthorized" },
+                403: {
+                    description:
+                        "Permission denied - API key missing `account:usage` permission",
+                },
+            },
+        }),
+        validator("query", earningsTransactionsQuerySchema),
+        async (c) => {
+            const log = c.get("log").getChild("earnings-transactions");
+
+            await c.var.auth.requireAuthorization({
+                message: "Authentication required to view earnings",
+            });
+
+            const user = c.var.auth.requireUser();
+            const apiKey = c.var.auth.apiKey;
+
+            requireUsagePermission(apiKey);
+
+            const { limit, days, granularity, period } = c.req.valid("query");
+            const { userId: devUserId } = resolveUsageTargetUserId(
+                c.env,
+                user.id,
+                apiKey,
+            );
+            const window = resolveUsageWindow(days, { granularity, period });
+            const tinybirdOrigin = new URL(c.env.TINYBIRD_INGEST_URL).origin;
+            const tinybirdToken = requireTinybirdReadToken(c.env);
+
+            try {
+                const transactions =
+                    await fetchTinybirdRows<DeveloperEarningsTransaction>(
+                        tinybirdOrigin,
+                        "/v0/pipes/activity_earnings_transactions.json",
+                        tinybirdToken,
+                        {
+                            dev_user_id: devUserId,
+                            limit: limit.toString(),
+                            since: window.since,
+                            until: window.until,
+                        },
+                    );
+
+                return c.json({ transactions, count: transactions.length });
+            } catch (error) {
+                log.error("Error fetching earnings transactions: {error}", {
+                    error,
+                });
+                return c.json(
+                    { error: "Failed to fetch earnings transactions" },
+                    500,
+                );
+            }
+        },
+    )
+    .get(
         "/earnings",
         describeRoute({
             tags: ["👤 Account"],
             summary: "Get Developer Earnings",
             description:
-                "Returns developer earnings (BYOP markup) in one response: per-(date, app) buckets, per-app rollups, and the global rollup across all apps. Each row breaks the markup math down into `baseline_price` (model cost before markup), `pollen_earned` (developer credit = `cost_usd − baseline_price`), `cost_usd` (markup-inclusive total charged to payers), and average `markup_rate`. Use `days` for rolling windows or `granularity` and `period` for exact day/week/month periods. Cached for 1 hour. Requires `account:usage` permission when using API keys.",
+                "Returns developer earnings in one response: per-(date, entity) buckets and per-entity rollups across BYOP apps and community models. Rows include `requests`, `baseline_price`, reward basis `cost_usd`, and `reward_rate`. Use `days` for rolling windows or `granularity` and `period` for exact day/week/month periods. API keys require the read-only `account:usage` permission.",
             responses: {
                 200: {
-                    description: "Combined earnings buckets and rollups",
+                    description: "Earnings buckets and additive totals",
                     content: {
                         "application/json": {
                             schema: resolver(developerEarningsResponseSchema),
@@ -1117,7 +1274,7 @@ export const accountRoutes = new Hono<Env>()
                 },
             },
         }),
-        validator("query", usageDailyQuerySchema),
+        validator("query", earningsQuerySchema),
         async (c) => {
             const log = c.get("log").getChild("earnings");
 
@@ -1128,126 +1285,54 @@ export const accountRoutes = new Hono<Env>()
             const user = c.var.auth.requireUser();
             const apiKey = c.var.auth.apiKey;
 
-            if (apiKey && !apiKey.permissions?.account?.includes("usage")) {
-                throw new HTTPException(403, {
-                    message: "API key does not have 'account:usage' permission",
-                });
-            }
+            requireUsagePermission(apiKey);
 
-            const {
-                format,
-                days,
-                granularity,
-                period,
-                api_key_ids: apiKeyIds,
-            } = c.req.valid("query");
+            const { format, days, granularity, period } = c.req.valid("query");
             const grain = granularity === "day" ? "hour" : "day";
             const { userId: devUserId, overridden: devUserOverridden } =
                 resolveUsageTargetUserId(c.env, user.id, apiKey);
             const tinybirdOrigin = new URL(c.env.TINYBIRD_INGEST_URL).origin;
             const tinybirdToken = requireTinybirdReadToken(c.env);
-            const kv = c.env.KV;
-            // v2: payload added `baseline_price` and `cost_usd` — bump to drop
-            // any old cached rows that would render as undefined in CSV.
-            const cacheKeyPrefix = devUserOverridden
-                ? `earnings:v2:debug:${devUserId}`
-                : `earnings:v2:${devUserId}`;
-            const periodCacheKey =
-                granularity && period ? `${granularity}:${period}` : `${days}d`;
-            const cacheKey = `${cacheKeyPrefix}:${periodCacheKey}:grain:${grain}:${apiKeyIds.length > 0 ? `keys:${apiKeyIds.join(",")}` : "all"}`;
-            const filenamePeriod = usageWindowFilenamePart(days, {
-                granularity,
-                period,
-            });
-            const window = formatUsageWindow(
-                resolveUsageWindow(days, { granularity, period }),
-            );
-
-            type EarningsPayload = {
-                daily: DeveloperEarningsRow[];
-                perApp: DeveloperEarningsRow[];
-                global: DeveloperEarningsRow | null;
-            };
+            const window = resolveUsageWindow(days, { granularity, period });
 
             try {
-                let payload: EarningsPayload | null = null;
-                let cached = false;
-
-                try {
-                    const cachedData = await kv.get<EarningsPayload>(
-                        cacheKey,
-                        "json",
-                    );
-                    if (cachedData) {
-                        payload = cachedData;
-                        cached = true;
-                    }
-                } catch (err) {
-                    log.trace("KV get error: {err}", { err });
-                }
-
-                if (!payload) {
-                    const rows = await fetchTinybirdRows<DeveloperEarningsRow>(
-                        tinybirdOrigin,
-                        "/v0/pipes/developer_earnings.json",
-                        tinybirdToken,
-                        {
-                            dev_user_id: devUserId,
-                            since: window.since,
-                            until: window.until,
-                            grain,
-                            api_key_ids:
-                                apiKeyIds.length > 0
-                                    ? apiKeyIds.join(",")
-                                    : undefined,
-                        },
-                    );
-                    const daily = rows.filter((r) => r.date !== "");
-                    const rollups = rows.filter((r) => r.date === "");
-                    const perApp = [...rollups]
-                        .filter((r) => r.app_key_id !== "")
-                        .sort((a, b) => b.pollen_earned - a.pollen_earned);
-                    const global =
-                        rollups.find((r) => r.app_key_id === "") ?? null;
-                    payload = { daily, perApp, global };
-
-                    try {
-                        await kv.put(cacheKey, JSON.stringify(payload), {
-                            expirationTtl: CACHE_TTL,
-                        });
-                    } catch (err) {
-                        log.trace("KV put error: {err}", { err });
-                    }
-                }
+                const daily = await fetchTinybirdRows<DeveloperEarningsRow>(
+                    tinybirdOrigin,
+                    "/v0/pipes/activity_earnings_chart.json",
+                    tinybirdToken,
+                    {
+                        dev_user_id: devUserId,
+                        since: window.since,
+                        until: window.until,
+                        grain,
+                    },
+                );
+                const perEntity = rollupEarningsByEntity(daily);
 
                 log.debug(
-                    "Fetched earnings: requesterUserId={requesterUserId} devUserId={devUserId} override={override} days={days} dailyCount={dailyCount} appCount={appCount} cached={cached}",
+                    "Fetched earnings: requesterUserId={requesterUserId} devUserId={devUserId} override={override} days={days} dailyCount={dailyCount} entityCount={entityCount}",
                     {
                         requesterUserId: user.id,
                         devUserId,
                         override: devUserOverridden,
                         days,
-                        dailyCount: payload.daily.length,
-                        appCount: payload.perApp.length,
-                        cached,
+                        dailyCount: daily.length,
+                        entityCount: perEntity.length,
                     },
                 );
 
                 if (format === "csv") {
-                    const header =
-                        "date,app_key_id,app_name,requests,baseline_price,pollen_earned,cost_usd,markup_rate";
-                    const rows = payload.daily.map(dailyEarningsRowToCsvRow);
-                    const csv = [header, ...rows].join("\n");
+                    const csv = toCsv(EARNINGS_CSV_COLUMNS, daily);
 
                     return new Response(csv, {
                         headers: {
                             "Content-Type": "text/csv",
-                            "Content-Disposition": `attachment; filename="pollinations-earnings-${filenamePeriod}-${new Date().toISOString().split("T")[0]}.csv"`,
+                            "Content-Disposition": `attachment; filename="pollinations-earnings-${window.filenamePart}-${new Date().toISOString().split("T")[0]}.csv"`,
                         },
                     });
                 }
 
-                return c.json(payload);
+                return c.json({ daily, perEntity });
             } catch (error) {
                 log.error("Error fetching earnings: {error}", { error });
                 return c.json({ error: "Failed to fetch earnings data" }, 500);
@@ -1323,11 +1408,11 @@ export const accountRoutes = new Hono<Env>()
             tags: ["👤 Account"],
             summary: "Create API Key",
             description:
-                'Create a new API key. To create an app key, use `type: "publishable"` with `redirectUris`. Publishable app keys default developer earnings off; send `earningsEnabled: true` to opt in. Requires `account:keys` permission and a secret key (sk_). The full key value is returned only once in the response. The `keys` account permission is automatically stripped from child keys to prevent escalation.',
+                'Create a new API key. To create an app key, use `type: "publishable"` with `redirectUris`. Publishable app keys default developer earnings off; send `earningsEnabled: true` to opt in. Requires `account:keys` permission when using API keys. The full key value is returned only once in the response. The `keys` account permission is automatically stripped from child keys to prevent escalation.',
             responses: {
                 200: { description: "Created API key with full secret" },
                 401: { description: "Unauthorized" },
-                403: { description: "Permission denied or publishable key" },
+                403: { description: "Permission denied" },
             },
         }),
         validator("json", CreateKeySchema),
@@ -1380,7 +1465,7 @@ export const accountRoutes = new Hono<Env>()
             tags: ["👤 Account"],
             summary: "Revoke API Key",
             description:
-                "Delete/revoke an API key. Requires `account:keys` permission and a secret key (sk_). Cannot revoke the key used to authenticate the request.",
+                "Delete/revoke an API key. Requires `account:keys` permission when using API keys. Cannot revoke the key used to authenticate the request.",
             responses: {
                 200: { description: "Key revoked" },
                 400: { description: "Cannot revoke self" },
@@ -1493,6 +1578,18 @@ export const accountRoutes = new Hono<Env>()
                                         .describe(
                                             "Whether rate limiting is enabled for this key",
                                         ),
+                                    userId: z
+                                        .string()
+                                        .nullable()
+                                        .describe(
+                                            "Stable id of the user that owns this key — server-attested.",
+                                        ),
+                                    byopClientKeyId: z
+                                        .string()
+                                        .nullable()
+                                        .describe(
+                                            "Publishable app key that minted this key via the BYOP authorize flow. Server-attested; clients cannot forge.",
+                                        ),
                                 }),
                             ),
                         },
@@ -1570,6 +1667,11 @@ export const accountRoutes = new Hono<Env>()
                 pollenBudget: apiKey.pollenBalance ?? null,
                 // Generation rate limiting applies to publishable keys only.
                 rateLimitEnabled: keyType === "publishable",
+                // Server-attested identity. Downstream services (media catalog)
+                // stamp ownership from these values — never from request
+                // params — so user and BYOP app ids cannot be spoofed.
+                userId: c.var.auth.user?.id ?? null,
+                byopClientKeyId: apiKey.byopClientKeyId ?? null,
             });
         },
     )
@@ -1579,7 +1681,7 @@ export const accountRoutes = new Hono<Env>()
             tags: ["👤 Account"],
             summary: "Get API Key Usage",
             description:
-                "Returns usage history for the API key used in the request. No scope required — a key can always read its own usage. For account-wide usage across all keys, use `/account/usage` with the `account:usage` scope.",
+                "Returns usage history for the API key used in the request. No scope required — a key can always read its own usage. Use `before` with `before_event_id` for stable cursor-based pagination. For account-wide usage across all keys, use `/account/usage` with `account:usage`.",
             responses: {
                 200: {
                     description: "Usage records for this key",
@@ -1607,61 +1709,38 @@ export const accountRoutes = new Hono<Env>()
             }
             const user = c.var.auth.requireUser();
 
-            const { format, limit, before, days, granularity, period } =
-                c.req.valid("query");
-            const usageWindow = formatUsageWindow(
-                resolveUsageWindow(days, {
-                    granularity,
-                    period,
-                }),
-            );
-            const filenamePeriod = usageWindowFilenamePart(days, {
+            const {
+                format,
+                limit,
+                before,
+                before_event_id: beforeEventId,
+                days,
+                granularity,
+                period,
+                models,
+            } = c.req.valid("query");
+            const usageWindow = resolveUsageWindow(days, {
                 granularity,
                 period,
             });
-            const tinybirdOrigin = new URL(c.env.TINYBIRD_INGEST_URL).origin;
-            const tinybirdToken = requireTinybirdReadToken(c.env);
-            const header =
-                "timestamp,type,model,api_key,api_key_type,meter_source,input_text_tokens,input_cached_tokens,input_audio_tokens,input_audio_seconds,input_image_tokens,output_text_tokens,output_reasoning_tokens,output_audio_tokens,output_audio_seconds,output_image_tokens,output_video_seconds,cost_usd,response_time_ms";
 
             log.debug(
                 "Fetching key usage: userId={userId} keyId={keyId} days={days}",
                 { userId: user.id, keyId: apiKey.id, days },
             );
 
-            try {
-                const usage = (
-                    await fetchDetailedUsagePage(
-                        tinybirdOrigin,
-                        tinybirdToken,
-                        {
-                            userId: user.id,
-                            apiKeyId: apiKey.id,
-                            limit,
-                            since: usageWindow.since,
-                            until: usageWindow.until,
-                            before,
-                        },
-                    )
-                ).map(stripUsageCursor);
-
-                if (format === "csv") {
-                    const rows = usage.map(usageRecordToCsvRow);
-                    const csv = [header, ...rows].join("\n");
-                    return new Response(csv, {
-                        headers: {
-                            "Content-Type": "text/csv",
-                            "Content-Disposition": `attachment; filename="pollinations-key-usage-${usage.length}-rows-${filenamePeriod}-${new Date().toISOString().split("T")[0]}.csv"`,
-                        },
-                    });
-                }
-
-                return c.json({ usage, count: usage.length });
-            } catch (error) {
-                log.error("Error fetching key usage: {error}", { error });
-                return c.json({ error: "Failed to fetch usage data" }, 500);
-            }
+            return respondDetailedUsage(c, log, {
+                userId: user.id,
+                apiKeyIds: [apiKey.id],
+                filenamePrefix: "pollinations-key-usage",
+                filenamePeriod: usageWindow.filenamePart,
+                format,
+                limit,
+                models,
+                since: usageWindow.since,
+                until: usageWindow.until,
+                before,
+                beforeEventId,
+            });
         },
     );
-
-export default accountRoutes;

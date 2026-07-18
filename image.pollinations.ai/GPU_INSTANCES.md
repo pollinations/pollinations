@@ -1,16 +1,139 @@
 # GPU Instances
 
-Last updated: 2026-04-13
+Last updated: 2026-07-14
 
 ## Capacity Summary
 
 | Model | Workers | GPUs | Provider | Cost/hr | Status |
 |-------|---------|------|----------|---------|--------|
-| Flux (INT4) | 2 | 2x RTX 4090 | RunPod | (shared) | **ACTIVE — production** |
-| Z-Image | 2 | 2x RTX 4090 | RunPod | (shared) | **ACTIVE — production** |
-| Klein 4B | 1 | 1x RTX 3090 | RunPod | $0.22 | **ACTIVE** |
+| Flux (FP4) | 1 | RTX 5090 | Vast.ai | $0.3744/hr | **ACTIVE — production** (Fireworks fallback) |
+| Z-Image | 3 | 4090 + 2x 3090 | RunPod | (see runpodctl) | **ACTIVE — production** |
+| Klein 4B | 1 active + 1 rollback | RTX 3090 + A5000 | Vast.ai + RunPod | $0.1656 + $0.27 while rollback runs | **ACTIVE — Vast production; RunPod stop-ready** |
 | LTX-2 + ACE-Step + Sana | 1 | GH200 | Lambda Labs | — | **ACTIVE** |
-| **Total active** | **~6** | | | **~$1.58/hr** | |
+
+## Provider: Vast.ai — Flux (RTX 5090, FP4)
+
+One single-GPU instance fronted by a Cloudflare Tunnel. Flux routes pool-first
+with automatic Fireworks fallback
+(`gen.pollinations.ai/src/image/createAndReturnImages.ts` → `callFluxWithFallback`).
+
+| Worker | Vast instance | GPU | Listed rate | Status |
+|--------|---------------|-----|-------------|--------|
+| flux-vast-03 | 44731147 | RTX 5090 | $0.374444/hr | OUT OF ROTATION (2026-07-14) — host network degraded; needs reprovision. All Flux traffic is on the Fireworks fallback (~$70/day) |
+
+> Instance IDs/IPs/ports change on recreate — check `vastai show instances`.
+> CRITICAL: workers MUST be behind a named Cloudflare tunnel created in the
+> authoritative Pollinations account. The gen Worker cannot fetch a Vast
+> raw-IP/non-standard-port origin, and a successful registry heartbeat alone
+> does not prove the data path works. Fireworks can hide either failure.
+
+**The quick-tunnel warning above is not theoretical — it caused the #12254
+outage.** flux-vast-03 was left on a `trycloudflare.com` quick tunnel (free,
+rate-limited, no SLA). Under production load it degraded until a static `/docs`
+fetch took 15–39s while the worker itself served a 1024×1024 image in 3.9s on
+localhost. Requests exceeded the CloudFront timeout, so users saw indefinite
+hangs, not errors — and the worker kept heartbeating green the whole time.
+Never point production at a quick tunnel; use a named tunnel.
+
+When reprovisioning, check the host's HuggingFace throughput before committing
+to it (`curl -r 0-5000000 -L <hf-model-url>`): this host managed 384 KB/s, so
+the worker could never finish loading its weights and stalled indefinitely
+mid-download.
+
+**Provision a new instance** (see `nunchaku/setup-vast.sh` header for all env):
+```bash
+vastai search offers 'gpu_name=RTX_5090 num_gpus=1 verified=true rentable=true reliability>0.99 duration>=30 inet_down>=500 cpu_cores>=8 disk_space>=60' --order dph_total
+vastai create instance <OFFER> --image "vastai/base-image:cuda-13.0.2-cudnn-devel-ubuntu24.04-py312" --disk 60 --ssh --direct --env '-p 8765:8765'
+vastai attach ssh <INSTANCE> "$(cat ~/.ssh/pollinations_services_2026.pub)"
+# First create a remote tunnel + hostname routing to localhost:8765 in Cloudflare, then:
+PLN_GPU_TOKEN=... HF_TOKEN=... CLOUDFLARED_TUNNEL_TOKEN=... \
+PUBLIC_HOSTNAME=flux-vast-NN.pollinations.ai GIT_BRANCH=main bash setup-vast.sh
+```
+Gotchas (all hit in practice): rent hosts with `duration>=30`; verify
+`intended_status=running` after create (GPU can be taken between create/start);
+some hosts have broken direct SSH (use the `ssh_host:ssh_port` proxy); some
+drop bulk CDN downloads mid-transfer (setup-vast.sh passes pip
+`--resume-retries` so downloads resume instead of restarting); hosts with
+driver < 580 hit CUDA Error 804 with the cuda-13 image (GeForce can't use
+forward-compat libs — setup-vast.sh disables them so the host driver is used);
+machine-to-machine rsync between vast instances is NOT reliable (hosts kill
+bulk SSH streams, the vast agent rewrites authorized_keys); racing 2 candidate
+instances and destroying the loser is cheap (~$0.40/hr each).
+
+**Health / restart:**
+```bash
+curl -s https://<named-tunnel-hostname>/docs -o /dev/null -w "%{http_code}\n"   # control-plane only
+curl -s https://gen.pollinations.ai/register -H "Authorization: Bearer $PLN_GPU_TOKEN"  # registry
+# on the instance: screen -r flux / screen -r cloudflared; logs /tmp/flux.log /tmp/cloudflared.log
+POLLINATIONS_API_KEY=... bash image.pollinations.ai/nunchaku/verify-vast.sh  # required before cutover
+```
+
+**Key behavior:** FP4 nunchaku, 4 steps, full 1024x1024 (`MAX_PIXELS=1048576`);
+`QUEUE_LIMIT=10` sheds load with 503 → gateway falls back to Fireworks.
+
+## Provider: Vast.ai — FLUX.2 Klein 4B (RTX 3090)
+
+Production Klein runs on a dedicated Indiana RTX 3090. The gen Worker reaches
+port 8000 through a remotely managed Cloudflare Tunnel bound as the private
+`KLEIN_VPC` Workers VPC network; there is no public hostname or raw-IP route.
+
+| Worker | Vast instance | GPU | Listed rate | Tunnel | Status |
+|--------|---------------|-----|-------------|--------|--------|
+| klein-vast-01 | 44766948 | RTX 3090 24GB | $0.165556/hr including 60GB disk | `c340d8d9-c1f3-4a13-8115-38b59faac3d5` | Active; 4 HA connections |
+
+**Provisioning:** use `image.pollinations.ai/klein-runpod/setup-vast.sh` with
+`pytorch/pytorch:2.5.1-cuda12.1-cudnn9-devel`. The model is public and does not
+require `HF_TOKEN`. Pre-create a remotely managed tunnel with catch-all service
+`http://localhost:8000`, then pass only its scoped token to the Vast host.
+
+```bash
+vastai create instance <OFFER> \
+  --image pytorch/pytorch:2.5.1-cuda12.1-cudnn9-devel \
+  --disk 60 --ssh --direct --label klein-vast-01 \
+  --env '-p 8000:8000' --cancel-unavail
+vastai attach ssh <INSTANCE> "$(cat ~/.ssh/id_ed25519.pub)"
+
+PLN_GPU_TOKEN=... CLOUDFLARED_TUNNEL_TOKEN=... \
+  bash image.pollinations.ai/klein-runpod/setup-vast.sh
+```
+
+**Routing and rollback:** when `KLEIN_VPC` exists, the Klein handler uses
+`http://127.0.0.1:8000/generate` through the binding. `KLEIN_URL` remains the
+RunPod URL in production secrets but is ignored while the VPC binding exists.
+There is no automatic runtime fallback for Klein. To roll back, remove the
+production `KLEIN_VPC` binding and redeploy the gen Worker; it will immediately
+resume using `KLEIN_URL`.
+
+**Health and restart:** Vast runs `/root/onstart.sh` on container startup. It
+supervises `klein` and `cloudflared` screen sessions with restart loops. Tokens
+are mode-600 files and cloudflared uses `--token-file`, keeping its token out of
+process listings.
+
+```bash
+vastai show instance 44766948 --raw
+# On the host:
+screen -ls
+tail -f /root/klein.log
+tail -f /root/cloudflared.log
+curl -s http://127.0.0.1:8000/health
+```
+
+**Cutover results (2026-07-14):**
+
+- 512x512 generation: 2.83s; single-reference edit: 2.97s.
+- Two-reference edit: 3.36s and both inputs influenced the output.
+- 1024x1024 generation: 4.63s.
+- Three concurrent 512x512 requests all returned valid images.
+- Real 850x1100 production requests completed in 2.37–2.39s.
+- Cloudflare showed 4 healthy connections and 0 origin proxy errors.
+- Final soak verification observed `provider=vast`, `model_used=klein`,
+  successful production traffic, and zero 5xx; the Vast backend had accepted
+  521 requests with no recent 5xx.
+
+The successful canary sequence is: local health, authenticated generation,
+single-reference edit, multi-reference edit, 1024x1024 render, concurrent
+requests, VPC-bound probe, then real `gen.pollinations.ai` traffic. A direct
+origin health check alone does not prove the Workers VPC data path.
 
 ## Provider: RunPod
 
@@ -22,70 +145,45 @@ runpodctl pod list             # list pods
 runpodctl pod get <id>         # pod details
 ```
 
-### Pod lqh6weiexk4sth — Klein 4B
+### Pod jmrbmje2fyuy46 — Klein 4B rollback
 
 > Pod ID changes if recreated. Check `runpodctl pod list` and the `KLEIN_URL` env var (sops: `gen.pollinations.ai/secrets/prod.vars.json`).
 
-- **GPU**: 1x RTX 3090 (24GB) | **Cost**: $0.22/hr (community cloud)
-- **SSH**: RunPod relay — interactive only: `ssh <pod-id>-<key-id>@ssh.runpod.io -i ~/.ssh/id_ed25519` (full command from dashboard "Connect" tab)
-- **HTTP**: `https://lqh6weiexk4sth-8000.proxy.runpod.net`
-- **Service**: FLUX.2 Klein 4B (FastAPI on port 8000)
+- **GPU**: 1x RTX A5000 (24GB) | **Cost**: $0.27/hr via API ($0.29/hr in UI)
+- **SSH**: full SSH using `SSH_RUNPOD_KLEIN` from SOPS; current runtime port changes on recreate/start
+- **HTTP**: `https://jmrbmje2fyuy46-8000.proxy.runpod.net`
+- **Service**: FLUX.2 Klein 4B manual rollback; not in the active production route
 - **Auth**: `x-backend-token` header with `PLN_GPU_TOKEN`
 - **Code**: `/workspace/handler.py` (mirrors `image.pollinations.ai/klein-runpod/handler.py`)
 - **Logs**: `/workspace/klein.log`
 - **Restart**: `bash /workspace/restart.sh` (in-pod)
 
-**Health check:**
+**Rollback health check:**
 ```bash
-curl -s https://lqh6weiexk4sth-8000.proxy.runpod.net/health
+curl -s https://jmrbmje2fyuy46-8000.proxy.runpod.net/health
 ```
 
-**Recovery from RunPod host outage**: see `.claude/skills/monitor-services/SKILL.md` Klein section. Pod volume is destroyed on terminate; `handler.py`/`restart.sh` must be redeployed onto a fresh pod.
+Keeping this pod running costs $0.27/hr in addition to Vast. Once the Vast
+deployment has met the desired soak period, stop the pod to remove that cost;
+retain its `KLEIN_URL` value for a manual restart-and-redeploy rollback.
 
-### Pod hsl3ksl31lvrcc — Flux + Z-Image (4x RTX 4090)
+**Shutdown checklist:** stop the pod; do not terminate it. Then confirm Klein
+still reports `provider=vast`, a successful request reaches instance `44766948`,
+and the production status window remains free of 5xx. To roll back, restart the
+pod, verify its health endpoint, remove `KLEIN_VPC`, and deploy gen through CI.
 
-- **GPU**: 4x RTX 4090 (24GB each) | **Cost**: $1.36/hr (community cloud)
-- **SSH**: `ssh -i <SSH_RUNPOD_FLUX_ZIMAGE from SOPS> -p 19489 root@38.65.239.17`
-- **Image**: `runpod/pytorch:1.0.3-cu1281-torch291-ubuntu2404`
-- **Storage**: 100GB container disk + 50GB persistent volume
-- **Repo**: `/opt/pollinations` (symlinked from `/workspace/pollinations`)
+### Z-Image pods
 
-| GPU | Screen Session | Port | Proxy URL | Service |
-|-----|---------------|------|-----------|---------|
-| 0 | flux-gpu0 | 8765 | `https://hsl3ksl31lvrcc-8765.proxy.runpod.net` | Flux (INT4, nunchaku) |
-| 1 | flux-gpu1 | 8766 | `https://hsl3ksl31lvrcc-8766.proxy.runpod.net` | Flux (INT4, nunchaku) |
-| 2 | zimage-gpu2 | 8767 | `https://hsl3ksl31lvrcc-8767.proxy.runpod.net` | Z-Image (Turbo + SPAN 2x) |
-| 3 | zimage-gpu3 | 8768 | `https://hsl3ksl31lvrcc-8768.proxy.runpod.net` | Z-Image (Turbo + SPAN 2x) |
-
-**Venvs** (separate per service):
-- Flux: `/opt/pollinations/image.pollinations.ai/nunchaku/venv` (torch 2.9.1+cu128)
-- Z-Image: `/opt/pollinations/image.pollinations.ai/z-image/venv`
-
-**Health check:**
-```bash
-curl -s https://hsl3ksl31lvrcc-8765.proxy.runpod.net/generate -X POST \
-  -H "Content-Type: application/json" \
-  -d '{"prompt":"test","width":512,"height":512}' -o /dev/null -w "HTTP %{http_code}"
-```
+Flux left RunPod on 2026-07-02 (pod hsl3ksl31lvrcc terminated; flux now on
+Vast.ai, see above). Z-Image runs on dedicated pods — check current IDs with
+`runpodctl pod list` (as of 2026-07-02: `icagz5lxdzotdx` zimage-4090-secure,
+`ua39ysr9i86nil`/`owngt7t59jexy8` zimage-3090). Registered URLs use RunPod's
+https proxy (`https://<pod>-<port>.proxy.runpod.net`).
 
 **Registry check (all workers):**
 ```bash
-curl -s https://gen.pollinations.ai/register | python3 -m json.tool
+curl -s https://gen.pollinations.ai/register -H "Authorization: Bearer $PLN_GPU_TOKEN" | python3 -m json.tool
 ```
-
-**Restart a worker:**
-```bash
-ssh -i <SSH_RUNPOD_FLUX_ZIMAGE from SOPS> -p 19489 root@38.65.239.17
-screen -S flux-gpu0 -X quit
-screen -dmS flux-gpu0 bash -c 'source /opt/pollinations/image.pollinations.ai/nunchaku/venv/bin/activate && \
-  CUDA_VISIBLE_DEVICES=0 PORT=8765 PUBLIC_IP=hsl3ksl31lvrcc-8765.proxy.runpod.net PUBLIC_PORT=443 \
-  SERVICE_TYPE=flux python /opt/pollinations/image.pollinations.ai/nunchaku/server.py 2>&1 | tee /tmp/flux-gpu0.log'
-```
-
-**Key notes:**
-- Uses INT4 quantization (not FP4) — RTX 4090 is Ada Lovelace, not Blackwell
-- Heartbeats register with `https://` proxy URLs (patched `server.py` line 63)
-- ~2.9s per Flux image, ~1.5s per Z-Image at 512x512
 
 ## Provider: Lambda Labs
 
@@ -120,14 +218,19 @@ Extract for use: `sops -d enter.pollinations.ai/secrets/prod.vars.json | jq -r '
 
 | SOPS key | Provider | Instances |
 |----------|----------|-----------|
-| `SSH_RUNPOD_FLUX_ZIMAGE` | RunPod | Flux+Z-Image pod (`hsl3ksl31lvrcc`) |
+| `SSH_RUNPOD_KLEIN` | RunPod | Klein rollback pod (`jmrbmje2fyuy46`) + Z-Image pods |
 | `SSH_LAMBDA_SANA_LTX2_ACESTEP` | Lambda Labs | GH200 (LTX-2, ACE-Step, Sana) |
 
-Klein uses the RunPod relay (`ssh.runpod.io`) with `~/.ssh/id_ed25519` — no SOPS key. Get the full SSH command from the dashboard "Connect" tab.
+The Klein RunPod rollback uses `SSH_RUNPOD_KLEIN` from SOPS. Get the current
+public SSH host/port from RunPod runtime ports; the port changes when the pod is
+recreated or restarted. (`SSH_RUNPOD_FLUX_ZIMAGE` belonged to the terminated
+`hsl3ksl31lvrcc` pod and does not auth against the current pods.)
 
-EC2 keys (not in SOPS):
+Non-SOPS keys:
 
 | Key | Provider | Location |
 |-----|----------|----------|
+| `~/.ssh/pollinations_services_2026` | Vast.ai | Flux 5090 workers (attach via `vastai attach ssh`) |
+| Vast account SSH key | Vast.ai | Klein instance 44766948; query current proxy host/port with `vastai show instance` |
 | `~/.ssh/enter-services-shared` | EC2 prod | enter services |
 | `~/.ssh/enter-services-staging` | EC2 staging | enter services |

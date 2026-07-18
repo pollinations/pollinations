@@ -10,7 +10,7 @@ port = 3000
 [assets]
 directory = "dist/client"
 not_found_handling = "single-page-application"
-run_worker_first = [ "/api/*" ]
+run_worker_first = [ "/api/*", "/.well-known/*" ]
 
 [[d1_databases]]
 binding = "DB"
@@ -23,24 +23,13 @@ migrations_dir = "drizzle"
 binding = "KV"
 id = "84512601e2a44679a4d3b0f7415d90ec"
 
-[[r2_buckets]]
-binding = "IMAGE_BUCKET"
-bucket_name = "pollinations-images"
-remote = true
-
-[[r2_buckets]]
-binding = "TEXT_BUCKET"
-bucket_name = "pollinations-text-enter"
-remote = true
-
 [vars]
 ENVIRONMENT = "development"
 CLOUDFLARE_ACCOUNT_ID = "b6ec751c0862027ba269faf7029b2501"
 LOG_LEVEL = "trace"
 LOG_FORMAT = "text"
-ALLOW_ANONYMOUS_USAGE = false
+D1_EXPORT_TOKEN_SHA256 = "9eb69171319388c1231cd7452b717f4bda9c52a8a836cf7456326b4e3b7c79fb"
 TINYBIRD_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=generation_event"
-TINYBIRD_TIER_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=tier_event"
 TINYBIRD_STRIPE_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=stripe_event"
 # Stripe payments (sandbox for dev)
 STRIPE_MODE = "sandbox"
@@ -51,8 +40,10 @@ STRIPE_AUTO_TOP_UP_PMC_ID = "pmc_1TUpob6O03AauPe8EgmA4mvg"
 # Single broad checkout PMC; Stripe filters methods by buyer currency/country.
 STRIPE_PMC = "pmc_1SrYT96O03AauPe8ijLy6sZU"
 
-
 [env.local]
+
+[env.local.triggers]
+crons = []
 
 [[env.local.d1_databases]]
 binding = "DB"
@@ -65,23 +56,13 @@ migrations_dir = "drizzle"
 binding = "KV"
 id = "84512601e2a44679a4d3b0f7415d90ec"
 
-[[env.local.r2_buckets]]
-binding = "IMAGE_BUCKET"
-bucket_name = "pollinations-images"
-
-[[env.local.r2_buckets]]
-binding = "TEXT_BUCKET"
-bucket_name = "pollinations-text-enter"
-
 [env.local.vars]
 ENVIRONMENT = "local"
-USAGE_DEBUG_USER_ID = "ds1EIz1ELXSNZzzRKJ0jrCsGgLeiVfRh" # pollen@myceli.ai; local dashboard usage data
 CLOUDFLARE_ACCOUNT_ID = "b6ec751c0862027ba269faf7029b2501"
 LOG_LEVEL = "trace"
 LOG_FORMAT = "text"
-ALLOW_ANONYMOUS_USAGE = false
+D1_EXPORT_TOKEN_SHA256 = "9eb69171319388c1231cd7452b717f4bda9c52a8a836cf7456326b4e3b7c79fb"
 TINYBIRD_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=generation_event"
-TINYBIRD_TIER_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=tier_event"
 TINYBIRD_STRIPE_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=stripe_event"
 # Stripe payments (sandbox for local development)
 STRIPE_MODE = "sandbox"
@@ -90,12 +71,14 @@ BETTER_AUTH_URL = "http://localhost:3000"
 STRIPE_AUTO_TOP_UP_PMC_ID = "pmc_1TUpob6O03AauPe8EgmA4mvg"
 # Single broad checkout PMC; Stripe filters methods by buyer currency/country.
 STRIPE_PMC = "pmc_1SrYT96O03AauPe8ijLy6sZU"
-POLLEN_REFILL_PER_HOUR = 1
 
 [env.production]
 
+# Explicitly detach cron schedules. Deleting the [triggers] block leaves
+# previously-deployed crons attached (crons undefined = unchanged); only
+# `crons = []` removes them. See Cloudflare Workers cron-triggers docs.
 [env.production.triggers]
-crons = ["*/15 * * * *"]
+crons = []
 
 [env.production.observability]
 enabled = true
@@ -104,6 +87,11 @@ head_sampling_rate = 1
 [[env.production.routes]]
 pattern = "enter.myceli.ai"
 zone_name = "myceli.ai"
+custom_domain = true
+
+[[env.production.routes]]
+pattern = "enter.pollinations.ai"
+zone_name = "pollinations.ai"
 custom_domain = true
 
 [[env.production.d1_databases]]
@@ -117,30 +105,14 @@ migrations_dir = "drizzle"
 binding = "KV"
 id = "a621f17ad3e34000971cffa616675c5b"
 
-[[env.production.r2_buckets]]
-binding = "IMAGE_BUCKET"
-bucket_name = "pollinations-images"
-
-[[env.production.r2_buckets]]
-binding = "TEXT_BUCKET"
-bucket_name = "pollinations-text-enter"
-
-# Edge rate limiter: ~1000 req/s per IP (10000 req per 10s)
-[[env.production.ratelimits]]
-name = "EDGE_RATE_LIMITER"
-namespace_id = "1001"
-simple = { limit = 10000, period = 10 }
-
 [env.production.vars]
 ENVIRONMENT = "production"
 CLOUDFLARE_ACCOUNT_ID = "b6ec751c0862027ba269faf7029b2501"
 LOG_LEVEL = "debug"
 LOG_FORMAT = "json"
-ALLOW_ANONYMOUS_USAGE = false
+D1_EXPORT_TOKEN_SHA256 = "16787796e725ff98fa6d4c820922cc12fcf85a21bd1221abd984ef6cd1902a8d"
 TINYBIRD_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=generation_event"
-TINYBIRD_TIER_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=tier_event"
 TINYBIRD_STRIPE_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=stripe_event"
-POLLEN_REFILL_PER_HOUR = 1
 # Stripe payments (live for production)
 STRIPE_MODE = "live"
 STRIPE_SUCCESS_URL = "https://enter.pollinations.ai"
@@ -149,15 +121,20 @@ BETTER_AUTH_URL = "https://enter.pollinations.ai"
 STRIPE_AUTO_TOP_UP_PMC_ID = "pmc_1TVU4T7rcjS3l7trqtBuve71"
 # Single broad checkout PMC; Stripe filters methods by buyer currency/country.
 STRIPE_PMC = "pmc_1SrY4O7rcjS3l7trnGXDTuat"
-
 [env.staging]
 
+# See production note above: explicit empty crons detaches the schedule.
 [env.staging.triggers]
-crons = ["*/15 * * * *"]
+crons = []
 
 [[env.staging.routes]]
 pattern = "staging.enter.myceli.ai"
 zone_name = "myceli.ai"
+custom_domain = true
+
+[[env.staging.routes]]
+pattern = "staging.enter.pollinations.ai"
+zone_name = "pollinations.ai"
 custom_domain = true
 
 [[env.staging.d1_databases]]
@@ -171,28 +148,13 @@ migrations_dir = "drizzle"
 binding = "KV"
 id = "ba22195551794751b9792e4e67eb074a"
 
-[[env.staging.r2_buckets]]
-binding = "IMAGE_BUCKET"
-bucket_name = "pollinations-images"
-
-[[env.staging.r2_buckets]]
-binding = "TEXT_BUCKET"
-bucket_name = "pollinations-text-enter"
-
-# Edge rate limiter: ~1000 req/s per IP (10000 req per 10s)
-[[env.staging.ratelimits]]
-name = "EDGE_RATE_LIMITER"
-namespace_id = "1001"
-simple = { limit = 10000, period = 10 }
-
 [env.staging.vars]
 ENVIRONMENT = "staging"
 CLOUDFLARE_ACCOUNT_ID = "b6ec751c0862027ba269faf7029b2501"
 LOG_LEVEL = "debug"
 LOG_FORMAT = "json"
-ALLOW_ANONYMOUS_USAGE = false
+D1_EXPORT_TOKEN_SHA256 = "9eb69171319388c1231cd7452b717f4bda9c52a8a836cf7456326b4e3b7c79fb"
 TINYBIRD_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=generation_event"
-TINYBIRD_TIER_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=tier_event"
 TINYBIRD_STRIPE_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=stripe_event"
 # Stripe payments: sandbox mode for staging
 STRIPE_MODE = "sandbox"
@@ -201,12 +163,10 @@ BETTER_AUTH_URL = "https://staging.enter.pollinations.ai"
 STRIPE_AUTO_TOP_UP_PMC_ID = "pmc_1TUpob6O03AauPe8EgmA4mvg"
 # Single broad checkout PMC; Stripe filters methods by buyer currency/country.
 STRIPE_PMC = "pmc_1SrYT96O03AauPe8ijLy6sZU"
-# GitHub OAuth lockdown — only these numeric GitHub user IDs may sign in.
-# Issue #11137. Comma-separated. IDs are immutable (usernames are not).
-# ElliotEtag=36901823, voodoohop=5099901,
-# thomashmyceli=235942848, fouchyelliot-rgb=248917639, pollen-router=241978997
-STAGING_ALLOWED_GITHUB_IDS = "36901823,5099901,235942848,248917639,241978997"
-
+# Staging OAuth lockdown — GitHub IDs are immutable; emails allow one-off
+# team access when the exact GitHub account is unknown. Issue #11137.
+STAGING_ALLOWED_GITHUB_IDS = "36901823,5099901,235942848,248917639,241978997,118118458"
+STAGING_ALLOWED_EMAILS = "elliot@pollinations.ai"
 [env.dev]
 
 [[env.dev.routes]]
@@ -225,25 +185,14 @@ migrations_dir = "drizzle"
 binding = "KV"
 id = "84512601e2a44679a4d3b0f7415d90ec"
 
-[[env.dev.r2_buckets]]
-binding = "IMAGE_BUCKET"
-bucket_name = "pollinations-images"
-remote = true
-
-[[env.dev.r2_buckets]]
-binding = "TEXT_BUCKET"
-bucket_name = "pollinations-text-enter"
-remote = true
-
 [env.dev.vars]
 ENVIRONMENT = "dev"
 USAGE_DEBUG_USER_ID = "ds1EIz1ELXSNZzzRKJ0jrCsGgLeiVfRh" # pollen@myceli.ai; dev dashboard usage data
 CLOUDFLARE_ACCOUNT_ID = "b6ec751c0862027ba269faf7029b2501"
 LOG_LEVEL = "debug"
 LOG_FORMAT = "json"
-ALLOW_ANONYMOUS_USAGE = false
+D1_EXPORT_TOKEN_SHA256 = "9eb69171319388c1231cd7452b717f4bda9c52a8a836cf7456326b4e3b7c79fb"
 TINYBIRD_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=generation_event"
-TINYBIRD_TIER_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=tier_event"
 TINYBIRD_STRIPE_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=stripe_event"
 # TODO: Change back to staging image endpoint once staging services are available
 # Currently using prod services for simplicity
@@ -254,7 +203,6 @@ BETTER_AUTH_URL = "https://dev.enter.pollinations.ai"
 STRIPE_AUTO_TOP_UP_PMC_ID = "pmc_1TUpob6O03AauPe8EgmA4mvg"
 # Single broad checkout PMC; Stripe filters methods by buyer currency/country.
 STRIPE_PMC = "pmc_1SrYT96O03AauPe8ijLy6sZU"
-
 [env.test]
 
 [[env.test.d1_databases]]
@@ -268,34 +216,18 @@ migrations_dir = "drizzle"
 binding = "KV"
 id = "84512601e2a44679a4d3b0f7415d90ec"
 
-[[env.test.r2_buckets]]
-binding = "IMAGE_BUCKET"
-bucket_name = "pollinations-images"
-
-[[env.test.r2_buckets]]
-binding = "TEXT_BUCKET"
-bucket_name = "pollinations-text-enter"
-
-# Edge rate limiter: ~1000 req/s per IP (10000 req per 10s)
-[[env.test.ratelimits]]
-name = "EDGE_RATE_LIMITER"
-namespace_id = "1001"
-simple = { limit = 10000, period = 10 }
-
 [env.test.vars]
 ENVIRONMENT = "test"
 CLOUDFLARE_ACCOUNT_ID = "b6ec751c0862027ba269faf7029b2501"
 LOG_LEVEL = "trace"
 LOG_FORMAT = "text"
-ALLOW_ANONYMOUS_USAGE = true
+D1_EXPORT_TOKEN_SHA256 = "93b05a64761af544d325ac158513bef41959e8777a7375981ec7ae41f84cb05d"
 GITHUB_CLIENT_ID = "test_github_client_id"
 GITHUB_CLIENT_SECRET = "test_github_client_secret"
 TINYBIRD_INGEST_URL = "http://localhost:7181/v0/events?name=generation_event"
-TINYBIRD_TIER_INGEST_URL = "http://localhost:7181/v0/events?name=tier_event"
 TINYBIRD_STRIPE_INGEST_URL = "http://localhost:7181/v0/events?name=stripe_event"
 TINYBIRD_INGEST_TOKEN = "test_tinybird_ingest_token"
 TINYBIRD_READ_TOKEN = "test_tinybird_read_token"
-TINYBIRD_SYNC_TOKEN = "test_tinybird_sync_token"
 STRIPE_MODE = "sandbox"
 STRIPE_SUCCESS_URL = "http://localhost:3000"
 BETTER_AUTH_URL = "http://localhost:3000"

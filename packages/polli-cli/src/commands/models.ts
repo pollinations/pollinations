@@ -9,14 +9,15 @@ import {
 } from "../lib/output.js";
 import { fetchModelStats } from "./stats.js";
 
+const MAX_STATS_WINDOW_MINUTES = 7 * 24 * 60;
+
 interface ModelEntry {
     name: string;
     description?: string;
     output_modalities?: string[];
     input_modalities?: string[];
     pricing?: Record<string, string>;
-    tools?: boolean;
-    reasoning?: boolean;
+    capabilities?: string[];
     context_length?: number;
     paid_only?: boolean;
     voices?: string[];
@@ -34,9 +35,7 @@ function classifyType(m: ModelEntry): string {
 }
 
 function capabilities(m: ModelEntry): string {
-    const caps: string[] = [];
-    if (m.tools) caps.push("tools");
-    if (m.reasoning) caps.push("reasoning");
+    const caps = [...(m.capabilities ?? [])];
     if (m.input_modalities?.includes("image")) caps.push("vision");
     if (m.video_capabilities?.length) caps.push(...m.video_capabilities);
     if (m.voices?.length) caps.push("voices");
@@ -77,11 +76,27 @@ export const modelsCommand = new Command("models")
     )
     .option("--verbose", "Show additional details (context length)")
     .option("--stats", "Show model health stats (err% column counts 5xx only)")
-    .option("--window <minutes>", "Stats window in minutes", "60")
+    .option(
+        "--window <minutes>",
+        `Stats window in minutes (1-${MAX_STATS_WINDOW_MINUTES})`,
+        "60",
+    )
     .action(async (opts) => {
         if (opts.stats) {
             try {
-                const rows = await fetchModelStats(Number(opts.window));
+                const windowMinutes = Number(opts.window);
+                if (
+                    !Number.isInteger(windowMinutes) ||
+                    windowMinutes < 1 ||
+                    windowMinutes > MAX_STATS_WINDOW_MINUTES
+                ) {
+                    printError(
+                        `--window must be an integer between 1 and ${MAX_STATS_WINDOW_MINUTES}`,
+                    );
+                    process.exit(1);
+                }
+
+                const rows = await fetchModelStats(windowMinutes);
                 const wantType = opts.type as string;
                 const valid = rows.filter((r) => {
                     if (r.model === "undefined") return false;

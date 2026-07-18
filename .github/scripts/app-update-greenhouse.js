@@ -11,10 +11,10 @@
  */
 
 const fs = require("fs");
+const { APPS_FILE, parseApps: parseAppsTable } = require("./lib/parse-apps.js");
 
 // ── Config ──────────────────────────────────────────────────────────────────
 
-const APPS_FILE = "apps/APPS.md";
 const GARDEN_FILE = "apps/GREENHOUSE.md";
 const ROOT_README = "README.md";
 
@@ -36,46 +36,29 @@ const CATEGORIES = [
 // ── Parse ───────────────────────────────────────────────────────────────────
 
 function parseApps() {
-    const content = fs.readFileSync(APPS_FILE, "utf8");
-    const lines = content.split("\n");
-    const headerIdx = lines.findIndex((l) => l.startsWith("| Emoji"));
-    if (headerIdx === -1) {
-        console.error("Error: Could not find header row in APPS.md");
-        process.exit(1);
-    }
+    return parseAppsTable().apps.map((app) => {
+        let stars = 0;
+        const m = app.stars.match(/⭐([\d.]+)(k)?/);
+        if (m) {
+            stars = parseFloat(m[1]);
+            if (m[2] === "k") stars *= 1000;
+            stars = Math.round(stars);
+        }
 
-    const rows = lines.slice(headerIdx + 2).filter((l) => l.startsWith("|"));
-    return rows
-        .map((row) => {
-            const cols = row.split("|").map((c) => c.trim());
-            cols.shift();
-            cols.pop();
-            if (cols.length < 15) return null;
-
-            const starsCol = cols[10];
-            let stars = 0;
-            const m = starsCol.match(/⭐([\d.]+)(k)?/);
-            if (m) {
-                stars = parseFloat(m[1]);
-                if (m[2] === "k") stars *= 1000;
-                stars = Math.round(stars);
-            }
-
-            return {
-                emoji: cols[0],
-                name: cols[1],
-                url: cols[2],
-                description: cols[3],
-                category: cols[5].toLowerCase(),
-                github: cols[7],
-                repo: cols[9],
-                stars,
-                approvedDate: cols[15] || "",
-                byop: cols.length > 16 && cols[16] === "true",
-                requests24h: cols.length > 17 ? parseInt(cols[17], 10) || 0 : 0,
-            };
-        })
-        .filter(Boolean);
+        return {
+            emoji: app.emoji,
+            name: app.name,
+            url: app.webUrl,
+            description: app.description,
+            category: app.category.toLowerCase(),
+            github: app.githubUsername,
+            repo: app.repoUrl,
+            stars,
+            approvedDate: app.approvedDate,
+            byop: app.byop === "true",
+            requests24h: parseInt(app.requests24h, 10) || 0,
+        };
+    });
 }
 
 // ── Classify ────────────────────────────────────────────────────────────────

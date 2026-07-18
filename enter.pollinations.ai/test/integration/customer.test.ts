@@ -31,7 +31,7 @@ test.for(
     expect(sessionCookieResponse.status).toBe(200);
 });
 
-test("/balance should return tier, pack, and lastTierGrant", async ({
+test("/balance should return tier and pack balances", async ({
     sessionToken,
     mocks,
 }) => {
@@ -55,14 +55,10 @@ test("/balance should return tier, pack, and lastTierGrant", async ({
         tierBalance: 10.5,
         packBalance: 25.3,
     };
-    const lastTierGrant = Date.now() - 3600000; // 1 hour ago
-
     await db
         .update(userTable)
         .set({
             ...testBalances,
-            tier: "seed",
-            lastTierGrant,
         })
         .where(eq(userTable.id, userId));
 
@@ -81,7 +77,6 @@ test("/balance should return tier, pack, and lastTierGrant", async ({
     expect(data).toEqual({
         tierBalance: testBalances.tierBalance,
         packBalance: testBalances.packBalance,
-        lastTierGrant,
     });
 });
 
@@ -103,61 +98,11 @@ test("/balance should return raw tier and pack balances regardless of tier", asy
     const session = await sessionResponse.json();
     const userId = session.user.id;
 
-    const tiers = ["microbe", "spore", "seed", "flower", "nectar", "router"];
-
-    for (const tier of tiers) {
-        await db
-            .update(userTable)
-            .set({
-                tier,
-                tierBalance: 1,
-                packBalance: 3,
-                lastTierGrant: null,
-            })
-            .where(eq(userTable.id, userId));
-
-        const response = await SELF.fetch(`${base}/balance`, {
-            method: "GET",
-            headers: {
-                cookie: `better-auth.session_token=${sessionToken}`,
-            },
-        });
-
-        expect(response.status).toBe(200);
-        expect(await response.json()).toEqual({
-            tierBalance: 1,
-            packBalance: 3,
-            lastTierGrant: null,
-        });
-    }
-});
-
-test("/balance should return zero balances for new users", async ({
-    sessionToken,
-    mocks,
-}) => {
-    await mocks.enable("tinybird");
-    const db = drizzle(env.DB);
-
-    // Get the authenticated user ID from session
-    const sessionResponse = await SELF.fetch(
-        "http://localhost:3000/api/auth/get-session",
-        {
-            headers: {
-                cookie: `better-auth.session_token=${sessionToken}`,
-            },
-        },
-    );
-    const session = await sessionResponse.json();
-    const userId = session.user.id;
-
-    // Reset all balances to 0
     await db
         .update(userTable)
         .set({
-            tierBalance: 0,
-            packBalance: 0,
-            lastTierGrant: null,
+            tierBalance: 1,
+            packBalance: 3,
         })
         .where(eq(userTable.id, userId));
 
@@ -169,12 +114,9 @@ test("/balance should return zero balances for new users", async ({
     });
 
     expect(response.status).toBe(200);
-    const data = await response.json();
-
-    expect(data).toEqual({
-        tierBalance: 0,
-        packBalance: 0,
-        lastTierGrant: null,
+    expect(await response.json()).toEqual({
+        tierBalance: 1,
+        packBalance: 3,
     });
 });
 

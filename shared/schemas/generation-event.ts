@@ -1,3 +1,4 @@
+import type { ApiKeyType } from "../auth/api-key-creation.ts";
 import type { PriceDefinition, Usage } from "../registry/registry.ts";
 import type { ContentFilterResult } from "./openai.ts";
 
@@ -7,7 +8,6 @@ export type EventType =
     | "generate.audio"
     | "generate.embedding"
     | "generate.realtime";
-export type ApiKeyType = "secret" | "publishable";
 
 // Plain TypeScript type for Tinybird events (no D1 table - events sent directly to Tinybird)
 export type TinybirdEvent = {
@@ -43,6 +43,13 @@ export type TinybirdEvent = {
     selectedMeterSlug?: string;
     balances?: Record<string, number>;
 
+    // Billing adjustments (search/tool fees). Keyed by versioned rule id
+    // (e.g. "google.gemini_3.search_query.v1"). Left undefined when the request
+    // had no adjustments so ClickHouse's DEFAULT map() fills them; a literal {}
+    // would serialize on every event since removeUnset only strips null/undefined.
+    adjustmentCosts?: Record<string, number>; // rule id → USD cost
+    adjustmentUnits?: Record<string, number>; // rule id → units charged (fractional-capable)
+
     // Network
     ipSubnet?: string;
     ipHash?: string;
@@ -56,6 +63,8 @@ export type TinybirdEvent = {
     resolvedModelRequested?: string;
     modelUsed?: string;
     modelProviderUsed?: string;
+    /** True when Portkey served from a non-primary fallback target. */
+    fallbackUsed?: boolean;
     isBilledUsage: boolean;
 
     // Pricing
@@ -63,11 +72,13 @@ export type TinybirdEvent = {
     tokenPricePromptCached: number;
     tokenPricePromptCacheWrite: number;
     tokenPricePromptAudio: number;
+    tokenPricePromptAudioSeconds: number;
     tokenPricePromptImage: number;
     tokenPricePromptVideo: number;
     tokenPriceCompletionText: number;
     tokenPriceCompletionReasoning: number;
     tokenPriceCompletionAudio: number;
+    tokenPriceCompletionAudioSeconds: number;
     tokenPriceCompletionImage: number;
     tokenPriceCompletionVideoSeconds: number;
     tokenPriceCompletionVideoTokens: number;
@@ -93,6 +104,9 @@ export type TinybirdEvent = {
     totalPrice: number;
     devPrice?: number;
     markupRate?: number;
+    communityModelRewardUserId?: string;
+    communityModelRewardRate?: number;
+    communityModelRewardAmount?: number;
 
     // Prompt Moderation
     moderationPromptHateSeverity?: string;
@@ -111,9 +125,6 @@ export type TinybirdEvent = {
 
     // Cache
     cacheHit?: boolean;
-    cacheType?: string;
-    cacheSemanticSimilarity?: number;
-    cacheSemanticThreshold?: number;
     cacheKey?: string;
 
     // Error
@@ -122,20 +133,18 @@ export type TinybirdEvent = {
     errorMessage?: string;
 };
 
-// Alias for backward compatibility with track.ts
-export type InsertGenerationEvent = TinybirdEvent;
-export type SelectGenerationEvent = TinybirdEvent;
-
 export type GenerationEventPriceParams = {
     tokenPricePromptText: number;
     tokenPricePromptCached: number;
     tokenPricePromptCacheWrite: number;
     tokenPricePromptAudio: number;
+    tokenPricePromptAudioSeconds: number;
     tokenPricePromptImage: number;
     tokenPricePromptVideo: number;
     tokenPriceCompletionText: number;
     tokenPriceCompletionReasoning: number;
     tokenPriceCompletionAudio: number;
+    tokenPriceCompletionAudioSeconds: number;
     tokenPriceCompletionImage: number;
     tokenPriceCompletionVideoSeconds: number;
     tokenPriceCompletionVideoTokens: number;
@@ -172,6 +181,8 @@ export function priceToEventParams(
             priceDefinition?.promptCacheWriteTokens || 0,
         tokenPricePromptAudio: 
             priceDefinition?.promptAudioTokens || 0,
+        tokenPricePromptAudioSeconds:
+            priceDefinition?.promptAudioSeconds || 0,
         tokenPricePromptImage:
             priceDefinition?.promptImageTokens || 0,
         tokenPricePromptVideo:
@@ -184,6 +195,8 @@ export function priceToEventParams(
             0,
         tokenPriceCompletionAudio:
             priceDefinition?.completionAudioTokens || 0,
+        tokenPriceCompletionAudioSeconds:
+            priceDefinition?.completionAudioSeconds || 0,
         tokenPriceCompletionImage:
             priceDefinition?.completionImageTokens || 0,
         tokenPriceCompletionVideoSeconds:

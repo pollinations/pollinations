@@ -7,6 +7,8 @@
     "@logtape/logtape": "1.3.5",
     "better-auth": "1.4.17",
     "drizzle-orm": "0.44.7",
+    "hono": "4.10.6",
+    "hono-openapi": "1.2.0",
     "zod": "4.3.5"
   }
 }

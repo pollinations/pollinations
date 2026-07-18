@@ -16,8 +16,14 @@ import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as ErrorRouteImport } from './routes/error'
 import { Route as DeviceRouteImport } from './routes/device'
 import { Route as AuthorizeRouteImport } from './routes/authorize'
+import { Route as DashboardRouteImport } from './routes/_dashboard'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as InternalDesignRouteImport } from './routes/internal.design'
+import { Route as DashboardQuestsRouteImport } from './routes/_dashboard.quests'
+import { Route as DashboardPollenRouteImport } from './routes/_dashboard.pollen'
+import { Route as DashboardNewsRouteImport } from './routes/_dashboard.news'
+import { Route as DashboardModelsRouteImport } from './routes/_dashboard.models'
+import { Route as DashboardKeysRouteImport } from './routes/_dashboard.keys'
+import { Route as DashboardActivityRouteImport } from './routes/_dashboard.activity'
 
 const TermsRoute = TermsRouteImport.update({
   id: '/terms',
@@ -54,18 +60,45 @@ const AuthorizeRoute = AuthorizeRouteImport.update({
   path: '/authorize',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DashboardRoute = DashboardRouteImport.update({
+  id: '/_dashboard',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const InternalDesignRoute = InternalDesignRouteImport.update({
-  id: '/internal/design',
-  path: '/internal/design',
-  getParentRoute: () => rootRouteImport,
-} as any).lazy(() =>
-  import('./routes/internal.design.lazy').then((d) => d.Route),
-)
+const DashboardQuestsRoute = DashboardQuestsRouteImport.update({
+  id: '/quests',
+  path: '/quests',
+  getParentRoute: () => DashboardRoute,
+} as any)
+const DashboardPollenRoute = DashboardPollenRouteImport.update({
+  id: '/pollen',
+  path: '/pollen',
+  getParentRoute: () => DashboardRoute,
+} as any)
+const DashboardNewsRoute = DashboardNewsRouteImport.update({
+  id: '/news',
+  path: '/news',
+  getParentRoute: () => DashboardRoute,
+} as any)
+const DashboardModelsRoute = DashboardModelsRouteImport.update({
+  id: '/models',
+  path: '/models',
+  getParentRoute: () => DashboardRoute,
+} as any)
+const DashboardKeysRoute = DashboardKeysRouteImport.update({
+  id: '/keys',
+  path: '/keys',
+  getParentRoute: () => DashboardRoute,
+} as any)
+const DashboardActivityRoute = DashboardActivityRouteImport.update({
+  id: '/activity',
+  path: '/activity',
+  getParentRoute: () => DashboardRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -76,7 +109,12 @@ export interface FileRoutesByFullPath {
   '/refunds': typeof RefundsRoute
   '/sign-in': typeof SignInRoute
   '/terms': typeof TermsRoute
-  '/internal/design': typeof InternalDesignRoute
+  '/activity': typeof DashboardActivityRoute
+  '/keys': typeof DashboardKeysRoute
+  '/models': typeof DashboardModelsRoute
+  '/news': typeof DashboardNewsRoute
+  '/pollen': typeof DashboardPollenRoute
+  '/quests': typeof DashboardQuestsRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -87,11 +125,17 @@ export interface FileRoutesByTo {
   '/refunds': typeof RefundsRoute
   '/sign-in': typeof SignInRoute
   '/terms': typeof TermsRoute
-  '/internal/design': typeof InternalDesignRoute
+  '/activity': typeof DashboardActivityRoute
+  '/keys': typeof DashboardKeysRoute
+  '/models': typeof DashboardModelsRoute
+  '/news': typeof DashboardNewsRoute
+  '/pollen': typeof DashboardPollenRoute
+  '/quests': typeof DashboardQuestsRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/_dashboard': typeof DashboardRouteWithChildren
   '/authorize': typeof AuthorizeRoute
   '/device': typeof DeviceRoute
   '/error': typeof ErrorRoute
@@ -99,7 +143,12 @@ export interface FileRoutesById {
   '/refunds': typeof RefundsRoute
   '/sign-in': typeof SignInRoute
   '/terms': typeof TermsRoute
-  '/internal/design': typeof InternalDesignRoute
+  '/_dashboard/activity': typeof DashboardActivityRoute
+  '/_dashboard/keys': typeof DashboardKeysRoute
+  '/_dashboard/models': typeof DashboardModelsRoute
+  '/_dashboard/news': typeof DashboardNewsRoute
+  '/_dashboard/pollen': typeof DashboardPollenRoute
+  '/_dashboard/quests': typeof DashboardQuestsRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -112,7 +161,12 @@ export interface FileRouteTypes {
     | '/refunds'
     | '/sign-in'
     | '/terms'
-    | '/internal/design'
+    | '/activity'
+    | '/keys'
+    | '/models'
+    | '/news'
+    | '/pollen'
+    | '/quests'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -123,10 +177,16 @@ export interface FileRouteTypes {
     | '/refunds'
     | '/sign-in'
     | '/terms'
-    | '/internal/design'
+    | '/activity'
+    | '/keys'
+    | '/models'
+    | '/news'
+    | '/pollen'
+    | '/quests'
   id:
     | '__root__'
     | '/'
+    | '/_dashboard'
     | '/authorize'
     | '/device'
     | '/error'
@@ -134,11 +194,17 @@ export interface FileRouteTypes {
     | '/refunds'
     | '/sign-in'
     | '/terms'
-    | '/internal/design'
+    | '/_dashboard/activity'
+    | '/_dashboard/keys'
+    | '/_dashboard/models'
+    | '/_dashboard/news'
+    | '/_dashboard/pollen'
+    | '/_dashboard/quests'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  DashboardRoute: typeof DashboardRouteWithChildren
   AuthorizeRoute: typeof AuthorizeRoute
   DeviceRoute: typeof DeviceRoute
   ErrorRoute: typeof ErrorRoute
@@ -146,7 +212,6 @@ export interface RootRouteChildren {
   RefundsRoute: typeof RefundsRoute
   SignInRoute: typeof SignInRoute
   TermsRoute: typeof TermsRoute
-  InternalDesignRoute: typeof InternalDesignRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -200,6 +265,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthorizeRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_dashboard': {
+      id: '/_dashboard'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof DashboardRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -207,18 +279,76 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/internal/design': {
-      id: '/internal/design'
-      path: '/internal/design'
-      fullPath: '/internal/design'
-      preLoaderRoute: typeof InternalDesignRouteImport
-      parentRoute: typeof rootRouteImport
+    '/_dashboard/quests': {
+      id: '/_dashboard/quests'
+      path: '/quests'
+      fullPath: '/quests'
+      preLoaderRoute: typeof DashboardQuestsRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/_dashboard/pollen': {
+      id: '/_dashboard/pollen'
+      path: '/pollen'
+      fullPath: '/pollen'
+      preLoaderRoute: typeof DashboardPollenRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/_dashboard/news': {
+      id: '/_dashboard/news'
+      path: '/news'
+      fullPath: '/news'
+      preLoaderRoute: typeof DashboardNewsRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/_dashboard/models': {
+      id: '/_dashboard/models'
+      path: '/models'
+      fullPath: '/models'
+      preLoaderRoute: typeof DashboardModelsRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/_dashboard/keys': {
+      id: '/_dashboard/keys'
+      path: '/keys'
+      fullPath: '/keys'
+      preLoaderRoute: typeof DashboardKeysRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/_dashboard/activity': {
+      id: '/_dashboard/activity'
+      path: '/activity'
+      fullPath: '/activity'
+      preLoaderRoute: typeof DashboardActivityRouteImport
+      parentRoute: typeof DashboardRoute
     }
   }
 }
 
+interface DashboardRouteChildren {
+  DashboardActivityRoute: typeof DashboardActivityRoute
+  DashboardKeysRoute: typeof DashboardKeysRoute
+  DashboardModelsRoute: typeof DashboardModelsRoute
+  DashboardNewsRoute: typeof DashboardNewsRoute
+  DashboardPollenRoute: typeof DashboardPollenRoute
+  DashboardQuestsRoute: typeof DashboardQuestsRoute
+}
+
+const DashboardRouteChildren: DashboardRouteChildren = {
+  DashboardActivityRoute: DashboardActivityRoute,
+  DashboardKeysRoute: DashboardKeysRoute,
+  DashboardModelsRoute: DashboardModelsRoute,
+  DashboardNewsRoute: DashboardNewsRoute,
+  DashboardPollenRoute: DashboardPollenRoute,
+  DashboardQuestsRoute: DashboardQuestsRoute,
+}
+
+const DashboardRouteWithChildren = DashboardRoute._addFileChildren(
+  DashboardRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  DashboardRoute: DashboardRouteWithChildren,
   AuthorizeRoute: AuthorizeRoute,
   DeviceRoute: DeviceRoute,
   ErrorRoute: ErrorRoute,
@@ -226,7 +356,6 @@ const rootRouteChildren: RootRouteChildren = {
   RefundsRoute: RefundsRoute,
   SignInRoute: SignInRoute,
   TermsRoute: TermsRoute,
-  InternalDesignRoute: InternalDesignRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

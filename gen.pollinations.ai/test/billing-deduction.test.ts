@@ -1,11 +1,9 @@
 import { env } from "cloudflare:test";
-import {
-    atomicDeductUserBalance,
-    getUserBalances,
-} from "@shared/billing/deduction.ts";
+import { getUserBalance } from "@shared/billing/balance.ts";
+import { atomicDeductUserBalance } from "@shared/billing/deduction.ts";
 import { handleBalanceDeduction } from "@shared/billing/track-helpers.ts";
 import { user as userTable } from "@shared/db/better-auth.ts";
-import { getModelDefinition } from "@shared/registry/registry.ts";
+import { getRegistryModelDefinition } from "@shared/registry/registry.ts";
 import { drizzle } from "drizzle-orm/d1";
 import { describe, expect, it } from "vitest";
 
@@ -23,7 +21,6 @@ async function createUser({
         id: userId,
         email: `${userId}@test.local`,
         name: "Billing Test User",
-        tier: "flower",
         tierBalance,
         packBalance,
         createdAt: new Date(),
@@ -37,19 +34,19 @@ describe("billing deduction", () => {
         const userId = await createUser({ tierBalance: 5, packBalance: 10 });
 
         await atomicDeductUserBalance(db, userId, 3);
-        expect(await getUserBalances(db, userId)).toEqual({
+        expect(await getUserBalance(db, userId)).toEqual({
             tierBalance: 2,
             packBalance: 10,
         });
 
         await atomicDeductUserBalance(db, userId, 4);
-        expect(await getUserBalances(db, userId)).toEqual({
+        expect(await getUserBalance(db, userId)).toEqual({
             tierBalance: 2,
             packBalance: 6,
         });
 
         await atomicDeductUserBalance(db, userId, 10);
-        expect(await getUserBalances(db, userId)).toEqual({
+        expect(await getUserBalance(db, userId)).toEqual({
             tierBalance: 2,
             packBalance: -4,
         });
@@ -60,7 +57,7 @@ describe("billing deduction", () => {
 
         await atomicDeductUserBalance(db, userId, 3);
 
-        expect(await getUserBalances(db, userId)).toEqual({
+        expect(await getUserBalance(db, userId)).toEqual({
             tierBalance: -3,
             packBalance: 0,
         });
@@ -73,13 +70,13 @@ describe("billing deduction", () => {
         });
 
         await atomicDeductUserBalance(db, userId, 2, true);
-        expect(await getUserBalances(db, userId)).toEqual({
+        expect(await getUserBalance(db, userId)).toEqual({
             tierBalance: 10,
             packBalance: 3,
         });
 
         await atomicDeductUserBalance(db, userId, 4, true);
-        expect(await getUserBalances(db, userId)).toEqual({
+        expect(await getUserBalance(db, userId)).toEqual({
             tierBalance: 10,
             packBalance: -1,
         });
@@ -92,15 +89,31 @@ describe("billing deduction", () => {
         await atomicDeductUserBalance(db, userId, 4, true);
         await atomicDeductUserBalance(db, userId, 6);
 
-        expect(await getUserBalances(db, userId)).toEqual({
+        expect(await getUserBalance(db, userId)).toEqual({
             tierBalance: 2,
             packBalance: 0,
         });
     });
 
+    it("handles concurrent regular deductions without lost updates", async () => {
+        const userId = await createUser({ tierBalance: 20, packBalance: 40 });
+
+        const results = await Promise.all(
+            Array.from({ length: 10 }, () =>
+                atomicDeductUserBalance(db, userId, 5),
+            ),
+        );
+
+        expect(results.every((result) => result.ok)).toBe(true);
+        expect(await getUserBalance(db, userId)).toEqual({
+            tierBalance: 0,
+            packBalance: 10,
+        });
+    });
+
     it("deducts an Azure paid-only model only from pack balance", async () => {
         const modelResolved = "llama-maverick";
-        const model = getModelDefinition(modelResolved);
+        const model = getRegistryModelDefinition(modelResolved);
         expect(model.provider).toBe("azure");
         expect(model.paidOnly).toBe(true);
 
@@ -114,9 +127,9 @@ describe("billing deduction", () => {
             isBilledUsage: true,
             totalPrice: 0.01,
             userId,
-            modelResolved,
+            modelPaidOnly: model.paidOnly,
         });
-        let balance = await getUserBalances(db, userId);
+        let balance = await getUserBalance(db, userId);
         expect(balance.tierBalance).toBeCloseTo(0.01, 10);
         expect(balance.packBalance).toBeCloseTo(0, 10);
 
@@ -125,9 +138,9 @@ describe("billing deduction", () => {
             isBilledUsage: true,
             totalPrice: 0.01,
             userId,
-            modelResolved,
+            modelPaidOnly: model.paidOnly,
         });
-        balance = await getUserBalances(db, userId);
+        balance = await getUserBalance(db, userId);
         expect(balance.tierBalance).toBeCloseTo(0.01, 10);
         expect(balance.packBalance).toBeCloseTo(-0.01, 10);
     });

@@ -3,100 +3,145 @@
  * Handles the complete flow from request to image generation using Gemini
  */
 
+import type { Usage } from "@shared/registry/registry.ts";
 import debug from "debug";
-import type {
-    AuthResult,
-    ImageGenerationResult,
-} from "./createAndReturnImages.js";
+import type { ImageGenerationResult } from "./createAndReturnImages.js";
 import { HttpError } from "./httpError.ts";
 import type { ImageParams } from "./params.js";
 import { base64ToBuffer, downloadUserImage } from "./utils/imageDownload.ts";
-import { generateTransparentImage } from "./utils/transparentImage.ts";
-import type { VertexAIImageData } from "./vertexAIClient.ts";
-import { generateImageWithVertexAI } from "./vertexAIClient.ts";
+import {
+    generateImageWithVertexAI,
+    type VertexAIImageData,
+    type VertexAIModality,
+    type VertexAIModalityTokenCount,
+    type VertexAISafetyRating,
+    type VertexAIUsageMetadata,
+} from "./vertexAIClient.ts";
 import { writeExifMetadata } from "./writeExifMetadata.js";
 
 const log = debug("pollinations:vertex-ai-generator");
 const errorLog = debug("pollinations:vertex-ai-generator:error");
 
 /** Mapping from pollinations model names to Vertex AI model IDs and display names */
-const NANOBANANA_MODELS: Record<string, { vertex: string; name: string }> = {
+const NANOBANANA_MODELS = {
     "nanobanana-pro": {
-        vertex: "gemini-3-pro-image-preview",
-        name: "Vertex AI Gemini 3 Pro Image Preview",
+        vertex: "gemini-3-pro-image",
+        name: "Vertex AI Gemini 3 Pro Image",
     },
     "nanobanana-2": {
-        vertex: "gemini-3.1-flash-image-preview",
-        name: "Vertex AI Gemini 3.1 Flash Image Preview",
+        vertex: "gemini-3.1-flash-image",
+        name: "Vertex AI Gemini 3.1 Flash Image",
+    },
+    "nanobanana-2-lite": {
+        vertex: "gemini-3.1-flash-lite-image",
+        name: "Vertex AI Gemini 3.1 Flash-Lite Image",
     },
     "nanobanana": {
         vertex: "gemini-2.5-flash-image",
         name: "Vertex AI Gemini 2.5 Flash Image",
     },
+} as const;
+
+const PROMPT_MODALITY_TO_USAGE_KEY: Partial<
+    Record<VertexAIModality, keyof Usage>
+> = {
+    TEXT: "promptTextTokens",
+    IMAGE: "promptImageTokens",
 };
 
-/**
- * Process nanobanana requests with special logic for height/width parameters
- * @param {string} prompt - Original user prompt
- * @param {ImageParams} safeParams - Parameters for image generation
- * @returns {Promise<{processedPrompt: string, processedParams: ImageParams, transparentImage?: VertexAIImageData}>} - Processed prompt, parameters, and optional transparent image
- */
-async function processNanobananaRequest(
-    prompt: string,
-    safeParams: ImageParams,
-): Promise<{
-    processedPrompt: string;
-    processedParams: ImageParams;
-    transparentImage?: VertexAIImageData;
-}> {
-    // Check if this is a nanobanana model request with height/width parameters
-    const isNanoBananaModel = safeParams.model in NANOBANANA_MODELS;
-    if (!isNanoBananaModel || !safeParams.width || !safeParams.height) {
-        // Return original values for non-nanobanana models or when dimensions are missing
-        return { processedPrompt: prompt, processedParams: safeParams };
+const COMPLETION_MODALITY_TO_USAGE_KEY: Partial<
+    Record<VertexAIModality, keyof Usage>
+> = {
+    TEXT: "completionTextTokens",
+    IMAGE: "completionImageTokens",
+};
+
+function isTokenCount(value: unknown): value is number {
+    return Number.isSafeInteger(value) && (value as number) >= 0;
+}
+
+function invalidVertexUsage(usage: VertexAIUsageMetadata | undefined): never {
+    errorLog(
+        "Vertex AI returned invalid billing usage metadata:",
+        JSON.stringify(usage),
+    );
+    throw new HttpError(
+        "Vertex AI returned invalid billing usage metadata",
+        502,
+    );
+}
+
+function addUsage(usage: Usage, key: keyof Usage, amount: number) {
+    if (amount === 0) return;
+    usage[key] = (usage[key] ?? 0) + amount;
+}
+
+function mapModalityDetails(
+    usage: Usage,
+    details: VertexAIModalityTokenCount[],
+    keyMap: Partial<Record<VertexAIModality, keyof Usage>>,
+    providerUsage: VertexAIUsageMetadata,
+): number {
+    let mappedTokens = 0;
+    for (const detail of details) {
+        const key = detail.modality && keyMap[detail.modality];
+        if (!key || !isTokenCount(detail.tokenCount)) {
+            invalidVertexUsage(providerUsage);
+        }
+        addUsage(usage, key, detail.tokenCount);
+        mappedTokens += detail.tokenCount;
+    }
+    return mappedTokens;
+}
+
+export function mapVertexGeminiImageUsage({
+    usage,
+}: {
+    usage?: VertexAIUsageMetadata;
+}): Usage {
+    if (
+        !usage ||
+        !isTokenCount(usage.promptTokenCount) ||
+        !isTokenCount(usage.candidatesTokenCount) ||
+        !isTokenCount(usage.totalTokenCount) ||
+        (usage.thoughtsTokenCount !== undefined &&
+            !isTokenCount(usage.thoughtsTokenCount)) ||
+        !usage.promptTokensDetails?.length ||
+        !usage.candidatesTokensDetails?.length
+    ) {
+        invalidVertexUsage(usage);
     }
 
-    // Skip transparent image generation for 1:1 aspect ratio (default behavior works fine)
-    const aspectRatio = safeParams.width / safeParams.height;
-    if (Math.abs(aspectRatio - 1.0) < 0.001) {
-        // Use small epsilon for floating point comparison
-        log(
-            `Skipping transparent image generation for 1:1 aspect ratio (${safeParams.width}x${safeParams.height})`,
-        );
-        return { processedPrompt: prompt, processedParams: safeParams };
-    }
-
-    log("Processing nanobanana request with height/width parameters");
-    log(
-        `Dimensions: ${safeParams.width}x${safeParams.height}, aspect ratio: ${aspectRatio.toFixed(3)}`,
+    const mappedUsage: Usage = {};
+    const promptTokens = usage.promptTokenCount;
+    const mappedPromptTokens = mapModalityDetails(
+        mappedUsage,
+        usage.promptTokensDetails,
+        PROMPT_MODALITY_TO_USAGE_KEY,
+        usage,
     );
 
-    try {
-        // Generate transparent image for the specified dimensions
-        const transparentImage = await generateTransparentImage(
-            safeParams.width,
-            safeParams.height,
-        );
-        log(
-            `Generated transparent image: ${transparentImage.base64.length} base64 chars`,
-        );
+    const candidateTokens = usage.candidatesTokenCount;
+    const mappedCandidateTokens = mapModalityDetails(
+        mappedUsage,
+        usage.candidatesTokensDetails,
+        COMPLETION_MODALITY_TO_USAGE_KEY,
+        usage,
+    );
+    const thoughtsTokens = usage.thoughtsTokenCount ?? 0;
+    addUsage(mappedUsage, "completionReasoningTokens", thoughtsTokens);
 
-        // Add post-prompt after user prompt
-        const postPrompt =
-            " The last image defines the aspect ratio. Generate the content to match that aspect ratio, completely replacing the last image while keeping its dimensions. Make sure no blank areas are left";
-
-        const processedPrompt = `${prompt}${postPrompt}`;
-
-        return {
-            processedPrompt,
-            processedParams: safeParams,
-            transparentImage,
-        };
-    } catch (error) {
-        errorLog("Error processing nanobanana request:", error);
-        // Return original values on error to maintain backward compatibility
-        return { processedPrompt: prompt, processedParams: safeParams };
+    if (
+        mappedPromptTokens !== promptTokens ||
+        mappedCandidateTokens !== candidateTokens ||
+        !mappedUsage.completionImageTokens ||
+        promptTokens + candidateTokens + thoughtsTokens !==
+            usage.totalTokenCount
+    ) {
+        invalidVertexUsage(usage);
     }
+
+    return mappedUsage;
 }
 
 /**
@@ -107,7 +152,7 @@ async function processNanobananaRequest(
 function buildNoImageDataError(result: {
     textResponse?: string;
     finishReason?: string;
-    safetyRatings?: any[];
+    safetyRatings?: VertexAISafetyRating[];
 }): HttpError {
     if (result.textResponse) {
         return new HttpError(`Gemini: ${result.textResponse}`, 400);
@@ -115,8 +160,8 @@ function buildNoImageDataError(result: {
 
     if (result.safetyRatings && result.safetyRatings.length > 0) {
         const blockedCategories = result.safetyRatings
-            .filter((r: any) => r.blocked)
-            .map((r: any) => r.category)
+            .filter((rating) => rating.blocked)
+            .map((rating) => rating.category)
             .join(", ");
 
         if (blockedCategories) {
@@ -128,10 +173,11 @@ function buildNoImageDataError(result: {
 
         const highProbCategories = result.safetyRatings
             .filter(
-                (r: any) =>
-                    r.probability === "HIGH" || r.probability === "MEDIUM",
+                (rating) =>
+                    rating.probability === "HIGH" ||
+                    rating.probability === "MEDIUM",
             )
-            .map((r: any) => `${r.category} (${r.probability})`)
+            .map((rating) => `${rating.category} (${rating.probability})`)
             .join(", ");
 
         if (highProbCategories) {
@@ -155,43 +201,31 @@ function buildNoImageDataError(result: {
 export async function callVertexAIGemini(
     prompt: string,
     safeParams: ImageParams,
-    userInfo: AuthResult,
 ): Promise<ImageGenerationResult> {
     try {
         log("Starting Vertex AI Gemini image generation");
 
-        // Process nanobanana request with special logic if needed
-        const {
-            processedPrompt,
-            processedParams,
-            transparentImage: generatedTransparentImage,
-        } = await processNanobananaRequest(prompt, safeParams);
-
-        log("Original prompt:", prompt.substring(0, 100));
-        log("Processed prompt:", processedPrompt.substring(0, 100));
+        log("Prompt:", prompt.substring(0, 100));
         log("Parameters:", {
-            width: processedParams.width,
-            height: processedParams.height,
-            model: processedParams.model,
+            width: safeParams.width,
+            height: safeParams.height,
+            model: safeParams.model,
             hasReferenceImages: !!(
-                processedParams.image && processedParams.image.length > 0
+                safeParams.image && safeParams.image.length > 0
             ),
         });
 
-        // Process all reference images (URLs + transparent image) into base64 format
-        const processedImages: any[] = [];
+        // Process reference image URLs into base64 format
+        const processedImages: VertexAIImageData[] = [];
 
-        // Process URL-based reference images
-        if (processedParams.image && processedParams.image.length > 0) {
-            log(
-                `Processing ${processedParams.image.length} reference image URLs`,
-            );
+        if (safeParams.image && safeParams.image.length > 0) {
+            log(`Processing ${safeParams.image.length} reference image URLs`);
 
-            for (let i = 0; i < processedParams.image.length; i++) {
-                const imageUrl = processedParams.image[i];
+            for (let i = 0; i < safeParams.image.length; i++) {
+                const imageUrl = safeParams.image[i];
                 try {
                     log(
-                        `Fetching reference image ${i + 1}/${processedParams.image.length}: ${imageUrl}`,
+                        `Fetching reference image ${i + 1}/${safeParams.image.length}: ${imageUrl}`,
                     );
 
                     // Download and detect MIME type from magic bytes
@@ -219,33 +253,29 @@ export async function callVertexAIGemini(
             }
         }
 
-        // Add transparent image if it was generated for nanobanana
-        if (generatedTransparentImage) {
-            processedImages.push({
-                base64: generatedTransparentImage.base64,
-                mimeType: generatedTransparentImage.mimeType,
-            });
-            log(
-                `Added transparent image to processed images. Total images: ${processedImages.length}`,
-            );
-        }
-
         // Determine the Vertex AI model based on the model parameter
         const modelConfig =
-            NANOBANANA_MODELS[safeParams.model] ||
-            NANOBANANA_MODELS["nanobanana"];
+            NANOBANANA_MODELS[
+                safeParams.model as keyof typeof NANOBANANA_MODELS
+            ];
+        if (!modelConfig) {
+            throw new HttpError(
+                `Unsupported Vertex AI image model: ${safeParams.model}`,
+                400,
+            );
+        }
         const vertexModel = modelConfig.vertex;
 
         const vertexRequest = {
-            prompt: processedPrompt,
-            width: processedParams.width,
-            height: processedParams.height,
+            prompt,
+            width: safeParams.width,
+            height: safeParams.height,
             referenceImages: processedImages,
             model: vertexModel,
             safe: safeParams.safe as boolean,
             reasoning: safeParams.reasoning,
-            ...(processedParams.seed !== undefined && {
-                seed: processedParams.seed as number,
+            ...(safeParams.seed !== undefined && {
+                seed: safeParams.seed as number,
             }),
         };
 
@@ -287,7 +317,9 @@ export async function callVertexAIGemini(
         // Log usage metadata from Vertex AI for debugging token counts (without full response to avoid base64 bloat)
         log("=== VERTEX AI USAGE METADATA ===");
         log("candidatesTokenCount:", result.usage?.candidatesTokenCount);
+        log("candidatesTokensDetails:", result.usage?.candidatesTokensDetails);
         log("promptTokenCount:", result.usage?.promptTokenCount);
+        log("promptTokensDetails:", result.usage?.promptTokensDetails);
         log("totalTokenCount:", result.usage?.totalTokenCount);
         log("================================");
 
@@ -297,6 +329,8 @@ export async function callVertexAIGemini(
             );
             throw buildNoImageDataError(result);
         }
+
+        const usage = mapVertexGeminiImageUsage({ usage: result.usage });
 
         // Convert base64 to buffer
         const imageBuffer = base64ToBuffer(result.imageData);
@@ -337,14 +371,7 @@ export async function callVertexAIGemini(
             // Include tracking data for enter service headers
             trackingData: {
                 actualModel: safeParams.model,
-                usage: {
-                    // Convert Vertex AI format to unified format
-                    completionImageTokens:
-                        result.usage?.candidatesTokenCount || 1,
-                    promptTokenCount: result.usage?.promptTokenCount,
-                    totalTokenCount: result.usage?.totalTokenCount,
-                    completionReasoningTokens: result.usage?.thoughtsTokenCount,
-                },
+                usage,
             },
         };
     } catch (error) {

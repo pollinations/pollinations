@@ -1,6 +1,13 @@
 import { test as base } from "vitest";
 import { createTestApiKey } from "./api-keys.ts";
 
+export const RESTRICTED_TEXT_TEST_MODEL = "openai-fast" as const;
+export const RESTRICTED_IMAGE_TEST_MODEL = "flux" as const;
+export const RESTRICTED_TEST_MODELS = [
+    RESTRICTED_TEXT_TEST_MODEL,
+    RESTRICTED_IMAGE_TEST_MODEL,
+] as const;
+
 type SharedFixtures = {
     apiKey: string;
     paidApiKey: string;
@@ -13,7 +20,9 @@ type SharedFixtures = {
 export const test = base.extend<SharedFixtures>({
     // biome-ignore lint/correctness/noEmptyPattern: vitest fixture pattern requires object destructuring
     apiKey: async ({}, use) => {
-        const { key } = await createTestApiKey();
+        const { key } = await createTestApiKey({
+            user: { tierBalance: 100, packBalance: 0 },
+        });
         await use(key);
     },
     // biome-ignore lint/correctness/noEmptyPattern: vitest fixture pattern requires object destructuring
@@ -36,7 +45,7 @@ export const test = base.extend<SharedFixtures>({
     restrictedApiKey: async ({}, use) => {
         const { key } = await createTestApiKey({
             name: "restricted-test-key",
-            allowedModels: ["openai-fast", "flux"],
+            allowedModels: [...RESTRICTED_TEST_MODELS],
         });
         await use(key);
     },

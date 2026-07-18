@@ -6,6 +6,9 @@ import { defineConfig } from "vite";
 import tsconfigPaths from "vite-tsconfig-paths";
 
 const here = fileURLToPath(new URL(".", import.meta.url));
+const uiBrand = fileURLToPath(
+    new URL("../../packages/ui/src/brand", import.meta.url),
+);
 const apiProxyTarget = "http://localhost:3001";
 
 export default defineConfig({
@@ -23,7 +26,10 @@ export default defineConfig({
     publicDir: "public",
     assetsInclude: ["**/*.md"],
     resolve: {
-        dedupe: ["zod"],
+        alias: {
+            "@pollinations/ui/brand": uiBrand,
+        },
+        dedupe: ["react", "react-dom", "zod"],
     },
     plugins: [
         tanstackRouter({

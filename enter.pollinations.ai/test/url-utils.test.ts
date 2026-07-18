@@ -1,20 +1,5 @@
 import { describe, expect, test } from "vitest";
-import {
-    isLoopbackUrl,
-    redirectUriMatchesAllowlist,
-} from "../src/routes/url-utils.ts";
-
-describe("isLoopbackUrl", () => {
-    test("recognizes loopback hostnames", () => {
-        expect(isLoopbackUrl("http://localhost:3000/callback")).toBe(true);
-        expect(isLoopbackUrl("http://localhost.:3000/callback")).toBe(true);
-        expect(isLoopbackUrl("http://127.0.0.1:3000/callback")).toBe(true);
-        expect(isLoopbackUrl("http://[::1]:3000/callback")).toBe(true);
-        expect(isLoopbackUrl("http://0.0.0.0:3000/callback")).toBe(true);
-        expect(isLoopbackUrl("https://example.com/callback")).toBe(false);
-        expect(isLoopbackUrl("not a url")).toBe(false);
-    });
-});
+import { redirectUriMatchesAllowlist } from "../src/routes/url-utils.ts";
 
 describe("redirectUriMatchesAllowlist", () => {
     test("returns false when allowlist is empty or missing", () => {
@@ -130,6 +115,14 @@ describe("redirectUriMatchesAllowlist", () => {
                 "https://app.com/cb",
             ]),
         ).toBe(false);
+    });
+
+    test("trusts the allowlist regardless of scheme (policy is enforced at registration)", () => {
+        // Scheme restriction is enforced when the URI is registered, not here.
+        // Whatever made it into the allowlist is matched on host/path/port.
+        for (const uri of ["http://app.com/cb", "com.example.app://callback"]) {
+            expect(redirectUriMatchesAllowlist(uri, [uri])).toBe(true);
+        }
     });
 
     test("accepts any port for loopback entries (RFC 8252 §7.3)", () => {

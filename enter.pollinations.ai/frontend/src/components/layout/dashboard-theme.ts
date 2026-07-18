@@ -1,63 +1,53 @@
-// ─── Phase 0: slim cascade-aligned exports ───────────────────
-// The 6 chrome themes the new CSS-var cascade exposes via [data-theme="…"].
-// Keep in sync with the [data-theme="*"] blocks in style.css.
-export const themes = [
-    "amber",
-    "blue",
-    "pink",
-    "teal",
-    "violet",
-    "green",
-] as const;
-export type ThemeName = (typeof themes)[number];
-
 // Intent maps live per-primitive now: Button/Surface/IconButton support
-// `danger`; Chip supports the four label intents (news/alpha/paid/tier).
+// `danger`; Chip supports generic label intents (news/alpha/neutral).
 // See each component's file for its own ChipIntent / SurfaceIntent / etc.
+import {
+    BeakerIcon,
+    LockIcon,
+    NewspaperIcon,
+    SparkleIcon,
+    TrendUpIcon,
+    WalletIcon,
+} from "@pollinations/ui";
+import type { ComponentType } from "react";
 
-export type DashboardPage =
-    | "news-faq"
-    | "pollen"
-    | "activity"
-    | "keys"
-    | "models";
-
-/** Alias kept for backwards-compat at call sites; identical to ThemeName. */
-export type DashboardTheme = ThemeName;
-
-export const DASHBOARD_NAV_ITEMS: {
-    id: DashboardPage;
+export const DASHBOARD_NAV_ITEMS = [
+    {
+        id: "news-faq",
+        to: "/news",
+        label: "News & FAQ",
+        icon: NewspaperIcon,
+    },
+    { id: "models", to: "/models", label: "Models", icon: BeakerIcon },
+    { id: "keys", to: "/keys", label: "Keys", icon: LockIcon },
+    { id: "pollen", to: "/pollen", label: "Pollen", icon: WalletIcon },
+    {
+        id: "activity",
+        to: "/activity",
+        label: "Activity",
+        icon: TrendUpIcon,
+    },
+    { id: "quests", to: "/quests", label: "Quests", icon: SparkleIcon },
+] as const satisfies readonly {
+    id: string;
+    to: string;
     label: string;
-    theme: ThemeName;
-}[] = [
-    { id: "news-faq", label: "News & FAQ", theme: "violet" },
-    { id: "models", label: "Models", theme: "teal" },
-    { id: "keys", label: "Keys", theme: "blue" },
-    { id: "pollen", label: "Pollen", theme: "amber" },
-    { id: "activity", label: "Activity", theme: "pink" },
-];
+    icon: ComponentType<{ className?: string }>;
+}[];
 
-export const DASHBOARD_PAGES: DashboardPage[] = [
+export type DashboardPage = (typeof DASHBOARD_NAV_ITEMS)[number]["id"];
+export type DashboardPath = (typeof DASHBOARD_NAV_ITEMS)[number]["to"];
+
+export function isDashboardPath(path: string): path is DashboardPath {
+    return DASHBOARD_NAV_ITEMS.some((item) => item.to === path);
+}
+
+const SIGNED_OUT_PAGES: ReadonlySet<DashboardPage> = new Set([
     "news-faq",
     "models",
-    "keys",
-    "pollen",
-    "activity",
-];
+    "quests",
+]);
 
-// Page → theme lookup, derived from DASHBOARD_NAV_ITEMS.
-// Pages should read their theme from here so flipping a nav item's `theme`
-// retheme the corresponding page in one edit.
-export const dashboardThemeByPage = Object.fromEntries(
-    DASHBOARD_NAV_ITEMS.map(({ id, theme }) => [id, theme]),
-) as Record<DashboardPage, ThemeName>;
-
-// Page chrome colors are now driven entirely by the CSS-var cascade in
-// `style.css`. Components scope their subtree with `data-theme="…"` and
-// read `text-theme-*` / `bg-theme-*` / `border-theme-*` utilities. Phase 5
-// removed the legacy `themeTokens` and `dashboardThemeClasses` literal-class
-// bundles (see PR description for migration notes).
-
-export function isDashboardPage(page: string): page is DashboardPage {
-    return DASHBOARD_PAGES.includes(page as DashboardPage);
-}
+export const SIGNED_OUT_NAV_ITEMS = DASHBOARD_NAV_ITEMS.filter((item) =>
+    SIGNED_OUT_PAGES.has(item.id),
+);

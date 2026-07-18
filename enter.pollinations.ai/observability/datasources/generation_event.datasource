@@ -39,6 +39,10 @@ SCHEMA >
 `selected_meter_slug`   LowCardinality(String)  `json:$.selectedMeterSlug` DEFAULT 'undefined',
 `balances`              Map(String, Float64)    `json:$.balances` DEFAULT map(),
 
+-- Billing adjustments (search/tool fees), keyed by versioned rule id
+`adjustment_costs`      Map(String, Float64)    `json:$.adjustmentCosts` DEFAULT map(),
+`adjustment_units`      Map(String, Float64)    `json:$.adjustmentUnits` DEFAULT map(),
+
 -- Referrer
 `referrer_url`    String                 `json:$.referrerUrl` DEFAULT 'undefined',
 `referrer_domain` LowCardinality(String) `json:$.referrerDomain` DEFAULT 'undefined',
@@ -48,6 +52,7 @@ SCHEMA >
 `resolved_model_requested`  LowCardinality(String) `json:$.resolvedModelRequested` DEFAULT 'undefined',
 `model_used`                LowCardinality(String) `json:$.modelUsed` DEFAULT 'undefined',
 `model_provider_used`       LowCardinality(String) `json:$.modelProviderUsed` DEFAULT 'undefined',
+`fallback_used`             Bool                   `json:$.fallbackUsed` DEFAULT false,
 `is_billed_usage`           Bool                   `json:$.isBilledUsage`,
 
 -- Pricing
@@ -55,11 +60,13 @@ SCHEMA >
 `token_price_prompt_cached`        Float64  `json:$.tokenPricePromptCached` DEFAULT 0,
 `token_price_prompt_cache_write`   Float64  `json:$.tokenPricePromptCacheWrite` DEFAULT 0,
 `token_price_prompt_audio`         Float64  `json:$.tokenPricePromptAudio` DEFAULT 0,
+`token_price_prompt_audio_seconds` Float64  `json:$.tokenPricePromptAudioSeconds` DEFAULT 0,
 `token_price_prompt_image`         Float64  `json:$.tokenPricePromptImage` DEFAULT 0,
 `token_price_prompt_video`         Float64  `json:$.tokenPricePromptVideo` DEFAULT 0,
 `token_price_completion_text`      Float64  `json:$.tokenPriceCompletionText` DEFAULT 0,
 `token_price_completion_reasoning` Float64  `json:$.tokenPriceCompletionReasoning` DEFAULT 0,
 `token_price_completion_audio`     Float64  `json:$.tokenPriceCompletionAudio` DEFAULT 0,
+`token_price_completion_audio_seconds` Float64 `json:$.tokenPriceCompletionAudioSeconds` DEFAULT 0,
 `token_price_completion_image`     Float64  `json:$.tokenPriceCompletionImage` DEFAULT 0,
 `token_price_completion_video_seconds` Float64 `json:$.tokenPriceCompletionVideoSeconds` DEFAULT 0,
 `token_price_completion_video_tokens`  Float64 `json:$.tokenPriceCompletionVideoTokens` DEFAULT 0,
@@ -85,6 +92,9 @@ SCHEMA >
 `total_price`   Float64 `json:$.totalPrice` DEFAULT 0,
 `dev_price`     Float64 `json:$.devPrice` DEFAULT 0,
 `markup_rate` Float64 `json:$.markupRate` DEFAULT 0,
+`community_model_reward_user_id` String `json:$.communityModelRewardUserId` DEFAULT 'undefined',
+`community_model_reward_rate` Float64 `json:$.communityModelRewardRate` DEFAULT 0,
+`community_model_reward_amount` Float64 `json:$.communityModelRewardAmount` DEFAULT 0,
 
 -- Prompt Moderation
 `moderation_prompt_hate_severity`       LowCardinality(String) `json:$.moderationPromptHateSeverity` DEFAULT 'undefined',

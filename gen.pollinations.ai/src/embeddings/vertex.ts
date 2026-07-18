@@ -1,5 +1,5 @@
+import { ensureUpstreamOk } from "@shared/error.ts";
 import type { Usage } from "@shared/registry/registry.ts";
-import { ensureUpstreamOk } from "@/error.ts";
 import googleCloudAuth from "@/text/auth/googleCloudAuth.ts";
 import type {
     GeminiEmbedResponse,

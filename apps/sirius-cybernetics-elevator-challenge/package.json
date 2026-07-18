@@ -10,7 +10,6 @@
     "lint": "eslint . --ext ts,tsx"
   },
   "dependencies": {
-    "@lottiefiles/dotlottie-react": "^0.12.1",
     "clsx": "^2.1.1",
     "lucide-react": "^0.453.0",
     "react": "^18.2.0",

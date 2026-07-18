@@ -1,13 +1,12 @@
-import { createMCPResponse, createTextContent } from "../utils/coreUtils.js";
+import { z } from "zod";
 import {
-    setApiKey as storeApiKey,
-    getApiKey,
     clearApiKey as clearStoredKey,
-    hasApiKey,
     getKeyType,
     getMaskedKey,
+    hasApiKey,
+    setApiKey as storeApiKey,
 } from "../utils/authUtils.js";
-import { z } from "zod";
+import { createMCPResponse, createTextContent } from "../utils/coreUtils.js";
 
 async function setApiKey(params) {
     const { key } = params;
@@ -44,14 +43,14 @@ async function setApiKey(params) {
     ]);
 }
 
-async function getKeyInfo(params) {
+async function getKeyInfo() {
     if (!hasApiKey()) {
         return createMCPResponse([
             createTextContent(
                 {
                     authenticated: false,
                     message: "No API key set. Use setApiKey to authenticate.",
-                    info: "Get your API key at https://enter.pollinations.ai",
+                    info: "Get your API key at https://enter.pollinations.ai/keys",
                 },
                 true,
             ),
@@ -77,7 +76,7 @@ async function getKeyInfo(params) {
     ]);
 }
 
-async function clearApiKey(params) {
+async function clearApiKey() {
     const wasSet = hasApiKey();
     clearStoredKey();
 
@@ -97,7 +96,7 @@ async function clearApiKey(params) {
 export const authTools = [
     [
         "setApiKey",
-        "Set your pollinations.ai API key for authenticated requests. Get your key at https://enter.pollinations.ai",
+        "Set your pollinations.ai API key for authenticated requests. Get your key at https://enter.pollinations.ai/keys",
         {
             key: z
                 .string()

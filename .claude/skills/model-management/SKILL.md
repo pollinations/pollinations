@@ -1,9 +1,9 @@
 ---
 name: model-management
-description: "Add, update, or remove text/image/video/audio/embeddings models. Covers the full lifecycle: files to touch, what to verify, and how to test empirically before merging."
+description: "Add, update, rename, or remove text/image/video/audio/embeddings models. Requires explicit user confirmation of pricing, paid status, provider, GPU ownership, and primary/fallback inference routes before editing, then covers files, empirical verification, and tests."
 ---
 
-> **Read top to bottom on first use.** Then bookmark §6 ([Change matrix](#6-change-matrix--if-you-change-x-verify-y)) and §7 ([Test matrix](#7-test-matrix--if-model-claims-x-run-y)) — those are the daily-driver tables. §9 ([Field-parity audit](#9-field-parity-audit--mandatory-on-new-model--provider-change)) is **mandatory** for new model and provider-change PRs.
+> **Read top to bottom on first use.** The [confirmation gate](#mandatory-confirmation-gate--before-any-model-edit) applies to every model change. Then bookmark §6 ([Change matrix](#6-change-matrix--if-you-change-x-verify-y)) and §7 ([Test matrix](#7-test-matrix--if-model-claims-x-run-y)) — those are the daily-driver tables. §9 ([Field-parity audit](#9-field-parity-audit--mandatory-on-new-model--provider-change)) is **mandatory** for new model and provider-change PRs.
 
 ---
 
@@ -20,6 +20,43 @@ description: "Add, update, or remove text/image/video/audio/embeddings models. C
 | Deleting a model | §6 (row "Delete") |
 | Debugging a live issue | See `model-debugging` skill (currently stale — scheduled for rewrite) |
 
+## Mandatory confirmation gate — before any model edit
+
+Do not edit a model until the user explicitly confirms its business and inference contract. This gate applies to additions, removals, renames, aliases, descriptions, capabilities, modalities, prices, providers, and routing. A change that appears metadata-only does not bypass it.
+
+First inspect the registry and every reachable runtime route. Present the values you found; do not ask the user to discover them for you.
+
+| Confirm | Exact meaning |
+|---|---|
+| Canonical name and aliases | Public name after the change and every compatibility/upstream alias |
+| `priceMultiplier` | Exact multiplier applied after provider cost calculation |
+| `paidOnly` | Whether the model requires purchased pack balance |
+| Pollinations-operated GPU | **Yes** only when Pollinations operates the production inference hardware; a managed provider API is **No**, even though that provider uses GPUs |
+| Registry provider | Primary provider configured for the model; this is not the model brand and not a fallback that happened to serve one request |
+| Primary inference route | Runtime handler/config, deployment or host, and upstream `modelId` |
+| Fallback route | Fallback provider, deployment/host, and upstream `modelId`, or explicitly `none` |
+
+Ask this explicit question, filled with the discovered values:
+
+> Please confirm: the price multiplier is **X**, paid-only is **yes/no**, Pollinations-operated GPU is **yes/no**, the registry provider is **Y**, the primary inference route is **Z**, and the fallback route is **A/none**. Are all of these correct?
+
+Also show the canonical name and aliases immediately above the question. Do not proceed on a general approval such as “looks good” if any value is missing from what was shown.
+
+If a value is unknown, inferred, conflicting, or route-dependent:
+
+1. Label it `UNKNOWN` or describe the conflict.
+2. Ask the user to resolve that exact value.
+3. Wait for explicit confirmation before editing the model.
+
+For batch work, use one table row per model with every field above. The user may approve the complete table in one response, but no blank or inherited cells are allowed.
+
+Keep these concepts separate:
+
+- **Configured** provider/GPU describes the registry's intended primary route.
+- **Used** provider/GPU describes the backend proven to have served a specific request.
+- A fallback can make configured and used values different. Never overwrite the configured registry provider with an observed fallback provider.
+- When the registry has a `selfHosted` field, `selfHosted: true` means the configured primary route uses Pollinations-operated production inference GPUs. It does not prove which backend served an individual request.
+
 ## Related skills — when to hand off
 
 This skill is self-contained for the model lifecycle. Hand off to a dedicated skill when the work clearly belongs elsewhere:
@@ -28,7 +65,7 @@ This skill is self-contained for the model lifecycle. Hand off to a dedicated sk
 |---|---|---|
 | Adding/modifying a Tinybird **pipe or datasource schema** | `tinybird-deploy` | Querying existing pipes/SQL to verify billing rows |
 | Investigating a live model error in prod (logs, error patterns, affected users) | `model-debugging` | Pre-merge empirical testing |
-| Verifying provider invoice ↔ our cost block math, monthly spend rollups | `provider-billing` | Setting the cost block from provider's posted rates |
+| Verifying provider invoice ↔ our cost block math, monthly spend rollups | Economics `apps/operation/economics/ingest/connectors/<provider>.md` | Setting the cost block from provider's posted rates |
 | Deploying gen/enter workers themselves | `enter-services` | Local-only testing before merge |
 
 **Things kept inline (not extracted into their own skills) on purpose:**
@@ -53,7 +90,7 @@ client → gen.pollinations.ai → upstream provider
          enter.pollinations.ai (dashboard, auth, Stripe surfaces)
 ```
 
-**Generation does not go through Enter, and neither does billing tracking.** Gen reads the shared D1/KV bindings directly to validate tokens, check `packBalance`, and apply tier limits. Gen also sends the `generation_event` directly to Tinybird (`gen.pollinations.ai/src/middleware/track.ts:290`). The `ENTER` service binding is invoked in only three places:
+**Generation does not go through Enter, and neither does billing tracking.** Gen reads the shared D1/KV bindings directly to validate tokens, check balances, and apply model permissions. Gen also sends the `generation_event` directly to Tinybird (`gen.pollinations.ai/src/middleware/track.ts:290`). The `ENTER` service binding is invoked in only three places:
 
 | File:line | Call site purpose |
 |---|---|
@@ -73,7 +110,6 @@ Implication: **local gen alone covers ~90% of model-management work** — includ
 **Boot Enter locally only if the change touches any of:**
 - Dashboard, auth routes, account APIs (Stripe portal, webhook handlers, login)
 - Pollen pack / `packBalance` mutation logic, auto-top-up flow itself
-- Tier configs (the source of truth in enter — `enter.pollinations.ai/src/tier-config.ts`)
 - Tinybird event schema (the event SHAPE / new datasource column — not the data inside it; gen writes the data)
 - DB seeding / migrations
 
@@ -85,13 +121,33 @@ For pure model work (modelId, provider, registry modalities/aliases/description,
 
 ```bash
 # (Optional) Terminal 1 — Enter on 3000 — ONLY when your change touches Enter surfaces
-(cd enter.pollinations.ai && npm run decrypt-vars && npm run dev)
+(cd enter.pollinations.ai && npm run dev)
 
-# Terminal 2 — Gen on 8788 — required for all model tests
-(cd gen.pollinations.ai && npm run decrypt-vars && npx wrangler dev --port 8788)
+# Terminal 2 — Gen on 8788 — required for all model tests.
+# USE `npm run dev`, NOT bare `npx wrangler dev`. The dev script runs
+# `vite build` first; bare wrangler serves a STALE bundle (your registry/config
+# edits won't show — /v1/models returns old pricing) and skips
+# `--persist-to .wrangler/state` (so the seeded D1 below isn't used).
+(cd gen.pollinations.ai && npm run dev)
 
-# Terminal 3 — your tests
+# Terminal 3 — seed a known API key into gen's local D1, then source tokens.
+# Without this, e2e curls 401: gen validates Bearer tokens against its own local
+# D1, and better-auth stores keys hashed (base64url(sha256(key))) — it never
+# stores the plaintext of secret keys, so a token in _local/.env only works if
+# its hash is in THIS D1. `seed:local` inserts a key whose plaintext = your
+# _local/.env POLLINATIONS_TOKEN_LOCAL (idempotent; re-run after any D1 reset).
+(cd gen.pollinations.ai && npm run seed:local)
 source _local/.env
+```
+
+**End-to-end smoke test (must pass before any model PR):**
+```bash
+source _local/.env
+curl -s "http://localhost:8788/v1/chat/completions" \
+  -H "Authorization: Bearer $POLLINATIONS_TOKEN_LOCAL" -H "Content-Type: application/json" \
+  -d '{"model":"<your-model>","max_tokens":200,"messages":[{"role":"user","content":"Reply: OK"}]}' \
+  | jq '{finish:.choices[0].finish_reason, content:.choices[0].message.content}'
+# 200 + content → wiring + auth + billing path all live. 401 → re-run seed:local.
 ```
 
 ---
@@ -107,19 +163,18 @@ source _local/.env
 | Var | Purpose |
 |---|---|
 | `POLLINATIONS_TOKEN_PROD` | Prod enter `sk_` — calls against `gen.pollinations.ai` |
-| `POLLINATIONS_TOKEN_LOCAL` | Local enter `sk_` (seeded into local KV) — calls against `localhost:8788` |
+| `POLLINATIONS_TOKEN_LOCAL` | `sk_` for `localhost:8788`. **NOT auto-seeded** — its hash must be inserted into gen's local D1 via `cd gen.pollinations.ai && npm run seed:local` (seeds this exact token). Re-run after any D1 reset. |
 | `POLLINATIONS_TOKEN_STAGING` | Staging enter `sk_` — calls against staging deploys |
 | `TINYBIRD_READ_PROD` | Read token, prod workspace |
 | `TINYBIRD_READ_STAGING` | Read token, staging workspace — **also covers DEV** (local gen writes to the staging workspace via its `TINYBIRD_INGEST_URL` binding) |
 
 > **There are no "free" vs "paid" keys.** A key is a key. The `paidOnly` gate checks the user's `packBalance` (purchased Pollen pack balance), not the key prefix. To exercise the gate, use a token whose **owning user has `packBalance == 0`** — typically a freshly minted key (signup grants free Pollen, no pack) or one whose pack has been depleted. Don't confuse "free Pollen remaining" (signup grant, doesn't unlock paidOnly) with "pack balance" (purchased, does unlock).
 
-> **`_local/.env` token labels are not guaranteed to match where they actually validate.** Before assuming a 401 means "wrong/expired token," verify the token against gen's local D1 — only keys seeded in *gen's* `apikey` table validate there (enter's D1 is a separate sqlite, not shared with gen in local). Quick lookup (no secrets printed):
+> **A 401 on `localhost:8788` almost always means the local D1 has no row for your token — run `cd gen.pollinations.ai && npm run seed:local`.** Root cause: gen validates `Bearer` tokens against its OWN local D1 `apikey` table (`shared/auth/api-key.ts` → better-auth `verifyApiKey`; enter's D1 is a separate sqlite, not shared). better-auth stores keys hashed as `base64url(sha256(key))` and never stores the plaintext of secret keys, so a dashboard-minted key is unrecoverable and a `_local/.env` token only validates if its hash is in THIS D1. The D1 gets recreated (or came from another clone), so the hash is usually absent → 401. `seed:local` inserts a key whose plaintext = your `_local/.env` `POLLINATIONS_TOKEN_LOCAL` with large test balances, so paid-only + spend both pass. It's idempotent — re-run any time. Inspect what's seeded (no secrets printed):
 > ```bash
 > GEN_DB=gen.pollinations.ai/.wrangler/state/v3/d1/miniflare-D1DatabaseObject/*.sqlite
-> sqlite3 $GEN_DB "SELECT name, start, prefix FROM apikey;"
+> sqlite3 $GEN_DB "SELECT name, start, enabled FROM apikey WHERE id='local-e2e-key';"
 > ```
-> Match each `POLLINATIONS_TOKEN_*` env var's first 6 chars against the `start` column — the env var named `_LOCAL` is not necessarily the one seeded locally. Pick whichever env var matches a row whose `name` looks like a local test key (e.g., `local-battle-test`, `local-e2e-test-key`).
 
 Provider/runtime secrets (Azure, OpenAI, OpenRouter API keys, etc.) belong in `gen.pollinations.ai/secrets/{dev,staging,prod}.vars.json` via SOPS — never in `_local/.env`. See §11.
 
@@ -174,7 +229,7 @@ Provider/runtime secrets (Azure, OpenAI, OpenRouter API keys, etc.) belong in `g
 
 ### `priceMultiplier`
 
-Every cost block requires `priceMultiplier`. Current values in the registry: **`1` or `1.5`**, no others. `1.5` is our standard markup for retail; `1` is at-cost (typically free-tier or strategically subsidized). Set it explicitly on every new model. Final billed price = `usage × cost × priceMultiplier`.
+Every cost block requires `priceMultiplier`. Do not assume a fixed set of allowed multipliers: inspect the current registry value and obtain explicit user confirmation before keeping or changing it. Set it explicitly on every new model. Final billed price = `usage × cost × priceMultiplier`.
 
 ---
 
@@ -182,6 +237,8 @@ Every cost block requires `priceMultiplier`. Current values in the registry: **`
 
 > Pricing depends on **both model AND provider.** Always verify pricing on the provider's own website before writing the cost block.
 > `addedDate` is set **once** and **never updated.** Drives the 7-day NEW chip on the dashboard. Use `new Date("YYYY-MM-DD").getTime()` with today's date on first add; do not touch it for later pricing/endpoint/provider changes.
+
+Every row below starts with the [mandatory confirmation gate](#mandatory-confirmation-gate--before-any-model-edit). Verification after editing does not replace confirmation before editing.
 
 | If you change… | …in these files | …re-verify |
 |---|---|---|
@@ -196,7 +253,7 @@ Every cost block requires `priceMultiplier`. Current values in the registry: **`
 | **Image resolutions / aspect ratios** | handler + (registry comment) | One generation per supported ratio returns 200 with matching dims; unsupported ratios return 4xx; §7 cache row with byte-identical params shows MISS→HIT |
 | **Video duration / fps** | handler | Each supported duration returns 200, mp4 of declared length; unsupported returns 4xx |
 | **Cached-token behavior** | registry `promptCachedTokens` in cost block | §7 prompt-cache row passes (`cached_tokens > 0` on call 2); tail clean of `Missing conversion rate: usageType=promptCachedTokens` |
-| **`paidOnly` flip** | registry `paidOnly: true/false` | Token whose user has `packBalance == 0` → 4xx; token with pack balance → 200; `/v1/models` filtering correct per tier |
+| **`paidOnly` flip** | registry `paidOnly: true/false` | Token whose user has `packBalance == 0` → 4xx; token with pack balance → 200; `/v1/models` filtering correct per pack balance |
 | **Add model** | every file above | Full §7 + §8 + **§9 (mandatory)** + §10 |
 | **Delete model** | remove from config + registry; keep SOPS provider keys (other models may share) | `/v1/models` no longer lists slug; request returns model-not-found 4xx; `aliases.test.ts` updated; `rg <slug>` across the repo for orphan hardcodes; PR description names any downstream apps removed from |
 
@@ -502,6 +559,7 @@ This is acceptable. What's NOT acceptable is silently dropping a separately-bill
 
 ## Empirical (must all pass against `localhost:8788`)
 
+- [ ] PR links or includes the explicitly approved confirmation row(s): name, aliases, `priceMultiplier`, `paidOnly`, Pollinations-operated GPU, registry provider, primary route, and fallback route
 - [ ] All [Change matrix](#6-change-matrix--if-you-change-x-verify-y) rows for this change type re-verified
 - [ ] All [Test matrix](#7-test-matrix--if-model-claims-x-run-y) rows for declared capabilities passed (not from docs)
 - [ ] [Output cache](#72-image) tested with **byte-identical requests** if the modality caches
@@ -510,10 +568,11 @@ This is acceptable. What's NOT acceptable is silently dropping a separately-bill
 - [ ] [Field-parity audit](#9-field-parity-audit--mandatory-on-new-model--provider-change) passed (new model or provider change)
 - [ ] `/v1/models` returns the model with correct pricing + modalities
 - [ ] `addedDate` set on first add, **untouched** on later edits
-- [ ] `priceMultiplier` set (1 or 1.5)
+- [ ] `priceMultiplier` is set to the explicitly confirmed value
 - [ ] No 5xx in [error-path matrix](#76-error-paths--every-malformed-request-must-return-4xx-never-opaque-5xx)
 - [ ] Burst test passed at expected production concurrency
 - [ ] PR description notes any docs/upstream discrepancies found and any bundled-modality choices
+- [ ] `APIDOCS.md` is untouched. It is regenerated from the live OpenAPI schema after production deploy; update source schemas/routes instead.
 
 ---
 
@@ -556,13 +615,13 @@ If `-a "$USER"` doesn't match, try without `-a` (`security find-generic-password
 
 ## 11.2 Description style
 
-Format: `<Model Name> - <what it does or what makes it distinct>`. ≤ ~70 chars when possible.
+Format: `<what it does or what makes it distinct>`. ≤ ~70 chars when possible.
 
 - Say what the model **does** or what makes it **different** ("Fast & affordable image generation", "Long-context MoE for retrieval"). Capability over branding.
+- **Do not repeat the model name/title** in the description. The model manager renders the display name separately, so descriptions like "Seedream 5.0 Pro - Premium image generation" are redundant.
 - **No provider/inference attribution** in the description — no "(OpenRouter)", "via DashScope", "OpenAI's", etc. `provider` and `brand` fields carry that.
-- **No filler.** "X - Image Generation Model" tells the reader nothing. "FLUX.2 Klein 4B - Fast image generation and editing" > "FLUX.2 Klein 4B - Advanced Model".
+- **No filler.** "Image generation model" tells the reader nothing. "Fast image generation and editing" > "Advanced model".
 
 ## 11.3 Wrapper models (e.g. persona-prompted Claude)
 
 For specialized wrappers, the underlying model's capabilities are NOT the same as the product's. Mark `inputModalities` to reflect the **product intent**, not what the underlying model technically supports. Add a one-line comment explaining the discrepancy.
-

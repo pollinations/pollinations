@@ -15,14 +15,14 @@ describe("getCohortFromCountry", () => {
             "ZZ",
         ])("routes %s to USD", (country) => {
             const cohort = getCohortFromCountry(country);
-            expect(cohort.id).toBe("USD");
+            expect(cohort).toBe("USD");
         });
 
         test("routes MO to USD (spoof-signal regression)", () => {
             // 99.8% of MO billing-country charges in the live audit were
             // US-issued cards — pure card-testing fingerprint. MO must not
             // land in APAC_ALIPAY local-currency routing.
-            expect(getCohortFromCountry("MO").id).toBe("USD");
+            expect(getCohortFromCountry("MO")).toBe("USD");
         });
 
         test.each([
@@ -31,23 +31,21 @@ describe("getCohortFromCountry", () => {
             null,
             undefined,
         ])("routes %p to USD", (country) => {
-            expect(getCohortFromCountry(country).id).toBe("USD");
+            expect(getCohortFromCountry(country)).toBe("USD");
         });
     });
 
     describe("BR cohort", () => {
         test("routes BR to BR cohort", () => {
             const cohort = getCohortFromCountry("BR");
-            expect(cohort).toEqual({
-                id: "BR",
-            });
+            expect(cohort).toBe("BR");
         });
     });
 
     describe("APAC_ALIPAY cohort", () => {
         test.each(["CN", "HK", "TW"])("routes %s to APAC_ALIPAY", (country) => {
             const cohort = getCohortFromCountry(country);
-            expect(cohort.id).toBe("APAC_ALIPAY");
+            expect(cohort).toBe("APAC_ALIPAY");
         });
     });
 
@@ -75,36 +73,32 @@ describe("getCohortFromCountry", () => {
             "LI",
         ])("routes %s to EU_CORE", (country) => {
             const cohort = getCohortFromCountry(country);
-            expect(cohort.id).toBe("EU_CORE");
+            expect(cohort).toBe("EU_CORE");
         });
     });
 
     describe("INDIA cohort", () => {
         test("routes IN to INDIA cohort", () => {
             const cohort = getCohortFromCountry("IN");
-            expect(cohort).toEqual({
-                id: "INDIA",
-            });
+            expect(cohort).toBe("INDIA");
         });
     });
 
     describe("UK cohort", () => {
         test("routes GB to UK cohort", () => {
             const cohort = getCohortFromCountry("GB");
-            expect(cohort).toEqual({
-                id: "UK",
-            });
+            expect(cohort).toBe("UK");
         });
     });
 
     describe("case insensitivity", () => {
         test("lowercase country code routes to same cohort as uppercase", () => {
-            expect(getCohortFromCountry("br").id).toBe("BR");
-            expect(getCohortFromCountry("cn").id).toBe("APAC_ALIPAY");
-            expect(getCohortFromCountry("nl").id).toBe("EU_CORE");
-            expect(getCohortFromCountry("in").id).toBe("INDIA");
-            expect(getCohortFromCountry("gb").id).toBe("UK");
-            expect(getCohortFromCountry("us").id).toBe("USD");
+            expect(getCohortFromCountry("br")).toBe("BR");
+            expect(getCohortFromCountry("cn")).toBe("APAC_ALIPAY");
+            expect(getCohortFromCountry("nl")).toBe("EU_CORE");
+            expect(getCohortFromCountry("in")).toBe("INDIA");
+            expect(getCohortFromCountry("gb")).toBe("UK");
+            expect(getCohortFromCountry("us")).toBe("USD");
         });
     });
 });

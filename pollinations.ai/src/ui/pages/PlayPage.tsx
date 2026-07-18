@@ -19,8 +19,6 @@ function PlayPage() {
     const { apiKey, isLoggedIn, login } = useAuth();
     const {
         imageModels,
-        textModels,
-        audioModels,
         allModels: registryModels,
         allowedImageModelIds,
         allowedTextModelIds,
@@ -92,7 +90,7 @@ function PlayPage() {
                         {pageCopy.subtitleSuffix}
                     </Body>
                     <a
-                        href={LINKS.enter}
+                        href={LINKS.enterModels}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="font-headline text-xs font-black hover:underline inline-flex items-center gap-1 text-dark bg-accent-strong px-2 py-0.5"
@@ -125,9 +123,7 @@ function PlayPage() {
                     <PlayGenerator
                         selectedModel={selectedModel}
                         prompt={prompt}
-                        imageModels={imageModels}
-                        textModels={textModels}
-                        audioModels={audioModels}
+                        currentModel={currentModel}
                         apiKey={apiKey}
                         onLoginRequired={login}
                     />

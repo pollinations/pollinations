@@ -7,17 +7,9 @@ import type {
 
 const log = debug("pollinations:transforms:parameters");
 
-const SAMPLING_PARAMS = [
-    "temperature",
-    "top_p",
-    "presence_penalty",
-    "frequency_penalty",
-    "repetition_penalty",
-] as const;
-
 /**
- * Transform that applies model-specific sampling defaults, streaming options,
- * and provider-specific parameter conversions.
+ * Transform that applies streaming options and provider-specific parameter
+ * conversions.
  */
 export function processParameters(
     messages: ChatMessage[],
@@ -30,17 +22,6 @@ export function processParameters(
     const config = options.modelConfig as Record<string, unknown>;
     const updatedOptions = { ...options };
 
-    // Apply model-specific sampling parameter defaults
-    for (const param of SAMPLING_PARAMS) {
-        if (
-            updatedOptions[param] === undefined &&
-            config[param] !== undefined
-        ) {
-            log(`Setting ${param} to model default value: ${config[param]}`);
-            updatedOptions[param] = config[param] as number;
-        }
-    }
-
     if (updatedOptions.stream) {
         log("Adding stream_options to include usage data in stream");
         updatedOptions.stream_options = { include_usage: true };
@@ -50,8 +31,23 @@ export function processParameters(
     // Non-OpenAI models on Azure (Mistral, DeepSeek, Kimi, Grok) do NOT support it
     const azureModel = (config["azure-deployment-id"] as string) || "";
     const isOpenAIModel = /^(gpt-|o[134])/i.test(azureModel);
-    const supportsMaxCompletionTokens =
-        config.provider === "azure-openai" && isOpenAIModel;
+    const isAzureOpenAI = config.provider === "azure-openai";
+    const supportsMaxCompletionTokens = isAzureOpenAI && isOpenAIModel;
+
+    // Azure Foundry only accepts stream_options for actual OpenAI deployments.
+    // Third-party deployments (Mistral, Grok, DeepSeek, Llama) reject it with a
+    // 422 extra_forbidden, so strip it for non-OpenAI Azure models.
+    if (
+        isAzureOpenAI &&
+        !isOpenAIModel &&
+        updatedOptions.stream_options !== undefined
+    ) {
+        log(
+            `Stripping stream_options for non-OpenAI Azure model: ${azureModel}`,
+        );
+        delete updatedOptions.stream_options;
+    }
+
     if (supportsMaxCompletionTokens) {
         if (updatedOptions.max_tokens !== undefined) {
             log(
@@ -74,15 +70,26 @@ export function processParameters(
         updatedOptions.temperature = 1;
     }
 
-    // Claude Opus 4.7/4.8 deprecated temperature/top_p/top_k — non-default values
-    // return 400 from Anthropic. Strip them entirely.
-    if (/claude-opus-4-[78]/i.test(model)) {
+    // Claude Opus 4.7/4.8 and Fable 5 reject non-default sampling params.
+    // Strip them entirely.
+    if (/claude-(opus-4-[78]|fable-5)/i.test(model)) {
         for (const param of ["temperature", "top_p", "top_k"] as const) {
             if (updatedOptions[param] !== undefined) {
                 log(`Stripping ${param} for ${model}`);
                 delete updatedOptions[param];
             }
         }
+    }
+
+    // Bedrock Claude models return 400 when both temperature and top_p are
+    // set. Drop top_p when temperature is also present.
+    if (
+        /anthropic\.claude/i.test(model) &&
+        updatedOptions.temperature !== undefined &&
+        updatedOptions.top_p !== undefined
+    ) {
+        log(`Dropping top_p (temperature is set) for ${model}`);
+        delete updatedOptions.top_p;
     }
 
     return { messages, options: updatedOptions };

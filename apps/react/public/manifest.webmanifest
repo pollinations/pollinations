@@ -1,0 +1,29 @@
+{
+    "name": "React UI | pollinations.ai",
+    "short_name": "React UI",
+    "description": "React UI showcase for the Pollinations SDK and UI component library — auth, wallet, and design primitives.",
+    "icons": [
+        {
+            "src": "/icon-192.png",
+            "sizes": "192x192",
+            "type": "image/png",
+            "purpose": "any"
+        },
+        {
+            "src": "/icon-512.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "any"
+        },
+        {
+            "src": "/icon-maskable-512.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "maskable"
+        }
+    ],
+    "theme_color": "#fef8eb",
+    "background_color": "#110518",
+    "display": "standalone",
+    "start_url": "/"
+}

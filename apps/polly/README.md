@@ -169,23 +169,16 @@ POLLINATIONS_TOKEN=your_pollinations_token
 python main.py
 ```
 
-### 4️⃣ Optional: Media Handlers (Tables, LaTeX, Code Rendering)
+### 4️⃣ Media Handlers (Tables, Charts, LaTeX, Code)
 
-For enhanced Discord message formatting with markdown tables, LaTeX equations, and smart code block rendering:
+Enabled by default — all deps ship in `requirements.txt`, fonts vendored in `assets/fonts/`:
 
-```bash
-# Install optional dependencies
-pip install -r requirements-media.txt
-```
-
-Enables:
-- 📊 **Markdown Tables** → Rendered as PNG images
+- 📊 **Markdown Tables** → Rendered as PNG images with markdown-aware cells (bold/italic/code spans)
+- 📈 **Charts** → bar, line, pie, scatter, heatmap, histogram, etc. via the `render_visual` tool
 - ∑ **LaTeX Expressions** → Rendered as PNG images (inline `$...$` and display `$$...$$`)
 - 💻 **Code Blocks** → Smart splitting without breaking lines
 
 See [MEDIA_HANDLERS.md](docs/MEDIA_HANDLERS.md) for details.
-
-> Note: Graceful degradation if dependencies not installed — tables/LaTeX will render as text, code still works.
 
 ---
 

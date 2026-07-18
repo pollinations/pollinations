@@ -8,19 +8,19 @@ All calls go through `https://gen.pollinations.ai`. Models, voices, and pricing 
 
 ```bash
 # Run directly with npx (no installation required)
-npx @pollinations_ai/mcp
+npx @pollinations/mcp
 ```
 
 Or install globally:
 
 ```bash
-npm install -g @pollinations_ai/mcp
+npm install -g @pollinations/mcp
 pollinations-mcp
 ```
 
 ## Authentication
 
-Get your API key at [enter.pollinations.ai](https://enter.pollinations.ai), or use [BYOP](../../BRING_YOUR_OWN_POLLEN.md) to let users bring their own pollen (supports web redirects and [device flow](../../BRING_YOUR_OWN_POLLEN.md#clis--headless-apps-device-flow) for CLIs).
+Get your API key at [enter.pollinations.ai](https://enter.pollinations.ai/keys), or use [BYOP](../../BRING_YOUR_OWN_POLLEN.md) to let users bring their own pollen (supports web redirects and [device flow](../../BRING_YOUR_OWN_POLLEN.md#clis--headless-apps-device-flow) for CLIs).
 
 **Key types:**
 
@@ -31,7 +31,7 @@ Set your key via environment variable or the `setApiKey` tool:
 
 ```bash
 export POLLINATIONS_API_KEY=sk_your_key_here
-npx @pollinations_ai/mcp
+npx @pollinations/mcp
 ```
 
 ## Available Tools
@@ -49,7 +49,7 @@ npx @pollinations_ai/mcp
 | `analyzeVideo`       | Analyze YouTube videos or video URLs                       |
 | `listImageModels`    | List available image & video models (live)                 |
 
-Common image parameters: `prompt`, `model`, `width`, `height`, `seed`, `enhance`, `negative_prompt`, `quality`, `image` (for image-to-image), `transparent`. Common video parameters: `model`, `duration`, `aspectRatio`, `audio`. Call `listImageModels` for the current model set and per-model capabilities.
+Common image parameters: `prompt`, `model`, `width`, `height`, `seed`, `quality`, `image` (for image-to-image), `transparent`. Common video parameters: `model`, `duration`, `aspectRatio`, `audio`. Call `listImageModels` for the current model set and per-model capabilities.
 
 ### Text Generation
 
@@ -91,18 +91,14 @@ Call `listAudioVoices` for the current voice list. Output formats: mp3, wav, fla
 
 ## Claude Desktop Integration
 
-```bash
-npx @pollinations_ai/mcp install-claude-mcp
-```
-
-Or manually add to your Claude Desktop config:
+Add to your Claude Desktop config:
 
 ```json
 {
   "mcpServers": {
     "pollinations": {
       "command": "npx",
-      "args": ["@pollinations_ai/mcp"],
+      "args": ["@pollinations/mcp"],
       "env": {
         "POLLINATIONS_API_KEY": "sk_your_key_here"
       }

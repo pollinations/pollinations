@@ -2,7 +2,6 @@ import debug from "debug";
 import { getImageEnv } from "../env.ts";
 import { HttpError } from "../httpError.ts";
 import type { ImageParams } from "../params.ts";
-import type { ProgressManager } from "../progressBar.ts";
 import { sleep } from "../util.ts";
 import { downloadUserImage } from "../utils/imageDownload.ts";
 import { transformImage } from "../utils/imageTransform.ts";
@@ -101,7 +100,6 @@ async function normalizeReferenceImage(imageUrl: string): Promise<Buffer> {
 export async function callNovaReelAPI(
     prompt: string,
     safeParams: ImageParams,
-    progress: ProgressManager,
     requestId: string,
 ): Promise<VideoGenerationResult> {
     // Duration must be a multiple of 6. TEXT_VIDEO = 6s only. MULTI_SHOT_AUTOMATED = 12-120s.
@@ -137,13 +135,6 @@ export async function callNovaReelAPI(
         hasImage,
     });
 
-    progress.updateBar(
-        requestId,
-        35,
-        "Processing",
-        "Starting video generation with Nova Reel...",
-    );
-
     const {
         BedrockRuntimeClient,
         StartAsyncInvokeCommand,
@@ -172,12 +163,6 @@ export async function callNovaReelAPI(
             throw new HttpError("Nova Reel reference image is missing", 400);
         }
         logOps("Adding reference image for I2V:", imageUrl);
-        progress.updateBar(
-            requestId,
-            38,
-            "Processing",
-            "Processing reference image...",
-        );
         const buffer = await normalizeReferenceImage(imageUrl);
         textToVideoParams.images = [
             {
@@ -240,26 +225,12 @@ export async function callNovaReelAPI(
     }
 
     // Poll for completion
-    progress.updateBar(
-        requestId,
-        50,
-        "Processing",
-        "Generating video (this takes ~90 seconds)...",
-    );
 
     const maxAttempts = 60; // 5 minutes max
     let delayMs = 5000;
 
     for (let attempt = 1; attempt <= maxAttempts; attempt++) {
         logOps(`Poll attempt ${attempt}/${maxAttempts}...`);
-
-        const progressPercent = 50 + Math.min(40, attempt);
-        progress.updateBar(
-            requestId,
-            progressPercent,
-            "Processing",
-            `Waiting for video... (${attempt}/${maxAttempts})`,
-        );
 
         const getCommand = new GetAsyncInvokeCommand({
             invocationArn,
@@ -279,25 +250,12 @@ export async function callNovaReelAPI(
                 }
 
                 logOps("Downloading video from S3:", s3OutputUri);
-                progress.updateBar(
-                    requestId,
-                    92,
-                    "Processing",
-                    "Downloading generated video...",
-                );
 
                 const videoBuffer = await downloadFromS3(
                     s3OutputUri,
                     region,
                     accessKeyId,
                     secretAccessKey,
-                );
-
-                progress.updateBar(
-                    requestId,
-                    95,
-                    "Success",
-                    "Video generation completed",
                 );
 
                 return {

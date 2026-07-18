@@ -1,5 +1,11 @@
 import { SELF } from "cloudflare:test";
-import { test } from "@shared/test/fixtures/index.ts";
+import { getAudioModelsInfo } from "@shared/registry/model-info.ts";
+import {
+    RESTRICTED_IMAGE_TEST_MODEL,
+    RESTRICTED_TEST_MODELS,
+    RESTRICTED_TEXT_TEST_MODEL,
+    test,
+} from "@shared/test/fixtures/index.ts";
 import { expect } from "vitest";
 
 async function fetchWorker(path: string, init: RequestInit = {}) {
@@ -18,10 +24,11 @@ test("filters OpenAI-compatible model list by API key permissions", async ({
         data: { id: string }[];
     };
     const modelIds = body.data.map((model) => model.id);
+    const allowedModels = new Set<string>(RESTRICTED_TEST_MODELS);
 
-    expect(modelIds).toContain("openai-fast");
-    expect(modelIds).not.toContain("openai");
-    expect(modelIds).not.toContain("mistral");
+    expect(modelIds.length).toBeGreaterThan(0);
+    expect(modelIds.every((modelId) => allowedModels.has(modelId))).toBe(true);
+    expect(modelIds).toContain(RESTRICTED_TEXT_TEST_MODEL);
 });
 
 test("filters image model list by API key permissions", async ({
@@ -34,9 +41,13 @@ test("filters image model list by API key permissions", async ({
     expect(response.status).toBe(200);
     const body = (await response.json()) as { name: string }[];
     const modelNames = body.map((model) => model.name);
+    const allowedModels = new Set<string>(RESTRICTED_TEST_MODELS);
 
-    expect(modelNames).toContain("flux");
-    expect(modelNames).not.toContain("turbo");
+    expect(modelNames.length).toBeGreaterThan(0);
+    expect(modelNames.every((modelName) => allowedModels.has(modelName))).toBe(
+        true,
+    );
+    expect(modelNames).toContain(RESTRICTED_IMAGE_TEST_MODEL);
 });
 
 test("filters paid-only audio models by paid balance", async ({
@@ -53,14 +64,32 @@ test("filters paid-only audio models by paid balance", async ({
     expect(freeResponse.status).toBe(200);
     expect(paidResponse.status).toBe(200);
 
-    const freeModelNames = (
-        (await freeResponse.json()) as { name: string }[]
-    ).map((model) => model.name);
-    const paidModelNames = (
-        (await paidResponse.json()) as { name: string }[]
-    ).map((model) => model.name);
+    const freeModels = (await freeResponse.json()) as {
+        name: string;
+        paid_only?: boolean;
+    }[];
+    const paidModels = (await paidResponse.json()) as {
+        name: string;
+        paid_only?: boolean;
+    }[];
+    const expectedFreeModelNames = getAudioModelsInfo()
+        .filter((model) => !model.paid_only)
+        .map((model) => model.name);
+    const expectedPaidModelNames = getAudioModelsInfo().map(
+        (model) => model.name,
+    );
+    const expectedPaidOnlyModelNames = getAudioModelsInfo()
+        .filter((model) => model.paid_only)
+        .map((model) => model.name);
 
-    expect(freeModelNames).toContain("universal-2");
-    expect(freeModelNames).not.toContain("scribe");
-    expect(paidModelNames).toContain("scribe");
+    expect(expectedFreeModelNames.length).toBeGreaterThan(0);
+    expect(expectedPaidOnlyModelNames.length).toBeGreaterThan(0);
+    expect(freeModels.map((model) => model.name)).toEqual(
+        expectedFreeModelNames,
+    );
+    expect(paidModels.map((model) => model.name)).toEqual(
+        expectedPaidModelNames,
+    );
+    expect(freeModels.some((model) => model.paid_only)).toBe(false);
+    expect(paidModels.some((model) => model.paid_only)).toBe(true);
 });

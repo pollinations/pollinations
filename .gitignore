@@ -1,6 +1,7 @@
 
 # Temp test scripts (may contain API keys)
 temp/
+pollinations-myceli-proxy/wrangler.generated.toml
 
 # Crush
 .crush/
@@ -9,6 +10,9 @@ temp/
 /DESIGN_REFACTOR_PLAN.md
 /Design Audit.html
 /_local/
+
+# Local treasury ingest source artifacts and generated data
+/apps/operation/economics/ingest/data/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
@@ -147,7 +151,6 @@ dmypy.json
 # Cython debug symbols
 cython_debug/
 node_modules/
-lefthook.yml
 .DS_Store
 
 # Tmp folder
@@ -369,9 +372,6 @@ agent-communication.md
 .claude/MAIN.md
 .claude/SETUP.md
 .claude/settings.json
-enter.pollinations.ai/src/tier-progression/spore-to-microbe-report-enriched.csv
-enter.pollinations.ai/src/tier-progression/spore-to-microbe-report-reviewed.csv
-enter.pollinations.ai/src/tier-progression/abuse-ledger.csv
 apps/operation/finance/secrets/vendors.json
 apps/operation/finance/secrets/update-live.err
 apps/operation/finance/secrets/pool-history.json
@@ -379,3 +379,19 @@ apps/operation/finance/secrets/input/2026-03.csv
 apps/operation/finance/secrets/input/2026-02.csv
 apps/operation/finance/secrets/input/2026-01.csv
 apps/operation/finance/config.local.json
+
+# Local-only demo / sandbox files — never committed.
+*.demo.tsx
+*.demo.ts
+
+# Playwright MCP scratch output (snapshots, screenshots, console logs)
+.playwright-mcp/
+
+# Community monitor — live-only artifacts, never committed (see apps/operation/community-monitor/README.md)
+apps/operation/community-monitor/.env
+apps/operation/community-monitor/state.json
+apps/operation/community-monitor/people_mapping.json
+apps/operation/community-monitor/probe-results.json
+apps/operation/community-monitor/*.log
+apps/operation/community-monitor/monitor.log
+apps/operation/community-monitor/results.json

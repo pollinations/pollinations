@@ -370,16 +370,6 @@ async function fetchJSON<T>(url: string): Promise<T | null> {
     }
 }
 
-interface TwitterJson {
-    tweet: string;
-    tweet_type?: string;
-}
-
-interface LinkedInJson {
-    hook: string;
-    body: string;
-}
-
 interface GistJson {
     pr_number: number;
     author: string;
@@ -395,22 +385,6 @@ interface CanonicalSummaryJson {
     title: string;
     summary: string;
     prs?: PRReference[];
-}
-
-// Strip [Tag] category markers, hashtags, and URLs from social copy
-function cleanSocialText(text: string): string {
-    return text
-        .replace(/\[.*?\]\s*/g, "") // Remove ALL [Tag] markers anywhere in text
-        .replace(/\s*#\w+/g, "") // Remove hashtags
-        .replace(/https?:\/\/\S+/g, "") // Remove URLs
-        .replace(/\s{2,}/g, " ") // Collapse extra whitespace
-        .trim();
-}
-
-function extractTitle(text: string): string {
-    const cleaned = cleanSocialText(text);
-    const sentences = cleaned.split(/(?<=[.!?])\s+/);
-    return (sentences[0] || cleaned).trim();
 }
 
 async function enrichEntryFromSummary(
@@ -558,42 +532,6 @@ export function useDiaryData() {
                             );
                         }
                     }
-                }
-            }
-
-            if (!title && entry.type === "week") {
-                const linkedin = await fetchJSON<LinkedInJson>(
-                    `${RAW_BASE}/weekly/${entry.date}/linkedin.json`,
-                );
-                if (linkedin) {
-                    if (linkedin.body) {
-                        const cleanedBody = cleanSocialText(linkedin.body);
-                        title = extractTitle(linkedin.body);
-                        // Strip the title sentence from the start of summary to avoid duplication
-                        const afterTitle = cleanedBody.startsWith(title)
-                            ? cleanedBody.slice(title.length).trim()
-                            : cleanedBody;
-                        summary = afterTitle.slice(0, 600).trim();
-                    }
-                    if (!title) title = extractTitle(linkedin.hook);
-                }
-            } else if (!title) {
-                // Daily: fetch twitter.json (note: stored at the shifted date + 1 day in the repo)
-                // We need to fetch from the original file date (date + 1 day)
-                const nextDay = new Date(`${entry.date}T12:00:00Z`);
-                nextDay.setUTCDate(nextDay.getUTCDate() + 1);
-                const fileDate = nextDay.toISOString().slice(0, 10);
-
-                const twitter = await fetchJSON<TwitterJson>(
-                    `${RAW_BASE}/daily/${fileDate}/twitter.json`,
-                );
-                if (twitter) {
-                    title = extractTitle(twitter.tweet);
-                    const cleanedTweet = cleanSocialText(twitter.tweet);
-                    const afterTitle = cleanedTweet.startsWith(title)
-                        ? cleanedTweet.slice(title.length).trim()
-                        : cleanedTweet;
-                    summary = afterTitle;
                 }
             }
 

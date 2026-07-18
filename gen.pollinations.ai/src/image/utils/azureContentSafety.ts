@@ -1,4 +1,11 @@
+import debug from "debug";
+import type { AuthResult } from "../createAndReturnImages.ts";
 import { getImageEnv } from "../env.ts";
+import { HttpError } from "../httpError.ts";
+import type { ImageParams } from "../params.ts";
+import { logGptImageError, logGptImagePrompt } from "./gptImageLogger.ts";
+
+const logError = debug("pollinations:error");
 
 const CATEGORIES = ["Hate", "SelfHarm", "Sexual", "Violence"] as const;
 const SEVERITY_THRESHOLD = 4;
@@ -133,3 +140,32 @@ export const config = {
         return !!getConfig();
     },
 };
+
+/**
+ * Checks prompt safety with Azure Content Safety, logs the result, and throws
+ * an HttpError(400) if the prompt is unsafe.
+ */
+export async function requireSafePrompt(
+    prompt: string,
+    safeParams: ImageParams,
+    userInfo: AuthResult,
+): Promise<void> {
+    const promptSafetyResult = await analyzeTextSafety(prompt);
+
+    await logGptImagePrompt(prompt, safeParams, userInfo, promptSafetyResult);
+
+    if (!promptSafetyResult.safe) {
+        const errorMessage = `Prompt contains unsafe content: ${promptSafetyResult.formattedViolations}`;
+        logError("Azure Content Safety rejected prompt:", errorMessage);
+
+        const error = new HttpError(errorMessage, 400);
+        await logGptImageError(
+            prompt,
+            safeParams,
+            userInfo,
+            error,
+            promptSafetyResult,
+        );
+        throw error;
+    }
+}

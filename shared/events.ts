@@ -1,0 +1,148 @@
+import type { Logger } from "@logtape/logtape";
+import type { TinybirdEvent } from "./schemas/generation-event.ts";
+import { exponentialBackoffDelay, removeUnset } from "./util.ts";
+
+const MAX_RETRIES = 3;
+const MIN_DELAY = 100;
+const MAX_DELAY = 2000;
+
+export type TinybirdErrorEvent = {
+    timestamp: string;
+    kind: "server_error";
+    severity: "error";
+    request_id?: string;
+    environment?: string;
+    route_path?: string;
+    method?: string;
+    status: number;
+    duration_ms?: number;
+    error_code?: string;
+    error_class?: string;
+    message?: string;
+    stack?: string;
+    upstream_host?: string;
+    upstream_status?: number;
+    upstream_body?: string;
+    model_requested?: string;
+    resolved_model_requested?: string;
+    request_inputs?: string;
+    user_id?: string;
+    user_tier?: string;
+    api_key_id?: string;
+};
+
+export async function sendToTinybird(
+    event: TinybirdEvent,
+    tinybirdIngestUrl: string,
+    tinybirdIngestToken: string,
+    log: Logger,
+): Promise<void> {
+    const body = JSON.stringify(removeUnset(event));
+
+    for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+        try {
+            const response = await fetch(tinybirdIngestUrl, {
+                method: "POST",
+                headers: {
+                    Authorization: `Bearer ${tinybirdIngestToken}`,
+                    "Content-Type": "application/x-ndjson",
+                },
+                body,
+            });
+
+            if (response.ok) {
+                return;
+            }
+
+            const errorText = await response.text();
+            const isRetryable =
+                response.status >= 500 || response.status === 429;
+            const isLastAttempt = attempt === MAX_RETRIES;
+
+            if (!isRetryable || isLastAttempt) {
+                log.error(
+                    "Tinybird API error: status={status} error={error} attempt={attempt}",
+                    { status: response.status, error: errorText, attempt },
+                );
+                return;
+            }
+
+            await retryWithBackoff(
+                attempt,
+                log,
+                "Tinybird retry",
+                response.status,
+            );
+        } catch (error) {
+            if (attempt === MAX_RETRIES) {
+                log.error(
+                    "Failed to send event to Tinybird: {error} attempt={attempt}",
+                    { error, attempt },
+                );
+                return;
+            }
+
+            await retryWithBackoff(
+                attempt,
+                log,
+                "Tinybird network error, retrying",
+            );
+        }
+    }
+}
+
+export async function sendErrorEventToTinybird(
+    event: TinybirdErrorEvent,
+    tinybirdIngestUrl: string,
+    tinybirdIngestToken: string,
+    log: Logger,
+): Promise<void> {
+    const body = JSON.stringify(removeUnset(event));
+
+    try {
+        const response = await fetch(tinybirdIngestUrl, {
+            method: "POST",
+            headers: {
+                Authorization: `Bearer ${tinybirdIngestToken}`,
+                "Content-Type": "application/x-ndjson",
+            },
+            body,
+            signal: AbortSignal.timeout(5000),
+        });
+
+        if (!response.ok) {
+            log.warn("Tinybird error event ingest failed: status={status}", {
+                status: response.status,
+            });
+        }
+    } catch (error) {
+        log.warn("Tinybird error event ingest failed: {error}", { error });
+    }
+}
+
+export function getTinybirdDatasourceIngestUrl(
+    referenceIngestUrl: string,
+    datasourceName: string,
+): string {
+    const url = new URL(referenceIngestUrl);
+    url.searchParams.set("name", datasourceName);
+    return url.toString();
+}
+
+async function retryWithBackoff(
+    attempt: number,
+    log: Logger,
+    message: string,
+    status?: number,
+): Promise<void> {
+    const delay = exponentialBackoffDelay(attempt, {
+        minDelay: MIN_DELAY,
+        maxDelay: MAX_DELAY,
+        maxAttempts: MAX_RETRIES,
+    });
+
+    const logData = status ? { status, attempt, delay } : { attempt, delay };
+
+    log.warn(`${message}: attempt={attempt} delay={delay}ms`, logData);
+    await new Promise((resolve) => setTimeout(resolve, delay));
+}

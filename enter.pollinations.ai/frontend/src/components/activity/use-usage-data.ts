@@ -1,7 +1,6 @@
+import { getPeriodBucketKeys, periodBucketKeyToDate } from "@pollinations/ui";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { apiClient } from "../../api.ts";
-import { ALL_MODELS, type ModelModality } from "./constants";
-import { getPeriodBucketKeys, periodBucketKeyToDate } from "./period-utils.ts";
 import type {
     DailyUsageRecord,
     DataPoint,
@@ -10,53 +9,44 @@ import type {
 } from "./types";
 
 type UsageDataResult = {
-    dailyUsage: DailyUsageRecord[];
     loading: boolean;
     error: string | null;
     fetchUsage: () => void;
     usedModels: { id: string; label: string }[];
+    usedApiKeys: { id: string; label: string }[];
     chartData: DataPoint[];
     stats: {
         totalRequests: number;
         totalPollen: number;
         tierPollen: number;
         paidPollen: number;
-        averagePollenPerRequest: number;
-        activeModelCount: number;
+        activeApiKeyCount: number | null;
         topModel: {
             id: string;
             label: string;
             requests: number;
             pollen: number;
         } | null;
-        peakPeriod: {
-            label: string;
-            value: number;
-        } | null;
-        requestsByModality: Record<ModelModality, number>;
     };
-    filteredData: DailyUsageRecord[];
 };
 
 export function useUsageData(filters: FilterState): UsageDataResult {
     const [dailyUsage, setDailyUsage] = useState<DailyUsageRecord[]>([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const { granularity, period } = filters.period;
 
     const fetchUsage = useCallback(() => {
         setLoading(true);
         setError(null);
+
         const query: {
             granularity: string;
             period: string;
-            api_key_ids?: string;
         } = {
-            granularity: filters.period.granularity,
-            period: filters.period.period,
+            granularity,
+            period,
         };
-        if (filters.selectedKeyIds.length > 0) {
-            query.api_key_ids = filters.selectedKeyIds.join(",");
-        }
 
         apiClient.account.usage.daily
             .$get({ query })
@@ -66,19 +56,17 @@ export function useUsageData(filters: FilterState): UsageDataResult {
                 return r.json() as Promise<{ usage: DailyUsageRecord[] }>;
             })
             .then((data) => {
-                setDailyUsage(data?.usage || []);
+                setDailyUsage(data.usage);
             })
             .catch((err) => {
                 console.error("Usage fetch error:", err);
                 setError(err.message || "Failed to load usage data");
                 setDailyUsage([]);
             })
-            .finally(() => setLoading(false));
-    }, [
-        filters.period.granularity,
-        filters.period.period,
-        filters.selectedKeyIds,
-    ]);
+            .finally(() => {
+                setLoading(false);
+            });
+    }, [granularity, period]);
 
     useEffect(() => {
         fetchUsage();
@@ -91,19 +79,45 @@ export function useUsageData(filters: FilterState): UsageDataResult {
         }
 
         return Array.from(modelIds)
-            .map((id) => {
-                const registered = ALL_MODELS.find((m) => m.id === id);
-                return { id, label: registered?.label || id };
-            })
+            .map((id) => ({ id, label: id }))
             .sort((a, b) => a.label.localeCompare(b.label));
     }, [dailyUsage]);
 
-    const { chartData, stats, filteredData } = useMemo(() => {
+    const usedApiKeys = useMemo(() => {
+        const apiKeyLabels = new Map<string, string>();
+        for (const r of dailyUsage) {
+            if (apiKeyLabels.has(r.api_key_id)) continue;
+            apiKeyLabels.set(r.api_key_id, r.api_key || r.api_key_id);
+        }
+
+        return Array.from(apiKeyLabels.entries())
+            .map(([id, label]) => ({ id, label }))
+            .sort((a, b) => a.label.localeCompare(b.label));
+    }, [dailyUsage]);
+
+    const { chartData, stats } = useMemo(() => {
+        // Selections may reference ids absent from the current period; ignore
+        // stale ids so an all-stale selection falls back to "All".
+        const validKeyIds = new Set(dailyUsage.map((r) => r.api_key_id));
+        const selectedKeyIds = filters.selectedKeyIds.filter((id) =>
+            validKeyIds.has(id),
+        );
+        const validModels = new Set(
+            dailyUsage.map((r) => r.model).filter(Boolean),
+        );
+        const selectedModels = filters.selectedModels.filter((model) =>
+            validModels.has(model),
+        );
         const filtered = dailyUsage.filter((r: DailyUsageRecord) => {
             if (
-                filters.selectedModels.length > 0 &&
+                selectedKeyIds.length > 0 &&
+                !selectedKeyIds.includes(r.api_key_id)
+            )
+                return false;
+            if (
+                selectedModels.length > 0 &&
                 r.model &&
-                !filters.selectedModels.includes(r.model)
+                !selectedModels.includes(r.model)
             )
                 return false;
             return true;
@@ -134,11 +148,10 @@ export function useUsageData(filters: FilterState): UsageDataResult {
             cur.requests += r.requests || 0;
             cur.pollen += r.cost_usd || 0;
 
-            const isTier = r.meter_source === "tier";
-            if (isTier) {
+            if (r.meter_source === "tier") {
                 cur.tierRequests += r.requests || 0;
                 cur.tierPollen += r.cost_usd || 0;
-            } else {
+            } else if (r.meter_source === "pack") {
                 cur.paidRequests += r.requests || 0;
                 cur.paidPollen += r.cost_usd || 0;
             }
@@ -175,15 +188,12 @@ export function useUsageData(filters: FilterState): UsageDataResult {
             const modelBreakdown: ModelBreakdown[] = Array.from(
                 d.byModel.entries(),
             )
-                .map(([modelId, modelStats]) => {
-                    const registered = ALL_MODELS.find((m) => m.id === modelId);
-                    return {
-                        model: modelId,
-                        label: registered?.label || modelId,
-                        requests: modelStats.requests,
-                        pollen: modelStats.pollen,
-                    };
-                })
+                .map(([modelId, modelStats]) => ({
+                    model: modelId,
+                    label: modelId,
+                    requests: modelStats.requests,
+                    pollen: modelStats.pollen,
+                }))
                 .sort((a, b) => b.requests - a.requests);
 
             const tierKey =
@@ -248,7 +258,9 @@ export function useUsageData(filters: FilterState): UsageDataResult {
             string,
             { requests: number; pollen: number }
         >();
+        const activeApiKeyIds = new Set<string>();
         for (const r of filtered) {
+            if (r.api_key_id) activeApiKeyIds.add(r.api_key_id);
             if (!r.model) continue;
             const cur = modelTotals.get(r.model) || {
                 requests: 0,
@@ -274,38 +286,14 @@ export function useUsageData(filters: FilterState): UsageDataResult {
         const topModel = topModelEntry
             ? (() => {
                   const [id, modelStats] = topModelEntry;
-                  const registered = ALL_MODELS.find((m) => m.id === id);
                   return {
                       id,
-                      label: registered?.label || id,
+                      label: id,
                       requests: modelStats.requests,
                       pollen: modelStats.pollen,
                   };
               })()
             : null;
-        const peakPeriod = sorted.reduce<{
-            label: string;
-            value: number;
-        } | null>((best, point) => {
-            if (point.value <= 0) return best;
-            if (!best || point.value > best.value) {
-                return { label: point.label, value: point.value };
-            }
-            return best;
-        }, null);
-
-        const requestsByModality: Record<ModelModality, number> = {
-            text: 0,
-            image: 0,
-            audio: 0,
-        };
-        for (const r of filtered) {
-            if (!r.model || !r.requests) continue;
-            const registered = ALL_MODELS.find((m) => m.id === r.model);
-            if (!registered) continue;
-            requestsByModality[registered.type] += r.requests;
-        }
-
         return {
             chartData: sorted,
             stats: {
@@ -313,25 +301,26 @@ export function useUsageData(filters: FilterState): UsageDataResult {
                 totalPollen,
                 tierPollen,
                 paidPollen,
-                averagePollenPerRequest:
-                    totalReq > 0 ? totalPollen / totalReq : 0,
-                activeModelCount: modelTotals.size,
+                activeApiKeyCount:
+                    activeApiKeyIds.size > 0 ? activeApiKeyIds.size : null,
                 topModel,
-                peakPeriod,
-                requestsByModality,
             },
-            filteredData: filtered,
         };
-    }, [dailyUsage, filters.selectedModels, filters.metric, filters.period]);
+    }, [
+        dailyUsage,
+        filters.selectedKeyIds,
+        filters.selectedModels,
+        filters.metric,
+        filters.period,
+    ]);
 
     return {
-        dailyUsage,
         loading,
         error,
         fetchUsage,
         usedModels,
+        usedApiKeys,
         chartData,
         stats,
-        filteredData,
     };
 }

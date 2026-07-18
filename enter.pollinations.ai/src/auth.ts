@@ -5,12 +5,8 @@ import {
     StagingAccessDeniedError,
 } from "@shared/auth/api-key.ts";
 import * as betterAuthSchema from "@shared/db/better-auth.ts";
-import {
-    account as accountTable,
-    user as userTable,
-} from "@shared/db/better-auth.ts";
+import { user as userTable } from "@shared/db/better-auth.ts";
 import { AUTH_TRUSTED_ORIGINS } from "@shared/public-urls.ts";
-import { DEFAULT_TIER, getTierPollen } from "@shared/tier-config.ts";
 import {
     type BetterAuthOptions,
     type BetterAuthPlugin,
@@ -21,9 +17,8 @@ import {
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { APIError } from "better-auth/api";
 import { admin, openAPI } from "better-auth/plugins";
-import { and, eq } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
-import { sendTierEventToTinybird } from "./events.ts";
 
 export function createAuth(env: Cloudflare.Env, ctx?: ExecutionContext) {
     const db = drizzle(env.DB);
@@ -90,7 +85,7 @@ export function createAuth(env: Cloudflare.Env, ctx?: ExecutionContext) {
         plugins: [
             adminPlugin,
             apiKeyPlugin,
-            tierPlugin(env, ctx),
+            githubProfileSyncPlugin(env, ctx),
             stagingAccessPlugin(env),
             openAPIPlugin,
         ],
@@ -102,23 +97,15 @@ export type Auth = ReturnType<typeof createAuth>;
 export type Session = Auth["$Infer"]["Session"]["session"];
 export type User = Auth["$Infer"]["Session"]["user"];
 
-/**
- * Plugin to initialize tier balance for new users in D1.
- */
-function tierPlugin(
+function githubProfileSyncPlugin(
     env: Cloudflare.Env,
     executionCtx?: ExecutionContext,
 ): BetterAuthPlugin {
     return {
-        id: "tier",
-        init: (_ctx) => ({
+        id: "github-profile-sync",
+        init: () => ({
             options: {
                 databaseHooks: {
-                    user: {
-                        create: {
-                            after: onAfterUserCreate(env, executionCtx),
-                        },
-                    },
                     session: {
                         create: {
                             after: onAfterSessionCreate(env, executionCtx),
@@ -136,8 +123,8 @@ function tierPlugin(
  * We fetch the current username from GitHub API using the immutable github_id
  * and update D1 if it changed. Non-blocking via waitUntil.
  *
- * When github_id is missing from the user table (legacy rows), we resolve it
- * from the account table and backfill so subsequent logins skip the fallback.
+ * GitHub is the only auth provider, so every user row has a github_id; we skip
+ * the sync defensively if it is ever missing.
  */
 function onAfterSessionCreate(
     env: Cloudflare.Env,
@@ -160,30 +147,8 @@ function onAfterSessionCreate(
                         .where(eq(userTable.id, session.userId))
                         .limit(1);
 
-                    let githubId = user?.githubId;
-
-                    // Fallback: resolve github_id from the account table
-                    if (!githubId) {
-                        const [acct] = await db
-                            .select({ accountId: accountTable.accountId })
-                            .from(accountTable)
-                            .where(
-                                and(
-                                    eq(accountTable.userId, session.userId),
-                                    eq(accountTable.providerId, "github"),
-                                ),
-                            )
-                            .limit(1);
-
-                        if (!acct?.accountId) return;
-                        githubId = Number(acct.accountId);
-
-                        // Backfill so subsequent logins skip this fallback
-                        await db
-                            .update(userTable)
-                            .set({ githubId })
-                            .where(eq(userTable.id, session.userId));
-                    }
+                    const githubId = user?.githubId;
+                    if (!githubId) return;
 
                     const headers: Record<string, string> = {
                         Accept: "application/vnd.github+json",
@@ -227,52 +192,8 @@ function onAfterSessionCreate(
 }
 
 /**
- * Set initial tier balance in D1 after user creation.
- * This guarantees new users get their default tier pollen.
- */
-function onAfterUserCreate(
-    env: Cloudflare.Env,
-    executionCtx?: ExecutionContext,
-) {
-    return async (user: GenericUser, _ctx: GenericEndpointContext | null) => {
-        try {
-            const db = drizzle(env.DB);
-            const tierBalance = getTierPollen(DEFAULT_TIER);
-            await db
-                .update(userTable)
-                .set({
-                    tierBalance,
-                    lastTierGrant: Date.now(),
-                })
-                .where(eq(userTable.id, user.id));
-
-            // Log user registration event to Tinybird
-            // Use the ExecutionContext passed from createAuth, not better-auth's internal context
-            executionCtx?.waitUntil(
-                sendTierEventToTinybird(
-                    {
-                        event_type: "user_registration",
-                        environment: env.ENVIRONMENT || "unknown",
-                        user_id: user.id,
-                        tier: DEFAULT_TIER,
-                        pollen_amount: tierBalance,
-                    },
-                    env.TINYBIRD_TIER_INGEST_URL,
-                    env.TINYBIRD_INGEST_TOKEN,
-                ),
-            );
-        } catch (e: unknown) {
-            const messageOrError = e instanceof Error ? e.message : e;
-            throw new APIError("INTERNAL_SERVER_ERROR", {
-                message: `User tier initialization failed. Error: ${messageOrError}`,
-            });
-        }
-    };
-}
-
-/**
- * Restricts new signups on staging to an allowlist of GitHub user IDs
- * (immutable, unlike usernames). No-op outside staging.
+ * Restricts new signups on staging to explicit GitHub ID or email allowlists.
+ * GitHub IDs are immutable, unlike usernames. No-op outside staging.
  *
  * This is a thin UX layer only — it rejects disallowed users during OAuth
  * before a `user` row is created, so /error shows "staging is invite-only"
@@ -298,6 +219,7 @@ function stagingAccessPlugin(env: Cloudflare.Env): BetterAuthPlugin {
                                         githubId: (
                                             user as { githubId?: number }
                                         ).githubId,
+                                        email: user.email,
                                     });
                                 } catch (e) {
                                     if (e instanceof StagingAccessDeniedError) {

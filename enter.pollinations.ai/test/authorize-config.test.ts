@@ -1,6 +1,5 @@
 import { normalizeAllowedModelSelection } from "@frontend/components/keys/model-selection.ts";
 import {
-    CONSENT_PERMISSIONS,
     DEFAULT_CONSENT_BUDGET,
     DEFAULT_CONSENT_EXPIRY_DAYS,
     getAuthorizeInitialPermissions,
@@ -102,16 +101,16 @@ describe("getAuthorizeInitialPermissions", () => {
 
 describe("sanitizeAuthorizeAccountPermissions", () => {
     it("allows only the consent permission set", () => {
-        expect(CONSENT_PERMISSIONS).toEqual(["profile", "usage", "keys"]);
         expect(
             sanitizeAuthorizeAccountPermissions([
                 "offline_access",
                 "usage",
                 "profile",
+                "keys",
                 "usage",
                 "admin",
             ]),
-        ).toEqual(["usage", "profile"]);
+        ).toEqual(["usage", "profile", "keys"]);
     });
 
     it("returns null when no safe permissions remain", () => {

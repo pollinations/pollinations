@@ -17,6 +17,8 @@ const snapshotServerUrl = inject("snapshotServerUrl");
 const png1x1Base64 =
     "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAFgwJ/lPFCAAAAAABJRU5ErkJggg==";
 const imageBackendHost = "image-backend.test";
+const sanaBackendHost = "ltx2-backend.pollinations.ai";
+const fireworksHost = "api.fireworks.ai";
 
 afterEach(async () => {
     await teardownFetchMock();
@@ -35,6 +37,13 @@ const test = baseTest.extend<{
 function createGenerationMocks() {
     env.PORTKEY_GATEWAY_URL = "https://portkey.test";
     const portkeyHost = new URL(env.PORTKEY_GATEWAY_URL).host;
+    const fireworksState: {
+        requests: Array<{
+            body: Record<string, unknown>;
+            headers: Record<string, string>;
+            url: string;
+        }>;
+    } = { requests: [] };
     return createFetchMock({
         tinybird: createMockTinybird(),
         portkeyDirect: {
@@ -48,8 +57,19 @@ function createGenerationMocks() {
             state: {},
             handlerMap: {
                 [imageBackendHost]: fakeImageBackendResponse,
+                [sanaBackendHost]: fakeImageBackendResponse,
             },
             reset: () => {},
+        },
+        fireworks: {
+            state: fireworksState,
+            handlerMap: {
+                [fireworksHost]: (request) =>
+                    fakeFireworksFluxResponse(request, fireworksState),
+            },
+            reset: () => {
+                fireworksState.requests = [];
+            },
         },
         vcr: createMockVcr({
             originalFetch: fakeUpstreamFetch,
@@ -57,6 +77,32 @@ function createGenerationMocks() {
             snapshotServerUrl,
             mode: env.TEST_VCR_MODE,
         }),
+    });
+}
+
+async function fakeFireworksFluxResponse(
+    request: Request,
+    state: {
+        requests: Array<{
+            body: Record<string, unknown>;
+            headers: Record<string, string>;
+            url: string;
+        }>;
+    },
+) {
+    const body = (await request.json()) as Record<string, unknown>;
+    state.requests.push({
+        body,
+        headers: Object.fromEntries(request.headers.entries()),
+        url: request.url,
+    });
+
+    return new Response(Buffer.from(png1x1Base64, "base64"), {
+        headers: {
+            "content-type": "image/jpeg",
+            "finish-reason": "SUCCESS",
+            seed: String(body.seed ?? 0),
+        },
     });
 }
 
@@ -143,7 +189,7 @@ async function fakePortkeyResponse(request: Request) {
             );
         }
 
-        return Response.json({
+        const responseObject = {
             id: "resp_vcr",
             object: "response",
             created_at: 1,
@@ -175,13 +221,38 @@ async function fakePortkeyResponse(request: Request) {
                 output_tokens_details: { reasoning_tokens: 89 },
                 total_tokens: 150,
             },
-        });
+        };
+        if (body.stream) {
+            const events = [
+                {
+                    type: "response.output_text.delta",
+                    delta: "snapshot final answer",
+                },
+                { type: "response.completed", response: responseObject },
+            ];
+            return new Response(
+                events
+                    .map((event) => `data: ${JSON.stringify(event)}\n\n`)
+                    .join(""),
+                { headers: { "content-type": "text/event-stream" } },
+            );
+        }
+        return Response.json(responseObject);
     }
 
     const prompt =
         body.messages?.map((m) => contentToText(m.content)).join("\n") || "";
 
     if (body.stream) {
+        const streamUsageExtras = prompt.includes("vcr perplexity stream cost")
+            ? {
+                  search_context_size: "low",
+                  cost: {
+                      request_cost: 0.007,
+                      total_cost: 0.00701,
+                  },
+              }
+            : {};
         const streamEvent = {
             id: "chatcmpl_vcr_stream",
             object: "chat.completion.chunk",
@@ -207,6 +278,7 @@ async function fakePortkeyResponse(request: Request) {
                 prompt_tokens: 7,
                 completion_tokens: 3,
                 total_tokens: 10,
+                ...streamUsageExtras,
             },
         };
         return new Response(
@@ -253,6 +325,49 @@ async function fakePortkeyResponse(request: Request) {
             completionTokens: 2,
             citations: ["https://example.test/source"],
         },
+        {
+            matches: prompt.includes("vcr perplexity reported cost"),
+            content: "snapshot perplexity response",
+            promptTokens: 10,
+            completionTokens: 5,
+            usageExtras: {
+                search_context_size: "low",
+                cost: {
+                    request_cost: 0.006,
+                    total_cost: 0.00602,
+                },
+            },
+        },
+        {
+            matches: prompt.includes("vcr perplexity invalid cost"),
+            content: "snapshot perplexity response",
+            promptTokens: 10,
+            completionTokens: 5,
+            usageExtras: {
+                search_context_size: "low",
+                cost: {
+                    request_cost: "not-a-number",
+                },
+            },
+        },
+        {
+            matches: prompt.includes("vcr moderated text"),
+            content: "snapshot moderated response",
+            promptTokens: 6,
+            completionTokens: 4,
+            promptFilterResults: [
+                {
+                    prompt_index: 0,
+                    content_filter_results: {
+                        hate: { filtered: false, severity: "safe" },
+                        sexual: { filtered: false, severity: "safe" },
+                    },
+                },
+            ],
+            completionFilterResults: {
+                violence: { filtered: false, severity: "medium" },
+            },
+        },
     ];
     const selectedCase = cases.find((candidate) => candidate.matches);
     const isAudio =
@@ -295,6 +410,7 @@ async function fakePortkeyResponse(request: Request) {
             created: 1,
             model,
             citations: selectedCase?.citations,
+            prompt_filter_results: selectedCase?.promptFilterResults,
             choices: [
                 {
                     index: 0,
@@ -303,6 +419,8 @@ async function fakePortkeyResponse(request: Request) {
                         content: selectedCase?.content ?? "snapshot response",
                     },
                     finish_reason: selectedCase?.finishReason || "stop",
+                    content_filter_results:
+                        selectedCase?.completionFilterResults,
                 },
             ],
             usage: {
@@ -311,6 +429,7 @@ async function fakePortkeyResponse(request: Request) {
                 total_tokens:
                     (selectedCase?.promptTokens || 7) +
                     (selectedCase?.completionTokens || 3),
+                ...selectedCase?.usageExtras,
             },
         },
         { headers: usageHeaders({}) },
@@ -395,6 +514,178 @@ test("chat completions use local text generation with VCR-backed Portkey", async
         tokenCountCompletionText: 3,
         isBilledUsage: true,
     });
+    // Non-adjustment model → the Map columns must be absent from the payload so
+    // ClickHouse's DEFAULT map() fills them (removeUnset dropped the undefineds).
+    expect(mocks.tinybird.state.events[0]).not.toHaveProperty(
+        "adjustmentCosts",
+    );
+    expect(mocks.tinybird.state.events[0]).not.toHaveProperty(
+        "adjustmentUnits",
+    );
+});
+
+test("chat completions bill provider-reported Perplexity request cost without exposing it", async ({
+    paidApiKey,
+    mocks,
+}) => {
+    await mocks.enable("tinybird", "portkeyDirect");
+
+    const { response, wait } = await fetchWorker("/v1/chat/completions", {
+        method: "POST",
+        headers: {
+            "content-type": "application/json",
+            authorization: `Bearer ${paidApiKey}`,
+        },
+        body: JSON.stringify({
+            model: "perplexity-fast",
+            messages: [
+                { role: "user", content: "vcr perplexity reported cost" },
+            ],
+        }),
+    });
+
+    expect(response.status).toBe(200);
+    const body = (await response.json()) as {
+        usage?: Record<string, unknown>;
+    };
+    expect(body.usage).toMatchObject({
+        prompt_tokens: 10,
+        completion_tokens: 5,
+        total_tokens: 15,
+    });
+    expect(body.usage).not.toHaveProperty("cost");
+    expect(body.usage).not.toHaveProperty("search_context_size");
+    await wait();
+
+    expect(mocks.tinybird.state.events).toHaveLength(1);
+    expect(mocks.tinybird.state.events[0]).toMatchObject({
+        eventType: "generate.text",
+        modelRequested: "perplexity-fast",
+        tokenCountPromptText: 10,
+        tokenCountCompletionText: 5,
+        isBilledUsage: true,
+    });
+    expect(mocks.tinybird.state.events[0].totalCost).toBeCloseTo(0.006015, 8);
+    // Itemized search fee rides along in the Map columns, keyed by rule id.
+    expect(mocks.tinybird.state.events[0].adjustmentCosts).toEqual({
+        "perplexity.sonar_low.search_request.v1": 0.006,
+    });
+    expect(mocks.tinybird.state.events[0].adjustmentUnits).toEqual({
+        "perplexity.sonar_low.search_request.v1": 1,
+    });
+});
+
+test("streaming chat completions bill provider-reported Perplexity request cost", async ({
+    paidApiKey,
+    mocks,
+}) => {
+    await mocks.enable("tinybird", "portkeyDirect");
+
+    const { response, wait } = await fetchWorker("/v1/chat/completions", {
+        method: "POST",
+        headers: {
+            "content-type": "application/json",
+            authorization: `Bearer ${paidApiKey}`,
+        },
+        body: JSON.stringify({
+            model: "perplexity-fast",
+            stream: true,
+            messages: [{ role: "user", content: "vcr perplexity stream cost" }],
+        }),
+    });
+
+    expect(response.status).toBe(200);
+    await response.text();
+    await wait();
+
+    expect(mocks.tinybird.state.events).toHaveLength(1);
+    expect(mocks.tinybird.state.events[0]).toMatchObject({
+        eventType: "generate.text",
+        modelRequested: "perplexity-fast",
+        tokenCountPromptText: 7,
+        tokenCountCompletionText: 3,
+        isBilledUsage: true,
+    });
+    // 0.007 provider-reported request fee + 0.00001 token cost.
+    expect(mocks.tinybird.state.events[0].totalCost).toBeCloseTo(0.00701, 8);
+});
+
+test("malformed provider-reported cost bills the static fee, not a 5xx", async ({
+    paidApiKey,
+    mocks,
+}) => {
+    await mocks.enable("tinybird", "portkeyDirect");
+
+    const { response, wait } = await fetchWorker("/v1/chat/completions", {
+        method: "POST",
+        headers: {
+            "content-type": "application/json",
+            authorization: `Bearer ${paidApiKey}`,
+        },
+        body: JSON.stringify({
+            model: "perplexity-fast",
+            messages: [
+                { role: "user", content: "vcr perplexity invalid cost" },
+            ],
+        }),
+    });
+
+    // Clamp-and-alert: a malformed provider cost on an otherwise-good
+    // generation no longer fails the request. The response succeeds and the
+    // request is billed at the static registry fee.
+    expect(response.status).toBe(200);
+    const body = (await response.json()) as {
+        usage?: Record<string, unknown>;
+    };
+    expect(body.usage).not.toHaveProperty("cost");
+    await wait();
+
+    expect(mocks.tinybird.state.events).toHaveLength(1);
+    expect(mocks.tinybird.state.events[0]).toMatchObject({
+        eventType: "generate.text",
+        modelRequested: "perplexity-fast",
+        tokenCountPromptText: 10,
+        tokenCountCompletionText: 5,
+        isBilledUsage: true,
+    });
+    // 0.005 static request fee + 0.000015 token cost (10 prompt + 5 completion
+    // @ $1/1M). Provider request_cost was malformed → static fee substituted.
+    expect(mocks.tinybird.state.events[0].totalCost).toBeCloseTo(0.005015, 8);
+});
+
+test("non-stream chat completions keep moderation telemetry in generation events", async ({
+    paidApiKey,
+    mocks,
+}) => {
+    await mocks.enable("tinybird", "portkeyDirect");
+
+    const { response, wait } = await fetchWorker("/v1/chat/completions", {
+        method: "POST",
+        headers: {
+            "content-type": "application/json",
+            authorization: `Bearer ${paidApiKey}`,
+        },
+        body: JSON.stringify({
+            model: "openai-fast",
+            messages: [{ role: "user", content: "vcr moderated text" }],
+        }),
+    });
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get("x-moderation-prompt-hate-severity")).toBe(
+        "safe",
+    );
+    await wait();
+
+    expect(mocks.tinybird.state.events).toHaveLength(1);
+    expect(mocks.tinybird.state.events[0]).toMatchObject({
+        eventType: "generate.text",
+        modelRequested: "openai-fast",
+        moderationPromptHateSeverity: "safe",
+        moderationPromptSexualSeverity: "safe",
+        moderationCompletionViolenceSeverity: "medium",
+        isBilledUsage: true,
+    });
 });
 
 test("responses API returns reasoning summaries through Portkey", async ({
@@ -441,6 +732,45 @@ test("responses API returns reasoning summaries through Portkey", async ({
             },
         ],
     });
+    await wait();
+
+    expect(mocks.tinybird.state.events).toHaveLength(1);
+    expect(mocks.tinybird.state.events[0]).toMatchObject({
+        eventType: "generate.text",
+        responseStatus: 200,
+        modelRequested: "openai-large",
+        tokenCountPromptText: 44,
+        tokenCountPromptCached: 10,
+        tokenCountCompletionText: 7,
+        tokenCountCompletionReasoning: 89,
+        isBilledUsage: true,
+    });
+});
+
+test("responses API streams events and bills completed usage", async ({
+    paidApiKey,
+    mocks,
+}) => {
+    await mocks.enable("tinybird", "portkeyDirect");
+
+    const { response, wait } = await fetchWorker("/v1/responses", {
+        method: "POST",
+        headers: {
+            "content-type": "application/json",
+            authorization: `Bearer ${paidApiKey}`,
+        },
+        body: JSON.stringify({
+            model: "openai-large",
+            input: "vcr responses stream",
+            stream: true,
+        }),
+    });
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get("content-type")).toContain("text/event-stream");
+    const stream = await response.text();
+    expect(stream).toContain('"type":"response.output_text.delta"');
+    expect(stream).toContain('"type":"response.completed"');
     await wait();
 
     expect(mocks.tinybird.state.events).toHaveLength(1);
@@ -681,35 +1011,14 @@ test("simple text prompts can include slashes", async ({
     await expect(response.text()).resolves.toBe("snapshot slash response");
 });
 
-test("image generation uses a registered image backend from gen", async ({
+test("flux image generation uses Fireworks serverless from gen", async ({
     paidApiKey,
     mocks,
 }) => {
-    const existing = await env.KV.list({ prefix: "image:server:test:flux:" });
-    await Promise.all(existing.keys.map((k) => env.KV.delete(k.name)));
-
-    const { response: registerResponse } = await fetchWorker("/register", {
-        method: "POST",
-        headers: {
-            "content-type": "application/json",
-            authorization: `Bearer ${env.PLN_GPU_TOKEN}`,
-        },
-        body: JSON.stringify({
-            url: `https://${imageBackendHost}`,
-            type: "flux",
-        }),
-    });
-    expect(registerResponse.status).toBe(200);
-    const registered = await env.KV.list({
-        prefix: "image:server:test:flux:",
-    });
-    expect(registered.keys.length).toBeGreaterThan(0);
-    const entry = await env.KV.get(registered.keys[0].name);
-    expect(entry).toContain(imageBackendHost);
-    await mocks.enable("tinybird", "imageBackend");
+    await mocks.enable("tinybird", "fireworks");
 
     const { response, wait } = await fetchWorker(
-        "/image/vcr%20red%20square?model=flux&width=256&height=256&seed=42",
+        "/image/vcr%20red%20square?model=flux&width=1280&height=720&seed=42",
         {
             headers: { authorization: `Bearer ${paidApiKey}` },
         },
@@ -722,11 +1031,129 @@ test("image generation uses a registered image backend from gen", async ({
     expect((await response.arrayBuffer()).byteLength).toBeGreaterThan(0);
     await wait();
 
+    expect(mocks.fireworks.state.requests).toHaveLength(1);
+    expect(mocks.fireworks.state.requests[0]).toMatchObject({
+        url: "https://api.fireworks.ai/inference/v1/workflows/accounts/fireworks/models/flux-1-schnell-fp8/text_to_image",
+        body: {
+            prompt: "vcr red square",
+            aspect_ratio: "16:9",
+            num_inference_steps: 4,
+            seed: 42,
+        },
+        headers: {
+            accept: "image/jpeg",
+            authorization: `Bearer ${env.FIREWORKS_API_KEY}`,
+            "content-type": "application/json",
+        },
+    });
     expect(mocks.tinybird.state.events).toHaveLength(1);
     expect(mocks.tinybird.state.events[0]).toMatchObject({
         eventType: "generate.image",
         modelRequested: "flux",
         tokenCountCompletionImage: 1,
+        isBilledUsage: true,
+    });
+});
+
+test("OpenAI image generation returns token usage", async ({
+    paidApiKey,
+    mocks,
+}) => {
+    await mocks.enable("tinybird", "fireworks");
+
+    const { response, wait } = await fetchWorker("/v1/images/generations", {
+        method: "POST",
+        headers: {
+            authorization: `Bearer ${paidApiKey}`,
+            "content-type": "application/json",
+        },
+        body: JSON.stringify({
+            model: "flux",
+            prompt: "vcr red square",
+            size: "1280x720",
+            seed: 42,
+            response_format: "b64_json",
+        }),
+    });
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toMatchObject({
+        data: [{ b64_json: expect.any(String) }],
+        usage: {
+            input_tokens: 0,
+            output_tokens: 1,
+            total_tokens: 1,
+            input_tokens_details: {
+                text_tokens: 0,
+                image_tokens: 0,
+            },
+        },
+    });
+    await wait();
+});
+
+test("gpt-image-2 rejects transparent backgrounds with 400", async ({
+    paidApiKey,
+    mocks,
+}) => {
+    await mocks.enable("tinybird");
+
+    const { response, wait } = await fetchWorker("/v1/images/generations", {
+        method: "POST",
+        headers: {
+            "content-type": "application/json",
+            authorization: `Bearer ${paidApiKey}`,
+        },
+        body: JSON.stringify({
+            model: "gpt-image-2",
+            prompt: "transparent",
+            transparent: true,
+        }),
+    });
+
+    expect(response.status).toBe(400);
+    await expect(response.json()).resolves.toMatchObject({
+        success: false,
+        error: {
+            code: "BAD_REQUEST",
+            message:
+                "Invalid parameters: Transparent backgrounds are not supported by gpt-image-2.",
+        },
+    });
+    await wait();
+
+    expect(mocks.tinybird.state.events).toHaveLength(1);
+    expect(mocks.tinybird.state.events[0]).toMatchObject({
+        eventType: "generate.image",
+        modelRequested: "gpt-image-2",
+        responseStatus: 400,
+    });
+});
+
+test("sana uses its fixed backend and records its flat price", async ({
+    paidApiKey,
+    mocks,
+}) => {
+    await mocks.enable("tinybird", "imageBackend");
+
+    const { response, wait } = await fetchWorker(
+        "/image/fast%20flower?model=sana&width=512&height=512&seed=42",
+        {
+            headers: { authorization: `Bearer ${paidApiKey}` },
+        },
+    );
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get("x-model-used")).toBe("sana");
+    await wait();
+
+    expect(mocks.tinybird.state.events).toHaveLength(1);
+    expect(mocks.tinybird.state.events[0]).toMatchObject({
+        eventType: "generate.image",
+        modelRequested: "sana",
+        modelUsed: "sana",
+        tokenCountCompletionImage: 1,
+        tokenPriceCompletionImage: 0.0001,
         isBilledUsage: true,
     });
 });

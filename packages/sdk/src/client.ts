@@ -1,3 +1,4 @@
+import { pollinationsErrorFromResponse } from "./error-response.js";
 import type {
     AccountBalance,
     AccountKey,
@@ -21,10 +22,10 @@ import type {
     ImageGenerateV1Options,
     ImageResponse,
     KeyInfo,
+    KeyUsageOptions,
     Message,
     ModelInfo,
     PollinationsConfig,
-    PollinationsErrorDetails,
     RequestOptions,
     TextGenerateOptions,
     TranscribeOptions,
@@ -41,24 +42,13 @@ import type {
 import { PollinationsError } from "./types.js";
 
 const DEFAULT_BASE_URL = "https://gen.pollinations.ai";
-const AUTH_BASE_URL = "https://enter.pollinations.ai";
+export const AUTH_BASE_URL = "https://enter.pollinations.ai";
 const DEVICE_FLOW_CLIENT_ID = "pk_NgBAArhUeGvSRFba";
 const DEVICE_FLOW_DEFAULT_SCOPE = "generate keys usage";
-const DEFAULT_MAX_RETRIES = 3;
-const MAX_INT32 = 2147483647;
 // Default timeouts in milliseconds
 const DEFAULT_TIMEOUT = 300_000; // 5min for text/chat
 const DEFAULT_IMAGE_TIMEOUT = 600_000; // 10min for images
 const DEFAULT_VIDEO_TIMEOUT = 600_000; // 10min for videos
-
-// HTTP status codes that should NOT be retried
-const NON_RETRIABLE_CODES = [400, 401, 402, 403, 404, 422];
-
-// Default Retry-After delay when header is missing (seconds)
-const DEFAULT_RETRY_AFTER = 60;
-// Cap honored Retry-After so a malicious or misconfigured upstream
-// cannot force the client into an indefinite sleep.
-const MAX_RETRY_AFTER_SECONDS = 300;
 
 // Helper to get env var (works in Node.js, Deno, Bun, and edge runtimes)
 function getEnvVar(name: string): string | undefined {
@@ -82,64 +72,9 @@ function getEnvVar(name: string): string | undefined {
     return undefined;
 }
 
-// Generate a random seed (0 to MAX_INT32)
-function randomSeed(): number {
-    return Math.floor(Math.random() * MAX_INT32);
-}
-
-// Resolve seed: if -1, generate random; otherwise use as-is
-function resolveSeed(seed: number | undefined): number | undefined {
-    if (seed === -1) {
-        return randomSeed();
-    }
-    return seed;
-}
-
-// Sleep helper for retry delays
+// Sleep helper for device-flow polling
 function sleep(ms: number): Promise<void> {
     return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
-// Exponential backoff delay: 1s, 2s, 4s
-function getRetryDelay(attempt: number, retryAfterSeconds?: number): number {
-    if (retryAfterSeconds !== undefined && retryAfterSeconds > 0) {
-        return retryAfterSeconds * 1000;
-    }
-    return 2 ** attempt * 1000;
-}
-
-// Parse Retry-After header (can be seconds or HTTP date)
-function parseRetryAfter(response: Response): number | undefined {
-    const retryAfter = response.headers.get("Retry-After");
-    if (!retryAfter) return undefined;
-
-    // Try parsing as number of seconds.
-    // Use Number() (not parseInt) so malformed values like "5abc" or "5e2x"
-    // are rejected instead of being silently truncated into an aggressive
-    // retry delay.
-    const seconds = Number(retryAfter);
-    if (Number.isFinite(seconds) && seconds >= 0) {
-        return Math.min(seconds, MAX_RETRY_AFTER_SECONDS);
-    }
-
-    // Try parsing as HTTP date
-    const date = Date.parse(retryAfter);
-    if (!Number.isNaN(date)) {
-        const delayMs = date - Date.now();
-        return delayMs > 0 ? Math.ceil(delayMs / 1000) : undefined;
-    }
-
-    return undefined;
-}
-
-// Check if an error should be retried
-function isRetriableError(error: unknown): boolean {
-    if (error instanceof PollinationsError) {
-        // Don't retry client errors (4xx except rate limits)
-        return !NON_RETRIABLE_CODES.includes(error.status);
-    }
-    // Network errors, timeouts, etc. are retriable
-    return true;
 }
 
 // Fetch with timeout using AbortController
@@ -251,7 +186,6 @@ function parseSSEBuffer<T>(
 export class Pollinations {
     private apiKey: string;
     private baseUrl: string;
-    private maxRetries: number;
     private textTimeout: number;
     private imageTimeout: number;
     private videoTimeout: number;
@@ -262,7 +196,7 @@ export class Pollinations {
 
         if (!apiKey) {
             throw new PollinationsError(
-                "API key is required. Get one for free at https://enter.pollinations.ai",
+                "API key is required. Get one for free at https://enter.pollinations.ai/keys",
                 "API_KEY",
                 401,
             );
@@ -270,7 +204,6 @@ export class Pollinations {
 
         this.apiKey = apiKey;
         this.baseUrl = config.baseUrl?.replace(/\/$/, "") || DEFAULT_BASE_URL;
-        this.maxRetries = config.maxRetries ?? DEFAULT_MAX_RETRIES;
 
         // Allow timeout to be a default fallback for all types
         const defaultTimeout = config.timeout ?? DEFAULT_TIMEOUT;
@@ -299,33 +232,7 @@ export class Pollinations {
     }
 
     private async handleErrorResponse(response: Response): Promise<never> {
-        let errorData: PollinationsErrorDetails | null = null;
-        try {
-            const json = (await response.json()) as {
-                error?: PollinationsErrorDetails;
-            };
-            if (json.error) {
-                errorData = json.error;
-            }
-        } catch {
-            // Response wasn't JSON
-        }
-
-        // Parse Retry-After header for rate limit errors
-        const retryAfter =
-            response.status === 429
-                ? (parseRetryAfter(response) ?? DEFAULT_RETRY_AFTER)
-                : undefined;
-
-        throw new PollinationsError(
-            errorData?.message ||
-                `Request failed with status ${response.status}`,
-            errorData?.code || "UNKNOWN_ERROR",
-            response.status,
-            errorData?.details,
-            errorData?.requestId,
-            retryAfter,
-        );
+        throw await pollinationsErrorFromResponse(response);
     }
 
     private buildQueryParams(
@@ -354,6 +261,16 @@ export class Pollinations {
         return searchParams.toString();
     }
 
+    /** Remove keys whose value is undefined (mutates and returns the body). */
+    private stripUndefined(
+        body: Record<string, unknown>,
+    ): Record<string, unknown> {
+        for (const key of Object.keys(body)) {
+            if (body[key] === undefined) delete body[key];
+        }
+        return body;
+    }
+
     // ============================================================================
     // Image Generation
     // ============================================================================
@@ -362,18 +279,12 @@ export class Pollinations {
     private buildImageUrl(
         prompt: string,
         options: ImageGenerateOptions = {},
-        seed?: number,
     ): string {
         const params: Record<string, unknown> = {
             model: options.model || "zimage",
             width: options.width,
             height: options.height,
-            seed: seed !== undefined ? seed : resolveSeed(options.seed),
-            enhance: options.enhance,
-            negative_prompt: options.negativePrompt,
-            private: options.private,
-            nologo: options.nologo,
-            nofeed: options.nofeed,
+            seed: options.seed,
             safe: options.safe,
             quality: options.quality,
             image: options.referenceImage,
@@ -408,7 +319,6 @@ export class Pollinations {
 
     /**
      * Generate an image and return it as binary data.
-     * Automatically retries up to 3 times with exponential backoff on retriable failures.
      *
      * @example
      * ```ts
@@ -428,53 +338,23 @@ export class Pollinations {
             );
         }
 
-        let lastError: Error = new Error(
-            "Unknown error during image generation",
+        const url = this.buildImageUrl(prompt, options);
+        const response = await fetchWithTimeout(
+            url,
+            { headers: this.getHeaders() },
+            this.imageTimeout,
+            options.signal,
         );
 
-        for (let attempt = 0; attempt < this.maxRetries; attempt++) {
-            // Generate new seed for each retry (or use resolved seed on first attempt)
-            const seed =
-                attempt === 0 ? resolveSeed(options.seed) : randomSeed();
-            const url = this.buildImageUrl(prompt, options, seed);
-
-            try {
-                const response = await fetchWithTimeout(
-                    url,
-                    { headers: this.getHeaders() },
-                    this.imageTimeout,
-                    options.signal,
-                );
-
-                if (!response.ok) {
-                    await this.handleErrorResponse(response);
-                }
-
-                const buffer = await response.arrayBuffer();
-                const contentType =
-                    response.headers.get("content-type") || "image/jpeg";
-
-                return { buffer, contentType, url: stripKeyFromUrl(url) };
-            } catch (err) {
-                lastError = err as Error;
-
-                // Don't retry non-retriable errors (400, 401, 403, 404, 422)
-                if (!isRetriableError(err)) {
-                    throw lastError;
-                }
-
-                if (attempt < this.maxRetries - 1) {
-                    // Use Retry-After from rate limit errors, otherwise exponential backoff
-                    const retryAfter =
-                        err instanceof PollinationsError
-                            ? err.retryAfter
-                            : undefined;
-                    await sleep(getRetryDelay(attempt, retryAfter));
-                }
-            }
+        if (!response.ok) {
+            await this.handleErrorResponse(response);
         }
 
-        throw lastError;
+        const buffer = await response.arrayBuffer();
+        const contentType =
+            response.headers.get("content-type") || "image/jpeg";
+
+        return { buffer, contentType, url: stripKeyFromUrl(url) };
     }
 
     // ============================================================================
@@ -542,38 +422,10 @@ export class Pollinations {
             );
         }
 
-        // If we got a URL, fetch the binary
-        if (item.url) {
-            const imgResponse = await fetchWithTimeout(
-                item.url,
-                {},
-                this.imageTimeout,
-                options.signal,
-            );
-            const buffer = await imgResponse.arrayBuffer();
-            const contentType =
-                imgResponse.headers.get("content-type") || "image/png";
-            return { buffer, contentType, url: item.url };
-        }
-
-        // b64_json response — decode to buffer
-        if (item.b64_json) {
-            const binary = atob(item.b64_json);
-            const bytes = new Uint8Array(binary.length);
-            for (let i = 0; i < binary.length; i++) {
-                bytes[i] = binary.charCodeAt(i);
-            }
-            return {
-                buffer: bytes.buffer as ArrayBuffer,
-                contentType: "image/png",
-                url: "",
-            };
-        }
-
-        throw new PollinationsError(
+        return this.resolveImageItem(
+            item,
+            options.signal,
             "Unexpected response format from image edit",
-            "INVALID_RESPONSE",
-            500,
         );
     }
 
@@ -627,10 +479,8 @@ export class Pollinations {
         if (options.responseFormat)
             body.response_format = options.responseFormat;
         if (options.reasoning !== undefined) body.reasoning = options.reasoning;
-        if (options.seed !== undefined) body.seed = resolveSeed(options.seed);
+        if (options.seed !== undefined) body.seed = options.seed;
         if (options.quality) body.quality = options.quality;
-        if (options.negativePrompt)
-            body.negative_prompt = options.negativePrompt;
 
         const response = await fetchWithTimeout(
             `${this.baseUrl}/v1/images/generations`,
@@ -676,6 +526,7 @@ export class Pollinations {
     private async resolveImageItem(
         item: { url?: string; b64_json?: string },
         signal?: AbortSignal,
+        invalidResponseMessage = "Unexpected image item shape in response",
     ): Promise<ImageResponse> {
         if (item.url) {
             const imgResponse = await fetchWithTimeout(
@@ -702,7 +553,7 @@ export class Pollinations {
             };
         }
         throw new PollinationsError(
-            "Unexpected image item shape in response",
+            invalidResponseMessage,
             "INVALID_RESPONSE",
             500,
         );
@@ -712,36 +563,20 @@ export class Pollinations {
     // Video Generation
     // ============================================================================
 
-    private validateVideoDuration(_model: string, duration?: number): void {
-        if (duration === undefined) return;
-
-        if (duration < 1 || duration > 30) {
-            throw new PollinationsError(
-                `Invalid duration: ${duration}. Must be between 1-30 seconds.`,
-                "INVALID_DURATION",
-                400,
-            );
-        }
-    }
-
     /** Build video URL with all params (internal use) */
     private buildVideoUrl(
         prompt: string,
         options: VideoGenerateOptions = {},
-        seed?: number,
     ): string {
         const model = options.model || "veo";
-        this.validateVideoDuration(model, options.duration);
 
         const params: Record<string, unknown> = {
             model,
             duration: options.duration,
             aspectRatio: options.aspectRatio,
-            seed: seed !== undefined ? seed : resolveSeed(options.seed),
+            seed: options.seed,
             audio: options.audio,
             image: options.referenceImage,
-            private: options.private,
-            nologo: options.nologo,
             safe: options.safe,
         };
 
@@ -770,7 +605,6 @@ export class Pollinations {
 
     /**
      * Generate a video and return it as binary data.
-     * Automatically retries up to 3 times with exponential backoff on retriable failures.
      * Note: Video generation can take several minutes - timeout is set to 10 minutes.
      *
      * @example
@@ -790,52 +624,22 @@ export class Pollinations {
             );
         }
 
-        let lastError: Error = new Error(
-            "Unknown error during video generation",
+        const url = this.buildVideoUrl(prompt, options);
+        const response = await fetchWithTimeout(
+            url,
+            { headers: this.getHeaders() },
+            this.videoTimeout,
+            options.signal,
         );
 
-        for (let attempt = 0; attempt < this.maxRetries; attempt++) {
-            const seed =
-                attempt === 0 ? resolveSeed(options.seed) : randomSeed();
-            const url = this.buildVideoUrl(prompt, options, seed);
-
-            try {
-                const response = await fetchWithTimeout(
-                    url,
-                    { headers: this.getHeaders() },
-                    this.videoTimeout,
-                    options.signal,
-                );
-
-                if (!response.ok) {
-                    await this.handleErrorResponse(response);
-                }
-
-                const buffer = await response.arrayBuffer();
-                const contentType =
-                    response.headers.get("content-type") || "video/mp4";
-
-                return { buffer, contentType, url: stripKeyFromUrl(url) };
-            } catch (err) {
-                lastError = err as Error;
-
-                // Don't retry non-retriable errors (400, 401, 403, 404, 422)
-                if (!isRetriableError(err)) {
-                    throw lastError;
-                }
-
-                if (attempt < this.maxRetries - 1) {
-                    // Use Retry-After from rate limit errors, otherwise exponential backoff
-                    const retryAfter =
-                        err instanceof PollinationsError
-                            ? err.retryAfter
-                            : undefined;
-                    await sleep(getRetryDelay(attempt, retryAfter));
-                }
-            }
+        if (!response.ok) {
+            await this.handleErrorResponse(response);
         }
 
-        throw lastError;
+        const buffer = await response.arrayBuffer();
+        const contentType = response.headers.get("content-type") || "video/mp4";
+
+        return { buffer, contentType, url: stripKeyFromUrl(url) };
     }
 
     // ============================================================================
@@ -844,7 +648,6 @@ export class Pollinations {
 
     /**
      * Generate text from a prompt.
-     * Automatically retries up to 3 times with exponential backoff on retriable failures.
      *
      * @example
      * ```ts
@@ -864,88 +667,55 @@ export class Pollinations {
             );
         }
 
-        let lastError: Error = new Error(
-            "Unknown error during text generation",
-        );
+        const messages: Message[] = [];
 
-        for (let attempt = 0; attempt < this.maxRetries; attempt++) {
-            const seed =
-                attempt === 0 ? resolveSeed(options.seed) : randomSeed();
-
-            const messages: Message[] = [];
-
-            if (options.systemPrompt) {
-                messages.push({
-                    role: "system",
-                    content: options.systemPrompt,
-                });
-            }
-            messages.push({ role: "user", content: prompt });
-
-            const body: Record<string, unknown> = {
-                messages,
-                model: options.model || "openai",
-                temperature: options.temperature,
-                max_tokens: options.maxTokens,
-                frequency_penalty: options.frequencyPenalty,
-                presence_penalty: options.presencePenalty,
-                seed,
-                stream: false,
-                private: options.private,
-            };
-
-            if (options.json) {
-                body.response_format = { type: "json_object" };
-            }
-
-            // Remove undefined values
-            Object.keys(body).forEach((key) => {
-                if (body[key] === undefined) delete body[key];
+        if (options.systemPrompt) {
+            messages.push({
+                role: "system",
+                content: options.systemPrompt,
             });
+        }
+        messages.push({ role: "user", content: prompt });
 
-            try {
-                const response = await fetchWithTimeout(
-                    `${this.baseUrl}/v1/chat/completions`,
-                    {
-                        method: "POST",
-                        headers: this.getHeaders("application/json"),
-                        body: JSON.stringify(body),
-                    },
-                    this.textTimeout,
-                    options.signal,
-                );
+        const body: Record<string, unknown> = {
+            messages,
+            model: options.model || "openai",
+            temperature: options.temperature,
+            max_tokens: options.maxTokens,
+            frequency_penalty: options.frequencyPenalty,
+            presence_penalty: options.presencePenalty,
+            seed: options.seed,
+            stream: false,
+            private: options.private,
+        };
 
-                if (!response.ok) {
-                    await this.handleErrorResponse(response);
-                }
-
-                const data = (await response.json()) as ChatResponse;
-                return data.choices[0]?.message?.content || "";
-            } catch (err) {
-                lastError = err as Error;
-
-                // Don't retry non-retriable errors (400, 401, 403, 404, 422)
-                if (!isRetriableError(err)) {
-                    throw lastError;
-                }
-
-                if (attempt < this.maxRetries - 1) {
-                    // Use Retry-After from rate limit errors, otherwise exponential backoff
-                    const retryAfter =
-                        err instanceof PollinationsError
-                            ? err.retryAfter
-                            : undefined;
-                    await sleep(getRetryDelay(attempt, retryAfter));
-                }
-            }
+        if (options.json) {
+            body.response_format = { type: "json_object" };
         }
 
-        throw lastError;
+        this.stripUndefined(body);
+
+        const response = await fetchWithTimeout(
+            `${this.baseUrl}/v1/chat/completions`,
+            {
+                method: "POST",
+                headers: this.getHeaders("application/json"),
+                body: JSON.stringify(body),
+            },
+            this.textTimeout,
+            options.signal,
+        );
+
+        if (!response.ok) {
+            await this.handleErrorResponse(response);
+        }
+
+        const data = (await response.json()) as ChatResponse;
+        return data.choices[0]?.message?.content || "";
     }
 
     /**
      * Generate text with streaming response.
-     * Automatically retries on connection failure before streaming starts.
      *
      * @example
      * ```ts
@@ -989,55 +759,21 @@ export class Pollinations {
             body.response_format = { type: "json_object" };
         }
 
-        // Remove undefined values
-        Object.keys(body).forEach((key) => {
-            if (body[key] === undefined) delete body[key];
-        });
+        this.stripUndefined(body);
 
-        // Retry logic for connection establishment
-        let response: Response | null = null;
-        let lastError: Error = new Error("Unknown error during text stream");
+        const response = await fetchWithTimeout(
+            `${this.baseUrl}/v1/chat/completions`,
+            {
+                method: "POST",
+                headers: this.getHeaders("application/json"),
+                body: JSON.stringify(body),
+            },
+            this.textTimeout,
+            options.signal,
+        );
 
-        for (let attempt = 0; attempt < this.maxRetries; attempt++) {
-            try {
-                response = await fetchWithTimeout(
-                    `${this.baseUrl}/v1/chat/completions`,
-                    {
-                        method: "POST",
-                        headers: this.getHeaders("application/json"),
-                        body: JSON.stringify(body),
-                    },
-                    this.textTimeout,
-                    options.signal,
-                );
-
-                if (!response.ok) {
-                    await this.handleErrorResponse(response);
-                }
-
-                // Connection successful, break out of retry loop
-                break;
-            } catch (err) {
-                lastError = err as Error;
-
-                if (!isRetriableError(err)) {
-                    throw lastError;
-                }
-
-                if (attempt < this.maxRetries - 1) {
-                    const retryAfter =
-                        err instanceof PollinationsError
-                            ? err.retryAfter
-                            : undefined;
-                    await sleep(getRetryDelay(attempt, retryAfter));
-                } else {
-                    throw lastError;
-                }
-            }
-        }
-
-        if (!response) {
-            throw lastError;
+        if (!response.ok) {
+            await this.handleErrorResponse(response);
         }
 
         const reader = response.body?.getReader();
@@ -1073,9 +809,43 @@ export class Pollinations {
     // Chat Completions (OpenAI-compatible)
     // ============================================================================
 
+    /** Build the shared chat-completions request body. */
+    private buildChatBody(
+        messages: Message[],
+        options: Omit<ChatOptions, "stream">,
+        stream: boolean,
+    ): Record<string, unknown> {
+        return this.stripUndefined({
+            messages,
+            model: options.model || "openai",
+            temperature: options.temperature,
+            top_p: options.topP,
+            max_tokens: options.maxTokens,
+            frequency_penalty: options.frequencyPenalty,
+            presence_penalty: options.presencePenalty,
+            repetition_penalty: options.repetitionPenalty,
+            stop: options.stop,
+            seed: options.seed,
+            stream,
+            stream_options: options.streamOptions,
+            response_format: options.responseFormat,
+            tools: options.tools,
+            tool_choice: options.toolChoice,
+            parallel_tool_calls: options.parallelToolCalls,
+            reasoning_effort: options.reasoningEffort,
+            modalities: options.modalities,
+            audio: options.audio,
+            user: options.user,
+            logit_bias: options.logitBias,
+            logprobs: options.logprobs,
+            top_logprobs: options.topLogprobs,
+            functions: options.functions,
+            function_call: options.functionCall,
+        });
+    }
+
     /**
      * Create a chat completion (OpenAI-compatible).
-     * Automatically retries up to 3 times with exponential backoff on retriable failures.
      *
      * @example
      * ```ts
@@ -1097,93 +867,27 @@ export class Pollinations {
             );
         }
 
-        let lastError: Error = new Error(
-            "Unknown error during chat completion",
+        const body = this.buildChatBody(messages, options, false);
+        const response = await fetchWithTimeout(
+            `${this.baseUrl}/v1/chat/completions`,
+            {
+                method: "POST",
+                headers: this.getHeaders("application/json"),
+                body: JSON.stringify(body),
+            },
+            this.textTimeout,
+            options.signal,
         );
 
-        for (let attempt = 0; attempt < this.maxRetries; attempt++) {
-            const seed =
-                attempt === 0 ? resolveSeed(options.seed) : randomSeed();
-
-            const body: Record<string, unknown> = {
-                messages,
-                model: options.model || "openai",
-                temperature: options.temperature,
-                top_p: options.topP,
-                max_tokens: options.maxTokens,
-                frequency_penalty: options.frequencyPenalty,
-                presence_penalty: options.presencePenalty,
-                repetition_penalty: options.repetitionPenalty,
-                stop: options.stop,
-                seed,
-                stream: false,
-                stream_options: options.streamOptions,
-                response_format: options.responseFormat,
-                tools: options.tools,
-                tool_choice: options.toolChoice,
-                parallel_tool_calls: options.parallelToolCalls,
-                thinking: options.thinking,
-                reasoning_effort: options.reasoningEffort,
-                thinking_budget: options.thinkingBudget,
-                modalities: options.modalities,
-                audio: options.audio,
-                user: options.user,
-                logit_bias: options.logitBias,
-                logprobs: options.logprobs,
-                top_logprobs: options.topLogprobs,
-                functions: options.functions,
-                function_call: options.functionCall,
-            };
-
-            // Remove undefined values
-            Object.keys(body).forEach((key) => {
-                if (body[key] === undefined) {
-                    delete body[key];
-                }
-            });
-
-            try {
-                const response = await fetchWithTimeout(
-                    `${this.baseUrl}/v1/chat/completions`,
-                    {
-                        method: "POST",
-                        headers: this.getHeaders("application/json"),
-                        body: JSON.stringify(body),
-                    },
-                    this.textTimeout,
-                    options.signal,
-                );
-
-                if (!response.ok) {
-                    await this.handleErrorResponse(response);
-                }
-
-                return response.json() as Promise<ChatResponse>;
-            } catch (err) {
-                lastError = err as Error;
-
-                // Don't retry non-retriable errors (400, 401, 403, 404, 422)
-                if (!isRetriableError(err)) {
-                    throw lastError;
-                }
-
-                if (attempt < this.maxRetries - 1) {
-                    // Use Retry-After from rate limit errors, otherwise exponential backoff
-                    const retryAfter =
-                        err instanceof PollinationsError
-                            ? err.retryAfter
-                            : undefined;
-                    await sleep(getRetryDelay(attempt, retryAfter));
-                }
-            }
+        if (!response.ok) {
+            await this.handleErrorResponse(response);
         }
 
-        throw lastError;
+        return response.json() as Promise<ChatResponse>;
     }
 
     /**
      * Create a streaming chat completion.
-     * Automatically retries on connection failure before streaming starts.
      *
      * @example
      * ```ts
@@ -1207,87 +911,20 @@ export class Pollinations {
             );
         }
 
-        const body: Record<string, unknown> = {
-            messages,
-            model: options.model || "openai",
-            temperature: options.temperature,
-            top_p: options.topP,
-            max_tokens: options.maxTokens,
-            frequency_penalty: options.frequencyPenalty,
-            presence_penalty: options.presencePenalty,
-            repetition_penalty: options.repetitionPenalty,
-            stop: options.stop,
-            seed: options.seed,
-            stream: true,
-            stream_options: options.streamOptions,
-            response_format: options.responseFormat,
-            tools: options.tools,
-            tool_choice: options.toolChoice,
-            parallel_tool_calls: options.parallelToolCalls,
-            thinking: options.thinking,
-            reasoning_effort: options.reasoningEffort,
-            thinking_budget: options.thinkingBudget,
-            modalities: options.modalities,
-            audio: options.audio,
-            user: options.user,
-            logit_bias: options.logitBias,
-            logprobs: options.logprobs,
-            top_logprobs: options.topLogprobs,
-            functions: options.functions,
-            function_call: options.functionCall,
-        };
+        const body = this.buildChatBody(messages, options, true);
+        const response = await fetchWithTimeout(
+            `${this.baseUrl}/v1/chat/completions`,
+            {
+                method: "POST",
+                headers: this.getHeaders("application/json"),
+                body: JSON.stringify(body),
+            },
+            this.textTimeout,
+            options.signal,
+        );
 
-        // Remove undefined values
-        Object.keys(body).forEach((key) => {
-            if (body[key] === undefined) {
-                delete body[key];
-            }
-        });
-
-        // Retry logic for connection establishment
-        let response: Response | null = null;
-        let lastError: Error = new Error("Unknown error during chat stream");
-
-        for (let attempt = 0; attempt < this.maxRetries; attempt++) {
-            try {
-                response = await fetchWithTimeout(
-                    `${this.baseUrl}/v1/chat/completions`,
-                    {
-                        method: "POST",
-                        headers: this.getHeaders("application/json"),
-                        body: JSON.stringify(body),
-                    },
-                    this.textTimeout,
-                    options.signal,
-                );
-
-                if (!response.ok) {
-                    await this.handleErrorResponse(response);
-                }
-
-                // Connection successful, break out of retry loop
-                break;
-            } catch (err) {
-                lastError = err as Error;
-
-                if (!isRetriableError(err)) {
-                    throw lastError;
-                }
-
-                if (attempt < this.maxRetries - 1) {
-                    const retryAfter =
-                        err instanceof PollinationsError
-                            ? err.retryAfter
-                            : undefined;
-                    await sleep(getRetryDelay(attempt, retryAfter));
-                } else {
-                    throw lastError;
-                }
-            }
-        }
-
-        if (!response) {
-            throw lastError;
+        if (!response.ok) {
+            await this.handleErrorResponse(response);
         }
 
         const reader = response.body?.getReader();
@@ -1351,10 +988,7 @@ export class Pollinations {
             voice: options.voice,
             model: options.model,
             duration: options.duration,
-            seed:
-                options.seed !== undefined
-                    ? resolveSeed(options.seed)
-                    : undefined,
+            seed: options.seed,
         };
 
         const queryString = this.buildQueryParams(params);
@@ -1548,54 +1182,36 @@ export class Pollinations {
         if (options.temperature !== undefined)
             formData.append("temperature", String(options.temperature));
 
-        let lastError: Error = new Error("Unknown error during transcription");
+        const headers = this.getHeaders();
+        // Don't set Content-Type - fetch sets it with boundary for FormData
 
-        for (let attempt = 0; attempt < this.maxRetries; attempt++) {
-            try {
-                const headers = this.getHeaders();
-                // Don't set Content-Type - fetch sets it with boundary for FormData
+        const response = await fetchWithTimeout(
+            `${this.baseUrl}/v1/audio/transcriptions`,
+            {
+                method: "POST",
+                headers,
+                body: formData,
+            },
+            this.textTimeout,
+            options.signal,
+        );
 
-                const response = await fetchWithTimeout(
-                    `${this.baseUrl}/v1/audio/transcriptions`,
-                    {
-                        method: "POST",
-                        headers,
-                        body: formData,
-                    },
-                    this.textTimeout,
-                    options.signal,
-                );
-
-                if (!response.ok) {
-                    await this.handleErrorResponse(response);
-                }
-
-                if (
-                    options.responseFormat === "text" ||
-                    options.responseFormat === "srt" ||
-                    options.responseFormat === "vtt"
-                ) {
-                    const text = await response.text();
-                    return { text };
-                }
-
-                return response.json() as Promise<
-                    TranscriptionResponse | TranscriptionVerboseResponse
-                >;
-            } catch (err) {
-                lastError = err as Error;
-                if (!isRetriableError(err)) throw lastError;
-                if (attempt < this.maxRetries - 1) {
-                    const retryAfter =
-                        err instanceof PollinationsError
-                            ? err.retryAfter
-                            : undefined;
-                    await sleep(getRetryDelay(attempt, retryAfter));
-                }
-            }
+        if (!response.ok) {
+            await this.handleErrorResponse(response);
         }
 
-        throw lastError;
+        if (
+            options.responseFormat === "text" ||
+            options.responseFormat === "srt" ||
+            options.responseFormat === "vtt"
+        ) {
+            const text = await response.text();
+            return { text };
+        }
+
+        return response.json() as Promise<
+            TranscriptionResponse | TranscriptionVerboseResponse
+        >;
     }
 
     // ============================================================================
@@ -1608,7 +1224,10 @@ export class Pollinations {
      * @example
      * ```ts
      * // Upload from ArrayBuffer
-     * const result = await pollinations.upload(imageBuffer, { contentType: 'image/jpeg' });
+     * const result = await pollinations.upload(imageBuffer, {
+     *   contentType: 'image/jpeg',
+     *   tags: ['cats'],
+     * });
      * console.log(result.url); // https://media.pollinations.ai/abc123...
      *
      * // Upload from Blob (browser)
@@ -1629,43 +1248,28 @@ export class Pollinations {
                   });
 
         formData.append("file", blob, options.name || "upload");
+        if (options.tags?.length) {
+            formData.append("tags", options.tags.join(","));
+        }
 
         const headers = this.getHeaders();
 
-        let lastError: Error = new Error("Unknown error during upload");
+        const response = await fetchWithTimeout(
+            `https://media.pollinations.ai/upload`,
+            {
+                method: "POST",
+                headers,
+                body: formData,
+            },
+            this.imageTimeout,
+            options.signal,
+        );
 
-        for (let attempt = 0; attempt < this.maxRetries; attempt++) {
-            try {
-                const response = await fetchWithTimeout(
-                    `https://media.pollinations.ai/upload`,
-                    {
-                        method: "POST",
-                        headers,
-                        body: formData,
-                    },
-                    this.imageTimeout,
-                    options.signal,
-                );
-
-                if (!response.ok) {
-                    await this.handleErrorResponse(response);
-                }
-
-                return response.json() as Promise<UploadResponse>;
-            } catch (err) {
-                lastError = err as Error;
-                if (!isRetriableError(err)) throw lastError;
-                if (attempt < this.maxRetries - 1) {
-                    const retryAfter =
-                        err instanceof PollinationsError
-                            ? err.retryAfter
-                            : undefined;
-                    await sleep(getRetryDelay(attempt, retryAfter));
-                }
-            }
+        if (!response.ok) {
+            await this.handleErrorResponse(response);
         }
 
-        throw lastError;
+        return response.json() as Promise<UploadResponse>;
     }
 
     // ============================================================================
@@ -1689,11 +1293,12 @@ export class Pollinations {
      *
      * Omit `budget` for the default cap.
      */
-    authorizeUrl(options: AuthorizeOptions): string {
+    static authorizeUrl(options: AuthorizeOptions): string {
         const params = new URLSearchParams();
-        params.set("redirect_url", options.redirectUrl);
+        params.set("redirect_uri", options.redirectUrl);
 
-        if (options.appKey) params.set("app_key", options.appKey);
+        if (options.appKey) params.set("client_id", options.appKey);
+        if (options.state) params.set("state", options.state);
         if (options.models?.length)
             params.set("models", options.models.join(","));
         if (options.budget !== undefined)
@@ -1701,9 +1306,13 @@ export class Pollinations {
         if (options.expiry !== undefined)
             params.set("expiry", String(options.expiry));
         if (options.permissions?.length)
-            params.set("permissions", options.permissions.join(","));
+            params.set("scope", options.permissions.join(" "));
 
-        return `${AUTH_BASE_URL}/authorize?${params.toString()}`;
+        return `${options.authBaseUrl ?? AUTH_BASE_URL}/authorize?${params.toString()}`;
+    }
+
+    authorizeUrl(options: AuthorizeOptions): string {
+        return Pollinations.authorizeUrl(options);
     }
 
     // ============================================================================
@@ -1737,8 +1346,11 @@ export class Pollinations {
 
         const response = await fetch(`${AUTH_BASE_URL}/api/device/code`, {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ client_id: clientId, scope }),
+            headers: { "Content-Type": "application/x-www-form-urlencoded" },
+            body: new URLSearchParams({
+                client_id: clientId,
+                scope,
+            }).toString(),
             signal: options.signal,
         });
 
@@ -1753,7 +1365,7 @@ export class Pollinations {
 
         const code = (await response.json()) as DeviceCodeResponse;
         const expiresAt = new Date(Date.now() + code.expires_in * 1000);
-        const pollMs = Math.max(code.interval, 5) * 1000;
+        let pollMs = Math.max(code.interval, 5) * 1000;
 
         const poll = async (): Promise<string> => {
             while (Date.now() < expiresAt.getTime()) {
@@ -1767,15 +1379,18 @@ export class Pollinations {
                 }
 
                 const tokenRes = await fetch(
-                    `${AUTH_BASE_URL}/api/device/token`,
+                    `${AUTH_BASE_URL}/api/oauth/token`,
                     {
                         method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({
-                            device_code: code.device_code,
+                        headers: {
+                            "Content-Type": "application/x-www-form-urlencoded",
+                        },
+                        body: new URLSearchParams({
                             grant_type:
                                 "urn:ietf:params:oauth:grant-type:device_code",
-                        }),
+                            device_code: code.device_code,
+                            client_id: clientId,
+                        }).toString(),
                     },
                 );
 
@@ -1786,10 +1401,12 @@ export class Pollinations {
                 if (tokenRes.ok && body.access_token) {
                     return body.access_token;
                 }
-                if (
-                    body.error === "authorization_pending" ||
-                    body.error === "slow_down"
-                ) {
+                if (body.error === "authorization_pending") {
+                    continue;
+                }
+                if (body.error === "slow_down") {
+                    // RFC 8628 §3.5: back off by 5s on slow_down
+                    pollMs += 5000;
                     continue;
                 }
                 throw new PollinationsError(
@@ -1822,7 +1439,7 @@ export class Pollinations {
      * @example
      * ```ts
      * const user = await pollinations.userInfo();
-     * console.log(user.name, user.tier);
+     * console.log(user.name, user.preferred_username);
      * ```
      */
     async userInfo(options: RequestOptions = {}): Promise<UserInfo> {
@@ -1896,6 +1513,8 @@ export class Pollinations {
         if (options.days) params.set("days", String(options.days));
         if (options.limit) params.set("limit", String(options.limit));
         if (options.before) params.set("before", options.before);
+        if (options.granularity) params.set("granularity", options.granularity);
+        if (options.period) params.set("period", options.period);
 
         const qs = params.toString();
         const url = `${this.baseUrl}/account/usage${qs ? `?${qs}` : ""}`;
@@ -1925,6 +1544,8 @@ export class Pollinations {
         const params = new URLSearchParams();
         if (options.format) params.set("format", options.format);
         if (options.days) params.set("days", String(options.days));
+        if (options.granularity) params.set("granularity", options.granularity);
+        if (options.period) params.set("period", options.period);
         if (options.api_key_ids && options.api_key_ids.length > 0)
             params.set("api_key_ids", options.api_key_ids.join(","));
 
@@ -1959,6 +1580,38 @@ export class Pollinations {
 
         if (!response.ok) await this.handleErrorResponse(response);
         return response.json() as Promise<KeyInfo>;
+    }
+
+    /**
+     * Get usage history for the API key used by this client.
+     *
+     * @example
+     * ```ts
+     * const { usage } = await pollinations.accountKeyUsage({ limit: 50 });
+     * usage.forEach(r => console.log(r.model, r.cost_usd));
+     * ```
+     */
+    async accountKeyUsage(
+        options: KeyUsageOptions = {},
+    ): Promise<UsageResponse> {
+        const params = new URLSearchParams();
+        if (options.days) params.set("days", String(options.days));
+        if (options.limit) params.set("limit", String(options.limit));
+        if (options.before) params.set("before", options.before);
+        if (options.granularity) params.set("granularity", options.granularity);
+        if (options.period) params.set("period", options.period);
+
+        const qs = params.toString();
+        const url = `${this.baseUrl}/account/key/usage${qs ? `?${qs}` : ""}`;
+
+        const response = await fetchWithTimeout(
+            url,
+            { headers: this.getHeaders() },
+            this.textTimeout,
+        );
+
+        if (!response.ok) await this.handleErrorResponse(response);
+        return response.json() as Promise<UsageResponse>;
     }
 
     // ============================================================================
@@ -2023,6 +1676,9 @@ export class Pollinations {
             body.pollenBudget = options.pollenBudget;
         if (options.accountPermissions)
             body.accountPermissions = options.accountPermissions;
+        if (options.redirectUris) body.redirectUris = options.redirectUris;
+        if (options.earningsEnabled !== undefined)
+            body.earningsEnabled = options.earningsEnabled;
 
         const response = await fetchWithTimeout(
             `${this.baseUrl}/account/keys`,

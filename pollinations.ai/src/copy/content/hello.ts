@@ -49,11 +49,11 @@ export const HELLO_PAGE = {
         },
         {
             emoji: "🌱",
-            title: "Free Credits",
+            title: "Pollen Quests",
             lead: "Build before users show up.",
-            desc: "- **Refill Pollen** for prototypes & testing\n- Earn extra from **Pollen Quests** 🎯\n- More activity unlocks more room 📈",
-            linkText: "How tiers work",
-            linkUrl: "enterTiersFaq",
+            desc: "- Earn **Pollen** by completing **Quests** 🎯\n- Free Pollen for prototypes & testing\n- More Quests, more ways to earn 📈",
+            linkText: "How Quests work",
+            linkUrl: "enterQuestsFaq",
         },
         {
             emoji: "🎯",
@@ -107,7 +107,7 @@ export const HELLO_PAGE = {
     // Section 9 — CTA
     ctaTitle: "Start building",
     ctaBody:
-        "One API. Free credits to start, and earnings when your app gets used.",
+        "One API. Free Pollen from Quests to start, and earnings when your app gets used.",
     browseAppsLink: "Browse Apps",
     communityLink: "Community",
 };

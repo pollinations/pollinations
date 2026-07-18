@@ -37,7 +37,7 @@ export function createTextCommand() {
         .option("--json-response", "Force model to return JSON object")
         .option(
             "--reasoning <effort>",
-            "Reasoning effort for reasoning models: low|medium|high",
+            "Reasoning effort for reasoning models: none|minimal|low|medium|high|xhigh",
         )
         .option(
             "--image <url...>",

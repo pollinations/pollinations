@@ -1,18 +1,33 @@
 {
-    "name": "html-wrapper",
-    "version": "1.0.0",
-    "description": "Wrapper service for gen.pollinations.ai/v1/chat/completions that returns HTML content",
+    "name": "websim.pollinations.ai",
+    "private": true,
+    "version": "0.0.0",
+    "description": "Worker-backed Websim app for generating shareable HTML pages with Pollinations.",
     "main": "worker.js",
     "type": "module",
     "scripts": {
-        "dev": "wrangler dev worker.js --local",
-        "deploy": "wrangler deploy worker.js"
+        "dev": "npm run build && wrangler dev worker.js --local",
+        "build": "npm run build:deps && npm run build:app",
+        "build:app": "vite build",
+        "build:deps": "npm run build --prefix ../../packages/sdk && npm run build --prefix ../../packages/ui",
+        "deploy": "npm run build && wrangler deploy worker.js",
+        "pretypecheck": "npm run build:deps",
+        "typecheck": "tsc --noEmit"
     },
     "dependencies": {
-        "eventsource-parser": "^1.1.1",
-        "node-fetch": "^3.3.2"
+        "@pollinations/sdk": "file:../../packages/sdk",
+        "@pollinations/ui": "file:../../packages/ui",
+        "react": "^19.2.0",
+        "react-dom": "^19.2.0"
     },
     "devDependencies": {
+        "@tailwindcss/vite": "^4.0.0",
+        "@types/react": "^19.2.7",
+        "@types/react-dom": "^19.2.3",
+        "@vitejs/plugin-react": "^5.1.1",
+        "tailwindcss": "^4.0.0",
+        "typescript": "^5.7.2",
+        "vite": "^7.0.0",
         "wrangler": "^4.14.1"
     }
 }

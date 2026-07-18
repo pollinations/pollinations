@@ -1,5 +1,20 @@
 import { useEffect } from "react";
 
+const TAB_TITLES: Record<string, string> = {
+    hello: "pollinations.ai",
+    play: "Play",
+    apps: "Apps",
+    community: "Community",
+    "terms of service": "Terms",
+    "privacy policy": "Privacy",
+    "refunds and cancellations": "Refunds",
+};
+
+function tabTitle(title: string) {
+    const label = TAB_TITLES[title] ?? title;
+    return label === "pollinations.ai" ? label : `${label} | pollinations.ai`;
+}
+
 /**
  * Sets document title, meta description, and canonical URL for the current page.
  * Resets to defaults on unmount.
@@ -7,7 +22,7 @@ import { useEffect } from "react";
 export function useDocumentMeta(title: string, description?: string) {
     useEffect(() => {
         const prev = document.title;
-        document.title = `${title} — pollinations.ai`;
+        document.title = tabTitle(title);
 
         let metaDesc: HTMLMetaElement | null = null;
         let prevContent: string | null = null;

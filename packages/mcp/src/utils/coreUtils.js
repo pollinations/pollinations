@@ -3,15 +3,6 @@ import { getAuthHeaders, getAuthQueryParam } from "./authUtils.js";
 export const API_BASE_URL = "https://gen.pollinations.ai";
 
 /**
- * @param {Object} schema - The schema object for the tool
- * @param {Function} handler - The handler function for the tool
- * @returns {Object} - Tool definition object
- */
-export function createToolDefinition(schema, handler) {
-    return { schema, handler };
-}
-
-/**
  * @param {Array} content - Array of content objects (text, image, etc.)
  * @returns {Object} - MCP response object
  */
@@ -181,6 +172,44 @@ export async function chatWithMedia({ model, prompt, mediaType, mediaUrl }) {
 }
 
 /**
+ * POST a chat-completion request body to /v1/chat/completions.
+ * Strips null/undefined keys, reuses the 30s timeout in fetchWithAuth, and maps
+ * errors (with the dedicated rate-limit message). Returns the raw Response so
+ * callers can shape the JSON themselves.
+ *
+ * @param {Object} body - Request body (null/undefined fields are stripped)
+ * @returns {Promise<Response>} - Raw fetch response (already checked for !ok)
+ */
+export async function postChatCompletion(body) {
+    const cleanedBody = {};
+    for (const [key, value] of Object.entries(body)) {
+        if (value !== undefined && value !== null) {
+            cleanedBody[key] = value;
+        }
+    }
+
+    const response = await fetchWithAuth(
+        `${API_BASE_URL}/v1/chat/completions`,
+        {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(cleanedBody),
+            timeoutMs: 30000,
+        },
+    );
+
+    if (!response.ok) {
+        const errorText = await response.text().catch(() => "Unknown error");
+        if (response.status === 429) {
+            throw new Error("Rate limited. Please wait before retrying.");
+        }
+        throw new Error(parseApiError(response.status, errorText));
+    }
+
+    return response;
+}
+
+/**
  * @param {string} url - URL to fetch
  * @param {Object} options - Fetch options
  * @returns {Promise<{buffer: ArrayBuffer, contentType: string}>} - Binary data and content type
@@ -203,14 +232,6 @@ export async function fetchBinaryWithAuth(url, options = {}) {
  */
 export function arrayBufferToBase64(buffer) {
     return Buffer.from(buffer).toString("base64");
-}
-
-/**
- * @param {Error} error - Error object
- * @returns {Object} - MCP response with error message
- */
-export function createErrorResponse(error) {
-    return createMCPResponse([createTextContent(`Error: ${error.message}`)]);
 }
 
 /**
@@ -239,7 +260,7 @@ export function parseApiError(status, errorText) {
             }
             return `Bad request: ${errorMessage}`;
         case 401:
-            return `Authentication failed. Please set a valid API key using setApiKey. Get your key at https://enter.pollinations.ai`;
+            return `Authentication failed. Please set a valid API key using setApiKey. Get your key at https://enter.pollinations.ai/keys`;
         case 403:
             return `Access forbidden. Your API key may not have permission for this operation.`;
         case 404:

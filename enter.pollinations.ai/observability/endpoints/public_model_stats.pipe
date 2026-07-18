@@ -20,7 +20,7 @@ SQL >
     WHERE start_time >= now() - INTERVAL 7 DAY
     AND resolved_model_requested != 'undefined'
     AND cache_hit = false
-    GROUP BY resolved_model_requested
+    GROUP BY model
     HAVING priced_success_count >= 3
     ORDER BY request_count DESC
     LIMIT {{Int32(limit, 50)}}

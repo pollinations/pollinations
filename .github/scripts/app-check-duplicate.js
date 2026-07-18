@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
 const fs = require("fs");
+const { parseApps } = require("./lib/parse-apps.js");
 
 // Parse environment variables
 const projectJson = process.env.PROJECT_JSON;
@@ -30,88 +31,31 @@ const appUrl = project.url || "";
 const appRepo = project.repo || "";
 
 /**
- * Parse APPS.md markdown table into structured data
- * Handles special characters safely (no shell parsing)
+ * Load APPS.md rows in the shape the duplicate checks need.
  */
-function parseAppsMarkdown(filePath) {
+function loadApps(filePath) {
     if (!fs.existsSync(filePath)) {
         return [];
     }
 
-    const content = fs.readFileSync(filePath, "utf8");
-    const lines = content.split("\n");
-
-    // Find header row
-    const headerIdx = lines.findIndex((l) => l.startsWith("| Emoji"));
-    if (headerIdx === -1) {
-        return [];
-    }
-
-    // Parse data rows (skip header and separator)
-    const apps = [];
-    for (let i = headerIdx + 2; i < lines.length; i++) {
-        const line = lines[i];
-        if (!line.startsWith("|")) continue;
-
-        // Split by pipe, handling content that may contain special chars
-        const cols = line.split("|").map((c) => c.trim());
-        // Remove first and last empty strings from split
-        cols.shift();
-        cols.pop();
-
-        if (cols.length < 15) continue;
-
-        // cols: [emoji, name, web_url, desc, language, category, github, github_id, repo, stars, discord, other, submitted_date, issue_url, approved_date]
-        const [
-            emoji,
-            name,
-            webUrl,
-            desc,
-            language,
-            category,
-            github,
-            githubId,
-            repo,
-            stars,
-            discord,
-            other,
-            submittedDate,
-            issueUrl,
-            approvedDate,
-        ] = cols;
-
+    return parseApps(filePath).apps.map((app) => {
         // Extract clean name and URL from markdown link format: [Name](url)
-        let cleanName = name;
+        let name = app.name;
         let url = "";
-        const linkMatch = name.match(/\[([^\]]+)\]\(([^)]+)\)/);
+        const linkMatch = app.name.match(/\[([^\]]+)\]\(([^)]+)\)/);
         if (linkMatch) {
-            cleanName = linkMatch[1];
+            name = linkMatch[1];
             url = linkMatch[2];
         }
 
-        apps.push({
-            emoji,
-            name: cleanName,
-            nameRaw: name,
-            url: url || webUrl,
-            webUrl,
-            desc,
-            language,
-            category,
-            github: github.replace(/^@/, ""),
-            githubId,
-            repo,
-            stars,
-            discord,
-            other,
-            submitted: submittedDate,
-            submittedDate,
-            issueUrl,
-            approvedDate,
-        });
-    }
-
-    return apps;
+        return {
+            name,
+            url: url || app.webUrl,
+            desc: app.description,
+            github: app.githubUsername.replace(/^@/, ""),
+            repo: app.repoUrl,
+        };
+    });
 }
 
 /**
@@ -193,7 +137,7 @@ function writeOutput(key, value) {
 
 // Main logic
 const appsFile = "apps/APPS.md";
-const apps = parseAppsMarkdown(appsFile);
+const apps = loadApps(appsFile);
 
 console.error(`Parsed ${apps.length} apps from ${appsFile}`);
 console.error(`Checking submission: "${appName}" by @${githubUsername}`);

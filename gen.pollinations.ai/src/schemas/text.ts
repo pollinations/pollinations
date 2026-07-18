@@ -1,21 +1,20 @@
-import { DEFAULT_TEXT_MODEL, TEXT_SERVICES } from "@shared/registry/text.ts";
+import { DEFAULT_TEXT_MODEL } from "@shared/registry/text.ts";
 import { SafeSchema } from "@shared/schemas/safety.ts";
 import { z } from "zod";
+import { parseBooleanLike } from "@/util.ts";
 
-const VALID_TEXT_MODELS = [
-    ...Object.keys(TEXT_SERVICES),
-    ...Object.values(TEXT_SERVICES).flatMap((service) => service.aliases),
-] as const;
+// z.coerce.boolean() coerces the string "false" to true; parse boolean-ish
+// tokens instead and let unrecognized values fail validation.
+const BooleanQueryParamSchema = z.preprocess(
+    (value) => parseBooleanLike(value) ?? value,
+    z.boolean(),
+);
 
 export const GenerateTextRequestQueryParamsSchema = z.object({
-    model: z
-        .enum(VALID_TEXT_MODELS as unknown as [string, ...string[]])
-        .optional()
-        .default(DEFAULT_TEXT_MODEL)
-        .meta({
-            description:
-                "Text model to use. See /v1/models or /text/models for the full list of available models.",
-        }),
+    model: z.string().optional().default(DEFAULT_TEXT_MODEL).meta({
+        description:
+            "Text model to use. See /v1/models or /text/models for the full list of available models.",
+    }),
     seed: z.coerce.number().int().min(-1).optional().default(0).meta({
         description: "Seed for reproducible results. Use -1 for random.",
     }),
@@ -23,7 +22,7 @@ export const GenerateTextRequestQueryParamsSchema = z.object({
         description:
             "System prompt to set the model's behavior and context. Acts as initial instructions before the user prompt.",
     }),
-    json: z.coerce.boolean().optional().default(false).meta({
+    json: BooleanQueryParamSchema.optional().default(false).meta({
         description:
             "When true, the model returns valid JSON. Useful for structured data extraction.",
     }),
@@ -31,7 +30,7 @@ export const GenerateTextRequestQueryParamsSchema = z.object({
         description:
             "Controls randomness. Lower values (e.g. 0.2) produce more focused output, higher values (e.g. 1.5) produce more creative output. Range: 0.0 to 2.0.",
     }),
-    stream: z.coerce.boolean().optional().default(false).meta({
+    stream: BooleanQueryParamSchema.optional().default(false).meta({
         description:
             "Stream the response as it's generated, using Server-Sent Events (SSE). Each chunk contains partial text.",
     }),

@@ -1,6 +1,5 @@
+import { remapUpstreamStatus } from "@shared/error.ts";
 import debug from "debug";
-import { remapUpstreamStatus } from "@/error.ts";
-import { createSseStreamConverter } from "./sseStreamConverter.js";
 import {
     normalizeOptions,
     validateAndNormalizeMessages,
@@ -18,6 +17,24 @@ import { cleanNullAndUndefined } from "./utils/objectCleaners.js";
 const log = debug("pollinations:genericopenai");
 const errorLog = debug("pollinations:error");
 const DONE_EVENT_PATTERN = /data:\s*\[DONE\]/;
+
+// Attach Portkey's served fallback target as internal, non-enumerable metadata
+// so tracking can read completion.fallbackTarget while it stays out of every
+// JSON.stringify({ ...completion }) response body (the OpenAI-compatible body
+// has no such field).
+function withFallbackTarget(
+    completion: ChatCompletion,
+    fallbackTarget: string | undefined,
+): ChatCompletion {
+    if (fallbackTarget === undefined) return completion;
+    Object.defineProperty(completion, "fallbackTarget", {
+        value: fallbackTarget,
+        enumerable: false,
+        configurable: true,
+        writable: true,
+    });
+    return completion;
+}
 
 function ensureOpenAISseDone(
     source: ReadableStream<Uint8Array> | null,
@@ -99,14 +116,7 @@ export async function genericOpenAIClient(
     options: TransformOptions = {},
     config: OpenAIClientConfig,
 ): Promise<ChatCompletion> {
-    const {
-        endpoint,
-        authHeaderName = "Authorization",
-        authHeaderValue,
-        defaultOptions = {},
-        formatResponse = null,
-        additionalHeaders = {},
-    } = config;
+    const { endpoint, defaultOptions = {}, additionalHeaders = {} } = config;
     const startTime = Date.now();
     const requestId = crypto.randomUUID();
 
@@ -131,15 +141,12 @@ export async function genericOpenAIClient(
         const validatedMessages = validateAndNormalizeMessages(messages);
         const {
             additionalHeaders: _additionalHeaders,
-            isPrivate: _isPrivate,
             jsonMode: _jsonMode,
             modelConfig: _modelConfig,
             modelDef: _modelDef,
             portkeyGatewayUrl: _portkeyGatewayUrl,
-            referrer: _referrer,
             requestedModel: _requestedModel,
             userApiKey: _userApiKey,
-            userInfo: _userInfo,
             ...cleanedOptions
         } = normalizedOptions;
         const requestBody = cleanNullAndUndefined({
@@ -160,11 +167,7 @@ export async function genericOpenAIClient(
                 ? endpoint(modelName, normalizedOptions)
                 : endpoint;
 
-        const resolvedAuthHeaderValue = authHeaderValue?.();
         const headers = {
-            ...(resolvedAuthHeaderValue
-                ? { [authHeaderName]: resolvedAuthHeaderValue }
-                : {}),
             "Content-Type": "application/json",
             ...additionalHeaders,
         };
@@ -187,44 +190,37 @@ export async function genericOpenAIClient(
             throw createApiError(response, errorDetails, modelName);
         }
 
+        // Portkey reports which fallback target served the call via this header
+        // (e.g. "config.targets[0]" = primary, "config.targets[1]" = first
+        // fallback). Surface it so tracking can record whether a fallback fired.
+        const fallbackTarget =
+            response.headers.get("x-portkey-last-used-option-index") ??
+            undefined;
+
         if (normalizedOptions.stream) {
             log(
                 `[${requestId}] Streaming response, status: ${response.status}`,
             );
 
-            let streamToReturn: ReadableStream<Uint8Array> | null =
-                response.body;
-            if (response.body && formatResponse) {
-                streamToReturn = response.body.pipeThrough(
-                    createSseStreamConverter((json: unknown) => {
-                        const parsed = json as ChatCompletion;
-                        const delta = parsed?.choices?.[0]?.delta;
-                        if (!delta) return json;
-                        const mapped = formatResponse(delta, json) ?? delta;
-                        return {
-                            ...parsed,
-                            choices: [
-                                {
-                                    ...(parsed.choices?.[0] ?? {}),
-                                    delta: mapped,
-                                },
-                            ],
-                        };
-                    }),
-                );
-            }
-            streamToReturn = ensureOpenAISseDone(streamToReturn);
-            return {
-                id: `genericopenai-${requestId}`,
-                object: "chat.completion.chunk",
-                created: Math.floor(startTime / 1000),
-                model: modelName,
-                stream: true,
-                responseStream: streamToReturn,
-                choices: [
-                    { delta: { content: "" }, finish_reason: null, index: 0 },
-                ],
-            };
+            const streamToReturn = ensureOpenAISseDone(response.body);
+            return withFallbackTarget(
+                {
+                    id: `genericopenai-${requestId}`,
+                    object: "chat.completion.chunk",
+                    created: Math.floor(startTime / 1000),
+                    model: modelName,
+                    stream: true,
+                    responseStream: streamToReturn,
+                    choices: [
+                        {
+                            delta: { content: "" },
+                            finish_reason: null,
+                            index: 0,
+                        },
+                    ],
+                },
+                fallbackTarget,
+            );
         }
 
         const data = (await response.json()) as ChatCompletion;
@@ -232,17 +228,7 @@ export async function genericOpenAIClient(
             `[${requestId}] Completed in ${Date.now() - startTime}ms, model: ${data.model || modelName}`,
         );
 
-        const originalChoice = data.choices?.[0] ?? {};
-        const formattedChoice = (
-            formatResponse
-                ? formatResponse(
-                      originalChoice,
-                      requestId,
-                      startTime,
-                      modelName,
-                  )
-                : originalChoice
-        ) as CompletionChoice;
+        const formattedChoice = (data.choices?.[0] ?? {}) as CompletionChoice;
 
         // Force finish_reason to "tool_calls" when tool_calls are present.
         // Some providers (e.g. Vertex AI) return "stop" for tool call responses.
@@ -250,12 +236,15 @@ export async function genericOpenAIClient(
             formattedChoice.finish_reason = "tool_calls";
         }
 
-        return {
-            ...data,
-            id: data.id || `genericopenai-${requestId}`,
-            object: data.object || "chat.completion",
-            choices: [formattedChoice],
-        };
+        return withFallbackTarget(
+            {
+                ...data,
+                id: data.id || `genericopenai-${requestId}`,
+                object: data.object || "chat.completion",
+                choices: [formattedChoice],
+            },
+            fallbackTarget,
+        );
     } catch (thrown: unknown) {
         const error = thrown as ServiceError;
         errorLog(`[${requestId}] Error:`, {

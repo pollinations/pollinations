@@ -4,7 +4,14 @@ import {
     AUTO_TOP_UP_THRESHOLD_POLLEN,
 } from "@shared/billing/auto-top-up.ts";
 import { user as userTable } from "@shared/db/better-auth.ts";
-import { getPollenPackByAmount } from "@shared/pollen-packs.ts";
+import {
+    calculateServiceFeeCents,
+    getPollenPackByAmount,
+    POLLEN_PACK_LINE_TYPE,
+    SERVICE_FEE_LINE_TYPE,
+    SERVICE_FEE_NAME,
+    SERVICE_FEE_TAX_CODE,
+} from "@shared/pollen-packs.ts";
 import { PUBLIC_URLS } from "@shared/public-urls.ts";
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
@@ -56,7 +63,6 @@ type AutoTopUpAttemptRow = {
     userId: string;
     stripeInvoiceId: string | null;
     amountUsd: number;
-    pollenGrant: number;
     status: string;
 };
 
@@ -82,6 +88,7 @@ export type BillingOverview = {
         enabled: boolean;
         thresholdPollen: number;
         packAmountUsd: number;
+        serviceFeeCents: number;
         lastIssue: AutoTopUpIssue | null;
     };
     paymentMethod: {
@@ -158,13 +165,15 @@ export async function getBillingOverview(
         user.autoTopUpEnabled && !!paymentMethod && billingDetailsComplete;
 
     const lastIssue = await getLastAutoTopUpIssue(env.DB, stripe, userId);
+    const packAmountUsd =
+        user.autoTopUpAmountUsd ?? DEFAULT_AUTO_TOP_UP_AMOUNT_USD;
 
     return {
         autoTopUp: {
             enabled: autoTopUpEnabled,
             thresholdPollen: AUTO_TOP_UP_THRESHOLD_POLLEN,
-            packAmountUsd:
-                user.autoTopUpAmountUsd ?? DEFAULT_AUTO_TOP_UP_AMOUNT_USD,
+            packAmountUsd,
+            serviceFeeCents: calculateServiceFeeCents(packAmountUsd * 100),
             lastIssue,
         },
         paymentMethod: paymentMethod
@@ -434,7 +443,6 @@ export async function processAutoTopUpForUser(
         attemptId,
         userId,
         amountUsd: pack.amountUsd,
-        pollenGrant: pack.pollenGrant,
     });
     if (!claimed) {
         return {
@@ -504,6 +512,9 @@ export async function processAutoTopUpForUser(
                 default_payment_method: paymentMethod.id,
                 description: pack.checkoutName,
                 metadata,
+                rendering: {
+                    amount_tax_display: "exclude_tax",
+                },
             },
             { idempotencyKey: `${idempotencyKey}:invoice` },
         );
@@ -518,11 +529,34 @@ export async function processAutoTopUpForUser(
                 amount: pack.amountUsd * 100,
                 currency: "usd",
                 description: pack.checkoutName,
-                tax_behavior: "inclusive",
+                tax_behavior: "exclusive",
                 tax_code: pack.taxCode,
-                metadata,
+                metadata: {
+                    ...metadata,
+                    line_type: POLLEN_PACK_LINE_TYPE,
+                    packKey: pack.packKey,
+                },
             },
-            { idempotencyKey: `${idempotencyKey}:item` },
+            { idempotencyKey: `${idempotencyKey}:pack-item` },
+        );
+
+        const serviceFeeCents = calculateServiceFeeCents(pack.amountUsd * 100);
+        await stripe.invoiceItems.create(
+            {
+                customer: customerId,
+                invoice: invoice.id,
+                amount: serviceFeeCents,
+                currency: "usd",
+                description: SERVICE_FEE_NAME,
+                tax_behavior: "exclusive",
+                tax_code: SERVICE_FEE_TAX_CODE,
+                metadata: {
+                    ...metadata,
+                    line_type: SERVICE_FEE_LINE_TYPE,
+                    serviceFeeCents: String(serviceFeeCents),
+                },
+            },
+            { idempotencyKey: `${idempotencyKey}:service-fee-item` },
         );
 
         const finalized = await stripe.invoices.finalizeInvoice(
@@ -580,7 +614,11 @@ export async function creditAutoTopUpInvoice(
         return { credited: false, reason: "invoice already credited" };
     }
 
-    const verification = verifyAutoTopUpInvoicePayment(invoice, attempt);
+    const verification = await verifyAutoTopUpInvoicePayment(
+        env,
+        invoice,
+        attempt,
+    );
     if (!verification.ok) {
         console.warn("[auto-top-up] invoice verification failed", {
             invoiceId: invoice.id,
@@ -631,7 +669,7 @@ export async function creditAutoTopUpInvoice(
                             AND completed_at = ?
                     )`,
         ).bind(
-            attempt.pollenGrant,
+            attempt.amountUsd,
             attempt.userId,
             invoice.id,
             attempt.userId,
@@ -645,7 +683,7 @@ export async function creditAutoTopUpInvoice(
         return { credited: false, reason: "invoice already credited" };
     }
 
-    return { credited: true, pollenCredited: attempt.pollenGrant };
+    return { credited: true, pollenCredited: attempt.amountUsd };
 }
 
 export async function markAutoTopUpInvoiceFailed(
@@ -913,7 +951,6 @@ async function claimAutoTopUpAttempt(
         attemptId: string;
         userId: string;
         amountUsd: number;
-        pollenGrant: number;
     },
 ): Promise<boolean> {
     const now = Date.now();
@@ -924,12 +961,11 @@ async function claimAutoTopUpAttempt(
                 user_id,
                 stripe_invoice_id,
                 amount_usd,
-                pollen_grant,
                 status,
                 created_at,
                 updated_at
             )
-            SELECT ?, ?, NULL, ?, ?, ?, ?, ?
+            SELECT ?, ?, NULL, ?, ?, ?, ?
             WHERE EXISTS (
                 SELECT 1
                 FROM user
@@ -949,7 +985,6 @@ async function claimAutoTopUpAttempt(
             input.attemptId,
             input.userId,
             input.amountUsd,
-            input.pollenGrant,
             AUTO_TOP_UP_ATTEMPT_STATUS_CLAIMED,
             now,
             now,
@@ -1005,7 +1040,6 @@ async function getAutoTopUpAttemptByInvoiceId(
                     user_id AS userId,
                     stripe_invoice_id AS stripeInvoiceId,
                     amount_usd AS amountUsd,
-                    pollen_grant AS pollenGrant,
                     status
                 FROM stripe_auto_top_up_attempt
                 WHERE stripe_invoice_id = ?
@@ -1075,23 +1109,95 @@ async function markAttemptFailedByInvoice(
     );
 }
 
-function verifyAutoTopUpInvoicePayment(
+async function verifyAutoTopUpInvoicePayment(
+    env: CloudflareBindings,
     invoice: Stripe.Invoice,
     attempt: AutoTopUpAttemptRow,
-): { ok: true } | { ok: false; reason: string } {
+): Promise<{ ok: true } | { ok: false; reason: string }> {
     if (invoice.status !== "paid") {
         return { ok: false, reason: "invoice status is not paid" };
-    }
-
-    if (invoice.amount_paid !== attempt.amountUsd * 100) {
-        return { ok: false, reason: "amount mismatch" };
     }
 
     if (invoice.currency !== "usd") {
         return { ok: false, reason: "currency mismatch" };
     }
 
+    const expectedPackAmountCents = attempt.amountUsd * 100;
+    const expectedServiceFeeCents = calculateServiceFeeCents(
+        expectedPackAmountCents,
+    );
+    const expectedMinimumPaidCents =
+        expectedPackAmountCents + expectedServiceFeeCents;
+    const lines = await getInvoiceLinesForVerification(env, invoice);
+    if (lines.length === 0) {
+        if (invoice.amount_paid < expectedMinimumPaidCents) {
+            return { ok: false, reason: "amount mismatch" };
+        }
+        return { ok: true };
+    }
+
+    if (lines.some((line) => getInvoiceLineAmountCents(line) < 0)) {
+        return { ok: false, reason: "unexpected negative invoice line" };
+    }
+
+    const packLines = lines.filter(
+        (line) => line.metadata?.line_type === POLLEN_PACK_LINE_TYPE,
+    );
+    if (packLines.length !== 1) {
+        return { ok: false, reason: "wrong pollen pack line count" };
+    }
+
+    if (getInvoiceLineAmountCents(packLines[0]) !== expectedPackAmountCents) {
+        return { ok: false, reason: "pack line amount mismatch" };
+    }
+
+    const serviceFeeLines = lines.filter(
+        (line) => line.metadata?.line_type === SERVICE_FEE_LINE_TYPE,
+    );
+    if (serviceFeeLines.length !== 1) {
+        return { ok: false, reason: "wrong service fee line count" };
+    }
+
+    if (
+        getInvoiceLineAmountCents(serviceFeeLines[0]) !==
+        expectedServiceFeeCents
+    ) {
+        return { ok: false, reason: "service fee amount mismatch" };
+    }
+
+    if (invoice.amount_paid < expectedMinimumPaidCents) {
+        return { ok: false, reason: "amount mismatch" };
+    }
+
     return { ok: true };
+}
+
+async function getInvoiceLinesForVerification(
+    env: CloudflareBindings,
+    invoice: Stripe.Invoice,
+): Promise<Stripe.InvoiceLineItem[]> {
+    const inlineLines = invoice.lines?.data ?? [];
+    if (inlineLines.length > 0 && !invoice.lines?.has_more) {
+        return inlineLines;
+    }
+
+    try {
+        const stripe = createStripeClient(env);
+        const lines = await stripe.invoices.listLineItems(invoice.id, {
+            limit: 100,
+        });
+        return lines.data;
+    } catch (error) {
+        console.warn("[auto-top-up] invoice line lookup failed", {
+            invoiceId: invoice.id,
+            error: error instanceof Error ? error.message : String(error),
+        });
+        return inlineLines;
+    }
+}
+
+function getInvoiceLineAmountCents(line: Stripe.InvoiceLineItem): number {
+    return line.amount;
 }
 
 async function cleanupFailedAutoTopUpInvoice(
@@ -1204,7 +1310,7 @@ function createAutoTopUpIdempotencyKey(attemptId: string): string {
 
 function getBillingReturnUrl(env: CloudflareBindings): string {
     const baseUrl = env.STRIPE_SUCCESS_URL || PUBLIC_URLS.enter.production;
-    const url = new URL(baseUrl);
+    const url = new URL("/pollen", baseUrl);
     url.searchParams.set("stripe_billing_return", "true");
     return url.toString();
 }

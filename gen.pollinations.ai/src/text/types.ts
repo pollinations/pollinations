@@ -10,9 +10,7 @@ export interface ChatMessage {
     name?: string;
     tool_calls?: unknown[];
     function_call?: unknown;
-    reasoning?: unknown;
     reasoning_content?: unknown;
-    reasoning_details?: unknown;
     audio?: unknown;
     [key: string]: unknown;
 }
@@ -41,13 +39,9 @@ export interface TransformOptions {
     jsonMode?: boolean;
     voice?: string;
     reasoning_effort?: string;
-    thinking_budget?: number;
     modalities?: string[];
     audio?: Record<string, unknown>;
-    reasoning?: Record<string, unknown>;
     stream_options?: Record<string, unknown>;
-    isPrivate?: boolean;
-    referrer?: string;
     [key: string]: unknown;
 }
 
@@ -79,12 +73,14 @@ export interface ChatCompletion {
     created?: number;
     model?: string;
     choices?: CompletionChoice[];
-    usage?: Record<string, number>;
+    usage?: Record<string, unknown>;
     citations?: string[];
     error?: string | { message?: string; status?: number; details?: unknown };
     stream?: boolean;
-    responseStream?: AsyncIterable<unknown> | ReadableStream | null;
+    responseStream?: ReadableStream | null;
     requestData?: unknown;
+    /** Portkey fallback target that served the call, e.g. "config.targets[1]". */
+    fallbackTarget?: string;
     [key: string]: unknown;
 }
 
@@ -96,7 +92,6 @@ export interface ServiceError extends Error {
     details?: unknown;
     model?: string;
     provider?: string;
-    originalProvider?: string;
     response?: { data?: unknown };
 }
 
@@ -111,17 +106,13 @@ export interface RequestData {
     repetition_penalty?: number;
     seed?: number;
     stream?: boolean;
-    isPrivate?: boolean;
-    referrer?: string;
     voice?: string;
     jsonMode?: boolean;
     tools?: unknown[];
     tool_choice?: unknown;
     modalities?: string[];
     audio?: Record<string, unknown>;
-    reasoning?: Record<string, unknown>;
     reasoning_effort?: string;
-    thinking_budget?: number;
     response_format?: { type: string; [key: string]: unknown };
     max_tokens?: number;
     max_completion_tokens?: number;
@@ -137,9 +128,6 @@ export interface RequestData {
 /** Configuration for the generic OpenAI client. */
 export interface OpenAIClientConfig {
     endpoint: string | ((model: string, options: TransformOptions) => string);
-    authHeaderName?: string;
-    authHeaderValue?: () => string | undefined;
     defaultOptions?: Record<string, unknown>;
-    formatResponse?: ((...args: unknown[]) => unknown) | null;
     additionalHeaders?: Record<string, string>;
 }

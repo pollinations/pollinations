@@ -1,9 +1,5 @@
-import type { Context } from "hono";
-import { routePath } from "hono/route";
-
 const RANDOM_ID_ALPHABET =
     "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
-const resetColor = "\x1b[0m";
 
 export function generateRandomId(): string {
     const bytes = crypto.getRandomValues(new Uint8Array(32));
@@ -11,30 +7,6 @@ export function generateRandomId(): string {
         bytes,
         (byte) => RANDOM_ID_ALPHABET[byte % RANDOM_ID_ALPHABET.length],
     ).join("");
-}
-
-export function getRoutePath(c: Context): string {
-    try {
-        return routePath(c) || c.req.path;
-    } catch {
-        return c.req.path;
-    }
-}
-
-type NonNullableValue<T> = T extends null | undefined ? never : T;
-
-type RemoveUnset<T> = {
-    [K in keyof T as T[K] extends null | undefined
-        ? never
-        : K]: NonNullableValue<T[K]>;
-};
-
-export function removeUnset<T extends object>(obj: T): RemoveUnset<T> {
-    return Object.fromEntries(
-        Object.entries(obj).filter(
-            ([_, value]) => value !== null && value !== undefined,
-        ),
-    ) as RemoveUnset<T>;
 }
 
 export function safeRound(amount: number, precision: number = 6): number {
@@ -48,63 +20,33 @@ export function safeRound(amount: number, precision: number = 6): number {
     return Math.round(amount * factor) / factor;
 }
 
-export function capitalize(str: string): string {
-    return `${str.charAt(0).toUpperCase()}${str.slice(1)}`;
-}
+export function arrayBufferToBase64(buffer: ArrayBuffer): string {
+    const bytes = new Uint8Array(buffer);
+    let binary = "";
+    const chunkSize = 0x8000;
 
-export type ExponentialBackoffOptions = {
-    maxAttempts?: number;
-    minDelay?: number;
-    maxDelay?: number;
-    jitter?: number;
-};
-
-export function exponentialBackoffDelay(
-    attempt: number,
-    options: ExponentialBackoffOptions = {},
-): number {
-    const {
-        minDelay = 100,
-        maxDelay = 10000,
-        maxAttempts = 5,
-        jitter = 0.25,
-    } = options;
-
-    if (attempt === 0) return 0;
-
-    const base = (maxDelay / minDelay) ** (1 / (maxAttempts - 1));
-    const delay = minDelay * base ** (attempt - 1);
-
-    if (jitter > 0) {
-        const jitterRange = delay * jitter;
-        const jitterOffset = jitterRange * (Math.random() * 2 - 1);
-        return delay + jitterOffset;
+    for (let i = 0; i < bytes.length; i += chunkSize) {
+        binary += String.fromCharCode(...bytes.subarray(i, i + chunkSize));
     }
 
-    return Math.max(minDelay, Math.min(maxDelay, delay));
+    return btoa(binary);
 }
 
-export type AnsiColor =
-    | "black"
-    | "red"
-    | "green"
-    | "yellow"
-    | "blue"
-    | "magenta"
-    | "cyan"
-    | "white";
+const TRUE_TOKENS = ["true", "1", "yes", "on"];
+const FALSE_TOKENS = ["false", "0", "no", "off", ""];
 
-const ansiColors: Record<AnsiColor, string> = {
-    black: "\x1b[30m",
-    red: "\x1b[31m",
-    green: "\x1b[32m",
-    yellow: "\x1b[33m",
-    blue: "\x1b[34m",
-    magenta: "\x1b[35m",
-    cyan: "\x1b[36m",
-    white: "\x1b[37m",
-};
+/**
+ * Parse boolean-ish query/body values. Returns null when the value is not
+ * recognizably boolean, so callers decide between defaulting and rejecting.
+ * (z.coerce.boolean() treats the string "false" as true.)
+ */
+export function parseBooleanLike(value: unknown): boolean | null {
+    if (typeof value === "boolean") return value;
+    if (typeof value === "number") return value !== 0;
+    if (typeof value !== "string") return null;
 
-export function applyColor(color: AnsiColor, str: string): string {
-    return `${ansiColors[color]}${str}${resetColor}`;
+    const normalized = value.trim().toLowerCase();
+    if (TRUE_TOKENS.includes(normalized)) return true;
+    if (FALSE_TOKENS.includes(normalized)) return false;
+    return null;
 }

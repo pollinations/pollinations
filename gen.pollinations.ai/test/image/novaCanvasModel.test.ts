@@ -45,17 +45,12 @@ describe("callNovaCanvasAPI", () => {
         bedrockMocks.send.mockRejectedValueOnce(validationError);
 
         await expect(
-            callNovaCanvasAPI(
-                "too long",
-                {
-                    model: "nova-canvas",
-                    width: 1024,
-                    height: 1024,
-                    seed: 42,
-                } as ImageParams,
-                { updateBar: vi.fn() } as never,
-                "request-id",
-            ),
+            callNovaCanvasAPI("too long", {
+                model: "nova-canvas",
+                width: 1024,
+                height: 1024,
+                seed: 42,
+            } as ImageParams),
         ).rejects.toMatchObject({
             name: "HttpError",
             status: 400,

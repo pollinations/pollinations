@@ -1,97 +1,312 @@
-import { type FC, useState } from "react";
-import { DashboardSection } from "../layout/dashboard-section.tsx";
-import { LinkButton } from "../ui/link-button.tsx";
-import { TabButton } from "../ui/tab-button.tsx";
-import { getModelPrices } from "./data.ts";
+import {
+    Alert,
+    Chip,
+    ClockIcon,
+    ExternalLinkButton,
+    GitHubIcon,
+    Input,
+    SearchIcon,
+    Section,
+    SparklesIcon,
+    TabButton,
+    TokensIcon,
+    TrendUpIcon,
+} from "@pollinations/ui";
+import { useNavigate, useSearch } from "@tanstack/react-router";
+import { type FC, useCallback, useEffect, useMemo, useState } from "react";
+import { CommunityEndpoints } from "../community-endpoints";
+import {
+    type ApiModelInfo,
+    fetchModelCatalog,
+    getModelPricesFromCatalog,
+} from "./model-catalog.ts";
+import { getModelDisplayName } from "./model-info.ts";
+import type { ModelSortDirection, ModelSortKey } from "./model-search.ts";
 import {
     type SectionType,
     sectionLabels,
     UnifiedModelTable,
 } from "./model-table.tsx";
+import type { ModelPrice } from "./types.ts";
 import { useModelStats } from "./use-model-stats.ts";
 
 type ModelsProps = {
-    tierBalance?: number;
-    packBalance?: number;
+    // Render the owner-scoped "My Models" section (logged-in dashboard only).
+    showCommunityEndpoints?: boolean;
+    // Allowlisted owners can make their models public; everyone else is limited
+    // to private, owner-only models.
+    canPublish?: boolean;
 };
 
-export const Models: FC<ModelsProps> = ({ tierBalance, packBalance }) => {
-    const [activeTab, setActiveTab] = useState<SectionType>("image");
-    const { stats } = useModelStats();
-    const allModels = getModelPrices(stats);
+const SECTION_ORDER: SectionType[] = [
+    "all",
+    "image",
+    "video",
+    "3d",
+    "audio",
+    "realtime",
+    "text",
+    "community",
+    "embedding",
+];
 
-    const imageModels = allModels.filter((m) => m.type === "image");
-    const videoModels = allModels.filter((m) => m.type === "video");
-    const audioModels = allModels.filter((m) => m.type === "audio");
-    const realtimeModels = allModels.filter((m) => m.type === "realtime");
-    const textModels = allModels.filter((m) => m.type === "text");
-    const embeddingModels = allModels.filter((m) => m.type === "embedding");
-    const availableSections: SectionType[] = [
-        "image",
-        "video",
-        ...(audioModels.length > 0 ? (["audio"] as SectionType[]) : []),
-        ...(realtimeModels.length > 0 ? (["realtime"] as SectionType[]) : []),
-        "text",
-        ...(embeddingModels.length > 0 ? (["embedding"] as SectionType[]) : []),
-    ];
+const SEARCH_LABELS: Record<SectionType, string> = {
+    all: "all",
+    image: "image",
+    video: "video",
+    "3d": "3D",
+    audio: "audio",
+    realtime: "realtime",
+    text: "text",
+    community: "community",
+    embedding: "embedding",
+};
+
+const DEFAULT_SORT_DIRECTIONS: Record<ModelSortKey, ModelSortDirection> = {
+    name: "asc",
+    perPollen: "desc",
+    input: "asc",
+    output: "asc",
+};
+
+function matchesQuery(model: ModelPrice, query: string): boolean {
+    if (!query) return true;
+    const displayName = getModelDisplayName(model) ?? "";
+    const haystack =
+        `${model.name} ${displayName} ${model.description ?? ""} ${model.brand ?? ""}`.toLowerCase();
+    return haystack.includes(query);
+}
+
+function categorizeModels(
+    models: ModelPrice[],
+): Record<SectionType, ModelPrice[]> {
+    return {
+        all: models,
+        image: models.filter((m) => m.type === "image"),
+        video: models.filter((m) => m.type === "video"),
+        "3d": models.filter((m) => m.type === "3d"),
+        audio: models.filter((m) => m.type === "audio"),
+        realtime: models.filter((m) => m.type === "realtime"),
+        text: models.filter((m) => m.type === "text" && !m.community),
+        community: models.filter((m) => m.community),
+        embedding: models.filter((m) => m.type === "embedding"),
+    };
+}
+
+export const Models: FC<ModelsProps> = ({
+    showCommunityEndpoints = false,
+    canPublish = false,
+}) => {
+    const navigate = useNavigate({ from: "/models" });
+    const modelSearch = useSearch({ from: "/_dashboard/models" });
+    const activeTab = modelSearch.category ?? "all";
+    const search = modelSearch.q ?? "";
+    const sortKey = modelSearch.sort ?? "perPollen";
+    const sortDir = modelSearch.dir ?? DEFAULT_SORT_DIRECTIONS[sortKey];
+    const [catalogModels, setCatalogModels] = useState<ApiModelInfo[]>([]);
+    const [catalogError, setCatalogError] = useState<string | null>(null);
+    const { stats } = useModelStats();
+    const allModels = useMemo(
+        () => getModelPricesFromCatalog(catalogModels, stats),
+        [catalogModels, stats],
+    );
+    const query = search.trim().toLowerCase();
+    const filteredModels = useMemo(
+        () =>
+            query ? allModels.filter((m) => matchesQuery(m, query)) : allModels,
+        [allModels, query],
+    );
+
+    const loadModelCatalog = useCallback(
+        (options: { refresh?: boolean } = {}) =>
+            fetchModelCatalog(options)
+                .then((models) => {
+                    setCatalogModels(models);
+                    setCatalogError(null);
+                })
+                .catch(() => {
+                    setCatalogModels([]);
+                    setCatalogError("Could not load models.");
+                }),
+        [],
+    );
+
+    useEffect(() => {
+        void loadModelCatalog();
+    }, [loadModelCatalog]);
+
+    // Tab visibility follows the full catalog so a search query never hides
+    // or auto-switches away from a tab — only its contents are filtered.
+    const sectionModelsAll = useMemo(
+        () => categorizeModels(allModels),
+        [allModels],
+    );
+    const sectionModels = useMemo(
+        () => categorizeModels(filteredModels),
+        [filteredModels],
+    );
+    const searchLabel = SEARCH_LABELS[activeTab];
+    const availableSections =
+        allModels.length > 0
+            ? SECTION_ORDER.filter(
+                  (section) => sectionModelsAll[section].length,
+              )
+            : SECTION_ORDER;
+
+    useEffect(() => {
+        if (!availableSections.includes(activeTab)) {
+            void navigate({
+                search: (previous) => ({
+                    ...previous,
+                    category:
+                        availableSections[0] === "all"
+                            ? undefined
+                            : availableSections[0],
+                }),
+                replace: true,
+            });
+        }
+    }, [activeTab, availableSections, navigate]);
+
+    const setActiveTab = (category: SectionType) => {
+        void navigate({
+            search: (previous) => ({
+                ...previous,
+                category: category === "all" ? undefined : category,
+            }),
+        });
+    };
+
+    const setSearch = (q: string) => {
+        void navigate({
+            search: (previous) => ({
+                ...previous,
+                q: q || undefined,
+            }),
+            replace: true,
+        });
+    };
+
+    const onSort = (key: ModelSortKey) => {
+        const nextDirection =
+            key === sortKey
+                ? sortDir === "asc"
+                    ? "desc"
+                    : "asc"
+                : DEFAULT_SORT_DIRECTIONS[key];
+
+        void navigate({
+            search: (previous) => ({
+                ...previous,
+                sort: key === "perPollen" ? undefined : key,
+                dir:
+                    nextDirection === DEFAULT_SORT_DIRECTIONS[key]
+                        ? undefined
+                        : nextDirection,
+            }),
+        });
+    };
 
     return (
         <div className="flex flex-col gap-6">
-            <DashboardSection
+            <Section
                 title="Models"
-                theme="teal"
                 framed
                 actionClassName="w-full sm:ml-auto sm:w-auto"
                 action={
                     <div className="flex flex-col items-start gap-2 sm:flex-row sm:flex-wrap sm:justify-end">
-                        <LinkButton
-                            theme="teal"
+                        <ExternalLinkButton
                             href="https://model-monitor.pollinations.ai"
                             className="self-start sm:self-center"
                         >
-                            📊 Model Health
-                        </LinkButton>
-                        <LinkButton
-                            theme="teal"
+                            <span className="inline-flex items-center gap-1.5">
+                                <TrendUpIcon className="h-4 w-4" />
+                                Model Health
+                            </span>
+                        </ExternalLinkButton>
+                        <ExternalLinkButton
                             href="https://github.com/pollinations/pollinations/issues/5321"
                             className="self-start sm:self-center"
                         >
-                            🗳️ Vote for next model
-                        </LinkButton>
+                            <span className="inline-flex items-center gap-1.5">
+                                <GitHubIcon className="h-4 w-4" />
+                                Vote for next model
+                            </span>
+                        </ExternalLinkButton>
                     </div>
                 }
             >
-                <div className="mb-4 flex flex-wrap gap-1.5">
-                    {availableSections.map((section) => (
-                        <TabButton
-                            key={section}
-                            active={activeTab === section}
-                            onClick={() => setActiveTab(section)}
-                        >
-                            <span className="font-bold">
-                                {sectionLabels[section]}
-                            </span>
-                        </TabButton>
-                    ))}
+                <div className="mb-4 flex flex-col items-start gap-3">
+                    <div className="flex flex-wrap gap-1.5">
+                        {availableSections.map((section) => (
+                            <TabButton
+                                key={section}
+                                active={activeTab === section}
+                                onClick={() => setActiveTab(section)}
+                                ariaLabel={
+                                    section === "community"
+                                        ? "Community alpha models"
+                                        : undefined
+                                }
+                            >
+                                <span className="inline-flex items-center gap-1.5">
+                                    {sectionLabels[section]}
+                                    {section === "community" && (
+                                        <Chip intent="alpha" size="sm">
+                                            Alpha
+                                        </Chip>
+                                    )}
+                                </span>
+                            </TabButton>
+                        ))}
+                    </div>
+                    <div className="relative w-full sm:w-72">
+                        <SearchIcon className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-theme-text-muted" />
+                        <Input
+                            type="search"
+                            value={search}
+                            onChange={(e) => setSearch(e.target.value)}
+                            placeholder={`Search ${searchLabel} models…`}
+                            aria-label={`Search ${searchLabel} models`}
+                            className="w-full pl-9"
+                        />
+                    </div>
                 </div>
-                <div className="overflow-x-auto md:overflow-visible [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-                    <UnifiedModelTable
-                        imageModels={imageModels}
-                        videoModels={videoModels}
-                        audioModels={audioModels}
-                        realtimeModels={realtimeModels}
-                        textModels={textModels}
-                        embeddingModels={embeddingModels}
-                        activeTab={activeTab}
-                        tierBalance={tierBalance}
-                        packBalance={packBalance}
-                    />
-                </div>
-                <div className="mt-5 space-y-2 border-t border-gray-200 pt-5 text-[13px] leading-snug text-gray-500">
+                {catalogError && (
+                    <Alert intent="danger" className="mb-4">
+                        {catalogError}
+                    </Alert>
+                )}
+                {query && sectionModels[activeTab].length === 0 ? (
+                    <p className="py-8 text-center text-sm text-theme-text-muted">
+                        No {sectionLabels[activeTab].toLowerCase()} models match
+                        “{search.trim()}”.
+                    </p>
+                ) : (
+                    <div className="overflow-x-auto md:overflow-visible [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+                        <UnifiedModelTable
+                            allModels={sectionModels.all}
+                            imageModels={sectionModels.image}
+                            videoModels={sectionModels.video}
+                            model3dModels={sectionModels["3d"]}
+                            audioModels={sectionModels.audio}
+                            realtimeModels={sectionModels.realtime}
+                            textModels={sectionModels.text}
+                            communityModels={sectionModels.community}
+                            embeddingModels={sectionModels.embedding}
+                            activeTab={activeTab}
+                            sortKey={sortKey}
+                            sortDir={sortDir}
+                            onSort={onSort}
+                        />
+                    </div>
+                )}
+                <div className="mt-4 space-y-2 border-t border-divider pt-4 text-[13px] leading-snug text-theme-text-muted">
                     <p className="flex items-start gap-1.5">
-                        <ImageIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                        <SparklesIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                         <span>
-                            <strong>/img</strong> — flat rate per image.
+                            <strong>/gen</strong> — flat rate per image or audio
+                            generation.
                         </span>
                     </p>
                     <p className="flex items-start gap-1.5">
@@ -108,55 +323,15 @@ export const Models: FC<ModelsProps> = ({ tierBalance, packBalance }) => {
                         </span>
                     </p>
                 </div>
-            </DashboardSection>
+            </Section>
+            {showCommunityEndpoints && (
+                <CommunityEndpoints
+                    canPublish={canPublish}
+                    onChange={() => {
+                        void loadModelCatalog({ refresh: true });
+                    }}
+                />
+            )}
         </div>
     );
 };
-
-const ImageIcon: FC<{ className?: string }> = ({ className }) => (
-    <svg
-        viewBox="0 0 24 24"
-        className={className}
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        aria-hidden="true"
-    >
-        <rect x="3" y="3" width="18" height="18" rx="2" />
-        <circle cx="9" cy="9" r="2" />
-        <path d="m21 15-5-5L5 21" />
-    </svg>
-);
-
-const TokensIcon: FC<{ className?: string }> = ({ className }) => (
-    <svg
-        viewBox="0 0 24 24"
-        className={className}
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        aria-hidden="true"
-    >
-        <path d="M4 9h16M4 15h16M10 3 8 21M16 3l-2 18" />
-    </svg>
-);
-
-const ClockIcon: FC<{ className?: string }> = ({ className }) => (
-    <svg
-        viewBox="0 0 24 24"
-        className={className}
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        aria-hidden="true"
-    >
-        <circle cx="12" cy="12" r="9" />
-        <path d="M12 7v5l3 2" />
-    </svg>
-);

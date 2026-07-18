@@ -77,26 +77,22 @@ interface Tool {
     [key: string]: unknown;
 }
 
-export function sanitizeToolSchemas(): TransformFn {
-    return (messages, options) => ({
-        messages,
-        options: {
-            ...options,
-            tools: options.tools?.map((tool) => {
-                const typedTool = tool as Tool;
-                return typedTool.type === "function" &&
-                    typedTool.function?.parameters
-                    ? {
-                          ...typedTool,
-                          function: {
-                              ...typedTool.function,
-                              parameters: sanitize(
-                                  typedTool.function.parameters,
-                              ),
-                          },
-                      }
-                    : typedTool;
-            }),
-        },
-    });
-}
+export const sanitizeToolSchemas: TransformFn = (messages, options) => ({
+    messages,
+    options: {
+        ...options,
+        tools: options.tools?.map((tool) => {
+            const typedTool = tool as Tool;
+            return typedTool.type === "function" &&
+                typedTool.function?.parameters
+                ? {
+                      ...typedTool,
+                      function: {
+                          ...typedTool.function,
+                          parameters: sanitize(typedTool.function.parameters),
+                      },
+                  }
+                : typedTool;
+        }),
+    },
+});

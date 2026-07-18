@@ -2,16 +2,15 @@
 
 ## Issue & PR Labeling
 
-- **pr-assign-author.yml** - Assigns the PR creator to the PR when opened.
+- **repo-assign-pr-author.yml** - Assigns the PR creator to the PR when opened.
 
 ## AI Agents
 
-- **pr-issue-assistant.yml** - AI assistant (Polly) via pollinations.ai, triggered by `polly` in issues/PRs. Whitelisted users only.
-- **issue-pr-review-changes.yml** - Claude Opus agent triggered by `@claude` in issues/PRs. Performs code reviews and answers questions.
+- **repo-polly-assistant.yml** - AI assistant (Polly) via pollinations.ai, triggered by `polly` in issues/PRs. Whitelisted users only.
 
 ## Issue Automation Pipeline
 
-- **issue-automation.yml** - Automated triage on every new issue. Calls Polly API to detect duplicates, already-resolved issues, and minor auto-fixable problems.
+- **repo-triage-new-issues.yml** - Automated triage on every new issue. Calls Polly API to detect duplicates, already-resolved issues, and minor auto-fixable problems.
 
 ### Flow
 
@@ -28,7 +27,7 @@ flowchart TD
     F -->|resolved >= 0.85| H[Comment + Close as completed]
     F -->|auto_fix >= 0.70| I[Comment + Add polly label]
     F -->|skip / below threshold| C
-    I --> J[issue-polly-auto-fix.yml triggered]
+    I --> J[repo-auto-fix-polly-issues.yml triggered]
 ```
 
 ### Model Routing (Auto-Fix)
@@ -41,9 +40,8 @@ flowchart TD
 
 ## Project Management
 
-- **project-manager.yml** - AI-powered auto-kanban. Classifies issues/PRs and routes to Dev/Support/Apps projects with priority.
-- **issue-close-discarded.yml** - Auto-closes issues marked "Discarded" in project (hourly).
-- **pr-update-project-status.yml** - Updates PR status in project (In Progress/In Review/Done/Discarded).
+- **repo-organize-issues-prs.yml** - AI-powered auto-kanban. Classifies issues/PRs and routes to Dev/Support/Apps projects with priority.
+- **repo-close-discarded-issues.yml** - Auto-closes issues marked "Discarded" in project (hourly).
 
 ### Project Manager (Auto-Kanban)
 
@@ -117,9 +115,9 @@ flowchart TD
 ```mermaid
 %%{init: {'theme': 'dark'}}%%
 flowchart TD
-    A[PR opened] --> B[pr-assign-author.yml]
+    A[PR opened] --> B[repo-assign-pr-author.yml]
     B --> C[Author assigned]
-    C --> D[project-manager.yml]
+    C --> D[repo-organize-issues-prs.yml]
     D --> E[Always routed to Dev #20]
 ```
 
@@ -130,7 +128,7 @@ flowchart TD
 flowchart TD
     A[User mentions 'polly' in issue/PR/comment] --> B{User whitelisted?}
     B -->|No| C[Posts unauthorized message]
-    B -->|Yes| D[pr-issue-assistant.yml]
+    B -->|Yes| D[repo-polly-assistant.yml]
     D --> E[Starts pollinations.ai router]
     E --> F[Claude Code Action responds]
     F --> G[AI assists with code/questions]
@@ -141,7 +139,6 @@ flowchart TD
 | Script                 | Purpose        | AI Model                  | Trigger               |
 | ---------------------- | -------------- | ------------------------- | --------------------- |
 | `project-manager.py`   | Auto-kanban    | openai (via pollinations) | Issue/PR opened       |
-| `pr_comment_review.py` | AI code review | claude-large              | Comment `Review=True` |
 
 **project-manager.py details:**
 
@@ -149,11 +146,6 @@ flowchart TD
 - Timeout: 5 minutes for AI, 30s for GraphQL
 - Routing: PRs → Dev (always). Issues: internal author → Dev, external author → Support
 - Fallback: AI failure → skip (no project assignment)
-
-**pr_comment_review.py details:**
-
-- Context: 900k tokens, Max output: 65k tokens
-- Skips: lock files, minified, assets, source maps
 
 ---
 
@@ -166,10 +158,10 @@ Any `TIER-*` labeled issue routes to the Apps project (#23). The state machine:
 | Label                 | Purpose                           | Applied by                                         |
 | --------------------- | --------------------------------- | -------------------------------------------------- |
 | `TIER-APP`            | New app submission                | Issue template                                     |
-| `TIER-APP-INCOMPLETE` | Needs user action (info/register) | `app-review-submission.yml`                        |
-| `TIER-APP-REVIEW`     | Issue awaiting maintainer review  | `app-review-submission.yml` (stripped on approval) |
+| `TIER-APP-INCOMPLETE` | Needs user action (info/register) | `apps-review-submissions.yml`                        |
+| `TIER-APP-REVIEW`     | Issue awaiting maintainer review  | `apps-review-submissions.yml` (stripped on approval) |
 | `TIER-APP-APPROVED`   | Maintainer approved, PR created   | Maintainer (manual)                                |
-| `TIER-APP-REJECTED`   | Submission rejected               | `app-review-submission.yml`                        |
+| `TIER-APP-REJECTED`   | Submission rejected               | `apps-review-submissions.yml`                        |
 
 ### Dev Labels
 
@@ -206,10 +198,10 @@ Any `TIER-*` labeled issue routes to the Apps project (#23). The state machine:
 | `VIDEO`   | Video generation      | `project-manager.py` |
 | `API`     | API/SDK general       | `project-manager.py` |
 | `WEB`     | Website/dashboard     | `project-manager.py` |
-| `CREDITS` | Pollen balance issues | `project-manager.py` |
+| `CREDITS` | Pollen balance and usage quota issues | `project-manager.py` |
 | `BILLING` | Payment/credit card   | `project-manager.py` |
 | `ACCOUNT` | Account/login/auth    | `project-manager.py` |
-| `TIER`    | User tier questions (spore/seed/flower/nectar/upgrade) | `project-manager.py` |
+| `TIER`    | Account-level Pollen wallet balance and usage-limit questions | `project-manager.py` |
 
 (`TIER` is unrelated to the `TIER-APP-*` family used for app submissions.)
 
@@ -219,4 +211,4 @@ The `NEWS` label is used by the social pipeline (`social/` workflows), not by Pr
 
 | Label  | Purpose                | Applied by                                          |
 | ------ | ---------------------- | --------------------------------------------------- |
-| `NEWS` | News/social content PR | `readme-daily-update.yml`, `NEWS_summary.yml`, etc. |
+| `NEWS` | News/social content PR | `docs-update-readme-news.yml`, `news-generate-summary.yml`, etc. |

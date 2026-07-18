@@ -1,20 +1,11 @@
-import { getLogger } from "@logtape/logtape";
-import { user as userTable } from "@shared/db/better-auth.ts";
-import {
-    getTierPollen,
-    isValidTier,
-    type TierName,
-} from "@shared/tier-config.ts";
-import { eq } from "drizzle-orm";
-import { drizzle } from "drizzle-orm/d1";
+import { bytesToHex } from "@shared/client-ip.ts";
 import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
 import type { Env } from "../env.ts";
-import { sendTierEventToTinybird } from "../events.ts";
-import { runD1TinybirdSync } from "../services/d1-tinybird-sync.ts";
-import { runTierRefill } from "../services/tier-refill.ts";
-
-const log = getLogger(["hono", "admin"]);
+import {
+    exportD1TinybirdPage,
+    isD1TinybirdDatasource,
+} from "../services/d1-tinybird-sync.ts";
 
 export const adminRoutes = new Hono<Env>()
     .use("*", async (c, next) => {
@@ -32,109 +23,66 @@ export const adminRoutes = new Hono<Env>()
             return await next();
         }
 
-        // Tinybird sync token: authenticates the GH Action AND is used for Tinybird API calls
-        const syncToken = c.env.TINYBIRD_SYNC_TOKEN;
+        // The runner holds the token; the Worker stores only its hash.
+        const exportTokenHash = c.env.D1_EXPORT_TOKEN_SHA256;
         if (
-            syncToken &&
-            providedKey === syncToken &&
-            c.req.path.endsWith("/trigger-d1-sync")
+            exportTokenHash &&
+            c.req.path.endsWith("/trigger-d1-sync") &&
+            (await sha256(providedKey)) === exportTokenHash
         ) {
             return await next();
         }
 
         throw new HTTPException(401, { message: "Unauthorized" });
     })
-    .post("/update-tier", async (c) => {
-        const body = await c.req.json<{ userId: string; tier: string }>();
-
-        if (!body.userId) {
-            throw new HTTPException(400, { message: "userId is required" });
-        }
-        if (!body.tier || !isValidTier(body.tier)) {
-            throw new HTTPException(400, { message: "Valid tier is required" });
+    .post("/trigger-d1-sync", async (c) => {
+        let body: unknown;
+        try {
+            body = await c.req.json();
+        } catch {
+            throw new HTTPException(400, { message: "Invalid JSON body" });
         }
 
-        const targetTier = body.tier as TierName;
-        const tierBalance = getTierPollen(targetTier);
-        const db = drizzle(c.env.DB);
-
-        // Get current tier before update for logging
-        const [currentUser] = await db
-            .select({ tier: userTable.tier })
-            .from(userTable)
-            .where(eq(userTable.id, body.userId));
-
-        if (!currentUser) {
-            throw new HTTPException(404, { message: "User not found" });
+        if (!body || typeof body !== "object") {
+            throw new HTTPException(400, { message: "Invalid sync request" });
         }
 
-        const previousTier = currentUser.tier;
+        const { datasource, cursor } = body as {
+            datasource?: unknown;
+            cursor?: unknown;
+        };
 
-        // Update tier and balance in D1
-        const result = await db
-            .update(userTable)
-            .set({
-                tier: targetTier,
-                tierBalance,
-                lastTierGrant: Date.now(),
-            })
-            .where(eq(userTable.id, body.userId))
-            .returning({ id: userTable.id });
-
-        if (result.length === 0) {
-            throw new HTTPException(404, { message: "User not found" });
+        if (
+            typeof datasource !== "string" ||
+            !isD1TinybirdDatasource(datasource)
+        ) {
+            throw new HTTPException(400, { message: "Invalid datasource" });
+        }
+        if (
+            cursor !== undefined &&
+            (typeof cursor !== "string" ||
+                cursor.length === 0 ||
+                cursor.length > 256)
+        ) {
+            throw new HTTPException(400, { message: "Invalid cursor" });
         }
 
-        // Log tier change event to Tinybird
-        c.executionCtx.waitUntil(
-            sendTierEventToTinybird(
-                {
-                    event_type: "tier_change",
-                    environment: c.env.ENVIRONMENT || "unknown",
-                    user_id: body.userId,
-                    tier: targetTier,
-                    pollen_amount: tierBalance,
-                },
-                c.env.TINYBIRD_TIER_INGEST_URL,
-                c.env.TINYBIRD_INGEST_TOKEN,
-            ),
-        );
-
-        log.info(
-            "Tier updated for user {userId} from {previousTier} to {tier} with balance {balance}",
-            {
-                userId: body.userId,
-                previousTier,
-                tier: targetTier,
-                balance: tierBalance,
-            },
+        const result = await exportD1TinybirdPage(
+            c.env.DB,
+            datasource,
+            cursor as string | undefined,
         );
 
         return c.json({
             success: true,
-            userId: body.userId,
-            previousTier,
-            tier: targetTier,
-            tierBalance,
+            datasource: result.datasource,
+            rows: result.rows,
+            next_cursor: result.nextCursor,
+            done: result.done,
         });
-    })
-    .post("/trigger-refill", async (c) => {
-        const result = await runTierRefill(c.env, c.executionCtx);
-        return c.json(result);
-    })
-    .post("/trigger-d1-sync", async (c) => {
-        const syncToken = c.env.TINYBIRD_SYNC_TOKEN;
-        if (!syncToken) {
-            throw new HTTPException(500, {
-                message: "TINYBIRD_SYNC_TOKEN not configured",
-            });
-        }
-
-        const results = await runD1TinybirdSync(c.env.DB, syncToken);
-        const hasErrors = results.some((r) => r.status === "error");
-
-        return c.json(
-            { success: !hasErrors, tables: results },
-            hasErrors ? 207 : 200,
-        );
     });
+
+async function sha256(value: string): Promise<string> {
+    const bytes = new TextEncoder().encode(value);
+    return bytesToHex(await crypto.subtle.digest("SHA-256", bytes));
+}

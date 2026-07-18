@@ -10,10 +10,14 @@ import type { LoggerVariables } from "@/middleware/logger.ts";
 import {
     applySafety,
     applySafetyToChatRequest,
+    applySafetyToResponseRequest,
     withSafetyHeaders,
 } from "@/middleware/safety.ts";
 import type { BedrockResponse } from "@/utils/bedrock-guardrail.ts";
-import { generateCacheKey as generateMediaCacheKey } from "@/utils/media-cache.ts";
+import {
+    generateCacheKey as generateMediaCacheKey,
+    SAFETY_CACHE_VERSION as MEDIA_SAFETY_CACHE_VERSION,
+} from "@/utils/media-cache.ts";
 import {
     generateCacheKey as generateTextCacheKey,
     prepareMetadata as prepareTextCacheMetadata,
@@ -54,6 +58,14 @@ function safetyApp() {
             const safeBody = await applySafetyToChatRequest(
                 c,
                 body as Parameters<typeof applySafetyToChatRequest>[1],
+            );
+            return withSafetyHeaders(c, Response.json(safeBody));
+        })
+        .post("/responses", async (c) => {
+            const body = await c.req.json();
+            const safeBody = await applySafetyToResponseRequest(
+                c,
+                body as Parameters<typeof applySafetyToResponseRequest>[1],
             );
             return withSafetyHeaders(c, Response.json(safeBody));
         });
@@ -101,7 +113,10 @@ describe("safety schema", () => {
     });
 });
 
-describe("applySafety", () => {
+// The Bedrock-backed tests sign requests with AWS SigV4 (WebCrypto HMAC-SHA256)
+// inside the workerd runtime; that crypto path can take several seconds on a cold
+// or loaded runtime, so give these blocks generous headroom over the 5s default.
+describe("applySafety", { timeout: 30000 }, () => {
     beforeEach(() => {
         guardrailResponse = { action: "NONE", assessments: [] };
         fetchMock = vi.fn(async () => Response.json(guardrailResponse));
@@ -290,7 +305,7 @@ describe("applySafety", () => {
     });
 });
 
-describe("applySafetyToChatRequest", () => {
+describe("applySafetyToChatRequest", { timeout: 30000 }, () => {
     beforeEach(() => {
         guardrailResponse = { action: "NONE", assessments: [] };
         fetchMock = vi.fn(async () => Response.json(guardrailResponse));
@@ -369,6 +384,68 @@ describe("applySafetyToChatRequest", () => {
                             },
                         },
                         { type: "text", text: "phone {PHONE}" },
+                    ],
+                },
+            ],
+        });
+    });
+
+    it("checks nested Responses API text without changing image inputs", async () => {
+        guardrailResponse = intervened(
+            {
+                sensitiveInformationPolicy: {
+                    piiEntities: [
+                        {
+                            action: "ANONYMIZED",
+                            match: "a@example.com",
+                            type: "EMAIL",
+                        },
+                    ],
+                },
+            },
+            [{ text: "system" }, { text: "email {EMAIL}" }],
+        );
+
+        const response = await safetyApp().request(
+            "/responses",
+            {
+                method: "POST",
+                body: JSON.stringify({
+                    model: "openai-large",
+                    safe: "privacy",
+                    instructions: "system",
+                    input: [
+                        {
+                            role: "user",
+                            content: [
+                                {
+                                    type: "input_text",
+                                    text: "email a@example.com",
+                                },
+                                {
+                                    type: "input_image",
+                                    image_url: "https://example.com/image.png",
+                                },
+                            ],
+                        },
+                    ],
+                }),
+            },
+            configuredEnv,
+        );
+
+        expect(response.status).toBe(200);
+        expect(fetchMock).toHaveBeenCalledOnce();
+        expect(await response.json()).toMatchObject({
+            instructions: "system",
+            input: [
+                {
+                    content: [
+                        { type: "input_text", text: "email {EMAIL}" },
+                        {
+                            type: "input_image",
+                            image_url: "https://example.com/image.png",
+                        },
                     ],
                 },
             ],
@@ -511,7 +588,7 @@ describe("safety cache keys", () => {
         expect(withQueryOverride).not.toBe(withHeaderSafety);
     });
 
-    it("adds a visible safety namespace to media cache keys when safe is active", () => {
+    it("separates media cache keys when safe is active", () => {
         const withSafety = generateMediaCacheKey(
             new URL("https://gen.pollinations.ai/image/hello?safe=true"),
         );
@@ -519,11 +596,14 @@ describe("safety cache keys", () => {
             new URL("https://gen.pollinations.ai/image/hello?safe=false"),
         );
 
-        expect(withSafety).toContain("safety_bedrock-input-v1");
-        expect(withoutSafety).not.toContain("safety_bedrock-input-v1");
+        expect(withSafety).not.toBe(withoutSafety);
+        expect(withSafety).toContain(`__safety_${MEDIA_SAFETY_CACHE_VERSION}`);
     });
 
-    it("adds header safety to media cache keys", () => {
+    it("separates media cache keys when safe is provided by header", () => {
+        const withoutHeaderSafety = generateMediaCacheKey(
+            new URL("https://gen.pollinations.ai/image/hello"),
+        );
         const withHeaderSafety = generateMediaCacheKey(
             new URL("https://gen.pollinations.ai/image/hello"),
             "privacy",
@@ -533,9 +613,15 @@ describe("safety cache keys", () => {
             "privacy",
         );
 
-        expect(withHeaderSafety).toContain("safe_header_privacy");
-        expect(withHeaderSafety).toContain("safety_bedrock-input-v1");
-        expect(withQueryOverride).not.toContain("safe_header");
-        expect(withQueryOverride).not.toContain("safety_bedrock-input-v1");
+        expect(withHeaderSafety).not.toBe(withoutHeaderSafety);
+        expect(withHeaderSafety).toContain(
+            `__safety_${MEDIA_SAFETY_CACHE_VERSION}`,
+        );
+        expect(withQueryOverride).not.toBe(withHeaderSafety);
+        expect(withQueryOverride).toBe(
+            generateMediaCacheKey(
+                new URL("https://gen.pollinations.ai/image/hello?safe=false"),
+            ),
+        );
     });
 });

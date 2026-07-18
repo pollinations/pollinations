@@ -9,19 +9,6 @@ npm install
 npm run dev
 ```
 
-## Theme Creator
-
-To use the Theme Creator, add your API key:
-
-```bash
-# Create .env file
-echo "VITE_PLN_APPS_KEY=your_secret_key_here" > .env
-```
-
-Get your key at https://enter.pollinations.ai
-
----
-
 ## Theme System Architecture
 
 A single text prompt (the **"vibe"**) drives the entire theme generation through 3 AI agents:

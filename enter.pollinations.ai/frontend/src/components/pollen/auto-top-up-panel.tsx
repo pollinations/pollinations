@@ -1,10 +1,25 @@
 import { apiClient } from "@frontend/api.ts";
-import { cn } from "@frontend/lib/cn.ts";
+import {
+    Button,
+    CardIcon,
+    CheckIcon,
+    cn,
+    ExternalLinkButton,
+    InfoTip,
+    Switch,
+    type SwitchStatus,
+    Tooltip,
+} from "@pollinations/ui";
+import { WalletKindIcon } from "@pollinations/ui/wallet";
 import {
     AUTO_TOP_UP_PACK_MAX_USD,
     AUTO_TOP_UP_PACK_MIN_USD,
 } from "@shared/billing/auto-top-up.ts";
-import { POLLEN_PACKS } from "@shared/pollen-packs.ts";
+import {
+    calculateServiceFeeCents,
+    formatUsdCentsCompact,
+    POLLEN_PACKS,
+} from "@shared/pollen-packs.ts";
 import {
     type FC,
     type ReactNode,
@@ -12,10 +27,6 @@ import {
     useEffect,
     useState,
 } from "react";
-import { Button } from "../ui/button.tsx";
-import { InfoTip } from "../ui/info-tip.tsx";
-import { Switch, type SwitchStatus } from "../ui/switch.tsx";
-import { Tooltip } from "../ui/tooltip.tsx";
 import { PollenPackSlider } from "./pollen-pack-controls.tsx";
 
 export type AutoTopUpIssue =
@@ -35,6 +46,7 @@ export type BillingState = {
         enabled: boolean;
         thresholdPollen: number;
         packAmountUsd: number;
+        serviceFeeCents: number;
         lastIssue: AutoTopUpIssue | null;
     };
     paymentMethod: {
@@ -61,24 +73,35 @@ type AutoTopUpPanelProps = {
 
 const DEFAULT_PACK_AMOUNT_USD = 10;
 const AUTO_TOP_UP_DRAFT_STORAGE_KEY = "pollinations:auto-top-up-draft";
-const AUTO_TOP_UP_TOOLTIP_CONTENT = (
-    <div className="space-y-2">
+const AutoTopUpTooltipContent: FC = () => (
+    <div className="space-y-2 text-theme-text-base">
         <div>
-            <strong>Auto top-up</strong> keeps your{" "}
-            <strong>paid balance</strong> topped up automatically.
+            Keeps your{" "}
+            <span className="font-semibold text-theme-text-strong">
+                paid balance
+            </span>{" "}
+            topped up automatically.
         </div>
-        <ul className="list-disc space-y-1 pl-4">
+        <ul className="list-disc space-y-1 pl-4 text-theme-text-muted">
             <li>
-                Triggers when your <strong>paid balance</strong> drops to{" "}
-                <strong>5 pollen or below</strong>
+                Runs at{" "}
+                <span className="font-semibold text-theme-text-strong">
+                    5 pollen or below
+                </span>
             </li>
             <li>
-                Charges your <strong>default Stripe card</strong> for the pack
-                size you select
+                Charges your{" "}
+                <span className="font-semibold text-theme-text-strong">
+                    default Stripe card
+                </span>{" "}
+                for the selected pack, plus applicable tax and service fee
             </li>
             <li>
-                Only your <strong>paid balance</strong> counts — tier pollen is
-                not considered
+                <span className="inline-flex items-center gap-1 font-semibold text-theme-text-strong">
+                    <WalletKindIcon kind="tier" />
+                    Quest Pollen is ignored
+                </span>{" "}
+                for this trigger
             </li>
         </ul>
     </div>
@@ -116,6 +139,9 @@ export const AutoTopUpPanel: FC<AutoTopUpPanelProps> = ({
         (pack) => pack.amountUsd === packAmountUsd,
     );
     const isEnabled = billingState?.autoTopUp.enabled ?? false;
+    const serviceFeeCents = selectedPack
+        ? calculateServiceFeeCents(selectedPack.amountUsd * 100)
+        : 0;
     const showConfig = isEnabled || enableDraft;
     const hasUnsavedChanges =
         billingState !== null &&
@@ -261,7 +287,7 @@ export const AutoTopUpPanel: FC<AutoTopUpPanelProps> = ({
         toggleStatus,
         lastIssue,
     );
-    const alertTone = switchStatus === "draft";
+    const alertTone = switchStatus === "invalid";
     const isToggleOn = toggleStatus !== "off";
 
     return (
@@ -279,17 +305,19 @@ export const AutoTopUpPanel: FC<AutoTopUpPanelProps> = ({
                     }
                 />
                 <div className="min-w-0">
-                    <div className="flex min-w-0 items-center text-sm font-bold text-amber-950">
+                    <div className="flex min-w-0 items-center text-sm font-bold text-theme-text-soft">
                         Auto top-up
                         <InfoTip
-                            content={AUTO_TOP_UP_TOOLTIP_CONTENT}
+                            content={<AutoTopUpTooltipContent />}
                             label="Auto top-up information"
                         />
                     </div>
                     <div
                         className={cn(
                             "text-xs font-medium",
-                            alertTone ? "text-red-700" : "text-amber-800/75",
+                            alertTone
+                                ? "text-intent-danger-text"
+                                : "text-theme-text-muted",
                         )}
                     >
                         {statusMessage}
@@ -306,11 +334,23 @@ export const AutoTopUpPanel: FC<AutoTopUpPanelProps> = ({
                                     value={packAmountUsd}
                                     onChange={setPackAmountUsd}
                                     packs={AUTO_TOP_UP_PACKS}
+                                    selectedBadgeLabel={
+                                        selectedPack
+                                            ? formatUsdCentsCompact(
+                                                  selectedPack.amountUsd * 100 +
+                                                      serviceFeeCents,
+                                              )
+                                            : "$0"
+                                    }
+                                    selectedBadgeDetail={
+                                        selectedPack
+                                            ? `incl. ${formatUsdCentsCompact(serviceFeeCents)} fee`
+                                            : undefined
+                                    }
                                     disabled={isSaving}
                                 />
                             </div>
                             <AutoTopUpSaveButton
-                                showConfig={showConfig}
                                 hasUnsavedChanges={hasUnsavedChanges}
                                 setup={setup}
                                 onSave={handleSave}
@@ -355,7 +395,7 @@ function renderStatusMessage(
                     href={issue.invoiceUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="font-semibold underline underline-offset-2 hover:text-amber-900"
+                    className="font-semibold underline underline-offset-2 hover:text-theme-text-soft"
                 >
                     complete in Stripe
                 </a>
@@ -375,17 +415,16 @@ const ManageBillingButton: FC<ManageBillingButtonProps> = ({
     onClick,
     loading,
 }) => (
-    <Button
-        as="button"
-        type="button"
-        theme="amber"
+    <ExternalLinkButton
         onClick={onClick}
         disabled={loading}
         className="w-fit shrink-0 gap-1.5 whitespace-nowrap shadow-none"
     >
-        <span>{loading ? "Opening..." : "Manage billing"}</span>
-        {!loading && <ExternalLinkIcon />}
-    </Button>
+        <span className="inline-flex items-center gap-1.5">
+            <CardIcon className="h-4 w-4 shrink-0" />
+            <span>{loading ? "Opening..." : "Manage billing"}</span>
+        </span>
+    </ExternalLinkButton>
 );
 
 function mapToggleStatusToSwitchStatus(
@@ -393,28 +432,25 @@ function mapToggleStatusToSwitchStatus(
     issue: AutoTopUpIssue | null,
 ): SwitchStatus {
     if (status === "off") return "off";
-    if (status === "draft") return "draft";
-    // status === "on": red (draft) when there's an unresolved issue,
+    if (status === "draft") return "invalid";
+    // status === "on": red (invalid) when there's an unresolved issue,
     // green (on) when fully configured.
-    return issue !== null ? "draft" : "on";
+    return issue !== null ? "invalid" : "on";
 }
 
 type AutoTopUpSaveButtonProps = {
-    showConfig: boolean;
     hasUnsavedChanges: boolean;
     setup: SetupReadiness;
     onSave: () => void;
 };
 
 const AutoTopUpSaveButton: FC<AutoTopUpSaveButtonProps> = ({
-    showConfig,
     hasUnsavedChanges,
     setup,
     onSave,
 }) => {
-    const saveDisabled = !showConfig || !canEnable(setup) || !hasUnsavedChanges;
+    const saveDisabled = !canEnable(setup) || !hasUnsavedChanges;
     const disabledReason = getSaveDisabledReason({
-        showConfig,
         hasUnsavedChanges,
         ...setup,
     });
@@ -427,11 +463,11 @@ const AutoTopUpSaveButton: FC<AutoTopUpSaveButtonProps> = ({
             <Button
                 as="button"
                 type="button"
-                theme="amber"
                 onClick={onSave}
                 disabled={saveDisabled}
-                className="w-28 min-w-0 self-start text-center shadow-none sm:self-center"
+                className="w-28 min-w-0 gap-1.5 self-start text-center shadow-none sm:self-center"
             >
+                <CheckIcon className="h-4 w-4 shrink-0" />
                 Save
             </Button>
         </DisabledControlTooltip>
@@ -466,33 +502,28 @@ function canEnable(setup: SetupReadiness): boolean {
     );
 }
 
-function getDisabledReason(
-    setup: SetupReadiness,
-    action: string,
-): string | null {
+function getDisabledReason(setup: SetupReadiness): string | null {
     if (setup.isSaving) return "Saving auto top-up...";
     if (!setup.hasSelectedPack) return "Choose a valid pollen pack first.";
     if (!setup.paymentMethodReady && !setup.billingDetailsReady) {
-        return `Add a default payment method and billing details in Stripe before ${action}.`;
+        return "Add a default payment method and billing details in Stripe before saving changes.";
     }
     if (!setup.paymentMethodReady) {
-        return `Add a default payment method in Stripe before ${action}.`;
+        return "Add a default payment method in Stripe before saving changes.";
     }
     if (!setup.billingDetailsReady) {
-        return `Add billing details in Stripe before ${action}.`;
+        return "Add billing details in Stripe before saving changes.";
     }
     return null;
 }
 
 function getSaveDisabledReason(
     state: SetupReadiness & {
-        showConfig: boolean;
         hasUnsavedChanges: boolean;
     },
 ): string | null {
-    const setupReason = getDisabledReason(state, "saving changes");
+    const setupReason = getDisabledReason(state);
     if (setupReason) return setupReason;
-    if (!state.showConfig) return "Use the switch to enable auto top-up first.";
     if (!state.hasUnsavedChanges) return "No changes to save.";
     return null;
 }
@@ -503,9 +534,9 @@ type SetupSnippetProps = {
 };
 
 const SetupSnippet: FC<SetupSnippetProps> = ({ title, value }) => (
-    <div className="min-w-0 break-words leading-relaxed text-amber-950">
+    <div className="min-w-0 break-words leading-relaxed text-theme-text-soft">
         <span className="text-sm font-bold">{title}:</span>{" "}
-        <span className="inline-flex rounded-lg bg-white px-2 py-0.5 text-sm font-medium">
+        <span className="inline-flex rounded-lg bg-surface-opaque px-2 py-0.5 text-sm font-medium">
             {value}
         </span>
     </div>
@@ -514,27 +545,10 @@ const SetupSnippet: FC<SetupSnippetProps> = ({ title, value }) => (
 const ErrorNotice: FC<{ children: ReactNode }> = ({ children }) => (
     <div
         role="alert"
-        className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-800"
+        className="rounded-xl border border-intent-danger-border bg-intent-danger-bg-light p-4 text-sm text-intent-danger-text"
     >
         {children}
     </div>
-);
-
-const ExternalLinkIcon: FC = () => (
-    <svg
-        viewBox="0 0 24 24"
-        className="h-4 w-4 shrink-0 text-amber-700/70"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        aria-hidden="true"
-    >
-        <path
-            d="M7 17 17 7M9 7h8v8"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-        />
-    </svg>
 );
 
 function formatPaymentMethod(billingState: BillingState | null): string {
@@ -576,7 +590,6 @@ function extractErrorMessage(payload: unknown, fallback: string): string {
 
 function isStripeBillingReturn(): boolean {
     return (
-        typeof window !== "undefined" &&
         new URLSearchParams(window.location.search).get(
             "stripe_billing_return",
         ) === "true"
@@ -584,7 +597,6 @@ function isStripeBillingReturn(): boolean {
 }
 
 function readAutoTopUpDraftPackAmount(): number | null {
-    if (typeof window === "undefined") return null;
     try {
         const raw = window.sessionStorage.getItem(
             AUTO_TOP_UP_DRAFT_STORAGE_KEY,

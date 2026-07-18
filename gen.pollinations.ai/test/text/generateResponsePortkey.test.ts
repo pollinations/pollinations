@@ -17,7 +17,7 @@ describe("generateResponsePortkey", () => {
                 return Response.json({
                     id: "resp_test",
                     object: "response",
-                    model: "gpt-5.4",
+                    model: "gpt-5.5",
                     output: [
                         {
                             type: "reasoning",
@@ -52,12 +52,14 @@ describe("generateResponsePortkey", () => {
                 model: "openai-large",
                 input: "test prompt",
                 reasoning: { effort: "high", summary: "auto" },
+                stream: false,
+                store: false,
                 safe: "false",
             },
             { portkeyGatewayUrl: "https://portkey.test" },
         );
 
-        expect(response).toMatchObject({
+        await expect(response.json()).resolves.toMatchObject({
             object: "response",
             output_text: "Final answer",
         });
@@ -67,21 +69,26 @@ describe("generateResponsePortkey", () => {
         );
         expect(
             upstreamRequest?.headers.get("x-portkey-azure-api-version"),
-        ).toBe("2025-03-01-preview");
+        ).toBe("v1");
         await expect(upstreamRequest?.json()).resolves.toMatchObject({
-            model: "gpt-5.4",
+            model: "gpt-5.5",
             input: "test prompt",
             reasoning: { effort: "high", summary: "auto" },
             store: false,
         });
     });
 
-    it("rejects models that are not marked Responses API capable", async () => {
+    it.each([
+        "gemma",
+        "unregistered-model",
+    ])("rejects unsupported Responses API model %s", async (model) => {
         await expect(
             generateResponsePortkey(
                 {
-                    model: "gemma",
+                    model,
                     input: "test prompt",
+                    stream: false,
+                    store: false,
                     safe: "false",
                 },
                 { portkeyGatewayUrl: "https://portkey.test" },
@@ -97,68 +104,42 @@ describe("generateResponsePortkey", () => {
         });
     });
 
-    it("routes Mistral Small 4 Responses API requests through OpenRouter", async () => {
+    it("forwards streaming Responses API bodies without buffering", async () => {
+        process.env.AZURE_MYCELI_PROD_API_KEY = "test-azure-key";
         let upstreamRequest: Request | undefined;
+        const event = {
+            type: "response.output_text.delta",
+            delta: "hello",
+        };
 
         vi.spyOn(globalThis, "fetch").mockImplementation(
             async (input, init) => {
                 upstreamRequest = new Request(input, init);
-                return Response.json({
-                    id: "resp_mistral",
-                    object: "response",
-                    model: "mistralai/mistral-small-2603",
-                    output: [
-                        {
-                            type: "reasoning",
-                            content: [
-                                {
-                                    type: "reasoning_text",
-                                    text: "Reasoning trace",
-                                },
-                            ],
-                        },
-                        {
-                            type: "message",
-                            role: "assistant",
-                            content: [
-                                { type: "output_text", text: "Final answer" },
-                            ],
-                        },
-                    ],
-                    output_text: "Final answer",
-                    usage: {
-                        input_tokens: 54,
-                        output_tokens: 96,
-                        output_tokens_details: { reasoning_tokens: 89 },
-                        total_tokens: 150,
-                    },
+                return new Response(`data: ${JSON.stringify(event)}\n\n`, {
+                    headers: { "content-type": "text/event-stream" },
                 });
             },
         );
 
-        await generateResponsePortkey(
+        const response = await generateResponsePortkey(
             {
-                model: "mistral-4",
+                model: "openai-large",
                 input: "test prompt",
-                reasoning: { effort: "high" },
+                stream: true,
+                store: false,
                 safe: "false",
             },
             { portkeyGatewayUrl: "https://portkey.test" },
         );
 
-        expect(upstreamRequest?.headers.get("x-portkey-provider")).toBe(
-            "openai",
+        expect(response.headers.get("content-type")).toBe("text/event-stream");
+        await expect(response.text()).resolves.toBe(
+            `data: ${JSON.stringify(event)}\n\n`,
         );
-        expect(upstreamRequest?.headers.get("x-portkey-custom-host")).toBe(
-            "https://openrouter.ai/api/v1",
-        );
-        expect(
-            upstreamRequest?.headers.get("x-portkey-azure-api-version"),
-        ).toBeNull();
         await expect(upstreamRequest?.json()).resolves.toMatchObject({
-            model: "mistralai/mistral-small-2603",
+            model: "gpt-5.5",
             input: "test prompt",
-            reasoning: { effort: "high" },
+            stream: true,
             store: false,
         });
     });

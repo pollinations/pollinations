@@ -9,7 +9,7 @@ type FunctionTool = {
 };
 
 describe("sanitizeToolSchemas", () => {
-    const transform = sanitizeToolSchemas();
+    const transform = sanitizeToolSchemas;
 
     it("removes unsupported bounds while preserving supported schema fields", async () => {
         const result = await transform([], {

@@ -4,6 +4,7 @@ import {
 } from "cloudflare:test";
 import type { Logger } from "@logtape/logtape";
 import { IMMUTABLE_CACHE_CONTROL } from "@shared/http/cache-control.ts";
+import { validator } from "@shared/middleware/validator.ts";
 import { CreateChatCompletionRequestSchema } from "@shared/schemas/openai.ts";
 import { createTestR2Bucket } from "@shared/test/mocks/r2.ts";
 import { Hono } from "hono";
@@ -11,7 +12,6 @@ import type { RequestIdVariables } from "hono/request-id";
 import { describe, expect, it } from "vitest";
 import type { LoggerVariables } from "@/middleware/logger.ts";
 import { textCache } from "@/middleware/text-cache.ts";
-import { validator } from "@/middleware/validator.ts";
 
 const testLog = {
     getChild: () => testLog,

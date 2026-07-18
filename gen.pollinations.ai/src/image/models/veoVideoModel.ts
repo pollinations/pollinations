@@ -3,7 +3,6 @@ import googleCloudAuth from "@/text/auth/googleCloudAuth.ts";
 import { getImageEnv } from "../env.ts";
 import { HttpError } from "../httpError.ts";
 import type { ImageParams } from "../params.ts";
-import type { ProgressManager } from "../progressBar.ts";
 import { sleep } from "../util.ts";
 import { fetchUpstream } from "../utils/fetchUpstream.ts";
 import { downloadUserImage } from "../utils/imageDownload.ts";
@@ -48,7 +47,7 @@ export interface VideoGenerationResult {
         usage: {
             completionVideoSeconds?: number; // For Veo, Wan (billed by seconds)
             completionVideoTokens?: number; // For Seedance (billed by tokens)
-            completionAudioSeconds?: number; // For Wan audio (billed by seconds)
+            completionAudioSeconds?: number; // Output audio billed by seconds
             totalTokenCount?: number;
         };
     };
@@ -72,18 +71,20 @@ interface VeoOperationResponse {
 }
 
 /**
- * Generates a video using Veo 3.1 Fast API
+ * Generates a video using a fixed-resolution Veo 3.1 Fast tier.
+ * Resolution is selected by model name, not inferred from dimensions, so the
+ * upstream request always matches the registry rate.
+ * @param {"720p" | "1080p"} resolution - Fixed upstream resolution
+ * @param {"veo" | "veo-1080p"} actualModel - Registry model used for billing
  * @param {string} prompt - The prompt for video generation
  * @param {ImageParams} safeParams - The parameters for video generation
- * @param {ProgressManager} progress - Progress manager for updates
- * @param {string} requestId - Request ID for progress tracking
  * @returns {Promise<VideoGenerationResult>}
  */
-export const callVeoAPI = async (
+const generateVeoVideo = async (
+    resolution: "720p" | "1080p",
+    actualModel: "veo" | "veo-1080p",
     prompt: string,
     safeParams: ImageParams,
-    progress: ProgressManager,
-    requestId: string,
 ): Promise<VideoGenerationResult> => {
     const PROJECT_ID = getImageEnv("GOOGLE_PROJECT_ID");
 
@@ -96,14 +97,6 @@ export const callVeoAPI = async (
 
     logOps("Calling Veo API with prompt:", prompt);
 
-    // Update progress
-    progress.updateBar(
-        requestId,
-        35,
-        "Processing",
-        "Starting video generation...",
-    );
-
     // Get access token
     const accessToken = await googleCloudAuth.getAccessToken();
     if (!accessToken) {
@@ -115,18 +108,11 @@ export const callVeoAPI = async (
     // Audio is disabled by default - user must explicitly pass audio=true to enable
     const generateAudio = safeParams.audio === true;
 
-    // Calculate resolution and aspect ratio from width/height or aspectRatio
-    const { aspectRatio, resolution: resolutionUpper } =
-        calculateVideoResolution({
-            width: safeParams.width,
-            height: safeParams.height,
-            aspectRatio: safeParams.aspectRatio,
-            defaultResolution: "720P",
-        });
-    const resolution = resolutionUpper.toLowerCase() as
-        | "480p"
-        | "720p"
-        | "1080p";
+    const { aspectRatio } = calculateVideoResolution({
+        width: safeParams.width,
+        height: safeParams.height,
+        aspectRatio: safeParams.aspectRatio,
+    });
 
     // Check for input image (image-to-video)
     const hasImage = safeParams.image && safeParams.image.length > 0;
@@ -159,12 +145,6 @@ export const callVeoAPI = async (
             ? safeParams.image[0]
             : safeParams.image;
         logOps("Adding first frame image for I2V:", imageUrl);
-        progress.updateBar(
-            requestId,
-            38,
-            "Processing",
-            "Processing first frame...",
-        );
         instance.image = await processImageForVeo(imageUrl, "first frame");
     }
 
@@ -172,12 +152,6 @@ export const callVeoAPI = async (
     if (hasLastFrame) {
         const lastFrameUrl = safeParams.image[1];
         logOps("Adding last frame image for interpolation:", lastFrameUrl);
-        progress.updateBar(
-            requestId,
-            39,
-            "Processing",
-            "Processing last frame...",
-        );
         instance.lastFrame = await processImageForVeo(
             lastFrameUrl,
             "last frame",
@@ -214,12 +188,6 @@ export const callVeoAPI = async (
     logOps("Veo API request body:", JSON.stringify(logSafeRequest, null, 2));
 
     // Step 1: Start video generation with predictLongRunning
-    progress.updateBar(
-        requestId,
-        40,
-        "Processing",
-        "Initiating video generation...",
-    );
 
     const generateEndpoint = `https://${LOCATION}-aiplatform.googleapis.com/v1/projects/${PROJECT_ID}/locations/${LOCATION}/publishers/google/models/${MODEL_ID}:predictLongRunning`;
     logOps("Generate endpoint:", generateEndpoint);
@@ -247,48 +215,48 @@ export const callVeoAPI = async (
     }
 
     // Step 2: Poll for completion using fetchPredictOperation
-    progress.updateBar(
-        requestId,
-        50,
-        "Processing",
-        "Generating video (this takes 30-90 seconds)...",
-    );
 
-    const videoBuffer = await pollVeoOperation(
-        generateData.name,
-        accessToken,
-        progress,
-        requestId,
-    );
-
-    progress.updateBar(requestId, 95, "Success", "Video generation completed");
+    const videoBuffer = await pollVeoOperation(generateData.name, accessToken);
 
     return {
         buffer: videoBuffer,
         mimeType: "video/mp4",
         durationSeconds: durationSeconds,
         trackingData: {
-            actualModel: "veo",
+            actualModel,
             usage: {
                 completionVideoSeconds: durationSeconds,
+                ...(generateAudio
+                    ? { completionAudioSeconds: durationSeconds }
+                    : {}),
             },
         },
     };
 };
 
+/** Veo 3.1 Fast at 720p ($0.08/s video + $0.02/s audio when enabled). */
+export const callVeoAPI = (
+    prompt: string,
+    safeParams: ImageParams,
+): Promise<VideoGenerationResult> =>
+    generateVeoVideo("720p", "veo", prompt, safeParams);
+
+/** Veo 3.1 Fast at 1080p ($0.10/s video + $0.02/s audio when enabled). */
+export const callVeo1080pAPI = (
+    prompt: string,
+    safeParams: ImageParams,
+): Promise<VideoGenerationResult> =>
+    generateVeoVideo("1080p", "veo-1080p", prompt, safeParams);
+
 /**
  * Poll Veo operation until completion using fetchPredictOperation
  * @param {string} operationName - The operation name from generate response
  * @param {string} accessToken - Google Cloud access token
- * @param {ProgressManager} progress - Progress manager
- * @param {string} requestId - Request ID
  * @returns {Promise<Buffer>} - The video buffer
  */
 async function pollVeoOperation(
     operationName: string,
     accessToken: string,
-    progress: ProgressManager,
-    requestId: string,
 ): Promise<Buffer> {
     const PROJECT_ID = getImageEnv("GOOGLE_PROJECT_ID");
 
@@ -304,15 +272,6 @@ async function pollVeoOperation(
 
     for (let attempt = 1; attempt <= maxAttempts; attempt++) {
         logOps(`Poll attempt ${attempt}/${maxAttempts}...`);
-
-        // Update progress based on attempt number
-        const progressPercent = 50 + Math.min(40, attempt);
-        progress.updateBar(
-            requestId,
-            progressPercent,
-            "Processing",
-            `Waiting for video... (${attempt}/${maxAttempts})`,
-        );
 
         const pollResponse = await fetch(pollUrl, {
             method: "POST",

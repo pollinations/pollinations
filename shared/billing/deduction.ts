@@ -13,10 +13,10 @@ const BUCKET_COLUMNS = {
 /**
  * Atomically deducts pollen from user balance.
  *
- * Regular requests are binary: tier pays when it can cover the actual charge,
- * pack pays when tier cannot cover and pack is positive, and regular overage
- * falls back to tier when pack is empty.
- * Paid-only requests always deduct from pack and never touch tier.
+ * Regular requests are binary: Quest Pollen pays when it can cover the actual
+ * charge, pack pays when Quest Pollen cannot cover and pack is positive, and
+ * regular overage falls back to Quest Pollen when pack is empty.
+ * Paid-only requests always deduct from pack and never touch Quest Pollen.
  */
 export async function atomicDeductUserBalance(
     db: DrizzleD1Database,
@@ -97,15 +97,15 @@ export async function atomicDeductApiKeyBalance(
 export type { UserBalance };
 
 /**
- * Atomically adjusts any user balance bucket by a positive or negative amount.
+ * Atomically credits a positive amount to a user balance bucket.
  */
-export async function atomicAdjustUserBalance(
+export async function atomicCreditUserBalance(
     db: DrizzleD1Database,
     userId: string,
     bucket: Bucket,
     amount: number,
 ): Promise<{ ok: boolean; newBalance: number | null }> {
-    if (amount === 0) return { ok: true, newBalance: null };
+    if (amount <= 0) return { ok: true, newBalance: null };
 
     const column = BUCKET_COLUMNS[bucket];
     const rows = await db
@@ -117,43 +117,5 @@ export async function atomicAdjustUserBalance(
     return {
         ok: rows.length > 0,
         newBalance: rows[0]?.newBalance ?? null,
-    };
-}
-
-export async function atomicCreditUserBalance(
-    db: DrizzleD1Database,
-    userId: string,
-    bucket: Bucket,
-    amount: number,
-): Promise<{ ok: boolean; newBalance: number | null }> {
-    if (amount <= 0) return { ok: true, newBalance: null };
-    return atomicAdjustUserBalance(db, userId, bucket, amount);
-}
-
-/**
- * Gets the current balances for a user.
- * Useful for logging or displaying balance information.
- *
- * @param db - Drizzle database instance
- * @param userId - User ID to get balances for
- * @returns Object with tier and pack balances
- */
-export async function getUserBalances(
-    db: DrizzleD1Database,
-    userId: string,
-): Promise<UserBalance> {
-    const result = await db
-        .select({
-            tierBalance: userTable.tierBalance,
-            packBalance: userTable.packBalance,
-        })
-        .from(userTable)
-        .where(sql`${userTable.id} = ${userId}`)
-        .limit(1);
-
-    const user = result[0];
-    return {
-        tierBalance: user?.tierBalance ?? 0,
-        packBalance: user?.packBalance ?? 0,
     };
 }

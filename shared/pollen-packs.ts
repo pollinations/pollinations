@@ -5,8 +5,6 @@ export type PollenPackKey = "p2" | "p5" | "p10" | "p20" | "p50" | "p100";
 export type PollenPack = {
     packKey: PollenPackKey;
     amountUsd: number;
-    bonusPollen: number;
-    pollenGrant: number;
     checkoutName: string;
     checkoutDescription: string;
     checkoutImageUrl: string;
@@ -16,19 +14,24 @@ export type PollenPack = {
 const CHECKOUT_IMAGE_URL = `${PUBLIC_URLS.enter.production}/checkout/pollen-pack.png`;
 const POLLEN_TAX_CODE = "txcd_10103001";
 const CHECKOUT_FEEDBACK_URL = "https://discord.gg/z5uMbEYK";
+export const SERVICE_FEE_RATE_BPS = 350;
+export const SERVICE_FEE_FIXED_CENTS = 30;
+export const SERVICE_FEE_NAME = "Service fee";
+export const SERVICE_FEE_LINE_TYPE = "service_fee";
+export const POLLEN_PACK_LINE_TYPE = "pollen_pack";
+export const SERVICE_FEE_TAX_CODE = POLLEN_TAX_CODE;
 
-// USD is the canonical reference: 1 pollen ≈ $1.
+// USD is the canonical reference: 1 pollen ≈ $1. You get what you buy.
 const BASE_POLLEN_PACKS: ReadonlyArray<{
     packKey: PollenPackKey;
     amountUsd: number;
-    bonusPollen: number;
 }> = [
-    { packKey: "p2", amountUsd: 2, bonusPollen: 0 },
-    { packKey: "p5", amountUsd: 5, bonusPollen: 1 },
-    { packKey: "p10", amountUsd: 10, bonusPollen: 3 },
-    { packKey: "p20", amountUsd: 20, bonusPollen: 8 },
-    { packKey: "p50", amountUsd: 50, bonusPollen: 25 },
-    { packKey: "p100", amountUsd: 100, bonusPollen: 60 },
+    { packKey: "p2", amountUsd: 2 },
+    { packKey: "p5", amountUsd: 5 },
+    { packKey: "p10", amountUsd: 10 },
+    { packKey: "p20", amountUsd: 20 },
+    { packKey: "p50", amountUsd: 50 },
+    { packKey: "p100", amountUsd: 100 },
 ];
 
 const PACK_KEY_SET = new Set<PollenPackKey>(
@@ -36,35 +39,17 @@ const PACK_KEY_SET = new Set<PollenPackKey>(
 );
 
 export const formatPollenPackValue = (value: number): string =>
-    Number.isInteger(value)
-        ? value.toLocaleString("en-US")
-        : value.toLocaleString("en-US", {
-              minimumFractionDigits: 1,
-              maximumFractionDigits: 1,
-          });
+    value.toLocaleString("en-US");
 
 export const POLLEN_PACKS: ReadonlyArray<PollenPack> = BASE_POLLEN_PACKS.map(
-    ({ packKey, amountUsd, bonusPollen }) => {
-        const pollenGrant = amountUsd + bonusPollen;
-        const hasBonus = bonusPollen > 0;
-        const checkoutName = hasBonus
-            ? `🪷 ${formatPollenPackValue(amountUsd)} Pollen + ${formatPollenPackValue(bonusPollen)} FREE`
-            : `🪷 ${formatPollenPackValue(amountUsd)} Pollen`;
-        const checkoutDescription = hasBonus
-            ? `Tiny bits of creative energy for pollinations.ai 🌱 We’re still in beta, so this pack includes ${formatPollenPackValue(bonusPollen)} extra Pollen when you buy ${formatPollenPackValue(amountUsd)}. Feedback: ${CHECKOUT_FEEDBACK_URL}`
-            : `Tiny bits of creative energy for pollinations.ai 🌱 Feedback: ${CHECKOUT_FEEDBACK_URL}`;
-
-        return {
-            packKey,
-            amountUsd,
-            bonusPollen,
-            pollenGrant,
-            checkoutName,
-            checkoutDescription,
-            checkoutImageUrl: CHECKOUT_IMAGE_URL,
-            taxCode: POLLEN_TAX_CODE,
-        };
-    },
+    ({ packKey, amountUsd }) => ({
+        packKey,
+        amountUsd,
+        checkoutName: `🪷 ${formatPollenPackValue(amountUsd)} Pollen`,
+        checkoutDescription: `Tiny bits of creative energy for pollinations.ai 🌱 Feedback: ${CHECKOUT_FEEDBACK_URL}`,
+        checkoutImageUrl: CHECKOUT_IMAGE_URL,
+        taxCode: POLLEN_TAX_CODE,
+    }),
 );
 
 export const isPollenPackKey = (value: string): value is PollenPackKey =>
@@ -87,15 +72,30 @@ export const getPollenPackByAmount = (
         ? POLLEN_PACKS.find((pack) => pack.amountUsd === amountUsd)
         : undefined;
 
-export const describePollenPack = (pack: PollenPack): string => {
-    const bonusSuffix =
-        pack.bonusPollen > 0
-            ? ` (+${formatPollenPackValue(pack.bonusPollen)} bonus)`
-            : "";
-    return `$${pack.amountUsd} -> ${formatPollenPackValue(pack.pollenGrant)} pollen${bonusSuffix}`;
+export const describePollenPack = (pack: PollenPack): string =>
+    `$${pack.amountUsd} -> ${formatPollenPackValue(pack.amountUsd)} pollen`;
+
+export const calculateServiceFeeCents = (packAmountCents: number): number => {
+    if (!Number.isFinite(packAmountCents) || packAmountCents <= 0) {
+        return 0;
+    }
+
+    return Math.ceil(
+        (packAmountCents * SERVICE_FEE_RATE_BPS) / 10_000 +
+            SERVICE_FEE_FIXED_CENTS,
+    );
 };
 
-export const getPackBonusPercent = (pack: PollenPack): number =>
-    pack.amountUsd > 0
-        ? Math.round((pack.bonusPollen / pack.amountUsd) * 100)
-        : 0;
+export const formatUsdCents = (amountCents: number): string =>
+    (amountCents / 100).toLocaleString("en-US", {
+        style: "currency",
+        currency: "USD",
+    });
+
+export const formatUsdCentsCompact = (amountCents: number): string =>
+    (amountCents / 100).toLocaleString("en-US", {
+        style: "currency",
+        currency: "USD",
+        minimumFractionDigits: amountCents % 100 === 0 ? 0 : 2,
+        maximumFractionDigits: 2,
+    });

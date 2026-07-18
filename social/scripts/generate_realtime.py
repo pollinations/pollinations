@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Tier 1: PR Gist Generator
+Tier 1: News / Create PR gist
 
 On PR merge:
   Step 1: AI analyzes PR → structured gist JSON
@@ -156,7 +156,7 @@ Changed files:
 
     response = call_pollinations_api(
         system_prompt, user_prompt, token,
-        temperature=0.2, exit_on_failure=False
+        temperature=0.2
     )
     return parse_json_response(response) if response else None
 
@@ -231,7 +231,7 @@ def generate_gist_image(gist: Dict, pollinations_token: str,
 # ── Main ─────────────────────────────────────────────────────────────
 
 def main():
-    print("=== Tier 1: PR Gist Generator ===")
+    print("=== Tier 1: News / Create PR gist ===")
 
     # Environment
     github_token = get_env("GITHUB_TOKEN")

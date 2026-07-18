@@ -1,26 +1,15 @@
-import { AUDIO_SERVICES, DEFAULT_AUDIO_MODEL } from "@shared/registry/audio.ts";
-import {
-    DEFAULT_EMBEDDING_MODEL,
-    EMBEDDING_SERVICES,
-} from "@shared/registry/embeddings.ts";
-import { DEFAULT_IMAGE_MODEL, IMAGE_SERVICES } from "@shared/registry/image.ts";
-import {
-    DEFAULT_REALTIME_MODEL,
-    REALTIME_SERVICES,
-} from "@shared/registry/realtime.ts";
-import { type ModelName, resolveModelName } from "@shared/registry/registry.ts";
-import { DEFAULT_TEXT_MODEL, TEXT_SERVICES } from "@shared/registry/text.ts";
-import type { EventType } from "@shared/registry/types.ts";
+import type { CommunityEndpointRuntime } from "@shared/community-endpoints.ts";
+import { DEFAULT_AUDIO_MODEL } from "@shared/registry/audio.ts";
+import { DEFAULT_EMBEDDING_MODEL } from "@shared/registry/embeddings.ts";
+import { DEFAULT_IMAGE_MODEL } from "@shared/registry/image.ts";
+import { DEFAULT_REALTIME_MODEL } from "@shared/registry/realtime.ts";
+import type { ModelDefinition } from "@shared/registry/registry.ts";
+import { DEFAULT_TEXT_MODEL } from "@shared/registry/text.ts";
+import type { EventType } from "@shared/schemas/generation-event.ts";
 import { createMiddleware } from "hono/factory";
 import { HTTPException } from "hono/http-exception";
-
-const SERVICES_BY_EVENT_TYPE = {
-    "generate.text": TEXT_SERVICES,
-    "generate.image": IMAGE_SERVICES,
-    "generate.audio": AUDIO_SERVICES,
-    "generate.embedding": EMBEDDING_SERVICES,
-    "generate.realtime": REALTIME_SERVICES,
-} as const satisfies Record<EventType, Record<string, unknown>>;
+import { getGenerationModelRegistry } from "../model-registry.ts";
+import type { AuthVariables } from "./auth.ts";
 
 const ENDPOINT_LABEL: Record<EventType, string> = {
     "generate.text": "text",
@@ -35,7 +24,10 @@ export type ModelVariables = {
         /** The model string from the request (before resolution) */
         requested: string;
         /** The resolved canonical model name */
-        resolved: ModelName;
+        resolved: string;
+        /** Static registry definition, or a dynamic definition resolved from D1. */
+        definition: ModelDefinition<string>;
+        communityEndpoint?: CommunityEndpointRuntime;
     };
     formData?: FormData;
 };
@@ -58,15 +50,63 @@ function getValidatedJsonBody<T>(req: {
     }
 }
 
+export async function resolveModelDefinition(
+    model: string,
+    eventType: EventType,
+    env: CloudflareBindings,
+    callerUserId?: string,
+): Promise<ModelVariables["model"]> {
+    const registry = await getGenerationModelRegistry(env);
+    const entry = registry.resolve(model);
+    if (!entry) {
+        throw new HTTPException(400, {
+            message: `Invalid model or alias: "${model}". Must be a valid model name or alias.`,
+        });
+    }
+
+    // A private community endpoint is owner-only: to everyone else it doesn't
+    // exist. Reuse the same "invalid model" response as an unknown name so
+    // private models aren't discoverable by probing.
+    const community = entry.communityEndpoint;
+    if (
+        community &&
+        community.visibility !== "public" &&
+        community.ownerUserId !== callerUserId
+    ) {
+        throw new HTTPException(400, {
+            message: `Invalid model or alias: "${model}". Must be a valid model name or alias.`,
+        });
+    }
+
+    if (entry.eventType !== eventType) {
+        const actualLabel = ENDPOINT_LABEL[entry.eventType];
+        throw new HTTPException(400, {
+            message: `Model "${model}" is a ${actualLabel} model and cannot be used on the ${ENDPOINT_LABEL[eventType]} endpoint. Use the ${actualLabel} endpoint instead.`,
+        });
+    }
+
+    return {
+        requested: model,
+        resolved: entry.id,
+        definition: entry.definition,
+        ...(entry.communityEndpoint && {
+            communityEndpoint: entry.communityEndpoint,
+        }),
+    };
+}
+
 /**
  * Middleware that extracts, defaults, and resolves the model from the request.
- * Must run before auth and track middlewares.
+ * Must run after auth and before track so private endpoints can be owner-gated.
  */
 export function resolveModel(
     eventType: EventType,
     options?: ResolveModelOptions,
 ) {
-    return createMiddleware<{ Variables: ModelVariables }>(async (c, next) => {
+    return createMiddleware<{
+        Bindings: CloudflareBindings;
+        Variables: ModelVariables & Partial<AuthVariables>;
+    }>(async (c, next) => {
         // Extract model from request
         let rawModel: string | null = null;
 
@@ -112,48 +152,19 @@ export function resolveModel(
                       ? DEFAULT_REALTIME_MODEL
                       : DEFAULT_IMAGE_MODEL);
         const model = rawModel || defaultModel;
-
-        // Resolve alias to canonical model name
-        // If resolution fails, throw a 400 error with the original error message
-        let resolved: ModelName;
-        try {
-            resolved = resolveModelName(model);
-        } catch (error) {
-            throw new HTTPException(400, {
-                message:
-                    error instanceof Error
-                        ? error.message
-                        : `Invalid model: ${model}`,
-            });
-        }
-
-        // Reject models whose category doesn't match this endpoint
-        // (e.g. an audio model sent to /v1/chat/completions). Without this,
-        // the request would be proxied to the wrong backend and surface
-        // as a 5xx upstream error.
-        if (!(resolved in SERVICES_BY_EVENT_TYPE[eventType])) {
-            const actualCategory = (
-                [
-                    "generate.text",
-                    "generate.image",
-                    "generate.audio",
-                    "generate.embedding",
-                    "generate.realtime",
-                ] as const
-            ).find((et) => resolved in SERVICES_BY_EVENT_TYPE[et]);
-            const actualLabel = actualCategory
-                ? ENDPOINT_LABEL[actualCategory]
-                : "unknown";
-            throw new HTTPException(400, {
-                message: `Model "${model}" is a ${actualLabel} model and cannot be used on the ${ENDPOINT_LABEL[eventType]} endpoint. Use the ${actualLabel} endpoint instead.`,
-            });
-        }
-
-        c.set("model", {
-            requested: model,
-            resolved,
-        });
-
+        // auth() runs before resolveModel on the authenticated generation
+        // routes, so the caller identity is available to gate private
+        // endpoints. If it isn't (unauthenticated path), callerUserId is
+        // undefined and a private endpoint fails closed — never exposed.
+        c.set(
+            "model",
+            await resolveModelDefinition(
+                model,
+                eventType,
+                c.env,
+                c.var.auth?.user?.id,
+            ),
+        );
         await next();
     });
 }

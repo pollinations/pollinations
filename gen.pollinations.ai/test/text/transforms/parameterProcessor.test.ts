@@ -35,9 +35,52 @@ describe("processParameters", () => {
         expect(result.options.max_completion_tokens).toBeUndefined();
     });
 
+    it("strips stream_options for non-OpenAI Azure models when streaming", () => {
+        const result = processParameters(messages, {
+            model: "grok-4.3",
+            stream: true,
+            modelConfig: {
+                provider: "azure-openai",
+                "azure-deployment-id": "grok-4.3",
+            },
+            modelDef,
+        });
+
+        expect(result.options.stream_options).toBeUndefined();
+    });
+
+    it("strips nullable stream_options for non-OpenAI Azure models", () => {
+        const result = processParameters(messages, {
+            model: "mistral-large",
+            stream_options: null as unknown as Record<string, unknown>,
+            modelConfig: {
+                provider: "azure-openai",
+                "azure-deployment-id": "Mistral-Large-3",
+            },
+            modelDef,
+        });
+
+        expect(result.options.stream_options).toBeUndefined();
+    });
+
+    it("keeps stream_options for OpenAI Azure models when streaming", () => {
+        const result = processParameters(messages, {
+            model: "gpt-5-nano",
+            stream: true,
+            modelConfig: {
+                provider: "azure-openai",
+                "azure-deployment-id": "gpt-5-nano",
+            },
+            modelDef,
+        });
+
+        expect(result.options.stream_options).toEqual({ include_usage: true });
+    });
+
     it.each([
         "us.anthropic.claude-opus-4-7",
         "global.anthropic.claude-opus-4-8",
+        "global.anthropic.claude-fable-5",
     ])("strips temperature/top_p/top_k for %s", (model) => {
         const result = processParameters(messages, {
             model,
@@ -51,6 +94,28 @@ describe("processParameters", () => {
         expect(result.options.temperature).toBeUndefined();
         expect(result.options.top_p).toBeUndefined();
         expect(result.options.top_k).toBeUndefined();
+    });
+
+    it("drops top_p when temperature is also set for Bedrock Claude models", () => {
+        const both = processParameters(messages, {
+            model: "global.anthropic.claude-sonnet-4-6",
+            temperature: 0.7,
+            top_p: 0.9,
+            modelConfig: { provider: "bedrock" },
+            modelDef,
+        });
+
+        expect(both.options.top_p).toBeUndefined();
+        expect(both.options.temperature).toBe(0.7);
+
+        const topPOnly = processParameters(messages, {
+            model: "global.anthropic.claude-sonnet-4-6",
+            top_p: 0.9,
+            modelConfig: { provider: "bedrock" },
+            modelDef,
+        });
+
+        expect(topPOnly.options.top_p).toBe(0.9);
     });
 
     it("does not strip temperature for Claude Opus 4.6", () => {

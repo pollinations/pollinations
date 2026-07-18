@@ -1,111 +1,125 @@
-import { AUDIO_SERVICES } from "@shared/registry/audio.ts";
-import { EMBEDDING_SERVICES } from "@shared/registry/embeddings.ts";
-import { IMAGE_SERVICES } from "@shared/registry/image.ts";
-import { REALTIME_SERVICES } from "@shared/registry/realtime.ts";
-import type { Category } from "@shared/registry/registry.ts";
-import { TEXT_SERVICES } from "@shared/registry/text.ts";
-import { getModelDisplayName } from "./model-utils.ts";
+import {
+    type ApiModelInfo,
+    getCatalogCategory,
+    getCatalogDisplayName,
+    getCatalogModelId,
+} from "./model-catalog.ts";
+import type { ModelDisplayCategory } from "./types.ts";
 
 export type ModelCategoryLabel =
     | "Text"
     | "Image"
     | "Video"
+    | "3D"
     | "Audio"
     | "Realtime"
-    | "Embedding";
+    | "Embedding"
+    | "Community";
 export type ModelCategoryModel = { id: string; label: string };
 export type ModelCategoryGroup = {
-    category: Category;
+    category: ModelDisplayCategory;
     label: ModelCategoryLabel;
-    modality: "text" | "images" | "video" | "audio" | "realtime" | "embeddings";
+    modality:
+        | "text"
+        | "images"
+        | "video"
+        | "3d"
+        | "audio"
+        | "realtime"
+        | "embeddings";
     models: ModelCategoryModel[];
 };
 
-const CATEGORY_ORDER: Category[] = [
+const CATEGORY_ORDER: ModelDisplayCategory[] = [
     "text",
     "image",
     "video",
+    "3d",
     "audio",
     "realtime",
     "embedding",
+    "community",
 ];
 
-const CATEGORY_LABELS: Record<Category, ModelCategoryLabel> = {
+const CATEGORY_LABELS: Record<ModelDisplayCategory, ModelCategoryLabel> = {
     text: "Text",
     image: "Image",
     video: "Video",
+    "3d": "3D",
     audio: "Audio",
     realtime: "Realtime",
     embedding: "Embedding",
+    community: "Community",
 };
 
 const CATEGORY_MODALITIES: Record<
-    ModelCategoryLabel,
+    ModelDisplayCategory,
     ModelCategoryGroup["modality"]
 > = {
-    Text: "text",
-    Image: "images",
-    Video: "video",
-    Audio: "audio",
-    Realtime: "realtime",
-    Embedding: "embeddings",
+    text: "text",
+    image: "images",
+    video: "video",
+    "3d": "3d",
+    audio: "audio",
+    realtime: "realtime",
+    embedding: "embeddings",
+    community: "text",
 };
 
-const allRegistryEntries = [
-    ...Object.entries(TEXT_SERVICES),
-    ...Object.entries(IMAGE_SERVICES),
-    ...Object.entries(AUDIO_SERVICES),
-    ...Object.entries(REALTIME_SERVICES),
-    ...Object.entries(EMBEDDING_SERVICES),
-] as Array<[string, { category: Category }]>;
+const ALL_MODALITIES: ModelCategoryGroup["modality"][] = [
+    "text",
+    "images",
+    "video",
+    "3d",
+    "audio",
+    "realtime",
+    "embeddings",
+];
 
-export const MODEL_CATEGORIES: ModelCategoryGroup[] = CATEGORY_ORDER.map(
-    (category) => {
+export function getModelCategoriesFromCatalog(
+    models: ApiModelInfo[],
+): ModelCategoryGroup[] {
+    return CATEGORY_ORDER.map((category) => {
         const label = CATEGORY_LABELS[category];
-        const models = allRegistryEntries
-            .filter(([, config]) => config.category === category)
-            .map(([id]) => ({
-                id,
-                label: getModelDisplayName(id),
-            }))
+        const categoryModels = models
+            .filter((model) =>
+                category === "community"
+                    ? model.community === true
+                    : getCatalogCategory(model) === category &&
+                      model.community !== true,
+            )
+            .map((model) => {
+                const id = getCatalogModelId(model);
+                return {
+                    id,
+                    label: getCatalogDisplayName(model, id),
+                };
+            })
+            .filter((model) => model.id)
             .sort((a, b) => a.label.localeCompare(b.label));
 
         return {
             category,
             label,
-            modality: CATEGORY_MODALITIES[label],
-            models,
+            modality: CATEGORY_MODALITIES[category],
+            models: categoryModels,
         };
-    },
-);
-
-const getCategoryModelIds = (category: Category): string[] =>
-    (
-        MODEL_CATEGORIES.find((group) => group.category === category)?.models ??
-        []
-    ).map((model) => model.id);
-
-export const textModelIds = getCategoryModelIds("text");
-
-export const imageModelIds = getCategoryModelIds("image");
-
-export const videoModelIds = getCategoryModelIds("video");
-
-export const audioModelIds = getCategoryModelIds("audio");
-
-export const realtimeModelIds = getCategoryModelIds("realtime");
-
-export const embeddingModelIds = getCategoryModelIds("embedding");
+    }).filter(({ models }) => models.length > 0);
+}
 
 export function computeCategoryModalities(
     allowedModels: string[] | null,
+    categories: ModelCategoryGroup[] = [],
 ): ModelCategoryGroup["modality"][] {
     if (allowedModels === null) {
-        return MODEL_CATEGORIES.map(({ modality }) => modality);
+        return categories.length > 0
+            ? categories.map(({ modality }) => modality)
+            : ALL_MODALITIES;
     }
 
     const selected = new Set(allowedModels);
-    return MODEL_CATEGORIES.filter(({ models }) =>
-        models.some(({ id }) => selected.has(id)),
-    ).map(({ modality }) => modality);
+    const modalities = categories
+        .filter(({ models }) => models.some(({ id }) => selected.has(id)))
+        .map(({ modality }) => modality);
+    return modalities;
 }

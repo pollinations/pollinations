@@ -1,8 +1,16 @@
 import { Scalar } from "@scalar/hono-api-reference";
 import { AUDIO_SERVICES, ELEVENLABS_VOICES } from "@shared/registry/audio.ts";
 import { EMBEDDING_SERVICES } from "@shared/registry/embeddings.ts";
-import { IMAGE_SERVICES } from "@shared/registry/image.ts";
-import { getRealtimeModelsInfo } from "@shared/registry/model-info.ts";
+import {
+    getImageModelIds,
+    getVideoModelIds,
+    IMAGE_SERVICES,
+} from "@shared/registry/image.ts";
+import {
+    getModel3dModelsInfo,
+    getRealtimeModelsInfo,
+} from "@shared/registry/model-info.ts";
+import { DEFAULT_REALTIME_MODEL } from "@shared/registry/realtime.ts";
 import { TEXT_SERVICES } from "@shared/registry/text.ts";
 import type { Context } from "hono";
 import { Hono } from "hono";
@@ -10,17 +18,27 @@ import { generateSpecs } from "hono-openapi";
 import { marked } from "marked";
 import { stringify as yamlStringify } from "yaml";
 import type { Env } from "@/env.ts";
-import LOGO_WHITE_SVG from "../../../assets/logo-text-white.svg?raw";
+import LOGO_WHITE_SVG from "../../../packages/ui/src/brand/lockup-horizontal-white.svg?raw";
+import { CODE_SAMPLES, RESPONSE_EXAMPLES } from "./docs-samples.ts";
+import {
+    API_REFERENCE_CUSTOM_CSS,
+    GUIDES_CSS,
+    POLLINATIONS_HEADER_CSS,
+    POLLINATIONS_HEADER_SCALAR_CSS,
+    POLLINATIONS_HEADER_STANDALONE_CSS,
+} from "./docs-styles.ts";
+import { docsSocialHeadTags, injectDocsSocialHead, SEO_TITLE } from "./seo.ts";
 
-// Same favicon as enter.pollinations.ai (32×32 PNG, ~1.3kB → inlined as a
-// data URI so we don't need a separate binary asset route or a build-time
-// step. Update this if enter's favicon ever changes.
+// Same amber favicon as gen.pollinations.ai/public/favicon-32x32.png. Scalar
+// needs this as a data URI, while conventional browser/favicon URLs are served
+// from gen.pollinations.ai/public.
 const FAVICON_DATA_URI =
-    "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAACXBIWXMAAAsTAAALEwEAmpwYAAAE9ElEQVR4nMVXaWhdVRB+7gsWNxQVQVxQEYsbIqhFsEjd/WGVWtHiTltccS1Yan9ocK1VqRoVqkUkFRUFUawWUxWVNG/m5ZlgXNLcmZtaWmuKJnkzTz0y55z78raQpYsDFx73nDvznTnffDMvl9sOWz/Uf9T64YFjcv+HrXVuTxT+FpV++MYl++1yACD0JAj9hsopKr2+ywJ3uI69UGgpCEte+Foo8+UorCC8rM/17bvTAYAmd6JQGYRuyN5hia8E4RFUWrRTg3dqcjYI/QPKrQ3AhFtQ2WGZZ25XEBB6EZRfqX5QaAWUk1kovBaUsc25Peq/c87tDkJfGzEL5fQiEHqh0Q+/3Ot69xkPwL+o9CsIfZY9xnR/OmVnjsf6FoUfr+xT/qnWB/fa+x63edq4AEB5cd3pdkOhx0ZBcEtDcKVFVevL6k+KSvfYWtFtOmDSAMxAqB2FB1DoqXDXdMkoMdPz/Tvh5f7kypirs8kCeLTJ+3ZUZnMAym2g1N/h0v29ICn9CMIfd7hfDgSlHlAujAVgzCvocZunQYlP9BwQXt7hNhzZBEBqvwsj/ceZDhQkuT5fpsusMjpLA6eEbFB3PYCi6zsChZ+I13NG3vUdNOp4ZOOxqOmDPr3xDkM6qQzKq0HpLvvA1A6Fh03/AyD+EpQ+AKU3jKT2zu8THkTld2Om5oPS2yBcqvO9DYWWdI30H5/zUiq0zdhd0IGzUGkDKL8Kkt6CQp/GDzZlJLQTRwBzPMOV21CSW0Oa0xmRC3Zajr+/8ECEnwXh3y1GkHHeamBzKHQbCg11Oz7UOxFah0IfZRkylCj8SVUZrvEAysnF1gtAKcESzQ4A+L2qfe12LVZBcW0lKhftt3EFhTaj8gPh7sO9tdrmILU8CG7j4TUcKCezQOhPnwXhmwxAJaUlmg0lutoTOPaILHBNQKElMXvPWaYLrv/g4LzEVxiRLJVFlxwCQltM/RoqoUwXGg8MSF7pjgxAQel2C2DBsZRe1VSghIeNjAXhayIZb64rE15oZLE7Rkmvi2q2uDkIGgrNp0Kqv/zJIz9q/dLd0dd86xP+u5iJBgPlVbYBlO/zrA93+VJDSSrfX8PqAGJp9R7jVCCel/bXPAChISN20+CZodK9fqNyFyp1RiYPWqMBpYcLSg9VOl8tgGdsLaxTuzE+nJy6rRLizNAybi8wQ0nPROHPG4JM9RFa16V8bm6yhpJMR+UFqPwWKHXYY85idzMilexkWZBQ83Gf0jt2/6Z8uR1pEEYwU7suUzzrAX44DUSck9vRlre5T/nnqFx/REZDpxs4DJXfRKUPowR/N8oX3mrNKlPIKRtKMheF/kbh763f+3rXdEbW6zMA2bBq92x7jIgo9FWoAF4wteBDdHQsydXNRrAIYGUGoN6CqvIqy4pvOpMGIEGMiiPJCc3WbQ4ApfeNeGON4/Ga3KSzUCilJ0ctcDZsVDS7ykDpkaoye7p+3f4tZbwwmc8Lnz5hAKhctMEUhed5dteN4V1Cp8XJqRWFnw/9ILmgxoeNbqFv3BiaHSWTAEB91pJt+LAKsJquXs9rel44eTLXl2XVnFAFYAUok3HJdMT3/gkDEJ7n/4AYCYW2gNI51etFV9zbyGdTU5BYWmPzYfUekOTUMMj4LFg1LJwwAA+izDNDm02mN1s3ENZSrdbrg1d8lPgkX5ZlunSsQP8BPbyNNiarxF0AAAAASUVORK5CYII=";
+    "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAACXBIWXMAAAPoAAAD6AG1e1JrAAAEs0lEQVR4nM1Xa2hcVRBeH9Va37ZWxUfVKrWivyqCjx+KxHeLiFURoSo2pjkzmyY1FEWMtkqVoKL1WSvoD0H9U/FR8Fm1PqJGYpO9M7uJJTaCVqXU+raWfnLmnGx29+7GJGuLBy6cvefcM3Nmvu+b2UymjgFxZ0H5pnrOmPBAnk6A8PdQ+ht5vnj3Gu9pOQRCAuU1ULodQtug7vTdY3xdx94QfhPCn6O7cYq9U3oaSl8j13zkrndA6QEobSo1hu7GSVB6D0IfeQd3oXE+23JeoDNTa73ZI6C0GUKtdRqhzVBGxfMbxK2Hcg5Cz9T+1t0CoR+h/BaUtlY5B/+aJtgt2KGw+ET080xodg7UnQehR8Ih1AVxU1Pf5ZoPgNLrtkfoZYhrCN/aMws5PnXsDihflXqfZC+A0l+WZ+EvvMEyDAi9C6UeCPdC+LbU90Ot+9XngLrroDyEjY0HRwquHFnjuwyY4qZCeBWEH/7vHcjT9RAaDPPsuVDebmny4BP6HcJzbU34CSg9VD1FNRxAd+MUr2YQXgqlXyH8EhK+GYWW2SURmAfhn0oc7YLwnVDX4iNSfC+81kek+DvJngxtvhHKDwZ88L0QuqyYQgg/aUaVf4Hyx3FegPJARG4O6prstuEGJ8XvlkJ4HYRe8YcWRUppC/I0H0ILIbQhAtfT87M47zHlFP4DSs/6/K22jVFAoPwalFfYvEDHeEBB6AdzSuhPCC+PDswNEswFJHRNeOcuj05/F2l4v68ZIW18ta8dNsf8vUy4EvdiBrnscZZDdfPCIZSFUl85LtoPDLk1im1DsvgoCF9Y5LY3HG7fXULDMqoaOBN+PuLpHBM04dOG83m3oTjfNg0DTdMtPOIa0gB1TRDeGSjnLio6kKdLINQZQ3wHkNkjrZImZg0RjANQerQUhJMsn+rex+CCyXaYUB4FOijlhHBbNJSUKNyaePPO1H507GkR8eqY69gHSm9Yyr9csn/5Rn97z++EP0TfomMNNF5+823T0pGIBksfXyErb24G+TlPX1NDq6I06M+vPNMGcq2HQfkDazQCJT8JAKR2X+/Nyd5Fh9rc53DE+A6oO8PWvBjl6ZTAAlYIbQyMoUFT0ELr0ZnRBqy08q0Q+hlCX1nuqhWVsT4JfROFajkKtO+oxksH+vnw6PmnZbcN+d9SEf6dkaql73ZY0+JpPNA0PVPPgOWy5XgkzTOMkh7pJlzUHYuTF5V2S4EXLL9vcMHkuowODw+swFtmExafR288yV4K5Reg/JivHUFLDDP3WDn3HXMFKMc9YJrg1gddMCl9FcrLhlEcHAh8ti5ZeYUpadi7HcLveGBP3AGht+1WNUpojMDKqmtBYTd4DZiY8ULLbANXP8+suWcUB8J6do6dUYv3tUZUr8djGK+tnR5f7airlgEkdEVgCK8aHwXVo9x9G7sbn/8rUw4q9QVAUpdpe4UBKJ9v1TP8Z9hUTaZrO+DlWLgtHmRIT+XXRKZ5Rmi1vE5kZ5XtCWxYGy90g+8rxvvnoz/2elv9AWXrvvR6hQvOrfadUmmTOtIbWHOzzKKl9NTYHRiyW90XOiS3pBqffS2PVW5NtT8qMQoLY/XrrHTwfzP+AT7xZOU9QGoaAAAAAElFTkSuQmCC";
 
 import BYOP_MD from "../../../BRING_YOUR_OWN_POLLEN.md?raw";
 import MCP_README from "../../../packages/mcp/README.md?raw";
 import CLI_README from "../../../packages/polli-cli/README.md?raw";
+import MODEL3D_GENERATION_MD from "../docs/3d-generation.md?raw";
 import ACCOUNT_MD from "../docs/account.md?raw";
 import AUDIO_GENERATION_MD from "../docs/audio-generation.md?raw";
 import AUTHENTICATION_MD from "../docs/authentication.md?raw";
@@ -30,6 +48,7 @@ import IMAGE_GENERATION_MD from "../docs/image-generation.md?raw";
 import INTRODUCTION_MD from "../docs/introduction.md?raw";
 import MEDIA_STORAGE_MD from "../docs/media-storage.md?raw";
 import MODELS_MD from "../docs/models.md?raw";
+import PUBLIC_STATS_MD from "../docs/public-stats.md?raw";
 import QUICK_START_MD from "../docs/quick-start.md?raw";
 import SAFETY_MD from "../docs/safety.md?raw";
 import TEXT_GENERATION_MD from "../docs/text-generation.md?raw";
@@ -37,11 +56,123 @@ import VIDEO_GENERATION_MD from "../docs/video-generation.md?raw";
 
 type OpenApiSchema = Record<string, unknown>;
 
+const DOC_TAGS = {
+    quickStart: "Quick Start",
+    authentication: "Authentication",
+    byop: "BYOP",
+    cli: "CLI",
+    mcpServer: "MCP Server",
+    errors: "Errors",
+    safety: "Safety",
+    text: "Text",
+    image: "Image",
+    video: "Video",
+    realtime: "Realtime",
+    model3d: "3D",
+    audio: "Audio",
+    embeddings: "Embeddings",
+    models: "Models",
+    quests: "Quests",
+    mediaStorage: "Media Storage",
+    account: "Account",
+    publicStats: "Public Stats",
+} as const;
+
+const LEGACY_DOC_TAGS: Record<string, string> = {
+    "🚀 Quick Start": DOC_TAGS.quickStart,
+    "🔐 Authentication": DOC_TAGS.authentication,
+    "🌸 BYOP": DOC_TAGS.byop,
+    "🖥 CLI": DOC_TAGS.cli,
+    "🔌 MCP Server": DOC_TAGS.mcpServer,
+    "❌ Errors": DOC_TAGS.errors,
+    "🛡️ Safety": DOC_TAGS.safety,
+    "✍️ Text": DOC_TAGS.text,
+    "🖼️ Image": DOC_TAGS.image,
+    "🎬 Video": DOC_TAGS.video,
+    "🎙️ Realtime": DOC_TAGS.realtime,
+    "🧊 3D": DOC_TAGS.model3d,
+    "🔊 Audio": DOC_TAGS.audio,
+    "🔢 Embeddings": DOC_TAGS.embeddings,
+    "🤖 Models": DOC_TAGS.models,
+    "✨ Quests": DOC_TAGS.quests,
+    "📦 Media Storage": DOC_TAGS.mediaStorage,
+    "👤 Account": DOC_TAGS.account,
+    "📊 Public Stats": DOC_TAGS.publicStats,
+    "media.pollinations.ai": DOC_TAGS.mediaStorage,
+};
+
+const docsIcon = (body: string): string =>
+    `<svg class="ph-doc-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${body}</svg>`;
+
+const DOC_TAG_ICON_HTML: Record<string, string> = {
+    [DOC_TAGS.quickStart]: docsIcon(
+        '<path d="M7 20h10" /><path d="M10 20c5.5-2.5.8-6.4 3-10" /><path d="M9.5 9.4c1.1.8 1.8 2.2 2.3 3.7-2 .4-3.5.4-4.8-.3-1.2-.6-2.3-1.9-3-4.2 2.8-.5 4.4 0 5.5.8z" /><path d="M14.1 6a7 7 0 0 0-1.1 4c1.9-.1 3.3-.6 4.3-1.4 1-1 1.6-2.3 1.7-4.6-2.7.1-4 1-4.9 2z" />',
+    ),
+    [DOC_TAGS.authentication]: docsIcon(
+        '<rect x="3" y="11" width="18" height="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" />',
+    ),
+    [DOC_TAGS.byop]: docsIcon(
+        '<path d="M3 7a2 2 0 0 1 2-2h13a2 2 0 0 1 2 2v2H5a2 2 0 0 0-2 2V7Z" /><path d="M3 11a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-6Z" /><circle cx="17" cy="14" r="1.25" fill="currentColor" />',
+    ),
+    [DOC_TAGS.cli]: docsIcon(
+        '<polyline points="4 8 8 12 4 16" /><line x1="12" y1="20" x2="20" y2="20" />',
+    ),
+    [DOC_TAGS.mcpServer]: docsIcon(
+        '<rect x="2" y="7" width="8" height="10" rx="1.5" /><rect x="14" y="7" width="8" height="10" rx="1.5" /><path d="M10 12h4" />',
+    ),
+    [DOC_TAGS.errors]: docsIcon('<path d="M18 6 6 18M6 6l12 12" />'),
+    [DOC_TAGS.safety]: docsIcon('<polyline points="20 6 9 17 4 12" />'),
+    [DOC_TAGS.text]: docsIcon(
+        '<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />',
+    ),
+    [DOC_TAGS.image]: docsIcon(
+        '<rect x="3" y="3" width="18" height="18" rx="2" /><circle cx="9" cy="9" r="2" /><path d="m21 15-5-5L5 21" />',
+    ),
+    [DOC_TAGS.video]: docsIcon(
+        '<path d="m22 8-6 4 6 4V8z" /><rect x="2" y="6" width="14" height="12" rx="2" />',
+    ),
+    [DOC_TAGS.realtime]: docsIcon(
+        '<path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z" /><path d="M19 10v2a7 7 0 0 1-14 0v-2" /><path d="M12 19v3" />',
+    ),
+    [DOC_TAGS.model3d]: docsIcon(
+        '<path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" /><path d="m3.3 7 8.7 5 8.7-5" /><path d="M12 22V12" />',
+    ),
+    [DOC_TAGS.audio]: docsIcon(
+        '<path d="M11 5 6 9H2v6h4l5 4z" /><path d="M15.54 8.46a5 5 0 0 1 0 7.07" /><path d="M19.07 4.93a10 10 0 0 1 0 14.14" />',
+    ),
+    [DOC_TAGS.embeddings]: docsIcon(
+        '<path d="M4 9h16M4 15h16M10 3 8 21M16 3l-2 18" />',
+    ),
+    [DOC_TAGS.models]: docsIcon(
+        '<path d="M9 3h6" /><path d="M10 3v6.5L4.5 18a2 2 0 0 0 1.7 3h11.6a2 2 0 0 0 1.7-3L14 9.5V3" /><path d="M7 14h10" />',
+    ),
+    [DOC_TAGS.quests]: docsIcon(
+        '<path d="M9.94 15.5A2 2 0 0 0 8.5 14.06l-6.14-1.58a.5.5 0 0 1 0-.96L8.5 9.94A2 2 0 0 0 9.94 8.5l1.58-6.14a.5.5 0 0 1 .96 0L14.06 8.5A2 2 0 0 0 15.5 9.94l6.14 1.58a.5.5 0 0 1 0 .96L15.5 14.06a2 2 0 0 0-1.44 1.44l-1.58 6.14a.5.5 0 0 1-.96 0z" /><path d="M20 3v4" /><path d="M22 5h-4" /><path d="M4 17v2" /><path d="M5 18H3" />',
+    ),
+    [DOC_TAGS.mediaStorage]: docsIcon(
+        '<ellipse cx="12" cy="5" rx="9" ry="3" /><path d="M3 5v14a9 3 0 0 0 18 0V5" /><path d="M3 12a9 3 0 0 0 18 0" />',
+    ),
+    [DOC_TAGS.account]: docsIcon(
+        '<circle cx="7.5" cy="15.5" r="5.5" /><path d="m21 2-9.6 9.6" /><path d="m15.5 7.5 3 3L22 7l-3-3" />',
+    ),
+    [DOC_TAGS.publicStats]: docsIcon(
+        '<polyline points="3 17 9 11 13 15 21 7" /><polyline points="15 7 21 7 21 13" />',
+    ),
+};
+
+const DOC_TAG_NAV_ICON_HTML: Record<string, string> = Object.fromEntries(
+    Object.entries(DOC_TAG_ICON_HTML).map(([tag, icon]) => [
+        tag,
+        icon.replace(
+            'class="ph-doc-icon"',
+            'class="ph-doc-icon ph-doc-nav-icon"',
+        ),
+    ]),
+);
+
 const BYOP_DOCS = BYOP_MD.trim();
 
-const CLI_DOCS = CLI_README.replace(/^# .*\n+/, "")
-    .replace(/^https:\/\/github\.com\/user-attachments\/assets\/[^\n]+\n+/m, "")
-    .trim();
+const CLI_DOCS = CLI_README.replace(/^# .*\n+/, "").trim();
 
 const MCP_DOCS = MCP_README.replace(/^# .*\n+/, "").trim();
 
@@ -62,6 +193,7 @@ const AUTHENTICATION_DOCS = AUTHENTICATION_MD.trim();
 const MODELS_DOCS = MODELS_MD.trim();
 const MEDIA_STORAGE_DOCS = MEDIA_STORAGE_MD.trim();
 const ACCOUNT_DOCS = ACCOUNT_MD.trim();
+const PUBLIC_STATS_DOCS = PUBLIC_STATS_MD.trim();
 const SAFETY_DOCS = SAFETY_MD.trim();
 const ERRORS_DOCS = ERRORS_MD.trim();
 const IMAGE_ALIASES = new Set(
@@ -82,25 +214,9 @@ const ALL_ALIASES = new Set([
     ...AUDIO_ALIASES,
     ...EMBEDDING_ALIASES,
 ]);
+const imageModelDisplayNames = getImageModelIds().join(", ");
 
-const imageModelDisplayNames = Object.keys(IMAGE_SERVICES)
-    .filter(
-        (id) =>
-            !(
-                IMAGE_SERVICES[id as keyof typeof IMAGE_SERVICES]
-                    .outputModalities as string[] | undefined
-            )?.includes("video"),
-    )
-    .join(", ");
-
-const videoModelDisplayNames = Object.keys(IMAGE_SERVICES)
-    .filter((id) =>
-        (
-            IMAGE_SERVICES[id as keyof typeof IMAGE_SERVICES]
-                .outputModalities as string[] | undefined
-        )?.includes("video"),
-    )
-    .join(", ");
+const videoModelDisplayNames = getVideoModelIds().join(", ");
 
 const textModelDisplayNames = Object.keys(TEXT_SERVICES).join(", ");
 const audioModelDisplayNames = Object.keys(AUDIO_SERVICES).join(", ");
@@ -108,7 +224,9 @@ const embeddingModelDisplayNames = Object.keys(EMBEDDING_SERVICES).join(", ");
 const realtimeModelDisplayNames = getRealtimeModelsInfo()
     .map((model) => model.name)
     .join(", ");
-
+const model3dModelDisplayNames = getModel3dModelsInfo()
+    .map((model) => model.name)
+    .join(", ");
 function filterAliases(schema: OpenApiSchema): OpenApiSchema {
     return JSON.parse(
         JSON.stringify(schema, (key, value) => {
@@ -129,6 +247,7 @@ const MODEL_VARS: Record<string, string> = {
     IMAGE_MODELS: imageModelDisplayNames,
     VIDEO_MODELS: videoModelDisplayNames,
     REALTIME_MODELS: realtimeModelDisplayNames,
+    "3D_MODELS": model3dModelDisplayNames,
     AUDIO_MODELS: audioModelDisplayNames,
     EMBEDDING_MODELS: embeddingModelDisplayNames,
     ELEVENLABS_VOICES: ELEVENLABS_VOICES.join(", "),
@@ -147,6 +266,10 @@ const AUDIO_GENERATION_DOCS = interpolate(
     AUDIO_GENERATION_MD.trim(),
     MODEL_VARS,
 );
+const MODEL3D_GENERATION_DOCS = interpolate(
+    MODEL3D_GENERATION_MD.trim(),
+    MODEL_VARS,
+);
 const REALTIME_DOCS = [
     "## Realtime Voice",
     "",
@@ -154,7 +277,7 @@ const REALTIME_DOCS = [
     "",
     "| Endpoint | Description |",
     "|----------|-------------|",
-    "| `GET /v1/realtime` | WebSocket Realtime session (`model=gpt-realtime-2`) |",
+    `| \`GET /v1/realtime\` | WebSocket Realtime session (\`model=${DEFAULT_REALTIME_MODEL}\`) |`,
     "",
     "Requires an API key with positive balance. Server clients can use `Authorization: Bearer <key>`; browser WebSocket clients can use `?key=pk_...`.",
     "",
@@ -167,7 +290,7 @@ const REALTIME_DOCS = [
     "",
     "// Server: Bearer auth. Browser: append `&key=pk_...` instead (headers aren't settable).",
     "const ws = new WebSocket(",
-    '    "wss://gen.pollinations.ai/v1/realtime?model=gpt-realtime-2",',
+    `    "wss://gen.pollinations.ai/v1/realtime?model=${DEFAULT_REALTIME_MODEL}",`,
     // biome-ignore lint/suspicious/noTemplateCurlyInString: literal JS snippet shown in docs
     "    { headers: { Authorization: `Bearer ${process.env.POLLINATIONS_API_KEY}` } },",
     ");",
@@ -196,6 +319,7 @@ const GEN_API_DOCS = [
     IMAGE_GENERATION_DOCS,
     VIDEO_GENERATION_DOCS,
     REALTIME_DOCS,
+    MODEL3D_GENERATION_DOCS,
     AUDIO_GENERATION_DOCS,
     EMBEDDINGS_DOCS,
     MODELS_DOCS,
@@ -203,6 +327,7 @@ const GEN_API_DOCS = [
     ACCOUNT_DOCS,
     SAFETY_DOCS,
     ERRORS_DOCS,
+    PUBLIC_STATS_DOCS,
 ].join("\n\n");
 
 const BYOP_SECTION = `## BYOP\n\n${BYOP_DOCS}`;
@@ -223,81 +348,13 @@ const LLM_DOC_SECTIONS: Record<string, string> = {
     mcp: MCP_SECTION,
 };
 
-const POLLINATIONS_HEADER_CSS = `
-.ph-bar {
-    position: fixed; top: 0; left: 0; right: 0; z-index: 2147483000;
-    min-height: 48px; box-sizing: border-box;
-    background: #0a0a0a; border-bottom: 1px solid #1f1f23;
-    display: flex; align-items: center; gap: 10px; padding: 8px 14px;
-    font: 13px/1.2 -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
-    color: #d4d4d8;
-}
-.ph-bar .ph-brand {
-    color: #fafafa; text-decoration: none;
-    display: inline-flex; align-items: center; flex-shrink: 0;
-}
-.ph-bar .ph-brand img { height: 18px; width: auto; display: block; }
-@media (min-width: 640px) { .ph-bar .ph-brand img { height: 20px; } }
-@media (max-width: 640px) {
-    .ph-bar { justify-content: center; padding: 8px 12px; }
-    .ph-bar .ph-brand img { height: 22px; }
-}
-
-.ph-fab-cluster {
-    position: fixed; top: 64px; right: 18px; z-index: 9999;
-    display: flex; gap: 8px; align-items: center;
-    justify-content: flex-end; max-width: calc(100vw - 36px);
-}
-.ph-fab {
-    padding: 10px 14px; border-radius: 999px;
-    border: 1px solid #f59e0b; background: #f59e0b; color: #451a03;
-    font: 600 14px/1 -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
-    box-shadow: 0 6px 20px rgba(245,158,11,.3);
-    cursor: pointer; text-decoration: none;
-    transition: background .15s, color .15s, box-shadow .15s, transform .1s;
-    display: inline-flex; align-items: center; gap: 6px; line-height: 1;
-}
-.ph-fab:hover {
-    background: #0a0a0a; color: #f59e0b;
-    box-shadow: 0 6px 24px rgba(245,158,11,.4);
-}
-.ph-fab:active { transform: translateY(1px); }
-.ph-fab svg { width: 16px; height: 16px; }
-@media (max-width: 640px) {
-    .ph-fab-cluster { top: 60px; right: 12px; }
-    .ph-fab { padding: 7px 11px; font-size: 12px; }
-    .ph-fab svg { width: 14px; height: 14px; }
-}
-`;
-
-const POLLINATIONS_HEADER_SCALAR_CSS = `
-/* Push Scalar's mount point down so its content (h1, version badges,
-   sidebar, mobile hamburger row) doesn't render under our fixed bar.
-   Body padding works because .ph-bar is position: fixed — it ignores
-   parent padding, so the bar stays at top while everything else shifts. */
-body { padding-top: 48px; }
-/* Match Scalar's mobile hamburger row background to our bar so the seam
-   between the two reads as one continuous header instead of a stripe. */
-@media (max-width: 1000px) {
-    .scalar-app [class*="lg:hidden"][class*="grid-area:header"] {
-        background: #0a0a0a !important;
-        border: 0 !important;
-        box-shadow: none !important;
-        backdrop-filter: none !important;
-    }
-}
-`;
-
-const POLLINATIONS_HEADER_STANDALONE_CSS = `
-body { padding-top: 48px; }
-`;
-
 type GuideId = "byop" | "cli" | "mcp";
 
 function pollinationsHeaderHtml(scalarHosted = false): string {
     const contextCss = scalarHosted
         ? POLLINATIONS_HEADER_SCALAR_CSS
         : POLLINATIONS_HEADER_STANDALONE_CSS;
+    const navIcons = JSON.stringify(DOC_TAG_NAV_ICON_HTML);
     return `<style>${POLLINATIONS_HEADER_CSS}${contextCss}</style>
 <header class="ph-bar">
   <a href="/" class="ph-brand"><img src="/docs/logo.svg" alt="Pollinations" /></a>
@@ -326,12 +383,21 @@ function pollinationsHeaderHtml(scalarHosted = false): string {
   // Text-based DOM scan for Scalar buttons whose class names get hashed
   // by the CDN bundle — we tag them by their stable label so our CSS can
   // hide ("Ask AI") or style ("Show more") them in amber.
+  var navIcons = ${navIcons};
+  function normalizeScalarNavLabel(text) {
+    return text.replace(/\\s+/g, ' ').trim().replace(/\\s*(Open|Close)\\s*Group$/i, '').trim();
+  }
   function scanScalarButtons() {
     var nodes = document.querySelectorAll('button, a, [role="button"]');
     for (var i = 0; i < nodes.length; i++) {
       var text = (nodes[i].textContent || '').trim();
+      var navText = normalizeScalarNavLabel(text);
       if (/^ask ai\\b/i.test(text)) nodes[i].style.display = 'none';
       else if (/^show more\\b/i.test(text)) nodes[i].classList.add('ph-show-more');
+      else if (navIcons[navText] && !nodes[i].querySelector('.ph-doc-icon')) {
+        nodes[i].classList.add('ph-doc-nav-item');
+        nodes[i].insertAdjacentHTML('afterbegin', navIcons[navText]);
+      }
     }
   }
   scanScalarButtons();
@@ -340,97 +406,20 @@ function pollinationsHeaderHtml(scalarHosted = false): string {
 </script>`;
 }
 
-const API_REFERENCE_CUSTOM_CSS = `
-/* Each table gets its own horizontal scroll, scoped to itself, so the
-   markdown container doesn't grow a second outer scrollbar that fights
-   with the scroll on adjacent code blocks. */
-.scalar-app .markdown table {
-  display: block;
-  max-width: 100%;
-  width: max-content;
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
-}
-.scalar-app .markdown table th,
-.scalar-app .markdown table td {
-  word-break: normal !important;
-  overflow-wrap: normal !important;
-}
+function withHtmlClass(html: string, className: string): string {
+    return html.replace(/<html([^>]*)>/i, (match, attrs: string) => {
+        const classMatch = attrs.match(/\sclass=(["'])(.*?)\1/i);
+        if (!classMatch) return `<html${attrs} class="${className}">`;
 
-.scalar-app .markdown a {
-  color: #f59e0b;
-}
-.scalar-app .markdown a:hover {
-  color: #fbbf24;
-}
+        const classes = classMatch[2].split(/\s+/).filter(Boolean);
+        if (classes.includes(className)) return match;
 
-/* Hide Scalar's native download UI — we surface it via the floating
-   action cluster (see .ph-fab-cluster below) for layout consistency. */
-.scalar-app .download-container { display: none !important; }
-
-/* Hide "Powered by Scalar" sidebar footer link. */
-.scalar-app a[href="https://www.scalar.com"] { display: none !important; }
-
-/* Hide Scalar's IDE/MCP quick-launch buttons (VS Code, Cursor, Generate MCP).
-   These render in the sidebar regardless of showDeveloperTools. We target
-   by URL scheme so the rule survives class-name renames across Scalar
-   versions, plus the section wrapper via :has() in case the buttons render
-   inside a labeled group. */
-.scalar-app a[href^="vscode:"],
-.scalar-app a[href^="vscode-insiders:"],
-.scalar-app a[href^="cursor:"],
-.scalar-app a[href*="mcp.scalar.com"],
-.scalar-app a[href*="generate-mcp"],
-.scalar-app a[href*="modelcontextprotocol"] { display: none !important; }
-.scalar-app section:has(> a[href^="vscode:"]),
-.scalar-app section:has(> a[href^="cursor:"]) { display: none !important; }
-
-/* Hide Scalar's "Ask AI" feature (sidebar button + any floating widget).
-   Targeted by attribute and class fragments, case-insensitive, since the
-   CDN bundle may rename the underlying classes between releases. */
-.scalar-app [class*="ask-ai" i],
-.scalar-app [class*="askai" i],
-.scalar-app [class*="ai-assistant" i],
-.scalar-app [aria-label*="Ask AI" i],
-.scalar-app [title*="Ask AI" i],
-.scalar-app button[data-feature="ask-ai" i] { display: none !important; }
-
-/* Full-width prose for sections with no right-column code samples (Quick Start,
-   Auth, BYOP, CLI, MCP, Errors, Safety, plain Models/Account). Scalar lays
-   each tag out as two flex columns; the right column stays empty for prose-
-   only tags, wasting ~50% of the page. We collapse the empty column and let
-   the prose stretch. The same rule fixes the section header row above. */
-.scalar-app .section-columns:has(> .section-column:nth-child(2):empty) > .section-column:first-child {
-    flex: 1 1 100% !important;
-    max-width: 100% !important;
+        return match.replace(
+            classMatch[0],
+            ` class=${classMatch[1]}${[...classes, className].join(" ")}${classMatch[1]}`,
+        );
+    });
 }
-.scalar-app .section-columns > .section-column:nth-child(2):empty {
-    display: none !important;
-}
-.scalar-app .section-header-wrapper:not(:has(> :nth-child(2))) {
-    grid-template-columns: 1fr !important;
-}
-
-/* "Show more" buttons (tagged by our header script — see scanScalarButtons).
-   Promote to the amber action color so they don't disappear into the page. */
-.scalar-app .ph-show-more {
-    background: #f59e0b !important;
-    color: #451a03 !important;
-    border-color: #f59e0b !important;
-}
-.scalar-app .ph-show-more:hover {
-    background: #fbbf24 !important;
-    border-color: #fbbf24 !important;
-}
-/* Force the chevron/triangle SVG inside the button to match text color
-   (otherwise it inherits Scalar's dim color and disappears on amber). */
-.scalar-app .ph-show-more svg,
-.scalar-app .ph-show-more svg * {
-    color: #451a03 !important;
-    fill: currentColor !important;
-    stroke: currentColor !important;
-}
-`;
 
 function generationDocumentation(): OpenApiSchema {
     return {
@@ -447,7 +436,7 @@ function generationDocumentation(): OpenApiSchema {
                     scheme: "bearer",
                     bearerFormat: "API Key",
                     description:
-                        "API key from [enter.pollinations.ai](https://enter.pollinations.ai)",
+                        "API key from [enter.pollinations.ai](https://enter.pollinations.ai/keys)",
                 },
             },
         },
@@ -455,98 +444,113 @@ function generationDocumentation(): OpenApiSchema {
         "x-tagGroups": [
             {
                 name: "Get Started",
-                tags: ["🚀 Quick Start", "🔐 Authentication"],
+                tags: [DOC_TAGS.quickStart, DOC_TAGS.authentication],
             },
             {
                 name: "Integrations",
-                tags: ["🌸 BYOP", "🖥 CLI", "🔌 MCP Server"],
+                tags: [DOC_TAGS.byop, DOC_TAGS.cli, DOC_TAGS.mcpServer],
             },
             {
                 name: "Generation",
                 tags: [
-                    "✍️ Text",
-                    "🖼️ Image",
-                    "🎬 Video",
-                    "🎙️ Realtime",
-                    "🔊 Audio",
-                    "🔢 Embeddings",
+                    DOC_TAGS.text,
+                    DOC_TAGS.image,
+                    DOC_TAGS.video,
+                    DOC_TAGS.realtime,
+                    DOC_TAGS.model3d,
+                    DOC_TAGS.audio,
+                    DOC_TAGS.embeddings,
                 ],
             },
             {
                 name: "Resources",
                 tags: [
-                    "🤖 Models",
-                    "📦 Media Storage",
-                    "👤 Account",
-                    "❌ Errors",
-                    "🛡️ Safety",
+                    DOC_TAGS.models,
+                    DOC_TAGS.quests,
+                    DOC_TAGS.mediaStorage,
+                    DOC_TAGS.account,
+                    DOC_TAGS.safety,
+                    DOC_TAGS.errors,
+                    DOC_TAGS.publicStats,
                 ],
             },
         ],
         tags: [
             {
-                name: "🚀 Quick Start",
+                name: DOC_TAGS.quickStart,
                 description: stripLeadingHeading(QUICK_START_DOCS),
             },
             {
-                name: "🔐 Authentication",
+                name: DOC_TAGS.authentication,
                 description: stripLeadingHeading(AUTHENTICATION_DOCS),
             },
             {
-                name: "🌸 BYOP",
+                name: DOC_TAGS.byop,
                 description: BYOP_DOCS,
             },
             {
-                name: "🖥 CLI",
+                name: DOC_TAGS.cli,
                 description: CLI_DOCS,
             },
             {
-                name: "🔌 MCP Server",
+                name: DOC_TAGS.mcpServer,
                 description: MCP_DOCS,
             },
             {
-                name: "❌ Errors",
+                name: DOC_TAGS.errors,
                 description: stripLeadingHeading(ERRORS_DOCS),
             },
             {
-                name: "🛡️ Safety",
+                name: DOC_TAGS.safety,
                 description: stripLeadingHeading(SAFETY_DOCS),
             },
             {
-                name: "✍️ Text",
+                name: DOC_TAGS.text,
                 description: stripLeadingHeading(TEXT_GENERATION_DOCS),
             },
             {
-                name: "🖼️ Image",
+                name: DOC_TAGS.image,
                 description: stripLeadingHeading(IMAGE_GENERATION_DOCS),
             },
             {
-                name: "🎬 Video",
+                name: DOC_TAGS.video,
                 description: stripLeadingHeading(VIDEO_GENERATION_DOCS),
             },
             {
-                name: "🎙️ Realtime",
+                name: DOC_TAGS.realtime,
                 description: stripLeadingHeading(REALTIME_DOCS),
             },
             {
-                name: "🔊 Audio",
+                name: DOC_TAGS.model3d,
+                description: stripLeadingHeading(MODEL3D_GENERATION_DOCS),
+            },
+            {
+                name: DOC_TAGS.audio,
                 description: stripLeadingHeading(AUDIO_GENERATION_DOCS),
             },
             {
-                name: "🔢 Embeddings",
+                name: DOC_TAGS.embeddings,
                 description: stripLeadingHeading(EMBEDDINGS_DOCS),
             },
             {
-                name: "🤖 Models",
+                name: DOC_TAGS.models,
                 description: stripLeadingHeading(MODELS_DOCS),
             },
             {
-                name: "📦 Media Storage",
+                name: DOC_TAGS.quests,
+                description: "Public quest catalog and available rewards.",
+            },
+            {
+                name: DOC_TAGS.mediaStorage,
                 description: stripLeadingHeading(MEDIA_STORAGE_DOCS),
             },
             {
-                name: "👤 Account",
+                name: DOC_TAGS.account,
                 description: stripLeadingHeading(ACCOUNT_DOCS),
+            },
+            {
+                name: DOC_TAGS.publicStats,
+                description: stripLeadingHeading(PUBLIC_STATS_DOCS),
             },
         ],
     };
@@ -561,12 +565,42 @@ function getGenerationSchema(genApp: Hono<Env>): Promise<OpenApiSchema> {
     return generationSchemaPromise;
 }
 
+function normalizeDocTagName(tag: string): string {
+    return LEGACY_DOC_TAGS[tag] ?? tag;
+}
+
+function normalizeDocTagObjects(tags: OpenApiSchema[]): OpenApiSchema[] {
+    return mergeTags(
+        tags.map((tag) =>
+            typeof tag.name === "string"
+                ? { ...tag, name: normalizeDocTagName(tag.name) }
+                : tag,
+        ),
+        [],
+    );
+}
+
+function normalizeOperationTags(paths: OpenApiSchema): void {
+    for (const pathItem of Object.values(paths)) {
+        if (!pathItem || typeof pathItem !== "object") continue;
+        for (const operation of Object.values(pathItem as OpenApiSchema)) {
+            if (!operation || typeof operation !== "object") continue;
+            const record = operation as { tags?: unknown };
+            if (!Array.isArray(record.tags)) continue;
+            record.tags = record.tags.map((tag) =>
+                typeof tag === "string" ? normalizeDocTagName(tag) : tag,
+            );
+        }
+    }
+}
+
 function transformGenerationSchema(schema: OpenApiSchema): OpenApiSchema {
     const paths: OpenApiSchema = {};
     for (const [path, value] of Object.entries(asRecord(schema.paths))) {
         const publicPath = path.replace(/^\/api\/account(?=\/|$)/, "/account");
         paths[publicPath] = value;
     }
+    normalizeOperationTags(paths);
 
     return filterAliases({
         ...schema,
@@ -589,16 +623,22 @@ async function fetchEnterSchema(c: Context<Env>) {
     return transformEnterSchema(stripGenerationPaths(schema));
 }
 
-async function fetchMediaSchema(): Promise<OpenApiSchema | undefined> {
-    const response = await fetch("https://media.pollinations.ai/openapi.json");
+async function fetchMediaSchema(
+    c: Context<Env>,
+): Promise<OpenApiSchema | undefined> {
+    // Local dev merges the local media worker (port 8790, its wrangler [dev]
+    // port) so schema changes are visible before a media prod deploy.
+    const mediaOrigin =
+        c.env.ENVIRONMENT === "development"
+            ? "http://localhost:8790"
+            : "https://media.pollinations.ai";
+    const response = await fetch(`${mediaOrigin}/openapi.json`);
     if (!response.ok) return undefined;
     const schema = (await response.json()) as OpenApiSchema;
 
     for (const [path, operations] of Object.entries(asRecord(schema.paths))) {
         if (!operations || typeof operations !== "object") continue;
-        (operations as OpenApiSchema).servers = [
-            { url: "https://media.pollinations.ai" },
-        ];
+        (operations as OpenApiSchema).servers = [{ url: mediaOrigin }];
         for (const [method, operation] of Object.entries(
             operations as OpenApiSchema,
         )) {
@@ -606,7 +646,7 @@ async function fetchMediaSchema(): Promise<OpenApiSchema | undefined> {
             const record = operation as { tags?: unknown; security?: unknown };
             if (!Array.isArray(record.tags)) continue;
             record.tags = record.tags.map((tag) =>
-                tag === "media.pollinations.ai" ? "📦 Media Storage" : tag,
+                typeof tag === "string" ? normalizeDocTagName(tag) : tag,
             );
             // Public read routes do not require auth. Defensive override in
             // case the upstream media spec hasn't been redeployed with the
@@ -623,17 +663,31 @@ async function fetchMediaSchema(): Promise<OpenApiSchema | undefined> {
 function isPublicMediaRead(method: string, path: string): boolean {
     const lower = method.toLowerCase();
     if (lower !== "get" && lower !== "head") return false;
-    return path === "/{hash}" || path === "/{hash}/metadata";
+    return path === "/{id}" || path === "/{id}/metadata" || path === "/media";
 }
 
 function transformEnterSchema(schema: OpenApiSchema): OpenApiSchema {
     const paths: OpenApiSchema = {};
     for (const [path, value] of Object.entries(asRecord(schema.paths))) {
-        if (!isPublicAccountPath(path)) continue;
-        const publicPath = path.replace(/^\/api\/account(?=\/|$)/, "/account");
-        paths[publicPath] = value;
+        if (!isPublicEnterPath(path)) continue;
+        paths[publicEnterPath(path)] = value;
     }
-    return { ...schema, tags: tagsForPaths(schema, paths), paths };
+    normalizeOperationTags(paths);
+    return {
+        ...schema,
+        tags: tagsForPaths(
+            {
+                ...schema,
+                tags: normalizeDocTagObjects(asRecordArray(schema.tags)),
+            },
+            paths,
+        ),
+        paths,
+    };
+}
+
+function isPublicEnterPath(path: string): boolean {
+    return isPublicAccountPath(path) || isPublicQuestCatalogPath(path);
 }
 
 function isPublicAccountPath(path: string): boolean {
@@ -643,6 +697,18 @@ function isPublicAccountPath(path: string): boolean {
         path === "/api/account" ||
         path.startsWith("/api/account/")
     );
+}
+
+// Only the catalog is part of the public gen API. Session-only dashboard quest
+// actions stay on enter and are omitted from the merged gen docs.
+function isPublicQuestCatalogPath(path: string): boolean {
+    return path === "/quests/catalog" || path === "/api/quests/catalog";
+}
+
+function publicEnterPath(path: string): string {
+    return path
+        .replace(/^\/api\/account(?=\/|$)/, "/account")
+        .replace(/^\/api\/quests(?=\/|$)/, "/quests");
 }
 
 function tagsForPaths(
@@ -694,572 +760,6 @@ function isGenerationPath(path: string): boolean {
         path.startsWith("/generate/")
     );
 }
-
-// ---------------------------------------------------------------------------
-// x-codeSamples: multi-language examples injected into the OpenAPI schema
-// ---------------------------------------------------------------------------
-const CODE_SAMPLES: Record<
-    string,
-    { label: string; lang: string; source: string }[]
-> = {
-    "post /account/keys": [
-        {
-            label: "Create app key",
-            lang: "Shell",
-            source: `curl https://gen.pollinations.ai/account/keys \\
-  -H "Authorization: Bearer YOUR_SECRET_KEY" \\
-  -H "Content-Type: application/json" \\
-  -d '{
-    "name": "myapp",
-    "type": "publishable",
-    "redirectUris": ["https://myapp.com/callback"]
-  }'`,
-        },
-    ],
-    "post /v1/chat/completions": [
-        {
-            label: "cURL",
-            lang: "Shell",
-            source: `curl https://gen.pollinations.ai/v1/chat/completions \\
-  -H "Authorization: Bearer YOUR_API_KEY" \\
-  -H "Content-Type: application/json" \\
-  -d '{
-    "model": "openai",
-    "messages": [{"role": "user", "content": "Hello!"}]
-  }'`,
-        },
-        {
-            label: "Python",
-            lang: "Python",
-            source: `from openai import OpenAI
-
-client = OpenAI(
-    base_url="https://gen.pollinations.ai/v1",
-    api_key="YOUR_API_KEY"
-)
-
-response = client.chat.completions.create(
-    model="openai",
-    messages=[{"role": "user", "content": "Hello!"}]
-)
-print(response.choices[0].message.content)`,
-        },
-        {
-            label: "JavaScript",
-            lang: "JavaScript",
-            source: `import OpenAI from "openai";
-
-const client = new OpenAI({
-  baseURL: "https://gen.pollinations.ai/v1",
-  apiKey: "YOUR_API_KEY",
-});
-
-const response = await client.chat.completions.create({
-  model: "openai",
-  messages: [{ role: "user", content: "Hello!" }],
-});
-console.log(response.choices[0].message.content);`,
-        },
-    ],
-    "get /text/{prompt}": [
-        {
-            label: "cURL",
-            lang: "Shell",
-            source: `curl "https://gen.pollinations.ai/text/Write%20a%20haiku?model=openai" \\
-  -H "Authorization: Bearer YOUR_API_KEY"`,
-        },
-        {
-            label: "Python",
-            lang: "Python",
-            source: `import requests
-
-response = requests.get(
-    "https://gen.pollinations.ai/text/Write a haiku",
-    params={"model": "openai"},
-    headers={"Authorization": "Bearer YOUR_API_KEY"},
-)
-print(response.text)`,
-        },
-        {
-            label: "JavaScript",
-            lang: "JavaScript",
-            source: `const response = await fetch(
-  "https://gen.pollinations.ai/text/Write%20a%20haiku?model=openai",
-  { headers: { Authorization: "Bearer YOUR_API_KEY" } },
-);
-console.log(await response.text());`,
-        },
-    ],
-    "get /image/{prompt}": [
-        {
-            label: "HTML",
-            lang: "HTML",
-            source: `<!-- No code needed — use as an image URL -->
-<img src="https://gen.pollinations.ai/image/a%20cat%20in%20space?model=flux" />`,
-        },
-        {
-            label: "cURL",
-            lang: "Shell",
-            source: `# Generate an image
-curl "https://gen.pollinations.ai/image/a%20cat%20in%20space?model=flux" \\
-  -H "Authorization: Bearer YOUR_API_KEY" -o image.jpg
-
-# Generate a video
-curl "https://gen.pollinations.ai/image/a%20sunset%20timelapse?model=veo&duration=4" \\
-  -H "Authorization: Bearer YOUR_API_KEY" -o video.mp4`,
-        },
-        {
-            label: "Python",
-            lang: "Python",
-            source: `import requests
-
-response = requests.get(
-    "https://gen.pollinations.ai/image/a cat in space",
-    params={"model": "flux"},
-    headers={"Authorization": "Bearer YOUR_API_KEY"},
-)
-with open("image.jpg", "wb") as f:
-    f.write(response.content)`,
-        },
-        {
-            label: "JavaScript",
-            lang: "JavaScript",
-            source: `const response = await fetch(
-  "https://gen.pollinations.ai/image/a%20cat%20in%20space?model=flux",
-  { headers: { Authorization: "Bearer YOUR_API_KEY" } },
-);
-const blob = await response.blob();`,
-        },
-    ],
-    "get /video/{prompt}": [
-        {
-            label: "cURL",
-            lang: "Shell",
-            source: `curl "https://gen.pollinations.ai/video/a%20sunset%20timelapse?model=veo&duration=4" \\
-  -H "Authorization: Bearer YOUR_API_KEY" -o video.mp4`,
-        },
-        {
-            label: "Python",
-            lang: "Python",
-            source: `import requests
-
-response = requests.get(
-    "https://gen.pollinations.ai/video/a sunset timelapse",
-    params={"model": "veo", "duration": 4},
-    headers={"Authorization": "Bearer YOUR_API_KEY"},
-)
-with open("video.mp4", "wb") as f:
-    f.write(response.content)`,
-        },
-        {
-            label: "JavaScript",
-            lang: "JavaScript",
-            source: `const response = await fetch(
-  "https://gen.pollinations.ai/video/a%20sunset%20timelapse?model=veo&duration=4",
-  { headers: { Authorization: "Bearer YOUR_API_KEY" } },
-);
-const blob = await response.blob();`,
-        },
-    ],
-    "get /audio/{text}": [
-        {
-            label: "cURL",
-            lang: "Shell",
-            source: `# Text-to-speech
-curl "https://gen.pollinations.ai/audio/Hello%20world?voice=nova" \\
-  -H "Authorization: Bearer YOUR_API_KEY" -o speech.mp3
-
-# Generate music (ElevenLabs)
-curl "https://gen.pollinations.ai/audio/upbeat%20jazz?model=elevenmusic&duration=30" \\
-  -H "Authorization: Bearer YOUR_API_KEY" -o music.mp3
-
-# Generate music (ACE-Step, open-source)
-curl "https://gen.pollinations.ai/audio/brazilian%20berimbau%20instrumental?model=acestep&duration=15" \\
-  -H "Authorization: Bearer YOUR_API_KEY" -o music.mp3`,
-        },
-        {
-            label: "Python",
-            lang: "Python",
-            source: `import requests
-
-response = requests.get(
-    "https://gen.pollinations.ai/audio/Hello world",
-    params={"voice": "nova"},
-    headers={"Authorization": "Bearer YOUR_API_KEY"},
-)
-with open("speech.mp3", "wb") as f:
-    f.write(response.content)`,
-        },
-        {
-            label: "JavaScript",
-            lang: "JavaScript",
-            source: `const response = await fetch(
-  "https://gen.pollinations.ai/audio/Hello%20world?voice=nova",
-  { headers: { Authorization: "Bearer YOUR_API_KEY" } },
-);
-const audio = await response.blob();`,
-        },
-    ],
-    "post /v1/audio/speech": [
-        {
-            label: "cURL",
-            lang: "Shell",
-            source: `curl https://gen.pollinations.ai/v1/audio/speech \\
-  -H "Authorization: Bearer YOUR_API_KEY" \\
-  -H "Content-Type: application/json" \\
-  -d '{"input": "Hello world", "voice": "nova"}' \\
-  -o speech.mp3`,
-        },
-        {
-            label: "Python",
-            lang: "Python",
-            source: `from openai import OpenAI
-
-client = OpenAI(
-    base_url="https://gen.pollinations.ai/v1",
-    api_key="YOUR_API_KEY",
-)
-
-response = client.audio.speech.create(
-    model="tts-1",
-    voice="nova",
-    input="Hello world",
-)
-response.stream_to_file("speech.mp3")`,
-        },
-        {
-            label: "JavaScript",
-            lang: "JavaScript",
-            source: `import OpenAI from "openai";
-
-const client = new OpenAI({
-  baseURL: "https://gen.pollinations.ai/v1",
-  apiKey: "YOUR_API_KEY",
-});
-
-const response = await client.audio.speech.create({
-  model: "tts-1",
-  voice: "nova",
-  input: "Hello world",
-});
-const buffer = Buffer.from(await response.arrayBuffer());`,
-        },
-    ],
-    "post /v1/audio/transcriptions": [
-        {
-            label: "cURL",
-            lang: "Shell",
-            source: `curl https://gen.pollinations.ai/v1/audio/transcriptions \\
-  -H "Authorization: Bearer YOUR_API_KEY" \\
-  -F file=@audio.mp3 \\
-  -F model=whisper-large-v3`,
-        },
-        {
-            label: "Python",
-            lang: "Python",
-            source: `from openai import OpenAI
-
-client = OpenAI(
-    base_url="https://gen.pollinations.ai/v1",
-    api_key="YOUR_API_KEY",
-)
-
-with open("audio.mp3", "rb") as f:
-    transcript = client.audio.transcriptions.create(
-        model="whisper-large-v3", file=f
-    )
-print(transcript.text)`,
-        },
-        {
-            label: "JavaScript",
-            lang: "JavaScript",
-            source: `import OpenAI from "openai";
-import fs from "fs";
-
-const client = new OpenAI({
-  baseURL: "https://gen.pollinations.ai/v1",
-  apiKey: "YOUR_API_KEY",
-});
-
-const transcript = await client.audio.transcriptions.create({
-  model: "whisper-large-v3",
-  file: fs.createReadStream("audio.mp3"),
-});
-console.log(transcript.text);`,
-        },
-    ],
-    "get /account/balance": [
-        {
-            label: "cURL",
-            lang: "Shell",
-            source: `curl https://gen.pollinations.ai/account/balance \\
-  -H "Authorization: Bearer YOUR_API_KEY"`,
-        },
-        {
-            label: "Python",
-            lang: "Python",
-            source: `import requests
-
-response = requests.get(
-    "https://gen.pollinations.ai/account/balance",
-    headers={"Authorization": "Bearer YOUR_API_KEY"},
-)
-print(response.json())  # {"balance": 42.5}`,
-        },
-        {
-            label: "JavaScript",
-            lang: "JavaScript",
-            source: `const response = await fetch(
-  "https://gen.pollinations.ai/account/balance",
-  { headers: { Authorization: "Bearer YOUR_API_KEY" } },
-);
-const { balance } = await response.json();
-console.log(balance);`,
-        },
-    ],
-    "get /account/profile": [
-        {
-            label: "cURL",
-            lang: "Shell",
-            source: `curl https://gen.pollinations.ai/account/profile \\
-  -H "Authorization: Bearer YOUR_API_KEY"`,
-        },
-        {
-            label: "Python",
-            lang: "Python",
-            source: `import requests
-
-response = requests.get(
-    "https://gen.pollinations.ai/account/profile",
-    headers={"Authorization": "Bearer YOUR_API_KEY"},
-)
-profile = response.json()
-print(profile["githubUsername"])`,
-        },
-        {
-            label: "JavaScript",
-            lang: "JavaScript",
-            source: `const response = await fetch(
-  "https://gen.pollinations.ai/account/profile",
-  { headers: { Authorization: "Bearer YOUR_API_KEY" } },
-);
-const profile = await response.json();
-console.log(profile.githubUsername);`,
-        },
-    ],
-    "get /account/key": [
-        {
-            label: "cURL",
-            lang: "Shell",
-            source: `curl https://gen.pollinations.ai/account/key \\
-  -H "Authorization: Bearer YOUR_API_KEY"`,
-        },
-        {
-            label: "Python",
-            lang: "Python",
-            source: `import requests
-
-response = requests.get(
-    "https://gen.pollinations.ai/account/key",
-    headers={"Authorization": "Bearer YOUR_API_KEY"},
-)
-key_info = response.json()
-print(f"Valid: {key_info['valid']}, Type: {key_info['type']}")`,
-        },
-        {
-            label: "JavaScript",
-            lang: "JavaScript",
-            source: `const response = await fetch(
-  "https://gen.pollinations.ai/account/key",
-  { headers: { Authorization: "Bearer YOUR_API_KEY" } },
-);
-const keyInfo = await response.json();
-console.log(\`Valid: \${keyInfo.valid}, Type: \${keyInfo.type}\`);`,
-        },
-    ],
-    "get /v1/models": [
-        {
-            label: "cURL",
-            lang: "Shell",
-            source: `curl https://gen.pollinations.ai/v1/models`,
-        },
-        {
-            label: "Python",
-            lang: "Python",
-            source: `from openai import OpenAI
-
-client = OpenAI(
-    base_url="https://gen.pollinations.ai/v1",
-    api_key="YOUR_API_KEY",
-)
-
-models = client.models.list()
-for model in models.data:
-    print(model.id)`,
-        },
-        {
-            label: "JavaScript",
-            lang: "JavaScript",
-            source: `import OpenAI from "openai";
-
-const client = new OpenAI({
-  baseURL: "https://gen.pollinations.ai/v1",
-  apiKey: "YOUR_API_KEY",
-});
-
-const models = await client.models.list();
-models.data.forEach((m) => console.log(m.id));`,
-        },
-    ],
-    "get /image/models": [
-        {
-            label: "cURL",
-            lang: "Shell",
-            source: `curl https://gen.pollinations.ai/image/models`,
-        },
-        {
-            label: "JavaScript",
-            lang: "JavaScript",
-            source: `const response = await fetch("https://gen.pollinations.ai/image/models");
-const models = await response.json();
-models.forEach((m) => console.log(\`\${m.id}: \${m.description}\`));`,
-        },
-    ],
-    "get /text/models": [
-        {
-            label: "cURL",
-            lang: "Shell",
-            source: `curl https://gen.pollinations.ai/text/models`,
-        },
-        {
-            label: "JavaScript",
-            lang: "JavaScript",
-            source: `const response = await fetch("https://gen.pollinations.ai/text/models");
-const models = await response.json();
-models.forEach((m) => console.log(\`\${m.id}: \${m.description}\`));`,
-        },
-    ],
-    "get /audio/models": [
-        {
-            label: "cURL",
-            lang: "Shell",
-            source: `curl https://gen.pollinations.ai/audio/models`,
-        },
-        {
-            label: "JavaScript",
-            lang: "JavaScript",
-            source: `const response = await fetch("https://gen.pollinations.ai/audio/models");
-const models = await response.json();
-models.forEach((m) => console.log(\`\${m.id}: \${m.description}\`));`,
-        },
-    ],
-    "get /account/usage": [
-        {
-            label: "cURL",
-            lang: "Shell",
-            source: `# Get usage history (JSON)
-curl "https://gen.pollinations.ai/account/usage?limit=10" \\
-  -H "Authorization: Bearer YOUR_API_KEY"
-
-# Export the latest 50,000 rows from the last 30 days as CSV
-curl "https://gen.pollinations.ai/account/usage?format=csv&days=30&limit=50000" \\
-  -H "Authorization: Bearer YOUR_API_KEY" -o usage.csv`,
-        },
-        {
-            label: "Python",
-            lang: "Python",
-            source: `import requests
-
-response = requests.get(
-    "https://gen.pollinations.ai/account/usage",
-    params={"limit": 10, "days": 30},
-    headers={"Authorization": "Bearer YOUR_API_KEY"},
-)
-for record in response.json()["usage"]:
-    print(f"{record['model']}: {record['cost_usd']} pollen")`,
-        },
-    ],
-    "get /account/usage/daily": [
-        {
-            label: "cURL",
-            lang: "Shell",
-            source: `curl "https://gen.pollinations.ai/account/usage/daily?days=30" \\
-  -H "Authorization: Bearer YOUR_API_KEY"`,
-        },
-    ],
-};
-
-// ---------------------------------------------------------------------------
-// Response examples injected into the OpenAPI schema
-// ---------------------------------------------------------------------------
-const RESPONSE_EXAMPLES: Record<string, unknown> = {
-    "post /v1/chat/completions": {
-        id: "chatcmpl-abc123",
-        object: "chat.completion",
-        created: 1700000000,
-        model: "openai",
-        choices: [
-            {
-                index: 0,
-                message: {
-                    role: "assistant",
-                    content: "Hello! How can I help you today?",
-                },
-                finish_reason: "stop",
-            },
-        ],
-        usage: {
-            prompt_tokens: 10,
-            completion_tokens: 12,
-            total_tokens: 22,
-        },
-    },
-    "get /v1/models": {
-        object: "list",
-        data: [
-            {
-                id: "openai",
-                object: "model",
-                created: 1700000000,
-                owned_by: "pollinations",
-            },
-            {
-                id: "claude",
-                object: "model",
-                created: 1700000000,
-                owned_by: "pollinations",
-            },
-            {
-                id: "gemini",
-                object: "model",
-                created: 1700000000,
-                owned_by: "pollinations",
-            },
-        ],
-    },
-    "get /account/balance": {
-        balance: 42.5,
-    },
-    "get /account/profile": {
-        githubUsername: "janedeveloper",
-        image: "https://avatars.example.com/jane.jpg",
-        name: "Jane Developer",
-        email: "jane@example.com",
-    },
-    "get /account/key": {
-        valid: true,
-        type: "secret",
-        name: "my-bot",
-        expiresAt: null,
-        expiresIn: null,
-        permissions: {
-            models: null,
-            account: ["usage"],
-        },
-        pollenBudget: null,
-        rateLimitEnabled: false,
-    },
-};
 
 function injectSamples(schema: OpenApiSchema): OpenApiSchema {
     const paths = schema.paths as Record<string, unknown> | undefined;
@@ -1389,7 +889,7 @@ function asRecordArray(value: unknown): OpenApiSchema[] {
 type Guide = {
     id: GuideId;
     title: string;
-    emoji: string;
+    icon: string;
     summary: string;
     markdown: string;
 };
@@ -1398,7 +898,7 @@ const GUIDES: Guide[] = [
     {
         id: "byop",
         title: "BYOP",
-        emoji: "🌸",
+        icon: DOC_TAGS.byop,
         summary:
             "Let your users authorize your app to spend their own Pollen on Pollinations requests.",
         markdown: BYOP_DOCS,
@@ -1406,7 +906,7 @@ const GUIDES: Guide[] = [
     {
         id: "cli",
         title: "CLI",
-        emoji: "🖥️",
+        icon: DOC_TAGS.cli,
         summary:
             "The Pollinations CLI — for humans, AI agents, and everything in between.",
         markdown: CLI_DOCS,
@@ -1414,7 +914,7 @@ const GUIDES: Guide[] = [
     {
         id: "mcp",
         title: "MCP Server",
-        emoji: "🔌",
+        icon: DOC_TAGS.mcpServer,
         summary:
             "Wire Pollinations into Claude Desktop, Cursor, and other MCP-compatible clients.",
         markdown: MCP_DOCS,
@@ -1423,70 +923,15 @@ const GUIDES: Guide[] = [
 
 const GUIDES_BY_ID = new Map(GUIDES.map((g) => [g.id, g]));
 
-const GUIDES_CSS = `
-:root { color-scheme: dark; }
-* { box-sizing: border-box; }
-html, body { overflow-x: hidden; }
-body {
-    font: 15px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
-    color: #d4d4d8;
-    background: #0a0a0a;
-    margin: 0;
-}
-.wrap { max-width: 800px; margin: 0 auto; padding: 1.5rem 1.25rem 4rem; }
-h1, h2, h3, h4 { font-weight: 600; line-height: 1.3; margin: 2rem 0 .75rem; color: #fafafa; }
-h1 { font-size: 1.875rem; margin-top: 1rem; }
-h2 { font-size: 1.375rem; padding-bottom: .375rem; border-bottom: 1px solid #27272a; }
-h3 { font-size: 1.125rem; }
-p, li, blockquote { overflow-wrap: anywhere; word-break: break-word; }
-p { margin: .75rem 0; }
-code {
-    background: #18181b; padding: 2px 5px; border-radius: 4px; color: #f4f4f5;
-    font: 13px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-    overflow-wrap: anywhere; word-break: break-word;
-}
-pre {
-    background: #000; color: #f1f5f9; padding: 1rem; border-radius: 8px;
-    border: 1px solid #1f1f23; overflow-x: auto; font-size: 13px; line-height: 1.5;
-    max-width: 100%;
-}
-pre code {
-    background: transparent; color: inherit; padding: 0;
-    overflow-wrap: normal; word-break: normal; white-space: pre;
-}
-table {
-    display: block; max-width: 100%; width: max-content;
-    overflow-x: auto; -webkit-overflow-scrolling: touch;
-    border-collapse: collapse; margin: 1rem 0; font-size: .9rem;
-}
-th, td { padding: .5rem .75rem; border: 1px solid #27272a; text-align: left; vertical-align: top; }
-th { background: #18181b; font-weight: 600; color: #fafafa; }
-a { color: #f59e0b; text-decoration: none; overflow-wrap: anywhere; word-break: break-word; }
-a:hover { text-decoration: underline; }
-blockquote { border-left: 3px solid #3f3f46; padding: .25rem 1rem; color: #a1a1aa; margin: 1rem 0; background: #131316; }
-ul, ol { padding-left: 1.5rem; }
-li { margin: .25rem 0; }
-hr { border: 0; border-top: 1px solid #27272a; margin: 2rem 0; }
-img { max-width: 100%; height: auto; }
-.guide-cards { display: grid; gap: 1rem; grid-template-columns: 1fr; margin-top: 1.5rem; }
-@media (min-width: 600px) { .guide-cards { grid-template-columns: 1fr 1fr; } }
-.guide-card {
-    display: block; padding: 1.25rem; border: 1px solid #27272a; border-radius: 10px;
-    background: #131316; color: #fafafa; text-decoration: none; transition: border-color .15s, background .15s;
-}
-.guide-card:hover { border-color: #f59e0b; background: #161618; }
-.guide-card h3 { margin: 0 0 .375rem; font-size: 1.05rem; color: #fafafa; }
-.guide-card p { margin: 0; color: #a1a1aa; font-size: .9rem; }
-`;
-
-function guidesPage(body: string): string {
+function guidesPage(c: Context<Env>, body: string): string {
     return `<!doctype html>
-<html lang="en">
+<html lang="en" class="dark">
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>pollinations.ai - Docs</title>
+<title>${SEO_TITLE}</title>
 <link rel="icon" type="image/png" href="${FAVICON_DATA_URI}" />
+${docsSocialHeadTags(c)}
 <style>${GUIDES_CSS}</style>
 </head>
 <body>
@@ -1496,33 +941,56 @@ ${pollinationsHeaderHtml()}
 </html>`;
 }
 
-function guidesIndexHtml(): string {
+function guidesIndexHtml(c: Context<Env>): string {
     const cards = GUIDES.map(
         (g) =>
-            `<a class="guide-card" href="/docs/guides/${g.id}"><h3>${g.emoji} ${g.title}</h3><p>${g.summary}</p></a>`,
+            `<a class="guide-card" href="/docs/guides/${g.id}"><h3>${guideIconHtml(g.icon)}<span>${g.title}</span></h3><p>${g.summary}</p></a>`,
     ).join("");
     const body = `<h1>Guides</h1><p>Integration paths beyond the raw API.</p><div class="guide-cards">${cards}</div>`;
-    return guidesPage(body);
+    return guidesPage(c, body);
 }
 
-function guideHtml(guide: Guide): string {
+function guideIconHtml(icon: string): string {
+    return DOC_TAG_ICON_HTML[icon] ?? "";
+}
+
+function guideHtml(c: Context<Env>, guide: Guide): string {
     // Prepend the guide title as an H1 so each guide page has a clear heading.
     // Source READMEs have their H1 stripped (because we render the page title
     // separately) — re-adding it here gives the rendered page a proper title
     // without duplicating it across surfaces.
-    const rendered = marked.parse(
-        `# ${guide.emoji} ${guide.title}\n\n${guide.markdown}`,
-        { async: false },
-    ) as string;
-    return guidesPage(rendered);
+    const rendered = marked.parse(guide.markdown, { async: false }) as string;
+    return guidesPage(
+        c,
+        `<h1 class="guide-title">${guideIconHtml(guide.icon)}<span>${guide.title}</span></h1>${rendered}`,
+    );
+}
+
+/**
+ * Build the merged OpenAPI spec (generation + public account + media storage,
+ * with code samples injected). Single source of truth for both the docs
+ * Scalar route and the conventional /openapi.json alias.
+ */
+export async function buildMergedOpenApiSpec(
+    c: Context<Env>,
+    genApp: Hono<Env>,
+): Promise<OpenApiSchema> {
+    const [generationSchema, enterSchema, mediaSchema] = await Promise.all([
+        getGenerationSchema(genApp),
+        fetchEnterSchema(c).catch(() => undefined),
+        fetchMediaSchema(c).catch(() => undefined),
+    ]);
+    return injectSamples(
+        mergeSchemas(generationSchema, enterSchema, mediaSchema),
+    );
 }
 
 export function createDocsRoutes(genApp: Hono<Env>): Hono<Env> {
     return new Hono<Env>()
         .get("/", async (c, next) => {
             const response = await Scalar<Env>({
-                pageTitle: "pollinations.ai - Docs",
-                title: "pollinations.ai - Docs",
+                pageTitle: SEO_TITLE,
+                title: SEO_TITLE,
                 favicon: FAVICON_DATA_URI,
                 theme: "saturn",
                 darkMode: true,
@@ -1546,15 +1014,19 @@ export function createDocsRoutes(genApp: Hono<Env>): Hono<Env> {
             })(c, next);
             if (!response) return;
             const html = await response.text();
-            const bodyOpenMatch = html.match(/<body[^>]*>/);
+            const htmlWithMeta = withHtmlClass(
+                injectDocsSocialHead(html, c),
+                "dark",
+            );
+            const bodyOpenMatch = htmlWithMeta.match(/<body[^>]*>/);
             if (!bodyOpenMatch || bodyOpenMatch.index === undefined) {
-                return c.html(html);
+                return c.html(htmlWithMeta);
             }
             const insertAt = bodyOpenMatch.index + bodyOpenMatch[0].length;
             return c.html(
-                html.slice(0, insertAt) +
+                htmlWithMeta.slice(0, insertAt) +
                     pollinationsHeaderHtml(true) +
-                    html.slice(insertAt),
+                    htmlWithMeta.slice(insertAt),
             );
         })
         .get("/logo.svg", (c) => {
@@ -1570,23 +1042,14 @@ export function createDocsRoutes(genApp: Hono<Env>): Hono<Env> {
             if (!content) return c.text("Section not found", 404);
             return c.text(content);
         })
-        .get("/guides", (c) => c.html(guidesIndexHtml()))
+        .get("/guides", (c) => c.html(guidesIndexHtml(c)))
         .get("/guides/:id", (c) => {
             const guide = GUIDES_BY_ID.get(c.req.param("id") as GuideId);
             if (!guide) return c.text("Guide not found", 404);
-            return c.html(guideHtml(guide));
+            return c.html(guideHtml(c, guide));
         })
         .get("/open-api/generate-schema", async (c) => {
-            const [generationSchema, enterSchema, mediaSchema] =
-                await Promise.all([
-                    getGenerationSchema(genApp),
-                    fetchEnterSchema(c).catch(() => undefined),
-                    fetchMediaSchema().catch(() => undefined),
-                ]);
-            const merged = injectSamples(
-                mergeSchemas(generationSchema, enterSchema, mediaSchema),
-            );
-
+            const merged = await buildMergedOpenApiSpec(c, genApp);
             if (c.req.query("format") === "yaml") {
                 c.header("Content-Type", "application/yaml; charset=utf-8");
                 return c.body(yamlStringify(merged));

@@ -9,8 +9,8 @@ Sunday 06:00 UTC:
   4. Generate 7 platform images (1 twitter + 1 linkedin + 3 instagram + 1 reddit + 1 discord)
   5. Commit all content directly to the news branch
 
-Buffer staging happens immediately after in NEWS_summary.yml.
-Direct channels (Reddit, Discord) publish via NEWS_publish.yml cron.
+Buffer staging happens immediately after in news-generate-summary.yml.
+Direct channels (Reddit, Discord) publish via news-publish-social.yml cron.
 
 See social/PIPELINE.md for full architecture.
 """
@@ -185,7 +185,7 @@ PR gists by date:
 
     response = call_pollinations_api(
         system_prompt, user_prompt, token,
-        temperature=0.3, exit_on_failure=False
+        temperature=0.3
     )
     if not response:
         return None
@@ -261,7 +261,7 @@ def generate_discord_post(
         task += f"\nTotal PRs merged: {pr_count}"
     task += "\n\n" + fmt + _weekly_image_context()
 
-    response = call_pollinations_api(voice, task, token, temperature=0.7, exit_on_failure=False)
+    response = call_pollinations_api(voice, task, token, temperature=0.7)
     if not response:
         return None
 

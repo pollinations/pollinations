@@ -1,7 +1,10 @@
 import {
+    calculateServiceFeeCents,
     describePollenPack,
     getPollenPackByKey,
     POLLEN_PACKS,
+    SERVICE_FEE_NAME,
+    SERVICE_FEE_TAX_CODE,
 } from "@shared/pollen-packs.ts";
 import { PUBLIC_URLS } from "@shared/public-urls.ts";
 import type { Context } from "hono";
@@ -18,6 +21,10 @@ import {
     processAutoTopUpForUser,
     updateAutoTopUpSettings,
 } from "../utils/stripe-billing.ts";
+import {
+    getStripeNewCardGateStatus,
+    stripeNewCardGateMetadata,
+} from "../utils/stripe-card-gate.ts";
 
 /**
  * Stripe pack configuration
@@ -33,7 +40,7 @@ export const stripeRoutes = new Hono<Env>()
      * form ("2".."100") is no longer accepted — all first-party callers and
      * the /products endpoint expose packKey.
      *
-     * Cohort routing (Phase 1): CF-IPCountry → CheckoutCohort for analytics.
+     * Cohort routing (Phase 1): CF-IPCountry → CohortId for analytics.
      * Stripe Adaptive Pricing localizes presentment.
      *
      * Pollen is the canonical unit: 1 pollen ≈ $1. Checkout sends USD
@@ -62,10 +69,12 @@ export const stripeRoutes = new Hono<Env>()
         // Create Stripe client
         const stripe = createStripeClient(c.env);
 
-        // Determine success URL based on environment
-        const successUrl =
+        // Return checkout sessions to the Pollen page for this environment.
+        const baseUrl =
             c.env.STRIPE_SUCCESS_URL || PUBLIC_URLS.enter.production;
-        const cancelUrl = successUrl;
+        const pollenUrl = new URL("/pollen", baseUrl);
+        pollenUrl.searchParams.set("pack", pack.packKey);
+        const pollenReturnUrl = pollenUrl.toString();
 
         // Resolve cohort from buyer IP for analytics. Checkout stays USD-native
         // and does not call FX at runtime.
@@ -86,18 +95,23 @@ export const stripeRoutes = new Hono<Env>()
                 c.env,
                 userId,
             );
+            const newCardGate = await getStripeNewCardGateStatus(
+                c.env.DB,
+                userId,
+            );
 
-            // Snapshot of pack identity + grant at session creation time. The
-            // webhook reads this back to credit exactly what the user saw,
-            // independent of how Adaptive Pricing localized the presentment.
+            // packKey identifies the pack; the webhook looks up its fixed USD
+            // amount to credit, independent of how Adaptive Pricing localized
+            // the presentment currency.
             const packMetadata = {
                 userId,
                 packKey: pack.packKey,
-                packAmountUsd: String(pack.amountUsd),
-                packPollenGrant: String(pack.pollenGrant),
-                packBonusPollen: String(pack.bonusPollen),
-                cohort: cohort.id,
+                cohort,
+                ...stripeNewCardGateMetadata(newCardGate),
             };
+            const serviceFeeCents = calculateServiceFeeCents(
+                pack.amountUsd * 100,
+            );
 
             const checkoutSession = await stripe.checkout.sessions.create({
                 mode: "payment",
@@ -107,12 +121,24 @@ export const stripeRoutes = new Hono<Env>()
                         price_data: {
                             currency: "usd",
                             unit_amount: pack.amountUsd * 100,
-                            tax_behavior: "inclusive",
+                            tax_behavior: "exclusive",
                             product_data: {
                                 name: pack.checkoutName,
                                 description: pack.checkoutDescription,
                                 images: [pack.checkoutImageUrl],
                                 tax_code: pack.taxCode,
+                            },
+                        },
+                        quantity: 1,
+                    },
+                    {
+                        price_data: {
+                            currency: "usd",
+                            unit_amount: serviceFeeCents,
+                            tax_behavior: "exclusive",
+                            product_data: {
+                                name: SERVICE_FEE_NAME,
+                                tax_code: SERVICE_FEE_TAX_CODE,
                             },
                         },
                         quantity: 1,
@@ -140,13 +166,13 @@ export const stripeRoutes = new Hono<Env>()
                     enabled: true,
                     invoice_data: {
                         rendering_options: {
-                            amount_tax_display: "include_inclusive_tax",
+                            amount_tax_display: "exclude_tax",
                         },
                     },
                 },
                 metadata: packMetadata,
-                success_url: `${successUrl}?stripe_success=true&session_id={CHECKOUT_SESSION_ID}`,
-                cancel_url: `${cancelUrl}?stripe_canceled=true`,
+                success_url: `${pollenReturnUrl}&stripe_success=true&session_id={CHECKOUT_SESSION_ID}`,
+                cancel_url: `${pollenReturnUrl}&stripe_canceled=true`,
             });
 
             // Redirect to Stripe Checkout (will use checkout.pollinations.ai custom domain)
@@ -173,8 +199,6 @@ export const stripeRoutes = new Hono<Env>()
             packs: POLLEN_PACKS.map((pack) => ({
                 packKey: pack.packKey,
                 amount: pack.amountUsd,
-                bonusPollen: pack.bonusPollen,
-                pollenGrant: pack.pollenGrant,
                 description: describePollenPack(pack),
             })),
         });

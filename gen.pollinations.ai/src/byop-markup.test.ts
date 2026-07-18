@@ -1,17 +1,21 @@
 import { env } from "cloudflare:test";
-import {
-    atomicCreditUserBalance,
-    getUserBalances,
-} from "@shared/billing/deduction.ts";
+import { getUserBalance } from "@shared/billing/balance.ts";
+import { atomicCreditUserBalance } from "@shared/billing/deduction.ts";
 import { computeDevCredit, MARKUP_PCT } from "@shared/billing/markup.ts";
+import { roundPollenLedgerAmount } from "@shared/billing/precision.ts";
 import {
     handleBalanceDeduction,
     resolveDevMarkup,
 } from "@shared/billing/track-helpers.ts";
+import { COMMUNITY_MODEL_REWARD_RATE } from "@shared/community-endpoints.ts";
 import {
     apikey as apikeyTable,
     user as userTable,
 } from "@shared/db/better-auth.ts";
+import {
+    getRegistryModelDefinition,
+    type ModelName,
+} from "@shared/registry/registry.ts";
 import { sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { describe, expect, it } from "vitest";
@@ -44,10 +48,15 @@ function fakeLog() {
     };
 }
 
-async function setupPayerAndDev({
-    payerTier = "spore",
-    devTier = "seed",
-} = {}) {
+function testModel(model: ModelName = "openai") {
+    return {
+        requested: model,
+        resolved: model,
+        definition: getRegistryModelDefinition(model),
+    };
+}
+
+async function setupPayerAndDev() {
     const suffix = crypto.randomUUID();
     const payerId = `payer-${suffix}`;
     const devId = `dev-${suffix}`;
@@ -58,7 +67,6 @@ async function setupPayerAndDev({
             id: payerId,
             email: `${payerId}@test.local`,
             name: payerId,
-            tier: payerTier,
             tierBalance: 2,
             packBalance: 0,
             createdAt: new Date(),
@@ -68,7 +76,6 @@ async function setupPayerAndDev({
             id: devId,
             email: `${devId}@test.local`,
             name: devId,
-            tier: devTier,
             tierBalance: 0,
             packBalance: 0,
             createdAt: new Date(),
@@ -89,6 +96,23 @@ async function setupPayerAndDev({
     });
 
     return { payerId, devId, pkId };
+}
+
+async function createBalanceUser(
+    prefix: string,
+    balances = { tier: 0, pack: 0 },
+) {
+    const userId = `${prefix}-${crypto.randomUUID()}`;
+    await db.insert(userTable).values({
+        id: userId,
+        email: `${userId}@test.local`,
+        name: userId,
+        tierBalance: balances.tier,
+        packBalance: balances.pack,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+    });
+    return userId;
 }
 
 describe("BYOP markup", () => {
@@ -117,19 +141,7 @@ describe("BYOP markup", () => {
         expect(await resolveDevMarkup(db, pkId, 4, payerId)).toBeNull();
     });
 
-    it("resolves markup for app owners on any tier", async () => {
-        const { payerId, devId, pkId } = await setupPayerAndDev({
-            devTier: "spore",
-        });
-
-        expect(await resolveDevMarkup(db, pkId, 4, payerId)).toEqual({
-            devUserId: devId,
-            devCredit: 4 * MARKUP_PCT,
-            markupRate: MARKUP_PCT,
-        });
-    });
-
-    it("credits creator tier balance when payer spends tier balance", async () => {
+    it("credits creator Quest Pollen when payer spends Quest Pollen", async () => {
         const { payerId, devId, pkId } = await setupPayerAndDev();
 
         const { markup } = await handleBalanceDeduction({
@@ -143,11 +155,11 @@ describe("BYOP markup", () => {
         expect(markup?.devUserId).toBe(devId);
         expect(markup?.devCredit).toBeCloseTo(MARKUP_PCT, 10);
 
-        expect((await getUserBalances(db, payerId)).tierBalance).toBeCloseTo(
+        expect((await getUserBalance(db, payerId)).tierBalance).toBeCloseTo(
             2 - 1 - MARKUP_PCT,
             10,
         );
-        const creatorBalances = await getUserBalances(db, devId);
+        const creatorBalances = await getUserBalance(db, devId);
         expect(creatorBalances.tierBalance).toBeCloseTo(MARKUP_PCT, 10);
         expect(creatorBalances.packBalance).toBe(0);
     });
@@ -170,38 +182,13 @@ describe("BYOP markup", () => {
         expect(markup?.devUserId).toBe(devId);
         expect(markup?.devCredit).toBeCloseTo(MARKUP_PCT, 10);
 
-        const payerBalances = await getUserBalances(db, payerId);
+        const payerBalances = await getUserBalance(db, payerId);
         expect(payerBalances.tierBalance).toBeCloseTo(0.5, 10);
         expect(payerBalances.packBalance).toBeCloseTo(2 - 1 - MARKUP_PCT, 10);
 
-        const creatorBalances = await getUserBalances(db, devId);
+        const creatorBalances = await getUserBalance(db, devId);
         expect(creatorBalances.tierBalance).toBe(0);
         expect(creatorBalances.packBalance).toBeCloseTo(MARKUP_PCT, 10);
-    });
-
-    it("bills baseline plus markup without a payer-tier gate", async () => {
-        const { payerId, devId, pkId } = await setupPayerAndDev({
-            payerTier: "flower",
-        });
-
-        const { markup } = await handleBalanceDeduction({
-            db,
-            isBilledUsage: true,
-            totalPrice: 1,
-            userId: payerId,
-            byopClientKeyId: pkId,
-        });
-
-        expect(markup?.devUserId).toBe(devId);
-        expect(markup?.devCredit).toBeCloseTo(MARKUP_PCT, 10);
-        expect((await getUserBalances(db, payerId)).tierBalance).toBeCloseTo(
-            1 - MARKUP_PCT,
-            10,
-        );
-        expect((await getUserBalances(db, devId)).tierBalance).toBeCloseTo(
-            MARKUP_PCT,
-            10,
-        );
     });
 
     it("allows regular preflight when one bucket is above the model estimate", async () => {
@@ -218,10 +205,8 @@ describe("BYOP markup", () => {
                     tierBalance: 1,
                     packBalance: 2,
                 }),
-                requirePositiveBalance: async () => undefined,
-                requirePaidBalance: async () => undefined,
             },
-            model: { requested: "openai", resolved: "openai" },
+            model: testModel(),
             log: fakeLog(),
         } as unknown as Parameters<typeof checkBalance>[0];
 
@@ -255,7 +240,7 @@ describe("BYOP markup", () => {
                     packBalance: 1,
                 }),
             },
-            model: { requested: "openai", resolved: "openai" },
+            model: testModel(),
             log: fakeLog(),
         } as unknown as Parameters<typeof checkBalance>[0];
 
@@ -278,7 +263,7 @@ describe("BYOP markup", () => {
                     packBalance: 0.01,
                 }),
             },
-            model: { requested: "openai", resolved: "openai" },
+            model: testModel(),
             log: fakeLog(),
         } as unknown as Parameters<typeof checkBalance>[0];
 
@@ -302,7 +287,7 @@ describe("BYOP markup", () => {
                     packBalance: 1,
                 }),
             },
-            model: { requested: "llama-maverick", resolved: "llama-maverick" },
+            model: testModel("llama-maverick"),
             log: fakeLog(),
         } as unknown as Parameters<typeof checkBalance>[0];
 
@@ -325,7 +310,7 @@ describe("BYOP markup", () => {
                     packBalance: 10,
                 }),
             },
-            model: { requested: "openai", resolved: "openai" },
+            model: testModel(),
             log: fakeLog(),
         } as unknown as Parameters<typeof checkBalance>[0];
 
@@ -352,7 +337,7 @@ describe("BYOP markup", () => {
                     packBalance: 10,
                 }),
             },
-            model: { requested: "openai", resolved: "openai" },
+            model: testModel(),
             log: fakeLog(),
         } as unknown as Parameters<typeof checkBalance>[0];
 
@@ -382,7 +367,7 @@ describe("BYOP markup", () => {
                     packBalance: 0,
                 }),
             },
-            model: { requested: "openai", resolved: "openai" },
+            model: testModel(),
             log: fakeLog(),
         } as unknown as Parameters<typeof checkBalance>[0];
 
@@ -408,8 +393,8 @@ describe("BYOP markup", () => {
         });
 
         expect(markup).toBeNull();
-        expect((await getUserBalances(db, payerId)).tierBalance).toBe(2);
-        expect((await getUserBalances(db, devId)).tierBalance).toBe(0);
+        expect((await getUserBalance(db, payerId)).tierBalance).toBe(2);
+        expect((await getUserBalance(db, devId)).tierBalance).toBe(0);
     });
 
     it("reverts dev credit when payer deduction fails", async () => {
@@ -425,7 +410,7 @@ describe("BYOP markup", () => {
             }),
         ).rejects.toThrow(/affected 0 rows/);
 
-        expect((await getUserBalances(db, devId)).tierBalance).toBe(0);
+        expect((await getUserBalance(db, devId)).tierBalance).toBe(0);
     });
 
     it("returns ok=false when crediting a missing user", async () => {
@@ -438,5 +423,129 @@ describe("BYOP markup", () => {
 
         expect(ok).toBe(false);
         expect(newBalance).toBeNull();
+    });
+
+    it("returns a rounded billedPrice that matches what the ledger was charged", async () => {
+        const { payerId, devId, pkId } = await setupPayerAndDev();
+
+        const totalPrice = 1.23456789;
+        const { markup, billedPrice } = await handleBalanceDeduction({
+            db,
+            isBilledUsage: true,
+            totalPrice,
+            userId: payerId,
+            byopClientKeyId: pkId,
+        });
+
+        expect(markup).not.toBeNull();
+        // billedPrice is totalPrice + devCredit, snapped to ledger precision.
+        expect(billedPrice).toBe(
+            roundPollenLedgerAmount(totalPrice + (markup?.devCredit ?? 0)),
+        );
+
+        // Dev credit lands on the ledger at the same precision.
+        const creditBalance = (await getUserBalance(db, devId)).tierBalance;
+        expect(creditBalance).toBe(
+            roundPollenLedgerAmount(markup?.devCredit ?? 0),
+        );
+    });
+
+    it("credits a community model owner without increasing the payer bill", async () => {
+        const { payerId } = await setupPayerAndDev();
+        const ownerId = await createBalanceUser("community-owner");
+
+        const { communityModelReward, billedPrice } =
+            await handleBalanceDeduction({
+                db,
+                isBilledUsage: true,
+                totalPrice: 1,
+                userId: payerId,
+                communityModelReward: {
+                    userId: ownerId,
+                    rewardRate: COMMUNITY_MODEL_REWARD_RATE,
+                },
+            });
+
+        expect(billedPrice).toBe(1);
+        expect(communityModelReward).toEqual({
+            userId: ownerId,
+            rewardRate: COMMUNITY_MODEL_REWARD_RATE,
+            credit: COMMUNITY_MODEL_REWARD_RATE,
+        });
+        expect((await getUserBalance(db, payerId)).tierBalance).toBeCloseTo(
+            1,
+            10,
+        );
+        expect((await getUserBalance(db, ownerId)).tierBalance).toBeCloseTo(
+            COMMUNITY_MODEL_REWARD_RATE,
+            10,
+        );
+    });
+
+    it("can credit BYOP and community model rewards on the same generation", async () => {
+        const { payerId, devId, pkId } = await setupPayerAndDev();
+        const ownerId = await createBalanceUser("community-owner");
+
+        const { markup, communityModelReward, billedPrice } =
+            await handleBalanceDeduction({
+                db,
+                isBilledUsage: true,
+                totalPrice: 1,
+                userId: payerId,
+                byopClientKeyId: pkId,
+                communityModelReward: {
+                    userId: ownerId,
+                    rewardRate: COMMUNITY_MODEL_REWARD_RATE,
+                },
+            });
+
+        expect(markup?.devCredit).toBeCloseTo(MARKUP_PCT, 10);
+        expect(communityModelReward?.credit).toBeCloseTo(
+            COMMUNITY_MODEL_REWARD_RATE,
+            10,
+        );
+        expect(billedPrice).toBe(1 + MARKUP_PCT);
+        expect((await getUserBalance(db, payerId)).tierBalance).toBeCloseTo(
+            2 - 1 - MARKUP_PCT,
+            10,
+        );
+        expect((await getUserBalance(db, devId)).tierBalance).toBeCloseTo(
+            MARKUP_PCT,
+            10,
+        );
+        expect((await getUserBalance(db, ownerId)).tierBalance).toBeCloseTo(
+            COMMUNITY_MODEL_REWARD_RATE,
+            10,
+        );
+    });
+
+    it("credits a community model owner for their own request", async () => {
+        const ownerId = await createBalanceUser("community-owner", {
+            tier: 2,
+            pack: 0,
+        });
+
+        const { communityModelReward, billedPrice } =
+            await handleBalanceDeduction({
+                db,
+                isBilledUsage: true,
+                totalPrice: 1,
+                userId: ownerId,
+                communityModelReward: {
+                    userId: ownerId,
+                    rewardRate: COMMUNITY_MODEL_REWARD_RATE,
+                },
+            });
+
+        expect(billedPrice).toBe(1);
+        expect(communityModelReward).toEqual({
+            userId: ownerId,
+            rewardRate: COMMUNITY_MODEL_REWARD_RATE,
+            credit: COMMUNITY_MODEL_REWARD_RATE,
+        });
+        expect((await getUserBalance(db, ownerId)).tierBalance).toBeCloseTo(
+            2 - 1 + COMMUNITY_MODEL_REWARD_RATE,
+            10,
+        );
     });
 });

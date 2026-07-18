@@ -1,34 +1,29 @@
 import { env, SELF } from "cloudflare:test";
 import * as schema from "@shared/db/better-auth.ts";
-import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { describe, expect } from "vitest";
-import { test } from "../fixtures.ts";
+import { createApiKeyViaApi, test } from "../fixtures.ts";
 
-async function setSessionUserTier(sessionToken: string, tier: string) {
-    const sessionResponse = await SELF.fetch(
-        "http://localhost:3000/api/auth/get-session",
-        {
-            headers: {
-                Cookie: `better-auth.session_token=${sessionToken}`,
-            },
-        },
-    );
-    const session = await sessionResponse.json();
-    const db = drizzle(env.DB, { schema });
-    await db
-        .update(schema.user)
-        .set({ tier })
-        .where(eq(schema.user.id, session.user.id));
-}
+type ListedApiKey = {
+    id: string;
+    name?: string;
+    start?: string;
+    createdAt?: string;
+    pollenBalance?: number | null;
+    permissions?: Record<string, string[]> | null;
+    expiresAt?: string | null;
+    metadata?: { redirectUris?: string[] };
+};
+
+type ApiKeyListResponse = {
+    data: ListedApiKey[];
+};
 
 describe("API Key Management", () => {
     describe("POST /api/api-keys", () => {
         test("should create publishable key metadata in one step", async ({
             sessionToken,
         }) => {
-            await setSessionUserTier(sessionToken, "seed");
-
             const response = await SELF.fetch(
                 "http://localhost:3000/api/api-keys",
                 {
@@ -61,9 +56,7 @@ describe("API Key Management", () => {
             });
         });
 
-        test("allows reward-enabled app keys for any owner tier", async ({
-            sessionToken,
-        }) => {
+        test("allows reward-enabled app keys", async ({ sessionToken }) => {
             const response = await SELF.fetch(
                 "http://localhost:3000/api/api-keys",
                 {
@@ -73,11 +66,11 @@ describe("API Key Management", () => {
                         Cookie: `better-auth.session_token=${sessionToken}`,
                     },
                     body: JSON.stringify({
-                        name: "spore-reward-publishable",
+                        name: "wallet-reward-publishable",
                         type: "publishable",
                         metadata: {
                             redirectUris: [
-                                "https://spore-rewards.example/callback",
+                                "https://wallet-rewards.example/callback",
                             ],
                             earningsEnabled: true,
                         },
@@ -117,6 +110,106 @@ describe("API Key Management", () => {
                 "http://localhost:3456/callback",
             ]);
             expect(created.metadata.earningsEnabled).toBe(false);
+        });
+
+        test("rejects unsafe redirectUris metadata during app key creation", async ({
+            sessionToken,
+        }) => {
+            for (const redirectUri of [
+                "javascript://x/%0afetch('https://example.com')//",
+                "data://x/text/html,<script>alert(1)</script>",
+                "file://localhost/tmp/callback",
+                "http://app.example/callback",
+            ]) {
+                const response = await SELF.fetch(
+                    "http://localhost:3000/api/api-keys",
+                    {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
+                            Cookie: `better-auth.session_token=${sessionToken}`,
+                        },
+                        body: JSON.stringify({
+                            name: "unsafe-publishable",
+                            type: "publishable",
+                            metadata: {
+                                redirectUris: [redirectUri],
+                            },
+                        }),
+                    },
+                );
+
+                expect(response.status).toBe(400);
+            }
+        });
+
+        test("blocks native Better Auth api-key create/update routes", async ({
+            sessionToken,
+        }) => {
+            // Keys are created/updated only through /api/api-keys, which validates
+            // redirect URIs and strips server-only metadata. The native routes store
+            // caller metadata verbatim, so they must not be reachable over HTTP.
+            const nativeCreate = await SELF.fetch(
+                "http://localhost:3000/api/auth/api-key/create",
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Cookie: `better-auth.session_token=${sessionToken}`,
+                    },
+                    body: JSON.stringify({
+                        name: "native-redirect-bypass",
+                        prefix: "pk",
+                        metadata: {
+                            redirectUris: [
+                                "javascript://x/%0afetch('https://example.com')//",
+                            ],
+                        },
+                    }),
+                },
+            );
+            expect(nativeCreate.status).toBe(405);
+
+            // The safe route still works and validates the scheme.
+            const safeCreate = await SELF.fetch(
+                "http://localhost:3000/api/api-keys",
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Cookie: `better-auth.session_token=${sessionToken}`,
+                    },
+                    body: JSON.stringify({
+                        name: "safe-publishable",
+                        type: "publishable",
+                        metadata: {
+                            redirectUris: ["https://safe.example/callback"],
+                        },
+                    }),
+                },
+            );
+            expect(safeCreate.status).toBe(200);
+            const created = await safeCreate.json();
+
+            const nativeUpdate = await SELF.fetch(
+                "http://localhost:3000/api/auth/api-key/update",
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Cookie: `better-auth.session_token=${sessionToken}`,
+                    },
+                    body: JSON.stringify({
+                        keyId: created.id,
+                        metadata: {
+                            redirectUris: [
+                                "javascript://x/%0afetch('https://example.com')//",
+                            ],
+                        },
+                    }),
+                },
+            );
+            expect(nativeUpdate.status).toBe(405);
         });
 
         test("rejects spoofed keyType / createdVia / plaintextKey from caller metadata", async ({
@@ -193,8 +286,6 @@ describe("API Key Management", () => {
         test("rejects redirect-auth key creation when client_id redirect_uri mismatches", async ({
             sessionToken,
         }) => {
-            await setSessionUserTier(sessionToken, "seed");
-
             const appResponse = await SELF.fetch(
                 "http://localhost:3000/api/api-keys",
                 {
@@ -703,7 +794,7 @@ describe("API Key Management", () => {
             );
 
             expect(response.status).toBe(200);
-            const data = await response.json();
+            const data = (await response.json()) as ApiKeyListResponse;
             expect(data.data).toBeInstanceOf(Array);
             expect(data.data.length).toBeGreaterThanOrEqual(3);
 
@@ -718,7 +809,7 @@ describe("API Key Management", () => {
 
             // Find the restricted key and verify its permissions
             const restrictedKey = data.data.find(
-                (k: any) => k.name === "restricted-test-key",
+                (k) => k.name === "restricted-test-key",
             );
             expect(restrictedKey).toBeTruthy();
             expect(restrictedKey.permissions).toEqual({
@@ -766,18 +857,12 @@ describe("API Key Management", () => {
     });
 
     describe("POST /api/api-keys/:id/update", () => {
-        test("should update API key name", async ({ auth, sessionToken }) => {
+        test("should update API key name", async ({ sessionToken }) => {
             // Create a new key for this test
-            const createResponse = await auth.apiKey.create({
+            const createdKey = await createApiKeyViaApi(sessionToken, {
                 name: "original-name",
-                fetchOptions: {
-                    headers: {
-                        Cookie: `better-auth.session_token=${sessionToken}`,
-                    },
-                },
             });
-            expect(createResponse.data).toBeTruthy();
-            const keyId = createResponse.data!.id;
+            const keyId = createdKey.id;
 
             // Update the name
             const updateResponse = await SELF.fetch(
@@ -807,25 +892,17 @@ describe("API Key Management", () => {
                     },
                 },
             );
-            const keys = await listResponse.json();
-            const updatedKey = keys.data.find((k: any) => k.id === keyId);
+            const keys = (await listResponse.json()) as ApiKeyListResponse;
+            const updatedKey = keys.data.find((k) => k.id === keyId);
             expect(updatedKey.name).toBe("updated-name");
         });
 
-        test("should update API key permissions", async ({
-            auth,
-            sessionToken,
-        }) => {
+        test("should update API key permissions", async ({ sessionToken }) => {
             // Create a new key
-            const createResponse = await auth.apiKey.create({
+            const createdKey = await createApiKeyViaApi(sessionToken, {
                 name: "permissions-test",
-                fetchOptions: {
-                    headers: {
-                        Cookie: `better-auth.session_token=${sessionToken}`,
-                    },
-                },
             });
-            const keyId = createResponse.data!.id;
+            const keyId = createdKey.id;
 
             // Update with model restrictions
             const updateResponse = await SELF.fetch(
@@ -856,8 +933,8 @@ describe("API Key Management", () => {
                     },
                 },
             );
-            const keys = await listResponse.json();
-            const updatedKey = keys.data.find((k: any) => k.id === keyId);
+            const keys = (await listResponse.json()) as ApiKeyListResponse;
+            const updatedKey = keys.data.find((k) => k.id === keyId);
             expect(updatedKey.permissions).toEqual({
                 models: ["flux", "openai"],
                 account: ["profile", "usage"],
@@ -865,22 +942,11 @@ describe("API Key Management", () => {
         });
 
         test("should reflect updated permissions immediately after update", async ({
-            auth,
             sessionToken,
         }) => {
-            const createResponse = await auth.apiKey.create({
+            const createdKey = await createApiKeyViaApi(sessionToken, {
                 name: "permissions-freshness-test",
-                fetchOptions: {
-                    headers: {
-                        Cookie: `better-auth.session_token=${sessionToken}`,
-                    },
-                },
             });
-            const createdKey = createResponse.data;
-            expect(createdKey).toBeTruthy();
-            if (!createdKey) {
-                throw new Error("Failed to create API key");
-            }
 
             const updateResponse = await SELF.fetch(
                 `http://localhost:3000/api/api-keys/${createdKey.id}/update`,
@@ -914,22 +980,11 @@ describe("API Key Management", () => {
         });
 
         test("should reflect updated metadata immediately after update", async ({
-            auth,
             sessionToken,
         }) => {
-            const createResponse = await auth.apiKey.create({
+            const createdKey = await createApiKeyViaApi(sessionToken, {
                 name: "metadata-freshness-test",
-                fetchOptions: {
-                    headers: {
-                        Cookie: `better-auth.session_token=${sessionToken}`,
-                    },
-                },
             });
-            const createdKey = createResponse.data;
-            expect(createdKey).toBeTruthy();
-            if (!createdKey) {
-                throw new Error("Failed to create API key");
-            }
 
             const metadataResponse = await SELF.fetch(
                 `http://localhost:3000/api/api-keys/${createdKey.id}/metadata`,
@@ -959,13 +1014,38 @@ describe("API Key Management", () => {
                 },
             );
             expect(listResponse.status).toBe(200);
-            const list = (await listResponse.json()) as {
-                data: { id: string; metadata?: { redirectUris?: string[] } }[];
-            };
+            const list = (await listResponse.json()) as ApiKeyListResponse;
             const refreshed = list.data.find((k) => k.id === createdKey.id);
             expect(refreshed?.metadata?.redirectUris).toEqual([
                 "https://freshness.example/callback",
             ]);
+        });
+
+        test("rejects unsafe redirectUris during metadata updates", async ({
+            sessionToken,
+        }) => {
+            const createdKey = await createApiKeyViaApi(sessionToken, {
+                name: "metadata-unsafe-redirect-test",
+                type: "publishable",
+            });
+
+            const metadataResponse = await SELF.fetch(
+                `http://localhost:3000/api/api-keys/${createdKey.id}/metadata`,
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Cookie: `better-auth.session_token=${sessionToken}`,
+                    },
+                    body: JSON.stringify({
+                        redirectUris: [
+                            "javascript://x/%0afetch('https://example.com')//",
+                        ],
+                    }),
+                },
+            );
+
+            expect(metadataResponse.status).toBe(400);
         });
 
         test("allows enabling rewards from app key metadata", async ({
@@ -1010,17 +1090,12 @@ describe("API Key Management", () => {
             expect(updated.metadata.earningsEnabled).toBe(true);
         });
 
-        test("should update pollen budget", async ({ auth, sessionToken }) => {
+        test("should update pollen budget", async ({ sessionToken }) => {
             // Create a new key
-            const createResponse = await auth.apiKey.create({
+            const createdKey = await createApiKeyViaApi(sessionToken, {
                 name: "budget-test",
-                fetchOptions: {
-                    headers: {
-                        Cookie: `better-auth.session_token=${sessionToken}`,
-                    },
-                },
             });
-            const keyId = createResponse.data!.id;
+            const keyId = createdKey.id;
 
             // Set budget to 50
             const updateResponse = await SELF.fetch(
@@ -1050,22 +1125,17 @@ describe("API Key Management", () => {
                     },
                 },
             );
-            const keys = await listResponse.json();
-            const updatedKey = keys.data.find((k: any) => k.id === keyId);
+            const keys = (await listResponse.json()) as ApiKeyListResponse;
+            const updatedKey = keys.data.find((k) => k.id === keyId);
             expect(updatedKey.pollenBalance).toBe(50);
         });
 
-        test("should update expiry date", async ({ auth, sessionToken }) => {
+        test("should update expiry date", async ({ sessionToken }) => {
             // Create a new key
-            const createResponse = await auth.apiKey.create({
+            const createdKey = await createApiKeyViaApi(sessionToken, {
                 name: "expiry-test",
-                fetchOptions: {
-                    headers: {
-                        Cookie: `better-auth.session_token=${sessionToken}`,
-                    },
-                },
             });
-            const keyId = createResponse.data!.id;
+            const keyId = createdKey.id;
 
             // Set expiry to 30 days from now
             const futureDate = new Date();
@@ -1096,8 +1166,8 @@ describe("API Key Management", () => {
                     },
                 },
             );
-            const keys = await listResponse.json();
-            const updatedKey = keys.data.find((k: any) => k.id === keyId);
+            const keys = (await listResponse.json()) as ApiKeyListResponse;
+            const updatedKey = keys.data.find((k) => k.id === keyId);
             expect(updatedKey.expiresAt).toBeTruthy();
 
             // Check the date is approximately correct (within 1 minute)
@@ -1107,19 +1177,13 @@ describe("API Key Management", () => {
         });
 
         test("should clear permissions when set to null", async ({
-            auth,
             sessionToken,
         }) => {
             // Create a key with permissions
-            const createResponse = await auth.apiKey.create({
+            const createdKey = await createApiKeyViaApi(sessionToken, {
                 name: "clear-permissions-test",
-                fetchOptions: {
-                    headers: {
-                        Cookie: `better-auth.session_token=${sessionToken}`,
-                    },
-                },
             });
-            const keyId = createResponse.data!.id;
+            const keyId = createdKey.id;
 
             // First set some permissions
             await SELF.fetch(
@@ -1164,8 +1228,8 @@ describe("API Key Management", () => {
                     },
                 },
             );
-            const keys = await listResponse.json();
-            const updatedKey = keys.data.find((k: any) => k.id === keyId);
+            const keys = (await listResponse.json()) as ApiKeyListResponse;
+            const updatedKey = keys.data.find((k) => k.id === keyId);
             expect(updatedKey.permissions).toBeNull();
         });
 
@@ -1190,20 +1254,14 @@ describe("API Key Management", () => {
         });
 
         test("should not allow updating another user's key", async ({
-            auth,
             sessionToken,
         }) => {
             // This test would need a second user session to be comprehensive
             // For now, we'll just verify authentication is required
-            const createResponse = await auth.apiKey.create({
+            const createdKey = await createApiKeyViaApi(sessionToken, {
                 name: "ownership-test",
-                fetchOptions: {
-                    headers: {
-                        Cookie: `better-auth.session_token=${sessionToken}`,
-                    },
-                },
             });
-            const keyId = createResponse.data!.id;
+            const keyId = createdKey.id;
 
             // Try updating without authentication
             const response = await SELF.fetch(
@@ -1223,19 +1281,13 @@ describe("API Key Management", () => {
         });
 
         test("should handle multiple updates in sequence", async ({
-            auth,
             sessionToken,
         }) => {
             // Create a key
-            const createResponse = await auth.apiKey.create({
+            const createdKey = await createApiKeyViaApi(sessionToken, {
                 name: "multi-update-test",
-                fetchOptions: {
-                    headers: {
-                        Cookie: `better-auth.session_token=${sessionToken}`,
-                    },
-                },
             });
-            const keyId = createResponse.data!.id;
+            const keyId = createdKey.id;
 
             // Update 1: Set name and budget
             await SELF.fetch(
@@ -1296,8 +1348,8 @@ describe("API Key Management", () => {
                     },
                 },
             );
-            const keys = await listResponse.json();
-            const finalKey = keys.data.find((k: any) => k.id === keyId);
+            const keys = (await listResponse.json()) as ApiKeyListResponse;
+            const finalKey = keys.data.find((k) => k.id === keyId);
 
             expect(finalKey.name).toBe("final-name");
             expect(finalKey.pollenBalance).toBe(25);
@@ -1307,18 +1359,13 @@ describe("API Key Management", () => {
     });
 
     describe("Permission enforcement", () => {
-        test("should reject expired keys", async ({ auth, sessionToken }) => {
+        test("should reject expired keys", async ({ sessionToken }) => {
             // Create a key that expires immediately
-            const createResponse = await auth.apiKey.create({
+            const createdKey = await createApiKeyViaApi(sessionToken, {
                 name: "expired-key",
-                fetchOptions: {
-                    headers: {
-                        Cookie: `better-auth.session_token=${sessionToken}`,
-                    },
-                },
             });
-            const keyId = createResponse.data!.id;
-            const apiKey = createResponse.data!.key;
+            const keyId = createdKey.id;
+            const apiKey = createdKey.key;
 
             // Set expiry to past
             const pastDate = new Date();
@@ -1349,8 +1396,8 @@ describe("API Key Management", () => {
                     },
                 },
             );
-            const keys = await listResp.json();
-            const updatedKey = keys.data.find((k: any) => k.id === keyId);
+            const keys = (await listResp.json()) as ApiKeyListResponse;
+            const updatedKey = keys.data.find((k) => k.id === keyId);
             expect(updatedKey).toBeTruthy();
             expect(updatedKey.expiresAt).toBeTruthy();
 

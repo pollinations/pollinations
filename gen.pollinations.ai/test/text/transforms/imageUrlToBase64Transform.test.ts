@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { createImageUrlToBase64Transform } from "../../../src/text/transforms/imageUrlToBase64Transform.js";
+import { imageUrlToBase64Transform } from "../../../src/text/transforms/imageUrlToBase64Transform.js";
 
-const transform = createImageUrlToBase64Transform();
+const transform = imageUrlToBase64Transform;
 const bedrockOptions = { modelConfig: { provider: "bedrock" } };
 
 afterEach(() => {

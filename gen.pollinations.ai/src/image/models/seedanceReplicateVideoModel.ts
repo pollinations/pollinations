@@ -16,9 +16,9 @@ import debug from "debug";
 import type { VideoGenerationResult } from "../createAndReturnVideos.ts";
 import { HttpError } from "../httpError.ts";
 import type { ImageParams } from "../params.ts";
-import type { ProgressManager } from "../progressBar.ts";
+import { closestRatioLogSpace } from "../utils/aspectRatio.ts";
 import { fetchUpstream } from "../utils/fetchUpstream.ts";
-import { downloadUserImage } from "../utils/imageDownload.ts";
+import { toDataUri } from "../utils/imageDownload.ts";
 import {
     ReplicateError,
     runReplicatePrediction,
@@ -40,28 +40,6 @@ const SEEDANCE_ASPECT_RATIOS = [
 ] as const;
 type SeedanceAspectRatio = (typeof SEEDANCE_ASPECT_RATIOS)[number];
 
-// When clients pass width/height without aspectRatio (documented schema
-// contract: "If not set, determined by width/height"), derive a Seedance-
-// supported ratio by minimum euclidean distance in log space, so 1920×1080
-// → 16:9, 720×1280 → 9:16, 800×800 → 1:1, etc.
-function deriveAspectRatioFromDimensions(
-    width: number,
-    height: number,
-): SeedanceAspectRatio {
-    const target = Math.log(width / height);
-    let best: SeedanceAspectRatio = "16:9";
-    let bestDist = Number.POSITIVE_INFINITY;
-    for (const ar of SEEDANCE_ASPECT_RATIOS) {
-        const [w, h] = ar.split(":").map(Number);
-        const dist = Math.abs(Math.log(w / h) - target);
-        if (dist < bestDist) {
-            bestDist = dist;
-            best = ar;
-        }
-    }
-    return best;
-}
-
 function resolveSeedanceAspectRatio(
     safeParams: ImageParams,
 ): SeedanceAspectRatio {
@@ -76,9 +54,12 @@ function resolveSeedanceAspectRatio(
         );
     }
     if (safeParams.width && safeParams.height) {
-        return deriveAspectRatioFromDimensions(
+        // Derive a supported ratio from width/height (documented schema
+        // contract: "If not set, determined by width/height").
+        return closestRatioLogSpace(
             safeParams.width,
             safeParams.height,
+            SEEDANCE_ASPECT_RATIOS,
         );
     }
     return "16:9";
@@ -101,7 +82,7 @@ interface SeedanceModelConfig {
     model: string;
     /** Tracking label for usage metrics + analytics. */
     trackingLabel: string;
-    /** Display name for progress messages and error context. */
+    /** Display name for error context. */
     displayName: string;
     /** Whether the model accepts last_frame_image. Pro-Fast does not. */
     supportsEndFrame: boolean;
@@ -124,16 +105,7 @@ async function generateSeedanceVideo(
     config: SeedanceModelConfig,
     prompt: string,
     safeParams: ImageParams,
-    progress: ProgressManager,
-    requestId: string,
 ): Promise<VideoGenerationResult> {
-    progress.updateBar(
-        requestId,
-        35,
-        "Processing",
-        `Starting ${config.displayName} video generation...`,
-    );
-
     // Replicate's duration range is [2, 12]. Clamp to upstream + our config max.
     const requestedDuration = Math.floor(
         safeParams.duration ?? config.defaultDuration,
@@ -172,13 +144,6 @@ async function generateSeedanceVideo(
         input.seed = safeParams.seed;
     }
 
-    // Replicate fetches input URLs server-side and saves them under a path
-    // derived from the URL — query strings and missing extensions break it.
-    // Match seedance-2.0: download here, pass data URIs.
-    const toDataUri = async (url: string): Promise<string> => {
-        const { buffer, mimeType } = await downloadUserImage(url);
-        return `data:${mimeType};base64,${buffer.toString("base64")}`;
-    };
     if (images.length >= 1) input.image = await toDataUri(images[0]);
     if (images.length >= 2) input.last_frame_image = await toDataUri(images[1]);
 
@@ -188,13 +153,6 @@ async function generateSeedanceVideo(
         image: input.image ? "[data uri]" : undefined,
         last_frame_image: input.last_frame_image ? "[data uri]" : undefined,
     });
-
-    progress.updateBar(
-        requestId,
-        45,
-        "Processing",
-        "Submitting to Replicate (40-90s typical)...",
-    );
 
     let videoUrl: string;
     let actualDurationSeconds: number | undefined;
@@ -225,7 +183,6 @@ async function generateSeedanceVideo(
         throw err;
     }
 
-    progress.updateBar(requestId, 90, "Processing", "Downloading video...");
     const videoResponse = await fetchUpstream(videoUrl, {
         errorLabel: `Failed to download ${config.displayName} output video`,
     });
@@ -235,8 +192,6 @@ async function generateSeedanceVideo(
         (buffer.length / 1024 / 1024).toFixed(2),
         "MB",
     );
-
-    progress.updateBar(requestId, 95, "Success", "Video generation completed");
 
     // Bill on the actual output length Replicate reports; fall back to the
     // requested duration if the metric is missing.
@@ -261,13 +216,5 @@ async function generateSeedanceVideo(
 export const callSeedanceProAPI = (
     prompt: string,
     safeParams: ImageParams,
-    progress: ProgressManager,
-    requestId: string,
 ): Promise<VideoGenerationResult> =>
-    generateSeedanceVideo(
-        SEEDANCE_PRO_FAST_CONFIG,
-        prompt,
-        safeParams,
-        progress,
-        requestId,
-    );
+    generateSeedanceVideo(SEEDANCE_PRO_FAST_CONFIG, prompt, safeParams);

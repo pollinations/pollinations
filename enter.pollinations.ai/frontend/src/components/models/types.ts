@@ -1,25 +1,58 @@
-import type { Category } from "@shared/registry/registry.ts";
+export type ModelCategory =
+    | "text"
+    | "image"
+    | "audio"
+    | "video"
+    | "3d"
+    | "embedding"
+    | "realtime";
+
+export type ModelDisplayCategory = ModelCategory | "community";
+
+export type ModelCapability =
+    | "tool_calling"
+    | "reasoning"
+    | "web_search"
+    | "code_execution";
+
+export type PriceKind =
+    | "text"
+    | "image"
+    | "3d"
+    | "cached"
+    | "cacheWrite"
+    | "reasoning"
+    | "video"
+    | "audioIn"
+    | "audioOut";
+
+export type PriceDirection = "input" | "output";
+
+export type PriceUnit = "token" | "second" | "request";
+
+export type ModelPriceLine = {
+    direction: PriceDirection;
+    kind: PriceKind;
+    price: string;
+    unit: PriceUnit;
+};
 
 export type ModelPrice = {
     name: string;
-    type: Category;
-    perToken?: boolean;
-    // Text pricing
-    promptTextPrice?: string;
-    promptCachedPrice?: string;
-    promptAudioPrice?: string;
-    completionTextPrice?: string;
-    completionAudioPrice?: string;
-    completionAudioTokens?: string; // For audio calculation
-    // Image pricing
-    promptImagePrice?: string;
-    completionImagePrice?: string;
-    perImagePrice?: string;
-    // Video pricing
-    promptVideoPrice?: string;
-    perSecondPrice?: string;
-    perAudioSecondPrice?: string; // For video models with audio (e.g., wan)
-    perTokenPrice?: string; // For token-based video models like seedance
+    type: ModelCategory;
+    community?: boolean;
+    displayName?: string;
+    description?: string;
+    brand?: string;
+    inputModalities?: string[];
+    outputModalities?: string[];
+    capabilities: ModelCapability[];
+    paidOnly?: boolean;
+    alpha?: boolean;
+    addedDate?: number;
+    inputSortPrice?: number;
+    outputSortPrice?: number;
+    prices: ModelPriceLine[];
     // Real usage data from Tinybird (rolling 7-day average)
     realAvgCost?: number;
 };

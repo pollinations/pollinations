@@ -3,8 +3,8 @@
 Tier 3: Weekly Publish
 
 Publishes weekly content from the news branch. Two modes via PUBLISH_MODE env var:
-  - "buffer": Stage Twitter + LinkedIn + Instagram to Buffer (called by NEWS_summary.yml after generation)
-  - "direct": Deploy Reddit to VPS + Discord webhook (called by NEWS_publish.yml cron at 18:00 UTC Sunday)
+  - "buffer": Stage Twitter + LinkedIn + Instagram to Buffer (called by news-generate-summary.yml after generation)
+  - "direct": Deploy Reddit to VPS + Discord webhook (called by news-publish-social.yml cron at 18:00 UTC Sunday)
   - "all" (default): Both
 
 See social/PIPELINE.md for full architecture.
@@ -221,7 +221,7 @@ def main():
     if publish_mode in ("direct", "all"):
         print("\n[Direct] Publishing direct channels...")
 
-        # Reddit (VPS/Devvit deployment)
+        # Reddit (VPS deployment)
         vps_host = get_env("REDDIT_VPS_HOST", required=False)
         vps_user = get_env("REDDIT_VPS_USER", required=False)
         vps_ssh_key_raw = get_env("REDDIT_VPS_SSH_KEY", required=False)

@@ -11,6 +11,75 @@ const escapeHtml = (value) =>
         .replace(/</g, "&lt;")
         .replace(/>/g, "&gt;");
 
+const URL_ATTRIBUTE_PATTERN =
+    /\s(href|src)\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+))/gi;
+
+const decodeHtmlEntities = (value) =>
+    String(value).replace(
+        /&(#x?[0-9a-f]+|amp|quot|apos|lt|gt);/gi,
+        (match, entity) => {
+            const lower = entity.toLowerCase();
+            if (lower === "amp") return "&";
+            if (lower === "quot") return '"';
+            if (lower === "apos") return "'";
+            if (lower === "lt") return "<";
+            if (lower === "gt") return ">";
+            if (lower.startsWith("#x")) {
+                return String.fromCodePoint(
+                    Number.parseInt(lower.slice(2), 16),
+                );
+            }
+            if (lower.startsWith("#")) {
+                return String.fromCodePoint(
+                    Number.parseInt(lower.slice(1), 10),
+                );
+            }
+            return match;
+        },
+    );
+
+const stripUrlControlChars = (value) =>
+    Array.from(value)
+        .filter((char) => {
+            const code = char.codePointAt(0) ?? 0;
+            return code > 0x20 && code !== 0x7f;
+        })
+        .join("");
+
+const isSafeUrl = (value, attributeName) => {
+    const normalized = stripUrlControlChars(decodeHtmlEntities(value).trim());
+
+    if (!normalized) return true;
+    if (normalized.startsWith("#")) return true;
+    if (normalized.startsWith("/") && !normalized.startsWith("//")) return true;
+    if (normalized.startsWith("./") || normalized.startsWith("../"))
+        return true;
+
+    try {
+        const parsed = new URL(normalized, "https://pollinations.ai");
+        if (["http:", "https:", "mailto:", "tel:"].includes(parsed.protocol)) {
+            return true;
+        }
+        return (
+            attributeName.toLowerCase() === "src" &&
+            parsed.protocol === "data:" &&
+            /^data:image\/(?:png|jpeg|jpg|gif|webp);base64,/i.test(normalized)
+        );
+    } catch {
+        return false;
+    }
+};
+
+const sanitizeRenderedHtml = (html) =>
+    String(html).replace(
+        URL_ATTRIBUTE_PATTERN,
+        (match, attributeName, doubleQuoted, singleQuoted, unquoted) => {
+            const value = doubleQuoted ?? singleQuoted ?? unquoted ?? "";
+            if (isSafeUrl(value, attributeName)) return match;
+            return ` ${attributeName.toLowerCase()}="#"`;
+        },
+    );
+
 marked.setOptions({
     gfm: true,
     breaks: false,
@@ -64,7 +133,9 @@ const md = new MarkdownIt({
                     }).value +
                     "</code></pre>"
                 );
-            } catch (__) {}
+            } catch (error) {
+                console.warn("Highlight error (markdown-it):", error);
+            }
         }
         return `<pre class="code-block"><code class="hljs">${escapeHtml(str)}</code></pre>`;
     },
@@ -125,7 +196,7 @@ export const formatMessage = (content) => {
 
         let html = md.render(textContent);
 
-        html = renderMath(html);
+        html = sanitizeRenderedHtml(renderMath(html));
 
         if (charts.length > 0) {
             html += `<div data-charts='${JSON.stringify(charts).replace(/'/g, "&apos;")}'></div>`;
@@ -154,7 +225,7 @@ export const formatStreamingMessage = (content) => {
         );
 
         const html = marked.parse(textContent, { async: false });
-        return renderMath(html);
+        return sanitizeRenderedHtml(renderMath(html));
     } catch (error) {
         console.error("Streaming markdown rendering error:", error);
         return escapeHtml(String(content));

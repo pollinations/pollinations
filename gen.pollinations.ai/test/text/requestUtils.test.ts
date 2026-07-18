@@ -21,13 +21,15 @@ describe("getRequestData", () => {
         expect(requestData.max_completion_tokens).toBe(16);
     });
 
-    it("passes through reasoning config from chat completion bodies", () => {
+    it("does not expose deprecated thinking aliases as request params", () => {
         const requestData = getRequestData({
             query: {},
             body: {
-                model: "mistral-4",
+                model: "openai-fast",
                 messages: [{ role: "user", content: "hello" }],
-                reasoning: { effort: "high", exclude: false },
+                thinking: { type: "enabled", budget_tokens: 1024 },
+                thinking_budget: 1024,
+                reasoning_effort: "medium",
             },
             path: "/v1/chat/completions",
             params: {},
@@ -36,9 +38,8 @@ describe("getRequestData", () => {
             url: "https://gen.pollinations.ai/v1/chat/completions",
         });
 
-        expect(requestData.reasoning).toEqual({
-            effort: "high",
-            exclude: false,
-        });
+        expect(requestData.reasoning_effort).toBe("medium");
+        expect("thinking" in requestData).toBe(false);
+        expect("thinking_budget" in requestData).toBe(false);
     });
 });

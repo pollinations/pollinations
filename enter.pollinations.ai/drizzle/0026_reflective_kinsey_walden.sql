@@ -1,0 +1,1 @@
+ALTER TABLE `stripe_auto_top_up_attempt` DROP COLUMN `pollen_grant`;

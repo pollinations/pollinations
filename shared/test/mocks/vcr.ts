@@ -3,7 +3,7 @@ import { getLogger } from "@logtape/logtape";
 import { Hono } from "hono";
 import { expect } from "vitest";
 import {
-    getModelDefinition,
+    getRegistryModelDefinition,
     resolveModelName,
 } from "../../registry/registry.ts";
 import { createHonoMockHandler, type MockAPI } from "./fetch.ts";
@@ -70,7 +70,7 @@ async function getSnapshotHash(request: Request): Promise<string> {
         // migrates to a different backend (e.g. fireworks → azure).
         try {
             const modelName = resolveModelName(body.model);
-            const def = getModelDefinition(modelName);
+            const def = getRegistryModelDefinition(modelName);
             hash.update(`${def.provider}:${def.modelId}`);
         } catch {
             // Unknown model — hash stays request-only

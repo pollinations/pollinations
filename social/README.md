@@ -8,11 +8,11 @@ See [PIPELINE.md](PIPELINE.md) for the full design document (architecture, data 
 
 | | Twitter/X | LinkedIn | Instagram | Reddit | Discord |
 |---|---|---|---|---|---|
-| **Daily** | Buffer (scheduled) | — | Buffer (scheduled) | VPS deploy | Per-PR (realtime) |
+| **Daily** | Buffer (scheduled) | — | — | VPS deploy | Per-PR (realtime) |
 | **Weekly** | Buffer (scheduled) | Buffer (scheduled) | Buffer (scheduled) | VPS deploy | Webhook |
-| **Review** | Yes (daily PR) | Yes (weekly PR) | Yes (daily PR) | Yes (daily PR) | No (automatic) |
+| **Review** | Yes (daily PR) | Yes (weekly PR) | Yes (weekly PR) | Yes (daily PR) | No (automatic) |
 | **Images** | 1 per post | 1 per post | up to 3 carousel | 1 per post | 1 per PR |
-| **Model** | `nanobanana-2` | `nanobanana-2` | `nanobanana-2` | `nanobanana-2` | `nanobanana-2` |
+| **Model** | `nanobanana-2-lite` | `nanobanana-2-lite` | `nanobanana-2-lite` | `nanobanana-2-lite` | `nanobanana-2-lite` |
 
 ## Delivery Schedule
 
@@ -22,7 +22,7 @@ Defined in [`buffer-schedule.yml`](buffer-schedule.yml).
 |---|---|---|---|
 | **Twitter/X** | Yes | Yes | Buffer scheduled delivery |
 | **LinkedIn** | — | Yes | Weekly only |
-| **Instagram** | Yes | Yes | Buffer scheduled delivery |
+| **Instagram** | — | Yes | Weekly only, Sunday 18:00 UTC via Buffer |
 | **Reddit** | Yes | Yes | VPS deploy on merge |
 | **Discord** | Per PR (realtime) | Yes | Webhook on merge / Sun 18:00 UTC |
 
@@ -44,4 +44,4 @@ Defined in [`buffer-schedule.yml`](buffer-schedule.yml).
 
 The old per-platform standalone scripts and workflows have been removed. The 3-tier pipeline above replaces all of them.
 
-The old Devvit-based Reddit pipeline (`social/reddit/`) is also superseded — Reddit now posts via SSH deployment to a VPS in `publish_daily.py` and `publish_weekly.py`.
+The old Devvit-based Reddit pipeline has been removed. Reddit now posts via SSH deployment to a VPS in `publish_daily.py` and `publish_weekly.py`.

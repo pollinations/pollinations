@@ -1,119 +1,75 @@
-import { cn } from "@frontend/lib/cn.ts";
+import { ChevronIcon, CopyButton, cn, Tooltip } from "@pollinations/ui";
+import { type FC, useState } from "react";
+import { calculatePerPollen, calculatePerPollenValue } from "./calculations.ts";
+import { CAPABILITY_ICON, MODALITY_ICON } from "./model-icons.tsx";
 import {
-    getPriceDefinition,
-    type ModelName,
-} from "@shared/registry/registry.ts";
-import { type FC, type MouseEvent, useState } from "react";
-import { Chip } from "../ui/chip.tsx";
-import { Tooltip } from "../ui/tooltip.tsx";
-import { calculatePerPollen, canAffordModel } from "./calculations.ts";
-import {
+    type DisplayCapability,
     getModelBrandLogoPath,
-    getModelCapabilityIcons,
+    getModelCapabilities,
+    getModelDescriptionWithoutName,
     getModelDisplayName,
-    getModelModalityIcons,
+    getModelInputModalities,
+    type InputModality,
     isAlpha,
     isNewModel,
     isPaidOnly,
-    isPersona,
 } from "./model-info.ts";
 import { ModelRow } from "./model-row.tsx";
+import type {
+    ModelCategory,
+    ModelSortDirection,
+    ModelSortKey,
+} from "./model-search.ts";
 import {
-    groupPriceBadges,
-    PriceBadge,
-    type PriceBadgeConfig,
-} from "./price-badge.tsx";
-import type { ModelPrice } from "./types.ts";
+    type BalanceAccess,
+    BalanceAccessChip,
+    ModelStatusChips,
+} from "./model-status-chips.tsx";
+import { getModelPriceBadges, PriceBadgeList } from "./price-badge.tsx";
+import type { ModelPrice, PriceDirection } from "./types.ts";
 
-export type SectionType =
-    | "image"
-    | "video"
-    | "audio"
-    | "realtime"
-    | "text"
-    | "embedding";
+export type SectionType = ModelCategory;
 
 type UnifiedModelTableProps = {
+    allModels: ModelPrice[];
     imageModels: ModelPrice[];
     videoModels: ModelPrice[];
+    model3dModels: ModelPrice[];
     textModels: ModelPrice[];
+    communityModels: ModelPrice[];
     audioModels: ModelPrice[];
     realtimeModels: ModelPrice[];
     embeddingModels: ModelPrice[];
     activeTab: SectionType;
-    tierBalance?: number;
-    packBalance?: number;
-};
-
-// Helper to convert per pollen string to numeric value for sorting
-const getPerPollenNumeric = (perPollen: string): number => {
-    if (perPollen === "—") return -1;
-    const cleaned = perPollen.replace(" min", "");
-    if (cleaned.endsWith("K")) return parseFloat(cleaned) * 1000;
-    if (cleaned.endsWith("M")) return parseFloat(cleaned) * 1000000;
-    return parseFloat(cleaned) || -1;
-};
-
-type SortKey = "name" | "perPollen" | "input" | "output";
-type SortDir = "asc" | "desc";
-
-const DEFAULT_DIR: Record<SortKey, SortDir> = {
-    name: "asc",
-    perPollen: "desc",
-    input: "asc",
-    output: "asc",
-};
-
-const getInputSortValue = (modelName: string): number => {
-    const p = getPriceDefinition(modelName as ModelName);
-    if (!p) return -1;
-    const sum =
-        (p.promptTextTokens ?? 0) +
-        (p.promptCachedTokens ?? 0) +
-        (p.promptAudioTokens ?? 0) +
-        (p.promptAudioSeconds ?? 0) +
-        (p.promptImageTokens ?? 0) +
-        (p.promptVideoTokens ?? 0);
-    return sum > 0 ? sum : -1;
-};
-
-const getOutputSortValue = (modelName: string): number => {
-    const p = getPriceDefinition(modelName as ModelName);
-    if (!p) return -1;
-    const sum =
-        (p.completionTextTokens ?? 0) +
-        (p.completionAudioTokens ?? 0) +
-        (p.completionAudioSeconds ?? 0) +
-        (p.completionImageTokens ?? 0) +
-        (p.completionVideoSeconds ?? 0) +
-        (p.completionVideoTokens ?? 0);
-    return sum > 0 ? sum : -1;
+    sortKey: ModelSortKey;
+    sortDir: ModelSortDirection;
+    onSort: (key: ModelSortKey) => void;
 };
 
 const sortModels = (
     models: ModelPrice[],
-    sortKey: SortKey,
-    sortDir: SortDir,
+    sortKey: ModelSortKey,
+    sortDir: ModelSortDirection,
 ) => {
     const sign = sortDir === "asc" ? 1 : -1;
     return [...models].sort((a, b) => {
         if (sortKey === "name") {
-            const an = (getModelDisplayName(a.name) ?? a.name).toLowerCase();
-            const bn = (getModelDisplayName(b.name) ?? b.name).toLowerCase();
+            const an = (getModelDisplayName(a) ?? a.name).toLowerCase();
+            const bn = (getModelDisplayName(b) ?? b.name).toLowerCase();
             return an < bn ? -sign : an > bn ? sign : 0;
         }
         const av =
             sortKey === "perPollen"
-                ? getPerPollenNumeric(calculatePerPollen(a))
+                ? (calculatePerPollenValue(a) ?? -1)
                 : sortKey === "input"
-                  ? getInputSortValue(a.name)
-                  : getOutputSortValue(a.name);
+                  ? (a.inputSortPrice ?? -1)
+                  : (a.outputSortPrice ?? -1);
         const bv =
             sortKey === "perPollen"
-                ? getPerPollenNumeric(calculatePerPollen(b))
+                ? (calculatePerPollenValue(b) ?? -1)
                 : sortKey === "input"
-                  ? getInputSortValue(b.name)
-                  : getOutputSortValue(b.name);
+                  ? (b.inputSortPrice ?? -1)
+                  : (b.outputSortPrice ?? -1);
         // Missing values always sort last regardless of direction
         if (av < 0 && bv >= 0) return 1;
         if (bv < 0 && av >= 0) return -1;
@@ -121,107 +77,43 @@ const sortModels = (
     });
 };
 
-const unitLabels: Record<string, string> = {
-    text: "responses",
-    image: "images",
-    video: "videos",
-    audio: "responses",
-    realtime: "sessions",
-    embedding: "embeddings",
-};
-
 export const sectionLabels: Record<SectionType, string> = {
+    all: "All",
     image: "Image",
     video: "Video",
+    "3d": "3D",
     audio: "Audio",
     realtime: "Realtime",
     text: "Text",
+    community: "Community",
     embedding: "Embedding",
 };
 
 // --- Tab content ---
 
 type TabContentProps = {
-    type: SectionType;
     models: ModelPrice[];
-    sortKey: SortKey;
-    sortDir: SortDir;
-    tierBalance?: number;
-    packBalance?: number;
+    sortKey: ModelSortKey;
+    sortDir: ModelSortDirection;
 };
 
-const TabContent: FC<TabContentProps> = ({
-    type,
-    models,
-    sortKey,
-    sortDir,
-    tierBalance,
-    packBalance,
-}) => {
+const TabContent: FC<TabContentProps> = ({ models, sortKey, sortDir }) => {
     const sorted = sortModels(models, sortKey, sortDir);
-    const regularModels =
-        type === "text" ? sorted.filter((m) => !isPersona(m.name)) : sorted;
-    const personaModels =
-        type === "text" ? sorted.filter((m) => isPersona(m.name)) : [];
 
     return (
         <>
             {/* Desktop cards */}
             <div className="hidden md:flex md:flex-col gap-2 pb-1">
-                {regularModels.map((model) => (
-                    <ModelRow
-                        key={model.name}
-                        model={model}
-                        tierBalance={tierBalance}
-                        packBalance={packBalance}
-                    />
+                {sorted.map((model) => (
+                    <ModelRow key={model.name} model={model} />
                 ))}
-                {personaModels.length > 0 && (
-                    <>
-                        <div className="pt-2 pb-0 px-2">
-                            <span className="text-xs font-semibold text-pink-500 opacity-60">
-                                Persona
-                            </span>
-                        </div>
-                        {personaModels.map((model) => (
-                            <ModelRow
-                                key={model.name}
-                                model={model}
-                                tierBalance={tierBalance}
-                                packBalance={packBalance}
-                            />
-                        ))}
-                    </>
-                )}
             </div>
 
             {/* Mobile list */}
             <div className="md:hidden pb-1">
-                {regularModels.map((model) => (
-                    <MobileModelRow
-                        key={model.name}
-                        model={model}
-                        tierBalance={tierBalance}
-                        packBalance={packBalance}
-                    />
+                {sorted.map((model) => (
+                    <MobileModelRow key={model.name} model={model} />
                 ))}
-                {personaModels.length > 0 && (
-                    <>
-                        <div className="pt-3 pb-1 px-4">
-                            <span className="text-xs font-semibold text-pink-500 opacity-60">
-                                Persona
-                            </span>
-                        </div>
-                        {personaModels.map((model) => (
-                            <MobileModelRow
-                                key={model.name}
-                                model={model}
-                                tierBalance={tierBalance}
-                                packBalance={packBalance}
-                            />
-                        ))}
-                    </>
-                )}
             </div>
         </>
     );
@@ -231,56 +123,24 @@ const TabContent: FC<TabContentProps> = ({
 
 type MobileModelRowProps = {
     model: ModelPrice;
-    tierBalance?: number;
-    packBalance?: number;
 };
 
-const MobileModelRow: FC<MobileModelRowProps> = ({
-    model,
-    tierBalance,
-    packBalance,
-}) => {
+const MobileModelRow: FC<MobileModelRowProps> = ({ model }) => {
     const [expanded, setExpanded] = useState(false);
-    const [copied, setCopied] = useState(false);
-    const displayName = getModelDisplayName(model.name);
-    const brandLogoPath = getModelBrandLogoPath(model.name);
-    const modalityIcons = getModelModalityIcons(model.name);
-    const capabilityIcons = getModelCapabilityIcons(model.name);
+    const displayName = getModelDisplayName(model);
+    const modelDescription = getModelDescriptionWithoutName(model);
+    const brandLogoPath = getModelBrandLogoPath(model);
+    const inputModalities = getModelInputModalities(model);
+    const capabilities = getModelCapabilities(model);
     const publicModelName = displayName || model.name;
-    const showNew = isNewModel(model.name);
-    const showPaidOnly = isPaidOnly(model.name);
-    const showAlpha = isAlpha(model.name);
+    const showNew = isNewModel(model);
+    const showPaidOnly = isPaidOnly(model);
+    const showAlpha = isAlpha(model);
+    const balanceAccess: BalanceAccess = showPaidOnly ? "paid" : "quest";
 
-    const isSignedIn = packBalance !== undefined;
     const perPollen = calculatePerPollen(model);
-    const isDisabled =
-        isSignedIn &&
-        !canAffordModel(
-            model,
-            tierBalance ?? 0,
-            packBalance ?? 0,
-            showPaidOnly,
-        );
-
-    const copyModelName = async (e: MouseEvent<HTMLButtonElement>) => {
-        e.stopPropagation();
-        await navigator.clipboard.writeText(model.name);
-        setCopied(true);
-        setTimeout(() => setCopied(false), 900);
-    };
-
     return (
-        <div
-            className={cn(
-                "rounded-xl mb-1 border",
-                expanded ? "border-teal-200" : "border-transparent",
-                isDisabled
-                    ? "bg-transparent"
-                    : expanded
-                      ? "bg-white/90"
-                      : "bg-white/80 hover:bg-white/90 transition-colors",
-            )}
-        >
+        <div className="rounded-xl mb-1 bg-surface-opaque shadow-sm transition-colors hover:bg-surface-opaque/90">
             {/* Clickable header */}
             <div className="relative">
                 <button
@@ -293,104 +153,90 @@ const MobileModelRow: FC<MobileModelRowProps> = ({
                     className="absolute inset-0 w-full rounded-xl cursor-pointer"
                     onClick={() => setExpanded(!expanded)}
                 />
-                <div className="relative z-10 pointer-events-none grid grid-cols-[minmax(0,1fr)_auto] items-start gap-2 p-4">
-                    <div className="flex items-start gap-2.5 min-w-0 flex-1">
-                        <svg
-                            className={cn(
-                                "mt-1 w-3.5 h-3.5 text-gray-300 transition-transform duration-200 shrink-0",
-                                expanded && "rotate-180",
-                            )}
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
-                            strokeWidth={2}
+                <div className="relative z-10 pointer-events-none flex items-center gap-2.5 p-4">
+                    {brandLogoPath && (
+                        <span
                             aria-hidden="true"
-                        >
-                            <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                d="M19 9l-7 7-7-7"
-                            />
-                        </svg>
-                        <div className="min-w-0 flex-1">
-                            <div className="flex min-w-0 items-center gap-2.5">
-                                {brandLogoPath && (
-                                    <span
-                                        aria-hidden="true"
-                                        className="h-[1.35rem] w-[1.35rem] shrink-0 self-center bg-current opacity-55"
-                                        style={{
-                                            maskImage: `url(${brandLogoPath})`,
-                                            WebkitMaskImage: `url(${brandLogoPath})`,
-                                            maskRepeat: "no-repeat",
-                                            WebkitMaskRepeat: "no-repeat",
-                                            maskPosition: "center",
-                                            WebkitMaskPosition: "center",
-                                            maskSize: "contain",
-                                            WebkitMaskSize: "contain",
-                                        }}
-                                    />
-                                )}
-                                <span className="min-w-0 flex-1 truncate text-sm font-medium">
+                            className="h-8 w-8 shrink-0 bg-current opacity-55"
+                            style={{
+                                maskImage: `url(${brandLogoPath})`,
+                                WebkitMaskImage: `url(${brandLogoPath})`,
+                                maskRepeat: "no-repeat",
+                                WebkitMaskRepeat: "no-repeat",
+                                maskPosition: "center",
+                                WebkitMaskPosition: "center",
+                                maskSize: "contain",
+                                WebkitMaskSize: "contain",
+                            }}
+                        />
+                    )}
+                    <div className="flex min-w-0 flex-1 flex-col gap-1.5">
+                        <div className="flex min-w-0 items-center">
+                            <CopyButton
+                                value={model.name}
+                                tooltip={null}
+                                aria-label={`Copy model id ${model.name}`}
+                                className={(copied) =>
+                                    cn(
+                                        "pointer-events-auto flex min-w-0 flex-1 cursor-pointer items-center gap-1.5 text-left text-sm font-medium leading-none transition-colors",
+                                        copied
+                                            ? "text-intent-success-text"
+                                            : "hover:text-theme-text-soft",
+                                    )
+                                }
+                            >
+                                <span className="min-w-0 truncate">
                                     {publicModelName}
                                 </span>
-                            </div>
-                            {(showNew ||
-                                showAlpha ||
-                                showPaidOnly ||
-                                modalityIcons.length > 0 ||
-                                capabilityIcons.length > 0) && (
-                                <div className="mt-1 flex min-w-0 flex-wrap items-center gap-1.5">
-                                    <MobileMetadataBadges
-                                        modalityIcons={modalityIcons}
-                                        capabilityIcons={capabilityIcons}
-                                    />
-                                    {showNew && (
-                                        <Chip intent="news" size="sm">
-                                            NEW
-                                        </Chip>
-                                    )}
-                                    {showAlpha && (
-                                        <Chip intent="alpha" size="sm">
-                                            ALPHA
-                                        </Chip>
-                                    )}
-                                    {showPaidOnly && (
-                                        <Chip intent="paid" size="sm">
-                                            PAID
-                                        </Chip>
-                                    )}
-                                </div>
-                            )}
+                            </CopyButton>
+                        </div>
+                        <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1.5">
+                            <MobileMetadataBadges
+                                inputModalities={inputModalities}
+                                capabilities={capabilities}
+                            />
+                            <ModelStatusChips
+                                showNew={showNew}
+                                showAlpha={showAlpha}
+                                alphaTooltip={false}
+                            />
+                            <span className="inline-flex shrink-0 items-center gap-1">
+                                <BalanceAccessChip
+                                    access={balanceAccess}
+                                    className="whitespace-nowrap"
+                                />
+                                <span className="inline-flex items-baseline gap-1 whitespace-nowrap">
+                                    <span className="text-sm font-semibold leading-none tabular-nums text-theme-text-strong">
+                                        {perPollen}
+                                    </span>
+                                    <span className="text-[10px] font-medium leading-none text-theme-text-muted">
+                                        gen/pollen
+                                    </span>
+                                </span>
+                            </span>
                         </div>
                     </div>
-                    <Chip className="justify-self-end">{perPollen}</Chip>
+                    <ChevronIcon
+                        expanded={expanded}
+                        className="h-3.5 w-3.5 shrink-0 text-theme-text-muted"
+                    />
                 </div>
             </div>
 
-            {/* Expanded: capabilities + full pricing */}
+            {/* Expanded: description + full pricing */}
             {expanded && (
                 <div className="px-4 pb-4 pt-0">
-                    <div className="flex min-w-0 flex-col gap-2 pl-6">
-                        <button
-                            type="button"
-                            onClick={copyModelName}
-                            className={cn(
-                                "inline-flex max-w-full cursor-pointer items-center gap-1.5 self-start text-xs font-medium leading-none text-gray-500 transition-colors",
-                                copied
-                                    ? "text-teal-700"
-                                    : "hover:text-gray-700",
-                            )}
-                            aria-label={`Copy API model name ${model.name}`}
-                        >
-                            <span className="min-w-0 truncate">
-                                {model.name}
-                            </span>
-                            {copied && (
-                                <span className="rounded-lg bg-teal-100 px-1.5 py-0.5 text-micro font-semibold uppercase tracking-wide text-teal-700">
-                                    copied
-                                </span>
-                            )}
-                        </button>
+                    <div
+                        className={cn(
+                            "flex min-w-0 flex-col gap-2",
+                            brandLogoPath ? "pl-[42px]" : "pl-0",
+                        )}
+                    >
+                        {modelDescription && (
+                            <p className="mb-2 text-sm leading-relaxed text-theme-text-muted">
+                                {modelDescription}
+                            </p>
+                        )}
                         <MobilePriceGroup
                             label="In"
                             model={model}
@@ -414,7 +260,7 @@ const MobileModelRow: FC<MobileModelRowProps> = ({
 type MobilePriceGroupProps = {
     label: string;
     model: ModelPrice;
-    direction: "input" | "output";
+    direction: PriceDirection;
 };
 
 const MobilePriceGroup: FC<MobilePriceGroupProps> = ({
@@ -422,192 +268,105 @@ const MobilePriceGroup: FC<MobilePriceGroupProps> = ({
     model,
     direction,
 }) => {
-    const badges: PriceBadgeConfig[] = groupPriceBadges(
-        direction === "input"
-            ? [
-                  {
-                      prices: [model.promptTextPrice],
-                      emoji: "💬",
-                      subEmojis: ["💬"],
-                      perToken: model.perToken,
-                  },
-                  {
-                      prices: [model.promptCachedPrice],
-                      emoji: "💾",
-                      subEmojis: ["💾"],
-                      perToken: model.perToken,
-                  },
-                  {
-                      prices: [model.promptAudioPrice],
-                      emoji: "🎙️",
-                      subEmojis: ["🎙️"],
-                      perToken: model.perToken,
-                  },
-                  {
-                      prices: [model.promptImagePrice],
-                      emoji: "🖼️",
-                      subEmojis: ["🖼️"],
-                      perToken: model.perToken,
-                  },
-                  {
-                      prices: [model.promptVideoPrice],
-                      emoji: "🎬",
-                      subEmojis: ["🎬"],
-                      perToken: model.perToken,
-                  },
-              ]
-            : [
-                  {
-                      prices: [model.completionTextPrice],
-                      emoji: "💬",
-                      subEmojis: ["💬"],
-                      perToken: model.perToken,
-                  },
-                  {
-                      prices: [model.completionAudioPrice],
-                      emoji: "🔊",
-                      subEmojis: ["🔊"],
-                      perToken: model.perToken,
-                  },
-                  {
-                      prices: [model.perSecondPrice],
-                      emoji: model.type === "audio" ? "🔊" : "🎬",
-                      subEmojis: [model.type === "audio" ? "🔊" : "🎬"],
-                      perSecond: true,
-                  },
-                  {
-                      prices: [model.perAudioSecondPrice],
-                      emoji: "🔊",
-                      subEmojis: ["🔊"],
-                      perSecond: true,
-                  },
-                  {
-                      prices: [model.perTokenPrice],
-                      emoji: "🎬",
-                      subEmojis: ["🎬"],
-                      perToken: true,
-                  },
-                  {
-                      prices: [model.perImagePrice],
-                      emoji: "🖼️",
-                      subEmojis: ["🖼️"],
-                      perImage: true,
-                  },
-                  {
-                      prices: [model.completionImagePrice],
-                      emoji: "🖼️",
-                      subEmojis: ["🖼️"],
-                      perToken: model.perToken,
-                  },
-              ],
-    );
+    const badges = getModelPriceBadges(model, direction);
 
     if (badges.length === 0) return null;
 
     return (
         <div className="grid w-full grid-cols-[2rem_minmax(0,1fr)] items-center gap-1">
-            <span className="text-xs font-bold text-gray-500 uppercase tracking-wide">
+            <span className="text-xs font-bold text-theme-text-muted uppercase tracking-wide">
                 {label}
             </span>
-            <div className="flex min-w-0 flex-wrap justify-end gap-1">
-                {badges.map((badge) => (
-                    <PriceBadge
-                        key={`${badge.subEmojis.join("")}-${badge.prices[0]}-${badge.perToken ? "token" : ""}-${badge.perImage ? "img" : ""}-${badge.perSecond ? "sec" : ""}`}
-                        {...badge}
-                    />
-                ))}
-            </div>
+            <PriceBadgeList
+                badges={badges}
+                className="flex min-w-0 flex-wrap justify-end gap-1"
+            />
         </div>
     );
 };
 
 type MobileMetadataBadgesProps = {
-    modalityIcons: string[];
-    capabilityIcons: string[];
+    inputModalities: InputModality[];
+    capabilities: DisplayCapability[];
 };
 
 const MobileMetadataBadges: FC<MobileMetadataBadgesProps> = ({
-    modalityIcons,
-    capabilityIcons,
+    inputModalities,
+    capabilities,
 }) => {
-    if (modalityIcons.length === 0 && capabilityIcons.length === 0) {
+    if (inputModalities.length === 0 && capabilities.length === 0) {
         return null;
     }
 
     return (
-        <>
-            {modalityIcons.length > 0 && (
-                <Chip intent="neutral" size="sm">
-                    {modalityIcons.map((emoji) => (
-                        <span key={emoji}>{emoji}</span>
-                    ))}
-                </Chip>
+        <div className="inline-flex items-center gap-1.5 text-theme-text-muted">
+            {inputModalities.length > 0 && (
+                <span className="inline-flex items-center gap-1">
+                    {inputModalities.map((key) => {
+                        const Icon = MODALITY_ICON[key];
+                        return <Icon key={key} className="h-4 w-4" />;
+                    })}
+                </span>
             )}
-            {capabilityIcons.length > 0 && (
-                <Chip intent="neutral" size="sm">
-                    {capabilityIcons.map((emoji) => (
-                        <span key={emoji}>{emoji}</span>
-                    ))}
-                </Chip>
+            {inputModalities.length > 0 && capabilities.length > 0 && (
+                <span className="h-3.5 w-px bg-current opacity-30" />
             )}
-        </>
+            {capabilities.length > 0 && (
+                <span className="inline-flex items-center gap-1 text-theme-text-soft">
+                    {capabilities.map((key) => {
+                        const Icon = CAPABILITY_ICON[key];
+                        return <Icon key={key} className="h-4 w-4" />;
+                    })}
+                </span>
+            )}
+        </div>
     );
 };
 
 // --- Main export ---
 
 export const UnifiedModelTable: FC<UnifiedModelTableProps> = ({
+    allModels,
     imageModels,
     videoModels,
+    model3dModels,
     textModels,
+    communityModels,
     audioModels,
     realtimeModels,
     embeddingModels,
     activeTab,
-    tierBalance,
-    packBalance,
+    sortKey,
+    sortDir,
+    onSort,
 }) => {
     const sections: { type: SectionType; models: ModelPrice[] }[] = [
+        { type: "all", models: allModels },
         { type: "image", models: imageModels },
         { type: "video", models: videoModels },
-        ...(audioModels.length > 0
-            ? [{ type: "audio" as const, models: audioModels }]
-            : []),
-        ...(realtimeModels.length > 0
-            ? [{ type: "realtime" as const, models: realtimeModels }]
-            : []),
+        { type: "3d", models: model3dModels },
+        { type: "audio", models: audioModels },
+        { type: "realtime", models: realtimeModels },
         { type: "text", models: textModels },
-        ...(embeddingModels.length > 0
-            ? [{ type: "embedding" as const, models: embeddingModels }]
-            : []),
+        { type: "community", models: communityModels },
+        { type: "embedding", models: embeddingModels },
     ];
 
-    const [sortKey, setSortKey] = useState<SortKey>("perPollen");
-    const [sortDir, setSortDir] = useState<SortDir>("desc");
     const activeSection = sections.find((s) => s.type === activeTab);
 
-    const onSort = (key: SortKey) => {
-        if (key === sortKey) {
-            setSortDir(sortDir === "asc" ? "desc" : "asc");
-        } else {
-            setSortKey(key);
-            setSortDir(DEFAULT_DIR[key]);
-        }
-    };
-
-    const sortArrow = (key: SortKey) =>
+    const sortArrow = (key: ModelSortKey) =>
         sortKey === key ? (sortDir === "asc" ? "↑" : "↓") : null;
 
     return (
         <div>
             {/* Column headers (sortable) */}
-            <div className="flex items-center pb-2 pr-4 md:pr-8">
+            <div className="hidden items-center pb-2 pr-8 md:flex">
                 <button
                     type="button"
                     onClick={() => onSort("name")}
-                    className="flex-1 min-w-6 text-left pl-[52px] cursor-pointer hover:text-gray-700"
+                    className="flex-1 min-w-6 text-left pl-4 cursor-pointer hover:text-theme-text-base"
                 >
-                    <span className="text-sm font-bold text-gray-900">
+                    <span className="text-sm font-bold text-ink-900">
                         Model {sortArrow("name")}
                     </span>
                 </button>
@@ -615,62 +374,62 @@ export const UnifiedModelTable: FC<UnifiedModelTableProps> = ({
                     triggerAs="span"
                     content={
                         <span className="block w-[220px] whitespace-normal leading-snug">
-                            Based on average community usage. Actual costs vary
-                            with modality and output.
+                            Based on{" "}
+                            <span className="font-semibold text-theme-text-strong">
+                                average usage
+                            </span>
+                            . Actual costs vary with modality and output.
                         </span>
                     }
                 >
                     <button
                         type="button"
                         onClick={() => onSort("perPollen")}
-                        className="text-right min-[500px]:text-center shrink-0 w-[90px] translate-x-[14px] cursor-pointer hover:text-gray-700"
+                        className="text-right min-[500px]:text-center shrink-0 w-[90px] translate-x-[14px] cursor-pointer hover:text-theme-text-base"
                     >
-                        <div className="text-sm font-bold text-gray-900">
-                            1 pollen {sortArrow("perPollen")}
+                        <div className="text-sm font-bold text-ink-900">
+                            <span className="md:hidden">Gen</span>
+                            <span className="hidden md:inline">1 pollen</span>{" "}
+                            {sortArrow("perPollen")}
                         </div>
-                        <div className="text-xs font-normal text-gray-700 opacity-70 italic">
-                            ≈{" "}
-                            {activeSection
-                                ? unitLabels[activeSection.type]
-                                : ""}
+                        <div className="text-xs font-normal text-ink-700 opacity-70 italic">
+                            <span className="md:hidden">/pollen</span>
+                            <span className="hidden md:inline">≈ gen</span>
                         </div>
                     </button>
                 </Tooltip>
                 <button
                     type="button"
                     onClick={() => onSort("input")}
-                    className="hidden md:block text-center w-[100px] pl-7 shrink-0 cursor-pointer hover:text-gray-700"
+                    className="hidden md:block text-center w-[100px] pl-7 shrink-0 cursor-pointer hover:text-theme-text-base"
                 >
-                    <div className="text-sm font-bold text-gray-900">
+                    <div className="text-sm font-bold text-ink-900">
                         Input {sortArrow("input")}
                     </div>
-                    <div className="text-xs font-normal text-gray-700 opacity-70 italic">
+                    <div className="text-xs font-normal text-ink-700 opacity-70 italic">
                         pollen
                     </div>
                 </button>
                 <button
                     type="button"
                     onClick={() => onSort("output")}
-                    className="hidden md:block text-center w-[100px] pl-7 shrink-0 cursor-pointer hover:text-gray-700"
+                    className="hidden md:block text-center w-[100px] pl-7 shrink-0 cursor-pointer hover:text-theme-text-base"
                 >
-                    <div className="text-sm font-bold text-gray-900">
+                    <div className="text-sm font-bold text-ink-900">
                         Output {sortArrow("output")}
                     </div>
-                    <div className="text-xs font-normal text-gray-700 opacity-70 italic">
+                    <div className="text-xs font-normal text-ink-700 opacity-70 italic">
                         pollen
                     </div>
                 </button>
             </div>
 
-            {/* Tab content */}
+            {/* Tab content — the selected modality */}
             {activeSection && (
                 <TabContent
-                    type={activeSection.type}
                     models={activeSection.models}
                     sortKey={sortKey}
                     sortDir={sortDir}
-                    tierBalance={tierBalance}
-                    packBalance={packBalance}
                 />
             )}
         </div>

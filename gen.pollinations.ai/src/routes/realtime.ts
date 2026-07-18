@@ -1,15 +1,23 @@
-import { getUserBalance } from "@shared/billing/balance.ts";
+import { getUserBalance, payerBucketToMeter } from "@shared/billing/balance.ts";
 import {
     handleBalanceDeduction,
     type MarkupResolution,
 } from "@shared/billing/track-helpers.ts";
-import { getRealClientIp } from "@shared/client-ip.ts";
-import { DEFAULT_REALTIME_MODEL } from "@shared/registry/realtime.ts";
 import {
-    calculateCost,
-    calculatePrice,
-    getModelDefinition,
-    getPriceDefinition,
+    bytesToHex,
+    getRealClientIp,
+    hashIp,
+    stripIPv4MappedPrefix,
+    truncateIpToSubnet,
+} from "@shared/client-ip.ts";
+import { sendToTinybird } from "@shared/events.ts";
+import {
+    type CostDefinition,
+    calculateCostWithDefinition,
+    calculatePriceWithDefinition,
+    getPriceDefinitionForModel,
+    type ModelDefinition,
+    type PriceDefinition,
     type Usage,
     type UsageCost,
     type UsagePrice,
@@ -20,27 +28,20 @@ import {
     type TinybirdEvent,
     usageToEventParams,
 } from "@shared/schemas/generation-event.ts";
+import { getRoutePath } from "@shared/util.ts";
 import { drizzle } from "drizzle-orm/d1";
 import type { Context } from "hono";
 import { HTTPException } from "hono/http-exception";
 import type { Env } from "@/env.ts";
-import { sendToTinybird } from "@/events.ts";
-import {
-    type RealtimeRequestQueryParams,
-    RealtimeUsageSchema,
-} from "@/schemas/realtime.ts";
-import { generateRandomId, getRoutePath } from "@/util.ts";
+import { RealtimeUsageSchema } from "@/schemas/realtime.ts";
+import { generateRandomId } from "@/util.ts";
 import { checkBalance } from "@/utils/generation-access.ts";
 
-// Azure OpenAI realtime endpoint. The gpt-realtime-2 deployment lives on the
-// Sweden Central myceli resource (same resource as the gpt-audio models). The
-// realtime WebSocket path mirrors OpenAI's: /openai/v1/realtime?model=<deployment>.
+// Azure OpenAI realtime endpoint. The deployments live on the Sweden Central
+// myceli resource (same resource as the gpt-audio models). The realtime
+// WebSocket path mirrors OpenAI's: /openai/v1/realtime?model=<deployment>.
 const AZURE_REALTIME_WEBSOCKET_URL =
-    "https://myceli-prod-swedencentral.cognitiveservices.azure.com/openai/v1/realtime";
-// Azure deployment name for the realtime model (set when deploying via the
-// Azure CLI). Matches DEFAULT_REALTIME_MODEL here, but kept separate because
-// Azure deployment names are independent of the public model id.
-const AZURE_REALTIME_DEPLOYMENT = "gpt-realtime-2";
+    "https://myceli-prod-swedencentral.openai.azure.com/openai/v1/realtime";
 const CREDENTIAL_QUERY_PARAMS = new Set([
     "access_token",
     "api_key",
@@ -66,6 +67,11 @@ type RealtimeBillingContext = {
     apiKeyClientId?: string;
     apiKeyPollenBalance?: number | null;
     byopClientKeyId?: string | null;
+    modelRequested: string;
+    resolvedModelRequested: string;
+    modelDefinition: ModelDefinition<string>;
+    modelCostDefinition: CostDefinition;
+    modelPriceDefinition: PriceDefinition;
     requestId: string;
     requestPath: string;
     environment: string;
@@ -91,12 +97,6 @@ function requireAllowedModel(c: Context<Env>, model: string): void {
     }
 }
 
-function bytesToHex(bytes: ArrayBuffer): string {
-    return Array.from(new Uint8Array(bytes))
-        .map((byte) => byte.toString(16).padStart(2, "0"))
-        .join("");
-}
-
 async function createSafetyIdentifier(
     userId: string,
     secret: string,
@@ -105,17 +105,24 @@ async function createSafetyIdentifier(
     return bytesToHex(await crypto.subtle.digest("SHA-256", data));
 }
 
-function buildUpstreamUrl(): string {
+function buildUpstreamUrl(modelId: string): string {
     const upstreamUrl = new URL(AZURE_REALTIME_WEBSOCKET_URL);
-    upstreamUrl.searchParams.set("model", AZURE_REALTIME_DEPLOYMENT);
+    upstreamUrl.searchParams.set("model", modelId);
     return upstreamUrl.toString();
 }
 
 async function connectAzureRealtime(
     c: Context<Env>,
     userId: string,
+    modelId: string,
 ): Promise<WebSocket | Response> {
-    const response = (await fetch(buildUpstreamUrl(), {
+    if (!c.env.AZURE_MYCELI_PROD_SWEDEN_API_KEY) {
+        throw new HTTPException(503, {
+            message: "Azure realtime provider is not configured.",
+        });
+    }
+
+    const response = (await fetch(buildUpstreamUrl(modelId), {
         headers: {
             "api-key": c.env.AZURE_MYCELI_PROD_SWEDEN_API_KEY,
             "OpenAI-Safety-Identifier": await createSafetyIdentifier(
@@ -362,50 +369,6 @@ function redactCredentialQueryParams(url: URL): string {
     return redacted.toString();
 }
 
-async function hashIp(
-    ip: string | undefined,
-    salt: string,
-): Promise<string | undefined> {
-    if (!ip) return undefined;
-    const data = new TextEncoder().encode(`${salt}:${ip}`);
-    return bytesToHex(await crypto.subtle.digest("SHA-256", data));
-}
-
-function stripIPv4MappedPrefix(ip: string): string {
-    const match = ip.match(/^::ffff:(\d+\.\d+\.\d+\.\d+)$/i);
-    return match ? match[1] : ip;
-}
-
-function expandIPv6(ip: string): string {
-    if (!ip.includes("::")) {
-        return ip
-            .split(":")
-            .map((group) => group.padStart(4, "0"))
-            .join(":");
-    }
-    const halves = ip.split("::");
-    const left = halves[0] ? halves[0].split(":") : [];
-    const right = halves[1] ? halves[1].split(":") : [];
-    const middle = Array(8 - left.length - right.length).fill("0000");
-    return [...left, ...middle, ...right]
-        .map((group) => group.padStart(4, "0"))
-        .join(":");
-}
-
-function truncateIpToSubnet(ip: string | undefined): string | undefined {
-    if (!ip) return undefined;
-    const normalized = stripIPv4MappedPrefix(ip);
-    if (normalized.includes(".")) {
-        const parts = normalized.split(".");
-        if (parts.length === 4) return `${parts[0]}.${parts[1]}.${parts[2]}.0`;
-    }
-    if (normalized.includes(":")) {
-        const groups = expandIPv6(normalized).split(":");
-        return `${groups[0]}:${groups[1]}:${groups[2]}::`;
-    }
-    return undefined;
-}
-
 function getPostDeductionBalances(
     payerBucket: "tier" | "pack" | null,
     balances: { tierBalance: number; packBalance: number },
@@ -414,9 +377,7 @@ function getPostDeductionBalances(
         return {};
     }
     return {
-        selectedMeterId: `local:${payerBucket}`,
-        selectedMeterSlug:
-            payerBucket === "tier" ? "v1:meter:tier" : "v1:meter:pack",
+        ...payerBucketToMeter(payerBucket),
         balances: {
             "v1:meter:tier": balances.tierBalance,
             "v1:meter:pack": balances.packBalance,
@@ -435,7 +396,6 @@ function createRealtimeTrackingEvent(args: {
     payerBucket: "tier" | "pack" | null;
     balances: { tierBalance: number; packBalance: number };
 }): TinybirdEvent {
-    const model = getModelDefinition(DEFAULT_REALTIME_MODEL);
     return {
         id: generateRandomId(),
         requestId: args.tracking.requestId,
@@ -461,13 +421,13 @@ function createRealtimeTrackingEvent(args: {
         apiKeyClientId: args.tracking.apiKeyClientId,
         referrerUrl: args.tracking.referrerUrl,
         referrerDomain: args.tracking.referrerDomain,
-        modelRequested: DEFAULT_REALTIME_MODEL,
-        resolvedModelRequested: DEFAULT_REALTIME_MODEL,
-        modelUsed: DEFAULT_REALTIME_MODEL,
-        modelProviderUsed: model.provider,
+        modelRequested: args.tracking.modelRequested,
+        resolvedModelRequested: args.tracking.resolvedModelRequested,
+        modelUsed: args.tracking.resolvedModelRequested,
+        modelProviderUsed: args.tracking.modelDefinition.provider,
         isBilledUsage: true,
         ...getPostDeductionBalances(args.payerBucket, args.balances),
-        ...priceToEventParams(getPriceDefinition(DEFAULT_REALTIME_MODEL) ?? {}),
+        ...priceToEventParams(args.tracking.modelPriceDefinition),
         ...usageToEventParams(args.usage),
         totalCost: args.cost.totalCost,
         totalPrice: args.price.totalPrice + (args.markup?.devCredit ?? 0),
@@ -489,8 +449,16 @@ async function settleRealtimeSession(
         return;
     }
 
-    const cost = calculateCost(DEFAULT_REALTIME_MODEL, usage);
-    const price = calculatePrice(DEFAULT_REALTIME_MODEL, usage);
+    const cost = calculateCostWithDefinition(
+        tracking.resolvedModelRequested,
+        usage,
+        tracking.modelCostDefinition,
+    );
+    const price = calculatePriceWithDefinition(
+        tracking.resolvedModelRequested,
+        usage,
+        tracking.modelPriceDefinition,
+    );
     if (price.totalPrice <= 0) {
         tracking.settled = true;
         return;
@@ -509,7 +477,7 @@ async function settleRealtimeSession(
         apiKeyId: tracking.apiKeyId,
         apiKeyPollenBalance: tracking.apiKeyPollenBalance,
         byopClientKeyId: tracking.byopClientKeyId,
-        modelResolved: DEFAULT_REALTIME_MODEL,
+        modelPaidOnly: tracking.modelDefinition.paidOnly,
     });
 
     if (!tracking.rateLimitConsumed) {
@@ -652,6 +620,15 @@ async function createRealtimeBillingContext(
     const clientIp =
         rawIp !== "unknown" ? stripIPv4MappedPrefix(rawIp) : undefined;
     const referrer = extractReferrerHeader(c);
+    const modelInfo = c.var.model;
+    const modelPriceDefinition = getPriceDefinitionForModel(
+        modelInfo.definition,
+    );
+    if (!modelInfo.definition.cost || !modelPriceDefinition) {
+        throw new Error(
+            `Failed to get price definition for model: ${modelInfo.resolved}`,
+        );
+    }
 
     return {
         userId: user.id,
@@ -668,6 +645,11 @@ async function createRealtimeBillingContext(
         apiKeyClientId: c.var.auth.apiKey?.byopClientKeyId ?? undefined,
         apiKeyPollenBalance: c.var.auth.apiKey?.pollenBalance,
         byopClientKeyId: c.var.auth.apiKey?.byopClientKeyId,
+        modelRequested: modelInfo.requested,
+        resolvedModelRequested: modelInfo.resolved,
+        modelDefinition: modelInfo.definition,
+        modelCostDefinition: modelInfo.definition.cost,
+        modelPriceDefinition,
         requestId: c.get("requestId"),
         requestPath: getRoutePath(c),
         environment: c.env.ENVIRONMENT,
@@ -696,31 +678,19 @@ export async function handleRealtimeWebSocket(
     });
     const user = c.var.auth.requireUser();
 
-    const query = c.req.valid("query" as never) as RealtimeRequestQueryParams;
-    const requestedModel = query.model;
-    if (requestedModel !== DEFAULT_REALTIME_MODEL) {
-        throw new HTTPException(400, {
-            message: `Only ${DEFAULT_REALTIME_MODEL} is currently supported for realtime sessions.`,
-        });
-    }
-    requireAllowedModel(c, requestedModel);
+    const resolvedModel = c.var.model.resolved;
+    requireAllowedModel(c, resolvedModel);
 
     // Same model-independent, estimated-price balance gate as every other
-    // generation route (tier or pack balance, paidOnly handled by the model
-    // definition). checkBalance reads model.resolved.
-    c.set("model", {
-        requested: requestedModel,
-        resolved: DEFAULT_REALTIME_MODEL,
-    });
+    // generation route (tier or pack balance, paidOnly handled by the resolved
+    // model definition). checkBalance reads c.var.model.
     await checkBalance(c.var, c.env);
 
-    if (!c.env.AZURE_MYCELI_PROD_SWEDEN_API_KEY) {
-        throw new HTTPException(503, {
-            message: "Azure realtime provider is not configured.",
-        });
-    }
-
-    const upstream = await connectAzureRealtime(c, user.id);
+    const upstream = await connectAzureRealtime(
+        c,
+        user.id,
+        c.var.model.definition.modelId,
+    );
     if (upstream instanceof Response) return upstream;
 
     return proxyRealtimeWebSockets(

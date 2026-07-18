@@ -1,12 +1,9 @@
+import { Markdown, Surface } from "@pollinations/ui";
+import { useNavigate, useRouterState } from "@tanstack/react-router";
 import type { FC } from "react";
 import { useEffect, useState } from "react";
-import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
 import faqMarkdown from "../../../../POLLEN_FAQ.md?raw";
 import { PollenExamples } from "../models/pollen-examples.tsx";
-
-export const FAQ_GITHUB_URL =
-    "https://github.com/pollinations/pollinations/blob/master/enter.pollinations.ai/POLLEN_FAQ.md";
 
 type FAQItem = {
     question: string;
@@ -70,8 +67,12 @@ type FAQProps = {
 
 export const FAQ: FC<FAQProps> = ({ showTitle = true }) => {
     const [openIndices, setOpenIndices] = useState<Set<number>>(new Set());
+    const hash = useRouterState({ select: (state) => state.location.hash });
+    const navigate = useNavigate();
 
     const toggleQuestion = (index: number) => {
+        const slug = generateSlug(faqData[index]?.question ?? "");
+        const isOpen = openIndices.has(index);
         setOpenIndices((prev) => {
             const next = new Set(prev);
             if (next.has(index)) {
@@ -81,50 +82,36 @@ export const FAQ: FC<FAQProps> = ({ showTitle = true }) => {
             }
             return next;
         });
+        if (!isOpen || hash === slug) {
+            void navigate({
+                to: "/news",
+                hash: isOpen ? "" : slug,
+            });
+        }
     };
 
     // Auto-expand FAQ item when navigating via anchor link
     useEffect(() => {
-        const handleHashChange = () => {
-            const hash = window.location.hash.slice(1); // Remove #
-            if (hash) {
-                const index = faqData.findIndex(
-                    (item) => generateSlug(item.question) === hash,
-                );
-                if (index !== -1) {
-                    // Expand the FAQ item
-                    setOpenIndices((prev) => {
-                        const next = new Set(prev);
-                        next.add(index);
-                        return next;
-                    });
+        if (!hash) return;
+        const index = faqData.findIndex(
+            (item) => generateSlug(item.question) === hash,
+        );
+        if (index === -1) return;
 
-                    // Scroll to the element after a brief delay to ensure it's rendered
-                    setTimeout(() => {
-                        const element = document.getElementById(hash);
-                        if (element) {
-                            element.scrollIntoView({
-                                behavior: "smooth",
-                                block: "start",
-                            });
-                        }
-                    }, 500);
-                }
-            }
-        };
-
-        // Check on mount
-        handleHashChange();
-
-        // Listen for hash changes
-        window.addEventListener("hashchange", handleHashChange);
-        return () => window.removeEventListener("hashchange", handleHashChange);
-    }, []);
+        setOpenIndices((prev) => new Set(prev).add(index));
+        const timeout = window.setTimeout(() => {
+            document.getElementById(hash)?.scrollIntoView({
+                behavior: "smooth",
+                block: "start",
+            });
+        }, 500);
+        return () => window.clearTimeout(timeout);
+    }, [hash]);
 
     return (
         <>
             {showTitle && (
-                <h2 className="px-1 text-left text-lg font-semibold text-violet-950 sm:text-xl">
+                <h2 className="px-1 text-left text-lg font-semibold text-theme-text-strong sm:text-xl">
                     FAQ
                 </h2>
             )}
@@ -140,24 +127,23 @@ export const FAQ: FC<FAQProps> = ({ showTitle = true }) => {
                             <button
                                 type="button"
                                 onClick={() => toggleQuestion(index)}
-                                className="w-full text-left flex justify-between items-start gap-4 text-violet-950 hover:text-violet-800 transition-colors"
+                                className="w-full text-left flex justify-between items-start gap-4 text-theme-text-soft hover:text-theme-text-strong transition-colors"
                             >
-                                <span className="flex-1 font-bold text-violet-700">
-                                    {item.question}
-                                </span>
+                                <span className="flex-1">{item.question}</span>
                                 <span className="text-2xl flex-shrink-0 font-normal">
                                     {openIndices.has(index) ? "−" : "+"}
                                 </span>
                             </button>
                             {openIndices.has(index) && (
-                                <div className="mt-3 text-gray-600 leading-relaxed prose prose-sm max-w-none prose-ul:list-disc prose-ul:pl-6 prose-ul:space-y-2 prose-li:text-gray-600 prose-p:mb-3 prose-a:text-purple-600 prose-a:underline prose-a:font-medium hover:prose-a:text-purple-800">
-                                    <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                                        {item.answer}
-                                    </ReactMarkdown>
+                                <Surface
+                                    variant="card"
+                                    className="mt-3 flex flex-col gap-3 text-theme-text-base"
+                                >
+                                    <Markdown>{item.answer}</Markdown>
                                     {item.question.includes(
                                         "What can I create with Pollen",
                                     ) && <PollenExamples />}
-                                </div>
+                                </Surface>
                             )}
                         </div>
                     );

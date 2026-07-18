@@ -44,7 +44,8 @@ export async function getAudioVoices() {
         }
         if (voices.size > 0) return Array.from(voices);
     } catch {}
-    // Last-resort fallback. Registry normally covers this.
+    // Last-resort fallback. Keep in sync with AUDIO_VOICES in
+    // shared/registry/text.ts (the canonical list the API serves).
     return [
         "alloy",
         "echo",
@@ -57,6 +58,8 @@ export async function getAudioVoices() {
         "ballad",
         "ash",
         "sage",
+        "amuch",
+        "dan",
     ];
 }
 

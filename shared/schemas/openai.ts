@@ -83,6 +83,9 @@ const CacheControlSchema = z
     .object({
         type: z.enum(["ephemeral"]),
     })
+    .describe(
+        "Marks the end of a static prompt prefix to cache (Gemini, Claude, and Nova models). Place on the final content block of the prefix; repeat requests bill the cached prefix at ~10% of the input rate. See Text Generation → Prompt caching.",
+    )
     .optional()
     .meta({ $id: "CacheControl" });
 
@@ -132,7 +135,7 @@ export type MessageContentPart = z.infer<
     typeof ChatCompletionRequestMessageContentPartSchema
 >;
 
-// Thinking (provider-specific; requires strict_openai_compliance=false)
+// Provider response content blocks. These are not request-level controls.
 const ChatCompletionMessageContentPartThinkingSchema = z.object({
     type: z.literal("thinking"),
     thinking: z.string(),
@@ -264,28 +267,16 @@ const ChatCompletionStreamOptionsSchema = z
     .nullable()
     .optional();
 
-const ThinkingSchema = z
-    .object({
-        type: z.enum(["enabled", "disabled"]).default("disabled"),
-        budget_tokens: z.number().int().min(1).optional(),
-    })
-    .nullable()
-    .optional();
-
 const ReasoningConfigSchema = z
     .object({
         effort: z
             .enum(["none", "minimal", "low", "medium", "high", "xhigh"])
             .optional(),
-        max_tokens: z.number().int().min(0).optional(),
-        exclude: z.boolean().optional(),
-        enabled: z.boolean().optional(),
         summary: z.enum(["auto", "concise", "detailed"]).optional(),
-        // Deprecated by OpenAI, still accepted by Portkey docs.
+        // Deprecated by OpenAI; retained for wire compatibility.
         generate_summary: z.enum(["auto", "concise", "detailed"]).optional(),
     })
     .passthrough();
-
 export const CreateChatCompletionRequestSchema = z
     .object({
         messages: z.array(ChatCompletionRequestMessageSchema),
@@ -324,25 +315,19 @@ export const CreateChatCompletionRequestSchema = z
             .optional()
             .default(0),
         response_format: ResponseFormatUnionSchema.optional(),
-        seed: z
-            .number()
-            .int()
-            .min(-1)
-            .max(Number.MAX_SAFE_INTEGER)
-            .nullable()
-            .optional(),
+        seed: z.number().int().min(-1).max(2147483647).nullable().optional(),
         stop: z
             .union([z.string().nullable(), z.array(z.string()).min(1).max(4)])
             .optional(),
         stream: z.boolean().nullable().optional().default(false),
         stream_options: ChatCompletionStreamOptionsSchema,
         safe: SafeSchema,
-        thinking: ThinkingSchema,
-        reasoning: ReasoningConfigSchema.optional(),
         reasoning_effort: z
             .enum(["none", "minimal", "low", "medium", "high", "xhigh"])
+            .describe(
+                'Requests reasoning depth for models that support adjustable reasoning. "none" requests no reasoning.',
+            )
             .optional(),
-        thinking_budget: z.number().int().min(0).optional(),
         temperature: z.number().min(0).max(2).nullable().optional(),
         top_p: z.number().min(0).max(1).nullable().optional(),
         tools: z.array(ChatCompletionToolSchema).optional(),
@@ -369,13 +354,18 @@ export type CreateChatCompletionRequest = z.infer<
 
 export const CreateResponseRequestSchema = z
     .object({
-        model: z.string().optional(),
+        model: z.string().optional().default(DEFAULT_TEXT_MODEL).meta({
+            description:
+                "AI model for response generation. See /v1/models for models that list /v1/responses.",
+        }),
         input: z.union([z.string(), z.array(z.unknown())]),
-        instructions: z.string().optional(),
+        instructions: z.string().nullish(),
         reasoning: ReasoningConfigSchema.optional(),
         max_output_tokens: z.number().int().min(0).optional(),
-        stream: z.literal(false).optional(),
-        store: z.boolean().optional(),
+        stream: z.boolean().optional().default(false),
+        // Response retrieval is not exposed, so persisted upstream state would
+        // be unreachable through Pollinations.
+        store: z.literal(false).optional().default(false),
         text: z.record(z.string(), z.any()).optional(),
         tools: z.array(z.record(z.string(), z.any())).optional(),
         tool_choice: z.any().optional(),
@@ -399,18 +389,6 @@ const ChatCompletionMessageContentBlockSchema = z.union([
         .passthrough(),
 ]);
 
-const ChatCompletionReasoningDetailSchema = z
-    .object({
-        type: z.string(),
-        text: z.string().optional(),
-        summary: z.string().optional(),
-        signature: z.string().nullish(),
-        id: z.string().nullish(),
-        format: z.string().optional(),
-        index: z.number().int().nonnegative().optional(),
-    })
-    .passthrough();
-
 const ChatCompletionResponseMessageSchema = z.object({
     content: z.string().nullish(),
     tool_calls: ChatCompletionMessageToolCallsSchema.nullish(),
@@ -432,9 +410,6 @@ const ChatCompletionResponseMessageSchema = z.object({
         .nullish(),
     // DeepSeek reasoning format
     reasoning_content: z.string().nullish(),
-    // OpenRouter reasoning format
-    reasoning: z.string().nullish(),
-    reasoning_details: z.array(ChatCompletionReasoningDetailSchema).nullish(),
 });
 
 const ChatCompletionTokenTopLogprobSchema = z.object({
@@ -458,6 +433,7 @@ const ChatCompletionChoiceLogprobsSchema = z
 
 export const CompletionUsageSchema = z
     .object({
+        cached_input_tokens: z.number().int().nonnegative().nullish(),
         cache_creation_input_tokens: z.number().int().nonnegative().nullish(),
         cache_read_input_tokens: z.number().int().nonnegative().nullish(),
         completion_tokens: z.number().int().nonnegative(),
@@ -485,6 +461,7 @@ export const CompletionUsageSchema = z
                 image_tokens: z.number().int().nonnegative().nullish(),
             })
             .nullish(),
+        reasoning_tokens: z.number().int().nonnegative().nullish(),
         total_tokens: z.number().int().nonnegative(),
     })
     .meta({ $id: "CompletionUsage" });
@@ -585,9 +562,6 @@ export const PromptFilterResultSchema = z.array(
     }),
 );
 
-const UserTierSchema = z.literal(["anonymous", "seed", "flower", "nectar"]);
-export type UserTier = z.infer<typeof UserTierSchema>;
-
 const CompletionChoiceSchema = z.object({
     // Accept any string - backends may return various values (stop, length, error, max_tokens, etc.)
     finish_reason: z.string().nullable().optional(),
@@ -602,70 +576,16 @@ export const CreateChatCompletionResponseSchema = z.object({
     choices: z.array(CompletionChoiceSchema),
     prompt_filter_results: PromptFilterResultSchema.nullish(),
     created: z.number().int(),
-    model: z.string(),
+    model: z.string().optional(),
     system_fingerprint: z.string().nullish(),
     object: z.literal("chat.completion"),
     usage: CompletionUsageSchema.optional(),
-    user_tier: UserTierSchema.optional(),
     citations: z.array(z.string()).optional(), // Perplexity citations
 });
 
 export type CreateChatCompletionResponse = z.infer<
     typeof CreateChatCompletionResponseSchema
 >;
-
-const ChatCompletionMessageToolCallChunkSchema = z.object({
-    index: z.number().int().nonnegative(),
-    id: z.string().optional(),
-    type: z.literal("function").optional(),
-    function: z
-        .object({
-            name: z.string().optional(),
-            arguments: z.string().optional(),
-        })
-        .optional(),
-});
-
-const ChatCompletionStreamResponseDeltaSchema = z.object({
-    content: z.string().nullable().optional(),
-    function_call: z
-        .object({
-            arguments: z.string().optional(),
-            name: z.string().optional(),
-        })
-        .optional(),
-    tool_calls: z.array(ChatCompletionMessageToolCallChunkSchema).optional(),
-    role: z.enum(["system", "user", "assistant", "tool"]).optional(),
-    // Reasoning/thinking fields for streaming
-    reasoning_content: z.string().optional(),
-    reasoning: z.string().optional(),
-    reasoning_details: z.array(ChatCompletionReasoningDetailSchema).optional(),
-    content_blocks: z.array(ChatCompletionMessageContentBlockSchema).optional(),
-});
-
-export const CreateChatCompletionStreamResponseSchema = z.object({
-    id: z.string(),
-    choices: z.array(
-        z.object({
-            delta: ChatCompletionStreamResponseDeltaSchema,
-            logprobs: ChatCompletionChoiceLogprobsSchema.optional(),
-            // Accept any string - backends may return various values
-            finish_reason: z.string().nullable().optional(),
-            index: z.number().int().nonnegative(),
-        }),
-    ),
-    created: z.number().int(),
-    model: z.string(),
-    system_fingerprint: z.string().nullish(),
-    object: z.literal("chat.completion.chunk"),
-    usage: z
-        .object({
-            completion_tokens: z.number().int(),
-            prompt_tokens: z.number().int(),
-            total_tokens: z.number().int(),
-        })
-        .optional(),
-});
 
 const OpenAIModelSchema = z
     .object({
@@ -677,10 +597,6 @@ const OpenAIModelSchema = z
         supported_endpoints: z.array(z.string()).optional(),
         tools: z.boolean().optional(),
         reasoning: z.boolean().optional(),
-        responses: z.boolean().optional(),
-        responses_reasoning_summary: z.boolean().optional(),
-        responses_reasoning_text: z.boolean().optional(),
-        responses_reasoning_effort: z.boolean().optional(),
         context_length: z.number().optional(),
     })
     .meta({
@@ -751,7 +667,7 @@ export const CreateImageRequestSchema = z
             }),
         safe: SafeSchema,
     })
-    .passthrough() // Allow Pollinations extensions: seed, nologo, enhance, safe, etc.
+    .passthrough() // Allow Pollinations extensions: seed, safe, etc.
     .meta({ $id: "CreateImageRequest" });
 
 export type CreateImageRequest = z.infer<typeof CreateImageRequestSchema>;
@@ -762,10 +678,21 @@ const ImageDataSchema = z.object({
     revised_prompt: z.string().optional(),
 });
 
+export const ImageUsageSchema = z.object({
+    input_tokens: z.number().int().nonnegative(),
+    output_tokens: z.number().int().nonnegative(),
+    total_tokens: z.number().int().nonnegative(),
+    input_tokens_details: z.object({
+        text_tokens: z.number().int().nonnegative(),
+        image_tokens: z.number().int().nonnegative(),
+    }),
+});
+
 export const CreateImageResponseSchema = z
     .object({
         created: z.number().int(),
         data: z.array(ImageDataSchema),
+        usage: ImageUsageSchema,
     })
     .meta({ $id: "CreateImageResponse" });
 

@@ -1,50 +1,74 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { getPeriodBucketKeys, periodBucketKeyToDate } from "@pollinations/ui";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { apiClient } from "../../api.ts";
-import { getPeriodBucketKeys, periodBucketKeyToDate } from "./period-utils.ts";
-import type { DataPoint, ModelBreakdown, UsagePeriodSelection } from "./types";
+import type {
+    DataPoint,
+    Metric,
+    ModelBreakdown,
+    UsagePeriodSelection,
+} from "./types";
+
+export type EarningsSource = "byop_markup" | "community_model";
 
 export type DeveloperEarningsRow = {
     date: string;
-    app_key_id: string;
-    app_name: string;
+    entity_id: string;
+    entity_name: string;
+    source: EarningsSource;
     requests: number;
+    paid_requests: number;
+    tier_requests: number;
+    baseline_price: number;
     pollen_earned: number;
-    /** Earnings from paid-balance spend. Optional — pipe may not yet split. */
-    paid_earned?: number;
-    /** Earnings from tier-balance spend. Optional — pipe may not yet split. */
-    tier_earned?: number;
-    markup_rate: number;
-    unique_users: number;
+    paid_earned: number;
+    tier_earned: number;
+    cost_usd: number;
+    reward_rate: number;
 };
 
 export type EarningsFilterState = {
     period: UsagePeriodSelection;
+    metric: Metric;
     selectedAppKeyIds: string[];
+    selectedModelIds: string[];
 };
 
-type TopApp = {
+type TopEarningEntity = {
     id: string;
     label: string;
     requests: number;
     pollen: number;
-    paidPollen: number;
-    tierPollen: number;
-    uniqueUsers: number;
 };
+
+function filterRowsBySelection(
+    rows: DeveloperEarningsRow[],
+    appKeyIds: string[],
+    modelIds: string[],
+): DeveloperEarningsRow[] {
+    if (appKeyIds.length === 0 && modelIds.length === 0) return rows;
+    const appKeyIdSet = new Set(appKeyIds);
+    const modelIdSet = new Set(modelIds);
+    return rows.filter(
+        (row) =>
+            (row.source === "byop_markup" && appKeyIdSet.has(row.entity_id)) ||
+            (row.source === "community_model" && modelIdSet.has(row.entity_id)),
+    );
+}
 
 type EarningsDataResult = {
     loading: boolean;
     error: string | null;
     fetchEarnings: () => void;
+    usedApps: { id: string; label: string }[];
+    usedModels: { id: string; label: string }[];
     chartData: DataPoint[];
     stats: {
+        totalRequests: number;
         totalPollen: number;
         totalPaid: number;
         totalTier: number;
-        averageMarkupRate: number;
-        activeUsers: number;
-        appCount: number;
-        topApp: TopApp | null;
+        entityCount: number;
+        topEntity: TopEarningEntity | null;
     };
 };
 
@@ -54,41 +78,22 @@ export function useEarningsData(
     const [dailyEarnings, setDailyEarnings] = useState<DeveloperEarningsRow[]>(
         [],
     );
-    const [perApp, setPerApp] = useState<DeveloperEarningsRow[]>([]);
-    const [globalSummary, setGlobalSummary] =
-        useState<DeveloperEarningsRow | null>(null);
+    const [perEntity, setPerEntity] = useState<DeveloperEarningsRow[]>([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
-    const inFlightRef = useRef<AbortController | null>(null);
 
-    const selectedAppKeyIdsKey = filters.selectedAppKeyIds.join(",");
     const { granularity, period } = filters.period;
 
     const fetchEarnings = useCallback(() => {
-        inFlightRef.current?.abort();
-        const controller = new AbortController();
-        inFlightRef.current = controller;
-
         setLoading(true);
         setError(null);
         setDailyEarnings([]);
-        setPerApp([]);
-        setGlobalSummary(null);
+        setPerEntity([]);
 
-        const query: {
-            granularity: string;
-            period: string;
-            api_key_ids?: string;
-        } = {
-            granularity,
-            period,
-        };
-        if (selectedAppKeyIdsKey) {
-            query.api_key_ids = selectedAppKeyIdsKey;
-        }
+        const query = { granularity, period };
 
         apiClient.account.earnings
-            .$get({ query }, { init: { signal: controller.signal } })
+            .$get({ query })
             .then((r) => {
                 if (!r.ok)
                     throw new Error(
@@ -96,74 +101,126 @@ export function useEarningsData(
                     );
                 return r.json() as Promise<{
                     daily: DeveloperEarningsRow[];
-                    perApp: DeveloperEarningsRow[];
-                    global: DeveloperEarningsRow | null;
+                    perEntity: DeveloperEarningsRow[];
                 }>;
             })
             .then((data) => {
-                if (controller.signal.aborted) return;
                 setDailyEarnings(data.daily);
-                setPerApp(data.perApp);
-                setGlobalSummary(data.global);
+                setPerEntity(data.perEntity);
             })
             .catch((err) => {
-                if (controller.signal.aborted) return;
                 console.error("Earnings fetch error:", err);
                 setError(err.message || "Failed to load earnings data");
                 setDailyEarnings([]);
-                setPerApp([]);
-                setGlobalSummary(null);
+                setPerEntity([]);
             })
             .finally(() => {
-                if (controller.signal.aborted) return;
                 setLoading(false);
             });
-    }, [granularity, period, selectedAppKeyIdsKey]);
+    }, [granularity, period]);
 
     useEffect(() => {
         fetchEarnings();
-        return () => {
-            inFlightRef.current?.abort();
-        };
     }, [fetchEarnings]);
+
+    const usedApps = useMemo(() => {
+        const appLabels = new Map<string, string>();
+        for (const row of perEntity) {
+            if (row.source !== "byop_markup" || !row.entity_id) continue;
+            if (appLabels.has(row.entity_id)) continue;
+            appLabels.set(row.entity_id, row.entity_name);
+        }
+
+        return Array.from(appLabels.entries())
+            .map(([id, label]) => ({ id, label }))
+            .sort((a, b) => a.label.localeCompare(b.label));
+    }, [perEntity]);
+
+    const usedModels = useMemo(() => {
+        const modelLabels = new Map<string, string>();
+        for (const row of perEntity) {
+            if (row.source !== "community_model" || !row.entity_id) continue;
+            if (modelLabels.has(row.entity_id)) continue;
+            modelLabels.set(row.entity_id, row.entity_name);
+        }
+
+        return Array.from(modelLabels.entries())
+            .map(([id, label]) => ({ id, label }))
+            .sort((a, b) => a.label.localeCompare(b.label));
+    }, [perEntity]);
+
+    const effectiveAppKeyIds = useMemo(() => {
+        const valid = new Set(usedApps.map((app) => app.id));
+        return filters.selectedAppKeyIds.filter((id) => valid.has(id));
+    }, [usedApps, filters.selectedAppKeyIds]);
+
+    const effectiveModelIds = useMemo(() => {
+        const valid = new Set(usedModels.map((model) => model.id));
+        return filters.selectedModelIds.filter((id) => valid.has(id));
+    }, [usedModels, filters.selectedModelIds]);
+
+    const filteredDailyEarnings = useMemo(
+        () =>
+            filterRowsBySelection(
+                dailyEarnings,
+                effectiveAppKeyIds,
+                effectiveModelIds,
+            ),
+        [dailyEarnings, effectiveAppKeyIds, effectiveModelIds],
+    );
+
+    const filteredPerEntity = useMemo(
+        () =>
+            filterRowsBySelection(
+                perEntity,
+                effectiveAppKeyIds,
+                effectiveModelIds,
+            ),
+        [perEntity, effectiveAppKeyIds, effectiveModelIds],
+    );
 
     const chartData = useMemo<DataPoint[]>(() => {
         type DayBucket = {
             requests: number;
             pollen: number;
-            paid: number;
-            tier: number;
-            byApp: Map<
+            paidRequests: number;
+            tierRequests: number;
+            paidPollen: number;
+            tierPollen: number;
+            byEntity: Map<
                 string,
                 { label: string; requests: number; pollen: number }
             >;
         };
         const buckets = new Map<string, DayBucket>();
 
-        for (const r of dailyEarnings) {
-            const dateKey = r.date;
-            const cur = buckets.get(dateKey) || {
+        for (const row of filteredDailyEarnings) {
+            const current = buckets.get(row.date) || {
                 requests: 0,
                 pollen: 0,
-                paid: 0,
-                tier: 0,
-                byApp: new Map(),
+                paidRequests: 0,
+                tierRequests: 0,
+                paidPollen: 0,
+                tierPollen: 0,
+                byEntity: new Map(),
             };
-            cur.requests += r.requests;
-            cur.pollen += r.pollen_earned;
-            // If pipe doesn't yet split, fall back to all-paid.
-            cur.paid += r.paid_earned ?? r.pollen_earned;
-            cur.tier += r.tier_earned ?? 0;
+            current.requests += row.requests;
+            current.pollen += row.pollen_earned;
+            current.paidRequests += row.paid_requests;
+            current.tierRequests += row.tier_requests;
+            current.paidPollen += row.paid_earned;
+            current.tierPollen += row.tier_earned;
 
-            const appData = cur.byApp.get(r.app_key_id) || {
-                label: r.app_name,
+            const entityKey = `${row.source}:${row.entity_id}`;
+            const entityData = current.byEntity.get(entityKey) || {
+                label: row.entity_name,
                 requests: 0,
                 pollen: 0,
             };
-            appData.requests += r.requests;
-            appData.pollen += r.pollen_earned;
-            cur.byApp.set(r.app_key_id, appData);
-            buckets.set(dateKey, cur);
+            entityData.requests += row.requests;
+            entityData.pollen += row.pollen_earned;
+            current.byEntity.set(entityKey, entityData);
+            buckets.set(row.date, current);
         }
 
         const isHourly = filters.period.granularity === "day";
@@ -174,24 +231,36 @@ export function useEarningsData(
                 bucketKey,
                 filters.period.granularity,
             );
-            const d = buckets.get(bucketKey) || {
+            const bucket = buckets.get(bucketKey) || {
                 requests: 0,
                 pollen: 0,
-                paid: 0,
-                tier: 0,
-                byApp: new Map<
+                paidRequests: 0,
+                tierRequests: 0,
+                paidPollen: 0,
+                tierPollen: 0,
+                byEntity: new Map<
                     string,
                     { label: string; requests: number; pollen: number }
                 >(),
             };
-            const appBreakdown: ModelBreakdown[] = Array.from(d.byApp.entries())
-                .map(([appKeyId, appStats]) => ({
-                    model: appKeyId,
-                    label: appStats.label,
-                    requests: appStats.requests,
-                    pollen: appStats.pollen,
+            const entityBreakdown: ModelBreakdown[] = Array.from(
+                bucket.byEntity.entries(),
+            )
+                .map(([entityKey, entityStats]) => ({
+                    model: entityKey,
+                    label: entityStats.label,
+                    requests: entityStats.requests,
+                    pollen: entityStats.pollen,
                 }))
-                .sort((a, b) => b.pollen - a.pollen);
+                .sort((a, b) => {
+                    const left =
+                        filters.metric === "requests" ? a.requests : a.pollen;
+                    const right =
+                        filters.metric === "requests" ? b.requests : b.pollen;
+                    return right - left;
+                });
+
+            const isRequestsMetric = filters.metric === "requests";
 
             return {
                 label: isHourly
@@ -218,54 +287,70 @@ export function useEarningsData(
                         hour12: false,
                     }),
                 }),
-                value: d.pollen,
-                tierValue: d.tier,
-                paidValue: d.paid,
+                value: isRequestsMetric ? bucket.requests : bucket.pollen,
+                tierValue: isRequestsMetric
+                    ? bucket.tierRequests
+                    : bucket.tierPollen,
+                paidValue: isRequestsMetric
+                    ? bucket.paidRequests
+                    : bucket.paidPollen,
                 timestamp: date,
-                modelBreakdown: appBreakdown,
+                modelBreakdown: entityBreakdown,
             };
         });
-    }, [dailyEarnings, filters.period]);
+    }, [filteredDailyEarnings, filters.metric, filters.period]);
 
     const stats = useMemo(() => {
-        const totalPollen = globalSummary?.pollen_earned ?? 0;
-        const totalPaid =
-            globalSummary?.paid_earned ?? globalSummary?.pollen_earned ?? 0;
-        const totalTier = globalSummary?.tier_earned ?? 0;
-        const averageMarkupRate = globalSummary?.markup_rate ?? 0;
-        const activeUsers = globalSummary?.unique_users ?? 0;
-        const appCount = perApp.length;
+        const totalRequests = filteredPerEntity.reduce(
+            (sum, row) => sum + row.requests,
+            0,
+        );
+        const totalPollen = filteredPerEntity.reduce(
+            (sum, row) => sum + row.pollen_earned,
+            0,
+        );
+        const totalPaid = filteredPerEntity.reduce(
+            (sum, row) => sum + row.paid_earned,
+            0,
+        );
+        const totalTier = filteredPerEntity.reduce(
+            (sum, row) => sum + row.tier_earned,
+            0,
+        );
+        const entityCount = filteredPerEntity.length;
 
-        const topAppRow = [...perApp].sort(
-            (a, b) => b.pollen_earned - a.pollen_earned,
-        )[0];
-        const topApp: TopApp | null = topAppRow
+        const topEntityRow = [...filteredPerEntity].sort((a, b) => {
+            const left =
+                filters.metric === "requests" ? a.requests : a.pollen_earned;
+            const right =
+                filters.metric === "requests" ? b.requests : b.pollen_earned;
+            return right - left;
+        })[0];
+        const topEntity: TopEarningEntity | null = topEntityRow
             ? {
-                  id: topAppRow.app_key_id,
-                  label: topAppRow.app_name,
-                  requests: topAppRow.requests,
-                  pollen: topAppRow.pollen_earned,
-                  paidPollen: topAppRow.paid_earned ?? topAppRow.pollen_earned,
-                  tierPollen: topAppRow.tier_earned ?? 0,
-                  uniqueUsers: topAppRow.unique_users,
+                  id: topEntityRow.entity_id,
+                  label: topEntityRow.entity_name,
+                  requests: topEntityRow.requests,
+                  pollen: topEntityRow.pollen_earned,
               }
             : null;
 
         return {
+            totalRequests,
             totalPollen,
             totalPaid,
             totalTier,
-            averageMarkupRate,
-            activeUsers,
-            appCount,
-            topApp,
+            entityCount,
+            topEntity,
         };
-    }, [perApp, globalSummary]);
+    }, [filteredPerEntity, filters.metric]);
 
     return {
         loading,
         error,
         fetchEarnings,
+        usedApps,
+        usedModels,
         chartData,
         stats,
     };

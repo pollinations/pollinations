@@ -3,39 +3,41 @@ import type { ImageGenerationResult } from "../createAndReturnImages.ts";
 import { getImageEnv } from "../env.ts";
 import { HttpError } from "../httpError.ts";
 import type { ImageParams } from "../params.ts";
-import type { ProgressManager } from "../progressBar.ts";
 import { fetchUpstream } from "../utils/fetchUpstream.ts";
 import { base64ToBuffer, downloadUserImage } from "../utils/imageDownload.ts";
 
 const logOps = debug("pollinations:flux-klein:ops");
 const logError = debug("pollinations:flux-klein:error");
 
-// RunPod pod endpoint for Klein 4B (read lazily so dotenv has time to load)
-const getKleinGenerateUrl = () =>
-    `${getImageEnv("KLEIN_URL") || "https://lqh6weiexk4sth-8000.proxy.runpod.net"}/generate`;
+let kleinVpc: Fetcher | undefined;
+
+export function setKleinVpcBinding(binding: Fetcher | undefined): void {
+    kleinVpc = binding;
+}
+
+// Production uses the private Vast tunnel; other environments retain KLEIN_URL.
+const getKleinGenerateUrl = (): string => {
+    if (kleinVpc) {
+        return "http://127.0.0.1:8000/generate";
+    }
+    const url = getImageEnv("KLEIN_URL");
+    if (!url) {
+        throw new HttpError("KLEIN_URL is not configured", 500);
+    }
+    return `${url}/generate`;
+};
 const MAX_INPUT_IMAGES = 10;
 
 /**
- * Calls the Flux Klein API for image generation via RunPod pod (4B)
+ * Calls the self-hosted Flux Klein 4B API. Production uses the Vast VPC binding.
  */
 export const callFluxKleinAPI = async (
     prompt: string,
     safeParams: ImageParams,
-    progress: ProgressManager,
-    requestId: string,
 ): Promise<ImageGenerationResult> => {
     try {
         const hasReferenceImages =
             safeParams.image && safeParams.image.length > 0;
-
-        progress.updateBar(
-            requestId,
-            hasReferenceImages ? 25 : 35,
-            "Processing",
-            hasReferenceImages
-                ? `Downloading ${safeParams.image.length} reference image(s)...`
-                : "Generating with Flux Klein (4B)...",
-        );
 
         // Download and encode reference images if provided
         let imagesB64: string[] = [];
@@ -49,12 +51,6 @@ export const callFluxKleinAPI = async (
             );
             imagesB64 = downloads.map(({ buffer }) =>
                 buffer.toString("base64"),
-            );
-            progress.updateBar(
-                requestId,
-                50,
-                "Processing",
-                "Generating with Flux Klein (4B) editing...",
             );
         }
 
@@ -85,12 +81,16 @@ export const callFluxKleinAPI = async (
         }
 
         const kleinUrl = getKleinGenerateUrl();
-        const response = await fetchUpstream(kleinUrl, {
-            method: "POST",
-            headers,
-            body: JSON.stringify(body),
-            errorLabel: "Klein API request failed",
-        });
+        const response = await fetchUpstream(
+            kleinUrl,
+            {
+                method: "POST",
+                headers,
+                body: JSON.stringify(body),
+                errorLabel: "Klein API request failed",
+            },
+            kleinVpc?.fetch.bind(kleinVpc),
+        );
 
         const result = await response.json();
         const item = Array.isArray(result) ? result[0] : result;
@@ -110,13 +110,6 @@ export const callFluxKleinAPI = async (
             imageBuffer.length,
             "seed:",
             item.seed,
-        );
-
-        progress.updateBar(
-            requestId,
-            90,
-            "Success",
-            "Flux Klein generation completed",
         );
 
         return {

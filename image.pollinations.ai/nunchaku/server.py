@@ -26,7 +26,13 @@ logger = logging.getLogger(__name__)
 
 MODEL_ID = "black-forest-labs/FLUX.1-schnell"
 MODEL_CACHE = "model-cache"
-QUANT_MODEL_PATH = "mit-han-lab/svdq-int4-flux.1-schnell"
+# INT4 for Ada GPUs (RTX 4090); Blackwell GPUs (RTX 5090) must use
+# QUANT_MODEL_PATH=mit-han-lab/svdq-fp4-flux.1-schnell
+QUANT_MODEL_PATH = os.getenv("QUANT_MODEL_PATH", "mit-han-lab/svdq-int4-flux.1-schnell")
+# Cap total pixels to prevent CUDA OOM/hangs with quantized models. The 810k
+# default suits RTX 4090 (INT4); RTX 5090 instances set MAX_PIXELS=1048576 so
+# 1024x1024 requests are served at full resolution instead of downscaled.
+MAX_PIXELS = int(os.getenv("MAX_PIXELS", "810000"))
 
 class ImageRequest(BaseModel):
     prompts: List[str] = ["a photo of an astronaut riding a horse on mars"]
@@ -38,6 +44,11 @@ class ImageRequest(BaseModel):
 
 pipe = None
 gpu_semaphore = asyncio.Semaphore(1)  # Serialize GPU inference to prevent CUDA hangs
+BACKEND_TOKEN = os.getenv("PLN_GPU_TOKEN")
+# Shed load instead of building unbounded backlog: beyond this many in-flight
+# requests, reply 503 so the gateway falls back to its secondary provider.
+QUEUE_LIMIT = int(os.getenv("QUEUE_LIMIT", "10"))
+pending_requests = 0
 
 # Function to get public IP address
 def get_public_ip():
@@ -93,6 +104,9 @@ async def lifespan(app: FastAPI):
     # Startup
     global pipe
     heartbeat_task = None
+    if not BACKEND_TOKEN:
+        logger.critical("PLN_GPU_TOKEN not configured - refusing to start")
+        raise RuntimeError("PLN_GPU_TOKEN must be configured")
     try:
         print("Loading FLUX pipeline...")
         transformer = NunchakuFluxTransformer2dModel.from_pretrained(QUANT_MODEL_PATH)
@@ -154,8 +168,6 @@ def find_nearest_valid_dimensions(width: float, height: float) -> tuple[int, int
     if width < MIN_DIMENSION or height < MIN_DIMENSION:
         raise ValueError(f"Dimensions too small: {width}x{height}. Minimum allowed is {MIN_DIMENSION}x{MIN_DIMENSION}")
     
-    # Cap total pixels to prevent CUDA OOM with quantized models
-    MAX_PIXELS = 900 * 900  # 810,000 pixels — reduced to prevent CUDA hangs on RTX 4090
     start_w = round(width)
     start_h = round(height)
     
@@ -199,22 +211,28 @@ def verify_backend_token(
     
     Requires x-backend-token header validated against PLN_GPU_TOKEN env var.
     """
-    expected_token = os.getenv("PLN_GPU_TOKEN")
-    if not expected_token:
-        logger.warning("PLN_GPU_TOKEN not configured - allowing request")
-        return True
-    
-    if x_backend_token != expected_token:
+    if x_backend_token != BACKEND_TOKEN:
         logger.warning("Invalid or missing backend token")
         raise HTTPException(status_code=403, detail="Unauthorized")
     return True
 
 @app.post("/generate")
 async def generate(request: ImageRequest, _auth: bool = Depends(verify_backend_token)):
+    global pending_requests
     print(f"Request: {request}")
     if pipe is None:
         raise HTTPException(status_code=503, detail="Model not loaded")
-        
+    if pending_requests >= QUEUE_LIMIT:
+        raise HTTPException(status_code=503, detail="Queue full")
+    pending_requests += 1
+    try:
+        return await _generate(request)
+    finally:
+        pending_requests -= 1
+
+
+async def _generate(request: ImageRequest):
+
     seed = request.seed if request.seed is not None else int.from_bytes(os.urandom(2), "big")
     print(f"Using seed: {seed}")
 

@@ -7,6 +7,21 @@ import {
 
 const SNAPSHOT_NUMBER_PRECISION = 15;
 
+function formatSnapshotNumber(value: number): string {
+    if (!Number.isFinite(value) || value === 0) return String(value);
+
+    const normalized = Number(value.toPrecision(SNAPSHOT_NUMBER_PRECISION));
+    const printed = String(normalized);
+    if (!printed.includes("e")) return printed;
+
+    return normalized.toFixed(20).replace(/0+$/, "").replace(/\.$/, "");
+}
+
+expect.addSnapshotSerializer({
+    test: (value) => typeof value === "number",
+    serialize: (value) => formatSnapshotNumber(value as number),
+});
+
 function normalizeSnapshotValue(value: unknown): unknown {
     if (typeof value === "number") {
         if (!Number.isFinite(value) || value === 0) return value;

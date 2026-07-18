@@ -11,9 +11,8 @@ import debug from "debug";
 import type { VideoGenerationResult } from "../createAndReturnVideos.ts";
 import { HttpError } from "../httpError.ts";
 import type { ImageParams } from "../params.ts";
-import type { ProgressManager } from "../progressBar.ts";
 import { fetchUpstream } from "../utils/fetchUpstream.ts";
-import { downloadUserImage } from "../utils/imageDownload.ts";
+import { toDataUri } from "../utils/imageDownload.ts";
 import {
     ReplicateError,
     runReplicatePrediction,
@@ -66,16 +65,7 @@ interface SeedanceV2Input {
 export async function callSeedanceV2API(
     prompt: string,
     safeParams: ImageParams,
-    progress: ProgressManager,
-    requestId: string,
 ): Promise<VideoGenerationResult> {
-    progress.updateBar(
-        requestId,
-        35,
-        "Processing",
-        "Starting Seedance 2.0 video generation...",
-    );
-
     // Seedance 2.0 requires duration in [4, 15]. The schema enforces min=1
     // so we only need to clamp into the upstream's accepted range.
     const duration = Math.max(
@@ -104,13 +94,6 @@ export async function callSeedanceV2API(
     if (safeParams.seed !== undefined && safeParams.seed !== -1) {
         input.seed = safeParams.seed;
     }
-    // Replicate fetches input URLs server-side and saves them under a temp
-    // path derived from the URL — query strings and missing extensions break
-    // it. Match the other video models: download here and pass data URIs.
-    const toDataUri = async (url: string): Promise<string> => {
-        const { buffer, mimeType } = await downloadUserImage(url);
-        return `data:${mimeType};base64,${buffer.toString("base64")}`;
-    };
     if (images.length >= 1) input.image = await toDataUri(images[0]);
     if (images.length >= 2) input.last_frame_image = await toDataUri(images[1]);
 
@@ -120,13 +103,6 @@ export async function callSeedanceV2API(
         image: input.image ? "[url]" : undefined,
         last_frame_image: input.last_frame_image ? "[url]" : undefined,
     });
-
-    progress.updateBar(
-        requestId,
-        45,
-        "Processing",
-        "Submitting to Replicate (40-90s typical)...",
-    );
 
     let videoUrl: string;
     let actualDurationSeconds: number | undefined;
@@ -157,7 +133,6 @@ export async function callSeedanceV2API(
         throw err;
     }
 
-    progress.updateBar(requestId, 90, "Processing", "Downloading video...");
     const videoResponse = await fetchUpstream(videoUrl, {
         errorLabel: "Failed to download Seedance 2.0 output video",
     });
@@ -167,8 +142,6 @@ export async function callSeedanceV2API(
         (buffer.length / 1024 / 1024).toFixed(2),
         "MB",
     );
-
-    progress.updateBar(requestId, 95, "Success", "Video generation completed");
 
     // Bill on the actual output length Replicate reports; fall back to the
     // requested duration if the metric is missing.

@@ -77,8 +77,7 @@ export type GameAction =
     | { type: "ADD_MESSAGE"; message: Message }
     | { type: "SWITCH_PERSONA"; persona: Persona }
     | { type: "START_AUTONOMOUS" }
-    | { type: "END_GAME" }
-    | { type: "REWIND_TO_PRE_MARVIN" }; // Add this line
+    | { type: "END_GAME" };
 
 // API Types
 export type PollingsMessage = {
@@ -116,10 +115,3 @@ export type LMMessage = {
 };
 
 export type SetState<T> = React.Dispatch<React.SetStateAction<T>>;
-
-// Animation mode types
-export type AnimationMode = "lottie" | "png";
-
-export type AppSettings = {
-    animationMode: AnimationMode;
-};

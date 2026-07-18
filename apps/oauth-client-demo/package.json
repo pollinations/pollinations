@@ -1,0 +1,11 @@
+{
+    "name": "oauth-client-demo",
+    "version": "0.1.0",
+    "private": true,
+    "type": "module",
+    "description": "Minimal 'Sign in with Pollinations' OAuth 2.1 client (authorization code + PKCE)",
+    "engines": { "node": ">=18" },
+    "scripts": {
+        "start": "node server.js"
+    }
+}

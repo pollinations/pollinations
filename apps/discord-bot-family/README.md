@@ -5,13 +5,19 @@ runs multiple AI-powered discord bots, each using a different model via the poll
 ## setup
 
 ```bash
-cp .env.example .env   # add your tokens
 npm install
+npm run decrypt-vars   # sops-decrypt secrets/env.json -> .env
+```
+
+Update secrets (decrypts in your editor, re-encrypts on save):
+```bash
+sops secrets/env.json
 ```
 
 ## config
 
-- `.env` — api keys + bot tokens (secrets, gitignored)
+- `secrets/env.json` — sops-encrypted api keys + bot tokens (committed)
+- `.env` — decrypted secrets, produced by `npm run decrypt-vars` (gitignored)
 - `bots.json` — models, shared/per-bot channels (safe to commit)
 
 each bot gets the shared channels plus any bot-specific ones.
@@ -19,7 +25,7 @@ each bot gets the shared channels plus any bot-specific ones.
 ## run
 
 ```bash
-./start-bots.sh        # spawns one process per bot
+./start-all.sh         # spawns one process per bot
 ```
 
 each bot runs independently via `cli.ts`:

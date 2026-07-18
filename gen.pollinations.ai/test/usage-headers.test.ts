@@ -8,67 +8,30 @@ import {
 import { describe, expect, it } from "vitest";
 
 describe("buildUsageHeaders", () => {
-    it("should include x-model-used header", () => {
+    // Raw-string consumers (track.ts, text-cache.ts) read these exact wire keys
+    // and values, so pin the literal key→String(value) mapping for every
+    // single-field passthrough. One fully-populated Usage covers all of them.
+    it("emits the literal wire key/value for each populated field", () => {
         const usage: Usage = {
-            promptTextTokens: 10,
-            completionTextTokens: 20,
+            promptTextTokens: 42,
+            completionTextTokens: 55,
+            promptCachedTokens: 50,
+            promptCacheWriteTokens: 4096,
+            completionReasoningTokens: 150,
         };
         const headers = buildUsageHeaders("openai-fast", usage);
 
-        expect(headers["x-model-used"]).toBe("openai-fast");
-    });
-
-    it("should include x-usage-prompt-text-tokens header", () => {
-        const usage: Usage = {
-            promptTextTokens: 42,
-            completionTextTokens: 20,
+        const expected: Record<string, string> = {
+            "x-model-used": "openai-fast",
+            "x-usage-prompt-text-tokens": "42",
+            "x-usage-completion-text-tokens": "55",
+            "x-usage-prompt-cached-tokens": "50",
+            "x-usage-prompt-cache-write-tokens": "4096",
+            "x-usage-completion-reasoning-tokens": "150",
         };
-        const headers = buildUsageHeaders("openai", usage);
-
-        expect(headers["x-usage-prompt-text-tokens"]).toBe("42");
-    });
-
-    it("should include x-usage-completion-text-tokens header", () => {
-        const usage: Usage = {
-            promptTextTokens: 10,
-            completionTextTokens: 55,
-        };
-        const headers = buildUsageHeaders("openai", usage);
-
-        expect(headers["x-usage-completion-text-tokens"]).toBe("55");
-    });
-
-    it("should include cached tokens header when present", () => {
-        const usage: Usage = {
-            promptTextTokens: 100,
-            promptCachedTokens: 50,
-            completionTextTokens: 20,
-        };
-        const headers = buildUsageHeaders("claude-large", usage);
-
-        expect(headers["x-usage-prompt-cached-tokens"]).toBe("50");
-    });
-
-    it("should include prompt cache write tokens header when present", () => {
-        const usage: Usage = {
-            promptTextTokens: 100,
-            promptCacheWriteTokens: 4096,
-            completionTextTokens: 20,
-        };
-        const headers = buildUsageHeaders("claude-large", usage);
-
-        expect(headers["x-usage-prompt-cache-write-tokens"]).toBe("4096");
-    });
-
-    it("should include reasoning tokens header when present", () => {
-        const usage: Usage = {
-            promptTextTokens: 100,
-            completionTextTokens: 20,
-            completionReasoningTokens: 150,
-        };
-        const headers = buildUsageHeaders("deepseek", usage);
-
-        expect(headers["x-usage-completion-reasoning-tokens"]).toBe("150");
+        for (const [key, value] of Object.entries(expected)) {
+            expect(headers[key]).toBe(value);
+        }
     });
 
     it("should omit zero-value headers", () => {
@@ -125,6 +88,23 @@ describe("openaiUsageToUsage", () => {
 
         expect(usage.promptTextTokens).toBe(70); // 100 - 30
         expect(usage.promptCachedTokens).toBe(30);
+    });
+
+    it("should handle Inception top-level cached and reasoning tokens", () => {
+        const openaiUsage = {
+            prompt_tokens: 8,
+            reasoning_tokens: 49,
+            completion_tokens: 4,
+            total_tokens: 61,
+            cached_input_tokens: 8,
+        };
+
+        const usage = openaiUsageToUsage(openaiUsage);
+
+        expect(usage.promptTextTokens).toBe(0);
+        expect(usage.promptCachedTokens).toBe(8);
+        expect(usage.completionTextTokens).toBe(4);
+        expect(usage.completionReasoningTokens).toBe(49);
     });
 
     it("should handle Anthropic cache creation tokens", () => {

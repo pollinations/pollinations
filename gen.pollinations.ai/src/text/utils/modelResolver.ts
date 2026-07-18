@@ -28,18 +28,18 @@ export function resolveModelConfig(
     if (!requestedModel) {
         throw modelResolutionError("Model is required");
     }
-    const modelDef = findModelByName(requestedModel);
+    const staticModelDef = findModelByName(requestedModel);
+    const modelDef = options.modelDef ?? staticModelDef;
+    const rawConfig = options.modelConfig ?? staticModelDef?.config;
 
-    if (!modelDef?.config) {
+    if (!rawConfig) {
         throw modelResolutionError(
             `Model configuration not found for: ${requestedModel}`,
         );
     }
 
     const config = (
-        typeof modelDef.config === "function"
-            ? modelDef.config()
-            : modelDef.config
+        typeof rawConfig === "function" ? rawConfig() : rawConfig
     ) as Record<string, unknown>;
 
     const usedModel = (config.model ||

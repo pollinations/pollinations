@@ -13,7 +13,7 @@ export async function budgetHint(
         .catch(() => null);
     const lines = [
         "Insufficient pollen balance.",
-        "Top up: https://enter.pollinations.ai",
+        "Top up: https://enter.pollinations.ai/pollen",
         "",
     ];
     if (balance != null) lines.push(`Account balance: ${balance} pollen`);

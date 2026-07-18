@@ -7,18 +7,24 @@ import { buildUsageHeaders } from "@shared/registry/usage-headers.ts";
 
 export interface TrackingData {
     actualModel?: string;
-    usage?: Usage & Record<string, unknown>; // Allow extra fields like totalTokenCount
+    usage: Usage & Record<string, unknown>; // Allow extra fields like totalTokenCount
 }
 
 /**
  * Build tracking headers for the enter service.
- * Passes usage directly to buildUsageHeaders - defaults to 1 image token if empty.
+ * Passes provider-reported usage directly to buildUsageHeaders.
  */
 export function buildTrackingHeaders(
     model: string,
-    trackingData?: TrackingData,
+    trackingData: TrackingData,
 ): Record<string, string> {
+    if (!trackingData?.usage) {
+        throw new Error(`Missing billable usage for ${model}`);
+    }
     const modelUsed = trackingData?.actualModel || model;
-    const usage: Usage = trackingData?.usage || { completionImageTokens: 1 };
-    return buildUsageHeaders(modelUsed, usage);
+    const headers = buildUsageHeaders(modelUsed, trackingData.usage);
+    if (!Object.keys(headers).some((header) => header.startsWith("x-usage-"))) {
+        throw new Error(`Missing billable usage for ${model}`);
+    }
+    return headers;
 }

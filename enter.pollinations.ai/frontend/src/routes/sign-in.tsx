@@ -1,139 +1,67 @@
-import { Button, GitHubIcon } from "@pollinations/ui";
 import { createFileRoute, redirect } from "@tanstack/react-router";
-import { useState } from "react";
 import { authClient } from "../auth.ts";
+import { DashboardShell } from "../components/layout/dashboard-shell.tsx";
 import {
-    type DashboardPage,
-    DashboardShell,
-} from "../components/layout/dashboard-shell.tsx";
-import {
-    DASHBOARD_NAV_ITEMS,
-    isDashboardPage,
+    isDashboardPath,
+    SIGNED_OUT_NAV_ITEMS,
 } from "../components/layout/dashboard-theme.ts";
-import { usePageFromHash } from "../components/layout/use-page-from-hash.ts";
-import { Models } from "../components/models";
 import { NewsFaq } from "../components/news-faq";
-import { QuestOverview } from "../components/quests";
+import { SignedOutAccountArea } from "./_dashboard.tsx";
 
-const SIGNED_OUT_PAGES: ReadonlySet<DashboardPage> = new Set([
-    "news-faq",
-    "models",
-    "quests",
-]);
+type SignInSearch = {
+    next?: string;
+};
 
-const SIGNED_OUT_NAV_ITEMS = DASHBOARD_NAV_ITEMS.filter((item) =>
-    SIGNED_OUT_PAGES.has(item.id),
-);
+function parseNext(value: unknown): string | undefined {
+    if (
+        typeof value !== "string" ||
+        !value.startsWith("/") ||
+        value.startsWith("//")
+    ) {
+        return undefined;
+    }
 
-function pageFromHash(hash: string): DashboardPage {
-    const page = hash.replace(/^#/, "");
-    if (isDashboardPage(page) && SIGNED_OUT_PAGES.has(page)) return page;
-    if (page === "news" || page === "faq" || page === "updates")
-        return "news-faq";
-    if (page === "pricing") return "models";
-    return "news-faq";
+    const url = new URL(value, "https://enter.pollinations.ai");
+    if (!isDashboardPath(url.pathname)) return undefined;
+    return `${url.pathname}${url.search}${url.hash}`;
 }
 
 export const Route = createFileRoute("/sign-in")({
-    component: RouteComponent,
-    beforeLoad: async () => {
+    validateSearch: (search: Record<string, unknown>): SignInSearch => ({
+        next: parseNext(search.next),
+    }),
+    beforeLoad: async ({ search }) => {
         const result = await authClient.getSession();
-        if (result.data?.user) {
-            // Check for pending redirect URL from authorize flow
-            const pendingRedirectUrl = localStorage.getItem(
-                "pending_redirect_url",
-            );
+        if (!result.data?.user) return;
 
-            if (pendingRedirectUrl) {
-                // Clear the stored URL and redirect to authorize
-                localStorage.removeItem("pending_redirect_url");
-                throw redirect({
-                    to: "/authorize",
-                    search: {
-                        redirect_url: pendingRedirectUrl,
-                        models: null,
-                        budget: null,
-                        expiry: null,
-                        scope: null,
-                    },
-                });
-            }
+        const pendingRedirectUrl = localStorage.getItem("pending_redirect_url");
+        if (pendingRedirectUrl) {
+            localStorage.removeItem("pending_redirect_url");
             throw redirect({
-                to: "/",
-                hash: window.location.hash.slice(1) || undefined,
+                to: "/authorize",
+                search: {
+                    redirect_url: pendingRedirectUrl,
+                    models: null,
+                    budget: null,
+                    expiry: null,
+                    scope: null,
+                },
             });
         }
+
+        if (search.next) throw redirect({ href: search.next });
+        throw redirect({ to: "/pollen" });
     },
+    component: SignInPage,
 });
 
-function dashboardCallbackUrl(activePage: DashboardPage): string {
-    const url = new URL("/", window.location.href);
-    url.hash = window.location.hash.slice(1) || activePage;
-    return url.href;
-}
-
-function RouteComponent() {
-    const [loading, setLoading] = useState(false);
-    const [activePage, setActivePage] = usePageFromHash(pageFromHash);
-
-    const handleSignIn = async () => {
-        setLoading(true);
-        const { error } = await authClient.signIn.social({
-            provider: "github",
-            callbackURL: dashboardCallbackUrl(activePage),
-        });
-        if (error) {
-            setLoading(false);
-            throw error;
-        }
-    };
-
-    function handlePageChange(page: DashboardPage): void {
-        setActivePage(page);
-        try {
-            history.replaceState(null, "", `#${page}`);
-        } catch {
-            // Hash updates are cosmetic; navigation still works without them.
-        }
-        window.scrollTo({ top: 0, behavior: "auto" });
-    }
-
+function SignInPage() {
     return (
         <DashboardShell
-            activePage={activePage}
             navItems={SIGNED_OUT_NAV_ITEMS}
-            onPageChange={handlePageChange}
-            accountArea={
-                <SignedOutAccountArea
-                    loading={loading}
-                    onSignIn={handleSignIn}
-                />
-            }
+            accountArea={<SignedOutAccountArea />}
         >
-            {activePage === "news-faq" && <NewsFaq />}
-            {activePage === "models" && <Models />}
-            {activePage === "quests" && <QuestOverview />}
+            <NewsFaq />
         </DashboardShell>
-    );
-}
-
-function SignedOutAccountArea({
-    loading,
-    onSignIn,
-}: {
-    loading: boolean;
-    onSignIn: () => void;
-}) {
-    return (
-        <Button
-            as="button"
-            data-theme="accent"
-            onClick={onSignIn}
-            disabled={loading}
-            className="w-full justify-center gap-2 text-center"
-        >
-            <GitHubIcon className="h-4 w-4 shrink-0" />
-            {loading ? "Signing in..." : "Sign in with GitHub"}
-        </Button>
     );
 }

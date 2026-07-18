@@ -6,7 +6,7 @@ Self-service endpoints for the authenticated user. All endpoints require authent
 
 | Endpoint | Description |
 |----------|-------------|
-| `GET /account/profile` | GitHub username, image, tier, reset time |
+| `GET /account/profile` | GitHub username, image, and community model access |
 | `GET /account/balance` | Current pollen balance |
 | `GET /account/quests` | Read-only quest status |
 | `GET /account/usage` | Per-request usage history with costs |
@@ -16,7 +16,7 @@ Self-service endpoints for the authenticated user. All endpoints require authent
 
 ### GET /account/profile
 
-Returns user profile. `githubUsername`, `image`, `tier`, and `nextResetAt` are always included. `name` and `email` are included only when the API key has `account:profile`.
+Returns user profile. `githubUsername`, `image`, and `communityEndpointsAllowed` are always included. `name` and `email` are included only when the API key has `account:profile`.
 
 ### GET /account/balance
 

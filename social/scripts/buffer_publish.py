@@ -133,20 +133,12 @@ def create_buffer_post_with_retry(
     return {"success": False, "error": "Max retries exceeded"}
 
 
-def _instagram_metadata(post_data: dict, image_urls: list) -> dict:
-    """Build Instagram post/carousel metadata block."""
-    metadata_block = post_data.get("metadata") or {}
-    stored_post_type = metadata_block.get("post_type")
-    if stored_post_type == "carousel" or len(image_urls) > 1:
-        instagram_type = "carousel"
-    else:
-        instagram_type = "post"
-    print(f"Instagram post type: {instagram_type}")
-    # Verified against Buffer GraphQL introspection: InstagramPostMetadataInput.type uses PostType,
-    # and PostType includes "post", "story", "reel", and "carousel".
+def _instagram_metadata(_post_data: dict, _image_urls: list) -> dict:
+    """Build Instagram post metadata; multiple assets create a carousel."""
+    print("Instagram post type: post")
     return {
         "instagram": {
-            "type": instagram_type,
+            "type": "post",
             "shouldShareToFeed": True,
         }
     }

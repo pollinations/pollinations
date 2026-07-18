@@ -15,8 +15,6 @@ const MAX_WEEKS_BACK = 20;
 type Env = {
     TINYBIRD_READ_TOKEN: string;
     TINYBIRD_API: string;
-    POLAR_ACCESS_TOKEN: string;
-    POLAR_API: string;
     GITHUB_TOKEN?: string;
     GITHUB_APP_ID?: string;
     GITHUB_APP_PRIVATE_KEY?: string;
@@ -206,15 +204,6 @@ app.get("/api/kpi/total-users", async (c) => {
     return c.json({ total: row?.total || 0 });
 });
 
-// Tinybird: Tier distribution (from Oct 1, 2025)
-app.get("/api/kpi/tiers", async (c) => {
-    const result = await fetchTinybird(c.env, "kpi_tier_distribution", {
-        min_created_at: DATA_START_TIMESTAMP_SEC,
-    });
-    if (result.error) return c.json({ error: result.error, data: [] }, 500);
-    return c.json({ data: result.data });
-});
-
 // D7 Activations: users who made their first API request within 7 days of registration
 // Fully computed in Tinybird by joining d1_user with generation_event
 app.get("/api/kpi/activations", async (c) => {
@@ -298,75 +287,6 @@ app.get("/api/kpi/stripe-revenue", async (c) => {
     return c.json({ data: result.data });
 });
 
-// Polar: Revenue (one-time pollen purchases only) - legacy, being phased out
-async function fetchPolarRevenue(
-    env: Env,
-): Promise<Array<{ week: string; revenue: number; purchases: number }>> {
-    const allOrders: Array<{
-        status: string;
-        created_at: string;
-        amount: number;
-    }> = [];
-    let page = 1;
-    const maxPages = 5;
-
-    while (page <= maxPages) {
-        const res = await fetch(
-            `${env.POLAR_API}/v1/orders?limit=100&product_billing_type=one_time&page=${page}`,
-            {
-                headers: {
-                    Authorization: `Bearer ${env.POLAR_ACCESS_TOKEN}`,
-                    "Content-Type": "application/json",
-                },
-                redirect: "follow",
-            },
-        );
-
-        if (!res.ok) break;
-
-        const data = (await res.json()) as {
-            items: Array<{
-                status: string;
-                created_at: string;
-                amount: number;
-            }>;
-            pagination: { total_count: number };
-        };
-
-        allOrders.push(...(data.items || []));
-
-        if (
-            allOrders.length >= data.pagination.total_count ||
-            data.items.length === 0
-        )
-            break;
-        page++;
-    }
-
-    const weeklyData: Record<string, { revenue: number; purchases: number }> =
-        {};
-
-    for (const order of allOrders) {
-        if (order.status !== "paid") continue;
-        if (order.amount === 0) continue;
-
-        const date = new Date(order.created_at);
-        if (date < new Date(DATA_START_DATE)) continue;
-
-        const weekStart = getWeekStart(date);
-
-        if (!weeklyData[weekStart]) {
-            weeklyData[weekStart] = { revenue: 0, purchases: 0 };
-        }
-        weeklyData[weekStart].revenue += order.amount / 100;
-        weeklyData[weekStart].purchases += 1;
-    }
-
-    return Object.entries(weeklyData)
-        .map(([week, d]) => ({ week, ...d }))
-        .sort((a, b) => a.week.localeCompare(b.week));
-}
-
 // Tinybird: Fetch and aggregate daily Stripe revenue into weekly
 async function fetchStripeRevenue(
     env: Env,
@@ -401,41 +321,11 @@ async function fetchStripeRevenue(
         .sort((a, b) => a.week.localeCompare(b.week));
 }
 
-// Combined Revenue: Stripe (primary) + Polar (legacy)
 app.get("/api/kpi/revenue", async (c) => {
-    // Fetch both sources in parallel
-    const [stripeRevenue, polarRevenue] = await Promise.all([
-        fetchStripeRevenue(c.env),
-        fetchPolarRevenue(c.env),
-    ]);
-
-    // Merge by week, summing revenue and purchases
-    const weeklyData: Record<string, { revenue: number; purchases: number }> =
-        {};
-
-    for (const row of stripeRevenue) {
-        if (!weeklyData[row.week]) {
-            weeklyData[row.week] = { revenue: 0, purchases: 0 };
-        }
-        weeklyData[row.week].revenue += row.revenue;
-        weeklyData[row.week].purchases += row.purchases;
-    }
-
-    for (const row of polarRevenue) {
-        if (!weeklyData[row.week]) {
-            weeklyData[row.week] = { revenue: 0, purchases: 0 };
-        }
-        weeklyData[row.week].revenue += row.revenue;
-        weeklyData[row.week].purchases += row.purchases;
-    }
-
-    const result = Object.entries(weeklyData)
-        .map(([week, d]) => ({
-            week,
-            revenue: Math.round(d.revenue * 100) / 100,
-            purchases: d.purchases,
-        }))
-        .sort((a, b) => a.week.localeCompare(b.week));
+    const result = (await fetchStripeRevenue(c.env)).map((row) => ({
+        ...row,
+        revenue: Math.round(row.revenue * 100) / 100,
+    }));
 
     return c.json({ data: result });
 });

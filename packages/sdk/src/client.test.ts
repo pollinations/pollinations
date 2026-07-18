@@ -2,15 +2,6 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { Pollinations } from "./client.js";
 import { PollinationsError } from "./types.js";
 
-// ---------------------------------------------------------------------------
-// Characterization tests for client.ts.
-//
-// These lock the CURRENT behavior of the retry loop, per-attempt seed
-// recomputation, chat vs chatStream seed handling, and imageEdit response
-// resolution. They are written to pass against the UNREFACTORED client and
-// must continue to pass byte-for-byte after the dedup refactor.
-// ---------------------------------------------------------------------------
-
 // Build a minimal Response-like object good enough for the client paths.
 function makeResponse(
     body: unknown,
@@ -66,11 +57,10 @@ function makeResponse(
     return resp as unknown as Response;
 }
 
-function newClient(overrides: Record<string, unknown> = {}) {
+function newClient() {
     return new Pollinations({
         apiKey: "sk_test",
         baseUrl: "https://example.test",
-        ...overrides,
     });
 }
 
@@ -97,178 +87,145 @@ function bodyOf(call: unknown[]): Record<string, unknown> {
     return JSON.parse(init.body as string) as Record<string, unknown>;
 }
 
-describe("Pollinations.image — retry behavior (characterization)", () => {
-    it("retries a retriable failure then succeeds; counts attempts", async () => {
+describe("Pollinations request attempts", () => {
+    it("does not retry uploads after a network failure", async () => {
         const client = newClient();
-
-        // First attempt: network error (retriable). Second: success.
-        fetchMock
-            .mockRejectedValueOnce(new Error("boom"))
-            .mockResolvedValueOnce(
-                makeResponse(null, {
-                    kind: "binary",
-                    contentType: "image/png",
-                }),
-            );
-
-        const result = await client.image("a cat");
-        expect(result.contentType).toBe("image/png");
-        // 1 failed + 1 succeeded = 2 fetch attempts.
-        expect(fetchMock).toHaveBeenCalledTimes(2);
-    });
-
-    it("retries up to maxRetries on persistent retriable failure", async () => {
-        const client = newClient({ maxRetries: 3 });
-
         fetchMock.mockRejectedValue(new Error("boom"));
 
-        await expect(client.image("a cat")).rejects.toThrow("boom");
-        // Exactly maxRetries attempts.
-        expect(fetchMock).toHaveBeenCalledTimes(3);
+        await expect(client.upload(new ArrayBuffer(8))).rejects.toThrow("boom");
+        expect(fetchMock).toHaveBeenCalledTimes(1);
     });
 
-    it("does NOT retry a non-retriable error (e.g. 400)", async () => {
-        const client = newClient({ maxRetries: 3 });
-
+    it("returns API errors directly with server-provided Retry-After", async () => {
+        const client = newClient();
         fetchMock.mockResolvedValue(
             makeResponse(
-                { error: { message: "bad", code: "INVALID_INPUT" } },
-                { ok: false, status: 400 },
+                { error: { message: "slow down", code: "RATE_LIMITED" } },
+                {
+                    ok: false,
+                    status: 429,
+                    headers: { "Retry-After": "900" },
+                },
             ),
         );
 
-        await expect(client.image("a cat")).rejects.toBeInstanceOf(
-            PollinationsError,
-        );
-        // Non-retriable => single attempt, no retry.
+        await expect(client.image("a cat")).rejects.toMatchObject({
+            code: "RATE_LIMITED",
+            status: 429,
+            retryAfter: 900,
+        });
         expect(fetchMock).toHaveBeenCalledTimes(1);
     });
-});
 
-describe("Pollinations — per-attempt seed recomputation (characterization)", () => {
-    it("image: attempt 0 sends no seed (resolveSeed(undefined)), retry sends a fresh random seed", async () => {
-        const client = newClient({ maxRetries: 2 });
-
-        // Force randomSeed() deterministic for the retry attempt.
-        const randSpy = vi.spyOn(Math, "random").mockReturnValue(0.5);
-
-        fetchMock
-            .mockRejectedValueOnce(new Error("boom"))
-            .mockResolvedValueOnce(
-                makeResponse(null, {
-                    kind: "binary",
-                    contentType: "image/png",
-                }),
-            );
-
-        await client.image("a cat"); // no explicit seed
-
-        const url0 = fetchMock.mock.calls[0][0] as string;
-        const url1 = fetchMock.mock.calls[1][0] as string;
-
-        // Attempt 0: resolveSeed(undefined) === undefined => no seed param.
-        expect(seedFromUrl(url0)).toBeNull();
-        // Attempt 1: randomSeed() => concrete number, present and differs.
-        const seed1 = seedFromUrl(url1);
-        expect(seed1).not.toBeNull();
-        expect(Number.isNaN(Number(seed1))).toBe(false);
-        randSpy.mockRestore();
-    });
-
-    it("image: explicit seed -1 resolves to a concrete number on attempt 0, fresh random on retry", async () => {
-        const client = newClient({ maxRetries: 2 });
-
-        // Math.random sequence: first for resolveSeed(-1) on attempt 0,
-        // second for randomSeed() on attempt 1.
-        const randSpy = vi
-            .spyOn(Math, "random")
-            .mockReturnValueOnce(0.1)
-            .mockReturnValueOnce(0.9);
-
-        fetchMock
-            .mockRejectedValueOnce(new Error("boom"))
-            .mockResolvedValueOnce(
-                makeResponse(null, {
-                    kind: "binary",
-                    contentType: "image/png",
-                }),
-            );
-
-        await client.image("a cat", { seed: -1 });
-
-        const seed0 = seedFromUrl(fetchMock.mock.calls[0][0] as string);
-        const seed1 = seedFromUrl(fetchMock.mock.calls[1][0] as string);
-
-        // -1 resolves to a concrete number on attempt 0 (not "-1").
-        expect(seed0).not.toBeNull();
-        expect(seed0).not.toBe("-1");
-        // Retry recomputes a fresh random seed that differs.
-        expect(seed1).not.toBeNull();
-        expect(seed1).not.toBe(seed0);
-        randSpy.mockRestore();
-    });
-
-    it("text: attempt 0 omits seed (undefined stripped), retry sends a fresh random seed in the body", async () => {
-        const client = newClient({ maxRetries: 2 });
-
-        fetchMock
-            .mockRejectedValueOnce(new Error("boom"))
-            .mockResolvedValueOnce(
-                makeResponse({ choices: [{ message: { content: "hi" } }] }),
-            );
-
-        const out = await client.text("hello"); // no explicit seed
-        expect(out).toBe("hi");
-
-        const body0 = bodyOf(fetchMock.mock.calls[0]);
-        const body1 = bodyOf(fetchMock.mock.calls[1]);
-
-        // Attempt 0: seed undefined => stripped from body.
-        expect("seed" in body0).toBe(false);
-        // Attempt 1: randomSeed() => concrete number present.
-        expect(typeof body1.seed).toBe("number");
-    });
-});
-
-describe("Pollinations.chat vs chatStream — seed resolution (characterization)", () => {
-    it("chat() resolves a raw -1 seed into a concrete number in the request body", async () => {
+    it("does not invent Retry-After when the header is absent", async () => {
         const client = newClient();
-        const randSpy = vi.spyOn(Math, "random").mockReturnValue(0.25);
-
         fetchMock.mockResolvedValue(
-            makeResponse({ choices: [{ message: { content: "ok" } }] }),
+            makeResponse(
+                { error: { message: "slow down", code: "RATE_LIMITED" } },
+                { ok: false, status: 429 },
+            ),
         );
 
-        await client.chat([{ role: "user", content: "hi" }], { seed: -1 });
+        let error: PollinationsError | undefined;
+        try {
+            await client.image("a cat");
+        } catch (caught) {
+            if (caught instanceof PollinationsError) error = caught;
+        }
 
-        const body = bodyOf(fetchMock.mock.calls[0]);
-        // chat resolves -1 to a concrete random number.
-        expect(typeof body.seed).toBe("number");
-        expect(body.seed).not.toBe(-1);
-        randSpy.mockRestore();
+        expect(error).toBeInstanceOf(PollinationsError);
+        expect(error?.retryAfter).toBeUndefined();
     });
+});
 
-    it("chatStream() preserves a raw -1 seed unchanged (no resolveSeed)", async () => {
+describe("Pollinations media upload", () => {
+    it("serializes tags in the multipart request", async () => {
         const client = newClient();
-
         fetchMock.mockResolvedValue(
-            makeResponse('data: {"choices":[{"delta":{"content":"x"}}]}\n', {
-                kind: "stream",
-                contentType: "text/event-stream",
+            makeResponse({
+                id: "media-id",
+                url: "https://media.pollinations.ai/media-id",
+                contentType: "image/png",
+                size: 8,
+                tags: ["cats", "gallery"],
             }),
         );
 
-        const it = client.chatStream([{ role: "user", content: "hi" }], {
+        const result = await client.upload(new ArrayBuffer(8), {
+            contentType: "image/png",
+            name: "cat.png",
+            tags: ["cats", "gallery"],
+        });
+
+        const request = fetchMock.mock.calls[0][1] as RequestInit;
+        const formData = request.body as FormData;
+        expect(formData.get("tags")).toBe("cats,gallery");
+        expect(result.tags).toEqual(["cats", "gallery"]);
+    });
+});
+
+describe("Pollinations seed handling", () => {
+    it("passes seed and model-specific video duration through URL requests", async () => {
+        const client = newClient();
+        fetchMock.mockResolvedValue(
+            makeResponse(null, {
+                kind: "binary",
+                contentType: "application/octet-stream",
+            }),
+        );
+
+        await client.image("a cat", { seed: -1 });
+        await client.video("a long scene", {
+            model: "nova-reel",
+            duration: 120,
             seed: -1,
         });
-        // Drain the generator so the fetch is issued.
-        for await (const _ of it) {
-            // consume
+
+        const imageUrl = fetchMock.mock.calls[0][0] as string;
+        const videoUrl = new URL(fetchMock.mock.calls[1][0] as string);
+        expect(seedFromUrl(imageUrl)).toBe("-1");
+        expect(videoUrl.searchParams.get("seed")).toBe("-1");
+        expect(videoUrl.searchParams.get("duration")).toBe("120");
+    });
+
+    it("passes seed through text and chat requests consistently", async () => {
+        const client = newClient();
+        const stream = 'data: {"choices":[{"delta":{"content":"x"}}]}\n';
+        fetchMock
+            .mockResolvedValueOnce(
+                makeResponse({ choices: [{ message: { content: "ok" } }] }),
+            )
+            .mockResolvedValueOnce(
+                makeResponse(stream, {
+                    kind: "stream",
+                    contentType: "text/event-stream",
+                }),
+            )
+            .mockResolvedValueOnce(
+                makeResponse({ choices: [{ message: { content: "ok" } }] }),
+            )
+            .mockResolvedValueOnce(
+                makeResponse(stream, {
+                    kind: "stream",
+                    contentType: "text/event-stream",
+                }),
+            );
+
+        await client.text("hello", { seed: -1 });
+        for await (const _ of client.textStream("hello", { seed: -1 })) {
+            // consume stream
+        }
+        await client.chat([{ role: "user", content: "hi" }], { seed: -1 });
+        for await (const _ of client.chatStream(
+            [{ role: "user", content: "hi" }],
+            { seed: -1 },
+        )) {
+            // consume stream
         }
 
-        const body = bodyOf(fetchMock.mock.calls[0]);
-        // chatStream passes the raw seed through untouched.
-        expect(body.seed).toBe(-1);
+        expect(fetchMock.mock.calls.map((call) => bodyOf(call).seed)).toEqual([
+            -1, -1, -1, -1,
+        ]);
     });
 
     it("chat() serializes the standard reasoning effort option", async () => {

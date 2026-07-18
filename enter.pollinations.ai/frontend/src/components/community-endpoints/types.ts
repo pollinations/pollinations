@@ -4,7 +4,9 @@ import {
     type CommunityEndpointModality,
     type CommunityEndpointPriceKey,
     type CommunityEndpointPrices,
+    type CommunityEndpointVisibility,
     communityEndpointPriceFieldsForModality,
+    MIN_COMMUNITY_PRICE_PER_MILLION_TOKENS,
 } from "@shared/community-endpoints.ts";
 import type { Usage } from "@shared/registry/registry.ts";
 
@@ -18,6 +20,9 @@ export type CommunityEndpoint = {
     modality: CommunityEndpointModality;
     baseUrl: string;
     upstreamModel: string;
+    // private → owner-only, shown only to the owner, no owner-set price;
+    // public → globally listed + billed to callers.
+    visibility: CommunityEndpointVisibility;
     disabled: boolean;
     disabledReason: string | null;
     disabledAt: string | null;
@@ -27,6 +32,10 @@ export type EndpointFormState = {
     modality: CommunityEndpointModality;
     name: string;
     description: string;
+    // private → owner-only, shown only to the owner, no owner-set price;
+    // public → globally listed + billed to callers.
+    // Public is selectable only by allowlisted owners; defaults private.
+    visibility: CommunityEndpointVisibility;
     baseUrl: string;
     upstreamModel: string;
     bearerToken: string;
@@ -38,6 +47,7 @@ export type EndpointPayload = {
     description: string;
     baseUrl: string;
     upstreamModel: string;
+    visibility: CommunityEndpointVisibility;
 } & CommunityEndpointPrices;
 
 export type CommunityEndpointUsage = Record<string, unknown>;
@@ -64,6 +74,7 @@ export const emptyForm: EndpointFormState = {
     modality: "text",
     name: "",
     description: "",
+    visibility: "private",
     baseUrl: "",
     upstreamModel: "",
     bearerToken: "",
@@ -72,6 +83,11 @@ export const emptyForm: EndpointFormState = {
 
 export const idleAction: ActionState = { status: "idle" };
 
+export const VISIBILITY_LABELS: Record<CommunityEndpointVisibility, string> = {
+    private: "Private",
+    public: "Public",
+};
+
 const TOKENS_PER_MILLION = 1_000_000;
 
 /** Stored prices are per-token; the UI shows and accepts them per 1M tokens. */
@@ -79,7 +95,7 @@ export function pricePerTokenToPerMillion(value: number): string {
     return String(Number((value * TOKENS_PER_MILLION).toPrecision(15)));
 }
 
-function pricePerMillionToPerToken(value: string): number {
+export function pricePerMillionToPerToken(value: string): number {
     const trimmed = value.trim();
     if (!trimmed) return 0;
     if (!isValidPriceInput(trimmed)) return Number.NaN;
@@ -115,7 +131,10 @@ export function isValidPriceInput(value: string): boolean {
     if (!trimmed) return true;
     if (trimmed.includes(",")) return false;
     const parsed = Number(trimmed);
-    return Number.isFinite(parsed) && parsed >= 0;
+    return (
+        Number.isFinite(parsed) &&
+        (parsed === 0 || parsed >= MIN_COMMUNITY_PRICE_PER_MILLION_TOKENS)
+    );
 }
 
 export function endpointToForm(endpoint: CommunityEndpoint): EndpointFormState {
@@ -123,6 +142,7 @@ export function endpointToForm(endpoint: CommunityEndpoint): EndpointFormState {
         modality: endpoint.modality,
         name: endpoint.name,
         description: endpoint.description ?? "",
+        visibility: endpoint.visibility,
         baseUrl: endpoint.baseUrl,
         upstreamModel: endpoint.upstreamModel,
         bearerToken: "",
@@ -148,7 +168,11 @@ function formPricesToPayload(
         COMMUNITY_ENDPOINT_PRICE_FIELDS.map((field) => {
             if (!allowed.has(field.key)) return [field.key, 0];
             if (!isValidPriceInput(form[field.key])) {
-                throw new Error("Prices must use dot decimals, e.g. 0.1");
+                const unit =
+                    modality === "image" ? "per image" : "per 1M tokens";
+                throw new Error(
+                    `Prices must be 0 (free) or at least ${MIN_COMMUNITY_PRICE_PER_MILLION_TOKENS} ${unit}, using a dot decimal`,
+                );
             }
             return [
                 field.key,
@@ -198,6 +222,7 @@ export function toEndpointPayload(form: EndpointFormState): EndpointPayload {
         modality: form.modality,
         name: modelName,
         description: form.description.trim(),
+        visibility: form.visibility,
         baseUrl: form.baseUrl.trim(),
         upstreamModel: form.upstreamModel.trim() || modelName,
         ...formPricesToPayload(form, form.modality),

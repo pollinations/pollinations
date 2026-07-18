@@ -7,6 +7,7 @@ import { decryptSecret } from "@shared/secret-encryption.ts";
 import type { ImageGenerationResult } from "./createAndReturnImages.ts";
 import { HttpError } from "./httpError.ts";
 import type { ImageParams } from "./params.ts";
+import { base64ToBuffer } from "./utils/imageDownload.ts";
 
 type CommunityImageParams = Omit<ImageParams, "model"> & { model: string };
 
@@ -40,13 +41,10 @@ export async function callCommunityImageEndpoint(
         ...(safeParams.transparent
             ? { background: "transparent", output_format: "png" }
             : {}),
+        response_format: "b64_json",
     });
 
-    const image = firstImage(body);
-    const buffer =
-        typeof image.b64_json === "string"
-            ? Buffer.from(image.b64_json, "base64")
-            : await fetchCommunityImageUrl(image.url);
+    const buffer = base64ToBuffer(firstImageBase64(body));
 
     return {
         buffer,
@@ -87,27 +85,6 @@ async function fetchCommunityImageJson(
     return parsed;
 }
 
-async function fetchCommunityImageUrl(
-    url: string | undefined,
-): Promise<Buffer> {
-    if (!url) {
-        throw new HttpError(
-            "Community image endpoint returned no image data",
-            502,
-        );
-    }
-    const response = await fetchWithTimeout(url);
-    if (!response.ok) {
-        throw new HttpError(
-            `Community image URL fetch failed with ${response.status}`,
-            response.status,
-            { body: await response.text().catch(() => "") },
-            url,
-        );
-    }
-    return Buffer.from(await response.arrayBuffer());
-}
-
 async function fetchWithTimeout(
     input: string,
     init?: RequestInit,
@@ -115,6 +92,7 @@ async function fetchWithTimeout(
     try {
         return await fetch(input, {
             ...init,
+            redirect: "manual",
             signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
         });
     } catch (error) {
@@ -127,7 +105,7 @@ async function fetchWithTimeout(
     }
 }
 
-function firstImage(body: unknown): { b64_json?: string; url?: string } {
+function firstImageBase64(body: unknown): string {
     if (
         !body ||
         typeof body !== "object" ||
@@ -141,15 +119,16 @@ function firstImage(body: unknown): { b64_json?: string; url?: string } {
     }
     for (const image of body.data) {
         if (!image || typeof image !== "object") continue;
-        if ("b64_json" in image && typeof image.b64_json === "string") {
-            return { b64_json: image.b64_json };
-        }
-        if ("url" in image && typeof image.url === "string") {
-            return { url: image.url };
+        if (
+            "b64_json" in image &&
+            typeof image.b64_json === "string" &&
+            image.b64_json.length > 0
+        ) {
+            return image.b64_json;
         }
     }
     throw new HttpError(
-        "Community image endpoint did not return an image URL or base64 data",
+        "Community image endpoint did not return base64 image data",
         502,
     );
 }

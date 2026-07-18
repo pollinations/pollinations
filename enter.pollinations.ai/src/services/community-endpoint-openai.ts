@@ -21,7 +21,7 @@ export type CommunityEndpointTestResult = {
     billableUsage: Usage;
 };
 
-const REQUEST_TIMEOUT_MS = 10_000;
+const REQUEST_TIMEOUT_MS = 90_000;
 
 function authorizationHeaders(bearerToken: string): HeadersInit {
     return {
@@ -36,8 +36,12 @@ function communityModelsUrl(baseUrl: string): string {
 async function fetchJson(url: string, init: RequestInit): Promise<unknown> {
     let response: Response;
     try {
+        // The base URL is validated against https + the private-host blocklist
+        // before we fetch; following redirects would let the endpoint bounce
+        // the probe to an unvalidated destination.
         response = await fetch(url, {
             ...init,
+            redirect: "manual",
             signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
         });
     } catch {
@@ -56,7 +60,9 @@ function endpointErrorMessage(status: number, body: unknown): string {
     const prefix =
         status === 401
             ? "Endpoint responded 401 after we sent Authorization"
-            : `Endpoint responded ${status}`;
+            : status >= 300 && status < 400
+              ? `Endpoint responded ${status} with a redirect, which is not supported`
+              : `Endpoint responded ${status}`;
     return message ? `${prefix}: ${message}` : prefix;
 }
 
@@ -171,6 +177,7 @@ export async function testCommunityImageEndpoint({
             prompt: "A simple green sprout icon on a white background.",
             n: 1,
             size: "1024x1024",
+            response_format: "b64_json",
         }),
     });
 
@@ -183,11 +190,12 @@ export async function testCommunityImageEndpoint({
             (image) =>
                 image &&
                 typeof image === "object" &&
-                (("b64_json" in image && typeof image.b64_json === "string") ||
-                    ("url" in image && typeof image.url === "string")),
+                "b64_json" in image &&
+                typeof image.b64_json === "string" &&
+                image.b64_json.length > 0,
         )
     ) {
-        throw new Error("Endpoint did not return OpenAI image data");
+        throw new Error("Endpoint did not return base64 OpenAI image data");
     }
 
     return {

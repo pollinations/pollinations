@@ -9,8 +9,8 @@ Sunday 06:00 UTC:
   4. Generate 7 platform images (1 twitter + 1 linkedin + 3 instagram + 1 reddit + 1 discord)
   5. Commit all content directly to the news branch
 
-Buffer staging happens immediately after in NEWS_summary.yml.
-Direct channels (Reddit, Discord) publish via NEWS_publish.yml cron.
+Buffer staging happens immediately after in news-generate-summary.yml.
+Direct channels (Reddit, Discord) publish via news-publish-social.yml cron.
 
 See social/PIPELINE.md for full architecture.
 """

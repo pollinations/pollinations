@@ -18,6 +18,7 @@ import type { ChatCompletion, RequestData, ServiceError } from "./types.js";
 type TextContext = Context<Env>;
 
 const TEXT_ENV_KEYS = [
+    "AI_GATEWAY_API_KEY",
     "AWS_ACCESS_KEY_ID",
     "AWS_REGION",
     "AWS_SECRET_ACCESS_KEY",
@@ -124,6 +125,38 @@ function usageHeaders(
         headers.set(FALLBACK_TARGET_HEADER, completion.fallbackTarget);
     }
     return headers;
+}
+
+const PUBLIC_USAGE_FIELDS = new Set([
+    "cache_creation_input_tokens",
+    "cache_read_input_tokens",
+    "completion_tokens",
+    "completion_tokens_details",
+    "prompt_tokens",
+    "prompt_tokens_details",
+    "total_tokens",
+]);
+
+function publicCompletionUsage(
+    usage: ChatCompletion["usage"],
+): ChatCompletion["usage"] {
+    if (!usage || (!("cost" in usage) && !("search_context_size" in usage))) {
+        return usage;
+    }
+
+    return Object.fromEntries(
+        Object.entries(usage).filter(([key]) => PUBLIC_USAGE_FIELDS.has(key)),
+    );
+}
+
+function publicChatCompletion(completion: ChatCompletion): ChatCompletion {
+    const usage = publicCompletionUsage(completion.usage);
+    if (usage === completion.usage) return completion;
+
+    return {
+        ...completion,
+        usage,
+    };
 }
 
 function sendOpenAIResponse(
@@ -315,9 +348,16 @@ async function generateTextResponse(
 
         if (requestData.stream) return sendTextStreamResponse(completion);
         const fallbackModel = c.var.model?.resolved;
-        if (contentResponse)
-            return sendTextContentResponse(completion, fallbackModel);
-        return sendOpenAIResponse(completion, fallbackModel);
+        // Provider-reported cost is read post-response in track (clamp-and-alert
+        // in the registry) — malformed/absent cost never fails the request.
+        const trackingResponse = sendOpenAIResponse(completion, fallbackModel);
+        const publicCompletion = publicChatCompletion(completion);
+        if (contentResponse) {
+            c.var.track?.overrideResponseTracking(trackingResponse.clone());
+            return sendTextContentResponse(publicCompletion, fallbackModel);
+        }
+        c.var.track?.overrideResponseTracking(trackingResponse.clone());
+        return sendOpenAIResponse(publicCompletion, fallbackModel);
     } catch (thrown: unknown) {
         throwTextError(thrown as ServiceError, c);
     }

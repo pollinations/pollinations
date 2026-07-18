@@ -2,20 +2,17 @@ import { SELF } from "cloudflare:test";
 import { expect } from "vitest";
 import { test } from "./fixtures.ts";
 
-test("tracks the legacy image referral and redirects", async ({ mocks }) => {
+test("tracks the image referral", async ({ mocks }) => {
     await mocks.enable("tinybird");
 
     const response = await SELF.fetch(
-        "https://enter.pollinations.ai/api/referral?ref=legacy-image-error",
-        { redirect: "manual" },
+        "https://enter.pollinations.ai/api/referral?ref=image",
+        { method: "POST" },
     );
 
-    expect(response.status).toBe(302);
-    expect(response.headers.get("Location")).toBe(
-        "https://enter.pollinations.ai/",
-    );
+    expect(response.status).toBe(204);
     expect(mocks.tinybird.state.referralEvents).toEqual([
-        expect.objectContaining({ ref: "legacy-image-error" }),
+        expect.objectContaining({ ref: "image" }),
     ]);
 });
 
@@ -24,9 +21,9 @@ test("does not track unknown referrals", async ({ mocks }) => {
 
     const response = await SELF.fetch(
         "https://enter.pollinations.ai/api/referral?ref=unknown",
-        { redirect: "manual" },
+        { method: "POST" },
     );
 
-    expect(response.status).toBe(302);
+    expect(response.status).toBe(204);
     expect(mocks.tinybird.state.referralEvents).toEqual([]);
 });

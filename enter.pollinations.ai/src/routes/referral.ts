@@ -3,7 +3,7 @@ import { getTinybirdDatasourceIngestUrl } from "@shared/events.ts";
 import { Hono } from "hono";
 import type { Env } from "../env.ts";
 
-const LEGACY_IMAGE_REF = "legacy-image-error";
+const IMAGE_REF = "image";
 
 async function trackReferral(
     env: CloudflareBindings,
@@ -35,10 +35,10 @@ async function trackReferral(
     }
 }
 
-export const referralRoutes = new Hono<Env>().get("/", (c) => {
+export const referralRoutes = new Hono<Env>().post("/", (c) => {
     const ref = c.req.query("ref");
 
-    if (ref === LEGACY_IMAGE_REF) {
+    if (ref === IMAGE_REF) {
         c.executionCtx.waitUntil(
             trackReferral(c.env, ref, c.get("log")).catch((error) =>
                 c.get("log").warn("Referral event ingest failed: {error}", {
@@ -48,5 +48,5 @@ export const referralRoutes = new Hono<Env>().get("/", (c) => {
         );
     }
 
-    return c.redirect(new URL("/", c.req.url).toString());
+    return c.body(null, 204);
 });

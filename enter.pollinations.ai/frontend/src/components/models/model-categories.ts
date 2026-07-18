@@ -16,6 +16,7 @@ export type ModelCategoryLabel =
     | "Embedding"
     | "Community Text"
     | "Community Image"
+    | "Community Audio"
     | "Community Embedding";
 export type ModelCategoryModel = { id: string; label: string };
 export type ModelCategoryGroup = {
@@ -42,6 +43,7 @@ const CATEGORY_ORDER: ModelDisplayCategory[] = [
     "embedding",
     "community-text",
     "community-image",
+    "community-audio",
     "community-embedding",
 ];
 
@@ -55,6 +57,7 @@ const CATEGORY_LABELS: Record<ModelDisplayCategory, ModelCategoryLabel> = {
     embedding: "Embedding",
     "community-text": "Community Text",
     "community-image": "Community Image",
+    "community-audio": "Community Audio",
     "community-embedding": "Community Embedding",
 };
 
@@ -71,6 +74,7 @@ const CATEGORY_MODALITIES: Record<
     embedding: "embeddings",
     "community-text": "text",
     "community-image": "images",
+    "community-audio": "audio",
     "community-embedding": "embeddings",
 };
 
@@ -92,6 +96,7 @@ export function getModelDisplayCategory(
         community &&
         (category === "text" ||
             category === "image" ||
+            category === "audio" ||
             category === "embedding")
     ) {
         return `community-${category}`;

@@ -1,6 +1,7 @@
 import type { Usage } from "@shared/registry/registry.ts";
 import {
     buildUsageHeaders,
+    getOpenAITranscriptionDuration,
     openaiUsageToUsage,
     parseUsageHeaders,
 } from "@shared/registry/usage-headers.ts";
@@ -377,6 +378,23 @@ describe("parseUsageHeaders", () => {
         expect(usage.promptTextTokens).toBe(100);
         expect(usage.completionTextTokens).toBeUndefined();
         expect(usage.promptCachedTokens).toBeUndefined();
+    });
+});
+
+describe("getOpenAITranscriptionDuration", () => {
+    it("reads OpenAI duration from either supported response shape", () => {
+        expect(getOpenAITranscriptionDuration({ duration: 3.5 })).toBe(3.5);
+        expect(
+            getOpenAITranscriptionDuration({ usage: { seconds: 2.25 } }),
+        ).toBe(2.25);
+    });
+
+    it("rejects missing, zero, and non-finite durations", () => {
+        expect(getOpenAITranscriptionDuration({})).toBeNull();
+        expect(getOpenAITranscriptionDuration({ duration: 0 })).toBeNull();
+        expect(
+            getOpenAITranscriptionDuration({ usage: { seconds: Infinity } }),
+        ).toBeNull();
     });
 });
 

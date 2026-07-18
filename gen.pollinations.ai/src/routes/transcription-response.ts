@@ -8,6 +8,103 @@
  * (text / verbose_json / diarized_json / json) identically.
  */
 
+import { UpstreamError } from "@shared/error.ts";
+import type { ContentfulStatusCode } from "hono/utils/http-status";
+
+export interface WhisperSegment {
+    start: number;
+    end: number;
+    text: string;
+}
+
+export interface WhisperVerboseJson {
+    text: string;
+    duration?: number;
+    usage?: { seconds?: number };
+    segments?: WhisperSegment[];
+    [key: string]: unknown;
+}
+
+const WHISPER_RESPONSE_FORMATS = [
+    "json",
+    "text",
+    "verbose_json",
+    "srt",
+    "vtt",
+] as const;
+
+type WhisperResponseFormat = (typeof WHISPER_RESPONSE_FORMATS)[number];
+
+export function validateWhisperResponseFormat(
+    responseFormat: string | null,
+): void {
+    if (
+        responseFormat &&
+        !WHISPER_RESPONSE_FORMATS.includes(
+            responseFormat as WhisperResponseFormat,
+        )
+    ) {
+        throw new UpstreamError(400 as ContentfulStatusCode, {
+            message: `Unsupported response_format for whisper model: ${responseFormat}. Supported: ${WHISPER_RESPONSE_FORMATS.join(", ")}`,
+        });
+    }
+}
+
+/** Format SRT/VTT timestamps from seconds. SRT uses a comma, VTT a dot. */
+function formatTimestamp(seconds: number, sep: "," | "."): string {
+    const ms = Math.round(seconds * 1000);
+    const h = String(Math.floor(ms / 3_600_000)).padStart(2, "0");
+    const m = String(Math.floor((ms % 3_600_000) / 60_000)).padStart(2, "0");
+    const s = String(Math.floor((ms % 60_000) / 1000)).padStart(2, "0");
+    const msPart = String(ms % 1000).padStart(3, "0");
+    return `${h}:${m}:${s}${sep}${msPart}`;
+}
+
+function toSubtitles(segments: WhisperSegment[], kind: "srt" | "vtt"): string {
+    const sep = kind === "srt" ? "," : ".";
+    const cues = segments.map((segment, index) => {
+        const time = `${formatTimestamp(segment.start, sep)} --> ${formatTimestamp(segment.end, sep)}`;
+        const head = kind === "srt" ? `${index + 1}\n` : "";
+        return `${head}${time}\n${segment.text.trim()}`;
+    });
+    return kind === "vtt"
+        ? `WEBVTT\n\n${cues.join("\n\n")}\n`
+        : `${cues.join("\n\n")}\n`;
+}
+
+export function formatWhisperResponse(
+    json: WhisperVerboseJson,
+    responseFormat: string | null,
+    usageHeaders: Record<string, string>,
+): Response {
+    validateWhisperResponseFormat(responseFormat);
+
+    if (responseFormat === "text") {
+        return new Response(json.text, {
+            headers: {
+                "Content-Type": "text/plain; charset=utf-8",
+                ...usageHeaders,
+            },
+        });
+    }
+
+    if (responseFormat === "srt" || responseFormat === "vtt") {
+        return new Response(toSubtitles(json.segments ?? [], responseFormat), {
+            headers: {
+                "Content-Type": "text/plain; charset=utf-8",
+                ...usageHeaders,
+            },
+        });
+    }
+
+    if (responseFormat === "verbose_json") {
+        const { usage: _usage, ...rest } = json;
+        return Response.json(rest, { headers: usageHeaders });
+    }
+
+    return Response.json({ text: json.text }, { headers: usageHeaders });
+}
+
 export interface NormalizedWord {
     word: string;
     start: number;

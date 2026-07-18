@@ -19,6 +19,10 @@ import { type Context, Hono } from "hono";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
 import { describeRoute } from "hono-openapi";
 import { z } from "zod";
+import {
+    generateCommunitySpeech,
+    generateCommunityTranscription,
+} from "@/audio/communityEndpoint.ts";
 import type { Env } from "@/env.ts";
 import { auth } from "@/middleware/auth.ts";
 import { balance } from "@/middleware/balance.ts";
@@ -30,7 +34,14 @@ import { track } from "@/middleware/track.ts";
 import { arrayBufferToBase64 } from "@/util.ts";
 import { requireGenerationAccess } from "@/utils/generation-access.ts";
 import { transcribeWithAssemblyAi } from "./assemblyai-transcription.ts";
-import { buildTranscriptionResponse } from "./transcription-response.ts";
+import {
+    buildTranscriptionResponse,
+    formatWhisperResponse,
+    validateWhisperResponseFormat,
+    type WhisperVerboseJson,
+} from "./transcription-response.ts";
+
+export { formatWhisperResponse } from "./transcription-response.ts";
 
 const CreateSpeechRequestSchema = z
     .object({
@@ -121,6 +132,15 @@ const CreateSpeechRequestSchema = z
             description:
                 "Emotion/style instruction (qwen-tts-instruct only). e.g. 'excited and cheerful'.",
             example: "speak softly and warmly",
+        }),
+        instructions: z.string().max(4096).optional().meta({
+            description:
+                "OpenAI-compatible voice instructions for community speech models.",
+        }),
+        speed: z.number().min(0.25).max(4).optional().meta({
+            description:
+                "OpenAI-compatible speech speed for community speech models.",
+            example: 1,
         }),
     })
     .meta({ $id: "CreateSpeechRequest" });
@@ -1014,6 +1034,9 @@ async function parseSpeechRequest(c: AudioContext): Promise<
             seed: parseOptionalNumber(formData.get("seed"), "seed"),
             style: (formData.get("style") as string | null) || undefined,
             instruct: (formData.get("instruct") as string | null) || undefined,
+            instructions:
+                (formData.get("instructions") as string | null) || undefined,
+            speed: parseOptionalNumber(formData.get("speed"), "speed"),
             loop: parseOptionalBoolean(formData.get("loop"), "loop"),
             prompt_influence: parseOptionalNumber(
                 formData.get("prompt_influence"),
@@ -1757,6 +1780,29 @@ export async function handleSimpleAudio(c: AudioContext): Promise<Response> {
     requireTextToAudioModel(c.var.model.resolved, c.var.model.definition);
     text = await applySafety(c, text, query.safe);
 
+    const communityEndpoint = c.var.model.communityEndpoint;
+    if (communityEndpoint) {
+        if (communityEndpoint.modality !== "speech") {
+            throw new UpstreamError(400 as ContentfulStatusCode, {
+                message: "This community model does not generate speech",
+            });
+        }
+        return withSafetyHeaders(
+            c,
+            await generateCommunitySpeech(
+                communityEndpoint,
+                {
+                    input: text,
+                    voice: query.voice,
+                    responseFormat: query.response_format,
+                    instructions: query.instruct,
+                },
+                c.var.model.resolved,
+                c.env.BETTER_AUTH_SECRET,
+            ),
+        );
+    }
+
     const apiKey = (c.env as unknown as { ELEVENLABS_API_KEY: string })
         .ELEVENLABS_API_KEY;
 
@@ -1955,6 +2001,8 @@ export const audioRoutes = new Hono<Env>()
                 seed,
                 style,
                 instruct,
+                instructions,
+                speed,
                 loop,
                 prompt_influence,
             } = await parseSpeechRequest(c);
@@ -1970,6 +2018,31 @@ export const audioRoutes = new Hono<Env>()
                 extractCompositionPlan: extract_composition_plan,
             });
             const safeInput = await applySafety(c, input, safe);
+
+            const communityEndpoint = c.var.model.communityEndpoint;
+            if (communityEndpoint) {
+                if (communityEndpoint.modality !== "speech") {
+                    throw new UpstreamError(400 as ContentfulStatusCode, {
+                        message:
+                            "This community model does not generate speech",
+                    });
+                }
+                return withSafetyHeaders(
+                    c,
+                    await generateCommunitySpeech(
+                        communityEndpoint,
+                        {
+                            input: safeInput,
+                            voice,
+                            responseFormat: response_format,
+                            instructions,
+                            speed,
+                        },
+                        c.var.model.resolved,
+                        c.env.BETTER_AUTH_SECRET,
+                    ),
+                );
+            }
 
             const apiKey = (c.env as unknown as { ELEVENLABS_API_KEY: string })
                 .ELEVENLABS_API_KEY;
@@ -2170,6 +2243,26 @@ export const audioRoutes = new Hono<Env>()
                 });
             }
 
+            const communityEndpoint = c.var.model.communityEndpoint;
+            if (communityEndpoint) {
+                if (communityEndpoint.modality !== "transcription") {
+                    throw new UpstreamError(400 as ContentfulStatusCode, {
+                        message:
+                            "This community model does not transcribe audio",
+                    });
+                }
+                const result = await generateCommunityTranscription(
+                    communityEndpoint,
+                    file,
+                    formData,
+                    responseFormat,
+                    c.var.model.resolved,
+                    c.env.BETTER_AUTH_SECRET,
+                );
+                c.var.track.overrideResponseTracking(result.clone());
+                return result;
+            }
+
             // Route to ElevenLabs Scribe or Whisper based on model
             if (c.var.model.resolved === "scribe") {
                 const elevenLabsApiKey = (
@@ -2293,41 +2386,6 @@ export function parsePositiveInt(
     return n;
 }
 
-interface WhisperSegment {
-    start: number;
-    end: number;
-    text: string;
-}
-
-interface WhisperVerboseJson {
-    text: string;
-    usage?: { seconds?: number };
-    segments?: WhisperSegment[];
-}
-
-const WHISPER_RESPONSE_FORMATS = [
-    "json",
-    "text",
-    "verbose_json",
-    "srt",
-    "vtt",
-] as const;
-
-type WhisperResponseFormat = (typeof WHISPER_RESPONSE_FORMATS)[number];
-
-function validateWhisperResponseFormat(responseFormat: string | null): void {
-    if (
-        responseFormat &&
-        !WHISPER_RESPONSE_FORMATS.includes(
-            responseFormat as WhisperResponseFormat,
-        )
-    ) {
-        throw new UpstreamError(400 as ContentfulStatusCode, {
-            message: `Unsupported response_format for whisper model: ${responseFormat}. Supported: ${WHISPER_RESPONSE_FORMATS.join(", ")}`,
-        });
-    }
-}
-
 function extractWhisperUsage(json: WhisperVerboseJson, log: Logger): number {
     const seconds = json.usage?.seconds;
     if (typeof seconds !== "number" || seconds <= 0) {
@@ -2337,64 +2395,4 @@ function extractWhisperUsage(json: WhisperVerboseJson, log: Logger): number {
     }
     log.debug("Whisper usage: {seconds}s", { seconds });
     return seconds;
-}
-
-/** Format SRT/VTT timestamps from seconds. SRT uses a comma, VTT a dot. */
-function formatTimestamp(seconds: number, sep: "," | "."): string {
-    const ms = Math.round(seconds * 1000);
-    const h = String(Math.floor(ms / 3_600_000)).padStart(2, "0");
-    const m = String(Math.floor((ms % 3_600_000) / 60_000)).padStart(2, "0");
-    const s = String(Math.floor((ms % 60_000) / 1000)).padStart(2, "0");
-    const msPart = String(ms % 1000).padStart(3, "0");
-    return `${h}:${m}:${s}${sep}${msPart}`;
-}
-
-function toSubtitles(segments: WhisperSegment[], kind: "srt" | "vtt"): string {
-    const sep = kind === "srt" ? "," : ".";
-    const cues = segments.map((seg, i) => {
-        const time = `${formatTimestamp(seg.start, sep)} --> ${formatTimestamp(seg.end, sep)}`;
-        const head = kind === "srt" ? `${i + 1}\n` : "";
-        return `${head}${time}\n${seg.text.trim()}`;
-    });
-    return kind === "vtt"
-        ? `WEBVTT\n\n${cues.join("\n\n")}\n`
-        : `${cues.join("\n\n")}\n`;
-}
-
-/**
- * Reformat OVH's verbose_json into the caller's requested response_format.
- * Mirrors the ElevenLabs scribe path so behaviour is consistent across backends.
- */
-export function formatWhisperResponse(
-    json: WhisperVerboseJson,
-    responseFormat: string | null,
-    usageHeaders: Record<string, string>,
-): Response {
-    validateWhisperResponseFormat(responseFormat);
-
-    if (responseFormat === "text") {
-        return new Response(json.text, {
-            headers: {
-                "Content-Type": "text/plain; charset=utf-8",
-                ...usageHeaders,
-            },
-        });
-    }
-
-    if (responseFormat === "srt" || responseFormat === "vtt") {
-        return new Response(toSubtitles(json.segments ?? [], responseFormat), {
-            headers: {
-                "Content-Type": "text/plain; charset=utf-8",
-                ...usageHeaders,
-            },
-        });
-    }
-
-    if (responseFormat === "verbose_json") {
-        const { usage: _usage, ...rest } = json;
-        return Response.json(rest, { headers: usageHeaders });
-    }
-
-    // Default: json
-    return Response.json({ text: json.text }, { headers: usageHeaders });
 }

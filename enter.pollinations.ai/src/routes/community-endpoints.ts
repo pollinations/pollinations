@@ -2,6 +2,7 @@ import {
     COMMUNITY_ENDPOINT_MODALITIES,
     COMMUNITY_ENDPOINT_PRICE_FIELDS,
     COMMUNITY_ENDPOINT_VISIBILITIES,
+    type CommunityEndpointModality,
     type CommunityEndpointPriceKey,
     type CommunityEndpointVisibility,
     communityEndpointPriceFieldsForModality,
@@ -9,7 +10,6 @@ import {
     communityEndpointPricesForModality,
     communityModelId,
     isCommunityEndpointOwnerAllowed,
-    MIN_COMMUNITY_PRICE_PER_MILLION_TOKENS,
     MIN_COMMUNITY_PRICE_PER_TOKEN,
     normalizeCommunityEndpointBaseUrl,
     normalizeCommunityEndpointBearerToken,
@@ -28,10 +28,13 @@ import { z } from "zod";
 import type { Env } from "../env.ts";
 import { auth } from "../middleware/auth.ts";
 import {
+    type CommunityEndpointTestResult,
     listCommunityEndpointModels,
     testCommunityEmbeddingEndpoint,
     testCommunityEndpoint,
     testCommunityImageEndpoint,
+    testCommunitySpeechEndpoint,
+    testCommunityTranscriptionEndpoint,
 } from "../services/community-endpoint-openai.ts";
 import { hasDirectAccountPermission } from "./account-permissions.ts";
 
@@ -39,7 +42,6 @@ const ModalitySchema = z.enum(COMMUNITY_ENDPOINT_MODALITIES);
 const UpdatePriceFieldsSchema = Object.fromEntries(
     COMMUNITY_ENDPOINT_PRICE_FIELDS.map((field) => {
         const minimum = MIN_COMMUNITY_PRICE_PER_TOKEN;
-        const unit = `per token (${MIN_COMMUNITY_PRICE_PER_MILLION_TOKENS} per 1M tokens)`;
         return [
             field.key,
             z
@@ -47,7 +49,7 @@ const UpdatePriceFieldsSchema = Object.fromEntries(
                 .finite()
                 .min(0)
                 .refine((price) => price === 0 || price >= minimum, {
-                    message: `Price must be 0 (free) or at least ${minimum} ${unit}`,
+                    message: `Price must be 0 (free) or at least ${minimum} per billable unit`,
                 })
                 .optional(),
         ];
@@ -137,6 +139,13 @@ const CommunityEndpointDeleteResponseSchema = z.object({
     id: z.string(),
 });
 const ENDPOINT_PROBE_THROTTLE_SECONDS = 30;
+const TEST_SUCCESS_MESSAGES: Record<CommunityEndpointModality, string> = {
+    text: "Endpoint responded with usage",
+    image: "Endpoint responded with image data",
+    embedding: "Endpoint responded with embedding data",
+    speech: "Endpoint responded with speech audio",
+    transcription: "Endpoint responded with a transcription",
+};
 type Db = ReturnType<typeof drizzle<typeof schema>>;
 type CommunityEndpointRow = typeof schema.communityEndpoint.$inferSelect;
 
@@ -360,7 +369,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
             tags: ["👤 Account"],
             summary: "Create My Model",
             description:
-                "Register a private or public community text, image, or embedding model. Private is the default. Public models require an allowlisted account and may be free or priced. API keys require `account:keys`. The upstream bearer token is encrypted and never returned.",
+                "Register a private or public community text, image, embedding, speech, or transcription model. Private is the default. Public models require an allowlisted account and may be free or priced. API keys require `account:keys`. The upstream bearer token is encrypted and never returned.",
             responses: {
                 200: {
                     description: "Created community model",
@@ -498,20 +507,27 @@ export const communityEndpointsRoutes = new Hono<Env>()
             );
             if (throttled) return throttled;
             try {
-                const result =
-                    input.modality === "image"
-                        ? await testCommunityImageEndpoint(input)
-                        : input.modality === "embedding"
-                          ? await testCommunityEmbeddingEndpoint(input)
-                          : await testCommunityEndpoint(input);
+                let result: CommunityEndpointTestResult;
+                switch (input.modality) {
+                    case "image":
+                        result = await testCommunityImageEndpoint(input);
+                        break;
+                    case "embedding":
+                        result = await testCommunityEmbeddingEndpoint(input);
+                        break;
+                    case "speech":
+                        result = await testCommunitySpeechEndpoint(input);
+                        break;
+                    case "transcription":
+                        result =
+                            await testCommunityTranscriptionEndpoint(input);
+                        break;
+                    default:
+                        result = await testCommunityEndpoint(input);
+                }
                 return c.json({
                     ok: true,
-                    message:
-                        input.modality === "image"
-                            ? "Endpoint responded with image data"
-                            : input.modality === "embedding"
-                              ? "Endpoint responded with embedding data"
-                              : "Endpoint responded with usage",
+                    message: TEST_SUCCESS_MESSAGES[input.modality],
                     ...result,
                 });
             } catch (error) {

@@ -13,7 +13,11 @@ import {
     ScrollArea,
     TabButton,
 } from "@pollinations/ui";
-import type { CommunityEndpointVisibility } from "@shared/community-endpoints.ts";
+import type {
+    CommunityEndpointModality,
+    CommunityEndpointPriceKey,
+    CommunityEndpointVisibility,
+} from "@shared/community-endpoints.ts";
 import type { FormEvent, ReactNode } from "react";
 import { useEffect, useState } from "react";
 import { apiClient } from "../../api.ts";
@@ -52,6 +56,33 @@ type CommunityEndpointDialogProps = {
     onSubmit: (payload: EndpointPayload, bearerToken: string) => Promise<void>;
     /** Create-mode trigger rendered by the parent (e.g. the Section action). */
     trigger?: ReactNode;
+};
+
+const MODALITY_OPTIONS: CommunityEndpointModality[] = [
+    "text",
+    "image",
+    "embedding",
+    "speech",
+    "transcription",
+];
+
+const BASE_PRICE_KEYS: Record<
+    CommunityEndpointModality,
+    readonly CommunityEndpointPriceKey[]
+> = {
+    text: BASE_TEXT_PRICE_KEYS,
+    image: ["promptTextPrice", "completionImagePrice"],
+    embedding: ["promptTextPrice"],
+    speech: ["completionAudioPrice"],
+    transcription: ["promptAudioPrice"],
+};
+
+const MODEL_PLACEHOLDERS: Record<CommunityEndpointModality, string> = {
+    text: "gpt-4o-mini",
+    image: "gpt-image-2",
+    embedding: "text-embedding-3-small",
+    speech: "gpt-4o-mini-tts",
+    transcription: "whisper-1",
 };
 
 export function CommunityEndpointDialog({
@@ -170,7 +201,7 @@ export function CommunityEndpointDialog({
                 throw new Error(
                     form.modality === "image"
                         ? "Endpoint responded, but did not return image data"
-                        : "Endpoint responded, but did not return billable token usage",
+                        : "Endpoint responded, but did not return billable usage",
                 );
             }
             setTestState({
@@ -223,12 +254,7 @@ export function CommunityEndpointDialog({
         : [];
     // Reveal the modality's base price plus whatever the test observed or the
     // model already had saved. Blank and zero prices mean free.
-    const basePriceKeys =
-        form.modality === "image"
-            ? (["promptTextPrice", "completionImagePrice"] as const)
-            : form.modality === "embedding"
-              ? (["promptTextPrice"] as const)
-              : BASE_TEXT_PRICE_KEYS;
+    const basePriceKeys = BASE_PRICE_KEYS[form.modality];
     const visiblePriceKeys = new Set(
         isShared
             ? visiblePriceFieldKeys(savedPriceKeys, returnedFields, [
@@ -307,30 +333,28 @@ export function CommunityEndpointDialog({
                         }
                         alignLabelRow
                     >
-                        <div className="grid grid-cols-3 gap-2">
-                            {(["text", "image", "embedding"] as const).map(
-                                (modality) => {
-                                    const selected = form.modality === modality;
-                                    return (
-                                        <button
-                                            key={modality}
-                                            type="button"
-                                            disabled={isEdit}
-                                            className={`rounded-md border px-3 py-2 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-60 ${
-                                                selected
-                                                    ? "border-theme-border-active bg-theme-bg-active text-theme-text-strong"
-                                                    : "border-divider bg-surface text-theme-text-muted hover:bg-surface-opaque"
-                                            }`}
-                                            onClick={() =>
-                                                updateForm("modality", modality)
-                                            }
-                                        >
-                                            {modality.charAt(0).toUpperCase() +
-                                                modality.slice(1)}
-                                        </button>
-                                    );
-                                },
-                            )}
+                        <div className="grid grid-cols-2 gap-2 sm:grid-cols-5">
+                            {MODALITY_OPTIONS.map((modality) => {
+                                const selected = form.modality === modality;
+                                return (
+                                    <button
+                                        key={modality}
+                                        type="button"
+                                        disabled={isEdit}
+                                        className={`rounded-md border px-3 py-2 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-60 ${
+                                            selected
+                                                ? "border-theme-border-active bg-theme-bg-active text-theme-text-strong"
+                                                : "border-divider bg-surface text-theme-text-muted hover:bg-surface-opaque"
+                                        }`}
+                                        onClick={() =>
+                                            updateForm("modality", modality)
+                                        }
+                                    >
+                                        {modality.charAt(0).toUpperCase() +
+                                            modality.slice(1)}
+                                    </button>
+                                );
+                            })}
                         </div>
                     </FieldStack>
 
@@ -375,7 +399,7 @@ export function CommunityEndpointDialog({
                         label="Visibility"
                         helper={
                             isShared
-                                ? "Public: listed in /models and callable by anyone. Set optional per-1M-token prices below, or leave them at 0 for free."
+                                ? "Public: listed in /models and callable by anyone. Set optional usage prices below, or leave them at 0 for free."
                                 : canPublish
                                   ? "Private: callable only by you and shown only in model lists authenticated with your API key."
                                   : "Private: callable only by you. Publishing publicly requires approval."
@@ -412,7 +436,7 @@ export function CommunityEndpointDialog({
                     <div className="grid gap-4 sm:grid-cols-2">
                         <FieldStack
                             label="Endpoint URL"
-                            helper="OpenAI-compatible /v1 base URL, or full chat, image generation, or embeddings URL."
+                            helper="OpenAI-compatible /v1 base URL, or full chat, image, embeddings, speech, or transcription URL."
                             alignLabelRow
                         >
                             <Input
@@ -474,12 +498,9 @@ export function CommunityEndpointDialog({
                                                 name="community-upstream-id"
                                                 value={form.upstreamModel}
                                                 placeholder={
-                                                    form.modality === "image"
-                                                        ? "gpt-image-2"
-                                                        : form.modality ===
-                                                            "embedding"
-                                                          ? "text-embedding-3-small"
-                                                          : "gpt-4o-mini"
+                                                    MODEL_PLACEHOLDERS[
+                                                        form.modality
+                                                    ]
                                                 }
                                                 className="w-full pr-10"
                                                 autoComplete="off"
@@ -544,11 +565,7 @@ export function CommunityEndpointDialog({
                                     name="community-upstream-id"
                                     value={form.upstreamModel}
                                     placeholder={
-                                        form.modality === "image"
-                                            ? "gpt-image-2"
-                                            : form.modality === "embedding"
-                                              ? "text-embedding-3-small"
-                                              : "gpt-4o-mini"
+                                        MODEL_PLACEHOLDERS[form.modality]
                                     }
                                     autoComplete="off"
                                     autoCapitalize="none"

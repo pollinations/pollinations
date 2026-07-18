@@ -22,12 +22,18 @@ const COMMUNITY_TEXT_ENDPOINTS = [
 ];
 const COMMUNITY_IMAGE_ENDPOINTS = ["/v1/images/generations", "/image/{prompt}"];
 const COMMUNITY_EMBEDDING_ENDPOINTS = ["/v1/embeddings"];
+const COMMUNITY_SPEECH_ENDPOINTS = ["/v1/audio/speech", "/audio/{text}"];
+const COMMUNITY_TRANSCRIPTION_ENDPOINTS = ["/v1/audio/transcriptions"];
 
 export function communitySupportedEndpoints(
     modality: CommunityEndpointModality,
 ): string[] {
     if (modality === "image") return COMMUNITY_IMAGE_ENDPOINTS;
     if (modality === "embedding") return COMMUNITY_EMBEDDING_ENDPOINTS;
+    if (modality === "speech") return COMMUNITY_SPEECH_ENDPOINTS;
+    if (modality === "transcription") {
+        return COMMUNITY_TRANSCRIPTION_ENDPOINTS;
+    }
     return COMMUNITY_TEXT_ENDPOINTS;
 }
 

@@ -129,6 +129,16 @@ export const OPENAI_EMBEDDING_USAGE_PATHS = {
     promptTextTokens: ["prompt_tokens"],
 } as const satisfies Partial<Record<UsageType, readonly string[]>>;
 
+export function getOpenAITranscriptionDuration(value: unknown): number | null {
+    if (!value || typeof value !== "object") return null;
+    const duration = "duration" in value ? value.duration : undefined;
+    if (isPositiveNumber(duration)) return duration;
+    const usage = "usage" in value ? value.usage : undefined;
+    if (!usage || typeof usage !== "object") return null;
+    const seconds = "seconds" in usage ? usage.seconds : undefined;
+    return isPositiveNumber(seconds) ? seconds : null;
+}
+
 export function usageToOpenAIImageUsage(usage: Usage): OpenAIImageUsage {
     const inputTextTokens =
         (usage.promptTextTokens ?? 0) +
@@ -274,6 +284,10 @@ function isTokenCount(value: unknown): value is number {
     return (
         typeof value === "number" && Number.isSafeInteger(value) && value >= 0
     );
+}
+
+function isPositiveNumber(value: unknown): value is number {
+    return typeof value === "number" && Number.isFinite(value) && value > 0;
 }
 
 function sumTokens(tokens: readonly number[]): number {

@@ -1,11 +1,14 @@
 import {
     COMMUNITY_ENDPOINT_PRICE_FIELDS,
     type CommunityEndpointModality,
+    type CommunityEndpointPriceField,
     type CommunityEndpointPriceKey,
     type CommunityEndpointPrices,
     type CommunityEndpointVisibility,
     communityEndpointPriceFieldsForModality,
     MIN_COMMUNITY_PRICE_PER_MILLION_TOKENS,
+    MIN_COMMUNITY_PRICE_PER_TOKEN,
+    normalizeCommunityEndpointModality,
 } from "@shared/community-endpoints.ts";
 import type { Usage } from "@shared/registry/registry.ts";
 
@@ -101,30 +104,49 @@ export function pricePerMillionToPerToken(value: string): number {
     return Number(trimmed) / TOKENS_PER_MILLION;
 }
 
-export function storedPriceToFormValue(value: number): string {
+export function storedPriceToFormValue(
+    value: number,
+    priceUnit: CommunityEndpointPriceField["priceUnit"] = "million",
+): string {
     if (value <= 0) return "";
-    return pricePerTokenToPerMillion(value);
+    return priceUnit === "second"
+        ? String(Number(value.toPrecision(15)))
+        : pricePerTokenToPerMillion(value);
 }
 
-export function formPriceToStoredPrice(value: string): number {
+export function formPriceToStoredPrice(
+    value: string,
+    priceUnit: CommunityEndpointPriceField["priceUnit"] = "million",
+): number {
     const trimmed = value.trim();
     if (!trimmed) return 0;
-    if (!isValidPriceInput(trimmed)) return Number.NaN;
-    return pricePerMillionToPerToken(trimmed);
+    if (!isValidPriceInput(trimmed, priceUnit)) return Number.NaN;
+    return priceUnit === "second"
+        ? Number(trimmed)
+        : pricePerMillionToPerToken(trimmed);
 }
 
-export function isValidPriceInput(value: string): boolean {
+export function isValidPriceInput(
+    value: string,
+    priceUnit: CommunityEndpointPriceField["priceUnit"] = "million",
+): boolean {
     const trimmed = value.trim();
     if (!trimmed) return true;
     if (trimmed.includes(",")) return false;
     const parsed = Number(trimmed);
-    return (
-        Number.isFinite(parsed) &&
-        (parsed === 0 || parsed >= MIN_COMMUNITY_PRICE_PER_MILLION_TOKENS)
-    );
+    const minimum =
+        priceUnit === "second"
+            ? MIN_COMMUNITY_PRICE_PER_TOKEN
+            : MIN_COMMUNITY_PRICE_PER_MILLION_TOKENS;
+    return Number.isFinite(parsed) && (parsed === 0 || parsed >= minimum);
 }
 
 export function endpointToForm(endpoint: CommunityEndpoint): EndpointFormState {
+    const fields = new Map(
+        communityEndpointPriceFieldsForModality(endpoint.modality).map(
+            (field) => [field.key, field],
+        ),
+    );
     return {
         modality: endpoint.modality,
         name: endpoint.name,
@@ -134,10 +156,18 @@ export function endpointToForm(endpoint: CommunityEndpoint): EndpointFormState {
         upstreamModel: endpoint.upstreamModel,
         bearerToken: "",
         ...(Object.fromEntries(
-            COMMUNITY_ENDPOINT_PRICE_FIELDS.map((field) => [
-                field.key,
-                storedPriceToFormValue(endpoint[field.key]),
-            ]),
+            COMMUNITY_ENDPOINT_PRICE_FIELDS.map((field) => {
+                const modalityField = fields.get(field.key);
+                return [
+                    field.key,
+                    modalityField
+                        ? storedPriceToFormValue(
+                              endpoint[field.key],
+                              modalityField.priceUnit,
+                          )
+                        : "",
+                ];
+            }),
         ) as EndpointFormPrices),
     };
 }
@@ -146,20 +176,32 @@ function formPricesToPayload(
     form: EndpointFormState,
     modality: CommunityEndpointModality,
 ): CommunityEndpointPrices {
-    const allowed = new Set(
-        communityEndpointPriceFieldsForModality(modality).map(
-            (field) => field.key,
-        ),
+    const allowed = new Map(
+        communityEndpointPriceFieldsForModality(modality).map((field) => [
+            field.key,
+            field,
+        ]),
     );
     return Object.fromEntries(
         COMMUNITY_ENDPOINT_PRICE_FIELDS.map((field) => {
-            if (!allowed.has(field.key)) return [field.key, 0];
-            if (!isValidPriceInput(form[field.key])) {
+            const modalityField = allowed.get(field.key);
+            if (!modalityField) return [field.key, 0];
+            if (!isValidPriceInput(form[field.key], modalityField.priceUnit)) {
+                const unit =
+                    modalityField.priceUnit === "second"
+                        ? "audio second"
+                        : "1M units";
                 throw new Error(
-                    `Prices must be 0 (free) or at least ${MIN_COMMUNITY_PRICE_PER_MILLION_TOKENS} per 1M tokens, using a dot decimal`,
+                    `Prices must be 0 (free) or a positive amount per ${unit}, using a dot decimal`,
                 );
             }
-            return [field.key, formPriceToStoredPrice(form[field.key])];
+            return [
+                field.key,
+                formPriceToStoredPrice(
+                    form[field.key],
+                    modalityField.priceUnit,
+                ),
+            ];
         }),
     ) as CommunityEndpointPrices;
 }
@@ -181,7 +223,7 @@ function hasObservedUsagePath(
 
 export function hasObservedPriceField(
     usage: CommunityEndpointUsage | undefined,
-    field: (typeof COMMUNITY_ENDPOINT_PRICE_FIELDS)[number],
+    field: CommunityEndpointPriceField,
 ): boolean {
     return field.rawUsagePaths.some((path) =>
         hasObservedUsagePath(usage, path),
@@ -191,7 +233,7 @@ export function hasObservedPriceField(
 export function observedUsageValue(
     usage: CommunityEndpointUsage | undefined,
     billableUsage: Usage | undefined,
-    field: (typeof COMMUNITY_ENDPOINT_PRICE_FIELDS)[number],
+    field: CommunityEndpointPriceField,
 ): number | null {
     return hasObservedPriceField(usage, field)
         ? (billableUsage?.[field.usageType] ?? 0)
@@ -220,8 +262,7 @@ export function nextFormState(
     if (key === "modality") {
         return {
             ...current,
-            modality:
-                value === "image" || value === "embedding" ? value : "text",
+            modality: normalizeCommunityEndpointModality(value),
         };
     }
     const next = { ...current, [key]: value };

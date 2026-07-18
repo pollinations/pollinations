@@ -11,6 +11,7 @@ export type ModelDisplayCategory =
     | ModelCategory
     | "community-text"
     | "community-image"
+    | "community-audio"
     | "community-embedding";
 
 export type ModelCapability =

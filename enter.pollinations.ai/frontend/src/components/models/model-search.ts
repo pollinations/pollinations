@@ -8,6 +8,7 @@ export const MODEL_CATEGORIES = [
     "text",
     "community-text",
     "community-image",
+    "community-audio",
     "community-embedding",
     "embedding",
 ] as const;

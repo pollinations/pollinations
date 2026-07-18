@@ -42,9 +42,23 @@ describe("community endpoint price input", () => {
         expect(storedPriceToFormValue(0.00003)).toBe("30");
     });
 
+    it("keeps per-second transcription prices unscaled", () => {
+        expect(formPriceToStoredPrice("0.00004", "second")).toBe(0.00004);
+        expect(storedPriceToFormValue(0.00004, "second")).toBe("0.00004");
+    });
+
     it("keeps embedding as the selected endpoint modality", () => {
         expect(nextFormState(emptyForm, "modality", "embedding").modality).toBe(
             "embedding",
         );
+    });
+
+    it("keeps both audio endpoint modalities", () => {
+        expect(nextFormState(emptyForm, "modality", "speech").modality).toBe(
+            "speech",
+        );
+        expect(
+            nextFormState(emptyForm, "modality", "transcription").modality,
+        ).toBe("transcription");
     });
 });

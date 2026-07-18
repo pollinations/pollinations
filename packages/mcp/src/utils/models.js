@@ -8,33 +8,16 @@ export const getTextModels = () => fetchRegistry("/text/models");
 export const getAudioModels = () => fetchRegistry("/audio/models");
 
 export async function getAudioVoices() {
-    try {
-        const audioModels = await getAudioModels();
-        const voices = new Set();
-        for (const m of audioModels) {
-            if (Array.isArray(m.voices)) {
-                for (const v of m.voices) voices.add(v);
-            }
+    const voices = new Set();
+    for (const model of await getAudioModels()) {
+        if (Array.isArray(model.voices)) {
+            for (const voice of model.voices) voices.add(voice);
         }
-        if (voices.size > 0) return Array.from(voices);
-    } catch {}
-    // Last-resort fallback. Keep in sync with AUDIO_VOICES in
-    // shared/registry/text.ts (the canonical list the API serves).
-    return [
-        "alloy",
-        "echo",
-        "fable",
-        "onyx",
-        "nova",
-        "shimmer",
-        "coral",
-        "verse",
-        "ballad",
-        "ash",
-        "sage",
-        "amuch",
-        "dan",
-    ];
+    }
+    if (voices.size === 0) {
+        throw new Error("Audio model registry returned no voices");
+    }
+    return Array.from(voices);
 }
 
 export async function validateVoice(voice) {

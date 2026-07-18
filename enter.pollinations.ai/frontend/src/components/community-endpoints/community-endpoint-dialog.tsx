@@ -372,11 +372,7 @@ export function CommunityEndpointDialog({
                         label="Visibility"
                         helper={
                             isShared
-                                ? `Public: listed in /models and callable by anyone. Set an optional ${
-                                      form.modality === "image"
-                                          ? "per-image"
-                                          : "per-1M-token"
-                                  } price below, or leave it at 0 for free.`
+                                ? "Public: listed in /models and callable by anyone. Set optional per-1M-token prices below, or leave them at 0 for free."
                                 : canPublish
                                   ? "Private: callable only by you and shown only in model lists authenticated with your API key."
                                   : "Private: callable only by you. Publishing publicly requires approval."

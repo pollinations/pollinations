@@ -1,0 +1,36 @@
+{
+  "pr_number": 12560,
+  "title": "Add FLOSS funding manifest",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/12560",
+  "merged_at": "2026-07-18T07:28:37Z",
+  "labels": [
+    "DEV-DOCS"
+  ],
+  "pr_body_excerpt": "- Adds a funding.json v1.1.0 manifest for Pollinations and Myceli AI OÜ.\n- Requests up to $100,000 yearly for open infrastructure and maintainer engineering.\n- Keeps bank, payment, and tax details private until an award is approved.\n- Uses current product and traction facts without the stale no-auth claims from the earlier draft.\n\nValidation: `npx biome check --write funding.json`; `jq empty funding.json`.",
+  "gist": {
+    "category": "docs",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "A seed packet for the commons",
+    "blurb": "The hive now has a proper FLOSS funding manifest. It explains what open infrastructure needs to keep growing, while keeping the sensitive paperwork safely off the garden path.",
+    "summary": "Added a funding.json v1.1.0 manifest for Pollinations and Myceli AI OÜ, documenting up to $100,000 in annual FLOSS funding needs for open infrastructure and maintainer engineering.",
+    "impact": "Potential funders can now discover a current, machine-readable funding profile while banking, payment, and tax details remain private until an award is approved.",
+    "keywords": [
+      "floss",
+      "funding",
+      "open-source",
+      "manifest",
+      "infrastructure",
+      "maintainers"
+    ],
+    "visual_concept": "A cozy community garden noticeboard displays a small funding manifest as a seed packet for sustaining open infrastructure. Polly, wearing a tiny gardener hat and carrying a watering can, tends code-plants beside the board; a locked little document box represents private award paperwork, with flowers and a warm retro terminal nearby.",
+    "image_prompt": "Cozy pixel art scene of Polly the cute yellow-and-brown striped bee mascot wearing a tiny gardener hat, watering code-plants beside a community garden noticeboard labeled 'FUNDING.JSON'; a small locked document box sits safely nearby. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, retro gaming vibes, pixel flowers and a softly glowing terminal, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-18/PR-12560.jpg",
+    "prompt": "Cozy pixel art scene of Polly the cute yellow-and-brown striped bee mascot wearing a tiny gardener hat, watering code-plants beside a community garden noticeboard labeled 'FUNDING.JSON'; a small locked document box sits safely nearby. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, retro gaming vibes, pixel flowers and a softly glowing terminal, nostalgic but beautiful."
+  },
+  "generated_at": "2026-07-18T07:29:29.268940+00:00"
+}

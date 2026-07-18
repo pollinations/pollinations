@@ -1,143 +1,78 @@
 import { z } from "zod";
 import { requireApiKey } from "../utils/authUtils.js";
 import {
+    API_BASE_URL,
     arrayBufferToBase64,
-    buildUrl,
     chatWithMedia,
     createAudioContent,
     createMCPResponse,
     createTextContent,
     fetchBinaryWithAuth,
+    postChatCompletion,
 } from "../utils/coreUtils.js";
-import { getAudioModels, validateVoice } from "../utils/models.js";
-
-const DEFAULT_AUDIO_MODEL = "openai-audio";
-
-async function resolveAudioModel(requested) {
-    if (requested) return requested;
-    try {
-        const models = await getAudioModels();
-        const tts = models.find((m) => m.output_modalities?.includes("audio"));
-        return tts?.name || DEFAULT_AUDIO_MODEL;
-    } catch {
-        return DEFAULT_AUDIO_MODEL;
-    }
-}
+import { getAudioModels } from "../utils/models.js";
 
 async function respondAudio(params) {
     requireApiKey();
 
-    const {
-        prompt,
-        voice = "alloy",
-        format = "mp3",
-        model,
-        voiceInstructions,
-    } = params;
+    const { prompt, voice = "alloy", format = "mp3" } = params;
 
     if (!prompt || typeof prompt !== "string") {
         throw new Error("Prompt is required and must be a string");
     }
 
-    const voiceCheck = await validateVoice(voice);
-    if (!voiceCheck.valid) {
-        throw new Error(
-            `${voiceCheck.error} Did you mean: ${voiceCheck.suggestions.join(", ")}? ` +
-                `Use listAudioVoices to see all ${voiceCheck.availableCount} available voices.`,
-        );
+    const response = await postChatCompletion({
+        model: "openai-audio",
+        messages: [{ role: "user", content: prompt }],
+        modalities: ["text", "audio"],
+        audio: { voice, format },
+    });
+    const result = await response.json();
+    const audio = result.choices?.[0]?.message?.audio;
+
+    if (!audio?.data) {
+        throw new Error("Audio response did not include audio data");
     }
 
-    let finalPrompt = prompt;
-    if (voiceInstructions) {
-        finalPrompt = `${voiceInstructions}\n\n${prompt}`;
+    const content = [
+        createAudioContent(
+            audio.data,
+            `audio/${format === "mp3" ? "mpeg" : format}`,
+        ),
+    ];
+    if (audio.transcript) {
+        content.push(createTextContent(audio.transcript));
     }
-
-    const queryParams = {
-        model: await resolveAudioModel(model),
-        voice,
-        format,
-    };
-
-    const url = buildUrl(
-        `/text/${encodeURIComponent(finalPrompt)}`,
-        queryParams,
-    );
-
-    try {
-        const { buffer, contentType } = await fetchBinaryWithAuth(url);
-        const base64Data = arrayBufferToBase64(buffer);
-
-        const mimeType =
-            contentType || `audio/${format === "mp3" ? "mpeg" : format}`;
-
-        return createMCPResponse([
-            createAudioContent(base64Data, mimeType),
-            createTextContent(
-                `Generated audio response for prompt: "${prompt}"\n\nVoice: ${voice}\nFormat: ${format}`,
-            ),
-        ]);
-    } catch (error) {
-        console.error("Error generating audio:", error);
-        throw error;
-    }
+    return createMCPResponse(content);
 }
 
 async function sayText(params) {
     requireApiKey();
 
-    const {
-        text,
-        voice = "alloy",
-        format = "mp3",
-        model,
-        voiceInstructions,
-    } = params;
+    const { text, voice = "alloy", format = "mp3", model } = params;
 
     if (!text || typeof text !== "string") {
         throw new Error("Text is required and must be a string");
     }
 
-    const voiceCheck = await validateVoice(voice);
-    if (!voiceCheck.valid) {
-        throw new Error(
-            `${voiceCheck.error} Did you mean: ${voiceCheck.suggestions.join(", ")}? ` +
-                `Use listAudioVoices to see all ${voiceCheck.availableCount} available voices.`,
-        );
-    }
+    const body = { input: text, voice, response_format: format };
+    if (model) body.model = model;
 
-    let finalPrompt = `Say verbatim: ${text}`;
-    if (voiceInstructions) {
-        finalPrompt = `${voiceInstructions}\n\n${finalPrompt}`;
-    }
-
-    const queryParams = {
-        model: await resolveAudioModel(model),
-        voice,
-        format,
-    };
-
-    const url = buildUrl(
-        `/text/${encodeURIComponent(finalPrompt)}`,
-        queryParams,
+    const { buffer, contentType } = await fetchBinaryWithAuth(
+        `${API_BASE_URL}/v1/audio/speech`,
+        {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(body),
+        },
     );
 
-    try {
-        const { buffer, contentType } = await fetchBinaryWithAuth(url);
-        const base64Data = arrayBufferToBase64(buffer);
-
-        const mimeType =
-            contentType || `audio/${format === "mp3" ? "mpeg" : format}`;
-
-        return createMCPResponse([
-            createAudioContent(base64Data, mimeType),
-            createTextContent(
-                `Generated speech for text: "${text}"\n\nVoice: ${voice}\nFormat: ${format}`,
-            ),
-        ]);
-    } catch (error) {
-        console.error("Error generating speech:", error);
-        throw error;
-    }
+    return createMCPResponse([
+        createAudioContent(arrayBufferToBase64(buffer), contentType),
+        createTextContent(
+            `Generated speech for text: "${text}"\n\nVoice: ${voice}\nFormat: ${format}`,
+        ),
+    ]);
 }
 
 async function listAudioVoices(_params) {
@@ -161,7 +96,7 @@ async function listAudioVoices(_params) {
             {
                 voices: allVoices,
                 byModel,
-                formats: ["wav", "mp3", "flac", "opus", "pcm16"],
+                formats: ["wav", "mp3", "flac", "opus", "aac", "pcm", "pcm16"],
                 total: allVoices.length,
             },
             true,
@@ -182,29 +117,24 @@ async function transcribeAudio(params) {
         throw new Error("audioUrl is required and must be a string");
     }
 
-    try {
-        const { content, model: respondedModel } = await chatWithMedia({
-            model,
-            prompt,
-            mediaType: "input_audio",
-            mediaUrl: audioUrl,
-        });
+    const { content, model: respondedModel } = await chatWithMedia({
+        model,
+        prompt,
+        mediaType: "input_audio",
+        mediaUrl: audioUrl,
+    });
 
-        return createMCPResponse([
-            createTextContent(
-                {
-                    transcription: content,
-                    audioUrl,
-                    model: respondedModel,
-                    prompt,
-                },
-                true,
-            ),
-        ]);
-    } catch (error) {
-        console.error("Error transcribing audio:", error);
-        throw error;
-    }
+    return createMCPResponse([
+        createTextContent(
+            {
+                transcription: content,
+                audioUrl,
+                model: respondedModel,
+                prompt,
+            },
+            true,
+        ),
+    ]);
 }
 
 const voiceSchema = z
@@ -214,14 +144,20 @@ const voiceSchema = z
             "Use listAudioVoices to see the full live list.",
     );
 
-const formatEnum = z.enum(["wav", "mp3", "flac", "opus", "pcm16"]);
+const responseAudioFormatSchema = z.enum([
+    "wav",
+    "mp3",
+    "flac",
+    "opus",
+    "pcm16",
+]);
+const speechFormatSchema = z.enum(["mp3", "opus", "aac", "flac", "wav", "pcm"]);
 
 const audioModelSchema = z
     .string()
     .optional()
     .describe(
-        "Audio model override (e.g. 'elevenlabs', 'openai-audio'). " +
-            "Defaults to the current primary TTS model from the registry.",
+        "Audio model override. Omit to use the current primary TTS model.",
     );
 
 export const audioTools = [
@@ -235,16 +171,9 @@ export const audioTools = [
             voice: voiceSchema
                 .optional()
                 .describe("Voice to use (default: alloy)"),
-            format: formatEnum
+            format: responseAudioFormatSchema
                 .optional()
                 .describe("Audio format (default: mp3)"),
-            model: audioModelSchema,
-            voiceInstructions: z
-                .string()
-                .optional()
-                .describe(
-                    "Additional instructions for voice style (e.g., 'Speak with enthusiasm')",
-                ),
         },
         respondAudio,
     ],
@@ -257,14 +186,10 @@ export const audioTools = [
             voice: voiceSchema
                 .optional()
                 .describe("Voice to use (default: alloy)"),
-            format: formatEnum
+            format: speechFormatSchema
                 .optional()
                 .describe("Audio format (default: mp3)"),
             model: audioModelSchema,
-            voiceInstructions: z
-                .string()
-                .optional()
-                .describe("Additional instructions for voice style"),
         },
         sayText,
     ],

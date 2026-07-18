@@ -1,0 +1,35 @@
+{
+  "pr_number": 12536,
+  "title": "fix: use direct Enter referral link",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/12536",
+  "merged_at": "2026-07-18T04:52:14Z",
+  "labels": [
+    "DEV-BUG"
+  ],
+  "pr_body_excerpt": "- Sends users directly to `https://enter.pollinations.ai/?ref=image`\n- Records the allowlisted referral with a background beacon\n- Removes the redirect behavior from the analytics endpoint\n- Adds a regression test and referral URL guidance\n\nChecks:\n- `npx vitest run test/referral.test.ts`\n- `npm run typecheck`\n- legacy `createAndReturnImages` tests",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Referrals take the front door",
+    "blurb": "Image referrals now land directly in Enter, with the little referral pollen recorded quietly in the background. Less redirect choreography, more getting where you meant to go.",
+    "summary": "Image referral links now send users straight to https://enter.pollinations.ai/?ref=image while a background beacon records the allowlisted referral instead of routing through the analytics redirect endpoint.",
+    "impact": "Users arriving from image.pollinations.ai get a more direct Enter experience, while referral attribution continues to be captured without an extra redirect.",
+    "keywords": [
+      "referrals",
+      "enter",
+      "analytics",
+      "redirects",
+      "image"
+    ],
+    "visual_concept": "Polly acts as a friendly guide at a garden path sign pointing directly from an image-flower garden to a cozy Enter gateway, while a tiny background pollen trail quietly reaches a small analytics jar. The scene represents direct navigation with attribution kept out of the user's way.",
+    "image_prompt": "Cozy pixel art scene of Polly, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny guide hat, happily pointing travelers along a direct lime green (#ecf874) garden path to a warm retro computer gateway labeled \"ENTER\"; a faint trail of pollen drifts quietly into a small jar labeled \"REF\" beside blooming code-plants. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, dark purple (#110518) outlines, emotionally warm and inviting."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-18/PR-12536.jpg",
+    "prompt": "Cozy pixel art scene of Polly, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny guide hat, happily pointing travelers along a direct lime green (#ecf874) garden path to a warm retro computer gateway labeled \"ENTER\"; a faint trail of pollen drifts quietly into a small jar labeled \"REF\" beside blooming code-plants. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, dark purple (#110518) outlines, emotionally warm and inviting."
+  },
+  "generated_at": "2026-07-18T04:53:10.819073+00:00"
+}

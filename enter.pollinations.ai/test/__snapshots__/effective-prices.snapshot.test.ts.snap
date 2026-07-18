@@ -436,6 +436,16 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.00000375,
     },
   },
+  "gpt-oss": {
+    "cost": {
+      "completionTextTokens": 0.00000018,
+      "promptTextTokens": 0.00000005,
+    },
+    "price": {
+      "completionTextTokens": 0.00000018,
+      "promptTextTokens": 0.00000005,
+    },
+  },
   "gpt-realtime-2": {
     "cost": {
       "completionAudioTokens": 0.000064,
@@ -1146,6 +1156,14 @@ exports[`effective cost and price per model — snapshot 1`] = `
     },
     "price": {
       "promptTextTokens": 0.0000001,
+    },
+  },
+  "sana": {
+    "cost": {
+      "completionImageTokens": 0.0001,
+    },
+    "price": {
+      "completionImageTokens": 0.0001,
     },
   },
   "scribe": {

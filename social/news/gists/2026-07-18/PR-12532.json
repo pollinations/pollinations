@@ -1,0 +1,36 @@
+{
+  "pr_number": 12532,
+  "title": "feat: track legacy image referrals",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/12532",
+  "merged_at": "2026-07-18T03:44:33Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "pr_body_excerpt": "- Adds a public `/api/referral` redirect with an allowlisted `legacy-image-error` ref.\n- Records `timestamp` and `ref` in a minimal Tinybird datasource without client-side analytics.\n- Redirects unknown refs without recording them.\n- Adds focused Worker tests for tracking and redirect behavior.\n\nChecks:\n- `npx vitest run test/referral.test.ts`\n- `npm run typecheck`\n- `npx biome check --write ...`\n\nTinybird deployment validation is pending a token with `WORKSPACE:DEPLOY`; no Tinybird workspace changes were made.",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "The old link leaves pollen",
+    "blurb": "Legacy image error links now have a small, tidy trail to follow. No browser analytics parade required.",
+    "summary": "Added a public /api/referral redirect that records timestamped legacy-image-error referrals in a minimal Tinybird datasource while sending unknown refs onward without tracking them.",
+    "impact": "Legacy image referral links now preserve their redirect behavior while giving maintainers a privacy-light view of where the allowlisted legacy-image-error traffic originates.",
+    "keywords": [
+      "referrals",
+      "legacy-images",
+      "redirects",
+      "tinybird",
+      "observability",
+      "privacy"
+    ],
+    "visual_concept": "A cozy garden path represents the public referral redirect: Polly, wearing a tiny detective hat, follows one clearly marked legacy-image-error signpost to a small glowing Tinybird-style event ledger. Unmarked paths continue peacefully through the garden without leaving a trail, emphasizing allowlisted, minimal tracking.",
+    "image_prompt": "Cozy pixel art scene of Polly, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny detective hat, following a lime green (#ecf874) garden sign reading \"legacy-image-error\" toward a small glowing event notebook beside a retro terminal; other unmarked paths lead quietly onward through flowers and code-plants. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, dark purple (#110518) outlines, emotionally warm and gently observant."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-18/PR-12532.jpg",
+    "prompt": "Cozy pixel art scene of Polly, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny detective hat, following a lime green (#ecf874) garden sign reading \"legacy-image-error\" toward a small glowing event notebook beside a retro terminal; other unmarked paths lead quietly onward through flowers and code-plants. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, dark purple (#110518) outlines, emotionally warm and gently observant."
+  },
+  "generated_at": "2026-07-18T03:45:30.455331+00:00"
+}

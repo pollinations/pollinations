@@ -1,6 +1,7 @@
 import {
     MIN_COMMUNITY_PRICE_PER_MILLION_TOKENS,
     MIN_COMMUNITY_PRICE_PER_TOKEN,
+    MIN_COMMUNITY_PRICE_PER_UNIT,
 } from "@shared/community-endpoints.ts";
 import { describe, expect, it } from "vitest";
 import {
@@ -45,6 +46,20 @@ describe("community endpoint price input", () => {
     it("keeps per-second transcription prices unscaled", () => {
         expect(formPriceToStoredPrice("0.00004", "second")).toBe(0.00004);
         expect(storedPriceToFormValue(0.00004, "second")).toBe("0.00004");
+    });
+
+    it("keeps fixed per-image prices unscaled", () => {
+        expect(formPriceToStoredPrice("0.03", "image")).toBe(0.03);
+        expect(storedPriceToFormValue(0.03, "image")).toBe("0.03");
+        expect(
+            isValidPriceInput(String(MIN_COMMUNITY_PRICE_PER_UNIT), "image"),
+        ).toBe(true);
+        expect(
+            isValidPriceInput(
+                String(MIN_COMMUNITY_PRICE_PER_UNIT / 10),
+                "image",
+            ),
+        ).toBe(false);
     });
 
     it("keeps embedding as the selected endpoint modality", () => {

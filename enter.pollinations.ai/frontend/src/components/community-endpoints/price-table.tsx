@@ -14,7 +14,7 @@ import {
     type CommunityEndpointModality,
     communityEndpointPriceFieldsForModality,
     MIN_COMMUNITY_PRICE_PER_MILLION_TOKENS,
-    MIN_COMMUNITY_PRICE_PER_TOKEN,
+    MIN_COMMUNITY_PRICE_PER_UNIT,
 } from "@shared/community-endpoints.ts";
 import { PRICE_ICON } from "../models/model-icons.tsx";
 import type { PriceKind } from "../models/types.ts";
@@ -179,11 +179,16 @@ function PriceInputCell({
 
     const inputId = `community-${field.key}`;
     const hasError = state.invalid;
-    const unitLabel = field.priceUnit === "second" ? "/sec" : "/1M";
+    const unitLabel =
+        field.priceUnit === "image"
+            ? "/image"
+            : field.priceUnit === "second"
+              ? "/sec"
+              : "/1M";
     const minimum =
-        field.priceUnit === "second"
-            ? MIN_COMMUNITY_PRICE_PER_TOKEN
-            : MIN_COMMUNITY_PRICE_PER_MILLION_TOKENS;
+        field.priceUnit === "million"
+            ? MIN_COMMUNITY_PRICE_PER_MILLION_TOKENS
+            : MIN_COMMUNITY_PRICE_PER_UNIT;
 
     return (
         <TableCell align="right" className="w-40 align-top">
@@ -207,7 +212,7 @@ function PriceInputCell({
                             onChange(field.key, event.target.value)
                         }
                     />
-                    <span className="w-8 text-left text-xs text-theme-text-muted">
+                    <span className="w-10 text-left text-xs text-theme-text-muted">
                         {unitLabel}
                     </span>
                 </div>

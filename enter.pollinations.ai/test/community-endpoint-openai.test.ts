@@ -94,7 +94,7 @@ describe("community endpoint OpenAI service", () => {
         expect(fetchMock).toHaveBeenCalledTimes(1);
     });
 
-    it("tests OpenAI-compatible image generation endpoints", async () => {
+    it("bills OpenAI-compatible image endpoints once per image", async () => {
         const fetchMock = vi.fn(async (input, init) => {
             const request = new Request(input, init);
             expect(request.url).toBe(
@@ -134,26 +134,14 @@ describe("community endpoint OpenAI service", () => {
                 model: "gpt-image-1",
             }),
         ).resolves.toEqual({
-            usage: {
-                input_tokens: 12,
-                output_tokens: 1056,
-                total_tokens: 1068,
-                input_tokens_details: {
-                    text_tokens: 12,
-                    image_tokens: 0,
-                },
-            },
-            billableUsage: {
-                promptTextTokens: 12,
-                promptImageTokens: 0,
-                completionImageTokens: 1056,
-            },
+            usage: { images: 1 },
+            billableUsage: { completionImageTokens: 1 },
         });
 
         expect(fetchMock).toHaveBeenCalledTimes(1);
     });
 
-    it("rejects image endpoints without OpenAI token usage", async () => {
+    it("accepts image endpoints without OpenAI token usage", async () => {
         vi.stubGlobal(
             "fetch",
             vi.fn(async () =>
@@ -169,7 +157,58 @@ describe("community endpoint OpenAI service", () => {
                 bearerToken: "sk_saved_token",
                 model: "gpt-image-1",
             }),
-        ).rejects.toThrow("Endpoint did not return OpenAI image token usage");
+        ).resolves.toEqual({
+            usage: { images: 1 },
+            billableUsage: { completionImageTokens: 1 },
+        });
+    });
+
+    it("accepts legacy OpenAI image URL responses", async () => {
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async (input) => {
+                const url = String(input);
+                if (url === "http://api.example.com/assets/image.png") {
+                    return new Response(
+                        new Uint8Array([137, 80, 78, 71, 13, 10, 26, 10]),
+                        { headers: { "Content-Type": "image/png" } },
+                    );
+                }
+                return Response.json({
+                    data: [{ url: "http://api.example.com/assets/image.png" }],
+                });
+            }),
+        );
+
+        await expect(
+            testCommunityImageEndpoint({
+                baseUrl: "https://api.example.com/v1",
+                bearerToken: "sk_saved_token",
+                model: "flux",
+            }),
+        ).resolves.toEqual({
+            usage: { images: 1 },
+            billableUsage: { completionImageTokens: 1 },
+        });
+    });
+
+    it("rejects private image URLs returned by upstreams", async () => {
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async () =>
+                Response.json({
+                    data: [{ url: "http://127.0.0.1/private.png" }],
+                }),
+            ),
+        );
+
+        await expect(
+            testCommunityImageEndpoint({
+                baseUrl: "https://api.example.com/v1",
+                bearerToken: "sk_saved_token",
+                model: "flux",
+            }),
+        ).rejects.toThrow("unsafe image URL");
     });
 
     it("rejects base64 that is not an image", async () => {
@@ -197,7 +236,7 @@ describe("community endpoint OpenAI service", () => {
                 bearerToken: "sk_saved_token",
                 model: "gpt-image-1",
             }),
-        ).rejects.toThrow("Endpoint did not return a supported base64 image");
+        ).rejects.toThrow("Endpoint did not return a supported image");
     });
 
     it("tests OpenAI-compatible embedding endpoints", async () => {

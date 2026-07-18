@@ -71,7 +71,7 @@ const BASE_PRICE_KEYS: Record<
     readonly CommunityEndpointPriceKey[]
 > = {
     text: BASE_TEXT_PRICE_KEYS,
-    image: ["promptTextPrice", "completionImagePrice"],
+    image: ["completionImagePrice"],
     embedding: ["promptTextPrice"],
     speech: ["completionAudioPrice"],
     transcription: ["promptAudioPrice"],

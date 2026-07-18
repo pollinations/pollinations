@@ -11,6 +11,7 @@ import {
     communityModelId,
     isCommunityEndpointOwnerAllowed,
     MIN_COMMUNITY_PRICE_PER_TOKEN,
+    MIN_COMMUNITY_PRICE_PER_UNIT,
     normalizeCommunityEndpointBaseUrl,
     normalizeCommunityEndpointBearerToken,
     normalizeCommunityEndpointModality,
@@ -41,7 +42,10 @@ import { hasDirectAccountPermission } from "./account-permissions.ts";
 const ModalitySchema = z.enum(COMMUNITY_ENDPOINT_MODALITIES);
 const UpdatePriceFieldsSchema = Object.fromEntries(
     COMMUNITY_ENDPOINT_PRICE_FIELDS.map((field) => {
-        const minimum = MIN_COMMUNITY_PRICE_PER_TOKEN;
+        const minimum =
+            field.priceUnit === "million"
+                ? MIN_COMMUNITY_PRICE_PER_TOKEN
+                : MIN_COMMUNITY_PRICE_PER_UNIT;
         return [
             field.key,
             z

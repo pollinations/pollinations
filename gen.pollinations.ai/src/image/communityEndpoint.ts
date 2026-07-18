@@ -1,13 +1,11 @@
+import { Buffer } from "node:buffer";
 import {
     type CommunityEndpointRuntime,
     communityImageGenerationsUrl,
+    normalizeCommunityAssetUrl,
     normalizeCommunityEndpointBearerToken,
 } from "@shared/community-endpoints.ts";
 import { detectImageMimeType } from "@shared/image-mime.ts";
-import {
-    getOpenAIImageUsage,
-    openaiImageUsageToUsage,
-} from "@shared/registry/usage-headers.ts";
 import { decryptSecret } from "@shared/secret-encryption.ts";
 import type { ImageGenerationResult } from "./createAndReturnImages.ts";
 import { HttpError } from "./httpError.ts";
@@ -17,6 +15,7 @@ import { base64ToBuffer } from "./utils/imageDownload.ts";
 type CommunityImageParams = Omit<ImageParams, "model"> & { model: string };
 
 const REQUEST_TIMEOUT_MS = 120_000;
+const MAX_IMAGE_BYTES = 20 * 1024 * 1024;
 
 export async function callCommunityImageEndpoint(
     endpoint: CommunityEndpointRuntime,
@@ -48,34 +47,19 @@ export async function callCommunityImageEndpoint(
             : {}),
     });
 
-    const buffer = base64ToBuffer(firstImageBase64(body));
+    const buffer = await firstImageBuffer(body, endpoint.baseUrl);
     if (!detectImageMimeType(buffer)) {
         throw new HttpError(
             "Community image endpoint did not return a supported image",
             502,
         );
     }
-    const openaiUsage = getOpenAIImageUsage(body);
-    if (!openaiUsage) {
-        throw new HttpError(
-            "Community image endpoint did not return OpenAI image token usage",
-            502,
-        );
-    }
-    const usage = openaiImageUsageToUsage(openaiUsage);
-    if ((usage.completionImageTokens ?? 0) <= 0) {
-        throw new HttpError(
-            "Community image endpoint did not return billable image output tokens",
-            502,
-        );
-    }
-
     return {
         buffer,
         isMature: false,
         isChild: false,
         trackingData: {
-            usage,
+            usage: { completionImageTokens: 1 },
         },
     };
 }
@@ -129,7 +113,10 @@ async function fetchWithTimeout(
     }
 }
 
-function firstImageBase64(body: unknown): string {
+async function firstImageBuffer(
+    body: unknown,
+    endpointBaseUrl: string,
+): Promise<Buffer> {
     if (
         !body ||
         typeof body !== "object" ||
@@ -148,12 +135,83 @@ function firstImageBase64(body: unknown): string {
             typeof image.b64_json === "string" &&
             image.b64_json.length > 0
         ) {
-            return image.b64_json;
+            return base64ToBuffer(image.b64_json);
+        }
+        if (
+            "url" in image &&
+            typeof image.url === "string" &&
+            image.url.length > 0
+        ) {
+            return fetchImageBuffer(image.url, endpointBaseUrl);
         }
     }
     throw new HttpError(
-        "Community image endpoint did not return base64 image data",
+        "Community image endpoint did not return base64 or URL image data",
         502,
+    );
+}
+
+async function fetchImageBuffer(
+    value: string,
+    endpointBaseUrl: string,
+): Promise<Buffer> {
+    let url: string;
+    try {
+        url = normalizeCommunityAssetUrl(value, endpointBaseUrl);
+    } catch {
+        throw new HttpError(
+            "Community image endpoint returned an unsafe image URL",
+            502,
+        );
+    }
+    const response = await fetchWithTimeout(url);
+    if (!response.ok) {
+        throw new HttpError(
+            `Community image URL responded ${response.status}`,
+            502,
+            undefined,
+            url,
+        );
+    }
+    const contentLength = Number(response.headers.get("content-length"));
+    if (Number.isFinite(contentLength) && contentLength > MAX_IMAGE_BYTES) {
+        throw new HttpError("Community image is larger than 20 MB", 502);
+    }
+    return readImageBuffer(response);
+}
+
+async function readImageBuffer(response: Response): Promise<Buffer> {
+    const reader = response.body?.getReader();
+    if (!reader) {
+        const buffer = Buffer.from(await response.arrayBuffer());
+        if (buffer.byteLength > MAX_IMAGE_BYTES) {
+            throw new HttpError("Community image is larger than 20 MB", 502);
+        }
+        return buffer;
+    }
+
+    const chunks: Uint8Array[] = [];
+    let total = 0;
+    try {
+        while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            total += value.byteLength;
+            if (total > MAX_IMAGE_BYTES) {
+                await reader.cancel();
+                throw new HttpError(
+                    "Community image is larger than 20 MB",
+                    502,
+                );
+            }
+            chunks.push(value);
+        }
+    } finally {
+        reader.releaseLock();
+    }
+    return Buffer.concat(
+        chunks.map((chunk) => Buffer.from(chunk)),
+        total,
     );
 }
 

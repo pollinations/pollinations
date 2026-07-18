@@ -7,7 +7,7 @@ import {
     type CommunityEndpointVisibility,
     communityEndpointPriceFieldsForModality,
     MIN_COMMUNITY_PRICE_PER_MILLION_TOKENS,
-    MIN_COMMUNITY_PRICE_PER_TOKEN,
+    MIN_COMMUNITY_PRICE_PER_UNIT,
     normalizeCommunityEndpointModality,
 } from "@shared/community-endpoints.ts";
 import type { Usage } from "@shared/registry/registry.ts";
@@ -92,7 +92,7 @@ export const VISIBILITY_LABELS: Record<CommunityEndpointVisibility, string> = {
 
 const TOKENS_PER_MILLION = 1_000_000;
 
-/** Stored prices are per-token; the UI shows and accepts them per 1M tokens. */
+/** Token prices are entered per million; fixed media prices stay per unit. */
 export function pricePerTokenToPerMillion(value: number): string {
     return String(Number((value * TOKENS_PER_MILLION).toPrecision(15)));
 }
@@ -109,9 +109,9 @@ export function storedPriceToFormValue(
     priceUnit: CommunityEndpointPriceField["priceUnit"] = "million",
 ): string {
     if (value <= 0) return "";
-    return priceUnit === "second"
-        ? String(Number(value.toPrecision(15)))
-        : pricePerTokenToPerMillion(value);
+    return priceUnit === "million"
+        ? pricePerTokenToPerMillion(value)
+        : String(Number(value.toPrecision(15)));
 }
 
 export function formPriceToStoredPrice(
@@ -121,9 +121,9 @@ export function formPriceToStoredPrice(
     const trimmed = value.trim();
     if (!trimmed) return 0;
     if (!isValidPriceInput(trimmed, priceUnit)) return Number.NaN;
-    return priceUnit === "second"
-        ? Number(trimmed)
-        : pricePerMillionToPerToken(trimmed);
+    return priceUnit === "million"
+        ? pricePerMillionToPerToken(trimmed)
+        : Number(trimmed);
 }
 
 export function isValidPriceInput(
@@ -135,9 +135,9 @@ export function isValidPriceInput(
     if (trimmed.includes(",")) return false;
     const parsed = Number(trimmed);
     const minimum =
-        priceUnit === "second"
-            ? MIN_COMMUNITY_PRICE_PER_TOKEN
-            : MIN_COMMUNITY_PRICE_PER_MILLION_TOKENS;
+        priceUnit === "million"
+            ? MIN_COMMUNITY_PRICE_PER_MILLION_TOKENS
+            : MIN_COMMUNITY_PRICE_PER_UNIT;
     return Number.isFinite(parsed) && (parsed === 0 || parsed >= minimum);
 }
 
@@ -188,9 +188,11 @@ function formPricesToPayload(
             if (!modalityField) return [field.key, 0];
             if (!isValidPriceInput(form[field.key], modalityField.priceUnit)) {
                 const unit =
-                    modalityField.priceUnit === "second"
-                        ? "audio second"
-                        : "1M units";
+                    modalityField.priceUnit === "image"
+                        ? "image"
+                        : modalityField.priceUnit === "second"
+                          ? "audio second"
+                          : "1M units";
                 throw new Error(
                     `Prices must be 0 (free) or a positive amount per ${unit}, using a dot decimal`,
                 );

@@ -687,10 +687,14 @@ it("lists stable-audio-3-medium in audio models", async () => {
     const response = await fetchWorker("/audio/models");
 
     expect(response.status).toBe(200);
-    const models = (await response.json()) as { name: string }[];
-    expect(models.some((model) => model.name === "stable-audio-3-medium")).toBe(
-        true,
+    const models = (await response.json()) as {
+        name: string;
+        input_modalities?: string[];
+    }[];
+    const model = models.find(
+        (candidate) => candidate.name === "stable-audio-3-medium",
     );
+    expect(model?.input_modalities).toEqual(["text", "audio"]);
 });
 
 fixtureTest(
@@ -894,10 +898,16 @@ it("lists stable-audio-3-large in audio models", async () => {
     const response = await fetchWorker("/audio/models");
 
     expect(response.status).toBe(200);
-    const models = (await response.json()) as { name: string }[];
-    expect(models.some((model) => model.name === "stable-audio-3-large")).toBe(
-        true,
+    const models = (await response.json()) as {
+        name: string;
+        aliases: string[];
+        input_modalities?: string[];
+    }[];
+    const model = models.find(
+        (candidate) => candidate.name === "stable-audio-3-large",
     );
+    expect(model?.aliases).toContain("stable-audio-3");
+    expect(model?.input_modalities).toEqual(["text", "audio"]);
 });
 
 fixtureTest(

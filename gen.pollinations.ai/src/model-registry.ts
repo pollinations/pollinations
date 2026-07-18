@@ -104,8 +104,8 @@ function communityEntryToGenerationEntry(
         definition: entry.definition,
         info: entry.info,
         communityEndpoint: entry.communityEndpoint,
-        // Public endpoints appear for everyone. Private endpoints are added
-        // back for their owner by visibleEntries().
+        // Public endpoints appear for everyone. Private and app endpoints are
+        // added back for eligible authenticated callers by visibleEntries().
         visible:
             entry.communityEndpoint.disabledAt === null &&
             entry.communityEndpoint.visibility === "public",
@@ -119,7 +119,8 @@ export function canAccessCommunityModel(
     return (
         endpoint.visibility === "public" ||
         endpoint.ownerUserId === access?.callerUserId ||
-        endpoint.ownerUserId === access?.appOwnerUserId
+        (endpoint.visibility === "app" &&
+            endpoint.ownerUserId === access?.appOwnerUserId)
     );
 }
 

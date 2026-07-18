@@ -44,8 +44,8 @@ import {
 type CommunityEndpointDialogProps = {
     /** Present in edit mode (prefills the form); omit to create. */
     endpoint?: CommunityEndpoint;
-    // Allowlisted owners can choose Public. Everyone else sees the same
-    // lifecycle control with Public disabled.
+    // Allowlisted owners can choose App users or Public. Everyone else sees
+    // both sharing choices disabled.
     canPublish: boolean;
     open: boolean;
     onOpenChange: (open: boolean) => void;
@@ -206,16 +206,17 @@ export function CommunityEndpointDialog({
         }
     }
 
-    // Pricing is only meaningful when the model is (or is being made) public —
-    // keyed off the LIVE form value so flipping Visibility to Public in place
-    // reveals the test + pricing section immediately. Private models carry no
-    // pricing (owner is the only caller).
-    const isShared = form.visibility === "public";
-    const returnedFields = isShared ? returnedPriceFields(testState) : [];
+    // App/public access uses configured pricing. Key this off the live form
+    // value so changing Access reveals the test + pricing section immediately.
+    // Private models remain owner-only and free.
+    const hasConfiguredPricing = form.visibility !== "private";
+    const returnedFields = hasConfiguredPricing
+        ? returnedPriceFields(testState)
+        : [];
     // Reveal the optional base text prices plus whatever the test observed or
     // the model already had saved. Blank and zero prices mean free.
     const visiblePriceKeys = new Set(
-        isShared
+        hasConfiguredPricing
             ? visiblePriceFieldKeys(savedPriceKeys, returnedFields, [
                   ...BASE_TEXT_PRICE_KEYS,
               ])
@@ -225,14 +226,12 @@ export function CommunityEndpointDialog({
         form,
         visiblePriceKeys,
     );
-    // First-time publishing of an external endpoint re-observes its billed
-    // buckets, so it needs a successful test. A model already saved as public
-    // has server-validated pricing, so re-editing it (e.g. a price or
-    // description tweak) does not force another test. Private models defer
-    // pricing entirely. External endpoints always need a token to be callable
-    // at all.
-    const alreadyPublic = isEdit && endpoint?.visibility === "public";
-    const needsTest = isShared && !alreadyPublic;
+    // First-time app/public sharing re-observes billed usage buckets, so it
+    // needs a successful test. An already shared model has server-validated
+    // pricing, so ordinary edits do not force another test. Private models
+    // defer pricing entirely. External endpoints always need a token.
+    const alreadyShared = isEdit && endpoint?.visibility !== "private";
+    const needsTest = hasConfiguredPricing && !alreadyShared;
     const testRequirementMet =
         testState.status === "success" && returnedFields.length > 0;
     const saveRequirementMet = needsTest
@@ -286,7 +285,7 @@ export function CommunityEndpointDialog({
                     <div className="grid gap-4 sm:grid-cols-2">
                         <FieldStack
                             label="Model ID"
-                            helper="Public id: {username}/{model-id}."
+                            helper="Full model ID: {username}/{model-id}."
                             alignLabelRow
                         >
                             <Input
@@ -304,7 +303,7 @@ export function CommunityEndpointDialog({
                         </FieldStack>
                         <FieldStack
                             label="Description"
-                            helper="Shown in the Models list, like registry models."
+                            helper="Shown wherever this model is visible."
                             alignLabelRow
                         >
                             <Input
@@ -321,17 +320,19 @@ export function CommunityEndpointDialog({
                     </div>
 
                     <FieldStack
-                        label="Visibility"
+                        label="Access"
                         helper={
-                            isShared
-                                ? "Public: listed in /models and callable by anyone. Set optional per-1M-token prices below, or leave them at 0 for free."
-                                : canPublish
-                                  ? "Private: callable by you and users of your apps; shown only in model lists authenticated with those API keys."
-                                  : "Private: callable by you and users of your apps. Publishing publicly requires approval."
+                            form.visibility === "public"
+                                ? "Public: listed in /models and callable by anyone. Configure per-1M-token pricing below."
+                                : form.visibility === "app"
+                                  ? "App users: you and users authenticated through any app you own can list and call this model. It is not publicly listed. Configure per-1M-token pricing below."
+                                  : canPublish
+                                    ? "Private: only API keys owned by your account can list and call this model. Private calls are free through Pollinations."
+                                    : "Private: only API keys owned by your account can list and call this model. Sharing with app users or publicly requires approval."
                         }
                         alignLabelRow
                     >
-                        <ButtonGroup aria-label="Model visibility">
+                        <ButtonGroup aria-label="Model access">
                             <TabButton
                                 active={form.visibility === "private"}
                                 onClick={() => updateVisibility("private")}
@@ -342,6 +343,18 @@ export function CommunityEndpointDialog({
                                     <CheckIcon className="h-3.5 w-3.5" />
                                 )}
                                 Private
+                            </TabButton>
+                            <TabButton
+                                active={form.visibility === "app"}
+                                disabled={!canPublish}
+                                onClick={() => updateVisibility("app")}
+                                size="sm"
+                                className="min-w-24 gap-1.5"
+                            >
+                                {form.visibility === "app" && (
+                                    <CheckIcon className="h-3.5 w-3.5" />
+                                )}
+                                App users
                             </TabButton>
                             <TabButton
                                 active={form.visibility === "public"}
@@ -559,7 +572,7 @@ export function CommunityEndpointDialog({
                         </div>
                     )}
 
-                    {isShared && (
+                    {hasConfiguredPricing && (
                         <PriceGroups
                             form={form}
                             testState={testState}
@@ -587,9 +600,11 @@ export function CommunityEndpointDialog({
                             ? "Saving…"
                             : isEdit
                               ? "Save Model"
-                              : isShared
+                              : form.visibility === "public"
                                 ? "Publish Model"
-                                : "Add Private Model"}
+                                : form.visibility === "app"
+                                  ? "Share with App Users"
+                                  : "Add Private Model"}
                     </Button>
                 </div>
             </form>

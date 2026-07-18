@@ -68,9 +68,9 @@ export async function resolveModelDefinition(
         });
     }
 
-    // A private community endpoint exists only for its owner and keys issued
-    // through an app owned by that developer. Keep the unknown-model response
-    // for everyone else so private models aren't discoverable by probing.
+    // Private endpoints exist only for their owner; app endpoints also exist
+    // for keys issued through any app owned by that developer. Keep the
+    // unknown-model response for everyone else to prevent discovery by probing.
     const community = entry.communityEndpoint;
     if (community && !canAccessCommunityModel(community, access)) {
         throw new HTTPException(400, {

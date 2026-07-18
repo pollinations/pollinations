@@ -19,8 +19,8 @@ import {
 
 type CommunityEndpointsProps = {
     onChange?: () => void | Promise<void>;
-    // Allowlisted owners can make models public (set prices, list in /models).
-    // Everyone else can only create and edit private models.
+    // Allowlisted owners can share priced models with app users or publicly.
+    // Everyone else can only create and edit owner-only private models.
     canPublish: boolean;
 };
 
@@ -103,11 +103,10 @@ export function CommunityEndpoints({
 
     const privateModelGuidance = (
         <>
-            Your models are private — callable by you and users of your apps,
-            and shown only when <strong>/models</strong> is authenticated with
-            your API key or an API key created through your app. Enter the
-            upstream model ID manually, then test the saved model by calling its
-            model ID. To request public publishing access, open a{" "}
+            Private models are available only through API keys owned by your
+            account. Enter the upstream model ID manually, then test the saved
+            model by calling its full model ID. To share models with users of
+            any app you own or publish them publicly, open a{" "}
             <a
                 href="https://github.com/pollinations/pollinations/issues/new?title=Community%20model%20publishing%20request"
                 target="_blank"
@@ -170,7 +169,7 @@ export function CommunityEndpoints({
                             </p>
                             <p className="text-sm text-theme-text-muted">
                                 {canPublish
-                                    ? "Publish an OpenAI-compatible endpoint with your own per-1M-token pricing."
+                                    ? "Register an OpenAI-compatible endpoint, choose who can access it, and configure pricing when sharing it."
                                     : privateModelGuidance}
                             </p>
                         </Surface>
@@ -191,12 +190,12 @@ export function CommunityEndpoints({
                         <span>
                             {canPublish ? (
                                 <>
-                                    Private models are callable by you and users
-                                    of your apps, and shown only when model
-                                    lists use those API keys. Make one public to
-                                    list it for everyone in{" "}
-                                    <strong>/models</strong> and bill callers at
-                                    your per-1M-token pricing.
+                                    Keep a model Private for your account, share
+                                    it with users authenticated through any app
+                                    you own, or make it Public for everyone in{" "}
+                                    <strong>/models</strong>. App and public
+                                    callers are billed at your configured
+                                    per-1M-token pricing.
                                 </>
                             ) : (
                                 privateModelGuidance

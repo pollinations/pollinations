@@ -18,8 +18,10 @@ import {
     parseCommunityModelId,
 } from "@shared/community-endpoints.ts";
 import {
+    apikey as apiKeyTable,
     communityEndpoint as communityEndpointTable,
     session as sessionTable,
+    user as userTable,
 } from "@shared/db/better-auth.ts";
 import { handleError } from "@shared/error.ts";
 import { IMMUTABLE_CACHE_CONTROL } from "@shared/http/cache-control.ts";
@@ -446,10 +448,10 @@ fixtureTest(
 );
 
 fixtureTest(
-    "a private model is available to its owner and app users, while a zero-priced public model is free",
+    "preserves private access, prices app access, revokes deleted apps, and keeps public behavior",
     async ({ apiKey }) => {
         const ownerGithubUsername = `owner-${crypto.randomUUID().slice(0, 8)}`;
-        const modelName = `private-${crypto.randomUUID().slice(0, 8)}`;
+        const modelName = `access-${crypto.randomUUID().slice(0, 8)}`;
         const modelId = communityModelId(ownerGithubUsername, modelName);
         const endpointId = `endpoint-${crypto.randomUUID()}`;
         const ownerUserId = await createTestUser({
@@ -465,17 +467,45 @@ fixtureTest(
             userId: ownerUserId,
         });
         const redirectUri = "https://private-model-app.test/callback";
-        const { key: appApiKey } = await createTestApiKey({
+        const { id: appApiKeyId, key: appApiKey } = await createTestApiKey({
             name: "private-model-app",
             userId: ownerUserId,
             type: "publishable",
-            metadata: { redirectUris: [redirectUri] },
+            metadata: { redirectUris: [redirectUri], earningsEnabled: true },
         });
-        const { key: appUserApiKey } = await createTestApiKey({
-            name: "app-user-key",
+        const { key: appUserApiKey, userId: appUserId } =
+            await createTestApiKey({
+                name: "app-user-key",
+                user: { tierBalance: 100 },
+                metadata: {
+                    requestedClientId: appApiKey,
+                    redirectUri,
+                },
+            });
+        const { key: restrictedAppUserApiKey } = await createTestApiKey({
+            name: "restricted-app-user-key",
+            user: { tierBalance: 100 },
+            allowedModels: ["openai"],
             metadata: {
                 requestedClientId: appApiKey,
                 redirectUri,
+            },
+        });
+        const unrelatedAppOwnerId = await createTestUser();
+        const unrelatedRedirectUri =
+            "https://unrelated-private-model-app.test/callback";
+        const { key: unrelatedAppApiKey } = await createTestApiKey({
+            name: "unrelated-private-model-app",
+            userId: unrelatedAppOwnerId,
+            type: "publishable",
+            metadata: { redirectUris: [unrelatedRedirectUri] },
+        });
+        const { key: unrelatedAppUserApiKey } = await createTestApiKey({
+            name: "unrelated-app-user-key",
+            user: { tierBalance: 100 },
+            metadata: {
+                requestedClientId: unrelatedAppApiKey,
+                redirectUri: unrelatedRedirectUri,
             },
         });
         await db.insert(communityEndpointTable).values({
@@ -490,7 +520,8 @@ fixtureTest(
                 "Bearer sk_saved_token",
                 env.BETTER_AUTH_SECRET,
             ),
-            // A private endpoint is free (billed to its owner); prices are 0.
+            // Private endpoints are free through Pollinations; the endpoint
+            // owner still covers their own upstream provider costs.
             promptTextPrice: 0,
             completionTextPrice: 0,
             createdAt: new Date(),
@@ -523,54 +554,41 @@ fixtureTest(
         });
         vi.stubGlobal("fetch", fetchMock);
 
+        const callModel = (authorization: string, message: string) =>
+            SELF.fetch(
+                new Request("https://gen.pollinations.ai/v1/chat/completions", {
+                    method: "POST",
+                    headers: {
+                        Authorization: `Bearer ${authorization}`,
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({
+                        model: modelId,
+                        messages: [{ role: "user", content: message }],
+                    }),
+                }),
+            );
+
         // A non-owner caller: the private model resolves to "invalid model",
         // indistinguishable from an unknown name so it isn't discoverable.
-        const otherResponse = await SELF.fetch(
-            new Request("https://gen.pollinations.ai/v1/chat/completions", {
-                method: "POST",
-                headers: {
-                    Authorization: `Bearer ${apiKey}`,
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({
-                    model: modelId,
-                    messages: [{ role: "user", content: "hello" }],
-                }),
-            }),
-        );
+        const otherResponse = await callModel(apiKey, "unrelated private");
         expect(otherResponse.status).toBe(400);
 
-        // A key issued through an app owned by the model developer can use the
-        // private model without making it visible to unrelated callers.
-        const appUserResponse = await SELF.fetch(
-            new Request("https://gen.pollinations.ai/v1/chat/completions", {
-                method: "POST",
-                headers: {
-                    Authorization: `Bearer ${appUserApiKey}`,
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({
-                    model: modelId,
-                    messages: [{ role: "user", content: "hello" }],
-                }),
-            }),
+        // Existing private models remain owner-only, including for keys issued
+        // through an app owned by the model developer.
+        const privateAppUserResponse = await callModel(
+            appUserApiKey,
+            "app user private",
         );
-        expect(appUserResponse.status).toBe(200);
+        expect(privateAppUserResponse.status).toBe(400);
+        const privateOtherAppResponse = await callModel(
+            unrelatedAppUserApiKey,
+            "other app private",
+        );
+        expect(privateOtherAppResponse.status).toBe(400);
 
         // The owner reaches their own private model.
-        const ownerResponse = await SELF.fetch(
-            new Request("https://gen.pollinations.ai/v1/chat/completions", {
-                method: "POST",
-                headers: {
-                    Authorization: `Bearer ${ownerApiKey}`,
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({
-                    model: modelId,
-                    messages: [{ role: "user", content: "hello" }],
-                }),
-            }),
-        );
+        const ownerResponse = await callModel(ownerApiKey, "owner private");
         expect(ownerResponse.status).toBe(200);
         await expect(ownerResponse.json()).resolves.toMatchObject({
             choices: [{ message: { content: "ok" } }],
@@ -589,18 +607,95 @@ fixtureTest(
             return models.some((model) => model.name === modelId);
         };
 
-        // The owner and their app user can discover the private model, while
-        // anonymous and unrelated authenticated callers cannot.
+        // Only the owner can discover the private model.
+        await expect(catalogIncludesModel(ownerApiKey)).resolves.toBe(true);
+        await expect(catalogIncludesModel(appUserApiKey)).resolves.toBe(false);
+        await expect(
+            catalogIncludesModel(unrelatedAppUserApiKey),
+        ).resolves.toBe(false);
+        await expect(catalogIncludesModel(apiKey)).resolves.toBe(false);
+        await expect(catalogIncludesModel()).resolves.toBe(false);
+
+        // App access is an explicit priced scope. Users of any app owned by the
+        // developer can discover and call it; other developers' app users
+        // cannot. Normal per-key model permissions still apply.
+        await db
+            .update(communityEndpointTable)
+            .set({
+                visibility: "app",
+                promptTextPrice: 0.1,
+                completionTextPrice: 0.1,
+            })
+            .where(eq(communityEndpointTable.id, endpointId));
+        resetGenerationModelRegistryCache();
+
         await expect(catalogIncludesModel(ownerApiKey)).resolves.toBe(true);
         await expect(catalogIncludesModel(appUserApiKey)).resolves.toBe(true);
         await expect(catalogIncludesModel(apiKey)).resolves.toBe(false);
         await expect(catalogIncludesModel()).resolves.toBe(false);
+        await expect(
+            catalogIncludesModel(unrelatedAppUserApiKey),
+        ).resolves.toBe(false);
+        await expect(
+            catalogIncludesModel(restrictedAppUserApiKey),
+        ).resolves.toBe(false);
+
+        const otherAppResponse = await callModel(
+            unrelatedAppUserApiKey,
+            "other app scoped",
+        );
+        expect(otherAppResponse.status).toBe(400);
+        const restrictedAppResponse = await callModel(
+            restrictedAppUserApiKey,
+            "restricted app scoped",
+        );
+        expect(restrictedAppResponse.status).toBe(403);
+
+        const appUserResponse = await callModel(
+            appUserApiKey,
+            "priced app scoped",
+        );
+        expect(appUserResponse.status).toBe(200);
+        await expect(appUserResponse.json()).resolves.toMatchObject({
+            choices: [{ message: { content: "ok" } }],
+        });
+
+        // 5 tokens × 0.1 = 0.5, plus the app's 25% BYOP markup. The model
+        // reward (75%) and app markup (25%) both go to this developer.
+        await vi.waitFor(async () => {
+            const [appUserAfter, ownerAfter] = await Promise.all([
+                db
+                    .select({ tierBalance: userTable.tierBalance })
+                    .from(userTable)
+                    .where(eq(userTable.id, appUserId))
+                    .get(),
+                db
+                    .select({ tierBalance: userTable.tierBalance })
+                    .from(userTable)
+                    .where(eq(userTable.id, ownerUserId))
+                    .get(),
+            ]);
+            expect(appUserAfter?.tierBalance).toBeCloseTo(99.375);
+            expect(ownerAfter?.tierBalance).toBeCloseTo(0.5);
+        });
+
+        // App-issued keys resolve through the referenced pk_. Deleting that app
+        // key removes the relationship and immediately revokes model access.
+        await db.delete(apiKeyTable).where(eq(apiKeyTable.id, appApiKeyId));
+        await expect(catalogIncludesModel(appUserApiKey)).resolves.toBe(false);
+        const revokedResponse = await callModel(appUserApiKey, "deleted app");
+        expect(revokedResponse.status).toBe(400);
+        await expect(catalogIncludesModel(ownerApiKey)).resolves.toBe(true);
 
         // Publishing the same zero-priced endpoint makes it globally callable
         // without requiring a Pollinations balance.
         await db
             .update(communityEndpointTable)
-            .set({ visibility: "public" })
+            .set({
+                visibility: "public",
+                promptTextPrice: 0,
+                completionTextPrice: 0,
+            })
             .where(eq(communityEndpointTable.id, endpointId));
         resetGenerationModelRegistryCache();
         await expect(catalogIncludesModel(apiKey)).resolves.toBe(true);
@@ -1097,27 +1192,29 @@ fixtureTest(
             expect(probeResponse.status).toBe(403);
         }
 
-        const directPublishResponse = await fetchEnterApi(
-            enterApi,
-            new Request("http://localhost:3000/api/community-endpoints", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    Cookie: await signedSessionCookie(sessionToken),
-                },
-                body: JSON.stringify({
-                    name: `${modelName}-direct-public`,
-                    description: "Denied public community endpoint",
-                    baseUrl: "https://api.example.com/v1",
-                    upstreamModel: "gpt-4.1-mini",
-                    bearerToken: "sk_saved_token",
-                    visibility: "public",
-                    promptTextPrice: 0.1,
-                    completionTextPrice: 0.1,
+        for (const visibility of ["app", "public"] as const) {
+            const directShareResponse = await fetchEnterApi(
+                enterApi,
+                new Request("http://localhost:3000/api/community-endpoints", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Cookie: await signedSessionCookie(sessionToken),
+                    },
+                    body: JSON.stringify({
+                        name: `${modelName}-direct-${visibility}`,
+                        description: "Denied shared community endpoint",
+                        baseUrl: "https://api.example.com/v1",
+                        upstreamModel: "gpt-4.1-mini",
+                        bearerToken: "sk_saved_token",
+                        visibility,
+                        promptTextPrice: 0.1,
+                        completionTextPrice: 0.1,
+                    }),
                 }),
-            }),
-        );
-        expect(directPublishResponse.status).toBe(403);
+            );
+            expect(directShareResponse.status).toBe(403);
+        }
 
         // Creation is open to everyone: a non-allowlisted user can register a
         // private model for their own use.
@@ -1151,26 +1248,29 @@ fixtureTest(
             completionTextPrice: 0,
         });
 
-        // Publishing is a separate, allowlist-gated action.
-        const publishResponse = await fetchEnterApi(
-            enterApi,
-            new Request(
-                `http://localhost:3000/api/community-endpoints/${registered.id}/update`,
-                {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                        Cookie: await signedSessionCookie(sessionToken),
+        // Sharing with app users and publishing are separate,
+        // allowlist-gated actions.
+        for (const visibility of ["app", "public"] as const) {
+            const shareResponse = await fetchEnterApi(
+                enterApi,
+                new Request(
+                    `http://localhost:3000/api/community-endpoints/${registered.id}/update`,
+                    {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
+                            Cookie: await signedSessionCookie(sessionToken),
+                        },
+                        body: JSON.stringify({
+                            visibility,
+                            promptTextPrice: 0.1,
+                            completionTextPrice: 0.1,
+                        }),
                     },
-                    body: JSON.stringify({
-                        visibility: "public",
-                        promptTextPrice: 0.1,
-                        completionTextPrice: 0.1,
-                    }),
-                },
-            ),
-        );
-        expect(publishResponse.status).toBe(403);
+                ),
+            );
+            expect(shareResponse.status).toBe(403);
+        }
 
         await db.insert(communityEndpointTable).values({
             id: `endpoint-${crypto.randomUUID()}`,
@@ -1577,7 +1677,7 @@ fixtureTest(
                     },
                     body: JSON.stringify({
                         description: "Updated description",
-                        visibility: "public",
+                        visibility: "app",
                         promptTextPrice: 0.1,
                         completionTextPrice: 0.2,
                     }),
@@ -1587,7 +1687,7 @@ fixtureTest(
         expect(updateResponse.status).toBe(200);
         await expect(updateResponse.json()).resolves.toMatchObject({
             description: "Updated description",
-            visibility: "public",
+            visibility: "app",
             promptTextPrice: 0.1,
             completionTextPrice: 0.2,
             disabled: true,
@@ -1649,7 +1749,7 @@ fixtureTest(
         );
         expect(priceOnlyResponse.status).toBe(200);
         await expect(priceOnlyResponse.json()).resolves.toMatchObject({
-            visibility: "public",
+            visibility: "app",
             promptTextPrice: 0.3,
             completionTextPrice: 0.2,
         });

@@ -1,0 +1,37 @@
+{
+  "pr_number": 12566,
+  "title": "feat: add GPT-OSS model",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/12566",
+  "merged_at": "2026-07-18T11:02:49Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "pr_body_excerpt": "- Adds `gpt-oss` with `gpt-oss-20b` and `ovh-reasoning` aliases.\n- Routes GPT-OSS 20B through OVHcloud's unified OpenAI-compatible endpoint with no fallback.\n- Bills OVHcloud's posted worldwide rates at 1×: $0.05/M input and $0.18/M output; the model is not paid-only.\n- Advertises text input/output, tool calling, reasoning, and a 131,072-token context window.\n- Refreshes the effective-price snapshot, including the already-present Sana entry missing from the baseline snapshot.\n\nPricing source: https://www.ovhcloud.com/en/public-cloud/ai-endpoints/catalog/gpt-oss-20b/\n\nChecks:\n- Biome and gen TypeScript checks\n- 57 gen billing/cache/schema tests\n- 270 registry alias/pricing tests\n- 41 VCR/safety tests\n- Live local completion, streaming, tool call, aliases, zero-pack-balance access, and malformed-request checks\n- Live usage headers and worker billing: 72 input + 18 output tokens = $0.00000684, with no missing conversion-rate warning\n\nTinybird ingest completed without a worker error. Direct row verification remains pending because the available token is ingest-only and lacks `DATASOURCES:READ:generation_event`.\n",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "A 131K-token bee brain",
+    "blurb": "GPT-OSS 20B has landed in the garden via OVHcloud. It can reason, call tools, and keep a truly unreasonable amount of context in its little pollen-dusted notebook.",
+    "summary": "Added GPT-OSS 20B through OVHcloud's OpenAI-compatible endpoint, available as `gpt-oss`, `gpt-oss-20b`, and `ovh-reasoning`, with tool calling, reasoning, text I/O, and a 131,072-token context window.",
+    "impact": "Developers can use GPT-OSS 20B without paid-only access at OVHcloud's 1× worldwide rates of $0.05/M input tokens and $0.18/M output tokens, including through its new aliases.",
+    "keywords": [
+      "gpt-oss",
+      "gpt-oss-20b",
+      "ovhcloud",
+      "text-generation",
+      "tool-calling",
+      "reasoning",
+      "models"
+    ],
+    "visual_concept": "A cozy model-library garden scene: Polly, wearing tiny round reasoning glasses and a tool belt, tends a large flowering code-plant labeled GPT-OSS 20B. The plant's long vine curls through a retro terminal as a visual metaphor for its 131K context window, while small tool icons hang like fruit and an OVHcloud-style endpoint pipe feeds the garden.",
+    "image_prompt": "Cozy pixel art scene of Polly, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, round reasoning glasses, and a tiny tool belt, carefully tending a flowering code-plant labeled 'GPT-OSS 20B' beside a retro terminal; its enormous curling vine is dotted with tiny context pages and tool icons. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient garden, warm lighting, code flowers and gentle CRT glow, retro gaming vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-18/PR-12566.jpg",
+    "prompt": "Cozy pixel art scene of Polly, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, round reasoning glasses, and a tiny tool belt, carefully tending a flowering code-plant labeled 'GPT-OSS 20B' beside a retro terminal; its enormous curling vine is dotted with tiny context pages and tool icons. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient garden, warm lighting, code flowers and gentle CRT glow, retro gaming vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
+  },
+  "generated_at": "2026-07-18T11:03:45.203206+00:00"
+}

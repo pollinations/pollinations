@@ -151,10 +151,10 @@ export const apikey = sqliteTable("apikey", {
   index("idx_apikey_byop_client_key_id").on(table.byopClientKeyId),
 ]);
 
-// One row per billed generation. The request id is both the audit identity and
-// the idempotency gate for the atomic payer debit + creator/supplier payouts.
+// One row per billed generation. The server-generated settlement id is both
+// the audit identity and the idempotency gate for payer debit + payouts.
 export const generationSettlement = sqliteTable("generation_settlement", {
-  requestId: text("request_id").primaryKey(),
+  settlementId: text("request_id").primaryKey(),
   payerUserId: text("payer_user_id").notNull(),
   apiKeyId: text("api_key_id"),
   baseCharge: real("base_charge").notNull(),

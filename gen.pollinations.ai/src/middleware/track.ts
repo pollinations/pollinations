@@ -139,6 +139,7 @@ export const track = (eventType: EventType) =>
     createMiddleware<TrackEnv>(async (c, next) => {
         const log = getLogger(["hono", "track"]);
         const startTime = new Date();
+        const settlementId = crypto.randomUUID();
         const db = drizzle(c.env.DB);
 
         // Get model from resolveModel middleware
@@ -226,7 +227,7 @@ export const track = (eventType: EventType) =>
                     const communityEndpoint = c.var.model?.communityEndpoint;
                     settlement = await settleGeneration({
                         d1: c.env.DB,
-                        requestId: c.get("requestId"),
+                        settlementId,
                         isBilledUsage: responseTracking.isBilledUsage,
                         baseCharge: responseTracking.price?.totalPrice,
                         payerUserId: userTracking.userId,

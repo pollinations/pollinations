@@ -70,6 +70,7 @@ type RealtimeBillingContext = {
     modelDefinition: ModelDefinition<string>;
     modelCostDefinition: CostDefinition;
     modelPriceDefinition: PriceDefinition;
+    settlementId: string;
     requestId: string;
     requestPath: string;
     environment: string;
@@ -468,7 +469,7 @@ async function settleRealtimeSession(
 
     tracking.settlement ??= await settleGeneration({
         d1: c.env.DB,
-        requestId: tracking.requestId,
+        settlementId: tracking.settlementId,
         isBilledUsage: true,
         baseCharge: price.totalPrice,
         payerUserId: tracking.userId,
@@ -646,6 +647,7 @@ async function createRealtimeBillingContext(
         modelDefinition: modelInfo.definition,
         modelCostDefinition: modelInfo.definition.cost,
         modelPriceDefinition,
+        settlementId: crypto.randomUUID(),
         requestId: c.get("requestId"),
         requestPath: getRoutePath(c),
         environment: c.env.ENVIRONMENT,

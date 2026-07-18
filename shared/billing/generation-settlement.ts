@@ -18,7 +18,7 @@ export type SettlementPayout = {
 };
 
 export type GenerationSettlement = {
-    requestId: string;
+    settlementId: string;
     payerUserId: string | null;
     apiKeyId: string | null;
     baseCharge: number;
@@ -35,7 +35,7 @@ export type SupplierPayoutInput = {
 
 type SettlementParams = {
     d1: D1Database;
-    requestId: string;
+    settlementId: string;
     isBilledUsage: boolean;
     baseCharge?: number;
     payerUserId?: string;
@@ -47,7 +47,7 @@ type SettlementParams = {
 };
 
 type StoredSettlementRow = {
-    requestId: string;
+    settlementId: string;
     payerUserId: string;
     apiKeyId: string | null;
     baseCharge: number;
@@ -130,15 +130,15 @@ export function resolveSupplierPayout(
 /**
  * Commits one generation charge and all payouts as a single idempotent D1
  * batch. The settlement insert gates every later statement via `changes()`, so
- * retrying the same request id reads the original settlement without moving
- * any balance twice.
+ * retrying the same server-generated settlement id reads the original
+ * settlement without moving any balance twice.
  */
 export async function settleGeneration(
     params: SettlementParams,
 ): Promise<GenerationSettlement> {
     const {
         d1,
-        requestId,
+        settlementId,
         isBilledUsage,
         baseCharge: rawBaseCharge,
         payerUserId,
@@ -150,7 +150,7 @@ export async function settleGeneration(
     } = params;
 
     if (!isBilledUsage || rawBaseCharge == null || rawBaseCharge === 0) {
-        return emptySettlement(requestId, payerUserId, apiKeyId);
+        return emptySettlement(settlementId, payerUserId, apiKeyId);
     }
     if (!payerUserId) {
         throw new Error("Billed generation requires a payer user");
@@ -158,10 +158,10 @@ export async function settleGeneration(
 
     const baseCharge = roundPollenLedgerAmount(rawBaseCharge);
     if (baseCharge <= 0) {
-        return emptySettlement(requestId, payerUserId, apiKeyId);
+        return emptySettlement(settlementId, payerUserId, apiKeyId);
     }
 
-    const existing = await loadSettlement(d1, requestId);
+    const existing = await loadSettlement(d1, settlementId);
     if (existing) {
         assertSameSettlementCore(existing, {
             payerUserId,
@@ -239,7 +239,7 @@ export async function settleGeneration(
                 ${dependencyChecks}`,
             )
             .bind(
-                requestId,
+                settlementId,
                 apiKeyId ?? null,
                 baseCharge,
                 payerCharge,
@@ -266,7 +266,13 @@ export async function settleGeneration(
                     END
                 WHERE id = ? AND changes() = 1`,
             )
-            .bind(requestId, payerCharge, requestId, payerCharge, payerUserId),
+            .bind(
+                settlementId,
+                payerCharge,
+                settlementId,
+                payerCharge,
+                payerUserId,
+            ),
         d1
             .prepare(
                 `UPDATE generation_settlement
@@ -275,7 +281,7 @@ export async function settleGeneration(
                 )
                 WHERE request_id = ? AND changes() = 1`,
             )
-            .bind(requestId),
+            .bind(settlementId),
     ];
 
     if (hasFiniteApiKeyBudget) {
@@ -313,9 +319,9 @@ export async function settleGeneration(
                     WHERE id = ? AND changes() = 1`,
                 )
                 .bind(
-                    requestId,
+                    settlementId,
                     payout.amount,
-                    requestId,
+                    settlementId,
                     payout.amount,
                     payout.recipientUserId,
                 ),
@@ -324,15 +330,15 @@ export async function settleGeneration(
 
     const results = await d1.batch(statements);
     const inserted = (results[0]?.meta.changes ?? 0) === 1;
-    const stored = await loadSettlement(d1, requestId);
+    const stored = await loadSettlement(d1, settlementId);
     if (!stored) {
         throw new Error(
-            `Generation settlement dependencies missing for request ${requestId}`,
+            `Generation settlement dependencies missing for ${settlementId}`,
         );
     }
 
     assertSameSettlement(stored, {
-        requestId,
+        settlementId,
         payerUserId,
         apiKeyId: apiKeyId ?? null,
         baseCharge,
@@ -344,16 +350,14 @@ export async function settleGeneration(
         inserted &&
         results.slice(1).some((result) => result.meta.changes !== 1)
     ) {
-        throw new Error(
-            `Generation settlement incomplete for request ${requestId}`,
-        );
+        throw new Error(`Generation settlement incomplete for ${settlementId}`);
     }
 
     const settlement = toGenerationSettlement(stored);
     log.debug(
-        "Settled generation {requestId}: charged {payerCharge} to {payerUserId} from {payerBucket} with {payoutCount} payouts",
+        "Settled generation {settlementId}: charged {payerCharge} to {payerUserId} from {payerBucket} with {payoutCount} payouts",
         {
-            requestId,
+            settlementId,
             payerCharge,
             payerUserId,
             payerBucket: settlement.payerBucket,
@@ -364,12 +368,12 @@ export async function settleGeneration(
 }
 
 function emptySettlement(
-    requestId: string,
+    settlementId: string,
     payerUserId: string | undefined,
     apiKeyId: string | undefined,
 ): GenerationSettlement {
     return {
-        requestId,
+        settlementId,
         payerUserId: payerUserId ?? null,
         apiKeyId: apiKeyId ?? null,
         baseCharge: 0,
@@ -382,12 +386,12 @@ function emptySettlement(
 
 async function loadSettlement(
     d1: D1Database,
-    requestId: string,
+    settlementId: string,
 ): Promise<StoredSettlementRow | null> {
     return d1
         .prepare(
             `SELECT
-                request_id AS requestId,
+                request_id AS settlementId,
                 payer_user_id AS payerUserId,
                 api_key_id AS apiKeyId,
                 base_charge AS baseCharge,
@@ -398,7 +402,7 @@ async function loadSettlement(
             FROM generation_settlement
             WHERE request_id = ?`,
         )
-        .bind(requestId)
+        .bind(settlementId)
         .first<StoredSettlementRow>();
 }
 
@@ -417,7 +421,7 @@ function assertSameSettlement(
         stored.payoutsJson !== expected.payoutsJson
     ) {
         throw new Error(
-            `Request ${expected.requestId} was already used for a different generation settlement`,
+            `Settlement ${expected.settlementId} was already used for a different generation`,
         );
     }
 }
@@ -435,7 +439,7 @@ function assertSameSettlementCore(
         stored.baseCharge !== expected.baseCharge
     ) {
         throw new Error(
-            `Request ${stored.requestId} was already used for a different generation settlement`,
+            `Settlement ${stored.settlementId} was already used for a different generation`,
         );
     }
 }
@@ -444,7 +448,7 @@ function toGenerationSettlement(
     row: StoredSettlementRow,
 ): GenerationSettlement {
     return {
-        requestId: row.requestId,
+        settlementId: row.settlementId,
         payerUserId: row.payerUserId,
         apiKeyId: row.apiKeyId,
         baseCharge: row.baseCharge,

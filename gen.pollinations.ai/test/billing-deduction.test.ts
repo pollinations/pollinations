@@ -124,7 +124,7 @@ describe("billing deduction", () => {
 
         await settleGeneration({
             d1: env.DB,
-            requestId: crypto.randomUUID(),
+            settlementId: crypto.randomUUID(),
             isBilledUsage: true,
             baseCharge: 0.01,
             payerUserId: userId,
@@ -136,7 +136,7 @@ describe("billing deduction", () => {
 
         await settleGeneration({
             d1: env.DB,
-            requestId: crypto.randomUUID(),
+            settlementId: crypto.randomUUID(),
             isBilledUsage: true,
             baseCharge: 0.01,
             payerUserId: userId,

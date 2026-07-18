@@ -24,11 +24,11 @@ import { checkBalance } from "@/utils/generation-access.ts";
 const db = drizzle(env.DB);
 
 function settleGenerationOnce(
-    params: Omit<Parameters<typeof settleGeneration>[0], "d1" | "requestId">,
+    params: Omit<Parameters<typeof settleGeneration>[0], "d1" | "settlementId">,
 ) {
     return settleGeneration({
         d1: env.DB,
-        requestId: crypto.randomUUID(),
+        settlementId: crypto.randomUUID(),
         ...params,
     });
 }
@@ -571,12 +571,12 @@ describe("BYOP markup", () => {
         );
     });
 
-    it("settles the same request id only once", async () => {
+    it("settles the same server-generated settlement id only once", async () => {
         const { payerId, devId, pkId } = await setupPayerAndDev();
-        const requestId = crypto.randomUUID();
+        const settlementId = crypto.randomUUID();
         const input = {
             d1: env.DB,
-            requestId,
+            settlementId,
             isBilledUsage: true,
             baseCharge: 1,
             payerUserId: payerId,

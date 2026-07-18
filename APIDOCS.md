@@ -2115,6 +2115,11 @@ Marks the end of a static prompt prefix to cache (Gemini, Claude, and Nova model
 | `data[].url` | `string` | — |
 | `data[].b64_json` | `string` | — |
 | `data[].revised_prompt` | `string` | — |
+| `usage` * | `object` | — |
+| `usage.input_tokens` * | `integer` | — |
+| `usage.output_tokens` * | `integer` | — |
+| `usage.total_tokens` * | `integer` | — |
+| `usage.input_tokens_details` * | `object` | — |
 
 <sub>`*` = required field</sub>
 

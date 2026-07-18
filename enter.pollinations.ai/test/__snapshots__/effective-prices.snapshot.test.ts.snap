@@ -2,14 +2,6 @@
 
 exports[`effective cost and price per model — snapshot 1`] = `
 {
-  "acestep": {
-    "cost": {
-      "completionAudioSeconds": 0.0005,
-    },
-    "price": {
-      "completionAudioSeconds": 0.0005,
-    },
-  },
   "claude": {
     "cost": {
       "completionTextTokens": 0.000015,
@@ -684,14 +676,6 @@ exports[`effective cost and price per model — snapshot 1`] = `
     "price": {
       "completionTextTokens": 0.0000003,
       "promptTextTokens": 0.0000001,
-    },
-  },
-  "ltx-2": {
-    "cost": {
-      "completionVideoSeconds": 0.005,
-    },
-    "price": {
-      "completionVideoSeconds": 0.005,
     },
   },
   "mercury": {

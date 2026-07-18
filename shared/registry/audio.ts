@@ -231,23 +231,6 @@ export const AUDIO_SERVICES = {
         inputModalities: ["audio"],
         outputModalities: ["text"],
     },
-    acestep: {
-        aliases: ["ace-step", "acestep-music"],
-        modelId: "acestep_v15_turbo",
-        provider: "lambda",
-        brand: "ACE-Step",
-        category: "audio",
-        addedDate: new Date("2026-04-03").getTime(),
-        priceMultiplier: 1,
-        cost: {
-            completionAudioSeconds: 0.0005,
-        },
-        title: "ACE-Step 1.5 Turbo",
-        description:
-            "ACE-Step 1.5 Turbo - Fast open-source music generation with lyrics support",
-        inputModalities: ["text"],
-        outputModalities: ["audio"],
-    },
     "stable-audio-3-medium": {
         aliases: ["stable-audio", "stability-audio", "stable-audio-2.5"],
         modelId: "stable-audio-3-medium",

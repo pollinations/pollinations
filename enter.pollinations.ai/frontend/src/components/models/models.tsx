@@ -100,6 +100,10 @@ export const Models: FC<ModelsProps> = ({
     const navigate = useNavigate({ from: "/models" });
     const modelSearch = useSearch({ from: "/_dashboard/models" });
     const activeTab = modelSearch.category ?? "all";
+    const activeView =
+        showCommunityEndpoints && modelSearch.view === "mine"
+            ? "mine"
+            : "browse";
     const search = modelSearch.q ?? "";
     const sortKey = modelSearch.sort ?? "perPollen";
     const sortDir = modelSearch.dir ?? DEFAULT_SORT_DIRECTIONS[sortKey];
@@ -177,6 +181,15 @@ export const Models: FC<ModelsProps> = ({
         });
     };
 
+    const setActiveView = (view: "browse" | "mine") => {
+        void navigate({
+            search: (previous) => ({
+                ...previous,
+                view: view === "mine" ? "mine" : undefined,
+            }),
+        });
+    };
+
     const setSearch = (q: string) => {
         void navigate({
             search: (previous) => ({
@@ -209,7 +222,27 @@ export const Models: FC<ModelsProps> = ({
 
     return (
         <div className="flex flex-col gap-6">
+            {showCommunityEndpoints && (
+                <nav
+                    className="flex gap-1.5 md:hidden"
+                    aria-label="Models sections"
+                >
+                    <TabButton
+                        active={activeView === "browse"}
+                        onClick={() => setActiveView("browse")}
+                    >
+                        Browse Models
+                    </TabButton>
+                    <TabButton
+                        active={activeView === "mine"}
+                        onClick={() => setActiveView("mine")}
+                    >
+                        My Models
+                    </TabButton>
+                </nav>
+            )}
             <Section
+                className={activeView === "browse" ? undefined : "hidden"}
                 title="Models"
                 framed
                 actionClassName="w-full sm:ml-auto sm:w-auto"
@@ -324,7 +357,7 @@ export const Models: FC<ModelsProps> = ({
                     </p>
                 </div>
             </Section>
-            {showCommunityEndpoints && (
+            {showCommunityEndpoints && activeView === "mine" && (
                 <CommunityEndpoints
                     canPublish={canPublish}
                     onChange={() => {

@@ -55,6 +55,7 @@ const brandWordmarkMask: CSSProperties = {
 
 type DashboardShellProps = PropsWithChildren<{
     navItems?: readonly DashboardNavItem[];
+    showModelsSubnav?: boolean;
     githubUsername?: string;
     githubAvatarUrl?: string;
     onSignOut?: () => void;
@@ -137,6 +138,7 @@ const accountMenuLinks: readonly AccountMenuLink[] = [
 
 export const DashboardShell: FC<DashboardShellProps> = ({
     navItems = DASHBOARD_NAV_ITEMS,
+    showModelsSubnav = false,
     githubUsername,
     githubAvatarUrl,
     onSignOut,
@@ -153,6 +155,8 @@ export const DashboardShell: FC<DashboardShellProps> = ({
         DASHBOARD_NAV_ITEMS.find((item) => item.to === location.pathname) ??
         DASHBOARD_NAV_ITEMS[0];
     const activePage = activeNavItem.id;
+    const activeModelsView =
+        location.search.view === "mine" ? "mine" : "browse";
 
     useDashboardShellBodyClass();
     useScrollLock(isDrawerOpen);
@@ -290,6 +294,8 @@ export const DashboardShell: FC<DashboardShellProps> = ({
             accountArea={effectiveAccountArea}
             walletArea={walletArea}
             onNavigate={closeDrawer}
+            showModelsSubnav={showModelsSubnav}
+            activeModelsView={activeModelsView}
         />
     );
 
@@ -380,6 +386,8 @@ type DashboardRailProps = {
     accountArea?: ReactNode;
     walletArea?: ReactNode;
     onNavigate: () => void;
+    showModelsSubnav: boolean;
+    activeModelsView: "browse" | "mine";
 };
 
 const DashboardRail: FC<DashboardRailProps> = ({
@@ -390,6 +398,8 @@ const DashboardRail: FC<DashboardRailProps> = ({
     accountArea,
     walletArea,
     onNavigate,
+    showModelsSubnav,
+    activeModelsView,
 }) => (
     <aside
         data-theme="neutral"
@@ -410,28 +420,40 @@ const DashboardRail: FC<DashboardRailProps> = ({
             }
         >
             <nav className="flex flex-col gap-1 pr-2">
-                {navItems.map((item) => (
-                    <NavItem
-                        as={Link}
-                        key={item.id}
-                        to={item.to}
-                        data-theme="accent"
-                        icon={item.icon}
-                        active={activePage === item.id}
-                        onClick={onNavigate}
-                    >
-                        {item.label}
-                        {item.id === "quests" && (
-                            <Chip
-                                intent="neutral"
-                                size="sm"
-                                className="ml-auto bg-transparent text-theme-text-soft"
+                {navItems.map((item) => {
+                    const isActive = activePage === item.id;
+                    return (
+                        <div key={item.id}>
+                            <NavItem
+                                as={Link}
+                                to={item.to}
+                                data-theme="accent"
+                                icon={item.icon}
+                                active={isActive}
+                                onClick={onNavigate}
                             >
-                                New!
-                            </Chip>
-                        )}
-                    </NavItem>
-                ))}
+                                {item.label}
+                                {item.id === "quests" && (
+                                    <Chip
+                                        intent="neutral"
+                                        size="sm"
+                                        className="ml-auto bg-transparent text-theme-text-soft"
+                                    >
+                                        New!
+                                    </Chip>
+                                )}
+                            </NavItem>
+                            {item.id === "models" &&
+                                isActive &&
+                                showModelsSubnav && (
+                                    <ModelsSubnav
+                                        activeView={activeModelsView}
+                                        onNavigate={onNavigate}
+                                    />
+                                )}
+                        </div>
+                    );
+                })}
                 <DashboardSupport action={supportAction} links={supportLinks} />
             </nav>
         </ScrollArea>
@@ -441,6 +463,42 @@ const DashboardRail: FC<DashboardRailProps> = ({
             <DashboardFooter links={footerLinks} note="© 2026 Myceli.AI" />
         </div>
     </aside>
+);
+
+const ModelsSubnav: FC<{
+    activeView: "browse" | "mine";
+    onNavigate: () => void;
+}> = ({ activeView, onNavigate }) => (
+    <div className="ml-7 mt-1 flex flex-col gap-0.5 border-l border-theme-text-strong/10 pl-2">
+        <Link
+            to="/models"
+            search={{}}
+            aria-current={activeView === "browse" ? "page" : undefined}
+            className={cn(
+                "rounded-full px-3 py-1.5 text-xs font-medium transition-colors",
+                activeView === "browse"
+                    ? "bg-surface-opaque text-theme-text-strong"
+                    : "text-theme-text-muted hover:bg-surface-opaque/60 hover:text-theme-text-strong",
+            )}
+            onClick={onNavigate}
+        >
+            Browse Models
+        </Link>
+        <Link
+            to="/models"
+            search={{ view: "mine" }}
+            aria-current={activeView === "mine" ? "page" : undefined}
+            className={cn(
+                "rounded-full px-3 py-1.5 text-xs font-medium transition-colors",
+                activeView === "mine"
+                    ? "bg-surface-opaque text-theme-text-strong"
+                    : "text-theme-text-muted hover:bg-surface-opaque/60 hover:text-theme-text-strong",
+            )}
+            onClick={onNavigate}
+        >
+            My Models
+        </Link>
+    </div>
 );
 
 const MobileMenuButton: FC<{

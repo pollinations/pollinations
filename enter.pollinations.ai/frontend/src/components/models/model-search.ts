@@ -24,6 +24,7 @@ export const MODEL_SORT_DIRECTIONS = ["asc", "desc"] as const;
 export type ModelSortDirection = (typeof MODEL_SORT_DIRECTIONS)[number];
 
 export type ModelSearch = {
+    view?: "mine";
     category?: ModelCategory;
     q?: string;
     sort?: ModelSortKey;
@@ -41,6 +42,7 @@ export function validateModelSearch(
     search: Record<string, unknown>,
 ): ModelSearch {
     return {
+        view: search.view === "mine" ? "mine" : undefined,
         category:
             includes(MODEL_CATEGORIES, search.category) &&
             search.category !== "all"

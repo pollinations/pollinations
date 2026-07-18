@@ -95,6 +95,7 @@ function DashboardLayout() {
     return (
         <DashboardShell
             navItems={data.user ? undefined : SIGNED_OUT_NAV_ITEMS}
+            showModelsSubnav={Boolean(data.user)}
             githubUsername={data.githubUsername}
             githubAvatarUrl={data.user?.image || ""}
             onSignOut={data.user ? handleSignOut : undefined}

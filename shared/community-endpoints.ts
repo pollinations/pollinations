@@ -1,9 +1,9 @@
 import { isCommunityModelAllowedGithubId } from "./auth/github-id-list.ts";
+import { POLLEN_BILLING_PRECISION } from "./billing/precision.ts";
 import type { ModelDefinition, PriceDefinition } from "./registry/registry.ts";
 import {
     OPENAI_CHAT_USAGE_PATHS,
     OPENAI_CHAT_USAGE_TYPES,
-    OPENAI_IMAGE_USAGE_PATHS,
     type OpenAIChatUsageType,
 } from "./registry/usage-headers.ts";
 
@@ -14,35 +14,56 @@ export const COMMUNITY_ENDPOINT_MODALITIES = ["text", "image"] as const;
 export const MIN_COMMUNITY_PRICE_PER_MILLION_TOKENS = 0.000001;
 export const MIN_COMMUNITY_PRICE_PER_TOKEN =
     MIN_COMMUNITY_PRICE_PER_MILLION_TOKENS / 1_000_000;
+export const MIN_COMMUNITY_PRICE_PER_UNIT = 10 ** -POLLEN_BILLING_PRECISION;
 const BEARER_PREFIX = /^Bearer(?:\s+|$)/i;
 
 export type CommunityEndpointModality =
     (typeof COMMUNITY_ENDPOINT_MODALITIES)[number];
 
 const COMMUNITY_PRICE_FIELD_BY_USAGE_TYPE = {
-    promptTextTokens: { key: "promptTextPrice", label: "Prompt text" },
-    promptCachedTokens: { key: "promptCachedPrice", label: "Prompt cached" },
+    promptTextTokens: {
+        key: "promptTextPrice",
+        label: "Prompt text",
+        priceUnit: "million",
+    },
+    promptCachedTokens: {
+        key: "promptCachedPrice",
+        label: "Prompt cached",
+        priceUnit: "million",
+    },
     promptCacheWriteTokens: {
         key: "promptCacheWritePrice",
         label: "Prompt cache write",
+        priceUnit: "million",
     },
-    promptAudioTokens: { key: "promptAudioPrice", label: "Prompt audio" },
-    promptImageTokens: { key: "promptImagePrice", label: "Prompt image" },
+    promptAudioTokens: {
+        key: "promptAudioPrice",
+        label: "Prompt audio",
+        priceUnit: "million",
+    },
+    promptImageTokens: {
+        key: "promptImagePrice",
+        label: "Prompt image",
+        priceUnit: "million",
+    },
     completionTextTokens: {
         key: "completionTextPrice",
         label: "Completion text",
+        priceUnit: "million",
     },
     completionReasoningTokens: {
         key: "completionReasoningPrice",
         label: "Completion reasoning",
+        priceUnit: "million",
     },
     completionAudioTokens: {
         key: "completionAudioPrice",
         label: "Completion audio",
+        priceUnit: "million",
     },
 } as const satisfies Record<
     OpenAIChatUsageType,
-    { key: string; label: string }
+    { key: string; label: string; priceUnit: "million" }
 >;
 
 const COMMUNITY_TEXT_PRICE_FIELDS = OPENAI_CHAT_USAGE_TYPES.map(
@@ -55,20 +76,16 @@ const COMMUNITY_TEXT_PRICE_FIELDS = OPENAI_CHAT_USAGE_TYPES.map(
     key: (typeof COMMUNITY_PRICE_FIELD_BY_USAGE_TYPE)[OpenAIChatUsageType]["key"];
     usageType: OpenAIChatUsageType;
     label: string;
+    priceUnit: "million";
     rawUsagePaths: readonly string[];
 }[];
-
-const COMMUNITY_IMAGE_PROMPT_TEXT_PRICE_FIELD = {
-    ...COMMUNITY_PRICE_FIELD_BY_USAGE_TYPE.promptTextTokens,
-    usageType: "promptTextTokens",
-    rawUsagePaths: OPENAI_IMAGE_USAGE_PATHS.promptTextTokens,
-} as const;
 
 const COMMUNITY_IMAGE_PRICE_FIELD = {
     key: "completionImagePrice",
     usageType: "completionImageTokens",
-    label: "Output image",
-    rawUsagePaths: OPENAI_IMAGE_USAGE_PATHS.completionImageTokens,
+    label: "Generated image",
+    priceUnit: "image",
+    rawUsagePaths: ["images"],
 } as const;
 
 export const COMMUNITY_ENDPOINT_PRICE_FIELDS = [
@@ -82,7 +99,6 @@ const COMMUNITY_TEXT_ENDPOINT_PRICE_FIELDS =
     );
 
 const COMMUNITY_IMAGE_ENDPOINT_PRICE_FIELDS = [
-    COMMUNITY_IMAGE_PROMPT_TEXT_PRICE_FIELD,
     COMMUNITY_IMAGE_PRICE_FIELD,
 ] as const;
 
@@ -231,6 +247,27 @@ export function normalizeCommunityEndpointBaseUrl(value: string): string {
     return url.toString().replace(/\/+$/, "");
 }
 
+export function normalizeCommunityAssetUrl(
+    value: string,
+    endpointBaseUrl: string,
+): string {
+    const url = new URL(value);
+    if (url.protocol !== "http:" && url.protocol !== "https:") {
+        throw new Error("Image URL must use http or https");
+    }
+    if (url.username || url.password || isBlockedHostname(url.hostname)) {
+        throw new Error("Image URL cannot target a private host");
+    }
+    if (
+        url.protocol === "http:" &&
+        url.hostname !== new URL(endpointBaseUrl).hostname
+    ) {
+        throw new Error("HTTP image URL must use the endpoint host");
+    }
+    url.hash = "";
+    return url.toString();
+}
+
 export function communityChatCompletionsUrl(baseUrl: string): string {
     return `${communityOpenAIBaseUrl(baseUrl)}/chat/completions`;
 }
@@ -255,9 +292,10 @@ export function communityOpenAIBaseUrl(baseUrl: string): string {
 
 export function communityPriceDefinition(
     endpoint: CommunityEndpointPrices,
+    modality: CommunityEndpointModality,
 ): PriceDefinition {
     const pricing: PriceDefinition = {};
-    for (const field of COMMUNITY_ENDPOINT_PRICE_FIELDS) {
+    for (const field of communityEndpointPriceFieldsForModality(modality)) {
         const price = endpoint[field.key];
         // Zero is an intentional rate here (private models, unpriced usage
         // buckets), not a missing one: keep it explicit so billing charges 0
@@ -287,7 +325,7 @@ export function communityModelDefinition(
         provider: "community",
         brand: "Community",
         category: isImage ? "image" : "text",
-        cost: communityPriceDefinition(endpoint),
+        cost: communityPriceDefinition(endpoint, modality),
         priceMultiplier: 1,
         addedDate: 0,
         title: description || parsed?.modelName || endpoint.modelId,
@@ -296,17 +334,37 @@ export function communityModelDefinition(
         outputModalities: isImage ? ["image"] : ["text"],
         paidOnly: false,
         alpha: true,
-        ...(isImage ? { flatRate: false } : {}),
+        ...(isImage ? { flatRate: true } : {}),
     };
 }
 
 function isBlockedHostname(hostname: string): boolean {
-    const host = hostname.toLowerCase();
+    const host = hostname
+        .replace(/^\[|\]$/g, "")
+        .replace(/\.$/, "")
+        .toLowerCase();
     if (host === "localhost" || host.endsWith(".localhost")) return true;
     if (host.endsWith(".local")) return true;
-    if (host === "::1" || host === "[::1]") return true;
+    if (host.includes(":")) return true;
     if (host.startsWith("127.") || host.startsWith("10.")) return true;
+    if (host.startsWith("169.254.")) return true;
+    if (host.startsWith("100.")) {
+        const second = Number(host.split(".")[1]);
+        if (second >= 64 && second <= 127) return true;
+    }
     if (host.startsWith("192.168.")) return true;
+    const ipv4 = host.split(".").map(Number);
+    if (
+        ipv4.length === 4 &&
+        ipv4.every(
+            (part) => Number.isInteger(part) && part >= 0 && part <= 255,
+        ) &&
+        (ipv4[0] === 0 ||
+            (ipv4[0] ?? 0) >= 224 ||
+            (ipv4[0] === 198 && (ipv4[1] === 18 || ipv4[1] === 19)))
+    ) {
+        return true;
+    }
     const match172 = host.match(/^172\.(\d+)\./);
     if (match172) {
         const second = Number(match172[1]);

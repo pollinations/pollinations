@@ -170,7 +170,7 @@ export function CommunityEndpointDialog({
                 throw new Error(
                     form.modality === "image"
                         ? "Endpoint responded, but did not return image data"
-                        : "Endpoint responded, but did not return billable token usage",
+                        : "Endpoint responded, but did not return billable usage",
                 );
             }
             setTestState({
@@ -225,7 +225,7 @@ export function CommunityEndpointDialog({
     // model already had saved. Blank and zero prices mean free.
     const basePriceKeys =
         form.modality === "image"
-            ? (["promptTextPrice", "completionImagePrice"] as const)
+            ? (["completionImagePrice"] as const)
             : BASE_TEXT_PRICE_KEYS;
     const visiblePriceKeys = new Set(
         isShared
@@ -372,7 +372,7 @@ export function CommunityEndpointDialog({
                         label="Visibility"
                         helper={
                             isShared
-                                ? "Public: listed in /models and callable by anyone. Set optional per-1M-token prices below, or leave them at 0 for free."
+                                ? "Public: listed in /models and callable by anyone. Set optional usage prices below, or leave them at 0 for free."
                                 : canPublish
                                   ? "Private: callable only by you and shown only in model lists authenticated with your API key."
                                   : "Private: callable only by you. Publishing publicly requires approval."

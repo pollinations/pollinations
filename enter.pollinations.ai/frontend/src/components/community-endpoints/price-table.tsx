@@ -14,6 +14,7 @@ import {
     type CommunityEndpointModality,
     communityEndpointPriceFieldsForModality,
     MIN_COMMUNITY_PRICE_PER_MILLION_TOKENS,
+    MIN_COMMUNITY_PRICE_PER_UNIT,
 } from "@shared/community-endpoints.ts";
 import { PRICE_ICON } from "../models/model-icons.tsx";
 import type { PriceKind } from "../models/types.ts";
@@ -74,13 +75,13 @@ export function PriceGroups({
                                 align="right"
                                 className="normal-case tracking-normal"
                             >
-                                Input / 1M
+                                Input price
                             </TableHeaderCell>
                             <TableHeaderCell
                                 align="right"
                                 className="normal-case tracking-normal"
                             >
-                                Output / 1M
+                                Output price
                             </TableHeaderCell>
                         </TableRow>
                     </TableHead>
@@ -178,32 +179,41 @@ function PriceInputCell({
 
     const inputId = `community-${field.key}`;
     const hasError = state.invalid;
+    const unitLabel = field.priceUnit === "image" ? "/image" : "/1M";
+    const minimum =
+        field.priceUnit === "million"
+            ? MIN_COMMUNITY_PRICE_PER_MILLION_TOKENS
+            : MIN_COMMUNITY_PRICE_PER_UNIT;
 
     return (
         <TableCell align="right" className="w-40 align-top">
             <div className="inline-flex flex-col items-end">
-                <Input
-                    id={inputId}
-                    name={inputId}
-                    type="number"
-                    step="any"
-                    min="0"
-                    inputMode="decimal"
-                    hideNumberSteppers
-                    value={value}
-                    placeholder="0"
-                    autoComplete="off"
-                    aria-label={`${field.label} price per 1M tokens`}
-                    error={hasError}
-                    className="h-9 w-32 max-w-full font-mono tabular-nums text-right"
-                    onChange={(event) =>
-                        onChange(field.key, event.target.value)
-                    }
-                />
+                <div className="flex items-center gap-1.5">
+                    <Input
+                        id={inputId}
+                        name={inputId}
+                        type="number"
+                        step="any"
+                        min="0"
+                        inputMode="decimal"
+                        hideNumberSteppers
+                        value={value}
+                        placeholder="0"
+                        autoComplete="off"
+                        aria-label={`${field.label} price ${unitLabel}`}
+                        error={hasError}
+                        className="h-9 w-28 max-w-full font-mono tabular-nums text-right"
+                        onChange={(event) =>
+                            onChange(field.key, event.target.value)
+                        }
+                    />
+                    <span className="w-10 text-left text-xs text-theme-text-muted">
+                        {unitLabel}
+                    </span>
+                </div>
                 {hasError && (
                     <p className="mt-1 text-right text-xs text-intent-danger-text">
-                        0 (free) or at least{" "}
-                        {MIN_COMMUNITY_PRICE_PER_MILLION_TOKENS} per 1M
+                        0 (free) or at least {minimum} {unitLabel}
                     </p>
                 )}
             </div>
@@ -221,7 +231,7 @@ function priceCellState(
         null;
     return {
         observed,
-        invalid: !isValidPriceInput(form[field.key]),
+        invalid: !isValidPriceInput(form[field.key], field.priceUnit),
     };
 }
 
@@ -339,9 +349,18 @@ export function hasValidVisibleFormPrices(
     form: EndpointFormState,
     visiblePriceKeys: Set<PriceFieldKey>,
 ): boolean {
-    return COMMUNITY_ENDPOINT_PRICE_FIELDS.every(
-        (field) =>
-            !visiblePriceKeys.has(field.key) ||
-            isValidPriceInput(form[field.key]),
+    const fields = new Map(
+        communityEndpointPriceFieldsForModality(form.modality).map((field) => [
+            field.key,
+            field,
+        ]),
     );
+    return COMMUNITY_ENDPOINT_PRICE_FIELDS.every((field) => {
+        if (!visiblePriceKeys.has(field.key)) return true;
+        const modalityField = fields.get(field.key);
+        return Boolean(
+            modalityField &&
+                isValidPriceInput(form[field.key], modalityField.priceUnit),
+        );
+    });
 }

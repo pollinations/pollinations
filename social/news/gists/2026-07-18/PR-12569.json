@@ -1,0 +1,36 @@
+{
+  "pr_number": 12569,
+  "title": "fix: keep mobile model layout in landscape",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/12569",
+  "merged_at": "2026-07-18T11:40:15Z",
+  "labels": [
+    "DEV-UI-UX"
+  ],
+  "pr_body_excerpt": "Follow-up to #12519.\n\n- Keeps the dashboard drawer until `lg` (1024px), so the 240px rail does not consume landscape-phone space at 768px.\n- Selects desktop model rows only when the component has at least 672px and the primary pointer is fine.\n- Keeps touch-first devices on the tap-to-expand cards from #12519 in both portrait and landscape.\n\nRoot cause:\n- The `md` breakpoint simultaneously enabled the desktop rail and desktop model rows, leaving only about 432px for the table at the transition.\n\nValidation:\n- `npx biome check --write` on changed files\n- `npm run typecheck --workspace pollinations-enter`\n- `npm run build:frontend --workspace pollinations-enter --ignore-scripts`\n- Browser checks at 844×390 touch landscape, 671/672px container boundaries, and 1024px desktop",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Landscape gets its petals back",
+    "blurb": "The model picker now leaves landscape phones enough room to breathe. Polly gently moved the furniture so touch screens can keep tapping instead of squinting at a cramped table.",
+    "summary": "Adjusted the Enter dashboard breakpoints so the drawer remains a compact overlay until 1024px, while desktop model rows require a 672px component width and a fine primary pointer.",
+    "impact": "Touch-first devices in portrait and landscape now keep the tap-to-expand model cards, avoiding the cramped roughly 432px model table previously triggered around 768px.",
+    "keywords": [
+      "enter",
+      "dashboard",
+      "mobile",
+      "responsive",
+      "model-picker",
+      "ui-ux"
+    ],
+    "visual_concept": "Depict Polly as a careful interior designer in a cozy retro dashboard room, sliding a 240px drawer aside to make space for wide landscape-phone model cards. A small CRT monitor robot can happily point at two roomy tap-to-expand cards, with code-plants and flowers showing the interface has room to grow.",
+    "image_prompt": "Cozy pixel art scene of the cute pollinations bee mascot wearing a tiny tool belt, gently sliding a compact dashboard drawer aside so a landscape phone can display roomy tap-to-expand model cards; a cheerful CRT monitor robot points at the newly open space beside code-plants and flowers. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, retro gaming vibes, pixel-font text: \"ROOM TO TAP\"."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-18/PR-12569.jpg",
+    "prompt": "Cozy pixel art scene of the cute pollinations bee mascot wearing a tiny tool belt, gently sliding a compact dashboard drawer aside so a landscape phone can display roomy tap-to-expand model cards; a cheerful CRT monitor robot points at the newly open space beside code-plants and flowers. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, retro gaming vibes, pixel-font text: \"ROOM TO TAP\"."
+  },
+  "generated_at": "2026-07-18T11:41:15.274285+00:00"
+}

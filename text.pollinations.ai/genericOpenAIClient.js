@@ -1,5 +1,6 @@
 import fetch from "node-fetch";
 import debug from "debug";
+import { Transform } from "stream";
 import {
     validateAndNormalizeMessages,
     cleanNullAndUndefined,
@@ -14,6 +15,44 @@ import { sendTinybirdEvent } from "./observability/tinybirdTracker.js";
 
 const log = debug(`pollinations:genericopenai`);
 const errorLog = debug(`pollinations:error`);
+
+function stopAfterSseDone(responseStream) {
+    const marker = "data: [DONE]";
+    let pending = "";
+    let done = false;
+
+    return responseStream.pipe(
+        new Transform({
+            transform(chunk, _encoding, callback) {
+                if (done) return callback();
+
+                pending += chunk.toString();
+                const markerIndex = pending.indexOf(marker);
+                if (markerIndex !== -1) {
+                    this.push(
+                        `${pending.slice(0, markerIndex + marker.length)}\n\n`,
+                    );
+                    pending = "";
+                    done = true;
+                } else {
+                    const safeLength = Math.max(
+                        0,
+                        pending.length - marker.length + 1,
+                    );
+                    if (safeLength) {
+                        this.push(pending.slice(0, safeLength));
+                        pending = pending.slice(safeLength);
+                    }
+                }
+                callback();
+            },
+            flush(callback) {
+                if (!done && pending) this.push(pending);
+                callback();
+            },
+        }),
+    );
+}
 
 /**
  * Generic OpenAI-compatible API client function
@@ -174,7 +213,7 @@ export async function genericOpenAIClient(messages, options = {}, config) {
             // Check if the response is SSE (text/event-stream)
             log(`[${requestId}] Streaming response headers:`, responseHeaders);
 
-            let streamToReturn = response.body;
+            let streamToReturn = stopAfterSseDone(response.body);
             if (response.body && formatResponse) {
                 // Map each SSE event chunk's delta through formatResponse
                 streamToReturn = response.body.pipe(

@@ -103,7 +103,7 @@ test("passes Gen streaming responses through as OpenAI SSE", async () => {
             receivedBody = JSON.parse(body);
             res.writeHead(200, { "content-type": "text/event-stream" });
             res.end(
-                'data: {"choices":[{"index":0,"delta":{"content":"hello"},"finish_reason":null}]}\n\ndata: [DONE]\n\n',
+                'data: {"choices":[{"index":0,"delta":{"content":"hello"},"finish_reason":null}]}\n\ndata: [DONE]\n\ndata: {"error":"late upstream error"}\n\n',
             );
         });
     });
@@ -129,6 +129,7 @@ test("passes Gen streaming responses through as OpenAI SSE", async () => {
         );
         assert.match(output, /"content":"hello"/);
         assert.match(output, /data: \[DONE\]/);
+        assert.doesNotMatch(output, /late upstream error/);
     } finally {
         await new Promise((resolve, reject) =>
             server.close((error) => (error ? reject(error) : resolve())),

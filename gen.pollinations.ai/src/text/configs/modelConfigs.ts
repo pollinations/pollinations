@@ -5,8 +5,8 @@ import {
     createFireworksModelConfig,
     createInceptionModelConfig,
     createOpenRouterModelConfig,
-    createOVHcloudMistralConfig,
     createOVHcloudModelConfig,
+    createOVHcloudOAIConfig,
     createPerplexityModelConfig,
     createPollyConfig,
     createVercelAIGatewayModelConfig,
@@ -356,11 +356,16 @@ export const portkeyConfig: PortkeyConfigMap = {
             model: "stepfun/step-3.7-flash",
         }),
 
-    // -- OVHcloud (Qwen) ------------------------------------------------------
+    // -- OVHcloud -------------------------------------------------------------
+    "gpt-oss-20b": () =>
+        createOVHcloudOAIConfig({
+            model: "gpt-oss-20b",
+            "max-tokens": 1500,
+        }),
     "qwen3-coder-30b-a3b-instruct": () =>
         createOVHcloudModelConfig({ model: "Qwen3-Coder-30B-A3B-Instruct" }),
     "Qwen3Guard-Gen-8B": () =>
-        createOVHcloudMistralConfig({ model: "Qwen3Guard-Gen-8B" }),
+        createOVHcloudOAIConfig({ model: "Qwen3Guard-Gen-8B" }),
 
     // -- Community Models -----------------------------------------------------
     "polly": () =>

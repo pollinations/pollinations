@@ -3,7 +3,7 @@
  *
  * Adds a status code and optional details/upstream URL to Error for passing
  * HTTP status codes through the error chain. `upstreamUrl` is the URL of the
- * upstream backend that produced the error (e.g. an LTX-2 enqueue endpoint),
+ * upstream backend that produced the error (e.g. a provider enqueue endpoint),
  * threaded through to UpstreamError.requestUrl in the error envelope so
  * `upstreamHost` reflects the actual backend rather than the gen.pollinations.ai
  * request URL. Callers must not pass URLs that include credentials in query

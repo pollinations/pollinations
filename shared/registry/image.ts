@@ -702,26 +702,6 @@ export const IMAGE_SERVICES = {
         outputModalities: ["image"],
         maxReferenceImages: 10, // Pollinations self-hosted route cap.
     },
-    "ltx-2": {
-        aliases: ["ltx2", "ltx-2.3", "ltxvideo", "ltx-video"],
-        modelId: "ltx-2",
-        provider: "lambda",
-        brand: "Lightricks",
-        category: "video",
-        addedDate: new Date("2026-02-06").getTime(),
-        priceMultiplier: 1,
-        alpha: true,
-        cost: {
-            completionVideoSeconds: 0.005,
-        },
-        title: "LTX-2.3",
-        description:
-            "LTX-2.3 - Fast text/image-to-video generation with upscaler",
-        inputModalities: ["text", "image"],
-        outputModalities: ["video"],
-        videoCapabilities: ["start_frame"],
-        maxReferenceImages: 1, // Video keyframe slots: start only.
-    },
     "p-image": {
         aliases: ["pruna-image", "pruna"],
         modelId: "p-image",

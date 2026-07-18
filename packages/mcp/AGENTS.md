@@ -11,9 +11,8 @@
 
 ```
 packages/mcp/
-  pollinations-mcp.js            # bin wrapper → calls startMcpServer()
   src/
-    index.js                     # server bootstrap, tool registration, instructions
+    index.js                     # executable server entrypoint and tool registration
     services/
       imageService.js            # generateImage(Url|Batch), generateVideo(Url), describeImage, analyzeVideo, listImageModels
       textService.js             # generateText, chatCompletion, webSearch, listTextModels, getPricing

@@ -41,14 +41,6 @@ export function getAuthHeaders() {
 }
 
 /**
- * @returns {Object} - Query params object with key if set
- */
-export function getAuthQueryParam() {
-    if (!apiKey) return {};
-    return { key: apiKey };
-}
-
-/**
  * @returns {string|null} - Masked key like "pk_...abc123" or null
  */
 export function getMaskedKey() {

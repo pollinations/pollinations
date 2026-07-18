@@ -1,10 +1,8 @@
 import { z } from "zod";
-import { getAuthHeaders, requireApiKey } from "../utils/authUtils.js";
+import { requireApiKey } from "../utils/authUtils.js";
 import {
-    API_BASE_URL,
     createMCPResponse,
     createTextContent,
-    parseApiError,
     postChatCompletion,
 } from "../utils/coreUtils.js";
 import {
@@ -63,16 +61,11 @@ async function generateText(params) {
         requestBody.response_format = { type: "json_object" };
     }
 
-    try {
-        const response = await postChatCompletion(requestBody);
-        const result = await response.json();
-        const content = result.choices?.[0]?.message?.content || "";
+    const response = await postChatCompletion(requestBody);
+    const result = await response.json();
+    const content = result.choices?.[0]?.message?.content || "";
 
-        return createMCPResponse([createTextContent(content)]);
-    } catch (error) {
-        console.error("Error generating text:", error);
-        throw error;
-    }
+    return createMCPResponse([createTextContent(content)]);
 }
 
 async function chatCompletion(params) {
@@ -146,176 +139,161 @@ async function chatCompletion(params) {
         user,
     };
 
-    try {
-        const response = await postChatCompletion(requestBody);
-        const result = await response.json();
+    const response = await postChatCompletion(requestBody);
+    const result = await response.json();
 
-        const choice = result.choices?.[0];
-        const assistantMessage = choice?.message;
+    const choice = result.choices?.[0];
+    const assistantMessage = choice?.message;
 
-        const responseContent = [];
+    const responseContent = [];
 
-        if (assistantMessage?.content) {
-            responseContent.push(createTextContent(assistantMessage.content));
-        }
+    if (assistantMessage?.content) {
+        responseContent.push(createTextContent(assistantMessage.content));
+    }
 
-        if (assistantMessage?.reasoning_content) {
-            responseContent.push(
-                createTextContent(
-                    {
-                        reasoning: assistantMessage.reasoning_content,
-                    },
-                    true,
-                ),
-            );
-        }
-
-        if (assistantMessage?.tool_calls?.length > 0) {
-            responseContent.push(
-                createTextContent(
-                    {
-                        tool_calls: assistantMessage.tool_calls,
-                    },
-                    true,
-                ),
-            );
-        }
-
-        if (assistantMessage?.function_call) {
-            responseContent.push(
-                createTextContent(
-                    {
-                        function_call: assistantMessage.function_call,
-                    },
-                    true,
-                ),
-            );
-        }
-
-        if (assistantMessage?.audio) {
-            responseContent.push({
-                type: "audio",
-                data: assistantMessage.audio.data,
-                mimeType: `audio/${audio?.format || "mp3"}`,
-            });
-            if (assistantMessage.audio.transcript) {
-                responseContent.push(
-                    createTextContent(
-                        {
-                            audio_transcript: assistantMessage.audio.transcript,
-                        },
-                        true,
-                    ),
-                );
-            }
-        }
-
-        if (result.citations?.length > 0) {
-            responseContent.push(
-                createTextContent(
-                    {
-                        citations: result.citations,
-                    },
-                    true,
-                ),
-            );
-        }
-
+    if (assistantMessage?.reasoning_content) {
         responseContent.push(
             createTextContent(
                 {
-                    model: result.model,
-                    finish_reason: choice?.finish_reason,
-                    usage: result.usage,
+                    reasoning: assistantMessage.reasoning_content,
                 },
                 true,
             ),
         );
-
-        return createMCPResponse(responseContent);
-    } catch (error) {
-        console.error("Error in chat completion:", error);
-        throw error;
     }
+
+    if (assistantMessage?.tool_calls?.length > 0) {
+        responseContent.push(
+            createTextContent(
+                {
+                    tool_calls: assistantMessage.tool_calls,
+                },
+                true,
+            ),
+        );
+    }
+
+    if (assistantMessage?.function_call) {
+        responseContent.push(
+            createTextContent(
+                {
+                    function_call: assistantMessage.function_call,
+                },
+                true,
+            ),
+        );
+    }
+
+    if (assistantMessage?.audio) {
+        responseContent.push({
+            type: "audio",
+            data: assistantMessage.audio.data,
+            mimeType: `audio/${audio?.format || "mp3"}`,
+        });
+        if (assistantMessage.audio.transcript) {
+            responseContent.push(
+                createTextContent(
+                    {
+                        audio_transcript: assistantMessage.audio.transcript,
+                    },
+                    true,
+                ),
+            );
+        }
+    }
+
+    if (result.citations?.length > 0) {
+        responseContent.push(
+            createTextContent(
+                {
+                    citations: result.citations,
+                },
+                true,
+            ),
+        );
+    }
+
+    responseContent.push(
+        createTextContent(
+            {
+                model: result.model,
+                finish_reason: choice?.finish_reason,
+                usage: result.usage,
+            },
+            true,
+        ),
+    );
+
+    return createMCPResponse(responseContent);
 }
 
 async function listTextModels(_params) {
-    try {
-        const models = await getTextModels();
+    const models = await getTextModels();
 
-        const hasCapability = (model, capability) =>
-            model.capabilities?.includes(capability);
-        const generalModels = models.filter((m) => !m.is_specialized);
-        const specializedModels = models.filter((m) => m.is_specialized);
-        const reasoningModels = models.filter((m) =>
-            hasCapability(m, "reasoning"),
-        );
-        const searchModels = models.filter((m) =>
-            hasCapability(m, "web_search"),
-        );
-        const codeExecutionModels = models.filter((m) =>
-            hasCapability(m, "code_execution"),
-        );
-        const audioModels = models.filter(
-            (m) =>
-                m.output_modalities?.includes("audio") ||
-                m.name === "openai-audio",
-        );
-        const visionModels = models.filter(
-            (m) => m.input_modalities?.includes("image") || m.vision,
-        );
-        const toolCapableModels = models.filter((m) =>
-            hasCapability(m, "tool_calling"),
-        );
+    const hasCapability = (model, capability) =>
+        model.capabilities?.includes(capability);
+    const generalModels = models.filter((m) => !m.is_specialized);
+    const specializedModels = models.filter((m) => m.is_specialized);
+    const reasoningModels = models.filter((m) => hasCapability(m, "reasoning"));
+    const searchModels = models.filter((m) => hasCapability(m, "web_search"));
+    const codeExecutionModels = models.filter((m) =>
+        hasCapability(m, "code_execution"),
+    );
+    const audioModels = models.filter(
+        (m) =>
+            m.output_modalities?.includes("audio") || m.name === "openai-audio",
+    );
+    const visionModels = models.filter(
+        (m) => m.input_modalities?.includes("image") || m.vision,
+    );
+    const toolCapableModels = models.filter((m) =>
+        hasCapability(m, "tool_calling"),
+    );
 
-        const result = {
-            models: models.map((m) => ({
-                name: m.name,
-                description: m.description,
-                aliases: m.aliases || [],
-                inputModalities: m.input_modalities,
-                outputModalities: m.output_modalities,
-                capabilities: m.capabilities || [],
-                tools: m.tools,
-                reasoning: m.reasoning,
-                voices: m.voices,
-                isSpecialized: m.is_specialized,
-            })),
-            categories: {
-                general: generalModels.map((m) => m.name),
-                specialized: specializedModels.map((m) => m.name),
-                reasoning: reasoningModels.map((m) => m.name),
-                search: searchModels.map((m) => m.name),
-                codeExecution: codeExecutionModels.map((m) => m.name),
-                audio: audioModels.map((m) => m.name),
-                vision: visionModels.map((m) => m.name),
-                toolCapable: toolCapableModels.map((m) => m.name),
-            },
-            summary: {
-                totalModels: models.length,
-                generalModels: generalModels.length,
-                reasoningModels: reasoningModels.length,
-                searchModels: searchModels.length,
-                codeExecutionModels: codeExecutionModels.length,
-                audioModels: audioModels.length,
-                visionModels: visionModels.length,
-                toolCapableModels: toolCapableModels.length,
-            },
-            usage: {
-                simple: "Use generateText for simple prompts",
-                advanced:
-                    "Use chatCompletion for multi-turn conversations, tool calling, audio output",
-                reasoning:
-                    "True reasoning models: kimi, perplexity-reasoning, openai-large, gemini-large. Use reasoning_effort",
-                audio: "Use openai-audio with modalities=['text','audio'] for voice output",
-            },
-        };
+    const result = {
+        models: models.map((m) => ({
+            name: m.name,
+            description: m.description,
+            aliases: m.aliases || [],
+            inputModalities: m.input_modalities,
+            outputModalities: m.output_modalities,
+            capabilities: m.capabilities || [],
+            tools: m.tools,
+            reasoning: m.reasoning,
+            voices: m.voices,
+            isSpecialized: m.is_specialized,
+        })),
+        categories: {
+            general: generalModels.map((m) => m.name),
+            specialized: specializedModels.map((m) => m.name),
+            reasoning: reasoningModels.map((m) => m.name),
+            search: searchModels.map((m) => m.name),
+            codeExecution: codeExecutionModels.map((m) => m.name),
+            audio: audioModels.map((m) => m.name),
+            vision: visionModels.map((m) => m.name),
+            toolCapable: toolCapableModels.map((m) => m.name),
+        },
+        summary: {
+            totalModels: models.length,
+            generalModels: generalModels.length,
+            reasoningModels: reasoningModels.length,
+            searchModels: searchModels.length,
+            codeExecutionModels: codeExecutionModels.length,
+            audioModels: audioModels.length,
+            visionModels: visionModels.length,
+            toolCapableModels: toolCapableModels.length,
+        },
+        usage: {
+            simple: "Use generateText for simple prompts",
+            advanced:
+                "Use chatCompletion for multi-turn conversations, tool calling, audio output",
+            reasoning:
+                "True reasoning models: kimi, perplexity-reasoning, openai-large, gemini-large. Use reasoning_effort",
+            audio: "Use openai-audio with modalities=['text','audio'] for voice output",
+        },
+    };
 
-        return createMCPResponse([createTextContent(result, true)]);
-    } catch (error) {
-        console.error("Error listing text models:", error);
-        throw error;
-    }
+    return createMCPResponse([createTextContent(result, true)]);
 }
 
 async function webSearch(params) {
@@ -350,79 +328,54 @@ async function webSearch(params) {
         ],
     };
 
-    try {
-        const response = await fetch(`${API_BASE_URL}/v1/chat/completions`, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                ...getAuthHeaders(),
-            },
-            body: JSON.stringify(requestBody),
-        });
+    const response = await postChatCompletion(requestBody);
+    const result = await response.json();
+    const answer = result.choices?.[0]?.message?.content || "";
 
-        if (!response.ok) {
-            const errorText = await response
-                .text()
-                .catch(() => "Unknown error");
-            throw new Error(parseApiError(response.status, errorText));
-        }
+    const responseData = {
+        answer,
+        query,
+        model: result.model || model,
+    };
 
-        const result = await response.json();
-        const answer = result.choices?.[0]?.message?.content || "";
-
-        const responseData = {
-            answer,
-            query,
-            model: result.model || model,
-        };
-
-        if (result.citations?.length > 0) {
-            responseData.sources = result.citations;
-        }
-
-        return createMCPResponse([createTextContent(responseData, true)]);
-    } catch (error) {
-        console.error("Error in web search:", error);
-        throw error;
+    if (result.citations?.length > 0) {
+        responseData.sources = result.citations;
     }
+
+    return createMCPResponse([createTextContent(responseData, true)]);
 }
 
 async function getPricing(params) {
     const { type = "all" } = params;
 
-    try {
-        const results = {};
+    const results = {};
 
-        if (type === "all" || type === "text") {
-            const textModels = await getTextModels();
-            results.textModels = textModels
-                .map((m) => ({
-                    name: m.name,
-                    description: m.description,
-                    pricing: m.pricing,
-                }))
-                .filter((m) => m.pricing);
-        }
-
-        if (type === "all" || type === "image") {
-            const imageModels = await getImageModels();
-            results.imageModels = imageModels
-                .map((m) => ({
-                    name: m.name,
-                    description: m.description,
-                    pricing: m.pricing,
-                }))
-                .filter((m) => m.pricing);
-        }
-
-        results.currency = "pollen";
-        results.note = "Prices are in pollen. 1 pollen = $0.001 USD";
-
-        return createMCPResponse([createTextContent(results, true)]);
-    } catch (error) {
-        console.error("Error getting pricing:", error);
-        throw error;
+    if (type === "all" || type === "text") {
+        const textModels = await getTextModels();
+        results.textModels = textModels
+            .map((m) => ({
+                name: m.name,
+                description: m.description,
+                pricing: m.pricing,
+            }))
+            .filter((m) => m.pricing);
     }
+
+    if (type === "all" || type === "image") {
+        const imageModels = await getImageModels();
+        results.imageModels = imageModels
+            .map((m) => ({
+                name: m.name,
+                description: m.description,
+                pricing: m.pricing,
+            }))
+            .filter((m) => m.pricing);
+    }
+
+    results.currency = "pollen";
+    results.note = "Prices are in pollen. 1 pollen = $0.001 USD";
+
+    return createMCPResponse([createTextContent(results, true)]);
 }
 
 const textParamsSchema = {

@@ -1,4 +1,4 @@
-import { getAuthHeaders, getAuthQueryParam } from "./authUtils.js";
+import { getAuthHeaders } from "./authUtils.js";
 
 export const API_BASE_URL = "https://gen.pollinations.ai";
 
@@ -51,36 +51,12 @@ export function createAudioContent(data, mimeType) {
 /**
  * @param {string} path - URL path (will be appended to API_BASE_URL)
  * @param {Object} params - Query parameters
- * @param {boolean} includeAuth - Whether to include auth query param (default: false, prefer headers)
  * @returns {string} - Complete URL
  */
-export function buildUrl(path, params = {}, includeAuth = false) {
-    const url = new URL(path, API_BASE_URL);
-    const allParams = includeAuth
-        ? { ...params, ...getAuthQueryParam() }
-        : params;
-    Object.entries(allParams).forEach(([key, value]) => {
-        if (value !== undefined && value !== null) {
-            url.searchParams.set(key, String(value));
-        }
-    });
-    return url.toString();
-}
-
-/**
- * @param {string} path - URL path (will be appended to API_BASE_URL)
- * @param {Object} params - Query parameters (auth key will be excluded)
- * @returns {string} - Complete URL without auth
- */
-export function buildShareableUrl(path, params = {}) {
+export function buildUrl(path, params = {}) {
     const url = new URL(path, API_BASE_URL);
     Object.entries(params).forEach(([key, value]) => {
-        if (
-            value !== undefined &&
-            value !== null &&
-            key !== "key" &&
-            key !== "token"
-        ) {
+        if (value !== undefined && value !== null) {
             url.searchParams.set(key, String(value));
         }
     });
@@ -93,16 +69,16 @@ export function buildShareableUrl(path, params = {}) {
  * @returns {Promise<Response>} - Fetch response
  */
 export async function fetchWithAuth(url, options = {}) {
+    const { timeoutMs = 30000, ...fetchOptions } = options;
     const headers = {
-        ...options.headers,
+        ...fetchOptions.headers,
         ...getAuthHeaders(),
     };
-    const timeoutMs = options.timeoutMs || 30000;
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
     try {
         return await fetch(url, {
-            ...options,
+            ...fetchOptions,
             headers,
             signal: controller.signal,
         });
@@ -142,27 +118,15 @@ export async function chatWithMedia({ model, prompt, mediaType, mediaUrl }) {
             ? { type: "input_audio", input_audio: { url: mediaUrl } }
             : { type: mediaType, [mediaType]: { url: mediaUrl } };
 
-    const response = await fetchWithAuth(
-        `${API_BASE_URL}/v1/chat/completions`,
-        {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-                model,
-                messages: [
-                    {
-                        role: "user",
-                        content: [{ type: "text", text: prompt }, mediaBlock],
-                    },
-                ],
-            }),
-        },
-    );
-
-    if (!response.ok) {
-        const errorText = await response.text().catch(() => "Unknown error");
-        throw new Error(parseApiError(response.status, errorText));
-    }
+    const response = await postChatCompletion({
+        model,
+        messages: [
+            {
+                role: "user",
+                content: [{ type: "text", text: prompt }, mediaBlock],
+            },
+        ],
+    });
 
     const result = await response.json();
     return {

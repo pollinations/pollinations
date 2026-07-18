@@ -1,31 +1,20 @@
 import { z } from "zod";
-import { getAuthHeaders, requireApiKey } from "../utils/authUtils.js";
+import { requireApiKey } from "../utils/authUtils.js";
 import {
     arrayBufferToBase64,
-    buildShareableUrl,
     buildUrl,
     chatWithMedia,
     createImageContent,
     createMCPResponse,
     createTextContent,
     fetchBinaryWithAuth,
+    fetchWithAuth,
 } from "../utils/coreUtils.js";
 import {
     getImageModels,
-    getVideoModels,
     validateImageModel,
     validateVideoModel,
 } from "../utils/models.js";
-
-function buildQueryParams(params) {
-    const result = {};
-    for (const [key, value] of Object.entries(params)) {
-        if (value !== undefined && value !== null) {
-            result[key] = value;
-        }
-    }
-    return result;
-}
 
 /**
  * Validate an image request and build its encoded prompt + query params.
@@ -63,7 +52,7 @@ async function prepareImageRequest(params) {
     }
 
     const encodedPrompt = encodeURIComponent(prompt);
-    const queryParams = buildQueryParams({
+    const queryParams = {
         model,
         width,
         height,
@@ -73,7 +62,7 @@ async function prepareImageRequest(params) {
         image,
         transparent,
         safe,
-    });
+    };
 
     return { encodedPrompt, queryParams };
 }
@@ -126,7 +115,7 @@ async function prepareVideoRequest(params) {
     }
 
     const encodedPrompt = encodeURIComponent(prompt);
-    const queryParams = buildQueryParams({
+    const queryParams = {
         model,
         duration,
         aspectRatio,
@@ -134,7 +123,7 @@ async function prepareVideoRequest(params) {
         image,
         seed,
         safe,
-    });
+    };
 
     return { encodedPrompt, queryParams };
 }
@@ -145,17 +134,13 @@ async function generateImageUrl(params) {
     const { prompt, model, width, height, seed, quality } = params;
     const { encodedPrompt, queryParams } = await prepareImageRequest(params);
 
-    const authUrl = buildUrl(`/image/${encodedPrompt}`, queryParams, true);
+    const url = buildUrl(`/image/${encodedPrompt}`, queryParams);
 
     try {
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 5000);
-
-        const preGenResponse = await fetch(authUrl, {
+        const preGenResponse = await fetchWithAuth(url, {
             method: "GET",
-            headers: getAuthHeaders(),
-            signal: controller.signal,
-        }).finally(() => clearTimeout(timeoutId));
+            timeoutMs: 5000,
+        });
 
         if (!preGenResponse.ok) {
             console.warn(
@@ -175,15 +160,10 @@ async function generateImageUrl(params) {
         }
     }
 
-    const shareableUrl = buildShareableUrl(
-        `/image/${encodedPrompt}`,
-        queryParams,
-    );
-
     return createMCPResponse([
         createTextContent(
             {
-                imageUrl: shareableUrl,
+                imageUrl: url,
                 prompt,
                 model: model || "flux",
                 width: width || 1024,
@@ -204,30 +184,25 @@ async function generateImage(params) {
 
     const url = buildUrl(`/image/${encodedPrompt}`, queryParams);
 
-    try {
-        const { buffer, contentType } = await fetchBinaryWithAuth(url);
-        const base64Data = arrayBufferToBase64(buffer);
+    const { buffer, contentType } = await fetchBinaryWithAuth(url);
+    const base64Data = arrayBufferToBase64(buffer);
 
-        const metadata = {
-            prompt,
-            model: model || "flux",
-            width: width || 1024,
-            height: height || 1024,
-            seed,
-            quality: quality || "medium",
-            transparent: transparent || false,
-        };
+    const metadata = {
+        prompt,
+        model: model || "flux",
+        width: width || 1024,
+        height: height || 1024,
+        seed,
+        quality: quality || "medium",
+        transparent: transparent || false,
+    };
 
-        return createMCPResponse([
-            createImageContent(base64Data, contentType),
-            createTextContent(
-                `Generated image from prompt: "${prompt}"\n\nMetadata: ${JSON.stringify(metadata, null, 2)}`,
-            ),
-        ]);
-    } catch (error) {
-        console.error("Error generating image:", error);
-        throw error;
-    }
+    return createMCPResponse([
+        createImageContent(base64Data, contentType),
+        createTextContent(
+            `Generated image from prompt: "${prompt}"\n\nMetadata: ${JSON.stringify(metadata, null, 2)}`,
+        ),
+    ]);
 }
 
 async function generateImageBatch(params) {
@@ -259,7 +234,7 @@ async function generateImageBatch(params) {
     const results = await Promise.allSettled(
         prompts.map(async (prompt, index) => {
             const encodedPrompt = encodeURIComponent(prompt);
-            const queryParams = buildQueryParams({
+            const queryParams = {
                 model,
                 width,
                 height,
@@ -269,7 +244,7 @@ async function generateImageBatch(params) {
                 image,
                 transparent,
                 safe,
-            });
+            };
 
             const url = buildUrl(`/image/${encodedPrompt}`, queryParams);
             const { buffer, contentType } = await fetchBinaryWithAuth(url);
@@ -346,37 +321,32 @@ async function generateVideo(params) {
 
     const url = buildUrl(`/image/${encodedPrompt}`, queryParams);
 
-    try {
-        const { buffer, contentType } = await fetchBinaryWithAuth(url);
-        const base64Data = arrayBufferToBase64(buffer);
+    const { buffer, contentType } = await fetchBinaryWithAuth(url);
+    const base64Data = arrayBufferToBase64(buffer);
 
-        const metadata = {
-            prompt,
-            model,
-            duration,
-            aspectRatio,
-            audio: model === "veo" ? audio || false : undefined,
-            hasReferenceImage: !!image,
-            seed,
-        };
+    const metadata = {
+        prompt,
+        model,
+        duration,
+        aspectRatio,
+        audio: model === "veo" ? audio || false : undefined,
+        hasReferenceImage: !!image,
+        seed,
+    };
 
-        return createMCPResponse([
-            {
-                type: "resource",
-                resource: {
-                    uri: `pollinations://video/${Date.now()}`,
-                    mimeType: contentType || "video/mp4",
-                    blob: base64Data,
-                },
+    return createMCPResponse([
+        {
+            type: "resource",
+            resource: {
+                uri: `pollinations://video/${Date.now()}`,
+                mimeType: contentType || "video/mp4",
+                blob: base64Data,
             },
-            createTextContent(
-                `Generated video from prompt: "${prompt}"\n\nMetadata: ${JSON.stringify(metadata, null, 2)}\n\nVideo returned as base64-encoded resource (decode and save as .mp4)`,
-            ),
-        ]);
-    } catch (error) {
-        console.error("Error generating video:", error);
-        throw error;
-    }
+        },
+        createTextContent(
+            `Generated video from prompt: "${prompt}"\n\nMetadata: ${JSON.stringify(metadata, null, 2)}\n\nVideo returned as base64-encoded resource (decode and save as .mp4)`,
+        ),
+    ]);
 }
 
 async function generateVideoUrl(params) {
@@ -393,12 +363,12 @@ async function generateVideoUrl(params) {
     } = params;
     const { encodedPrompt, queryParams } = await prepareVideoRequest(params);
 
-    const authUrl = buildUrl(`/image/${encodedPrompt}`, queryParams, true);
+    const url = buildUrl(`/image/${encodedPrompt}`, queryParams);
 
     try {
-        const headResponse = await fetch(authUrl, {
+        const headResponse = await fetchWithAuth(url, {
             method: "HEAD",
-            headers: getAuthHeaders(),
+            timeoutMs: 5000,
         });
         if (!headResponse.ok) {
             console.warn(
@@ -412,15 +382,10 @@ async function generateVideoUrl(params) {
         );
     }
 
-    const shareableUrl = buildShareableUrl(
-        `/image/${encodedPrompt}`,
-        queryParams,
-    );
-
     return createMCPResponse([
         createTextContent(
             {
-                videoUrl: shareableUrl,
+                videoUrl: url,
                 prompt,
                 model,
                 duration,
@@ -447,29 +412,24 @@ async function describeImage(params) {
         throw new Error("imageUrl is required and must be a string");
     }
 
-    try {
-        const { content, model: respondedModel } = await chatWithMedia({
-            model,
-            prompt,
-            mediaType: "image_url",
-            mediaUrl: imageUrl,
-        });
+    const { content, model: respondedModel } = await chatWithMedia({
+        model,
+        prompt,
+        mediaType: "image_url",
+        mediaUrl: imageUrl,
+    });
 
-        return createMCPResponse([
-            createTextContent(
-                {
-                    description: content,
-                    imageUrl,
-                    model: respondedModel,
-                    prompt,
-                },
-                true,
-            ),
-        ]);
-    } catch (error) {
-        console.error("Error analyzing image:", error);
-        throw error;
-    }
+    return createMCPResponse([
+        createTextContent(
+            {
+                description: content,
+                imageUrl,
+                model: respondedModel,
+                prompt,
+            },
+            true,
+        ),
+    ]);
 }
 
 async function analyzeVideo(params) {
@@ -485,87 +445,76 @@ async function analyzeVideo(params) {
         throw new Error("videoUrl is required and must be a string");
     }
 
-    try {
-        const { content, model: respondedModel } = await chatWithMedia({
-            model,
-            prompt,
-            mediaType: "video_url",
-            mediaUrl: videoUrl,
-        });
+    const { content, model: respondedModel } = await chatWithMedia({
+        model,
+        prompt,
+        mediaType: "video_url",
+        mediaUrl: videoUrl,
+    });
 
-        return createMCPResponse([
-            createTextContent(
-                {
-                    analysis: content,
-                    videoUrl,
-                    model: respondedModel,
-                    prompt,
-                },
-                true,
-            ),
-        ]);
-    } catch (error) {
-        console.error("Error analyzing video:", error);
-        throw error;
-    }
+    return createMCPResponse([
+        createTextContent(
+            {
+                analysis: content,
+                videoUrl,
+                model: respondedModel,
+                prompt,
+            },
+            true,
+        ),
+    ]);
 }
 
 async function listImageModels(_params) {
-    try {
-        const [models, videoModels] = await Promise.all([
-            getImageModels(),
-            getVideoModels(),
-        ]);
+    const models = await getImageModels();
+    const videoModels = models.filter((m) =>
+        m.output_modalities?.includes("video"),
+    );
+    const imageOnlyModels = models.filter(
+        (m) =>
+            m.output_modalities?.includes("image") &&
+            !m.output_modalities?.includes("video"),
+    );
+    const imageToImageModels = models.filter((m) =>
+        m.input_modalities?.includes("image"),
+    );
 
-        const imageOnlyModels = models.filter(
-            (m) =>
-                m.output_modalities?.includes("image") &&
-                !m.output_modalities?.includes("video"),
-        );
-        const imageToImageModels = models.filter((m) =>
-            m.input_modalities?.includes("image"),
-        );
+    const result = {
+        imageModels: imageOnlyModels.map((m) => ({
+            name: m.name,
+            description: m.description,
+            aliases: m.aliases || [],
+            inputModalities: m.input_modalities,
+            outputModalities: m.output_modalities,
+            supportsImageToImage:
+                m.input_modalities?.includes("image") || false,
+        })),
+        videoModels: videoModels.map((m) => ({
+            name: m.name,
+            description: m.description,
+            aliases: m.aliases || [],
+            inputModalities: m.input_modalities,
+            outputModalities: m.output_modalities,
+            supportsImageToVideo:
+                m.input_modalities?.includes("image") || false,
+            videoCapabilities: m.video_capabilities || [],
+        })),
+        imageToImageCapable: imageToImageModels.map((m) => m.name),
+        summary: {
+            totalModels: models.length,
+            imageModels: imageOnlyModels.length,
+            videoModels: videoModels.length,
+            imageToImageCapable: imageToImageModels.length,
+        },
+        usage: {
+            image: "Use generateImage or generateImageUrl with image models",
+            video: "Use generateVideo with veo, seedance, or seedance-pro",
+            imageToImage:
+                "Pass 'image' parameter with a URL to transform existing images",
+        },
+    };
 
-        const result = {
-            imageModels: imageOnlyModels.map((m) => ({
-                name: m.name,
-                description: m.description,
-                aliases: m.aliases || [],
-                inputModalities: m.input_modalities,
-                outputModalities: m.output_modalities,
-                supportsImageToImage:
-                    m.input_modalities?.includes("image") || false,
-            })),
-            videoModels: videoModels.map((m) => ({
-                name: m.name,
-                description: m.description,
-                aliases: m.aliases || [],
-                inputModalities: m.input_modalities,
-                outputModalities: m.output_modalities,
-                supportsImageToVideo:
-                    m.input_modalities?.includes("image") || false,
-                videoCapabilities: m.video_capabilities || [],
-            })),
-            imageToImageCapable: imageToImageModels.map((m) => m.name),
-            summary: {
-                totalModels: models.length,
-                imageModels: imageOnlyModels.length,
-                videoModels: videoModels.length,
-                imageToImageCapable: imageToImageModels.length,
-            },
-            usage: {
-                image: "Use generateImage or generateImageUrl with image models",
-                video: "Use generateVideo with veo, seedance, or seedance-pro",
-                imageToImage:
-                    "Pass 'image' parameter with a URL to transform existing images",
-            },
-        };
-
-        return createMCPResponse([createTextContent(result, true)]);
-    } catch (error) {
-        console.error("Error listing image models:", error);
-        throw error;
-    }
+    return createMCPResponse([createTextContent(result, true)]);
 }
 
 const imageParamsSchema = {

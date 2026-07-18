@@ -1,11 +1,12 @@
+#!/usr/bin/env node
+
 /**
- * pollinations.ai MCP Server v2.0
+ * pollinations.ai MCP Server
  *
  * A Model Context Protocol server for pollinations.ai services.
  * Supports image, video, text, and audio generation via gen.pollinations.ai
  */
 
-import { pathToFileURL } from "node:url";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import player from "play-sound";
@@ -28,7 +29,7 @@ const allTools = [
 /**
  * Server instructions shown to MCP clients
  */
-const SERVER_INSTRUCTIONS = `# Pollinations MCP Server v2.1
+const SERVER_INSTRUCTIONS = `# Pollinations MCP Server
 
 ## Authentication
 Set your API key first using the setApiKey tool:
@@ -86,7 +87,7 @@ All requests go through: https://gen.pollinations.ai
 /**
  * Start the MCP server with STDIO transport
  */
-export async function startMcpServer() {
+async function startMcpServer() {
     try {
         // Initialize audio player (optional, for local playback)
         try {
@@ -99,7 +100,7 @@ export async function startMcpServer() {
         const server = new McpServer(
             {
                 name: "pollinations-mcp",
-                version: "2.1.0",
+                version: "2.3.0",
                 instructions: SERVER_INSTRUCTIONS,
             },
             {
@@ -110,45 +111,14 @@ export async function startMcpServer() {
         );
 
         // Register all tools
-        allTools.forEach((tool) => {
-            try {
-                // Tool format: [name, description, inputSchema, handler]
-                if (!Array.isArray(tool) || tool.length < 4) {
-                    throw new Error(
-                        `Invalid tool format for ${tool[0] || "unknown"}`,
-                    );
-                }
-                const [name, description, inputSchema, handler] = tool;
-                server.tool(name, description, inputSchema, handler);
-            } catch (error) {
-                console.error(
-                    `Failed to register tool ${tool[0]}:`,
-                    error.message,
-                );
-            }
-        });
+        for (const [name, description, inputSchema, handler] of allTools) {
+            server.tool(name, description, inputSchema, handler);
+        }
 
         // Error handling
         server.onerror = (error) => {
             console.error(`Server error: ${error.message}`);
         };
-
-        // Exit the process if we reach uncaughtException — by definition the
-        // program is already in an unknown state, and the existing log-only
-        // handler left a dead event loop running on orphan.
-        process.on("uncaughtException", (error) => {
-            console.error(`Uncaught exception: ${error.message}`);
-            process.exit(1);
-        });
-
-        process.on("unhandledRejection", (reason) => {
-            console.error(`Unhandled rejection: ${reason}`);
-        });
-
-        // Handle graceful shutdown. Register BEFORE connect so an early
-        // disconnect during startup is still observed.
-        process.on("SIGINT", () => process.exit(0));
-        process.on("SIGTERM", () => process.exit(0));
 
         // Windows does not deliver SIGTERM when the MCP client exits.
         // stdin `close` fires whenever the parent's end of the pipe goes
@@ -160,7 +130,7 @@ export async function startMcpServer() {
         const transport = new StdioServerTransport();
         await server.connect(transport);
 
-        console.error("Pollinations MCP Server v2.1.0 running on stdio");
+        console.error("Pollinations MCP Server running on stdio");
         console.error("API: https://gen.pollinations.ai");
     } catch (error) {
         console.error(`Failed to start MCP server: ${error.message}`);
@@ -168,12 +138,4 @@ export async function startMcpServer() {
     }
 }
 
-// Only start the server when this module is the Node entry point.
-// The bin wrapper (pollinations-mcp.js) imports startMcpServer and calls
-// it explicitly; an unconditional call here would start a second instance.
-if (
-    process.argv[1] &&
-    import.meta.url === pathToFileURL(process.argv[1]).href
-) {
-    startMcpServer();
-}
+await startMcpServer();

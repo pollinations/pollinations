@@ -17,7 +17,7 @@ const KEY = process.env.POLLINATIONS_API_KEY;
 
 const transport = new StdioClientTransport({
     command: "node",
-    args: [path.join(__dirname, "pollinations-mcp.js")],
+    args: [path.join(__dirname, "src/index.js")],
 });
 const client = new Client(
     { name: "mcp-smoke-test", version: "0.0.1" },

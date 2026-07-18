@@ -13,7 +13,11 @@ import {
     ScrollArea,
     TabButton,
 } from "@pollinations/ui";
-import type { CommunityEndpointVisibility } from "@shared/community-endpoints.ts";
+import type {
+    CommunityEndpointModality,
+    CommunityEndpointPriceKey,
+    CommunityEndpointVisibility,
+} from "@shared/community-endpoints.ts";
 import type { FormEvent, ReactNode } from "react";
 import { useEffect, useState } from "react";
 import { apiClient } from "../../api.ts";
@@ -52,6 +56,33 @@ type CommunityEndpointDialogProps = {
     onSubmit: (payload: EndpointPayload, bearerToken: string) => Promise<void>;
     /** Create-mode trigger rendered by the parent (e.g. the Section action). */
     trigger?: ReactNode;
+};
+
+const MODALITY_OPTIONS: CommunityEndpointModality[] = [
+    "text",
+    "image",
+    "embedding",
+    "speech",
+    "transcription",
+];
+
+const BASE_PRICE_KEYS: Record<
+    CommunityEndpointModality,
+    readonly CommunityEndpointPriceKey[]
+> = {
+    text: BASE_TEXT_PRICE_KEYS,
+    image: ["completionImagePrice"],
+    embedding: [],
+    speech: ["completionAudioPrice"],
+    transcription: [],
+};
+
+const MODEL_PLACEHOLDERS: Record<CommunityEndpointModality, string> = {
+    text: "gpt-4o-mini",
+    image: "gpt-image-2",
+    embedding: "text-embedding-3-small",
+    speech: "gpt-4o-mini-tts",
+    transcription: "whisper-1",
 };
 
 export function CommunityEndpointDialog({
@@ -223,10 +254,7 @@ export function CommunityEndpointDialog({
         : [];
     // Reveal the modality's base price plus whatever the test observed or the
     // model already had saved. Blank and zero prices mean free.
-    const basePriceKeys =
-        form.modality === "image"
-            ? (["completionImagePrice"] as const)
-            : BASE_TEXT_PRICE_KEYS;
+    const basePriceKeys = BASE_PRICE_KEYS[form.modality];
     const visiblePriceKeys = new Set(
         isShared
             ? visiblePriceFieldKeys(savedPriceKeys, returnedFields, [
@@ -305,8 +333,8 @@ export function CommunityEndpointDialog({
                         }
                         alignLabelRow
                     >
-                        <div className="grid grid-cols-2 gap-2">
-                            {(["text", "image"] as const).map((modality) => {
+                        <div className="grid grid-cols-2 gap-2 sm:grid-cols-5">
+                            {MODALITY_OPTIONS.map((modality) => {
                                 const selected = form.modality === modality;
                                 return (
                                     <button
@@ -322,9 +350,8 @@ export function CommunityEndpointDialog({
                                             updateForm("modality", modality)
                                         }
                                     >
-                                        {modality === "image"
-                                            ? "Image"
-                                            : "Text"}
+                                        {modality.charAt(0).toUpperCase() +
+                                            modality.slice(1)}
                                     </button>
                                 );
                             })}
@@ -409,7 +436,7 @@ export function CommunityEndpointDialog({
                     <div className="grid gap-4 sm:grid-cols-2">
                         <FieldStack
                             label="Endpoint URL"
-                            helper="OpenAI-compatible /v1 base URL, or full chat/image generation URL."
+                            helper="OpenAI-compatible /v1 base URL, or full chat, image, embeddings, speech, or transcription URL."
                             alignLabelRow
                         >
                             <Input
@@ -471,9 +498,9 @@ export function CommunityEndpointDialog({
                                                 name="community-upstream-id"
                                                 value={form.upstreamModel}
                                                 placeholder={
-                                                    form.modality === "image"
-                                                        ? "gpt-image-2"
-                                                        : "gpt-4o-mini"
+                                                    MODEL_PLACEHOLDERS[
+                                                        form.modality
+                                                    ]
                                                 }
                                                 className="w-full pr-10"
                                                 autoComplete="off"
@@ -538,9 +565,7 @@ export function CommunityEndpointDialog({
                                     name="community-upstream-id"
                                     value={form.upstreamModel}
                                     placeholder={
-                                        form.modality === "image"
-                                            ? "gpt-image-2"
-                                            : "gpt-4o-mini"
+                                        MODEL_PLACEHOLDERS[form.modality]
                                     }
                                     autoComplete="off"
                                     autoCapitalize="none"

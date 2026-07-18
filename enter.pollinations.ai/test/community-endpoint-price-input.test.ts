@@ -5,8 +5,10 @@ import {
 } from "@shared/community-endpoints.ts";
 import { describe, expect, it } from "vitest";
 import {
+    emptyForm,
     formPriceToStoredPrice,
     isValidPriceInput,
+    nextFormState,
     pricePerMillionToPerToken,
     storedPriceToFormValue,
 } from "../frontend/src/components/community-endpoints/types.ts";
@@ -41,6 +43,11 @@ describe("community endpoint price input", () => {
         expect(storedPriceToFormValue(0.00003)).toBe("30");
     });
 
+    it("keeps fixed per-request prices unscaled", () => {
+        expect(formPriceToStoredPrice("0.03", "request")).toBe(0.03);
+        expect(storedPriceToFormValue(0.03, "request")).toBe("0.03");
+    });
+
     it("keeps fixed per-image prices unscaled", () => {
         expect(formPriceToStoredPrice("0.03", "image")).toBe(0.03);
         expect(storedPriceToFormValue(0.03, "image")).toBe("0.03");
@@ -53,5 +60,20 @@ describe("community endpoint price input", () => {
                 "image",
             ),
         ).toBe(false);
+    });
+
+    it("keeps embedding as the selected endpoint modality", () => {
+        expect(nextFormState(emptyForm, "modality", "embedding").modality).toBe(
+            "embedding",
+        );
+    });
+
+    it("keeps both audio endpoint modalities", () => {
+        expect(nextFormState(emptyForm, "modality", "speech").modality).toBe(
+            "speech",
+        );
+        expect(
+            nextFormState(emptyForm, "modality", "transcription").modality,
+        ).toBe("transcription");
     });
 });

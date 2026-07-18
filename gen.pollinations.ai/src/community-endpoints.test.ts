@@ -3,6 +3,7 @@ import type { Logger } from "@logtape/logtape";
 import {
     type CommunityEndpointRuntime,
     communityChatCompletionsUrl,
+    communityEmbeddingsUrl,
     communityEndpointPriceFieldsForModality,
     communityEndpointPrices,
     communityImageGenerationsUrl,
@@ -10,6 +11,8 @@ import {
     communityModelId,
     communityOpenAIBaseUrl,
     communityPriceDefinition,
+    communitySpeechUrl,
+    communityTranscriptionsUrl,
     isCommunityEndpointOwnerAllowed,
     legacyCommunityModelId,
     MIN_COMMUNITY_PRICE_PER_MILLION_TOKENS,
@@ -55,6 +58,29 @@ function isPortkeyChatCompletionsRequest(request: Request): boolean {
 
 function isCommunityImageGenerationsRequest(request: Request): boolean {
     return new URL(request.url).pathname.endsWith("/images/generations");
+}
+
+function isCommunityEmbeddingsRequest(request: Request): boolean {
+    const url = new URL(request.url);
+    return (
+        url.hostname === "api.example.com" && url.pathname === "/v1/embeddings"
+    );
+}
+
+function isCommunitySpeechRequest(request: Request): boolean {
+    const url = new URL(request.url);
+    return (
+        url.hostname === "api.example.com" &&
+        url.pathname === "/v1/audio/speech"
+    );
+}
+
+function isCommunityTranscriptionRequest(request: Request): boolean {
+    const url = new URL(request.url);
+    return (
+        url.hostname === "api.example.com" &&
+        url.pathname === "/v1/audio/transcriptions"
+    );
 }
 
 beforeEach(() => {
@@ -261,6 +287,15 @@ describe("community endpoint helpers", () => {
         expect(communityImageGenerationsUrl("https://api.example.com/v1")).toBe(
             "https://api.example.com/v1/images/generations",
         );
+        expect(communityEmbeddingsUrl("https://api.example.com/v1")).toBe(
+            "https://api.example.com/v1/embeddings",
+        );
+        expect(communitySpeechUrl("https://api.example.com/v1")).toBe(
+            "https://api.example.com/v1/audio/speech",
+        );
+        expect(communityTranscriptionsUrl("https://api.example.com/v1")).toBe(
+            "https://api.example.com/v1/audio/transcriptions",
+        );
         expect(
             communityChatCompletionsUrl(
                 "https://api.example.com/v1/chat/completions",
@@ -271,6 +306,17 @@ describe("community endpoint helpers", () => {
                 "https://api.example.com/v1/images/generations",
             ),
         ).toBe("https://api.example.com/v1/images/generations");
+        expect(
+            communityEmbeddingsUrl("https://api.example.com/v1/embeddings"),
+        ).toBe("https://api.example.com/v1/embeddings");
+        expect(
+            communitySpeechUrl("https://api.example.com/v1/audio/speech"),
+        ).toBe("https://api.example.com/v1/audio/speech");
+        expect(
+            communityTranscriptionsUrl(
+                "https://api.example.com/v1/audio/transcriptions",
+            ),
+        ).toBe("https://api.example.com/v1/audio/transcriptions");
         expect(
             normalizeCommunityAssetUrl(
                 "http://api.example.com/assets/image.png#fragment",
@@ -312,6 +358,114 @@ describe("community endpoint helpers", () => {
         expect(modelDefinition.description).toBe(
             "OpenAI via community endpoint",
         );
+    });
+
+    it("builds an embedding model definition with text input pricing", () => {
+        const definition = communityModelDefinition({
+            modelId: "voodoohop/embedding",
+            description: "Community embeddings",
+            modality: "embedding",
+            ...communityEndpointPrices({ promptTextPrice: 0.1 }),
+        });
+
+        expect(definition).toMatchObject({
+            category: "embedding",
+            inputModalities: ["text"],
+            outputModalities: ["embedding"],
+            cost: { promptTextTokens: 0.1 },
+        });
+    });
+
+    it("builds a fixed-price embedding definition", () => {
+        const definition = communityModelDefinition({
+            modelId: "voodoohop/embedding",
+            description: "Community embeddings",
+            modality: "embedding",
+            ...communityEndpointPrices({ completionTextPrice: 0.02 }),
+        });
+
+        expect(definition).toMatchObject({
+            category: "embedding",
+            flatRate: true,
+            cost: { completionTextTokens: 0.02 },
+        });
+        expect(
+            calculateUsageBilling(
+                definition.modelId,
+                { completionTextTokens: 1 },
+                definition,
+            ).price.totalPrice,
+        ).toBe(0.02);
+    });
+
+    it("builds fixed speech and token-priced transcription definitions", () => {
+        const speech = communityModelDefinition({
+            modelId: "voodoohop/speech",
+            description: "Community speech",
+            modality: "speech",
+            ...communityEndpointPrices({ completionAudioPrice: 0.01 }),
+        });
+        const transcription = communityModelDefinition({
+            modelId: "voodoohop/transcription",
+            description: "Community transcription",
+            modality: "transcription",
+            ...communityEndpointPrices({
+                promptAudioPrice: 0.000002,
+                completionTextPrice: 0.00001,
+            }),
+        });
+
+        expect(speech).toMatchObject({
+            category: "audio",
+            inputModalities: ["text"],
+            outputModalities: ["audio"],
+            flatRate: true,
+            cost: { completionAudioTokens: 0.01 },
+        });
+        expect(transcription).toMatchObject({
+            category: "audio",
+            inputModalities: ["audio"],
+            outputModalities: ["text"],
+            cost: {
+                promptAudioTokens: 0.000002,
+                completionTextTokens: 0.00001,
+            },
+        });
+        expect(
+            calculateUsageBilling(
+                speech.modelId,
+                { completionAudioTokens: 1 },
+                speech,
+            ).price.totalPrice,
+        ).toBe(0.01);
+        expect(
+            calculateUsageBilling(
+                transcription.modelId,
+                { promptAudioTokens: 20, completionTextTokens: 3 },
+                transcription,
+            ).price.totalPrice,
+        ).toBeCloseTo(0.00007);
+    });
+
+    it("builds fixed-price transcription definitions", () => {
+        const definition = communityModelDefinition({
+            modelId: "voodoohop/transcription",
+            description: "Community transcription",
+            modality: "transcription",
+            ...communityEndpointPrices({ completionAudioPrice: 0.02 }),
+        });
+
+        expect(definition).toMatchObject({
+            flatRate: true,
+            cost: { completionAudioTokens: 0.02 },
+        });
+        expect(
+            calculateUsageBilling(
+                definition.modelId,
+                { completionAudioTokens: 1 },
+                definition,
+            ).price.totalPrice,
+        ).toBe(0.02);
     });
 
     it("builds community image models with one fixed per-image price", () => {
@@ -1846,6 +2000,456 @@ fixtureTest(
                     new Request(input, init).url === TEST_COMMUNITY_IMAGE_URL,
             ),
         ).toHaveLength(3);
+    },
+);
+
+fixtureTest(
+    "registers an OpenAI-compatible embedding endpoint and exposes it through the embeddings API",
+    async ({ apiKey }) => {
+        const ownerGithubUsername = `owner-${crypto.randomUUID().slice(0, 8)}`;
+        const modelName = `embedding-${crypto.randomUUID().slice(0, 8)}`;
+        const ownerUserId = await createTestUser({
+            githubId: COMMUNITY_ENDPOINT_ALLOWED_TEST_GITHUB_ID,
+            githubUsername: ownerGithubUsername,
+        });
+        const sessionToken = `session-${crypto.randomUUID()}`;
+        await db.insert(sessionTable).values({
+            id: `session-${crypto.randomUUID()}`,
+            token: sessionToken,
+            userId: ownerUserId,
+            expiresAt: new Date(Date.now() + 60 * 60 * 1000),
+            createdAt: new Date(),
+            updatedAt: new Date(),
+        });
+
+        const enterApi = await createEnterCommunityApi();
+        const fetchMock = vi.fn(async (input, init) => {
+            const request = new Request(input, init);
+
+            if (isCommunityEmbeddingsRequest(request)) {
+                expect(request.headers.get("authorization")).toBe(
+                    "Bearer sk_embedding_upstream",
+                );
+                const body = (await request.json()) as {
+                    model: string;
+                    input: string | string[];
+                    encoding_format: string;
+                };
+                expect(body).toMatchObject({
+                    model: "text-embedding-3-small",
+                });
+                const inputs = Array.isArray(body.input)
+                    ? body.input
+                    : [body.input];
+                return Response.json({
+                    object: "list",
+                    data: inputs.map((_, index) => ({
+                        object: "embedding",
+                        embedding:
+                            body.encoding_format === "base64"
+                                ? "AAAAAA=="
+                                : [index + 0.1, index + 0.2],
+                        index,
+                    })),
+                    model: "text-embedding-3-small",
+                    usage: { prompt_tokens: 6, total_tokens: 6 },
+                });
+            }
+
+            if (isBillingFetch(request)) {
+                return Response.json({ data: [] });
+            }
+
+            throw new Error(`Unexpected fetch: ${request.url}`);
+        });
+        vi.stubGlobal("fetch", fetchMock);
+
+        const registerResponse = await fetchEnterApi(
+            enterApi,
+            new Request("http://localhost:3000/api/community-endpoints", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Cookie: await signedSessionCookie(sessionToken),
+                },
+                body: JSON.stringify({
+                    name: modelName,
+                    description: "OpenAI-compatible embedding endpoint",
+                    modality: "embedding",
+                    visibility: "public",
+                    baseUrl: "https://api.example.com/v1/embeddings",
+                    upstreamModel: "text-embedding-3-small",
+                    bearerToken: "Bearer sk_embedding_upstream",
+                    promptTextPrice: 0.000002,
+                    completionAudioPrice: 0.5,
+                }),
+            }),
+        );
+
+        expect(registerResponse.status).toBe(200);
+        const registered = (await registerResponse.json()) as {
+            modelId: string;
+            modality: string;
+            baseUrl: string;
+            upstreamModel: string;
+            promptTextPrice: number;
+            completionAudioPrice: number;
+        };
+        expect(registered).toMatchObject({
+            modelId: communityModelId(ownerGithubUsername, modelName),
+            modality: "embedding",
+            baseUrl: "https://api.example.com/v1/embeddings",
+            upstreamModel: "text-embedding-3-small",
+            promptTextPrice: 0.000002,
+            completionAudioPrice: 0,
+        });
+
+        const testResponse = await fetchEnterApi(
+            enterApi,
+            new Request("http://localhost:3000/api/community-endpoints/test", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Cookie: await signedSessionCookie(sessionToken),
+                },
+                body: JSON.stringify({
+                    baseUrl: registered.baseUrl,
+                    bearerToken: "Bearer sk_embedding_upstream",
+                    model: registered.upstreamModel,
+                    modality: "embedding",
+                }),
+            }),
+        );
+        expect(testResponse.status).toBe(200);
+        await expect(testResponse.json()).resolves.toMatchObject({
+            message: "Endpoint responded with embedding data",
+            usage: { prompt_tokens: 6, total_tokens: 6 },
+            billableUsage: { promptTextTokens: 6 },
+        });
+
+        const embeddingResponse = await SELF.fetch(
+            new Request("https://gen.pollinations.ai/v1/embeddings", {
+                method: "POST",
+                headers: {
+                    Authorization: `Bearer ${apiKey}`,
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    model: registered.modelId,
+                    input: ["green sprout", "blue flower"],
+                    encoding_format: "float",
+                }),
+            }),
+        );
+        expect(embeddingResponse.status).toBe(200);
+        expect(embeddingResponse.headers.get("x-model-used")).toBe(
+            registered.modelId,
+        );
+        expect(
+            embeddingResponse.headers.get("x-usage-prompt-text-tokens"),
+        ).toBe("6");
+        await expect(embeddingResponse.json()).resolves.toMatchObject({
+            object: "list",
+            model: registered.modelId,
+            data: [
+                { object: "embedding", embedding: [0.1, 0.2], index: 0 },
+                { object: "embedding", embedding: [1.1, 1.2], index: 1 },
+            ],
+            usage: { prompt_tokens: 6, total_tokens: 6 },
+        });
+
+        const base64Response = await SELF.fetch(
+            new Request("https://gen.pollinations.ai/v1/embeddings", {
+                method: "POST",
+                headers: {
+                    Authorization: `Bearer ${apiKey}`,
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    model: registered.modelId,
+                    input: "green sprout",
+                    encoding_format: "base64",
+                }),
+            }),
+        );
+        expect(base64Response.status).toBe(200);
+        await expect(base64Response.json()).resolves.toMatchObject({
+            data: [{ embedding: "AAAAAA==", index: 0 }],
+        });
+
+        const embeddingModelsResponse = await SELF.fetch(
+            "https://gen.pollinations.ai/embeddings/models",
+        );
+        const textModelsResponse = await SELF.fetch(
+            "https://gen.pollinations.ai/text/models",
+        );
+        const openaiModelsResponse = await SELF.fetch(
+            "https://gen.pollinations.ai/v1/models",
+        );
+        expect(embeddingModelsResponse.status).toBe(200);
+
+        const embeddingModels = (await embeddingModelsResponse.json()) as {
+            name: string;
+            category?: string;
+            community?: boolean;
+            pricing?: Record<string, string>;
+        }[];
+        const textModels = (await textModelsResponse.json()) as {
+            name: string;
+        }[];
+        const openaiModels = (await openaiModelsResponse.json()) as {
+            data: { id: string; supported_endpoints?: string[] }[];
+        };
+        expect(
+            embeddingModels.find((model) => model.name === registered.modelId),
+        ).toMatchObject({
+            category: "embedding",
+            community: true,
+            pricing: {
+                currency: "pollen",
+                promptTextTokens: "0.000002",
+            },
+        });
+        expect(
+            textModels.find((model) => model.name === registered.modelId),
+        ).toBeUndefined();
+        expect(
+            openaiModels.data.find((model) => model.id === registered.modelId)
+                ?.supported_endpoints,
+        ).toEqual(["/v1/embeddings"]);
+        expect(
+            fetchMock.mock.calls.filter(([input, init]) =>
+                isCommunityEmbeddingsRequest(new Request(input, init)),
+            ),
+        ).toHaveLength(3);
+    },
+);
+
+fixtureTest(
+    "routes community speech and transcription through the OpenAI audio APIs",
+    async ({ apiKey }) => {
+        const ownerGithubUsername = `owner-${crypto.randomUUID().slice(0, 8)}`;
+        const ownerUserId = await createTestUser({
+            githubId: COMMUNITY_ENDPOINT_ALLOWED_TEST_GITHUB_ID,
+            githubUsername: ownerGithubUsername,
+        });
+        const speechName = `speech-${crypto.randomUUID().slice(0, 8)}`;
+        const transcriptionName = `transcription-${crypto.randomUUID().slice(0, 8)}`;
+        const speechModelId = communityModelId(ownerGithubUsername, speechName);
+        const transcriptionModelId = communityModelId(
+            ownerGithubUsername,
+            transcriptionName,
+        );
+        const now = new Date();
+
+        await db.insert(communityEndpointTable).values({
+            id: `endpoint-${crypto.randomUUID()}`,
+            ownerUserId,
+            visibility: "public",
+            name: speechName,
+            description: "OpenAI-compatible speech endpoint",
+            modality: "speech",
+            baseUrl: "https://api.example.com/v1/audio/speech",
+            upstreamModel: "gpt-4o-mini-tts",
+            bearerTokenCiphertext: await encryptSecret(
+                "Bearer sk_audio_upstream",
+                env.BETTER_AUTH_SECRET,
+            ),
+            promptTextPrice: 0,
+            completionTextPrice: 0,
+            completionAudioPrice: 0.000001,
+            createdAt: now,
+            updatedAt: now,
+        });
+        await db.insert(communityEndpointTable).values({
+            id: `endpoint-${crypto.randomUUID()}`,
+            ownerUserId,
+            visibility: "public",
+            name: transcriptionName,
+            description: "OpenAI-compatible transcription endpoint",
+            modality: "transcription",
+            baseUrl: "https://api.example.com/v1/audio/transcriptions",
+            upstreamModel: "whisper-1",
+            bearerTokenCiphertext: await encryptSecret(
+                "Bearer sk_audio_upstream",
+                env.BETTER_AUTH_SECRET,
+            ),
+            promptTextPrice: 0,
+            completionTextPrice: 0,
+            promptAudioPrice: 0,
+            completionAudioPrice: 0.02,
+            createdAt: now,
+            updatedAt: now,
+        });
+        resetGenerationModelRegistryCache();
+
+        const fetchMock = vi.fn(async (input, init) => {
+            const request = new Request(input, init);
+
+            if (isCommunitySpeechRequest(request)) {
+                expect(request.headers.get("authorization")).toBe(
+                    "Bearer sk_audio_upstream",
+                );
+                await expect(request.json()).resolves.toEqual({
+                    model: "gpt-4o-mini-tts",
+                    input: "Hello audio",
+                    voice: "alloy",
+                    response_format: "mp3",
+                    instructions: "Speak warmly",
+                    speed: 1.25,
+                });
+                return new Response(new Uint8Array([73, 68, 51]), {
+                    headers: { "Content-Type": "audio/mpeg" },
+                });
+            }
+
+            if (isCommunityTranscriptionRequest(request)) {
+                expect(request.headers.get("authorization")).toBe(
+                    "Bearer sk_audio_upstream",
+                );
+                const form = await request.formData();
+                expect(form.get("model")).toBe("whisper-1");
+                expect(form.get("response_format")).toBe("verbose_json");
+                expect(form.get("language")).toBe("en");
+                expect(form.get("file")).toBeInstanceOf(File);
+                return Response.json({
+                    text: "Hello audio",
+                    duration: 2.5,
+                    segments: [
+                        {
+                            id: 0,
+                            start: 0,
+                            end: 2.5,
+                            text: "Hello audio",
+                        },
+                    ],
+                });
+            }
+
+            if (isBillingFetch(request)) return Response.json({ data: [] });
+            throw new Error(`Unexpected fetch: ${request.url}`);
+        });
+        vi.stubGlobal("fetch", fetchMock);
+
+        const speechResponse = await SELF.fetch(
+            new Request("https://gen.pollinations.ai/v1/audio/speech", {
+                method: "POST",
+                headers: {
+                    Authorization: `Bearer ${apiKey}`,
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    model: speechModelId,
+                    input: "Hello audio",
+                    voice: "alloy",
+                    response_format: "mp3",
+                    instructions: "Speak warmly",
+                    speed: 1.25,
+                }),
+            }),
+        );
+        expect(speechResponse.status).toBe(200);
+        expect(speechResponse.headers.get("content-type")).toBe("audio/mpeg");
+        expect(speechResponse.headers.get("x-model-used")).toBe(speechModelId);
+        expect(
+            speechResponse.headers.get("x-usage-completion-audio-tokens"),
+        ).toBe("1");
+        expect(new Uint8Array(await speechResponse.arrayBuffer())).toEqual(
+            new Uint8Array([73, 68, 51]),
+        );
+
+        const transcriptionForm = new FormData();
+        transcriptionForm.append("model", transcriptionModelId);
+        transcriptionForm.append("language", "en");
+        transcriptionForm.append("response_format", "verbose_json");
+        transcriptionForm.append(
+            "file",
+            new File([new Uint8Array([82, 73, 70, 70])], "sample.wav", {
+                type: "audio/wav",
+            }),
+        );
+        const transcriptionResponse = await SELF.fetch(
+            new Request("https://gen.pollinations.ai/v1/audio/transcriptions", {
+                method: "POST",
+                headers: { Authorization: `Bearer ${apiKey}` },
+                body: transcriptionForm,
+            }),
+        );
+        expect(transcriptionResponse.status).toBe(200);
+        expect(transcriptionResponse.headers.get("x-model-used")).toBe(
+            transcriptionModelId,
+        );
+        expect(
+            transcriptionResponse.headers.get(
+                "x-usage-completion-audio-tokens",
+            ),
+        ).toBe("1");
+        await expect(transcriptionResponse.json()).resolves.toMatchObject({
+            text: "Hello audio",
+            duration: 2.5,
+        });
+
+        const audioModelsResponse = await SELF.fetch(
+            "https://gen.pollinations.ai/audio/models",
+        );
+        const openaiModelsResponse = await SELF.fetch(
+            "https://gen.pollinations.ai/v1/models",
+        );
+        const audioModels = (await audioModelsResponse.json()) as {
+            name: string;
+            category?: string;
+            community?: boolean;
+            input_modalities?: string[];
+            output_modalities?: string[];
+            pricing?: Record<string, string>;
+        }[];
+        const openaiModels = (await openaiModelsResponse.json()) as {
+            data: { id: string; supported_endpoints?: string[] }[];
+        };
+
+        expect(
+            audioModels.find((model) => model.name === speechModelId),
+        ).toMatchObject({
+            category: "audio",
+            community: true,
+            input_modalities: ["text"],
+            output_modalities: ["audio"],
+            pricing: {
+                currency: "pollen",
+                completionAudioTokens: "0.000001",
+            },
+        });
+        expect(
+            audioModels.find((model) => model.name === transcriptionModelId),
+        ).toMatchObject({
+            category: "audio",
+            community: true,
+            input_modalities: ["audio"],
+            output_modalities: ["text"],
+            pricing: {
+                currency: "pollen",
+                completionAudioTokens: "0.02",
+            },
+            flat_rate: true,
+        });
+        expect(
+            openaiModels.data.find((model) => model.id === speechModelId)
+                ?.supported_endpoints,
+        ).toEqual(["/v1/audio/speech", "/audio/{text}"]);
+        expect(
+            openaiModels.data.find((model) => model.id === transcriptionModelId)
+                ?.supported_endpoints,
+        ).toEqual(["/v1/audio/transcriptions"]);
+        expect(
+            fetchMock.mock.calls.filter(([input, init]) =>
+                isCommunitySpeechRequest(new Request(input, init)),
+            ),
+        ).toHaveLength(1);
+        expect(
+            fetchMock.mock.calls.filter(([input, init]) =>
+                isCommunityTranscriptionRequest(new Request(input, init)),
+            ),
+        ).toHaveLength(1);
     },
 );
 

@@ -8,6 +8,8 @@ import { validateModelSearch } from "../frontend/src/components/models/model-sea
 const catalog = [
     { name: "official-text", category: "text" as const },
     { name: "official-image", category: "image" as const },
+    { name: "official-audio", category: "audio" as const },
+    { name: "official-embedding", category: "embedding" as const },
     {
         name: "community-text",
         category: "text" as const,
@@ -18,10 +20,25 @@ const catalog = [
         category: "image" as const,
         community: true,
     },
+    {
+        name: "community-speech",
+        category: "audio" as const,
+        community: true,
+    },
+    {
+        name: "community-transcription",
+        category: "audio" as const,
+        community: true,
+    },
+    {
+        name: "community-embedding",
+        category: "embedding" as const,
+        community: true,
+    },
 ];
 
 describe("model categories", () => {
-    it("separates community text and image models from official models", () => {
+    it("separates community models from official modality models", () => {
         const categories = getModelCategoriesFromCatalog(catalog);
 
         expect(
@@ -45,6 +62,18 @@ describe("model categories", () => {
                 models: ["official-image"],
             },
             {
+                category: "audio",
+                label: "Audio",
+                modality: "audio",
+                models: ["official-audio"],
+            },
+            {
+                category: "embedding",
+                label: "Embedding",
+                modality: "embeddings",
+                models: ["official-embedding"],
+            },
+            {
                 category: "community-text",
                 label: "Community Text",
                 modality: "text",
@@ -55,6 +84,18 @@ describe("model categories", () => {
                 label: "Community Image",
                 modality: "images",
                 models: ["community-image"],
+            },
+            {
+                category: "community-audio",
+                label: "Community Audio",
+                modality: "audio",
+                models: ["community-speech", "community-transcription"],
+            },
+            {
+                category: "community-embedding",
+                label: "Community Embedding",
+                modality: "embeddings",
+                models: ["community-embedding"],
             },
         ]);
     });
@@ -69,18 +110,32 @@ describe("model categories", () => {
             computeCategoryModalities(["community-image"], categories),
         ).toEqual(["images"]);
         expect(
+            computeCategoryModalities(["community-speech"], categories),
+        ).toEqual(["audio"]);
+        expect(
+            computeCategoryModalities(["community-embedding"], categories),
+        ).toEqual(["embeddings"]);
+        expect(
             computeCategoryModalities(
-                ["official-text", "community-text", "community-image"],
+                [
+                    "official-text",
+                    "community-text",
+                    "community-image",
+                    "community-speech",
+                    "community-embedding",
+                ],
                 categories,
             ),
-        ).toEqual(["text", "images"]);
+        ).toEqual(["text", "images", "audio", "embeddings"]);
         expect(computeCategoryModalities(null, categories)).toEqual([
             "text",
             "images",
+            "audio",
+            "embeddings",
         ]);
     });
 
-    it("accepts both community category URLs", () => {
+    it("accepts community category URLs", () => {
         expect(validateModelSearch({ category: "community-text" })).toEqual({
             category: "community-text",
             q: undefined,
@@ -89,6 +144,20 @@ describe("model categories", () => {
         });
         expect(validateModelSearch({ category: "community-image" })).toEqual({
             category: "community-image",
+            q: undefined,
+            sort: undefined,
+            dir: undefined,
+        });
+        expect(validateModelSearch({ category: "community-audio" })).toEqual({
+            category: "community-audio",
+            q: undefined,
+            sort: undefined,
+            dir: undefined,
+        });
+        expect(
+            validateModelSearch({ category: "community-embedding" }),
+        ).toEqual({
+            category: "community-embedding",
             q: undefined,
             sort: undefined,
             dir: undefined,

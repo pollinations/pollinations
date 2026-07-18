@@ -99,6 +99,111 @@ export const OPENAI_IMAGE_USAGE_PATHS = {
     completionImageTokens: ["output_tokens"],
 } as const satisfies Partial<Record<UsageType, readonly string[]>>;
 
+export type OpenAIEmbeddingUsage = {
+    prompt_tokens: number;
+    total_tokens: number;
+};
+
+export function getOpenAIEmbeddingUsage(
+    value: unknown,
+): OpenAIEmbeddingUsage | null {
+    if (!value || typeof value !== "object" || !("usage" in value)) {
+        return null;
+    }
+    const usage = value.usage;
+    if (
+        !usage ||
+        typeof usage !== "object" ||
+        !("prompt_tokens" in usage) ||
+        !isTokenCount(usage.prompt_tokens) ||
+        !("total_tokens" in usage) ||
+        !isTokenCount(usage.total_tokens) ||
+        usage.total_tokens !== usage.prompt_tokens
+    ) {
+        return null;
+    }
+    return usage as OpenAIEmbeddingUsage;
+}
+
+export const OPENAI_EMBEDDING_USAGE_PATHS = {
+    promptTextTokens: ["prompt_tokens"],
+} as const satisfies Partial<Record<UsageType, readonly string[]>>;
+
+export type OpenAITranscriptionTokenUsage = {
+    type: "tokens";
+    input_tokens: number;
+    output_tokens: number;
+    total_tokens: number;
+    input_token_details?: {
+        audio_tokens?: number;
+        text_tokens?: number;
+    };
+};
+
+export function getOpenAITranscriptionTokenUsage(
+    value: unknown,
+): OpenAITranscriptionTokenUsage | null {
+    if (!value || typeof value !== "object" || !("usage" in value)) {
+        return null;
+    }
+    const usage = value.usage;
+    if (
+        !usage ||
+        typeof usage !== "object" ||
+        !("type" in usage) ||
+        usage.type !== "tokens" ||
+        !("input_tokens" in usage) ||
+        !isTokenCount(usage.input_tokens) ||
+        !("output_tokens" in usage) ||
+        !isTokenCount(usage.output_tokens) ||
+        !("total_tokens" in usage) ||
+        !isTokenCount(usage.total_tokens) ||
+        usage.total_tokens !== usage.input_tokens + usage.output_tokens
+    ) {
+        return null;
+    }
+
+    const details =
+        "input_token_details" in usage ? usage.input_token_details : undefined;
+    if (details !== undefined) {
+        if (!details || typeof details !== "object") return null;
+        const audioTokens =
+            "audio_tokens" in details ? details.audio_tokens : undefined;
+        const textTokens =
+            "text_tokens" in details ? details.text_tokens : undefined;
+        if (
+            (audioTokens !== undefined && !isTokenCount(audioTokens)) ||
+            (textTokens !== undefined && !isTokenCount(textTokens)) ||
+            (audioTokens ?? 0) + (textTokens ?? 0) > usage.input_tokens
+        ) {
+            return null;
+        }
+    }
+
+    return usage as OpenAITranscriptionTokenUsage;
+}
+
+export function openaiTranscriptionUsageToUsage(
+    usage: OpenAITranscriptionTokenUsage,
+): Usage {
+    const promptTextTokens = usage.input_token_details?.text_tokens ?? 0;
+    return {
+        promptTextTokens,
+        promptAudioTokens: usage.input_tokens - promptTextTokens,
+        completionTextTokens: usage.output_tokens,
+    };
+}
+
+export function getOpenAITranscriptionDuration(value: unknown): number | null {
+    if (!value || typeof value !== "object") return null;
+    const duration = "duration" in value ? value.duration : undefined;
+    if (isPositiveNumber(duration)) return duration;
+    const usage = "usage" in value ? value.usage : undefined;
+    if (!usage || typeof usage !== "object") return null;
+    const seconds = "seconds" in usage ? usage.seconds : undefined;
+    return isPositiveNumber(seconds) ? seconds : null;
+}
+
 export function usageToOpenAIImageUsage(usage: Usage): OpenAIImageUsage {
     const inputTextTokens =
         (usage.promptTextTokens ?? 0) +
@@ -244,6 +349,10 @@ function isTokenCount(value: unknown): value is number {
     return (
         typeof value === "number" && Number.isSafeInteger(value) && value >= 0
     );
+}
+
+function isPositiveNumber(value: unknown): value is number {
+    return typeof value === "number" && Number.isFinite(value) && value > 0;
 }
 
 function sumTokens(tokens: readonly number[]): number {

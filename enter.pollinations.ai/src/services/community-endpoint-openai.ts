@@ -1,13 +1,21 @@
 import {
     communityChatCompletionsUrl,
+    communityEmbeddingsUrl,
     communityImageGenerationsUrl,
     communityOpenAIBaseUrl,
+    communitySpeechUrl,
+    communityTranscriptionsUrl,
     normalizeCommunityAssetUrl,
     normalizeCommunityEndpointBearerToken,
 } from "@shared/community-endpoints.ts";
 import { detectImageMimeType } from "@shared/image-mime.ts";
 import type { Usage } from "@shared/registry/registry.ts";
-import { openaiUsageToUsage } from "@shared/registry/usage-headers.ts";
+import {
+    getOpenAIEmbeddingUsage,
+    getOpenAITranscriptionTokenUsage,
+    openaiTranscriptionUsageToUsage,
+    openaiUsageToUsage,
+} from "@shared/registry/usage-headers.ts";
 
 type EndpointAuth = {
     baseUrl: string;
@@ -37,6 +45,14 @@ function communityModelsUrl(baseUrl: string): string {
 }
 
 async function fetchJson(url: string, init: RequestInit): Promise<unknown> {
+    const response = await fetchEndpoint(url, init);
+    return response.json().catch(() => null);
+}
+
+async function fetchEndpoint(
+    url: string,
+    init: RequestInit,
+): Promise<Response> {
     let response: Response;
     try {
         // The base URL is validated against https + the private-host blocklist
@@ -51,11 +67,14 @@ async function fetchJson(url: string, init: RequestInit): Promise<unknown> {
         throw new Error("Endpoint request timed out or could not connect");
     }
 
-    const body = await response.json().catch(() => null);
     if (!response.ok) {
+        const body = await response
+            .clone()
+            .json()
+            .catch(() => null);
         throw new Error(endpointErrorMessage(response.status, body));
     }
-    return body;
+    return response;
 }
 
 function endpointErrorMessage(status: number, body: unknown): string {
@@ -193,6 +212,183 @@ export async function testCommunityImageEndpoint({
         usage: { images: 1 },
         billableUsage: { completionImageTokens: 1 },
     };
+}
+
+export async function testCommunityEmbeddingEndpoint({
+    baseUrl,
+    bearerToken,
+    model,
+}: EndpointTestInput): Promise<CommunityEndpointTestResult> {
+    const body = await fetchJson(communityEmbeddingsUrl(baseUrl), {
+        method: "POST",
+        headers: {
+            ...authorizationHeaders(bearerToken),
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+            model,
+            input: "A simple green sprout.",
+            encoding_format: "float",
+        }),
+    });
+
+    if (
+        !body ||
+        typeof body !== "object" ||
+        !("data" in body) ||
+        !Array.isArray(body.data) ||
+        body.data.length !== 1 ||
+        !body.data[0] ||
+        typeof body.data[0] !== "object" ||
+        !("embedding" in body.data[0]) ||
+        !Array.isArray(body.data[0].embedding) ||
+        body.data[0].embedding.length === 0 ||
+        !body.data[0].embedding.every(
+            (value: unknown) =>
+                typeof value === "number" && Number.isFinite(value),
+        )
+    ) {
+        throw new Error("Endpoint did not return OpenAI embedding data");
+    }
+
+    const usage = getOpenAIEmbeddingUsage(body);
+    if (usage && usage.prompt_tokens > 0) {
+        return {
+            usage,
+            billableUsage: { promptTextTokens: usage.prompt_tokens },
+        };
+    }
+    if (
+        !usage &&
+        body &&
+        typeof body === "object" &&
+        "usage" in body &&
+        body.usage !== undefined &&
+        body.usage !== null
+    ) {
+        throw new Error("Endpoint did not return billable OpenAI token usage");
+    }
+
+    return {
+        usage: { requests: 1 },
+        billableUsage: { completionTextTokens: 1 },
+    };
+}
+
+export async function testCommunitySpeechEndpoint({
+    baseUrl,
+    bearerToken,
+    model,
+}: EndpointTestInput): Promise<CommunityEndpointTestResult> {
+    const input = "A simple green sprout.";
+    const response = await fetchEndpoint(communitySpeechUrl(baseUrl), {
+        method: "POST",
+        headers: {
+            ...authorizationHeaders(bearerToken),
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+            model,
+            input,
+            voice: "alloy",
+            response_format: "mp3",
+        }),
+    });
+    const contentType = response.headers.get("content-type") || "";
+    if (
+        !isAudioContentType(contentType) ||
+        (await response.arrayBuffer()).byteLength === 0
+    ) {
+        throw new Error("Endpoint did not return OpenAI speech audio");
+    }
+
+    return {
+        usage: { requests: 1 },
+        billableUsage: { completionAudioTokens: 1 },
+    };
+}
+
+export async function testCommunityTranscriptionEndpoint({
+    baseUrl,
+    bearerToken,
+    model,
+}: EndpointTestInput): Promise<CommunityEndpointTestResult> {
+    const form = new FormData();
+    const wav = silentWav();
+    form.append(
+        "file",
+        new File([wav.buffer as ArrayBuffer], "probe.wav", {
+            type: "audio/wav",
+        }),
+    );
+    form.append("model", model);
+    form.append("response_format", "json");
+    const body = await fetchJson(communityTranscriptionsUrl(baseUrl), {
+        method: "POST",
+        headers: authorizationHeaders(bearerToken),
+        body: form,
+    });
+    if (
+        !body ||
+        typeof body !== "object" ||
+        !("text" in body) ||
+        typeof body.text !== "string"
+    ) {
+        throw new Error("Endpoint did not return an OpenAI transcription");
+    }
+
+    const usage = getOpenAITranscriptionTokenUsage(body);
+    if (usage && usage.total_tokens > 0) {
+        return {
+            usage,
+            billableUsage: openaiTranscriptionUsageToUsage(usage),
+        };
+    }
+    if (
+        "usage" in body &&
+        body.usage &&
+        typeof body.usage === "object" &&
+        "type" in body.usage &&
+        body.usage.type === "tokens"
+    ) {
+        throw new Error("Endpoint returned invalid transcription token usage");
+    }
+
+    return {
+        usage: { requests: 1 },
+        billableUsage: { completionAudioTokens: 1 },
+    };
+}
+
+function isAudioContentType(value: string): boolean {
+    const mime = value.split(";", 1)[0]?.trim().toLowerCase();
+    return mime?.startsWith("audio/") || mime === "application/octet-stream";
+}
+
+function silentWav(): Uint8Array {
+    const sampleRate = 8_000;
+    const dataLength = sampleRate * 2;
+    const bytes = new Uint8Array(44 + dataLength);
+    const view = new DataView(bytes.buffer);
+    const text = (offset: number, value: string) => {
+        for (let index = 0; index < value.length; index++) {
+            bytes[offset + index] = value.charCodeAt(index);
+        }
+    };
+    text(0, "RIFF");
+    view.setUint32(4, bytes.length - 8, true);
+    text(8, "WAVE");
+    text(12, "fmt ");
+    view.setUint32(16, 16, true);
+    view.setUint16(20, 1, true);
+    view.setUint16(22, 1, true);
+    view.setUint32(24, sampleRate, true);
+    view.setUint32(28, sampleRate * 2, true);
+    view.setUint16(32, 2, true);
+    view.setUint16(34, 16, true);
+    text(36, "data");
+    view.setUint32(40, dataLength, true);
+    return bytes;
 }
 
 async function firstImageBytes(

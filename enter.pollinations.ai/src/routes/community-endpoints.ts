@@ -2,6 +2,7 @@ import {
     COMMUNITY_ENDPOINT_MODALITIES,
     COMMUNITY_ENDPOINT_PRICE_FIELDS,
     COMMUNITY_ENDPOINT_VISIBILITIES,
+    type CommunityEndpointModality,
     type CommunityEndpointPriceKey,
     type CommunityEndpointVisibility,
     communityEndpointPriceFieldsForModality,
@@ -9,7 +10,6 @@ import {
     communityEndpointPricesForModality,
     communityModelId,
     isCommunityEndpointOwnerAllowed,
-    MIN_COMMUNITY_PRICE_PER_MILLION_TOKENS,
     MIN_COMMUNITY_PRICE_PER_TOKEN,
     MIN_COMMUNITY_PRICE_PER_UNIT,
     normalizeCommunityEndpointBaseUrl,
@@ -29,9 +29,13 @@ import { z } from "zod";
 import type { Env } from "../env.ts";
 import { auth } from "../middleware/auth.ts";
 import {
+    type CommunityEndpointTestResult,
     listCommunityEndpointModels,
+    testCommunityEmbeddingEndpoint,
     testCommunityEndpoint,
     testCommunityImageEndpoint,
+    testCommunitySpeechEndpoint,
+    testCommunityTranscriptionEndpoint,
 } from "../services/community-endpoint-openai.ts";
 import { hasDirectAccountPermission } from "./account-permissions.ts";
 
@@ -42,10 +46,6 @@ const UpdatePriceFieldsSchema = Object.fromEntries(
             field.priceUnit === "million"
                 ? MIN_COMMUNITY_PRICE_PER_TOKEN
                 : MIN_COMMUNITY_PRICE_PER_UNIT;
-        const unit =
-            field.priceUnit === "image"
-                ? "per image"
-                : `per token (${MIN_COMMUNITY_PRICE_PER_MILLION_TOKENS} per 1M tokens)`;
         return [
             field.key,
             z
@@ -53,7 +53,7 @@ const UpdatePriceFieldsSchema = Object.fromEntries(
                 .finite()
                 .min(0)
                 .refine((price) => price === 0 || price >= minimum, {
-                    message: `Price must be 0 (free) or at least ${minimum} ${unit}`,
+                    message: `Price must be 0 (free) or at least ${minimum} per billable unit`,
                 })
                 .optional(),
         ];
@@ -143,6 +143,13 @@ const CommunityEndpointDeleteResponseSchema = z.object({
     id: z.string(),
 });
 const ENDPOINT_PROBE_THROTTLE_SECONDS = 30;
+const TEST_SUCCESS_MESSAGES: Record<CommunityEndpointModality, string> = {
+    text: "Endpoint responded with usage",
+    image: "Endpoint responded with image data",
+    embedding: "Endpoint responded with embedding data",
+    speech: "Endpoint responded with speech audio",
+    transcription: "Endpoint responded with a transcription",
+};
 type Db = ReturnType<typeof drizzle<typeof schema>>;
 type CommunityEndpointRow = typeof schema.communityEndpoint.$inferSelect;
 
@@ -166,6 +173,49 @@ function normalizeInputBearerToken(value: string): string {
                 error instanceof Error
                     ? error.message
                     : "Invalid API bearer token",
+        });
+    }
+}
+
+function validatePricesForModality(
+    input: Partial<Record<CommunityEndpointPriceKey, number | undefined>>,
+    modality: CommunityEndpointModality,
+): void {
+    for (const field of communityEndpointPriceFieldsForModality(modality)) {
+        const price = input[field.key];
+        if (!price) continue;
+        const minimum =
+            field.priceUnit === "million"
+                ? MIN_COMMUNITY_PRICE_PER_TOKEN
+                : MIN_COMMUNITY_PRICE_PER_UNIT;
+        if (price < minimum) {
+            throw new HTTPException(400, {
+                message: `${field.label} price must be 0 (free) or at least ${minimum} per billable unit`,
+            });
+        }
+    }
+}
+
+function validatePricingMode(
+    prices: Partial<Record<CommunityEndpointPriceKey, number | undefined>>,
+    modality: CommunityEndpointModality,
+): void {
+    let fixedPrice = 0;
+    let hasTokenPrice = false;
+    if (modality === "embedding") {
+        fixedPrice = prices.completionTextPrice ?? 0;
+        hasTokenPrice = Boolean(prices.promptTextPrice);
+    } else if (modality === "transcription") {
+        fixedPrice = prices.completionAudioPrice ?? 0;
+        hasTokenPrice = Boolean(
+            prices.promptTextPrice ||
+                prices.promptAudioPrice ||
+                prices.completionTextPrice,
+        );
+    }
+    if (fixedPrice && hasTokenPrice) {
+        throw new HTTPException(400, {
+            message: "Choose either token pricing or one fixed request price",
         });
     }
 }
@@ -366,7 +416,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
             tags: ["👤 Account"],
             summary: "Create My Model",
             description:
-                "Register a private or public community text or image model. Private is the default. Public models require an allowlisted account and may be free or priced. API keys require `account:keys`. The upstream bearer token is encrypted and never returned.",
+                "Register a private or public community text, image, embedding, speech, or transcription model. Private is the default. Public models require an allowlisted account and may be free or priced. API keys require `account:keys`. The upstream bearer token is encrypted and never returned.",
             responses: {
                 200: {
                     description: "Created community model",
@@ -391,11 +441,13 @@ export const communityEndpointsRoutes = new Hono<Env>()
                 db,
                 user.id,
             );
+            validatePricesForModality(input, input.modality);
             await ensureModelNameAvailable(db, user.id, input.name);
             const prices =
                 input.visibility === "public"
                     ? communityEndpointPricesForModality(input, input.modality)
                     : communityEndpointPrices({});
+            validatePricingMode(prices, input.modality);
             await enforcePublishingAccess(db, user.id, input.visibility);
             const id = crypto.randomUUID();
             const [row] = await db
@@ -504,16 +556,27 @@ export const communityEndpointsRoutes = new Hono<Env>()
             );
             if (throttled) return throttled;
             try {
-                const result =
-                    input.modality === "image"
-                        ? await testCommunityImageEndpoint(input)
-                        : await testCommunityEndpoint(input);
+                let result: CommunityEndpointTestResult;
+                switch (input.modality) {
+                    case "image":
+                        result = await testCommunityImageEndpoint(input);
+                        break;
+                    case "embedding":
+                        result = await testCommunityEmbeddingEndpoint(input);
+                        break;
+                    case "speech":
+                        result = await testCommunitySpeechEndpoint(input);
+                        break;
+                    case "transcription":
+                        result =
+                            await testCommunityTranscriptionEndpoint(input);
+                        break;
+                    default:
+                        result = await testCommunityEndpoint(input);
+                }
                 return c.json({
                     ok: true,
-                    message:
-                        input.modality === "image"
-                            ? "Endpoint responded with image data"
-                            : "Endpoint responded with usage",
+                    message: TEST_SUCCESS_MESSAGES[input.modality],
                     ...result,
                 });
             } catch (error) {
@@ -558,6 +621,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
             const modality = normalizeCommunityEndpointModality(
                 endpoint.modality,
             );
+            validatePricesForModality(input, modality);
             await ensureModelNameAvailable(
                 db,
                 user.id,
@@ -606,6 +670,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
                           { ...endpoint, ...update },
                           modality,
                       );
+            validatePricingMode(effectivePrices, modality);
             await enforcePublishingAccess(db, user.id, effectiveVisibility);
             // Persist visibility together with the complete effective price
             // set on every update, so concurrent partial updates cannot

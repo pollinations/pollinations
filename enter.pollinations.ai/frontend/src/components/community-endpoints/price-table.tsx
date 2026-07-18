@@ -179,7 +179,12 @@ function PriceInputCell({
 
     const inputId = `community-${field.key}`;
     const hasError = state.invalid;
-    const unitLabel = field.priceUnit === "image" ? "/image" : "/1M";
+    const unitLabel =
+        field.priceUnit === "image"
+            ? "/image"
+            : field.priceUnit === "request"
+              ? "/request"
+              : "/1M";
     const minimum =
         field.priceUnit === "million"
             ? MIN_COMMUNITY_PRICE_PER_MILLION_TOKENS

@@ -4,12 +4,19 @@ import type { ModelDefinition, PriceDefinition } from "./registry/registry.ts";
 import {
     OPENAI_CHAT_USAGE_PATHS,
     OPENAI_CHAT_USAGE_TYPES,
+    OPENAI_EMBEDDING_USAGE_PATHS,
     type OpenAIChatUsageType,
 } from "./registry/usage-headers.ts";
 
 export const LEGACY_COMMUNITY_MODEL_PREFIX = "community/";
 export const COMMUNITY_MODEL_REWARD_RATE = 0.75;
-export const COMMUNITY_ENDPOINT_MODALITIES = ["text", "image"] as const;
+export const COMMUNITY_ENDPOINT_MODALITIES = [
+    "text",
+    "image",
+    "embedding",
+    "speech",
+    "transcription",
+] as const;
 // Zero is free; positive owner-declared prices start at this floor.
 export const MIN_COMMUNITY_PRICE_PER_MILLION_TOKENS = 0.000001;
 export const MIN_COMMUNITY_PRICE_PER_TOKEN =
@@ -102,16 +109,81 @@ const COMMUNITY_IMAGE_ENDPOINT_PRICE_FIELDS = [
     COMMUNITY_IMAGE_PRICE_FIELD,
 ] as const;
 
+const COMMUNITY_EMBEDDING_ENDPOINT_PRICE_FIELDS = [
+    {
+        ...COMMUNITY_PRICE_FIELD_BY_USAGE_TYPE.promptTextTokens,
+        usageType: "promptTextTokens",
+        rawUsagePaths: OPENAI_EMBEDDING_USAGE_PATHS.promptTextTokens,
+    },
+    {
+        key: "completionTextPrice",
+        usageType: "completionTextTokens",
+        label: "Embedding request",
+        priceUnit: "request",
+        rawUsagePaths: ["requests"],
+    },
+] as const;
+
+const COMMUNITY_SPEECH_ENDPOINT_PRICE_FIELDS = [
+    {
+        key: "completionAudioPrice",
+        usageType: "completionAudioTokens",
+        label: "Speech request",
+        priceUnit: "request",
+        rawUsagePaths: ["requests"],
+    },
+] as const;
+
+const COMMUNITY_TRANSCRIPTION_ENDPOINT_PRICE_FIELDS = [
+    {
+        key: "promptTextPrice",
+        usageType: "promptTextTokens",
+        label: "Input text",
+        priceUnit: "million",
+        rawUsagePaths: ["input_token_details.text_tokens"],
+    },
+    {
+        key: "promptAudioPrice",
+        usageType: "promptAudioTokens",
+        label: "Input audio",
+        priceUnit: "million",
+        rawUsagePaths: ["input_token_details.audio_tokens", "input_tokens"],
+    },
+    {
+        key: "completionTextPrice",
+        usageType: "completionTextTokens",
+        label: "Output text",
+        priceUnit: "million",
+        rawUsagePaths: ["output_tokens"],
+    },
+    {
+        key: "completionAudioPrice",
+        usageType: "completionAudioTokens",
+        label: "Transcription request",
+        priceUnit: "request",
+        rawUsagePaths: ["requests"],
+    },
+] as const;
+
 export function communityEndpointPriceFieldsForModality(
     modality: CommunityEndpointModality,
 ) {
-    return modality === "image"
-        ? COMMUNITY_IMAGE_ENDPOINT_PRICE_FIELDS
-        : COMMUNITY_TEXT_ENDPOINT_PRICE_FIELDS;
+    if (modality === "image") return COMMUNITY_IMAGE_ENDPOINT_PRICE_FIELDS;
+    if (modality === "embedding") {
+        return COMMUNITY_EMBEDDING_ENDPOINT_PRICE_FIELDS;
+    }
+    if (modality === "speech") return COMMUNITY_SPEECH_ENDPOINT_PRICE_FIELDS;
+    if (modality === "transcription") {
+        return COMMUNITY_TRANSCRIPTION_ENDPOINT_PRICE_FIELDS;
+    }
+    return COMMUNITY_TEXT_ENDPOINT_PRICE_FIELDS;
 }
 
 export type CommunityEndpointPriceField =
-    (typeof COMMUNITY_ENDPOINT_PRICE_FIELDS)[number];
+    | (typeof COMMUNITY_ENDPOINT_PRICE_FIELDS)[number]
+    | (typeof COMMUNITY_EMBEDDING_ENDPOINT_PRICE_FIELDS)[number]
+    | (typeof COMMUNITY_SPEECH_ENDPOINT_PRICE_FIELDS)[number]
+    | (typeof COMMUNITY_TRANSCRIPTION_ENDPOINT_PRICE_FIELDS)[number];
 
 export type CommunityEndpointPriceKey = CommunityEndpointPriceField["key"];
 
@@ -148,7 +220,11 @@ export function communityEndpointPricesForModality(
 export function normalizeCommunityEndpointModality(
     value: string | null | undefined,
 ): CommunityEndpointModality {
-    return value === "image" ? "image" : "text";
+    return COMMUNITY_ENDPOINT_MODALITIES.includes(
+        value as CommunityEndpointModality,
+    )
+        ? (value as CommunityEndpointModality)
+        : "text";
 }
 
 // Access/visibility of a registered endpoint. Private is the default; choosing
@@ -276,12 +352,27 @@ export function communityImageGenerationsUrl(baseUrl: string): string {
     return `${communityOpenAIBaseUrl(baseUrl)}/images/generations`;
 }
 
+export function communityEmbeddingsUrl(baseUrl: string): string {
+    return `${communityOpenAIBaseUrl(baseUrl)}/embeddings`;
+}
+
+export function communitySpeechUrl(baseUrl: string): string {
+    return `${communityOpenAIBaseUrl(baseUrl)}/audio/speech`;
+}
+
+export function communityTranscriptionsUrl(baseUrl: string): string {
+    return `${communityOpenAIBaseUrl(baseUrl)}/audio/transcriptions`;
+}
+
 export function communityOpenAIBaseUrl(baseUrl: string): string {
     const normalized = normalizeCommunityEndpointBaseUrl(baseUrl);
     for (const suffix of [
         "/chat/completions",
         "/images/generations",
         "/images/edits",
+        "/embeddings",
+        "/audio/speech",
+        "/audio/transcriptions",
     ]) {
         if (normalized.endsWith(suffix)) {
             return normalized.slice(0, -suffix.length);
@@ -318,25 +409,65 @@ export function communityModelDefinition(
     const aliases =
         legacyAlias && legacyAlias !== endpoint.modelId ? [legacyAlias] : [];
     const modality = normalizeCommunityEndpointModality(endpoint.modality);
-    const isImage = modality === "image";
+    const definition = COMMUNITY_MODEL_MODALITY_DEFINITIONS[modality];
+    const flatRate =
+        modality === "image" ||
+        modality === "speech" ||
+        (modality === "embedding" && endpoint.completionTextPrice > 0) ||
+        (modality === "transcription" && endpoint.completionAudioPrice > 0);
     return {
         aliases,
         modelId: endpoint.modelId,
         provider: "community",
         brand: "Community",
-        category: isImage ? "image" : "text",
+        category: definition.category,
         cost: communityPriceDefinition(endpoint, modality),
         priceMultiplier: 1,
         addedDate: 0,
         title: description || parsed?.modelName || endpoint.modelId,
         description: description || undefined,
-        inputModalities: ["text"],
-        outputModalities: isImage ? ["image"] : ["text"],
+        inputModalities: [...definition.inputModalities],
+        outputModalities: [...definition.outputModalities],
         paidOnly: false,
         alpha: true,
-        ...(isImage ? { flatRate: true } : {}),
+        ...(flatRate ? { flatRate: true } : {}),
     };
 }
+
+const COMMUNITY_MODEL_MODALITY_DEFINITIONS = {
+    text: {
+        category: "text",
+        inputModalities: ["text"],
+        outputModalities: ["text"],
+    },
+    image: {
+        category: "image",
+        inputModalities: ["text"],
+        outputModalities: ["image"],
+    },
+    embedding: {
+        category: "embedding",
+        inputModalities: ["text"],
+        outputModalities: ["embedding"],
+    },
+    speech: {
+        category: "audio",
+        inputModalities: ["text"],
+        outputModalities: ["audio"],
+    },
+    transcription: {
+        category: "audio",
+        inputModalities: ["audio"],
+        outputModalities: ["text"],
+    },
+} as const satisfies Record<
+    CommunityEndpointModality,
+    {
+        category: ModelDefinition["category"];
+        inputModalities: readonly string[];
+        outputModalities: readonly string[];
+    }
+>;
 
 function isBlockedHostname(hostname: string): boolean {
     const host = hostname

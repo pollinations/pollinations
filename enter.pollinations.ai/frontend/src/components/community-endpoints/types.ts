@@ -8,6 +8,7 @@ import {
     communityEndpointPriceFieldsForModality,
     MIN_COMMUNITY_PRICE_PER_MILLION_TOKENS,
     MIN_COMMUNITY_PRICE_PER_UNIT,
+    normalizeCommunityEndpointModality,
 } from "@shared/community-endpoints.ts";
 import type { Usage } from "@shared/registry/registry.ts";
 
@@ -187,7 +188,11 @@ function formPricesToPayload(
             if (!modalityField) return [field.key, 0];
             if (!isValidPriceInput(form[field.key], modalityField.priceUnit)) {
                 const unit =
-                    modalityField.priceUnit === "image" ? "image" : "1M units";
+                    modalityField.priceUnit === "image"
+                        ? "image"
+                        : modalityField.priceUnit === "request"
+                          ? "request"
+                          : "1M units";
                 throw new Error(
                     `Prices must be 0 (free) or a positive amount per ${unit}, using a dot decimal`,
                 );
@@ -220,7 +225,7 @@ function hasObservedUsagePath(
 
 export function hasObservedPriceField(
     usage: CommunityEndpointUsage | undefined,
-    field: (typeof COMMUNITY_ENDPOINT_PRICE_FIELDS)[number],
+    field: CommunityEndpointPriceField,
 ): boolean {
     return field.rawUsagePaths.some((path) =>
         hasObservedUsagePath(usage, path),
@@ -230,7 +235,7 @@ export function hasObservedPriceField(
 export function observedUsageValue(
     usage: CommunityEndpointUsage | undefined,
     billableUsage: Usage | undefined,
-    field: (typeof COMMUNITY_ENDPOINT_PRICE_FIELDS)[number],
+    field: CommunityEndpointPriceField,
 ): number | null {
     return hasObservedPriceField(usage, field)
         ? (billableUsage?.[field.usageType] ?? 0)
@@ -259,7 +264,7 @@ export function nextFormState(
     if (key === "modality") {
         return {
             ...current,
-            modality: value === "image" ? "image" : "text",
+            modality: normalizeCommunityEndpointModality(value),
         };
     }
     const next = { ...current, [key]: value };

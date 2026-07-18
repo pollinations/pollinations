@@ -49,6 +49,8 @@ const SECTION_ORDER: SectionType[] = [
     "text",
     "community-text",
     "community-image",
+    "community-audio",
+    "community-embedding",
     "embedding",
 ];
 
@@ -62,8 +64,14 @@ const SEARCH_LABELS: Record<SectionType, string> = {
     text: "text",
     "community-text": "community text",
     "community-image": "community image",
+    "community-audio": "community audio",
+    "community-embedding": "community embedding",
     embedding: "embedding",
 };
+
+function isCommunitySection(section: SectionType): boolean {
+    return section.startsWith("community-");
+}
 
 const DEFAULT_SORT_DIRECTIONS: Record<ModelSortKey, ModelSortDirection> = {
     name: "asc",
@@ -93,6 +101,8 @@ function categorizeModels(
         text: [],
         "community-text": [],
         "community-image": [],
+        "community-audio": [],
+        "community-embedding": [],
         embedding: [],
     };
 
@@ -228,16 +238,14 @@ export const Models: FC<ModelsProps> = ({
                                 active={activeTab === section}
                                 onClick={() => setActiveTab(section)}
                                 ariaLabel={
-                                    section === "community-text" ||
-                                    section === "community-image"
+                                    isCommunitySection(section)
                                         ? `${sectionLabels[section]} alpha models`
                                         : undefined
                                 }
                             >
                                 <span className="inline-flex items-center gap-1.5">
                                     {sectionLabels[section]}
-                                    {(section === "community-text" ||
-                                        section === "community-image") && (
+                                    {isCommunitySection(section) && (
                                         <Chip intent="alpha" size="sm">
                                             Alpha
                                         </Chip>
@@ -283,6 +291,12 @@ export const Models: FC<ModelsProps> = ({
                             }
                             communityImageModels={
                                 sectionModels["community-image"]
+                            }
+                            communityAudioModels={
+                                sectionModels["community-audio"]
+                            }
+                            communityEmbeddingModels={
+                                sectionModels["community-embedding"]
                             }
                             embeddingModels={sectionModels.embedding}
                             activeTab={activeTab}

@@ -10,7 +10,9 @@ export type ModelCategory =
 export type ModelDisplayCategory =
     | ModelCategory
     | "community-text"
-    | "community-image";
+    | "community-image"
+    | "community-audio"
+    | "community-embedding";
 
 export type ModelCapability =
     | "tool_calling"

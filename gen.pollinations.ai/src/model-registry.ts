@@ -12,8 +12,7 @@ import {
 import type { EventType } from "@shared/schemas/generation-event.ts";
 import {
     type CommunityModelRegistryEntry,
-    communityImageSupportedEndpoints,
-    communityTextSupportedEndpoints,
+    communitySupportedEndpoints,
     getCommunityModelRegistryEntries,
 } from "./community-models.ts";
 
@@ -97,10 +96,9 @@ function communityEntryToGenerationEntry(
         id: entry.id,
         aliases: entry.aliases,
         eventType,
-        supportedEndpoints:
-            eventType === "generate.image"
-                ? communityImageSupportedEndpoints()
-                : communityTextSupportedEndpoints(),
+        supportedEndpoints: communitySupportedEndpoints(
+            entry.communityEndpoint.modality,
+        ),
         definition: entry.definition,
         info: entry.info,
         communityEndpoint: entry.communityEndpoint,

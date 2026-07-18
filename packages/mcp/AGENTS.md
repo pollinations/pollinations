@@ -15,14 +15,13 @@ packages/mcp/
   src/
     index.js                     # server entrypoint and tool registration
     services/
-      imageService.js            # image/video generation, media analysis, registry discovery
-      textService.js             # chat completion and registry discovery
-      audioService.js            # speech, transcription, and voice discovery
+      imageService.js            # image/video generation
+      textService.js             # chat completion and model discovery
+      audioService.js            # audio response and speech generation
       accountService.js          # balance and usage via /account/*
     utils/
       authUtils.js               # immutable environment authentication
       coreUtils.js               # gateway fetch and MCP content helpers
-      models.js                  # direct registry fetchers
 ```
 
 ## Stdio Discipline
@@ -43,9 +42,7 @@ The server speaks JSON-RPC over stdio. `console.log` in imported server modules 
 
 Do not add model or voice enums, registry preflight checks, response summaries, compatibility aliases, or convenience wrappers.
 
-## Media Chat
-
-`describeImage`, `analyzeVideo`, and `transcribeAudio` use `chatWithMedia` from `coreUtils.js`. Keep their shared request path there.
+Use `chatCompletion` directly for image, video, and audio analysis instead of adding fixed-prompt convenience tools.
 
 ## Testing
 

@@ -25,18 +25,17 @@ The key is read only from `POLLINATIONS_API_KEY`. There are no authentication to
 | `generateImage` | Generate an image and return base64 data |
 | `generateVideo` | Generate a video and return base64 data |
 | `generateVideoUrl` | Generate a video and return its URL |
-| `describeImage` | Analyze an image URL |
-| `analyzeVideo` | Analyze a video URL |
-| `listImageModels` | Return Gen's live image and video registry |
+
+Video generation requires an explicit video model so Gen cannot fall back to its default image model.
 
 ### Text
 
 | Tool | Description |
 | --- | --- |
 | `chatCompletion` | Proxy an OpenAI-compatible chat completion and return raw Gen JSON |
-| `listTextModels` | Return Gen's live text registry |
+| `listModels` | Return Gen's live registry for all model types |
 
-Use `chatCompletion` for simple prompts, multi-turn chat, reasoning, tool calling, and search-capable models.
+Use `chatCompletion` for simple prompts, multi-turn chat, reasoning, tool calling, search, and image/video/audio analysis.
 
 ### Audio
 
@@ -44,15 +43,13 @@ Use `chatCompletion` for simple prompts, multi-turn chat, reasoning, tool callin
 | --- | --- |
 | `respondAudio` | Generate a spoken response to a prompt |
 | `sayText` | Speak text verbatim |
-| `transcribeAudio` | Transcribe audio from a URL |
-| `listAudioVoices` | Return Gen's live audio and voice registry |
 
 ### Account
 
 | Tool | Description |
 | --- | --- |
-| `getBalance` | Get Pollen balance (`account:usage` permission required) |
-| `getUsage` | Get per-request or daily usage (`account:usage` permission required) |
+| `getBalance` | Get the key budget or, with `account:usage`, account balances |
+| `getUsage` | Get usage for the authenticated key |
 
 The model registry responses include the current names, aliases, capabilities, and pricing supplied by Gen.
 
@@ -79,7 +76,7 @@ npm test
 POLLINATIONS_API_KEY=sk_… npm test
 ```
 
-The smoke test always lists tools and text models. With a key, it also exercises chat completion, image URL generation, and balance.
+The smoke test always lists tools and models. With a key, it also exercises chat completion, image URL generation, and balance.
 
 ## Requirements and Links
 

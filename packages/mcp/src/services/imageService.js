@@ -3,269 +3,53 @@ import { requireApiKey } from "../utils/authUtils.js";
 import {
     arrayBufferToBase64,
     buildUrl,
-    chatWithMedia,
     createImageContent,
     createMCPResponse,
     createTextContent,
     fetchBinaryWithAuth,
 } from "../utils/coreUtils.js";
-import { getImageModels } from "../utils/models.js";
 
-/**
- * Build an image request's encoded prompt and query params.
- * Shared by generateImage and generateImageUrl.
- *
- * @param {Object} params - Raw tool params
- * @returns {{encodedPrompt: string, queryParams: Object}}
- */
-function prepareImageRequest(params) {
-    const {
-        prompt,
-        model,
-        width,
-        height,
-        seed,
-        guidance_scale,
-        quality,
-        image,
-        transparent,
-        safe,
-    } = params;
-
-    if (!prompt || typeof prompt !== "string") {
-        throw new Error("Prompt is required and must be a string");
-    }
-
-    const encodedPrompt = encodeURIComponent(prompt);
-    const queryParams = {
-        model,
-        width,
-        height,
-        seed,
-        guidance_scale,
-        quality,
-        image,
-        transparent,
-        safe,
-    };
-
-    return { encodedPrompt, queryParams };
-}
-
-/**
- * Build a video request's encoded prompt and query params.
- * Shared by generateVideo and generateVideoUrl.
- *
- * @param {Object} params - Raw tool params
- * @returns {{encodedPrompt: string, queryParams: Object}}
- */
-function prepareVideoRequest(params) {
-    const { prompt, model, duration, aspectRatio, audio, image, seed, safe } =
-        params;
-
-    if (!prompt || typeof prompt !== "string") {
-        throw new Error("Prompt is required and must be a string");
-    }
-
-    const encodedPrompt = encodeURIComponent(prompt);
-    const queryParams = {
-        model,
-        duration,
-        aspectRatio,
-        audio,
-        image,
-        seed,
-        safe,
-    };
-
-    return { encodedPrompt, queryParams };
+function mediaUrl({ prompt, ...params }) {
+    return buildUrl(`/image/${encodeURIComponent(prompt)}`, params);
 }
 
 async function generateImageUrl(params) {
     requireApiKey();
-
-    const { prompt, model, width, height, seed, quality } = params;
-    const { encodedPrompt, queryParams } = prepareImageRequest(params);
-
-    const url = buildUrl(`/image/${encodedPrompt}`, queryParams);
+    const url = mediaUrl(params);
     await fetchBinaryWithAuth(url, { timeoutMs: 300000 });
-
-    return createMCPResponse([
-        createTextContent(
-            {
-                imageUrl: url,
-                prompt,
-                model,
-                width,
-                height,
-                seed,
-                quality,
-            },
-            true,
-        ),
-    ]);
+    return createMCPResponse([createTextContent(url)]);
 }
 
 async function generateImage(params) {
     requireApiKey();
-
-    const { prompt, model, width, height, seed, quality, transparent } = params;
-    const { encodedPrompt, queryParams } = prepareImageRequest(params);
-
-    const url = buildUrl(`/image/${encodedPrompt}`, queryParams);
-
+    const url = mediaUrl(params);
     const { buffer, contentType } = await fetchBinaryWithAuth(url);
-    const base64Data = arrayBufferToBase64(buffer);
-
-    const metadata = {
-        prompt,
-        model,
-        width,
-        height,
-        seed,
-        quality,
-        transparent,
-    };
-
     return createMCPResponse([
-        createImageContent(base64Data, contentType),
-        createTextContent(
-            `Generated image from prompt: "${prompt}"\n\nMetadata: ${JSON.stringify(metadata, null, 2)}`,
-        ),
+        createImageContent(arrayBufferToBase64(buffer), contentType),
     ]);
 }
 
 async function generateVideo(params) {
     requireApiKey();
-
-    const { prompt, model, duration, aspectRatio, audio, image, seed } = params;
-    const { encodedPrompt, queryParams } = prepareVideoRequest(params);
-
-    const url = buildUrl(`/image/${encodedPrompt}`, queryParams);
-
+    const url = mediaUrl(params);
     const { buffer, contentType } = await fetchBinaryWithAuth(url);
-    const base64Data = arrayBufferToBase64(buffer);
-
-    const metadata = {
-        prompt,
-        model,
-        duration,
-        aspectRatio,
-        audio,
-        hasReferenceImage: !!image,
-        seed,
-    };
-
     return createMCPResponse([
         {
             type: "resource",
             resource: {
                 uri: `pollinations://video/${Date.now()}`,
                 mimeType: contentType || "video/mp4",
-                blob: base64Data,
+                blob: arrayBufferToBase64(buffer),
             },
         },
-        createTextContent(
-            `Generated video from prompt: "${prompt}"\n\nMetadata: ${JSON.stringify(metadata, null, 2)}\n\nVideo returned as base64-encoded resource (decode and save as .mp4)`,
-        ),
     ]);
 }
 
 async function generateVideoUrl(params) {
     requireApiKey();
-
-    const { prompt, model, duration, aspectRatio, audio, image, seed } = params;
-    const { encodedPrompt, queryParams } = prepareVideoRequest(params);
-
-    const url = buildUrl(`/image/${encodedPrompt}`, queryParams);
+    const url = mediaUrl(params);
     await fetchBinaryWithAuth(url, { method: "HEAD", timeoutMs: 300000 });
-
-    return createMCPResponse([
-        createTextContent(
-            {
-                videoUrl: url,
-                prompt,
-                model,
-                duration,
-                aspectRatio,
-                audio,
-                hasReferenceImage: !!image,
-                seed,
-            },
-            true,
-        ),
-    ]);
-}
-
-async function describeImage(params) {
-    requireApiKey();
-
-    const {
-        imageUrl,
-        prompt = "Describe this image in detail.",
-        model,
-    } = params;
-
-    if (!imageUrl || typeof imageUrl !== "string") {
-        throw new Error("imageUrl is required and must be a string");
-    }
-
-    const { content, model: respondedModel } = await chatWithMedia({
-        model,
-        prompt,
-        mediaType: "image_url",
-        mediaUrl: imageUrl,
-    });
-
-    return createMCPResponse([
-        createTextContent(
-            {
-                description: content,
-                imageUrl,
-                model: respondedModel,
-                prompt,
-            },
-            true,
-        ),
-    ]);
-}
-
-async function analyzeVideo(params) {
-    requireApiKey();
-
-    const {
-        videoUrl,
-        prompt = "Describe what happens in this video in detail.",
-        model,
-    } = params;
-
-    if (!videoUrl || typeof videoUrl !== "string") {
-        throw new Error("videoUrl is required and must be a string");
-    }
-
-    const { content, model: respondedModel } = await chatWithMedia({
-        model,
-        prompt,
-        mediaType: "video_url",
-        mediaUrl: videoUrl,
-    });
-
-    return createMCPResponse([
-        createTextContent(
-            {
-                analysis: content,
-                videoUrl,
-                model: respondedModel,
-                prompt,
-            },
-            true,
-        ),
-    ]);
-}
-
-async function listImageModels(_params) {
-    const models = await getImageModels();
-    return createMCPResponse([createTextContent(models, true)]);
+    return createMCPResponse([createTextContent(url)]);
 }
 
 const imageParamsSchema = {
@@ -275,51 +59,32 @@ const imageParamsSchema = {
     model: z
         .string()
         .optional()
-        .describe(
-            "Image model or alias. Use listImageModels for the live list.",
-        ),
+        .describe("Image model or alias. Use listModels for the live list."),
     width: z
         .number()
         .int()
-        .min(64)
-        .max(4096)
         .optional()
-        .describe(
-            "Image width in pixels (default: 1024). Common sizes: 512, 768, 1024, 1280, 1536, 2048",
-        ),
+        .describe("Image width in pixels; support and defaults vary by model"),
     height: z
         .number()
         .int()
-        .min(64)
-        .max(4096)
         .optional()
-        .describe(
-            "Image height in pixels (default: 1024). Common sizes: 512, 768, 1024, 1280, 1536, 2048",
-        ),
+        .describe("Image height in pixels; support and defaults vary by model"),
     seed: z
         .number()
         .int()
-        .min(0)
         .optional()
-        .describe(
-            "Random seed for reproducible results (default: 42). Use same seed + prompt for identical images",
-        ),
+        .describe("Random seed for reproducible results; use -1 for random"),
     guidance_scale: z
         .number()
-        .min(1)
-        .max(20)
         .optional()
-        .describe(
-            "How closely to follow the prompt (1-20). Higher = more literal, lower = more creative. Default varies by model",
-        ),
+        .describe("Prompt guidance scale; support and range vary by model"),
     quality: z
-        .enum(["low", "medium", "high", "hd"])
-        .optional()
-        .describe(
-            "Image quality level (default: 'medium'). 'hd' for maximum quality, 'low' for faster generation",
-        ),
-    image: z
         .string()
+        .optional()
+        .describe("Image quality; supported values vary by model"),
+    image: z
+        .union([z.string(), z.array(z.string())])
         .optional()
         .describe(
             "Reference image URL(s) for image-to-image generation. Supported inputs depend on model.",
@@ -331,10 +96,10 @@ const imageParamsSchema = {
             "Generate with transparent background (default: false). Useful for logos, stickers, overlays",
         ),
     safe: z
-        .boolean()
+        .union([z.boolean(), z.string()])
         .optional()
         .describe(
-            "Enable safety content filters (default: false). Blocks NSFW content",
+            "Safety mode: boolean or comma-separated feature names accepted by Gen",
         ),
 };
 
@@ -342,12 +107,7 @@ const videoParamsSchema = {
     prompt: z
         .string()
         .describe("Text description of the video to generate (required)"),
-    model: z
-        .string()
-        .optional()
-        .describe(
-            "Video model or alias. Use listImageModels for the live list.",
-        ),
+    model: z.string().describe("Video model or alias. Use listModels."),
     duration: z
         .number()
         .int()
@@ -365,10 +125,10 @@ const videoParamsSchema = {
         .boolean()
         .optional()
         .describe(
-            "Enable audio generation where supported. Check videoCapabilities from listImageModels for per-model support.",
+            "Enable audio generation where supported. Check listModels for model capabilities.",
         ),
     image: z
-        .string()
+        .union([z.string(), z.array(z.string())])
         .optional()
         .describe(
             "Reference image URL(s) for image-to-video generation. " +
@@ -377,13 +137,12 @@ const videoParamsSchema = {
     seed: z
         .number()
         .int()
-        .min(0)
         .optional()
-        .describe("Random seed for reproducible results"),
+        .describe("Random seed for reproducible results; use -1 for random"),
     safe: z
-        .boolean()
+        .union([z.boolean(), z.string()])
         .optional()
-        .describe("Enable safety content filters (default: false)"),
+        .describe("Safety mode accepted by Gen"),
 };
 
 export const imageTools = [
@@ -411,58 +170,5 @@ export const imageTools = [
         "Generate a video and return its shareable URL.",
         videoParamsSchema,
         generateVideoUrl,
-    ],
-    [
-        "describeImage",
-        "Analyze and describe an image using vision-capable AI models. " +
-            "Pass an image URL and optionally a custom prompt. " +
-            "Great for image captioning, content analysis, OCR, and visual Q&A.",
-        {
-            imageUrl: z
-                .string()
-                .describe("URL of the image to analyze (required)"),
-            prompt: z
-                .string()
-                .optional()
-                .describe(
-                    "What to analyze about the image (default: 'Describe this image in detail.'). " +
-                        "Examples: 'What text is in this image?', 'What emotions are shown?', 'List all objects'",
-                ),
-            model: z
-                .string()
-                .optional()
-                .describe("Vision-capable model or alias"),
-        },
-        describeImage,
-    ],
-    [
-        "analyzeVideo",
-        "Analyze a YouTube URL or direct video URL.",
-        {
-            videoUrl: z
-                .string()
-                .describe(
-                    "URL of the video to analyze. Supports YouTube URLs (youtube.com, youtu.be), " +
-                        "direct video URLs (https://...), and Google Cloud Storage (gs://...)",
-                ),
-            prompt: z
-                .string()
-                .optional()
-                .describe(
-                    "What to analyze about the video (default: 'Describe what happens in this video'). " +
-                        "Examples: 'Summarize the key points', 'What is being discussed?', 'List all people shown'",
-                ),
-            model: z
-                .string()
-                .optional()
-                .describe("Video-capable model or alias"),
-        },
-        analyzeVideo,
-    ],
-    [
-        "listImageModels",
-        "Return the live image and video model registry from Gen.",
-        {},
-        listImageModels,
     ],
 ];

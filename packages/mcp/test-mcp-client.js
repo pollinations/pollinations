@@ -54,30 +54,35 @@ await client.connect(transport);
 await step("listTools", async () => {
     const { tools } = await client.listTools();
     const expected = [
-        "analyzeVideo",
         "chatCompletion",
-        "describeImage",
         "generateImage",
         "generateImageUrl",
         "generateVideo",
         "generateVideoUrl",
         "getBalance",
         "getUsage",
-        "listAudioVoices",
-        "listImageModels",
-        "listTextModels",
+        "listModels",
         "respondAudio",
         "sayText",
-        "transcribeAudio",
     ];
     const actual = tools.map((tool) => tool.name).sort();
     if (JSON.stringify(actual) !== JSON.stringify(expected)) {
         throw new Error(`unexpected tools: ${actual.join(", ")}`);
     }
+    const byName = Object.fromEntries(tools.map((tool) => [tool.name, tool]));
+    const videoRequired = byName.generateVideo.inputSchema.required || [];
+    if (!videoRequired.includes("model")) {
+        throw new Error("generateVideo.model must be required");
+    }
+    if (byName.chatCompletion.inputSchema.additionalProperties === false) {
+        throw new Error(
+            "chatCompletion must pass unknown Gen parameters through",
+        );
+    }
     return `${tools.length} tools`;
 });
 
-await step("listTextModels (unauthenticated)", () => call("listTextModels"));
+await step("listModels (unauthenticated)", () => call("listModels"));
 
 if (!KEY) {
     console.log(

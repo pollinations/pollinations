@@ -5,7 +5,6 @@
 
 import { getVideoModelIds } from "@shared/registry/image.ts";
 import debug from "debug";
-import { callLtx2API } from "./models/ltx2VideoModel.ts";
 import { callNovaReelAPI } from "./models/novaReelModel.ts";
 import {
     callPrunaVideo720API,
@@ -64,9 +63,6 @@ export async function createAndReturnVideo(
             break;
         case "wan-pro-1080p":
             result = await callWanPro1080pAPI(prompt, safeParams);
-            break;
-        case "ltx-2":
-            result = await callLtx2API(prompt, safeParams);
             break;
         case "p-video-720p":
             result = await callPrunaVideo720API(prompt, safeParams);

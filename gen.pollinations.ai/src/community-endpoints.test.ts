@@ -1528,6 +1528,15 @@ fixtureTest(
                 return Response.json({
                     created: 1,
                     data: [{ b64_json: TEST_PNG_BASE64 }],
+                    usage: {
+                        input_tokens: 12,
+                        output_tokens: 1056,
+                        total_tokens: 1068,
+                        input_tokens_details: {
+                            text_tokens: 12,
+                            image_tokens: 0,
+                        },
+                    },
                 });
             }
 
@@ -1555,8 +1564,8 @@ fixtureTest(
                     baseUrl: "https://api.example.com/v1/images/generations",
                     upstreamModel: "gpt-image-1",
                     bearerToken: "Bearer sk_image_upstream",
-                    promptTextPrice: 99,
-                    completionImagePrice: 0.02,
+                    promptTextPrice: 0.000002,
+                    completionImagePrice: 0.00003,
                 }),
             }),
         );
@@ -1576,8 +1585,8 @@ fixtureTest(
             modality: "image",
             baseUrl: "https://api.example.com/v1/images/generations",
             upstreamModel: "gpt-image-1",
-            promptTextPrice: 0,
-            completionImagePrice: 0.02,
+            promptTextPrice: 0.000002,
+            completionImagePrice: 0.00003,
         });
 
         const testResponse = await fetchEnterApi(
@@ -1599,8 +1608,15 @@ fixtureTest(
         expect(testResponse.status).toBe(200);
         await expect(testResponse.json()).resolves.toMatchObject({
             message: "Endpoint responded with image data",
-            usage: { images: 1 },
-            billableUsage: { completionImageTokens: 1 },
+            usage: {
+                input_tokens: 12,
+                output_tokens: 1056,
+                total_tokens: 1068,
+            },
+            billableUsage: {
+                promptTextTokens: 12,
+                completionImageTokens: 1056,
+            },
         });
 
         const simpleImageResponse = await SELF.fetch(
@@ -1623,8 +1639,11 @@ fixtureTest(
             registered.modelId,
         );
         expect(
+            simpleImageResponse.headers.get("x-usage-prompt-text-tokens"),
+        ).toBe("12");
+        expect(
             simpleImageResponse.headers.get("x-usage-completion-image-tokens"),
-        ).toBe("1");
+        ).toBe("1056");
         expect(
             Array.from(new Uint8Array(await simpleImageResponse.arrayBuffer())),
         ).toEqual(TEST_PNG_BYTES);
@@ -1648,6 +1667,15 @@ fixtureTest(
         expect(openaiImageResponse.status).toBe(200);
         await expect(openaiImageResponse.json()).resolves.toMatchObject({
             data: [{ b64_json: TEST_PNG_BASE64 }],
+            usage: {
+                input_tokens: 12,
+                output_tokens: 1056,
+                total_tokens: 1068,
+                input_tokens_details: {
+                    text_tokens: 12,
+                    image_tokens: 0,
+                },
+            },
         });
 
         const imageModelsResponse = await SELF.fetch(
@@ -1672,6 +1700,7 @@ fixtureTest(
             name: string;
             category?: string;
             community?: boolean;
+            flat_rate?: boolean;
             pricing?: Record<string, string>;
         }[];
         const textModels = (await textModelsResponse.json()) as {
@@ -1693,9 +1722,11 @@ fixtureTest(
             name: registered.modelId,
             category: "image",
             community: true,
+            flat_rate: false,
             pricing: {
                 currency: "pollen",
-                completionImageTokens: "0.02",
+                promptTextTokens: "0.000002",
+                completionImageTokens: "0.00003",
             },
         });
         expect(

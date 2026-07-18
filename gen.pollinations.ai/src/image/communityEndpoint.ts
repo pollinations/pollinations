@@ -3,6 +3,10 @@ import {
     communityImageGenerationsUrl,
     normalizeCommunityEndpointBearerToken,
 } from "@shared/community-endpoints.ts";
+import {
+    getOpenAIImageUsage,
+    openaiImageUsageToUsage,
+} from "@shared/registry/usage-headers.ts";
 import { decryptSecret } from "@shared/secret-encryption.ts";
 import type { ImageGenerationResult } from "./createAndReturnImages.ts";
 import { HttpError } from "./httpError.ts";
@@ -45,13 +49,27 @@ export async function callCommunityImageEndpoint(
     });
 
     const buffer = base64ToBuffer(firstImageBase64(body));
+    const openaiUsage = getOpenAIImageUsage(body);
+    if (!openaiUsage) {
+        throw new HttpError(
+            "Community image endpoint did not return OpenAI image token usage",
+            502,
+        );
+    }
+    const usage = openaiImageUsageToUsage(openaiUsage);
+    if ((usage.completionImageTokens ?? 0) <= 0) {
+        throw new HttpError(
+            "Community image endpoint did not return billable image output tokens",
+            502,
+        );
+    }
 
     return {
         buffer,
         isMature: false,
         isChild: false,
         trackingData: {
-            usage: { completionImageTokens: 1 },
+            usage,
         },
     };
 }

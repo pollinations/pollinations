@@ -228,13 +228,10 @@ function communityPriceGroups(
         const kind = communityPriceKind(field.usageType);
         groups[groupKey].push({
             badge: {
-                price: storedPriceToFormValue(field.key, price),
+                price: storedPriceToFormValue(price),
                 kind,
                 subKinds: [kind],
-                unit:
-                    field.usageType === "completionImageTokens"
-                        ? "request"
-                        : "token",
+                unit: "token",
             },
         });
     }
@@ -261,6 +258,6 @@ function communityPriceKind(usageType: string): PriceKind {
     if (usageType === "completionReasoningTokens") return "reasoning";
     if (usageType === "promptAudioTokens") return "audioIn";
     if (usageType === "completionAudioTokens") return "audioOut";
-    if (usageType === "promptImageTokens") return "image";
+    if (usageType.includes("Image")) return "image";
     return "text";
 }

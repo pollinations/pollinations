@@ -108,6 +108,15 @@ describe("community endpoint OpenAI service", () => {
             });
             return Response.json({
                 data: [{ b64_json: "iVBORw0KGgo=" }],
+                usage: {
+                    input_tokens: 12,
+                    output_tokens: 1056,
+                    total_tokens: 1068,
+                    input_tokens_details: {
+                        text_tokens: 12,
+                        image_tokens: 0,
+                    },
+                },
             });
         });
         vi.stubGlobal("fetch", fetchMock);
@@ -119,11 +128,42 @@ describe("community endpoint OpenAI service", () => {
                 model: "gpt-image-1",
             }),
         ).resolves.toEqual({
-            usage: { images: 1 },
-            billableUsage: { completionImageTokens: 1 },
+            usage: {
+                input_tokens: 12,
+                output_tokens: 1056,
+                total_tokens: 1068,
+                input_tokens_details: {
+                    text_tokens: 12,
+                    image_tokens: 0,
+                },
+            },
+            billableUsage: {
+                promptTextTokens: 12,
+                promptImageTokens: 0,
+                completionImageTokens: 1056,
+            },
         });
 
         expect(fetchMock).toHaveBeenCalledTimes(1);
+    });
+
+    it("rejects image endpoints without OpenAI token usage", async () => {
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async () =>
+                Response.json({
+                    data: [{ b64_json: "iVBORw0KGgo=" }],
+                }),
+            ),
+        );
+
+        await expect(
+            testCommunityImageEndpoint({
+                baseUrl: "https://api.example.com/v1",
+                bearerToken: "sk_saved_token",
+                model: "gpt-image-1",
+            }),
+        ).rejects.toThrow("Endpoint did not return OpenAI image token usage");
     });
 
     it("clarifies upstream 401s after sending Authorization", async () => {

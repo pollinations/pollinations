@@ -1,6 +1,5 @@
 import {
     COMMUNITY_ENDPOINT_PRICE_FIELDS,
-    COMMUNITY_ENDPOINT_PRICE_FIELDS_BY_KEY,
     type CommunityEndpointModality,
     type CommunityEndpointPriceKey,
     type CommunityEndpointPrices,
@@ -102,28 +101,16 @@ export function pricePerMillionToPerToken(value: string): number {
     return Number(trimmed) / TOKENS_PER_MILLION;
 }
 
-export function storedPriceToFormValue(
-    key: CommunityEndpointPriceKey,
-    value: number,
-): string {
+export function storedPriceToFormValue(value: number): string {
     if (value <= 0) return "";
-    const field = COMMUNITY_ENDPOINT_PRICE_FIELDS_BY_KEY[key];
-    return field.usageType === "completionImageTokens"
-        ? String(Number(value.toPrecision(15)))
-        : pricePerTokenToPerMillion(value);
+    return pricePerTokenToPerMillion(value);
 }
 
-export function formPriceToStoredPrice(
-    key: CommunityEndpointPriceKey,
-    value: string,
-): number {
+export function formPriceToStoredPrice(value: string): number {
     const trimmed = value.trim();
     if (!trimmed) return 0;
     if (!isValidPriceInput(trimmed)) return Number.NaN;
-    const field = COMMUNITY_ENDPOINT_PRICE_FIELDS_BY_KEY[key];
-    return field.usageType === "completionImageTokens"
-        ? Number(trimmed)
-        : pricePerMillionToPerToken(trimmed);
+    return pricePerMillionToPerToken(trimmed);
 }
 
 export function isValidPriceInput(value: string): boolean {
@@ -149,7 +136,7 @@ export function endpointToForm(endpoint: CommunityEndpoint): EndpointFormState {
         ...(Object.fromEntries(
             COMMUNITY_ENDPOINT_PRICE_FIELDS.map((field) => [
                 field.key,
-                storedPriceToFormValue(field.key, endpoint[field.key]),
+                storedPriceToFormValue(endpoint[field.key]),
             ]),
         ) as EndpointFormPrices),
     };
@@ -168,16 +155,11 @@ function formPricesToPayload(
         COMMUNITY_ENDPOINT_PRICE_FIELDS.map((field) => {
             if (!allowed.has(field.key)) return [field.key, 0];
             if (!isValidPriceInput(form[field.key])) {
-                const unit =
-                    modality === "image" ? "per image" : "per 1M tokens";
                 throw new Error(
-                    `Prices must be 0 (free) or at least ${MIN_COMMUNITY_PRICE_PER_MILLION_TOKENS} ${unit}, using a dot decimal`,
+                    `Prices must be 0 (free) or at least ${MIN_COMMUNITY_PRICE_PER_MILLION_TOKENS} per 1M tokens, using a dot decimal`,
                 );
             }
-            return [
-                field.key,
-                formPriceToStoredPrice(field.key, form[field.key]),
-            ];
+            return [field.key, formPriceToStoredPrice(form[field.key])];
         }),
     ) as CommunityEndpointPrices;
 }

@@ -26,7 +26,9 @@ import {
     observedUsageValue,
 } from "./types.ts";
 
-export type PriceField = (typeof COMMUNITY_ENDPOINT_PRICE_FIELDS)[number];
+export type PriceField = ReturnType<
+    typeof communityEndpointPriceFieldsForModality
+>[number];
 export type PriceFieldKey = PriceField["key"];
 type PriceColumn = "input" | "output";
 type PriceFormRow = {
@@ -55,7 +57,7 @@ export function PriceGroups({
     visiblePriceKeys: Set<PriceFieldKey>;
     onChange: (key: keyof EndpointFormState, value: string) => void;
 }) {
-    const rows = priceFormRows(visiblePriceKeys);
+    const rows = priceFormRows(visiblePriceKeys, modality);
 
     if (rows.length === 0) return null;
 
@@ -78,9 +80,7 @@ export function PriceGroups({
                                 align="right"
                                 className="normal-case tracking-normal"
                             >
-                                {modality === "image"
-                                    ? "Output / image"
-                                    : "Output / 1M"}
+                                Output / 1M
                             </TableHeaderCell>
                         </TableRow>
                     </TableHead>
@@ -193,7 +193,7 @@ function PriceInputCell({
                     value={value}
                     placeholder="0"
                     autoComplete="off"
-                    aria-label={`${field.label} price ${priceUnitLabel(field)}`}
+                    aria-label={`${field.label} price per 1M tokens`}
                     error={hasError}
                     className="h-9 w-32 max-w-full font-mono tabular-nums text-right"
                     onChange={(event) =>
@@ -203,10 +203,7 @@ function PriceInputCell({
                 {hasError && (
                     <p className="mt-1 text-right text-xs text-intent-danger-text">
                         0 (free) or at least{" "}
-                        {MIN_COMMUNITY_PRICE_PER_MILLION_TOKENS}{" "}
-                        {field.usageType === "completionImageTokens"
-                            ? "per image"
-                            : "per 1M"}
+                        {MIN_COMMUNITY_PRICE_PER_MILLION_TOKENS} per 1M
                     </p>
                 )}
             </div>
@@ -228,9 +225,12 @@ function priceCellState(
     };
 }
 
-function priceFormRows(visiblePriceKeys: Set<PriceFieldKey>): PriceFormRow[] {
+function priceFormRows(
+    visiblePriceKeys: Set<PriceFieldKey>,
+    modality: CommunityEndpointModality,
+): PriceFormRow[] {
     const rows = new Map<string, PriceFormRow>();
-    for (const field of COMMUNITY_ENDPOINT_PRICE_FIELDS) {
+    for (const field of communityEndpointPriceFieldsForModality(modality)) {
         if (!visiblePriceKeys.has(field.key)) continue;
         const column = priceColumn(field);
         if (!column) continue;
@@ -275,12 +275,6 @@ function shortPriceLabel(label: string): string {
     return label.replace(/^Prompt /, "").replace(/^Completion /, "");
 }
 
-function priceUnitLabel(field: PriceField): string {
-    return field.usageType === "completionImageTokens"
-        ? "per generated image"
-        : "per 1M tokens";
-}
-
 export function savedEndpointPriceKeys(
     endpoint: CommunityEndpoint | undefined,
 ): Set<PriceFieldKey> {
@@ -300,9 +294,12 @@ export const BASE_TEXT_PRICE_KEYS: PriceFieldKey[] = [
     "completionTextPrice",
 ];
 
-export function returnedPriceFields(testState: ActionState): PriceField[] {
+export function returnedPriceFields(
+    testState: ActionState,
+    modality: CommunityEndpointModality,
+): PriceField[] {
     if (testState.status !== "success") return [];
-    return COMMUNITY_ENDPOINT_PRICE_FIELDS.filter((field) =>
+    return communityEndpointPriceFieldsForModality(modality).filter((field) =>
         hasObservedPriceField(testState.usage, field),
     );
 }

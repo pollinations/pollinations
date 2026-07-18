@@ -37,13 +37,8 @@ import { hasDirectAccountPermission } from "./account-permissions.ts";
 const ModalitySchema = z.enum(COMMUNITY_ENDPOINT_MODALITIES);
 const UpdatePriceFieldsSchema = Object.fromEntries(
     COMMUNITY_ENDPOINT_PRICE_FIELDS.map((field) => {
-        const isImage = field.usageType === "completionImageTokens";
-        const minimum = isImage
-            ? MIN_COMMUNITY_PRICE_PER_MILLION_TOKENS
-            : MIN_COMMUNITY_PRICE_PER_TOKEN;
-        const unit = isImage
-            ? "per image"
-            : `per token (${MIN_COMMUNITY_PRICE_PER_MILLION_TOKENS} per 1M tokens)`;
+        const minimum = MIN_COMMUNITY_PRICE_PER_TOKEN;
+        const unit = `per token (${MIN_COMMUNITY_PRICE_PER_MILLION_TOKENS} per 1M tokens)`;
         return [
             field.key,
             z

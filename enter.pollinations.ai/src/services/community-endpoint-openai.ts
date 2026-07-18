@@ -5,7 +5,11 @@ import {
     normalizeCommunityEndpointBearerToken,
 } from "@shared/community-endpoints.ts";
 import type { Usage } from "@shared/registry/registry.ts";
-import { openaiUsageToUsage } from "@shared/registry/usage-headers.ts";
+import {
+    getOpenAIImageUsage,
+    openaiImageUsageToUsage,
+    openaiUsageToUsage,
+} from "@shared/registry/usage-headers.ts";
 
 type EndpointAuth = {
     baseUrl: string;
@@ -198,8 +202,18 @@ export async function testCommunityImageEndpoint({
         throw new Error("Endpoint did not return base64 OpenAI image data");
     }
 
+    const usage = getOpenAIImageUsage(body);
+    if (!usage) {
+        throw new Error("Endpoint did not return OpenAI image token usage");
+    }
+
+    const billableUsage = openaiImageUsageToUsage(usage);
+    if ((billableUsage.completionImageTokens ?? 0) <= 0) {
+        throw new Error("Endpoint did not return billable image output tokens");
+    }
+
     return {
-        usage: { images: 1 },
-        billableUsage: { completionImageTokens: 1 },
+        usage,
+        billableUsage,
     };
 }

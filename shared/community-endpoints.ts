@@ -3,6 +3,7 @@ import type { ModelDefinition, PriceDefinition } from "./registry/registry.ts";
 import {
     OPENAI_CHAT_USAGE_PATHS,
     OPENAI_CHAT_USAGE_TYPES,
+    OPENAI_IMAGE_USAGE_PATHS,
     type OpenAIChatUsageType,
 } from "./registry/usage-headers.ts";
 
@@ -57,11 +58,17 @@ const COMMUNITY_TEXT_PRICE_FIELDS = OPENAI_CHAT_USAGE_TYPES.map(
     rawUsagePaths: readonly string[];
 }[];
 
+const COMMUNITY_IMAGE_PROMPT_TEXT_PRICE_FIELD = {
+    ...COMMUNITY_PRICE_FIELD_BY_USAGE_TYPE.promptTextTokens,
+    usageType: "promptTextTokens",
+    rawUsagePaths: OPENAI_IMAGE_USAGE_PATHS.promptTextTokens,
+} as const;
+
 const COMMUNITY_IMAGE_PRICE_FIELD = {
     key: "completionImagePrice",
     usageType: "completionImageTokens",
-    label: "Generated image",
-    rawUsagePaths: ["images"],
+    label: "Output image",
+    rawUsagePaths: OPENAI_IMAGE_USAGE_PATHS.completionImageTokens,
 } as const;
 
 export const COMMUNITY_ENDPOINT_PRICE_FIELDS = [
@@ -74,10 +81,10 @@ export const COMMUNITY_TEXT_ENDPOINT_PRICE_FIELDS =
         (field) => field.usageType !== "completionImageTokens",
     );
 
-export const COMMUNITY_IMAGE_ENDPOINT_PRICE_FIELDS =
-    COMMUNITY_ENDPOINT_PRICE_FIELDS.filter(
-        (field) => field.usageType === "completionImageTokens",
-    );
+export const COMMUNITY_IMAGE_ENDPOINT_PRICE_FIELDS = [
+    COMMUNITY_IMAGE_PROMPT_TEXT_PRICE_FIELD,
+    COMMUNITY_IMAGE_PRICE_FIELD,
+] as const;
 
 export function communityEndpointPriceFieldsForModality(
     modality: CommunityEndpointModality,
@@ -298,7 +305,7 @@ export function communityModelDefinition(
         outputModalities: isImage ? ["image"] : ["text"],
         paidOnly: false,
         alpha: true,
-        ...(isImage ? { flatRate: true } : {}),
+        ...(isImage ? { flatRate: false } : {}),
     };
 }
 

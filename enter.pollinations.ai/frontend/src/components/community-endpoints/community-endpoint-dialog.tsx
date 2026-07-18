@@ -158,11 +158,14 @@ export function CommunityEndpointDialog({
             if (!response.ok) throw new Error(await readError(response));
             const body =
                 (await response.json()) as CommunityEndpointTestResponse;
-            const returnedFields = returnedPriceFields({
-                status: "success",
-                usage: body.usage,
-                billableUsage: body.billableUsage,
-            });
+            const returnedFields = returnedPriceFields(
+                {
+                    status: "success",
+                    usage: body.usage,
+                    billableUsage: body.billableUsage,
+                },
+                form.modality,
+            );
             if (returnedFields.length === 0) {
                 throw new Error(
                     form.modality === "image"
@@ -215,12 +218,14 @@ export function CommunityEndpointDialog({
     // reveals the test + pricing section immediately. Private models carry no
     // pricing (owner is the only caller).
     const isShared = form.visibility === "public";
-    const returnedFields = isShared ? returnedPriceFields(testState) : [];
+    const returnedFields = isShared
+        ? returnedPriceFields(testState, form.modality)
+        : [];
     // Reveal the modality's base price plus whatever the test observed or the
     // model already had saved. Blank and zero prices mean free.
     const basePriceKeys =
         form.modality === "image"
-            ? (["completionImagePrice"] as const)
+            ? (["promptTextPrice", "completionImagePrice"] as const)
             : BASE_TEXT_PRICE_KEYS;
     const visiblePriceKeys = new Set(
         isShared

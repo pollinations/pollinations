@@ -60,6 +60,39 @@ export type OpenAIImageUsage = {
     };
 };
 
+export function getOpenAIImageUsage(value: unknown): OpenAIImageUsage | null {
+    if (!value || typeof value !== "object" || !("usage" in value)) {
+        return null;
+    }
+    const usage = value.usage;
+    if (!usage || typeof usage !== "object") return null;
+    const details =
+        "input_tokens_details" in usage
+            ? usage.input_tokens_details
+            : undefined;
+    if (!details || typeof details !== "object") return null;
+    if (
+        !("input_tokens" in usage) ||
+        !isTokenCount(usage.input_tokens) ||
+        !("output_tokens" in usage) ||
+        !isTokenCount(usage.output_tokens) ||
+        !("total_tokens" in usage) ||
+        !isTokenCount(usage.total_tokens) ||
+        !("text_tokens" in details) ||
+        !isTokenCount(details.text_tokens) ||
+        !("image_tokens" in details) ||
+        !isTokenCount(details.image_tokens)
+    ) {
+        return null;
+    }
+    return usage as OpenAIImageUsage;
+}
+
+export const OPENAI_IMAGE_USAGE_PATHS = {
+    promptTextTokens: ["input_tokens_details.text_tokens"],
+    completionImageTokens: ["output_tokens"],
+} as const satisfies Partial<Record<UsageType, readonly string[]>>;
+
 export function usageToOpenAIImageUsage(usage: Usage): OpenAIImageUsage {
     const inputTextTokens =
         (usage.promptTextTokens ?? 0) +
@@ -191,6 +224,20 @@ export function openaiUsageToUsage(openaiUsage: {
         completionAudioTokens,
         completionReasoningTokens,
     };
+}
+
+export function openaiImageUsageToUsage(usage: OpenAIImageUsage): Usage {
+    return {
+        promptTextTokens: usage.input_tokens_details.text_tokens,
+        promptImageTokens: usage.input_tokens_details.image_tokens,
+        completionImageTokens: usage.output_tokens,
+    };
+}
+
+function isTokenCount(value: unknown): value is number {
+    return (
+        typeof value === "number" && Number.isSafeInteger(value) && value >= 0
+    );
 }
 
 function sumTokens(tokens: readonly number[]): number {

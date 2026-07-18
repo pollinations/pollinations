@@ -1,6 +1,12 @@
 import { HTTPException } from "hono/http-exception";
 import { HttpError } from "@/image/httpError.ts";
 import { downloadImageAsBase64 } from "@/image/utils/imageDownload.ts";
+import {
+    assertAllowedRemoteMediaUrl,
+    assertRemoteMediaContentLength,
+    fetchRemoteMedia,
+    readRemoteMediaBytes,
+} from "@/utils/remoteMedia.ts";
 import { MAX_EMBEDDING_BATCH_SIZE } from "./limits.ts";
 import type { ContentPart, EmbeddingRequest, GeminiPart } from "./types.ts";
 
@@ -8,26 +14,13 @@ export function badRequest(message: string): never {
     throw new HTTPException(400, { message });
 }
 
-function parseRemoteMediaUrl(url: string): URL {
-    try {
-        const parsed = new URL(url);
-        if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
-            badRequest(`Unsupported media URL protocol: ${parsed.protocol}`);
-        }
-        return parsed;
-    } catch (error) {
-        if (error instanceof HTTPException) throw error;
-        badRequest(`Invalid media URL: ${url}`);
-    }
-}
-
 async function fetchMedia(
     url: string,
 ): Promise<{ data: string; contentType: string }> {
-    const parsed = parseRemoteMediaUrl(url);
+    const parsed = assertAllowedRemoteMediaUrl(url);
     let response: Response;
     try {
-        response = await fetch(parsed);
+        response = await fetchRemoteMedia(parsed.toString());
     } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
         badRequest(`Failed to fetch media: ${message}`);
@@ -37,11 +30,18 @@ async function fetchMedia(
             `Failed to fetch media: ${response.status} ${response.statusText}`,
         );
     }
-    const buffer = await response.arrayBuffer();
+    assertRemoteMediaContentLength(url, response);
+    const contentType =
+        response.headers.get("content-type") || "application/octet-stream";
+    if (contentType && !contentType.startsWith("video/")) {
+        badRequest(
+            `Invalid content type for ${url}: received ${contentType}, expected video/*.`,
+        );
+    }
+    const buffer = await readRemoteMediaBytes(response);
     return {
         data: Buffer.from(buffer).toString("base64"),
-        contentType:
-            response.headers.get("content-type") || "application/octet-stream",
+        contentType,
     };
 }
 

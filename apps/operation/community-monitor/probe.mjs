@@ -145,7 +145,7 @@ function planRequestCounts(models, budget) {
 // Basic billing-integrity sanity checks on a single probe response. These are
 // NOT health/deactivation signals (CYCLE.md's 5xx/timeout rules own that) --
 // they flag "the numbers we're about to pay this owner on look implausible
-// for a fixed, known prompt", for a human to investigate. Thresholds are
+// for a short, cache-busted prompt", for a human to investigate. Thresholds are
 // deliberately loose (calibrated against real tokenizer variance seen across
 // the catalog: a 7-word prompt legitimately tokenizes anywhere from ~7 to
 // ~35 tokens depending on the model's tokenizer) -- the goal is to catch
@@ -164,16 +164,12 @@ function billingSanityFlags(usage, content) {
         0;
     if (p === 0) flags.push("prompt_tokens=0 for a non-empty prompt");
     if (cached > 0)
-        flags.push(
-            `cached_tokens=${cached} on a cache-busted single-message prompt`,
-        );
+        flags.push("cached tokens on a cache-busted single-message prompt");
     if (p != null && cached > p)
-        flags.push(`cached_tokens=${cached} exceeds prompt_tokens=${p}`);
+        flags.push("cached_tokens exceeds prompt_tokens");
     const uncached = p != null && cached <= p ? p - cached : undefined;
     if (uncached != null && uncached > 100)
-        flags.push(
-            `uncached_prompt_tokens=${uncached}, implausible for the short probe`,
-        );
+        flags.push("implausible uncached prompt token count");
     if (c === 0) flags.push("completion_tokens=0 despite a successful reply");
     if (!content?.trim()) flags.push("empty completion content");
     return flags;

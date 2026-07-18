@@ -146,38 +146,11 @@ export const Models: FC<ModelsProps> = ({
         void loadModelCatalog();
     }, [loadModelCatalog]);
 
-    // Tab visibility follows the full catalog so a search query never hides
-    // or auto-switches away from a tab — only its contents are filtered.
-    const sectionModelsAll = useMemo(
-        () => categorizeModels(allModels),
-        [allModels],
-    );
     const sectionModels = useMemo(
         () => categorizeModels(filteredModels),
         [filteredModels],
     );
     const searchLabel = SEARCH_LABELS[activeTab];
-    const availableSections =
-        allModels.length > 0
-            ? SECTION_ORDER.filter(
-                  (section) => sectionModelsAll[section].length,
-              )
-            : SECTION_ORDER;
-
-    useEffect(() => {
-        if (!availableSections.includes(activeTab)) {
-            void navigate({
-                search: (previous) => ({
-                    ...previous,
-                    category:
-                        availableSections[0] === "all"
-                            ? undefined
-                            : availableSections[0],
-                }),
-                replace: true,
-            });
-        }
-    }, [activeTab, availableSections, navigate]);
 
     const setActiveTab = (category: SectionType) => {
         void navigate({
@@ -249,7 +222,7 @@ export const Models: FC<ModelsProps> = ({
             >
                 <div className="mb-4 flex flex-col items-start gap-3">
                     <div className="flex flex-wrap gap-1.5">
-                        {availableSections.map((section) => (
+                        {SECTION_ORDER.map((section) => (
                             <TabButton
                                 key={section}
                                 active={activeTab === section}

@@ -1,0 +1,35 @@
+{
+  "pr_number": 12553,
+  "title": "feat: tag product packaging results",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/12553",
+  "merged_at": "2026-07-18T07:47:12Z",
+  "labels": [
+    "DEV-APP"
+  ],
+  "pr_body_excerpt": "- Publishes generated packaging images with `product-packaging-designer`\n- Keeps source product uploads untagged\n- Falls back to the generated blob if publishing fails\n\nChecks: Biome, esbuild, source/output tagging contract",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "The package gets its stamp",
+    "blurb": "The packaging designer now sends finished mockups out with a proper tag, while the original product photo stays quietly unlabelled. If the publishing desk is closed, the generated image still makes it home.",
+    "summary": "The product-packaging-designer app now publishes generated packaging images with its app tag, leaves source product uploads untagged, and falls back to the generated blob when publishing fails.",
+    "impact": "People using the packaging designer get reliably returned mockups with clear provenance, without altering their original product uploads.",
+    "keywords": [
+      "product-packaging-designer",
+      "image-publishing",
+      "image-tags",
+      "fallback",
+      "community-app"
+    ],
+    "visual_concept": "Polly is a tiny package designer in a beret, placing a neat label onto a finished product box beside a retro image workstation. The original product photo rests untagged on a nearby clipboard, while a friendly glowing backup blob waits in a jar; code-plants and small flowers make the studio feel like a garden.",
+    "image_prompt": "Cozy pixel art scene of Polly, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny painter's beret, carefully stamping a finished package mockup with a small tag beside a retro CRT design terminal glowing lime green (#ecf874); an untagged original product photo sits safely on a clipboard and a friendly backup image blob glows in a little jar. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, code-plants and flowers, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, emotionally warm and nostalgic."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-18/PR-12553.jpg",
+    "prompt": "Cozy pixel art scene of Polly, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny painter's beret, carefully stamping a finished package mockup with a small tag beside a retro CRT design terminal glowing lime green (#ecf874); an untagged original product photo sits safely on a clipboard and a friendly backup image blob glows in a little jar. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, code-plants and flowers, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, emotionally warm and nostalgic."
+  },
+  "generated_at": "2026-07-18T07:48:07.747159+00:00"
+}

@@ -14,7 +14,7 @@ import {
     isNewModel,
     isPaidOnly,
 } from "./model-info.ts";
-import { ModelRow } from "./model-row.tsx";
+import { ModelId, ModelRow } from "./model-row.tsx";
 import type {
     ModelCategory,
     ModelSortDirection,
@@ -232,6 +232,9 @@ const MobileModelRow: FC<MobileModelRowProps> = ({ model }) => {
                             brandLogoPath ? "pl-[42px]" : "pl-0",
                         )}
                     >
+                        <div className="min-w-0 rounded-lg bg-theme-bg-subtle px-3 py-2">
+                            <ModelId name={model.name} />
+                        </div>
                         {modelDescription && (
                             <p className="mb-2 text-sm leading-relaxed text-theme-text-muted">
                                 {modelDescription}

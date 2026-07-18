@@ -1,0 +1,35 @@
+{
+  "pr_number": 12557,
+  "title": "feat: tag opposite prompt images",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/12557",
+  "merged_at": "2026-07-18T07:59:19Z",
+  "labels": [
+    "DEV-APP"
+  ],
+  "pr_body_excerpt": "- Publishes successfully delivered bot images with `opposite-prompt-bot`\n- Keeps media publishing failures from breaking Discord replies\n- Uploads after reply delivery to avoid retry duplicates\n\nChecks: Biome, esbuild, source/output tagging contract",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "The bot leaves a pollen trail",
+    "blurb": "Opposite Prompt Bot now tags the images it successfully delivers before sending them out into the Discord wild. Publishing happens after the reply, so a fussy upload cannot interrupt the conversation.",
+    "summary": "Opposite Prompt Bot now publishes successfully delivered images with the `opposite-prompt-bot` source tag after its Discord reply is sent, while isolating media-upload failures from reply delivery.",
+    "impact": "Discord users keep receiving bot images reliably, and images that arrive successfully become discoverable as creations from Opposite Prompt Bot without retry duplicates.",
+    "keywords": [
+      "opposite-prompt-bot",
+      "discord",
+      "image-publishing",
+      "source-tags",
+      "media"
+    ],
+    "visual_concept": "A cozy Discord-adjacent bot delivery scene: Polly acts as a careful post bee, attaching a tiny `opposite-prompt-bot` tag to a finished pixel image after a friendly robot has delivered it through a glowing chat terminal. A small code-plant and garden labels suggest that completed creations are now planted into the wider gallery, while a harmless upload-error paper airplane drifts away without disturbing the delivered message.",
+    "image_prompt": "Cozy pixel art scene of Polly, the cute yellow-and-brown striped bee mascot with pink cheek blush, light blue wings, and a tiny messenger hat, carefully tying a pixel-font tag reading \"opposite-prompt-bot\" onto a finished artwork beside a warm glowing Discord-style retro terminal; a cheerful CRT monitor robot has already delivered the image, while code-plants bloom from lime green (#ecf874) pots. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-18/PR-12557.jpg",
+    "prompt": "Cozy pixel art scene of Polly, the cute yellow-and-brown striped bee mascot with pink cheek blush, light blue wings, and a tiny messenger hat, carefully tying a pixel-font tag reading \"opposite-prompt-bot\" onto a finished artwork beside a warm glowing Discord-style retro terminal; a cheerful CRT monitor robot has already delivered the image, while code-plants bloom from lime green (#ecf874) pots. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
+  },
+  "generated_at": "2026-07-18T08:00:14.190382+00:00"
+}

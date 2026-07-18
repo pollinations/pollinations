@@ -1,10 +1,8 @@
 #!/usr/bin/env bash
 # Writes a structured health snapshot for the community-monitor loop to
 # /home/ubuntu/monitor/health-status.json. Does NOT post to Discord itself --
-# this box has no standalone Discord credential (the agent posts via its own
-# MCP session, not a reusable webhook/bot token), so alerting is done by an
-# external reader (a scheduled job elsewhere with Discord access) that reads
-# this file over SSH and only pings a human when something looks wrong.
+# alerting is done by an external reader that consumes this file and only
+# pings a human when something looks wrong.
 #
 # Run from cron hourly. systemd owns process supervision; this independently
 # checks that the service is alive and state.json is still progressing.

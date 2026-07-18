@@ -12,6 +12,7 @@ EnvironmentFile=/home/ubuntu/monitor/.env
 ExecStart=/home/ubuntu/monitor/loop.sh
 Restart=always
 RestartSec=900
+RuntimeMaxSec=2700
 TimeoutStopSec=30
 
 [Install]

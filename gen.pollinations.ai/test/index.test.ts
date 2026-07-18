@@ -359,6 +359,26 @@ describe("gen worker routing", () => {
             expect(servedModel?.context_length).toBe(model.context_length);
         }
     });
+
+    it("advertises audio input support for gemini-fast", async () => {
+        const response = await fetchWorker("/text/models", envWithEnter());
+
+        expect(response.status).toBe(200);
+        const models = (await response.json()) as {
+            name: string;
+            input_modalities?: string[];
+        }[];
+        const model = models.find(
+            (candidate) => candidate.name === "gemini-fast",
+        );
+
+        expect(model?.input_modalities).toEqual([
+            "text",
+            "image",
+            "audio",
+            "video",
+        ]);
+    });
 });
 
 describe("model status", () => {

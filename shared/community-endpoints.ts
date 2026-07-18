@@ -76,12 +76,12 @@ export const COMMUNITY_ENDPOINT_PRICE_FIELDS = [
     COMMUNITY_IMAGE_PRICE_FIELD,
 ] as const;
 
-export const COMMUNITY_TEXT_ENDPOINT_PRICE_FIELDS =
+const COMMUNITY_TEXT_ENDPOINT_PRICE_FIELDS =
     COMMUNITY_ENDPOINT_PRICE_FIELDS.filter(
         (field) => field.usageType !== "completionImageTokens",
     );
 
-export const COMMUNITY_IMAGE_ENDPOINT_PRICE_FIELDS = [
+const COMMUNITY_IMAGE_ENDPOINT_PRICE_FIELDS = [
     COMMUNITY_IMAGE_PROMPT_TEXT_PRICE_FIELD,
     COMMUNITY_IMAGE_PRICE_FIELD,
 ] as const;
@@ -93,15 +93,6 @@ export function communityEndpointPriceFieldsForModality(
         ? COMMUNITY_IMAGE_ENDPOINT_PRICE_FIELDS
         : COMMUNITY_TEXT_ENDPOINT_PRICE_FIELDS;
 }
-
-export const COMMUNITY_ENDPOINT_PRICE_FIELDS_BY_KEY = Object.fromEntries(
-    COMMUNITY_ENDPOINT_PRICE_FIELDS.map((field) => [field.key, field]),
-) as {
-    [K in CommunityEndpointPriceKey]: Extract<
-        (typeof COMMUNITY_ENDPOINT_PRICE_FIELDS)[number],
-        { key: K }
-    >;
-};
 
 export type CommunityEndpointPriceField =
     (typeof COMMUNITY_ENDPOINT_PRICE_FIELDS)[number];

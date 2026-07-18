@@ -4,6 +4,7 @@ import {
     communityOpenAIBaseUrl,
     normalizeCommunityEndpointBearerToken,
 } from "@shared/community-endpoints.ts";
+import { detectImageMimeType } from "@shared/image-mime.ts";
 import type { Usage } from "@shared/registry/registry.ts";
 import {
     getOpenAIImageUsage,
@@ -181,25 +182,17 @@ export async function testCommunityImageEndpoint({
             prompt: "A simple green sprout icon on a white background.",
             n: 1,
             size: "1024x1024",
-            response_format: "b64_json",
+            quality: "medium",
         }),
     });
 
-    if (
-        !body ||
-        typeof body !== "object" ||
-        !("data" in body) ||
-        !Array.isArray(body.data) ||
-        !body.data.some(
-            (image) =>
-                image &&
-                typeof image === "object" &&
-                "b64_json" in image &&
-                typeof image.b64_json === "string" &&
-                image.b64_json.length > 0,
-        )
-    ) {
+    const imageBase64 = firstImageBase64(body);
+    if (!imageBase64) {
         throw new Error("Endpoint did not return base64 OpenAI image data");
+    }
+    const imageBytes = decodeBase64(imageBase64);
+    if (!imageBytes || !detectImageMimeType(imageBytes)) {
+        throw new Error("Endpoint did not return a supported base64 image");
     }
 
     const usage = getOpenAIImageUsage(body);
@@ -216,4 +209,41 @@ export async function testCommunityImageEndpoint({
         usage,
         billableUsage,
     };
+}
+
+function firstImageBase64(body: unknown): string | null {
+    if (
+        !body ||
+        typeof body !== "object" ||
+        !("data" in body) ||
+        !Array.isArray(body.data)
+    ) {
+        return null;
+    }
+    for (const image of body.data) {
+        if (
+            image &&
+            typeof image === "object" &&
+            "b64_json" in image &&
+            typeof image.b64_json === "string" &&
+            image.b64_json.length > 0
+        ) {
+            return image.b64_json;
+        }
+    }
+    return null;
+}
+
+function decodeBase64(value: string): Uint8Array | null {
+    try {
+        const encoded = value
+            .replace(/^data:[^,]+,/, "")
+            .replace(/\s/g, "")
+            .replace(/-/g, "+")
+            .replace(/_/g, "/");
+        const decoded = atob(encoded);
+        return Uint8Array.from(decoded, (character) => character.charCodeAt(0));
+    } catch {
+        return null;
+    }
 }

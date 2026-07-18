@@ -85,6 +85,12 @@ export function getOpenAIImageUsage(value: unknown): OpenAIImageUsage | null {
     ) {
         return null;
     }
+    if (
+        usage.input_tokens !== details.text_tokens + details.image_tokens ||
+        usage.total_tokens !== usage.input_tokens + usage.output_tokens
+    ) {
+        return null;
+    }
     return usage as OpenAIImageUsage;
 }
 

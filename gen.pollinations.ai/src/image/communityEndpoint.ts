@@ -3,6 +3,7 @@ import {
     communityImageGenerationsUrl,
     normalizeCommunityEndpointBearerToken,
 } from "@shared/community-endpoints.ts";
+import { detectImageMimeType } from "@shared/image-mime.ts";
 import {
     getOpenAIImageUsage,
     openaiImageUsageToUsage,
@@ -45,10 +46,15 @@ export async function callCommunityImageEndpoint(
         ...(safeParams.transparent
             ? { background: "transparent", output_format: "png" }
             : {}),
-        response_format: "b64_json",
     });
 
     const buffer = base64ToBuffer(firstImageBase64(body));
+    if (!detectImageMimeType(buffer)) {
+        throw new HttpError(
+            "Community image endpoint did not return a supported image",
+            502,
+        );
+    }
     const openaiUsage = getOpenAIImageUsage(body);
     if (!openaiUsage) {
         throw new HttpError(

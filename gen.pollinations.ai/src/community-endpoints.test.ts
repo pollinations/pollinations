@@ -44,6 +44,7 @@ const COMMUNITY_ENDPOINT_ALLOWED_TEST_GITHUB_ID = 36901823;
 const COMMUNITY_ENDPOINT_DENIED_TEST_GITHUB_ID = 999_999_999;
 const TEST_PNG_BASE64 = "iVBORw0KGgo=";
 const TEST_PNG_BYTES = [137, 80, 78, 71, 13, 10, 26, 10];
+const TEST_INVALID_IMAGE_BASE64 = "bm90IGFuIGltYWdl";
 
 function isPortkeyChatCompletionsRequest(request: Request): boolean {
     return new URL(request.url).pathname === "/v1/chat/completions";
@@ -169,7 +170,9 @@ async function expectCommunityImageGenerationsRequest(
         `Bearer ${expected.bearerToken}`,
     );
     expect(request.headers.get("content-type")).toContain("application/json");
-    await expect(request.json()).resolves.toMatchObject(expected.body);
+    const body = await request.json();
+    expect(body).toMatchObject(expected.body);
+    expect(body).not.toHaveProperty("response_format");
 }
 
 function isBillingFetch(request: Request): boolean {
@@ -1506,6 +1509,7 @@ fixtureTest(
                 ) {
                     expect(body).toMatchObject({
                         size: "1024x1024",
+                        quality: "medium",
                     });
                 } else if (body.prompt === "green sprout") {
                     expect(body).toMatchObject({
@@ -1519,7 +1523,7 @@ fixtureTest(
                         size: "1024x1024",
                         quality: "high",
                     });
-                } else {
+                } else if (body.prompt !== "invalid media") {
                     throw new Error(
                         `Unexpected image prompt: ${String(body.prompt)}`,
                     );
@@ -1527,7 +1531,14 @@ fixtureTest(
 
                 return Response.json({
                     created: 1,
-                    data: [{ b64_json: TEST_PNG_BASE64 }],
+                    data: [
+                        {
+                            b64_json:
+                                body.prompt === "invalid media"
+                                    ? TEST_INVALID_IMAGE_BASE64
+                                    : TEST_PNG_BASE64,
+                        },
+                    ],
                     usage: {
                         input_tokens: 12,
                         output_tokens: 1056,
@@ -1678,6 +1689,43 @@ fixtureTest(
             },
         });
 
+        const urlImageResponse = await SELF.fetch(
+            new Request("https://gen.pollinations.ai/v1/images/generations", {
+                method: "POST",
+                headers: {
+                    Authorization: `Bearer ${apiKey}`,
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    model: registered.modelId,
+                    prompt: "blue flower",
+                    response_format: "url",
+                }),
+            }),
+        );
+        expect(urlImageResponse.status).toBe(400);
+        await expect(urlImageResponse.json()).resolves.toMatchObject({
+            error: {
+                message:
+                    'Community image models support response_format "b64_json" only',
+            },
+        });
+
+        const invalidMediaResponse = await SELF.fetch(
+            new Request("https://gen.pollinations.ai/v1/images/generations", {
+                method: "POST",
+                headers: {
+                    Authorization: `Bearer ${apiKey}`,
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    model: registered.modelId,
+                    prompt: "invalid media",
+                }),
+            }),
+        );
+        expect(invalidMediaResponse.status).toBe(502);
+
         const imageModelsResponse = await SELF.fetch(
             "https://gen.pollinations.ai/image/models",
         );
@@ -1752,7 +1800,7 @@ fixtureTest(
             fetchMock.mock.calls.filter(([input, init]) =>
                 isCommunityImageGenerationsRequest(new Request(input, init)),
             ),
-        ).toHaveLength(3);
+        ).toHaveLength(4);
     },
 );
 

@@ -286,7 +286,7 @@ export function CommunityEndpointDialog({
                     <div className="grid gap-4 sm:grid-cols-2">
                         <FieldStack
                             label="Model ID"
-                            helper="Public id: {username}/{model-id}."
+                            helper="Pollinations model ID: {username}/{model-id}."
                             alignLabelRow
                         >
                             <Input
@@ -326,8 +326,8 @@ export function CommunityEndpointDialog({
                             isShared
                                 ? "Public: listed in /models and callable by anyone. Set optional per-1M-token prices below, or leave them at 0 for free."
                                 : canPublish
-                                  ? "Private: callable only by you and shown only in model lists authenticated with your API key."
-                                  : "Private: callable only by you. Publishing publicly requires approval."
+                                  ? "Private: call it through the Pollinations API with your API key at no Pollen cost. Upstream charges may still apply."
+                                  : "Private: call it through the Pollinations API with your API key at no Pollen cost. Upstream charges may still apply; publishing publicly requires approval."
                         }
                         alignLabelRow
                     >

@@ -103,10 +103,11 @@ export function CommunityEndpoints({
 
     const privateModelGuidance = (
         <>
-            Your models are private — callable only by you and shown only when{" "}
-            <strong>/models</strong> is authenticated with your API key. Enter
-            the upstream model ID manually, then test the saved model by calling
-            its model ID. To request public publishing access, open a{" "}
+            Register your OpenAI-compatible endpoint as a private model, then
+            call its model ID through the Pollinations API with your API key.
+            Private models appear only in authenticated model lists and cost no
+            Pollen to call. Your upstream provider may still charge you. To
+            request public publishing access, open a{" "}
             <a
                 href="https://github.com/pollinations/pollinations/issues/new?title=Community%20model%20publishing%20request"
                 target="_blank"
@@ -169,7 +170,7 @@ export function CommunityEndpoints({
                             </p>
                             <p className="text-sm text-theme-text-muted">
                                 {canPublish
-                                    ? "Publish an OpenAI-compatible endpoint with your own per-1M-token pricing."
+                                    ? "Register an OpenAI-compatible endpoint as a private model, or publish it with your own per-1M-token pricing."
                                     : privateModelGuidance}
                             </p>
                         </Surface>
@@ -190,11 +191,12 @@ export function CommunityEndpoints({
                         <span>
                             {canPublish ? (
                                 <>
-                                    Private models are callable only by you and
-                                    shown only when model lists use your API
-                                    key. Make one public to list it for everyone
-                                    in <strong>/models</strong> and bill callers
-                                    at your per-1M-token pricing.
+                                    Call private models through the Pollinations
+                                    API with your API key at no Pollen cost. Your
+                                    upstream provider may still charge you. Make
+                                    one public to list it for everyone in{" "}
+                                    <strong>/models</strong> and bill callers at
+                                    your per-1M-token pricing.
                                 </>
                             ) : (
                                 privateModelGuidance

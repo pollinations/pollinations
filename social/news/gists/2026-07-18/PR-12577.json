@@ -1,0 +1,37 @@
+{
+  "pr_number": 12577,
+  "title": "feat: add OpenRouter frontier models",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/12577",
+  "merged_at": "2026-07-18T15:21:08Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "pr_body_excerpt": "- Adds Kimi K3, Grok 4.5, Gemma 4 31B, MiMo V2.5/Pro, and Qwen3.7 Max through OpenRouter.\n- Moves Qwen3.7 Plus from Fireworks to OpenRouter with updated pricing, context, and cache-write accounting.\n- Adds paid-only HappyHorse 1.1 video generation and keeps expensive text models paid-only.\n- Extends OpenAI usage parsing for cache-write, video-input, and image-output tokens.\n\nChecks:\n- Biome on all changed source files\n- Gen model, cache, billing, image/video, VCR, and safety suites: 247 tests\n- Enter aliases, pricing, and effective-price snapshot suites: 279 tests",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "The model garden got frontier-sized",
+    "blurb": "A fresh batch of frontier models has landed through OpenRouter, plus a paid video horse with unusually strong opinions about pixels. The hive can now keep better track of cache writes, video inputs, and image outputs while it works.",
+    "summary": "Added Kimi K3, Grok 4.5, Gemma 4 31B, MiMo V2.5/Pro, and Qwen3.7 Max through OpenRouter; moved Qwen3.7 Plus from Fireworks to OpenRouter with updated pricing, context, and cache-write accounting; and added paid-only HappyHorse 1.1 video generation.",
+    "impact": "Developers can call a broader set of frontier text models and HappyHorse 1.1 video generation through pollinations, with usage headers that now account for cache-write, video-input, and image-output tokens.",
+    "keywords": [
+      "openrouter",
+      "frontier-models",
+      "text-generation",
+      "video-generation",
+      "usage-accounting",
+      "happyhorse",
+      "qwen"
+    ],
+    "visual_concept": "A cozy model greenhouse where Polly tends labeled code-plants representing Kimi, Grok, Gemma, MiMo, and Qwen, while a friendly tiny pixel horse trots out of a retro video terminal. A CRT monitor robot holds a glowing usage ledger with cache, video, and image token icons, making the expanded model catalog and more precise accounting visible without turning the scene into a spreadsheet.",
+    "image_prompt": "Cozy pixel art scene of Polly, the cute bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and rounded light blue translucent wings, wearing tiny gardener overalls as she waters code-plants labeled KIMI, GROK, GEMMA, MIMO, and QWEN in a lime green (#ecf874) greenhouse; a cute CRT-monitor robot holds a token ledger while a small friendly pixel horse emerges from a retro video terminal. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, with flowers and vines around the terminals; pixel-font text: \"MORE MODELS\". Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-18/PR-12577.jpg",
+    "prompt": "Cozy pixel art scene of Polly, the cute bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and rounded light blue translucent wings, wearing tiny gardener overalls as she waters code-plants labeled KIMI, GROK, GEMMA, MIMO, and QWEN in a lime green (#ecf874) greenhouse; a cute CRT-monitor robot holds a token ledger while a small friendly pixel horse emerges from a retro video terminal. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, with flowers and vines around the terminals; pixel-font text: \"MORE MODELS\". Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-07-18T15:22:15.603942+00:00"
+}

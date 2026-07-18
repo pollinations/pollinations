@@ -78,6 +78,27 @@ export const TEXT_SERVICES = {
         contextLength: 400000,
         isSpecialized: false,
     },
+    "gpt-oss": {
+        aliases: ["gpt-oss-20b", "ovh-reasoning"],
+        modelId: "gpt-oss-20b",
+        provider: "ovhcloud",
+        brand: "OpenAI",
+        category: "text",
+        addedDate: new Date("2026-07-18").getTime(),
+        priceMultiplier: 1,
+        cost: {
+            promptTextTokens: perMillion(0.05),
+            completionTextTokens: perMillion(0.18),
+        },
+        title: "GPT-OSS 20B",
+        description: "Open-weight reasoning model with tool support",
+        inputModalities: ["text"],
+        outputModalities: ["text"],
+        tools: true,
+        reasoning: true,
+        contextLength: 131072,
+        isSpecialized: false,
+    },
     "gpt-5.4": {
         aliases: ["gpt-5.4-reasoning", "gpt-5.2", "gpt-5.2-reasoning"],
         modelId: "gpt-5.4",
@@ -477,7 +498,7 @@ export const TEXT_SERVICES = {
         billing: withVertexCacheStorage(GEMINI_25_GROUNDING_BILLING, 1.0),
         title: "Gemini 2.5 Flash Lite",
         description: "Gemini 2.5 Flash Lite - Ultra Fast & Cost-Effective",
-        inputModalities: ["text", "image", "video"],
+        inputModalities: ["text", "image", "audio", "video"],
         outputModalities: ["text"],
         maxReferenceImages: 3600, // Gemini API image-understanding file limit.
         maxReferenceVideos: 10, // Gemini API video-understanding upload limit.

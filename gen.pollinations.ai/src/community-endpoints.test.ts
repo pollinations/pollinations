@@ -169,6 +169,9 @@ describe("community endpoint helpers", () => {
         expect(isCommunityEndpointOwnerAllowed({ githubId: 101795137 })).toBe(
             true,
         );
+        expect(isCommunityEndpointOwnerAllowed({ githubId: 183505255 })).toBe(
+            true,
+        );
         expect(isCommunityEndpointOwnerAllowed({ githubId: 235942848 })).toBe(
             false,
         );

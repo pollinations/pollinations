@@ -1,12 +1,5 @@
 #!/usr/bin/env node
 
-/**
- * pollinations.ai MCP Server
- *
- * A Model Context Protocol server for pollinations.ai services.
- * Supports image, video, text, and audio generation via gen.pollinations.ai
- */
-
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { accountTools } from "./services/accountService.js";
@@ -16,9 +9,6 @@ import { textTools } from "./services/textService.js";
 
 const allTools = [...imageTools, ...textTools, ...audioTools, ...accountTools];
 
-/**
- * Server instructions shown to MCP clients
- */
 const SERVER_INSTRUCTIONS = `# Pollinations MCP Server
 
 All requests go through https://gen.pollinations.ai.
@@ -27,9 +17,6 @@ Authentication is configured only with the POLLINATIONS_API_KEY environment vari
 
 Use chatCompletion for text and multimodal generation, including reasoning, tool use, web search, and media analysis. Use listModels to inspect the live registry. Gen validates models, aliases, modalities, and request parameters.`;
 
-/**
- * Start the MCP server with STDIO transport
- */
 async function startMcpServer() {
     const server = new McpServer({
         name: "pollinations-mcp",

@@ -2,19 +2,10 @@ import { getAuthHeaders } from "./authUtils.js";
 
 export const API_BASE_URL = "https://gen.pollinations.ai";
 
-/**
- * @param {Array} content - Array of content objects (text, image, etc.)
- * @returns {Object} - MCP response object
- */
 export function createMCPResponse(content) {
     return { content };
 }
 
-/**
- * @param {string|Object} text - Text content or object to stringify
- * @param {boolean} [stringify=false] - Whether to stringify the text if it's an object
- * @returns {Object} - Text content object
- */
 export function createTextContent(text, stringify = false) {
     return {
         type: "text",
@@ -22,11 +13,6 @@ export function createTextContent(text, stringify = false) {
     };
 }
 
-/**
- * @param {string} data - Base64-encoded image data
- * @param {string} mimeType - MIME type of the image
- * @returns {Object} - Image content object
- */
 export function createImageContent(data, mimeType) {
     return {
         type: "image",
@@ -35,11 +21,6 @@ export function createImageContent(data, mimeType) {
     };
 }
 
-/**
- * @param {string} data - Base64-encoded audio data
- * @param {string} mimeType - MIME type of the audio
- * @returns {Object} - Audio content object
- */
 export function createAudioContent(data, mimeType) {
     return {
         type: "audio",
@@ -48,11 +29,6 @@ export function createAudioContent(data, mimeType) {
     };
 }
 
-/**
- * @param {string} path - URL path (will be appended to API_BASE_URL)
- * @param {Object} params - Query parameters
- * @returns {string} - Complete URL
- */
 export function buildUrl(path, params = {}) {
     const url = new URL(path, API_BASE_URL);
     Object.entries(params).forEach(([key, value]) => {
@@ -63,35 +39,15 @@ export function buildUrl(path, params = {}) {
     return url.toString();
 }
 
-/**
- * @param {string} url - URL to fetch
- * @param {Object} options - Fetch options (can include timeoutMs)
- * @returns {Promise<Response>} - Fetch response
- */
 export async function fetchWithAuth(url, options = {}) {
     const { timeoutMs = 30000, ...fetchOptions } = options;
-    const headers = {
-        ...fetchOptions.headers,
-        ...getAuthHeaders(),
-    };
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
-    try {
-        return await fetch(url, {
-            ...fetchOptions,
-            headers,
-            signal: controller.signal,
-        });
-    } finally {
-        clearTimeout(timeoutId);
-    }
+    return fetch(url, {
+        ...fetchOptions,
+        headers: { ...fetchOptions.headers, ...getAuthHeaders() },
+        signal: AbortSignal.timeout(timeoutMs),
+    });
 }
 
-/**
- * @param {string} url - URL to fetch
- * @param {Object} options - Fetch options
- * @returns {Promise<Object>} - Parsed JSON response
- */
 export async function fetchJsonWithAuth(url, options = {}) {
     const response = await fetchWithAuth(url, options);
     if (!response.ok) {
@@ -101,28 +57,13 @@ export async function fetchJsonWithAuth(url, options = {}) {
     return response.json();
 }
 
-/**
- * POST a chat-completion request body to /v1/chat/completions.
- * Strips null/undefined keys, reuses the 30s timeout in fetchWithAuth, and
- * preserves upstream errors. Returns the checked Response.
- *
- * @param {Object} body - Request body (null/undefined fields are stripped)
- * @returns {Promise<Response>} - Raw fetch response (already checked for !ok)
- */
 export async function postChatCompletion(body) {
-    const cleanedBody = {};
-    for (const [key, value] of Object.entries(body)) {
-        if (value !== undefined && value !== null) {
-            cleanedBody[key] = value;
-        }
-    }
-
     const response = await fetchWithAuth(
         `${API_BASE_URL}/v1/chat/completions`,
         {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(cleanedBody),
+            body: JSON.stringify(body),
             timeoutMs: 30000,
         },
     );
@@ -135,11 +76,6 @@ export async function postChatCompletion(body) {
     return response;
 }
 
-/**
- * @param {string} url - URL to fetch
- * @param {Object} options - Fetch options
- * @returns {Promise<{buffer: ArrayBuffer, contentType: string}>} - Binary data and content type
- */
 export async function fetchBinaryWithAuth(url, options = {}) {
     const response = await fetchWithAuth(url, options);
     if (!response.ok) {
@@ -152,19 +88,10 @@ export async function fetchBinaryWithAuth(url, options = {}) {
     return { buffer, contentType };
 }
 
-/**
- * @param {ArrayBuffer} buffer - Array buffer to convert
- * @returns {string} - Base64 encoded string
- */
 export function arrayBufferToBase64(buffer) {
     return Buffer.from(buffer).toString("base64");
 }
 
-/**
- * @param {number} status - HTTP status code
- * @param {string} errorText - Raw error text from response
- * @returns {string} - Upstream error message with its HTTP status
- */
 export function parseApiError(status, errorText) {
     let parsed;
     try {

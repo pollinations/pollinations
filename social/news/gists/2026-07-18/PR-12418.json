@@ -1,0 +1,37 @@
+{
+  "pr_number": 12418,
+  "title": "chore: decommission LTX and ACE-Step",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/12418",
+  "merged_at": "2026-07-18T12:24:46Z",
+  "labels": [
+    "DEV-CHORE"
+  ],
+  "pr_body_excerpt": "- Removes the `ltx-2` video model and `acestep` audio model from the shared registries because usage is low relative to maintenance cost.\n- Deletes their runtime dispatch/handler code and model-specific environment configuration.\n- Updates API docs, SDK guidance, generated bindings, and pricing snapshots.\n- Preserves Sana routing, shared GPU authentication, Lambda access, and historical economics/observability data.\n\nOperational note: merging/deploying this PR removes API exposure but does not stop host processes or lower the Lambda bill. Sana currently uses `ltx2-backend.pollinations.ai`; that hostname/tunnel must remain. Stop ACE/LTX only by their exact services/ports after deployment.\n\nTests:\n- Enter registry/pricing snapshots: 264 passed\n- Gen permissions, backend registry, and Sana fixed-backend regression: 32 passed\n- Enter and Gen typechecks\n- APIDOCS validation\n\nRelated: #11125",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "The model garden gets pruned",
+    "blurb": "LTX-2 and ACE-Step have left the shared model registry, while Sana’s route and the surrounding GPU plumbing stay carefully watered. Fewer low-traffic branches, same healthy garden.",
+    "summary": "Removed the ltx-2 video and acestep audio models from the public registries, API documentation, SDK types, pricing snapshots, and runtime dispatch while preserving Sana’s fixed LTX2 backend routing and shared GPU access.",
+    "impact": "API and SDK users now see a cleaner supported-model list without ltx-2 or acestep, while Sana continues using ltx2-backend.pollinations.ai unchanged.",
+    "keywords": [
+      "model-registry",
+      "ltx-2",
+      "acestep",
+      "video",
+      "audio",
+      "sdk",
+      "api-docs"
+    ],
+    "visual_concept": "A cozy maintenance scene: Polly, wearing a tiny gardener’s hat and tool belt, carefully prunes two clearly labeled code-plants, “LTX-2” and “ACE-Step,” from a shared model garden. Nearby, a healthy Sana plant remains connected to a glowing backend tunnel, showing that its route stays intact.",
+    "image_prompt": "Cozy pixel art scene of Polly the cute yellow-and-brown striped bee mascot wearing a tiny gardener hat and tool belt, gently pruning two small code-plants labeled “LTX-2” and “ACE-Step” from a warm cream garden while a healthy “Sana” plant stays connected to a glowing retro server tunnel. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, flowers and vines, warm lighting, retro gaming vibes, dark purple (#110518) pixel-font labels, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-18/PR-12418.jpg",
+    "prompt": "Cozy pixel art scene of Polly the cute yellow-and-brown striped bee mascot wearing a tiny gardener hat and tool belt, gently pruning two small code-plants labeled “LTX-2” and “ACE-Step” from a warm cream garden while a healthy “Sana” plant stays connected to a glowing retro server tunnel. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, flowers and vines, warm lighting, retro gaming vibes, dark purple (#110518) pixel-font labels, nostalgic but beautiful."
+  },
+  "generated_at": "2026-07-18T12:25:41.199926+00:00"
+}

@@ -25,6 +25,8 @@ export interface ApiKeyManagerProps {
     onCreate: (formData: CreateApiKey) => Promise<CreateApiKeyResponse>;
     onUpdate: (id: string, updates: ApiKeyUpdateParams) => Promise<void>;
     onDelete: (id: string) => Promise<void>;
+    /** False for a read-only org member: hides create/edit/delete controls. */
+    canManage?: boolean;
 }
 
 export type CreateApiKey = {

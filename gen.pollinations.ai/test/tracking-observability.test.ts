@@ -59,6 +59,7 @@ function createTestApp(
                 tierBalance: 1,
                 packBalance: 0,
             }),
+            getOrganizationBalance: async () => ({ packBalance: 0 }),
         });
         c.set("frontendKeyRateLimit", { consumePollen });
         c.set("model", model);
@@ -138,6 +139,7 @@ function createWrongContentTypeApp(
         });
         c.set("balance", {
             getBalance: async () => ({ tierBalance: 1, packBalance: 0 }),
+            getOrganizationBalance: async () => ({ packBalance: 0 }),
         });
         c.set("frontendKeyRateLimit", { consumePollen });
         c.set("model", {
@@ -171,6 +173,7 @@ function createSseStreamApp(chunkDelayMs: number) {
         });
         c.set("balance", {
             getBalance: async () => ({ tierBalance: 1, packBalance: 0 }),
+            getOrganizationBalance: async () => ({ packBalance: 0 }),
         });
         c.set("frontendKeyRateLimit", { consumePollen: async () => {} });
         c.set("model", {
@@ -240,6 +243,7 @@ function createHeaderApp(extraHeaders: Record<string, string>) {
         });
         c.set("balance", {
             getBalance: async () => ({ tierBalance: 1, packBalance: 0 }),
+            getOrganizationBalance: async () => ({ packBalance: 0 }),
         });
         c.set("frontendKeyRateLimit", { consumePollen: async () => {} });
         c.set("model", {

@@ -1,11 +1,11 @@
 import { createFileRoute, redirect, useRouter } from "@tanstack/react-router";
 import { apiClient } from "../api.ts";
-import { authClient } from "../auth.ts";
 import {
     ApiKeyList,
     type CreateApiKey,
     type CreateApiKeyResponse,
 } from "../components/keys";
+import { useActiveOrganizationId } from "../lib/active-organization.ts";
 import { createKeyWithPermissions } from "../lib/create-api-key.ts";
 import { Route as DashboardRoute } from "./_dashboard.tsx";
 
@@ -23,7 +23,15 @@ export const Route = createFileRoute("/_dashboard/keys")({
 
 function KeysPage() {
     const router = useRouter();
-    const { apiKeys } = DashboardRoute.useLoaderData();
+    const { apiKeys, organizations } = DashboardRoute.useLoaderData();
+    const activeOrganizationId = useActiveOrganizationId();
+    const activeOrganization = organizations.find(
+        (org) => org.id === activeOrganizationId,
+    );
+    // Any member (including read-only) can view an org's keys, but only the
+    // owner or a member with canManageApiKeys may create/edit/delete them.
+    const canManage =
+        !activeOrganizationId || !!activeOrganization?.canManageApiKeys;
 
     async function handleCreateApiKey(
         formState: CreateApiKey,
@@ -51,6 +59,7 @@ function KeysPage() {
                     ? formState.accountPermissions
                     : undefined,
             },
+            organizationId: activeOrganizationId ?? undefined,
         });
 
         await router.invalidate();
@@ -62,8 +71,19 @@ function KeysPage() {
     }
 
     async function handleDeleteApiKey(id: string): Promise<void> {
-        const result = await authClient.apiKey.delete({ keyId: id });
-        if (result.error) console.error(result.error);
+        // First-party route (not authClient.apiKey.delete): org-owned keys
+        // can be deleted by any manager, not just the member who created
+        // them, which better-auth's own userId-matching delete can't allow.
+        const response = await apiClient["api-keys"][":id"].delete.$post({
+            param: { id },
+        });
+        if (!response.ok) {
+            const error = await response.json().catch(() => null);
+            console.error(
+                (error as { message?: string } | null)?.message ||
+                    "Failed to delete key",
+            );
+        }
         await router.invalidate();
     }
 
@@ -102,6 +122,7 @@ function KeysPage() {
             onCreate={handleCreateApiKey}
             onUpdate={handleUpdateApiKey}
             onDelete={handleDeleteApiKey}
+            canManage={canManage}
         />
     );
 }

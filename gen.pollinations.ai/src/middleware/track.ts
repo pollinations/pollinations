@@ -172,6 +172,7 @@ export const track = (eventType: EventType) =>
             apiKeyCreatedForApp: c.var.auth.apiKey?.byopClientName ?? undefined,
             apiKeyCreatedForUserId:
                 c.var.auth.apiKey?.byopClientUserId ?? undefined,
+            organizationId: c.var.auth.apiKey?.organizationId ?? undefined,
         } satisfies UserData;
 
         let responseOverride: Response | null = null;
@@ -232,6 +233,8 @@ export const track = (eventType: EventType) =>
                     null;
                 let billedPrice = 0;
                 let shouldRunAutoTopUp = false;
+                const organizationId =
+                    c.var.auth?.apiKey?.organizationId ?? undefined;
                 try {
                     const communityEndpoint = c.var.model?.communityEndpoint;
                     const deduction = await handleBalanceDeduction({
@@ -239,6 +242,7 @@ export const track = (eventType: EventType) =>
                         isBilledUsage: responseTracking.isBilledUsage,
                         totalPrice: responseTracking.price?.totalPrice,
                         userId: userTracking.userId,
+                        organizationId,
                         apiKeyId: c.var.auth?.apiKey?.id,
                         apiKeyPollenBalance: c.var.auth?.apiKey?.pollenBalance,
                         byopClientKeyId,
@@ -260,6 +264,10 @@ export const track = (eventType: EventType) =>
                     billedPrice = deduction.billedPrice;
                     const totalPrice = responseTracking.price?.totalPrice ?? 0;
                     if (
+                        // Organizations have no auto-top-up of their own, and
+                        // a low org balance must never trigger a charge to
+                        // the creating member's personal card.
+                        !organizationId &&
                         totalPrice > 0 &&
                         payerBucket === "pack" &&
                         deduction.postDeductionPackBalance != null &&
@@ -619,6 +627,7 @@ type UserData = {
     apiKeyCreatedForApp?: string;
     apiKeyCreatedForUserId?: string;
     apiKeyClientId?: string;
+    organizationId?: string;
 };
 
 type BalanceData = {

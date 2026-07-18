@@ -5,7 +5,7 @@ import {
 import { sanitizeAuthorizeAccountPermissions } from "@shared/auth/authorize-config.ts";
 import * as schema from "@shared/db/better-auth.ts";
 import { validator } from "@shared/middleware/validator.ts";
-import { and, eq } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
@@ -14,6 +14,11 @@ import { z } from "zod";
 import type { Env } from "../env.ts";
 import { auth } from "../middleware/auth.ts";
 import { parseMetadata } from "./metadata-utils.ts";
+import {
+    readOrganizationIdParam,
+    requireManageApiKeysPermission,
+    requireOrgAccess,
+} from "./organizations.ts";
 
 const SECONDS_PER_DAY = 24 * 60 * 60;
 
@@ -68,8 +73,12 @@ function parsePermissions(raw: string): Record<string, string[]> | null {
 }
 
 /**
- * Verify the authenticated user owns the API key, returning the key row.
- * Throws 404 if not found or not owned by the user.
+ * Verify the authenticated user may manage the API key, returning the key
+ * row. For a personally-owned key, that means `userId` created it. For an
+ * org-owned key (`apikey.organizationId` set), it means the caller is the
+ * org's owner or a member with `canManageApiKeys` — not necessarily the
+ * member who created the key. Throws 404 if the key doesn't exist or the
+ * caller has no relationship to it.
  */
 async function requireOwnedKey(
     db: ReturnType<typeof drizzle<typeof schema>>,
@@ -77,12 +86,21 @@ async function requireOwnedKey(
     userId: string,
 ) {
     const key = await db.query.apikey.findFirst({
-        where: and(
-            eq(schema.apikey.id, keyId),
-            eq(schema.apikey.userId, userId),
-        ),
+        where: eq(schema.apikey.id, keyId),
     });
     if (!key) {
+        throw new HTTPException(404, { message: "API key not found" });
+    }
+    if (key.organizationId) {
+        const { role, membership } = await requireOrgAccess(
+            db,
+            key.organizationId,
+            userId,
+        );
+        requireManageApiKeysPermission(role, membership);
+        return key;
+    }
+    if (key.userId !== userId) {
         throw new HTTPException(404, { message: "API key not found" });
     }
     return key;
@@ -173,6 +191,12 @@ const CreateApiKeySchema = z.object({
             'Account permissions: ["profile", "usage", "keys"]. null = none',
         ),
     metadata: z.record(z.string(), z.unknown()).optional(),
+    organizationId: z
+        .string()
+        .optional()
+        .describe(
+            "Create this key as org-owned: it spends the organization's paid Pollen balance instead of the creator's own. Caller must be the org's owner or a member with canManageApiKeys.",
+        ),
 });
 
 /**
@@ -230,6 +254,16 @@ export const apiKeysRoutes = new Hono<Env>()
                     ? "redirect-auth"
                     : "dashboard";
 
+            if (input.organizationId) {
+                const db = drizzle(c.env.DB, { schema });
+                const { role, membership } = await requireOrgAccess(
+                    db,
+                    input.organizationId,
+                    user.id,
+                );
+                requireManageApiKeysPermission(role, membership);
+            }
+
             const created = await createApiKeyForUser({
                 authClient: c.var.auth.client,
                 dbBinding: c.env.DB,
@@ -241,6 +275,7 @@ export const apiKeysRoutes = new Hono<Env>()
                 pollenBudget: input.pollenBudget,
                 accountPermissions: input.accountPermissions,
                 metadata: input.metadata,
+                organizationId: input.organizationId,
                 allowAccountKeysPermission: true,
                 defaultCreatedVia: createdVia,
             });
@@ -265,8 +300,17 @@ export const apiKeysRoutes = new Hono<Env>()
             const db = drizzle(c.env.DB, { schema });
             setPrivateNoStoreHeaders(c);
 
+            const organizationId = readOrganizationIdParam(c);
+            if (organizationId) {
+                // Any member (including read-only) may view the org's key
+                // list — just not create/manage them.
+                await requireOrgAccess(db, organizationId, user.id);
+            }
+
             const keys = await db.query.apikey.findMany({
-                where: eq(schema.apikey.userId, user.id),
+                where: organizationId
+                    ? eq(schema.apikey.organizationId, organizationId)
+                    : eq(schema.apikey.userId, user.id),
                 orderBy: (apikey, { desc }) => [desc(apikey.createdAt)],
             });
 
@@ -284,6 +328,7 @@ export const apiKeysRoutes = new Hono<Env>()
                     metadata: key.metadata ? parseMetadata(key.metadata) : null,
                     pollenBalance: key.pollenBalance,
                     byopClientKeyId: key.byopClientKeyId,
+                    organizationId: key.organizationId,
                 })),
             });
         },
@@ -333,13 +378,28 @@ export const apiKeysRoutes = new Hono<Env>()
             );
 
             if (updatedPermissions) {
-                await authClient.api.updateApiKey({
-                    body: {
-                        keyId: id,
-                        userId: user.id,
-                        permissions: updatedPermissions,
-                    },
-                });
+                if (existingKey.organizationId) {
+                    // Better-auth's native updateApiKey requires the key's
+                    // stored userId to equal the caller's session id — that
+                    // only holds for the member who created the key, not an
+                    // org manager updating someone else's key. Write the
+                    // permissions column directly instead, same as the other
+                    // D1-only fields below.
+                    await db
+                        .update(schema.apikey)
+                        .set({
+                            permissions: JSON.stringify(updatedPermissions),
+                        })
+                        .where(eq(schema.apikey.id, id));
+                } else {
+                    await authClient.api.updateApiKey({
+                        body: {
+                            keyId: id,
+                            userId: user.id,
+                            permissions: updatedPermissions,
+                        },
+                    });
+                }
             }
 
             const d1Updates: Record<string, string | number | Date | null> = {};
@@ -408,5 +468,27 @@ export const apiKeysRoutes = new Hono<Env>()
                 existingKey.metadata,
             );
             return c.json({ id, metadata });
+        },
+    )
+    /**
+     * Delete an API key. First-party route (not better-auth's native
+     * `authClient.apiKey.delete`, which requires `apikey.userId` to match the
+     * caller's session and so can't authorize an org manager deleting a key
+     * created by a different member).
+     */
+    .post(
+        "/:id/delete",
+        describeRoute({
+            tags: ["👤 Account"],
+            description: "Delete an API key.",
+            hide: ({ c }) => c?.env.ENVIRONMENT !== "development",
+        }),
+        async (c) => {
+            const user = c.var.auth.requireUser();
+            const { id } = c.req.param();
+            const db = drizzle(c.env.DB, { schema });
+            await requireOwnedKey(db, id, user.id);
+            await db.delete(schema.apikey).where(eq(schema.apikey.id, id));
+            return c.json({ id });
         },
     );

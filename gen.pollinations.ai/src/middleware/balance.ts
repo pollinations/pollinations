@@ -3,6 +3,10 @@ import {
     getUserBalance,
     type UserBalance,
 } from "@shared/billing/balance.ts";
+import {
+    getOrganizationBalance,
+    type OrganizationBalance,
+} from "@shared/billing/organization-balance.ts";
 import { drizzle } from "drizzle-orm/d1";
 import { createMiddleware } from "hono/factory";
 import { HTTPException } from "hono/http-exception";
@@ -14,6 +18,9 @@ export type { UserBalance };
 export type BalanceVariables = {
     balance: {
         getBalance: (userId: string) => Promise<UserBalance>;
+        getOrganizationBalance: (
+            organizationId: string,
+        ) => Promise<OrganizationBalance>;
         balanceCheckResult?: BalanceCheckResult;
     };
 };
@@ -49,8 +56,35 @@ export const balance = createMiddleware<BalanceEnv>(async (c, next) => {
         }
     };
 
+    const orgBalanceCache = new Map<string, OrganizationBalance>();
+    const fetchOrganizationBalanceWithErrorHandling = async (
+        organizationId: string,
+    ): Promise<OrganizationBalance> => {
+        const cached = orgBalanceCache.get(organizationId);
+        if (cached) return cached;
+
+        try {
+            const orgBalance = await getOrganizationBalance(db, organizationId);
+            orgBalanceCache.set(organizationId, orgBalance);
+            return orgBalance;
+        } catch (error) {
+            log.error(
+                "Failed to get balance for organization {organizationId}",
+                {
+                    organizationId,
+                    error:
+                        error instanceof Error ? error.message : String(error),
+                },
+            );
+            throw new HTTPException(503, {
+                message: "Unable to verify balance. Please try again shortly.",
+            });
+        }
+    };
+
     const balanceState: BalanceVariables["balance"] = {
         getBalance: fetchBalanceWithErrorHandling,
+        getOrganizationBalance: fetchOrganizationBalanceWithErrorHandling,
     };
 
     c.set("balance", balanceState);

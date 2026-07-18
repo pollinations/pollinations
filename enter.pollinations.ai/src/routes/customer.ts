@@ -1,3 +1,5 @@
+import * as schema from "@shared/db/better-auth.ts";
+import { drizzle } from "drizzle-orm/d1";
 import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
 import { describeRoute } from "hono-openapi";
@@ -10,6 +12,7 @@ import {
     TinybirdRateLimitError,
 } from "../services/tinybird.ts";
 import { resolveUsageTargetUserId } from "./account.ts";
+import { readOrganizationIdParam, requireOrgAccess } from "./organizations.ts";
 
 type EarningsTodayRow = {
     paid_week: number;
@@ -45,6 +48,22 @@ export const customerRoutes = new Hono<Env>()
         }),
         async (c) => {
             const user = c.var.auth.requireUser();
+            const organizationId = readOrganizationIdParam(c);
+
+            if (organizationId) {
+                const db = drizzle(c.env.DB, { schema });
+                const { organization } = await requireOrgAccess(
+                    db,
+                    organizationId,
+                    user.id,
+                );
+                // Organizations never hold Quest/tier Pollen, by design.
+                return c.json({
+                    tierBalance: 0,
+                    packBalance: organization.packBalance,
+                });
+            }
+
             const { tierBalance, packBalance } = await c.var.balance.getBalance(
                 user.id,
             );

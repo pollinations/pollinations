@@ -1,4 +1,7 @@
-import { user as userTable } from "@shared/db/better-auth.ts";
+import {
+    organization as organizationTable,
+    user as userTable,
+} from "@shared/db/better-auth.ts";
 import { getPollenPackByKey } from "@shared/pollen-packs.ts";
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
@@ -256,6 +259,75 @@ async function creditCheckoutSessionOnce({
     }
 }
 
+/**
+ * Same idempotency shape as {@link creditCheckoutSessionOnce} (raw `env.DB.batch`,
+ * not the drizzle query builder — a DrizzleQueryError wraps the underlying D1
+ * error so a `.message`-only unique-constraint check would silently miss it),
+ * but credits an organization's `pack_balance` instead of a user's.
+ *
+ * `payerUserId` is still recorded on the `stripe_checkout_credits` row (who
+ * paid), while `organizationId` records who was credited.
+ */
+async function creditOrganizationCheckoutSessionOnce({
+    env,
+    event,
+    session,
+    payerUserId,
+    organizationId,
+    creditsToAdd,
+}: {
+    env: CloudflareBindings;
+    event: Stripe.Event;
+    session: Stripe.Checkout.Session;
+    payerUserId: string;
+    organizationId: string;
+    creditsToAdd: number;
+}): Promise<{ credited: boolean }> {
+    const createdAt = Date.now();
+
+    try {
+        const [, updateResult] = await env.DB.batch([
+            env.DB.prepare(
+                `INSERT INTO stripe_checkout_credits (
+                    session_id,
+                    event_id,
+                    event_type,
+                    user_id,
+                    pollen_credited,
+                    created_at,
+                    organization_id
+                ) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+            ).bind(
+                session.id,
+                event.id,
+                event.type,
+                payerUserId,
+                creditsToAdd,
+                createdAt,
+                organizationId,
+            ),
+            env.DB.prepare(
+                `UPDATE organization
+                SET pack_balance = pack_balance + ?
+                WHERE id = ?`,
+            ).bind(creditsToAdd, organizationId),
+        ]);
+
+        if ((updateResult.meta.changes ?? 0) !== 1) {
+            throw new Error(
+                `Stripe checkout credit failed to update organization ${organizationId} for session ${session.id}`,
+            );
+        }
+
+        return { credited: true };
+    } catch (error) {
+        if (isUniqueConstraintError(error)) {
+            return { credited: false };
+        }
+        throw error;
+    }
+}
+
 async function sendStripeEventToTinybird(
     env: CloudflareBindings,
     data: StripeEventData,
@@ -492,6 +564,61 @@ const handleCheckoutSessionCompleted = async (
     const presentment = readPresentment(session);
     const sessionAmountTotal = session.amount_total ?? 0;
     const sessionCurrency = session.currency ?? "";
+
+    // Organization funding: the payer already passed the canFundOrganization
+    // check at checkout-creation time (payment hadn't happened yet, so a hard
+    // reject there was free). By webhook time the charge has succeeded, so we
+    // must not strand the money over a permission that may have since
+    // changed — the only thing re-checked here is whether the org still
+    // exists. If it was deleted in the interim, credit the payer instead of
+    // dropping the payment.
+    const organizationId = metadata.organizationId;
+    if (organizationId) {
+        const [org] = await db
+            .select({ id: organizationTable.id })
+            .from(organizationTable)
+            .where(eq(organizationTable.id, organizationId))
+            .limit(1);
+
+        if (org) {
+            const { credited } = await creditOrganizationCheckoutSessionOnce({
+                env,
+                event,
+                session,
+                payerUserId: userId,
+                organizationId,
+                creditsToAdd: pack.amountUsd,
+            });
+
+            if (!credited) {
+                console.log(
+                    `Stripe: Skipping duplicate org checkout credit for organization ${organizationId} (session: ${session.id}, event: ${event.id})`,
+                );
+                return {
+                    success: true,
+                    message: `Skipped duplicate checkout credit for session ${session.id}`,
+                    duplicate: true,
+                };
+            }
+
+            console.log(
+                `Stripe: Credited ${pack.amountUsd} pollen to organization ${organizationId} (paid by user ${userId}, pack: $${pack.amountUsd}, paid: ${sessionAmountTotal} ${sessionCurrency}, presentment: ${presentment.presentmentAmount} ${presentment.presentmentCurrency}, session: ${session.id})`,
+            );
+
+            return {
+                success: true,
+                message: `Credited ${pack.amountUsd} pollen to organization ${organizationId}`,
+                pollenCredited: pack.amountUsd,
+                presentmentCurrency: presentment.presentmentCurrency,
+                presentmentAmount: presentment.presentmentAmount,
+            };
+        }
+
+        console.error(
+            `Stripe: Organization ${organizationId} no longer exists at webhook time for session ${session.id} — crediting payer ${userId} instead so the payment isn't stranded`,
+        );
+        // Falls through to the regular user-credit path below.
+    }
 
     const { credited } = await creditCheckoutSessionOnce({
         env,

@@ -3,6 +3,7 @@ import {
     type PeriodGranularity,
     PeriodPicker,
     Section,
+    Surface,
 } from "@pollinations/ui";
 import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
 import { useEffect } from "react";
@@ -10,6 +11,7 @@ import { EarningsGraph } from "../components/activity/earnings-graph.tsx";
 import type { Metric } from "../components/activity/types.ts";
 import { UsageSection } from "../components/activity/usage-section.tsx";
 import { LastEventsPanel } from "../components/pollen/last-events-panel.tsx";
+import { useActiveOrganizationId } from "../lib/active-organization.ts";
 
 const ACTIVITY_MIN_DATE = new Date("2026-01-01T00:00:00.000Z");
 const PERIOD_PATTERN: Record<PeriodGranularity, RegExp> = {
@@ -68,6 +70,7 @@ export const Route = createFileRoute("/_dashboard/activity")({
 function ActivityPage() {
     const search = Route.useSearch();
     const navigate = useNavigate({ from: "/activity" });
+    const activeOrganizationId = useActiveOrganizationId();
     const period = {
         granularity: search.granularity,
         period: search.period,
@@ -84,6 +87,19 @@ function ActivityPage() {
         if (params.has("granularity") && params.has("period")) return;
         void navigate({ search, replace: true });
     }, [navigate, search]);
+
+    if (activeOrganizationId) {
+        return (
+            <Section title="Activity" framed>
+                <Surface className="p-6 text-center">
+                    <p className="text-sm text-theme-text-muted">
+                        Organization usage history is coming soon. Switch back
+                        to your personal account to see your own Activity.
+                    </p>
+                </Surface>
+            </Section>
+        );
+    }
 
     return (
         <div className="flex flex-col gap-6">

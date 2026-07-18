@@ -27,7 +27,6 @@ export async function checkBalance(
     const { auth, balance, model, log } = vars;
     if (!auth.user?.id) return;
 
-    const isPaidOnly = model.definition.paidOnly ?? false;
     const estimatedCost = getEstimatedPrice(
         await getModelStats(env.KV, log),
         model.resolved,
@@ -51,6 +50,33 @@ export async function checkBalance(
         });
     }
 
+    // Org-owned keys always spend the organization's balance, never the
+    // creating member's — and organizations are paid-only (no quest/tier
+    // bucket), so this is a fully separate branch rather than a variant of
+    // the user-balance check below.
+    const organizationId = auth.apiKey?.organizationId;
+    if (organizationId) {
+        const orgBalance = await balance.getOrganizationBalance(organizationId);
+        const orgUserBalance = {
+            tierBalance: 0,
+            packBalance: orgBalance.packBalance,
+        };
+        if (
+            !isFreeCommunityModel &&
+            !canCoverEstimatedCharge(orgUserBalance, estimatedCost, true)
+        ) {
+            throw new HTTPException(402, {
+                message: `Organization balance too low. This request costs ~${estimatedCost.toFixed(4)} pollen, but the organization's available balance is ${Math.max(0, orgBalance.packBalance).toFixed(4)}.`,
+            });
+        }
+        balance.balanceCheckResult = createBalanceCheckResult(
+            orgUserBalance,
+            true,
+        );
+        return;
+    }
+
+    const isPaidOnly = model.definition.paidOnly ?? false;
     const userBalance = await balance.getBalance(auth.user.id);
 
     if (

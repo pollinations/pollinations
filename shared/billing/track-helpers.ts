@@ -9,6 +9,7 @@ import {
     type Bucket,
 } from "./deduction.ts";
 import { computeDevCredit, MARKUP_PCT } from "./markup.ts";
+import { atomicDeductOrganizationBalance } from "./organization-deduction.ts";
 import { roundPollenLedgerAmount } from "./precision.ts";
 
 const log = getLogger(["track", "helpers"]);
@@ -35,6 +36,13 @@ interface DeductionParams {
     isBilledUsage: boolean;
     totalPrice?: number;
     userId?: string;
+    /**
+     * Set when the request was made through an org-owned key. Spend is
+     * deducted from the organization's pack balance instead of `userId`'s —
+     * `userId` (the creating member) is still recorded for attribution but
+     * is not charged.
+     */
+    organizationId?: string;
     apiKeyId?: string;
     apiKeyPollenBalance?: number | null;
     byopClientKeyId?: string | null;
@@ -131,6 +139,7 @@ export async function handleBalanceDeduction(params: DeductionParams): Promise<{
         isBilledUsage,
         totalPrice,
         userId,
+        organizationId,
         apiKeyId,
         apiKeyPollenBalance,
         byopClientKeyId,
@@ -167,7 +176,15 @@ export async function handleBalanceDeduction(params: DeductionParams): Promise<{
     let postDeductionPackBalance: number | null = null;
 
     try {
-        if (userId) {
+        if (organizationId) {
+            const deduction = await deductOrganizationBalance(
+                db,
+                organizationId,
+                billedPrice,
+            );
+            payerBucket = "pack";
+            postDeductionPackBalance = deduction.packBalance;
+        } else if (userId) {
             const deduction = await deductUserBalance(
                 db,
                 userId,
@@ -327,6 +344,39 @@ async function deductApiKeyBalance(
             keyId: apiKeyId,
             error: error instanceof Error ? error.message : error,
         });
+        throw error;
+    }
+}
+
+async function deductOrganizationBalance(
+    db: DrizzleD1Database,
+    organizationId: string,
+    amount: number,
+): Promise<{ packBalance: number | null }> {
+    try {
+        const { ok, packBalance } = await atomicDeductOrganizationBalance(
+            db,
+            organizationId,
+            amount,
+        );
+        if (!ok) {
+            throw new Error(
+                `Organization balance deduction affected 0 rows for ${organizationId}`,
+            );
+        }
+        log.debug(
+            "Decremented {price} pollen from organization {organizationId} pack balance",
+            { price: amount, organizationId },
+        );
+        return { packBalance };
+    } catch (error) {
+        log.error(
+            "Failed to decrement organization balance for {organizationId}: {error}",
+            {
+                organizationId,
+                error: error instanceof Error ? error.message : String(error),
+            },
+        );
         throw error;
     }
 }

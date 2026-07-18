@@ -37,6 +37,14 @@ export type TinybirdEvent = {
     apiKeyCreatedForApp?: string;
     apiKeyCreatedForUserId?: string;
     apiKeyClientId?: string;
+    // Set when the request was made through an org-owned key — the org's
+    // balance paid, not `userId`'s. `userId` still identifies the creating
+    // member for attribution. NOTE: not yet a column on the Tinybird
+    // generation_event datasource — sent for forward-compat (Tinybird's
+    // JSONPath-based ingest ignores unmapped fields), but org-scoped
+    // Activity/usage queries need the datasource + pipe changes to land
+    // before this is queryable. See AGENTS.md Tinybird deployment safety.
+    organizationId?: string;
 
     // Meter
     selectedMeterId?: string;

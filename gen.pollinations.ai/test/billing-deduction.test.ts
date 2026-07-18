@@ -1,9 +1,14 @@
 import { env } from "cloudflare:test";
 import { getUserBalance } from "@shared/billing/balance.ts";
 import { atomicDeductUserBalance } from "@shared/billing/deduction.ts";
+import { atomicDeductOrganizationBalance } from "@shared/billing/organization-deduction.ts";
 import { handleBalanceDeduction } from "@shared/billing/track-helpers.ts";
-import { user as userTable } from "@shared/db/better-auth.ts";
+import {
+    organization as organizationTable,
+    user as userTable,
+} from "@shared/db/better-auth.ts";
 import { getRegistryModelDefinition } from "@shared/registry/registry.ts";
+import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { describe, expect, it } from "vitest";
 
@@ -27,6 +32,33 @@ async function createUser({
         updatedAt: new Date(),
     });
     return userId;
+}
+
+async function createOrganization({
+    packBalance,
+    ownerUserId,
+}: {
+    packBalance: number;
+    ownerUserId: string;
+}) {
+    const organizationId = `org-${crypto.randomUUID()}`;
+    await db.insert(organizationTable).values({
+        id: organizationId,
+        name: "Billing Test Org",
+        ownerUserId,
+        packBalance,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+    });
+    return organizationId;
+}
+
+async function getOrganizationPackBalance(organizationId: string) {
+    const [row] = await db
+        .select({ packBalance: organizationTable.packBalance })
+        .from(organizationTable)
+        .where(eq(organizationTable.id, organizationId));
+    return row?.packBalance ?? null;
 }
 
 describe("billing deduction", () => {
@@ -143,5 +175,79 @@ describe("billing deduction", () => {
         balance = await getUserBalance(db, userId);
         expect(balance.tierBalance).toBeCloseTo(0.01, 10);
         expect(balance.packBalance).toBeCloseTo(-0.01, 10);
+    });
+
+    describe("organization-owned key spend", () => {
+        it("atomicDeductOrganizationBalance deducts pack balance directly, with no tier bucket", async () => {
+            const ownerUserId = await createUser({
+                tierBalance: 0,
+                packBalance: 0,
+            });
+            const organizationId = await createOrganization({
+                packBalance: 10,
+                ownerUserId,
+            });
+
+            const result = await atomicDeductOrganizationBalance(
+                db,
+                organizationId,
+                4,
+            );
+            expect(result).toEqual({ ok: true, packBalance: 6 });
+            expect(await getOrganizationPackBalance(organizationId)).toBe(6);
+        });
+
+        it("handleBalanceDeduction with organizationId deducts the org's balance and leaves the creating member's balance untouched", async () => {
+            const creatorUserId = await createUser({
+                tierBalance: 100,
+                packBalance: 100,
+            });
+            const organizationId = await createOrganization({
+                packBalance: 10,
+                ownerUserId: creatorUserId,
+            });
+
+            const deduction = await handleBalanceDeduction({
+                db,
+                isBilledUsage: true,
+                totalPrice: 3,
+                // The creating member is still passed through for
+                // attribution (matches what track.ts does), but must not be
+                // charged when organizationId is present.
+                userId: creatorUserId,
+                organizationId,
+            });
+
+            expect(deduction.payerBucket).toBe("pack");
+            expect(deduction.postDeductionPackBalance).toBe(7);
+            expect(await getOrganizationPackBalance(organizationId)).toBe(7);
+
+            const creatorBalance = await getUserBalance(db, creatorUserId);
+            expect(creatorBalance).toEqual({
+                tierBalance: 100,
+                packBalance: 100,
+            });
+        });
+
+        it("allows the organization's pack balance to go negative on overage, same as user pack-only overage today", async () => {
+            const ownerUserId = await createUser({
+                tierBalance: 0,
+                packBalance: 0,
+            });
+            const organizationId = await createOrganization({
+                packBalance: 2,
+                ownerUserId,
+            });
+
+            await handleBalanceDeduction({
+                db,
+                isBilledUsage: true,
+                totalPrice: 5,
+                userId: ownerUserId,
+                organizationId,
+            });
+
+            expect(await getOrganizationPackBalance(organizationId)).toBe(-3);
+        });
     });
 });

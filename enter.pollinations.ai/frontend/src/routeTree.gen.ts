@@ -22,6 +22,7 @@ import { Route as DashboardQuestsRouteImport } from './routes/_dashboard.quests'
 import { Route as DashboardPollenRouteImport } from './routes/_dashboard.pollen'
 import { Route as DashboardNewsRouteImport } from './routes/_dashboard.news'
 import { Route as DashboardModelsRouteImport } from './routes/_dashboard.models'
+import { Route as DashboardMembersRouteImport } from './routes/_dashboard.members'
 import { Route as DashboardKeysRouteImport } from './routes/_dashboard.keys'
 import { Route as DashboardActivityRouteImport } from './routes/_dashboard.activity'
 
@@ -89,6 +90,11 @@ const DashboardModelsRoute = DashboardModelsRouteImport.update({
   path: '/models',
   getParentRoute: () => DashboardRoute,
 } as any)
+const DashboardMembersRoute = DashboardMembersRouteImport.update({
+  id: '/members',
+  path: '/members',
+  getParentRoute: () => DashboardRoute,
+} as any)
 const DashboardKeysRoute = DashboardKeysRouteImport.update({
   id: '/keys',
   path: '/keys',
@@ -111,6 +117,7 @@ export interface FileRoutesByFullPath {
   '/terms': typeof TermsRoute
   '/activity': typeof DashboardActivityRoute
   '/keys': typeof DashboardKeysRoute
+  '/members': typeof DashboardMembersRoute
   '/models': typeof DashboardModelsRoute
   '/news': typeof DashboardNewsRoute
   '/pollen': typeof DashboardPollenRoute
@@ -127,6 +134,7 @@ export interface FileRoutesByTo {
   '/terms': typeof TermsRoute
   '/activity': typeof DashboardActivityRoute
   '/keys': typeof DashboardKeysRoute
+  '/members': typeof DashboardMembersRoute
   '/models': typeof DashboardModelsRoute
   '/news': typeof DashboardNewsRoute
   '/pollen': typeof DashboardPollenRoute
@@ -145,6 +153,7 @@ export interface FileRoutesById {
   '/terms': typeof TermsRoute
   '/_dashboard/activity': typeof DashboardActivityRoute
   '/_dashboard/keys': typeof DashboardKeysRoute
+  '/_dashboard/members': typeof DashboardMembersRoute
   '/_dashboard/models': typeof DashboardModelsRoute
   '/_dashboard/news': typeof DashboardNewsRoute
   '/_dashboard/pollen': typeof DashboardPollenRoute
@@ -163,6 +172,7 @@ export interface FileRouteTypes {
     | '/terms'
     | '/activity'
     | '/keys'
+    | '/members'
     | '/models'
     | '/news'
     | '/pollen'
@@ -179,6 +189,7 @@ export interface FileRouteTypes {
     | '/terms'
     | '/activity'
     | '/keys'
+    | '/members'
     | '/models'
     | '/news'
     | '/pollen'
@@ -196,6 +207,7 @@ export interface FileRouteTypes {
     | '/terms'
     | '/_dashboard/activity'
     | '/_dashboard/keys'
+    | '/_dashboard/members'
     | '/_dashboard/models'
     | '/_dashboard/news'
     | '/_dashboard/pollen'
@@ -307,6 +319,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardModelsRouteImport
       parentRoute: typeof DashboardRoute
     }
+    '/_dashboard/members': {
+      id: '/_dashboard/members'
+      path: '/members'
+      fullPath: '/members'
+      preLoaderRoute: typeof DashboardMembersRouteImport
+      parentRoute: typeof DashboardRoute
+    }
     '/_dashboard/keys': {
       id: '/_dashboard/keys'
       path: '/keys'
@@ -327,6 +346,7 @@ declare module '@tanstack/react-router' {
 interface DashboardRouteChildren {
   DashboardActivityRoute: typeof DashboardActivityRoute
   DashboardKeysRoute: typeof DashboardKeysRoute
+  DashboardMembersRoute: typeof DashboardMembersRoute
   DashboardModelsRoute: typeof DashboardModelsRoute
   DashboardNewsRoute: typeof DashboardNewsRoute
   DashboardPollenRoute: typeof DashboardPollenRoute
@@ -336,6 +356,7 @@ interface DashboardRouteChildren {
 const DashboardRouteChildren: DashboardRouteChildren = {
   DashboardActivityRoute: DashboardActivityRoute,
   DashboardKeysRoute: DashboardKeysRoute,
+  DashboardMembersRoute: DashboardMembersRoute,
   DashboardModelsRoute: DashboardModelsRoute,
   DashboardNewsRoute: DashboardNewsRoute,
   DashboardPollenRoute: DashboardPollenRoute,

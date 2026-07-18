@@ -33,6 +33,11 @@ type CreateApiKeyForUserInput = {
     metadata?: CallerMetadata;
     allowAccountKeysPermission: boolean;
     defaultCreatedVia: string;
+    /**
+     * When set, the created key spends from this organization's balance
+     * instead of `userId`'s own. `userId` still records the creating member.
+     */
+    organizationId?: string;
 };
 
 type CreateApiKeyAuthClient = {
@@ -237,6 +242,7 @@ export async function createApiKeyForUser({
     metadata,
     allowAccountKeysPermission,
     defaultCreatedVia,
+    organizationId,
 }: CreateApiKeyForUserInput) {
     const db = drizzle(dbBinding, { schema });
     const attribution = await validateClientRedirectBinding(
@@ -302,6 +308,9 @@ export async function createApiKeyForUser({
     if (!isPublishable && attribution) {
         d1Updates.byopClientKeyId = attribution.clientId;
     }
+    if (organizationId) {
+        d1Updates.organizationId = organizationId;
+    }
 
     await db
         .update(schema.apikey)
@@ -321,6 +330,7 @@ export async function createApiKeyForUser({
         pollenBudget: pollenBudget ?? null,
         byopClientKeyId:
             !isPublishable && attribution ? attribution.clientId : null,
+        organizationId: organizationId ?? null,
         metadata: finalMetadata,
     };
 }

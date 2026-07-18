@@ -105,14 +105,14 @@ const TabContent: FC<TabContentProps> = ({ models, sortKey, sortDir }) => {
     return (
         <>
             {/* Desktop cards */}
-            <div className="hidden md:flex md:flex-col gap-2 pb-1">
+            <div className="hidden gap-2 pb-1 @2xl:pointer-fine:flex @2xl:pointer-fine:flex-col">
                 {sorted.map((model) => (
                     <ModelRow key={model.name} model={model} />
                 ))}
             </div>
 
             {/* Mobile list */}
-            <div className="md:hidden pb-1">
+            <div className="pb-1 @2xl:pointer-fine:hidden">
                 {sorted.map((model) => (
                     <MobileModelRow key={model.name} model={model} />
                 ))}
@@ -362,9 +362,9 @@ export const UnifiedModelTable: FC<UnifiedModelTableProps> = ({
         sortKey === key ? (sortDir === "asc" ? "↑" : "↓") : null;
 
     return (
-        <div>
+        <div className="@container">
             {/* Column headers (sortable) */}
-            <div className="hidden items-center pb-2 pr-8 md:flex">
+            <div className="hidden items-center pb-2 pr-8 @2xl:pointer-fine:flex">
                 <button
                     type="button"
                     onClick={() => onSort("name")}
@@ -392,20 +392,17 @@ export const UnifiedModelTable: FC<UnifiedModelTableProps> = ({
                         className="text-right min-[500px]:text-center shrink-0 w-[90px] translate-x-[14px] cursor-pointer hover:text-theme-text-base"
                     >
                         <div className="text-sm font-bold text-ink-900">
-                            <span className="md:hidden">Gen</span>
-                            <span className="hidden md:inline">1 pollen</span>{" "}
-                            {sortArrow("perPollen")}
+                            1 pollen {sortArrow("perPollen")}
                         </div>
                         <div className="text-xs font-normal text-ink-700 opacity-70 italic">
-                            <span className="md:hidden">/pollen</span>
-                            <span className="hidden md:inline">≈ gen</span>
+                            ≈ gen
                         </div>
                     </button>
                 </Tooltip>
                 <button
                     type="button"
                     onClick={() => onSort("input")}
-                    className="hidden md:block text-center w-[100px] pl-7 shrink-0 cursor-pointer hover:text-theme-text-base"
+                    className="w-[100px] shrink-0 cursor-pointer pl-7 text-center hover:text-theme-text-base"
                 >
                     <div className="text-sm font-bold text-ink-900">
                         Input {sortArrow("input")}
@@ -417,7 +414,7 @@ export const UnifiedModelTable: FC<UnifiedModelTableProps> = ({
                 <button
                     type="button"
                     onClick={() => onSort("output")}
-                    className="hidden md:block text-center w-[100px] pl-7 shrink-0 cursor-pointer hover:text-theme-text-base"
+                    className="w-[100px] shrink-0 cursor-pointer pl-7 text-center hover:text-theme-text-base"
                 >
                     <div className="text-sm font-bold text-ink-900">
                         Output {sortArrow("output")}

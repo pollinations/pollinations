@@ -1,0 +1,33 @@
+{
+  "pr_number": 12556,
+  "title": "feat: tag SlidePainter images",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/12556",
+  "merged_at": "2026-07-18T07:56:50Z",
+  "labels": [],
+  "pr_body_excerpt": "- Publishes generated slide images with `slidepainter`\n- Uses the media URL as the generated result when publishing succeeds\n- Keeps media publishing non-blocking\n\nChecks: Biome, esbuild, mocked multipart contract",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Slides Join the Garden",
+    "blurb": "SlidePainter now sends its generated images out with a little provenance pollen attached. When publishing works, the shared media URL becomes the result without making anyone wait by the mailbox.",
+    "summary": "SlidePainter now publishes generated slide images tagged with \"slidepainter\", uses the published media URL as the result when available, and keeps publishing non-blocking.",
+    "impact": "People sharing SlidePainter output get a durable published media URL with clear app attribution, while slide generation remains responsive if publishing takes its time.",
+    "keywords": [
+      "slidepainter",
+      "images",
+      "media-publishing",
+      "attribution",
+      "community-app"
+    ],
+    "visual_concept": "A cozy SlidePainter workshop where Polly adds a small \"slidepainter\" label to illustrated presentation slides before sending them along a garden path to a glowing media gallery. Include a retro monitor showing a colorful slide, with flowers and code-vines around the workspace to represent publishing happening quietly in the background.",
+    "image_prompt": "Cozy pixel art scene of Polly, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny painter's beret, carefully attaching a pixel-font \"slidepainter\" tag to a colorful presentation slide on a retro CRT monitor while copies drift toward a glowing media garden in the background. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, code-plants and small flowers, warm lighting, retro gaming vibes, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-18/PR-12556.jpg",
+    "prompt": "Cozy pixel art scene of Polly, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny painter's beret, carefully attaching a pixel-font \"slidepainter\" tag to a colorful presentation slide on a retro CRT monitor while copies drift toward a glowing media garden in the background. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, code-plants and small flowers, warm lighting, retro gaming vibes, nostalgic but beautiful."
+  },
+  "generated_at": "2026-07-18T07:57:46.235999+00:00"
+}

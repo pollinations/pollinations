@@ -3,8 +3,7 @@ import path from "node:path";
 /**
  * End-to-end smoke test for the Pollinations MCP server.
  *
- * Spawns the server over stdio, lists tools, and exercises a small slice
- * (auth + a live text + image-URL call) using a sk_ key from env.
+ * Spawns the server over stdio, lists tools, and exercises a small live slice.
  *
  *   POLLINATIONS_API_KEY=sk_xxx npm run test
  */
@@ -18,6 +17,7 @@ const KEY = process.env.POLLINATIONS_API_KEY;
 const transport = new StdioClientTransport({
     command: "node",
     args: [path.join(__dirname, "src/index.js")],
+    env: KEY ? { POLLINATIONS_API_KEY: KEY } : undefined,
 });
 const client = new Client(
     { name: "mcp-smoke-test", version: "0.0.1" },
@@ -53,7 +53,27 @@ await client.connect(transport);
 
 await step("listTools", async () => {
     const { tools } = await client.listTools();
-    if (tools.length < 15) throw new Error(`only ${tools.length} tools`);
+    const expected = [
+        "analyzeVideo",
+        "chatCompletion",
+        "describeImage",
+        "generateImage",
+        "generateImageUrl",
+        "generateVideo",
+        "generateVideoUrl",
+        "getBalance",
+        "getUsage",
+        "listAudioVoices",
+        "listImageModels",
+        "listTextModels",
+        "respondAudio",
+        "sayText",
+        "transcribeAudio",
+    ];
+    const actual = tools.map((tool) => tool.name).sort();
+    if (JSON.stringify(actual) !== JSON.stringify(expected)) {
+        throw new Error(`unexpected tools: ${actual.join(", ")}`);
+    }
     return `${tools.length} tools`;
 });
 
@@ -64,12 +84,14 @@ if (!KEY) {
         "\nSkipping authenticated calls — set POLLINATIONS_API_KEY=sk_… to exercise the full path.",
     );
 } else {
-    await step("setApiKey", () => call("setApiKey", { key: KEY }));
-    await step("getKeyInfo", () => call("getKeyInfo"));
-    await step("generateText", async () => {
-        const out = await call("generateText", {
-            prompt: "Reply with exactly: pong",
-            model: "openai-fast",
+    await step("chatCompletion", async () => {
+        const out = await call("chatCompletion", {
+            messages: [
+                {
+                    role: "user",
+                    content: "Reply with exactly: pong",
+                },
+            ],
         });
         if (!/pong/i.test(out)) throw new Error(`unexpected: ${trim(out)}`);
         return out;
@@ -86,7 +108,6 @@ if (!KEY) {
         return out;
     });
     await step("getBalance", () => call("getBalance"));
-    await step("clearApiKey", () => call("clearApiKey"));
 }
 
 await client.close();

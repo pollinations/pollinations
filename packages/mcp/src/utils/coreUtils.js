@@ -164,9 +164,6 @@ export async function postChatCompletion(body) {
 
     if (!response.ok) {
         const errorText = await response.text().catch(() => "Unknown error");
-        if (response.status === 429) {
-            throw new Error("Rate limited. Please wait before retrying.");
-        }
         throw new Error(parseApiError(response.status, errorText));
     }
 
@@ -201,46 +198,15 @@ export function arrayBufferToBase64(buffer) {
 /**
  * @param {number} status - HTTP status code
  * @param {string} errorText - Raw error text from response
- * @returns {string} - User-friendly error message
+ * @returns {string} - Upstream error message with its HTTP status
  */
 export function parseApiError(status, errorText) {
-    let parsed = null;
+    let parsed;
     try {
         parsed = JSON.parse(errorText);
     } catch {}
-    const errorMessage =
+    const error =
         parsed?.error?.message || parsed?.message || parsed?.error || errorText;
-    switch (status) {
-        case 400:
-            if (
-                errorMessage.toLowerCase().includes("content moderation") ||
-                errorMessage.toLowerCase().includes("safety") ||
-                errorMessage.toLowerCase().includes("blocked")
-            ) {
-                return `Content blocked by safety filters. Try rephrasing your prompt or disable 'safe' mode if appropriate.`;
-            }
-            if (errorMessage.toLowerCase().includes("invalid model")) {
-                return `Invalid model specified. Use listImageModels or listTextModels to see available options.`;
-            }
-            return `Bad request: ${errorMessage}`;
-        case 401:
-            return `Authentication failed. Please set a valid API key using setApiKey. Get your key at https://enter.pollinations.ai/keys`;
-        case 403:
-            return `Access forbidden. Your API key may not have permission for this operation.`;
-        case 404:
-            return `Resource not found. The requested endpoint or model may not exist.`;
-        case 429:
-            return (
-                `Rate limited. You're making too many requests. ` +
-                `If using pk_ (publishable) key, consider upgrading to sk_ (secret) key for higher limits.`
-            );
-        case 500:
-            return `Server error: ${errorMessage}. Please try again later.`;
-        case 502:
-        case 503:
-        case 504:
-            return `Service temporarily unavailable. Please try again in a few moments.`;
-        default:
-            return `Request failed (${status}): ${errorMessage}`;
-    }
+    const message = typeof error === "string" ? error : JSON.stringify(error);
+    return `Request failed (${status}): ${message}`;
 }

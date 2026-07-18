@@ -12,77 +12,23 @@ import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js"
 import player from "play-sound";
 import { accountTools } from "./services/accountService.js";
 import { audioTools } from "./services/audioService.js";
-import { authTools } from "./services/authService.js";
 // Import tools from services
 import { imageTools } from "./services/imageService.js";
 import { textTools } from "./services/textService.js";
 
 // Combine all tools
-const allTools = [
-    ...imageTools,
-    ...textTools,
-    ...audioTools,
-    ...authTools,
-    ...accountTools,
-];
+const allTools = [...imageTools, ...textTools, ...audioTools, ...accountTools];
 
 /**
  * Server instructions shown to MCP clients
  */
 const SERVER_INSTRUCTIONS = `# Pollinations MCP Server
 
-## Authentication
-Set your API key first using the setApiKey tool:
-- **Publishable keys (pk_)**: Client-safe, rate-limited (1 pollen per IP per hour)
-- **Secret keys (sk_)**: Server-side only, no rate limits, can spend Pollen
+All requests go through https://gen.pollinations.ai.
 
-Get your API key at: https://enter.pollinations.ai/keys
+Authentication is configured only with the POLLINATIONS_API_KEY environment variable. Never pass an API key in tool arguments or conversation content.
 
-## Available Tools
-
-### Image & Video Generation
-- **generateImageUrl** - Get a shareable URL for an image (without API key)
-- **generateImage** - Generate an image and get base64 data
-- **generateImageBatch** - Generate multiple images in parallel (best with sk_ keys)
-- **generateVideo** - Generate videos using veo, seedance, or seedance-pro
-- **generateVideoUrl** - Get a shareable URL for a video (without API key)
-- **describeImage** - Analyze/describe an image using vision AI
-- **analyzeVideo** - Analyze YouTube videos or video URLs using gemini-large
-- **listImageModels** - List all available image/video models (dynamic)
-
-### Text Generation
-- **generateText** - Simple text generation from a prompt
-- **chatCompletion** - OpenAI-compatible chat completions with tool calling
-- **webSearch** - Search the web using perplexity or gemini-search
-- **listTextModels** - List all available text models (dynamic)
-- **getPricing** - Get model pricing info (cost per token/image)
-
-### Audio
-- **respondAudio** - AI responds to your prompt with speech
-- **sayText** - Text-to-speech (verbatim)
-- **transcribeAudio** - Transcribe audio using gemini-large
-- **listAudioVoices** - List available voices (dynamic)
-
-### Authentication
-- **setApiKey** - Set your API key
-- **getKeyInfo** - Check current key status (local)
-- **clearApiKey** - Remove stored key
-
-### Account
-- **getBalance** - Remaining Pollen for the authenticated key (requires account:usage)
-- **getUsage** - Recent usage history; pass daily=true for daily aggregated summary
-
-## API Endpoint
-All requests go through: https://gen.pollinations.ai
-
-## Tips
-- Models are fetched dynamically from the API - always up to date!
-- Use listImageModels/listTextModels to see available options
-- Image-to-image: Use the 'image' parameter with kontext or seedream models
-- Video generation: use listImageModels for live videoCapabilities, including start/end-frame and audio support
-- Web search: Use webSearch with perplexity-fast, perplexity-reasoning, or gemini-search
-- Audio transcription: Use transcribeAudio with gemini-large
-- Reasoning: Use kimi, perplexity-reasoning, openai-large, gemini-large`;
+Use chatCompletion for text generation, including model capabilities such as reasoning, tools, and web search. Use listTextModels, listImageModels, and listAudioVoices to inspect the live registries. Gen validates models, aliases, modalities, and request parameters.`;
 
 /**
  * Start the MCP server with STDIO transport

@@ -2,65 +2,53 @@
 
 ## Design Principles
 
-1. **Thin proxy, single gateway.** All HTTP goes through `gen.pollinations.ai`. Do not add second hostnames (e.g. direct `enter.pollinations.ai` or `media.pollinations.ai`) — use the gateway's rewrites (`/account/*`, `/image/*`, `/text/*`, `/audio/*`, `/v1/*`).
-2. **No hardcoded model or voice enums.** Validate against the live registry via `utils/models.js` (5-minute cache). Tool param schemas should be `z.string()` with a "use listX for the live list" hint.
-3. **Don't transform response data.** Pass through API responses; only reshape when an MCP content-block is required (e.g. wrap binary as base64 image/audio).
-4. **Minimal tool surface.** Every tool is extra context for the LLM to reason over and a chance to pick the wrong one. Add only what's genuinely useful inside a host (Claude Desktop, Cursor, etc.).
+1. **Thin proxy, single authority.** All HTTP goes through `gen.pollinations.ai`. Gen owns model defaults, aliases, modality support, voice support, request validation, and API errors.
+2. **Discovery registries, not preflights.** Model and voice registries exist to inform clients. Do not fetch a registry before a generation request or reject inputs locally based on registry contents.
+3. **Do not reshape API data.** Return Gen JSON unchanged inside an MCP text content block. Only convert data when the MCP protocol requires it, such as binary image or audio content.
+4. **Minimal tool surface.** Prefer one composable tool over convenience variants. Every tool adds model context and another opportunity to select the wrong operation.
+5. **Environment-only secrets.** Read `POLLINATIONS_API_KEY` from the server process environment. Never accept, store, inspect, or clear API keys through model-visible tools.
 
 ## File Structure
 
-```
+```text
 packages/mcp/
   src/
-    index.js                     # executable server entrypoint and tool registration
+    index.js                     # server entrypoint and tool registration
     services/
-      imageService.js            # generateImage(Url|Batch), generateVideo(Url), describeImage, analyzeVideo, listImageModels
-      textService.js             # generateText, chatCompletion, webSearch, listTextModels, getPricing
-      audioService.js            # respondAudio, sayText, transcribeAudio, listAudioVoices
-      authService.js             # setApiKey, getKeyInfo, clearApiKey  (local only — no API calls)
-      accountService.js          # getBalance, getUsage                (via /account/*)
+      imageService.js            # image/video generation, media analysis, registry discovery
+      textService.js             # chat completion and registry discovery
+      audioService.js            # speech, transcription, and voice discovery
+      accountService.js          # balance and usage via /account/*
     utils/
-      authUtils.js               # in-memory key store, header/query builders
-      coreUtils.js               # fetch wrappers, URL builders, chatWithMedia helper, error mapping
-      models.js                  # registry fetchers + validators (cached 5 min)
+      authUtils.js               # immutable environment authentication
+      coreUtils.js               # gateway fetch and MCP content helpers
+      models.js                  # direct registry fetchers
 ```
 
 ## Stdio Discipline
 
-The MCP server speaks JSON-RPC over stdio. `console.log` corrupts the protocol.
+The server speaks JSON-RPC over stdio. `console.log` in imported server modules corrupts the protocol.
 
-- **Never** use `console.log` in any module imported by `src/index.js`.
-- Use `console.error` sparingly for diagnostics (goes to stderr, safe).
-- Test scripts run standalone — `console.log` is fine there.
+- Never use `console.log` in modules imported by `src/index.js`.
+- Use `console.error` sparingly for diagnostics.
+- Standalone test scripts may use `console.log`.
 
 ## Adding a Tool
 
-1. Add the handler to the relevant service file (or create a new one for a new domain).
-2. Export a `[name, description, zodShape, handler]` entry in a tool array.
-3. Import the array into `src/index.js` and spread it into `allTools`.
-4. Update the `SERVER_INSTRUCTIONS` blurb with a one-line entry.
-5. Update `README.md`'s tool table.
+1. Confirm an existing tool cannot express the operation.
+2. Keep the handler as a direct Gen request with only MCP content wrapping.
+3. Export `[name, description, zodShape, handler]` from the relevant service.
+4. Register its service array in `src/index.js`.
+5. Update the concise tool table in `README.md`.
 
-## Validation Pattern
+Do not add model or voice enums, registry preflight checks, response summaries, compatibility aliases, or convenience wrappers.
 
-```js
-import { validateImageModel } from "../utils/models.js";
+## Media Chat
 
-const result = await validateImageModel(model);
-if (!result.valid) {
-    throw new Error(
-        `${result.error} Did you mean: ${result.suggestions.join(", ")}?`,
-    );
-}
-```
-
-Cache is shared across all tool calls within a process — don't roll your own fetcher for model lists.
-
-## Media-Chat Helper
-
-`describeImage`, `analyzeVideo`, `transcribeAudio` all call `/v1/chat/completions` with a single media block. Use `chatWithMedia({ model, prompt, mediaType, mediaUrl })` from `coreUtils.js` — do not re-inline the fetch+parse boilerplate.
+`describeImage`, `analyzeVideo`, and `transcribeAudio` use `chatWithMedia` from `coreUtils.js`. Keep their shared request path there.
 
 ## Testing
 
-- `npm run test` — `test-mcp-client.js` runs the server end-to-end over stdio. Set `POLLINATIONS_API_KEY=sk_…` to exercise authenticated tools.
-- Restart Claude Desktop after any change — it caches the running MCP process.
+- `npm test` runs the end-to-end stdio smoke test without authenticated calls.
+- `POLLINATIONS_API_KEY=sk_… npm test` also exercises authenticated tools.
+- Restart MCP hosts after changes because they cache the running server process.

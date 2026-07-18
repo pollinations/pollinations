@@ -9,13 +9,9 @@ import {
 
 async function getBalance(_params) {
     requireApiKey();
-    const data = await fetchJsonWithAuth(`${API_BASE_URL}/account/balance`);
     return createMCPResponse([
         createTextContent(
-            {
-                pollen: data.balance,
-                note: "Pollen balance for the authenticated key. Key-scoped when the key has its own budget, otherwise account-wide.",
-            },
+            await fetchJsonWithAuth(`${API_BASE_URL}/account/balance`),
             true,
         ),
     ]);
@@ -35,46 +31,8 @@ async function getUsage(params) {
         url.searchParams.set("limit", String(limit));
     }
 
-    const data = await fetchJsonWithAuth(url.toString());
-    const records = data.usage || [];
-
-    if (daily) {
-        const totalCost = records.reduce(
-            (sum, r) => sum + (r.cost_usd || 0),
-            0,
-        );
-        const totalRequests = records.reduce(
-            (sum, r) => sum + (r.requests || 0),
-            0,
-        );
-        return createMCPResponse([
-            createTextContent(
-                {
-                    mode: "daily",
-                    days: days ?? 90,
-                    totals: {
-                        requests: totalRequests,
-                        cost_usd: Number(totalCost.toFixed(4)),
-                    },
-                    records,
-                    count: data.count ?? records.length,
-                },
-                true,
-            ),
-        ]);
-    }
-
     return createMCPResponse([
-        createTextContent(
-            {
-                mode: "per-request",
-                days: days ?? 30,
-                limit: limit ?? 100,
-                records,
-                count: data.count ?? records.length,
-            },
-            true,
-        ),
+        createTextContent(await fetchJsonWithAuth(url.toString()), true),
     ]);
 }
 

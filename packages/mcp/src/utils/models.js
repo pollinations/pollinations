@@ -1,28 +1,11 @@
 import { API_BASE_URL, fetchJsonWithAuth } from "./coreUtils.js";
 
-const CACHE_TTL_MS = 5 * 60 * 1000;
+const fetchRegistry = (path) =>
+    fetchJsonWithAuth(`${API_BASE_URL}${path}`, { timeoutMs: 20000 });
 
-const cache = new Map();
-
-async function fetchCached(path) {
-    const hit = cache.get(path);
-    if (hit && Date.now() - hit.at < CACHE_TTL_MS) return hit.data;
-
-    const data = await fetchJsonWithAuth(`${API_BASE_URL}${path}`, {
-        timeoutMs: 20000,
-    });
-    cache.set(path, { data, at: Date.now() });
-    return data;
-}
-
-export const getImageModels = () => fetchCached("/image/models");
-export const getTextModels = () => fetchCached("/text/models");
-export const getAudioModels = () => fetchCached("/audio/models");
-
-export async function getVideoModels() {
-    const models = await getImageModels();
-    return models.filter((m) => m.output_modalities?.includes("video"));
-}
+export const getImageModels = () => fetchRegistry("/image/models");
+export const getTextModels = () => fetchRegistry("/text/models");
+export const getAudioModels = () => fetchRegistry("/audio/models");
 
 export async function getAudioVoices() {
     try {
@@ -53,41 +36,6 @@ export async function getAudioVoices() {
         "dan",
     ];
 }
-
-async function validateAgainstRegistry(modelName, fetcher, kind) {
-    if (!modelName) return { valid: true };
-    const models = await fetcher();
-    const model = models.find(
-        (m) => m.name === modelName || m.aliases?.includes(modelName),
-    );
-    if (model) return { valid: true, model };
-
-    const allNames = models.flatMap((m) => [m.name, ...(m.aliases || [])]);
-    const lower = modelName.toLowerCase();
-    const suggestions = allNames
-        .filter(
-            (name) =>
-                name.toLowerCase().includes(lower) ||
-                lower.includes(name.toLowerCase()),
-        )
-        .slice(0, 3);
-    return {
-        valid: false,
-        error: `Unknown ${kind} model "${modelName}".`,
-        suggestions:
-            suggestions.length > 0 ? suggestions : allNames.slice(0, 5),
-        availableCount: models.length,
-    };
-}
-
-export const validateImageModel = (name) =>
-    validateAgainstRegistry(name, getImageModels, "image");
-
-export const validateTextModel = (name) =>
-    validateAgainstRegistry(name, getTextModels, "text");
-
-export const validateVideoModel = (name) =>
-    validateAgainstRegistry(name, getVideoModels, "video");
 
 export async function validateVoice(voice) {
     if (!voice) return { valid: true };

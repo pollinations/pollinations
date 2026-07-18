@@ -256,6 +256,80 @@ async function creditCheckoutSessionOnce({
     }
 }
 
+/**
+ * Twin of creditCheckoutSessionOnce for gifts: writes to stripe_gift_credits
+ * (its own idempotency key space, so a gift session can never collide with a
+ * top-up session on stripe_checkout_credits' primary key) and credits
+ * recipientUserId's pack_balance instead of the payer's.
+ */
+async function creditGiftCheckoutOnce({
+    env,
+    event,
+    session,
+    senderUserId,
+    recipientUserId,
+    recipientGithubUsername,
+    packKey,
+    creditsToAdd,
+}: {
+    env: CloudflareBindings;
+    event: Stripe.Event;
+    session: Stripe.Checkout.Session;
+    senderUserId: string;
+    recipientUserId: string;
+    recipientGithubUsername: string;
+    packKey: string;
+    creditsToAdd: number;
+}): Promise<{ credited: boolean }> {
+    const createdAt = Date.now();
+
+    try {
+        const [, updateResult] = await env.DB.batch([
+            env.DB.prepare(
+                `INSERT INTO stripe_gift_credits (
+                    session_id,
+                    event_id,
+                    event_type,
+                    sender_user_id,
+                    recipient_user_id,
+                    recipient_github_username,
+                    pack_key,
+                    pollen_credited,
+                    created_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            ).bind(
+                session.id,
+                event.id,
+                event.type,
+                senderUserId,
+                recipientUserId,
+                recipientGithubUsername,
+                packKey,
+                creditsToAdd,
+                createdAt,
+            ),
+            env.DB.prepare(
+                `UPDATE user
+                SET pack_balance = COALESCE(pack_balance, 0) + ?
+                WHERE id = ?`,
+            ).bind(creditsToAdd, recipientUserId),
+        ]);
+
+        if ((updateResult.meta.changes ?? 0) !== 1) {
+            throw new Error(
+                `Gift credit failed to update recipient ${recipientUserId} for session ${session.id}`,
+            );
+        }
+
+        return { credited: true };
+    } catch (error) {
+        if (isUniqueConstraintError(error)) {
+            return { credited: false };
+        }
+        throw error;
+    }
+}
+
 async function sendStripeEventToTinybird(
     env: CloudflareBindings,
     data: StripeEventData,
@@ -427,6 +501,128 @@ function emitPaymentIntentAnalytics(
 }
 
 /**
+ * Handle a gift checkout session: credits recipientUserId's packBalance,
+ * not the payer's. Same shape as handleCheckoutSessionCompleted otherwise
+ * (presentment-based paid check, packKey lookup, idempotent D1 credit).
+ */
+const handleGiftCheckoutSessionCompleted = async (
+    event: Stripe.Event,
+    session: Stripe.Checkout.Session,
+    env: CloudflareBindings,
+): Promise<CheckoutSessionResult> => {
+    const metadata = session.metadata;
+    const senderUserId = metadata?.senderUserId;
+    const recipientUserId = metadata?.recipientUserId;
+    const recipientGithubUsername = metadata?.recipientGithubUsername;
+    const packKey = metadata?.packKey;
+
+    if (
+        !senderUserId ||
+        !recipientUserId ||
+        !recipientGithubUsername ||
+        !packKey
+    ) {
+        console.error("Missing gift metadata:", session.id);
+        return { success: false, message: "Missing required gift metadata" };
+    }
+
+    // Belt-and-suspenders: the only current caller (checkout.session.completed)
+    // already gates on payment_status === "paid" before dispatching here, and
+    // async_payment_succeeded implies a paid session. Checking again here means
+    // a future dispatch-site change can't accidentally credit an unpaid gift.
+    if (session.payment_status !== "paid") {
+        console.error(
+            "Gift checkout session not paid:",
+            session.id,
+            session.payment_status,
+        );
+        return { success: false, message: "Payment not completed" };
+    }
+
+    const pack = getPollenPackByKey(packKey);
+    if (!pack) {
+        console.error("Missing or invalid pack in gift checkout session:", {
+            sessionId: session.id,
+            packKey,
+        });
+        return { success: false, message: "Missing or invalid pack metadata" };
+    }
+
+    const presentmentSubtotal = Math.round(
+        (session.amount_subtotal || 0) / 100,
+    );
+    if (presentmentSubtotal <= 0) {
+        console.error("Invalid payment amount for gift:", {
+            sessionId: session.id,
+            presentmentSubtotal,
+        });
+        return { success: false, message: "Invalid payment amount" };
+    }
+    // amount_subtotal is localized by Adaptive Pricing to the buyer's
+    // presentment currency, so it isn't comparable to pack.amountUsd (USD)
+    // in general — that's why it's never used as a credit source. Only when
+    // the session settled in USD (no localization applied) can it double as
+    // a sanity floor catching a tampered/mismatched packKey.
+    if (session.currency === "usd" && presentmentSubtotal < pack.amountUsd) {
+        console.error("Gift payment amount below pack price:", {
+            sessionId: session.id,
+            packKey,
+            expectedAmountUsd: pack.amountUsd,
+            presentmentSubtotal,
+        });
+        return { success: false, message: "Invalid payment amount" };
+    }
+
+    const db = drizzle(env.DB);
+    const [recipient] = await db
+        .select({ id: userTable.id })
+        .from(userTable)
+        .where(eq(userTable.id, recipientUserId))
+        .limit(1);
+
+    if (!recipient) {
+        console.error("Gift recipient not found:", recipientUserId);
+        return { success: false, message: "Recipient no longer exists" };
+    }
+
+    const presentment = readPresentment(session);
+
+    const { credited } = await creditGiftCheckoutOnce({
+        env,
+        event,
+        session,
+        senderUserId,
+        recipientUserId,
+        recipientGithubUsername,
+        packKey,
+        creditsToAdd: pack.amountUsd,
+    });
+
+    if (!credited) {
+        console.log(
+            `Stripe: Skipping duplicate gift credit for recipient ${recipientUserId} (session: ${session.id}, event: ${event.id})`,
+        );
+        return {
+            success: true,
+            message: `Skipped duplicate gift credit for session ${session.id}`,
+            duplicate: true,
+        };
+    }
+
+    console.log(
+        `Stripe: Credited ${pack.amountUsd} pollen gift from ${senderUserId} to ${recipientUserId} (pack: $${pack.amountUsd}, presentment: ${presentment.presentmentAmount} ${presentment.presentmentCurrency}, session: ${session.id})`,
+    );
+
+    return {
+        success: true,
+        message: `Credited ${pack.amountUsd} pollen from ${senderUserId} to ${recipientUserId}`,
+        pollenCredited: pack.amountUsd,
+        presentmentCurrency: presentment.presentmentCurrency,
+        presentmentAmount: presentment.presentmentAmount,
+    };
+};
+
+/**
  * Handle successful checkout session completion.
  * Credits pollen to user's packBalance and persists observability fields.
  * Pollen amount is derived from the selected pack metadata.
@@ -437,6 +633,13 @@ const handleCheckoutSessionCompleted = async (
     env: CloudflareBindings,
 ): Promise<CheckoutSessionResult> => {
     const metadata = session.metadata;
+
+    // Gift sessions also carry metadata.userId (the payer, for the new-card
+    // fingerprint gate below), so this dispatch must run before the userId
+    // check treats the payer as the credit target.
+    if (metadata?.type === "gift") {
+        return handleGiftCheckoutSessionCompleted(event, session, env);
+    }
 
     if (!metadata?.userId) {
         console.error("Missing userId in checkout session:", session.id);

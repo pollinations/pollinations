@@ -50,6 +50,8 @@ export const user = sqliteTable("user", {
   index("idx_user_auto_top_up_enabled").on(table.autoTopUpEnabled),
   // GitHub profile lookup for quest checks and account display.
   index("idx_user_github_id").on(table.githubId),
+  // Gift-recipient lookup by GitHub username.
+  index("idx_user_github_username").on(table.githubUsername),
 ]);
 
 export const session = sqliteTable("session", {
@@ -321,6 +323,49 @@ export const stripeCheckoutCredits = sqliteTable("stripe_checkout_credits", {
 }, (table) => [
   index("idx_stripe_checkout_credits_user_id").on(table.userId),
 ]);
+
+// Mirrors stripe_checkout_credits, but the payer and the credited user
+// differ. Kept as its own table (rather than a nullable column on
+// stripe_checkout_credits) so gift-session idempotency never shares a
+// uniqueness key with regular top-up idempotency, and so "gifts I've
+// sent" / "gifts I've received" are simple indexed queries.
+export const stripeGiftCredits = sqliteTable("stripe_gift_credits", {
+  sessionId: text("session_id").primaryKey(),
+  eventId: text("event_id").notNull(),
+  eventType: text("event_type").notNull(),
+  senderUserId: text("sender_user_id")
+    .notNull()
+    .references(() => user.id, { onDelete: "cascade" }),
+  recipientUserId: text("recipient_user_id")
+    .notNull()
+    .references(() => user.id, { onDelete: "cascade" }),
+  // Snapshot of the GitHub username as resolved at checkout-creation time,
+  // so history/receipts still render correctly if the recipient later
+  // renames their GitHub account.
+  recipientGithubUsername: text("recipient_github_username").notNull(),
+  packKey: text("pack_key").notNull(),
+  pollenCredited: real("pollen_credited").notNull(),
+  createdAt: integer("created_at", { mode: "timestamp" })
+    .defaultNow()
+    .notNull(),
+}, (table) => [
+  index("idx_stripe_gift_credits_sender_user_id").on(table.senderUserId),
+  index("idx_stripe_gift_credits_recipient_user_id").on(table.recipientUserId),
+]);
+
+export const stripeGiftCreditsRelations = relations(
+  stripeGiftCredits,
+  ({ one }) => ({
+    sender: one(user, {
+      fields: [stripeGiftCredits.senderUserId],
+      references: [user.id],
+    }),
+    recipient: one(user, {
+      fields: [stripeGiftCredits.recipientUserId],
+      references: [user.id],
+    }),
+  }),
+);
 
 export const polarCheckoutCredits = sqliteTable("polar_checkout_credits", {
   orderId: text("order_id").primaryKey(),

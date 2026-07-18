@@ -517,9 +517,15 @@ const OpenAIModelSchema = z
         tools: z.boolean().optional(),
         reasoning: z.boolean().optional(),
         context_length: z.number().optional(),
+        pricing: z
+            .record(z.string(), z.string())
+            .and(z.object({ currency: z.literal("pollen") }))
+            .optional(),
+        paid_only: z.boolean().optional(),
     })
     .meta({
-        description: "OpenAI-compatible model object with capability metadata",
+        description:
+            "OpenAI-compatible model object with capability and billing metadata",
     });
 
 export const GetModelsResponseSchema = z

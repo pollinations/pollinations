@@ -372,6 +372,41 @@ describe("tracking observability", () => {
         expect(consumePollen.mock.calls[0]?.[0]).toBeGreaterThan(0);
     });
 
+    it("does not emit Tinybird generation events for cache hits", async () => {
+        const tinybirdFetch = vi
+            .spyOn(globalThis, "fetch")
+            .mockResolvedValue(new Response("ok"));
+
+        const ctx = createExecutionContext();
+        const response = await createHeaderApp({ "x-cache": "HIT" }).fetch(
+            new Request("https://gen.pollinations.ai/v1/chat/completions", {
+                method: "POST",
+                headers: { "content-type": "application/json" },
+                body: JSON.stringify({
+                    model: "openai",
+                    stream: false,
+                    messages: [{ role: "user", content: "test" }],
+                }),
+            }),
+            {
+                ENVIRONMENT: "test",
+                LOG_LEVEL: "debug",
+                LOG_FORMAT: "text",
+                BETTER_AUTH_SECRET: "test_secret",
+                TINYBIRD_INGEST_URL:
+                    "https://tinybird.test/v0/events?name=generation_event",
+                TINYBIRD_INGEST_TOKEN: "test_tinybird_token",
+            } as CloudflareBindings,
+            ctx,
+        );
+
+        await waitOnExecutionContext(ctx);
+
+        expect(response.status).toBe(200);
+        expect(response.headers.get("x-cache")).toBe("HIT");
+        expect(tinybirdFetch).not.toHaveBeenCalled();
+    });
+
     it("does not trigger auto top-up while post-deduction pack balance is above threshold", async () => {
         const db = drizzle(env.DB);
         const userId = `track-auto-top-up-${crypto.randomUUID()}`;

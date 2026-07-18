@@ -55,7 +55,7 @@ const brandWordmarkMask: CSSProperties = {
 
 type DashboardShellProps = PropsWithChildren<{
     navItems?: readonly DashboardNavItem[];
-    showModelsSubnav?: boolean;
+    showContextualNav?: boolean;
     githubUsername?: string;
     githubAvatarUrl?: string;
     onSignOut?: () => void;
@@ -138,7 +138,7 @@ const accountMenuLinks: readonly AccountMenuLink[] = [
 
 export const DashboardShell: FC<DashboardShellProps> = ({
     navItems = DASHBOARD_NAV_ITEMS,
-    showModelsSubnav = false,
+    showContextualNav = false,
     githubUsername,
     githubAvatarUrl,
     onSignOut,
@@ -155,8 +155,10 @@ export const DashboardShell: FC<DashboardShellProps> = ({
         DASHBOARD_NAV_ITEMS.find((item) => item.to === location.pathname) ??
         DASHBOARD_NAV_ITEMS[0];
     const activePage = activeNavItem.id;
-    const activeModelsView =
-        location.search.view === "mine" ? "mine" : "browse";
+    const activeContextualView =
+        typeof location.search.view === "string"
+            ? location.search.view
+            : undefined;
 
     useDashboardShellBodyClass();
     useScrollLock(isDrawerOpen);
@@ -294,8 +296,8 @@ export const DashboardShell: FC<DashboardShellProps> = ({
             accountArea={effectiveAccountArea}
             walletArea={walletArea}
             onNavigate={closeDrawer}
-            showModelsSubnav={showModelsSubnav}
-            activeModelsView={activeModelsView}
+            showContextualNav={showContextualNav}
+            activeContextualView={activeContextualView}
         />
     );
 
@@ -386,8 +388,8 @@ type DashboardRailProps = {
     accountArea?: ReactNode;
     walletArea?: ReactNode;
     onNavigate: () => void;
-    showModelsSubnav: boolean;
-    activeModelsView: "browse" | "mine";
+    showContextualNav: boolean;
+    activeContextualView?: string;
 };
 
 const DashboardRail: FC<DashboardRailProps> = ({
@@ -398,8 +400,8 @@ const DashboardRail: FC<DashboardRailProps> = ({
     accountArea,
     walletArea,
     onNavigate,
-    showModelsSubnav,
-    activeModelsView,
+    showContextualNav,
+    activeContextualView,
 }) => (
     <aside
         data-theme="neutral"
@@ -422,6 +424,7 @@ const DashboardRail: FC<DashboardRailProps> = ({
             <nav className="flex flex-col gap-1 pr-2">
                 {navItems.map((item) => {
                     const isActive = activePage === item.id;
+                    const contextualItems = CONTEXTUAL_NAV_ITEMS[item.id];
                     return (
                         <div key={item.id}>
                             <NavItem
@@ -443,11 +446,13 @@ const DashboardRail: FC<DashboardRailProps> = ({
                                     </Chip>
                                 )}
                             </NavItem>
-                            {item.id === "models" &&
+                            {contextualItems &&
                                 isActive &&
-                                showModelsSubnav && (
-                                    <ModelsSubnav
-                                        activeView={activeModelsView}
+                                showContextualNav && (
+                                    <ContextualSubnav
+                                        to={item.to}
+                                        items={contextualItems}
+                                        activeView={activeContextualView}
                                         onNavigate={onNavigate}
                                     />
                                 )}
@@ -465,39 +470,45 @@ const DashboardRail: FC<DashboardRailProps> = ({
     </aside>
 );
 
-const ModelsSubnav: FC<{
-    activeView: "browse" | "mine";
+type ContextualNavItem = {
+    label: string;
+    view?: "mine" | "apps";
+};
+
+const CONTEXTUAL_NAV_ITEMS: Partial<
+    Record<DashboardPage, readonly ContextualNavItem[]>
+> = {
+    models: [{ label: "Browse Models" }, { label: "My Models", view: "mine" }],
+    keys: [{ label: "API Keys" }, { label: "App Keys", view: "apps" }],
+};
+
+const ContextualSubnav: FC<{
+    to: DashboardPath;
+    items: readonly ContextualNavItem[];
+    activeView?: string;
     onNavigate: () => void;
-}> = ({ activeView, onNavigate }) => (
+}> = ({ to, items, activeView, onNavigate }) => (
     <div className="ml-7 mt-1 flex flex-col gap-0.5 border-l border-theme-text-strong/10 pl-2">
-        <Link
-            to="/models"
-            search={{}}
-            aria-current={activeView === "browse" ? "page" : undefined}
-            className={cn(
-                "rounded-full px-3 py-1.5 text-xs font-medium transition-colors",
-                activeView === "browse"
-                    ? "bg-surface-opaque text-theme-text-strong"
-                    : "text-theme-text-muted hover:bg-surface-opaque/60 hover:text-theme-text-strong",
-            )}
-            onClick={onNavigate}
-        >
-            Browse Models
-        </Link>
-        <Link
-            to="/models"
-            search={{ view: "mine" }}
-            aria-current={activeView === "mine" ? "page" : undefined}
-            className={cn(
-                "rounded-full px-3 py-1.5 text-xs font-medium transition-colors",
-                activeView === "mine"
-                    ? "bg-surface-opaque text-theme-text-strong"
-                    : "text-theme-text-muted hover:bg-surface-opaque/60 hover:text-theme-text-strong",
-            )}
-            onClick={onNavigate}
-        >
-            My Models
-        </Link>
+        {items.map((item) => {
+            const isActive = item.view === activeView;
+            return (
+                <Link
+                    key={item.label}
+                    to={to}
+                    search={item.view ? { view: item.view } : {}}
+                    aria-current={isActive ? "page" : undefined}
+                    className={cn(
+                        "rounded-full px-3 py-1.5 text-xs font-medium transition-colors",
+                        isActive
+                            ? "bg-surface-opaque text-theme-text-strong"
+                            : "text-theme-text-muted hover:bg-surface-opaque/60 hover:text-theme-text-strong",
+                    )}
+                    onClick={onNavigate}
+                >
+                    {item.label}
+                </Link>
+            );
+        })}
     </div>
 );
 

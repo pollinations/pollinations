@@ -6,10 +6,12 @@ import {
     type CreateApiKey,
     type CreateApiKeyResponse,
 } from "../components/keys";
+import { validateKeySearch } from "../components/keys/key-search.ts";
 import { createKeyWithPermissions } from "../lib/create-api-key.ts";
 import { Route as DashboardRoute } from "./_dashboard.tsx";
 
 export const Route = createFileRoute("/_dashboard/keys")({
+    validateSearch: validateKeySearch,
     beforeLoad: ({ context, location }) => {
         if (!context.user) {
             throw redirect({

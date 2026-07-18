@@ -9,11 +9,13 @@ import {
     PencilIcon,
     Section,
     Surface,
+    TabButton,
     TerminalIcon,
     TokensIcon,
     Tooltip,
     XIcon,
 } from "@pollinations/ui";
+import { useNavigate, useSearch } from "@tanstack/react-router";
 import { formatDistanceToNowStrict } from "date-fns";
 import type { FC } from "react";
 import { useState } from "react";
@@ -49,6 +51,9 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
     onUpdate,
     onDelete,
 }) => {
+    const navigate = useNavigate({ from: "/keys" });
+    const keySearch = useSearch({ from: "/_dashboard/keys" });
+    const activeView = keySearch.view === "apps" ? "apps" : "api";
     const [deleteId, setDeleteId] = useState<string | null>(null);
     const [editingKey, setEditingKey] = useState<ApiKey | null>(null);
 
@@ -69,6 +74,14 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
     );
     const sortedApiKeys = sortedKeys.filter((apiKey) => !isAppKey(apiKey));
     const sortedAppKeys = sortedKeys.filter(isAppKey);
+
+    const setActiveView = (view: "api" | "apps") => {
+        void navigate({
+            search: {
+                view: view === "apps" ? "apps" : undefined,
+            },
+        });
+    };
 
     function renderKeyCard(apiKey: ApiKey) {
         const isPublishable = isPublishableKey(apiKey);
@@ -246,8 +259,26 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
     return (
         <>
             <div className="flex flex-col gap-6">
+                <nav
+                    className="flex gap-1.5 md:hidden"
+                    aria-label="Key sections"
+                >
+                    <TabButton
+                        active={activeView === "api"}
+                        onClick={() => setActiveView("api")}
+                    >
+                        API Keys
+                    </TabButton>
+                    <TabButton
+                        active={activeView === "apps"}
+                        onClick={() => setActiveView("apps")}
+                    >
+                        App Keys
+                    </TabButton>
+                </nav>
                 <Section
-                    title="API"
+                    className={activeView === "api" ? undefined : "hidden"}
+                    title="API Keys"
                     framed
                     action={
                         <ApiKeyDialog
@@ -286,7 +317,8 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                     </p>
                 </Section>
                 <Section
-                    title="App"
+                    className={activeView === "apps" ? undefined : "hidden"}
+                    title="App Keys"
                     framed
                     action={
                         <ApiKeyDialog

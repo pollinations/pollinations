@@ -1,0 +1,36 @@
+{
+  "pr_number": 12549,
+  "title": "feat: add CatGPT community media gallery",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/12549",
+  "merged_at": "2026-07-18T06:51:18Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "pr_body_excerpt": "- Automatically republishes generated CatGPT memes to media storage with the `catgpt` tag.\n- Shows the newest tagged images in a public community gallery.\n- Keeps uploaded reference images untagged and unlisted.\n- Falls back to the generated image URL if gallery publishing fails.\n\nChecks:\n- `biome check` on changed JavaScript\n- `node --check` on changed JavaScript\n- Mocked upload, tag listing, and private-reference multipart contracts",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "The cats found a gallery",
+    "blurb": "CatGPT now puts its freshly generated memes on the community wall. Reference photos stay out of the frame; the cats have some editorial standards.",
+    "summary": "CatGPT now republishes generated memes to media storage with the catgpt tag and displays the newest tagged images in a public community gallery, while uploaded reference images remain private and unlisted.",
+    "impact": "People can browse the latest CatGPT creations in one shared gallery, with generated-image URLs still shown directly if gallery publishing is unavailable.",
+    "keywords": [
+      "catgpt",
+      "community-gallery",
+      "media-storage",
+      "memes",
+      "image-generation",
+      "tags"
+    ],
+    "visual_concept": "Depict CatGPT as a cozy public pixel-art meme gallery: framed whimsical cat images hang on a garden-wall gallery while Polly curates the newest arrivals. Polly should wear a tiny curator beret and pin a fresh cat picture to the wall; a small CRT monitor robot can proudly display the catgpt tag, with flowering vines and code-plants making the gallery feel community-grown.",
+    "image_prompt": "A cozy pixel-art community gallery garden where the cute pollinations bee mascot—a yellow body with dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light-blue translucent wings—wears a tiny curator beret and hangs a freshly generated pixel cat meme beneath a small \"catgpt\" sign, while a cute CRT-monitor robot presents the newest framed images among flowers and code-plants. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-18/PR-12549.jpg",
+    "prompt": "A cozy pixel-art community gallery garden where the cute pollinations bee mascot—a yellow body with dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light-blue translucent wings—wears a tiny curator beret and hangs a freshly generated pixel cat meme beneath a small \"catgpt\" sign, while a cute CRT-monitor robot presents the newest framed images among flowers and code-plants. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
+  },
+  "generated_at": "2026-07-18T06:52:12.411478+00:00"
+}

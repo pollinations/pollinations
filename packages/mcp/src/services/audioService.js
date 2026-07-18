@@ -1,6 +1,3 @@
-import fs from "node:fs";
-import os from "node:os";
-import path from "node:path";
 import { z } from "zod";
 import { requireApiKey } from "../utils/authUtils.js";
 import {
@@ -12,11 +9,7 @@ import {
     createTextContent,
     fetchBinaryWithAuth,
 } from "../utils/coreUtils.js";
-import {
-    getAudioModels,
-    getAudioVoices,
-    validateVoice,
-} from "../utils/models.js";
+import { getAudioModels, validateVoice } from "../utils/models.js";
 
 const DEFAULT_AUDIO_MODEL = "openai-audio";
 
@@ -40,8 +33,6 @@ async function respondAudio(params) {
         format = "mp3",
         model,
         voiceInstructions,
-        audioPlayer,
-        tempDir,
     } = params;
 
     if (!prompt || typeof prompt !== "string") {
@@ -79,17 +70,6 @@ async function respondAudio(params) {
         const mimeType =
             contentType || `audio/${format === "mp3" ? "mpeg" : format}`;
 
-        if (audioPlayer) {
-            const tempDirPath = tempDir || os.tmpdir();
-            await playAudio(
-                base64Data,
-                mimeType,
-                "respond_audio",
-                audioPlayer,
-                tempDirPath,
-            );
-        }
-
         return createMCPResponse([
             createAudioContent(base64Data, mimeType),
             createTextContent(
@@ -111,8 +91,6 @@ async function sayText(params) {
         format = "mp3",
         model,
         voiceInstructions,
-        audioPlayer,
-        tempDir,
     } = params;
 
     if (!text || typeof text !== "string") {
@@ -150,17 +128,6 @@ async function sayText(params) {
         const mimeType =
             contentType || `audio/${format === "mp3" ? "mpeg" : format}`;
 
-        if (audioPlayer) {
-            const tempDirPath = tempDir || os.tmpdir();
-            await playAudio(
-                base64Data,
-                mimeType,
-                "say_text",
-                audioPlayer,
-                tempDirPath,
-            );
-        }
-
         return createMCPResponse([
             createAudioContent(base64Data, mimeType),
             createTextContent(
@@ -174,44 +141,32 @@ async function sayText(params) {
 }
 
 async function listAudioVoices(_params) {
-    try {
-        const audioModels = await getAudioModels();
-        const byModel = audioModels
-            .filter((m) => Array.isArray(m.voices) && m.voices.length > 0)
-            .map((m) => ({
-                model: m.name,
-                aliases: m.aliases || [],
-                description: m.description,
-                voices: m.voices,
-            }));
-        const allVoices = Array.from(new Set(byModel.flatMap((m) => m.voices)));
+    const audioModels = await getAudioModels();
+    const byModel = audioModels
+        .filter((m) => Array.isArray(m.voices) && m.voices.length > 0)
+        .map((m) => ({
+            model: m.name,
+            aliases: m.aliases || [],
+            description: m.description,
+            voices: m.voices,
+        }));
+    const allVoices = Array.from(new Set(byModel.flatMap((m) => m.voices)));
 
-        return createMCPResponse([
-            createTextContent(
-                {
-                    voices: allVoices,
-                    byModel,
-                    formats: ["wav", "mp3", "flac", "opus", "pcm16"],
-                    total: allVoices.length,
-                },
-                true,
-            ),
-        ]);
-    } catch (error) {
-        console.error("Error listing audio voices:", error);
-        const voices = await getAudioVoices();
-        return createMCPResponse([
-            createTextContent(
-                {
-                    voices,
-                    formats: ["wav", "mp3", "flac", "opus", "pcm16"],
-                    total: voices.length,
-                    note: "Using fallback voice list (registry unavailable)",
-                },
-                true,
-            ),
-        ]);
+    if (allVoices.length === 0) {
+        throw new Error("Audio model registry returned no voices");
     }
+
+    return createMCPResponse([
+        createTextContent(
+            {
+                voices: allVoices,
+                byModel,
+                formats: ["wav", "mp3", "flac", "opus", "pcm16"],
+                total: allVoices.length,
+            },
+            true,
+        ),
+    ]);
 }
 
 async function transcribeAudio(params) {
@@ -250,50 +205,6 @@ async function transcribeAudio(params) {
         console.error("Error transcribing audio:", error);
         throw error;
     }
-}
-
-function playAudio(audioData, mimeType, prefix, audioPlayer, tempDir) {
-    if (!audioPlayer || !tempDir) {
-        return Promise.resolve();
-    }
-
-    return new Promise((resolve, reject) => {
-        try {
-            const format = getFormatFromMimeType(mimeType);
-            const tempFile = path.join(
-                tempDir,
-                `${prefix}_${Date.now()}.${format}`,
-            );
-            fs.writeFileSync(tempFile, Buffer.from(audioData, "base64"));
-
-            audioPlayer.play(tempFile, (err) => {
-                try {
-                    fs.unlinkSync(tempFile);
-                } catch (e) {
-                    console.error("Error removing temp file:", e);
-                }
-
-                if (err) {
-                    console.error("Error playing audio:", err);
-                }
-                resolve();
-            });
-        } catch (error) {
-            console.error("Error playing audio:", error);
-            reject(error);
-        }
-    });
-}
-
-function getFormatFromMimeType(mimeType) {
-    const formats = {
-        "audio/mpeg": "mp3",
-        "audio/wav": "wav",
-        "audio/ogg": "ogg",
-        "audio/flac": "flac",
-        "audio/opus": "opus",
-    };
-    return formats[mimeType] || "mp3";
 }
 
 const voiceSchema = z

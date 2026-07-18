@@ -8,7 +8,6 @@
 import { pathToFileURL } from "node:url";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
-import player from "play-sound";
 import { accountTools } from "./services/accountService.js";
 import { audioTools } from "./services/audioService.js";
 import { authTools } from "./services/authService.js";
@@ -88,13 +87,6 @@ All requests go through: https://gen.pollinations.ai
  */
 export async function startMcpServer() {
     try {
-        // Initialize audio player (optional, for local playback)
-        try {
-            global.audioPlayer = player();
-        } catch (error) {
-            console.error("Audio player not available:", error.message);
-        }
-
         // Create the MCP server
         const server = new McpServer(
             {

@@ -91,6 +91,7 @@ const models: ModelDefinition[] = [
     {
         name: "qwen-large",
         config: portkeyConfig["qwen/qwen3.7-plus"],
+        transform: createReasoningEffortTransform("toggle"),
     },
     {
         name: "qwen3.7-max",

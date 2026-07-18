@@ -1,0 +1,36 @@
+{
+  "pr_number": 12531,
+  "title": "fix: include usage in OpenAI image responses",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/12531",
+  "merged_at": "2026-07-18T02:28:59Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "pr_body_excerpt": "- Adds OpenAI-compatible token usage to image generation and edit responses.\\n- Preserves internal image tracking headers when binary responses are wrapped as JSON.\\n- Covers response mapping and billing behavior with focused tests.\\n\\nTests:\\n- Focused image usage unit test\\n- Focused OpenAI image generation integration test\\n- Gen TypeScript typecheck",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Images now count themselves",
+    "blurb": "OpenAI-compatible image responses now bring their usage receipts along. The pixels arrived; now the accounting does too.",
+    "summary": "OpenAI-compatible image generation and edit responses now include token usage data while preserving internal image-tracking headers when binary image results are returned as JSON.",
+    "impact": "Developers can track usage and billing from OpenAI-style image responses without losing the headers used to associate generated images with their requests.",
+    "keywords": [
+      "openai-compatible",
+      "image-generation",
+      "image-edits",
+      "usage",
+      "billing",
+      "api"
+    ],
+    "visual_concept": "A cozy API accounting scene: Polly is carefully attaching a tiny usage receipt to a framed generated pixel landscape, while a friendly CRT monitor robot verifies the image's tracking tags. A small code-plant and blooming flowers make the technical bookkeeping feel like garden maintenance rather than tax season.",
+    "image_prompt": "A cozy pixel art scene in a warm garden hackerspace: the main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; Polly wears tiny accountant glasses and carefully clips a pixel-font usage receipt onto a framed generated landscape while a cute chunky CRT-monitor robot checks glowing tracking labels. Lime green (#ecf874) is prominent on the terminal, receipt glow, and code-plants growing among pastel flowers; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, subtle scanlines, with simple pixel text: 'USAGE OK'."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-18/PR-12531.jpg",
+    "prompt": "A cozy pixel art scene in a warm garden hackerspace: the main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; Polly wears tiny accountant glasses and carefully clips a pixel-font usage receipt onto a framed generated landscape while a cute chunky CRT-monitor robot checks glowing tracking labels. Lime green (#ecf874) is prominent on the terminal, receipt glow, and code-plants growing among pastel flowers; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, subtle scanlines, with simple pixel text: 'USAGE OK'."
+  },
+  "generated_at": "2026-07-18T02:29:51.976477+00:00"
+}

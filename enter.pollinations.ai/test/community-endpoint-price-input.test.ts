@@ -4,8 +4,10 @@ import {
 } from "@shared/community-endpoints.ts";
 import { describe, expect, it } from "vitest";
 import {
+    emptyForm,
     formPriceToStoredPrice,
     isValidPriceInput,
+    nextFormState,
     pricePerMillionToPerToken,
     storedPriceToFormValue,
 } from "../frontend/src/components/community-endpoints/types.ts";
@@ -38,5 +40,11 @@ describe("community endpoint price input", () => {
     it("converts prices between per-token storage and per-million input", () => {
         expect(formPriceToStoredPrice("30")).toBe(0.00003);
         expect(storedPriceToFormValue(0.00003)).toBe("30");
+    });
+
+    it("keeps embedding as the selected endpoint modality", () => {
+        expect(nextFormState(emptyForm, "modality", "embedding").modality).toBe(
+            "embedding",
+        );
     });
 });

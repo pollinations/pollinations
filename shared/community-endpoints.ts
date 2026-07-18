@@ -3,13 +3,18 @@ import type { ModelDefinition, PriceDefinition } from "./registry/registry.ts";
 import {
     OPENAI_CHAT_USAGE_PATHS,
     OPENAI_CHAT_USAGE_TYPES,
+    OPENAI_EMBEDDING_USAGE_PATHS,
     OPENAI_IMAGE_USAGE_PATHS,
     type OpenAIChatUsageType,
 } from "./registry/usage-headers.ts";
 
 export const LEGACY_COMMUNITY_MODEL_PREFIX = "community/";
 export const COMMUNITY_MODEL_REWARD_RATE = 0.75;
-export const COMMUNITY_ENDPOINT_MODALITIES = ["text", "image"] as const;
+export const COMMUNITY_ENDPOINT_MODALITIES = [
+    "text",
+    "image",
+    "embedding",
+] as const;
 // Zero is free; positive owner-declared prices start at this floor.
 export const MIN_COMMUNITY_PRICE_PER_MILLION_TOKENS = 0.000001;
 export const MIN_COMMUNITY_PRICE_PER_TOKEN =
@@ -86,12 +91,22 @@ const COMMUNITY_IMAGE_ENDPOINT_PRICE_FIELDS = [
     COMMUNITY_IMAGE_PRICE_FIELD,
 ] as const;
 
+const COMMUNITY_EMBEDDING_ENDPOINT_PRICE_FIELDS = [
+    {
+        ...COMMUNITY_PRICE_FIELD_BY_USAGE_TYPE.promptTextTokens,
+        usageType: "promptTextTokens",
+        rawUsagePaths: OPENAI_EMBEDDING_USAGE_PATHS.promptTextTokens,
+    },
+] as const;
+
 export function communityEndpointPriceFieldsForModality(
     modality: CommunityEndpointModality,
 ) {
-    return modality === "image"
-        ? COMMUNITY_IMAGE_ENDPOINT_PRICE_FIELDS
-        : COMMUNITY_TEXT_ENDPOINT_PRICE_FIELDS;
+    if (modality === "image") return COMMUNITY_IMAGE_ENDPOINT_PRICE_FIELDS;
+    if (modality === "embedding") {
+        return COMMUNITY_EMBEDDING_ENDPOINT_PRICE_FIELDS;
+    }
+    return COMMUNITY_TEXT_ENDPOINT_PRICE_FIELDS;
 }
 
 export type CommunityEndpointPriceField =
@@ -132,7 +147,7 @@ export function communityEndpointPricesForModality(
 export function normalizeCommunityEndpointModality(
     value: string | null | undefined,
 ): CommunityEndpointModality {
-    return value === "image" ? "image" : "text";
+    return value === "image" || value === "embedding" ? value : "text";
 }
 
 // Access/visibility of a registered endpoint. Private is the default; choosing
@@ -239,12 +254,17 @@ export function communityImageGenerationsUrl(baseUrl: string): string {
     return `${communityOpenAIBaseUrl(baseUrl)}/images/generations`;
 }
 
+export function communityEmbeddingsUrl(baseUrl: string): string {
+    return `${communityOpenAIBaseUrl(baseUrl)}/embeddings`;
+}
+
 export function communityOpenAIBaseUrl(baseUrl: string): string {
     const normalized = normalizeCommunityEndpointBaseUrl(baseUrl);
     for (const suffix of [
         "/chat/completions",
         "/images/generations",
         "/images/edits",
+        "/embeddings",
     ]) {
         if (normalized.endsWith(suffix)) {
             return normalized.slice(0, -suffix.length);
@@ -281,19 +301,24 @@ export function communityModelDefinition(
         legacyAlias && legacyAlias !== endpoint.modelId ? [legacyAlias] : [];
     const modality = normalizeCommunityEndpointModality(endpoint.modality);
     const isImage = modality === "image";
+    const isEmbedding = modality === "embedding";
     return {
         aliases,
         modelId: endpoint.modelId,
         provider: "community",
         brand: "Community",
-        category: isImage ? "image" : "text",
+        category: isImage ? "image" : isEmbedding ? "embedding" : "text",
         cost: communityPriceDefinition(endpoint),
         priceMultiplier: 1,
         addedDate: 0,
         title: description || parsed?.modelName || endpoint.modelId,
         description: description || undefined,
         inputModalities: ["text"],
-        outputModalities: isImage ? ["image"] : ["text"],
+        outputModalities: isImage
+            ? ["image"]
+            : isEmbedding
+              ? ["embedding"]
+              : ["text"],
         paidOnly: false,
         alpha: true,
         ...(isImage ? { flatRate: false } : {}),

@@ -49,6 +49,7 @@ const SECTION_ORDER: SectionType[] = [
     "text",
     "community-text",
     "community-image",
+    "community-embedding",
     "embedding",
 ];
 
@@ -62,6 +63,7 @@ const SEARCH_LABELS: Record<SectionType, string> = {
     text: "text",
     "community-text": "community text",
     "community-image": "community image",
+    "community-embedding": "community embedding",
     embedding: "embedding",
 };
 
@@ -93,6 +95,7 @@ function categorizeModels(
         text: [],
         "community-text": [],
         "community-image": [],
+        "community-embedding": [],
         embedding: [],
     };
 
@@ -229,7 +232,8 @@ export const Models: FC<ModelsProps> = ({
                                 onClick={() => setActiveTab(section)}
                                 ariaLabel={
                                     section === "community-text" ||
-                                    section === "community-image"
+                                    section === "community-image" ||
+                                    section === "community-embedding"
                                         ? `${sectionLabels[section]} alpha models`
                                         : undefined
                                 }
@@ -237,7 +241,8 @@ export const Models: FC<ModelsProps> = ({
                                 <span className="inline-flex items-center gap-1.5">
                                     {sectionLabels[section]}
                                     {(section === "community-text" ||
-                                        section === "community-image") && (
+                                        section === "community-image" ||
+                                        section === "community-embedding") && (
                                         <Chip intent="alpha" size="sm">
                                             Alpha
                                         </Chip>
@@ -283,6 +288,9 @@ export const Models: FC<ModelsProps> = ({
                             }
                             communityImageModels={
                                 sectionModels["community-image"]
+                            }
+                            communityEmbeddingModels={
+                                sectionModels["community-embedding"]
                             }
                             embeddingModels={sectionModels.embedding}
                             activeTab={activeTab}

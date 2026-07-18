@@ -99,6 +99,36 @@ export const OPENAI_IMAGE_USAGE_PATHS = {
     completionImageTokens: ["output_tokens"],
 } as const satisfies Partial<Record<UsageType, readonly string[]>>;
 
+export type OpenAIEmbeddingUsage = {
+    prompt_tokens: number;
+    total_tokens: number;
+};
+
+export function getOpenAIEmbeddingUsage(
+    value: unknown,
+): OpenAIEmbeddingUsage | null {
+    if (!value || typeof value !== "object" || !("usage" in value)) {
+        return null;
+    }
+    const usage = value.usage;
+    if (
+        !usage ||
+        typeof usage !== "object" ||
+        !("prompt_tokens" in usage) ||
+        !isTokenCount(usage.prompt_tokens) ||
+        !("total_tokens" in usage) ||
+        !isTokenCount(usage.total_tokens) ||
+        usage.total_tokens !== usage.prompt_tokens
+    ) {
+        return null;
+    }
+    return usage as OpenAIEmbeddingUsage;
+}
+
+export const OPENAI_EMBEDDING_USAGE_PATHS = {
+    promptTextTokens: ["prompt_tokens"],
+} as const satisfies Partial<Record<UsageType, readonly string[]>>;
+
 export function usageToOpenAIImageUsage(usage: Usage): OpenAIImageUsage {
     const inputTextTokens =
         (usage.promptTextTokens ?? 0) +

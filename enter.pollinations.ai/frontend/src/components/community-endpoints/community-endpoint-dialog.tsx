@@ -226,7 +226,9 @@ export function CommunityEndpointDialog({
     const basePriceKeys =
         form.modality === "image"
             ? (["promptTextPrice", "completionImagePrice"] as const)
-            : BASE_TEXT_PRICE_KEYS;
+            : form.modality === "embedding"
+              ? (["promptTextPrice"] as const)
+              : BASE_TEXT_PRICE_KEYS;
     const visiblePriceKeys = new Set(
         isShared
             ? visiblePriceFieldKeys(savedPriceKeys, returnedFields, [
@@ -305,29 +307,30 @@ export function CommunityEndpointDialog({
                         }
                         alignLabelRow
                     >
-                        <div className="grid grid-cols-2 gap-2">
-                            {(["text", "image"] as const).map((modality) => {
-                                const selected = form.modality === modality;
-                                return (
-                                    <button
-                                        key={modality}
-                                        type="button"
-                                        disabled={isEdit}
-                                        className={`rounded-md border px-3 py-2 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-60 ${
-                                            selected
-                                                ? "border-theme-border-active bg-theme-bg-active text-theme-text-strong"
-                                                : "border-divider bg-surface text-theme-text-muted hover:bg-surface-opaque"
-                                        }`}
-                                        onClick={() =>
-                                            updateForm("modality", modality)
-                                        }
-                                    >
-                                        {modality === "image"
-                                            ? "Image"
-                                            : "Text"}
-                                    </button>
-                                );
-                            })}
+                        <div className="grid grid-cols-3 gap-2">
+                            {(["text", "image", "embedding"] as const).map(
+                                (modality) => {
+                                    const selected = form.modality === modality;
+                                    return (
+                                        <button
+                                            key={modality}
+                                            type="button"
+                                            disabled={isEdit}
+                                            className={`rounded-md border px-3 py-2 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-60 ${
+                                                selected
+                                                    ? "border-theme-border-active bg-theme-bg-active text-theme-text-strong"
+                                                    : "border-divider bg-surface text-theme-text-muted hover:bg-surface-opaque"
+                                            }`}
+                                            onClick={() =>
+                                                updateForm("modality", modality)
+                                            }
+                                        >
+                                            {modality.charAt(0).toUpperCase() +
+                                                modality.slice(1)}
+                                        </button>
+                                    );
+                                },
+                            )}
                         </div>
                     </FieldStack>
 
@@ -409,7 +412,7 @@ export function CommunityEndpointDialog({
                     <div className="grid gap-4 sm:grid-cols-2">
                         <FieldStack
                             label="Endpoint URL"
-                            helper="OpenAI-compatible /v1 base URL, or full chat/image generation URL."
+                            helper="OpenAI-compatible /v1 base URL, or full chat, image generation, or embeddings URL."
                             alignLabelRow
                         >
                             <Input
@@ -473,7 +476,10 @@ export function CommunityEndpointDialog({
                                                 placeholder={
                                                     form.modality === "image"
                                                         ? "gpt-image-2"
-                                                        : "gpt-4o-mini"
+                                                        : form.modality ===
+                                                            "embedding"
+                                                          ? "text-embedding-3-small"
+                                                          : "gpt-4o-mini"
                                                 }
                                                 className="w-full pr-10"
                                                 autoComplete="off"
@@ -540,7 +546,9 @@ export function CommunityEndpointDialog({
                                     placeholder={
                                         form.modality === "image"
                                             ? "gpt-image-2"
-                                            : "gpt-4o-mini"
+                                            : form.modality === "embedding"
+                                              ? "text-embedding-3-small"
+                                              : "gpt-4o-mini"
                                     }
                                     autoComplete="off"
                                     autoCapitalize="none"

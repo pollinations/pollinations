@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
     listCommunityEndpointModels,
+    testCommunityEmbeddingEndpoint,
     testCommunityEndpoint,
     testCommunityImageEndpoint,
 } from "../src/services/community-endpoint-openai.ts";
@@ -195,6 +196,74 @@ describe("community endpoint OpenAI service", () => {
                 model: "gpt-image-1",
             }),
         ).rejects.toThrow("Endpoint did not return a supported base64 image");
+    });
+
+    it("tests OpenAI-compatible embedding endpoints", async () => {
+        const fetchMock = vi.fn(async (input, init) => {
+            const request = new Request(input, init);
+            expect(request.url).toBe("https://api.example.com/v1/embeddings");
+            expect(request.headers.get("authorization")).toBe(
+                "Bearer sk_saved_token",
+            );
+            await expect(request.json()).resolves.toEqual({
+                model: "text-embedding-3-small",
+                input: "A simple green sprout.",
+                encoding_format: "float",
+            });
+            return Response.json({
+                object: "list",
+                data: [
+                    {
+                        object: "embedding",
+                        embedding: [0.1, -0.2, 0.3],
+                        index: 0,
+                    },
+                ],
+                model: "text-embedding-3-small",
+                usage: { prompt_tokens: 6, total_tokens: 6 },
+            });
+        });
+        vi.stubGlobal("fetch", fetchMock);
+
+        await expect(
+            testCommunityEmbeddingEndpoint({
+                baseUrl: "https://api.example.com/v1/embeddings",
+                bearerToken: "sk_saved_token",
+                model: "text-embedding-3-small",
+            }),
+        ).resolves.toEqual({
+            usage: { prompt_tokens: 6, total_tokens: 6 },
+            billableUsage: { promptTextTokens: 6 },
+        });
+    });
+
+    it("rejects inconsistent embedding usage", async () => {
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async () =>
+                Response.json({
+                    object: "list",
+                    data: [
+                        {
+                            object: "embedding",
+                            embedding: [0.1],
+                            index: 0,
+                        },
+                    ],
+                    usage: { prompt_tokens: 6, total_tokens: 7 },
+                }),
+            ),
+        );
+
+        await expect(
+            testCommunityEmbeddingEndpoint({
+                baseUrl: "https://api.example.com/v1",
+                bearerToken: "sk_saved_token",
+                model: "text-embedding-3-small",
+            }),
+        ).rejects.toThrow(
+            "Endpoint did not return billable OpenAI token usage",
+        );
     });
 
     it("clarifies upstream 401s after sending Authorization", async () => {

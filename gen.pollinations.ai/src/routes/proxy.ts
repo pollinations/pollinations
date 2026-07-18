@@ -1,6 +1,7 @@
 import { type Context, Hono } from "hono";
 import { bodyLimit } from "hono/body-limit";
 import { resolver as baseResolver, describeRoute } from "hono-openapi";
+import { generateCommunityEmbeddings } from "@/embeddings/communityEndpoint.ts";
 import { generateEmbeddings } from "@/embeddings/handler.ts";
 import type { Env } from "@/env.ts";
 import { handleImagePrompt, handleRegisterServer } from "@/image/handler.ts";
@@ -319,7 +320,7 @@ export const proxyRoutes = new Hono<Env>()
             tags: ["🤖 Models"],
             summary: "List Models (OpenAI-compatible)",
             description:
-                "Returns available models (text, community text/image, image, realtime, audio, embeddings) in the OpenAI-compatible format (`{object: \"list\", data: [...]}`). Use this endpoint if you're using an OpenAI SDK. For richer metadata including pricing and capabilities, use `/models`, `/text/models`, `/image/models`, `/audio/models`, or `/embeddings/models` instead. When authenticated: the owner's private community models are included, models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance.",
+                "Returns available models (text, image, realtime, audio, embeddings, and their supported community variants) in the OpenAI-compatible format (`{object: \"list\", data: [...]}`). Use this endpoint if you're using an OpenAI SDK. For richer metadata including pricing and capabilities, use `/models`, `/text/models`, `/image/models`, `/audio/models`, or `/embeddings/models` instead. When authenticated: the owner's private community models are included, models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance.",
             responses: {
                 200: {
                     description: "Success",
@@ -370,7 +371,7 @@ export const proxyRoutes = new Hono<Env>()
             tags: ["🤖 Models"],
             summary: "List Models",
             description:
-                "Returns all available text, community text/image, image, video, 3D, realtime, audio, and embedding models with pricing, capabilities, and metadata. When authenticated: the owner's private community models are included, models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance.",
+                "Returns all available text, image, video, 3D, realtime, audio, and embedding models, including supported community variants, with pricing, capabilities, and metadata. When authenticated: the owner's private community models are included, models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance.",
             responses: {
                 200: {
                     description: "Success",
@@ -657,6 +658,14 @@ export const proxyRoutes = new Hono<Env>()
                 typeof CreateEmbeddingRequestSchema
             >;
             const serviceDef = c.var.model.definition;
+            if (c.var.model.communityEndpoint) {
+                return generateCommunityEmbeddings(
+                    c.var.model.communityEndpoint,
+                    requestBody,
+                    c.var.model.resolved,
+                    c.env.BETTER_AUTH_SECRET,
+                );
+            }
             return generateEmbeddings(
                 c.env,
                 { ...requestBody, model: serviceDef.modelId },

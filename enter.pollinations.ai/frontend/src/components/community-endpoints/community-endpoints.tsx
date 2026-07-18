@@ -169,7 +169,7 @@ export function CommunityEndpoints({
                             </p>
                             <p className="text-sm text-theme-text-muted">
                                 {canPublish
-                                    ? "Publish an OpenAI-compatible text or image endpoint with your own pricing."
+                                    ? "Publish an OpenAI-compatible text, image, or embedding endpoint with your own pricing."
                                     : privateModelGuidance}
                             </p>
                         </Surface>

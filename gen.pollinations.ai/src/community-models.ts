@@ -1,4 +1,5 @@
 import {
+    type CommunityEndpointModality,
     type CommunityEndpointRuntime,
     communityEndpointPrices,
     communityModelDefinition,
@@ -20,13 +21,14 @@ const COMMUNITY_TEXT_ENDPOINTS = [
     "/text/{prompt}",
 ];
 const COMMUNITY_IMAGE_ENDPOINTS = ["/v1/images/generations", "/image/{prompt}"];
+const COMMUNITY_EMBEDDING_ENDPOINTS = ["/v1/embeddings"];
 
-export function communityTextSupportedEndpoints(): string[] {
+export function communitySupportedEndpoints(
+    modality: CommunityEndpointModality,
+): string[] {
+    if (modality === "image") return COMMUNITY_IMAGE_ENDPOINTS;
+    if (modality === "embedding") return COMMUNITY_EMBEDDING_ENDPOINTS;
     return COMMUNITY_TEXT_ENDPOINTS;
-}
-
-export function communityImageSupportedEndpoints(): string[] {
-    return COMMUNITY_IMAGE_ENDPOINTS;
 }
 
 export type CommunityModelRegistryEntry = {

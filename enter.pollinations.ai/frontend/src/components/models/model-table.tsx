@@ -38,6 +38,7 @@ type UnifiedModelTableProps = {
     textModels: ModelPrice[];
     communityTextModels: ModelPrice[];
     communityImageModels: ModelPrice[];
+    communityEmbeddingModels: ModelPrice[];
     audioModels: ModelPrice[];
     realtimeModels: ModelPrice[];
     embeddingModels: ModelPrice[];
@@ -88,6 +89,7 @@ export const sectionLabels: Record<SectionType, string> = {
     text: "Text",
     "community-text": "Community Text",
     "community-image": "Community Image",
+    "community-embedding": "Community Embedding",
     embedding: "Embedding",
 };
 
@@ -335,6 +337,7 @@ export const UnifiedModelTable: FC<UnifiedModelTableProps> = ({
     textModels,
     communityTextModels,
     communityImageModels,
+    communityEmbeddingModels,
     audioModels,
     realtimeModels,
     embeddingModels,
@@ -353,6 +356,7 @@ export const UnifiedModelTable: FC<UnifiedModelTableProps> = ({
         { type: "text", models: textModels },
         { type: "community-text", models: communityTextModels },
         { type: "community-image", models: communityImageModels },
+        { type: "community-embedding", models: communityEmbeddingModels },
         { type: "embedding", models: embeddingModels },
     ];
 

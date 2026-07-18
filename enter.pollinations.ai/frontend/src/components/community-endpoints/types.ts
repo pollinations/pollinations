@@ -220,7 +220,8 @@ export function nextFormState(
     if (key === "modality") {
         return {
             ...current,
-            modality: value === "image" ? "image" : "text",
+            modality:
+                value === "image" || value === "embedding" ? value : "text",
         };
     }
     const next = { ...current, [key]: value };

@@ -76,32 +76,7 @@ async function sayText(params) {
 }
 
 async function listAudioVoices(_params) {
-    const audioModels = await getAudioModels();
-    const byModel = audioModels
-        .filter((m) => Array.isArray(m.voices) && m.voices.length > 0)
-        .map((m) => ({
-            model: m.name,
-            aliases: m.aliases || [],
-            description: m.description,
-            voices: m.voices,
-        }));
-    const allVoices = Array.from(new Set(byModel.flatMap((m) => m.voices)));
-
-    if (allVoices.length === 0) {
-        throw new Error("Audio model registry returned no voices");
-    }
-
-    return createMCPResponse([
-        createTextContent(
-            {
-                voices: allVoices,
-                byModel,
-                formats: ["wav", "mp3", "flac", "opus", "aac", "pcm", "pcm16"],
-                total: allVoices.length,
-            },
-            true,
-        ),
-    ]);
+    return createMCPResponse([createTextContent(await getAudioModels(), true)]);
 }
 
 async function transcribeAudio(params) {
@@ -140,8 +115,7 @@ async function transcribeAudio(params) {
 const voiceSchema = z
     .string()
     .describe(
-        "Voice name from the registry (e.g. alloy, nova, rachel, matilda). " +
-            "Use listAudioVoices to see the full live list.",
+        "Voice name or provider voice ID. Use listAudioVoices for discovery.",
     );
 
 const responseAudioFormatSchema = z.enum([
@@ -196,7 +170,7 @@ export const audioTools = [
 
     [
         "listAudioVoices",
-        "List all available audio voices and supported formats. Voices are fetched dynamically from the API.",
+        "Return the live audio model and voice registry from Gen.",
         {},
         listAudioVoices,
     ],
@@ -217,9 +191,7 @@ export const audioTools = [
             model: z
                 .string()
                 .optional()
-                .describe(
-                    "Model to use (default: 'gemini-large'). Also supports: gemini, openai-audio",
-                ),
+                .describe("Audio-capable text model or alias"),
         },
         transcribeAudio,
     ],

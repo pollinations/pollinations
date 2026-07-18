@@ -45,7 +45,7 @@ Use `chatCompletion` for simple prompts, multi-turn chat, reasoning, tool callin
 | `respondAudio` | Generate a spoken response to a prompt |
 | `sayText` | Speak text verbatim |
 | `transcribeAudio` | Transcribe audio from a URL |
-| `listAudioVoices` | List available voices and formats |
+| `listAudioVoices` | Return Gen's live audio and voice registry |
 
 ### Account
 

@@ -6,36 +6,3 @@ const fetchRegistry = (path) =>
 export const getImageModels = () => fetchRegistry("/image/models");
 export const getTextModels = () => fetchRegistry("/text/models");
 export const getAudioModels = () => fetchRegistry("/audio/models");
-
-export async function getAudioVoices() {
-    const voices = new Set();
-    for (const model of await getAudioModels()) {
-        if (Array.isArray(model.voices)) {
-            for (const voice of model.voices) voices.add(voice);
-        }
-    }
-    if (voices.size === 0) {
-        throw new Error("Audio model registry returned no voices");
-    }
-    return Array.from(voices);
-}
-
-export async function validateVoice(voice) {
-    if (!voice) return { valid: true };
-    const voices = await getAudioVoices();
-    if (voices.includes(voice)) return { valid: true };
-    const lower = voice.toLowerCase();
-    const suggestions = voices
-        .filter(
-            (v) =>
-                v.toLowerCase().includes(lower) ||
-                lower.includes(v.toLowerCase()),
-        )
-        .slice(0, 3);
-    return {
-        valid: false,
-        error: `Unknown voice "${voice}".`,
-        suggestions: suggestions.length > 0 ? suggestions : voices.slice(0, 8),
-        availableCount: voices.length,
-    };
-}

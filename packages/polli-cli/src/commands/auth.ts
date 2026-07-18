@@ -273,7 +273,7 @@ export async function showAuthStatus(): Promise<void> {
         authenticated: true,
         key: masked,
         name: profile.githubUsername ?? "unknown",
-        pollen: balance?.balance ?? "unknown",
+        pollen: balance?.total ?? "unknown",
     });
 }
 

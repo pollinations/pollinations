@@ -547,8 +547,7 @@ async function updateAuthUI({ skipModelPick = false } = {}) {
         }
 
         if (balance) {
-            $("authBalance").textContent =
-                `${balance.balance.toFixed(2)} pollen`;
+            $("authBalance").textContent = `${balance.total.toFixed(2)} pollen`;
         }
     } catch {
         clearApiKey();

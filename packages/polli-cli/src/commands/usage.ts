@@ -58,7 +58,11 @@ export const usageCommand = new Command("usage")
                     apiKey: key,
                 });
                 if (getOutputMode() !== "human") {
-                    printResult({ total: data.total, allowance: data.allowance, pack: data.pack });
+                    printResult({
+                        total: data.total,
+                        allowance: data.allowance,
+                        pack: data.pack,
+                    });
                     return;
                 }
                 const total = data.total;

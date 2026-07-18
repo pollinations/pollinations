@@ -318,7 +318,7 @@ print(response.json())  # {"total": 42.5, "allowance": 0.4, "pack": 42.1, "curre
   { headers: { Authorization: "Bearer YOUR_API_KEY" } },
 );
 const { total, allowance, pack, currency } = await response.json();
-console.log(`Total: ${total} ${currency} (allowance: ${allowance}, pack: ${pack})`);`,
+console.log({ total, allowance, pack, currency });`,
         },
     ],
     "get /account/profile": [

@@ -25,6 +25,7 @@ test("routes legacy text generation through the authenticated Gen model", async 
         req.on("end", () => {
             received = {
                 authorization: req.headers.authorization,
+                headers: req.headers,
                 body: JSON.parse(body),
             };
             res.writeHead(200, { "content-type": "application/json" });
@@ -68,6 +69,12 @@ test("routes legacy text generation through the authenticated Gen model", async 
 
         assert.equal(result.choices[0].message.content, "hello");
         assert.equal(received.authorization, "Bearer sk_legacy_text");
+        assert.equal(
+            Object.keys(received.headers).some((name) =>
+                name.startsWith("x-portkey-"),
+            ),
+            false,
+        );
         assert.equal(
             received.body.model,
             "sharktide/inferenceport.ai-gpt-oss-20b",

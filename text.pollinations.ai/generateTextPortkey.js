@@ -2,7 +2,6 @@ import dotenv from "dotenv";
 import { genericOpenAIClient } from "./genericOpenAIClient.js";
 import debug from "debug";
 import { resolveModelConfig } from "./utils/modelResolver.js";
-import { generateHeaders } from "./transforms/headerGenerator.js";
 import { sanitizeMessages } from "./transforms/messageSanitizer.js";
 import { checkLimits } from "./transforms/limitChecker.js";
 import { processParameters } from "./transforms/parameterProcessor.js";
@@ -103,17 +102,7 @@ export async function generateTextPortkey(messages, options = {}) {
                 !!processedOptions.modelConfig,
             );
 
-            // 2. Generate headers
-            result = await generateHeaders(processedMessages, processedOptions);
-            processedMessages = result.messages;
-            processedOptions = result.options;
-            log(
-                "After generateHeaders:",
-                !!processedOptions.modelDef,
-                !!processedOptions.modelConfig,
-            );
-
-            // 3. Sanitize messages
+            // 2. Sanitize messages
             result = sanitizeMessages(processedMessages, processedOptions);
             processedMessages = result.messages;
             processedOptions = result.options;
@@ -123,12 +112,12 @@ export async function generateTextPortkey(messages, options = {}) {
                 !!processedOptions.modelConfig,
             );
 
-            // 4. Check limits
+            // 3. Check limits
             result = checkLimits(processedMessages, processedOptions);
             processedMessages = result.messages;
             processedOptions = result.options;
 
-            // 5. Process parameters
+            // 4. Process parameters
             result = processParameters(processedMessages, processedOptions);
             processedMessages = result.messages;
             processedOptions = result.options;

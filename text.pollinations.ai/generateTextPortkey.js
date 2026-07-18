@@ -140,7 +140,7 @@ export async function generateTextPortkey(messages, options = {}) {
 
     // The legacy model aliases all resolve to this inexpensive community
     // model. Gen handles provider routing, usage accounting, and billing.
-    processedOptions.model = "sharktide/inferenceport.ai-gpt-oss-20b";
+    processedOptions.model = "gpt-oss";
 
     return await genericOpenAIClient(
         processedMessages,

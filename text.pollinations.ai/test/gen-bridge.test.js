@@ -77,7 +77,7 @@ test("routes legacy text generation through the authenticated Gen model", async 
         );
         assert.equal(
             received.body.model,
-            "sharktide/inferenceport.ai-gpt-oss-20b",
+            "gpt-oss",
         );
         assert.equal(received.body.temperature, 0.5);
         assert.equal(received.body.userInfo, undefined);
@@ -125,7 +125,7 @@ test("passes Gen streaming responses through as OpenAI SSE", async () => {
         assert.equal(receivedBody.stream, true);
         assert.equal(
             receivedBody.model,
-            "sharktide/inferenceport.ai-gpt-oss-20b",
+            "gpt-oss",
         );
         assert.match(output, /"content":"hello"/);
         assert.match(output, /data: \[DONE\]/);

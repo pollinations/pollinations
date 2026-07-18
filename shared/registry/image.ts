@@ -666,6 +666,25 @@ export const IMAGE_SERVICES = {
         videoCapabilities: ["start_frame"],
         maxReferenceImages: 1, // Video keyframe slots: start only.
     },
+    "happyhorse-1.1": {
+        aliases: ["happyhorse", "happy-horse-1.1"],
+        modelId: "alibaba/happyhorse-1.1",
+        provider: "openrouter",
+        brand: "Alibaba",
+        category: "video",
+        addedDate: new Date("2026-07-18").getTime(),
+        priceMultiplier: 1,
+        paidOnly: true,
+        cost: {
+            completionVideoSeconds: 0.0988, // per sec at 720p
+        },
+        title: "HappyHorse 1.1",
+        description: "Text and first-frame video generation at 720p",
+        inputModalities: ["text", "image"],
+        outputModalities: ["video"],
+        videoCapabilities: ["start_frame"],
+        maxReferenceImages: 1,
+    },
     "klein": {
         aliases: ["flux-klein"],
         modelId: "klein",

@@ -98,49 +98,49 @@ describe("media cache", () => {
     it.each([
         { label: "image", cache: imageCache, contentType: "image/png" },
         { label: "audio", cache: audioCache, contentType: "audio/mpeg" },
-    ])(
-        "serves cached $label responses before auth while misses still require auth",
-        async ({ cache, contentType }) => {
-            const media = createMediaCacheApp(cache, contentType);
-            const env = createMediaCacheEnv();
+    ])("serves cached $label responses before auth while misses still require auth", async ({
+        cache,
+        contentType,
+    }) => {
+        const media = createMediaCacheApp(cache, contentType);
+        const env = createMediaCacheEnv();
 
-            const warm = await dispatch(
-                media.app,
-                "/media/cached-hit",
-                {
-                    headers: { Authorization: "Bearer test-key" },
-                },
-                env,
-            );
-            expect(await consumeAndWait(warm)).toBe("origin:1");
+        const warm = await dispatch(
+            media.app,
+            "/media/cached-hit",
+            {
+                headers: { Authorization: "Bearer test-key" },
+            },
+            env,
+        );
+        expect(await consumeAndWait(warm)).toBe("origin:1");
 
-            const cachedNoAuth = await dispatch(
-                media.app,
-                "/media/cached-hit",
-                undefined,
-                env,
-            );
-            expect(await consumeAndWait(cachedNoAuth)).toBe("origin:1");
-            expect(cachedNoAuth.response.status).toBe(200);
-            expect(cachedNoAuth.response.headers.get("X-Cache")).toBe("HIT");
-            expect(cachedNoAuth.response.headers.get("Cache-Control")).toBe(
-                IMMUTABLE_CACHE_CONTROL,
-            );
-            expect(media.originHits).toBe(1);
+        const cachedNoAuth = await dispatch(
+            media.app,
+            "/media/cached-hit",
+            undefined,
+            env,
+        );
+        expect(await consumeAndWait(cachedNoAuth)).toBe("origin:1");
+        expect(cachedNoAuth.response.status).toBe(200);
+        expect(cachedNoAuth.response.headers.get("X-Cache")).toBe("HIT");
+        expect(cachedNoAuth.response.headers.get("Cache-Control")).toBe(
+            IMMUTABLE_CACHE_CONTROL,
+        );
+        expect(media.originHits).toBe(1);
 
-            const missNoAuth = await dispatch(
-                media.app,
-                "/media/uncached-miss",
-                undefined,
-                env,
-            );
-            expect(await consumeAndWait(missNoAuth)).toBe(
-                "Authentication required",
-            );
-            expect(missNoAuth.response.status).toBe(401);
-            expect(media.originHits).toBe(1);
-        },
-    );
+        const missNoAuth = await dispatch(
+            media.app,
+            "/media/uncached-miss",
+            undefined,
+            env,
+        );
+        expect(await consumeAndWait(missNoAuth)).toBe(
+            "Authentication required",
+        );
+        expect(missNoAuth.response.status).toBe(401);
+        expect(media.originHits).toBe(1);
+    });
 
     it("refreshes cached media TTL on aged cache hits", async () => {
         const media = createMediaCacheApp(imageCache, "image/png");

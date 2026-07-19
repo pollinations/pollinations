@@ -11,7 +11,7 @@
 # Usage:
 #   PLN_GPU_TOKEN=... \
 #   CLOUDFLARED_TUNNEL_TOKEN=... \
-#   PUBLIC_HOSTNAME=zimage-vast-NN.pollinations.ai \
+#   PUBLIC_HOSTNAME=zimage-vast.example.com \
 #   bash setup-vast.sh
 
 set -euo pipefail
@@ -29,7 +29,7 @@ SUDO=""
 log() { echo "[setup-vast] $1"; }
 
 if [ -z "${PLN_GPU_TOKEN:-}" ] || [ -z "${CLOUDFLARED_TUNNEL_TOKEN:-}" ] || [ -z "${PUBLIC_HOSTNAME:-}" ]; then
-    echo "Usage: PLN_GPU_TOKEN=... CLOUDFLARED_TUNNEL_TOKEN=... PUBLIC_HOSTNAME=zimage-vast-NN.pollinations.ai bash setup-vast.sh" >&2
+    echo "Usage: PLN_GPU_TOKEN=... CLOUDFLARED_TUNNEL_TOKEN=... PUBLIC_HOSTNAME=zimage-vast.example.com bash setup-vast.sh" >&2
     exit 1
 fi
 

@@ -19,14 +19,20 @@ the legacy cuDNN API keeps the decode GPU-accelerated and stable. SPAN is run
 without cuDNN on that stack for the same reason while remaining GPU-backed.
 
 Create a remotely managed Cloudflare Tunnel whose public hostname routes to
-`http://localhost:10002`, then provision the worker:
+`http://localhost:10002`, then provision each worker with the same tunnel token
+and hostname:
 
 ```bash
 PLN_GPU_TOKEN=... \
 CLOUDFLARED_TUNNEL_TOKEN=... \
-PUBLIC_HOSTNAME=zimage-vast-NN.pollinations.ai \
+PUBLIC_HOSTNAME=zimage-vast.example.com \
 bash setup-vast.sh
 ```
+
+Using one remotely managed tunnel for the pool creates a Cloudflare replica per
+Vast worker. Cloudflare balances requests across those replicas, while the
+Pollinations registry sees one stable backend URL. Production currently uses
+two RTX 5090 replicas so either worker can be removed without changing routing.
 
 The setup defaults to `HEARTBEAT_ENABLED=false`, so a new worker cannot join
 the production registry before validation. Run direct and tunnel verification,

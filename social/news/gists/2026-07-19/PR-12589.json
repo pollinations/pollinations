@@ -1,0 +1,37 @@
+{
+  "pr_number": 12589,
+  "title": "feat: harden Z-Image deployment on Vast",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/12589",
+  "merged_at": "2026-07-19T16:49:46Z",
+  "labels": [
+    "DEV-INFRA"
+  ],
+  "pr_body_excerpt": "- Adds guarded Vast setup with production heartbeat disabled by default\n- Pins the verified RTX 5090 stack and works around cuDNN VAE/SPAN crashes while keeping GPU execution\n- Adds deterministic tunnel checks, bounded benchmarks, persistent caches, and process supervision\n- Documents a shared Cloudflare Tunnel hostname across two Vast replicas\n\nLive checks:\n- Both RTX 5090 hosts pass 512x512, 1024x1024, and 768x1152 generation\n- Host 1: 332/332 in 5m, 1.095 images/s, p95 3.713s\n- Host 2: 69/69 in 60s, 1.090 images/s, p95 3.748s\n- Shared tunnel has two healthy replicas; unauthenticated generation returns 403\n- Both hosts match direct and tunneled pixels at all three sizes (RMS 0.000)\n- Production traffic is reaching both Vast replicas with no observed 5xx/runtime errors\n\nStatic checks:\n- `bash -n image.pollinations.ai/z-image/setup-vast.sh image.pollinations.ai/z-image/verify-vast.sh`\n- `python3 -m py_compile image.pollinations.ai/z-image/server.py image.pollinations.ai/z-image/benchmark-vast.py`\n- `git diff --check`\n",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Two hives, one tunnel",
+    "blurb": "Z-Image now has two well-tended RTX 5090 nests behind one shared tunnel. Polly checked every pixel twice; the pixels, unusually, agreed.",
+    "summary": "Hardened Z-Image deployment on two Vast RTX 5090 replicas with guarded setup, deterministic Cloudflare Tunnel verification, persistent caches, process supervision, and GPU-safe workarounds for cuDNN VAE/SPAN crashes.",
+    "impact": "Z-Image generation now runs reliably across two healthy replicas at about 1.09 images per second with p95 latency below 3.75 seconds, while direct and tunneled outputs match exactly at 512×512, 1024×1024, and 768×1152.",
+    "keywords": [
+      "z-image",
+      "image-generation",
+      "vast",
+      "rtx-5090",
+      "cloudflare-tunnel",
+      "reliability",
+      "gpu"
+    ],
+    "visual_concept": "Depict Z-Image as a cozy dual-server garden: two chunky RTX 5090-powered retro terminals in separate little garden sheds connect through one glowing tunnel vine, each producing identical framed pixel landscapes. Polly, wearing a tiny site-reliability tool belt, compares matching image prints while tending code-flowers; the monitor robot can enthusiastically watch both healthy connections.",
+    "image_prompt": "Cozy pixel art scene of Polly, the cute yellow-and-dark-brown striped bee mascot with black antennae, oval black eyes, bright pink rectangular cheek blushes, a happy smile, and small rounded translucent light-blue wings, wearing a tiny tool belt while comparing two identical pixel landscape prints from two chunky retro GPU terminals in garden sheds. A glowing lime green (#ecf874) vine-like tunnel links the terminals, code-plants and soft pastel flowers grow around their persistent cache boxes, and a cute CRT-monitor robot watches both screens with happy square eyes; subtle pixel-font text reads “2 REPLICAS”. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, warm cream and lavender background, dark purple (#110518) outlines, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-19/PR-12589.jpg",
+    "prompt": "Cozy pixel art scene of Polly, the cute yellow-and-dark-brown striped bee mascot with black antennae, oval black eyes, bright pink rectangular cheek blushes, a happy smile, and small rounded translucent light-blue wings, wearing a tiny tool belt while comparing two identical pixel landscape prints from two chunky retro GPU terminals in garden sheds. A glowing lime green (#ecf874) vine-like tunnel links the terminals, code-plants and soft pastel flowers grow around their persistent cache boxes, and a cute CRT-monitor robot watches both screens with happy square eyes; subtle pixel-font text reads “2 REPLICAS”. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, warm cream and lavender background, dark purple (#110518) outlines, nostalgic but beautiful."
+  },
+  "generated_at": "2026-07-19T16:50:44.837864+00:00"
+}

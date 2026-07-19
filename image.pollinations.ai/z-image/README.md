@@ -13,7 +13,10 @@ FastAPI server for Z-Image-Turbo (6B parameter text-to-image model from Tongyi-M
 Production migration uses a verified single-GPU Vast instance with at least
 24GB VRAM and 80GB disk. RTX 5090 workers require the CUDA 12.8+ PyTorch
 runtime installed by `setup-vast.sh`; the older cu124 Dockerfile is not
-Blackwell-compatible.
+Blackwell-compatible. The setup also disables cuDNN's v8 API because its VAE
+decode path exits with signal 11 on the tested RTX 5090 / driver 570 stack;
+the legacy cuDNN API keeps the decode GPU-accelerated and stable. SPAN is run
+without cuDNN on that stack for the same reason while remaining GPU-backed.
 
 Create a remotely managed Cloudflare Tunnel whose public hostname routes to
 `http://localhost:10002`, then provision the worker:

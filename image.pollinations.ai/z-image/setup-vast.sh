@@ -96,7 +96,9 @@ log "Installing PyTorch 2.9.1 cu128"
     torch==2.9.1 torchvision==0.24.1 \
     --index-url https://download.pytorch.org/whl/cu128
 log "Installing Z-Image dependencies"
-"$VENV/bin/pip" install -q $PIP_FLAGS -r "$ZIMAGE_DIR/requirements.txt"
+"$VENV/bin/pip" install -q $PIP_FLAGS \
+    -r "$ZIMAGE_DIR/requirements.txt" \
+    -c "$ZIMAGE_DIR/constraints-vast.txt"
 
 log "Verifying CUDA and Blackwell support"
 "$VENV/bin/python" - <<'PY'
@@ -134,6 +136,11 @@ log "Writing runtime environment to $ENV_FILE"
     printf 'export HF_HUB_CACHE=%q\n' "$MODEL_CACHE/hub"
     printf 'export HF_XET_HIGH_PERFORMANCE=1\n'
     printf 'export CUDA_VISIBLE_DEVICES=0\n'
+    # cuDNN v8's VAE convolution path segfaults with exit 139 on the tested
+    # RTX 5090 / driver 570 / cu128 stack. The legacy API remains GPU-backed
+    # and completes the same decode successfully.
+    printf 'export TORCH_CUDNN_V8_API_DISABLED=1\n'
+    printf 'export SPAN_DISABLE_CUDNN=1\n'
 } > "$ENV_FILE"
 chmod 600 "$ENV_FILE"
 unset PLN_GPU_TOKEN

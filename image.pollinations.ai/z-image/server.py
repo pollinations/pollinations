@@ -186,7 +186,14 @@ def upscale_with_span(image_np: np.ndarray) -> np.ndarray:
     tensor = torch.from_numpy(img_float).permute(2, 0, 1).unsqueeze(0).cuda()
     
     with torch.no_grad():
-        output = upscaler(tensor)
+        if _truthy_env(os.getenv("SPAN_DISABLE_CUDNN")):
+            # The SPAN convolution path segfaults with cuDNN on the tested Vast
+            # RTX 5090 stack. Keep the workaround scoped to SPAN so diffusion
+            # and VAE inference still use accelerated cuDNN kernels.
+            with torch.backends.cudnn.flags(enabled=False):
+                output = upscaler(tensor)
+        else:
+            output = upscaler(tensor)
     
     # Convert back: NCHW -> CHW -> HWC uint8
     result = output.squeeze(0).permute(1, 2, 0).cpu().numpy()

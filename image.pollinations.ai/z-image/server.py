@@ -84,8 +84,11 @@ async def periodic_heartbeat():
 
 
 MODEL_ID = "Tongyi-MAI/Z-Image-Turbo"
-MODEL_CACHE = "model_cache"
-SPAN_MODEL_PATH = "model_cache/span/2xNomosUni_span_multijpg.safetensors"
+MODEL_CACHE = os.getenv("MODEL_CACHE", "model_cache")
+SPAN_MODEL_PATH = os.getenv(
+    "SPAN_MODEL_PATH",
+    os.path.join(MODEL_CACHE, "span", "2xNomosUni_span_multijpg.safetensors"),
+)
 SAFETY_NSFW_MODEL = "CompVis/stable-diffusion-safety-checker"
 UPSCALE_FACTOR = 2
 MAX_GEN_PIXELS = 768 * 768  # Generate natively up to this size
@@ -243,8 +246,13 @@ async def lifespan(app: FastAPI):
         logger.error(f"Failed to load models: {e}")
         raise
     
-    # Start heartbeat task
-    heartbeat_task = asyncio.create_task(periodic_heartbeat())
+    # Fresh Vast workers stay out of production until direct verification and
+    # load testing pass. Existing deployments keep heartbeats enabled by
+    # default because they do not set HEARTBEAT_ENABLED.
+    if _truthy_env(os.getenv("HEARTBEAT_ENABLED", "true")):
+        heartbeat_task = asyncio.create_task(periodic_heartbeat())
+    else:
+        logger.warning("Production heartbeat disabled")
     
     yield
     

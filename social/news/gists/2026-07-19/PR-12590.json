@@ -1,0 +1,35 @@
+{
+  "pr_number": 12590,
+  "title": "fix: mark Z-Image provider as Vast",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/12590",
+  "merged_at": "2026-07-19T20:27:08Z",
+  "labels": [
+    "DEV-BUG"
+  ],
+  "pr_body_excerpt": "- Changes Z-Image's registry provider from `runpod` to `vast`\n- Aligns model metadata with the production backend migrated in #12589\n- Leaves pricing and routing behavior unchanged\n\nChecks:\n- `npx biome check --write shared/registry/image.ts`\n- Registry import resolves `IMAGE_SERVICES.zimage.provider` as `vast`\n- `git diff --check`\n",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Z-Image Finds Its Nest",
+    "blurb": "Z-Image’s registry badge now points to Vast, where its production backend already lives. Same pixels, tidier map.",
+    "summary": "Updated `IMAGE_SERVICES.zimage.provider` in the image registry from `runpod` to `vast`, aligning Z-Image metadata with the production backend migrated in #12589 without changing pricing or routing.",
+    "impact": "Developers inspecting Z-Image registry metadata now see Vast as the correct provider while generation behavior, routes, and prices remain the same.",
+    "keywords": [
+      "z-image",
+      "image-registry",
+      "vast",
+      "provider-metadata",
+      "bug-fix"
+    ],
+    "visual_concept": "Depict a cozy garden signpost being corrected so a Z-Image flower pot points toward a small Vast cloud-server greenhouse; Polly carefully replaces the old provider label while a nearby terminal confirms the route is unchanged. Use the provider correction as a map-making metaphor, with code-plants and warm infrastructure imagery.",
+    "image_prompt": "Cozy pixel art scene of Polly, a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings, wearing a tiny gardener tool belt as she fixes a garden sign from “runpod” to “vast” beside a Z-Image code-flower pot and a softly glowing retro terminal. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, code-plants and flowers, subtle pixel-font text “VAST”, retro gaming vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-19/PR-12590.jpg",
+    "prompt": "Cozy pixel art scene of Polly, a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings, wearing a tiny gardener tool belt as she fixes a garden sign from “runpod” to “vast” beside a Z-Image code-flower pot and a softly glowing retro terminal. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, code-plants and flowers, subtle pixel-font text “VAST”, retro gaming vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
+  },
+  "generated_at": "2026-07-19T20:28:03.134359+00:00"
+}

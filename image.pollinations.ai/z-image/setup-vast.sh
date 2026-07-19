@@ -69,6 +69,7 @@ printf '%s' "$CLOUDFLARED_TUNNEL_TOKEN" > "$TUNNEL_TOKEN_FILE"
 chmod 600 "$TUNNEL_TOKEN_FILE"
 unset CLOUDFLARED_TUNNEL_TOKEN
 
+mkdir -p "$(dirname "$WORK_DIR")"
 if [ -n "${SKIP_CLONE:-}" ]; then
     log "Using existing files in $WORK_DIR"
 elif [ -d "$WORK_DIR/.git" ]; then

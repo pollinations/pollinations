@@ -349,7 +349,7 @@ export const IMAGE_SERVICES = {
     "zimage": {
         aliases: ["z-image", "z-image-turbo"],
         modelId: "zimage",
-        provider: "runpod",
+        provider: "vast",
         brand: "Alibaba",
         category: "image",
         addedDate: new Date("2025-12-08").getTime(),

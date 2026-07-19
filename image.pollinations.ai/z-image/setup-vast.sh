@@ -47,10 +47,11 @@ $SUDO apt-get install -y -qq curl git screen python3.12-venv python3.12-dev
 # CUDA forward-compat libraries can fail on GeForce when the host driver is
 # older than the container toolkit. Use the host driver, as on the Flux Vast
 # deployment.
-if ls /usr/local/cuda*/compat/libcuda.so* >/dev/null 2>&1; then
+if find /usr/local -maxdepth 3 -path '/usr/local/cuda-*/compat/libcuda.so*' -print -quit 2>/dev/null | grep -q .; then
     log "Disabling CUDA forward-compat libraries"
     mkdir -p /root/cuda-compat-disabled
-    mv /usr/local/cuda*/compat/libcuda.so* /root/cuda-compat-disabled/
+    find /usr/local -maxdepth 3 -path '/usr/local/cuda-*/compat/libcuda.so*' \
+        -exec mv -t /root/cuda-compat-disabled/ {} +
     $SUDO ldconfig
 fi
 

@@ -100,7 +100,8 @@ export const Models: FC<ModelsProps> = ({
     const navigate = useNavigate({ from: "/models" });
     const modelSearch = useSearch({ from: "/_dashboard/models" });
     const activeTab = modelSearch.category ?? "all";
-    const search = modelSearch.q ?? "";
+    const urlSearch = modelSearch.q ?? "";
+    const [search, setSearch] = useState(urlSearch);
     const sortKey = modelSearch.sort ?? "perPollen";
     const sortDir = modelSearch.dir ?? DEFAULT_SORT_DIRECTIONS[sortKey];
     const [catalogModels, setCatalogModels] = useState<ApiModelInfo[]>([]);
@@ -168,22 +169,32 @@ export const Models: FC<ModelsProps> = ({
         }
     }, [activeTab, availableSections, navigate]);
 
+    useEffect(() => {
+        setSearch(urlSearch);
+    }, [urlSearch]);
+
+    useEffect(() => {
+        if (search === urlSearch) return;
+
+        const timeout = window.setTimeout(() => {
+            void navigate({
+                search: (previous) => ({
+                    ...previous,
+                    q: search || undefined,
+                }),
+                replace: true,
+            });
+        }, 200);
+
+        return () => window.clearTimeout(timeout);
+    }, [navigate, search, urlSearch]);
+
     const setActiveTab = (category: SectionType) => {
         void navigate({
             search: (previous) => ({
                 ...previous,
                 category: category === "all" ? undefined : category,
             }),
-        });
-    };
-
-    const setSearch = (q: string) => {
-        void navigate({
-            search: (previous) => ({
-                ...previous,
-                q: q || undefined,
-            }),
-            replace: true,
         });
     };
 

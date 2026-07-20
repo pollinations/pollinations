@@ -1,45 +1,49 @@
-name: Community Model Allowlist
-description: Request approval to publish a registered community model
-title: "[Community Model Allowlist]: "
+name: Community Model Publisher Allowlist
+description: Request account access to publish community models
+title: "[Community Model Publisher Access]: "
 body:
   - type: markdown
     attributes:
       value: |
-        Community models can be registered privately by any signed-in user. This form requests approval to make a model public in the Pollinations model catalog.
+        Use this form to request account-level access to publish community models in the Pollinations model catalog. It does **not** register or submit a specific model. Private models can be registered without approval.
 
-        Before submitting, register and test the model under **Models → My Models** at [enter.pollinations.ai](https://enter.pollinations.ai). Submit this form from the same GitHub account you use to sign in there.
+        Submit this form from the same GitHub account you use to sign in at [enter.pollinations.ai](https://enter.pollinations.ai).
 
         This issue is public. **Never include API keys, bearer tokens, or other credentials.**
 
-  - type: input
-    id: model-id
+  - type: dropdown
+    id: model-types
     attributes:
-      label: Registered model ID
-      description: Enter the exact private model ID shown in My Models.
-      placeholder: "your-github-username/model-id"
+      label: What kinds of models do you want to publish?
+      description: Select every model type you plan to add.
+      multiple: true
+      options:
+        - Text or chat
+        - Image generation or editing
+        - Embeddings
+        - Speech or text-to-speech
+        - Transcription or speech-to-text
     validations:
       required: true
 
   - type: textarea
-    id: model-details
+    id: publishing-plans
     attributes:
-      label: Model details
-      description: Describe the model, its intended use, and why it would be useful in the public catalog.
+      label: Publishing plans
+      description: Describe the models, providers, or endpoints you plan to publish and why they would be useful in the public catalog.
       placeholder: |
-        Model/provider:
-        Main capabilities:
-        Intended use:
+        Models/providers:
+        Main capabilities and intended use:
+        Why they are a good fit for the public catalog:
     validations:
       required: true
 
   - type: input
-    id: upstream-info
+    id: relevant-links
     attributes:
-      label: Public upstream information
-      description: Link to public model documentation, a repository, model card, or provider page. Do not include credentials.
+      label: Relevant links
+      description: Optional links to model cards, provider documentation, repositories, demos, or prior work. Do not include credentials.
       placeholder: "https://..."
-    validations:
-      required: true
 
   - type: textarea
     id: availability
@@ -57,9 +61,7 @@ body:
       options:
         - label: I am submitting from the same GitHub account I use to sign in to Pollinations.
           required: true
-        - label: I registered this model privately in My Models and tested it successfully with my account.
-          required: true
-        - label: The upstream endpoint is OpenAI-compatible.
+        - label: I understand that published community models must use OpenAI-compatible upstream endpoints.
           required: true
         - label: I have not included API keys, bearer tokens, or other credentials in this issue.
           required: true

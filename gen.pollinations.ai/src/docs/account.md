@@ -40,4 +40,4 @@ Returns the current API key's validity, type, and permissions.
 
 ### /account/my-models
 
-Community text model management. Any authenticated account can list, create, update, delete, and call its private owner-only models. Public publishing and the upstream inspection/test tools require `communityEndpointsAllowed: true`; [request allowlist approval](https://github.com/pollinations/pollinations/issues/new?template=community-model-allowlist.yml) after registering and testing the model privately. API keys require `account:keys`.
+Community text model management. Any authenticated account can list, create, update, delete, and call its private owner-only models. Public publishing and the upstream inspection/test tools require `communityEndpointsAllowed: true`; [request account-level publisher access](https://github.com/pollinations/pollinations/issues/new?template=community-model-allowlist.yml) with the allowlist form. The form does not register individual models. API keys require `account:keys`.

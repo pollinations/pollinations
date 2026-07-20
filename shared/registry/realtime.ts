@@ -21,7 +21,7 @@ export const REALTIME_SERVICES = {
         },
         title: "GPT Realtime 2.1",
         description:
-            "GPT Realtime 2.1 - realtime voice reasoning with improved silence and noise handling",
+            "Live voice conversations with instant replies and solid noise handling",
         inputModalities: ["text", "audio", "image"],
         outputModalities: ["text", "audio"],
         tools: true,
@@ -44,7 +44,8 @@ export const REALTIME_SERVICES = {
             completionAudioTokens: 0.000064,
         },
         title: "GPT Realtime 2",
-        description: "GPT Realtime 2 - realtime voice reasoning",
+        description:
+            "Live voice conversations with instant, reasoned replies",
         inputModalities: ["text", "audio", "image"],
         outputModalities: ["text", "audio"],
         tools: true,

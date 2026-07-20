@@ -17,7 +17,8 @@ export const IMAGE_SERVICES = {
             completionImageTokens: 0.0001, // per image
         },
         title: "Sana Sprint 1.6B",
-        description: "Sana Sprint 1.6B - Fast, low-cost image generation",
+        description:
+            "Near-instant images at rock-bottom cost; simpler detail than premium models",
         inputModalities: ["text"],
         outputModalities: ["image"],
     },
@@ -32,7 +33,8 @@ export const IMAGE_SERVICES = {
             completionImageTokens: 0.04, // per image
         },
         title: "FLUX.1 Kontext",
-        description: "FLUX.1 Kontext - In-context editing & generation",
+        description:
+            "Edits an existing image from plain instructions — swap, restyle, refine",
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
         maxReferenceImages: 1, // Azure FLUX.1 Kontext edit route forwards one input image.
@@ -53,7 +55,8 @@ export const IMAGE_SERVICES = {
             completionImageTokens: perMillion(30), // per 1M tokens, 1290 tokens/image
         },
         title: "NanoBanana",
-        description: "NanoBanana - Fast image generation & editing",
+        description:
+            "Quick image generation and editing that follows instructions well",
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
         maxReferenceImages: 3, // Pollinations cap for Gemini 2.5 Flash Image route.
@@ -75,7 +78,7 @@ export const IMAGE_SERVICES = {
         },
         title: "NanoBanana 2",
         description:
-            "NanoBanana 2 - Image generation & editing with sharper detail",
+            "Sharper detail and better text rendering in generated and edited images",
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
         maxReferenceImages: 14, // Pollinations cap for Gemini 3.1 Flash Image route.
@@ -97,7 +100,7 @@ export const IMAGE_SERVICES = {
         },
         title: "NanoBanana 2 Lite",
         description:
-            "NanoBanana 2 Lite - Fast, low-cost image generation & editing",
+            "Speedy, affordable image generation and editing for everyday use",
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
         maxReferenceImages: 14, // Pollinations cap for Gemini 3.1 Flash-Lite Image route.
@@ -120,7 +123,8 @@ export const IMAGE_SERVICES = {
             completionImageTokens: perMillion(120), // per 1M tokens, 1120 tokens per 1K image
         },
         title: "NanoBanana Pro",
-        description: "NanoBanana Pro - Gemini 3 Pro Image (4K, Thinking)",
+        description:
+            "Studio-quality images up to 4K, with reasoning for tricky prompts",
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
         maxReferenceImages: 14, // Gemini 3 Pro Image provider limit.
@@ -138,7 +142,7 @@ export const IMAGE_SERVICES = {
         },
         title: "Seedream 5.0 Lite",
         description:
-            "Seedream 5.0 Lite - Image generation with web search & reasoning",
+            "Image generation that can search the web and reason about your prompt",
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
         maxReferenceImages: 14, // Pollinations route cap from Replicate schema.
@@ -172,7 +176,7 @@ export const IMAGE_SERVICES = {
             completionImageTokens: 0.03, // per image
         },
         title: "Seedream 4.0",
-        description: "Seedream 4.0 - Photorealistic image generation",
+        description: "Photorealistic images with strong prompt adherence",
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
         maxReferenceImages: 10, // Pollinations route cap from Replicate schema.
@@ -190,7 +194,7 @@ export const IMAGE_SERVICES = {
         },
         title: "Seedream 4.5 Pro",
         description:
-            "Seedream 4.5 Pro - Premium photorealistic image generation",
+            "Premium photorealism for lifelike scenes and portraits",
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
         maxReferenceImages: 14, // Pollinations route cap from Replicate schema.
@@ -214,7 +218,7 @@ export const IMAGE_SERVICES = {
         },
         title: "Ideogram 4.0 Turbo",
         description:
-            "Ideogram 4.0 Turbo - Fast text-to-image with accurate typography",
+            "Fast images with crisp, accurate text and typography",
         inputModalities: ["text"],
         outputModalities: ["image"],
     },
@@ -231,7 +235,7 @@ export const IMAGE_SERVICES = {
         },
         title: "Ideogram 4.0 Balanced",
         description:
-            "Ideogram 4.0 Balanced - Text-to-image with accurate typography",
+            "Balanced speed and quality with accurate text rendering",
         inputModalities: ["text"],
         outputModalities: ["image"],
     },
@@ -248,7 +252,7 @@ export const IMAGE_SERVICES = {
         },
         title: "Ideogram 4.0 Quality",
         description:
-            "Ideogram 4.0 Quality - High-fidelity text-to-image with typography",
+            "Highest-fidelity images with spot-on typography; slower to generate",
         inputModalities: ["text"],
         outputModalities: ["image"],
     },
@@ -266,7 +270,8 @@ export const IMAGE_SERVICES = {
             completionImageTokens: perMillion(8), // per 1M tokens
         },
         title: "GPT Image 1 Mini",
-        description: "GPT Image 1 Mini - Fast & affordable image generation",
+        description:
+            "Affordable image creation and editing for everyday use",
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
         maxReferenceImages: 16, // GPT Image edit endpoint accepts up to 16 input images.
@@ -287,7 +292,8 @@ export const IMAGE_SERVICES = {
             completionImageTokens: perMillion(32), // per 1M tokens
         },
         title: "GPT Image 1.5",
-        description: "GPT Image 1.5 - High-fidelity image generation & editing",
+        description:
+            "High-fidelity image generation and editing with fine detail",
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
         maxReferenceImages: 16, // GPT Image edit endpoint accepts up to 16 input images.
@@ -308,7 +314,7 @@ export const IMAGE_SERVICES = {
         },
         title: "GPT Image 2",
         description:
-            "GPT Image 2 - Premium high-resolution image generation & editing",
+            "Premium high-resolution images with excellent prompt following",
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
         maxReferenceImages: 16, // GPT Image edit endpoint accepts up to 16 input images.
@@ -324,7 +330,7 @@ export const IMAGE_SERVICES = {
             completionImageTokens: 0.0014, // per image
         },
         title: "Flux Schnell",
-        description: "Flux Schnell - Fast high-quality image generation",
+        description: "Fast, high-quality images at a tiny cost",
         inputModalities: ["text"],
         outputModalities: ["image"],
     },
@@ -339,7 +345,8 @@ export const IMAGE_SERVICES = {
             completionImageTokens: 0.002, // per image
         },
         title: "Z-Image Turbo",
-        description: "Z-Image Turbo - Alibaba S3-DiT 6B with 2x SPAN upscaling",
+        description:
+            "Instant, budget-friendly images with crisp upscaled output",
         inputModalities: ["text"],
         outputModalities: ["image"],
     },
@@ -397,7 +404,7 @@ export const IMAGE_SERVICES = {
         },
         title: "Seedance Pro-Fast",
         description:
-            "Seedance Pro-Fast - Text/image-to-video (720p, better prompt adherence)",
+            "720p video from text or a start image, with strong prompt adherence",
         inputModalities: ["text", "image"],
         outputModalities: ["video"],
         videoCapabilities: ["start_frame"],
@@ -417,7 +424,7 @@ export const IMAGE_SERVICES = {
         },
         title: "Seedance 2.0",
         description:
-            "Seedance 2.0 - ByteDance multimodal video gen (720p, native audio)",
+            "720p video with natively synced sound, from text or images",
         inputModalities: ["text", "image"],
         outputModalities: ["video", "audio"],
         videoCapabilities: ["start_frame", "end_frame", "audio_output"],
@@ -438,7 +445,7 @@ export const IMAGE_SERVICES = {
         },
         title: "Wan 2.6",
         description:
-            "Wan 2.6 - text/image-to-video with audio (720p, 5/10/15s)",
+            "Video with sound from text or an image (720p, 5/10/15s clips)",
         inputModalities: ["text", "image"],
         outputModalities: ["video"],
         videoCapabilities: ["start_frame", "audio_output"],
@@ -458,7 +465,8 @@ export const IMAGE_SERVICES = {
             completionVideoSeconds: 0.01, // per sec (480p, silent)
         },
         title: "Wan 2.2",
-        description: "Wan 2.2 - Fast & cheap text/image-to-video (5s, 480p)",
+        description:
+            "Cheap 5-second silent clips at 480p — great for quick drafts",
         inputModalities: ["text", "image"],
         outputModalities: ["video"],
         videoCapabilities: ["start_frame", "end_frame"],
@@ -479,7 +487,7 @@ export const IMAGE_SERVICES = {
         },
         title: "Wan 2.7",
         description:
-            "Wan 2.7 - text/image-to-video with bundled audio (720p, keyframes)",
+            "Keyframe-controlled video with sound at 720p",
         inputModalities: ["text", "image"],
         outputModalities: ["video", "audio"],
         videoCapabilities: ["start_frame", "end_frame", "audio_output"],
@@ -501,7 +509,7 @@ export const IMAGE_SERVICES = {
         },
         title: "Wan 2.7 1080p",
         description:
-            "Wan 2.7 1080p - text/image-to-video with bundled audio (1080p, keyframes)",
+            "Keyframe-controlled video with sound in full 1080p",
         inputModalities: ["text", "image"],
         outputModalities: ["video", "audio"],
         videoCapabilities: ["start_frame", "end_frame", "audio_output"],
@@ -521,7 +529,7 @@ export const IMAGE_SERVICES = {
         },
         title: "Wan 2.7 Image",
         description:
-            "Wan 2.7 Image - Alibaba text-to-image and image editing (up to 2K)",
+            "Text-to-image and instruction-based editing up to 2K resolution",
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
         maxReferenceImages: 9, // Pollinations route cap.
@@ -541,7 +549,7 @@ export const IMAGE_SERVICES = {
         },
         title: "Wan 2.7 Image Pro",
         description:
-            "Wan 2.7 Image Pro - Alibaba text-to-image and editing (4K, thinking mode)",
+            "Detailed 4K image generation and editing with a thinking mode",
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
         maxReferenceImages: 9, // Pollinations route cap.
@@ -566,7 +574,7 @@ export const IMAGE_SERVICES = {
         },
         title: "Qwen Image Plus",
         description:
-            "Qwen Image Plus - Alibaba text-to-image and image editing",
+            "Versatile image creation and editing, strong at text inside images",
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
         maxReferenceImages: 3, // DashScope Qwen Image Edit route cap.
@@ -584,7 +592,7 @@ export const IMAGE_SERVICES = {
             completionImageTokens: 0.02, // per image
         },
         title: "Grok Imagine",
-        description: "Grok Imagine - Photorealistic image generation",
+        description: "Photorealistic image generation and quick edits",
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
         maxReferenceImages: 1, // xAI image edit route forwards one input image.
@@ -608,7 +616,7 @@ export const IMAGE_SERVICES = {
         },
         title: "Grok Imagine Pro",
         description:
-            "Grok Imagine Pro - xAI official pro image generation (Aurora)",
+            "Higher-fidelity photorealistic images for polished results",
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
         maxReferenceImages: 1, // xAI image edit route forwards one input image.
@@ -627,7 +635,7 @@ export const IMAGE_SERVICES = {
         },
         title: "Grok Video Pro",
         description:
-            "Grok Video Pro - xAI official video generation (720p, 1-15s)",
+            "Short videos from text or an image (720p, 1-15s)",
         inputModalities: ["text", "image"],
         outputModalities: ["video"],
         videoCapabilities: ["start_frame"],
@@ -662,7 +670,8 @@ export const IMAGE_SERVICES = {
             completionImageTokens: 0.01,
         },
         title: "FLUX.2 Klein 4B",
-        description: "FLUX.2 Klein 4B - Fast image generation and editing",
+        description:
+            "Quick image generation and editing with solid quality per dollar",
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
         maxReferenceImages: 10, // Pollinations self-hosted route cap.
@@ -679,7 +688,7 @@ export const IMAGE_SERVICES = {
             completionImageTokens: 0.005, // per image
         },
         title: "Pruna p-image",
-        description: "Pruna p-image - Fast text-to-image generation",
+        description: "Cheap, speedy text-to-image for rapid iteration",
         inputModalities: ["text"],
         outputModalities: ["image"],
     },
@@ -695,7 +704,7 @@ export const IMAGE_SERVICES = {
             completionImageTokens: 0.01, // per image
         },
         title: "Pruna p-image-edit",
-        description: "Pruna p-image-edit - Image-to-image editing",
+        description: "Fast instruction-based photo editing",
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
         maxReferenceImages: 5, // Pollinations route cap.
@@ -716,7 +725,7 @@ export const IMAGE_SERVICES = {
             completionVideoSeconds: 0.02, // Replicate 720p per sec
         },
         title: "Pruna p-video 720p",
-        description: "Pruna p-video - Text/image-to-video generation (720p)",
+        description: "Affordable video from text or an image at 720p",
         inputModalities: ["text", "image"],
         outputModalities: ["video"],
         videoCapabilities: ["start_frame"],
@@ -734,7 +743,7 @@ export const IMAGE_SERVICES = {
             completionVideoSeconds: 0.04, // Replicate 1080p per sec
         },
         title: "Pruna p-video 1080p",
-        description: "Pruna p-video - Text/image-to-video generation (1080p)",
+        description: "Affordable video from text or an image at 1080p",
         inputModalities: ["text", "image"],
         outputModalities: ["video"],
         videoCapabilities: ["start_frame"],
@@ -751,7 +760,7 @@ export const IMAGE_SERVICES = {
             completionImageTokens: 0.04, // per image
         },
         title: "Nova Canvas",
-        description: "Nova Canvas - Image generation, editing & inpainting",
+        description: "Image generation with editing and inpainting tools",
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
         maxReferenceImages: 1, // Nova Canvas route forwards one input image.
@@ -767,7 +776,8 @@ export const IMAGE_SERVICES = {
             completionVideoSeconds: 0.08, // per sec
         },
         title: "Nova Reel",
-        description: "Nova Reel - Video Generation (6-120s, 720p)",
+        description:
+            "Long-form video — clips from 6 seconds up to 2 minutes at 720p",
         inputModalities: ["text", "image"],
         outputModalities: ["video"],
         videoCapabilities: ["start_frame"],

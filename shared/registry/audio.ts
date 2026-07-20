@@ -65,7 +65,7 @@ export const AUDIO_SERVICES = {
         },
         title: "ElevenLabs v3 TTS",
         description:
-            "ElevenLabs v3 TTS - Expressive voices with emotions & audio tags",
+            "Expressive speech with emotion control and audio tags",
         inputModalities: ["text"],
         outputModalities: ["audio"],
         voices: ELEVENLABS_VOICES as string[],
@@ -86,7 +86,7 @@ export const AUDIO_SERVICES = {
         },
         title: "ElevenLabs Flash v2.5",
         description:
-            "ElevenLabs Flash v2.5 - Fast, low-latency TTS (~75ms, 32 languages)",
+            "Snappy low-latency speech in 32 languages; leaner than the premium voices",
         inputModalities: ["text"],
         outputModalities: ["audio"],
         voices: ELEVENLABS_VOICES as string[],
@@ -107,7 +107,7 @@ export const AUDIO_SERVICES = {
         },
         title: "ElevenLabs Multilingual v2",
         description:
-            "ElevenLabs Multilingual v2 - Lifelike, emotionally rich TTS (29 languages)",
+            "Lifelike, emotionally rich speech in 29 languages",
         inputModalities: ["text"],
         outputModalities: ["audio"],
         voices: ELEVENLABS_VOICES as string[],
@@ -128,7 +128,7 @@ export const AUDIO_SERVICES = {
         },
         title: "ElevenLabs Music",
         description:
-            "ElevenLabs Music - Generate studio-grade music from text prompts and reference audio",
+            "Studio-grade music from a text prompt or reference track",
         inputModalities: ["text", "audio"],
         outputModalities: ["audio"],
     },
@@ -145,8 +145,7 @@ export const AUDIO_SERVICES = {
             completionAudioSeconds: 0.002,
         },
         title: "ElevenLabs Sound Effects",
-        description:
-            "ElevenLabs Sound Effects - Generate sound effects from text prompts",
+        description: "Sound effects from a text description",
         inputModalities: ["text"],
         outputModalities: ["audio"],
     },
@@ -162,7 +161,7 @@ export const AUDIO_SERVICES = {
             promptAudioSeconds: 0.0000445,
         },
         title: "Whisper Large V3",
-        description: "Whisper Large V3 - Speech to text transcription",
+        description: "Accurate, affordable speech-to-text transcription",
         inputModalities: ["audio"],
         outputModalities: ["text"],
     },
@@ -179,7 +178,8 @@ export const AUDIO_SERVICES = {
             promptAudioSeconds: 0.22 / 3600,
         },
         title: "Scribe v2",
-        description: "Scribe v2 - Speech to text (90+ languages, diarization)",
+        description:
+            "Transcription in 90+ languages with speaker labels",
         inputModalities: ["audio"],
         outputModalities: ["text"],
     },
@@ -195,8 +195,7 @@ export const AUDIO_SERVICES = {
             promptAudioSeconds: 0.15 / 3600,
         },
         title: "AssemblyAI Universal-2",
-        description:
-            "AssemblyAI Universal-2 - Fast speech to text with 99-language support",
+        description: "Fast transcription with support for 99 languages",
         inputModalities: ["audio"],
         outputModalities: ["text"],
     },
@@ -217,7 +216,7 @@ export const AUDIO_SERVICES = {
         },
         title: "AssemblyAI Universal-3 Pro",
         description:
-            "AssemblyAI Universal-3 Pro - High-accuracy speech to text with prompting",
+            "Top-accuracy transcription you can steer with prompts",
         inputModalities: ["audio"],
         outputModalities: ["text"],
     },
@@ -241,7 +240,7 @@ export const AUDIO_SERVICES = {
         },
         title: "Stable Audio 3 Medium",
         description:
-            "Stable Audio 3 Medium - Long-form 44.1 kHz stereo music and sound generation",
+            "Long-form stereo music and soundscapes in studio quality",
         inputModalities: ["text", "audio"],
         outputModalities: ["audio"],
     },
@@ -266,7 +265,7 @@ export const AUDIO_SERVICES = {
         },
         title: "Stable Audio 3 Large",
         description:
-            "Stable Audio 3 Large - Long-form 44.1 kHz stereo music via Stability's direct API",
+            "Highest-quality long-form stereo music generation; priced per generation",
         inputModalities: ["text", "audio"],
         outputModalities: ["audio"],
     },
@@ -283,7 +282,7 @@ export const AUDIO_SERVICES = {
             completionAudioTokens: 0.01 / 1000,
         },
         title: "Qwen3-TTS Flash",
-        description: "Qwen3-TTS Flash - Fast multilingual text-to-speech",
+        description: "Fast multilingual text-to-speech at low cost",
         inputModalities: ["text"],
         outputModalities: ["audio"],
     },
@@ -300,7 +299,8 @@ export const AUDIO_SERVICES = {
             completionAudioTokens: 0.0115 / 1000,
         },
         title: "Qwen3-TTS Instruct",
-        description: "Qwen3-TTS Instruct - TTS with emotion & style control",
+        description:
+            "Text-to-speech you can direct with emotion and style instructions",
         inputModalities: ["text"],
         outputModalities: ["audio"],
     },

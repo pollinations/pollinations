@@ -1,0 +1,35 @@
+{
+  "pr_number": 12593,
+  "title": "chore: remove 15 dead apps (2026-07-20)",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/12593",
+  "merged_at": "2026-07-20T14:43:48Z",
+  "labels": [
+    "DEV-CHORE"
+  ],
+  "pr_body_excerpt": "## Dead App Removal\n\nThese apps returned 404/410 in **all 3 check rounds** (5 min apart):\n\n- SpiritPet World — Feature Overview | https://spiritworldfeatureoverview.netlify.app/\n- AI Image Forge | https://hilarious-seahorse-09c5c6.netlify.app/\n- CreatorPack AI | https://creatorpack.qhero.net/\n- Storyframe Studio | https://storyframe-studio.web.app\n- Persona AI Application | https://personaai.app/\n- Pollinations Seed Plan Qualification | https://app-j.pl/Pollinations/\n- ALL in One AI Tools | https://tools.zero2launch.io/\n- Pollinations Avatar Gen | https://github.com/Nidelon/pollinations-avatar-gen\n- SmartInfiniteYield | https://github.com/BokX1/InfiniteYieldWithAI\n- P2S | https://github.com/Rakesh-ada/P2S\n- AriaEren | https://ariaeren.com\n- Sugen | https://sugen.puter.site/\n- Flowgen | https://flowgen.puter.site/\n- Avatar GenStudio | https://astudio-dcae4.web.app\n- ii's Stupid Menu | https://github.com/iiDk-the-actual/iis.Stupid.Menu\n\nReview before merging. Close this PR to keep all apps.\n",
+  "gist": {
+    "category": "community",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Garden bed cleared",
+    "blurb": "Fifteen long-offline community app links have been gently weeded from the directory after three separate checks. The garden is a little tidier; the living projects get more sunlight.",
+    "summary": "Removed 15 app entries from apps/APPS.md after each linked project returned 404 or 410 across three checks spaced five minutes apart.",
+    "impact": "The community app directory now points readers toward projects that are still reachable instead of listing these 15 retired or unavailable apps.",
+    "keywords": [
+      "community-apps",
+      "app-directory",
+      "cleanup",
+      "dead-links",
+      "maintenance"
+    ],
+    "visual_concept": "A cozy community garden directory being tended: Polly carefully prunes a small row of wilted code-plants marked as unreachable, while healthy flowering app-plants remain in labeled pots beside a retro directory terminal. The scene represents curating a useful app garden rather than destroying projects.",
+    "image_prompt": "Cozy pixel art scene of Polly, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny gardener hat, carefully pruning a few wilted code-plants beside a retro terminal showing a tidy app directory; healthy flower-filled code pots glow prominently lime green (#ecf874) nearby. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley, with subtle pixel-font text: \"GARDEN TIDIED\"."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-20/PR-12593.jpg",
+    "prompt": "Cozy pixel art scene of Polly, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny gardener hat, carefully pruning a few wilted code-plants beside a retro terminal showing a tidy app directory; healthy flower-filled code pots glow prominently lime green (#ecf874) nearby. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley, with subtle pixel-font text: \"GARDEN TIDIED\"."
+  },
+  "generated_at": "2026-07-20T14:44:50.718467+00:00"
+}

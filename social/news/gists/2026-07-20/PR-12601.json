@@ -1,0 +1,35 @@
+{
+  "pr_number": 12601,
+  "title": "docs: regenerate APIDOCS.md",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/12601",
+  "merged_at": "2026-07-20T16:53:26Z",
+  "labels": [
+    "DEV-DOCS"
+  ],
+  "pr_body_excerpt": "Auto-generated from OpenAPI spec changes after a successful production deploy.",
+  "gist": {
+    "category": "docs",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "The map got fresher",
+    "blurb": "The API field guide has been regenerated from the latest production OpenAPI spec. Fewer mysteries, fewer tabs, marginally happier bees.",
+    "summary": "Regenerated APIDOCS.md from the production OpenAPI specification so the published API reference reflects the latest deployed endpoints and schema changes.",
+    "impact": "Developers can use the refreshed API reference to find current request and response details without reverse-engineering the live API.",
+    "keywords": [
+      "documentation",
+      "api",
+      "openapi",
+      "reference",
+      "developer-experience"
+    ],
+    "visual_concept": "Depict Polly as a careful librarian or cartographer updating a large API field guide beside a cozy retro terminal; the book contains simple endpoint paths and is surrounded by sprouting code-plants, representing documentation synchronized with the live system.",
+    "image_prompt": "Polly, the cute yellow-and-brown striped pixel bee with pink cheek blush and light blue wings, wears tiny librarian glasses while updating a large glowing API field guide beside a retro terminal, with code-plants and small flowers growing around it. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, subtle CRT glow, pixel-font text: 'API DOCS', retro gaming vibes, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-20/PR-12601.jpg",
+    "prompt": "Polly, the cute yellow-and-brown striped pixel bee with pink cheek blush and light blue wings, wears tiny librarian glasses while updating a large glowing API field guide beside a retro terminal, with code-plants and small flowers growing around it. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, subtle CRT glow, pixel-font text: 'API DOCS', retro gaming vibes, nostalgic but beautiful."
+  },
+  "generated_at": "2026-07-20T16:54:22.933977+00:00"
+}

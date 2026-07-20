@@ -92,9 +92,10 @@ export const EMBEDDING_SERVICES = {
         },
         title: "Qwen3 Embedding 8B",
         description:
-            "Qwen3 Embedding 8B - Multilingual text embeddings. 4096 dimensions, 40K context.",
+            "Qwen3 Embedding 8B - Multilingual text embeddings. 4096 dimensions, 40,960-token Fireworks context.",
         inputModalities: ["text"],
         outputModalities: ["embedding"],
+        // Match the effective context advertised by the Fireworks deployment.
         contextLength: 40960,
     },
 } as const satisfies Record<string, ModelDefinition>;

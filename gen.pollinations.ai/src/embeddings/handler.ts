@@ -97,6 +97,7 @@ async function generateCohereAzureEmbeddings(
     }
 
     const inputs = normalizeInputs(request.input);
+    // ContentPart[] is one aggregate embedding; only string[] is batched.
     const imageInput =
         inputs.length === 1 ? await inputToCohereImage(inputs[0]) : undefined;
 

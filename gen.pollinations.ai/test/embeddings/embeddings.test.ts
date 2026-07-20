@@ -11,6 +11,7 @@ import {
 } from "@shared/test/mocks/fetch.ts";
 import { createMockTinybird } from "@shared/test/mocks/tinybird.ts";
 import { afterEach, beforeEach, describe, expect, vi } from "vitest";
+import { applyGeminiTaskInstruction } from "../../src/embeddings/input.ts";
 import { MAX_EMBEDDING_BATCH_SIZE } from "../../src/embeddings/limits.ts";
 import worker from "../../src/index.ts";
 import googleCloudAuth from "../../src/text/auth/googleCloudAuth.ts";
@@ -296,6 +297,12 @@ async function fetchWorker(path: string, init: RequestInit = {}) {
 }
 
 describe("POST /v1/embeddings", () => {
+    test("rejects Gemini task hints without text content", () => {
+        expect(() => applyGeminiTaskInstruction([], "RETRIEVAL_QUERY")).toThrow(
+            "task_type requires non-empty Gemini text input",
+        );
+    });
+
     test("returns an OpenAI-compatible response and tracks billing", async ({
         paidApiKey: apiKey,
         mocks,
@@ -666,7 +673,7 @@ describe("POST /v1/embeddings", () => {
         await wait();
     });
 
-    test("supports Cohere image embeddings through Azure", async ({
+    test("supports Cohere combined text and image embeddings through Azure", async ({
         apiKey,
         mocks,
     }) => {
@@ -680,6 +687,10 @@ describe("POST /v1/embeddings", () => {
             body: buildEmbeddingsBody({
                 model: TEST_COHERE_MODEL,
                 input: [
+                    {
+                        type: "text",
+                        text: "Find visually similar items",
+                    },
                     {
                         type: "image_url",
                         image_url: {
@@ -707,6 +718,7 @@ describe("POST /v1/embeddings", () => {
                 input: [
                     {
                         image: "data:image/png;base64,aGVsbG8=",
+                        text: "Find visually similar items",
                     },
                 ],
                 input_type: "document",

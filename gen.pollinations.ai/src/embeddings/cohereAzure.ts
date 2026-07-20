@@ -4,6 +4,8 @@ import type { OpenAIEmbeddingResponse } from "./openai.ts";
 
 const COHERE_AZURE_ENDPOINT =
     "https://myceli-prod-eastus.cognitiveservices.azure.com/openai/v1/embeddings";
+// This Cohere deployment exposes image embeddings only on this Azure preview
+// contract; the 2025-04-01 image route returns 404.
 const COHERE_AZURE_IMAGE_ENDPOINT =
     "https://myceli-prod-eastus.cognitiveservices.azure.com/models/images/embeddings?api-version=2024-05-01-preview";
 
@@ -92,6 +94,8 @@ export function extractCohereAzureUsage(
         );
     }
 
+    // Azure reports one aggregate count for image requests, including any
+    // accompanying text, so the complete request is billed at the image rate.
     return modality === "image"
         ? { promptImageTokens: promptTokens }
         : { promptTextTokens: promptTokens };

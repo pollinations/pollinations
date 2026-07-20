@@ -140,7 +140,9 @@ export function applyGeminiTaskInstruction(
 
     const prefix = GEMINI_TASK_PREFIXES[taskType];
     const firstTextIndex = parts.findIndex((part) => part.text !== undefined);
-    if (firstTextIndex === -1) return [{ text: prefix.trimEnd() }, ...parts];
+    if (firstTextIndex === -1) {
+        badRequest("task_type requires non-empty Gemini text input");
+    }
 
     return parts.map((part, index) =>
         index === firstTextIndex

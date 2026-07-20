@@ -295,7 +295,7 @@ const models: ModelDefinition[] = [
         transform: createPerplexitySearchTransform("low"),
     },
     {
-        name: "perplexity-deep",
+        name: "perplexity-high",
         config: portkeyConfig["sonar"],
         transform: createPerplexitySearchTransform("high"),
     },

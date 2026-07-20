@@ -5,6 +5,10 @@ import {
 import { sanitizeAuthorizeAccountPermissions } from "@shared/auth/authorize-config.ts";
 import * as schema from "@shared/db/better-auth.ts";
 import { validator } from "@shared/middleware/validator.ts";
+import {
+    filterPermissionsToVisibleModels,
+    getVisibleModelIdsForUser,
+} from "@shared/registry/visible-model-ids.ts";
 import { and, eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { Hono } from "hono";
@@ -269,6 +273,10 @@ export const apiKeysRoutes = new Hono<Env>()
                 where: eq(schema.apikey.userId, user.id),
                 orderBy: (apikey, { desc }) => [desc(apikey.createdAt)],
             });
+            const visibleModelIds = await getVisibleModelIdsForUser(
+                c.env.DB,
+                user.id,
+            );
 
             return c.json({
                 data: keys.map((key) => ({
@@ -279,7 +287,10 @@ export const apiKeysRoutes = new Hono<Env>()
                     lastRequest: key.lastRequest,
                     expiresAt: key.expiresAt,
                     permissions: key.permissions
-                        ? parsePermissions(key.permissions)
+                        ? filterPermissionsToVisibleModels(
+                              parsePermissions(key.permissions),
+                              visibleModelIds,
+                          )
                         : null,
                     metadata: key.metadata ? parseMetadata(key.metadata) : null,
                     pollenBalance: key.pollenBalance,

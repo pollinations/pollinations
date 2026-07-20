@@ -836,6 +836,38 @@ describe("API Key Management", () => {
             expect(response.headers.get("pragma")).toBe("no-cache");
         });
 
+        test("should omit retired models without rewriting stored permissions", async ({
+            sessionToken,
+        }) => {
+            const created = await createApiKeyViaApi(sessionToken, {
+                name: "key-with-retired-model",
+                allowedModels: ["flux", "retired-model"],
+            });
+
+            const response = await SELF.fetch(
+                "http://localhost:3000/api/api-keys",
+                {
+                    headers: {
+                        Cookie: `better-auth.session_token=${sessionToken}`,
+                    },
+                },
+            );
+
+            expect(response.status).toBe(200);
+            const body = (await response.json()) as ApiKeyListResponse;
+            const listed = body.data.find((key) => key.id === created.id);
+            expect(listed?.permissions?.models).toEqual(["flux"]);
+
+            const db = drizzle(env.DB, { schema });
+            const stored = await db.query.apikey.findFirst({
+                where: (apikey, { eq }) => eq(apikey.id, created.id),
+            });
+            expect(JSON.parse(stored?.permissions ?? "{}").models).toEqual([
+                "flux",
+                "retired-model",
+            ]);
+        });
+
         test("should require authentication", async () => {
             const response = await SELF.fetch(
                 "http://localhost:3000/api/api-keys",

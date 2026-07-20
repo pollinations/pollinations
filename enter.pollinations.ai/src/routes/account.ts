@@ -11,6 +11,10 @@ import {
     user as userTable,
 } from "@shared/db/better-auth.ts";
 import { validator } from "@shared/middleware/validator.ts";
+import {
+    filterPermissionsToVisibleModels,
+    getVisibleModelIdsForUser,
+} from "@shared/registry/visible-model-ids.ts";
 import { and, desc, eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import type { Context } from "hono";
@@ -1375,6 +1379,10 @@ export const accountRoutes = new Hono<Env>()
                 .from(apikeyTable)
                 .where(eq(apikeyTable.userId, user.id))
                 .all();
+            const visibleModelIds = await getVisibleModelIdsForUser(
+                c.env.DB,
+                user.id,
+            );
 
             c.header("Cache-Control", "private, no-store, max-age=0");
             return c.json({
@@ -1389,7 +1397,10 @@ export const accountRoutes = new Hono<Env>()
                     permissions: key.permissions
                         ? (() => {
                               try {
-                                  return JSON.parse(key.permissions);
+                                  return filterPermissionsToVisibleModels(
+                                      JSON.parse(key.permissions),
+                                      visibleModelIds,
+                                  );
                               } catch {
                                   return null;
                               }
@@ -1652,9 +1663,17 @@ export const accountRoutes = new Hono<Env>()
             }
 
             // Format permissions for response
+            const visibleModelIds = await getVisibleModelIdsForUser(
+                c.env.DB,
+                c.var.auth.requireUser().id,
+            );
+            const effectivePermissions = filterPermissionsToVisibleModels(
+                apiKey.permissions ?? null,
+                visibleModelIds,
+            );
             const permissions = {
-                models: apiKey.permissions?.models || null,
-                account: apiKey.permissions?.account || null,
+                models: effectivePermissions?.models ?? null,
+                account: effectivePermissions?.account ?? null,
             };
 
             return c.json({

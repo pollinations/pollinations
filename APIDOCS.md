@@ -536,7 +536,7 @@ curl -X POST "https://gen.pollinations.ai/v1/images/edits" \
 
 Generate a video from a text prompt. Returns MP4.
 
-**Available models:** `veo`, `veo-1080p`, `seedance-pro`, `seedance-2.0`, `wan`, `wan-fast`, `wan-pro`, `wan-pro-1080p`, `grok-video-pro`, `ltx-2`, `p-video-720p`, `p-video-1080p`, `nova-reel`.
+**Available models:** `veo`, `veo-1080p`, `seedance-pro`, `seedance-2.0`, `wan`, `wan-fast`, `wan-pro`, `wan-pro-1080p`, `grok-video-pro`, `happyhorse-1.1`, `p-video-720p`, `p-video-1080p`, `nova-reel`.
 
 Use `duration` to set video length, `aspectRatio` for orientation, and `audio` where the selected model supports audio output.
 
@@ -608,7 +608,7 @@ curl -X POST "https://gen.pollinations.ai/v1/audio/music/upload" \
 
 Generate speech or music from text. Compatible with the OpenAI TTS API for JSON requests.
 
-Set `model` to `elevenmusic`, `acestep`, `stable-audio-3-medium`, or `stable-audio-3-large` to generate music. Send multipart/form-data with `reference_audio` plus `input` to run audio-to-audio (style transfer) on `stable-audio-3-medium` or `stable-audio-3-large`, or reference-audio conditioning on `elevenmusic`; for ElevenLabs inpainting, pass a `composition_plan`.
+Set `model` to `elevenmusic`, `stable-audio-3-medium`, or `stable-audio-3-large` to generate music. Send multipart/form-data with `reference_audio` plus `input` to run audio-to-audio (style transfer) on `stable-audio-3-medium` or `stable-audio-3-large`, or reference-audio conditioning on `elevenmusic`; for ElevenLabs inpainting, pass a `composition_plan`.
 
 **Available voices:** alloy, echo, fable, onyx, nova, shimmer, ash, ballad, coral, sage, verse, rachel, domi, bella, elli, charlotte, dorothy, sarah, emily, lily, matilda, adam, antoni, arnold, josh, sam, daniel, charlie, james, fin, callum, liam, george, brian, bill
 
@@ -690,7 +690,7 @@ Generate speech or music from text via a simple GET request.
 
 **Output formats:** mp3 (default), opus, aac, flac, wav, pcm
 
-**Music generation:** Set `model=elevenmusic`, `acestep`, `stable-audio-3-medium`, or `stable-audio-3-large` to generate music instead of speech. `elevenmusic` supports `duration` (3-300 seconds) and `instrumental` mode; `stable-audio-3-medium`/`stable-audio-3-large` support `seconds` (1-380), `steps`, `seed`, and `negative_prompt`. Use `POST /v1/audio/speech` with multipart `reference_audio` for style transfer (medium/large), or `POST /v1/audio/music/upload` to register a source track for inpainting.
+**Music generation:** Set `model=elevenmusic`, `stable-audio-3-medium`, or `stable-audio-3-large` to generate music instead of speech. `elevenmusic` supports `duration` (3-300 seconds) and `instrumental` mode; `stable-audio-3-medium`/`stable-audio-3-large` support `seconds` (1-380), `steps`, `seed`, and `negative_prompt`. Use `POST /v1/audio/speech` with multipart `reference_audio` for style transfer (medium/large), or `POST /v1/audio/music/upload` to register a source track for inpainting.
 
 ⚙️ **Parameters**
 
@@ -705,7 +705,6 @@ Generate speech or music from text via a simple GET request.
 | `steps` | `query` | `integer` | Sampling steps (stable-audio-3-medium 1-100, stable-audio-3-large 4-8) · range: `1…100` |
 | `negative_prompt` | `query` | `string` | Negative prompt for stable-audio-3-large |
 | `instrumental` | `query` | `"true"` \| `"false"` | If true, guarantees instrumental output (elevenmusic only) · default: `"false"` |
-| `style` | `query` | `string` | Style/genre tags for music generation (acestep only) |
 | `instruct` | `query` | `string` | Emotion/style instruction (qwen-tts-instruct only) |
 | `loop` | `query` | `"true"` \| `"false"` | Loop the generated sound effect (eleven-sfx only) |
 | `prompt_influence` | `query` | `string` | How strictly to follow the prompt, 0-1 (eleven-sfx only) |
@@ -2115,6 +2114,11 @@ Marks the end of a static prompt prefix to cache (Gemini, Claude, and Nova model
 | `data[].url` | `string` | — |
 | `data[].b64_json` | `string` | — |
 | `data[].revised_prompt` | `string` | — |
+| `usage` * | `object` | — |
+| `usage.input_tokens` * | `integer` | — |
+| `usage.output_tokens` * | `integer` | — |
+| `usage.total_tokens` * | `integer` | — |
+| `usage.input_tokens_details` * | `object` | — |
 
 <sub>`*` = required field</sub>
 

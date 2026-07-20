@@ -886,6 +886,43 @@ test("flux image generation uses Fireworks serverless from gen", async ({
     });
 });
 
+test("OpenAI image generation returns token usage", async ({
+    paidApiKey,
+    mocks,
+}) => {
+    await mocks.enable("tinybird", "fireworks");
+
+    const { response, wait } = await fetchWorker("/v1/images/generations", {
+        method: "POST",
+        headers: {
+            authorization: `Bearer ${paidApiKey}`,
+            "content-type": "application/json",
+        },
+        body: JSON.stringify({
+            model: "flux",
+            prompt: "vcr red square",
+            size: "1280x720",
+            seed: 42,
+            response_format: "b64_json",
+        }),
+    });
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toMatchObject({
+        data: [{ b64_json: expect.any(String) }],
+        usage: {
+            input_tokens: 0,
+            output_tokens: 1,
+            total_tokens: 1,
+            input_tokens_details: {
+                text_tokens: 0,
+                image_tokens: 0,
+            },
+        },
+    });
+    await wait();
+});
+
 test("gpt-image-2 rejects transparent backgrounds with 400", async ({
     paidApiKey,
     mocks,

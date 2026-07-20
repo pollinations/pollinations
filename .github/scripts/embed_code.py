@@ -261,8 +261,13 @@ def collect_code_files(repo_root: Path) -> list[Path]:
     return files
 
 
-def embed_batch(texts: list[str], retries: int = 3) -> list[list[float]]:
-    """Embed a batch of texts via Pollinations qwen3-embedding-8b at 1536-dim (MRL truncation)."""
+# Pollinations' /v1/embeddings rejects requests with more than this many input items
+# ("Too big: expected array to have <=32 items") — a single large file can produce more
+# chunks than that, so embed_batch must sub-batch instead of sending everything at once.
+MAX_EMBED_INPUTS_PER_REQUEST = 32
+
+
+def _embed_single_request(texts: list[str], retries: int = 3) -> list[list[float]]:
     payload = {
         "model": EMBED_MODEL,
         "input": texts,
@@ -284,6 +289,16 @@ def embed_batch(texts: list[str], retries: int = 3) -> list[list[float]]:
             print(f"  embed batch failed (attempt {attempt + 1}/{retries}): {e} — retrying in {wait}s", file=sys.stderr)
             time.sleep(wait)
     raise RuntimeError(f"Embedding failed after {retries} attempts: {last_err}")
+
+
+def embed_batch(texts: list[str]) -> list[list[float]]:
+    """Embed texts via Pollinations qwen3-embedding-8b at 1536-dim (MRL truncation),
+    sub-batching to stay under the API's per-request input limit."""
+    embeddings: list[list[float]] = []
+    for i in range(0, len(texts), MAX_EMBED_INPUTS_PER_REQUEST):
+        chunk = texts[i : i + MAX_EMBED_INPUTS_PER_REQUEST]
+        embeddings.extend(_embed_single_request(chunk))
+    return embeddings
 
 
 def vectorize_upsert(rows: list[dict]) -> None:

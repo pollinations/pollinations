@@ -211,8 +211,7 @@ function filterEntriesByPermissions(
     hasPaidBalance?: boolean,
 ): GenerationModelEntry[] {
     return entries.filter((entry) => {
-        if (allowedModels?.length && !allowedModels.includes(entry.id))
-            return false;
+        if (allowedModels && !allowedModels.includes(entry.id)) return false;
         if (entry.info.paid_only && hasPaidBalance === false) return false;
         return true;
     });

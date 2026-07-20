@@ -238,6 +238,26 @@ describe("community endpoint helpers", () => {
         expect(() =>
             normalizeCommunityEndpointBaseUrl("https://localhost/v1"),
         ).toThrow("Endpoint URL cannot target a private host");
+        for (const hostname of [
+            "0.0.0.0",
+            "10.0.0.1",
+            "127.0.0.1",
+            "169.254.169.254",
+            "172.16.0.1",
+            "172.31.255.255",
+            "192.168.1.1",
+            "[::]",
+            "[::1]",
+            "[::ffff:127.0.0.1]",
+            "[fc00::1]",
+            "[fd00::1]",
+            "[fe80::1]",
+            "[fe8f::1]",
+        ]) {
+            expect(() =>
+                normalizeCommunityEndpointBaseUrl(`https://${hostname}/v1`),
+            ).toThrow("Endpoint URL cannot target a private host");
+        }
     });
 
     it("uses the community endpoint description as the model title", () => {

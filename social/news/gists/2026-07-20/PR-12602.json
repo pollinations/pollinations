@@ -1,0 +1,34 @@
+{
+  "pr_number": 12602,
+  "title": "ci: add Vectorize code-embeddings workflow (qwen3-embedding-8b)",
+  "author": "Itachi-1824",
+  "url": "https://github.com/pollinations/pollinations/pull/12602",
+  "merged_at": "2026-07-20T17:25:28Z",
+  "labels": [],
+  "pr_body_excerpt": "Polly currently clones the repo and re-embeds it itself with OpenAI + a local ChromaDB on the VPS, triggered off a Discord webhook message. Moving that off Polly entirely — embeddings now go into Cloudflare Vectorize using Pollinations' own qwen3-embedding-8b, and this repo pushes to it directly instead of Polly pulling.\n\nNew index is `polly-code-embeddings`, 1536-dim (qwen3 is MRL-trained so it truncates cleanly from 4096, and 1536 is Vectorize's hard cap anyway).\n\nWorkflow has two modes:\n- manual dispatch, pick `full` or `incremental` — `full` walks the whole repo and re-embeds everything, that's for the first backfill or if we ever need to rebuild from scratch\n- push to main just runs `incremental` — diffs against the previous commit, only re-embeds what actually changed, deletes vectors for anything removed/renamed\n\nIt's the whole repo, not just \"code\" in the narrow sense — docs, Dockerfiles, the Tinybird `.pipe`/`.datasource` files, all of it. Only skips actual binary stuff (images, fonts, lockfiles) plus a quick binary-sniff as a backstop. First pass at this I had it as an extension allowlist and it was quietly dropping Dockerfiles and the tinybird pipe defs, switched it to a blocklist over `git ls-files` instead so nothing real slips through.\n\nUses the existing `POLLI_VECTOR_DB` secret for the Pollinations embedding calls and `CLOUDFLARE_API_TOKEN_MYCELI`/`CLOUDFLARE_ACCOUNT_ID_MYCELI` for Vectorize.\n\nPlan is: merge this, then I'll manually kick off a `full` run to backfill everything, and after that it just stays current on its own as PRs land. Haven't run it end to end yet so I'll be watching that first manual run closely.",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "The hive grows a memory",
+    "blurb": "Polly no longer has to haul the whole garden back to the VPS to remember it. The repository now tends its own searchable code memory, one changed file at a time.",
+    "summary": "Added a GitHub Actions workflow that embeds all tracked repository text into Cloudflare Vectorize's new 1536-dimensional `polly-code-embeddings` index using Pollinations `qwen3-embedding-8b`, with full backfills and incremental updates on pushes to main.",
+    "impact": "After the initial full backfill, changed files are re-embedded and removed or renamed files have their vectors deleted automatically, keeping Polly's repository context current without local ChromaDB re-indexing.",
+    "keywords": [
+      "github-actions",
+      "vectorize",
+      "embeddings",
+      "qwen3-embedding-8b",
+      "polly",
+      "cloudflare"
+    ],
+    "visual_concept": "Polly is a tiny librarian-gardener moving glowing code seedlings from a repository shelf into a labeled vector garden, while a friendly CRT robot sorts only the newly changed leaves. Show a large cozy filing garden marked `polly-code-embeddings`, with a few document, Dockerfile, and terminal-shaped sprouts to represent indexing the whole text repository rather than code alone.",
+    "image_prompt": "Cozy pixel art scene of Polly, the cute yellow-and-brown striped bee mascot with pink cheek blush, light blue wings, and a tiny librarian hat, carefully planting glowing document, terminal, and Dockerfile seedlings into a lime green (#ecf874) vector garden labeled in simple pixel text `polly-code-embeddings`; a cheerful CRT monitor robot sorts only fresh changed-file leaves beside her. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with code-plants, flowers, subtle CRT glow, and a warm cream background."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-20/PR-12602.jpg",
+    "prompt": "Cozy pixel art scene of Polly, the cute yellow-and-brown striped bee mascot with pink cheek blush, light blue wings, and a tiny librarian hat, carefully planting glowing document, terminal, and Dockerfile seedlings into a lime green (#ecf874) vector garden labeled in simple pixel text `polly-code-embeddings`; a cheerful CRT monitor robot sorts only fresh changed-file leaves beside her. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with code-plants, flowers, subtle CRT glow, and a warm cream background."
+  },
+  "generated_at": "2026-07-20T17:26:36.450660+00:00"
+}

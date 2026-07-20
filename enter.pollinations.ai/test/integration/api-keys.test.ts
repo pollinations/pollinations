@@ -842,7 +842,7 @@ describe("API Key Management", () => {
         }) => {
             const created = await createApiKeyViaApi(sessionToken, {
                 name: "key-with-retired-model",
-                allowedModels: ["flux", "retired-model"],
+                allowedModels: ["flux", "nanobanana2", "retired-model"],
             });
 
             const response = await SELF.fetch(
@@ -865,6 +865,7 @@ describe("API Key Management", () => {
             });
             expect(JSON.parse(stored?.permissions ?? "{}").models).toEqual([
                 "flux",
+                "nanobanana2",
                 "retired-model",
             ]);
         });
@@ -876,7 +877,6 @@ describe("API Key Management", () => {
                 name: "key-with-private-community-models",
                 allowedModels: [
                     "model-owner/private-model",
-                    "community/model-owner/legacy-private-model",
                     "other-owner/private-model",
                 ],
             });
@@ -912,17 +912,6 @@ describe("API Key Management", () => {
                     completionTextPrice: 0,
                 },
                 {
-                    id: "owner-legacy-private-model",
-                    ownerUserId,
-                    name: "legacy-private-model",
-                    baseUrl: "https://owner.example.com/v1",
-                    upstreamModel: "legacy-private-model",
-                    bearerTokenCiphertext: "encrypted-token",
-                    visibility: "private",
-                    promptTextPrice: 0,
-                    completionTextPrice: 0,
-                },
-                {
                     id: "other-private-model",
                     ownerUserId: "other-model-owner-id",
                     name: "private-model",
@@ -949,7 +938,6 @@ describe("API Key Management", () => {
             const listed = body.data.find((item) => item.id === created.id);
             expect(listed?.permissions?.models).toEqual([
                 "model-owner/private-model",
-                "community/model-owner/legacy-private-model",
             ]);
         });
 

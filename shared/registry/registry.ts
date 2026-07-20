@@ -305,14 +305,6 @@ export function resolveModelName(model: string): ModelName {
     );
 }
 
-export function resolveModelNameSafe(model: string): string {
-    try {
-        return resolveModelName(model);
-    } catch {
-        return model;
-    }
-}
-
 /**
  * Get all public model names
  */

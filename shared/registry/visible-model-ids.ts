@@ -1,11 +1,8 @@
 import { and, eq, isNotNull, isNull, or } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
-import {
-    communityModelId,
-    parseCommunityModelId,
-} from "../community-endpoints.ts";
+import { communityModelId } from "../community-endpoints.ts";
 import * as schema from "../db/better-auth.ts";
-import { getModels, resolveModelNameSafe } from "./registry.ts";
+import { getModels } from "./registry.ts";
 
 export async function getVisibleModelIdsForUser(
     dbBinding: D1Database,
@@ -53,19 +50,8 @@ export function filterPermissionsToVisibleModels(
 
     return {
         ...permissions,
-        models: permissions.models.filter((modelId) => {
-            const resolvedModelId = resolveModelNameSafe(modelId);
-            if (visibleModelIds.has(resolvedModelId)) return true;
-
-            const communityModel = parseCommunityModelId(modelId);
-            return communityModel
-                ? visibleModelIds.has(
-                      communityModelId(
-                          communityModel.ownerGithubUsername,
-                          communityModel.modelName,
-                      ),
-                  )
-                : false;
-        }),
+        models: permissions.models.filter((modelId) =>
+            visibleModelIds.has(modelId),
+        ),
     };
 }

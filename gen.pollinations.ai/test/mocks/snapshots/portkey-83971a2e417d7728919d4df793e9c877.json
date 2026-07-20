@@ -13,7 +13,6 @@
           }
         ],
         "seed": 42,
-        "voice": "alloy",
         "temperature": 1,
         "stream": false
       }

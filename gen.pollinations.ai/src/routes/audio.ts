@@ -1,7 +1,6 @@
 import type { Logger } from "@logtape/logtape";
 import { ensureUpstreamOk, UpstreamError } from "@shared/error.ts";
 import {
-    AUDIO_SERVICES,
     type AudioModelName,
     ELEVENLABS_VOICES,
     resolveElevenLabsVoiceId,
@@ -208,6 +207,18 @@ export function fixWavHeader(buffer: ArrayBuffer): ArrayBuffer {
         offset += 8 + chunkSize;
     }
     return buffer; // no data chunk found
+}
+
+const ELEVENLABS_TTS_MODEL_IDS = {
+    elevenlabs: "eleven_v3",
+    elevenflash: "eleven_flash_v2_5",
+    "eleven-multilingual-v2": "eleven_multilingual_v2",
+} as const satisfies Partial<Record<AudioModelName, string>>;
+
+type ElevenLabsTtsModelName = keyof typeof ELEVENLABS_TTS_MODEL_IDS;
+
+function isElevenLabsTtsModel(model: string): model is ElevenLabsTtsModelName {
+    return model in ELEVENLABS_TTS_MODEL_IDS;
 }
 
 export async function generateSpeech(opts: {
@@ -593,7 +604,7 @@ export async function generateMusic(
         });
     }
 
-    const modelId = AUDIO_SERVICES.elevenmusic.modelId;
+    const modelId = "music_v2";
     let uploadedSongId: string | undefined;
     let compositionPlan = opts.compositionPlan;
     let conditioningRef = opts.conditioningRef;
@@ -765,7 +776,7 @@ export async function generateSoundEffect(opts: {
         });
     }
 
-    const modelId = AUDIO_SERVICES["eleven-sfx"].modelId;
+    const modelId = "eleven_text_to_sound_v2";
     const elevenLabsUrl = "https://api.elevenlabs.io/v1/sound-generation";
 
     const body: Record<string, unknown> = { text: prompt, model_id: modelId };
@@ -813,12 +824,12 @@ export async function generateSoundEffect(opts: {
 const QWEN_TTS_ENDPOINT =
     "https://dashscope-intl.aliyuncs.com/api/v1/services/aigc/multimodal-generation/generation";
 
-const QWEN_TTS_MODELS = [
-    "qwen-tts",
-    "qwen-tts-instruct",
-] as const satisfies readonly AudioModelName[];
+const QWEN_TTS_MODEL_IDS = {
+    "qwen-tts": "qwen3-tts-flash",
+    "qwen-tts-instruct": "qwen3-tts-instruct-flash",
+} as const satisfies Partial<Record<AudioModelName, string>>;
 
-type QwenTtsModelName = (typeof QWEN_TTS_MODELS)[number];
+type QwenTtsModelName = keyof typeof QWEN_TTS_MODEL_IDS;
 
 const QWEN_TTS_OPENAI_VOICE_MAP: Record<string, string> = {
     alloy: "Chelsie",
@@ -839,12 +850,12 @@ function resolveQwenVoice(voice: string): string {
 }
 
 export function isQwenTtsModel(model: string): model is QwenTtsModelName {
-    return QWEN_TTS_MODELS.includes(model as QwenTtsModelName);
+    return model in QWEN_TTS_MODEL_IDS;
 }
 
 function requireTextToAudioModel(
     model: string,
-    definition: ModelDefinition<string>,
+    definition: ModelDefinition,
 ): void {
     const acceptsText = definition.inputModalities?.includes("text");
     const returnsAudio = definition.outputModalities?.includes("audio");
@@ -1551,8 +1562,8 @@ async function dispatchAudioGeneration(
         return withSafetyHeaders(
             c,
             await generateQwenTts({
-                modelName: c.var.model.resolved as QwenTtsModelName,
-                modelId: c.var.model.definition.modelId,
+                modelName: c.var.model.resolved,
+                modelId: QWEN_TTS_MODEL_IDS[c.var.model.resolved],
                 text,
                 voice,
                 instruct,
@@ -1562,11 +1573,17 @@ async function dispatchAudioGeneration(
         );
     }
 
+    if (!isElevenLabsTtsModel(c.var.model.resolved)) {
+        throw new UpstreamError(500 as ContentfulStatusCode, {
+            message: `No audio provider route configured for model: ${c.var.model.resolved}`,
+        });
+    }
+
     return withSafetyHeaders(
         c,
         await generateSpeech({
             modelName: c.var.model.resolved,
-            modelId: c.var.model.definition.modelId,
+            modelId: ELEVENLABS_TTS_MODEL_IDS[c.var.model.resolved],
             text,
             voice,
             responseFormat,

@@ -47,12 +47,10 @@ export const ELEVENLABS_VOICES = Object.keys(VOICE_MAPPING);
 
 export const DEFAULT_AUDIO_MODEL = "elevenlabs" as const;
 export type AudioModelName = keyof typeof AUDIO_SERVICES;
-export type AudioModelId = (typeof AUDIO_SERVICES)[AudioModelName]["modelId"];
 
 export const AUDIO_SERVICES = {
     elevenlabs: {
         aliases: ["tts", "text-to-speech", "eleven", "tts-1", "tts-1-hd"],
-        modelId: "eleven_v3",
         provider: "elevenlabs",
         brand: "ElevenLabs",
         category: "audio",
@@ -74,7 +72,6 @@ export const AUDIO_SERVICES = {
     },
     elevenflash: {
         aliases: ["tts-flash", "eleven-flash", "flash"],
-        modelId: "eleven_flash_v2_5",
         provider: "elevenlabs",
         brand: "ElevenLabs",
         category: "audio",
@@ -96,7 +93,6 @@ export const AUDIO_SERVICES = {
     },
     "eleven-multilingual-v2": {
         aliases: ["multilingual-v2", "eleven-v2", "tts-multilingual"],
-        modelId: "eleven_multilingual_v2",
         provider: "elevenlabs",
         brand: "ElevenLabs",
         category: "audio",
@@ -118,7 +114,6 @@ export const AUDIO_SERVICES = {
     },
     elevenmusic: {
         aliases: ["music"],
-        modelId: "music_v2",
         provider: "elevenlabs",
         brand: "ElevenLabs",
         category: "audio",
@@ -139,7 +134,6 @@ export const AUDIO_SERVICES = {
     },
     "eleven-sfx": {
         aliases: ["sfx", "sound-effects", "eleven-sound-effects"],
-        modelId: "eleven_text_to_sound_v2",
         provider: "elevenlabs",
         brand: "ElevenLabs",
         category: "audio",
@@ -158,7 +152,6 @@ export const AUDIO_SERVICES = {
     },
     whisper: {
         aliases: ["whisper-1", "whisper-large-v3"],
-        modelId: "whisper-large-v3",
         provider: "ovhcloud",
         brand: "OpenAI",
         category: "audio",
@@ -175,7 +168,6 @@ export const AUDIO_SERVICES = {
     },
     scribe: {
         aliases: ["scribe_v2", "scribe-v2"],
-        modelId: "scribe_v2",
         provider: "elevenlabs",
         brand: "ElevenLabs",
         category: "audio",
@@ -193,7 +185,6 @@ export const AUDIO_SERVICES = {
     },
     "universal-2": {
         aliases: ["assemblyai-universal-2", "assemblyai-u2"],
-        modelId: "universal-2",
         provider: "assemblyai",
         brand: "AssemblyAI",
         category: "audio",
@@ -215,7 +206,6 @@ export const AUDIO_SERVICES = {
             "assemblyai-u3-pro",
             "assemblyai-pro",
         ],
-        modelId: "universal-3-pro",
         provider: "assemblyai",
         brand: "AssemblyAI",
         category: "audio",
@@ -233,7 +223,6 @@ export const AUDIO_SERVICES = {
     },
     "stable-audio-3-medium": {
         aliases: ["stable-audio", "stability-audio", "stable-audio-2.5"],
-        modelId: "stable-audio-3-medium",
         provider: "fal",
         brand: "Stability AI",
         category: "audio",
@@ -261,7 +250,6 @@ export const AUDIO_SERVICES = {
         // API-only model served by Stability's direct API. Keep aliases
         // non-overlapping with the medium entry.
         aliases: ["stable-audio-3", "stable-audio-large"],
-        modelId: "stable-audio-3-large",
         provider: "stability",
         brand: "Stability AI",
         category: "audio",
@@ -284,7 +272,6 @@ export const AUDIO_SERVICES = {
     },
     "qwen-tts": {
         aliases: ["qwen3-tts", "qwen3-tts-flash"],
-        modelId: "qwen3-tts-flash",
         provider: "alibaba",
         brand: "Qwen",
         category: "audio",
@@ -302,7 +289,6 @@ export const AUDIO_SERVICES = {
     },
     "qwen-tts-instruct": {
         aliases: ["qwen3-tts-instruct", "qwen3-tts-instruct-flash"],
-        modelId: "qwen3-tts-instruct-flash",
         provider: "alibaba",
         brand: "Qwen",
         category: "audio",
@@ -318,7 +304,7 @@ export const AUDIO_SERVICES = {
         inputModalities: ["text"],
         outputModalities: ["audio"],
     },
-} satisfies Record<string, ModelDefinition<string>>;
+} satisfies Record<string, ModelDefinition>;
 
 export function resolveElevenLabsVoiceId(voice: string): string {
     return VOICE_MAPPING[voice] ?? voice;

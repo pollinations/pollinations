@@ -1,25 +1,13 @@
 import { perMillion } from "./price-helpers";
 import type { ModelDefinition } from "./registry";
 
-// Embedding model IDs as returned by providers
-type EmbeddingModelDefinitions = {
-    "gemini-2": ModelDefinition<"gemini-embedding-2-preview">;
-    "openai-3-small": ModelDefinition<"text-embedding-3-small">;
-    "openai-3-large": ModelDefinition<"text-embedding-3-large">;
-    "cohere-embed-v4": ModelDefinition<"embed-v-4-0">;
-    "qwen3-embedding-8b": ModelDefinition<"accounts/fireworks/models/qwen3-embedding-8b">;
-};
-
-export type EmbeddingServiceId = keyof EmbeddingModelDefinitions;
-export type EmbeddingModelId =
-    EmbeddingModelDefinitions[EmbeddingServiceId]["modelId"];
+export type EmbeddingServiceId = keyof typeof EMBEDDING_SERVICES;
 
 export const DEFAULT_EMBEDDING_MODEL: EmbeddingServiceId = "openai-3-small";
 
-export const EMBEDDING_SERVICES: EmbeddingModelDefinitions = {
+export const EMBEDDING_SERVICES = {
     "gemini-2": {
         aliases: ["embedding"],
-        modelId: "gemini-embedding-2-preview",
         provider: "google",
         brand: "Google",
         category: "embedding",
@@ -41,7 +29,6 @@ export const EMBEDDING_SERVICES: EmbeddingModelDefinitions = {
     },
     "openai-3-small": {
         aliases: ["embedding-small"],
-        modelId: "text-embedding-3-small",
         provider: "openai",
         brand: "OpenAI",
         category: "embedding",
@@ -59,7 +46,6 @@ export const EMBEDDING_SERVICES: EmbeddingModelDefinitions = {
     },
     "openai-3-large": {
         aliases: ["embedding-large"],
-        modelId: "text-embedding-3-large",
         provider: "openai",
         brand: "OpenAI",
         category: "embedding",
@@ -77,7 +63,6 @@ export const EMBEDDING_SERVICES: EmbeddingModelDefinitions = {
     },
     "cohere-embed-v4": {
         aliases: ["embed-v-4-0", "cohere-embed-v-4-0"],
-        modelId: "embed-v-4-0",
         provider: "azure",
         brand: "Cohere",
         category: "embedding",
@@ -97,7 +82,6 @@ export const EMBEDDING_SERVICES: EmbeddingModelDefinitions = {
     },
     "qwen3-embedding-8b": {
         aliases: ["qwen3-embedding"],
-        modelId: "accounts/fireworks/models/qwen3-embedding-8b",
         provider: "fireworks",
         brand: "Qwen",
         category: "embedding",
@@ -113,4 +97,4 @@ export const EMBEDDING_SERVICES: EmbeddingModelDefinitions = {
         outputModalities: ["embedding"],
         contextLength: 32768,
     },
-};
+} as const satisfies Record<string, ModelDefinition>;

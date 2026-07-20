@@ -1,0 +1,107 @@
+name: Vectorize / Code embeddings
+
+permissions:
+  contents: read
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - '**.py'
+      - '**.js'
+      - '**.ts'
+      - '**.tsx'
+      - '**.jsx'
+      - '**.go'
+      - '**.rs'
+      - '**.java'
+      - '**.c'
+      - '**.cpp'
+      - '**.h'
+      - '**.hpp'
+      - '**.cs'
+      - '**.rb'
+      - '**.php'
+      - '**.swift'
+      - '**.kt'
+      - '**.scala'
+      - '**.vue'
+      - '**.svelte'
+      - '**.html'
+      - '**.css'
+      - '**.scss'
+      - '**.json'
+      - '**.yaml'
+      - '**.yml'
+      - '**.toml'
+      - '**.md'
+      - '**.mdx'
+      - '**.sql'
+      - '**.sh'
+      - '**.tf'
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: 'full = re-embed entire repo (first-time backfill / manual rebuild). incremental = only diff since last run.'
+        type: choice
+        options:
+          - full
+          - incremental
+        default: full
+
+jobs:
+  embed:
+    runs-on: ubuntu-latest
+    concurrency:
+      group: vectorize-code-embeddings
+      cancel-in-progress: false
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: pip install -q requests tiktoken xxhash
+
+      - name: Determine mode and refs
+        id: params
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "mode=${{ inputs.mode }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "mode=incremental" >> "$GITHUB_OUTPUT"
+          fi
+          echo "base_sha=${{ github.event.before }}" >> "$GITHUB_OUTPUT"
+          echo "head_sha=${{ github.sha }}" >> "$GITHUB_OUTPUT"
+
+      - name: Run full embed
+        if: steps.params.outputs.mode == 'full'
+        env:
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID_MYCELI }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN_MYCELI }}
+          POLLI_VECTOR_DB: ${{ secrets.POLLI_VECTOR_DB }}
+        run: python .github/scripts/embed_code.py --mode full --repo-root .
+
+      - name: Run incremental embed
+        if: steps.params.outputs.mode == 'incremental'
+        env:
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID_MYCELI }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN_MYCELI }}
+          POLLI_VECTOR_DB: ${{ secrets.POLLI_VECTOR_DB }}
+        run: |
+          BASE_SHA="${{ steps.params.outputs.base_sha }}"
+          if [ -z "$BASE_SHA" ] || [ "$BASE_SHA" = "0000000000000000000000000000000000000000" ]; then
+            BASE_SHA=$(git rev-parse HEAD~1)
+          fi
+          python .github/scripts/embed_code.py \
+            --mode incremental \
+            --repo-root . \
+            --base-sha "$BASE_SHA" \
+            --head-sha "${{ steps.params.outputs.head_sha }}"

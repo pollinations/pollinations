@@ -99,8 +99,9 @@ jobs:
           mkdir -p $HOME/.claude-code-router
           echo '{"LOG":false,"NON_INTERACTIVE_MODE":true,"API_TIMEOUT_MS":600000,"Providers":[{"name":"pollinations","api_base_url":"https://gen.pollinations.ai/v1/chat/completions","api_key":"'"${POLLINATIONS_TOKEN}"'","models":["kimi-k2.6","perplexity-reasoning"]}],"Router":{"default":"pollinations,kimi-k2.6","webSearch":"pollinations,perplexity-reasoning"}}' > $HOME/.claude-code-router/config.json
 
-          # Start router with Bun
-          bunx @musistudio/claude-code-router start &
+          # Start router with Bun. Pinned: v3 replaced this flat config.json
+          # with a sqlite/UI-driven setup that has no headless equivalent.
+          bunx @musistudio/claude-code-router@2.0.0 start &
           until curl -s http://localhost:3456 >/dev/null; do sleep 0.5; done
         env:
           GH_TOKEN: ${{ steps.token.outputs.token }}

@@ -1,0 +1,36 @@
+{
+  "pr_number": 12597,
+  "title": "fix: improve embedding quality",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/12597",
+  "merged_at": "2026-07-20T15:51:49Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "pr_body_excerpt": "- Migrates Gemini Embedding 2 from the preview contract to the GA v1 US multi-region endpoint and converts task hints to documented prompt instructions.\n- Breaking vector-space change: existing `gemini-2` indexes must be re-embedded before mixing with GA vectors; inserted task instructions count toward billed prompt tokens.\n- Adds model-specific dimension validation plus Cohere query/document roles and combined text-image coverage. Cohere mixed requests use aggregate image-rate billing; Azure currently exposes this deployment through its 2024-05-01-preview image route (the 2025-04-01 route returns 404).\n- Keeps Qwen context at Fireworks effective 40,960-token deployment limit and documents the provider-specific value.\n- Verified with 564 gen tests, 29 pricing tests, focused review regressions, typecheck, docs validation, live provider probes, formatting, and CodeQL.",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Vectors found their true north",
+    "blurb": "Gemini Embedding 2 has moved out of preview and into its proper GA hive. Better role-aware embeddings, multimodal inputs, and fewer mysterious vector-space weather events.",
+    "summary": "Migrated Gemini Embedding 2 to the GA v1 US multi-region endpoint with documented prompt-based task instructions, while adding model-specific dimension checks, Cohere query/document roles, combined text-image embeddings, and provider-specific Qwen context documentation.",
+    "impact": "Developers get higher-quality, role-aware and multimodal embedding requests; existing gemini-2 indexes should be re-embedded before they are mixed with vectors produced by the new GA contract.",
+    "keywords": [
+      "embeddings",
+      "gemini",
+      "cohere",
+      "multimodal",
+      "vector-search",
+      "api"
+    ],
+    "visual_concept": "Depict a cozy vector garden being carefully replanted after a compass-guided migration: Gemini-style sparkling embedding seeds travel from a small PREVIEW sign to a sturdy GA v1 greenhouse, while separate query and document plants grow in matching rows and a text scroll plus tiny picture tile feed a shared blossom. Polly is the observant gardener validating that every plant pot has the right dimensions; a CRT monitor robot can display neat vector dots and a friendly checkmark.",
+    "image_prompt": "Cozy pixel art scene of a warm garden workshop where the cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings wears tiny round librarian glasses and carefully replants glowing embedding seeds from a little sign reading “PREVIEW” into a lime green (#ecf874) greenhouse sign reading “GA v1”; query and document flowers grow in paired pots beside a text scroll and a small image tile, while a cute CRT-monitor robot checks neat vector dots. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, with code-vines and flowers, subtle scanlines, dark purple (#110518) outlines, nostalgic but beautiful and emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-20/PR-12597.jpg",
+    "prompt": "Cozy pixel art scene of a warm garden workshop where the cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings wears tiny round librarian glasses and carefully replants glowing embedding seeds from a little sign reading “PREVIEW” into a lime green (#ecf874) greenhouse sign reading “GA v1”; query and document flowers grow in paired pots beside a text scroll and a small image tile, while a cute CRT-monitor robot checks neat vector dots. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, with code-vines and flowers, subtle scanlines, dark purple (#110518) outlines, nostalgic but beautiful and emotionally warm."
+  },
+  "generated_at": "2026-07-20T15:52:47.963893+00:00"
+}

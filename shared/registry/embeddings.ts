@@ -68,15 +68,15 @@ export const EMBEDDING_SERVICES = {
         category: "embedding",
         addedDate: new Date("2026-05-26").getTime(),
         priceMultiplier: 0.75,
-        // Azure Cohere retail rates (Global). Image-token billing also available
-        // upstream ($0.47/1M Global text-img); we only expose text input for now.
+        // Azure Cohere retail rates (Global).
         cost: {
             promptTextTokens: perMillion(0.12),
+            promptImageTokens: perMillion(0.47),
         },
         title: "Cohere Embed v4",
         description:
-            "Cohere Embed v4 - Multilingual text embeddings. 1536 dimensions, 128K context.",
-        inputModalities: ["text"],
+            "Cohere Embed v4 - Multilingual text and image embeddings. 1536 dimensions, 128K context.",
+        inputModalities: ["text", "image"],
         outputModalities: ["embedding"],
         contextLength: 128000,
     },
@@ -92,9 +92,9 @@ export const EMBEDDING_SERVICES = {
         },
         title: "Qwen3 Embedding 8B",
         description:
-            "Qwen3 Embedding 8B - Multilingual text embeddings. 4096 dimensions.",
+            "Qwen3 Embedding 8B - Multilingual text embeddings. 4096 dimensions, 40K context.",
         inputModalities: ["text"],
         outputModalities: ["embedding"],
-        contextLength: 32768,
+        contextLength: 40960,
     },
 } as const satisfies Record<string, ModelDefinition>;

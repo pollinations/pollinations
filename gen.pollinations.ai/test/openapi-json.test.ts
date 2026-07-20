@@ -92,6 +92,26 @@ describe("/openapi.json", () => {
             expect(properties.thinking).toBeUndefined();
             expect(properties.thinking_budget).toBeUndefined();
         }
+
+        const embeddingRequestPropertySets = collectPropertySets(schema).filter(
+            (properties) =>
+                "input_type" in properties && "task_type" in properties,
+        );
+        expect(embeddingRequestPropertySets.length).toBeGreaterThan(0);
+        for (const properties of embeddingRequestPropertySets) {
+            const inputType = properties.input_type as {
+                enum?: string[];
+                description?: string;
+            };
+            const taskType = properties.task_type as {
+                description?: string;
+            };
+            expect(inputType.enum).toEqual(["query", "document"]);
+            expect(inputType.description).toContain("Cohere-specific");
+            expect(taskType.description).toContain(
+                "recommended prompt instruction",
+            );
+        }
     });
 
     it("returns the same spec as /docs/open-api/generate-schema", async () => {

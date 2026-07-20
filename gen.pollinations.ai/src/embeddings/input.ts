@@ -2,7 +2,23 @@ import { HTTPException } from "hono/http-exception";
 import { HttpError } from "@/image/httpError.ts";
 import { downloadImageAsBase64 } from "@/image/utils/imageDownload.ts";
 import { MAX_EMBEDDING_BATCH_SIZE } from "./limits.ts";
-import type { ContentPart, EmbeddingRequest, GeminiPart } from "./types.ts";
+import type {
+    ContentPart,
+    EmbeddingRequest,
+    GeminiPart,
+    GeminiTaskType,
+} from "./types.ts";
+
+const GEMINI_TASK_PREFIXES: Record<GeminiTaskType, string> = {
+    SEMANTIC_SIMILARITY: "task: sentence similarity | query: ",
+    CLASSIFICATION: "task: classification | query: ",
+    CLUSTERING: "task: clustering | query: ",
+    RETRIEVAL_DOCUMENT: "title: none | text: ",
+    RETRIEVAL_QUERY: "task: search result | query: ",
+    CODE_RETRIEVAL_QUERY: "task: code retrieval | query: ",
+    QUESTION_ANSWERING: "task: question answering | query: ",
+    FACT_VERIFICATION: "task: fact checking | query: ",
+};
 
 export function badRequest(message: string): never {
     throw new HTTPException(400, { message });
@@ -111,6 +127,65 @@ export async function inputToGeminiParts(
         }
     }
     return parts;
+}
+
+export function applyGeminiTaskInstruction(
+    parts: GeminiPart[],
+    taskType?: GeminiTaskType,
+): GeminiPart[] {
+    if (!taskType) return parts;
+    if (parts.some((part) => part.inlineData)) {
+        badRequest("task_type is only supported for Gemini text input");
+    }
+
+    const prefix = GEMINI_TASK_PREFIXES[taskType];
+    const firstTextIndex = parts.findIndex((part) => part.text !== undefined);
+    if (firstTextIndex === -1) return [{ text: prefix.trimEnd() }, ...parts];
+
+    return parts.map((part, index) =>
+        index === firstTextIndex
+            ? { ...part, text: `${prefix}${part.text}` }
+            : part,
+    );
+}
+
+type CohereImageInput = {
+    image: string;
+    text?: string;
+};
+
+export async function inputToCohereImage(
+    input: string | ContentPart | ContentPart[],
+): Promise<CohereImageInput | undefined> {
+    if (typeof input === "string") return undefined;
+
+    const parts = Array.isArray(input) ? input : [input];
+    const textParts: string[] = [];
+    let image: string | undefined;
+
+    for (const part of parts) {
+        if (part.type === "text") {
+            textParts.push(part.text);
+            continue;
+        }
+        if (part.type !== "image_url") {
+            badRequest("Cohere Embed v4 supports text and image input only");
+        }
+        if (image) {
+            badRequest("Cohere Embed v4 supports one image per input");
+        }
+        const { inlineData } = await imageUrlToInlineData(part.image_url.url);
+        if (!inlineData) {
+            throw new Error("Image conversion did not produce inline data");
+        }
+        image = `data:${inlineData.mimeType};base64,${inlineData.data}`;
+    }
+
+    if (!image) return undefined;
+    return {
+        image,
+        ...(textParts.length > 0 ? { text: textParts.join("\n") } : {}),
+    };
 }
 
 export function inputToText(

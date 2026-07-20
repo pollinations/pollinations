@@ -102,9 +102,11 @@ exports[`effective cost and price per model — snapshot 1`] = `
   },
   "cohere-embed-v4": {
     "cost": {
+      "promptImageTokens": 0.00000047,
       "promptTextTokens": 0.00000012,
     },
     "price": {
+      "promptImageTokens": 0.0000003525,
       "promptTextTokens": 0.00000009,
     },
   },

@@ -3,11 +3,14 @@ import type { ModelDefinition, Usage } from "@shared/registry/registry.ts";
 import { buildUsageHeaders } from "@shared/registry/usage-headers.ts";
 import {
     callCohereAzureEmbed,
+    callCohereAzureImageEmbed,
     extractCohereAzureUsage,
 } from "./cohereAzure.ts";
 import { callFireworksEmbed, extractFireworksUsage } from "./fireworks.ts";
 import {
+    applyGeminiTaskInstruction,
     badRequest,
+    inputToCohereImage,
     inputToGeminiParts,
     inputToText,
     normalizeInputs,
@@ -29,7 +32,7 @@ type EmbeddingData = {
 // Provider-facing model IDs (what the upstream APIs expect), keyed by
 // registry model name. The registry only carries public names and pricing.
 const EMBEDDING_PROVIDER_MODEL_IDS: Record<EmbeddingServiceId, string> = {
-    "gemini-2": "gemini-embedding-2-preview",
+    "gemini-2": "gemini-embedding-2",
     "openai-3-small": "text-embedding-3-small",
     "openai-3-large": "text-embedding-3-large",
     "cohere-embed-v4": "embed-v-4-0",
@@ -47,9 +50,15 @@ export function getEmbeddingProviderModelId(modelName: string): string {
     return modelId;
 }
 
-const OPENAI_MAX_DIMENSIONS: Record<string, number> = {
-    "text-embedding-3-small": 1536,
-    "text-embedding-3-large": 3072,
+const EMBEDDING_DIMENSIONS: Record<
+    EmbeddingServiceId,
+    { max: number; allowed?: readonly number[] }
+> = {
+    "gemini-2": { max: 3072 },
+    "openai-3-small": { max: 1536 },
+    "openai-3-large": { max: 3072 },
+    "cohere-embed-v4": { max: 1536, allowed: [256, 512, 1024, 1536] },
+    "qwen3-embedding-8b": { max: 4096 },
 };
 
 export async function generateEmbeddings(
@@ -82,11 +91,31 @@ async function generateCohereAzureEmbeddings(
     request: EmbeddingRequest,
     responseModel: string,
 ): Promise<Response> {
+    validateDimensions(request.dimensions, responseModel);
     if (request.task_type) {
         badRequest("task_type is only supported by Gemini embedding models");
     }
 
     const inputs = normalizeInputs(request.input);
+    const imageInput =
+        inputs.length === 1 ? await inputToCohereImage(inputs[0]) : undefined;
+
+    if (imageInput) {
+        const result = await callCohereAzureImageEmbed(
+            env,
+            request.model,
+            [imageInput],
+            request.dimensions,
+            request.input_type,
+        );
+        return cohereEmbeddingsResponse(
+            result,
+            request,
+            responseModel,
+            "image",
+        );
+    }
+
     const textInputs = inputs.map(inputToText);
 
     if (textInputs.length === 0) {
@@ -98,18 +127,9 @@ async function generateCohereAzureEmbeddings(
         request.model,
         textInputs,
         request.dimensions,
+        request.input_type,
     );
-    const usage = extractCohereAzureUsage(result);
-
-    const data = [...result.data]
-        .sort((a, b) => a.index - b.index)
-        .map(({ embedding, index }) => ({
-            object: "embedding" as const,
-            embedding: encodeEmbedding(embedding, request.encoding_format),
-            index,
-        }));
-
-    return embeddingsResponse(responseModel, data, usage);
+    return cohereEmbeddingsResponse(result, request, responseModel, "text");
 }
 
 async function generateFireworksEmbeddings(
@@ -117,9 +137,11 @@ async function generateFireworksEmbeddings(
     request: EmbeddingRequest,
     responseModel: string,
 ): Promise<Response> {
+    validateDimensions(request.dimensions, responseModel);
     if (request.task_type) {
         badRequest("task_type is only supported by Gemini embedding models");
     }
+    rejectUnsupportedInputType(request);
 
     const inputs = normalizeInputs(request.input);
     const textInputs = inputs.map(inputToText);
@@ -152,17 +174,21 @@ async function generateGeminiEmbeddings(
     request: EmbeddingRequest,
     responseModel: string,
 ): Promise<Response> {
+    validateDimensions(request.dimensions, responseModel);
+    rejectUnsupportedInputType(request);
     syncGoogleEnvironment(env);
     const inputs = normalizeInputs(request.input);
     const aggregatedUsage: Usage = {};
 
     const data = await Promise.all(
         inputs.map(async (singleInput, index) => {
-            const parts = await inputToGeminiParts(singleInput);
+            const parts = applyGeminiTaskInstruction(
+                await inputToGeminiParts(singleInput),
+                request.task_type,
+            );
             const result = await callGeminiEmbed(
                 request.model,
                 parts,
-                request.task_type,
                 request.dimensions,
             );
             const usage = extractModalityUsage(result);
@@ -188,11 +214,11 @@ async function generateOpenAIEmbeddings(
     request: EmbeddingRequest,
     responseModel: string,
 ): Promise<Response> {
+    validateDimensions(request.dimensions, responseModel);
     if (request.task_type) {
         badRequest("task_type is only supported by Gemini embedding models");
     }
-
-    validateOpenAIDimensions(request, responseModel);
+    rejectUnsupportedInputType(request);
 
     const inputs = normalizeInputs(request.input);
     const textInputs = inputs.map(inputToText);
@@ -220,19 +246,53 @@ async function generateOpenAIEmbeddings(
     return embeddingsResponse(responseModel, data, usage);
 }
 
-function validateOpenAIDimensions(
-    request: EmbeddingRequest,
+function validateDimensions(
+    dimensions: number | undefined,
     responseModel: string,
 ) {
-    if (!request.dimensions) return;
+    if (!dimensions) return;
 
-    const maxDimensions = OPENAI_MAX_DIMENSIONS[request.model];
+    const constraints =
+        EMBEDDING_DIMENSIONS[responseModel as EmbeddingServiceId];
+    if (!constraints) return;
 
-    if (maxDimensions && request.dimensions > maxDimensions) {
+    if (dimensions > constraints.max) {
         badRequest(
-            `${responseModel} supports dimensions up to ${maxDimensions}`,
+            `${responseModel} supports dimensions up to ${constraints.max}`,
         );
     }
+
+    if (constraints.allowed && !constraints.allowed.includes(dimensions)) {
+        badRequest(
+            `${responseModel} supports dimensions ${constraints.allowed.join(
+                ", ",
+            )}`,
+        );
+    }
+}
+
+function rejectUnsupportedInputType(request: EmbeddingRequest) {
+    if (request.input_type) {
+        badRequest("input_type is only supported by Cohere embedding models");
+    }
+}
+
+function cohereEmbeddingsResponse(
+    result: Awaited<ReturnType<typeof callCohereAzureEmbed>>,
+    request: EmbeddingRequest,
+    responseModel: string,
+    modality: "text" | "image",
+): Response {
+    const usage = extractCohereAzureUsage(result, modality);
+    const data = [...result.data]
+        .sort((a, b) => a.index - b.index)
+        .map(({ embedding, index }) => ({
+            object: "embedding" as const,
+            embedding: encodeEmbedding(embedding, request.encoding_format),
+            index,
+        }));
+
+    return embeddingsResponse(responseModel, data, usage);
 }
 
 function encodeEmbedding(

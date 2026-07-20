@@ -1,0 +1,34 @@
+{
+  "pr_number": 12600,
+  "title": "fix: clarify Perplexity Sonar search presets",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/12600",
+  "merged_at": "2026-07-20T17:10:33Z",
+  "labels": [],
+  "pr_body_excerpt": "- Renames the high-context preset from `perplexity-deep` to `perplexity-high`; keeps `perplexity-deep` and `sonar-deep` as compatibility aliases.\n- Gives the low- and high-context Sonar presets distinct titles without implying Perplexity Deep Research.\n- Removes repeated model titles from all Perplexity descriptions and records the description-style rule in `AGENTS.md`.\n- Keeps upstream routing, pinned search context, pricing, billing, paid status, and provider configuration unchanged.\n- Adds catalog and alias/transform regression coverage.\n\nValidation:\n- Gen: 11 files, 145 tests passed\n- Enter: 3 files, 276 tests passed\n- Gen and Enter TypeScript checks passed\n- Local `perplexity-high` smoke test returned 200 and billed the high-context request rule",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Sonar names find their way",
+    "blurb": "The Perplexity Sonar presets have received clearer little signposts. High-context search is now called `perplexity-high`, while the old paths still lead home.",
+    "summary": "Renamed the high-context Perplexity Sonar preset from `perplexity-deep` to `perplexity-high`, retained `perplexity-deep` and `sonar-deep` as compatibility aliases, and clarified the catalog titles and descriptions.",
+    "impact": "Users can now distinguish low- and high-context Sonar search presets without confusing them for Perplexity Deep Research, while existing alias-based requests continue to route and bill exactly as before.",
+    "keywords": [
+      "Perplexity",
+      "Sonar",
+      "model-catalog",
+      "aliases",
+      "search",
+      "compatibility"
+    ],
+    "visual_concept": "A cozy model garden has two clearly labeled Sonar search paths: a small low-context trail and a taller high-context trail, with old wooden alias signposts still pointing safely to the high-context path. Polly acts as the observant trail guide, using a tiny explorer hat and map beside a friendly retro terminal showing clean search results.",
+    "image_prompt": "Cozy pixel art scene of Polly, the cute yellow-and-brown striped bee mascot with black oval eyes, pink rectangular blush, light blue wings, and a tiny explorer hat, gently replacing a garden sign from `perplexity-deep` to `perplexity-high` while two smaller old signposts read `perplexity-deep` and `sonar-deep` and point to the same glowing high-context code-plant; a retro terminal shows tidy Sonar search results among flowers and vines. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, with dark purple (#110518) pixel-font labels and a nostalgic, emotionally warm atmosphere."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-20/PR-12600.jpg",
+    "prompt": "Cozy pixel art scene of Polly, the cute yellow-and-brown striped bee mascot with black oval eyes, pink rectangular blush, light blue wings, and a tiny explorer hat, gently replacing a garden sign from `perplexity-deep` to `perplexity-high` while two smaller old signposts read `perplexity-deep` and `sonar-deep` and point to the same glowing high-context code-plant; a retro terminal shows tidy Sonar search results among flowers and vines. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, with dark purple (#110518) pixel-font labels and a nostalgic, emotionally warm atmosphere."
+  },
+  "generated_at": "2026-07-20T17:11:39.566072+00:00"
+}

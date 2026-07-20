@@ -367,7 +367,10 @@ const ModelChip: FC<{
         <span className="min-w-0 whitespace-normal break-words">
             {officialName}
             {showApiName && (
-                <span className="font-mono opacity-70"> - {apiName}</span>
+                <span className="font-mono text-xs font-normal opacity-70">
+                    {" - "}
+                    {apiName}
+                </span>
             )}
         </span>
     </ModalityTab>

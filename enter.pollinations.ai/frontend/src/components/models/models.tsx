@@ -13,7 +13,14 @@ import {
     TrendUpIcon,
 } from "@pollinations/ui";
 import { useNavigate, useSearch } from "@tanstack/react-router";
-import { type FC, useCallback, useEffect, useMemo, useState } from "react";
+import {
+    type FC,
+    useCallback,
+    useEffect,
+    useMemo,
+    useRef,
+    useState,
+} from "react";
 import { CommunityEndpoints } from "../community-endpoints";
 import {
     type ApiModelInfo,
@@ -102,6 +109,7 @@ export const Models: FC<ModelsProps> = ({
     const activeTab = modelSearch.category ?? "all";
     const urlSearch = modelSearch.q ?? "";
     const [search, setSearch] = useState(urlSearch);
+    const lastPushedSearchRef = useRef(urlSearch);
     const sortKey = modelSearch.sort ?? "perPollen";
     const sortDir = modelSearch.dir ?? DEFAULT_SORT_DIRECTIONS[sortKey];
     const [catalogModels, setCatalogModels] = useState<ApiModelInfo[]>([]);
@@ -169,25 +177,38 @@ export const Models: FC<ModelsProps> = ({
         }
     }, [activeTab, availableSections, navigate]);
 
+    const pushSearch = useCallback(
+        (nextSearch: string) => {
+            if (nextSearch === lastPushedSearchRef.current) return;
+
+            lastPushedSearchRef.current = nextSearch;
+            void navigate({
+                search: (previous) => ({
+                    ...previous,
+                    q: nextSearch || undefined,
+                }),
+                replace: true,
+            });
+        },
+        [navigate],
+    );
+
     useEffect(() => {
+        if (urlSearch === lastPushedSearchRef.current) return;
+
+        lastPushedSearchRef.current = urlSearch;
         setSearch(urlSearch);
     }, [urlSearch]);
 
     useEffect(() => {
-        if (search === urlSearch) return;
+        if (search === lastPushedSearchRef.current) return;
 
         const timeout = window.setTimeout(() => {
-            void navigate({
-                search: (previous) => ({
-                    ...previous,
-                    q: search || undefined,
-                }),
-                replace: true,
-            });
+            pushSearch(search);
         }, 200);
 
         return () => window.clearTimeout(timeout);
-    }, [navigate, search, urlSearch]);
+    }, [pushSearch, search]);
 
     const setActiveTab = (category: SectionType) => {
         void navigate({
@@ -277,6 +298,7 @@ export const Models: FC<ModelsProps> = ({
                             type="search"
                             value={search}
                             onChange={(e) => setSearch(e.target.value)}
+                            onBlur={() => pushSearch(search)}
                             placeholder={`Search ${searchLabel} models…`}
                             aria-label={`Search ${searchLabel} models`}
                             className="w-full pl-9"

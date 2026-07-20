@@ -1,0 +1,36 @@
+{
+  "pr_number": 12507,
+  "title": "fix: attribute replicate network failures and classify E003 capacity errors as 503",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/12507",
+  "merged_at": "2026-07-20T14:39:27Z",
+  "labels": [
+    "DEV-BUG"
+  ],
+  "pr_body_excerpt": "- Wraps fetch/body-read rejections in `ReplicateError` carrying the endpoint URL, threaded through all Replicate model catch blocks into `HttpError.upstreamUrl` — network-level drops (\"Network connection lost\") previously produced bare 500s with empty `upstream_host`/`upstream_status` in Tinybird, making the wan-image-pro degradation alert undiagnosable\n- `fetchUpstream` rethrows fetcher rejections as `HttpError` 502 with the URL; wan output `arrayBuffer()` read is wrapped so mid-download drops name `replicate.delivery`\n- Classifies prediction failures with `E003` / \"unavailable due to high demand\" (Alibaba capacity errors behind Replicate's WAN models) as 503 instead of 500, so monitoring separates provider capacity incidents from our bugs — verified live against prod: wan-image-pro has been failing with E003 since ~21:00 UTC Jul 15 while wan-image on the same token works fine\n- Tests for all new paths; 14/14 pass",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "The upstream gets a name",
+    "blurb": "When a Replicate connection drops mid-flight, the hive now leaves a useful note instead of pointing vaguely at the weather. WAN capacity traffic also gets its own proper 503 lane.",
+    "summary": "Replicate fetch and download failures now retain their upstream URL as 502 errors, while WAN prediction failures marked E003 or \"unavailable due to high demand\" are classified as 503 provider-capacity errors instead of generic 500s.",
+    "impact": "Users and operators get clearer upstream failure responses, and monitoring can distinguish Replicate/Alibaba WAN capacity incidents from pollinations.ai application errors.",
+    "keywords": [
+      "replicate",
+      "wan-image-pro",
+      "error-handling",
+      "503",
+      "upstream",
+      "monitoring"
+    ],
+    "visual_concept": "A cozy garden delivery scene where Polly identifies the source of a stalled WAN image parcel: a labeled Replicate delivery tube has encountered a gentle \"CAPACITY\" sign, while a retro monitor records the correct 503 status. This represents preserving upstream attribution and separating provider demand from internal failures.",
+    "image_prompt": "Cozy pixel art scene in a warm garden hackerspace: Polly, the cute pixel art bee mascot with a yellow body, dark brown stripes, black antennae and oval eyes, bright pink rectangular blush marks, a small happy smile, rounded light-blue translucent wings, and a tiny courier cap, carefully labels a stalled lime green (#ecf874) delivery tube \"REPLICATE\" beside a small pixel sign reading \"503 CAPACITY\"; a friendly CRT monitor robot logs the route while code-plants and flowers grow around them. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, dark purple (#110518) outlines, emotionally warm and gently amused."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-20/PR-12507.jpg",
+    "prompt": "Cozy pixel art scene in a warm garden hackerspace: Polly, the cute pixel art bee mascot with a yellow body, dark brown stripes, black antennae and oval eyes, bright pink rectangular blush marks, a small happy smile, rounded light-blue translucent wings, and a tiny courier cap, carefully labels a stalled lime green (#ecf874) delivery tube \"REPLICATE\" beside a small pixel sign reading \"503 CAPACITY\"; a friendly CRT monitor robot logs the route while code-plants and flowers grow around them. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, dark purple (#110518) outlines, emotionally warm and gently amused."
+  },
+  "generated_at": "2026-07-20T14:40:25.023809+00:00"
+}

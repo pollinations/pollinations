@@ -1,0 +1,36 @@
+{
+  "pr_number": 12595,
+  "title": "refactor: make TTS provider dispatch explicit",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/12595",
+  "merged_at": "2026-07-20T14:13:07Z",
+  "labels": [
+    "DEV-CHORE"
+  ],
+  "pr_body_excerpt": "- Renames `generateSpeech` to the provider-specific `generateElevenLabsSpeech`.\n- Keeps ElevenLabs and Qwen upstream model-ID lookup inside their adapters.\n- Replaces implicit TTS fallthrough and type guards with explicit provider dispatch.\n- Adds focused coverage for all three ElevenLabs TTS mappings.\n\nFollow-up to #12525.\n\nTests: `npm run typecheck`; 10 ElevenLabs audio tests; Qwen routing integration test.",
+  "gist": {
+    "category": "improvement",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "The voices found their lanes",
+    "blurb": "The audio hive now sends each voice provider down its own clearly marked garden path. ElevenLabs mappings got a small fence of tests, because mysterious fallthrough is not a personality trait.",
+    "summary": "Refactored gen.pollinations.ai TTS routing to explicitly dispatch ElevenLabs and Qwen providers, renamed generateSpeech to generateElevenLabsSpeech, and added coverage for all three ElevenLabs model mappings.",
+    "impact": "Audio routing is now easier to maintain and verify, with provider-specific model lookup remaining inside each adapter and focused tests guarding the ElevenLabs mappings.",
+    "keywords": [
+      "tts",
+      "audio",
+      "elevenlabs",
+      "qwen",
+      "provider-routing",
+      "tests"
+    ],
+    "visual_concept": "Polly acts as a cozy garden dispatcher beside three clearly labeled voice-pipeline paths, guiding little sound-wave parcels toward an ElevenLabs adapter station while a retro terminal confirms the correct routes. Code-plants and small test-check flowers represent explicit routing and mapping coverage.",
+    "image_prompt": "Cozy pixel art scene of Polly, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny dispatcher cap, happily directing glowing sound-wave parcels along clearly labeled provider paths beside a retro lime green (#ecf874) terminal and blooming code-plants with checkmark flowers. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, with subtle pixel-font text: \"TTS ROUTES\"."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-20/PR-12595.jpg",
+    "prompt": "Cozy pixel art scene of Polly, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny dispatcher cap, happily directing glowing sound-wave parcels along clearly labeled provider paths beside a retro lime green (#ecf874) terminal and blooming code-plants with checkmark flowers. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, with subtle pixel-font text: \"TTS ROUTES\"."
+  },
+  "generated_at": "2026-07-20T14:14:03.551903+00:00"
+}

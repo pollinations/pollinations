@@ -5,7 +5,7 @@ Two modes:
   --mode full        Embed every matching file in the repo (first-time backfill / manual re-embed).
   --mode incremental  Embed only files changed between two git refs; delete vectors for removed/renamed files.
 
-Chunking mirrors apps/polly/src/services/embeddings.py's Python fallback path so search results
+Chunking mirrors apps/polli/src/services/embeddings.py's Python fallback path so search results
 stay consistent between the one-time backfill and future incremental updates.
 """
 
@@ -26,7 +26,7 @@ import xxhash
 CF_ACCOUNT_ID = os.environ["CLOUDFLARE_ACCOUNT_ID"].strip()
 CF_API_TOKEN = os.environ["CLOUDFLARE_API_TOKEN"].strip()
 POLLINATIONS_TOKEN = os.environ["POLLI_VECTOR_DB"].strip()
-INDEX_NAME = os.environ.get("VECTORIZE_INDEX", "polly-code-embeddings")
+INDEX_NAME = os.environ.get("VECTORIZE_INDEX", "polli-code-embeddings")
 EMBED_MODEL = "qwen3-embedding-8b"
 EMBED_DIMENSIONS = 1536
 
@@ -168,7 +168,9 @@ def chunk_code(content: str, max_lines: int = 100) -> list[dict]:
         chunk_start = 1
         for i, line in enumerate(lines, 1):
             current_chunk.append(line)
-            is_break = len(current_chunk) >= max_lines or (len(current_chunk) >= 20 and is_definition_start(line))
+            is_break = len(current_chunk) >= max_lines or (
+                len(current_chunk) >= 20 and is_definition_start(line)
+            )
             if is_break and current_chunk:
                 chunks.append(
                     {
@@ -268,20 +270,30 @@ def embed_batch(texts: list[str], retries: int = 3) -> list[list[float]]:
         "input": texts,
         "dimensions": EMBED_DIMENSIONS,
     }
-    headers = {"Authorization": f"Bearer {POLLINATIONS_TOKEN}", "Content-Type": "application/json"}
+    headers = {
+        "Authorization": f"Bearer {POLLINATIONS_TOKEN}",
+        "Content-Type": "application/json",
+    }
     last_err = None
     for attempt in range(retries):
         try:
-            resp = requests.post(POLLINATIONS_EMBED_URL, json=payload, headers=headers, timeout=60)
+            resp = requests.post(
+                POLLINATIONS_EMBED_URL, json=payload, headers=headers, timeout=60
+            )
             if resp.status_code != 200:
-                raise RuntimeError(f"Pollinations embed HTTP {resp.status_code}: {resp.text[:300]}")
+                raise RuntimeError(
+                    f"Pollinations embed HTTP {resp.status_code}: {resp.text[:300]}"
+                )
             data = resp.json()
             sorted_data = sorted(data["data"], key=lambda x: x["index"])
             return [item["embedding"] for item in sorted_data]
         except Exception as e:
             last_err = e
             wait = 2**attempt
-            print(f"  embed batch failed (attempt {attempt + 1}/{retries}): {e} — retrying in {wait}s", file=sys.stderr)
+            print(
+                f"  embed batch failed (attempt {attempt + 1}/{retries}): {e} — retrying in {wait}s",
+                file=sys.stderr,
+            )
             time.sleep(wait)
     raise RuntimeError(f"Embedding failed after {retries} attempts: {last_err}")
 
@@ -299,7 +311,9 @@ def vectorize_upsert(rows: list[dict]) -> None:
             timeout=120,
         )
         if resp.status_code != 200 or not resp.json().get("success"):
-            raise RuntimeError(f"Vectorize upsert failed: {resp.status_code} {resp.text[:500]}")
+            raise RuntimeError(
+                f"Vectorize upsert failed: {resp.status_code} {resp.text[:500]}"
+            )
         print(f"  upserted {len(batch)} vectors ({i + len(batch)}/{len(rows)})")
 
 
@@ -316,7 +330,9 @@ def vectorize_delete_by_ids(ids: list[str]) -> None:
             timeout=60,
         )
         if resp.status_code != 200 or not resp.json().get("success"):
-            raise RuntimeError(f"Vectorize delete failed: {resp.status_code} {resp.text[:500]}")
+            raise RuntimeError(
+                f"Vectorize delete failed: {resp.status_code} {resp.text[:500]}"
+            )
         print(f"  deleted {len(batch)} vectors")
 
 
@@ -336,7 +352,9 @@ def vectorize_find_ids_for_file(file_path: str) -> list[str]:
         timeout=60,
     )
     if resp.status_code != 200 or not resp.json().get("success"):
-        raise RuntimeError(f"Vectorize query failed for {file_path}: {resp.status_code} {resp.text[:500]}")
+        raise RuntimeError(
+            f"Vectorize query failed for {file_path}: {resp.status_code} {resp.text[:500]}"
+        )
     matches = resp.json()["result"]["matches"]
     if len(matches) >= 100:
         print(
@@ -398,14 +416,27 @@ def run_full(repo_root: Path) -> None:
             vectorize_upsert(rows)
             total_vectors += len(rows)
         if idx % 25 == 0 or idx == len(files):
-            print(f"[{idx}/{len(files)}] files processed, {total_vectors} vectors upserted so far")
+            print(
+                f"[{idx}/{len(files)}] files processed, {total_vectors} vectors upserted so far"
+            )
     print(f"Full embed complete: {total_vectors} vectors across {len(files)} files")
 
 
-def git_changed_files(repo_root: Path, base_sha: str, head_sha: str) -> list[tuple[str, str, str]]:
+def git_changed_files(
+    repo_root: Path, base_sha: str, head_sha: str
+) -> list[tuple[str, str, str]]:
     """Return list of (status, old_path, new_path) between two refs. status: A/M/D/R."""
     result = subprocess.run(
-        ["git", "-C", str(repo_root), "diff", "--name-status", "-M", base_sha, head_sha],
+        [
+            "git",
+            "-C",
+            str(repo_root),
+            "diff",
+            "--name-status",
+            "-M",
+            base_sha,
+            head_sha,
+        ],
         capture_output=True,
         text=True,
         check=True,
@@ -425,7 +456,9 @@ def git_changed_files(repo_root: Path, base_sha: str, head_sha: str) -> list[tup
 
 def run_incremental(repo_root: Path, base_sha: str, head_sha: str) -> None:
     changes = git_changed_files(repo_root, base_sha, head_sha)
-    print(f"Incremental embed: {len(changes)} changed paths between {base_sha[:8]}..{head_sha[:8]}")
+    print(
+        f"Incremental embed: {len(changes)} changed paths between {base_sha[:8]}..{head_sha[:8]}"
+    )
 
     relevant = [c for c in changes if is_embeddable_path(c[2])]
     if not relevant:
@@ -461,7 +494,9 @@ def run_incremental(repo_root: Path, base_sha: str, head_sha: str) -> None:
         else:
             print(f"{status}  {new_path} — no embeddable content (empty/binary)")
 
-    print(f"Incremental embed complete: {total_upserted} vectors upserted, {total_deleted} stale vectors deleted")
+    print(
+        f"Incremental embed complete: {total_upserted} vectors upserted, {total_deleted} stale vectors deleted"
+    )
 
 
 def main():

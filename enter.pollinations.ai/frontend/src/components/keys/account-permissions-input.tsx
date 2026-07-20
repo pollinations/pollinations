@@ -362,11 +362,13 @@ const ModelChip: FC<{
         onClick={onClick}
         disabled={disabled}
         size="sm"
-        className="polli:shrink-0"
+        className="polli:min-w-0 polli:max-w-full polli:justify-start polli:text-left"
     >
-        {officialName}
-        {showApiName && (
-            <span className="font-mono opacity-70"> - {apiName}</span>
-        )}
+        <span className="min-w-0 whitespace-normal break-words">
+            {officialName}
+            {showApiName && (
+                <span className="font-mono opacity-70"> - {apiName}</span>
+            )}
+        </span>
     </ModalityTab>
 );

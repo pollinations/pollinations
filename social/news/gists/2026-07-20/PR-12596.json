@@ -1,0 +1,34 @@
+{
+  "pr_number": 12596,
+  "title": "feat: add community model publisher allowlist form",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/12596",
+  "merged_at": "2026-07-20T15:05:37Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds a GitHub issue form for account-level community model publisher access—not individual model registration.\n- Asks which model types the applicant plans to publish: text/chat, image, embeddings, speech, or transcription.\n- Collects publishing plans, relevant links, hosting capacity, and required safety confirmations.\n- Links the My Models UI and API docs directly to the publisher allowlist request.\n- Clarifies that private models can be registered without allowlist approval.\n\nChecks:\n- YAML issue-form structure validation\n- Biome on the My Models UI\n- Gen TypeScript check\n- API docs validation\n- `git diff --check`",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "The garden gets gatekeepers",
+    "blurb": "Community model publishers now have a proper front door instead of a trail of scattered links. Tell the hive what you plan to grow, confirm the safety basics, and get ready to share.",
+    "summary": "Added a GitHub issue form for account-level community model publisher allowlist access, covering planned text/chat, image, embedding, speech, and transcription models, with direct links from My Models and API documentation.",
+    "impact": "Prospective publishers get a clear route to request public community-model access while private models remain available to register without allowlist approval.",
+    "keywords": [
+      "community models",
+      "publisher allowlist",
+      "my models",
+      "model publishing",
+      "api docs",
+      "github forms"
+    ],
+    "visual_concept": "Depict the community-model publisher request as a cozy garden gate and sign-up desk: Polly, wearing a tiny librarian hat, helps a friendly creator fill out a pixel form listing different model seeds for chat, images, embeddings, speech, and transcription. A nearby private greenhouse is clearly open without a gate, while a CRT robot enthusiastically stamps approved gardening plans; code-plants and flowers make the publishing ecosystem feel welcoming rather than bureaucratic.",
+    "image_prompt": "A cozy pixel art garden-publisher desk with a lime green (#ecf874) garden gate and a chunky pixel form labeled \"PUBLISH MODELS,\" showing tiny seed icons for chat, image, embeddings, speech, and transcription; an open little greenhouse nearby is labeled \"PRIVATE MODELS.\" The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears a tiny librarian hat and warmly helps a creator submit the form while a cute CRT-monitor robot stamps a plan beside blooming code-plants. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, like Stardew Valley or A Short Hike, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-20/PR-12596.jpg",
+    "prompt": "A cozy pixel art garden-publisher desk with a lime green (#ecf874) garden gate and a chunky pixel form labeled \"PUBLISH MODELS,\" showing tiny seed icons for chat, image, embeddings, speech, and transcription; an open little greenhouse nearby is labeled \"PRIVATE MODELS.\" The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears a tiny librarian hat and warmly helps a creator submit the form while a cute CRT-monitor robot stamps a plan beside blooming code-plants. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, like Stardew Valley or A Short Hike, nostalgic but beautiful."
+  },
+  "generated_at": "2026-07-20T15:06:46.815188+00:00"
+}

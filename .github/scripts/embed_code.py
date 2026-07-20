@@ -208,9 +208,17 @@ def chunk_code(content: str, max_lines: int = 100) -> list[dict]:
 
 
 def chunk_id_for(file_path: str, chunk: dict) -> str:
+    """Vectorize caps vector IDs at 64 bytes — this repo has paths well past that on their
+    own (e.g. enter.pollinations.ai/frontend/src/components/...), so the raw
+    "path:start-end" id used during local dev doesn't survive contact with real paths.
+    Hash the full identifier instead: deterministic (same file+lines always hashes the
+    same, so incremental delete/re-insert by id still works), fixed-length, and the
+    human-readable path/lines are preserved in metadata for anyone reading query results.
+    """
     part = chunk.get("part")
     suffix = f"p{part}" if part is not None else ""
-    return f"{file_path}:{chunk['start_line']}-{chunk['end_line']}{suffix}"
+    raw = f"{file_path}:{chunk['start_line']}-{chunk['end_line']}{suffix}"
+    return xxhash.xxh3_64_hexdigest(raw.encode())
 
 
 def is_embeddable_path(rel_path: str) -> bool:

@@ -217,13 +217,8 @@ const ELEVENLABS_TTS_MODEL_IDS = {
 
 type ElevenLabsTtsModelName = keyof typeof ELEVENLABS_TTS_MODEL_IDS;
 
-function isElevenLabsTtsModel(model: string): model is ElevenLabsTtsModelName {
-    return model in ELEVENLABS_TTS_MODEL_IDS;
-}
-
-export async function generateSpeech(opts: {
-    modelName: string;
-    modelId: string;
+export async function generateElevenLabsSpeech(opts: {
+    modelName: ElevenLabsTtsModelName;
     text: string;
     voice: string;
     responseFormat: string;
@@ -231,8 +226,8 @@ export async function generateSpeech(opts: {
     apiKey: string;
     log: Logger;
 }): Promise<Response> {
-    const { modelName, modelId, text, voice, responseFormat, apiKey, log } =
-        opts;
+    const { modelName, text, voice, responseFormat, apiKey, log } = opts;
+    const modelId = ELEVENLABS_TTS_MODEL_IDS[modelName];
 
     if (!apiKey) {
         throw new UpstreamError(500 as ContentfulStatusCode, {
@@ -849,10 +844,6 @@ function resolveQwenVoice(voice: string): string {
     return QWEN_TTS_OPENAI_VOICE_MAP[voice] ?? voice;
 }
 
-export function isQwenTtsModel(model: string): model is QwenTtsModelName {
-    return model in QWEN_TTS_MODEL_IDS;
-}
-
 function requireTextToAudioModel(
     model: string,
     definition: ModelDefinition,
@@ -1050,14 +1041,14 @@ async function parseSpeechRequest(c: AudioContext): Promise<
 
 export async function generateQwenTts(opts: {
     modelName: QwenTtsModelName;
-    modelId: string;
     text: string;
     voice: string;
     instruct?: string;
     apiKey: string;
     log: Logger;
 }): Promise<Response> {
-    const { modelName, modelId, text, voice, instruct, apiKey, log } = opts;
+    const { modelName, text, voice, instruct, apiKey, log } = opts;
+    const modelId = QWEN_TTS_MODEL_IDS[modelName];
 
     if (!apiKey) {
         throw new UpstreamError(500 as ContentfulStatusCode, {
@@ -1558,40 +1549,40 @@ async function dispatchAudioGeneration(
         );
     }
 
-    if (isQwenTtsModel(c.var.model.resolved)) {
-        return withSafetyHeaders(
-            c,
-            await generateQwenTts({
-                modelName: c.var.model.resolved,
-                modelId: QWEN_TTS_MODEL_IDS[c.var.model.resolved],
-                text,
-                voice,
-                instruct,
-                apiKey: dashScopeApiKey,
-                log,
-            }),
-        );
+    switch (c.var.model.resolved) {
+        case "elevenlabs":
+        case "elevenflash":
+        case "eleven-multilingual-v2":
+            return withSafetyHeaders(
+                c,
+                await generateElevenLabsSpeech({
+                    modelName: c.var.model.resolved,
+                    text,
+                    voice,
+                    responseFormat,
+                    seed,
+                    apiKey,
+                    log,
+                }),
+            );
+        case "qwen-tts":
+        case "qwen-tts-instruct":
+            return withSafetyHeaders(
+                c,
+                await generateQwenTts({
+                    modelName: c.var.model.resolved,
+                    text,
+                    voice,
+                    instruct,
+                    apiKey: dashScopeApiKey,
+                    log,
+                }),
+            );
+        default:
+            throw new UpstreamError(500 as ContentfulStatusCode, {
+                message: `No audio provider route configured for model: ${c.var.model.resolved}`,
+            });
     }
-
-    if (!isElevenLabsTtsModel(c.var.model.resolved)) {
-        throw new UpstreamError(500 as ContentfulStatusCode, {
-            message: `No audio provider route configured for model: ${c.var.model.resolved}`,
-        });
-    }
-
-    return withSafetyHeaders(
-        c,
-        await generateSpeech({
-            modelName: c.var.model.resolved,
-            modelId: ELEVENLABS_TTS_MODEL_IDS[c.var.model.resolved],
-            text,
-            voice,
-            responseFormat,
-            seed,
-            apiKey,
-            log,
-        }),
-    );
 }
 
 export async function handleSimpleAudio(c: AudioContext): Promise<Response> {

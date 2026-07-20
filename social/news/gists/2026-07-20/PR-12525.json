@@ -1,0 +1,37 @@
+{
+  "pr_number": 12525,
+  "title": "refactor: remove modelId from model registry",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/12525",
+  "merged_at": "2026-07-20T13:55:28Z",
+  "labels": [
+    "DEV-CHORE"
+  ],
+  "pr_body_excerpt": "- Removes the `modelId` field from `ModelDefinition` and all registry entries (text, image, audio, embeddings, 3D, realtime, community). It was unused metadata for most categories and duplicated the registry key for image/video.\n- Keeps load-bearing upstream IDs in Gen routing, matching how text routing already works: audio IDs live beside the ElevenLabs and Qwen provider handlers, embedding IDs live in the embedding dispatcher, and Azure deployment names live beside the realtime connector.\n- Splits audio routing by provider. ElevenLabs and Qwen maps derive exact key unions, single-model music/SFX IDs stay inside their handlers, and dispatch no longer uses a mixed `Partial` lookup with casts and `undefined` handling.\n- Perplexity billing adjustment logs now report the registry model name instead of the upstream ID (`calculateBillingAdjustments` gains a `model` parameter).\n- VCR snapshot hashing uses `provider` only; affected Portkey snapshots were re-recorded.\n- Drops the `ModelId` union and per-category `*ModelId` type exports; `ModelDefinition` is no longer generic.\n\nUnblocks #12495: the canonical rename kept `modelId` only because this routing cleanup was pending.\n",
+  "gist": {
+    "category": "improvement",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "The registry sheds a skin",
+    "blurb": "The model registry put down some duplicate labels and let each provider keep its own directions. Fewer casts, fewer mystery IDs, and a tidier garden of routes.",
+    "summary": "Removed the unused `modelId` field and related ID type exports from every model registry category, keeping provider-specific upstream IDs in Gen audio, embedding, and realtime routing handlers instead.",
+    "impact": "Developers get simpler, more type-safe model routing: ElevenLabs and Qwen audio maps now use exact key unions, billing logs use registry model names, and VCR snapshots hash by provider only.",
+    "keywords": [
+      "model-registry",
+      "gen-api",
+      "routing",
+      "typescript",
+      "audio",
+      "embeddings",
+      "refactor"
+    ],
+    "visual_concept": "Depict a cozy registry garden where duplicate model-ID tags have been removed from labeled plant pots, while small provider-specific route signs sit neatly beside their own plants. Polly acts as the observant gardener with a clipboard, organizing paths between an audio flower, embedding sprouts, and a realtime connector vine; the scene represents routing logic moving to the places where it is actually used.",
+    "image_prompt": "Cozy pixel art scene of Polly, the cute yellow-and-brown striped bee mascot with black antennae, oval eyes, pink rectangular blush, a small smile, and light blue rounded wings, wearing a tiny gardener visor and holding a clipboard in a code-garden; she removes duplicate tags from lime green (#ecf874) model registry pots while tidy signposts route toward audio flowers, embedding sprouts, and a realtime vine beside a softly glowing retro terminal. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel mint-lavender-peach gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, subtle CRT glow, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-20/PR-12525.jpg",
+    "prompt": "Cozy pixel art scene of Polly, the cute yellow-and-brown striped bee mascot with black antennae, oval eyes, pink rectangular blush, a small smile, and light blue rounded wings, wearing a tiny gardener visor and holding a clipboard in a code-garden; she removes duplicate tags from lime green (#ecf874) model registry pots while tidy signposts route toward audio flowers, embedding sprouts, and a realtime vine beside a softly glowing retro terminal. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel mint-lavender-peach gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, subtle CRT glow, nostalgic but beautiful."
+  },
+  "generated_at": "2026-07-20T13:58:29.055067+00:00"
+}

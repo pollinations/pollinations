@@ -379,6 +379,33 @@ describe("gen worker routing", () => {
             "video",
         ]);
     });
+
+    it("distinguishes Perplexity Sonar search presets", async () => {
+        const response = await fetchWorker("/text/models", envWithEnter());
+
+        expect(response.status).toBe(200);
+        const models = (await response.json()) as {
+            name: string;
+            title?: string;
+            description?: string;
+        }[];
+
+        expect(
+            models.find((model) => model.name === "perplexity-fast"),
+        ).toMatchObject({
+            title: "Perplexity Sonar Fast Search",
+            description: "Fast, low-context web search",
+        });
+        expect(
+            models.find((model) => model.name === "perplexity-high"),
+        ).toMatchObject({
+            title: "Perplexity Sonar High-Context Search",
+            description: "Broader web grounding with high search context",
+        });
+        expect(models.some((model) => model.name === "perplexity-deep")).toBe(
+            false,
+        );
+    });
 });
 
 describe("model status", () => {

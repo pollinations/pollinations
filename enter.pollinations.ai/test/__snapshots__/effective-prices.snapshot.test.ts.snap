@@ -1074,7 +1074,7 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.000003,
     },
   },
-  "perplexity-deep": {
+  "perplexity-fast": {
     "cost": {
       "completionTextTokens": 0.000001,
       "promptTextTokens": 0.000001,
@@ -1084,7 +1084,7 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.000001,
     },
   },
-  "perplexity-fast": {
+  "perplexity-high": {
     "cost": {
       "completionTextTokens": 0.000001,
       "promptTextTokens": 0.000001,

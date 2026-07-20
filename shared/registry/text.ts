@@ -4,8 +4,8 @@ import {
     withVertexCacheStorage,
 } from "./gemini-billing";
 import {
-    PERPLEXITY_DEEP_BILLING,
     PERPLEXITY_FAST_BILLING,
+    PERPLEXITY_HIGH_BILLING,
     PERPLEXITY_PRO_BILLING,
     PERPLEXITY_REASONING_BILLING,
 } from "./perplexity-billing";
@@ -1004,8 +1004,8 @@ export const TEXT_SERVICES = {
             promptTextTokens: perMillion(1.0),
             completionTextTokens: perMillion(1.0),
         },
-        title: "Perplexity Sonar",
-        description: "Perplexity Sonar - Fast & affordable web search",
+        title: "Perplexity Sonar Fast Search",
+        description: "Fast, low-context web search",
         // Sonar is text-only — verified empirically (image input is ignored,
         // no image tokens billed). Do not add "image".
         inputModalities: ["text"],
@@ -1015,20 +1015,20 @@ export const TEXT_SERVICES = {
         contextLength: 128000,
         isSpecialized: false,
     },
-    "perplexity-deep": {
-        aliases: ["sonar-deep"],
+    "perplexity-high": {
+        aliases: ["perplexity-deep", "sonar-deep"],
         provider: "perplexity",
         brand: "Perplexity",
         category: "text",
         addedDate: new Date("2026-05-29").getTime(),
         priceMultiplier: 1,
-        billing: PERPLEXITY_DEEP_BILLING,
+        billing: PERPLEXITY_HIGH_BILLING,
         cost: {
             promptTextTokens: perMillion(1.0),
             completionTextTokens: perMillion(1.0),
         },
-        title: "Perplexity Sonar",
-        description: "Perplexity Sonar - Deep web search with broad grounding",
+        title: "Perplexity Sonar High-Context Search",
+        description: "Broader web grounding with high search context",
         inputModalities: ["text"],
         outputModalities: ["text"],
         tools: false,
@@ -1049,7 +1049,7 @@ export const TEXT_SERVICES = {
             completionTextTokens: perMillion(15.0),
         },
         title: "Perplexity Sonar Pro",
-        description: "Perplexity Sonar Pro - Advanced multi-source web search",
+        description: "Advanced multi-source web search",
         inputModalities: ["text"],
         outputModalities: ["text"],
         tools: false,
@@ -1070,8 +1070,7 @@ export const TEXT_SERVICES = {
             completionTextTokens: perMillion(8.0),
         },
         title: "Perplexity Sonar Reasoning",
-        description:
-            "Perplexity Sonar Reasoning - Step-by-step reasoning with web search",
+        description: "Step-by-step reasoning with web search",
         inputModalities: ["text"],
         outputModalities: ["text"],
         tools: false,

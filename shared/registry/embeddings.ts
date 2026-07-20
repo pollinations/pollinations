@@ -22,7 +22,7 @@ export const EMBEDDING_SERVICES = {
         },
         title: "Gemini Embedding 2",
         description:
-            "Gemini Embedding 2 - Multimodal Embeddings for Text, Images, Audio, and Video. 3072 dimensions, 8192 token limit.",
+            "Turns text, images, audio and video into vectors for semantic search. 3072 dimensions, 8192 token limit.",
         inputModalities: ["text", "image", "audio", "video"],
         outputModalities: ["embedding"],
         contextLength: 8192,
@@ -39,7 +39,7 @@ export const EMBEDDING_SERVICES = {
         },
         title: "Text Embedding 3 Small",
         description:
-            "Text Embedding 3 Small - Low-Cost Text Embeddings. 1536 dimensions, 8192 token limit.",
+            "Low-cost text vectors for search and similarity. 1536 dimensions, 8192 token limit.",
         inputModalities: ["text"],
         outputModalities: ["embedding"],
         contextLength: 8192,
@@ -56,7 +56,7 @@ export const EMBEDDING_SERVICES = {
         },
         title: "Text Embedding 3 Large",
         description:
-            "Text Embedding 3 Large - High-Quality Text Embeddings. 3072 dimensions, 8192 token limit.",
+            "High-quality text vectors for demanding search. 3072 dimensions, 8192 token limit.",
         inputModalities: ["text"],
         outputModalities: ["embedding"],
         contextLength: 8192,
@@ -75,7 +75,7 @@ export const EMBEDDING_SERVICES = {
         },
         title: "Cohere Embed v4",
         description:
-            "Cohere Embed v4 - Multilingual text and image embeddings. 1536 dimensions, 128K context.",
+            "Multilingual text and image vectors. 1536 dimensions, 128K context.",
         inputModalities: ["text", "image"],
         outputModalities: ["embedding"],
         contextLength: 128000,
@@ -92,7 +92,7 @@ export const EMBEDDING_SERVICES = {
         },
         title: "Qwen3 Embedding 8B",
         description:
-            "Qwen3 Embedding 8B - Multilingual text embeddings. 4096 dimensions, 40,960-token Fireworks context.",
+            "Multilingual text vectors. 4096 dimensions, 40,960-token context.",
         inputModalities: ["text"],
         outputModalities: ["embedding"],
         // Match the effective context advertised by the Fireworks deployment.

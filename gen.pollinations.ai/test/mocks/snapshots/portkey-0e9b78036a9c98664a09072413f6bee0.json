@@ -12,13 +12,11 @@
             "content": "vcr chat json"
           }
         ],
-        "temperature": 1,
-        "top_p": 1,
         "presence_penalty": 0,
         "frequency_penalty": 0,
         "stream": false,
-        "voice": "alloy",
-        "logprobs": false
+        "logprobs": false,
+        "temperature": 1
       }
     },
     "params": {}

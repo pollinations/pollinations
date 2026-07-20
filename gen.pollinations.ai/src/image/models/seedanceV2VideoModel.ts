@@ -128,6 +128,8 @@ export async function callSeedanceV2API(
             throw new HttpError(
                 `Seedance 2.0 generation failed: ${err.message}`,
                 err.status ?? 500,
+                undefined,
+                err.url,
             );
         }
         throw err;

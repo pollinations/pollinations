@@ -4,8 +4,8 @@ import {
     withVertexCacheStorage,
 } from "./gemini-billing";
 import {
-    PERPLEXITY_DEEP_BILLING,
     PERPLEXITY_FAST_BILLING,
+    PERPLEXITY_HIGH_BILLING,
     PERPLEXITY_PRO_BILLING,
     PERPLEXITY_REASONING_BILLING,
 } from "./perplexity-billing";
@@ -1028,7 +1028,7 @@ export const TEXT_SERVICES = {
             promptTextTokens: perMillion(1.0),
             completionTextTokens: perMillion(1.0),
         },
-        title: "Perplexity Sonar",
+        title: "Perplexity Sonar Fast Search",
         description: "Quick web searches with cited answers; keeps it brief",
         // Sonar is text-only — verified empirically (image input is ignored,
         // no image tokens billed). Do not add "image".
@@ -1039,19 +1039,19 @@ export const TEXT_SERVICES = {
         contextLength: 128000,
         isSpecialized: false,
     },
-    "perplexity-deep": {
-        aliases: ["sonar-deep"],
+    "perplexity-high": {
+        aliases: ["perplexity-deep", "sonar-deep"],
         provider: "perplexity",
         brand: "Perplexity",
         category: "text",
         addedDate: new Date("2026-05-29").getTime(),
         priceMultiplier: 1,
-        billing: PERPLEXITY_DEEP_BILLING,
+        billing: PERPLEXITY_HIGH_BILLING,
         cost: {
             promptTextTokens: perMillion(1.0),
             completionTextTokens: perMillion(1.0),
         },
-        title: "Perplexity Sonar",
+        title: "Perplexity Sonar High-Context Search",
         description:
             "Digs through many sources for thorough, cited research answers",
         inputModalities: ["text"],

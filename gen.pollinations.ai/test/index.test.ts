@@ -394,13 +394,27 @@ describe("gen worker routing", () => {
             models.find((model) => model.name === "perplexity-fast"),
         ).toMatchObject({
             title: "Perplexity Sonar Fast Search",
-            description: "Fast, low-context web search",
+            description:
+                "Quick web searches with cited answers; keeps it brief",
         });
         expect(
             models.find((model) => model.name === "perplexity-high"),
         ).toMatchObject({
             title: "Perplexity Sonar High-Context Search",
-            description: "Broader web grounding with high search context",
+            description:
+                "Digs through many sources for thorough, cited research answers",
+        });
+        expect(
+            models.find((model) => model.name === "perplexity"),
+        ).toMatchObject({
+            description:
+                "Advanced web search that synthesizes multiple sources with citations",
+        });
+        expect(
+            models.find((model) => model.name === "perplexity-reasoning"),
+        ).toMatchObject({
+            description:
+                "Thinks step by step while searching the web; slower but more rigorous",
         });
         expect(models.some((model) => model.name === "perplexity-deep")).toBe(
             false,

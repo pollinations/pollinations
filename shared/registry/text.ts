@@ -1029,7 +1029,7 @@ export const TEXT_SERVICES = {
             completionTextTokens: perMillion(1.0),
         },
         title: "Perplexity Sonar Fast Search",
-        description: "Fast, low-context web search",
+        description: "Quick web searches with cited answers; keeps it brief",
         // Sonar is text-only — verified empirically (image input is ignored,
         // no image tokens billed). Do not add "image".
         inputModalities: ["text"],
@@ -1052,7 +1052,8 @@ export const TEXT_SERVICES = {
             completionTextTokens: perMillion(1.0),
         },
         title: "Perplexity Sonar High-Context Search",
-        description: "Broader web grounding with high search context",
+        description:
+            "Digs through many sources for thorough, cited research answers",
         inputModalities: ["text"],
         outputModalities: ["text"],
         tools: false,
@@ -1073,7 +1074,8 @@ export const TEXT_SERVICES = {
             completionTextTokens: perMillion(15.0),
         },
         title: "Perplexity Sonar Pro",
-        description: "Advanced multi-source web search",
+        description:
+            "Advanced web search that synthesizes multiple sources with citations",
         inputModalities: ["text"],
         outputModalities: ["text"],
         tools: false,
@@ -1094,7 +1096,8 @@ export const TEXT_SERVICES = {
             completionTextTokens: perMillion(8.0),
         },
         title: "Perplexity Sonar Reasoning",
-        description: "Step-by-step reasoning with web search",
+        description:
+            "Thinks step by step while searching the web; slower but more rigorous",
         inputModalities: ["text"],
         outputModalities: ["text"],
         tools: false,

@@ -1,0 +1,34 @@
+{
+  "pr_number": 12607,
+  "title": "fix: repair polly assistant workflow",
+  "author": "Itachi-1824",
+  "url": "https://github.com/pollinations/pollinations/pull/12607",
+  "merged_at": "2026-07-20T19:14:28Z",
+  "labels": [],
+  "pr_body_excerpt": "Polly's been failing on every run. This gets it working again.\n\n- Pins claude-code-router to v2.0.0\n- Switches models to gpt-5.6-sol, minimax, and perplexity\n- Adds a small shim so request bodies come out in the format the API expects",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Polly finds her footing",
+    "blurb": "Polly’s workshop tools were put back in the right drawers. The assistant can once again buzz through repository tasks without tripping over request formats.",
+    "summary": "Repaired the Repo Polly GitHub Actions workflow by pinning claude-code-router to v2.0.0, switching its model set to gpt-5.6-sol, MiniMax, and Perplexity, and adding a request-body compatibility shim.",
+    "impact": "Repository maintainers regain a working Polly assistant workflow with API requests formatted for the current routing setup.",
+    "keywords": [
+      "github-actions",
+      "polly-assistant",
+      "claude-code-router",
+      "models",
+      "workflow",
+      "api-compatibility"
+    ],
+    "visual_concept": "A cozy garden-shed automation workshop where Polly, wearing a tiny mechanic tool belt, reconnects three labeled model cables to a friendly retro terminal while a small code-plant grows beside it; the visual metaphor is a request-format adapter making the workflow run smoothly again.",
+    "image_prompt": "Cozy pixel art scene of Polly, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny mechanic tool belt, carefully plugging three pastel model cables into a chunky retro terminal through a small adapter labeled “API”; a lime green (#ecf874) code-plant blooms beside the terminal in a warm cream garden workshop. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, subtle CRT glow, emotionally warm and inviting."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-20/PR-12607.jpg",
+    "prompt": "Cozy pixel art scene of Polly, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny mechanic tool belt, carefully plugging three pastel model cables into a chunky retro terminal through a small adapter labeled “API”; a lime green (#ecf874) code-plant blooms beside the terminal in a warm cream garden workshop. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, subtle CRT glow, emotionally warm and inviting."
+  },
+  "generated_at": "2026-07-20T19:15:22.204428+00:00"
+}

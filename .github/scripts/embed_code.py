@@ -451,11 +451,14 @@ def build_rows_for_file(repo_root: Path, rel_path: str) -> list[dict]:
 
 # Files are embedded independently — safe to run several at once. Pollinations/Vectorize
 # both take real network round-trips per call, so a sequential loop over ~1800 files
-# spends almost all its time waiting on I/O rather than doing local work. Kept deliberately
-# conservative (not e.g. 8+) — concurrency hasn't been load-tested against the real
-# embeddings endpoint/credential, and a burst that trips rate limiting is worse than a
-# slower, reliable run.
-EMBED_CONCURRENCY = 4
+# spends almost all its time waiting on I/O rather than doing local work.
+#
+# POLLI_VECTOR_DB is an sk_ (secret) key: gen.pollinations.ai's rate-limit middleware
+# (rate-limit-durable.ts) explicitly skips non-publishable keys, so there's no
+# platform-side concurrency wall here — the only real ceiling is pollen balance (402 on
+# empty). Still bounded rather than unbounded to stay a reasonable client of Vectorize's
+# own API and the GitHub Actions runner's resources, not because of a Pollinations limit.
+EMBED_CONCURRENCY = 16
 
 
 def _embed_and_upsert_file(repo_root: Path, rel_path: str) -> tuple[str, int, Exception | None]:

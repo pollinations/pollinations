@@ -1,0 +1,37 @@
+{
+  "pr_number": 12599,
+  "title": "fix: update self-hosted image costs",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/12599",
+  "merged_at": "2026-07-20T16:45:43Z",
+  "labels": [
+    "DEV-CHORE"
+  ],
+  "pr_body_excerpt": "- Sets per-image cost and effective price to `$0.002` for Flux, `$0.005` for Klein, and `$0.004` for Z-Image.\n- Normalizes all three `priceMultiplier` values to `1`.\n- Keeps all three registry providers on Vast; only Flux retains its Fireworks fallback.\n- Leaves the models non-paid-only on Pollinations-operated GPUs. Canonical aliases and inference routes are unchanged.\n\nChecks:\n- `npx biome check --write shared/registry/image.ts`\n- Enter pricing, alias, and effective-price snapshot tests: 275 passed\n- Gen billing, tracking, usage-header, and image tests: 196 passed\n- Effective registry assertion confirms the requested provider, multiplier, cost, and price values",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "The price tags got tiny",
+    "blurb": "Three self-hosted image models got their accounting labels straightened out. Flux, Klein, and Z-Image now charge the amount the registry says they do—an unusually peaceful outcome for billing math.",
+    "summary": "Corrected self-hosted image registry costs and effective prices to $0.002 for Flux, $0.005 for Klein, and $0.004 for Z-Image, with each model's priceMultiplier normalized to 1 while preserving existing aliases and inference routes.",
+    "impact": "Users and developers now receive consistent effective-price and billing data for Flux, Klein, and Z-Image without changing how those models are requested.",
+    "keywords": [
+      "image-generation",
+      "pricing",
+      "billing",
+      "Flux",
+      "Klein",
+      "Z-Image",
+      "registry"
+    ],
+    "visual_concept": "A cozy image-model garden with three clearly labeled seed packets or flower pots representing Flux, Klein, and Z-Image, each carrying a tiny corrected price tag. Polly, wearing a little accountant visor and holding a clipboard, checks the tags while a retro terminal confirms the numbers; code-vines and flowers make the registry feel alive.",
+    "image_prompt": "Cozy pixel art scene of Polly, the cute yellow bee mascot with dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and rounded light-blue translucent wings, wearing a tiny accountant visor while checking three flower pots labeled in simple pixel text “FLUX $0.002,” “KLEIN $0.005,” and “Z-IMAGE $0.004”; a retro terminal glows beside code-plants and pixel flowers, with lime green (#ecf874) prominent across the garden. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, dark purple (#110518) outlines, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-20/PR-12599.jpg",
+    "prompt": "Cozy pixel art scene of Polly, the cute yellow bee mascot with dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and rounded light-blue translucent wings, wearing a tiny accountant visor while checking three flower pots labeled in simple pixel text “FLUX $0.002,” “KLEIN $0.005,” and “Z-IMAGE $0.004”; a retro terminal glows beside code-plants and pixel flowers, with lime green (#ecf874) prominent across the garden. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, dark purple (#110518) outlines, nostalgic but beautiful."
+  },
+  "generated_at": "2026-07-20T16:48:55.599480+00:00"
+}

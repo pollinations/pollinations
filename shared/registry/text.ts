@@ -761,8 +761,7 @@ export const TEXT_SERVICES = {
         },
         billing: withVertexCacheStorage(GEMINI_3_SEARCH_BILLING, 1.0),
         title: "Gemini 3.1 Flash Lite Search",
-        description:
-            "Low-cost answers grounded in live web search results",
+        description: "Low-cost answers grounded in live web search results",
         inputModalities: ["text", "image", "audio", "video"],
         outputModalities: ["text"],
         maxReferenceImages: 3600, // Gemini API image-understanding file limit.
@@ -792,8 +791,7 @@ export const TEXT_SERVICES = {
         },
         billing: withVertexCacheStorage(GEMINI_3_SEARCH_BILLING, 1.0),
         title: "Gemini 3.5 Flash Search",
-        description:
-            "Premium web research with grounded, up-to-date answers",
+        description: "Premium web research with grounded, up-to-date answers",
         inputModalities: ["text", "image", "audio", "video"],
         outputModalities: ["text"],
         maxReferenceImages: 3600, // Gemini API image-understanding file limit.
@@ -1419,8 +1417,7 @@ export const TEXT_SERVICES = {
             completionTextTokens: perMillion(1.2),
         },
         title: "MiniMax M2.7",
-        description:
-            "Multilingual coding and agent tasks at a friendly price",
+        description: "Multilingual coding and agent tasks at a friendly price",
         inputModalities: ["text"],
         outputModalities: ["text"],
         tools: true,

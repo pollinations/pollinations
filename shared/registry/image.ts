@@ -193,8 +193,7 @@ export const IMAGE_SERVICES = {
             completionImageTokens: 0.04, // per image
         },
         title: "Seedream 4.5 Pro",
-        description:
-            "Premium photorealism for lifelike scenes and portraits",
+        description: "Premium photorealism for lifelike scenes and portraits",
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
         maxReferenceImages: 14, // Pollinations route cap from Replicate schema.
@@ -217,8 +216,7 @@ export const IMAGE_SERVICES = {
             completionImageTokens: 0.03, // flat per image — ideogram-ai/ideogram-v4-turbo
         },
         title: "Ideogram 4.0 Turbo",
-        description:
-            "Fast images with crisp, accurate text and typography",
+        description: "Fast images with crisp, accurate text and typography",
         inputModalities: ["text"],
         outputModalities: ["image"],
     },
@@ -234,8 +232,7 @@ export const IMAGE_SERVICES = {
             completionImageTokens: 0.06, // flat per image — ideogram-ai/ideogram-v4-balanced
         },
         title: "Ideogram 4.0 Balanced",
-        description:
-            "Balanced speed and quality with accurate text rendering",
+        description: "Balanced speed and quality with accurate text rendering",
         inputModalities: ["text"],
         outputModalities: ["image"],
     },
@@ -270,8 +267,7 @@ export const IMAGE_SERVICES = {
             completionImageTokens: perMillion(8), // per 1M tokens
         },
         title: "GPT Image 1 Mini",
-        description:
-            "Affordable image creation and editing for everyday use",
+        description: "Affordable image creation and editing for everyday use",
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
         maxReferenceImages: 16, // GPT Image edit endpoint accepts up to 16 input images.
@@ -486,8 +482,7 @@ export const IMAGE_SERVICES = {
             completionVideoSeconds: 0.1, // per sec (720p, includes audio)
         },
         title: "Wan 2.7",
-        description:
-            "Keyframe-controlled video with sound at 720p",
+        description: "Keyframe-controlled video with sound at 720p",
         inputModalities: ["text", "image"],
         outputModalities: ["video", "audio"],
         videoCapabilities: ["start_frame", "end_frame", "audio_output"],
@@ -508,8 +503,7 @@ export const IMAGE_SERVICES = {
             completionVideoSeconds: 0.15, // per sec (1080p, includes audio)
         },
         title: "Wan 2.7 1080p",
-        description:
-            "Keyframe-controlled video with sound in full 1080p",
+        description: "Keyframe-controlled video with sound in full 1080p",
         inputModalities: ["text", "image"],
         outputModalities: ["video", "audio"],
         videoCapabilities: ["start_frame", "end_frame", "audio_output"],
@@ -634,8 +628,7 @@ export const IMAGE_SERVICES = {
             completionVideoSeconds: 0.07, // per sec at 720p
         },
         title: "Grok Video Pro",
-        description:
-            "Short videos from text or an image (720p, 1-15s)",
+        description: "Short videos from text or an image (720p, 1-15s)",
         inputModalities: ["text", "image"],
         outputModalities: ["video"],
         videoCapabilities: ["start_frame"],

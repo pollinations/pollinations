@@ -64,8 +64,7 @@ export const AUDIO_SERVICES = {
             completionAudioTokens: 0.1 / 1000,
         },
         title: "ElevenLabs v3 TTS",
-        description:
-            "Expressive speech with emotion control and audio tags",
+        description: "Expressive speech with emotion control and audio tags",
         inputModalities: ["text"],
         outputModalities: ["audio"],
         voices: ELEVENLABS_VOICES as string[],
@@ -106,8 +105,7 @@ export const AUDIO_SERVICES = {
             completionAudioTokens: 0.1 / 1000,
         },
         title: "ElevenLabs Multilingual v2",
-        description:
-            "Lifelike, emotionally rich speech in 29 languages",
+        description: "Lifelike, emotionally rich speech in 29 languages",
         inputModalities: ["text"],
         outputModalities: ["audio"],
         voices: ELEVENLABS_VOICES as string[],
@@ -127,8 +125,7 @@ export const AUDIO_SERVICES = {
             completionAudioSeconds: 0.0025,
         },
         title: "ElevenLabs Music",
-        description:
-            "Studio-grade music from a text prompt or reference track",
+        description: "Studio-grade music from a text prompt or reference track",
         inputModalities: ["text", "audio"],
         outputModalities: ["audio"],
     },
@@ -178,8 +175,7 @@ export const AUDIO_SERVICES = {
             promptAudioSeconds: 0.22 / 3600,
         },
         title: "Scribe v2",
-        description:
-            "Transcription in 90+ languages with speaker labels",
+        description: "Transcription in 90+ languages with speaker labels",
         inputModalities: ["audio"],
         outputModalities: ["text"],
     },
@@ -215,8 +211,7 @@ export const AUDIO_SERVICES = {
             promptAudioSeconds: 0.21 / 3600,
         },
         title: "AssemblyAI Universal-3 Pro",
-        description:
-            "Top-accuracy transcription you can steer with prompts",
+        description: "Top-accuracy transcription you can steer with prompts",
         inputModalities: ["audio"],
         outputModalities: ["text"],
     },
@@ -239,8 +234,7 @@ export const AUDIO_SERVICES = {
             completionAudioTokens: 0.0376,
         },
         title: "Stable Audio 3 Medium",
-        description:
-            "Long-form stereo music and soundscapes in studio quality",
+        description: "Long-form stereo music and soundscapes in studio quality",
         inputModalities: ["text", "audio"],
         outputModalities: ["audio"],
     },

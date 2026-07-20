@@ -80,8 +80,7 @@ export const MODEL3D_SERVICES = {
             completionImageTokens: 0.1, // per generation
         },
         title: "Hyper3D Rodin 2.5",
-        description:
-            "Textured 3D models from an image or a text prompt",
+        description: "Textured 3D models from an image or a text prompt",
         inputModalities: ["text", "image"],
         outputModalities: ["3d"],
         maxReferenceImages: 1,

@@ -11,6 +11,7 @@ import {
     truncateIpToSubnet,
 } from "@shared/client-ip.ts";
 import { sendToTinybird } from "@shared/events.ts";
+import type { RealtimeModelName } from "@shared/registry/realtime.ts";
 import {
     type CostDefinition,
     calculateCostWithDefinition,
@@ -42,6 +43,12 @@ import { checkBalance } from "@/utils/generation-access.ts";
 // WebSocket path mirrors OpenAI's: /openai/v1/realtime?model=<deployment>.
 const AZURE_REALTIME_WEBSOCKET_URL =
     "https://myceli-prod-swedencentral.openai.azure.com/openai/v1/realtime";
+// Azure deployment names, keyed by registry model name. Deployment names are
+// independent of the public model id; the registry only carries public names.
+const REALTIME_DEPLOYMENTS: Record<RealtimeModelName, string> = {
+    "gpt-realtime-2.1": "gpt-realtime-2-1",
+    "gpt-realtime-2": "gpt-realtime-2",
+};
 const CREDENTIAL_QUERY_PARAMS = new Set([
     "access_token",
     "api_key",
@@ -69,7 +76,7 @@ type RealtimeBillingContext = {
     byopClientKeyId?: string | null;
     modelRequested: string;
     resolvedModelRequested: string;
-    modelDefinition: ModelDefinition<string>;
+    modelDefinition: ModelDefinition;
     modelCostDefinition: CostDefinition;
     modelPriceDefinition: PriceDefinition;
     requestId: string;
@@ -689,7 +696,7 @@ export async function handleRealtimeWebSocket(
     const upstream = await connectAzureRealtime(
         c,
         user.id,
-        c.var.model.definition.modelId,
+        REALTIME_DEPLOYMENTS[c.var.model.resolved as RealtimeModelName],
     );
     if (upstream instanceof Response) return upstream;
 

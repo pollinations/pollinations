@@ -437,7 +437,7 @@ curl "https://gen.pollinations.ai/text/Write%20a%20haiku%20about%20coding?model=
 
 Generate an image from a text prompt. Returns JPEG or PNG.
 
-**Available models:** `kontext`, `nanobanana`, `nanobanana-2`, `nanobanana-2-lite`, `nanobanana-pro`, `seedream5`, `seedream5-pro`, `seedream`, `seedream-pro`, `ideogram-v4-turbo`, `ideogram-v4-balanced`, `ideogram-v4-quality`, `gptimage`, `gptimage-large`, `gpt-image-2`, `flux`, `zimage`, `wan-image`, `wan-image-pro`, `qwen-image`, `grok-imagine`, `grok-imagine-pro`, `klein`, `p-image`, `p-image-edit`, `nova-canvas`. `zimage` is the default.
+**Available models:** `sana`, `kontext`, `nanobanana`, `nanobanana-2`, `nanobanana-2-lite`, `nanobanana-pro`, `seedream5`, `seedream5-pro`, `seedream`, `seedream-pro`, `ideogram-v4-turbo`, `ideogram-v4-balanced`, `ideogram-v4-quality`, `gptimage`, `gptimage-large`, `gpt-image-2`, `flux`, `zimage`, `wan-image`, `wan-image-pro`, `qwen-image`, `grok-imagine`, `grok-imagine-pro`, `klein`, `p-image`, `p-image-edit`, `nova-canvas`. `zimage` is the default.
 
 Browse all available models and their capabilities at [`/image/models`](https://gen.pollinations.ai/image/models).
 
@@ -536,7 +536,7 @@ curl -X POST "https://gen.pollinations.ai/v1/images/edits" \
 
 Generate a video from a text prompt. Returns MP4.
 
-**Available models:** `veo`, `veo-1080p`, `seedance-pro`, `seedance-2.0`, `wan`, `wan-fast`, `wan-pro`, `wan-pro-1080p`, `grok-video-pro`, `ltx-2`, `p-video-720p`, `p-video-1080p`, `nova-reel`.
+**Available models:** `veo`, `veo-1080p`, `seedance-pro`, `seedance-2.0`, `wan`, `wan-fast`, `wan-pro`, `wan-pro-1080p`, `grok-video-pro`, `happyhorse-1.1`, `p-video-720p`, `p-video-1080p`, `nova-reel`.
 
 Use `duration` to set video length, `aspectRatio` for orientation, and `audio` where the selected model supports audio output.
 
@@ -608,7 +608,7 @@ curl -X POST "https://gen.pollinations.ai/v1/audio/music/upload" \
 
 Generate speech or music from text. Compatible with the OpenAI TTS API for JSON requests.
 
-Set `model` to `elevenmusic`, `acestep`, `stable-audio-3-medium`, or `stable-audio-3-large` to generate music. Send multipart/form-data with `reference_audio` plus `input` to run audio-to-audio (style transfer) on `stable-audio-3-medium` or `stable-audio-3-large`, or reference-audio conditioning on `elevenmusic`; for ElevenLabs inpainting, pass a `composition_plan`.
+Set `model` to `elevenmusic`, `stable-audio-3-medium`, or `stable-audio-3-large` to generate music. Send multipart/form-data with `reference_audio` plus `input` to run audio-to-audio (style transfer) on `stable-audio-3-medium` or `stable-audio-3-large`, or reference-audio conditioning on `elevenmusic`; for ElevenLabs inpainting, pass a `composition_plan`.
 
 **Available voices:** alloy, echo, fable, onyx, nova, shimmer, ash, ballad, coral, sage, verse, rachel, domi, bella, elli, charlotte, dorothy, sarah, emily, lily, matilda, adam, antoni, arnold, josh, sam, daniel, charlie, james, fin, callum, liam, george, brian, bill
 
@@ -690,7 +690,7 @@ Generate speech or music from text via a simple GET request.
 
 **Output formats:** mp3 (default), opus, aac, flac, wav, pcm
 
-**Music generation:** Set `model=elevenmusic`, `acestep`, `stable-audio-3-medium`, or `stable-audio-3-large` to generate music instead of speech. `elevenmusic` supports `duration` (3-300 seconds) and `instrumental` mode; `stable-audio-3-medium`/`stable-audio-3-large` support `seconds` (1-380), `steps`, `seed`, and `negative_prompt`. Use `POST /v1/audio/speech` with multipart `reference_audio` for style transfer (medium/large), or `POST /v1/audio/music/upload` to register a source track for inpainting.
+**Music generation:** Set `model=elevenmusic`, `stable-audio-3-medium`, or `stable-audio-3-large` to generate music instead of speech. `elevenmusic` supports `duration` (3-300 seconds) and `instrumental` mode; `stable-audio-3-medium`/`stable-audio-3-large` support `seconds` (1-380), `steps`, `seed`, and `negative_prompt`. Use `POST /v1/audio/speech` with multipart `reference_audio` for style transfer (medium/large), or `POST /v1/audio/music/upload` to register a source track for inpainting.
 
 ⚙️ **Parameters**
 
@@ -705,7 +705,6 @@ Generate speech or music from text via a simple GET request.
 | `steps` | `query` | `integer` | Sampling steps (stable-audio-3-medium 1-100, stable-audio-3-large 4-8) · range: `1…100` |
 | `negative_prompt` | `query` | `string` | Negative prompt for stable-audio-3-large |
 | `instrumental` | `query` | `"true"` \| `"false"` | If true, guarantees instrumental output (elevenmusic only) · default: `"false"` |
-| `style` | `query` | `string` | Style/genre tags for music generation (acestep only) |
 | `instruct` | `query` | `string` | Emotion/style instruction (qwen-tts-instruct only) |
 | `loop` | `query` | `"true"` \| `"false"` | Loop the generated sound effect (eleven-sfx only) |
 | `prompt_influence` | `query` | `string` | How strictly to follow the prompt, 0-1 (eleven-sfx only) |
@@ -730,10 +729,10 @@ curl "https://gen.pollinations.ai/audio/Hello%2C%20welcome%20to%20Pollinations!?
 
 OpenAI-compatible Realtime WebSocket proxy.
 
-Connect with `wss://gen.pollinations.ai/v1/realtime?model=gpt-realtime-2` and send/receive Realtime JSON events over the socket.
+Connect with `wss://gen.pollinations.ai/v1/realtime?model=gpt-realtime-2.1` and send/receive Realtime JSON events over the socket.
 Server clients can authenticate with `Authorization: Bearer <key>`. Browser WebSocket clients can use `?key=pk_...` because they cannot set custom authorization headers.
 
-**Model:** `gpt-realtime-2`.
+**Models:** `gpt-realtime-2.1`, `gpt-realtime-2`.
 
 **Billing:** requires a positive balance. Gen proxies the WebSocket, aggregates observed `response.done` usage, and deducts one session total when the socket closes. Input transcription sessions are not supported yet.
 
@@ -741,7 +740,7 @@ Server clients can authenticate with `Authorization: Bearer <key>`. Browser WebS
 
 | Param | In | Type | Description |
 |---|---|---|---|
-| `model` | `query` | `"gpt-realtime-2"` | Realtime model to use. Currently only gpt-realtime-2 is supported. · default: `"gpt-realtime-2"` |
+| `model` | `query` | `"gpt-realtime-2.1"` \| `"gpt-realtime-2"` | Realtime model to use. Supported models: gpt-realtime-2.1, gpt-realtime-2. · default: `"gpt-realtime-2.1"` |
 | `key` | `query` | `string` | Pollinations API key. Useful for browser WebSocket clients that cannot set custom Authorization headers. |
 
 <sub>`*` = required parameter</sub>
@@ -749,7 +748,7 @@ Server clients can authenticate with `Authorization: Bearer <key>`. Browser WebS
 💻 **Example**
 
 ```bash
-curl "https://gen.pollinations.ai/v1/realtime?model=gpt-realtime-2&key=:key" \
+curl "https://gen.pollinations.ai/v1/realtime?model=gpt-realtime-2.1&key=:key" \
   -H "Authorization: Bearer $POLLINATIONS_KEY"
 ```
 
@@ -2115,6 +2114,11 @@ Marks the end of a static prompt prefix to cache (Gemini, Claude, and Nova model
 | `data[].url` | `string` | — |
 | `data[].b64_json` | `string` | — |
 | `data[].revised_prompt` | `string` | — |
+| `usage` * | `object` | — |
+| `usage.input_tokens` * | `integer` | — |
+| `usage.output_tokens` * | `integer` | — |
+| `usage.total_tokens` * | `integer` | — |
+| `usage.input_tokens_details` * | `object` | — |
 
 <sub>`*` = required field</sub>
 

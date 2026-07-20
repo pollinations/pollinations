@@ -1,0 +1,19 @@
+{
+  "date": "2026-07-19",
+  "period_start": "2026-07-19",
+  "period_end": "2026-07-19",
+  "title": "Z-Image now has a sturdier home on Vast",
+  "summary": "Z-Image got a more reliable Vast deployment, faster predictable generation, and metadata that finally points at the machine doing the work.\n\nZ-Image generation was hardened across two RTX 5090 replicas on Vast, with persistent caches, supervised processes, deterministic tunnel checks, and workarounds for GPU-side cuDNN/VAE/SPAN crashes. The result is reliable output at roughly 1.09 images per second, p95 latency under 3.75 seconds, and matching direct and tunneled images across supported sizes. Registry metadata now also names Vast as the provider, because reality is generally worth documenting.",
+  "pr_count": 2,
+  "prs": [
+    {
+      "number": 12589,
+      "date": "2026-07-19"
+    },
+    {
+      "number": 12590,
+      "date": "2026-07-19"
+    }
+  ],
+  "generated_at": "2026-07-20T07:16:55.571287+00:00"
+}

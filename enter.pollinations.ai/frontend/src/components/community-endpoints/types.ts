@@ -16,8 +16,8 @@ export type CommunityEndpoint = {
     description: string | null;
     baseUrl: string;
     upstreamModel: string;
-    // private → owner-only, shown only to the owner, no owner-set price;
-    // public → globally listed + billed to callers.
+    // private → owner-only, free; app → owner/app-user access, priced;
+    // public → globally listed, priced.
     visibility: CommunityEndpointVisibility;
     disabled: boolean;
     disabledReason: string | null;
@@ -27,9 +27,9 @@ export type CommunityEndpoint = {
 export type EndpointFormState = {
     name: string;
     description: string;
-    // private → owner-only, shown only to the owner, no owner-set price;
-    // public → globally listed + billed to callers.
-    // Public is selectable only by allowlisted owners; defaults private.
+    // private → owner-only, free; app → owner/app-user access, priced;
+    // public → globally listed, priced.
+    // App/public access is selectable only by allowlisted owners.
     visibility: CommunityEndpointVisibility;
     baseUrl: string;
     upstreamModel: string;
@@ -78,6 +78,7 @@ export const idleAction: ActionState = { status: "idle" };
 
 export const VISIBILITY_LABELS: Record<CommunityEndpointVisibility, string> = {
     private: "Private",
+    app: "App users",
     public: "Public",
 };
 

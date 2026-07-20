@@ -1,5 +1,6 @@
 import {
     Alert,
+    AppIcon,
     CardIcon,
     CheckIcon,
     Chip,
@@ -37,6 +38,7 @@ export function CommunityEndpointCard({
     onDelete,
 }: CommunityEndpointCardProps) {
     const isPublic = endpoint.visibility === "public";
+    const isApp = endpoint.visibility === "app";
     const priceGroups = communityPriceGroups(endpoint);
 
     return (
@@ -51,9 +53,16 @@ export function CommunityEndpointCard({
                         <h3 className="min-w-0 truncate text-base font-semibold text-theme-text-strong">
                             {endpoint.name}
                         </h3>
-                        <Chip intent={isPublic ? "news" : "neutral"} size="sm">
+                        <Chip
+                            intent={
+                                isPublic ? "news" : isApp ? "alpha" : "neutral"
+                            }
+                            size="sm"
+                        >
                             {isPublic ? (
                                 <GlobeIcon className="h-3 w-3" />
+                            ) : isApp ? (
+                                <AppIcon className="h-3 w-3" />
                             ) : (
                                 <LockIcon className="h-3 w-3" />
                             )}

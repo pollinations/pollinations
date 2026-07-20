@@ -49,7 +49,7 @@ const UpdatePriceFieldsSchema = Object.fromEntries(
 const VisibilitySchema = z
     .enum(COMMUNITY_ENDPOINT_VISIBILITIES)
     .describe(
-        '"private": owner-only, shown only to the owner, with no owner-set price. "public": anyone and listed in the catalog; it may be free or priced. Publishing requires an allowlisted account.',
+        '"private": owner-only and free. "app": available to the owner and users authenticated through any app they own, with configured pricing. "public": anyone and globally listed, with configured pricing. App/public access requires an allowlisted account.',
     );
 const EndpointFieldsSchema = {
     // No "/": the public model id is `<owner>/<name>`, so a slash in the name
@@ -257,14 +257,14 @@ function requireCommunityEndpointManagePermission(apiKey?: {
     }
 }
 
-// Publishing is allowlist-gated. Pricing is independent: public endpoints may
-// be free or owner-priced.
+// Sharing and owner-configured pricing are allowlist-gated. Private endpoints
+// remain owner-only and free.
 async function enforcePublishingAccess(
     db: Db,
     userId: string,
     visibility: CommunityEndpointVisibility,
 ): Promise<void> {
-    if (visibility !== "public") return;
+    if (visibility === "private") return;
     await requireCommunityEndpointPublishAccess(db, userId);
 }
 
@@ -305,7 +305,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
             tags: ["👤 Account"],
             summary: "List My Models",
             description:
-                "List private and public community text models owned by the authenticated account. API keys require `account:keys`.",
+                "List private, app-accessible, and public community text models owned by the authenticated account. API keys require `account:keys`.",
             responses: {
                 200: {
                     description: "Registered community text models",
@@ -344,7 +344,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
             tags: ["👤 Account"],
             summary: "Create My Model",
             description:
-                "Register a private or public community text model. Private is the default. Public models require an allowlisted account and may be free or priced. API keys require `account:keys`. The upstream bearer token is encrypted and never returned.",
+                "Register a private, app-accessible, or public community text model. Private is the owner-only default. App and public access require an allowlisted account and use configured pricing. API keys require `account:keys`. The upstream bearer token is encrypted and never returned.",
             responses: {
                 200: {
                     description: "Created community text model",
@@ -371,9 +371,9 @@ export const communityEndpointsRoutes = new Hono<Env>()
             );
             await ensureModelNameAvailable(db, user.id, input.name);
             const prices =
-                input.visibility === "public"
-                    ? communityEndpointPrices(input)
-                    : communityEndpointPrices({});
+                input.visibility === "private"
+                    ? communityEndpointPrices({})
+                    : communityEndpointPrices(input);
             await enforcePublishingAccess(db, user.id, input.visibility);
             const id = crypto.randomUUID();
             const [row] = await db
@@ -404,7 +404,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
             tags: ["👤 Account"],
             summary: "List Upstream Models",
             description:
-                "Fetch OpenAI-compatible upstream model IDs before publishing a My Models endpoint. Requires community model publishing approval; API keys also require `account:keys`.",
+                "Fetch OpenAI-compatible upstream model IDs before sharing or publishing a My Models endpoint. Requires community model publishing approval; API keys also require `account:keys`.",
             responses: {
                 200: {
                     description: "Upstream model IDs",
@@ -449,7 +449,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
             tags: ["👤 Account"],
             summary: "Test My Model Endpoint",
             description:
-                "Test an OpenAI-compatible upstream model before publishing it. Requires community model publishing approval; API keys also require `account:keys`.",
+                "Test an OpenAI-compatible upstream model before sharing or publishing it. Requires community model publishing approval; API keys also require `account:keys`.",
             responses: {
                 200: {
                     description: "Endpoint test result",
@@ -498,7 +498,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
             tags: ["👤 Account"],
             summary: "Update My Model",
             description:
-                "Update a community text model owned by the authenticated account. Changing visibility to public publishes it and requires an allowlisted account; public models may be free or priced. API keys require `account:keys`.",
+                "Update a community text model owned by the authenticated account. App and public access require an allowlisted account and configured pricing; private models remain owner-only and free. API keys require `account:keys`.",
             responses: {
                 200: {
                     description: "Updated community text model",
@@ -563,16 +563,16 @@ export const communityEndpointsRoutes = new Hono<Env>()
                 }
             }
             const effectiveVisibility = input.visibility ?? endpoint.visibility;
-            // A private model is owner-only, so owner-declared public pricing
-            // does not apply; making a published model private clears prices.
+            // Owner-declared app/public pricing does not apply to private
+            // models; making a shared model private clears prices.
             const effectivePrices =
                 effectiveVisibility === "private"
                     ? communityEndpointPrices({})
                     : communityEndpointPrices({ ...endpoint, ...update });
             await enforcePublishingAccess(db, user.id, effectiveVisibility);
-            // Persist visibility together with the complete effective price
-            // set on every update, so concurrent partial updates cannot
-            // interleave into a public row with cleared prices.
+            // Persist access together with the complete effective price set on
+            // every update, so concurrent partial updates cannot interleave
+            // into a priced row with cleared prices.
             update.visibility = effectiveVisibility;
             Object.assign(update, effectivePrices);
             const [row] = await db

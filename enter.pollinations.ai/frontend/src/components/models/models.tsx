@@ -33,8 +33,8 @@ import { useModelStats } from "./use-model-stats.ts";
 type ModelsProps = {
     // Render the owner-scoped "My Models" section (logged-in dashboard only).
     showCommunityEndpoints?: boolean;
-    // Allowlisted owners can make their models public; everyone else is limited
-    // to private, owner-only models.
+    // Allowlisted owners can share models with app users or publicly; everyone
+    // else is limited to owner-only private models.
     canPublish?: boolean;
 };
 

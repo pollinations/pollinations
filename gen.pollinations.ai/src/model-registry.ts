@@ -41,7 +41,12 @@ export type GenerationModelEntry = {
 
 export type GenerationModelRegistry = {
     resolve: (model: string) => GenerationModelEntry | null;
-    visibleEntries: (callerUserId?: string) => GenerationModelEntry[];
+    visibleEntries: (access?: GenerationModelAccess) => GenerationModelEntry[];
+};
+
+export type GenerationModelAccess = {
+    callerUserId?: string;
+    appOwnerUserId?: string | null;
 };
 
 type CachedRegistry = {
@@ -99,12 +104,24 @@ function communityEntryToGenerationEntry(
         definition: entry.definition,
         info: entry.info,
         communityEndpoint: entry.communityEndpoint,
-        // Public endpoints appear for everyone. Private endpoints are added
-        // back for their owner by visibleEntries().
+        // Public endpoints appear for everyone. Private and app endpoints are
+        // added back for eligible authenticated callers by visibleEntries().
         visible:
             entry.communityEndpoint.disabledAt === null &&
             entry.communityEndpoint.visibility === "public",
     };
+}
+
+export function canAccessCommunityModel(
+    endpoint: CommunityEndpointRuntime,
+    access?: GenerationModelAccess,
+): boolean {
+    return (
+        endpoint.visibility === "public" ||
+        endpoint.ownerUserId === access?.callerUserId ||
+        (endpoint.visibility === "app" &&
+            endpoint.ownerUserId === access?.appOwnerUserId)
+    );
 }
 
 function buildRegistry(
@@ -134,14 +151,13 @@ function buildRegistry(
             if (entry?.communityEndpoint?.disabledAt) return null;
             return entry;
         },
-        visibleEntries: (callerUserId) =>
+        visibleEntries: (access) =>
             entries.filter((entry) => {
                 if (entry.visible) return true;
                 const endpoint = entry.communityEndpoint;
                 return (
                     endpoint?.disabledAt === null &&
-                    endpoint.visibility === "private" &&
-                    endpoint.ownerUserId === callerUserId
+                    canAccessCommunityModel(endpoint, access)
                 );
             }),
     };

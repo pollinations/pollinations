@@ -19,6 +19,7 @@ import sys
 import threading
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from datetime import datetime, timezone
 from pathlib import Path
 
 import requests
@@ -269,6 +270,26 @@ def collect_code_files(repo_root: Path) -> list[Path]:
 MAX_EMBED_INPUTS_PER_REQUEST = 32
 
 
+def _parse_retry_after(header_value: str | None, fallback: float) -> float:
+    """Retry-After is either a delay in seconds or an HTTP-date (RFC 9110) — handle both,
+    since float() on a date string raises ValueError and would crash the retry loop
+    instead of falling back to a normal backoff."""
+    if not header_value:
+        return fallback
+    try:
+        return float(header_value)
+    except ValueError:
+        pass
+    try:
+        from email.utils import parsedate_to_datetime
+
+        target = parsedate_to_datetime(header_value)
+        delta = (target - datetime.now(timezone.utc)).total_seconds()
+        return max(delta, 0.0)
+    except Exception:
+        return fallback
+
+
 def _embed_single_request(texts: list[str], retries: int = 4) -> list[list[float]]:
     payload = {
         "model": EMBED_MODEL,
@@ -283,8 +304,7 @@ def _embed_single_request(texts: list[str], retries: int = 4) -> list[list[float
             if resp.status_code == 429:
                 # Rate limited — back off longer than a generic error, and respect
                 # Retry-After if the server sends one instead of guessing.
-                retry_after = resp.headers.get("Retry-After")
-                wait = float(retry_after) if retry_after else (5 * (attempt + 1))
+                wait = _parse_retry_after(resp.headers.get("Retry-After"), fallback=5 * (attempt + 1))
                 print(f"  rate limited (429), waiting {wait}s (attempt {attempt + 1}/{retries})", file=sys.stderr)
                 time.sleep(wait)
                 last_err = RuntimeError(f"Pollinations embed HTTP 429: {resp.text[:300]}")
@@ -292,7 +312,17 @@ def _embed_single_request(texts: list[str], retries: int = 4) -> list[list[float
             if resp.status_code != 200:
                 raise RuntimeError(f"Pollinations embed HTTP {resp.status_code}: {resp.text[:300]}")
             data = resp.json()
-            sorted_data = sorted(data["data"], key=lambda x: x["index"])
+            items = data["data"]
+            if len(items) != len(texts):
+                # A short/malformed response would otherwise be silently accepted here,
+                # then zip() in the caller truncates and misaligns embeddings to the
+                # wrong chunk — same failure mode as the local blank-chunk bug, just
+                # coming from the API side instead of local filtering.
+                raise RuntimeError(f"Pollinations embed returned {len(items)} embeddings for {len(texts)} inputs")
+            sorted_data = sorted(items, key=lambda x: x["index"])
+            indices = [item["index"] for item in sorted_data]
+            if indices != list(range(len(texts))):
+                raise RuntimeError(f"Pollinations embed returned non-contiguous indices: {indices}")
             return [item["embedding"] for item in sorted_data]
         except requests.exceptions.RequestException as e:
             last_err = e

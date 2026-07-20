@@ -321,9 +321,9 @@ export const IMAGE_SERVICES = {
         brand: "Black Forest Labs",
         category: "image",
         addedDate: new Date("2025-10-07").getTime(),
-        priceMultiplier: 1.25,
+        priceMultiplier: 1,
         cost: {
-            completionImageTokens: 0.0014, // per image
+            completionImageTokens: 0.002, // per image
         },
         title: "Flux Schnell",
         description: "Fast, high-quality images at a tiny cost",
@@ -338,7 +338,7 @@ export const IMAGE_SERVICES = {
         addedDate: new Date("2025-12-08").getTime(),
         priceMultiplier: 1,
         cost: {
-            completionImageTokens: 0.002, // per image
+            completionImageTokens: 0.004, // per image
         },
         title: "Z-Image Turbo",
         description:
@@ -660,7 +660,7 @@ export const IMAGE_SERVICES = {
         addedDate: new Date("2026-01-17").getTime(),
         priceMultiplier: 1,
         cost: {
-            completionImageTokens: 0.01,
+            completionImageTokens: 0.005,
         },
         title: "FLUX.2 Klein 4B",
         description:

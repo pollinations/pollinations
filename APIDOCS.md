@@ -773,22 +773,27 @@ curl "https://gen.pollinations.ai/embeddings/models" \
 
 Generate vector embeddings with an OpenAI-compatible response format.
 
-**Models:** `gemini-2` supports text, image, audio, and video inputs. `openai-3-small` and `openai-3-large` are text-only models.
+**Models:** `gemini-2` supports text, image, audio, and video. `cohere-embed-v4` supports text and one image. OpenAI and Qwen embedding models are text-only.
 
-**Input:** Pass a string, an array of up to 32 strings, or Gemini multimodal content parts (`text`, `image_url`, `input_audio`, `video_url`) in the `input` field.
+**Input:** Pass a string, an array of up to 32 strings, or supported multimodal content parts (`text`, `image_url`, `input_audio`, `video_url`) in the `input` field.
 
-**Task types:** `task_type` is Gemini-only. For example, use `RETRIEVAL_QUERY` or `CLASSIFICATION` with `gemini-2`.
+**Retrieval roles:** Use `task_type` with Gemini text input; it is converted to the model's recommended prompt instruction. Use `input_type` (`query` or `document`) with Cohere.
 
-**Dimensions:** Defaults are model-specific. `qwen3-embedding-8b` supports up to 4096 dimensions; `gemini-2` and `openai-3-large` support up to 3072; `openai-3-small` supports up to 1536.
+**Billing:** Gemini task instructions count toward prompt token usage. Cohere image requests expose one combined usage count, so text accompanying an image is billed at the image-input rate.
+
+**Gemini migration:** `gemini-2` uses the GA embedding space. Do not mix preview-era and GA vectors; re-embed stored `gemini-2` data before comparing it with new results.
+
+**Dimensions:** Defaults are model-specific. Qwen supports up to 4096; Gemini and OpenAI large up to 3072; OpenAI small up to 1536; Cohere supports 256, 512, 1024, or 1536.
 
 📥 **Request body** · `application/json`
 
 | Field | Type | Description |
 |---|---|---|
 | `model` | `string` | Embedding model to use · default: `"openai-3-small"` |
-| `input` * | `string` \| `string`[] \| `object` \| `object`[] | Input text or content parts to embed. Supports strings, arrays of strings (max 32 inputs), or multimodal content parts (text, image_url, input_audio, video_url). Multimodal content parts are supported by Gemini embedding models only. |
-| `dimensions` | `integer` | Output embedding dimensions (128-4096). Model-specific limits apply; openai-3-small supports up to 1536. · range: `128…4096` |
-| `task_type` | enum (8) — `"SEMANTIC_SIMILARITY"`, `"CLASSIFICATION"`, `"CLUSTERING"`, … | Gemini-specific task type hint for optimized embeddings |
+| `input` * | `string` \| `string`[] \| `object` \| `object`[] | Input text or content parts to embed. Supports strings, arrays of strings (max 32 inputs), or multimodal content parts (text, image_url, input_audio, video_url). Gemini supports every listed modality; Cohere Embed v4 supports text and one image per input. |
+| `dimensions` | `integer` | Output embedding dimensions (128-4096). Model-specific limits apply; Cohere supports 256, 512, 1024, or 1536. · range: `128…4096` |
+| `task_type` | enum (8) — `"SEMANTIC_SIMILARITY"`, `"CLASSIFICATION"`, `"CLUSTERING"`, … | Gemini text-specific task hint, converted to the model's recommended prompt instruction |
+| `input_type` | `"query"` \| `"document"` | Cohere-specific input role for retrieval. Use document when indexing and query when searching. |
 | `encoding_format` | `"float"` \| `"base64"` | Output encoding for the embedding vector. `base64` packs Float32 little-endian like OpenAI. · default: `"float"` |
 
 <sub>`*` = required field</sub>
@@ -2066,9 +2071,10 @@ Marks the end of a static prompt prefix to cache (Gemini, Claude, and Nova model
 | Field | Type | Description |
 |---|---|---|
 | `model` | `string` | Embedding model to use · default: `"openai-3-small"` |
-| `input` * | `string` \| `string`[] \| `object` \| `object`[] | Input text or content parts to embed. Supports strings, arrays of strings (max 32 inputs), or multimodal content parts (text, image_url, input_audio, video_url). Multimodal content parts are supported by Gemini embedding models only. |
-| `dimensions` | `integer` | Output embedding dimensions (128-4096). Model-specific limits apply; openai-3-small supports up to 1536. · range: `128…4096` |
-| `task_type` | enum (8) — `"SEMANTIC_SIMILARITY"`, `"CLASSIFICATION"`, `"CLUSTERING"`, … | Gemini-specific task type hint for optimized embeddings |
+| `input` * | `string` \| `string`[] \| `object` \| `object`[] | Input text or content parts to embed. Supports strings, arrays of strings (max 32 inputs), or multimodal content parts (text, image_url, input_audio, video_url). Gemini supports every listed modality; Cohere Embed v4 supports text and one image per input. |
+| `dimensions` | `integer` | Output embedding dimensions (128-4096). Model-specific limits apply; Cohere supports 256, 512, 1024, or 1536. · range: `128…4096` |
+| `task_type` | enum (8) — `"SEMANTIC_SIMILARITY"`, `"CLASSIFICATION"`, `"CLUSTERING"`, … | Gemini text-specific task hint, converted to the model's recommended prompt instruction |
+| `input_type` | `"query"` \| `"document"` | Cohere-specific input role for retrieval. Use document when indexing and query when searching. |
 | `encoding_format` | `"float"` \| `"base64"` | Output encoding for the embedding vector. `base64` packs Float32 little-endian like OpenAI. · default: `"float"` |
 
 <sub>`*` = required field</sub>

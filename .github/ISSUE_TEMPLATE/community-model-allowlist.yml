@@ -1,0 +1,67 @@
+name: Community Model Allowlist
+description: Request approval to publish a registered community model
+title: "[Community Model Allowlist]: "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Community models can be registered privately by any signed-in user. This form requests approval to make a model public in the Pollinations model catalog.
+
+        Before submitting, register and test the model under **Models → My Models** at [enter.pollinations.ai](https://enter.pollinations.ai). Submit this form from the same GitHub account you use to sign in there.
+
+        This issue is public. **Never include API keys, bearer tokens, or other credentials.**
+
+  - type: input
+    id: model-id
+    attributes:
+      label: Registered model ID
+      description: Enter the exact private model ID shown in My Models.
+      placeholder: "your-github-username/model-id"
+    validations:
+      required: true
+
+  - type: textarea
+    id: model-details
+    attributes:
+      label: Model details
+      description: Describe the model, its intended use, and why it would be useful in the public catalog.
+      placeholder: |
+        Model/provider:
+        Main capabilities:
+        Intended use:
+    validations:
+      required: true
+
+  - type: input
+    id: upstream-info
+    attributes:
+      label: Public upstream information
+      description: Link to public model documentation, a repository, model card, or provider page. Do not include credentials.
+      placeholder: "https://..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: availability
+    attributes:
+      label: Availability and limits
+      description: Tell us where the endpoint is hosted and any capacity, rate-limit, or uptime constraints reviewers should know.
+      placeholder: "Hosted on ..., approximately ... concurrent requests, ... rate limit"
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: confirmations
+    attributes:
+      label: Confirmations
+      options:
+        - label: I am submitting from the same GitHub account I use to sign in to Pollinations.
+          required: true
+        - label: I registered this model privately in My Models and tested it successfully with my account.
+          required: true
+        - label: The upstream endpoint is OpenAI-compatible.
+          required: true
+        - label: I have not included API keys, bearer tokens, or other credentials in this issue.
+          required: true
+        - label: I understand that public community models are monitored and may be deactivated for sustained failures or abuse.
+          required: true

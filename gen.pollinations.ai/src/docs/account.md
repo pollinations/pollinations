@@ -11,7 +11,7 @@ Self-service endpoints for the authenticated user. All endpoints require authent
 | `GET /account/quests` | Read-only quest status |
 | `GET /account/usage` | Per-request usage history with costs |
 | `GET /account/usage/daily` | Daily aggregated usage for dashboards |
-| `/account/my-models` | Invite-only community model management |
+| `/account/my-models` | Private community model registration and allowlisted public publishing |
 | `GET /account/key` | API key validity, type, and permissions |
 
 ### GET /account/profile
@@ -40,4 +40,4 @@ Returns the current API key's validity, type, and permissions.
 
 ### /account/my-models
 
-Invite-only community text model management: list, create, update, delete, inspect upstream models, and test an upstream model. API keys require `account:keys` and an account with `communityEndpointsAllowed: true`; dashboard sessions can manage models directly when enabled.
+Community text model management. Any authenticated account can list, create, update, delete, and call its private owner-only models. Public publishing and the upstream inspection/test tools require `communityEndpointsAllowed: true`; [request allowlist approval](https://github.com/pollinations/pollinations/issues/new?template=community-model-allowlist.yml) after registering and testing the model privately. API keys require `account:keys`.

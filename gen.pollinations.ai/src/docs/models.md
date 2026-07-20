@@ -19,7 +19,7 @@ structured fields.
 
 ## Community Models (Alpha)
 
-Community models are user-owned, OpenAI-compatible text endpoints proxied through `gen.pollinations.ai` under an `owner/model` id (e.g. `Spit-fires/LFM2.5-230M`). Registration is currently invite-only while the program is in alpha — rules below will likely get stricter before general availability.
+Community models are user-owned, OpenAI-compatible text endpoints proxied through `gen.pollinations.ai` under an `owner/model` id (e.g. `Spit-fires/LFM2.5-230M`). Any signed-in user can register a private, owner-only model. Publishing it in the public model catalog requires allowlist approval while the program is in alpha.
 
 **Alpha stage**
 - Inclusion is fairly permissive for now; expect that to tighten before official launch.
@@ -43,4 +43,4 @@ Community models are user-owned, OpenAI-compatible text endpoints proxied throug
 - Reactivating a deactivated model is manual and owner-only, from the dashboard. There's no auto-reactivation, so if your model was turned off, fix the underlying issue before reactivating it, or it may just fail again.
 - Check your model's live health — request counts, success rate, errors, and latency — at [model-monitor.pollinations.ai/debug](https://model-monitor.pollinations.ai/debug).
 
-Registration and management ("My Models") are documented under the Account section of this reference, or via the [CLI](/docs/guides/cli) (`polli my-models`).
+Register and test the model privately under **Models → My Models** at [enter.pollinations.ai](https://enter.pollinations.ai), then [request community model allowlist approval](https://github.com/pollinations/pollinations/issues/new?template=community-model-allowlist.yml) to publish it. Registration and management are also documented under the Account section of this reference, or via the [CLI](/docs/guides/cli) (`polli my-models`).

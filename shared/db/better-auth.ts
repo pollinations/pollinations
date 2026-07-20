@@ -144,11 +144,17 @@ export const apikey = sqliteTable("apikey", {
   metadata: text("metadata"),
   pollenBalance: real("pollen_balance"),
   byopClientKeyId: text("byop_client_key_id"),
+  // Set when this key spends from an organization's balance instead of
+  // `userId`'s. `userId` still records the member who created the key.
+  organizationId: text("organization_id").references(() => organization.id, {
+    onDelete: "cascade",
+  }),
 }, (table) => [
   index("idx_apikey_key").on(table.key),
   index('idx_apikey_expires_at').on(table.expiresAt),
   index("idx_apikey_user_id").on(table.userId),
   index("idx_apikey_byop_client_key_id").on(table.byopClientKeyId),
+  index("idx_apikey_organization_id").on(table.organizationId),
 ]);
 
 export const stripeAutoTopUpAttempt = sqliteTable("stripe_auto_top_up_attempt", {
@@ -234,6 +240,65 @@ export const communityEndpoint = sqliteTable("community_endpoint", {
   ),
 ]);
 
+// Organizations: a paid-only-Pollen team account. `ownerUserId` is the sole
+// source of ownership truth — the owner does NOT get an `organization_member`
+// row (see that table's comment). No `tierBalance`/quest column exists here
+// by design, to keep orgs paid-only and prevent quest-abuse.
+export const organization = sqliteTable("organization", {
+  id: text("id").primaryKey(),
+  name: text("name").notNull(),
+  ownerUserId: text("owner_user_id")
+    .notNull()
+    .references(() => user.id, { onDelete: "cascade" }),
+  packBalance: real("pack_balance").default(0).notNull(),
+  createdAt: integer("created_at", { mode: "timestamp" })
+    .defaultNow()
+    .notNull(),
+  updatedAt: integer("updated_at", { mode: "timestamp" })
+    .defaultNow()
+    .$onUpdate(() => /* @__PURE__ */ new Date())
+    .notNull(),
+}, (table) => [
+  index("idx_organization_owner_user_id").on(table.ownerUserId),
+]);
+
+// One row per invited (non-owner) member. `status` starts "pending" and
+// becomes "active" on accept; decline deletes the row outright (no terminal
+// "declined" status) so re-inviting the same person later doesn't collide
+// with the unique (organizationId, userId) index.
+export const organizationMember = sqliteTable("organization_member", {
+  id: text("id").primaryKey(),
+  organizationId: text("organization_id")
+    .notNull()
+    .references(() => organization.id, { onDelete: "cascade" }),
+  userId: text("user_id")
+    .notNull()
+    .references(() => user.id, { onDelete: "cascade" }),
+  status: text("status", { enum: ["pending", "active"] })
+    .default("pending")
+    .notNull(),
+  canManageApiKeys: integer("can_manage_api_keys", { mode: "boolean" })
+    .default(false)
+    .notNull(),
+  canFundOrganization: integer("can_fund_organization", { mode: "boolean" })
+    .default(false)
+    .notNull(),
+  invitedByUserId: text("invited_by_user_id")
+    .notNull()
+    .references(() => user.id, { onDelete: "cascade" }),
+  createdAt: integer("created_at", { mode: "timestamp" })
+    .defaultNow()
+    .notNull(),
+  respondedAt: integer("responded_at", { mode: "timestamp" }),
+}, (table) => [
+  index("idx_organization_member_organization_id").on(table.organizationId),
+  index("idx_organization_member_user_id").on(table.userId),
+  uniqueIndex("idx_organization_member_org_user").on(
+    table.organizationId,
+    table.userId,
+  ),
+]);
+
 // Drizzle relations for query builder joins
 export const userRelations = relations(user, ({ many }) => ({
   apikeys: many(apikey),
@@ -242,6 +307,8 @@ export const userRelations = relations(user, ({ many }) => ({
   stripeAutoTopUpAttempts: many(stripeAutoTopUpAttempt),
   stripeCardFingerprintAttempts: many(stripeCardFingerprintAttempt),
   communityEndpoints: many(communityEndpoint),
+  ownedOrganizations: many(organization),
+  organizationMemberships: many(organizationMember),
 }));
 
 export const apikeyRelations = relations(apikey, ({ one }) => ({
@@ -249,7 +316,41 @@ export const apikeyRelations = relations(apikey, ({ one }) => ({
     fields: [apikey.userId],
     references: [user.id],
   }),
+  organization: one(organization, {
+    fields: [apikey.organizationId],
+    references: [organization.id],
+  }),
 }));
+
+export const organizationRelations = relations(
+  organization,
+  ({ one, many }) => ({
+    owner: one(user, {
+      fields: [organization.ownerUserId],
+      references: [user.id],
+    }),
+    members: many(organizationMember),
+    apikeys: many(apikey),
+  }),
+);
+
+export const organizationMemberRelations = relations(
+  organizationMember,
+  ({ one }) => ({
+    organization: one(organization, {
+      fields: [organizationMember.organizationId],
+      references: [organization.id],
+    }),
+    user: one(user, {
+      fields: [organizationMember.userId],
+      references: [user.id],
+    }),
+    invitedBy: one(user, {
+      fields: [organizationMember.invitedByUserId],
+      references: [user.id],
+    }),
+  }),
+);
 
 export const sessionRelations = relations(session, ({ one }) => ({
   user: one(user, {
@@ -318,8 +419,19 @@ export const stripeCheckoutCredits = sqliteTable("stripe_checkout_credits", {
   createdAt: integer("created_at", { mode: "timestamp" })
     .defaultNow()
     .notNull(),
+  // Set when the purchase funds an organization instead of `userId` (who is
+  // then just the paying member, not the credited account). onDelete "set
+  // null" (not cascade) because this row is the Stripe-webhook idempotency
+  // guard — it must outlive the org, or a retried webhook delivery after org
+  // deletion would find no dedup row and double-credit the fallback payer.
+  organizationId: text("organization_id").references(() => organization.id, {
+    onDelete: "set null",
+  }),
 }, (table) => [
   index("idx_stripe_checkout_credits_user_id").on(table.userId),
+  index("idx_stripe_checkout_credits_organization_id").on(
+    table.organizationId,
+  ),
 ]);
 
 export const polarCheckoutCredits = sqliteTable("polar_checkout_credits", {

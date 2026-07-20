@@ -7,6 +7,7 @@ import {
     NewspaperIcon,
     SparkleIcon,
     TrendUpIcon,
+    UsersIcon,
     WalletIcon,
 } from "@pollinations/ui";
 import type { ComponentType } from "react";
@@ -28,6 +29,7 @@ export const DASHBOARD_NAV_ITEMS = [
         icon: TrendUpIcon,
     },
     { id: "quests", to: "/quests", label: "Quests", icon: SparkleIcon },
+    { id: "members", to: "/members", label: "Members", icon: UsersIcon },
 ] as const satisfies readonly {
     id: string;
     to: string;
@@ -50,4 +52,11 @@ const SIGNED_OUT_PAGES: ReadonlySet<DashboardPage> = new Set([
 
 export const SIGNED_OUT_NAV_ITEMS = DASHBOARD_NAV_ITEMS.filter((item) =>
     SIGNED_OUT_PAGES.has(item.id),
+);
+
+/** Shown only in the sidebar nav when an organization is the active context. */
+const ORG_ONLY_PAGES: ReadonlySet<DashboardPage> = new Set(["members"]);
+
+export const PERSONAL_NAV_ITEMS = DASHBOARD_NAV_ITEMS.filter(
+    (item) => !ORG_ONLY_PAGES.has(item.id),
 );

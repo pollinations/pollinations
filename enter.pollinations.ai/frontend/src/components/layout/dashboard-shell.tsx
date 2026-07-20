@@ -1,14 +1,12 @@
 import {
     BookIcon,
     CheckIcon,
-    ChevronIcon,
     Chip,
     ClipboardIcon,
     ColorModeToggle,
     CopyButton,
     cn,
     DiscordIcon,
-    Dropdown,
     ExternalLinkIcon,
     GenApiIcon,
     GitHubIcon,
@@ -55,9 +53,6 @@ const brandWordmarkMask: CSSProperties = {
 
 type DashboardShellProps = PropsWithChildren<{
     navItems?: readonly DashboardNavItem[];
-    githubUsername?: string;
-    githubAvatarUrl?: string;
-    onSignOut?: () => void;
     accountArea?: ReactNode;
     walletArea?: ReactNode;
 }>;
@@ -90,13 +85,6 @@ type FooterLink = {
     href: string;
 };
 
-type AccountMenuLink = {
-    href: string;
-    label: string;
-    icon: ReactNode;
-    ariaLabel?: string;
-};
-
 const brandLinks: readonly BrandLink[] = [
     {
         href: "https://github.com/pollinations/pollinations",
@@ -120,26 +108,8 @@ const footerLinks: readonly FooterLink[] = [
     { label: "Refunds", href: "https://pollinations.ai/refunds" },
 ];
 
-const accountMenuLinks: readonly AccountMenuLink[] = [
-    {
-        href: "https://discord.com/channels/885844321461485618/1432378056126894343",
-        label: "#pollen-beta",
-        icon: <DiscordIcon className="h-full w-full" />,
-        ariaLabel: "#pollen-beta Discord channel",
-    },
-    {
-        href: "https://github.com/pollinations/pollinations/issues",
-        label: "Report an issue",
-        icon: <GitHubIcon className="h-full w-full" />,
-        ariaLabel: "Report an issue on GitHub",
-    },
-];
-
 export const DashboardShell: FC<DashboardShellProps> = ({
     navItems = DASHBOARD_NAV_ITEMS,
-    githubUsername,
-    githubAvatarUrl,
-    onSignOut,
     accountArea,
     walletArea,
     children,
@@ -255,18 +225,6 @@ export const DashboardShell: FC<DashboardShellProps> = ({
         },
     ];
 
-    const effectiveAccountArea =
-        accountArea ??
-        (githubUsername && onSignOut ? (
-            <AccountMenuButton
-                username={githubUsername}
-                avatarUrl={githubAvatarUrl ?? ""}
-                onSignOut={onSignOut}
-                links={accountMenuLinks}
-                className="w-full justify-start"
-            />
-        ) : null);
-
     const supportAction: SupportAction = {
         label: "Docs",
         icon: <BookIcon className="h-4 w-4 shrink-0 text-theme-text-muted" />,
@@ -287,7 +245,7 @@ export const DashboardShell: FC<DashboardShellProps> = ({
             navItems={navItems}
             supportAction={supportAction}
             supportLinks={supportLinks}
-            accountArea={effectiveAccountArea}
+            accountArea={accountArea}
             walletArea={walletArea}
             onNavigate={closeDrawer}
         />
@@ -582,89 +540,4 @@ const DashboardFooter: FC<{
             </span>
         </div>
     </>
-);
-
-type AccountMenuButtonProps = {
-    username: string;
-    avatarUrl: string;
-    onSignOut?: () => void;
-    links?: readonly AccountMenuLink[];
-    className?: string;
-};
-
-const AccountMenuButton: FC<AccountMenuButtonProps> = ({
-    username,
-    avatarUrl,
-    onSignOut,
-    links = [],
-    className,
-}) => (
-    <Dropdown
-        align="end"
-        className="w-[var(--reference-width)] min-w-0 p-1"
-        trigger={(open) => (
-            <button
-                type="button"
-                data-theme="accent"
-                className={cn(
-                    "flex min-w-0 flex-row items-center gap-2 self-center whitespace-nowrap rounded-full bg-theme-bg-active p-1 pr-3 transition-colors hover:bg-theme-bg-hover",
-                    className,
-                )}
-            >
-                <img
-                    src={avatarUrl}
-                    alt={`${username} avatar`}
-                    className="h-8 shrink-0 rounded-full"
-                />
-                <span className="min-w-0 flex-1 truncate text-left font-medium text-theme-text-strong">
-                    {username}
-                </span>
-                <ChevronIcon
-                    expanded={open}
-                    className="ml-auto h-4 w-4 shrink-0 text-theme-text-strong transition-transform duration-200 ease-out"
-                />
-            </button>
-        )}
-    >
-        {(close) => (
-            <>
-                {links.map((link) => (
-                    <AccountMenuLinkRow key={link.href} {...link} />
-                ))}
-                {links.length > 0 && (
-                    <div className="my-1 border-t border-divider" />
-                )}
-                <button
-                    type="button"
-                    onClick={() => {
-                        close();
-                        onSignOut?.();
-                    }}
-                    className="flex w-full cursor-pointer items-center rounded-lg px-3 py-2 text-left text-sm text-theme-text-strong hover:bg-theme-bg-hover focus:outline-none focus-visible:bg-theme-bg-hover"
-                >
-                    Sign Out
-                </button>
-            </>
-        )}
-    </Dropdown>
-);
-
-const AccountMenuLinkRow: FC<AccountMenuLink> = ({
-    href,
-    label,
-    icon,
-    ariaLabel,
-}) => (
-    <a
-        href={href}
-        target="_blank"
-        rel="noopener noreferrer"
-        aria-label={ariaLabel ?? label}
-        className="flex items-center justify-start gap-2 rounded-lg px-3 py-2 text-sm font-medium text-theme-text-strong transition-colors hover:bg-theme-bg-hover focus:outline-none focus-visible:bg-theme-bg-hover"
-    >
-        <span className="h-4 w-4 shrink-0" aria-hidden="true">
-            {icon}
-        </span>
-        <span>{label}</span>
-    </a>
 );

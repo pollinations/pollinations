@@ -8,6 +8,7 @@ import {
 } from "@shared/pollen-packs.ts";
 import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
 import { BuyPollenPanel, PollenBalance } from "../components/pollen";
+import { useActiveOrganizationId } from "../lib/active-organization.ts";
 import { Route as DashboardRoute } from "./_dashboard.tsx";
 
 export const Route = createFileRoute("/_dashboard/pollen")({
@@ -33,8 +34,18 @@ export const Route = createFileRoute("/_dashboard/pollen")({
 function PollenPage() {
     const { pack } = Route.useSearch();
     const navigate = useNavigate({ from: "/pollen" });
-    const { tierBalance, packBalance, paidWeek, tierWeek, billingState } =
-        DashboardRoute.useLoaderData();
+    const {
+        tierBalance,
+        packBalance,
+        paidWeek,
+        tierWeek,
+        billingState,
+        organizations,
+    } = DashboardRoute.useLoaderData();
+    const activeOrganizationId = useActiveOrganizationId();
+    const activeOrganization = organizations.find(
+        (org) => org.id === activeOrganizationId,
+    );
     const selectedPack = getPollenPackByKey(pack ?? "p5") ?? POLLEN_PACKS[0];
 
     function selectPack(amount: number): void {
@@ -48,8 +59,12 @@ function PollenPage() {
                 <PollenBalance
                     tierBalance={tierBalance}
                     packBalance={packBalance}
-                    paidWeek={paidWeek}
-                    tierWeek={tierWeek}
+                    // Weekly-earnings figures are personal-only (Tinybird
+                    // isn't org-tagged yet — see AGENTS.md deferred scope);
+                    // don't show the signed-in member's own 7d earnings next
+                    // to the organization's balance.
+                    paidWeek={activeOrganizationId ? 0 : paidWeek}
+                    tierWeek={activeOrganizationId ? 0 : tierWeek}
                 />
             </Section>
             <Section title="Top-up" framed id="buy-pollen">
@@ -57,6 +72,11 @@ function PollenPage() {
                     initialBillingState={billingState}
                     selectedPackAmount={selectedPack?.amountUsd ?? 5}
                     onSelectedPackAmountChange={selectPack}
+                    organizationId={activeOrganizationId ?? undefined}
+                    canFund={
+                        !activeOrganizationId ||
+                        !!activeOrganization?.canFundOrganization
+                    }
                 />
             </Section>
         </div>

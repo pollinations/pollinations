@@ -21,6 +21,7 @@ type CreateKeyInput = {
     expiryDays?: number | null;
     metadata?: Record<string, unknown>;
     permissions?: Permissions;
+    organizationId?: string;
 };
 
 type CreatedKey = {
@@ -39,6 +40,7 @@ export async function createKeyWithPermissions({
     expiryDays,
     metadata,
     permissions,
+    organizationId,
 }: CreateKeyInput): Promise<CreatedKey> {
     const expiresIn = expiryDaysToExpiresIn(expiryDays);
     const keyType: "publishable" | "secret" =
@@ -51,6 +53,7 @@ export async function createKeyWithPermissions({
         allowedModels: permissions?.allowedModels,
         pollenBudget: permissions?.pollenBudget,
         accountPermissions: permissions?.accountPermissions,
+        ...(organizationId ? { organizationId } : {}),
     };
 
     const response = await apiClient["api-keys"].$post({

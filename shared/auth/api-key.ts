@@ -21,6 +21,11 @@ export interface AuthenticatedApiKey {
     byopClientName?: string | null;
     byopClientUserId?: string | null;
     rawKey?: string;
+    /**
+     * Set when this key spends from an organization's balance instead of
+     * `userId`'s own. `userId` still identifies the member who created it.
+     */
+    organizationId?: string | null;
 }
 
 export interface ApiKeyAuthResult {
@@ -231,6 +236,7 @@ export async function authenticateApiKeyRequest(opts: {
                 byopClientKeyId: schema.apikey.byopClientKeyId,
                 byopClientName: byopClientKey.name,
                 byopClientUserId: byopClientKey.userId,
+                organizationId: schema.apikey.organizationId,
             })
             .from(schema.apikey)
             .leftJoin(
@@ -264,6 +270,7 @@ export async function authenticateApiKeyRequest(opts: {
             byopClientKeyId: apiKeyExtra?.byopClientKeyId ?? null,
             byopClientName: apiKeyExtra?.byopClientName ?? null,
             byopClientUserId: apiKeyExtra?.byopClientUserId ?? null,
+            organizationId: apiKeyExtra?.organizationId ?? null,
             rawKey: rawApiKey,
         },
         rawApiKey,

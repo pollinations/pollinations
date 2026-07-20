@@ -1,3 +1,4 @@
+import * as schema from "@shared/db/better-auth.ts";
 import {
     calculateServiceFeeCents,
     describePollenPack,
@@ -7,6 +8,7 @@ import {
     SERVICE_FEE_TAX_CODE,
 } from "@shared/pollen-packs.ts";
 import { PUBLIC_URLS } from "@shared/public-urls.ts";
+import { drizzle } from "drizzle-orm/d1";
 import type { Context } from "hono";
 import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
@@ -25,6 +27,7 @@ import {
     getStripeNewCardGateStatus,
     stripeNewCardGateMetadata,
 } from "../utils/stripe-card-gate.ts";
+import { requireFundPermission, requireOrgAccess } from "./organizations.ts";
 
 /**
  * Stripe pack configuration
@@ -66,6 +69,20 @@ export const stripeRoutes = new Hono<Env>()
 
         const userId = session.user.id;
 
+        // Optional: fund an organization's paid Pollen balance instead of the
+        // payer's own. The payer's own Stripe customer/card is still charged —
+        // organizations don't get their own Stripe customer.
+        const organizationId = c.req.query("organizationId");
+        if (organizationId) {
+            const db = drizzle(c.env.DB, { schema });
+            const { role, membership } = await requireOrgAccess(
+                db,
+                organizationId,
+                userId,
+            );
+            requireFundPermission(role, membership);
+        }
+
         // Create Stripe client
         const stripe = createStripeClient(c.env);
 
@@ -102,11 +119,14 @@ export const stripeRoutes = new Hono<Env>()
 
             // packKey identifies the pack; the webhook looks up its fixed USD
             // amount to credit, independent of how Adaptive Pricing localized
-            // the presentment currency.
+            // the presentment currency. `userId` is always the payer (needed
+            // for the new-card-fingerprint gate); `organizationId`, when
+            // present, is who the webhook actually credits.
             const packMetadata = {
                 userId,
                 packKey: pack.packKey,
                 cohort,
+                ...(organizationId ? { organizationId } : {}),
                 ...stripeNewCardGateMetadata(newCardGate),
             };
             const serviceFeeCents = calculateServiceFeeCents(

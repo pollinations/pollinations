@@ -48,6 +48,7 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
     onCreate,
     onUpdate,
     onDelete,
+    canManage = true,
 }) => {
     const [deleteId, setDeleteId] = useState<string | null>(null);
     const [editingKey, setEditingKey] = useState<ApiKey | null>(null);
@@ -121,28 +122,30 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                             {apiKey.start}...
                         </span>
                     )}
-                    <div className="flex gap-1 shrink-0 ml-2 items-center">
-                        <IconButton
-                            intent="info"
-                            title="Edit key"
-                            tooltip="Edit key"
-                            tooltipAlign="center"
-                            tooltipClampToViewport={false}
-                            onClick={() => setEditingKey(apiKey)}
-                        >
-                            <PencilIcon className="h-4 w-4" />
-                        </IconButton>
-                        <IconButton
-                            intent="danger"
-                            title="Delete key"
-                            tooltip="Delete key"
-                            tooltipAlign="center"
-                            tooltipClampToViewport={false}
-                            onClick={() => setDeleteId(apiKey.id)}
-                        >
-                            <XIcon className="h-4 w-4" />
-                        </IconButton>
-                    </div>
+                    {canManage && (
+                        <div className="flex gap-1 shrink-0 ml-2 items-center">
+                            <IconButton
+                                intent="info"
+                                title="Edit key"
+                                tooltip="Edit key"
+                                tooltipAlign="center"
+                                tooltipClampToViewport={false}
+                                onClick={() => setEditingKey(apiKey)}
+                            >
+                                <PencilIcon className="h-4 w-4" />
+                            </IconButton>
+                            <IconButton
+                                intent="danger"
+                                title="Delete key"
+                                tooltip="Delete key"
+                                tooltipAlign="center"
+                                tooltipClampToViewport={false}
+                                onClick={() => setDeleteId(apiKey.id)}
+                            >
+                                <XIcon className="h-4 w-4" />
+                            </IconButton>
+                        </div>
+                    )}
                 </div>
                 <div className="flex flex-wrap items-center gap-4 text-xs">
                     <span>
@@ -250,16 +253,18 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                     title="API"
                     framed
                     action={
-                        <ApiKeyDialog
-                            onSubmit={onCreate}
-                            onComplete={() => {}}
-                            triggerLabel={
-                                <span className="inline-flex items-center gap-1.5">
-                                    <KeyIcon className="h-4 w-4" />
-                                    Add Key
-                                </span>
-                            }
-                        />
+                        canManage ? (
+                            <ApiKeyDialog
+                                onSubmit={onCreate}
+                                onComplete={() => {}}
+                                triggerLabel={
+                                    <span className="inline-flex items-center gap-1.5">
+                                        <KeyIcon className="h-4 w-4" />
+                                        Add Key
+                                    </span>
+                                }
+                            />
+                        ) : undefined
                     }
                 >
                     <div className="flex flex-col gap-3">
@@ -289,17 +294,19 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                     title="App"
                     framed
                     action={
-                        <ApiKeyDialog
-                            onSubmit={onCreate}
-                            onComplete={() => {}}
-                            triggerLabel={
-                                <span className="inline-flex items-center gap-1.5">
-                                    <AppIcon className="h-4 w-4" />
-                                    Add App
-                                </span>
-                            }
-                            simplified
-                        />
+                        canManage ? (
+                            <ApiKeyDialog
+                                onSubmit={onCreate}
+                                onComplete={() => {}}
+                                triggerLabel={
+                                    <span className="inline-flex items-center gap-1.5">
+                                        <AppIcon className="h-4 w-4" />
+                                        Add App
+                                    </span>
+                                }
+                                simplified
+                            />
+                        ) : undefined
                     }
                 >
                     <div className="flex flex-col gap-3">

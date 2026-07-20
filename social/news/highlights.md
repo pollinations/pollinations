@@ -1,3 +1,4 @@
+- **2026-07-19** – **⚡ Z-Image gets two RTX 5090 hives** Z-Image now runs across two replicas at ~1.09 images/sec, with p95 generation under 3.75 seconds. The bees have redundancy now. [Try it](https://pollinations.ai/play)
 - **2026-07-16** – **🚀 GPT Realtime 2.1** `gpt-realtime-2.1` is now the default realtime model, giving voice and live-interaction builders a newer verified endpoint while `gpt-realtime-2` remains available. [API Docs](https://gen.pollinations.ai/docs)
 - **2026-07-16** – **✨ Model math, less mysterious** The model table now shows Quest/Paid access clearly, reveals descriptions on hover, and lets you click a model name or ID to copy the exact identifier. [Browse models](https://gen.pollinations.ai/v1/models)
 - **2026-07-15** – **🚀 Private community models** Register a model, test it with your own key, then publish it when it is ready to meet the outdoors. Public models can be free or priced by their owner.

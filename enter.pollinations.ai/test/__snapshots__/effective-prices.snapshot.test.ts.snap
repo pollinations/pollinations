@@ -176,10 +176,10 @@ exports[`effective cost and price per model — snapshot 1`] = `
   },
   "flux": {
     "cost": {
-      "completionImageTokens": 0.0014,
+      "completionImageTokens": 0.002,
     },
     "price": {
-      "completionImageTokens": 0.00175,
+      "completionImageTokens": 0.002,
     },
   },
   "gemini": {
@@ -678,10 +678,10 @@ exports[`effective cost and price per model — snapshot 1`] = `
   },
   "klein": {
     "cost": {
-      "completionImageTokens": 0.01,
+      "completionImageTokens": 0.005,
     },
     "price": {
-      "completionImageTokens": 0.01,
+      "completionImageTokens": 0.005,
     },
   },
   "kontext": {
@@ -1448,10 +1448,10 @@ exports[`effective cost and price per model — snapshot 1`] = `
   },
   "zimage": {
     "cost": {
-      "completionImageTokens": 0.002,
+      "completionImageTokens": 0.004,
     },
     "price": {
-      "completionImageTokens": 0.002,
+      "completionImageTokens": 0.004,
     },
   },
 }

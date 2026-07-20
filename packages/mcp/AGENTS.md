@@ -17,7 +17,7 @@ packages/mcp/
     services/
       imageService.js            # image/video generation
       textService.js             # chat completion and model discovery
-      audioService.js            # audio response and speech generation
+      audioService.js            # OpenAI-compatible speech and transcription
       accountService.js          # balance and usage via /account/*
     utils/
       authUtils.js               # immutable environment authentication
@@ -42,7 +42,9 @@ The server speaks JSON-RPC over stdio. `console.log` in imported server modules 
 
 Do not add model or voice enums, registry preflight checks, response summaries, compatibility aliases, or convenience wrappers.
 
-Use `chatCompletion` directly for image, video, and audio analysis instead of adding fixed-prompt convenience tools.
+Use `chatCompletion` directly for image and video analysis instead of adding fixed-prompt convenience tools. Keep text-to-speech and speech-to-text as dedicated tools because they use the OpenAI-compatible audio endpoints, not chat completions.
+
+Pollinations API requests must go through Gen. `transcribeAudio` may download a caller-provided public HTTPS audio file solely to forward it as multipart form data to Gen; reject redirects, private addresses, and files over 25 MiB.
 
 ## Testing
 

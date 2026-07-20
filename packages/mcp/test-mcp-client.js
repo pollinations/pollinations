@@ -46,7 +46,12 @@ async function call(name, args = {}) {
     if (res.isError) {
         throw new Error(res.content?.[0]?.text || "tool error");
     }
-    return res.content?.[0]?.text;
+    return res.content || [];
+}
+
+async function callText(name, args = {}) {
+    const content = await call(name, args);
+    return content.find((item) => item.type === "text")?.text;
 }
 
 await client.connect(transport);
@@ -56,14 +61,12 @@ await step("listTools", async () => {
     const expected = [
         "chatCompletion",
         "generateImage",
-        "generateImageUrl",
         "generateVideo",
-        "generateVideoUrl",
         "getBalance",
         "getUsage",
         "listModels",
-        "respondAudio",
-        "sayText",
+        "textToSpeech",
+        "transcribeAudio",
     ];
     const actual = tools.map((tool) => tool.name).sort();
     if (JSON.stringify(actual) !== JSON.stringify(expected)) {
@@ -82,7 +85,7 @@ await step("listTools", async () => {
     return `${tools.length} tools`;
 });
 
-await step("listModels (unauthenticated)", () => call("listModels"));
+await step("listModels (unauthenticated)", () => callText("listModels"));
 
 if (!KEY) {
     console.log(
@@ -90,7 +93,7 @@ if (!KEY) {
     );
 } else {
     await step("chatCompletion", async () => {
-        const out = await call("chatCompletion", {
+        const out = await callText("chatCompletion", {
             messages: [
                 {
                     role: "user",
@@ -101,18 +104,49 @@ if (!KEY) {
         if (!/pong/i.test(out)) throw new Error(`unexpected: ${trim(out)}`);
         return out;
     });
-    await step("generateImageUrl", async () => {
-        const out = await call("generateImageUrl", {
+    await step("generateImage URL", async () => {
+        const out = await callText("generateImage", {
             prompt: "a small red apple",
             model: "flux",
             width: 256,
             height: 256,
+            output: "url",
         });
         if (!/pollinations\.ai/.test(out))
             throw new Error(`no URL: ${trim(out)}`);
         return out;
     });
-    await step("getBalance", () => call("getBalance"));
+    await step("textToSpeech", async () => {
+        const content = await call("textToSpeech", {
+            input: "MCP speech test.",
+            voice: "alloy",
+            response_format: "mp3",
+        });
+        const audio = content.find((item) => item.type === "audio");
+        if (!audio?.data) throw new Error("no audio content returned");
+        return `${audio.mimeType}, ${audio.data.length} base64 chars`;
+    });
+    await step("transcribeAudio", async () => {
+        const out = await callText("transcribeAudio", {
+            audioUrl:
+                "https://raw.githubusercontent.com/openai/whisper/main/tests/jfk.flac",
+            model: "whisper-large-v3",
+        });
+        if (!out) throw new Error("no transcription returned");
+        return "transcription returned";
+    });
+    await step("getBalance", async () => {
+        if (!(await callText("getBalance"))) {
+            throw new Error("no balance response returned");
+        }
+        return "balance response returned";
+    });
+    await step("getUsage", async () => {
+        if (!(await callText("getUsage", { days: 1, limit: 1 }))) {
+            throw new Error("no usage response returned");
+        }
+        return "usage response returned";
+    });
 }
 
 await client.close();

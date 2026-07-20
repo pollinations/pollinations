@@ -21,10 +21,8 @@ The key is read only from `POLLINATIONS_API_KEY`. There are no authentication to
 
 | Tool | Description |
 | --- | --- |
-| `generateImageUrl` | Generate an image and return its URL |
-| `generateImage` | Generate an image and return base64 data |
-| `generateVideo` | Generate a video and return base64 data |
-| `generateVideoUrl` | Generate a video and return its URL |
+| `generateImage` | Generate an image; set `output` to `url` (default) or `inline` |
+| `generateVideo` | Generate a video; set `output` to `url` (default) or `inline` |
 
 Video generation requires an explicit video model so Gen cannot fall back to its default image model.
 
@@ -41,8 +39,8 @@ Use `chatCompletion` for simple prompts, multi-turn chat, reasoning, tool callin
 
 | Tool | Description |
 | --- | --- |
-| `respondAudio` | Generate a spoken response to a prompt |
-| `sayText` | Speak text verbatim |
+| `textToSpeech` | Speak text through `POST /v1/audio/speech` |
+| `transcribeAudio` | Transcribe a public HTTPS audio URL through `POST /v1/audio/transcriptions` |
 
 ### Account
 
@@ -76,7 +74,7 @@ npm test
 POLLINATIONS_API_KEY=sk_… npm test
 ```
 
-The smoke test always lists tools and models. With a key, it also exercises chat completion, image URL generation, and balance.
+The smoke test always lists tools and models. With a key, it also exercises chat completion, image URL generation, text-to-speech, transcription, and balance.
 
 ## Requirements and Links
 

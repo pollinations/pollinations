@@ -15,12 +15,12 @@ All requests go through https://gen.pollinations.ai.
 
 Authentication is configured only with the POLLINATIONS_API_KEY environment variable. Never pass an API key in tool arguments or conversation content.
 
-Use chatCompletion for text and multimodal generation, including reasoning, tool use, web search, and media analysis. Use listModels to inspect the live registry. Gen validates models, aliases, modalities, and request parameters.`;
+Use chatCompletion for text and multimodal generation, including reasoning, tool use, web search, and media analysis. Use textToSpeech and transcribeAudio for the dedicated OpenAI-compatible audio endpoints. Use listModels to inspect the live registry. Gen validates models, aliases, modalities, and request parameters.`;
 
 async function startMcpServer() {
     const server = new McpServer({
         name: "pollinations-mcp",
-        version: "2.3.0",
+        version: "3.0.0",
         instructions: SERVER_INSTRUCTIONS,
     });
 

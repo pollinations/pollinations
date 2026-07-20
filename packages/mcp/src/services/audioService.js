@@ -1,3 +1,5 @@
+import { lookup } from "node:dns/promises";
+import { isIP } from "node:net";
 import { z } from "zod";
 import { requireApiKey } from "../utils/authUtils.js";
 import {
@@ -7,51 +9,28 @@ import {
     createMCPResponse,
     createTextContent,
     fetchBinaryWithAuth,
-    postChatCompletion,
+    fetchWithAuth,
+    parseApiError,
 } from "../utils/coreUtils.js";
 
-async function respondAudio(params) {
+const MAX_AUDIO_BYTES = 25 * 1024 * 1024;
+
+async function textToSpeech(params) {
     requireApiKey();
 
-    const { prompt, voice = "alloy", format = "mp3" } = params;
-    const response = await postChatCompletion({
-        model: "openai-audio",
-        messages: [{ role: "user", content: prompt }],
-        modalities: ["text", "audio"],
-        audio: { voice, format },
-    });
-    const result = await response.json();
-    const audio = result.choices?.[0]?.message?.audio;
-
-    if (!audio?.data) {
-        throw new Error("Audio response did not include audio data");
-    }
-
-    const content = [
-        createAudioContent(
-            audio.data,
-            `audio/${format === "mp3" ? "mpeg" : format}`,
-        ),
-    ];
-    if (audio.transcript) {
-        content.push(createTextContent(audio.transcript));
-    }
-    return createMCPResponse(content);
-}
-
-async function sayText(params) {
-    requireApiKey();
-
-    const { text, voice = "alloy", format = "mp3", model } = params;
-    const body = { input: text, voice, response_format: format };
-    if (model) body.model = model;
-
+    const { input, model, voice, response_format } = params;
+    const body = { input, model, voice, response_format };
     const { buffer, contentType } = await fetchBinaryWithAuth(
         `${API_BASE_URL}/v1/audio/speech`,
         {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(body),
+            body: JSON.stringify(
+                Object.fromEntries(
+                    Object.entries(body).filter(([, value]) => value != null),
+                ),
+            ),
+            timeoutMs: 300000,
         },
     );
 
@@ -60,46 +39,184 @@ async function sayText(params) {
     ]);
 }
 
-const voiceSchema = z
-    .string()
-    .describe("Voice name or provider voice ID. Use listModels for discovery.");
+function audioFilename(url, contentType) {
+    const name = decodeURIComponent(url.pathname.split("/").pop() || "audio");
+    if (name.includes(".")) return name;
+    const extension = {
+        "audio/flac": "flac",
+        "audio/mpeg": "mp3",
+        "audio/mp4": "m4a",
+        "audio/ogg": "ogg",
+        "audio/wav": "wav",
+        "audio/x-wav": "wav",
+        "audio/webm": "webm",
+    }[contentType];
+    return extension ? `${name}.${extension}` : name;
+}
+
+function isPrivateAddress(address) {
+    if (isIP(address) === 4) {
+        const [a, b] = address.split(".").map(Number);
+        return (
+            a === 0 ||
+            a === 10 ||
+            a === 127 ||
+            (a === 169 && b === 254) ||
+            (a === 172 && b >= 16 && b <= 31) ||
+            (a === 192 && b === 168) ||
+            (a === 100 && b >= 64 && b <= 127) ||
+            a >= 224
+        );
+    }
+    const normalized = address.toLowerCase();
+    return (
+        normalized === "::" ||
+        normalized === "::1" ||
+        normalized.startsWith("fc") ||
+        normalized.startsWith("fd") ||
+        /^fe[89ab]/.test(normalized)
+    );
+}
+
+async function validateAudioUrl(url) {
+    if (url.protocol !== "https:") {
+        throw new Error("audioUrl must use HTTPS");
+    }
+    const hostname = url.hostname.toLowerCase();
+    if (
+        hostname === "localhost" ||
+        hostname.endsWith(".localhost") ||
+        hostname.endsWith(".local") ||
+        hostname.endsWith(".internal")
+    ) {
+        throw new Error("audioUrl must use a public host");
+    }
+    const addresses = await lookup(hostname, { all: true });
+    if (addresses.some(({ address }) => isPrivateAddress(address))) {
+        throw new Error("audioUrl resolved to a private address");
+    }
+}
+
+async function downloadAudio(audioUrl) {
+    const url = new URL(audioUrl);
+    await validateAudioUrl(url);
+
+    const response = await fetch(url, {
+        redirect: "error",
+        signal: AbortSignal.timeout(60000),
+    });
+    if (!response.ok) {
+        throw new Error(`Failed to download audio (${response.status})`);
+    }
+    const declaredSize = Number(response.headers.get("content-length"));
+    if (Number.isFinite(declaredSize) && declaredSize > MAX_AUDIO_BYTES) {
+        throw new Error("Audio file exceeds the 25 MiB limit");
+    }
+
+    const buffer = await response.arrayBuffer();
+    if (buffer.byteLength > MAX_AUDIO_BYTES) {
+        throw new Error("Audio file exceeds the 25 MiB limit");
+    }
+
+    const contentType =
+        response.headers.get("content-type")?.split(";")[0] ||
+        "application/octet-stream";
+    return {
+        blob: new Blob([buffer], { type: contentType }),
+        filename: audioFilename(url, contentType),
+    };
+}
+
+async function transcribeAudio(params) {
+    requireApiKey();
+
+    const {
+        audioUrl,
+        model,
+        language,
+        prompt,
+        response_format,
+        temperature,
+        speakers_expected,
+    } = params;
+    const { blob, filename } = await downloadAudio(audioUrl);
+    const formData = new FormData();
+    formData.append("file", blob, filename);
+
+    for (const [key, value] of Object.entries({
+        model,
+        language,
+        prompt,
+        response_format,
+        temperature,
+        speakers_expected,
+    })) {
+        if (value != null) formData.append(key, String(value));
+    }
+
+    const response = await fetchWithAuth(
+        `${API_BASE_URL}/v1/audio/transcriptions`,
+        { method: "POST", body: formData, timeoutMs: 300000 },
+    );
+    if (!response.ok) {
+        const errorText = await response.text().catch(() => "Unknown error");
+        throw new Error(parseApiError(response.status, errorText));
+    }
+
+    const contentType = response.headers.get("content-type") || "";
+    const result = contentType.includes("application/json")
+        ? await response.json()
+        : await response.text();
+    return createMCPResponse([
+        createTextContent(result, typeof result !== "string"),
+    ]);
+}
 
 export const audioTools = [
     [
-        "respondAudio",
-        "Generate an audio response to a text prompt. The AI will respond to your prompt with speech.",
+        "textToSpeech",
+        "Convert text to speech through Gen's OpenAI-compatible audio endpoint.",
         {
-            prompt: z
-                .string()
-                .describe("The text prompt to respond to with audio"),
-            voice: voiceSchema
-                .optional()
-                .describe("Voice to use (default: alloy)"),
-            format: z
-                .string()
-                .optional()
-                .describe("Audio format (default: mp3)"),
-        },
-        respondAudio,
-    ],
-
-    [
-        "sayText",
-        "Generate speech that says the provided text verbatim. Direct text-to-speech.",
-        {
-            text: z.string().describe("The text to speak verbatim"),
-            voice: voiceSchema
-                .optional()
-                .describe("Voice to use (default: alloy)"),
-            format: z
-                .string()
-                .optional()
-                .describe("Audio format (default: mp3)"),
+            input: z.string().describe("Text to speak verbatim"),
             model: z
                 .string()
                 .optional()
-                .describe("Audio model; omit to use the Gen default"),
+                .describe("TTS model; omit to use the Gen default"),
+            voice: z
+                .string()
+                .optional()
+                .describe("Voice name or provider voice ID; use listModels"),
+            response_format: z
+                .string()
+                .optional()
+                .describe("Audio format such as mp3, wav, flac, opus, or pcm"),
         },
-        sayText,
+        textToSpeech,
+    ],
+    [
+        "transcribeAudio",
+        "Download an HTTPS audio file and transcribe it through Gen's OpenAI-compatible transcription endpoint.",
+        {
+            audioUrl: z.string().url().describe("Public HTTPS audio file URL"),
+            model: z
+                .string()
+                .optional()
+                .describe("STT model; omit to use the Gen default"),
+            language: z.string().optional().describe("ISO-639-1 language hint"),
+            prompt: z.string().optional().describe("Transcription prompt"),
+            response_format: z
+                .enum([
+                    "json",
+                    "text",
+                    "srt",
+                    "verbose_json",
+                    "vtt",
+                    "diarized_json",
+                ])
+                .optional(),
+            temperature: z.number().optional(),
+            speakers_expected: z.number().int().min(1).optional(),
+        },
+        transcribeAudio,
     ],
 ];

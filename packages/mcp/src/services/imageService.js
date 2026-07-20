@@ -9,21 +9,24 @@ import {
     fetchBinaryWithAuth,
 } from "../utils/coreUtils.js";
 
-function mediaUrl({ prompt, ...params }) {
+function mediaUrl({ prompt, output: _output, ...params }) {
     return buildUrl(`/image/${encodeURIComponent(prompt)}`, params);
-}
-
-async function generateImageUrl(params) {
-    requireApiKey();
-    const url = mediaUrl(params);
-    await fetchBinaryWithAuth(url, { timeoutMs: 300000 });
-    return createMCPResponse([createTextContent(url)]);
 }
 
 async function generateImage(params) {
     requireApiKey();
     const url = mediaUrl(params);
-    const { buffer, contentType } = await fetchBinaryWithAuth(url);
+    const { output = "url" } = params;
+    const { buffer, contentType } = await fetchBinaryWithAuth(url, {
+        method: "GET",
+        timeoutMs: 300000,
+    });
+    if (!contentType.startsWith("image/")) {
+        throw new Error(`Expected image response, received ${contentType}`);
+    }
+    if (output === "url") {
+        return createMCPResponse([createTextContent(url)]);
+    }
     return createMCPResponse([
         createImageContent(arrayBufferToBase64(buffer), contentType),
     ]);
@@ -32,7 +35,17 @@ async function generateImage(params) {
 async function generateVideo(params) {
     requireApiKey();
     const url = mediaUrl(params);
-    const { buffer, contentType } = await fetchBinaryWithAuth(url);
+    const { output = "url" } = params;
+    const { buffer, contentType } = await fetchBinaryWithAuth(url, {
+        method: "GET",
+        timeoutMs: 600000,
+    });
+    if (!contentType.startsWith("video/")) {
+        throw new Error(`Expected video response, received ${contentType}`);
+    }
+    if (output === "url") {
+        return createMCPResponse([createTextContent(url)]);
+    }
     return createMCPResponse([
         {
             type: "resource",
@@ -45,12 +58,12 @@ async function generateVideo(params) {
     ]);
 }
 
-async function generateVideoUrl(params) {
-    requireApiKey();
-    const url = mediaUrl(params);
-    await fetchBinaryWithAuth(url, { method: "HEAD", timeoutMs: 300000 });
-    return createMCPResponse([createTextContent(url)]);
-}
+const outputSchema = z
+    .enum(["url", "inline"])
+    .optional()
+    .describe(
+        "Return the authenticated Gen URL (default) or inline MCP binary content",
+    );
 
 const imageParamsSchema = {
     prompt: z
@@ -101,6 +114,7 @@ const imageParamsSchema = {
         .describe(
             "Safety mode: boolean or comma-separated feature names accepted by Gen",
         ),
+    output: outputSchema,
 };
 
 const videoParamsSchema = {
@@ -143,32 +157,20 @@ const videoParamsSchema = {
         .union([z.boolean(), z.string()])
         .optional()
         .describe("Safety mode accepted by Gen"),
+    output: outputSchema,
 };
 
 export const imageTools = [
     [
-        "generateImageUrl",
-        "Generate an image URL from a text prompt. Returns a shareable/embeddable URL without downloading the image. " +
-            "Supports all image models and parameters including image-to-image with the 'image' parameter.",
-        imageParamsSchema,
-        generateImageUrl,
-    ],
-    [
         "generateImage",
-        "Generate an image from a text prompt and return base64-encoded image data.",
+        "Generate an image and return its authenticated Gen URL or inline MCP image content.",
         imageParamsSchema,
         generateImage,
     ],
     [
         "generateVideo",
-        "Generate a video from a text prompt or reference image and return base64-encoded video data.",
+        "Generate a video and return its authenticated Gen URL or inline MCP resource.",
         videoParamsSchema,
         generateVideo,
-    ],
-    [
-        "generateVideoUrl",
-        "Generate a video and return its shareable URL.",
-        videoParamsSchema,
-        generateVideoUrl,
     ],
 ];

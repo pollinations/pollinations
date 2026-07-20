@@ -1,0 +1,34 @@
+{
+  "pr_number": 12604,
+  "title": "fix: hide retired models from API key permissions",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/12604",
+  "merged_at": "2026-07-20T22:34:37Z",
+  "labels": [],
+  "pr_body_excerpt": "## Problem\n\nAPI-key model restrictions are stored as JSON snapshots in D1. Removing a model from the catalog did not update those snapshots, so retired IDs remained visible even though they no longer granted usable access.\n\n## Fix\n\n- Intersects restricted model IDs with the current canonical callable catalog at read time; D1 remains unchanged.\n- Applies the projection to dashboard/account lists, current-key status, and update responses.\n- Includes built-in models, active public community models, and only the caller's active private community models.\n- Preserves empty model allowlists as deny-all across authentication, generation, realtime, and model discovery.\n- Skips catalog/D1 enrichment for unrestricted keys.\n\n## Impact\n\nRetired, aliased, and non-canonical IDs disappear from responses while canonical permissions remain visible. A filtered empty list cannot become unrestricted when round-tripped through an update.\n\n## Validation\n\n- Enter and Gen: `npx tsc --noEmit`\n- Enter affected files: 55 pass; 4 existing failures use intentionally blocked native Better Auth routes\n- Gen permission and realtime files: 22 pass\n- Biome and GitHub CI",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "The retired bees leave quietly",
+    "blurb": "Old model IDs were lingering in API-key permission lists like labels on empty flowerpots. The dashboard and API now show the callable models that are actually in the garden.",
+    "summary": "API-key model restrictions are now projected against the canonical callable catalog at read time, hiding retired, aliased, and non-canonical model IDs while preserving empty allowlists as deny-all.",
+    "impact": "Dashboard lists, current-key status, update responses, generation, realtime, and model discovery now consistently retain only usable canonical permissions, including each caller's active private community models.",
+    "keywords": [
+      "api-keys",
+      "model-permissions",
+      "model-catalog",
+      "authentication",
+      "dashboard",
+      "community-models"
+    ],
+    "visual_concept": "Depict an API-key permissions garden where outdated model-name tags gently fade from empty pots while healthy canonical code-plants remain clearly labeled. Polly, acting as a careful garden keeper with a tiny clipboard and pruning shears, checks a glowing key-shaped sign; a CRT monitor robot can display the clean active-model list. The visual metaphor is catalog cleanup without changing the underlying stored soil: only the currently callable flowers are visible.",
+    "image_prompt": "A cozy pixel art API-key permissions garden where a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings wears a tiny gardener hat and gently prunes faded old model labels from flowerpots, leaving glowing canonical code-flowers beside a lime green (#ecf874) key-shaped sign; a friendly chunky CRT monitor robot shows a tidy active-model list. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, with subtle pixel-font text: \"ACTIVE MODELS\"; nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-20/PR-12604.jpg",
+    "prompt": "A cozy pixel art API-key permissions garden where a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings wears a tiny gardener hat and gently prunes faded old model labels from flowerpots, leaving glowing canonical code-flowers beside a lime green (#ecf874) key-shaped sign; a friendly chunky CRT monitor robot shows a tidy active-model list. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, with subtle pixel-font text: \"ACTIVE MODELS\"; nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-07-20T22:35:30.314409+00:00"
+}

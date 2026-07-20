@@ -97,10 +97,100 @@ jobs:
           BOT_USER_ID=$(gh api "/users/${{ steps.token.outputs.app-slug }}[bot]" --jq .id)
           echo "user-id=$BOT_USER_ID" >> "$GITHUB_OUTPUT"
           mkdir -p $HOME/.claude-code-router
-          echo '{"LOG":false,"NON_INTERACTIVE_MODE":true,"API_TIMEOUT_MS":600000,"Providers":[{"name":"pollinations","api_base_url":"https://gen.pollinations.ai/v1/chat/completions","api_key":"'"${POLLINATIONS_TOKEN}"'","models":["kimi-k2.6","perplexity-reasoning"]}],"Router":{"default":"pollinations,kimi-k2.6","webSearch":"pollinations,perplexity-reasoning"}}' > $HOME/.claude-code-router/config.json
 
-          # Start router with Bun
-          bunx @musistudio/claude-code-router start &
+          # The router folds Anthropic's top-level `system` into messages[0] but
+          # leaves content as an array of typed blocks, which OpenAI-compatible
+          # upstreams reject ("messages[0].content.str should be a valid
+          # string"). Config transformers don't run on this path, so this shim
+          # flattens the body on its way out. It also mirrors the upstream
+          # content-type: returning JSON for an SSE body makes the router
+          # JSON.parse "data: {...}" and fail.
+          cat > $HOME/.claude-code-router/oai-shim.js <<'SHIM'
+          const http = require("http");
+          const UPSTREAM = "https://gen.pollinations.ai/v1/chat/completions";
+
+          const flatten = (c) => {
+            if (typeof c === "string") return c;
+            if (!Array.isArray(c)) return c;
+            return c.filter((b) => b && b.type === "text" && b.text)
+                    .map((b) => b.text).join("\n");
+          };
+
+          http.createServer((req, res) => {
+            let raw = "";
+            req.on("data", (d) => (raw += d));
+            req.on("end", async () => {
+              let body;
+              try { body = JSON.parse(raw); }
+              catch { res.writeHead(400).end('{"error":"bad json"}'); return; }
+
+              if (Array.isArray(body.messages)) {
+                body.messages = body.messages.map((m) => {
+                  const next = { ...m, content: flatten(m.content) };
+                  delete next.cache_control;
+                  return next;
+                });
+              }
+
+              let r;
+              try {
+                r = await fetch(UPSTREAM, {
+                  method: "POST",
+                  headers: {
+                    "Content-Type": "application/json",
+                    Authorization: req.headers.authorization || "",
+                  },
+                  body: JSON.stringify(body),
+                });
+              } catch (err) {
+                res.writeHead(502, { "Content-Type": "application/json" })
+                   .end(JSON.stringify({ error: { message: String(err) } }));
+                return;
+              }
+
+              res.writeHead(r.status, {
+                "Content-Type": r.headers.get("content-type") || "application/json",
+              });
+              if (!r.body) { res.end(await r.text()); return; }
+              const reader = r.body.getReader();
+              for (;;) {
+                const { done, value } = await reader.read();
+                if (done) break;
+                res.write(Buffer.from(value));
+              }
+              res.end();
+            });
+          }).listen(9912);
+          SHIM
+
+          node $HOME/.claude-code-router/oai-shim.js &
+          for i in $(seq 1 30); do
+            curl -s -o /dev/null http://127.0.0.1:9912 && break
+            sleep 1
+          done
+
+          # jq builds the JSON so the token is never expanded into a shell
+          # string that could surface in logs or -x traces.
+          jq -n --arg key "$POLLINATIONS_TOKEN" '{
+            LOG: false,
+            NON_INTERACTIVE_MODE: true,
+            API_TIMEOUT_MS: 600000,
+            Providers: [{
+              name: "pollinations",
+              api_base_url: "http://127.0.0.1:9912/v1/chat/completions",
+              api_key: $key,
+              models: ["gpt-5.6-sol", "minimax", "perplexity"]
+            }],
+            Router: {
+              default: "pollinations,gpt-5.6-sol",
+              background: "pollinations,minimax",
+              webSearch: "pollinations,perplexity"
+            }
+          }' > $HOME/.claude-code-router/config.json
+
+          # Start router with Bun. Pinned: v3 replaced this flat config.json
+          # with a sqlite/UI-driven setup that has no headless equivalent.
+          bunx @musistudio/claude-code-router@2.0.0 start &
           until curl -s http://localhost:3456 >/dev/null; do sleep 0.5; done
         env:
           GH_TOKEN: ${{ steps.token.outputs.token }}

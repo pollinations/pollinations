@@ -140,7 +140,7 @@ export const PERPLEXITY_FAST_BILLING = createPerplexitySearchBilling(
     "low",
 );
 
-export const PERPLEXITY_DEEP_BILLING = createPerplexitySearchBilling(
+export const PERPLEXITY_HIGH_BILLING = createPerplexitySearchBilling(
     "perplexity.sonar_high.search_request.v1",
     "Perplexity Search adds $12 / 1K requests for high search context.",
     12 / 1000,

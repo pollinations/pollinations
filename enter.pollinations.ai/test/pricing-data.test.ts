@@ -476,7 +476,7 @@ test("Perplexity request search fees are added by declarative billing rules", ()
     };
     const cases = [
         ["perplexity-fast", 2.005],
-        ["perplexity-deep", 2.012],
+        ["perplexity-high", 2.012],
         ["perplexity", 18.014],
         ["perplexity-reasoning", 10.014],
     ] as const;
@@ -610,7 +610,7 @@ test("Perplexity billing rules carry per-tier request fees privately only", () =
     const perplexityFees = [
         ["perplexity-fast", "perplexity.sonar_low.search_request.v1", 5 / 1000],
         [
-            "perplexity-deep",
+            "perplexity-high",
             "perplexity.sonar_high.search_request.v1",
             12 / 1000,
         ],

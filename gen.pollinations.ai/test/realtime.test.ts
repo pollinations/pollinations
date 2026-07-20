@@ -736,3 +736,18 @@ test("includes realtime model in OpenAI-compatible model discovery", async ({
         "gpt-realtime-2.1",
     );
 });
+
+test("rejects realtime access for empty model permissions", async () => {
+    const { key } = await createTestApiKey({
+        allowedModels: [],
+        user: { packBalance: 1 },
+    });
+    const response = await fetchWorker("/v1/realtime?model=gpt-realtime-2", {
+        headers: {
+            Authorization: `Bearer ${key}`,
+            Upgrade: "websocket",
+        },
+    });
+
+    expect(response.status).toBe(403);
+});

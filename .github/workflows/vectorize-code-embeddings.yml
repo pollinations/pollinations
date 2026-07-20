@@ -7,39 +7,9 @@ on:
   push:
     branches:
       - main
-    paths:
-      - '**.py'
-      - '**.js'
-      - '**.ts'
-      - '**.tsx'
-      - '**.jsx'
-      - '**.go'
-      - '**.rs'
-      - '**.java'
-      - '**.c'
-      - '**.cpp'
-      - '**.h'
-      - '**.hpp'
-      - '**.cs'
-      - '**.rb'
-      - '**.php'
-      - '**.swift'
-      - '**.kt'
-      - '**.scala'
-      - '**.vue'
-      - '**.svelte'
-      - '**.html'
-      - '**.css'
-      - '**.scss'
-      - '**.json'
-      - '**.yaml'
-      - '**.yml'
-      - '**.toml'
-      - '**.md'
-      - '**.mdx'
-      - '**.sql'
-      - '**.sh'
-      - '**.tf'
+    # No paths filter — the whole repo is in scope (code, docs, configs, Dockerfiles,
+    # Tinybird .pipe/.datasource, etc.). embed_code.py's own blocklist decides relevance,
+    # not the trigger, so every push to main runs the incremental diff below.
   workflow_dispatch:
     inputs:
       mode:

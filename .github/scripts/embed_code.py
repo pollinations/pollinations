@@ -38,44 +38,60 @@ POLLINATIONS_EMBED_URL = "https://gen.pollinations.ai/v1/embeddings"
 _enc = tiktoken.get_encoding("cl100k_base")
 MAX_TOKENS_PER_INPUT = 8000
 
-CODE_EXTENSIONS = {
-    ".py",
-    ".js",
-    ".ts",
-    ".tsx",
-    ".jsx",
-    ".go",
-    ".rs",
-    ".java",
-    ".c",
-    ".cpp",
-    ".h",
-    ".hpp",
-    ".cs",
-    ".rb",
-    ".php",
-    ".swift",
-    ".kt",
-    ".scala",
-    ".vue",
-    ".svelte",
-    ".html",
-    ".css",
-    ".scss",
-    ".json",
-    ".yaml",
-    ".yml",
-    ".toml",
-    ".md",
-    ".mdx",
-    ".sql",
-    ".sh",
-    ".bash",
-    ".zsh",
-    ".dockerfile",
-    ".tf",
+# Everything git-tracks gets embedded UNLESS it matches one of these — binary/generated/lockfile
+# noise with zero search value. This is deliberately a blocklist, not an allowlist: the repo is a
+# full-text knowledge base (code, docs, configs, SQL, Dockerfiles, extensionless files like
+# LICENSE/Dockerfile/_redirects), not just "source code" in a narrow sense.
+BINARY_EXTENSIONS = {
+    ".png",
+    ".jpg",
+    ".jpeg",
+    ".gif",
+    ".webp",
+    ".ico",
+    ".bmp",
+    ".tiff",
+    ".svg",
+    ".ttf",
+    ".otf",
+    ".woff",
+    ".woff2",
+    ".eot",
+    ".mp3",
+    ".mp4",
+    ".mov",
+    ".avi",
+    ".webm",
+    ".wav",
+    ".ogg",
+    ".zip",
+    ".tar",
+    ".gz",
+    ".7z",
+    ".rar",
+    ".pdf",
+    ".doc",
+    ".docx",
+    ".xls",
+    ".xlsx",
+    ".ppt",
+    ".pptx",
+    ".pyc",
+    ".pyo",
+    ".so",
+    ".dll",
+    ".dylib",
+    ".exe",
+    ".bin",
+    ".db",
+    ".sqlite",
+    ".sqlite3",
+    ".lock",
 }
 
+# Deliberately does NOT include "bin" or "obj" — real gitignored build output never reaches
+# git ls-files anyway, but "bin/" also legitimately holds tracked source (e.g. npm CLI entrypoints
+# like packages/polli-cli/bin/polli.js) that a blanket skip would wrongly drop.
 SKIP_DIRS = {
     ".git",
     "node_modules",
@@ -88,8 +104,6 @@ SKIP_DIRS = {
     ".next",
     ".nuxt",
     "target",
-    "bin",
-    "obj",
     ".idea",
     ".vscode",
     "coverage",
@@ -113,6 +127,15 @@ SKIP_FILES = {
 }
 
 MAX_FILE_SIZE = 200 * 1024
+
+
+def is_probably_binary(sample: bytes) -> bool:
+    """Backstop for binary files that slip through the extension blocklist."""
+    if b"\x00" in sample:
+        return True
+    text_chars = bytes(range(32, 127)) + b"\n\r\t\f\b"
+    nontext = sum(b not in text_chars for b in sample)
+    return bool(sample) and (nontext / len(sample)) > 0.30
 
 
 def content_hash(data: str) -> str:
@@ -190,22 +213,43 @@ def chunk_id_for(file_path: str, chunk: dict) -> str:
     return f"{file_path}:{chunk['start_line']}-{chunk['end_line']}{suffix}"
 
 
+def is_embeddable_path(rel_path: str) -> bool:
+    """Blocklist check shared by full and incremental modes."""
+    parts = Path(rel_path).parts
+    if any(part in SKIP_DIRS for part in parts):
+        return False
+    name = Path(rel_path).name
+    if name in SKIP_FILES:
+        return False
+    suffix = Path(rel_path).suffix.lower()
+    if suffix in BINARY_EXTENSIONS:
+        return False
+    return True
+
+
+def git_tracked_files(repo_root: Path) -> list[str]:
+    """Every file git tracks — the source of truth for 'the whole repo', not a hand-maintained extension list."""
+    result = subprocess.run(
+        ["git", "-C", str(repo_root), "ls-files"],
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+    return [line for line in result.stdout.strip().split("\n") if line]
+
+
 def collect_code_files(repo_root: Path) -> list[Path]:
     files = []
-    for root, dirs, filenames in os.walk(repo_root):
-        dirs[:] = [d for d in dirs if d not in SKIP_DIRS]
-        for filename in filenames:
-            if filename in SKIP_FILES:
+    for rel_path in git_tracked_files(repo_root):
+        if not is_embeddable_path(rel_path):
+            continue
+        file_path = repo_root / rel_path
+        try:
+            if file_path.stat().st_size > MAX_FILE_SIZE:
                 continue
-            file_path = Path(root) / filename
-            if file_path.suffix.lower() not in CODE_EXTENSIONS:
-                continue
-            try:
-                if file_path.stat().st_size > MAX_FILE_SIZE:
-                    continue
-            except OSError:
-                continue
-            files.append(file_path)
+        except OSError:
+            continue
+        files.append(file_path)
     return files
 
 
@@ -297,9 +341,14 @@ def vectorize_find_ids_for_file(file_path: str) -> list[str]:
 def build_rows_for_file(repo_root: Path, rel_path: str) -> list[dict]:
     abs_path = repo_root / rel_path
     try:
-        content = abs_path.read_text(encoding="utf-8", errors="ignore")
+        raw = abs_path.read_bytes()
     except OSError:
         return []
+    if is_probably_binary(raw[:8192]):
+        print(f"  skipping {rel_path} — detected as binary", file=sys.stderr)
+        return []
+
+    content = raw.decode("utf-8", errors="ignore")
     if not content.strip():
         return []
 
@@ -370,15 +419,9 @@ def run_incremental(repo_root: Path, base_sha: str, head_sha: str) -> None:
     changes = git_changed_files(repo_root, base_sha, head_sha)
     print(f"Incremental embed: {len(changes)} changed paths between {base_sha[:8]}..{head_sha[:8]}")
 
-    relevant = [
-        c
-        for c in changes
-        if Path(c[2]).suffix.lower() in CODE_EXTENSIONS
-        and Path(c[2]).name not in SKIP_FILES
-        and not any(part in SKIP_DIRS for part in Path(c[2]).parts)
-    ]
+    relevant = [c for c in changes if is_embeddable_path(c[2])]
     if not relevant:
-        print("No relevant code files changed — nothing to do")
+        print("No relevant files changed — nothing to do")
         return
 
     total_upserted = 0

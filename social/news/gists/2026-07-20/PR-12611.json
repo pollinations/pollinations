@@ -1,0 +1,34 @@
+{
+  "pr_number": 12611,
+  "title": "fix: sub-batch embed requests — Pollinations caps input at 32 items",
+  "author": "Itachi-1824",
+  "url": "https://github.com/pollinations/pollinations/pull/12611",
+  "merged_at": "2026-07-20T20:59:38Z",
+  "labels": [],
+  "pr_body_excerpt": "Second full backfill (after #12609) got to 475/1852 files, 1384 vectors upserted, then died on Pollinations' 32-item input cap. Fixed that, then reviewed the whole embed path properly before pushing again rather than iterating fix-by-fix in CI:\n\n- **32-item batch cap** — \\`embed_batch\\` now sub-batches at 32 instead of sending a whole file's chunks in one request.\n- **Parallelized the embed loop** — was fully sequential (one file at a time), which is most of why 1852 files took so long. Now runs with concurrency=4 via a thread pool. Kept conservative rather than higher since real embeddings-endpoint concurrency hasn't been load-tested against the actual credential.\n- **Fixed a silent chunk/embedding misalignment bug** — \\`texts\\` was filtered (dropping blank chunks) before embedding, but the result was zipped against the *unfiltered* chunk list. Any blank chunk shifted every embedding after it by one position, so a later chunk's embedding could get stored under an earlier chunk's file_path/line-range metadata. Filtering once and reusing the same list fixes it.\n- **429-aware retries** — rate limits now back off using \\`Retry-After\\` instead of being treated like any other error.\n- **No more silent partial success** — a run with any per-file failures now exits non-zero instead of reporting success. Re-running is safe (upserts are idempotent by id), so a red CI check just means \"run it again,\" not \"some files are silently missing forever.\"\n\nIndex currently has 1384 partial vectors from the failed run — will clear + re-run \\`full\\` after this merges.",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Vectors, properly pollinated",
+    "blurb": "The code garden’s embedding run learned to carry seeds in batches of 32, retry when the weather gets busy, and stop pretending a half-planted row is finished.",
+    "summary": "The code-index embedding script now splits requests into Pollinations’ 32-item limit, processes files with four concurrent workers, preserves chunk-to-embedding metadata alignment, honors 429 Retry-After headers, and fails visibly when any file cannot be indexed.",
+    "impact": "Future full backfills can reliably index all 1,852 files without oversized embed requests, shifted source metadata after blank chunks, or silently incomplete runs.",
+    "keywords": [
+      "embeddings",
+      "vector-index",
+      "batching",
+      "rate-limits",
+      "ci",
+      "code-search"
+    ],
+    "visual_concept": "A code-garden backfill: Polly organizes glowing vector seeds into neat trays of 32 while four tiny garden conveyors carry file-chunks toward a retro embedding terminal. The scene represents batching, parallel workers, correctly matched metadata labels, and patient Retry-After waiting rather than silently abandoning plants.",
+    "image_prompt": "Cozy pixel art scene of Polly, the cute yellow-and-brown striped bee mascot with pink cheek blush, light blue wings, and a tiny gardener tool belt, sorting glowing code-seeds into four neat trays labeled with small pixel text '32' beside a warm CRT embedding terminal; every seed has a matching little file-path tag, with flowers and code-plants growing nearby. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, dark purple (#110518) outlines, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-20/PR-12611.jpg",
+    "prompt": "Cozy pixel art scene of Polly, the cute yellow-and-brown striped bee mascot with pink cheek blush, light blue wings, and a tiny gardener tool belt, sorting glowing code-seeds into four neat trays labeled with small pixel text '32' beside a warm CRT embedding terminal; every seed has a matching little file-path tag, with flowers and code-plants growing nearby. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, dark purple (#110518) outlines, nostalgic but beautiful."
+  },
+  "generated_at": "2026-07-20T21:00:42.654258+00:00"
+}

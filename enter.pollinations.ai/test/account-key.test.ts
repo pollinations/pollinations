@@ -1,6 +1,6 @@
 import { SELF } from "cloudflare:test";
 import { expect } from "vitest";
-import { test } from "./fixtures.ts";
+import { createApiKeyViaApi, test } from "./fixtures.ts";
 
 const endpoint = "/api/account/key";
 
@@ -85,6 +85,28 @@ test(
         const data = await response.json();
         expect(data.permissions).toBeDefined();
         expect(data.permissions.models).toEqual(["openai-fast", "flux"]);
+    },
+);
+
+test(
+    "GET /api/account/key - omits retired models from permissions",
+    { timeout: 30000 },
+    async ({ sessionToken, mocks }) => {
+        await mocks.enable("tinybird");
+        const created = await createApiKeyViaApi(sessionToken, {
+            name: "current-key-with-retired-model",
+            allowedModels: ["openai-fast", "retired-model"],
+        });
+
+        const response = await SELF.fetch(`http://localhost:3000${endpoint}`, {
+            headers: {
+                Authorization: `Bearer ${created.key}`,
+            },
+        });
+
+        expect(response.status).toBe(200);
+        const data = await response.json();
+        expect(data.permissions.models).toEqual(["openai-fast"]);
     },
 );
 

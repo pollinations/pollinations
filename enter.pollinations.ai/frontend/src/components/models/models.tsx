@@ -79,8 +79,7 @@ const DEFAULT_SORT_DIRECTIONS: Record<ModelSortKey, ModelSortDirection> = {
 function matchesQuery(model: ModelPrice, query: string): boolean {
     if (!query) return true;
     const displayName = getModelDisplayName(model) ?? "";
-    const haystack =
-        `${model.name} ${displayName} ${model.description ?? ""} ${model.brand ?? ""}`.toLowerCase();
+    const haystack = `${displayName} ${model.brand ?? ""}`.toLowerCase();
     return haystack.includes(query);
 }
 

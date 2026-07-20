@@ -3,7 +3,6 @@ import type { ModelDefinition } from "./registry";
 export const DEFAULT_3D_MODEL = "trellis-2-low" as const;
 
 export type Model3dName = keyof typeof MODEL3D_SERVICES;
-export type Model3dId = (typeof MODEL3D_SERVICES)[Model3dName]["modelId"];
 
 // completionImageTokens is reused here as a flat per-generation charge (not
 // literal tokens) — same convention as image models — to avoid introducing a
@@ -12,7 +11,6 @@ export type Model3dId = (typeof MODEL3D_SERVICES)[Model3dName]["modelId"];
 export const MODEL3D_SERVICES = {
     "trellis-2-low": {
         aliases: [],
-        modelId: "trellis-2-low",
         provider: "inferenceport",
         brand: "Microsoft",
         category: "3d",
@@ -31,7 +29,6 @@ export const MODEL3D_SERVICES = {
     },
     "trellis-2-medium": {
         aliases: [],
-        modelId: "trellis-2-medium",
         provider: "inferenceport",
         brand: "Microsoft",
         category: "3d",
@@ -50,7 +47,6 @@ export const MODEL3D_SERVICES = {
     },
     "trellis-2-high": {
         aliases: [],
-        modelId: "trellis-2-high",
         provider: "inferenceport",
         brand: "Microsoft",
         category: "3d",
@@ -69,7 +65,6 @@ export const MODEL3D_SERVICES = {
     },
     "hyper3d-rodin": {
         aliases: ["rodin"],
-        modelId: "hyper3d-rodin",
         provider: "fal",
         brand: "Deemos",
         category: "3d",
@@ -87,6 +82,6 @@ export const MODEL3D_SERVICES = {
         outputModalities: ["3d"],
         maxReferenceImages: 1,
     },
-} as const satisfies Record<string, ModelDefinition<string>>;
+} as const satisfies Record<string, ModelDefinition>;
 
 export const getModel3dModelIds = (): string[] => Object.keys(MODEL3D_SERVICES);

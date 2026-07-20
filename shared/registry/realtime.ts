@@ -2,13 +2,10 @@ import type { ModelDefinition } from "./registry";
 
 export const DEFAULT_REALTIME_MODEL = "gpt-realtime-2.1" as const;
 export type RealtimeModelName = keyof typeof REALTIME_SERVICES;
-export type RealtimeModelId =
-    (typeof REALTIME_SERVICES)[RealtimeModelName]["modelId"];
 
 export const REALTIME_SERVICES = {
     [DEFAULT_REALTIME_MODEL]: {
         aliases: [],
-        modelId: "gpt-realtime-2-1",
         provider: "azure",
         brand: "OpenAI",
         category: "realtime",
@@ -33,7 +30,6 @@ export const REALTIME_SERVICES = {
     },
     "gpt-realtime-2": {
         aliases: [],
-        modelId: "gpt-realtime-2",
         provider: "azure",
         brand: "OpenAI",
         category: "realtime",
@@ -55,7 +51,7 @@ export const REALTIME_SERVICES = {
         reasoning: true,
         contextLength: 128000,
     },
-} satisfies Record<string, ModelDefinition<string>>;
+} satisfies Record<string, ModelDefinition>;
 
 export const REALTIME_MODEL_NAMES = Object.keys(
     REALTIME_SERVICES,

@@ -349,7 +349,7 @@ export const IMAGE_SERVICES = {
     "zimage": {
         aliases: ["z-image", "z-image-turbo"],
         modelId: "zimage",
-        provider: "runpod",
+        provider: "vast",
         brand: "Alibaba",
         category: "image",
         addedDate: new Date("2025-12-08").getTime(),
@@ -666,6 +666,25 @@ export const IMAGE_SERVICES = {
         videoCapabilities: ["start_frame"],
         maxReferenceImages: 1, // Video keyframe slots: start only.
     },
+    "happyhorse-1.1": {
+        aliases: ["happyhorse", "happy-horse-1.1"],
+        modelId: "alibaba/happyhorse-1.1",
+        provider: "openrouter",
+        brand: "Alibaba",
+        category: "video",
+        addedDate: new Date("2026-07-18").getTime(),
+        priceMultiplier: 1,
+        paidOnly: true,
+        cost: {
+            completionVideoSeconds: 0.0988, // per sec at 720p
+        },
+        title: "HappyHorse 1.1",
+        description: "Text and first-frame video generation at 720p",
+        inputModalities: ["text", "image"],
+        outputModalities: ["video"],
+        videoCapabilities: ["start_frame"],
+        maxReferenceImages: 1,
+    },
     "klein": {
         aliases: ["flux-klein"],
         modelId: "klein",
@@ -682,26 +701,6 @@ export const IMAGE_SERVICES = {
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
         maxReferenceImages: 10, // Pollinations self-hosted route cap.
-    },
-    "ltx-2": {
-        aliases: ["ltx2", "ltx-2.3", "ltxvideo", "ltx-video"],
-        modelId: "ltx-2",
-        provider: "lambda",
-        brand: "Lightricks",
-        category: "video",
-        addedDate: new Date("2026-02-06").getTime(),
-        priceMultiplier: 1,
-        alpha: true,
-        cost: {
-            completionVideoSeconds: 0.005,
-        },
-        title: "LTX-2.3",
-        description:
-            "LTX-2.3 - Fast text/image-to-video generation with upscaler",
-        inputModalities: ["text", "image"],
-        outputModalities: ["video"],
-        videoCapabilities: ["start_frame"],
-        maxReferenceImages: 1, // Video keyframe slots: start only.
     },
     "p-image": {
         aliases: ["pruna-image", "pruna"],

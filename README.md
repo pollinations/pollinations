@@ -48,6 +48,7 @@ We've launched **https://gen.pollinations.ai** — a single endpoint for all you
 
 ## 🆕 Latest News
 
+- **2026-07-19** – **⚡ Z-Image gets two RTX 5090 hives** Z-Image now runs across two replicas at ~1.09 images/sec, with p95 generation under 3.75 seconds. The bees have redundancy now. [Try it](https://pollinations.ai/play)
 - **2026-07-16** – **🚀 GPT Realtime 2.1** `gpt-realtime-2.1` is now the default realtime model, giving voice and live-interaction builders a newer verified endpoint while `gpt-realtime-2` remains available. [API Docs](https://gen.pollinations.ai/docs)
 - **2026-07-16** – **✨ Model math, less mysterious** The model table now shows Quest/Paid access clearly, reveals descriptions on hover, and lets you click a model name or ID to copy the exact identifier. [Browse models](https://gen.pollinations.ai/v1/models)
 - **2026-07-15** – **🚀 Private community models** Register a model, test it with your own key, then publish it when it is ready to meet the outdoors. Public models can be free or priced by their owner.
@@ -57,7 +58,6 @@ We've launched **https://gen.pollinations.ai** — a single endpoint for all you
 - **2026-07-14** – **✨ Public media galleries** Tag an upload to publish it in a shareable, newest-first gallery at `GET /media?tag=`; leave it untagged and it stays private. [API Docs](https://gen.pollinations.ai/docs)
 - **2026-07-14** – **🚀 GPT Image models rerouted** `gptimage`, `gptimage-large`, and `gpt-image-2` now use dedicated Azure routes with regional failover, so image generations and edits have somewhere else to go when one garden closes.
 - **2026-07-14** – **🌟 Model speed, measured properly** Model Monitor now sorts models by streamed completion throughput in tokens per second. Less folklore, more `tok/s`. [Check the monitor](https://model-monitor.pollinations.ai)
-- **2026-07-14** – **💡 Seeds reach the SDK API** `@pollinations/sdk` now forwards seeds to Gen, giving SDK users reproducible generations without client-side retry roulette. [View package](https://www.npmjs.com/package/@pollinations/sdk)
 ---
 
 ## 🌱 Introduction

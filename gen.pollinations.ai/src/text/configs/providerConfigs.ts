@@ -145,7 +145,7 @@ export function createOVHcloudModelConfig(
     );
 }
 
-export function createOVHcloudMistralConfig(
+export function createOVHcloudOAIConfig(
     overrides: ModelOverride = {},
 ): ProviderConfig {
     return createOpenAICompatibleConfig(

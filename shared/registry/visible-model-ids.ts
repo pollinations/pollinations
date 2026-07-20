@@ -1,18 +1,17 @@
 import { and, eq, isNotNull, isNull, or } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
-import { communityModelId } from "../community-endpoints.ts";
+import {
+    communityModelId,
+    parseCommunityModelId,
+} from "../community-endpoints.ts";
 import * as schema from "../db/better-auth.ts";
-import { getModels, getRegistryModelDefinition } from "./registry.ts";
+import { getModels, resolveModelNameSafe } from "./registry.ts";
 
 export async function getVisibleModelIdsForUser(
     dbBinding: D1Database,
     userId: string,
 ): Promise<Set<string>> {
-    const modelIds = new Set<string>(
-        getModels().filter(
-            (modelId) => !getRegistryModelDefinition(modelId).hidden,
-        ),
-    );
+    const modelIds = new Set<string>(getModels());
     const db = drizzle(dbBinding, { schema });
     const communityModels = await db
         .select({
@@ -54,8 +53,19 @@ export function filterPermissionsToVisibleModels(
 
     return {
         ...permissions,
-        models: permissions.models.filter((modelId) =>
-            visibleModelIds.has(modelId),
-        ),
+        models: permissions.models.filter((modelId) => {
+            const resolvedModelId = resolveModelNameSafe(modelId);
+            if (visibleModelIds.has(resolvedModelId)) return true;
+
+            const communityModel = parseCommunityModelId(modelId);
+            return communityModel
+                ? visibleModelIds.has(
+                      communityModelId(
+                          communityModel.ownerGithubUsername,
+                          communityModel.modelName,
+                      ),
+                  )
+                : false;
+        }),
     };
 }

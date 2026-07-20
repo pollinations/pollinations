@@ -95,7 +95,7 @@ test(
         await mocks.enable("tinybird");
         const created = await createApiKeyViaApi(sessionToken, {
             name: "current-key-with-retired-model",
-            allowedModels: ["retired-model"],
+            allowedModels: ["gpt-5-nano", "retired-model"],
         });
 
         const response = await SELF.fetch(`http://localhost:3000${endpoint}`, {
@@ -106,7 +106,7 @@ test(
 
         expect(response.status).toBe(200);
         const data = await response.json();
-        expect(data.permissions.models).toEqual([]);
+        expect(data.permissions.models).toEqual(["gpt-5-nano"]);
     },
 );
 

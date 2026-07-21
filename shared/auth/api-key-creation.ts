@@ -18,6 +18,7 @@ export type CallerMetadata = {
     deviceUserCode?: string;
     requestedClientId?: string;
     oauthResource?: string;
+    oauthScopes?: string[];
     description?: string;
     earningsEnabled?: boolean;
 };
@@ -152,6 +153,7 @@ function pickCallerMetadata(
             });
         }
         out.oauthResource = resource;
+        out.oauthScopes = ["mcp:tools"];
     }
     if (isPublishable) {
         out.earningsEnabled = metadata?.earningsEnabled === true;

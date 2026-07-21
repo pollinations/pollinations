@@ -19,6 +19,7 @@ import { getRedirectUris } from "./metadata-utils.ts";
 
 const KV_TTL = 600; // 10 minutes — codes are single-use and short-lived
 const CODE_LENGTH = 40;
+const MAX_CLIENT_METADATA_BYTES = 64 * 1024;
 export const DEVICE_CODE_GRANT = "urn:ietf:params:oauth:grant-type:device_code";
 
 /** What the consent page stored when the user approved the request. */
@@ -61,7 +62,7 @@ function tokenError(c: Context<Env>, error: string, description?: string) {
 
 const CreateCodeSchema = z.object({
     apiKey: z.string().min(1),
-    clientId: z.string().startsWith("pk_"),
+    clientId: z.string().min(1),
     redirectUri: z.string().min(1),
     scope: z.string().optional(),
     codeChallenge: z.string().regex(PKCE_S256_CHALLENGE_REGEX),
@@ -69,6 +70,54 @@ const CreateCodeSchema = z.object({
     expiresIn: z.number().int().positive().nullish(),
     resource: z.string().url().optional(),
 });
+
+function isClientMetadataUrl(clientId: string): boolean {
+    try {
+        const url = new URL(clientId);
+        return (
+            url.protocol === "https:" &&
+            Boolean(url.pathname && url.pathname !== "/") &&
+            !url.username &&
+            !url.password &&
+            url.hostname !== "localhost" &&
+            !url.hostname.endsWith(".localhost") &&
+            !url.hostname.endsWith(".local") &&
+            !url.hostname.endsWith(".internal") &&
+            !/^\d{1,3}(?:\.\d{1,3}){3}$/.test(url.hostname) &&
+            !url.hostname.includes(":")
+        );
+    } catch {
+        return false;
+    }
+}
+
+async function validateClientMetadataDocument(
+    clientId: string,
+    redirectUri: string,
+): Promise<boolean> {
+    if (!isClientMetadataUrl(clientId)) return false;
+
+    const response = await fetch(clientId, {
+        redirect: "error",
+        signal: AbortSignal.timeout(10_000),
+    }).catch(() => null);
+    if (!response?.ok) return false;
+    const size = Number(response.headers.get("content-length"));
+    if (Number.isFinite(size) && size > MAX_CLIENT_METADATA_BYTES) return false;
+    const text = await response.text();
+    if (text.length > MAX_CLIENT_METADATA_BYTES) return false;
+    let metadata: { client_id?: unknown; redirect_uris?: unknown };
+    try {
+        metadata = JSON.parse(text) as typeof metadata;
+    } catch {
+        return false;
+    }
+    return (
+        metadata.client_id === clientId &&
+        Array.isArray(metadata.redirect_uris) &&
+        metadata.redirect_uris.includes(redirectUri)
+    );
+}
 
 /**
  * OAuth 2.1 authorization-code grant with PKCE (S256 only), layered on the
@@ -103,21 +152,28 @@ export const oauthRoutes = new Hono<Env>()
             // leaves our origin, so it must never bind an unregistered
             // redirect (RFC 6749 §3.1.2). verifyApiKey returns the key row
             // with metadata already parsed.
-            const result = await c.var.auth.client.api.verifyApiKey({
-                body: { key: body.clientId },
-            });
-            if (!result.valid || !result.key) {
-                throw new HTTPException(400, {
-                    message: "Unknown client_id",
-                });
+            const isMetadataClient = isClientMetadataUrl(body.clientId);
+            const result = isMetadataClient
+                ? null
+                : await c.var.auth.client.api.verifyApiKey({
+                      body: { key: body.clientId },
+                  });
+            if (!isMetadataClient && (!result?.valid || !result.key)) {
+                throw new HTTPException(400, { message: "Unknown client_id" });
             }
-            if (
-                resource &&
-                result.key.metadata?.oauthResource !== resource
-            ) {
-                throw new HTTPException(400, {
-                    message: "API key is not bound to the requested resource",
+            if (resource) {
+                const issuedKey = await c.var.auth.client.api.verifyApiKey({
+                    body: { key: body.apiKey },
                 });
+                if (
+                    !issuedKey.valid ||
+                    issuedKey.key?.metadata?.oauthResource !== resource
+                ) {
+                    throw new HTTPException(400, {
+                        message:
+                            "API key is not bound to the requested resource",
+                    });
+                }
             }
             if (
                 resource &&
@@ -129,10 +185,16 @@ export const oauthRoutes = new Hono<Env>()
             }
             // Exact matching (incl. query) — the code rides the query string,
             // so the legacy flow's extra-query leniency doesn't apply here.
-            const allowlist = getRedirectUris(result.key.metadata ?? {});
-            if (
-                !redirectUriMatchesAllowlistExact(body.redirectUri, allowlist)
-            ) {
+            const redirectAllowed = isMetadataClient
+                ? await validateClientMetadataDocument(
+                      body.clientId,
+                      body.redirectUri,
+                  )
+                : redirectUriMatchesAllowlistExact(
+                      body.redirectUri,
+                      getRedirectUris(result?.key?.metadata ?? {}),
+                  );
+            if (!redirectAllowed) {
                 throw new HTTPException(400, {
                     message:
                         "redirect_uri is not registered for this client_id",

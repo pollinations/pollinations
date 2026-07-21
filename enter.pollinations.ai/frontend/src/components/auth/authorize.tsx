@@ -86,6 +86,7 @@ export function Authorize() {
     // OAuth 2.1 authorization-code flow: the callback carries ?code=...
     // instead of the legacy #api_key=... fragment.
     const isCodeFlow = !isDeviceMode && response_type === "code";
+    const isMetadataClient = app_key?.startsWith("https://") === true;
 
     const { data: session, isPending } = authClient.useSession();
     const user = session?.user as User | undefined;
@@ -132,17 +133,17 @@ export function Authorize() {
     const visibleOptionalPermissions = CONSENT_PERMISSIONS.filter((p) =>
         requestedScopes.has(p),
     );
-    const isAttributionPending = !!app_key && !attribution;
+    const isAttributionPending = !!app_key && !attribution && !isMetadataClient;
     const canAuthorize =
         (isDeviceMode || parsedRedirectUrl !== null) &&
         !isAttributionPending &&
         // The code flow only runs for registered clients with a validated
         // redirect — no hostname-only fallback like the legacy flow.
-        (!isCodeFlow || redirectValidationState === "valid");
+        (!isCodeFlow || isMetadataClient || redirectValidationState === "valid");
     const canRedirectOnDeny =
         parsedRedirectUrl !== null &&
         (isCodeFlow
-            ? redirectValidationState === "valid"
+            ? isMetadataClient || redirectValidationState === "valid"
             : !app_key || redirectValidationState === "valid");
 
     const isMobile = window.innerWidth < 768;
@@ -282,6 +283,12 @@ export function Authorize() {
                 setRedirectValidationState("valid");
                 return;
             }
+            if (isMetadataClient) {
+                // POST /api/oauth/code fetches and validates the document
+                // immediately before it creates the authorization code.
+                setRedirectValidationState("valid");
+                return;
+            }
 
             const lookupQuery: {
                 client_id: string;
@@ -335,6 +342,7 @@ export function Authorize() {
     }, [
         isDeviceMode,
         isCodeFlow,
+        isMetadataClient,
         user_code,
         urlScope,
         app_key,
@@ -386,7 +394,7 @@ export function Authorize() {
                 expiryDays: keyPermissions.permissions.expiryDays,
                 metadata: {
                     ...(isDeviceMode && { deviceUserCode: user_code }),
-                    ...(app_key &&
+                    ...(app_key?.startsWith("pk_") &&
                         (!isDeviceMode || attribution?.found) && {
                             requestedClientId: app_key,
                         }),
@@ -395,7 +403,10 @@ export function Authorize() {
                             redirectOrigin: parsedRedirectUrl.origin,
                             redirectUri: parsedRedirectUrl.href,
                         }),
-                    ...(mcpResource && { oauthResource: mcpResource }),
+                    ...(mcpResource && {
+                        oauthResource: mcpResource,
+                        oauthScopes: [MCP_TOOLS_SCOPE],
+                    }),
                 },
                 permissions: {
                     allowedModels,

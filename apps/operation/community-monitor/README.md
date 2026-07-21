@@ -11,8 +11,10 @@ Committed (source of truth — edit here, then deploy):
 - `CYCLE.md` — the agent's full rulebook, re-read fresh every cycle.
 - `probe.mjs` — one probe sweep across all community models, cost-weighted
   (see "Probe spend" below).
-- `watchdog.sh` — cron job (every 5 min) that revives the `screen` session if
-  it died. **This is the actual deploy path currently running on the box.**
+- `watchdog.sh` — cron job (every 5 min) that revived the old long-lived
+  `screen` session design. **Retired on the box since 2026-07-18** — kept in
+  the repo for history; the live deploy path is now `loop.sh` +
+  `community-monitor.service` (below).
 - `nudge.sh` — cron job (every 15 min, same cadence as the monitor's own
   cycle) that handles a different failure mode than watchdog.sh: the
   session is alive but stuck idle with unsubmitted input in the prompt box.
@@ -34,10 +36,13 @@ Committed (source of truth — edit here, then deploy):
     why `mikl-shortcuts/command-a-plus` (Cohere trial key exhausted, steady
     429s) went unflagged. The blind-`\r` version can't have that class of
     bug because there's no parsing left to be wrong.
-- `loop.sh` + `community-monitor.service` — an alternative systemd-supervised
-  design (fresh `claude -p` process per cycle instead of one long-lived
-  `--remote-control` session). Not currently active — kept as the intended
-  fast-follow migration.
+- `loop.sh` + `community-monitor.service` — the systemd-supervised design:
+  one fresh `claude -p "$(cat CYCLE.md)"` process per cycle (pinned
+  `--model claude-opus-4-8 --effort medium`, allowed-tools whitelist),
+  systemd restarts it 15 min after exit. **ACTIVE on the box since
+  2026-07-18.** Headless `-p` cycles cannot be remote-controlled; a separate
+  persistent `claude --remote-control community-monitor` screen session runs
+  alongside as a phone-accessible console (added 2026-07-21).
 - `.env.example` — the two required env var names, no values.
 
 Live-only on the box, never committed:
@@ -106,10 +111,10 @@ needed on the box) and allocates probe requests per model:
 
 ## Model/effort
 
-Pinned to `--model sonnet --effort low` in `watchdog.sh` — this is a
-15-minute-cadence health-check loop with mechanical rules, not a task that
-needs frontier reasoning. Revisit if the agent starts making judgment calls
-that need more capability.
+Pinned to `--model claude-opus-4-8 --effort medium` in `loop.sh` (the retired
+watchdog.sh design used sonnet/low). The bump came with the fresh-process
+migration: each cycle re-reads all state cold, which costs more reasoning
+than the old warm long-lived session did.
 
 ## Authority split
 

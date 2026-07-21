@@ -1,0 +1,35 @@
+{
+  "pr_number": 12622,
+  "title": "infra: add Azure VM inventory and encrypted access",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/12622",
+  "merged_at": "2026-07-21T13:43:25Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds an operations-owned inventory for the new Polli and LixSearch production VMs on Azure.\n- Stores one VM-specific SSH private key per host as committed SOPS ciphertext.\n- Adds path-specific AGE recipients so Polli includes Itachi while LixSearch remains limited to core administrators and CI.\n- Records static public/private IPs, VM sizing, SSH public-key fingerprints, and host-key fingerprints.\n\nValidation:\n- Confirmed both SOPS files are encrypted and locally decryptable.\n- Confirmed no plaintext OpenSSH private key appears in the PR scope.\n- Verified both Ubuntu 24.04 hosts over SSH, including CPU, memory, disk, cloud-init, and sudo access.",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Two servers enter the garden",
+    "blurb": "Polli and LixSearch now have their own carefully labeled Azure plots, with encrypted keys tucked safely beneath the soil. The bees may know where the servers live; not everyone gets the shed key.",
+    "summary": "Added an operations-owned Azure inventory for the Polli and LixSearch production VMs, including static IPs, host and SSH-key fingerprints, VM sizing, and per-host SOPS-encrypted SSH credentials with separate AGE recipient access.",
+    "impact": "Operators can now reliably manage and verify both Ubuntu 24.04 production hosts with encrypted, host-specific access records while keeping LixSearch credentials restricted to core administrators and CI.",
+    "keywords": [
+      "azure",
+      "infrastructure",
+      "sops",
+      "ssh",
+      "operations",
+      "inventory",
+      "encryption"
+    ],
+    "visual_concept": "A cozy garden-shed server nook represents the new Azure VM inventory: two small labeled server pots, Polli and LixSearch, each with a locked key box and a tidy inventory clipboard. Polly acts as the observant operator, using a tiny administrator keyring while code-plants and flowers grow around the servers; the locks and separate labeled paths convey encrypted, host-specific access without depicting real credentials.",
+    "image_prompt": "Cozy pixel art scene inside a warm garden-shed hackerspace, where Polly, the cute pixel art bee mascot with a yellow body, dark brown stripes, black antennae and oval eyes, bright pink rectangular cheek blushes, happy smile, and rounded light-blue translucent wings, wears a tiny operations cap and checks a clipboard beside two small retro server cabinets labeled in simple pixel font “POLLI” and “LIXSEARCH”; each cabinet has its own locked key box, inventory tags, and little code-plants growing from lime green (#ecf874) pots. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, subtle CRT glow, nostalgic but beautiful and emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-21/PR-12622.jpg",
+    "prompt": "Cozy pixel art scene inside a warm garden-shed hackerspace, where Polly, the cute pixel art bee mascot with a yellow body, dark brown stripes, black antennae and oval eyes, bright pink rectangular cheek blushes, happy smile, and rounded light-blue translucent wings, wears a tiny operations cap and checks a clipboard beside two small retro server cabinets labeled in simple pixel font “POLLI” and “LIXSEARCH”; each cabinet has its own locked key box, inventory tags, and little code-plants growing from lime green (#ecf874) pots. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, subtle CRT glow, nostalgic but beautiful and emotionally warm."
+  },
+  "generated_at": "2026-07-21T13:44:25.077171+00:00"
+}

@@ -12,7 +12,7 @@ import {
     TokensIcon,
     TrendUpIcon,
 } from "@pollinations/ui";
-import { useNavigate, useSearch } from "@tanstack/react-router";
+import { useNavigate, useRouterState, useSearch } from "@tanstack/react-router";
 import { type FC, useCallback, useEffect, useMemo, useState } from "react";
 import { CommunityEndpoints } from "../community-endpoints";
 import {
@@ -100,6 +100,9 @@ export const Models: FC<ModelsProps> = ({
     const navigate = useNavigate({ from: "/models" });
     const modelSearch = useSearch({ from: "/_dashboard/models" });
     const activeTab = modelSearch.category ?? "all";
+    const activeHash = useRouterState({
+        select: (state) => state.location.hash,
+    });
     const search = modelSearch.q ?? "";
     const sortKey = modelSearch.sort ?? "perPollen";
     const sortDir = modelSearch.dir ?? DEFAULT_SORT_DIRECTIONS[sortKey];
@@ -209,7 +212,27 @@ export const Models: FC<ModelsProps> = ({
 
     return (
         <div className="flex flex-col gap-6">
+            {showCommunityEndpoints && (
+                <nav
+                    className="flex gap-1.5 md:hidden"
+                    aria-label="Models sections"
+                >
+                    <TabButton
+                        active={!activeHash || activeHash === "models"}
+                        onClick={() => void navigate({ hash: "models" })}
+                    >
+                        Browse Models
+                    </TabButton>
+                    <TabButton
+                        active={activeHash === "my-models"}
+                        onClick={() => void navigate({ hash: "my-models" })}
+                    >
+                        My Models
+                    </TabButton>
+                </nav>
+            )}
             <Section
+                id="models"
                 title="Models"
                 framed
                 actionClassName="w-full sm:ml-auto sm:w-auto"

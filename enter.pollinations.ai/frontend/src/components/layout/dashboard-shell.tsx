@@ -55,6 +55,7 @@ const brandWordmarkMask: CSSProperties = {
 
 type DashboardShellProps = PropsWithChildren<{
     navItems?: readonly DashboardNavItem[];
+    showContextualNav?: boolean;
     githubUsername?: string;
     githubAvatarUrl?: string;
     onSignOut?: () => void;
@@ -137,6 +138,7 @@ const accountMenuLinks: readonly AccountMenuLink[] = [
 
 export const DashboardShell: FC<DashboardShellProps> = ({
     navItems = DASHBOARD_NAV_ITEMS,
+    showContextualNav = false,
     githubUsername,
     githubAvatarUrl,
     onSignOut,
@@ -153,6 +155,7 @@ export const DashboardShell: FC<DashboardShellProps> = ({
         DASHBOARD_NAV_ITEMS.find((item) => item.to === location.pathname) ??
         DASHBOARD_NAV_ITEMS[0];
     const activePage = activeNavItem.id;
+    const activeContextualHash = location.hash;
 
     useDashboardShellBodyClass();
     useScrollLock(isDrawerOpen);
@@ -205,8 +208,8 @@ export const DashboardShell: FC<DashboardShellProps> = ({
         const scrollElement = mainScrollRef.current;
         if (!scrollElement) return;
 
-        if (activePage === "pollen" && location.hash === "buy-pollen") {
-            const target = scrollElement.querySelector("#buy-pollen");
+        if (location.hash) {
+            const target = document.getElementById(location.hash);
             if (target instanceof HTMLElement) {
                 const scrollRect = scrollElement.getBoundingClientRect();
                 const targetRect = target.getBoundingClientRect();
@@ -290,6 +293,8 @@ export const DashboardShell: FC<DashboardShellProps> = ({
             accountArea={effectiveAccountArea}
             walletArea={walletArea}
             onNavigate={closeDrawer}
+            showContextualNav={showContextualNav}
+            activeContextualHash={activeContextualHash}
         />
     );
 
@@ -380,6 +385,8 @@ type DashboardRailProps = {
     accountArea?: ReactNode;
     walletArea?: ReactNode;
     onNavigate: () => void;
+    showContextualNav: boolean;
+    activeContextualHash: string;
 };
 
 const DashboardRail: FC<DashboardRailProps> = ({
@@ -390,6 +397,8 @@ const DashboardRail: FC<DashboardRailProps> = ({
     accountArea,
     walletArea,
     onNavigate,
+    showContextualNav,
+    activeContextualHash,
 }) => (
     <aside
         data-theme="neutral"
@@ -410,28 +419,43 @@ const DashboardRail: FC<DashboardRailProps> = ({
             }
         >
             <nav className="flex flex-col gap-1 pr-2">
-                {navItems.map((item) => (
-                    <NavItem
-                        as={Link}
-                        key={item.id}
-                        to={item.to}
-                        data-theme="accent"
-                        icon={item.icon}
-                        active={activePage === item.id}
-                        onClick={onNavigate}
-                    >
-                        {item.label}
-                        {item.id === "quests" && (
-                            <Chip
-                                intent="neutral"
-                                size="sm"
-                                className="ml-auto bg-transparent text-theme-text-soft"
+                {navItems.map((item) => {
+                    const isActive = activePage === item.id;
+                    const contextualItems = CONTEXTUAL_NAV_ITEMS[item.id];
+                    return (
+                        <div key={item.id}>
+                            <NavItem
+                                as={Link}
+                                to={item.to}
+                                data-theme="accent"
+                                icon={item.icon}
+                                active={isActive}
+                                onClick={onNavigate}
                             >
-                                New!
-                            </Chip>
-                        )}
-                    </NavItem>
-                ))}
+                                {item.label}
+                                {item.id === "quests" && (
+                                    <Chip
+                                        intent="neutral"
+                                        size="sm"
+                                        className="ml-auto bg-transparent text-theme-text-soft"
+                                    >
+                                        New!
+                                    </Chip>
+                                )}
+                            </NavItem>
+                            {contextualItems &&
+                                isActive &&
+                                showContextualNav && (
+                                    <ContextualSubnav
+                                        to={item.to}
+                                        items={contextualItems}
+                                        activeHash={activeContextualHash}
+                                        onNavigate={onNavigate}
+                                    />
+                                )}
+                        </div>
+                    );
+                })}
                 <DashboardSupport action={supportAction} links={supportLinks} />
             </nav>
         </ScrollArea>
@@ -441,6 +465,56 @@ const DashboardRail: FC<DashboardRailProps> = ({
             <DashboardFooter links={footerLinks} note="© 2026 Myceli.AI" />
         </div>
     </aside>
+);
+
+type ContextualNavItem = {
+    label: string;
+    hash: string;
+};
+
+const CONTEXTUAL_NAV_ITEMS: Partial<
+    Record<DashboardPage, readonly ContextualNavItem[]>
+> = {
+    models: [
+        { label: "Browse Models", hash: "models" },
+        { label: "My Models", hash: "my-models" },
+    ],
+    keys: [
+        { label: "API Keys", hash: "api-keys" },
+        { label: "App Keys", hash: "app-keys" },
+    ],
+};
+
+const ContextualSubnav: FC<{
+    to: DashboardPath;
+    items: readonly ContextualNavItem[];
+    activeHash: string;
+    onNavigate: () => void;
+}> = ({ to, items, activeHash, onNavigate }) => (
+    <div className="ml-7 mt-1 flex flex-col gap-0.5 border-l border-theme-text-strong/10 pl-2">
+        {items.map((item) => {
+            const isActive = activeHash
+                ? item.hash === activeHash
+                : item === items[0];
+            return (
+                <Link
+                    key={item.label}
+                    to={to}
+                    hash={item.hash}
+                    aria-current={isActive ? "page" : undefined}
+                    className={cn(
+                        "rounded-full px-3 py-1.5 text-xs font-medium transition-colors",
+                        isActive
+                            ? "bg-surface-opaque text-theme-text-strong"
+                            : "text-theme-text-muted hover:bg-surface-opaque/60 hover:text-theme-text-strong",
+                    )}
+                    onClick={onNavigate}
+                >
+                    {item.label}
+                </Link>
+            );
+        })}
+    </div>
 );
 
 const MobileMenuButton: FC<{

@@ -188,22 +188,6 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "completionImageTokens": 0.00175,
     },
   },
-  "gemini": {
-    "cost": {
-      "completionTextTokens": 0.0000075,
-      "promptAudioTokens": 0.0000015,
-      "promptCacheWriteTokens": 0.0000015,
-      "promptCachedTokens": 0.00000015,
-      "promptTextTokens": 0.0000015,
-    },
-    "price": {
-      "completionTextTokens": 0.0000075,
-      "promptAudioTokens": 0.0000015,
-      "promptCacheWriteTokens": 0.0000015,
-      "promptCachedTokens": 0.00000015,
-      "promptTextTokens": 0.0000015,
-    },
-  },
   "gemini-2": {
     "cost": {
       "promptAudioTokens": 0.0000065,
@@ -232,6 +216,22 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptCacheWriteTokens": 0.0000005,
       "promptCachedTokens": 0.00000005,
       "promptTextTokens": 0.0000005,
+    },
+  },
+  "gemini-3.6-flash": {
+    "cost": {
+      "completionTextTokens": 0.0000075,
+      "promptAudioTokens": 0.0000015,
+      "promptCacheWriteTokens": 0.0000015,
+      "promptCachedTokens": 0.00000015,
+      "promptTextTokens": 0.0000015,
+    },
+    "price": {
+      "completionTextTokens": 0.0000075,
+      "promptAudioTokens": 0.0000015,
+      "promptCacheWriteTokens": 0.0000015,
+      "promptCachedTokens": 0.00000015,
+      "promptTextTokens": 0.0000015,
     },
   },
   "gemini-fast": {
@@ -316,22 +316,6 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptCacheWriteTokens": 0.00000025,
       "promptCachedTokens": 0.000000025,
       "promptTextTokens": 0.00000025,
-    },
-  },
-  "gemini-search-large": {
-    "cost": {
-      "completionTextTokens": 0.0000075,
-      "promptAudioTokens": 0.0000015,
-      "promptCacheWriteTokens": 0.0000015,
-      "promptCachedTokens": 0.00000015,
-      "promptTextTokens": 0.0000015,
-    },
-    "price": {
-      "completionTextTokens": 0.0000075,
-      "promptAudioTokens": 0.0000015,
-      "promptCacheWriteTokens": 0.0000015,
-      "promptCachedTokens": 0.00000015,
-      "promptTextTokens": 0.0000015,
     },
   },
   "gemma": {

@@ -40,10 +40,8 @@ describe("createGeminiThinkingTransform", () => {
 });
 
 describe("Gemini reasoning_effort model wiring", () => {
-    it.each([
-        "gemini",
-        "gemini-search-large",
-    ])("routes %s to Gemini 3.6 Flash on Vertex global", (modelName) => {
+    it("routes Gemini 3.6 Flash to Vertex global", () => {
+        const modelName = "gemini-3.6-flash";
         const model = findModelByName(modelName);
         if (!model) throw new Error(`${modelName} model missing`);
 

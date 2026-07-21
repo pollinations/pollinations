@@ -394,13 +394,8 @@ export const TEXT_SERVICES = {
         contextLength: 1048576,
         isSpecialized: false,
     },
-    "gemini": {
-        aliases: [
-            "gemini-3.6-flash",
-            "gemini-3.5-flash",
-            "gemini-2.5-flash",
-            "gemini-2.5-flash-preview-04-17",
-        ],
+    "gemini-3.6-flash": {
+        aliases: ["gemini", "gemini-3.5-flash"],
         modelId: "gemini-3.6-flash",
         provider: "google",
         brand: "Google",
@@ -712,38 +707,6 @@ export const TEXT_SERVICES = {
         title: "Gemini 3.1 Flash Lite Search",
         description:
             "Gemini 3.1 Flash Lite Search - Cheap grounded web answers",
-        inputModalities: ["text", "image", "audio", "video"],
-        outputModalities: ["text"],
-        maxReferenceImages: 3600, // Gemini API image-understanding file limit.
-        maxReferenceVideos: 10, // Gemini API video-understanding upload limit.
-        tools: false,
-        search: true,
-        codeExecution: true,
-        contextLength: 1048576,
-        isSpecialized: false,
-    },
-    "gemini-search-large": {
-        aliases: ["gemini-3.6-flash-search", "gemini-3.5-flash-search"],
-        modelId: "gemini-3.6-flash",
-        provider: "google",
-        brand: "Google",
-        category: "text",
-        addedDate: new Date("2026-05-26").getTime(),
-        paidOnly: true,
-        priceMultiplier: 1,
-        // Vertex base rates for gemini-3.6-flash. Grounding fee $14/1K queries
-        // with 5K/month free shared across Gemini 3; absorbed by Pollinations.
-        cost: {
-            // Portkey folds image/video input into promptTextTokens; audio is separate.
-            promptTextTokens: perMillion(1.5),
-            promptCachedTokens: perMillion(0.15),
-            promptCacheWriteTokens: perMillion(1.5),
-            promptAudioTokens: perMillion(1.5),
-            completionTextTokens: perMillion(7.5),
-        },
-        billing: withVertexCacheStorage(GEMINI_3_SEARCH_BILLING, 1.0),
-        title: "Gemini 3.6 Flash Search",
-        description: "Premium web-grounded research and knowledge work",
         inputModalities: ["text", "image", "audio", "video"],
         outputModalities: ["text"],
         maxReferenceImages: 3600, // Gemini API image-understanding file limit.

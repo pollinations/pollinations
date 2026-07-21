@@ -10,7 +10,7 @@ Implement updates before additions. Each update bullet below is one separate pul
 
 ### 1. Updates
 
-- **PR 1 — Gemini 3.6 default and search migration:** Move `gemini` and `gemini-search-large` from Gemini 3.5 Flash to Gemini 3.6 Flash on Google Vertex AI after global-endpoint, search/tool, field-parity, and sampling-parameter tests pass.
+- **PR 1 — Gemini 3.6 canonical migration:** Add `gemini-3.6-flash` as the canonical Google model name, preserve `gemini` and `gemini-3.5-flash` as compatibility aliases, and make Google Search and code execution opt-in request tools.
 - **PR 2 — Azure GPT billing corrections:** Correct long-context and cache-write billing for GPT-5.4, GPT-5.5, GPT-5.6 Sol, GPT-5.6 Terra, and GPT-5.6 Luna; normalize the Azure price multiplier to `0.75` for all five models.
 - **PR 3 — Grok Video Pro provider migration:** Move Grok Video Pro from xAI to Replicate only if one blocking POST returns the completed media without status polling and confirms request-field parity, billing accuracy, and P95 completion within 120 seconds.
 - **PR 4 — Qwen TTS version consolidation:** Upgrade Qwen3-TTS Flash and Qwen3-TTS Instruct to Qwen-Audio 3.0 TTS Flash on Alibaba Model Studio after WebSocket, voice, instruction, and latency parity are verified.
@@ -201,7 +201,7 @@ Every approved model or provider change must get a complete row with no inherite
 
 - 2026-07-21: Removed the out-of-scope GPU migration from the active plan; updated Gemini 3.6 to the official launch price of $7.50/M output, selected LongCat direct, added provider-price confidence gates, and marked direct DeepInfra pricing as unresolved for CSM-1B.
 - 2026-07-21: Started Update PR 1 on `codex/gemini-3-6-default`. Live Vertex tests passed text, image, audio, video, streaming, tools, code execution, grounded search, sampling parameters, concurrency, usage headers, and Tinybird billing. Shipping remains blocked until Gemini 3.6 returns cached tokens through the gateway; implicit and explicit cache probes currently report zero cache hits.
-- 2026-07-21: Clarified that no fallback means one upstream route, not removal of public aliases. The Gemini 3.6 migration preserves the Gemini 3.5 aliases and routes the retired full Gemini 2.5 Flash identifiers to the upgraded `gemini` service; Flash-Lite and search aliases remain on their distinct services.
+- 2026-07-21: Consolidated Gemini 3.6 into one canonical `gemini-3.6-flash` service. Google Search and code execution are enabled only when requested; the duplicate search service and unverified full Gemini 2.5 aliases are removed, while `gemini` and `gemini-3.5-flash` remain compatibility aliases.
 - 2026-07-21: Added the top-level implementation sequence, grouped updates into separate pull requests, and ordered additions.
 - 2026-07-21: Removed every proposed secondary route. Each model now has one selected provider and primary route with no runtime failover.
 - 2026-07-21: Added CSM-1B as **TEST, THEN ADD** through the new synchronous OpenRouter/DeepInfra speech route; documented economics, limitations, implementation surface, and the decision not to provision a Pollinations GPU.

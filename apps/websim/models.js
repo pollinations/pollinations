@@ -17,7 +17,7 @@ export const WEB_SIM_MODELS = /** @type {const} */ ([
         detail: "Richer page ideas",
     },
     {
-        id: "gemini",
+        id: "gemini-3.6-flash",
         label: "Detailed",
         detail: "More complete HTML",
     },

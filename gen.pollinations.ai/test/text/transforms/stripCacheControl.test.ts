@@ -86,11 +86,10 @@ describe("cache_control passthrough (vertex explicit caching)", () => {
     // silently degrades to uncached requests — no error, just full price.
     it.each([
         "gemini-3-flash",
-        "gemini",
+        "gemini-3.6-flash",
         "gemini-flash-lite-3.1",
         "gemini-fast",
         "gemini-large",
-        "gemini-search-large",
     ])("%s transform preserves content-block cache_control markers", async (modelName) => {
         const model = findModelByName(modelName);
         if (!model?.transform)

@@ -4,7 +4,10 @@ import midijourneyPrompt from "./personas/midijourney.js";
 import { BASE_PROMPTS } from "./prompts/systemPrompts.js";
 import { createClaudeThinkingTransform } from "./transforms/createClaudeThinkingTransform.ts";
 import { createGeminiThinkingTransform } from "./transforms/createGeminiThinkingTransform.ts";
-import { createGeminiToolsTransform } from "./transforms/createGeminiToolsTransform.ts";
+import {
+    createGeminiToolsTransform,
+    normalizeGeminiBuiltInTools,
+} from "./transforms/createGeminiToolsTransform.ts";
 import { createMessageTransform } from "./transforms/createMessageTransform.js";
 import { createPerplexitySearchTransform } from "./transforms/createPerplexitySearchTransform.ts";
 import { createReasoningEffortTransform } from "./transforms/createReasoningEffortTransform.ts";
@@ -210,11 +213,11 @@ const models: ModelDefinition[] = [
         ),
     },
     {
-        name: "gemini",
+        name: "gemini-3.6-flash",
         config: portkeyConfig["gemini-3.6-flash"],
         transform: pipe(
             sanitizeToolSchemas,
-            createGeminiToolsTransform(["code_execution"]),
+            normalizeGeminiBuiltInTools,
             removeToolsForJsonResponse,
             createGeminiThinkingTransform("v3-flash"),
         ),
@@ -247,15 +250,6 @@ const models: ModelDefinition[] = [
     {
         name: "gemini-search-fast",
         config: portkeyConfig["gemini-3.1-flash-lite"],
-        transform: pipe(
-            sanitizeToolSchemas,
-            createGeminiToolsTransform(["google_search"]),
-            createGeminiThinkingTransform("v3-flash"),
-        ),
-    },
-    {
-        name: "gemini-search-large",
-        config: portkeyConfig["gemini-3.6-flash"],
         transform: pipe(
             sanitizeToolSchemas,
             createGeminiToolsTransform(["google_search"]),

@@ -114,7 +114,7 @@ async def _render_free_form(prompt: str) -> dict:
         async with session.post(
             f"{POLLINATIONS_API_BASE}/v1/chat/completions",
             json={
-                "model": "gemini",
+                "model": "gemini-3.6-flash",
                 "messages": [
                     {"role": "system", "content": GEMINI_SYSTEM_PROMPT},
                     {"role": "user", "content": str(prompt)},

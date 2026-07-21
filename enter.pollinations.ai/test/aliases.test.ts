@@ -56,20 +56,8 @@ test.for(
 });
 
 test("Gemini upgrades preserve historical aliases without fallback routing", () => {
-    for (const alias of [
-        "gemini-3.6-flash",
-        "gemini-3.5-flash",
-        "gemini-2.5-flash",
-        "gemini-2.5-flash-preview-04-17",
-    ]) {
-        expect(resolveModelName(alias)).toBe("gemini");
-    }
-
-    for (const alias of [
-        "gemini-3.6-flash-search",
-        "gemini-3.5-flash-search",
-    ]) {
-        expect(resolveModelName(alias)).toBe("gemini-search-large");
+    for (const alias of ["gemini", "gemini-3.5-flash"]) {
+        expect(resolveModelName(alias)).toBe("gemini-3.6-flash");
     }
 });
 

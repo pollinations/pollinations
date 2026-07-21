@@ -429,8 +429,8 @@ test("Gemini grounding cost is added by family billing rules", () => {
         usage,
         groundedOutput,
     );
-    const geminiSearchLargeCost = calculateCost(
-        "gemini-search-large",
+    const gemini36FlashCost = calculateCost(
+        "gemini-3.6-flash",
         usage,
         groundedOutput,
     );
@@ -448,7 +448,7 @@ test("Gemini grounding cost is added by family billing rules", () => {
     // Gemini 3.x bills per non-empty search query.
     expect(gemini3FlashCost.totalCost).toBeCloseTo(3.528, 8);
     expect(geminiSearchFastCost.totalCost).toBeCloseTo(1.778, 8);
-    expect(geminiSearchLargeCost.totalCost).toBeCloseTo(9.028, 8);
+    expect(gemini36FlashCost.totalCost).toBeCloseTo(9.028, 8);
     expect(ungroundedGeminiSearchFastCost.totalCost).toBeCloseTo(1.75, 8);
 });
 
@@ -824,13 +824,12 @@ test("vertex gemini models price cache writes at the standard input rate", () =>
     // created prefix as cache_creation_input_tokens → promptCacheWriteTokens.
     const models = [
         "gemini-3-flash",
-        "gemini",
+        "gemini-3.6-flash",
         "gemini-flash-lite-3.1",
         "gemini-fast",
         "gemini-large",
         "gemini-search",
         "gemini-search-fast",
-        "gemini-search-large",
     ] as const;
     for (const model of models) {
         // getRegistryModelDefinition throws on unknown names, so a renamed

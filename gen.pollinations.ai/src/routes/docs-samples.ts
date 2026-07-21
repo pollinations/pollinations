@@ -534,7 +534,7 @@ export const RESPONSE_EXAMPLES: Record<string, unknown> = {
                 owned_by: "pollinations",
             },
             {
-                id: "gemini",
+                id: "gemini-3.6-flash",
                 object: "model",
                 created: 1700000000,
                 owned_by: "pollinations",

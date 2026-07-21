@@ -283,7 +283,9 @@ function normalizePermissions(
         const safeScopes = scopes.filter(
             (scope): scope is string => typeof scope === "string",
         );
-        if (safeScopes.length) permissions[key] = safeScopes;
+        if (safeScopes.length || key === "models") {
+            permissions[key] = safeScopes;
+        }
     }
     return Object.keys(permissions).length ? permissions : undefined;
 }

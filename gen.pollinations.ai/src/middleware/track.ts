@@ -328,7 +328,10 @@ export const track = (eventType: EventType) =>
                     { event: finalEvent },
                 );
 
-                if (!responseTracking.cacheData.cacheHit) {
+                if (
+                    userTracking.userId &&
+                    !responseTracking.cacheData.cacheHit
+                ) {
                     await sendToTinybird(
                         finalEvent,
                         c.env.TINYBIRD_INGEST_URL,

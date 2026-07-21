@@ -3,10 +3,9 @@ import type { ApiKeyType } from "@shared/auth/api-key-creation.ts";
 import { AUTO_TOP_UP_THRESHOLD_POLLEN } from "@shared/billing/auto-top-up.ts";
 import { payerBucketToMeter } from "@shared/billing/balance.ts";
 import {
-    type CommunityModelRewardResolution,
-    handleBalanceDeduction,
-    type MarkupResolution,
-} from "@shared/billing/track-helpers.ts";
+    type GenerationSettlement,
+    settleGeneration,
+} from "@shared/billing/generation-settlement.ts";
 import {
     getRealClientIp,
     hashIp,
@@ -140,6 +139,7 @@ export const track = (eventType: EventType) =>
     createMiddleware<TrackEnv>(async (c, next) => {
         const log = getLogger(["hono", "track"]);
         const startTime = new Date();
+        const settlementId = crypto.randomUUID();
         const db = drizzle(c.env.DB);
 
         // Get model from resolveModel middleware
@@ -219,51 +219,38 @@ export const track = (eventType: EventType) =>
 
                 const ipHash = await hashIp(clientIp, c.env.BETTER_AUTH_SECRET);
 
-                // Deduct payer + credit dev before emitting the event so billing
+                // Settle payer + payouts before emitting the event so billing
                 // telemetry reflects the committed ledger state.
-                const balanceDb = db as unknown as Parameters<
-                    typeof handleBalanceDeduction
-                >[0]["db"];
-                let markup: MarkupResolution | null = null;
-                let payerBucket: Awaited<
-                    ReturnType<typeof handleBalanceDeduction>
-                >["payerBucket"] = null;
-                let communityModelReward: CommunityModelRewardResolution | null =
-                    null;
-                let billedPrice = 0;
+                let settlement: GenerationSettlement | null = null;
                 let shouldRunAutoTopUp = false;
                 try {
                     const communityEndpoint = c.var.model?.communityEndpoint;
-                    const deduction = await handleBalanceDeduction({
-                        db: balanceDb,
+                    settlement = await settleGeneration({
+                        d1: c.env.DB,
+                        settlementId,
                         isBilledUsage: responseTracking.isBilledUsage,
-                        totalPrice: responseTracking.price?.totalPrice,
-                        userId: userTracking.userId,
+                        baseCharge: responseTracking.price?.totalPrice,
+                        payerUserId: userTracking.userId,
                         apiKeyId: c.var.auth?.apiKey?.id,
                         apiKeyPollenBalance: c.var.auth?.apiKey?.pollenBalance,
-                        byopClientKeyId,
+                        creatorKeyId: byopClientKeyId,
                         modelPaidOnly: c.var.model?.definition.paidOnly,
                         // Only public endpoints pay their owner a reward: a
-                        // private endpoint is owner-called (base cost billed to
-                        // the owner, no markup, no self-credit).
-                        communityModelReward:
+                        // private endpoint is owner-called and has no payout.
+                        supplierPayout:
                             communityEndpoint?.visibility === "public"
                                 ? {
                                       userId: communityEndpoint.ownerUserId,
-                                      rewardRate: COMMUNITY_MODEL_REWARD_RATE,
+                                      rate: COMMUNITY_MODEL_REWARD_RATE,
                                   }
                                 : null,
                     });
-                    markup = deduction.markup;
-                    communityModelReward = deduction.communityModelReward;
-                    payerBucket = deduction.payerBucket;
-                    billedPrice = deduction.billedPrice;
                     const totalPrice = responseTracking.price?.totalPrice ?? 0;
                     if (
                         totalPrice > 0 &&
-                        payerBucket === "pack" &&
-                        deduction.postDeductionPackBalance != null &&
-                        deduction.postDeductionPackBalance <=
+                        settlement.payerBucket === "pack" &&
+                        settlement.postSettlementPackBalance != null &&
+                        settlement.postSettlementPackBalance <=
                             AUTO_TOP_UP_THRESHOLD_POLLEN &&
                         userTracking.userId &&
                         (await isAutoTopUpConfigured(db, userTracking.userId))
@@ -272,7 +259,7 @@ export const track = (eventType: EventType) =>
                     }
                 } catch (error) {
                     log.error(
-                        "Billing deduction failed after response; continuing tracking: {error}",
+                        "Generation settlement failed after response; continuing tracking: {error}",
                         {
                             error:
                                 error instanceof Error
@@ -281,6 +268,7 @@ export const track = (eventType: EventType) =>
                         },
                     );
                 }
+                const payerBucket = settlement?.payerBucket ?? null;
                 const committedBalanceTracking = payerBucket
                     ? {
                           ...balanceTracking,
@@ -302,9 +290,7 @@ export const track = (eventType: EventType) =>
                     balanceTracking: committedBalanceTracking,
                     requestTracking,
                     responseTracking,
-                    markup,
-                    communityModelReward,
-                    billedPrice,
+                    settlement,
                     errorTracking: collectErrorData(response, c.get("error")),
                 });
 
@@ -641,9 +627,7 @@ type TrackingEventInput = {
     balanceTracking: BalanceData;
     requestTracking: RequestTrackingData;
     responseTracking: ResponseTrackingData;
-    markup: MarkupResolution | null;
-    communityModelReward: CommunityModelRewardResolution | null;
-    billedPrice: number;
+    settlement: GenerationSettlement | null;
     errorTracking?: ErrorData;
 };
 
@@ -682,11 +666,15 @@ function createTrackingEvent({
     balanceTracking,
     requestTracking,
     responseTracking,
-    markup,
-    communityModelReward,
-    billedPrice,
+    settlement,
     errorTracking,
 }: TrackingEventInput): InsertGenerationEvent {
+    const creatorPayout = settlement?.payouts.find(
+        (payout) => payout.kind === "creator",
+    );
+    const supplierPayout = settlement?.payouts.find(
+        (payout) => payout.kind === "supplier",
+    );
     return {
         id,
         requestId,
@@ -719,12 +707,12 @@ function createTrackingEvent({
         ...usageToEventParams(responseTracking.usage),
 
         totalCost: responseTracking.cost?.totalCost || 0,
-        totalPrice: billedPrice,
-        devPrice: responseTracking.price?.totalPrice || 0,
-        markupRate: markup?.markupRate ?? 0,
-        communityModelRewardUserId: communityModelReward?.userId,
-        communityModelRewardRate: communityModelReward?.rewardRate ?? 0,
-        communityModelRewardAmount: communityModelReward?.credit ?? 0,
+        totalPrice: settlement?.payerCharge ?? 0,
+        devPrice: settlement?.baseCharge ?? 0,
+        markupRate: creatorPayout?.rate ?? 0,
+        communityModelRewardUserId: supplierPayout?.recipientUserId,
+        communityModelRewardRate: supplierPayout?.rate ?? 0,
+        communityModelRewardAmount: supplierPayout?.amount ?? 0,
 
         ...responseTracking.contentFilterResults,
         ...errorTracking,

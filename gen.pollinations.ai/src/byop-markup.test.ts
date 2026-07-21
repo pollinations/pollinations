@@ -1,12 +1,12 @@
 import { env } from "cloudflare:test";
+import { authenticateApiKeyRequest } from "@shared/auth/api-key.ts";
 import { getUserBalance } from "@shared/billing/balance.ts";
-import { atomicCreditUserBalance } from "@shared/billing/deduction.ts";
+import {
+    resolveCreatorPayout,
+    settleGeneration,
+} from "@shared/billing/generation-settlement.ts";
 import { computeDevCredit, MARKUP_PCT } from "@shared/billing/markup.ts";
 import { roundPollenLedgerAmount } from "@shared/billing/precision.ts";
-import {
-    handleBalanceDeduction,
-    resolveDevMarkup,
-} from "@shared/billing/track-helpers.ts";
 import { COMMUNITY_MODEL_REWARD_RATE } from "@shared/community-endpoints.ts";
 import {
     apikey as apikeyTable,
@@ -22,6 +22,16 @@ import { describe, expect, it } from "vitest";
 import { checkBalance } from "@/utils/generation-access.ts";
 
 const db = drizzle(env.DB);
+
+function settleGenerationOnce(
+    params: Omit<Parameters<typeof settleGeneration>[0], "d1" | "settlementId">,
+) {
+    return settleGeneration({
+        d1: env.DB,
+        settlementId: crypto.randomUUID(),
+        ...params,
+    });
+}
 
 function fakeStatsEnv(price: number, model = "openai"): CloudflareBindings {
     return {
@@ -125,35 +135,36 @@ describe("BYOP markup", () => {
     it("resolves markup only for enabled publishable app keys with earnings enabled", async () => {
         const { payerId, devId, pkId } = await setupPayerAndDev();
 
-        const resolved = await resolveDevMarkup(db, pkId, 4, payerId);
+        const resolved = await resolveCreatorPayout(db, pkId, 4, payerId);
         expect(resolved).toEqual({
-            devUserId: devId,
-            devCredit: 4 * MARKUP_PCT,
-            markupRate: MARKUP_PCT,
+            kind: "creator",
+            recipientUserId: devId,
+            amount: 4 * MARKUP_PCT,
+            rate: MARKUP_PCT,
         });
 
-        expect(await resolveDevMarkup(db, pkId, 4, devId)).toBeNull();
+        expect(await resolveCreatorPayout(db, pkId, 4, devId)).toBeNull();
 
         await db
             .update(apikeyTable)
             .set({ metadata: JSON.stringify({ earningsEnabled: false }) })
             .where(sql`${apikeyTable.id} = ${pkId}`);
-        expect(await resolveDevMarkup(db, pkId, 4, payerId)).toBeNull();
+        expect(await resolveCreatorPayout(db, pkId, 4, payerId)).toBeNull();
     });
 
     it("credits creator Quest Pollen when payer spends Quest Pollen", async () => {
         const { payerId, devId, pkId } = await setupPayerAndDev();
 
-        const { markup } = await handleBalanceDeduction({
-            db,
+        const settlement = await settleGenerationOnce({
             isBilledUsage: true,
-            totalPrice: 1,
-            userId: payerId,
-            byopClientKeyId: pkId,
+            baseCharge: 1,
+            payerUserId: payerId,
+            creatorKeyId: pkId,
         });
+        const creatorPayout = settlement.payouts[0];
 
-        expect(markup?.devUserId).toBe(devId);
-        expect(markup?.devCredit).toBeCloseTo(MARKUP_PCT, 10);
+        expect(creatorPayout?.recipientUserId).toBe(devId);
+        expect(creatorPayout?.amount).toBeCloseTo(MARKUP_PCT, 10);
 
         expect((await getUserBalance(db, payerId)).tierBalance).toBeCloseTo(
             2 - 1 - MARKUP_PCT,
@@ -171,16 +182,16 @@ describe("BYOP markup", () => {
             .set({ tierBalance: 0.5, packBalance: 2 })
             .where(sql`${userTable.id} = ${payerId}`);
 
-        const { markup } = await handleBalanceDeduction({
-            db,
+        const settlement = await settleGenerationOnce({
             isBilledUsage: true,
-            totalPrice: 1,
-            userId: payerId,
-            byopClientKeyId: pkId,
+            baseCharge: 1,
+            payerUserId: payerId,
+            creatorKeyId: pkId,
         });
+        const creatorPayout = settlement.payouts[0];
 
-        expect(markup?.devUserId).toBe(devId);
-        expect(markup?.devCredit).toBeCloseTo(MARKUP_PCT, 10);
+        expect(creatorPayout?.recipientUserId).toBe(devId);
+        expect(creatorPayout?.amount).toBeCloseTo(MARKUP_PCT, 10);
 
         const payerBalances = await getUserBalance(db, payerId);
         expect(payerBalances.tierBalance).toBeCloseTo(0.5, 10);
@@ -321,13 +332,14 @@ describe("BYOP markup", () => {
         );
     });
 
-    it("uses the baseline estimate for BYOP API key budget preflight", async () => {
+    it("includes known creator markup in API key budget preflight", async () => {
         const vars = {
             auth: {
                 user: { id: "preflight-payer" },
                 apiKey: {
                     id: "sk-test",
                     byopClientKeyId: "pk-test",
+                    creatorEarningsEnabled: true,
                     pollenBalance: 1.1,
                 },
             },
@@ -341,23 +353,49 @@ describe("BYOP markup", () => {
             log: fakeLog(),
         } as unknown as Parameters<typeof checkBalance>[0];
 
-        await checkBalance(vars, {
-            ...fakeStatsEnv(1),
-            DB: {
-                prepare: () => {
-                    throw new Error("DB should not be used in preflight");
-                },
-            } as unknown as D1Database,
-        } as CloudflareBindings);
+        await expect(checkBalance(vars, fakeStatsEnv(1))).rejects.toMatchObject(
+            { status: 402 },
+        );
     });
 
-    it("uses the baseline estimate for BYOP user balance preflight", async () => {
+    it("exposes active creator earnings to generation preflight", async () => {
+        const { payerId, pkId } = await setupPayerAndDev();
+        const childKeyId = `byop-child-${crypto.randomUUID()}`;
+        await db.insert(apikeyTable).values({
+            id: childKeyId,
+            userId: payerId,
+            key: `hashed-${childKeyId}`,
+            byopClientKeyId: pkId,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+        });
+
+        const result = await authenticateApiKeyRequest({
+            request: new Request("https://gen.test", {
+                headers: { Authorization: "Bearer sk_test" },
+            }),
+            env: { DB: env.DB },
+            client: {
+                api: {
+                    verifyApiKey: async () => ({
+                        valid: true,
+                        key: { id: childKeyId, userId: payerId },
+                    }),
+                },
+            },
+        });
+
+        expect(result?.apiKey.creatorEarningsEnabled).toBe(true);
+    });
+
+    it("includes known creator markup in user balance preflight", async () => {
         const vars = {
             auth: {
                 user: { id: "preflight-payer" },
                 apiKey: {
                     id: "sk-test",
                     byopClientKeyId: "pk-test",
+                    creatorEarningsEnabled: true,
                     pollenBalance: 10,
                 },
             },
@@ -371,28 +409,22 @@ describe("BYOP markup", () => {
             log: fakeLog(),
         } as unknown as Parameters<typeof checkBalance>[0];
 
-        await checkBalance(vars, {
-            ...fakeStatsEnv(1),
-            DB: {
-                prepare: () => {
-                    throw new Error("DB should not be used in preflight");
-                },
-            } as unknown as D1Database,
-        } as CloudflareBindings);
+        await expect(checkBalance(vars, fakeStatsEnv(1))).rejects.toMatchObject(
+            { status: 402 },
+        );
     });
 
     it("does not credit or deduct for unbilled requests", async () => {
         const { payerId, devId, pkId } = await setupPayerAndDev();
 
-        const { markup } = await handleBalanceDeduction({
-            db,
+        const settlement = await settleGenerationOnce({
             isBilledUsage: false,
-            totalPrice: 1,
-            userId: payerId,
-            byopClientKeyId: pkId,
+            baseCharge: 1,
+            payerUserId: payerId,
+            creatorKeyId: pkId,
         });
 
-        expect(markup).toBeNull();
+        expect(settlement.payouts).toEqual([]);
         expect((await getUserBalance(db, payerId)).tierBalance).toBe(2);
         expect((await getUserBalance(db, devId)).tierBalance).toBe(0);
     });
@@ -401,52 +433,38 @@ describe("BYOP markup", () => {
         const { devId, pkId } = await setupPayerAndDev();
 
         await expect(
-            handleBalanceDeduction({
-                db,
+            settleGenerationOnce({
                 isBilledUsage: true,
-                totalPrice: 1,
-                userId: "missing-payer-row",
-                byopClientKeyId: pkId,
+                baseCharge: 1,
+                payerUserId: "missing-payer-row",
+                creatorKeyId: pkId,
             }),
-        ).rejects.toThrow(/affected 0 rows/);
+        ).rejects.toThrow(/dependencies missing/);
 
         expect((await getUserBalance(db, devId)).tierBalance).toBe(0);
     });
 
-    it("returns ok=false when crediting a missing user", async () => {
-        const { ok, newBalance } = await atomicCreditUserBalance(
-            db,
-            "missing-credit-user",
-            "tier",
-            1,
-        );
-
-        expect(ok).toBe(false);
-        expect(newBalance).toBeNull();
-    });
-
-    it("returns a rounded billedPrice that matches what the ledger was charged", async () => {
+    it("returns a rounded payer charge that matches what the ledger was charged", async () => {
         const { payerId, devId, pkId } = await setupPayerAndDev();
 
         const totalPrice = 1.23456789;
-        const { markup, billedPrice } = await handleBalanceDeduction({
-            db,
+        const settlement = await settleGenerationOnce({
             isBilledUsage: true,
-            totalPrice,
-            userId: payerId,
-            byopClientKeyId: pkId,
+            baseCharge: totalPrice,
+            payerUserId: payerId,
+            creatorKeyId: pkId,
         });
+        const creatorPayout = settlement.payouts[0];
 
-        expect(markup).not.toBeNull();
-        // billedPrice is totalPrice + devCredit, snapped to ledger precision.
-        expect(billedPrice).toBe(
-            roundPollenLedgerAmount(totalPrice + (markup?.devCredit ?? 0)),
+        expect(creatorPayout).toBeDefined();
+        expect(settlement.payerCharge).toBe(
+            roundPollenLedgerAmount(totalPrice + (creatorPayout?.amount ?? 0)),
         );
 
         // Dev credit lands on the ledger at the same precision.
         const creditBalance = (await getUserBalance(db, devId)).tierBalance;
         expect(creditBalance).toBe(
-            roundPollenLedgerAmount(markup?.devCredit ?? 0),
+            roundPollenLedgerAmount(creatorPayout?.amount ?? 0),
         );
     });
 
@@ -454,23 +472,23 @@ describe("BYOP markup", () => {
         const { payerId } = await setupPayerAndDev();
         const ownerId = await createBalanceUser("community-owner");
 
-        const { communityModelReward, billedPrice } =
-            await handleBalanceDeduction({
-                db,
-                isBilledUsage: true,
-                totalPrice: 1,
-                userId: payerId,
-                communityModelReward: {
-                    userId: ownerId,
-                    rewardRate: COMMUNITY_MODEL_REWARD_RATE,
-                },
-            });
+        const settlement = await settleGenerationOnce({
+            isBilledUsage: true,
+            baseCharge: 1,
+            payerUserId: payerId,
+            supplierPayout: {
+                userId: ownerId,
+                rate: COMMUNITY_MODEL_REWARD_RATE,
+            },
+        });
+        const supplierPayout = settlement.payouts[0];
 
-        expect(billedPrice).toBe(1);
-        expect(communityModelReward).toEqual({
-            userId: ownerId,
-            rewardRate: COMMUNITY_MODEL_REWARD_RATE,
-            credit: COMMUNITY_MODEL_REWARD_RATE,
+        expect(settlement.payerCharge).toBe(1);
+        expect(supplierPayout).toEqual({
+            kind: "supplier",
+            recipientUserId: ownerId,
+            rate: COMMUNITY_MODEL_REWARD_RATE,
+            amount: COMMUNITY_MODEL_REWARD_RATE,
         });
         expect((await getUserBalance(db, payerId)).tierBalance).toBeCloseTo(
             1,
@@ -486,25 +504,29 @@ describe("BYOP markup", () => {
         const { payerId, devId, pkId } = await setupPayerAndDev();
         const ownerId = await createBalanceUser("community-owner");
 
-        const { markup, communityModelReward, billedPrice } =
-            await handleBalanceDeduction({
-                db,
-                isBilledUsage: true,
-                totalPrice: 1,
-                userId: payerId,
-                byopClientKeyId: pkId,
-                communityModelReward: {
-                    userId: ownerId,
-                    rewardRate: COMMUNITY_MODEL_REWARD_RATE,
-                },
-            });
+        const settlement = await settleGenerationOnce({
+            isBilledUsage: true,
+            baseCharge: 1,
+            payerUserId: payerId,
+            creatorKeyId: pkId,
+            supplierPayout: {
+                userId: ownerId,
+                rate: COMMUNITY_MODEL_REWARD_RATE,
+            },
+        });
+        const creatorPayout = settlement.payouts.find(
+            (payout) => payout.kind === "creator",
+        );
+        const supplierPayout = settlement.payouts.find(
+            (payout) => payout.kind === "supplier",
+        );
 
-        expect(markup?.devCredit).toBeCloseTo(MARKUP_PCT, 10);
-        expect(communityModelReward?.credit).toBeCloseTo(
+        expect(creatorPayout?.amount).toBeCloseTo(MARKUP_PCT, 10);
+        expect(supplierPayout?.amount).toBeCloseTo(
             COMMUNITY_MODEL_REWARD_RATE,
             10,
         );
-        expect(billedPrice).toBe(1 + MARKUP_PCT);
+        expect(settlement.payerCharge).toBe(1 + MARKUP_PCT);
         expect((await getUserBalance(db, payerId)).tierBalance).toBeCloseTo(
             2 - 1 - MARKUP_PCT,
             10,
@@ -525,27 +547,82 @@ describe("BYOP markup", () => {
             pack: 0,
         });
 
-        const { communityModelReward, billedPrice } =
-            await handleBalanceDeduction({
-                db,
-                isBilledUsage: true,
-                totalPrice: 1,
+        const settlement = await settleGenerationOnce({
+            isBilledUsage: true,
+            baseCharge: 1,
+            payerUserId: ownerId,
+            supplierPayout: {
                 userId: ownerId,
-                communityModelReward: {
-                    userId: ownerId,
-                    rewardRate: COMMUNITY_MODEL_REWARD_RATE,
-                },
-            });
+                rate: COMMUNITY_MODEL_REWARD_RATE,
+            },
+        });
+        const supplierPayout = settlement.payouts[0];
 
-        expect(billedPrice).toBe(1);
-        expect(communityModelReward).toEqual({
-            userId: ownerId,
-            rewardRate: COMMUNITY_MODEL_REWARD_RATE,
-            credit: COMMUNITY_MODEL_REWARD_RATE,
+        expect(settlement.payerCharge).toBe(1);
+        expect(supplierPayout).toEqual({
+            kind: "supplier",
+            recipientUserId: ownerId,
+            rate: COMMUNITY_MODEL_REWARD_RATE,
+            amount: COMMUNITY_MODEL_REWARD_RATE,
         });
         expect((await getUserBalance(db, ownerId)).tierBalance).toBeCloseTo(
             2 - 1 + COMMUNITY_MODEL_REWARD_RATE,
             10,
         );
+    });
+
+    it("settles the same server-generated settlement id only once", async () => {
+        const { payerId, devId, pkId } = await setupPayerAndDev();
+        const settlementId = crypto.randomUUID();
+        const input = {
+            d1: env.DB,
+            settlementId,
+            isBilledUsage: true,
+            baseCharge: 1,
+            payerUserId: payerId,
+            creatorKeyId: pkId,
+        };
+
+        const [first, retry] = await Promise.all([
+            settleGeneration(input),
+            settleGeneration(input),
+        ]);
+
+        expect(retry).toEqual(first);
+        expect((await getUserBalance(db, payerId)).tierBalance).toBeCloseTo(
+            2 - 1 - MARKUP_PCT,
+            10,
+        );
+        expect((await getUserBalance(db, devId)).tierBalance).toBeCloseTo(
+            MARKUP_PCT,
+            10,
+        );
+    });
+
+    it("clamps a one-request API key budget overrun to zero", async () => {
+        const { payerId } = await setupPayerAndDev();
+        const apiKeyId = `soft-budget-${crypto.randomUUID()}`;
+        await db.insert(apikeyTable).values({
+            id: apiKeyId,
+            userId: payerId,
+            key: `hashed-${apiKeyId}`,
+            pollenBalance: 0.1,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+        });
+
+        await settleGenerationOnce({
+            isBilledUsage: true,
+            baseCharge: 1,
+            payerUserId: payerId,
+            apiKeyId,
+            apiKeyPollenBalance: 0.1,
+        });
+
+        const [key] = await db
+            .select({ pollenBalance: apikeyTable.pollenBalance })
+            .from(apikeyTable)
+            .where(sql`${apikeyTable.id} = ${apiKeyId}`);
+        expect(key?.pollenBalance).toBe(0);
     });
 });

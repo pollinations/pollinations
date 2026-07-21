@@ -4,8 +4,8 @@ import {
     withVertexCacheStorage,
 } from "./gemini-billing";
 import {
-    PERPLEXITY_DEEP_BILLING,
     PERPLEXITY_FAST_BILLING,
+    PERPLEXITY_HIGH_BILLING,
     PERPLEXITY_PRO_BILLING,
     PERPLEXITY_REASONING_BILLING,
 } from "./perplexity-billing";
@@ -31,12 +31,10 @@ export const AUDIO_VOICES = [
 
 export const DEFAULT_TEXT_MODEL = "openai" as const;
 export type TextModelName = keyof typeof TEXT_SERVICES;
-export type TextModelId = (typeof TEXT_SERVICES)[TextModelName]["modelId"];
 
 export const TEXT_SERVICES = {
     "openai": {
         aliases: ["gpt-5.4-nano"],
-        modelId: "gpt-5.4-nano",
         provider: "azure",
         brand: "OpenAI",
         category: "text",
@@ -48,7 +46,8 @@ export const TEXT_SERVICES = {
             completionTextTokens: perMillion(1.25),
         },
         title: "GPT-5.4 Nano",
-        description: "GPT-5.4 Nano - Fast & Balanced",
+        description:
+            "Fast, affordable all-rounder for everyday chat and image questions",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
         maxReferenceImages: 10, // Azure OpenAI vision limit: 10 images/chat request (provider cap).
@@ -58,7 +57,6 @@ export const TEXT_SERVICES = {
     },
     "openai-fast": {
         aliases: ["gpt-5-nano", "gpt-5-nano-2025-08-07"],
-        modelId: "gpt-5-nano-2025-08-07",
         provider: "azure",
         brand: "OpenAI",
         category: "text",
@@ -70,7 +68,8 @@ export const TEXT_SERVICES = {
             completionTextTokens: perMillion(0.4),
         },
         title: "GPT-5 Nano",
-        description: "GPT-5 Nano - Ultra Fast & Affordable",
+        description:
+            "Ultra-fast and ultra-cheap for simple tasks; not built for hard problems",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
         maxReferenceImages: 10, // Azure OpenAI vision limit: 10 images/chat request (provider cap).
@@ -78,9 +77,29 @@ export const TEXT_SERVICES = {
         contextLength: 400000,
         isSpecialized: false,
     },
+    "gpt-oss": {
+        aliases: ["gpt-oss-20b", "ovh-reasoning"],
+        provider: "ovhcloud",
+        brand: "OpenAI",
+        category: "text",
+        addedDate: new Date("2026-07-18").getTime(),
+        priceMultiplier: 1,
+        cost: {
+            promptTextTokens: perMillion(0.05),
+            completionTextTokens: perMillion(0.18),
+        },
+        title: "GPT-OSS 20B",
+        description:
+            "Compact open-weight reasoner; solid logic on a budget, limited world knowledge",
+        inputModalities: ["text"],
+        outputModalities: ["text"],
+        tools: true,
+        reasoning: true,
+        contextLength: 131072,
+        isSpecialized: false,
+    },
     "gpt-5.4": {
         aliases: ["gpt-5.4-reasoning", "gpt-5.2", "gpt-5.2-reasoning"],
-        modelId: "gpt-5.4",
         provider: "azure",
         brand: "OpenAI",
         category: "text",
@@ -92,7 +111,8 @@ export const TEXT_SERVICES = {
             completionTextTokens: perMillion(15.0),
         },
         title: "GPT-5.4",
-        description: "GPT-5.4 - Most Powerful & Intelligent",
+        description:
+            "Deep reasoning for the hardest questions; slower and pricier than lighter tiers",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
         maxReferenceImages: 10, // Azure OpenAI vision limit: 10 images/chat request (provider cap).
@@ -103,7 +123,6 @@ export const TEXT_SERVICES = {
     },
     "gpt-5.4-mini": {
         aliases: ["gpt-5-mini", "openai-mini"],
-        modelId: "gpt-5.4-mini",
         provider: "azure",
         brand: "OpenAI",
         category: "text",
@@ -115,7 +134,8 @@ export const TEXT_SERVICES = {
             completionTextTokens: perMillion(4.5),
         },
         title: "GPT-5.4 Mini",
-        description: "GPT-5.4 Mini - Balanced Speed & Cost",
+        description:
+            "Strong all-round quality at mid cost; a good default when speed matters",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
         maxReferenceImages: 10, // Azure OpenAI vision limit: 10 images/chat request (provider cap).
@@ -125,7 +145,6 @@ export const TEXT_SERVICES = {
     },
     "openai-large": {
         aliases: ["gpt-5.5", "gpt-5.5-reasoning", "openai-reasoning"],
-        modelId: "gpt-5.5",
         provider: "azure",
         brand: "OpenAI",
         category: "text",
@@ -137,7 +156,8 @@ export const TEXT_SERVICES = {
             completionTextTokens: perMillion(30.0),
         },
         title: "GPT-5.5",
-        description: "GPT-5.5 - Frontier Reasoning",
+        description:
+            "Frontier reasoning for complex, multi-step problems; takes its time thinking",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
         maxReferenceImages: 10, // Azure OpenAI vision limit: 10 images/chat request (provider cap).
@@ -148,12 +168,11 @@ export const TEXT_SERVICES = {
     },
     "gpt-5.6-sol": {
         aliases: ["chatgpt-sol", "chatgpt-5.6-sol"],
-        modelId: "gpt-5.6-sol",
         provider: "azure",
         brand: "OpenAI",
         category: "text",
         addedDate: new Date("2026-07-10").getTime(),
-        priceMultiplier: 0.75,
+        priceMultiplier: 0.5,
         cost: {
             promptTextTokens: perMillion(5.0),
             promptCachedTokens: perMillion(0.5),
@@ -172,12 +191,11 @@ export const TEXT_SERVICES = {
     },
     "gpt-5.6-terra": {
         aliases: ["chatgpt-terra", "chatgpt-5.6-terra"],
-        modelId: "gpt-5.6-terra",
         provider: "azure",
         brand: "OpenAI",
         category: "text",
         addedDate: new Date("2026-07-10").getTime(),
-        priceMultiplier: 0.75,
+        priceMultiplier: 0.5,
         cost: {
             promptTextTokens: perMillion(2.5),
             promptCachedTokens: perMillion(0.25),
@@ -196,12 +214,11 @@ export const TEXT_SERVICES = {
     },
     "gpt-5.6-luna": {
         aliases: ["chatgpt-luna", "chatgpt-5.6-luna"],
-        modelId: "gpt-5.6-luna",
         provider: "azure",
         brand: "OpenAI",
         category: "text",
         addedDate: new Date("2026-07-10").getTime(),
-        priceMultiplier: 0.75,
+        priceMultiplier: 0.5,
         cost: {
             promptTextTokens: perMillion(1.0),
             promptCachedTokens: perMillion(0.1),
@@ -220,7 +237,6 @@ export const TEXT_SERVICES = {
     },
     "mercury": {
         aliases: ["mercury-2", "inception", "inception-mercury"],
-        modelId: "mercury-2",
         provider: "inception",
         brand: "Inception",
         category: "text",
@@ -233,7 +249,8 @@ export const TEXT_SERVICES = {
             completionTextTokens: perMillion(0.75),
         },
         title: "Mercury 2",
-        description: "Mercury 2 - Fast diffusion LLM for real-time agents",
+        description:
+            "Near-instant responses for real-time apps; skip it for heavy reasoning",
         inputModalities: ["text"],
         outputModalities: ["text"],
         tools: true,
@@ -242,7 +259,6 @@ export const TEXT_SERVICES = {
     },
     "qwen-coder": {
         aliases: ["qwen3-coder", "qwen3-coder-30b-a3b-instruct"],
-        modelId: "qwen3-coder-30b-a3b-instruct",
         provider: "ovhcloud",
         brand: "Qwen",
         category: "text",
@@ -253,7 +269,8 @@ export const TEXT_SERVICES = {
             completionTextTokens: perMillion(0.22),
         },
         title: "Qwen3 Coder 30B",
-        description: "Qwen3 Coder 30B - Specialized for Code Generation",
+        description:
+            "Writes and fixes code quickly at low cost; best for programming, not chat",
         inputModalities: ["text"],
         outputModalities: ["text"],
         tools: true,
@@ -266,7 +283,6 @@ export const TEXT_SERVICES = {
             "mistral-small-2503",
             "mistral-small-3.2-24b-instruct-2506",
         ],
-        modelId: "mistral-small-2503",
         provider: "openrouter",
         brand: "Mistral",
         category: "text",
@@ -278,7 +294,7 @@ export const TEXT_SERVICES = {
         },
         title: "Mistral Small 3.2",
         description:
-            "Mistral Small 3.2 - Improved Instruction Following & Function Calling",
+            "Follows instructions reliably and calls functions well, at low cost",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
         maxReferenceImages: 10, // OpenRouter/Mistral image count varies by provider/model; Pollinations cap.
@@ -293,7 +309,6 @@ export const TEXT_SERVICES = {
             "mistral-small-4",
             "mistral-small-2603",
         ],
-        modelId: "mistral-small-2603",
         provider: "openrouter",
         brand: "Mistral",
         category: "text",
@@ -305,7 +320,8 @@ export const TEXT_SERVICES = {
             completionTextTokens: perMillion(0.6),
         },
         title: "Mistral Small 4",
-        description: "Mistral Small 4 - Unified Reasoning & Multimodal",
+        description:
+            "Compact all-rounder that combines reasoning with image understanding",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
         maxReferenceImages: 10, // Mistral image count varies by model/token budget; Pollinations cap.
@@ -321,7 +337,6 @@ export const TEXT_SERVICES = {
             "gpt-4o-mini-audio-preview",
             "gpt-4o-mini-audio-preview-2024-12-17",
         ],
-        modelId: "gpt-audio-mini-2025-12-15",
         provider: "azure",
         brand: "OpenAI",
         category: "text",
@@ -334,7 +349,8 @@ export const TEXT_SERVICES = {
             completionAudioTokens: perMillion(20.0),
         },
         title: "GPT Audio Mini",
-        description: "GPT Audio Mini - Voice Input & Output",
+        description:
+            "Talks and listens — voice conversations with spoken or text replies",
         voices: [...AUDIO_VOICES],
         inputModalities: ["text", "audio"],
         outputModalities: ["audio", "text"],
@@ -344,7 +360,6 @@ export const TEXT_SERVICES = {
     },
     "openai-audio-large": {
         aliases: ["gpt-audio", "gpt-audio-1.5", "gpt-audio-2025-12-15"],
-        modelId: "gpt-audio-1.5",
         provider: "azure",
         brand: "OpenAI",
         category: "text",
@@ -357,7 +372,8 @@ export const TEXT_SERVICES = {
             completionAudioTokens: perMillion(80.0),
         },
         title: "GPT Audio 1.5",
-        description: "GPT Audio 1.5 - Premium Voice Input & Output",
+        description:
+            "Rich, natural voice conversations; premium quality at a higher price",
         voices: [...AUDIO_VOICES],
         inputModalities: ["text", "audio"],
         outputModalities: ["audio", "text"],
@@ -367,7 +383,6 @@ export const TEXT_SERVICES = {
     },
     "gemini-3-flash": {
         aliases: ["gemini-3-flash-preview"],
-        modelId: "gemini-3-flash-preview",
         provider: "google",
         brand: "Google",
         category: "text",
@@ -383,7 +398,8 @@ export const TEXT_SERVICES = {
         },
         billing: withVertexCacheStorage(GEMINI_3_SEARCH_BILLING, 1.0),
         title: "Gemini 3 Flash",
-        description: "Gemini 3 Flash - Pro-Grade Reasoning at Flash Speed",
+        description:
+            "Pro-grade reasoning at high speed, with web search and a huge context window",
         inputModalities: ["text", "image", "audio", "video"],
         outputModalities: ["text"],
         maxReferenceImages: 3600, // Gemini API image-understanding file limit.
@@ -396,7 +412,6 @@ export const TEXT_SERVICES = {
     },
     "gemini": {
         aliases: ["gemini-3.5-flash"],
-        modelId: "gemini-3.5-flash",
         provider: "google",
         brand: "Google",
         category: "text",
@@ -414,7 +429,8 @@ export const TEXT_SERVICES = {
         },
         billing: withVertexCacheStorage(GEMINI_3_SEARCH_BILLING, 1.0),
         title: "Gemini 3.5 Flash",
-        description: "Gemini 3.5 Flash - Next-Gen Reasoning at Flash Speed",
+        description:
+            "Sharp, fast reasoning over text, images, audio and video, plus web search",
         inputModalities: ["text", "image", "audio", "video"],
         outputModalities: ["text"],
         maxReferenceImages: 3600, // Gemini API image-understanding file limit.
@@ -431,7 +447,6 @@ export const TEXT_SERVICES = {
             "gemini-3.1-flash-lite-preview",
             "gemini-flash-lite",
         ],
-        modelId: "gemini-3.1-flash-lite",
         provider: "google",
         brand: "Google",
         category: "text",
@@ -447,7 +462,8 @@ export const TEXT_SERVICES = {
         },
         billing: withVertexCacheStorage(GEMINI_3_SEARCH_BILLING, 1.0),
         title: "Gemini 3.1 Flash Lite",
-        description: "Gemini 3.1 Flash Lite - Fast & Cost-Effective",
+        description:
+            "Quick, low-cost answers across text, images, audio and video",
         inputModalities: ["text", "image", "audio", "video"],
         outputModalities: ["text"],
         maxReferenceImages: 3600, // Gemini API image-understanding file limit.
@@ -460,7 +476,6 @@ export const TEXT_SERVICES = {
     },
     "gemini-fast": {
         aliases: ["gemini-2.5-flash-lite"],
-        modelId: "gemini-2.5-flash-lite",
         provider: "google",
         brand: "Google",
         category: "text",
@@ -476,8 +491,9 @@ export const TEXT_SERVICES = {
         },
         billing: withVertexCacheStorage(GEMINI_25_GROUNDING_BILLING, 1.0),
         title: "Gemini 2.5 Flash Lite",
-        description: "Gemini 2.5 Flash Lite - Ultra Fast & Cost-Effective",
-        inputModalities: ["text", "image", "video"],
+        description:
+            "Cheapest way to handle everyday multimodal tasks; trades depth for speed",
+        inputModalities: ["text", "image", "audio", "video"],
         outputModalities: ["text"],
         maxReferenceImages: 3600, // Gemini API image-understanding file limit.
         maxReferenceVideos: 10, // Gemini API video-understanding upload limit.
@@ -495,7 +511,6 @@ export const TEXT_SERVICES = {
             "deepseek-lite",
             "deepseek-flash",
         ],
-        modelId: "accounts/fireworks/models/deepseek-v4-flash",
         provider: "fireworks",
         brand: "DeepSeek",
         category: "text",
@@ -507,7 +522,7 @@ export const TEXT_SERVICES = {
             completionTextTokens: perMillion(0.28),
         },
         title: "DeepSeek V4 Flash (Lite)",
-        description: "DeepSeek V4 Flash (Lite) - Fast Reasoning & Coding",
+        description: "Fast reasoning and coding at bargain prices",
         inputModalities: ["text"],
         outputModalities: ["text"],
         tools: true,
@@ -522,7 +537,6 @@ export const TEXT_SERVICES = {
             "gemma-4-26b-a4b",
             "gemma-4-26b-a4b-it",
         ],
-        modelId: "google/gemma-4-26b-a4b-it",
         provider: "openrouter",
         addedDate: new Date("2026-05-08").getTime(),
         brand: "Google",
@@ -536,7 +550,7 @@ export const TEXT_SERVICES = {
         },
         title: "Gemma 4 26B A4B",
         description:
-            "Gemma 4 26B A4B - Open-source multimodal MoE for fast inference",
+            "Efficient open-source chat with image understanding; modest on hard problems",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
         maxReferenceImages: 10, // OpenRouter image count varies by provider/model; Pollinations cap.
@@ -545,9 +559,30 @@ export const TEXT_SERVICES = {
         contextLength: 262144,
         isSpecialized: false,
     },
+    "gemma-4-31b": {
+        aliases: ["gemma-large", "gemma-4-31b-it"],
+        provider: "openrouter",
+        addedDate: new Date("2026-07-18").getTime(),
+        brand: "Google",
+        category: "text",
+        paidOnly: false,
+        priceMultiplier: 1,
+        cost: {
+            promptTextTokens: perMillion(0.12),
+            completionTextTokens: perMillion(0.37),
+        },
+        title: "Gemma 4 31B",
+        description: "Dense multimodal reasoning with configurable thinking",
+        inputModalities: ["text", "image"],
+        outputModalities: ["text"],
+        maxReferenceImages: 10,
+        tools: true,
+        reasoning: true,
+        contextLength: 262144,
+        isSpecialized: false,
+    },
     "deepseek-pro": {
         aliases: ["deepseek-v4-pro"],
-        modelId: "accounts/fireworks/models/deepseek-v4-pro",
         provider: "fireworks",
         brand: "DeepSeek",
         category: "text",
@@ -559,7 +594,7 @@ export const TEXT_SERVICES = {
             completionTextTokens: perMillion(3.48),
         },
         title: "DeepSeek V4 Pro",
-        description: "DeepSeek V4 Pro - Advanced Reasoning & Coding",
+        description: "Deep reasoning and strong coding for demanding problems",
         inputModalities: ["text"],
         outputModalities: ["text"],
         tools: true,
@@ -578,7 +613,6 @@ export const TEXT_SERVICES = {
             "grok-4-20-non-reasoning",
             "grok-non-reasoning",
         ],
-        modelId: "grok-4-20-non-reasoning",
         provider: "azure",
         brand: "xAI",
         category: "text",
@@ -591,7 +625,8 @@ export const TEXT_SERVICES = {
             completionTextTokens: perMillion(6.0),
         },
         title: "Grok 4.20 Non-Reasoning",
-        description: "Grok 4.20 Non-Reasoning - Fast multimodal tool-calling",
+        description:
+            "Snappy multimodal chat with tool calling; skips step-by-step reasoning",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
         maxReferenceImages: 100, // xAI publishes no hard image-count limit; Pollinations cap.
@@ -601,7 +636,6 @@ export const TEXT_SERVICES = {
     },
     "grok-4-20-reasoning": {
         aliases: ["grok-4-20", "grok-4-1-fast-reasoning"],
-        modelId: "grok-4-20-reasoning",
         provider: "azure",
         brand: "xAI",
         category: "text",
@@ -615,7 +649,7 @@ export const TEXT_SERVICES = {
         },
         title: "Grok 4.20 Reasoning",
         description:
-            "Grok 4.20 Reasoning - Multimodal reasoning and agentic tasks",
+            "Step-by-step multimodal reasoning for agentic tasks; slower than the non-thinking variant",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
         maxReferenceImages: 100, // xAI publishes no hard image-count limit; Pollinations cap.
@@ -626,7 +660,6 @@ export const TEXT_SERVICES = {
     },
     "grok-large": {
         aliases: ["grok-4.3", "grok-4-3", "grok-reasoning"],
-        modelId: "grok-4.3",
         provider: "azure",
         brand: "xAI",
         category: "text",
@@ -641,7 +674,8 @@ export const TEXT_SERVICES = {
             completionTextTokens: perMillion(2.5),
         },
         title: "Grok 4.3",
-        description: "Grok 4.3 - Newer & cheaper multimodal reasoning",
+        description:
+            "Strong multimodal reasoning with a huge context window at a friendly price",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
         maxReferenceImages: 100, // xAI publishes no hard image-count limit; Pollinations cap.
@@ -650,9 +684,33 @@ export const TEXT_SERVICES = {
         contextLength: 1048576, // xAI Grok 4.3 context window.
         isSpecialized: false,
     },
+    "grok-4.5": {
+        aliases: ["grok-4-5"],
+        provider: "openrouter",
+        brand: "xAI",
+        category: "text",
+        addedDate: new Date("2026-07-18").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1,
+        // OpenRouter doubles token rates above 200K prompt tokens. Pollinations
+        // keeps the full context window and absorbs that higher tier.
+        cost: {
+            promptTextTokens: perMillion(2),
+            promptCachedTokens: perMillion(0.5),
+            completionTextTokens: perMillion(6),
+        },
+        title: "Grok 4.5",
+        description: "Frontier reasoning for coding and knowledge work",
+        inputModalities: ["text", "image"],
+        outputModalities: ["text"],
+        maxReferenceImages: 10,
+        tools: true,
+        reasoning: true,
+        contextLength: 500000,
+        isSpecialized: false,
+    },
     "gemini-search": {
         aliases: ["gemini-2.5-flash-search", "gemini-2.5-flash-lite-search"],
-        modelId: "gemini-2.5-flash-lite",
         provider: "google",
         brand: "Google",
         category: "text",
@@ -671,7 +729,7 @@ export const TEXT_SERVICES = {
         billing: withVertexCacheStorage(GEMINI_25_GROUNDING_BILLING, 1.0),
         title: "Google Gemini 2.5 Flash Lite Search",
         description:
-            "Google Gemini 2.5 Flash Lite Search - Web-grounded answers via Google Search",
+            "Answers grounded in live web search; fast and cheap, not a deep reasoner",
         inputModalities: ["text", "image", "video"],
         outputModalities: ["text"],
         maxReferenceImages: 3600, // Gemini API image-understanding file limit.
@@ -684,7 +742,6 @@ export const TEXT_SERVICES = {
     },
     "gemini-search-fast": {
         aliases: ["gemini-3.1-flash-lite-search"],
-        modelId: "gemini-3.1-flash-lite",
         provider: "google",
         brand: "Google",
         category: "text",
@@ -704,8 +761,7 @@ export const TEXT_SERVICES = {
         },
         billing: withVertexCacheStorage(GEMINI_3_SEARCH_BILLING, 1.0),
         title: "Gemini 3.1 Flash Lite Search",
-        description:
-            "Gemini 3.1 Flash Lite Search - Cheap grounded web answers",
+        description: "Low-cost answers grounded in live web search results",
         inputModalities: ["text", "image", "audio", "video"],
         outputModalities: ["text"],
         maxReferenceImages: 3600, // Gemini API image-understanding file limit.
@@ -718,7 +774,6 @@ export const TEXT_SERVICES = {
     },
     "gemini-search-large": {
         aliases: ["gemini-3.5-flash-search"],
-        modelId: "gemini-3.5-flash",
         provider: "google",
         brand: "Google",
         category: "text",
@@ -736,7 +791,7 @@ export const TEXT_SERVICES = {
         },
         billing: withVertexCacheStorage(GEMINI_3_SEARCH_BILLING, 1.0),
         title: "Gemini 3.5 Flash Search",
-        description: "Gemini 3.5 Flash Search - Premium grounded web research",
+        description: "Premium web research with grounded, up-to-date answers",
         inputModalities: ["text", "image", "audio", "video"],
         outputModalities: ["text"],
         maxReferenceImages: 3600, // Gemini API image-understanding file limit.
@@ -749,7 +804,6 @@ export const TEXT_SERVICES = {
     },
     "midijourney": {
         aliases: [],
-        modelId: "gpt-5.4-mini",
         provider: "azure",
         brand: "Pollinations",
         category: "text",
@@ -761,7 +815,7 @@ export const TEXT_SERVICES = {
             completionTextTokens: perMillion(4.5),
         },
         title: "MIDIjourney",
-        description: "MIDIjourney - AI Music Composition Assistant",
+        description: "Turns your musical ideas into playable MIDI notation",
         inputModalities: ["text"],
         outputModalities: ["text"],
         tools: true,
@@ -769,7 +823,6 @@ export const TEXT_SERVICES = {
     },
     "midijourney-large": {
         aliases: [],
-        modelId: "gpt-5.5",
         provider: "azure",
         brand: "Pollinations",
         category: "text",
@@ -781,7 +834,8 @@ export const TEXT_SERVICES = {
             completionTextTokens: perMillion(30.0),
         },
         title: "MIDIjourney Large",
-        description: "MIDIjourney Large - Premium AI Music Composition",
+        description:
+            "Composes richer, more detailed MIDI arrangements; costs more per piece",
         inputModalities: ["text"],
         outputModalities: ["text"],
         tools: true,
@@ -789,7 +843,6 @@ export const TEXT_SERVICES = {
     },
     "claude-fast": {
         aliases: ["claude-haiku-4.5", "claude-haiku"],
-        modelId: "claude-haiku-4-5-20251001",
         provider: "bedrock",
         brand: "Anthropic",
         category: "text",
@@ -804,7 +857,8 @@ export const TEXT_SERVICES = {
             completionTextTokens: perMillion(5),
         },
         title: "Claude Haiku 4.5",
-        description: "Claude Haiku 4.5 - Fast & Intelligent",
+        description:
+            "Quick, capable chat and coding at low cost; great for high-volume tasks",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
         maxReferenceImages: 20, // Bedrock Converse image limit.
@@ -814,7 +868,6 @@ export const TEXT_SERVICES = {
     },
     "claude": {
         aliases: ["claude-sonnet-4.6", "claude-sonnet"],
-        modelId: "claude-sonnet-4-6",
         provider: "bedrock",
         brand: "Anthropic",
         category: "text",
@@ -829,7 +882,8 @@ export const TEXT_SERVICES = {
             completionTextTokens: perMillion(15),
         },
         title: "Claude Sonnet 4.6",
-        description: "Claude Sonnet 4.6 - Most Capable & Balanced",
+        description:
+            "Excellent writing, coding and analysis with balanced speed and cost",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
         maxReferenceImages: 20, // Bedrock Converse image limit.
@@ -839,7 +893,6 @@ export const TEXT_SERVICES = {
     },
     "claude-sonnet-5": {
         aliases: ["sonnet-5"],
-        modelId: "claude-sonnet-5",
         provider: "bedrock",
         brand: "Anthropic",
         category: "text",
@@ -854,7 +907,8 @@ export const TEXT_SERVICES = {
             completionTextTokens: perMillion(10),
         },
         title: "Claude Sonnet 5",
-        description: "Claude Sonnet 5 - Best balance of speed & intelligence",
+        description:
+            "Sharp reasoning with fast responses — a strong default for most work",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
         maxReferenceImages: 20, // Bedrock Converse image limit.
@@ -864,7 +918,6 @@ export const TEXT_SERVICES = {
     },
     "claude-opus-4.6": {
         aliases: ["claude-opus-4.5"],
-        modelId: "claude-opus-4-6",
         provider: "bedrock",
         brand: "Anthropic",
         category: "text",
@@ -879,7 +932,8 @@ export const TEXT_SERVICES = {
             completionTextTokens: perMillion(25),
         },
         title: "Claude Opus 4.6",
-        description: "Claude Opus 4.6 - Most Intelligent Model",
+        description:
+            "Deep analysis and careful reasoning for tough problems; slower and premium-priced",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
         maxReferenceImages: 20, // Bedrock Converse image limit.
@@ -889,7 +943,6 @@ export const TEXT_SERVICES = {
     },
     "claude-opus-4.7": {
         aliases: [],
-        modelId: "claude-opus-4-7",
         provider: "bedrock",
         brand: "Anthropic",
         category: "text",
@@ -904,7 +957,8 @@ export const TEXT_SERVICES = {
             completionTextTokens: perMillion(25),
         },
         title: "Claude Opus 4.7",
-        description: "Claude Opus 4.7 - Most Intelligent Model",
+        description:
+            "Heavyweight reasoning and analysis; built for hard problems, not quick replies",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
         maxReferenceImages: 20, // Bedrock Converse image limit.
@@ -914,7 +968,6 @@ export const TEXT_SERVICES = {
     },
     "claude-large": {
         aliases: ["claude-opus-4.8", "claude-opus"],
-        modelId: "claude-opus-4-8",
         provider: "bedrock",
         brand: "Anthropic",
         category: "text",
@@ -929,7 +982,8 @@ export const TEXT_SERVICES = {
             completionTextTokens: perMillion(25),
         },
         title: "Claude Opus 4.8",
-        description: "Claude Opus 4.8 - Most Intelligent Model",
+        description:
+            "Top-shelf reasoning, writing and coding; premium price per token",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
         maxReferenceImages: 20, // Bedrock Converse image limit.
@@ -939,7 +993,6 @@ export const TEXT_SERVICES = {
     },
     "claude-fable-5": {
         aliases: [],
-        modelId: "claude-fable-5",
         provider: "bedrock",
         brand: "Anthropic",
         category: "text",
@@ -954,7 +1007,8 @@ export const TEXT_SERVICES = {
             completionTextTokens: perMillion(50),
         },
         title: "Claude Fable 5",
-        description: "Claude Fable 5 - Frontier reasoning & agentic work",
+        description:
+            "Frontier intelligence for complex reasoning and long agentic work; the priciest tier",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
         maxReferenceImages: 20, // Bedrock Converse image limit.
@@ -964,7 +1018,6 @@ export const TEXT_SERVICES = {
     },
     "perplexity-fast": {
         aliases: ["sonar"],
-        modelId: "sonar",
         provider: "perplexity",
         brand: "Perplexity",
         category: "text",
@@ -975,8 +1028,8 @@ export const TEXT_SERVICES = {
             promptTextTokens: perMillion(1.0),
             completionTextTokens: perMillion(1.0),
         },
-        title: "Perplexity Sonar",
-        description: "Perplexity Sonar - Fast & affordable web search",
+        title: "Perplexity Sonar Fast Search",
+        description: "Quick web searches with cited answers; keeps it brief",
         // Sonar is text-only — verified empirically (image input is ignored,
         // no image tokens billed). Do not add "image".
         inputModalities: ["text"],
@@ -986,21 +1039,21 @@ export const TEXT_SERVICES = {
         contextLength: 128000,
         isSpecialized: false,
     },
-    "perplexity-deep": {
-        aliases: ["sonar-deep"],
-        modelId: "sonar",
+    "perplexity-high": {
+        aliases: ["perplexity-deep", "sonar-deep"],
         provider: "perplexity",
         brand: "Perplexity",
         category: "text",
         addedDate: new Date("2026-05-29").getTime(),
         priceMultiplier: 1,
-        billing: PERPLEXITY_DEEP_BILLING,
+        billing: PERPLEXITY_HIGH_BILLING,
         cost: {
             promptTextTokens: perMillion(1.0),
             completionTextTokens: perMillion(1.0),
         },
-        title: "Perplexity Sonar",
-        description: "Perplexity Sonar - Deep web search with broad grounding",
+        title: "Perplexity Sonar High-Context Search",
+        description:
+            "Digs through many sources for thorough, cited research answers",
         inputModalities: ["text"],
         outputModalities: ["text"],
         tools: false,
@@ -1010,7 +1063,6 @@ export const TEXT_SERVICES = {
     },
     "perplexity": {
         aliases: ["sonar-pro", "perplexity-pro"],
-        modelId: "sonar-pro",
         provider: "perplexity",
         brand: "Perplexity",
         category: "text",
@@ -1022,7 +1074,8 @@ export const TEXT_SERVICES = {
             completionTextTokens: perMillion(15.0),
         },
         title: "Perplexity Sonar Pro",
-        description: "Perplexity Sonar Pro - Advanced multi-source web search",
+        description:
+            "Advanced web search that synthesizes multiple sources with citations",
         inputModalities: ["text"],
         outputModalities: ["text"],
         tools: false,
@@ -1032,7 +1085,6 @@ export const TEXT_SERVICES = {
     },
     "perplexity-reasoning": {
         aliases: ["sonar-reasoning", "sonar-reasoning-pro"],
-        modelId: "sonar-reasoning-pro",
         provider: "perplexity",
         brand: "Perplexity",
         category: "text",
@@ -1045,7 +1097,7 @@ export const TEXT_SERVICES = {
         },
         title: "Perplexity Sonar Reasoning",
         description:
-            "Perplexity Sonar Reasoning - Step-by-step reasoning with web search",
+            "Thinks step by step while searching the web; slower but more rigorous",
         inputModalities: ["text"],
         outputModalities: ["text"],
         tools: false,
@@ -1062,7 +1114,6 @@ export const TEXT_SERVICES = {
             "kimi-large",
             "kimi-thinking",
         ],
-        modelId: "accounts/fireworks/models/kimi-k2p6",
         provider: "fireworks",
         brand: "Moonshot AI",
         category: "text",
@@ -1075,7 +1126,7 @@ export const TEXT_SERVICES = {
         },
         title: "Moonshot Kimi K2.6",
         description:
-            "Moonshot Kimi K2.6 - Flagship Agentic Model with CoT Reasoning",
+            "Agentic all-rounder that shows its chain-of-thought reasoning",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
         maxReferenceImages: 30, // Fireworks vision hard limit.
@@ -1086,7 +1137,6 @@ export const TEXT_SERVICES = {
     },
     "kimi-code": {
         aliases: ["kimi-k2.7-code", "kimi-k2.7", "kimi-k2p7"],
-        modelId: "accounts/fireworks/models/kimi-k2p7-code",
         provider: "fireworks",
         brand: "Moonshot AI",
         category: "text",
@@ -1101,7 +1151,7 @@ export const TEXT_SERVICES = {
         },
         title: "Moonshot Kimi K2.7 Code",
         description:
-            "Moonshot Kimi K2.7 Code - Agentic coding model with CoT reasoning",
+            "Built for agentic coding — plans, reasons and edits code step by step",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
         maxReferenceImages: 30, // Fireworks vision hard limit.
@@ -1110,9 +1160,76 @@ export const TEXT_SERVICES = {
         contextLength: 262144,
         isSpecialized: false,
     },
+    "kimi-k3": {
+        aliases: [],
+        provider: "openrouter",
+        brand: "Moonshot AI",
+        category: "text",
+        addedDate: new Date("2026-07-18").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1,
+        cost: {
+            promptTextTokens: perMillion(3),
+            promptCachedTokens: perMillion(0.3),
+            completionTextTokens: perMillion(15),
+        },
+        title: "Kimi K3",
+        description: "Frontier multimodal model for coding and agents",
+        inputModalities: ["text", "image"],
+        outputModalities: ["text"],
+        maxReferenceImages: 10,
+        tools: true,
+        reasoning: true,
+        contextLength: 1048576,
+        isSpecialized: false,
+    },
+    "mimo-v2.5": {
+        aliases: ["mimo", "mimo-2.5"],
+        provider: "openrouter",
+        brand: "Xiaomi",
+        category: "text",
+        addedDate: new Date("2026-07-18").getTime(),
+        paidOnly: false,
+        priceMultiplier: 1,
+        cost: {
+            promptTextTokens: perMillion(0.14),
+            promptCachedTokens: perMillion(0.0028),
+            completionTextTokens: perMillion(0.28),
+        },
+        title: "MiMo V2.5",
+        description: "Efficient multimodal reasoning for agents and coding",
+        inputModalities: ["text", "image"],
+        outputModalities: ["text"],
+        maxReferenceImages: 10,
+        tools: true,
+        reasoning: true,
+        contextLength: 1048576,
+        isSpecialized: false,
+    },
+    "mimo-v2.5-pro": {
+        aliases: ["mimo-pro", "mimo-2.5-pro"],
+        provider: "openrouter",
+        brand: "Xiaomi",
+        category: "text",
+        addedDate: new Date("2026-07-18").getTime(),
+        paidOnly: false,
+        priceMultiplier: 1,
+        cost: {
+            promptTextTokens: perMillion(0.435),
+            promptCachedTokens: perMillion(0.0036),
+            completionTextTokens: perMillion(0.87),
+        },
+        title: "MiMo V2.5 Pro",
+        description: "Long-context reasoning and coding with higher capability",
+        inputModalities: ["text"],
+        outputModalities: ["text"],
+        tools: true,
+        reasoning: true,
+        contextLength: 1048576,
+        isSpecialized: false,
+    },
     "gemini-large": {
         aliases: ["gemini-3.1-pro", "gemini-2.5-pro"],
-        modelId: "gemini-3.1-pro-preview",
         provider: "google",
         brand: "Google",
         category: "text",
@@ -1131,7 +1248,7 @@ export const TEXT_SERVICES = {
         billing: withVertexCacheStorage(GEMINI_3_SEARCH_BILLING, 4.5),
         title: "Gemini 3.1 Pro",
         description:
-            "Gemini 3.1 Pro - Most Intelligent Model with 1M Context (Preview)",
+            "Top-tier multimodal reasoning over huge documents, images and video",
         inputModalities: ["text", "image", "audio", "video"],
         outputModalities: ["text"],
         maxReferenceImages: 3600, // Gemini API image-understanding file limit.
@@ -1145,7 +1262,6 @@ export const TEXT_SERVICES = {
     },
     "nova-fast": {
         aliases: ["amazon-nova-micro", "nova-micro"],
-        modelId: "amazon.nova-micro-v1:0",
         provider: "bedrock",
         brand: "Amazon",
         category: "text",
@@ -1160,7 +1276,8 @@ export const TEXT_SERVICES = {
             completionTextTokens: perMillion(0.14),
         },
         title: "Nova Micro",
-        description: "Nova Micro - Ultra Fast & Ultra Cheap",
+        description:
+            "Instant, ultra-cheap replies for simple tasks; not a deep thinker",
         inputModalities: ["text"],
         outputModalities: ["text"],
         tools: true,
@@ -1169,7 +1286,6 @@ export const TEXT_SERVICES = {
     },
     "nova": {
         aliases: ["nova-2-lite", "amazon-nova-2-lite", "nova-2"],
-        modelId: "us.amazon.nova-2-lite-v1:0",
         provider: "bedrock",
         brand: "Amazon",
         category: "text",
@@ -1184,7 +1300,8 @@ export const TEXT_SERVICES = {
             completionTextTokens: perMillion(2.75),
         },
         title: "Nova 2 Lite",
-        description: "Nova 2 Lite - 1M Context with Reasoning",
+        description:
+            "Budget-friendly reasoning with room for very long documents",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
         maxReferenceImages: 20, // Bedrock Converse image limit.
@@ -1195,7 +1312,6 @@ export const TEXT_SERVICES = {
     },
     "glm": {
         aliases: ["glm-5.2", "glm-5p2"],
-        modelId: "accounts/fireworks/models/glm-5p2",
         provider: "fireworks",
         brand: "Z.ai",
         category: "text",
@@ -1208,7 +1324,7 @@ export const TEXT_SERVICES = {
         },
         title: "Z.ai GLM-5.2",
         description:
-            "Z.ai GLM-5.2 - 743B MoE, Long Context Reasoning & Agentic Workflows",
+            "Massive open-weight model for long-context reasoning and agent workflows",
         inputModalities: ["text"],
         outputModalities: ["text"],
         tools: true,
@@ -1218,7 +1334,6 @@ export const TEXT_SERVICES = {
     },
     "llama": {
         aliases: ["llama-3.3", "llama-3.3-70b", "llama-v3p3-70b-instruct"],
-        modelId: "Llama-3.3-70B-Instruct",
         provider: "azure",
         brand: "Meta",
         category: "text",
@@ -1230,7 +1345,7 @@ export const TEXT_SERVICES = {
         },
         title: "Meta Llama 3.3 70B",
         description:
-            "Meta Llama 3.3 70B - Open-source dense model for general chat",
+            "Open-source workhorse for general chat and summarization; text only",
         inputModalities: ["text"],
         outputModalities: ["text"],
         tools: true,
@@ -1244,7 +1359,6 @@ export const TEXT_SERVICES = {
             "llama-maverick-17b",
             "llama-4-maverick-17b-128e-instruct-fp8",
         ],
-        modelId: "Llama-4-Maverick-17B-128E-Instruct-FP8",
         provider: "azure",
         brand: "Meta",
         category: "text",
@@ -1256,7 +1370,7 @@ export const TEXT_SERVICES = {
         },
         title: "Meta Llama 4 Maverick",
         description:
-            "Meta Llama 4 Maverick - Open-source multimodal MoE with vision",
+            "Open-source chat that understands images, with a huge context window",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
         maxReferenceImages: 10, // Azure-hosted Llama vision route has no public fixed image count; Pollinations cap.
@@ -1271,7 +1385,6 @@ export const TEXT_SERVICES = {
             "llama-scout-17b",
             "llama-4-scout-17b-16e-instruct",
         ],
-        modelId: "Llama-4-Scout-17B-16E-Instruct",
         provider: "openrouter",
         brand: "Meta",
         category: "text",
@@ -1283,7 +1396,7 @@ export const TEXT_SERVICES = {
         },
         title: "Meta Llama 4 Scout",
         description:
-            "Meta Llama 4 Scout - Open-source MoE for long context & retrieval",
+            "Open-source long-context specialist for digging through big documents",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
         maxReferenceImages: 10, // OpenRouter image count varies by provider/model; Pollinations cap.
@@ -1293,7 +1406,6 @@ export const TEXT_SERVICES = {
     },
     "minimax-m2.7": {
         aliases: ["minimax-m2p7", "minimax-m2.5", "minimax-m2p5"],
-        modelId: "accounts/fireworks/models/minimax-m2p7",
         provider: "fireworks",
         brand: "MiniMax",
         category: "text",
@@ -1305,7 +1417,7 @@ export const TEXT_SERVICES = {
             completionTextTokens: perMillion(1.2),
         },
         title: "MiniMax M2.7",
-        description: "MiniMax M2.7 - Coding, Agentic & Multi-Language",
+        description: "Multilingual coding and agent tasks at a friendly price",
         inputModalities: ["text"],
         outputModalities: ["text"],
         tools: true,
@@ -1315,7 +1427,6 @@ export const TEXT_SERVICES = {
     },
     "minimax": {
         aliases: ["minimax-m3", "minimax3", "minimax-3"],
-        modelId: "accounts/fireworks/models/minimax-m3",
         provider: "fireworks",
         brand: "MiniMax",
         category: "text",
@@ -1329,7 +1440,8 @@ export const TEXT_SERVICES = {
             completionTextTokens: perMillion(1.2),
         },
         title: "MiniMax M3",
-        description: "MiniMax M3 - Coding, agentic & 512K-context reasoning",
+        description:
+            "Strong coding and agent skills with a very long memory for big projects",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
         maxReferenceImages: 30, // Fireworks vision hard limit.
@@ -1340,7 +1452,6 @@ export const TEXT_SERVICES = {
     },
     "muse-spark-1.1": {
         aliases: ["muse-spark", "spark", "spark-1.1"],
-        modelId: "meta/muse-spark-1.1",
         provider: "vercel",
         brand: "Meta",
         category: "text",
@@ -1364,7 +1475,6 @@ export const TEXT_SERVICES = {
     },
     "mistral-large": {
         aliases: ["mistral-large-3"],
-        modelId: "Mistral-Large-3",
         provider: "azure",
         brand: "Mistral",
         category: "text",
@@ -1376,7 +1486,8 @@ export const TEXT_SERVICES = {
             completionTextTokens: perMillion(1.5),
         },
         title: "Mistral Large 3",
-        description: "Mistral Large 3 - Premium Multilingual & Reasoning",
+        description:
+            "Polished multilingual writing and reasoning with image understanding",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
         maxReferenceImages: 10, // Mistral image count varies by model/token budget; Pollinations cap.
@@ -1387,7 +1498,6 @@ export const TEXT_SERVICES = {
     },
     "polly": {
         aliases: ["pollinations-ai", "polly-ai"],
-        modelId: "polly",
         provider: "community",
         brand: "Pollinations",
         category: "text",
@@ -1399,7 +1509,7 @@ export const TEXT_SERVICES = {
         },
         title: "Polly by @Itachi-1824",
         description:
-            "Polly by @Itachi-1824 - Pollinations AI Assistant with GitHub, Code Search & Web Tools (Alpha)",
+            "Community-built assistant with GitHub, code search and web tools (alpha)",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
         maxReferenceImages: 3, // Pollinations community model cap.
@@ -1411,7 +1521,6 @@ export const TEXT_SERVICES = {
     },
     "qwen-coder-large": {
         aliases: ["qwen3-coder-next"],
-        modelId: "qwen/qwen3-coder-next",
         provider: "openrouter",
         brand: "Qwen",
         category: "text",
@@ -1426,7 +1535,8 @@ export const TEXT_SERVICES = {
             completionTextTokens: perMillion(0.8), // per 1M tokens
         },
         title: "Qwen3 Coder Next",
-        description: "Qwen3 Coder Next - Advanced Code Generation",
+        description:
+            "Advanced code generation for demanding projects; code-focused, text only",
         inputModalities: ["text"],
         outputModalities: ["text"],
         tools: true,
@@ -1442,25 +1552,53 @@ export const TEXT_SERVICES = {
             "qwen3.6-plus",
             "qwen3p6-plus",
         ],
-        modelId: "accounts/fireworks/models/qwen3p7-plus",
-        provider: "fireworks",
+        provider: "openrouter",
         brand: "Qwen",
         category: "text",
         addedDate: new Date("2026-06-12").getTime(),
+        paidOnly: false,
         priceMultiplier: 1,
+        // OpenRouter triples token rates above 256K prompt tokens. Pollinations
+        // keeps the full context window and absorbs that higher tier.
         cost: {
-            promptTextTokens: perMillion(0.4),
-            promptCachedTokens: perMillion(0.08),
-            completionTextTokens: perMillion(1.6),
+            promptTextTokens: perMillion(0.32),
+            promptCachedTokens: perMillion(0.064),
+            promptCacheWriteTokens: perMillion(0.4),
+            completionTextTokens: perMillion(1.28),
         },
         title: "Qwen3.7 Plus",
-        description: "Qwen3.7 Plus - Multimodal agent intelligence (Fireworks)",
+        description:
+            "Multimodal agent intelligence for coding and productivity",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
-        maxReferenceImages: 30, // Fireworks vision hard limit.
+        maxReferenceImages: 10,
         tools: true,
         reasoning: true,
-        contextLength: 262000,
+        contextLength: 1000000,
+        isSpecialized: false,
+    },
+    "qwen3.7-max": {
+        aliases: ["qwen-max", "qwen3p7-max"],
+        provider: "openrouter",
+        brand: "Qwen",
+        category: "text",
+        addedDate: new Date("2026-07-18").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1,
+        cost: {
+            promptTextTokens: perMillion(1.475),
+            promptCachedTokens: perMillion(0.295),
+            promptCacheWriteTokens: perMillion(1.84375),
+            completionTextTokens: perMillion(4.425),
+        },
+        title: "Qwen3.7 Max",
+        description:
+            "Flagship long-context model for coding and autonomous agents",
+        inputModalities: ["text"],
+        outputModalities: ["text"],
+        tools: true,
+        reasoning: true,
+        contextLength: 1000000,
         isSpecialized: false,
     },
     "qwen-vision": {
@@ -1471,7 +1609,6 @@ export const TEXT_SERVICES = {
             "qwen3-vl-plus",
             "qwen-vl",
         ],
-        modelId: "qwen/qwen3-vl-30b-a3b-instruct",
         provider: "openrouter",
         brand: "Qwen",
         category: "text",
@@ -1482,7 +1619,8 @@ export const TEXT_SERVICES = {
             completionTextTokens: perMillion(0.52),
         },
         title: "Qwen3 VL 30B A3B Instruct",
-        description: "Qwen3 VL 30B A3B Instruct - Fast vision-language model",
+        description:
+            "Fast image understanding — describes, reads and analyzes what it sees",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
         maxReferenceImages: 10, // OpenRouter image count varies by provider/model; Pollinations cap.
@@ -1498,7 +1636,6 @@ export const TEXT_SERVICES = {
             "qwen3-vl-235b-a22b-thinking",
             "qwen-vl-pro",
         ],
-        modelId: "qwen/qwen3-vl-235b-a22b-thinking",
         provider: "openrouter",
         brand: "Qwen",
         addedDate: new Date("2026-05-15").getTime(),
@@ -1509,7 +1646,8 @@ export const TEXT_SERVICES = {
             completionTextTokens: perMillion(2.6),
         },
         title: "Qwen3 VL 235B A22B Thinking",
-        description: "Qwen3 VL 235B A22B Thinking - Vision-Language Reasoning",
+        description:
+            "Careful visual reasoning for charts, documents and complex scenes",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
         maxReferenceImages: 10, // OpenRouter image count varies by provider/model; Pollinations cap.
@@ -1520,7 +1658,6 @@ export const TEXT_SERVICES = {
     },
     "step-flash": {
         aliases: ["stepfun-flash", "step-3.7-flash", "step-flash-3.7"],
-        modelId: "stepfun/step-3.7-flash",
         provider: "openrouter",
         brand: "StepFun",
         category: "text",
@@ -1534,7 +1671,8 @@ export const TEXT_SERVICES = {
             completionTextTokens: perMillion(1.15),
         },
         title: "StepFun Step 3.7 Flash",
-        description: "StepFun Step 3.7 Flash - Fast multimodal reasoning model",
+        description:
+            "Speedy reasoning over text and images for everyday questions",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
         maxReferenceImages: 10, // OpenRouter image count varies by provider/model; Pollinations cap.
@@ -1547,7 +1685,6 @@ export const TEXT_SERVICES = {
     },
     "step-3.5-flash": {
         aliases: ["stepfun-3.5-flash", "step-flash-3.5"],
-        modelId: "stepfun/step-3.5-flash",
         provider: "openrouter",
         brand: "StepFun",
         category: "text",
@@ -1560,7 +1697,7 @@ export const TEXT_SERVICES = {
             completionTextTokens: perMillion(0.3),
         },
         title: "StepFun Step 3.5 Flash",
-        description: "StepFun Step 3.5 Flash - Fast text reasoning model",
+        description: "Fast, low-cost text reasoning for everyday tasks",
         inputModalities: ["text"],
         outputModalities: ["text"],
         tools: true,
@@ -1570,7 +1707,6 @@ export const TEXT_SERVICES = {
     },
     "qwen-safety": {
         aliases: ["qwen3guard-gen-8b"],
-        modelId: "Qwen3Guard-Gen-8B",
         provider: "ovhcloud",
         brand: "Qwen",
         category: "text",
@@ -1581,9 +1717,10 @@ export const TEXT_SERVICES = {
             completionTextTokens: perMillion(0.01),
         },
         title: "Qwen3Guard 8B",
-        description: "Qwen3Guard 8B - Content Safety & Moderation",
+        description:
+            "Flags unsafe content — a moderation filter, not a chat companion",
         inputModalities: ["text"],
         outputModalities: ["text"],
         isSpecialized: true,
     },
-} as const satisfies Record<string, ModelDefinition<string>>;
+} as const satisfies Record<string, ModelDefinition>;

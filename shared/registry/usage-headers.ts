@@ -42,13 +42,46 @@ export const OPENAI_CHAT_USAGE_PATHS: Record<
         "prompt_tokens_details.cached_tokens",
         "cache_read_input_tokens",
     ],
-    promptCacheWriteTokens: ["cache_creation_input_tokens"],
+    promptCacheWriteTokens: [
+        "prompt_tokens_details.cache_write_tokens",
+        "cache_creation_input_tokens",
+    ],
     promptAudioTokens: ["prompt_tokens_details.audio_tokens"],
     promptImageTokens: ["prompt_tokens_details.image_tokens"],
     completionTextTokens: ["completion_tokens"],
     completionReasoningTokens: ["completion_tokens_details.reasoning_tokens"],
     completionAudioTokens: ["completion_tokens_details.audio_tokens"],
 };
+
+export type OpenAIImageUsage = {
+    input_tokens: number;
+    output_tokens: number;
+    total_tokens: number;
+    input_tokens_details: {
+        text_tokens: number;
+        image_tokens: number;
+    };
+};
+
+export function usageToOpenAIImageUsage(usage: Usage): OpenAIImageUsage {
+    const inputTextTokens =
+        (usage.promptTextTokens ?? 0) +
+        (usage.promptCachedTokens ?? 0) +
+        (usage.promptCacheWriteTokens ?? 0);
+    const inputImageTokens = usage.promptImageTokens ?? 0;
+    const inputTokens = inputTextTokens + inputImageTokens;
+    const outputTokens =
+        (usage.completionTextTokens ?? 0) + (usage.completionImageTokens ?? 0);
+    return {
+        input_tokens: inputTokens,
+        output_tokens: outputTokens,
+        total_tokens: inputTokens + outputTokens,
+        input_tokens_details: {
+            text_tokens: inputTextTokens,
+            image_tokens: inputImageTokens,
+        },
+    };
+}
 
 /**
  * Internal worker header carrying Portkey's served fallback target (e.g.
@@ -79,8 +112,10 @@ export function openaiUsageToUsage(openaiUsage: {
     total_tokens: number;
     prompt_tokens_details?: {
         cached_tokens?: number | null;
+        cache_write_tokens?: number | null;
         audio_tokens?: number | null;
         image_tokens?: number | null;
+        video_tokens?: number | null;
     } | null;
     cached_input_tokens?: number | null;
     cache_read_input_tokens?: number | null;
@@ -89,6 +124,7 @@ export function openaiUsageToUsage(openaiUsage: {
     completion_tokens_details?: {
         reasoning_tokens?: number | null;
         audio_tokens?: number | null;
+        image_tokens?: number | null;
         accepted_prediction_tokens?: number | null;
         rejected_prediction_tokens?: number | null;
     } | null;
@@ -98,12 +134,16 @@ export function openaiUsageToUsage(openaiUsage: {
         openaiUsage.cached_input_tokens ||
         openaiUsage.cache_read_input_tokens ||
         0;
-    const promptCacheWriteTokens = openaiUsage.cache_creation_input_tokens ?? 0;
+    const promptCacheWriteTokens =
+        openaiUsage.prompt_tokens_details?.cache_write_tokens ??
+        openaiUsage.cache_creation_input_tokens ??
+        0;
     const promptDetails = [
         promptCachedTokens,
         promptCacheWriteTokens,
         openaiUsage.prompt_tokens_details?.audio_tokens || 0,
         openaiUsage.prompt_tokens_details?.image_tokens || 0,
+        openaiUsage.prompt_tokens_details?.video_tokens || 0,
     ];
 
     const rawCompletionReasoningTokens =
@@ -114,6 +154,7 @@ export function openaiUsageToUsage(openaiUsage: {
         openaiUsage.completion_tokens_details?.accepted_prediction_tokens || 0,
         openaiUsage.completion_tokens_details?.rejected_prediction_tokens || 0,
         openaiUsage.completion_tokens_details?.audio_tokens || 0,
+        openaiUsage.completion_tokens_details?.image_tokens || 0,
         rawCompletionReasoningTokens,
     ];
 
@@ -147,9 +188,15 @@ export function openaiUsageToUsage(openaiUsage: {
         cappedPromptCacheWriteTokens,
         promptAudioTokens,
         promptImageTokens,
+        promptVideoTokens,
     ] = cappedPromptDetails;
-    const [, , completionAudioTokens, completionReasoningTokens] =
-        cappedCompletionDetails;
+    const [
+        ,
+        ,
+        completionAudioTokens,
+        completionImageTokens,
+        completionReasoningTokens,
+    ] = cappedCompletionDetails;
 
     return {
         promptTextTokens,
@@ -157,8 +204,10 @@ export function openaiUsageToUsage(openaiUsage: {
         promptCacheWriteTokens: cappedPromptCacheWriteTokens,
         promptAudioTokens,
         promptImageTokens,
+        promptVideoTokens,
         completionTextTokens,
         completionAudioTokens,
+        completionImageTokens,
         completionReasoningTokens,
     };
 }

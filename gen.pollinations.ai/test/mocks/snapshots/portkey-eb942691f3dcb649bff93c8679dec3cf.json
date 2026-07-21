@@ -12,16 +12,14 @@
             "content": "vcr chat stream"
           }
         ],
-        "temperature": 1,
-        "top_p": 1,
         "presence_penalty": 0,
         "frequency_penalty": 0,
         "stream": true,
-        "voice": "alloy",
         "logprobs": false,
         "stream_options": {
           "include_usage": true
-        }
+        },
+        "temperature": 1
       }
     },
     "params": {}

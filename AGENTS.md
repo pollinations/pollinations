@@ -45,6 +45,7 @@ Primary: `https://gen.pollinations.ai` → routes to `enter.pollinations.ai` for
   connector prompt (`apps/operation/economics/ingest/agent.system.txt`).
 - Services: Text (Portkey, multi-provider), Image (gen Worker dispatch to providers/GPU backends), Video (Wan/Veo/LTX), Audio (ElevenLabs, TTM)
 - Wallet: Pollen is earned by completing Quests; balances live in the `tier_balance` (shown as Quest Pollen) and `pack_balance` (Paid) buckets. The legacy `tier` D1 column and `tier_balance` wire name are kept for compatibility; see `shared/db/better-auth.ts`.
+- Referral links must use the canonical landing page with a short `?ref=` value; record analytics behind the page instead of exposing a tracking API as the destination URL.
 
 ### Local Development
 
@@ -135,6 +136,7 @@ curl "http://localhost:8788/v1/chat/completions" -H "Authorization: Bearer $TOKE
 - Test API keys in `enter.pollinations.ai/.testingtokens`.
 - Before model changes, read and follow `.claude/skills/model-management/SKILL.md`.
 - Don't request PR reviews or comment `polly` unless the user explicitly asks.
+- Model descriptions must describe only capabilities or differentiators; never repeat the model title or name.
 
 ## Testing
 

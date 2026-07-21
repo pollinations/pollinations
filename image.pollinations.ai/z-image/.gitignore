@@ -5,6 +5,7 @@ venv/
 .venv/
 testImages/
 env/
+.env.zimage
 model_cache/
 gfpgan/
 *.out

@@ -476,7 +476,7 @@ test("Perplexity request search fees are added by declarative billing rules", ()
     };
     const cases = [
         ["perplexity-fast", 2.005],
-        ["perplexity-deep", 2.012],
+        ["perplexity-high", 2.012],
         ["perplexity", 18.014],
         ["perplexity-reasoning", 10.014],
     ] as const;
@@ -610,7 +610,7 @@ test("Perplexity billing rules carry per-tier request fees privately only", () =
     const perplexityFees = [
         ["perplexity-fast", "perplexity.sonar_low.search_request.v1", 5 / 1000],
         [
-            "perplexity-deep",
+            "perplexity-high",
             "perplexity.sonar_high.search_request.v1",
             12 / 1000,
         ],
@@ -862,6 +862,7 @@ test("vertex cache storage adjustment bills cache-creating requests", () => {
     const created = calculateBillingAdjustments(
         getRegistryModelDefinition("gemini-fast"),
         { usage: { cache_creation_input_tokens: 1_000_000 } },
+        "gemini-fast",
     );
     expect(created).toEqual([
         {
@@ -884,6 +885,7 @@ test("vertex cache storage adjustment bills cache-creating requests", () => {
                 { usage: { cache_creation_input_tokens: 21500 } },
             ],
         },
+        "gemini-fast",
     );
     expect(streamed).toHaveLength(1);
     expect(streamed[0].units).toBe(21500);
@@ -893,6 +895,7 @@ test("vertex cache storage adjustment bills cache-creating requests", () => {
     const pro = calculateBillingAdjustments(
         getRegistryModelDefinition("gemini-large"),
         { usage: { cache_creation_input_tokens: 1_000_000 } },
+        "gemini-large",
     );
     const proStorage = pro.find((a) => a.kind === "cache_storage");
     expect(proStorage?.cost).toBeCloseTo(4.5, 8);
@@ -901,6 +904,7 @@ test("vertex cache storage adjustment bills cache-creating requests", () => {
     const search = calculateBillingAdjustments(
         getRegistryModelDefinition("gemini-search"),
         { usage: { cache_creation_input_tokens: 1_000_000 } },
+        "gemini-search",
     );
     expect(search.find((a) => a.kind === "cache_storage")?.cost).toBeCloseTo(
         1.0,
@@ -909,9 +913,13 @@ test("vertex cache storage adjustment bills cache-creating requests", () => {
 
     // Cache HITS report cached_tokens, not creation tokens → no storage fee.
     expect(
-        calculateBillingAdjustments(getRegistryModelDefinition("gemini-fast"), {
-            usage: { prompt_tokens_details: { cached_tokens: 21500 } },
-        }),
+        calculateBillingAdjustments(
+            getRegistryModelDefinition("gemini-fast"),
+            {
+                usage: { prompt_tokens_details: { cached_tokens: 21500 } },
+            },
+            "gemini-fast",
+        ),
     ).toEqual([]);
 
     // Malformed values never bill or throw.
@@ -920,6 +928,7 @@ test("vertex cache storage adjustment bills cache-creating requests", () => {
             calculateBillingAdjustments(
                 getRegistryModelDefinition("gemini-fast"),
                 { usage: { cache_creation_input_tokens: bad } },
+                "gemini-fast",
             ),
         ).toEqual([]);
     }
@@ -937,6 +946,7 @@ test("calculateBillingAdjustments returns per-rule breakdown entries", () => {
                 },
             ],
         },
+        "gemini-3-flash",
     );
     expect(gemini3).toEqual([
         {
@@ -963,6 +973,7 @@ test("calculateBillingAdjustments returns per-rule breakdown entries", () => {
                 },
             ],
         },
+        "gemini-search",
     );
     expect(gemini25).toEqual([
         {
@@ -980,6 +991,7 @@ test("calculateBillingAdjustments returns per-rule breakdown entries", () => {
     const perplexity = calculateBillingAdjustments(
         getRegistryModelDefinition("perplexity-fast"),
         { usage: { cost: { request_cost: 0.006 } } },
+        "perplexity-fast",
     );
     expect(perplexity).toEqual([
         {
@@ -1000,6 +1012,7 @@ test("calculateBillingAdjustments returns per-rule breakdown entries", () => {
             {
                 choices: [],
             },
+            "gemini-search",
         ),
     ).toEqual([]);
 });
@@ -1035,6 +1048,7 @@ test("calculateBillingAdjustments only emits keys present in the breakdown", () 
     const breakdown = calculateBillingAdjustments(
         getRegistryModelDefinition("gemini-3-flash"),
         { choices: [{ groundingMetadata: { webSearchQueries: ["a", "b"] } }] },
+        "gemini-3-flash",
     );
     expect(breakdown.length).toBeGreaterThan(0);
     for (const entry of breakdown) {

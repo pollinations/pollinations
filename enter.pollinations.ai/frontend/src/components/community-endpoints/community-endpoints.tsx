@@ -106,16 +106,18 @@ export function CommunityEndpoints({
             Your models are private — callable only by you and shown only when{" "}
             <strong>/models</strong> is authenticated with your API key. Enter
             the upstream model ID manually, then test the saved model by calling
-            its model ID. To request public publishing access, open a{" "}
+            its model ID. Public publishing is allowlist-only. To request
+            publishing access for your account, submit a{" "}
             <a
-                href="https://github.com/pollinations/pollinations/issues/new?title=Community%20model%20publishing%20request"
+                href="https://github.com/pollinations/pollinations/issues/new?template=community-model-allowlist.yml"
                 target="_blank"
                 rel="noreferrer"
                 className="underline hover:text-theme-text-strong"
             >
-                GitHub issue
+                community model publisher allowlist request
             </a>{" "}
-            or ask in{" "}
+            form. You can register and test private models without approval. For
+            questions, ask in{" "}
             <a
                 href="https://discord.gg/pollinations-ai-885844321461485618"
                 target="_blank"

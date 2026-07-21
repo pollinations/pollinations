@@ -60,7 +60,9 @@ class Config:
         # =================================================================
         github_cfg = cfg.get("github", {})
         self.github_bot_username = github_cfg.get("bot_username", "pollinations-ci")
-        self.github_admin_users: list[str] = [u.lower() for u in github_cfg.get("admin_users", [])]
+        self.github_admin_user_ids: set[int] = {
+            int(user_id) for user_id in github_cfg.get("admin_user_ids", [])
+        }
         self.whitelisted_repos: list[str] = [r.lower() for r in github_cfg.get("whitelisted_repos", [])]
         self.github_admin_only_mentions: bool = github_cfg.get("admin_only_mentions", False)
 
@@ -152,11 +154,11 @@ class Config:
         """Check if project PAT is configured for ProjectV2 access."""
         return bool(self.github_project_pat)
 
-    def is_github_admin(self, username: str) -> bool:
-        """Check if a GitHub username has admin privileges."""
-        if not username:
+    def is_github_admin(self, user_id: int | None) -> bool:
+        """Check if an immutable GitHub user ID has admin privileges."""
+        if user_id is None:
             return False
-        return username.lower() in self.github_admin_users
+        return int(user_id) in self.github_admin_user_ids
 
     def is_repo_whitelisted(self, repo: str) -> bool:
         """Check if a repo is whitelisted for webhook processing."""
@@ -191,7 +193,7 @@ class Config:
         logger.info(f"GitHub auth: {'App' if self.use_github_app else 'PAT'}")
         logger.info(f"Webhook: {'enabled' if self.webhook_enabled else 'disabled'} on port {self.webhook_port}")
         logger.info(f"AI model: {self.pollinations_model}")
-        logger.info(f"GitHub admins: {len(self.github_admin_users)} users")
+        logger.info(f"GitHub admins: {len(self.github_admin_user_ids)} users")
         logger.info(f"Whitelisted repos: {len(self.whitelisted_repos) if self.whitelisted_repos else 'all'}")
 
         if self.has_project_access:

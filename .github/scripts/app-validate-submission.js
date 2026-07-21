@@ -10,13 +10,14 @@
  * Outputs JSON with validation results.
  *
  * Usage:
- *   ISSUE_NUMBER=123 ISSUE_AUTHOR=username node app-validate-submission.js
+ *   ISSUE_NUMBER=123 ISSUE_AUTHOR=username ISSUE_AUTHOR_ID=456 node app-validate-submission.js
  */
 
 const { execSync, spawn } = require("node:child_process");
 
 const ISSUE_NUMBER = process.env.ISSUE_NUMBER;
 const ISSUE_AUTHOR = process.env.ISSUE_AUTHOR;
+const ISSUE_AUTHOR_ID = process.env.ISSUE_AUTHOR_ID;
 
 async function main() {
     const result = {
@@ -30,14 +31,10 @@ async function main() {
 
     // 1. Check Enter registration
     try {
-        // Sanitize username to prevent SQL injection (defense-in-depth)
-        const safeUsername = ISSUE_AUTHOR?.replace(/[^a-zA-Z0-9_-]/g, "") || "";
-        if (!safeUsername) {
-            throw new Error(
-                "ISSUE_AUTHOR is required but was empty or undefined",
-            );
+        if (!/^\d+$/.test(ISSUE_AUTHOR_ID || "")) {
+            throw new Error("ISSUE_AUTHOR_ID must be a numeric GitHub user ID");
         }
-        const cmd = `cd enter.pollinations.ai && npx wrangler d1 execute DB --remote --env production --command "SELECT id FROM user WHERE LOWER(github_username) = LOWER('${safeUsername}');" --json`;
+        const cmd = `cd enter.pollinations.ai && npx wrangler d1 execute DB --remote --env production --command "SELECT id FROM user WHERE github_id = ${ISSUE_AUTHOR_ID};" --json`;
         const output = execSync(cmd, {
             encoding: "utf-8",
             stdio: ["pipe", "pipe", "pipe"],
@@ -48,7 +45,8 @@ async function main() {
 
         result.checks.registration = {
             registered,
-            username: safeUsername,
+            username: ISSUE_AUTHOR,
+            github_user_id: ISSUE_AUTHOR_ID,
         };
 
         if (!registered) {
@@ -103,6 +101,7 @@ async function main() {
                 const dupResult = await new Promise((resolve, reject) => {
                     const env = { ...process.env };
                     env.GITHUB_USERNAME = ISSUE_AUTHOR;
+                    env.GITHUB_USER_ID = ISSUE_AUTHOR_ID;
                     env.PROJECT_JSON = projectJson;
 
                     const proc = spawn(

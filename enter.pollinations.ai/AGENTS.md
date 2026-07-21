@@ -642,7 +642,7 @@ Pollen is earned by completing **Quests**. The `tier`, `tier_balance`, and `pack
 ```bash
 cd enter.pollinations.ai
 npx wrangler d1 execute DB --remote --env production \
-  --command "SELECT github_username, email, tier_balance, pack_balance FROM user WHERE LOWER(github_username) LIKE '%USERNAME%';"
+  --command "SELECT id, github_username, email, tier_balance, pack_balance FROM user WHERE id = 'USER_ID';"
 ```
 
 ---

@@ -127,8 +127,9 @@ class GitHubWebhookServer:
             return
 
         # Don't respond to our own comments
-        commenter = comment.get("user", {}).get("login", "")
-        if commenter.lower() == config.github_bot_username.lower():
+        comment_user = comment.get("user", {})
+        commenter = comment_user.get("login", "")
+        if comment_user.get("type") == "Bot":
             return
 
         issue = data.get("issue", {})
@@ -144,6 +145,7 @@ class GitHubWebhookServer:
             "comment_id": comment.get("id"),
             "comment_body": body,
             "commenter": commenter,
+            "commenter_id": comment_user.get("id"),
             "issue_body": issue.get("body", ""),
         }
 
@@ -161,8 +163,9 @@ class GitHubWebhookServer:
         if not self.is_mentioned(body):
             return
 
-        author = issue.get("user", {}).get("login", "")
-        if author.lower() == config.github_bot_username.lower():
+        issue_user = issue.get("user", {})
+        author = issue_user.get("login", "")
+        if issue_user.get("type") == "Bot":
             return
 
         repo = data.get("repository", {})
@@ -176,6 +179,7 @@ class GitHubWebhookServer:
             "is_pr": False,
             "issue_body": body,
             "author": author,
+            "author_id": issue_user.get("id"),
         }
 
         await self.process_mention(context)
@@ -192,8 +196,9 @@ class GitHubWebhookServer:
         if not self.is_mentioned(body):
             return
 
-        author = pr.get("user", {}).get("login", "")
-        if author.lower() == config.github_bot_username.lower():
+        pr_user = pr.get("user", {})
+        author = pr_user.get("login", "")
+        if pr_user.get("type") == "Bot":
             return
 
         repo = data.get("repository", {})
@@ -207,6 +212,7 @@ class GitHubWebhookServer:
             "is_pr": True,
             "pr_body": body,
             "author": author,
+            "author_id": pr_user.get("id"),
             "head_branch": pr.get("head", {}).get("ref"),
             "base_branch": pr.get("base", {}).get("ref"),
         }
@@ -225,8 +231,9 @@ class GitHubWebhookServer:
         if not self.is_mentioned(body):
             return
 
-        commenter = comment.get("user", {}).get("login", "")
-        if commenter.lower() == config.github_bot_username.lower():
+        comment_user = comment.get("user", {})
+        commenter = comment_user.get("login", "")
+        if comment_user.get("type") == "Bot":
             return
 
         pr = data.get("pull_request", {})
@@ -241,6 +248,7 @@ class GitHubWebhookServer:
             "comment_id": comment.get("id"),
             "comment_body": body,
             "commenter": commenter,
+            "commenter_id": comment_user.get("id"),
             "file_path": comment.get("path"),
             "line": comment.get("line"),
             "diff_hunk": comment.get("diff_hunk", ""),
@@ -260,8 +268,9 @@ class GitHubWebhookServer:
         if not self.is_mentioned(body):
             return
 
-        reviewer = review.get("user", {}).get("login", "")
-        if reviewer.lower() == config.github_bot_username.lower():
+        review_user = review.get("user", {})
+        reviewer = review_user.get("login", "")
+        if review_user.get("type") == "Bot":
             return
 
         pr = data.get("pull_request", {})
@@ -277,6 +286,7 @@ class GitHubWebhookServer:
             "review_body": body,
             "review_state": review.get("state"),
             "reviewer": reviewer,
+            "reviewer_id": review_user.get("id"),
         }
 
         await self.process_mention(context)
@@ -293,12 +303,13 @@ class GitHubWebhookServer:
 
         from .pollinations import pollinations_client
 
-        # Get the GitHub username
+        # Usernames are display-only; authorization uses the immutable account ID.
         github_user = context.get("commenter") or context.get("author") or context.get("reviewer")
+        github_user_id = context.get("commenter_id") or context.get("author_id") or context.get("reviewer_id")
 
         # Check if user is a GitHub admin
-        is_admin = config.is_github_admin(github_user or "")
-        logger.info(f"GitHub user @{github_user} is_admin={is_admin}")
+        is_admin = config.is_github_admin(github_user_id)
+        logger.info(f"GitHub user @{github_user} (id={github_user_id}) is_admin={is_admin}")
 
         # If admin_only_mentions is enabled, reject non-admin users
         if config.github_admin_only_mentions and not is_admin:

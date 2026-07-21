@@ -88,7 +88,6 @@ export type ImageGenerationResult = {
 export type AuthResult = {
     tokenAuth: boolean;
     userId: string | null;
-    username: string | null;
 };
 
 function safeTokenCount(value: unknown): number {

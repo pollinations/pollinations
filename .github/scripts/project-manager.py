@@ -91,40 +91,35 @@ CONFIG = {
             "internal_only": False,
         },
     },
-    "org_members": [
-        "voodoohop",
-        "ElliotEtag",
-        "Circuit-Overtime",
-        "Itachi-1824",
-        "fisventurous"
-    ],
+    "discord_relay_bot_id": 247793354,
+    "org_member_ids": {5099901, 36901823, 74301576, 158852059, 34513273},
     "discord_uid_to_github": {
-        "304378879705874432": "voodoohop",
-        "884468469452656732": "ElliotEtag",
-        "738661669332320287": "Circuit-Overtime",
-        "859708931478388767": "Itachi-1824",
+        "304378879705874432": {"id": 5099901, "login": "voodoohop"},
+        "884468469452656732": {"id": 36901823, "login": "ElliotEtag"},
+        "738661669332320287": {"id": 74301576, "login": "Circuit-Overtime"},
+        "859708931478388767": {"id": 158852059, "login": "Itachi-1824"},
     },
 }
 
-def get_real_author() -> str:
-    if ISSUE_AUTHOR and "pollinations-ai" in ISSUE_AUTHOR.lower():
+def get_real_author() -> tuple[str, Optional[int]]:
+    if ISSUE_AUTHOR_ID == CONFIG["discord_relay_bot_id"]:
         uid_match = re.search(r'\(UID:\s*`?(\d+)`?\)', ISSUE_BODY)
         if uid_match:
             discord_uid = uid_match.group(1)
             log_debug(f"Extracted Discord UID: {discord_uid}")
             github_user = CONFIG["discord_uid_to_github"].get(discord_uid)
             if github_user:
-                log_debug(f"Mapped Discord UID {discord_uid} to GitHub user {github_user}")
-                return github_user
+                log_debug(f"Mapped Discord UID {discord_uid} to GitHub user {github_user['login']} (id={github_user['id']})")
+                return github_user["login"], github_user["id"]
             log_debug(f"No GitHub mapping for Discord UID {discord_uid}")
-    return ISSUE_AUTHOR
+    return ISSUE_AUTHOR, ISSUE_AUTHOR_ID
 
 
-def is_org_member(username: str) -> bool:
-    if not username:
+def is_org_member(github_id: Optional[int]) -> bool:
+    if github_id is None:
         return False
-    is_member = username.lower() in [m.lower() for m in CONFIG["org_members"]]
-    log_debug(f"Checked {username} org membership: {is_member}")
+    is_member = github_id in CONFIG["org_member_ids"]
+    log_debug(f"Checked GitHub ID {github_id} org membership: {is_member}")
     return is_member
 
 
@@ -562,9 +557,9 @@ def main():
             log_error("Apps project not configured")
         return
 
-    real_author = get_real_author()
-    is_internal = is_org_member(real_author)
-    log_debug(f"Author {ISSUE_AUTHOR} (real: {real_author}) is internal: {is_internal}")
+    real_author, real_author_id = get_real_author()
+    is_internal = is_org_member(real_author_id)
+    log_debug(f"Author {ISSUE_AUTHOR} (real: {real_author}, id={real_author_id}) is internal: {is_internal}")
     
     if real_author != ISSUE_AUTHOR and is_internal:
         assign_issue(real_author)

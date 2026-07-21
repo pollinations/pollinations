@@ -1,5 +1,5 @@
 DESCRIPTION >
-    Get request counts per GitHub username in the last 24 hours.
+    Get request counts per GitHub user ID in the last 24 hours.
     Used by the app metrics script to show activity levels per app author.
 
 TOKEN tinybird_read READ
@@ -7,13 +7,16 @@ TOKEN tinybird_read READ
 NODE app_request_counts_node
 SQL >
     SELECT
-        user_github_username as github_username,
-        count() as requests
-    FROM generation_event
-    WHERE start_time > now() - INTERVAL 1 DAY
-      AND user_github_username != 'undefined'
-      AND user_github_username != ''
-    GROUP BY user_github_username
+        toString(users.github_id) AS github_user_id,
+        count() AS requests
+    FROM generation_event events
+    INNER JOIN d1_user users ON events.user_id = users.id
+    WHERE events.start_time > now() - INTERVAL 1 DAY
+      AND users.synced_at = (SELECT max(synced_at) FROM d1_user)
+      AND users.github_id IS NOT NULL
+      AND events.user_id != 'undefined'
+      AND events.user_id != ''
+    GROUP BY users.github_id
     HAVING requests > 0
 
 TYPE endpoint

@@ -534,40 +534,42 @@ The prod `TINYBIRD_READ_TOKEN` above can query the raw `generation_event` dataso
 ```bash
 # Find users with frequent 403 errors (last 24 hours)
 curl -s "https://api.europe-west2.gcp.tinybird.co/v0/sql?token=$TB" \
-  --data-urlencode "q=SELECT user_id, user_github_username, user_tier, count() as error_403_count
-FROM generation_event
+  --data-urlencode "q=SELECT ge.user_id, any(users.github_username) AS github_username, argMax(ge.user_tier, ge.start_time) AS user_tier, count() as error_403_count
+FROM generation_event ge
+LEFT JOIN (SELECT id, github_username FROM d1_user WHERE synced_at = (SELECT max(synced_at) FROM d1_user)) users ON ge.user_id = users.id
 WHERE response_status = 403
   AND start_time > now() - interval 24 hour
   AND user_id != ''
   AND user_id != 'undefined'
-GROUP BY user_id, user_github_username, user_tier
+GROUP BY ge.user_id
 ORDER BY error_403_count DESC
 LIMIT 20"
 
 # Find users with 500 errors (actual backend issues)
 curl -s "https://api.europe-west2.gcp.tinybird.co/v0/sql?token=$TB" \
-  --data-urlencode "q=SELECT user_github_username, model_requested, error_message, count() as error_count 
-FROM generation_event 
-WHERE response_status >= 500 
-  AND start_time > now() - interval 24 hour 
-GROUP BY user_github_username, model_requested, error_message 
-ORDER BY error_count DESC 
+  --data-urlencode "q=SELECT ge.user_id, any(users.github_username) AS github_username, model_requested, error_message, count() as error_count
+FROM generation_event ge
+LEFT JOIN (SELECT id, github_username FROM d1_user WHERE synced_at = (SELECT max(synced_at) FROM d1_user)) users ON ge.user_id = users.id
+WHERE response_status >= 500
+  AND start_time > now() - interval 24 hour
+GROUP BY ge.user_id, model_requested, error_message
+ORDER BY error_count DESC
 LIMIT 20"
 
 # Check specific user's recent errors
 curl -s "https://api.europe-west2.gcp.tinybird.co/v0/sql?token=$TB" \
-  --data-urlencode "q=SELECT start_time, response_status, model_requested, error_message 
-FROM generation_event 
-WHERE user_github_username = 'USERNAME_HERE' 
-  AND start_time > now() - interval 24 hour 
-ORDER BY start_time DESC 
+  --data-urlencode "q=SELECT start_time, response_status, model_requested, error_message
+FROM generation_event
+WHERE user_id = 'USER_ID_HERE'
+  AND start_time > now() - interval 24 hour
+ORDER BY start_time DESC
 LIMIT 50"
 ```
 
 ### Datasource Schema
 
 The `generation_event` datasource is defined in `enter.pollinations.ai/observability/datasources/generation_event.datasource` and includes:
-- `user_id`, `user_github_username`, `user_tier`
+- `user_id`, `user_tier` (join `d1_user.id` for the current GitHub display name)
 - `response_status`, `error_message`, `error_response_code`
 - `model_requested`, `model_used`
 - `total_price`, `total_cost`
@@ -597,7 +599,7 @@ Helper scripts for common debugging tasks. Run from repo root.
 
 ```bash
 # See a user's recent errors
-.claude/skills/model-debugging/scripts/check-user-errors.sh superbrainai 24
+.claude/skills/model-debugging/scripts/check-user-errors.sh USER_ID_HERE 24
 ```
 
 ---

@@ -16,7 +16,6 @@ export interface App {
     category: string;
     platform: string;
     github: string;
-    githubId: string;
     repo: string;
     discord: string;
     other: string;
@@ -67,7 +66,6 @@ function parseAppsMarkdown(markdown: string): App[] {
         const category = (cols[ci("Category")] || "").toLowerCase();
         const platform = cols[ci("Platform")] || "";
         const github = cols[ci("GitHub_Username")];
-        const githubId = cols[ci("GitHub_UserID")];
         const repo = cols[ci("Github_Repository_URL")];
         const starsCol = cols[ci("Github_Repository_Stars")];
         const discord = cols[ci("Discord_Username")];
@@ -107,7 +105,6 @@ function parseAppsMarkdown(markdown: string): App[] {
             category,
             platform,
             github,
-            githubId,
             repo,
             stars,
             discord,

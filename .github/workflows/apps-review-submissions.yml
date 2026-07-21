@@ -57,14 +57,17 @@ jobs:
           # For workflow_dispatch, fetch author from API (input takes priority)
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
             if [ -n "${{ github.event.inputs.issue_author }}" ]; then
-              echo "author=${{ github.event.inputs.issue_author }}" >> "$GITHUB_OUTPUT"
+              AUTHOR="${{ github.event.inputs.issue_author }}"
             else
               AUTHOR=$(gh api repos/${{ github.repository }}/issues/$ISSUE_NUM --jq .user.login)
-              echo "author=$AUTHOR" >> "$GITHUB_OUTPUT"
             fi
           else
-            echo "author=${{ github.event.issue.user.login }}" >> "$GITHUB_OUTPUT"
+            AUTHOR="${{ github.event.issue.user.login }}"
           fi
+
+          AUTHOR_ID=$(gh api "/users/$AUTHOR" --jq .id)
+          echo "author=$AUTHOR" >> "$GITHUB_OUTPUT"
+          echo "author-id=$AUTHOR_ID" >> "$GITHUB_OUTPUT"
         env:
           GH_TOKEN: ${{ steps.token.outputs.token }}
 
@@ -107,9 +110,11 @@ jobs:
         run: |
           ASSOCIATION="${{ github.event.comment.author_association }}"
           COMMENT_AUTHOR="${{ github.event.comment.user.login }}"
+          COMMENT_AUTHOR_ID="${{ github.event.comment.user.id }}"
           ISSUE_AUTHOR="${{ github.event.issue.user.login }}"
+          ISSUE_AUTHOR_ID="${{ github.event.issue.user.id }}"
 
-          if [[ "$ASSOCIATION" == "MEMBER" || "$ASSOCIATION" == "OWNER" || "$ASSOCIATION" == "COLLABORATOR" || "$COMMENT_AUTHOR" == "$ISSUE_AUTHOR" ]]; then
+          if [[ "$ASSOCIATION" == "MEMBER" || "$ASSOCIATION" == "OWNER" || "$ASSOCIATION" == "COLLABORATOR" || "$COMMENT_AUTHOR_ID" == "$ISSUE_AUTHOR_ID" ]]; then
             echo "authorized=true" >> $GITHUB_OUTPUT
           else
             echo "authorized=false" >> $GITHUB_OUTPUT
@@ -151,6 +156,7 @@ jobs:
           GH_TOKEN: ${{ steps.token.outputs.token }}
           ISSUE_NUMBER: ${{ steps.issue.outputs.number }}
           ISSUE_AUTHOR: ${{ steps.issue.outputs.author }}
+          ISSUE_AUTHOR_ID: ${{ steps.issue.outputs.author-id }}
           COMMENT_AUTHOR: ${{ github.event.comment.user.login || '' }}
           COMMENT_AUTHOR_ASSOCIATION: ${{ github.event.comment.author_association || '' }}
           GITHUB_EVENT_NAME: ${{ github.event_name }}
@@ -175,6 +181,7 @@ jobs:
           POLLINATIONS_API_KEY: ${{ secrets.PLN_GITHUB_POLLY_KEY }}
           ISSUE_NUMBER: ${{ steps.issue.outputs.number }}
           ISSUE_AUTHOR: ${{ steps.issue.outputs.author }}
+          ISSUE_AUTHOR_ID: ${{ steps.issue.outputs.author-id }}
           VALIDATION_RESULT: ${{ steps.validate.outputs.result }}
 
   app-approve:
@@ -239,10 +246,10 @@ jobs:
             });
 
             // Find the latest bot comment with JSON code block
-            const botSlug = '${{ steps.token.outputs.app-slug }}[bot]';
+            const botUserId = Number('${{ steps.setup.outputs.user-id }}');
             let rowData = null;
             for (const c of comments.data.reverse()) {
-              if (c.user.login === botSlug || c.user.type === 'Bot') {
+              if (c.user.id === botUserId) {
                 const match = c.body.match(/<!-- APP_REVIEW_DATA -->\s*```json\n([\s\S]+?)\n```/);
                 if (match) {
                   rowData = match[1].trim();
@@ -295,7 +302,7 @@ jobs:
             const safeName = d.name.replace(/["`$\\]/g, '');
             const safeCategory = d.category.replace(/[^a-z_]/g, '');
             run('git add -A');
-            run(`git commit -m "Add ${safeName} to ${safeCategory}\n\nCo-authored-by: ${issueAuthor} <${issueAuthor}@users.noreply.github.com>"`);
+            run(`git commit -m "Add ${safeName} to ${safeCategory}\n\nCo-authored-by: ${issueAuthor} <${d.github_user_id}+${issueAuthor}@users.noreply.github.com>"`);
             run(`git push origin ${branch}`);
 
             core.setOutput('branch', branch);

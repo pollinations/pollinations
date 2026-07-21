@@ -323,7 +323,7 @@
           },
           "format": 0,
           "range": true,
-          "rawSql": "WITH banned_users AS (\n  SELECT github_username\n  FROM d1_user\n  WHERE banned = 1\n  GROUP BY github_username\n)\nSELECT\n  toStartOfInterval(start_time, INTERVAL 1 DAY) as time,\n  model_provider_used as provider,\n  sum(total_cost) as cost\nFROM generation_event\nWHERE $__timeFilter(start_time)\n  AND environment = 'production'\n  AND response_status >= 200 AND response_status < 300\n    AND user_github_username NOT IN (SELECT github_username FROM banned_users)\n  AND total_cost > 0\n  AND model_provider_used != ''\n  AND model_provider_used != 'undefined'\nGROUP BY time, provider\nORDER BY time, provider",
+          "rawSql": "WITH banned_users AS (\n  SELECT id AS user_id FROM d1_user WHERE banned = 1 GROUP BY id\n)\nSELECT\n  toStartOfInterval(start_time, INTERVAL 1 DAY) as time,\n  model_provider_used as provider,\n  sum(total_cost) as cost\nFROM generation_event\nWHERE $__timeFilter(start_time)\n  AND environment = 'production'\n  AND response_status >= 200 AND response_status < 300\n    AND user_id NOT IN (SELECT user_id FROM banned_users)\n  AND total_cost > 0\n  AND model_provider_used != ''\n  AND model_provider_used != 'undefined'\nGROUP BY time, provider\nORDER BY time, provider",
           "refId": "A"
         }
       ],
@@ -388,7 +388,7 @@
           },
           "format": 0,
           "range": true,
-          "rawSql": "WITH banned_users AS (\n  SELECT github_username\n  FROM d1_user\n  WHERE banned = 1\n  GROUP BY github_username\n)\nSELECT\n  toStartOfInterval(start_time, INTERVAL 1 DAY) as time,\n  model_provider_used as provider,\n  sumIf(total_price, selected_meter_slug LIKE '%pack%') as pack_revenue\nFROM generation_event\nWHERE $__timeFilter(start_time)\n  AND environment = 'production'\n  AND response_status >= 200 AND response_status < 300\n    AND user_github_username NOT IN (SELECT github_username FROM banned_users)\n  AND total_price > 0\n  AND model_provider_used != ''\n  AND model_provider_used != 'undefined'\nGROUP BY time, provider\nORDER BY time, provider",
+          "rawSql": "WITH banned_users AS (\n  SELECT id AS user_id FROM d1_user WHERE banned = 1 GROUP BY id\n)\nSELECT\n  toStartOfInterval(start_time, INTERVAL 1 DAY) as time,\n  model_provider_used as provider,\n  sumIf(total_price, selected_meter_slug LIKE '%pack%') as pack_revenue\nFROM generation_event\nWHERE $__timeFilter(start_time)\n  AND environment = 'production'\n  AND response_status >= 200 AND response_status < 300\n    AND user_id NOT IN (SELECT user_id FROM banned_users)\n  AND total_price > 0\n  AND model_provider_used != ''\n  AND model_provider_used != 'undefined'\nGROUP BY time, provider\nORDER BY time, provider",
           "refId": "A"
         }
       ],
@@ -453,7 +453,7 @@
           },
           "format": 0,
           "range": true,
-          "rawSql": "WITH banned_users AS (\n  SELECT github_username\n  FROM d1_user\n  WHERE banned = 1\n  GROUP BY github_username\n)\nSELECT\n  toStartOfInterval(start_time, INTERVAL 1 DAY) as time,\n  model_provider_used as provider,\n  (sumIf(total_price, selected_meter_slug LIKE '%pack%') / 2) - sum(total_cost) as net_balance\nFROM generation_event\nWHERE $__timeFilter(start_time)\n  AND environment = 'production'\n  AND response_status >= 200 AND response_status < 300\n    AND user_github_username NOT IN (SELECT github_username FROM banned_users)\n  AND (total_cost > 0 OR total_price > 0)\n  AND model_provider_used != ''\n  AND model_provider_used != 'undefined'\nGROUP BY time, provider\nORDER BY time, provider",
+          "rawSql": "WITH banned_users AS (\n  SELECT id AS user_id FROM d1_user WHERE banned = 1 GROUP BY id\n)\nSELECT\n  toStartOfInterval(start_time, INTERVAL 1 DAY) as time,\n  model_provider_used as provider,\n  (sumIf(total_price, selected_meter_slug LIKE '%pack%') / 2) - sum(total_cost) as net_balance\nFROM generation_event\nWHERE $__timeFilter(start_time)\n  AND environment = 'production'\n  AND response_status >= 200 AND response_status < 300\n    AND user_id NOT IN (SELECT user_id FROM banned_users)\n  AND (total_cost > 0 OR total_price > 0)\n  AND model_provider_used != ''\n  AND model_provider_used != 'undefined'\nGROUP BY time, provider\nORDER BY time, provider",
           "refId": "A"
         }
       ],
@@ -738,7 +738,7 @@
             "uid": "PAD1A0A25CD30D456"
           },
           "format": 1,
-          "rawSql": "WITH banned_users AS (\n  SELECT github_username\n  FROM d1_user\n  WHERE banned = 1\n  GROUP BY github_username\n)\nSELECT\n  provider,\n  net_balance,\n  daily_balance,\n  (net_balance / sum(net_balance) OVER ()) * 100 as bal_contribution_pct,\n  provider_cost,\n  pack_revenue,\n  effective_revenue,\n  tier_loss,\n  request_count\nFROM (\n  SELECT\n    model_provider_used as provider,\n    (sumIf(total_price, selected_meter_slug LIKE '%pack%') / 2) - sum(total_cost) as net_balance,\n    ((sumIf(total_price, selected_meter_slug LIKE '%pack%') / 2) - sum(total_cost)) / uniqExact(toDate(start_time)) as daily_balance,\n    sum(total_cost) as provider_cost,\n    sumIf(total_price, selected_meter_slug LIKE '%pack%') as pack_revenue,\n    sumIf(total_price, selected_meter_slug LIKE '%pack%') / 2 as effective_revenue,\n    sumIf(total_cost, selected_meter_slug LIKE '%tier%') as tier_loss,\n    count() as request_count\n  FROM generation_event\n  WHERE $__timeFilter(start_time)\n    AND environment = 'production'\n    AND response_status >= 200 AND response_status < 300\n    AND user_github_username NOT IN (SELECT github_username FROM banned_users)\n    AND (total_cost > 0 OR total_price > 0)\n    AND model_provider_used != ''\n    AND model_provider_used != 'undefined'\n  GROUP BY provider\n)\nORDER BY net_balance ASC",
+          "rawSql": "WITH banned_users AS (\n  SELECT id AS user_id FROM d1_user WHERE banned = 1 GROUP BY id\n)\nSELECT\n  provider,\n  net_balance,\n  daily_balance,\n  (net_balance / sum(net_balance) OVER ()) * 100 as bal_contribution_pct,\n  provider_cost,\n  pack_revenue,\n  effective_revenue,\n  tier_loss,\n  request_count\nFROM (\n  SELECT\n    model_provider_used as provider,\n    (sumIf(total_price, selected_meter_slug LIKE '%pack%') / 2) - sum(total_cost) as net_balance,\n    ((sumIf(total_price, selected_meter_slug LIKE '%pack%') / 2) - sum(total_cost)) / uniqExact(toDate(start_time)) as daily_balance,\n    sum(total_cost) as provider_cost,\n    sumIf(total_price, selected_meter_slug LIKE '%pack%') as pack_revenue,\n    sumIf(total_price, selected_meter_slug LIKE '%pack%') / 2 as effective_revenue,\n    sumIf(total_cost, selected_meter_slug LIKE '%tier%') as tier_loss,\n    count() as request_count\n  FROM generation_event\n  WHERE $__timeFilter(start_time)\n    AND environment = 'production'\n    AND response_status >= 200 AND response_status < 300\n    AND user_id NOT IN (SELECT user_id FROM banned_users)\n    AND (total_cost > 0 OR total_price > 0)\n    AND model_provider_used != ''\n    AND model_provider_used != 'undefined'\n  GROUP BY provider\n)\nORDER BY net_balance ASC",
           "refId": "A"
         }
       ],
@@ -1017,7 +1017,7 @@
             "uid": "PAD1A0A25CD30D456"
           },
           "format": 1,
-          "rawSql": "WITH banned_users AS (\n  SELECT github_username\n  FROM d1_user\n  WHERE banned = 1\n  GROUP BY github_username\n)\nSELECT\n  model_provider_used as provider,\n  sum(total_cost) as cost\nFROM generation_event\nWHERE $__timeFilter(start_time)\n  AND environment = 'production'\n  AND response_status >= 200 AND response_status < 300\n    AND user_github_username NOT IN (SELECT github_username FROM banned_users)\n  AND total_cost > 0\n  AND model_provider_used != ''\n  AND model_provider_used != 'undefined'\nGROUP BY provider\nORDER BY cost DESC",
+          "rawSql": "WITH banned_users AS (\n  SELECT id AS user_id FROM d1_user WHERE banned = 1 GROUP BY id\n)\nSELECT\n  model_provider_used as provider,\n  sum(total_cost) as cost\nFROM generation_event\nWHERE $__timeFilter(start_time)\n  AND environment = 'production'\n  AND response_status >= 200 AND response_status < 300\n    AND user_id NOT IN (SELECT user_id FROM banned_users)\n  AND total_cost > 0\n  AND model_provider_used != ''\n  AND model_provider_used != 'undefined'\nGROUP BY provider\nORDER BY cost DESC",
           "refId": "A"
         }
       ],

@@ -1,0 +1,43 @@
+{
+  "resourceGroup": "rg-pollinations-bots-prod",
+  "location": "eastus",
+  "network": {
+    "vnet": "vnet-pollinations-bots-prod",
+    "subnet": "snet-workloads",
+    "addressPrefix": "10.42.0.0/16"
+  },
+  "adminUsername": "pollinations",
+  "image": "Canonical:ubuntu-24_04-lts:server:latest",
+  "vms": {
+    "polli": {
+      "name": "polli-prod",
+      "size": "Standard_D4als_v6",
+      "vcpus": 4,
+      "memoryGB": 8,
+      "osDiskGB": 128,
+      "storageSku": "StandardSSD_LRS",
+      "publicIp": "20.106.136.139",
+      "privateIp": "10.42.1.4",
+      "networkSecurityGroup": "nsg-polli-prod",
+      "publicKey": "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOHyFnKHmfdrlZrhPTxht2grp3yRutviLGnwy+5GvVJq pollinations-polli-prod-azure-2026",
+      "publicKeyFingerprint": "SHA256:d/BPmXx84+motnisbrS3qzI1twWsCGJ7QLUoerMu2ss",
+      "hostKeyFingerprint": "SHA256:RqwxyctpdlSwo8d8donROXW7149AcjUDYEX/lDWzcO4",
+      "secretFile": "secrets/polli-prod.vars.json"
+    },
+    "lixsearch": {
+      "name": "lixsearch-prod",
+      "size": "Standard_D4as_v6",
+      "vcpus": 4,
+      "memoryGB": 16,
+      "osDiskGB": 256,
+      "storageSku": "StandardSSD_LRS",
+      "publicIp": "172.174.39.180",
+      "privateIp": "10.42.1.5",
+      "networkSecurityGroup": "nsg-lixsearch-prod",
+      "publicKey": "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIMZWYcdFsXF8kh1dWooIBwfUqO7DoljPfLgQ/RlXfIxN pollinations-lixsearch-prod-azure-2026",
+      "publicKeyFingerprint": "SHA256:pOtP1N/cZ8eNCFvrJpNgmW2rlwArtLhUcVFAmvodcDE",
+      "hostKeyFingerprint": "SHA256:2HkyEuXTIJxuAyiK3t/ij/D/dSsg+j2uO+TsVr3grAE",
+      "secretFile": "secrets/lixsearch-prod.vars.json"
+    }
+  }
+}

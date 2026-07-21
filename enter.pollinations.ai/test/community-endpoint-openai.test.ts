@@ -91,7 +91,7 @@ describe("community endpoint OpenAI service", () => {
         expect(fetchMock).toHaveBeenCalledTimes(1);
     });
 
-    it("bills OpenAI-compatible image endpoints once per image", async () => {
+    it("detects token billing when image endpoints return OpenAI usage", async () => {
         const fetchMock = vi.fn(async (input, init) => {
             const request = new Request(input, init);
             expect(request.url).toBe(
@@ -131,8 +131,21 @@ describe("community endpoint OpenAI service", () => {
                 model: "gpt-image-1",
             }),
         ).resolves.toEqual({
-            usage: { images: 1 },
-            billableUsage: { completionImageTokens: 1 },
+            usage: {
+                input_tokens: 12,
+                output_tokens: 1056,
+                total_tokens: 1068,
+                input_tokens_details: {
+                    text_tokens: 12,
+                    image_tokens: 0,
+                },
+            },
+            billableUsage: {
+                promptTextTokens: 12,
+                promptImageTokens: 0,
+                completionImageTokens: 1056,
+            },
+            imagePricing: "tokens",
         });
 
         expect(fetchMock).toHaveBeenCalledTimes(1);
@@ -157,6 +170,7 @@ describe("community endpoint OpenAI service", () => {
         ).resolves.toEqual({
             usage: { images: 1 },
             billableUsage: { completionImageTokens: 1 },
+            imagePricing: "request",
         });
     });
 
@@ -186,6 +200,7 @@ describe("community endpoint OpenAI service", () => {
         ).resolves.toEqual({
             usage: { images: 1 },
             billableUsage: { completionImageTokens: 1 },
+            imagePricing: "request",
         });
     });
 

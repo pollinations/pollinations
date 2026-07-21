@@ -10,6 +10,15 @@ import {
 export const LEGACY_COMMUNITY_MODEL_PREFIX = "community/";
 export const COMMUNITY_MODEL_REWARD_RATE = 0.75;
 export const COMMUNITY_ENDPOINT_MODALITIES = ["text", "image"] as const;
+// How a community image endpoint is billed. "request" charges the fixed
+// per-image price once per generation; "tokens" charges the provider-returned
+// OpenAI image token usage against per-1M prices. The mode is detected by the
+// registration probe: endpoints that return valid image token usage get
+// "tokens", everything else falls back to "request".
+export const COMMUNITY_ENDPOINT_IMAGE_PRICING_MODES = [
+    "request",
+    "tokens",
+] as const;
 // Zero is free; positive owner-declared prices start at this floor.
 export const MIN_COMMUNITY_PRICE_PER_MILLION_TOKENS = 0.000001;
 export const MIN_COMMUNITY_PRICE_PER_TOKEN =
@@ -19,6 +28,9 @@ const BEARER_PREFIX = /^Bearer(?:\s+|$)/i;
 
 export type CommunityEndpointModality =
     (typeof COMMUNITY_ENDPOINT_MODALITIES)[number];
+
+export type CommunityEndpointImagePricing =
+    (typeof COMMUNITY_ENDPOINT_IMAGE_PRICING_MODES)[number];
 
 const COMMUNITY_PRICE_FIELD_BY_USAGE_TYPE = {
     promptTextTokens: {
@@ -88,6 +100,33 @@ const COMMUNITY_IMAGE_PRICE_FIELD = {
     rawUsagePaths: ["images"],
 } as const;
 
+// Token-mode image fields reuse the stored price columns but are priced per
+// 1M tokens against the OpenAI images usage shape (input_tokens_details.*,
+// output_tokens) instead of per generated image.
+const COMMUNITY_IMAGE_TOKEN_PRICE_FIELDS = [
+    {
+        key: "promptTextPrice",
+        usageType: "promptTextTokens",
+        label: "Prompt text",
+        priceUnit: "million",
+        rawUsagePaths: ["input_tokens_details.text_tokens"],
+    },
+    {
+        key: "promptImagePrice",
+        usageType: "promptImageTokens",
+        label: "Prompt image",
+        priceUnit: "million",
+        rawUsagePaths: ["input_tokens_details.image_tokens"],
+    },
+    {
+        key: "completionImagePrice",
+        usageType: "completionImageTokens",
+        label: "Generated image",
+        priceUnit: "million",
+        rawUsagePaths: ["output_tokens"],
+    },
+] as const;
+
 export const COMMUNITY_ENDPOINT_PRICE_FIELDS = [
     ...COMMUNITY_TEXT_PRICE_FIELDS,
     COMMUNITY_IMAGE_PRICE_FIELD,
@@ -104,16 +143,20 @@ const COMMUNITY_IMAGE_ENDPOINT_PRICE_FIELDS = [
 
 export function communityEndpointPriceFieldsForModality(
     modality: CommunityEndpointModality,
+    imagePricing: CommunityEndpointImagePricing = "request",
 ) {
-    return modality === "image"
-        ? COMMUNITY_IMAGE_ENDPOINT_PRICE_FIELDS
-        : COMMUNITY_TEXT_ENDPOINT_PRICE_FIELDS;
+    if (modality !== "image") return COMMUNITY_TEXT_ENDPOINT_PRICE_FIELDS;
+    return imagePricing === "tokens"
+        ? COMMUNITY_IMAGE_TOKEN_PRICE_FIELDS
+        : COMMUNITY_IMAGE_ENDPOINT_PRICE_FIELDS;
 }
 
 export type CommunityEndpointPriceField =
-    (typeof COMMUNITY_ENDPOINT_PRICE_FIELDS)[number];
+    | (typeof COMMUNITY_ENDPOINT_PRICE_FIELDS)[number]
+    | (typeof COMMUNITY_IMAGE_TOKEN_PRICE_FIELDS)[number];
 
-export type CommunityEndpointPriceKey = CommunityEndpointPriceField["key"];
+export type CommunityEndpointPriceKey =
+    (typeof COMMUNITY_ENDPOINT_PRICE_FIELDS)[number]["key"];
 
 export type CommunityEndpointPrices = Record<CommunityEndpointPriceKey, number>;
 
@@ -131,9 +174,10 @@ export function communityEndpointPrices(
 export function communityEndpointPricesForModality(
     source: Partial<CommunityEndpointPrices>,
     modality: CommunityEndpointModality,
+    imagePricing: CommunityEndpointImagePricing = "request",
 ): CommunityEndpointPrices {
     const allowed = new Set(
-        communityEndpointPriceFieldsForModality(modality).map(
+        communityEndpointPriceFieldsForModality(modality, imagePricing).map(
             (field) => field.key,
         ),
     );
@@ -149,6 +193,12 @@ export function normalizeCommunityEndpointModality(
     value: string | null | undefined,
 ): CommunityEndpointModality {
     return value === "image" ? "image" : "text";
+}
+
+export function normalizeCommunityEndpointImagePricing(
+    value: string | null | undefined,
+): CommunityEndpointImagePricing {
+    return value === "tokens" ? "tokens" : "request";
 }
 
 // Access/visibility of a registered endpoint. Private is the default; choosing
@@ -167,6 +217,7 @@ export type CommunityEndpointRuntime = {
     name: string;
     description: string | null;
     modality: CommunityEndpointModality;
+    imagePricing: CommunityEndpointImagePricing;
     baseUrl: string;
     upstreamModel: string;
     bearerTokenCiphertext: string;
@@ -179,6 +230,7 @@ export type CommunityModelDefinitionInput = {
     modelId: string;
     description: string | null;
     modality?: CommunityEndpointModality;
+    imagePricing?: CommunityEndpointImagePricing;
 } & CommunityEndpointPrices;
 
 export type CommunityModelParts = {
@@ -293,9 +345,13 @@ export function communityOpenAIBaseUrl(baseUrl: string): string {
 export function communityPriceDefinition(
     endpoint: CommunityEndpointPrices,
     modality: CommunityEndpointModality,
+    imagePricing: CommunityEndpointImagePricing = "request",
 ): PriceDefinition {
     const pricing: PriceDefinition = {};
-    for (const field of communityEndpointPriceFieldsForModality(modality)) {
+    for (const field of communityEndpointPriceFieldsForModality(
+        modality,
+        imagePricing,
+    )) {
         const price = endpoint[field.key];
         // Zero is an intentional rate here (private models, unpriced usage
         // buckets), not a missing one: keep it explicit so billing charges 0
@@ -318,14 +374,20 @@ export function communityModelDefinition(
     const aliases =
         legacyAlias && legacyAlias !== endpoint.modelId ? [legacyAlias] : [];
     const modality = normalizeCommunityEndpointModality(endpoint.modality);
+    const imagePricing = normalizeCommunityEndpointImagePricing(
+        endpoint.imagePricing,
+    );
     const isImage = modality === "image";
+    // Token-priced image endpoints bill like text models (usage × per-token
+    // rates), so only fixed per-request image endpoints are flat-rate.
+    const isFlatRateImage = isImage && imagePricing === "request";
     return {
         aliases,
         modelId: endpoint.modelId,
         provider: "community",
         brand: "Community",
         category: isImage ? "image" : "text",
-        cost: communityPriceDefinition(endpoint, modality),
+        cost: communityPriceDefinition(endpoint, modality, imagePricing),
         priceMultiplier: 1,
         addedDate: 0,
         title: description || parsed?.modelName || endpoint.modelId,
@@ -334,7 +396,10 @@ export function communityModelDefinition(
         outputModalities: isImage ? ["image"] : ["text"],
         paidOnly: false,
         alpha: true,
-        ...(isImage ? { flatRate: true } : {}),
+        // Explicit false (not omitted) for token-priced image endpoints: the
+        // catalog only renders per-1M prices when flat_rate === false or a
+        // prompt token price is set.
+        ...(isImage ? { flatRate: isFlatRateImage } : {}),
     };
 }
 

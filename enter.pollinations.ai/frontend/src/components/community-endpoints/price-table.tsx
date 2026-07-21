@@ -11,6 +11,7 @@ import {
 } from "@pollinations/ui";
 import {
     COMMUNITY_ENDPOINT_PRICE_FIELDS,
+    type CommunityEndpointImagePricing,
     type CommunityEndpointModality,
     communityEndpointPriceFieldsForModality,
     MIN_COMMUNITY_PRICE_PER_MILLION_TOKENS,
@@ -48,17 +49,19 @@ type PriceCellState = {
 export function PriceGroups({
     form,
     modality,
+    imagePricing,
     testState,
     visiblePriceKeys,
     onChange,
 }: {
     form: EndpointFormState;
     modality: CommunityEndpointModality;
+    imagePricing: CommunityEndpointImagePricing;
     testState: ActionState;
     visiblePriceKeys: Set<PriceFieldKey>;
     onChange: (key: keyof EndpointFormState, value: string) => void;
 }) {
-    const rows = priceFormRows(visiblePriceKeys, modality);
+    const rows = priceFormRows(visiblePriceKeys, modality, imagePricing);
 
     if (rows.length === 0) return null;
 
@@ -238,9 +241,13 @@ function priceCellState(
 function priceFormRows(
     visiblePriceKeys: Set<PriceFieldKey>,
     modality: CommunityEndpointModality,
+    imagePricing: CommunityEndpointImagePricing,
 ): PriceFormRow[] {
     const rows = new Map<string, PriceFormRow>();
-    for (const field of communityEndpointPriceFieldsForModality(modality)) {
+    for (const field of communityEndpointPriceFieldsForModality(
+        modality,
+        imagePricing,
+    )) {
         if (!visiblePriceKeys.has(field.key)) continue;
         const column = priceColumn(field);
         if (!column) continue;
@@ -290,7 +297,10 @@ export function savedEndpointPriceKeys(
 ): Set<PriceFieldKey> {
     return new Set(
         endpoint
-            ? communityEndpointPriceFieldsForModality(endpoint.modality)
+            ? communityEndpointPriceFieldsForModality(
+                  endpoint.modality,
+                  endpoint.imagePricing,
+              )
                   .filter((field) => endpoint[field.key] > 0)
                   .map((field) => field.key)
             : [],
@@ -307,11 +317,13 @@ export const BASE_TEXT_PRICE_KEYS: PriceFieldKey[] = [
 export function returnedPriceFields(
     testState: ActionState,
     modality: CommunityEndpointModality,
+    imagePricing: CommunityEndpointImagePricing,
 ): PriceField[] {
     if (testState.status !== "success") return [];
-    return communityEndpointPriceFieldsForModality(modality).filter((field) =>
-        hasObservedPriceField(testState.usage, field),
-    );
+    return communityEndpointPriceFieldsForModality(
+        modality,
+        imagePricing,
+    ).filter((field) => hasObservedPriceField(testState.usage, field));
 }
 
 export function visiblePriceFieldKeys(
@@ -333,9 +345,10 @@ export function formWithVisiblePrices(
 ): EndpointFormState {
     const next = { ...form };
     const allowed = new Set(
-        communityEndpointPriceFieldsForModality(form.modality).map(
-            (field) => field.key,
-        ),
+        communityEndpointPriceFieldsForModality(
+            form.modality,
+            form.imagePricing,
+        ).map((field) => field.key),
     );
     for (const field of COMMUNITY_ENDPOINT_PRICE_FIELDS) {
         if (!visiblePriceKeys.has(field.key) || !allowed.has(field.key)) {
@@ -350,10 +363,10 @@ export function hasValidVisibleFormPrices(
     visiblePriceKeys: Set<PriceFieldKey>,
 ): boolean {
     const fields = new Map(
-        communityEndpointPriceFieldsForModality(form.modality).map((field) => [
-            field.key,
-            field,
-        ]),
+        communityEndpointPriceFieldsForModality(
+            form.modality,
+            form.imagePricing,
+        ).map((field) => [field.key, field]),
     );
     return COMMUNITY_ENDPOINT_PRICE_FIELDS.every((field) => {
         if (!visiblePriceKeys.has(field.key)) return true;

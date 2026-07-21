@@ -3,6 +3,7 @@ import {
     communityEndpointPrices,
     communityModelDefinition,
     communityModelId,
+    normalizeCommunityEndpointImagePricing,
     normalizeCommunityEndpointModality,
 } from "@shared/community-endpoints.ts";
 import * as schema from "@shared/db/better-auth.ts";
@@ -50,6 +51,7 @@ export async function getCommunityModelRegistryEntries(
             name: schema.communityEndpoint.name,
             description: schema.communityEndpoint.description,
             modality: schema.communityEndpoint.modality,
+            imagePricing: schema.communityEndpoint.imagePricing,
             baseUrl: schema.communityEndpoint.baseUrl,
             upstreamModel: schema.communityEndpoint.upstreamModel,
             bearerTokenCiphertext:
@@ -86,6 +88,9 @@ export async function getCommunityModelRegistryEntries(
             name: row.name,
             description: row.description,
             modality: normalizeCommunityEndpointModality(row.modality),
+            imagePricing: normalizeCommunityEndpointImagePricing(
+                row.imagePricing,
+            ),
             baseUrl: row.baseUrl,
             upstreamModel: row.upstreamModel,
             bearerTokenCiphertext: row.bearerTokenCiphertext,

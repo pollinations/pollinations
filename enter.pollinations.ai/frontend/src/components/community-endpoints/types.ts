@@ -1,5 +1,6 @@
 import {
     COMMUNITY_ENDPOINT_PRICE_FIELDS,
+    type CommunityEndpointImagePricing,
     type CommunityEndpointModality,
     type CommunityEndpointPriceField,
     type CommunityEndpointPriceKey,
@@ -19,6 +20,7 @@ export type CommunityEndpoint = {
     name: string;
     description: string | null;
     modality: CommunityEndpointModality;
+    imagePricing: CommunityEndpointImagePricing;
     baseUrl: string;
     upstreamModel: string;
     // private → owner-only, shown only to the owner, no owner-set price;
@@ -31,6 +33,8 @@ export type CommunityEndpoint = {
 
 export type EndpointFormState = {
     modality: CommunityEndpointModality;
+    // Detected by the endpoint test for image models; "request" until tested.
+    imagePricing: CommunityEndpointImagePricing;
     name: string;
     description: string;
     // private → owner-only, shown only to the owner, no owner-set price;
@@ -44,6 +48,7 @@ export type EndpointFormState = {
 
 export type EndpointPayload = {
     modality: CommunityEndpointModality;
+    imagePricing: CommunityEndpointImagePricing;
     name: string;
     description: string;
     baseUrl: string;
@@ -58,6 +63,7 @@ export type CommunityEndpointTestResponse = {
     message?: string;
     usage?: CommunityEndpointUsage;
     billableUsage?: Usage;
+    imagePricing?: CommunityEndpointImagePricing;
 };
 
 export type ActionState = {
@@ -73,6 +79,7 @@ const emptyPriceForm = Object.fromEntries(
 
 export const emptyForm: EndpointFormState = {
     modality: "text",
+    imagePricing: "request",
     name: "",
     description: "",
     visibility: "private",
@@ -142,12 +149,14 @@ export function isValidPriceInput(
 
 export function endpointToForm(endpoint: CommunityEndpoint): EndpointFormState {
     const fields = new Map(
-        communityEndpointPriceFieldsForModality(endpoint.modality).map(
-            (field) => [field.key, field],
-        ),
+        communityEndpointPriceFieldsForModality(
+            endpoint.modality,
+            endpoint.imagePricing,
+        ).map((field) => [field.key, field]),
     );
     return {
         modality: endpoint.modality,
+        imagePricing: endpoint.imagePricing,
         name: endpoint.name,
         description: endpoint.description ?? "",
         visibility: endpoint.visibility,
@@ -174,12 +183,12 @@ export function endpointToForm(endpoint: CommunityEndpoint): EndpointFormState {
 function formPricesToPayload(
     form: EndpointFormState,
     modality: CommunityEndpointModality,
+    imagePricing: CommunityEndpointImagePricing,
 ): CommunityEndpointPrices {
     const allowed = new Map(
-        communityEndpointPriceFieldsForModality(modality).map((field) => [
-            field.key,
-            field,
-        ]),
+        communityEndpointPriceFieldsForModality(modality, imagePricing).map(
+            (field) => [field.key, field],
+        ),
     );
     return Object.fromEntries(
         COMMUNITY_ENDPOINT_PRICE_FIELDS.map((field) => {
@@ -220,7 +229,7 @@ function hasObservedUsagePath(
 
 export function hasObservedPriceField(
     usage: CommunityEndpointUsage | undefined,
-    field: (typeof COMMUNITY_ENDPOINT_PRICE_FIELDS)[number],
+    field: CommunityEndpointPriceField,
 ): boolean {
     return field.rawUsagePaths.some((path) =>
         hasObservedUsagePath(usage, path),
@@ -230,7 +239,7 @@ export function hasObservedPriceField(
 export function observedUsageValue(
     usage: CommunityEndpointUsage | undefined,
     billableUsage: Usage | undefined,
-    field: (typeof COMMUNITY_ENDPOINT_PRICE_FIELDS)[number],
+    field: CommunityEndpointPriceField,
 ): number | null {
     return hasObservedPriceField(usage, field)
         ? (billableUsage?.[field.usageType] ?? 0)
@@ -239,14 +248,17 @@ export function observedUsageValue(
 
 export function toEndpointPayload(form: EndpointFormState): EndpointPayload {
     const modelName = form.name.trim();
+    const imagePricing =
+        form.modality === "image" ? form.imagePricing : "request";
     return {
         modality: form.modality,
+        imagePricing,
         name: modelName,
         description: form.description.trim(),
         visibility: form.visibility,
         baseUrl: form.baseUrl.trim(),
         upstreamModel: form.upstreamModel.trim() || modelName,
-        ...formPricesToPayload(form, form.modality),
+        ...formPricesToPayload(form, form.modality, imagePricing),
     };
 }
 

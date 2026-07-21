@@ -222,6 +222,7 @@ function communityPriceGroups(
 
     for (const field of communityEndpointPriceFieldsForModality(
         endpoint.modality,
+        endpoint.imagePricing,
     )) {
         const price = endpoint[field.key];
         if (price <= 0) continue;

@@ -201,6 +201,12 @@ export const communityEndpoint = sqliteTable("community_endpoint", {
   name: text("name").notNull(),
   description: text("description"),
   modality: text("modality").default("text").notNull(),
+  // Image endpoints only: "request" bills the fixed per-image price once per
+  // generation; "tokens" bills provider-returned image token usage. Detected
+  // by the registration probe.
+  imagePricing: text("image_pricing", { enum: ["request", "tokens"] })
+    .default("request")
+    .notNull(),
   baseUrl: text("base_url").notNull(),
   upstreamModel: text("upstream_model").notNull(),
   bearerTokenCiphertext: text("bearer_token_ciphertext").notNull(),

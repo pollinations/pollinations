@@ -37,6 +37,7 @@ import { drizzle } from "drizzle-orm/d1";
 import { Hono } from "hono";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { Env } from "@/env.ts";
+import { callCommunityImageEndpoint } from "./image/communityEndpoint.ts";
 import { resetGenerationModelRegistryCache } from "./model-registry.ts";
 import { communityEndpointGatewayContext } from "./text/communityEndpoint.ts";
 
@@ -340,6 +341,41 @@ describe("community endpoint helpers", () => {
         ).toBe(0.03);
     });
 
+    it("builds token-priced community image models when the probe detected usage", () => {
+        const definition = communityModelDefinition({
+            modelId: "voodoohop/gptimage",
+            description: "Token-priced image model",
+            modality: "image",
+            imagePricing: "tokens",
+            ...communityEndpointPrices({
+                promptTextPrice: 0.000005,
+                promptImagePrice: 0.00001,
+                completionImagePrice: 0.00004,
+            }),
+        });
+
+        expect(definition).toMatchObject({
+            category: "image",
+            flatRate: false,
+            cost: {
+                promptTextTokens: 0.000005,
+                promptImageTokens: 0.00001,
+                completionImageTokens: 0.00004,
+            },
+        });
+        expect(
+            calculateUsageBilling(
+                definition.modelId,
+                {
+                    promptTextTokens: 100,
+                    promptImageTokens: 0,
+                    completionImageTokens: 1000,
+                },
+                definition,
+            ).price.totalPrice,
+        ).toBeCloseTo(0.000005 * 100 + 0.00004 * 1000, 10);
+    });
+
     it("keeps zero prices as explicit zero rates in the price definition", () => {
         const definition = communityPriceDefinition(
             communityEndpointPrices({ promptTextPrice: 0.5 }),
@@ -355,6 +391,122 @@ describe("community endpoint helpers", () => {
         );
     });
 
+    describe("community image endpoint billing", () => {
+        afterEach(() => {
+            vi.unstubAllGlobals();
+        });
+
+        const secret = "test-secret";
+        const imageParams = {
+            model: "gpt-image-1",
+            width: 1024,
+            height: 1024,
+            quality: "medium",
+            transparent: false,
+            image: [],
+        } as unknown as Parameters<typeof callCommunityImageEndpoint>[2];
+
+        async function imageEndpoint(
+            imagePricing: CommunityEndpointRuntime["imagePricing"],
+        ): Promise<CommunityEndpointRuntime> {
+            return {
+                id: "community-endpoint-id",
+                ownerUserId: "owner-id",
+                modelId: "voodoohop/gptimage",
+                name: "gptimage",
+                description: null,
+                modality: "image",
+                imagePricing,
+                baseUrl: "https://api.example.com/v1",
+                upstreamModel: "gpt-image-1",
+                visibility: "public",
+                disabledAt: null,
+                disabledReason: null,
+                bearerTokenCiphertext: await encryptSecret(
+                    "sk_saved_token",
+                    secret,
+                ),
+                ...communityEndpointPrices({ completionImagePrice: 0.03 }),
+            };
+        }
+
+        const OPENAI_IMAGE_USAGE = {
+            input_tokens: 12,
+            output_tokens: 1056,
+            total_tokens: 1068,
+            input_tokens_details: { text_tokens: 12, image_tokens: 0 },
+        };
+
+        it("bills request-priced endpoints one image even when usage is returned", async () => {
+            vi.stubGlobal(
+                "fetch",
+                vi.fn(async () =>
+                    Response.json({
+                        data: [{ b64_json: "iVBORw0KGgo=" }],
+                        usage: OPENAI_IMAGE_USAGE,
+                    }),
+                ),
+            );
+
+            const result = await callCommunityImageEndpoint(
+                await imageEndpoint("request"),
+                "a sprout",
+                imageParams,
+                secret,
+            );
+            expect(result.trackingData?.usage).toEqual({
+                completionImageTokens: 1,
+            });
+        });
+
+        it("bills token-priced endpoints with the provider-returned usage", async () => {
+            vi.stubGlobal(
+                "fetch",
+                vi.fn(async () =>
+                    Response.json({
+                        data: [{ b64_json: "iVBORw0KGgo=" }],
+                        usage: OPENAI_IMAGE_USAGE,
+                    }),
+                ),
+            );
+
+            const result = await callCommunityImageEndpoint(
+                await imageEndpoint("tokens"),
+                "a sprout",
+                imageParams,
+                secret,
+            );
+            expect(result.trackingData?.usage).toEqual({
+                promptTextTokens: 12,
+                promptImageTokens: 0,
+                completionImageTokens: 1056,
+            });
+        });
+
+        it("fails token-priced endpoints that stop returning usage", async () => {
+            vi.stubGlobal(
+                "fetch",
+                vi.fn(async () =>
+                    Response.json({
+                        data: [{ b64_json: "iVBORw0KGgo=" }],
+                    }),
+                ),
+            );
+
+            await expect(
+                callCommunityImageEndpoint(
+                    await imageEndpoint("tokens"),
+                    "a sprout",
+                    imageParams,
+                    secret,
+                ),
+            ).rejects.toMatchObject({
+                status: 502,
+                message: expect.stringContaining("image token usage"),
+            });
+        });
+    });
+
     it("builds Portkey gateway context with the saved token", async () => {
         const secret = "test-secret";
         const endpoint: CommunityEndpointRuntime = {
@@ -364,6 +516,7 @@ describe("community endpoint helpers", () => {
             name: "openai",
             description: null,
             modality: "text",
+            imagePricing: "request",
             baseUrl: "https://api.example.com/v1",
             upstreamModel: "gpt-4.1-mini",
             visibility: "public",

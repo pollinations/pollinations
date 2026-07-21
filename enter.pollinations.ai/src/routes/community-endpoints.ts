@@ -1,4 +1,5 @@
 import {
+    COMMUNITY_ENDPOINT_IMAGE_PRICING_MODES,
     COMMUNITY_ENDPOINT_MODALITIES,
     COMMUNITY_ENDPOINT_PRICE_FIELDS,
     COMMUNITY_ENDPOINT_VISIBILITIES,
@@ -11,9 +12,9 @@ import {
     isCommunityEndpointOwnerAllowed,
     MIN_COMMUNITY_PRICE_PER_MILLION_TOKENS,
     MIN_COMMUNITY_PRICE_PER_TOKEN,
-    MIN_COMMUNITY_PRICE_PER_UNIT,
     normalizeCommunityEndpointBaseUrl,
     normalizeCommunityEndpointBearerToken,
+    normalizeCommunityEndpointImagePricing,
     normalizeCommunityEndpointModality,
 } from "@shared/community-endpoints.ts";
 import * as schema from "@shared/db/better-auth.ts";
@@ -36,15 +37,19 @@ import {
 import { hasDirectAccountPermission } from "./account-permissions.ts";
 
 const ModalitySchema = z.enum(COMMUNITY_ENDPOINT_MODALITIES);
+const ImagePricingSchema = z
+    .enum(COMMUNITY_ENDPOINT_IMAGE_PRICING_MODES)
+    .describe(
+        'Image models only. "request": the generated-image price is charged once per generation. "tokens": provider-returned OpenAI image token usage is charged against per-token prices. Detected by the endpoint test.',
+    );
 const UpdatePriceFieldsSchema = Object.fromEntries(
     COMMUNITY_ENDPOINT_PRICE_FIELDS.map((field) => {
-        const minimum =
-            field.priceUnit === "million"
-                ? MIN_COMMUNITY_PRICE_PER_TOKEN
-                : MIN_COMMUNITY_PRICE_PER_UNIT;
+        // completionImagePrice is per image for "request" endpoints but per
+        // token for "tokens" endpoints, so it shares the per-token floor.
+        const minimum = MIN_COMMUNITY_PRICE_PER_TOKEN;
         const unit =
             field.priceUnit === "image"
-                ? "per image"
+                ? "per image or per token"
                 : `per token (${MIN_COMMUNITY_PRICE_PER_MILLION_TOKENS} per 1M tokens)`;
         return [
             field.key,
@@ -86,6 +91,7 @@ const EndpointFieldsSchema = {
 const CreateEndpointSchema = z.object({
     ...EndpointFieldsSchema,
     modality: ModalitySchema.optional().default("text"),
+    imagePricing: ImagePricingSchema.optional().default("request"),
     visibility: VisibilitySchema.optional().default("private"),
     ...UpdatePriceFieldsSchema,
 });
@@ -96,6 +102,7 @@ const UpdateEndpointSchema = z.object({
     upstreamModel: EndpointFieldsSchema.upstreamModel,
     bearerToken: EndpointFieldsSchema.bearerToken.optional(),
     visibility: VisibilitySchema.optional(),
+    imagePricing: ImagePricingSchema.optional(),
     ...UpdatePriceFieldsSchema,
 });
 const ModelListSchema = z.object({
@@ -117,6 +124,7 @@ const CommunityEndpointResponseSchema = z.object({
     name: z.string(),
     description: z.string().nullable(),
     modality: ModalitySchema,
+    imagePricing: ImagePricingSchema,
     baseUrl: z.string(),
     upstreamModel: z.string(),
     visibility: VisibilitySchema,
@@ -212,6 +220,7 @@ function toResponse(row: CommunityEndpointRow, ownerGithubUsername: string) {
         name: row.name,
         description: row.description,
         modality,
+        imagePricing: normalizeCommunityEndpointImagePricing(row.imagePricing),
         baseUrl: row.baseUrl,
         upstreamModel: row.upstreamModel,
         visibility: row.visibility,
@@ -392,9 +401,15 @@ export const communityEndpointsRoutes = new Hono<Env>()
                 user.id,
             );
             await ensureModelNameAvailable(db, user.id, input.name);
+            const imagePricing =
+                input.modality === "image" ? input.imagePricing : "request";
             const prices =
                 input.visibility === "public"
-                    ? communityEndpointPricesForModality(input, input.modality)
+                    ? communityEndpointPricesForModality(
+                          input,
+                          input.modality,
+                          imagePricing,
+                      )
                     : communityEndpointPrices({});
             await enforcePublishingAccess(db, user.id, input.visibility);
             const id = crypto.randomUUID();
@@ -406,6 +421,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
                     name: input.name,
                     description: input.description || null,
                     modality: input.modality,
+                    imagePricing,
                     baseUrl: normalizeInputBaseUrl(input.baseUrl),
                     upstreamModel: input.upstreamModel ?? input.name,
                     bearerTokenCiphertext: await encryptSecret(
@@ -589,11 +605,25 @@ export const communityEndpointsRoutes = new Hono<Env>()
             if (input.visibility !== undefined) {
                 update.visibility = input.visibility;
             }
+            const storedImagePricing = normalizeCommunityEndpointImagePricing(
+                endpoint.imagePricing,
+            );
+            const effectiveImagePricing =
+                modality === "image" && input.imagePricing !== undefined
+                    ? input.imagePricing
+                    : storedImagePricing;
+            update.imagePricing = effectiveImagePricing;
             for (const field of communityEndpointPriceFieldsForModality(
                 modality,
+                effectiveImagePricing,
             )) {
                 if (input[field.key] !== undefined) {
                     update[field.key] = input[field.key];
+                } else if (effectiveImagePricing !== storedImagePricing) {
+                    // Switching modes changes the unit of the shared price
+                    // columns (per image ↔ per token); stored values must not
+                    // be reinterpreted, so unsent prices reset to free.
+                    update[field.key] = 0;
                 }
             }
             const effectiveVisibility = input.visibility ?? endpoint.visibility;
@@ -605,6 +635,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
                     : communityEndpointPricesForModality(
                           { ...endpoint, ...update },
                           modality,
+                          effectiveImagePricing,
                       );
             await enforcePublishingAccess(db, user.id, effectiveVisibility);
             // Persist visibility together with the complete effective price

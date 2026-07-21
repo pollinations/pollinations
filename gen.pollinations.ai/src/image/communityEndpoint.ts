@@ -6,6 +6,11 @@ import {
     normalizeCommunityEndpointBearerToken,
 } from "@shared/community-endpoints.ts";
 import { detectImageMimeType } from "@shared/image-mime.ts";
+import type { Usage } from "@shared/registry/registry.ts";
+import {
+    getOpenAIImageUsage,
+    openaiImageUsageToUsage,
+} from "@shared/registry/usage-headers.ts";
 import { decryptSecret } from "@shared/secret-encryption.ts";
 import type { ImageGenerationResult } from "./createAndReturnImages.ts";
 import { HttpError } from "./httpError.ts";
@@ -59,9 +64,38 @@ export async function callCommunityImageEndpoint(
         isMature: false,
         isChild: false,
         trackingData: {
-            usage: { completionImageTokens: 1 },
+            usage: communityImageUsage(endpoint, body),
         },
     };
+}
+
+// "tokens" endpoints registered with per-1M prices must keep returning the
+// OpenAI image usage they were probed with — billing the owner-declared token
+// rates against a made-up count would misprice the request, so a missing or
+// empty usage block is a provider regression and fails the request. "request"
+// endpoints always bill exactly one image at the fixed price.
+function communityImageUsage(
+    endpoint: CommunityEndpointRuntime,
+    body: unknown,
+): Usage {
+    if (endpoint.imagePricing !== "tokens") {
+        return { completionImageTokens: 1 };
+    }
+    const openaiUsage = getOpenAIImageUsage(body);
+    if (!openaiUsage) {
+        throw new HttpError(
+            "Community image endpoint did not return OpenAI image token usage",
+            502,
+        );
+    }
+    const usage = openaiImageUsageToUsage(openaiUsage);
+    if ((usage.completionImageTokens ?? 0) <= 0) {
+        throw new HttpError(
+            "Community image endpoint did not return billable image output tokens",
+            502,
+        );
+    }
+    return usage;
 }
 
 async function fetchCommunityImageJson(

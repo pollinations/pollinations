@@ -158,6 +158,10 @@ export function CommunityEndpointDialog({
             if (!response.ok) throw new Error(await readError(response));
             const body =
                 (await response.json()) as CommunityEndpointTestResponse;
+            const detectedImagePricing =
+                form.modality === "image"
+                    ? (body.imagePricing ?? "request")
+                    : form.imagePricing;
             const returnedFields = returnedPriceFields(
                 {
                     status: "success",
@@ -165,6 +169,7 @@ export function CommunityEndpointDialog({
                     billableUsage: body.billableUsage,
                 },
                 form.modality,
+                detectedImagePricing,
             );
             if (returnedFields.length === 0) {
                 throw new Error(
@@ -172,6 +177,17 @@ export function CommunityEndpointDialog({
                         ? "Endpoint responded, but did not return image data"
                         : "Endpoint responded, but did not return billable usage",
                 );
+            }
+            if (detectedImagePricing !== form.imagePricing) {
+                // The detected mode changes what the shared image price keys
+                // mean (per image ↔ per 1M tokens), so stale entries reset.
+                setForm((current) => ({
+                    ...current,
+                    imagePricing: detectedImagePricing,
+                    promptTextPrice: "",
+                    promptImagePrice: "",
+                    completionImagePrice: "",
+                }));
             }
             setTestState({
                 status: "success",
@@ -219,7 +235,7 @@ export function CommunityEndpointDialog({
     // pricing (owner is the only caller).
     const isShared = form.visibility === "public";
     const returnedFields = isShared
-        ? returnedPriceFields(testState, form.modality)
+        ? returnedPriceFields(testState, form.modality, form.imagePricing)
         : [];
     // Reveal the modality's base price plus whatever the test observed or the
     // model already had saved. Blank and zero prices mean free.
@@ -619,6 +635,7 @@ export function CommunityEndpointDialog({
                         <PriceGroups
                             form={form}
                             modality={form.modality}
+                            imagePricing={form.imagePricing}
                             testState={testState}
                             visiblePriceKeys={visiblePriceKeys}
                             onChange={updateForm}

@@ -1,4 +1,5 @@
 import {
+    type CommunityEndpointImagePricing,
     communityChatCompletionsUrl,
     communityImageGenerationsUrl,
     communityOpenAIBaseUrl,
@@ -7,7 +8,11 @@ import {
 } from "@shared/community-endpoints.ts";
 import { detectImageMimeType } from "@shared/image-mime.ts";
 import type { Usage } from "@shared/registry/registry.ts";
-import { openaiUsageToUsage } from "@shared/registry/usage-headers.ts";
+import {
+    getOpenAIImageUsage,
+    openaiImageUsageToUsage,
+    openaiUsageToUsage,
+} from "@shared/registry/usage-headers.ts";
 
 type EndpointAuth = {
     baseUrl: string;
@@ -21,6 +26,8 @@ export type CommunityEndpointUsage = Record<string, unknown>;
 export type CommunityEndpointTestResult = {
     usage: CommunityEndpointUsage;
     billableUsage: Usage;
+    /** Image tests only: billing mode detected from the probe response. */
+    imagePricing?: CommunityEndpointImagePricing;
 };
 
 const REQUEST_TIMEOUT_MS = 90_000;
@@ -189,9 +196,21 @@ export async function testCommunityImageEndpoint({
         throw new Error("Endpoint did not return a supported image");
     }
 
+    // Endpoints that return valid OpenAI image token usage are billed
+    // per token ("tokens"); everything else falls back to a fixed price
+    // per generated image ("request").
+    const openaiUsage = getOpenAIImageUsage(body);
+    if (openaiUsage && openaiUsage.output_tokens > 0) {
+        return {
+            usage: { ...openaiUsage },
+            billableUsage: openaiImageUsageToUsage(openaiUsage),
+            imagePricing: "tokens",
+        };
+    }
     return {
         usage: { images: 1 },
         billableUsage: { completionImageTokens: 1 },
+        imagePricing: "request",
     };
 }
 

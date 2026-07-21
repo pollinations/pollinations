@@ -20,7 +20,10 @@ import {
     PKCE_S256_CHALLENGE_REGEX,
     sanitizeAuthorizeAccountPermissions,
 } from "@shared/auth/authorize-config.ts";
-import { MCP_TOOLS_SCOPE, normalizeMcpResource } from "@shared/auth/mcp-resource.ts";
+import {
+    MCP_TOOLS_SCOPE,
+    normalizeMcpResource,
+} from "@shared/auth/mcp-resource.ts";
 import { redirectUriMatchesAllowlistExact } from "@shared/auth/redirect-uri.ts";
 import { useNavigate, useSearch } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
@@ -139,7 +142,9 @@ export function Authorize() {
         !isAttributionPending &&
         // The code flow only runs for registered clients with a validated
         // redirect — no hostname-only fallback like the legacy flow.
-        (!isCodeFlow || isMetadataClient || redirectValidationState === "valid");
+        (!isCodeFlow ||
+            isMetadataClient ||
+            redirectValidationState === "valid");
     const canRedirectOnDeny =
         parsedRedirectUrl !== null &&
         (isCodeFlow

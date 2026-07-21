@@ -1143,19 +1143,13 @@ export function createMcpGenerationRoutes(
         .post("/v1/chat/completions", ...chatCompletionHandlers)
         .get(
             "/image/:prompt{[\\s\\S]+}",
-            validator(
-                "param",
-                z.object({ prompt: z.string().min(1) }),
-            ),
+            validator("param", z.object({ prompt: z.string().min(1) })),
             validator("query", GenerateImageRequestQueryParamsSchema),
             ...imageVideoHandlers,
         )
         .get(
             "/video/:prompt{[\\s\\S]+}",
-            validator(
-                "param",
-                z.object({ prompt: z.string().min(1) }),
-            ),
+            validator("param", z.object({ prompt: z.string().min(1) })),
             validator("query", GenerateImageRequestQueryParamsSchema),
             ...imageVideoHandlers,
         );

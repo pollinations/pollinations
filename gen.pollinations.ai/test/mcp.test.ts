@@ -19,9 +19,7 @@ function testEnv(): CloudflareBindings {
 async function fetchWorker(host: string): Promise<Response> {
     const ctx = createExecutionContext();
     const response = await worker.fetch(
-        new Request(
-            `https://${host}/.well-known/oauth-protected-resource`,
-        ),
+        new Request(`https://${host}/.well-known/oauth-protected-resource`),
         testEnv(),
         ctx,
     );

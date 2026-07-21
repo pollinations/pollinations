@@ -1,5 +1,8 @@
 import { PKCE_S256_CHALLENGE_REGEX } from "@shared/auth/authorize-config.ts";
-import { MCP_TOOLS_SCOPE, normalizeMcpResource } from "@shared/auth/mcp-resource.ts";
+import {
+    MCP_TOOLS_SCOPE,
+    normalizeMcpResource,
+} from "@shared/auth/mcp-resource.ts";
 import { redirectUriMatchesAllowlistExact } from "@shared/auth/redirect-uri.ts";
 import { validator } from "@shared/middleware/validator.ts";
 import type { Context } from "hono";

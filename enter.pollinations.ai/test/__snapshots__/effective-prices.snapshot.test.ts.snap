@@ -190,14 +190,14 @@ exports[`effective cost and price per model — snapshot 1`] = `
   },
   "gemini": {
     "cost": {
-      "completionTextTokens": 0.000009,
+      "completionTextTokens": 0.0000075,
       "promptAudioTokens": 0.0000015,
       "promptCacheWriteTokens": 0.0000015,
       "promptCachedTokens": 0.00000015,
       "promptTextTokens": 0.0000015,
     },
     "price": {
-      "completionTextTokens": 0.000009,
+      "completionTextTokens": 0.0000075,
       "promptAudioTokens": 0.0000015,
       "promptCacheWriteTokens": 0.0000015,
       "promptCachedTokens": 0.00000015,
@@ -320,14 +320,14 @@ exports[`effective cost and price per model — snapshot 1`] = `
   },
   "gemini-search-large": {
     "cost": {
-      "completionTextTokens": 0.000009,
+      "completionTextTokens": 0.0000075,
       "promptAudioTokens": 0.0000015,
       "promptCacheWriteTokens": 0.0000015,
       "promptCachedTokens": 0.00000015,
       "promptTextTokens": 0.0000015,
     },
     "price": {
-      "completionTextTokens": 0.000009,
+      "completionTextTokens": 0.0000075,
       "promptAudioTokens": 0.0000015,
       "promptCacheWriteTokens": 0.0000015,
       "promptCachedTokens": 0.00000015,
@@ -430,10 +430,10 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.000005,
     },
     "price": {
-      "completionImageTokens": 0.00003,
-      "promptCachedTokens": 0.00000125,
-      "promptImageTokens": 0.000008,
-      "promptTextTokens": 0.000005,
+      "completionImageTokens": 0.0000225,
+      "promptCachedTokens": 0.0000009375,
+      "promptImageTokens": 0.000006,
+      "promptTextTokens": 0.00000375,
     },
   },
   "gpt-realtime-2": {

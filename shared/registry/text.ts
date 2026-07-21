@@ -395,8 +395,13 @@ export const TEXT_SERVICES = {
         isSpecialized: false,
     },
     "gemini": {
-        aliases: ["gemini-3.5-flash"],
-        modelId: "gemini-3.5-flash",
+        aliases: [
+            "gemini-3.6-flash",
+            "gemini-3.5-flash",
+            "gemini-2.5-flash",
+            "gemini-2.5-flash-preview-04-17",
+        ],
+        modelId: "gemini-3.6-flash",
         provider: "google",
         brand: "Google",
         category: "text",
@@ -406,15 +411,16 @@ export const TEXT_SERVICES = {
         // Rates per https://ai.google.dev/gemini-api/docs/pricing (global region).
         // Non-global regions add ~10%; we route through global.
         cost: {
+            // Portkey folds image/video input into promptTextTokens; audio is separate.
             promptTextTokens: perMillion(1.5),
             promptCachedTokens: perMillion(0.15),
             promptCacheWriteTokens: perMillion(1.5),
             promptAudioTokens: perMillion(1.5), // Audio billed at same rate as text
-            completionTextTokens: perMillion(9.0),
+            completionTextTokens: perMillion(7.5),
         },
         billing: withVertexCacheStorage(GEMINI_3_SEARCH_BILLING, 1.0),
-        title: "Gemini 3.5 Flash",
-        description: "Gemini 3.5 Flash - Next-Gen Reasoning at Flash Speed",
+        title: "Gemini 3.6 Flash",
+        description: "Efficient multimodal reasoning for coding and agents",
         inputModalities: ["text", "image", "audio", "video"],
         outputModalities: ["text"],
         maxReferenceImages: 3600, // Gemini API image-understanding file limit.
@@ -717,26 +723,27 @@ export const TEXT_SERVICES = {
         isSpecialized: false,
     },
     "gemini-search-large": {
-        aliases: ["gemini-3.5-flash-search"],
-        modelId: "gemini-3.5-flash",
+        aliases: ["gemini-3.6-flash-search", "gemini-3.5-flash-search"],
+        modelId: "gemini-3.6-flash",
         provider: "google",
         brand: "Google",
         category: "text",
         addedDate: new Date("2026-05-26").getTime(),
         paidOnly: true,
         priceMultiplier: 1,
-        // Vertex base rates for gemini-3.5-flash. Grounding fee $14/1K queries
+        // Vertex base rates for gemini-3.6-flash. Grounding fee $14/1K queries
         // with 5K/month free shared across Gemini 3; absorbed by Pollinations.
         cost: {
+            // Portkey folds image/video input into promptTextTokens; audio is separate.
             promptTextTokens: perMillion(1.5),
             promptCachedTokens: perMillion(0.15),
             promptCacheWriteTokens: perMillion(1.5),
             promptAudioTokens: perMillion(1.5),
-            completionTextTokens: perMillion(9.0),
+            completionTextTokens: perMillion(7.5),
         },
         billing: withVertexCacheStorage(GEMINI_3_SEARCH_BILLING, 1.0),
-        title: "Gemini 3.5 Flash Search",
-        description: "Gemini 3.5 Flash Search - Premium grounded web research",
+        title: "Gemini 3.6 Flash Search",
+        description: "Premium web-grounded research and knowledge work",
         inputModalities: ["text", "image", "audio", "video"],
         outputModalities: ["text"],
         maxReferenceImages: 3600, // Gemini API image-understanding file limit.

@@ -448,7 +448,7 @@ test("Gemini grounding cost is added by family billing rules", () => {
     // Gemini 3.x bills per non-empty search query.
     expect(gemini3FlashCost.totalCost).toBeCloseTo(3.528, 8);
     expect(geminiSearchFastCost.totalCost).toBeCloseTo(1.778, 8);
-    expect(geminiSearchLargeCost.totalCost).toBeCloseTo(10.528, 8);
+    expect(geminiSearchLargeCost.totalCost).toBeCloseTo(9.028, 8);
     expect(ungroundedGeminiSearchFastCost.totalCost).toBeCloseTo(1.75, 8);
 });
 

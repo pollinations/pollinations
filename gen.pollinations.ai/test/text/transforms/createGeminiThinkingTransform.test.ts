@@ -40,6 +40,20 @@ describe("createGeminiThinkingTransform", () => {
 });
 
 describe("Gemini reasoning_effort model wiring", () => {
+    it.each([
+        "gemini",
+        "gemini-search-large",
+    ])("routes %s to Gemini 3.6 Flash on Vertex global", (modelName) => {
+        const model = findModelByName(modelName);
+        if (!model) throw new Error(`${modelName} model missing`);
+
+        expect(model.config()).toMatchObject({
+            provider: "vertex-ai",
+            "vertex-region": "global",
+            "vertex-model-id": "gemini-3.6-flash",
+        });
+    });
+
     it("wires Gemini 2.5 thinking on gemini-fast", async () => {
         const transform = findModelByName("gemini-fast")?.transform;
         if (!transform) throw new Error("gemini-fast transform missing");

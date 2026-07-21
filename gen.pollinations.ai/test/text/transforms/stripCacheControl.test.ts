@@ -90,6 +90,7 @@ describe("cache_control passthrough (vertex explicit caching)", () => {
         "gemini-flash-lite-3.1",
         "gemini-fast",
         "gemini-large",
+        "gemini-search-large",
     ])("%s transform preserves content-block cache_control markers", async (modelName) => {
         const model = findModelByName(modelName);
         if (!model?.transform)

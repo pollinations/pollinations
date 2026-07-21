@@ -211,7 +211,7 @@ const models: ModelDefinition[] = [
     },
     {
         name: "gemini",
-        config: portkeyConfig["gemini-3.5-flash"],
+        config: portkeyConfig["gemini-3.6-flash"],
         transform: pipe(
             sanitizeToolSchemas,
             createGeminiToolsTransform(["code_execution"]),
@@ -255,7 +255,7 @@ const models: ModelDefinition[] = [
     },
     {
         name: "gemini-search-large",
-        config: portkeyConfig["gemini-3.5-flash"],
+        config: portkeyConfig["gemini-3.6-flash"],
         transform: pipe(
             sanitizeToolSchemas,
             createGeminiToolsTransform(["google_search"]),

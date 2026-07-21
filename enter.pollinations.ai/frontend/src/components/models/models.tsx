@@ -13,7 +13,14 @@ import {
     TrendUpIcon,
 } from "@pollinations/ui";
 import { useNavigate, useSearch } from "@tanstack/react-router";
-import { type FC, useCallback, useEffect, useMemo, useState } from "react";
+import {
+    type FC,
+    useCallback,
+    useEffect,
+    useMemo,
+    useRef,
+    useState,
+} from "react";
 import { CommunityEndpoints } from "../community-endpoints";
 import {
     type ApiModelInfo,
@@ -100,7 +107,7 @@ export const Models: FC<ModelsProps> = ({
     const navigate = useNavigate({ from: "/models" });
     const modelSearch = useSearch({ from: "/_dashboard/models" });
     const activeTab = modelSearch.category ?? "all";
-    const search = modelSearch.q ?? "";
+    const urlSearch = modelSearch.q ?? "";
     const sortKey = modelSearch.sort ?? "perPollen";
     const sortDir = modelSearch.dir ?? DEFAULT_SORT_DIRECTIONS[sortKey];
     const [catalogModels, setCatalogModels] = useState<ApiModelInfo[]>([]);
@@ -110,6 +117,24 @@ export const Models: FC<ModelsProps> = ({
         () => getModelPricesFromCatalog(catalogModels, stats),
         [catalogModels, stats],
     );
+
+    // The input's value must update synchronously with each keystroke.
+    // Writing straight to the URL search param on every keystroke (via
+    // router navigate) is too slow to drive a controlled input directly —
+    // on fast typing (especially mobile) the value lags behind the DOM and
+    // React resets the field, dropping characters. So typing updates this
+    // local state immediately, and the URL sync below is debounced.
+    const [search, setSearchInput] = useState(urlSearch);
+    const searchSyncTimer = useRef<ReturnType<typeof setTimeout> | undefined>(
+        undefined,
+    );
+
+    useEffect(() => {
+        setSearchInput(urlSearch);
+    }, [urlSearch]);
+
+    useEffect(() => () => clearTimeout(searchSyncTimer.current), []);
+
     const query = search.trim().toLowerCase();
     const filteredModels = useMemo(
         () =>
@@ -178,13 +203,17 @@ export const Models: FC<ModelsProps> = ({
     };
 
     const setSearch = (q: string) => {
-        void navigate({
-            search: (previous) => ({
-                ...previous,
-                q: q || undefined,
-            }),
-            replace: true,
-        });
+        setSearchInput(q);
+        clearTimeout(searchSyncTimer.current);
+        searchSyncTimer.current = setTimeout(() => {
+            void navigate({
+                search: (previous) => ({
+                    ...previous,
+                    q: q || undefined,
+                }),
+                replace: true,
+            });
+        }, 300);
     };
 
     const onSort = (key: ModelSortKey) => {

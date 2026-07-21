@@ -1,0 +1,15 @@
+{
+  "platform": "reddit",
+  "scope": "daily",
+  "date": "2026-07-20",
+  "period_start": "2026-07-20",
+  "period_end": "2026-07-20",
+  "generated_at": "2026-07-21T07:01:05.159806+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-07-20/images/reddit.jpg"
+    }
+  ],
+  "title": "Nine merges: embeddings, registry cleanup, upstream errors",
+  "text": "Nine PRs merged today. Most of the work was catalog and API hygiene, which is less glamorous than a new model button but tends to matter longer.\n\nEmbeddings now have better quality handling, clearer role semantics, dimensionality support, and multimodal support (#12597). The model registry also got a pass: end-user descriptions were rewritten (#12598), self-hosted image-model data was normalized (#12599), and retired/non-canonical models no longer appear in API-key permissions (#12604). The goal is for the catalog to behave more like a map and less like an archaeological site.\n\nOn the provider side, Replicate and WAN upstream failures are classified more accurately (#12507). Perplexity Sonar search presets are clearer while existing aliases remain intact (#12600). The API reference was regenerated from the production OpenAPI spec (#12601), because documentation drifting from production is software’s preferred form of fiction.\n\nThere is also now a request form for community model publishers who want to be allowlisted (#12596). README latest news was updated (#12594).\n\nCode and issue history: https://github.com/pollinations/pollinations\nDocs/API reference: https://pollinations.ai/docs\n\nIf a registry description, permission boundary, or embedding role still feels ambiguous in practice, file it. Those are usually the bugs users meet before the interesting ones."
+}

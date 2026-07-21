@@ -56,6 +56,7 @@ type StripeCheckoutSession = {
     mode: string;
     customer: string | null;
     url: string;
+    expires_at: number;
 };
 
 type StripePortalSession = {
@@ -168,6 +169,10 @@ export type MockStripeState = {
     paymentIntents: StripePaymentIntent[];
     requests: StripeRequest[];
     customerCreateByIdempotencyKey: Record<string, string>;
+    checkoutCreateByIdempotencyKey: Record<
+        string,
+        { body: string; sessionId: string }
+    >;
     /**
      * Per-invoice override for the `/v1/invoices/:id/pay` mock response.
      * When set, the mock returns the configured failure (HTTP 4xx with the
@@ -258,14 +263,52 @@ export function createMockStripe(): MockAPI<MockStripeState> {
         .post("/v1/checkout/sessions", async (c) => {
             const form = await parseForm(c.req.raw);
             recordRequest(c, state, form);
+            const idempotencyKey = c.req.header("idempotency-key");
+            const canonicalBody = JSON.stringify(
+                [...form.entries()].sort(([left], [right]) =>
+                    left.localeCompare(right),
+                ),
+            );
+            if (idempotencyKey) {
+                const previous =
+                    state.checkoutCreateByIdempotencyKey[idempotencyKey];
+                if (previous) {
+                    if (previous.body !== canonicalBody) {
+                        return c.json(
+                            {
+                                error: {
+                                    type: "idempotency_error",
+                                    message:
+                                        "Keys for idempotent requests can only be used with the same parameters.",
+                                },
+                            },
+                            409,
+                        );
+                    }
+                    const existing = state.checkoutSessions.find(
+                        (session) => session.id === previous.sessionId,
+                    );
+                    if (existing) return c.json(existing);
+                }
+            }
+
             const session: StripeCheckoutSession = {
                 id: `cs_mock_${state.checkoutSessions.length + 1}`,
                 object: "checkout.session",
                 mode: form.get("mode") ?? "payment",
                 customer: form.get("customer"),
                 url: `https://checkout.stripe.test/${state.checkoutSessions.length + 1}`,
+                expires_at:
+                    Number(form.get("expires_at")) ||
+                    Math.floor(Date.now() / 1000) + 24 * 60 * 60,
             };
             state.checkoutSessions.push(session);
+            if (idempotencyKey) {
+                state.checkoutCreateByIdempotencyKey[idempotencyKey] = {
+                    body: canonicalBody,
+                    sessionId: session.id,
+                };
+            }
             return c.json(session);
         })
         .post("/v1/billing_portal/sessions", async (c) => {
@@ -556,6 +599,7 @@ function createInitialState(): MockStripeState {
         paymentIntents: [],
         requests: [],
         customerCreateByIdempotencyKey: {},
+        checkoutCreateByIdempotencyKey: {},
         payBehavior: {},
     };
 }

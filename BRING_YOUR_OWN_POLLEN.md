@@ -125,6 +125,38 @@ fetch('https://gen.pollinations.ai/v1/chat/completions', {
 
 See `apps/oauth-client-demo/` for a zero-dependency reference client.
 
+## ⚛️ React SDK and in-app top-up
+
+`PolliProvider` manages the browser authorization callback. Apps using it can
+send the connected user directly to a 5 Pollen checkout without exposing the
+Enter developer dashboard:
+
+```tsx
+import { useAuthActions, useAuthState } from "@pollinations/sdk/react";
+
+function AddPollen() {
+    const { topUp } = useAuthActions();
+    const { topUpStatus } = useAuthState();
+
+    return (
+        <>
+            <button onClick={() => void topUp({ packKey: "p5" })}>
+                Buy 5 Pollen
+            </button>
+            {topUpStatus === "success" ? (
+                <p>Payment submitted — Pollen is added once confirmed.</p>
+            ) : null}
+        </>
+    );
+}
+```
+
+The SDK creates and validates a one-time return nonce and strips checkout
+return parameters from the URL. `useAccountBalance` refreshes an observable
+account balance for up to 10 seconds after a successful return. The connected
+`sk_` key must have been delegated by the current App Key; arbitrary secret
+keys cannot create these checkout intents.
+
 ## ⚙️ Legacy Web Apps (Fragment Flow)
 
 The older BYOP redirect flow is still supported. It returns the user-authorized key directly in the URL fragment and does not use PKCE.

@@ -687,8 +687,19 @@ const profileResponseSchema = z.object({
 const balanceResponseSchema = z.object({
     balance: z
         .number()
+        .describe("Remaining balance in the scope identified by `scope`"),
+    scope: z
+        .enum(["key_budget", "account"])
+        .describe("Whether `balance` is an app allowance or account wallet"),
+    keyBudget: z
+        .number()
+        .nullable()
+        .describe("Remaining delegated key allowance, when one is configured"),
+    accountBalance: z
+        .number()
+        .optional()
         .describe(
-            "Remaining pollen balance (sum of Quest Pollen + paid balance)",
+            "Quest Pollen plus paid balance; present only when the caller can read account usage",
         ),
 });
 
@@ -946,7 +957,7 @@ export const accountRoutes = new Hono<Env>()
             tags: ["👤 Account"],
             summary: "Get Balance",
             description:
-                "Returns the pollen balance visible to the caller. API keys with a budget always see their remaining budget (no scope needed). Full account balance requires the read-only `account:usage` permission.",
+                "Returns `balance` with an explicit `scope`: budgeted API keys see their remaining app allowance (`key_budget`), while sessions and unbudgeted keys with `account:usage` see the wallet (`account`). `keyBudget` is the remaining delegated allowance or null. `accountBalance` is included only when the caller can read account usage.",
             responses: {
                 200: {
                     description: "Pollen balance",
@@ -967,34 +978,47 @@ export const accountRoutes = new Hono<Env>()
             await c.var.auth.requireAuthorization();
             const user = c.var.auth.requireUser();
             const apiKey = c.var.auth.apiKey;
+            const keyBudget = apiKey?.pollenBalance ?? null;
+            const canReadAccountBalance =
+                !apiKey || hasAccountReadPermission(apiKey, "usage");
 
-            // Keys with a budget always see their own budget — no scope needed.
-            if (apiKey?.pollenBalance != null) {
-                return c.json({ balance: apiKey.pollenBalance });
-            }
-
-            // Beyond that, reading account balance requires usage or admin.
-            if (apiKey && !hasAccountReadPermission(apiKey, "usage")) {
+            if (keyBudget == null && !canReadAccountBalance) {
                 throw new HTTPException(403, {
                     message:
                         "API key does not have 'account:usage' permission and no budget of its own. Add `account:usage` or set a budget on the key.",
                 });
             }
 
-            const db = drizzle(c.env.DB);
-            const users = await db
-                .select({
-                    tierBalance: userTable.tierBalance,
-                    packBalance: userTable.packBalance,
-                })
-                .from(userTable)
-                .where(eq(userTable.id, user.id))
-                .limit(1);
+            let accountBalance: number | undefined;
+            if (canReadAccountBalance) {
+                const db = drizzle(c.env.DB);
+                const users = await db
+                    .select({
+                        tierBalance: userTable.tierBalance,
+                        packBalance: userTable.packBalance,
+                    })
+                    .from(userTable)
+                    .where(eq(userTable.id, user.id))
+                    .limit(1);
+                accountBalance =
+                    (users[0]?.tierBalance ?? 0) + (users[0]?.packBalance ?? 0);
+            }
 
-            const tierBalance = users[0]?.tierBalance ?? 0;
-            const packBalance = users[0]?.packBalance ?? 0;
+            if (keyBudget != null) {
+                return c.json({
+                    balance: keyBudget,
+                    scope: "key_budget" as const,
+                    keyBudget,
+                    ...(accountBalance != null && { accountBalance }),
+                });
+            }
 
-            return c.json({ balance: tierBalance + packBalance });
+            return c.json({
+                balance: accountBalance ?? 0,
+                scope: "account" as const,
+                keyBudget: null,
+                accountBalance: accountBalance ?? 0,
+            });
         },
     )
     .get(

@@ -1,8 +1,14 @@
-import { useAuthActions } from "@pollinations/sdk/react";
+import { useAuthActions, useAuthState } from "@pollinations/sdk/react";
+import { useState } from "react";
 import { ChevronIcon } from "../../primitives/ChevronIcon.tsx";
 import { Dropdown } from "../../primitives/Dropdown.tsx";
 import { DropdownItem } from "../../primitives/DropdownItem.tsx";
-import { LockIcon } from "../../primitives/icons/index.tsx";
+import {
+    AppIcon,
+    LockIcon,
+    SignOutIcon,
+    WalletIcon,
+} from "../../primitives/icons/index.tsx";
 import {
     LoginButton,
     UserAvatar,
@@ -15,40 +21,56 @@ import { Balance } from "../wallet/sdk.ts";
 export type AppUserMenuLabels = {
     authorize: string;
     appUserMenu: string;
-    topUpAccount: string;
+    buyPollen: string;
+    addingPollen: string;
+    paymentSubmitted: string;
+    paymentCanceled: string;
+    topUpError: string;
+    dashboard: string;
     logout: string;
 };
 
 export type AppUserMenuProps = {
-    dashboardHref: string;
     labels?: Partial<AppUserMenuLabels>;
 };
 
 const defaultLabels: AppUserMenuLabels = {
     authorize: "Connect",
     appUserMenu: "App user menu",
-    topUpAccount: "Top up account",
+    buyPollen: "Buy 5 Pollen",
+    addingPollen: "Opening checkout…",
+    paymentSubmitted:
+        "Payment submitted — Pollen is added once the payment is confirmed.",
+    paymentCanceled: "Payment canceled.",
+    topUpError: "Could not open checkout. Please try again.",
+    dashboard: "Open dashboard",
     logout: "Log out from this app",
 };
 
-export function AppUserMenu({
-    dashboardHref,
-    labels: labelOverrides,
-}: AppUserMenuProps) {
-    return (
-        <AppUserMenuContent
-            dashboardHref={dashboardHref}
-            labels={labelOverrides}
-        />
-    );
+export function AppUserMenu({ labels: labelOverrides }: AppUserMenuProps) {
+    return <AppUserMenuContent labels={labelOverrides} />;
 }
 
 function AppUserMenuContent({
-    dashboardHref,
     labels: labelOverrides,
-}: Pick<AppUserMenuProps, "dashboardHref" | "labels">) {
+}: Pick<AppUserMenuProps, "labels">) {
     const labels = { ...defaultLabels, ...labelOverrides };
-    const { logout } = useAuthActions();
+    const { topUp, logout, enterUrl } = useAuthActions();
+    const { topUpStatus } = useAuthState();
+    const [isAddingPollen, setIsAddingPollen] = useState(false);
+    const [topUpError, setTopUpError] = useState(false);
+
+    const buyPollen = async () => {
+        setIsAddingPollen(true);
+        setTopUpError(false);
+        try {
+            await topUp({ packKey: "p5" });
+        } catch {
+            setTopUpError(true);
+        } finally {
+            setIsAddingPollen(false);
+        }
+    };
 
     return (
         // shrink-0 so the account control never gets squeezed (and its label
@@ -96,21 +118,54 @@ function AppUserMenuContent({
                             className="polli:flex polli:flex-col"
                         >
                             <DropdownItem
+                                type="button"
+                                disabled={isAddingPollen}
+                                aria-busy={isAddingPollen}
+                                className="polli:disabled:cursor-wait polli:disabled:opacity-60"
+                                onClick={() => void buyPollen()}
+                            >
+                                <WalletIcon className="polli:h-4 polli:w-4 polli:shrink-0" />
+                                {isAddingPollen
+                                    ? labels.addingPollen
+                                    : labels.buyPollen}
+                            </DropdownItem>
+                            {topUpStatus === "success" ? (
+                                <p className="polli:m-0 polli:px-3 polli:py-2 polli:text-xs polli:text-theme-text-muted">
+                                    {labels.paymentSubmitted}
+                                </p>
+                            ) : null}
+                            {topUpStatus === "canceled" ? (
+                                <p className="polli:m-0 polli:px-3 polli:py-2 polli:text-xs polli:text-theme-text-muted">
+                                    {labels.paymentCanceled}
+                                </p>
+                            ) : null}
+                            {topUpError ? (
+                                <p
+                                    role="alert"
+                                    className="polli:m-0 polli:px-3 polli:py-2 polli:text-xs polli:text-intent-danger-text"
+                                >
+                                    {labels.topUpError}
+                                </p>
+                            ) : null}
+                            <DropdownItem
                                 as="a"
-                                href={dashboardHref}
+                                href={`${enterUrl.replace(/\/+$/, "")}/pollen`}
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 onClick={close}
                             >
-                                {labels.topUpAccount}
+                                <AppIcon className="polli:h-4 polli:w-4 polli:shrink-0" />
+                                {labels.dashboard}
                             </DropdownItem>
                             <DropdownItem
                                 type="button"
                                 onClick={() => {
                                     close();
+                                    setTopUpError(false);
                                     logout();
                                 }}
                             >
+                                <SignOutIcon className="polli:h-4 polli:w-4 polli:shrink-0" />
                                 {labels.logout}
                             </DropdownItem>
                         </div>

@@ -23,6 +23,11 @@ migrations_dir = "drizzle"
 binding = "KV"
 id = "84512601e2a44679a4d3b0f7415d90ec"
 
+[[ratelimits]]
+name = "TOP_UP_RATE_LIMITER"
+namespace_id = "1002"
+simple = { limit = 10, period = 60 }
+
 [vars]
 ENVIRONMENT = "development"
 CLOUDFLARE_ACCOUNT_ID = "b6ec751c0862027ba269faf7029b2501"
@@ -55,6 +60,11 @@ migrations_dir = "drizzle"
 # development-pollinations-enter-kv
 binding = "KV"
 id = "84512601e2a44679a4d3b0f7415d90ec"
+
+[[env.local.ratelimits]]
+name = "TOP_UP_RATE_LIMITER"
+namespace_id = "1002"
+simple = { limit = 10, period = 60 }
 
 [env.local.vars]
 ENVIRONMENT = "local"
@@ -105,6 +115,11 @@ migrations_dir = "drizzle"
 binding = "KV"
 id = "a621f17ad3e34000971cffa616675c5b"
 
+[[env.production.ratelimits]]
+name = "TOP_UP_RATE_LIMITER"
+namespace_id = "1002"
+simple = { limit = 10, period = 60 }
+
 [env.production.vars]
 ENVIRONMENT = "production"
 CLOUDFLARE_ACCOUNT_ID = "b6ec751c0862027ba269faf7029b2501"
@@ -148,6 +163,11 @@ migrations_dir = "drizzle"
 binding = "KV"
 id = "ba22195551794751b9792e4e67eb074a"
 
+[[env.staging.ratelimits]]
+name = "TOP_UP_RATE_LIMITER"
+namespace_id = "1002"
+simple = { limit = 10, period = 60 }
+
 [env.staging.vars]
 ENVIRONMENT = "staging"
 CLOUDFLARE_ACCOUNT_ID = "b6ec751c0862027ba269faf7029b2501"
@@ -185,6 +205,11 @@ migrations_dir = "drizzle"
 binding = "KV"
 id = "84512601e2a44679a4d3b0f7415d90ec"
 
+[[env.dev.ratelimits]]
+name = "TOP_UP_RATE_LIMITER"
+namespace_id = "1002"
+simple = { limit = 10, period = 60 }
+
 [env.dev.vars]
 ENVIRONMENT = "dev"
 USAGE_DEBUG_USER_ID = "ds1EIz1ELXSNZzzRKJ0jrCsGgLeiVfRh" # pollen@myceli.ai; dev dashboard usage data
@@ -216,6 +241,11 @@ migrations_dir = "drizzle"
 binding = "KV"
 id = "84512601e2a44679a4d3b0f7415d90ec"
 
+[[env.test.ratelimits]]
+name = "TOP_UP_RATE_LIMITER"
+namespace_id = "1002"
+simple = { limit = 10, period = 60 }
+
 [env.test.vars]
 ENVIRONMENT = "test"
 CLOUDFLARE_ACCOUNT_ID = "b6ec751c0862027ba269faf7029b2501"
@@ -231,6 +261,9 @@ TINYBIRD_READ_TOKEN = "test_tinybird_read_token"
 STRIPE_MODE = "sandbox"
 STRIPE_SUCCESS_URL = "http://localhost:3000"
 BETTER_AUTH_URL = "http://localhost:3000"
+PLN_ENTER_TOKEN = "test-only-internal-token-00000000000000000000000000000000"
+STRIPE_SECRET_KEY = "sk_test_workers_test_only"
+STRIPE_WEBHOOK_SECRET = "whsec_workers_test_only"
 STRIPE_AUTO_TOP_UP_PMC_ID = "pmc_1TUpob6O03AauPe8EgmA4mvg"
 # Single broad checkout PMC; Stripe filters methods by buyer currency/country.
 STRIPE_PMC = "pmc_1SrYT96O03AauPe8ijLy6sZU"

@@ -1,9 +1,9 @@
 import { createBalanceCheckResult } from "@shared/billing/balance.ts";
 import { canCoverEstimatedCharge } from "@shared/billing/bucket-selection.ts";
 import { COMMUNITY_ENDPOINT_PRICE_FIELDS } from "@shared/community-endpoints.ts";
+import { PaymentRequiredError } from "@shared/error.ts";
 import { getModelStats } from "@shared/utils/model-stats.ts";
 import { createMiddleware } from "hono/factory";
-import { HTTPException } from "hono/http-exception";
 import type { AuthVariables } from "@/middleware/auth.ts";
 import type { BalanceVariables } from "@/middleware/balance.ts";
 import type { LoggerVariables } from "@/middleware/logger.ts";
@@ -46,9 +46,10 @@ export async function checkBalance(
         typeof apiKeyBudget === "number" &&
         apiKeyBudget <= requiredBudget
     ) {
-        throw new HTTPException(402, {
-            message: `API key budget too low. This request costs ~${estimatedCost.toFixed(4)} pollen, but this key has ${Math.max(0, apiKeyBudget).toFixed(4)}.`,
-        });
+        throw new PaymentRequiredError(
+            `API key budget too low. This request costs ~${estimatedCost.toFixed(4)} pollen, but this key has ${Math.max(0, apiKeyBudget).toFixed(4)}.`,
+            "key_budget",
+        );
     }
 
     const userBalance = await balance.getBalance(auth.user.id);
@@ -60,9 +61,10 @@ export async function checkBalance(
         const available = isPaidOnly
             ? userBalance.packBalance
             : Math.max(userBalance.tierBalance, userBalance.packBalance);
-        throw new HTTPException(402, {
-            message: `Insufficient balance. This request costs ~${estimatedCost.toFixed(4)} pollen, but your available balance is ${Math.max(0, available).toFixed(4)}.`,
-        });
+        throw new PaymentRequiredError(
+            `Insufficient balance. This request costs ~${estimatedCost.toFixed(4)} pollen, but your available balance is ${Math.max(0, available).toFixed(4)}.`,
+            "account_balance",
+        );
     }
 
     balance.balanceCheckResult = createBalanceCheckResult(

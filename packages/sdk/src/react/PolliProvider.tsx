@@ -3,8 +3,10 @@ import {
     useCallback,
     useEffect,
     useMemo,
+    useRef,
     useState,
 } from "react";
+import { pollinationsErrorFromResponse } from "../error-response.js";
 import type { AccountPermission } from "../types.js";
 import {
     AuthContext,
@@ -17,11 +19,17 @@ import {
     type StorageAdapter,
     type StorageOption,
 } from "./storage.js";
+import {
+    canonicalizeTopUpReturnUrl,
+    consumeTopUpReturn,
+    type TopUpRequest,
+} from "./top-up.js";
 
 export type { AuthorizeRequest } from "./contexts.js";
 export type { StorageAdapter, StorageOption } from "./storage.js";
 
 export const DEFAULT_ENTER_URL = "https://enter.pollinations.ai";
+const TOP_UP_STATUS_LIFETIME_MS = 15_000;
 const BYOP_DOCS_URL =
     "https://github.com/pollinations/pollinations/blob/main/BRING_YOUR_OWN_POLLEN.md";
 
@@ -142,9 +150,9 @@ function warnAuthSetup(appKey: string, redirectUrl: string | null): void {
 
 /**
  * Provides Pollinations auth state to descendants. Wrap your app once at the
- * root. Holds the delegated API key, handles the OAuth callback, and exposes
- * login/logout. Account data is fetched by opt-in hooks so apps only request
- * the data they render.
+ * root. Holds the delegated API key, handles OAuth and validated top-up
+ * returns, and exposes login/logout/top-up actions. Account data and the
+ * bounded post-checkout refresh are owned by opt-in hooks.
  */
 export function PolliProvider({
     appKey,
@@ -164,6 +172,7 @@ export function PolliProvider({
     const resolvedApiBaseUrl = apiBaseUrl ?? `${enterUrl}/api`;
     const storageKey = `polli:${appKey}:token`;
     const stateStorageKey = `polli:${appKey}:oauth_state`;
+    const topUpStateStorageKey = `polli:${appKey}:topup_state`;
 
     const defaultPermissions = useMemo<readonly AccountPermission[]>(
         () => permissions ?? [],
@@ -174,10 +183,23 @@ export function PolliProvider({
     const [apiKey, setApiKey] = useState<string | null>(null);
     const [isHydrated, setIsHydrated] = useState(false);
     const [error, setError] = useState<Error | null>(null);
+    const [topUpStatus, setTopUpStatus] = useState<
+        "success" | "canceled" | null
+    >(null);
+    const topUpInFlightRef = useRef(false);
 
     useEffect(() => {
         warnAuthSetup(appKey, currentRedirectUrl());
     }, [appKey]);
+
+    useEffect(() => {
+        if (topUpStatus === null) return;
+        const timeout = setTimeout(
+            () => setTopUpStatus(null),
+            TOP_UP_STATUS_LIFETIME_MS,
+        );
+        return () => clearTimeout(timeout);
+    }, [topUpStatus]);
 
     const updateApiKey = useCallback(
         (nextApiKey: string | null) => {
@@ -199,13 +221,33 @@ export function PolliProvider({
             return;
         }
 
-        const result = consumeOAuthCallback(
+        const topUpResult = consumeTopUpReturn(
             window.location,
+            window.sessionStorage,
+            topUpStateStorageKey,
+        );
+        if (topUpResult.invalidState) {
+            console.warn(
+                "[PolliProvider] dropping top-up response with missing or mismatched state",
+            );
+        }
+        // A StrictMode effect replay sees the already-cleaned URL. Preserve the
+        // status captured by the first pass instead of overwriting it with null.
+        if (topUpResult.status !== null) {
+            setTopUpStatus(topUpResult.status);
+        }
+
+        const authLocation = topUpResult.cleanedUrl
+            ? new URL(topUpResult.cleanedUrl, window.location.href)
+            : window.location;
+        const result = consumeOAuthCallback(
+            authLocation,
             storage,
             stateStorageKey,
         );
-        if (result.cleanedUrl) {
-            window.history.replaceState({}, "", result.cleanedUrl);
+        const cleanedUrl = result.cleanedUrl ?? topUpResult.cleanedUrl;
+        if (cleanedUrl) {
+            window.history.replaceState({}, "", cleanedUrl);
         }
         if (result.invalidState) {
             console.warn(
@@ -231,7 +273,13 @@ export function PolliProvider({
         const stored = storage.getItem(storageKey);
         if (stored) setApiKey(stored);
         setIsHydrated(true);
-    }, [stateStorageKey, storage, updateApiKey, storageKey]);
+    }, [
+        stateStorageKey,
+        storage,
+        updateApiKey,
+        storageKey,
+        topUpStateStorageKey,
+    ]);
 
     const login = useCallback(
         (request?: AuthorizeRequest) => {
@@ -274,15 +322,74 @@ export function PolliProvider({
         updateApiKey(null);
     }, [updateApiKey]);
 
+    const topUp = useCallback(
+        async (request: TopUpRequest = {}) => {
+            if (typeof window === "undefined") return;
+            if (!apiKey)
+                throw new Error("Connect your account before adding Pollen");
+            if (topUpInFlightRef.current) {
+                throw new Error("Checkout is already opening");
+            }
+
+            topUpInFlightRef.current = true;
+            let topupState: string | null = null;
+
+            try {
+                const returnUri = canonicalizeTopUpReturnUrl(
+                    request.returnUrl ?? window.location.href,
+                );
+                topupState = crypto.randomUUID();
+                window.sessionStorage.setItem(topUpStateStorageKey, topupState);
+                const response = await fetch(
+                    `${resolvedApiBaseUrl.replace(/\/+$/, "")}/stripe/top-up-intents`,
+                    {
+                        method: "POST",
+                        headers: {
+                            Authorization: `Bearer ${apiKey}`,
+                            "Content-Type": "application/json",
+                        },
+                        body: JSON.stringify({
+                            packKey: request.packKey ?? "p5",
+                            returnUri,
+                            topupState,
+                        }),
+                    },
+                );
+                if (!response.ok) {
+                    throw await pollinationsErrorFromResponse(response);
+                }
+                const result = (await response.json()) as { url: string };
+                window.location.assign(result.url);
+                // location.assign schedules navigation but may leave this page
+                // alive in bfcache. Release the guard before the page freezes so
+                // Back restores a usable provider.
+                topUpInFlightRef.current = false;
+            } catch (err) {
+                if (
+                    topupState !== null &&
+                    window.sessionStorage.getItem(topUpStateStorageKey) ===
+                        topupState
+                ) {
+                    window.sessionStorage.removeItem(topUpStateStorageKey);
+                }
+                topUpInFlightRef.current = false;
+                throw err;
+            }
+        },
+        [apiKey, resolvedApiBaseUrl, topUpStateStorageKey],
+    );
+
     const authValue = useMemo<AuthContextValue>(
         () => ({
             apiKey,
             isLoggedIn: !!apiKey,
             isHydrated,
             error,
+            topUpStatus,
             login,
             logout,
             setApiKey: updateApiKey,
+            topUp,
             enterUrl,
             apiBaseUrl: resolvedApiBaseUrl,
         }),
@@ -290,9 +397,11 @@ export function PolliProvider({
             apiKey,
             isHydrated,
             error,
+            topUpStatus,
             login,
             logout,
             updateApiKey,
+            topUp,
             enterUrl,
             resolvedApiBaseUrl,
         ],

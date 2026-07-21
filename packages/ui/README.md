@@ -33,7 +33,7 @@ export function App() {
     return (
         <PolliProvider appKey="pk_your_publishable_key" permissions={["profile"]}>
             <Surface>
-                <AppUserMenu dashboardHref="https://enter.pollinations.ai" />
+                <AppUserMenu />
             </Surface>
         </PolliProvider>
     );
@@ -149,7 +149,9 @@ Wallet colors and utilities are bundled into the main stylesheet
   `WalletBalanceCard`, `PAID_BALANCE_CHART_COLOR`, and
   `TIER_BALANCE_CHART_COLOR`.
 - `@pollinations/ui/app-user-menu/sdk` exports the SDK-backed app account
-  menu module.
+  menu module. Its logged-in menu includes direct `Buy 5 Pollen` and Enter
+  dashboard actions; checkout return validation and balance refresh are handled
+  by the surrounding `PolliProvider`.
 - `@pollinations/ui/gen` exports generation UI modules and modality helpers:
   `ModelSelector`, `ModalityChip`, `ModalityDot`, `ModalityTab`,
   `categoryLabel`, and `getModalityKey`.

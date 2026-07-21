@@ -4,8 +4,9 @@ import {
     type ModelCatalogItem,
     type ModelCategory,
     Pollinations,
+    paymentRequiredReason,
 } from "@pollinations/sdk";
-import { useAuthState } from "@pollinations/sdk/react";
+import { useAuthActions, useAuthState } from "@pollinations/sdk/react";
 import {
     Alert,
     AudioIcon,
@@ -308,6 +309,7 @@ export function Playground({
     className,
 }: PlaygroundProps) {
     const { apiKey, isLoggedIn, isHydrated } = useAuthState();
+    const { login, topUp } = useAuthActions();
     const {
         catalog,
         isLoading,
@@ -325,7 +327,11 @@ export function Playground({
     const [selectedVoice, setSelectedVoice] = useState("");
     const [result, setResult] = useState<PlaygroundResult | null>(null);
     const [isGenerating, setIsGenerating] = useState(false);
+    const [isBuyingPollen, setIsBuyingPollen] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [fundingAction, setFundingAction] = useState<
+        "key_budget" | "account_balance" | null
+    >(null);
 
     const currentModel = useMemo(
         () => catalog.models.find((model) => model.id === selectedModel),
@@ -414,9 +420,22 @@ export function Playground({
         });
     }
 
+    async function buyPollen() {
+        if (isBuyingPollen) return;
+        setIsBuyingPollen(true);
+        try {
+            await topUp();
+        } catch (err) {
+            setError(errorMessage(err));
+        } finally {
+            setIsBuyingPollen(false);
+        }
+    }
+
     async function generate() {
         const trimmedPrompt = prompt.trim();
         const audioFile = audioFiles[0];
+        setFundingAction(null);
 
         if (!apiKey) {
             setError("Authorize the app before generating.");
@@ -531,7 +550,15 @@ export function Playground({
                 text: response.choices[0]?.message.content || "No response",
             });
         } catch (err) {
-            setError(errorMessage(err));
+            const reason = paymentRequiredReason(err);
+            setFundingAction(reason);
+            setError(
+                reason === "key_budget"
+                    ? "This app's allowance has run out. Increase it to keep generating."
+                    : reason === "account_balance"
+                      ? "Your wallet needs more Pollen to keep generating."
+                      : errorMessage(err),
+            );
         } finally {
             setIsGenerating(false);
         }
@@ -848,7 +875,33 @@ export function Playground({
                             </FieldStack>
                         )}
 
-                        {error && <Alert intent="danger">{error}</Alert>}
+                        {error && (
+                            <Alert intent="danger">
+                                <span>{error}</span>
+                                {fundingAction === "key_budget" ? (
+                                    <Button
+                                        type="button"
+                                        size="sm"
+                                        onClick={() => login()}
+                                    >
+                                        Renew app allowance
+                                    </Button>
+                                ) : null}
+                                {fundingAction === "account_balance" ? (
+                                    <Button
+                                        type="button"
+                                        size="sm"
+                                        disabled={isBuyingPollen}
+                                        aria-busy={isBuyingPollen}
+                                        onClick={() => void buyPollen()}
+                                    >
+                                        {isBuyingPollen
+                                            ? "Opening checkout…"
+                                            : "Buy 5 Pollen"}
+                                    </Button>
+                                ) : null}
+                            </Alert>
+                        )}
 
                         <Button
                             type="button"

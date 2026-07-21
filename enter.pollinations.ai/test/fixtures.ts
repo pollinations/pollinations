@@ -64,6 +64,10 @@ export const createApiKeyViaApi = async (
         name: string;
         type?: "secret" | "publishable";
         allowedModels?: string[];
+        pollenBudget?: number | null;
+        accountPermissions?: string[];
+        redirectUris?: string[];
+        earningsEnabled?: boolean;
     },
 ) => {
     const response = await SELF.fetch(

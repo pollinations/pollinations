@@ -8,6 +8,24 @@
   },
   "adminUsername": "pollinations",
   "image": "Canonical:ubuntu-24_04-lts:server:latest",
+  "operators": {
+    "itachi": {
+      "username": "itachi",
+      "access": "passwordless-sudo",
+      "vms": ["polli-prod", "lixsearch-prod"],
+      "publicKey": "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOw5QMC7rJadj6RLXXq5fwSQJLF1u+O6r4PSdBF9xDwI itachi@pollinations-azure-vms-2026-rotated",
+      "publicKeyFingerprint": "SHA256:F+eknjKXX+8vt6n971vHYvg4fNJjd8ltf6dqhl+AlDM",
+      "secretFile": "secrets/itachi-operator.vars.json"
+    },
+    "elixpo": {
+      "username": "elixpo",
+      "access": "passwordless-sudo",
+      "vms": ["polli-prod", "lixsearch-prod"],
+      "publicKey": "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAILMm+w4MRz7flBGPbFEZ20l6KNWsEXGoEpX1xLBtTNty elixpo@pollinations-azure-vms-2026-rotated",
+      "publicKeyFingerprint": "SHA256:2u7MvTmRHLYsfCtENQowcUh+ZI8hInpmqHl4CdnqAns",
+      "secretFile": "secrets/elixpo-operator.vars.json"
+    }
+  },
   "vms": {
     "polli": {
       "name": "polli-prod",

@@ -1,0 +1,34 @@
+{
+  "pr_number": 12623,
+  "title": "security: scope developer access",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/12623",
+  "merged_at": "2026-07-21T17:05:08Z",
+  "labels": [],
+  "pr_body_excerpt": "- Gives Itachi and Elixpo shared access to the Enter and Gen development and staging secret bundles.\n- Gives each developer a personal SSH credential for both Azure VMs, encrypted only to core admin and that developer's Age key.\n- Rekeys production, bot runtime, observability, and general SOPS files to core admin/CI only.\n- Records the rotated operator public keys and fingerprints in the Azure VM inventory.\n\nValidation:\n- Rotated both operator SSH keypairs and replaced the old authorized keys on both VMs.\n- Verified Itachi and Elixpo can each SSH to `polli-prod` and `lixsearch-prod` with passwordless sudo.\n- Verified neither developer can decrypt the other operator file in current ciphertext.\n- Verified both can decrypt Enter/Gen development and staging, while production remains excluded.\n- No plaintext private key is present; temporary plaintext rotation material was deleted.\n\nSeveral development and staging values are currently reused in production. Those credentials still require the separate planned rotation for complete environment isolation.",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Keys Find Their Gardens",
+    "blurb": "The secret bundles got clearer garden fences: developers can tend development and staging, while production stays in its own locked greenhouse.",
+    "summary": "Rekeyed SOPS secret bundles so developer access is limited to Enter and Gen development/staging environments, while production, bot, observability, and general operations secrets remain restricted to core admin and CI.",
+    "impact": "Contributors can work independently with their own VM credentials and the development/staging secrets they need, with production access kept compartmentalized.",
+    "keywords": [
+      "security",
+      "sops",
+      "access-control",
+      "secrets",
+      "staging",
+      "infrastructure"
+    ],
+    "visual_concept": "Depict Polly as a careful garden keeper using labeled keys to open two friendly dev and staging greenhouse gates, while a separate production greenhouse remains safely fenced behind a calm lock. Small code-plants, secret-envelope sprouts, and a cozy terminal make the access boundaries readable without showing real credentials.",
+    "image_prompt": "Cozy pixel art scene of Polly, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny gardener keyring, carefully opening two small greenhouse gates labeled “DEV” and “STAGING” while a separate peaceful “PROD” greenhouse sits safely behind a dark purple lock; code-plants and pastel flowers grow around a glowing retro terminal. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, chunky retro sprites, subtle CRT glow, retro gaming vibes like Stardew Valley or A Short Hike, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-21/PR-12623.jpg",
+    "prompt": "Cozy pixel art scene of Polly, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny gardener keyring, carefully opening two small greenhouse gates labeled “DEV” and “STAGING” while a separate peaceful “PROD” greenhouse sits safely behind a dark purple lock; code-plants and pastel flowers grow around a glowing retro terminal. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, chunky retro sprites, subtle CRT glow, retro gaming vibes like Stardew Valley or A Short Hike, emotionally warm."
+  },
+  "generated_at": "2026-07-21T17:06:05.579914+00:00"
+}

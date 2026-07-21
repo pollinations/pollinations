@@ -1,0 +1,35 @@
+{
+  "pr_number": 12618,
+  "title": "docs: update README — 2026-07-21",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/12618",
+  "merged_at": "2026-07-21T07:54:31Z",
+  "labels": [
+    "NEWS"
+  ],
+  "pr_body_excerpt": "Daily README update: Latest News section. (Recent Apps is refreshed by Apps / Update metrics.)",
+  "gist": {
+    "category": "docs",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Fresh pollen on the README",
+    "blurb": "The README's Latest News patch got its daily tending. The front door now has fresher notes pinned to it.",
+    "summary": "Updated the README's Latest News section for July 21, 2026, while Recent Apps continues to refresh through app metrics.",
+    "impact": "Visitors to the repository will see the current project news in the README's regularly maintained overview.",
+    "keywords": [
+      "readme",
+      "news",
+      "documentation",
+      "community",
+      "repository"
+    ],
+    "visual_concept": "A cozy open-source garden noticeboard represents the README's Latest News section: Polly, wearing a tiny librarian scarf, pins fresh lime-green pixel notes beside blooming code-plants while a retro terminal quietly updates the board.",
+    "image_prompt": "Cozy pixel art scene of Polly, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny librarian scarf, pinning fresh news notes to a garden README noticeboard beside blooming code-plants and a softly glowing retro terminal. Cozy 8-bit pixel art aesthetic with a prominent lime green (#ecf874) and warm cream pastel gradient, dark purple (#110518) outlines, warm lighting, retro gaming vibes; simple pixel-font text: 'LATEST NEWS'."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-21/PR-12618.jpg",
+    "prompt": "Cozy pixel art scene of Polly, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny librarian scarf, pinning fresh news notes to a garden README noticeboard beside blooming code-plants and a softly glowing retro terminal. Cozy 8-bit pixel art aesthetic with a prominent lime green (#ecf874) and warm cream pastel gradient, dark purple (#110518) outlines, warm lighting, retro gaming vibes; simple pixel-font text: 'LATEST NEWS'."
+  },
+  "generated_at": "2026-07-21T07:55:25.928642+00:00"
+}

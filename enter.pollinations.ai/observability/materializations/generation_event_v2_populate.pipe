@@ -1,5 +1,5 @@
 DESCRIPTION >
-    Backfills up to 1 week of authenticated, non-cached generation events
+    Backfills up to 12 months of authenticated, non-cached generation events
     into generation_event_v2 and keeps it current until direct ingestion is
     switched to the new datasource.
 
@@ -7,7 +7,7 @@ NODE generation_event_v2_populate_node
 SQL >
     SELECT *
     FROM generation_event
-    WHERE start_time >= now() - INTERVAL 1 WEEK
+    WHERE start_time >= now() - INTERVAL 12 MONTH
       AND user_id != ''
       AND user_id != 'undefined'
       AND cache_hit = false

@@ -1,0 +1,34 @@
+{
+  "pr_number": 12605,
+  "title": "fix: prevent dropped model search input",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/12605",
+  "merged_at": "2026-07-21T17:11:53Z",
+  "labels": [],
+  "pr_body_excerpt": "- Keeps model search input and filtering on immediate local state.\n- Debounces URL query synchronization by 200 ms while preserving deep-link and external URL updates.\n- Tracks the latest requested query so delayed router echoes cannot overwrite newer typing or clearing.\n- Flushes the current query on blur.\n- Matches search only against the displayed model title and brand; model IDs and descriptions stay unnoticed.\n\nValidation:\n- `npm run typecheck`\n- `npm run build:frontend`\n- Real Chromium rapid typing: batched, 0 ms, and 5 ms sequences\n- 1200 ms network latency: type-during-navigation 5/5 and clear-during-navigation 5/5\n- Blur flush 2/2 and deep-link hydration verified\n- Title and brand queries match; model ID, description, and `per`→Grok checks do not",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Search bar, hold your pollen",
+    "blurb": "The model picker now keeps up when your fingers decide to sprint. Polly put the URL updates on a short leash, so delayed navigation echoes stop eating fresh searches.",
+    "summary": "Fixed the model search in enter.pollinations.ai to filter from immediate local input state, debounce URL synchronization by 200 ms, preserve deep links and external URL updates, and prevent delayed router echoes from replacing newer typing or cleared queries.",
+    "impact": "Users can rapidly type, clear, or blur the model search without dropped input, while searches now intentionally match displayed model titles and brands rather than model IDs or descriptions.",
+    "keywords": [
+      "model-search",
+      "frontend",
+      "model-picker",
+      "url-sync",
+      "routing",
+      "bug-fix"
+    ],
+    "visual_concept": "A cozy model-library search desk where Polly protects a freshly typed search note from a slow, wandering URL courier; a retro monitor shows model cards filtered by title and brand, while a small 200 ms hourglass keeps navigation updates orderly. Include sprouting code-plants and a warm garden-like workspace to represent responsive local filtering and safely synchronized links.",
+    "image_prompt": "Cozy pixel art scene in a warm garden hackerspace where the cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings wears tiny librarian glasses while guarding a fresh search note beside a retro monitor of neatly filtered model cards; a gentle little hourglass labeled “200 ms” keeps slow URL-paper birds from overwriting it, with lime green (#ecf874) code-plants blooming around the desk. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, subtle CRT glow, pixel-font text: “SEARCH KEPT UP”, nostalgic but beautiful and emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-21/PR-12605.jpg",
+    "prompt": "Cozy pixel art scene in a warm garden hackerspace where the cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings wears tiny librarian glasses while guarding a fresh search note beside a retro monitor of neatly filtered model cards; a gentle little hourglass labeled “200 ms” keeps slow URL-paper birds from overwriting it, with lime green (#ecf874) code-plants blooming around the desk. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, subtle CRT glow, pixel-font text: “SEARCH KEPT UP”, nostalgic but beautiful and emotionally warm."
+  },
+  "generated_at": "2026-07-21T17:12:56.577610+00:00"
+}

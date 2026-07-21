@@ -39,7 +39,14 @@ CF_HEADERS = {"Authorization": f"Bearer {CF_API_TOKEN}"}
 POLLINATIONS_EMBED_URL = "https://gen.pollinations.ai/v1/embeddings"
 
 _enc = tiktoken.get_encoding("cl100k_base")
-MAX_TOKENS_PER_INPUT = 8000
+# Vectorize caps total metadata at 10KiB per vector, and the chunk's own text now lives
+# in metadata (see build_rows_for_file) so results are self-contained without a follow-up
+# fetch. Chunk size is kept well under that budget — conservatively assuming ~3 chars/token
+# for dense code, 2000 tokens is ~6-8KB, leaving headroom for file_path/language/app/git_sha
+# and JSON structural overhead.
+MAX_TOKENS_PER_INPUT = 2000
+MAX_CHUNK_LINES = 50
+VECTORIZE_METADATA_BUDGET_BYTES = 9000  # stay under the 10KiB cap with margin
 
 # Everything git-tracks gets embedded UNLESS it matches one of these — binary/generated/lockfile
 # noise with zero search value. This is deliberately a blocklist, not an allowlist: the repo is a
@@ -160,7 +167,7 @@ def is_definition_start(line: str) -> bool:
     )
 
 
-def chunk_code(content: str, max_lines: int = 100) -> list[dict]:
+def chunk_code(content: str, max_lines: int = MAX_CHUNK_LINES) -> list[dict]:
     lines = content.split("\n")
 
     if len(lines) <= max_lines:
@@ -407,7 +414,72 @@ def vectorize_find_ids_for_file(file_path: str) -> list[str]:
     return [m["id"] for m in matches]
 
 
-def build_rows_for_file(repo_root: Path, rel_path: str) -> list[dict]:
+# Extension -> language label for metadata. Not exhaustive — anything unlisted falls back
+# to the bare extension, which is still a usable filter value.
+LANGUAGE_BY_EXTENSION = {
+    ".py": "python",
+    ".js": "javascript",
+    ".mjs": "javascript",
+    ".cjs": "javascript",
+    ".jsx": "javascript",
+    ".ts": "typescript",
+    ".tsx": "typescript",
+    ".go": "go",
+    ".rs": "rust",
+    ".java": "java",
+    ".c": "c",
+    ".h": "c",
+    ".cpp": "cpp",
+    ".hpp": "cpp",
+    ".cs": "csharp",
+    ".rb": "ruby",
+    ".php": "php",
+    ".swift": "swift",
+    ".kt": "kotlin",
+    ".scala": "scala",
+    ".vue": "vue",
+    ".svelte": "svelte",
+    ".html": "html",
+    ".css": "css",
+    ".scss": "scss",
+    ".json": "json",
+    ".yaml": "yaml",
+    ".yml": "yaml",
+    ".toml": "toml",
+    ".md": "markdown",
+    ".mdx": "markdown",
+    ".sql": "sql",
+    ".sh": "shell",
+    ".bash": "shell",
+    ".zsh": "shell",
+    ".tf": "terraform",
+    ".pipe": "tinybird-pipe",
+    ".datasource": "tinybird-datasource",
+}
+
+
+def _language_for(rel_path: str) -> str:
+    suffix = Path(rel_path).suffix.lower()
+    if suffix:
+        return LANGUAGE_BY_EXTENSION.get(suffix, suffix.lstrip("."))
+    name = Path(rel_path).name.lower()
+    return "dockerfile" if name == "dockerfile" else "text"
+
+
+def _app_for(rel_path: str) -> str:
+    """Top-level path segment — the monorepo's app/service boundary, e.g.
+    "enter.pollinations.ai" or "apps/polly". Lets search be scoped to one part of the repo."""
+    parts = Path(rel_path).parts
+    if len(parts) >= 2 and parts[0] == "apps":
+        return f"apps/{parts[1]}"
+    return parts[0] if parts else rel_path
+
+
+def _metadata_size(metadata: dict) -> int:
+    return len(json.dumps(metadata).encode("utf-8"))
+
+
+def build_rows_for_file(repo_root: Path, rel_path: str, git_sha: str) -> list[dict]:
     abs_path = repo_root / rel_path
     try:
         raw = abs_path.read_bytes()
@@ -422,6 +494,9 @@ def build_rows_for_file(repo_root: Path, rel_path: str) -> list[dict]:
         return []
 
     file_hash = content_hash(content)
+    language = _language_for(rel_path)
+    app = _app_for(rel_path)
+
     # Filter once and reuse the same list for both — embed_batch's output is positionally
     # aligned to `texts`, so zipping it against the unfiltered `chunks` (as a prior version
     # of this function did) silently shifts every embedding after the first blank chunk:
@@ -434,16 +509,32 @@ def build_rows_for_file(repo_root: Path, rel_path: str) -> list[dict]:
 
     rows = []
     for chunk, emb in zip(valid_chunks, embeddings):
+        metadata = {
+            "file_path": rel_path,
+            "start_line": chunk["start_line"],
+            "end_line": chunk["end_line"],
+            "file_hash": file_hash,
+            "language": language,
+            "app": app,
+            "git_sha": git_sha,
+            "content": chunk["content"],
+        }
+        # Chunk size is kept well under the 10KiB metadata cap by MAX_TOKENS_PER_INPUT, but
+        # a pathological single very-long line (e.g. a minified-adjacent one-liner that
+        # slipped the binary check) could still exceed it. Drop content rather than fail
+        # the whole upload — search still returns file_path/line-range for that chunk.
+        if _metadata_size(metadata) > VECTORIZE_METADATA_BUDGET_BYTES:
+            print(
+                f"  WARNING: {rel_path}:{chunk['start_line']}-{chunk['end_line']} metadata "
+                f"exceeds budget even after chunking — storing without content",
+                file=sys.stderr,
+            )
+            metadata["content"] = ""
         rows.append(
             {
                 "id": chunk_id_for(rel_path, chunk),
                 "values": emb,
-                "metadata": {
-                    "file_path": rel_path,
-                    "start_line": chunk["start_line"],
-                    "end_line": chunk["end_line"],
-                    "file_hash": file_hash,
-                },
+                "metadata": metadata,
             }
         )
     return rows
@@ -461,11 +552,21 @@ def build_rows_for_file(repo_root: Path, rel_path: str) -> list[dict]:
 EMBED_CONCURRENCY = 16
 
 
-def _embed_and_upsert_file(repo_root: Path, rel_path: str) -> tuple[str, int, Exception | None]:
+def _current_head(repo_root: Path) -> str:
+    result = subprocess.run(
+        ["git", "-C", str(repo_root), "rev-parse", "HEAD"],
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+    return result.stdout.strip()
+
+
+def _embed_and_upsert_file(repo_root: Path, rel_path: str, git_sha: str) -> tuple[str, int, Exception | None]:
     """Returns (rel_path, vectors_upserted, error) — never raises, so one bad file
     doesn't take down the whole pool."""
     try:
-        rows = build_rows_for_file(repo_root, rel_path)
+        rows = build_rows_for_file(repo_root, rel_path, git_sha)
         if rows:
             vectorize_upsert(rows)
         return rel_path, len(rows), None
@@ -478,7 +579,8 @@ def run_full(repo_root: Path) -> bool:
     success — a green CI check has to mean the index is actually fully populated, not
     "ran without crashing while silently dropping some files"."""
     files = collect_code_files(repo_root)
-    print(f"Full embed: {len(files)} files found (concurrency={EMBED_CONCURRENCY})")
+    git_sha = _current_head(repo_root)
+    print(f"Full embed: {len(files)} files found (concurrency={EMBED_CONCURRENCY}, HEAD={git_sha[:8]})")
 
     total_vectors = 0
     processed = 0
@@ -487,7 +589,7 @@ def run_full(repo_root: Path) -> bool:
 
     with ThreadPoolExecutor(max_workers=EMBED_CONCURRENCY) as pool:
         futures = {
-            pool.submit(_embed_and_upsert_file, repo_root, str(f.relative_to(repo_root))): f for f in files
+            pool.submit(_embed_and_upsert_file, repo_root, str(f.relative_to(repo_root)), git_sha): f for f in files
         }
         for future in as_completed(futures):
             rel_path, vector_count, error = future.result()
@@ -535,7 +637,9 @@ def git_changed_files(repo_root: Path, base_sha: str, head_sha: str) -> list[tup
     return changes
 
 
-def _sync_one_change(repo_root: Path, status: str, old_path: str, new_path: str) -> tuple[str, int, int, Exception | None]:
+def _sync_one_change(
+    repo_root: Path, status: str, old_path: str, new_path: str, git_sha: str
+) -> tuple[str, int, int, Exception | None]:
     """Returns (log_line, vectors_upserted, vectors_deleted, error)."""
     try:
         deleted = 0
@@ -554,7 +658,7 @@ def _sync_one_change(repo_root: Path, status: str, old_path: str, new_path: str)
             vectorize_delete_by_ids(stale_ids)
             deleted += len(stale_ids)
 
-        rows = build_rows_for_file(repo_root, new_path)
+        rows = build_rows_for_file(repo_root, new_path, git_sha)
         if rows:
             vectorize_upsert(rows)
             return f"{status}  {new_path} — {len(rows)} new vectors", len(rows), deleted, None
@@ -578,7 +682,9 @@ def run_incremental(repo_root: Path, base_sha: str, head_sha: str) -> bool:
     failed: list[str] = []
 
     with ThreadPoolExecutor(max_workers=EMBED_CONCURRENCY) as pool:
-        futures = [pool.submit(_sync_one_change, repo_root, status, old, new) for status, old, new in relevant]
+        futures = [
+            pool.submit(_sync_one_change, repo_root, status, old, new, head_sha) for status, old, new in relevant
+        ]
         for future in as_completed(futures):
             log_line, upserted, deleted, error = future.result()
             print(log_line, file=sys.stderr if error else sys.stdout)

@@ -61,6 +61,14 @@ function notFound(): Response {
     return noIndex(new Response("Not Found", { status: 404 }));
 }
 
+function isMcpGateway(c: Context<Env>): boolean {
+    const origin = getPublicOrigin(c);
+    return (
+        origin === "https://mcp.pollinations.ai" ||
+        origin === "https://staging.mcp.pollinations.ai"
+    );
+}
+
 function robotsTxt(): Response {
     return new Response(
         [
@@ -110,7 +118,11 @@ app.use("*", cors(PERMISSIVE_CORS_OPTIONS))
     .use("*", logger)
     .get("/robots.txt", () => robotsTxt())
     .get("/manifest.webmanifest", () => manifestResponse())
-    .get("/", (c) => c.html(docsLandingHtml(c)))
+    .get("/", (c) =>
+        isMcpGateway(c)
+            ? new Response(null, { status: 405, headers: { Allow: "POST" } })
+            : c.html(docsLandingHtml(c)),
+    )
     .get("/docs/", (c) => c.redirect(`${getPublicOrigin(c)}/docs`, 301))
     .all("/api/docs", redirectLegacyDocs)
     .all("/api/docs/", redirectLegacyDocs)

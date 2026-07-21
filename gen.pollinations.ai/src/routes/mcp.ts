@@ -236,6 +236,20 @@ export const mcpRoutes = new Hono<Env>()
         const auth = await authenticateMcpRequest(c, resource);
         if (auth instanceof Response) return auth;
 
+        const contentType = c.req.header("content-type") || "";
+        const accept = c.req.header("accept") || "";
+        if (!contentType.includes("application/json")) {
+            return new Response(null, { status: 415 });
+        }
+        if (
+            accept &&
+            !accept.includes("application/json") &&
+            !accept.includes("text/event-stream") &&
+            !accept.includes("*/*")
+        ) {
+            return new Response(null, { status: 406 });
+        }
+
         const message = await c.req.json<{
             jsonrpc?: string;
             id?: unknown;
@@ -288,11 +302,18 @@ export const mcpRoutes = new Hono<Env>()
                 );
             } else if (name === "listModels") {
                 const registry = await getGenerationModelRegistry(c.env);
+                const allowedModels = auth.apiKey?.permissions?.models;
                 result = toolResult([
                     {
                         type: "text",
                         text: JSON.stringify(
-                            registry.visibleEntries(auth.user?.id),
+                            registry
+                                .visibleEntries(auth.user?.id)
+                                .filter(
+                                    (entry) =>
+                                        !allowedModels ||
+                                        allowedModels.includes(entry.id),
+                                ),
                             null,
                             2,
                         ),

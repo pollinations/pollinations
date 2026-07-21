@@ -1,4 +1,7 @@
 #!/usr/bin/env node
+import { randomUUID } from "node:crypto";
+import fs from "node:fs";
+
 // One probe sweep across all active community models via gen.pollinations.ai.
 // Cost-weighted: cheap models get more requests than expensive ones (see
 // planRequestCounts), every model capped at MAX_REQUESTS_PER_MODEL so no
@@ -12,7 +15,6 @@
 // Actual spend is reconciled from real `usage` tokens and fed back into
 // state.json so next cycle's budget self-corrects (overspend -> undershoot).
 // Writes /home/ubuntu/monitor/probe-results.json and prints a summary table.
-import fs from "node:fs";
 
 const TOKEN = process.env.POLLI_TOKEN;
 if (!TOKEN) {
@@ -20,10 +22,7 @@ if (!TOKEN) {
     process.exit(1);
 }
 const GEN = "https://gen.pollinations.ai";
-// Pooled workers (see the sweep loop below). At current tier targets the
-// sweep is ~900 requests; 8 workers keeps it around 10 minutes so the
-// results file is at most one 15-minute cycle stale.
-const CONCURRENCY = 8;
+const CONCURRENCY = 4;
 const TIMEOUT_MS = 45_000;
 const STATE_PATH = "/home/ubuntu/monitor/state.json";
 const TARGET_POLLEN = 0.5;
@@ -31,7 +30,6 @@ const TARGET_POLLEN = 0.5;
 // cycle (e.g. a model timing out after burning tokens) can't spiral.
 const MIN_BUDGET = TARGET_POLLEN * 0.4;
 const MAX_BUDGET = TARGET_POLLEN * 1.6;
-const PROMPT = "Reply with the single word: ok";
 const MAX_TOKENS = 10;
 // Rough estimate for planning only -- actual spend is reconciled from real
 // `usage` in each response, not from these constants.
@@ -62,16 +60,13 @@ function estimateCost(model) {
 // Baseline rank-based targets, cheapest quartile first. Ranking (not raw
 // cost) drives this, so "test expensive models less" holds even if the whole
 // catalog happens to be cheap or expensive that week -- it's always relative.
-// 3x'd from the original [5,4,2,1] -- the catalog turned out cheap enough
-// that the old cap left actual spend at ~0.015 pollen/cycle, far under the
-// 0.5 target; this trades more coverage/spend for more per-model traffic.
-// Started at 3x rather than the full 10x gap to avoid a big jump in load on
-// every upstream (incl. free models) in one step -- can raise further later.
-const TIER_TARGETS = [15, 12, 6, 3];
+// Keep synthetic traffic light: production data showed that larger sweeps can
+// consume a meaningful share of low-capacity community-provider quotas.
+const TIER_TARGETS = [4, 3, 2, 1];
 // Hard per-model ceiling, regardless of price or budget -- this is a health
 // probe, not a load test, and upstream owners may have their own rate limits.
 // Free models in particular must never be used to "soak up" leftover budget.
-const MAX_REQUESTS_PER_MODEL = 15;
+const MAX_REQUESTS_PER_MODEL = 4;
 
 // Every model gets a rank-based baseline (cheapest quartile: most requests,
 // priciest quartile: floor of 1). If that overshoots budget, trim extras from
@@ -148,7 +143,7 @@ function planRequestCounts(models, budget) {
 // Basic billing-integrity sanity checks on a single probe response. These are
 // NOT health/deactivation signals (CYCLE.md's 5xx/timeout rules own that) --
 // they flag "the numbers we're about to pay this owner on look implausible
-// for a fixed, known prompt", for a human to investigate. Thresholds are
+// for a short, cache-busted prompt", for a human to investigate. Thresholds are
 // deliberately loose (calibrated against real tokenizer variance seen across
 // the catalog: a 7-word prompt legitimately tokenizes anywhere from ~7 to
 // ~35 tokens depending on the model's tokenizer) -- the goal is to catch
@@ -159,10 +154,34 @@ function billingSanityFlags(usage, content) {
         flags.push("no usage object returned");
         return flags;
     }
-    const { prompt_tokens: p, completion_tokens: c } = usage;
+    const {
+        prompt_tokens: p,
+        completion_tokens: c,
+        total_tokens: total,
+    } = usage;
+    const cached =
+        usage.prompt_tokens_details?.cached_tokens ??
+        usage.cached_input_tokens ??
+        usage.cache_read_input_tokens ??
+        0;
     if (p === 0) flags.push("prompt_tokens=0 for a non-empty prompt");
-    else if (p != null && p > 100)
-        flags.push(`prompt_tokens=${p}, implausible for a 7-word prompt`);
+    if (cached > 0)
+        flags.push("cached tokens on a cache-busted single-message prompt");
+    if (p != null && cached > p)
+        flags.push("cached_tokens exceeds prompt_tokens");
+    const reasoning =
+        usage.completion_tokens_details?.reasoning_tokens ??
+        usage.reasoning_tokens ??
+        0;
+    if (c != null && reasoning > c)
+        flags.push("reasoning_tokens exceeds completion_tokens");
+    if (p != null && c != null && total != null && total !== p + c)
+        flags.push(
+            "total_tokens differs from prompt_tokens + completion_tokens",
+        );
+    const uncached = p != null && cached <= p ? p - cached : undefined;
+    if (uncached != null && uncached > 100)
+        flags.push("implausible uncached prompt token count");
     if (c === 0) flags.push("completion_tokens=0 despite a successful reply");
     if (!content?.trim()) flags.push("empty completion content");
     return flags;
@@ -170,6 +189,8 @@ function billingSanityFlags(usage, content) {
 
 async function probe(model) {
     const started = Date.now();
+    const marker = `ok-${randomUUID().slice(0, 8)}`;
+    const prompt = `Reply with exactly: ${marker}`;
     // The abort timer must stay armed through the BODY read, not just until
     // headers arrive: a stalled response stream otherwise hangs this job --
     // and, with it, the whole sweep -- forever. This exact hang killed every
@@ -185,7 +206,7 @@ async function probe(model) {
             },
             body: JSON.stringify({
                 model,
-                messages: [{ role: "user", content: PROMPT }],
+                messages: [{ role: "user", content: prompt }],
                 max_tokens: MAX_TOKENS,
             }),
             signal: ctrl.signal,
@@ -208,6 +229,7 @@ async function probe(model) {
             status: res.status,
             ms: Date.now() - started,
             usage,
+            probeMarker: marker,
             detail: res.ok ? undefined : body.slice(0, 300),
         };
         if (res.ok) result.billingFlags = billingSanityFlags(usage, content);

@@ -20,7 +20,10 @@ if (!TOKEN) {
     process.exit(1);
 }
 const GEN = "https://gen.pollinations.ai";
-const CONCURRENCY = 4;
+// Pooled workers (see the sweep loop below). At current tier targets the
+// sweep is ~900 requests; 8 workers keeps it around 10 minutes so the
+// results file is at most one 15-minute cycle stale.
+const CONCURRENCY = 8;
 const TIMEOUT_MS = 45_000;
 const STATE_PATH = "/home/ubuntu/monitor/state.json";
 const TARGET_POLLEN = 0.5;
@@ -167,9 +170,13 @@ function billingSanityFlags(usage, content) {
 
 async function probe(model) {
     const started = Date.now();
+    // The abort timer must stay armed through the BODY read, not just until
+    // headers arrive: a stalled response stream otherwise hangs this job --
+    // and, with it, the whole sweep -- forever. This exact hang killed every
+    // sweep from 2026-07-20 08:29 until it was found a day later.
+    const ctrl = new AbortController();
+    const t = setTimeout(() => ctrl.abort(), TIMEOUT_MS);
     try {
-        const ctrl = new AbortController();
-        const t = setTimeout(() => ctrl.abort(), TIMEOUT_MS);
         const res = await fetch(`${GEN}/v1/chat/completions`, {
             method: "POST",
             headers: {
@@ -183,7 +190,6 @@ async function probe(model) {
             }),
             signal: ctrl.signal,
         });
-        clearTimeout(t);
         const body = await res.text();
         let usage;
         let content;
@@ -214,6 +220,8 @@ async function probe(model) {
             ms: Date.now() - started,
             detail: String(err).slice(0, 200),
         };
+    } finally {
+        clearTimeout(t);
     }
 }
 
@@ -260,11 +268,18 @@ for (const model of models) {
     for (let i = 0; i < n; i++) jobs.push(model.name);
 }
 
+// Worker pool, not batched Promise.all: one slow request must not
+// head-of-line-block the other CONCURRENCY-1 slots for up to TIMEOUT_MS.
 const results = [];
-for (let i = 0; i < jobs.length; i += CONCURRENCY) {
-    const batch = jobs.slice(i, i + CONCURRENCY);
-    results.push(...(await Promise.all(batch.map(probe))));
-}
+let nextJob = 0;
+await Promise.all(
+    Array.from({ length: CONCURRENCY }, async () => {
+        while (nextJob < jobs.length) {
+            const i = nextJob++;
+            results[i] = await probe(jobs[i]);
+        }
+    }),
+);
 
 const actualSpend = results.reduce(
     (sum, r) => sum + actualCost(r, priceByModel),
@@ -273,9 +288,12 @@ const actualSpend = results.reduce(
 
 // Persist spend history for next cycle's adaptive budget. probe.mjs owns only
 // the `spend` key in state.json -- CYCLE.md/the agent owns everything else and
-// read-modify-writes this file, so merge rather than clobber.
+// read-modify-writes this file, so merge rather than clobber. Re-read the
+// file NOW rather than reusing the startup snapshot: the sweep takes minutes
+// and the agent rewrites state.json in the meantime -- merging into the old
+// snapshot would silently revert those writes.
 const nextState = {
-    ...state,
+    ...readState(),
     spend: {
         lastCycleBudget: budget,
         lastEstimatedPollen: estimatedSpend,

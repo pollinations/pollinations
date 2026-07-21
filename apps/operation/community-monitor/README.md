@@ -111,11 +111,17 @@ Pinned to `--model sonnet --effort low` in `watchdog.sh` — this is a
 needs frontier reasoning. Revisit if the agent starts making judgment calls
 that need more capability.
 
-## Authority split (hard rule, do not relax)
+## Authority split
 
 Deactivation is automatic — the agent can take a community model offline on
 its own once CYCLE.md's rule (b) is met (sustained Tinybird-confirmed
-failure). **Reactivation is exclusively a human maintainer's call, never the
-agent's**, even with strong evidence the fix worked. There is currently no
-self-serve dashboard reactivate path either (see PR #12193) — only a direct
-D1 update by a maintainer clears `disabled_at`.
+failure: <50% success on ≥100 non-4xx requests over 3+ cycles, then a
+24-hour grace period after the owner ping, then a freshness check that
+must show the model failing across the entire last day). Reactivation is **narrowly** automatic as of 2026-07-20
+(thomash's call after the Jul 18–20 deactivation wave): the agent may undo
+*its own* deactivations (`disabled_by = 'monitor'`) when the owner reports a
+fix or an upstream quota window has reset, at most once per model per 48h.
+Rows disabled by a human — including anything disabled during an
+abuse/billing incident — remain exclusively a human maintainer's call, no
+exceptions. There is still no self-serve dashboard reactivate path (see
+PR #12193) — owners' "test and save" does nothing.

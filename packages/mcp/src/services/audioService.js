@@ -69,6 +69,17 @@ function isPrivateAddress(address) {
         );
     }
     const normalized = address.toLowerCase();
+    const mappedIpv4 = normalized.match(
+        /(?:^|:)ffff:([0-9a-f]{1,4}):([0-9a-f]{1,4})$/,
+    );
+    if (mappedIpv4) {
+        const [high, low] = mappedIpv4
+            .slice(1)
+            .map((part) => Number.parseInt(part, 16));
+        return isPrivateAddress(
+            `${high >> 8}.${high & 255}.${low >> 8}.${low & 255}`,
+        );
+    }
     return (
         normalized === "::" ||
         normalized === "::1" ||
@@ -82,7 +93,7 @@ async function validateAudioUrl(url) {
     if (url.protocol !== "https:") {
         throw new Error("audioUrl must use HTTPS");
     }
-    const hostname = url.hostname.toLowerCase();
+    const hostname = url.hostname.replace(/^\[|\]$/g, "").toLowerCase();
     if (
         hostname === "localhost" ||
         hostname.endsWith(".localhost") ||

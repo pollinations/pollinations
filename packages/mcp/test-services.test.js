@@ -40,6 +40,25 @@ test("generateImage returns URL without forwarding output", async () => {
     assert.match(result.content[0].text, /model=flux/);
 });
 
+test("generateImage URL output does not buffer the media response", async () => {
+    let arrayBufferCalls = 0;
+    global.fetch = async () => {
+        const response = new Response(null, {
+            status: 200,
+            headers: { "Content-Type": "image/png" },
+        });
+        response.arrayBuffer = async () => {
+            arrayBufferCalls++;
+            return new ArrayBuffer();
+        };
+        return response;
+    };
+
+    await handlers.generateImage({ prompt: "red square", output: "url" });
+
+    assert.equal(arrayBufferCalls, 0);
+});
+
 test("generateImage returns inline image content", async () => {
     global.fetch = async () =>
         new Response(new Uint8Array([1, 2, 3]), {
@@ -164,5 +183,14 @@ test("transcribeAudio rejects local URLs", async () => {
     await assert.rejects(
         handlers.transcribeAudio({ audioUrl: "https://localhost/test.mp3" }),
         /public host/,
+    );
+});
+
+test("transcribeAudio rejects IPv4-mapped IPv6 private URLs", async () => {
+    await assert.rejects(
+        handlers.transcribeAudio({
+            audioUrl: "https://[::ffff:127.0.0.1]/test.mp3",
+        }),
+        /private address/,
     );
 });

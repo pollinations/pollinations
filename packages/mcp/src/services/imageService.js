@@ -6,27 +6,40 @@ import {
     createImageContent,
     createMCPResponse,
     createTextContent,
-    fetchBinaryWithAuth,
+    fetchWithAuth,
+    parseApiError,
 } from "../utils/coreUtils.js";
 
 function mediaUrl({ prompt, output: _output, ...params }) {
     return buildUrl(`/image/${encodeURIComponent(prompt)}`, params);
 }
 
+async function fetchMedia(url, timeoutMs, expectedContentType) {
+    const response = await fetchWithAuth(url, { method: "GET", timeoutMs });
+    if (!response.ok) {
+        const errorText = await response.text().catch(() => "Unknown error");
+        throw new Error(parseApiError(response.status, errorText));
+    }
+    const contentType = response.headers.get("content-type") || "";
+    if (!contentType.startsWith(expectedContentType)) {
+        await response.body?.cancel();
+        throw new Error(
+            `Expected ${expectedContentType} response, received ${contentType}`,
+        );
+    }
+    return { response, contentType };
+}
+
 async function generateImage(params) {
     requireApiKey();
     const url = mediaUrl(params);
     const { output = "url" } = params;
-    const { buffer, contentType } = await fetchBinaryWithAuth(url, {
-        method: "GET",
-        timeoutMs: 300000,
-    });
-    if (!contentType.startsWith("image/")) {
-        throw new Error(`Expected image response, received ${contentType}`);
-    }
+    const { response, contentType } = await fetchMedia(url, 300000, "image/");
     if (output === "url") {
+        await response.body?.cancel();
         return createMCPResponse([createTextContent(url)]);
     }
+    const buffer = await response.arrayBuffer();
     return createMCPResponse([
         createImageContent(arrayBufferToBase64(buffer), contentType),
     ]);
@@ -36,16 +49,12 @@ async function generateVideo(params) {
     requireApiKey();
     const url = mediaUrl(params);
     const { output = "url" } = params;
-    const { buffer, contentType } = await fetchBinaryWithAuth(url, {
-        method: "GET",
-        timeoutMs: 600000,
-    });
-    if (!contentType.startsWith("video/")) {
-        throw new Error(`Expected video response, received ${contentType}`);
-    }
+    const { response, contentType } = await fetchMedia(url, 600000, "video/");
     if (output === "url") {
+        await response.body?.cancel();
         return createMCPResponse([createTextContent(url)]);
     }
+    const buffer = await response.arrayBuffer();
     return createMCPResponse([
         {
             type: "resource",

@@ -1,0 +1,47 @@
+{
+  "date": "2026-07-20",
+  "period_start": "2026-07-20",
+  "period_end": "2026-07-20",
+  "title": "Embeddings got sharper, more role-aware, and multimodal",
+  "summary": "A catalog-and-embeddings day: clearer model choices, stronger vector search, a publisher path, and infrastructure that tells the truth when the internet does not.\n\nGemini Embedding 2 now uses its GA multi-region endpoint and documented task instructions, while Cohere gets query/document roles, text-image embedding support arrives, and model-specific dimension and context guidance makes vector search less of a guessing game. Existing Gemini 2 indexes should be re-embedded before mixing old and new vectors.\n\nAll 132 model descriptions were rewritten around practical strengths and trade-offs, Sonar's high-context preset was renamed for clarity without breaking existing aliases, and API-key permissions now show only callable canonical models—including active private community models. Less catalog archaeology, fewer retired IDs appearing where they cannot help.\n\nA new GitHub issue form gives prospective community-model publishers a clear path to request account-level public publishing access, linked directly from My Models and the API docs. Private models remain available to register without the allowlist ceremony.",
+  "pr_count": 9,
+  "prs": [
+    {
+      "number": 12507,
+      "date": "2026-07-20"
+    },
+    {
+      "number": 12594,
+      "date": "2026-07-20"
+    },
+    {
+      "number": 12596,
+      "date": "2026-07-20"
+    },
+    {
+      "number": 12597,
+      "date": "2026-07-20"
+    },
+    {
+      "number": 12598,
+      "date": "2026-07-20"
+    },
+    {
+      "number": 12599,
+      "date": "2026-07-20"
+    },
+    {
+      "number": 12600,
+      "date": "2026-07-20"
+    },
+    {
+      "number": 12601,
+      "date": "2026-07-20"
+    },
+    {
+      "number": 12604,
+      "date": "2026-07-20"
+    }
+  ],
+  "generated_at": "2026-07-21T07:01:05.159806+00:00"
+}

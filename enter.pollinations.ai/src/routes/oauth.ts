@@ -1,4 +1,5 @@
 import { PKCE_S256_CHALLENGE_REGEX } from "@shared/auth/authorize-config.ts";
+import { MCP_TOOLS_SCOPE, normalizeMcpResource } from "@shared/auth/mcp-resource.ts";
 import { redirectUriMatchesAllowlistExact } from "@shared/auth/redirect-uri.ts";
 import { validator } from "@shared/middleware/validator.ts";
 import type { Context } from "hono";
@@ -28,6 +29,7 @@ type StoredCode = {
     scope: string | null;
     codeChallenge: string;
     expiresIn: number | null;
+    resource: string | null;
 };
 
 /**
@@ -65,6 +67,7 @@ const CreateCodeSchema = z.object({
     codeChallenge: z.string().regex(PKCE_S256_CHALLENGE_REGEX),
     codeChallengeMethod: z.literal("S256"),
     expiresIn: z.number().int().positive().nullish(),
+    resource: z.string().url().optional(),
 });
 
 /**
@@ -86,6 +89,14 @@ export const oauthRoutes = new Hono<Env>()
         async (c) => {
             c.var.auth.requireUser();
             const body = c.req.valid("json");
+            const resource = body.resource
+                ? normalizeMcpResource(body.resource)
+                : null;
+            if (body.resource && !resource) {
+                throw new HTTPException(400, {
+                    message: "Unsupported OAuth resource",
+                });
+            }
 
             // Re-validate the client/redirect binding server-side; the same
             // check runs at sk_ minting, but the code is the artifact that
@@ -98,6 +109,22 @@ export const oauthRoutes = new Hono<Env>()
             if (!result.valid || !result.key) {
                 throw new HTTPException(400, {
                     message: "Unknown client_id",
+                });
+            }
+            if (
+                resource &&
+                result.key.metadata?.oauthResource !== resource
+            ) {
+                throw new HTTPException(400, {
+                    message: "API key is not bound to the requested resource",
+                });
+            }
+            if (
+                resource &&
+                !body.scope?.split(/\s+/).includes(MCP_TOOLS_SCOPE)
+            ) {
+                throw new HTTPException(400, {
+                    message: `Scope ${MCP_TOOLS_SCOPE} is required for MCP`,
                 });
             }
             // Exact matching (incl. query) — the code rides the query string,
@@ -122,6 +149,7 @@ export const oauthRoutes = new Hono<Env>()
                 scope: body.scope ?? null,
                 codeChallenge: body.codeChallenge,
                 expiresIn: body.expiresIn ?? null,
+                resource,
             };
             await c.env.KV.put(`oauth-code:${code}`, JSON.stringify(stored), {
                 expirationTtl: KV_TTL,
@@ -193,12 +221,16 @@ export const oauthRoutes = new Hono<Env>()
         if (!(await verifyPkceS256(body.code_verifier, stored.codeChallenge))) {
             return tokenError(c, "invalid_grant", "PKCE verification failed");
         }
+        if (stored.resource && body.resource !== stored.resource) {
+            return tokenError(c, "invalid_grant", "resource mismatch");
+        }
 
         return c.json({
             access_token: stored.key,
             token_type: "bearer",
             ...(stored.expiresIn != null && { expires_in: stored.expiresIn }),
             ...(stored.scope != null && { scope: stored.scope }),
+            ...(stored.resource != null && { resource: stored.resource }),
         });
     })
     .get(

@@ -3,6 +3,7 @@ import { drizzle } from "drizzle-orm/d1";
 import { HTTPException } from "hono/http-exception";
 import * as schema from "../db/better-auth.ts";
 import { sanitizeAuthorizeAccountPermissions } from "./authorize-config.ts";
+import { normalizeMcpResource } from "./mcp-resource.ts";
 import {
     isAllowedRedirectUrl,
     redirectUriMatchesAllowlist,
@@ -16,6 +17,7 @@ export type CallerMetadata = {
     redirectOrigin?: string;
     deviceUserCode?: string;
     requestedClientId?: string;
+    oauthResource?: string;
     description?: string;
     earningsEnabled?: boolean;
 };
@@ -142,6 +144,15 @@ function pickCallerMetadata(
         out.deviceUserCode = metadata.deviceUserCode;
     if (typeof metadata?.description === "string")
         out.description = metadata.description;
+    if (metadata?.oauthResource !== undefined) {
+        const resource = normalizeMcpResource(metadata.oauthResource);
+        if (!resource || isPublishable) {
+            throw new HTTPException(400, {
+                message: "Invalid OAuth resource",
+            });
+        }
+        out.oauthResource = resource;
+    }
     if (isPublishable) {
         out.earningsEnabled = metadata?.earningsEnabled === true;
     }

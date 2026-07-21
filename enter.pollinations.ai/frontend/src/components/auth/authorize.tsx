@@ -20,6 +20,7 @@ import {
     PKCE_S256_CHALLENGE_REGEX,
     sanitizeAuthorizeAccountPermissions,
 } from "@shared/auth/authorize-config.ts";
+import { MCP_TOOLS_SCOPE, normalizeMcpResource } from "@shared/auth/mcp-resource.ts";
 import { redirectUriMatchesAllowlistExact } from "@shared/auth/redirect-uri.ts";
 import { useNavigate, useSearch } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
@@ -76,6 +77,7 @@ export function Authorize() {
         models,
         budget,
         expiry,
+        resource,
         scope: urlScope,
     } = useSearch({ from: "/authorize" });
     const navigate = useNavigate();
@@ -268,6 +270,10 @@ export function Authorize() {
                     );
                     return;
                 }
+                if (resource && !normalizeMcpResource(resource)) {
+                    setError("Unsupported OAuth resource");
+                    return;
+                }
             }
 
             // Attribution is identified by client_id only. Without one, the
@@ -336,6 +342,7 @@ export function Authorize() {
         response_type,
         code_challenge,
         code_challenge_method,
+        resource,
         setAccountPermissions,
     ]);
 
@@ -365,6 +372,12 @@ export function Authorize() {
                 keyPermissions.permissions;
             const grantedAccountPermissions =
                 sanitizeAuthorizeAccountPermissions(accountPermissions) ?? [];
+            const mcpResource =
+                isCodeFlow && resource ? normalizeMcpResource(resource) : null;
+            const grantedScope = [
+                ...(mcpResource ? [MCP_TOOLS_SCOPE] : []),
+                ...grantedAccountPermissions,
+            ].join(" ");
             const { key, id, expiresIn } = await createKeyWithPermissions({
                 name: isDeviceMode
                     ? `Device ${user_code}`
@@ -382,6 +395,7 @@ export function Authorize() {
                             redirectOrigin: parsedRedirectUrl.origin,
                             redirectUri: parsedRedirectUrl.href,
                         }),
+                    ...(mcpResource && { oauthResource: mcpResource }),
                 },
                 permissions: {
                     allowedModels,
@@ -434,9 +448,8 @@ export function Authorize() {
                                 // distinct from undefined (nothing requested)
                                 // — RFC 6749 §5.1 needs the token response to
                                 // echo the former
-                                scope: requestedScopes.size
-                                    ? grantedAccountPermissions.join(" ")
-                                    : undefined,
+                                scope: grantedScope || undefined,
+                                ...(mcpResource && { resource: mcpResource }),
                                 codeChallenge: code_challenge,
                                 codeChallengeMethod: "S256",
                                 expiresIn,

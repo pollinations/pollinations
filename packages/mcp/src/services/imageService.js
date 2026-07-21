@@ -14,17 +14,17 @@ function mediaUrl({ prompt, output: _output, ...params }) {
     return buildUrl(`/image/${encodeURIComponent(prompt)}`, params);
 }
 
-async function fetchMedia(url, timeoutMs, expectedContentType) {
+async function fetchMedia(url, timeoutMs, expectedMediaType) {
     const response = await fetchWithAuth(url, { method: "GET", timeoutMs });
     if (!response.ok) {
         const errorText = await response.text().catch(() => "Unknown error");
         throw new Error(parseApiError(response.status, errorText));
     }
     const contentType = response.headers.get("content-type") || "";
-    if (!contentType.startsWith(expectedContentType)) {
+    if (!contentType.startsWith(`${expectedMediaType}/`)) {
         await response.body?.cancel();
         throw new Error(
-            `Expected ${expectedContentType} response, received ${contentType}`,
+            `Expected ${expectedMediaType} response, received ${contentType}`,
         );
     }
     return { response, contentType };
@@ -34,7 +34,7 @@ async function generateImage(params) {
     requireApiKey();
     const url = mediaUrl(params);
     const { output = "url" } = params;
-    const { response, contentType } = await fetchMedia(url, 300000, "image/");
+    const { response, contentType } = await fetchMedia(url, 300000, "image");
     if (output === "url") {
         await response.body?.cancel();
         return createMCPResponse([createTextContent(url)]);
@@ -49,7 +49,7 @@ async function generateVideo(params) {
     requireApiKey();
     const url = mediaUrl(params);
     const { output = "url" } = params;
-    const { response, contentType } = await fetchMedia(url, 600000, "video/");
+    const { response, contentType } = await fetchMedia(url, 600000, "video");
     if (output === "url") {
         await response.body?.cancel();
         return createMCPResponse([createTextContent(url)]);

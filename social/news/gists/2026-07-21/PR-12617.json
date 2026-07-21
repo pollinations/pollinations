@@ -1,0 +1,33 @@
+{
+  "pr_number": 12617,
+  "title": "chore: update app metrics 2026-07-21",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/12617",
+  "merged_at": "2026-07-21T05:07:22Z",
+  "labels": [],
+  "pr_body_excerpt": "Daily automated update of app metrics, health checks, and greenhouse",
+  "gist": {
+    "category": "community",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Garden census, complete",
+    "blurb": "The greenhouse clipboard got its daily shuffle. App metrics and health checks are freshly counted, because even digital gardens need someone to walk the rows.",
+    "summary": "Updated the daily app metrics, health-check records, and greenhouse listings in apps/APPS.md and apps/GREENHOUSE.md for 2026-07-21.",
+    "impact": "Community maintainers have a current snapshot of listed apps and their greenhouse health status.",
+    "keywords": [
+      "community",
+      "apps",
+      "metrics",
+      "health-checks",
+      "greenhouse"
+    ],
+    "visual_concept": "A cozy community garden census: Polly, wearing a tiny gardener visor and carrying a clipboard, checks labeled code-plants while the eager CRT monitor robot reads app-health indicators from a small terminal. Rows of healthy flowers and vines represent the refreshed app directory and greenhouse records.",
+    "image_prompt": "Cozy pixel art scene of Polly, the cute yellow-and-brown striped bee mascot with pink cheek blush and light blue wings, wearing a tiny gardener visor and checking a clipboard beside code-plants with neat health tags; a friendly CRT monitor robot reads a lime green (#ecf874) terminal while flowers bloom around a greenhouse. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, dark purple (#110518) details, small pixel-font sign reading \"DAILY CHECK\"."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-21/PR-12617.jpg",
+    "prompt": "Cozy pixel art scene of Polly, the cute yellow-and-brown striped bee mascot with pink cheek blush and light blue wings, wearing a tiny gardener visor and checking a clipboard beside code-plants with neat health tags; a friendly CRT monitor robot reads a lime green (#ecf874) terminal while flowers bloom around a greenhouse. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, dark purple (#110518) details, small pixel-font sign reading \"DAILY CHECK\"."
+  },
+  "generated_at": "2026-07-21T05:08:16.448680+00:00"
+}

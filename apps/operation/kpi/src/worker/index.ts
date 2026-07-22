@@ -498,7 +498,9 @@ app.get("/api/kpi/app-submissions", async (c) => {
         itemCount = data.length;
         for (const issue of data) {
             if (issue.pull_request) continue;
-            const week = getWeekStart(new Date(issue.created_at));
+            const createdAt = new Date(issue.created_at);
+            if (createdAt.getTime() < DATA_START_TIMESTAMP_MS) continue;
+            const week = getWeekStart(createdAt);
             weeklySubmissions[week] = (weeklySubmissions[week] || 0) + 1;
         }
         page++;

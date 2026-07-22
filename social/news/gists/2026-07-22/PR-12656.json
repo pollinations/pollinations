@@ -1,0 +1,34 @@
+{
+  "pr_number": 12656,
+  "title": "fix: cancel timed-out Replicate predictions",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/12656",
+  "merged_at": "2026-07-22T19:47:26Z",
+  "labels": [],
+  "pr_body_excerpt": "Replicate predictions could continue running—and consuming provider resources—after our local polling timeout returned a 504.\n\n- Sends `Cancel-After: 6m` when creating a prediction, covering the 60-second synchronous wait and five-minute polling budget.\n- Cancels a still-running prediction when the local polling budget is exhausted, using Replicate’s supplied cancellation URL or the standard fallback endpoint.\n- Bounds best-effort cancellation to five seconds and preserves the original 504 if cancellation fails or never settles; the create-time deadline remains the cleanup safety net.\n- Covers the deadline header, custom and fallback cancellation URLs, cancellation failures, and a never-settling cancellation request.\n\nTests:\n- `npx vitest run test/image/replicateClient.test.ts`\n- `npx vitest run test/image`\n- `npm run typecheck`\n- `npx biome check src/image/utils/replicateClient.ts test/image/replicateClient.test.ts`",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "No prediction left buzzing",
+    "blurb": "Timed-out Replicate jobs now get a polite but firm recall notice. Polli has started turning off the garden hose before wandering back inside.",
+    "summary": "Replicate image predictions now receive a `Cancel-After: 6m` deadline at creation and are actively cancelled after Pollinations' five-minute polling budget expires, with a five-second best-effort cleanup window.",
+    "impact": "When an image request reaches its 504 timeout, its still-running Replicate prediction is cleaned up through Replicate's supplied cancellation URL or the standard fallback endpoint, helping keep provider work tidy without delaying the original response.",
+    "keywords": [
+      "replicate",
+      "image-generation",
+      "timeouts",
+      "cancellation",
+      "reliability",
+      "api"
+    ],
+    "visual_concept": "Depict Polli as a careful garden keeper shutting off a runaway pixel-art watering hose connected to a glowing Replicate-style image-prediction machine. A small retro timer shows six minutes while a five-minute cleanup clock and a neat cancellation lever convey bounded, reliable timeout cleanup; include code-plants and a cozy garden-server setting.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow bee mascot with dark brown stripes, black oval eyes, bright pink rectangular cheek blushes, a happy smile, light blue translucent wings, and a tiny gardener tool belt, carefully turning off a glowing lime green (#ecf874) watering hose connected to a retro image-prediction terminal as a small pixel timer reads \"6M\"; code-plants, flowers, and vines grow around the tidy garden server room. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, with dark purple (#110518) outlines and subtle CRT glow."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-22/PR-12656.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow bee mascot with dark brown stripes, black oval eyes, bright pink rectangular cheek blushes, a happy smile, light blue translucent wings, and a tiny gardener tool belt, carefully turning off a glowing lime green (#ecf874) watering hose connected to a retro image-prediction terminal as a small pixel timer reads \"6M\"; code-plants, flowers, and vines grow around the tidy garden server room. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, with dark purple (#110518) outlines and subtle CRT glow."
+  },
+  "generated_at": "2026-07-22T19:50:44.389858+00:00"
+}

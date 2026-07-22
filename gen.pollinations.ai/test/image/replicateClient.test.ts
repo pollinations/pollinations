@@ -114,6 +114,10 @@ describe("runReplicatePrediction", () => {
             "input validation error (e.g. expired image URL)",
             "Input validation error: 403 Client Error: Forbidden for url: https://example.com/img.jpg",
         ],
+        [
+            "malformed image input",
+            "cannot identify image file '/tmp/tmpuv5xc__efile.jpg'",
+        ],
     ])("classifies %s as 400 (user input error)", async (_, errorMessage) => {
         vi.spyOn(globalThis, "fetch").mockResolvedValue(
             new Response(

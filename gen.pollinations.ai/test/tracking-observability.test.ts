@@ -106,6 +106,8 @@ function createCommunityEndpoint(
         modelId: "test-owner/test-model",
         name: "test-model",
         description: null,
+        modality: "text",
+        imagePricing: "request",
         baseUrl: "https://community.example.test/openai",
         upstreamModel: "upstream-test-model",
         bearerTokenCiphertext: "encrypted",

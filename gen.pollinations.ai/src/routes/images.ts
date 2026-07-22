@@ -203,6 +203,12 @@ export async function handleImageGeneration(c: Context<Env>) {
     const body = c.req.valid("json" as never) as CreateImageRequest &
         Record<string, unknown>;
     const model = c.var.model.resolved;
+    if (body.response_format === "url" && c.var.model.communityEndpoint) {
+        throw new UpstreamError(400 as ContentfulStatusCode, {
+            message:
+                'Community image models support response_format "b64_json" only',
+        });
+    }
     const resolved = resolveParams(body);
     const safePrompt = await applySafety(
         c,

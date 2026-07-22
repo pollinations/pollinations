@@ -1,0 +1,34 @@
+{
+  "pr_number": 12668,
+  "title": "fix: rank free models first by pollen value",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/12668",
+  "merged_at": "2026-07-22T23:39:38Z",
+  "labels": [],
+  "pr_body_excerpt": "- Marks catalog models with explicit zero pricing as free.\n- Shows free models as `∞ gen/pollen` and sorts them above finite values in descending order.\n- Keeps `—` for models that genuinely lack usage data.\n- Adds regression coverage for catalog detection, display, and ranking.\n\nRoot cause: the usage statistics query excludes zero-price requests, so free models had no average-cost row and were treated as missing.\n\nChecks:\n- `npx biome check --write ...`\n- `npx vitest run enter.pollinations.ai/test/model-calculations.test.ts`\n- `npm run typecheck --workspace pollinations-enter`",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Free models find the sunshine",
+    "blurb": "The model catalog now recognizes zero-priced models as properly free, rather than mistaking their lack of billing data for a mysterious blank spot. Infinite generations per Pollen: mathematically rude, visually clear.",
+    "summary": "Fixed the model catalog so explicitly zero-priced models display as “∞ gen/pollen” and rank above finite generation-per-Pollen values, while models with genuinely missing usage data still show “—”.",
+    "impact": "Users can now spot free models at the top of the catalog instead of seeing them treated as if their usage information were unavailable.",
+    "keywords": [
+      "model catalog",
+      "free models",
+      "pollen",
+      "pricing display",
+      "ranking",
+      "frontend"
+    ],
+    "visual_concept": "Depict the model catalog as a cozy garden leaderboard: Polli, wearing tiny librarian glasses, places a glowing lime-green “∞ gen/pollen” seed packet at the very top of a wooden ranking board. Below it are orderly finite-value seed packets, while a separate small “—” sign rests beside an unlabeled pot to represent genuinely missing data; code-plants and flowers make the sorting feel organic.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink cheek blush and light blue wings, wearing tiny librarian glasses as she places a glowing lime green (#ecf874) seed packet marked “∞ gen/pollen” at the top of a wooden garden ranking board; finite seed packets sit neatly below, and one empty flower pot has a small “—” label. Code-plants, pastel mint and lavender flowers, and a warm retro terminal create a friendly catalog garden. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-22/PR-12668.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink cheek blush and light blue wings, wearing tiny librarian glasses as she places a glowing lime green (#ecf874) seed packet marked “∞ gen/pollen” at the top of a wooden garden ranking board; finite seed packets sit neatly below, and one empty flower pot has a small “—” label. Code-plants, pastel mint and lavender flowers, and a warm retro terminal create a friendly catalog garden. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, nostalgic but beautiful."
+  },
+  "generated_at": "2026-07-22T23:40:35.056758+00:00"
+}

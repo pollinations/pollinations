@@ -16,7 +16,7 @@ SQL >
         uniq(user_id) AS users,
         sum(total_price) AS pollen,
         count() AS requests
-    FROM generation_event_v2
+    FROM generation_event
     WHERE
         {% if defined(start_date) %}
         start_time >= toDate({{ String(start_date) }})

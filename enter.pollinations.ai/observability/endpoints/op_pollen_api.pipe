@@ -1,6 +1,6 @@
 DESCRIPTION >
     op_pollen: product usage in Pollen with paid/quest splits, computed directly
-    from generation_event_v2. Reads the pre-aggregated op_pollen (cost/price/
+    from generation_event. Reads the pre-aggregated op_pollen (cost/price/
     requests and byop/model payouts, per month/provider/model) instead of
     scanning raw event history.
 

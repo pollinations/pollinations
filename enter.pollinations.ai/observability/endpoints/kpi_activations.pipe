@@ -2,7 +2,7 @@ DESCRIPTION >
     D7 activations: users who made their first API request within 7 days
     of registration, grouped by registration week. Reads first activity from
     user_first_activity_mv so dashboard requests do not scan raw
-    generation_event_v2.
+    generation_event.
 
 TOKEN tinybird_read READ
 

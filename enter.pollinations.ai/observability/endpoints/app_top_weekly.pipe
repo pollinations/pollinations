@@ -43,7 +43,7 @@ SQL >
         ra.app_name,
         ra.owner_user_id,
         ge.start_time
-    FROM generation_event_v2 ge
+    FROM generation_event ge
     INNER JOIN registered_apps ra
         ON ge.api_key_created_via = 'redirect-auth'
        AND ge.api_key_client_id = ra.app_key_id

@@ -55,7 +55,7 @@ SQL >
             ),
             NULL
         ) as tokens_per_second
-    FROM generation_event_v2
+    FROM generation_event
     WHERE start_time >= now() - interval {{Int32(minutes, 60)}} minute
     GROUP BY model, event_type
     ORDER BY total_requests DESC

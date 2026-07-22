@@ -19,7 +19,7 @@ SQL >
     SELECT
         coalesce(nullIf(la.app_name, ''), ge.api_key_name) AS hostname,
         count() AS requests
-    FROM generation_event_v2 ge
+    FROM generation_event ge
     LEFT JOIN latest_apps la
         ON ge.api_key_client_id = la.app_key_id
     WHERE ge.start_time > now() - INTERVAL 1 DAY

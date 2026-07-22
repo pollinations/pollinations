@@ -9,7 +9,7 @@ SQL >
     SELECT
         user_github_username as github_username,
         count() as requests
-    FROM generation_event_v2
+    FROM generation_event
     WHERE start_time > now() - INTERVAL 1 DAY
       AND user_github_username != 'undefined'
       AND user_github_username != ''

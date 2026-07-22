@@ -20,7 +20,7 @@ SQL >
         countIf(response_status >= 200 AND response_status < 300) as status_2xx,
         round(sumIf(total_price, selected_meter_slug = 'v1:meter:pack' AND response_status >= 200 AND response_status < 300), 4) as paid_revenue,
         round(sumIf(total_price, selected_meter_slug = 'v1:meter:tier' AND response_status >= 200 AND response_status < 300), 4) as tier_value
-    FROM generation_event_v2
+    FROM generation_event
     WHERE start_time >= now() - interval {{Int32(minutes, 60)}} minute
     GROUP BY model, event_type
     ORDER BY paid_revenue DESC

@@ -267,6 +267,13 @@
       "when": 1784745559578,
       "tag": "0037_salty_khan",
       "breakpoints": true
+    },
+    {
+      "idx": 38,
+      "version": "6",
+      "when": 1784758070305,
+      "tag": "0038_prompt_agent_columns",
+      "breakpoints": true
     }
   ]
 }

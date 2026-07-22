@@ -34,6 +34,17 @@ import {
     testCommunityEndpoint,
     testCommunityImageEndpoint,
 } from "../services/community-endpoint-openai.ts";
+import {
+    buildPromptAgentDeploy,
+    PromptAgentSchema,
+    parseStoredPromptAgent,
+} from "../services/prompt-agent.ts";
+import {
+    communityWorkerScriptName,
+    deleteCommunityWorker,
+    deployCommunityWorker,
+    requireWorkerDeployConfig,
+} from "../services/worker-deploy.ts";
 import { hasDirectAccountPermission } from "./account-permissions.ts";
 
 const ModalitySchema = z
@@ -91,24 +102,54 @@ const EndpointFieldsSchema = {
     bearerToken: z.string().min(1),
 } as const;
 
-const CreateEndpointSchema = z.object({
-    ...EndpointFieldsSchema,
-    modality: ModalitySchema.optional().default("text"),
-    imagePricing: ImagePricingSchema.optional().default("request"),
-    visibility: VisibilitySchema.optional().default("private"),
-    ...UpdatePriceFieldsSchema,
-});
-const UpdateEndpointSchema = z.object({
-    name: EndpointFieldsSchema.name.optional(),
-    description: EndpointFieldsSchema.description,
-    baseUrl: EndpointFieldsSchema.baseUrl.optional(),
-    upstreamModel: EndpointFieldsSchema.upstreamModel,
-    bearerToken: EndpointFieldsSchema.bearerToken.optional(),
-    visibility: VisibilitySchema.optional(),
-    imagePricing: ImagePricingSchema.optional(),
-    active: z.boolean().optional(),
-    ...UpdatePriceFieldsSchema,
-});
+const CreateEndpointSchema = z
+    .object({
+        ...EndpointFieldsSchema,
+        baseUrl: EndpointFieldsSchema.baseUrl.optional(),
+        promptAgent: PromptAgentSchema.optional(),
+        // A bearer token is only meaningful for self-hosted baseUrl endpoints;
+        // prompt-agent deploys mint and manage their own worker token.
+        bearerToken: EndpointFieldsSchema.bearerToken.optional(),
+        modality: ModalitySchema.optional().default("text"),
+        imagePricing: ImagePricingSchema.optional().default("request"),
+        visibility: VisibilitySchema.optional().default("private"),
+        ...UpdatePriceFieldsSchema,
+    })
+    .refine(
+        (input) =>
+            [input.baseUrl, input.promptAgent].filter(
+                (value) => value !== undefined,
+            ).length === 1,
+        { message: "Provide exactly one of baseUrl or promptAgent" },
+    )
+    .refine(
+        (input) => input.baseUrl === undefined || Boolean(input.bearerToken),
+        {
+            message: "bearerToken is required when registering with baseUrl",
+        },
+    )
+    .refine(
+        (input) => input.promptAgent === undefined || input.modality === "text",
+        { message: "Prompt agents must use text modality" },
+    );
+const UpdateEndpointSchema = z
+    .object({
+        name: EndpointFieldsSchema.name.optional(),
+        description: EndpointFieldsSchema.description,
+        baseUrl: EndpointFieldsSchema.baseUrl.optional(),
+        promptAgent: PromptAgentSchema.optional(),
+        upstreamModel: EndpointFieldsSchema.upstreamModel,
+        bearerToken: EndpointFieldsSchema.bearerToken.optional(),
+        visibility: VisibilitySchema.optional(),
+        imagePricing: ImagePricingSchema.optional(),
+        active: z.boolean().optional(),
+        ...UpdatePriceFieldsSchema,
+    })
+    .refine(
+        (input) =>
+            input.baseUrl === undefined || input.promptAgent === undefined,
+        { message: "Provide only one of baseUrl or promptAgent" },
+    );
 const ModelListSchema = z.object({
     baseUrl: z.string().url(),
     bearerToken: z.string().min(1),
@@ -130,6 +171,9 @@ const CommunityEndpointResponseSchema = z.object({
     modality: ModalitySchema,
     imagePricing: ImagePricingSchema,
     baseUrl: z.string(),
+    promptAgent: PromptAgentSchema.nullable().describe(
+        "No-code agent config when this endpoint is a prompt agent; null otherwise.",
+    ),
     upstreamModel: z.string(),
     visibility: VisibilitySchema,
     ...ResponsePriceFieldsSchema,
@@ -231,6 +275,10 @@ async function requireOwnerGithubUsername(
 
 function toResponse(row: CommunityEndpointRow, ownerGithubUsername: string) {
     const modality = normalizeCommunityEndpointModality(row.modality);
+    // A prompt agent stores its config (and the minted key id) in the
+    // prompt_agent column; surface only the nested config — never the raw
+    // blob or the internal key id.
+    const storedPromptAgent = parseStoredPromptAgent(row.promptAgent);
     return {
         id: row.id,
         modelId: communityModelId(ownerGithubUsername, row.name),
@@ -239,6 +287,7 @@ function toResponse(row: CommunityEndpointRow, ownerGithubUsername: string) {
         modality,
         imagePricing: normalizeCommunityEndpointImagePricing(row.imagePricing),
         baseUrl: row.baseUrl,
+        promptAgent: storedPromptAgent?.promptAgent ?? null,
         upstreamModel: row.upstreamModel,
         visibility: row.visibility,
         ...communityEndpointPrices(row),
@@ -418,40 +467,105 @@ export const communityEndpointsRoutes = new Hono<Env>()
                 user.id,
             );
             await ensureModelNameAvailable(db, user.id, input.name);
+            const modality = input.promptAgent ? "text" : input.modality;
             const imagePricing =
-                input.modality === "image" ? input.imagePricing : "request";
+                modality === "image" ? input.imagePricing : "request";
             const prices =
                 input.visibility === "public"
                     ? communityEndpointPricesForModality(
                           input,
-                          input.modality,
+                          modality,
                           imagePricing,
                       )
                     : communityEndpointPrices({});
             await enforcePublishingAccess(db, user.id, input.visibility);
             const id = crypto.randomUUID();
-            const [row] = await db
-                .insert(schema.communityEndpoint)
-                .values({
-                    id,
-                    ownerUserId: user.id,
-                    name: input.name,
-                    description: input.description || null,
-                    modality: input.modality,
-                    imagePricing,
-                    baseUrl: normalizeInputBaseUrl(input.baseUrl),
-                    upstreamModel: input.upstreamModel ?? input.name,
-                    bearerTokenCiphertext: await encryptSecret(
-                        normalizeInputBearerToken(input.bearerToken),
-                        c.env.BETTER_AUTH_SECRET,
-                    ),
-                    visibility: input.visibility,
-                    ...prices,
-                    createdAt: new Date(),
-                    updatedAt: new Date(),
-                })
-                .returning();
-            return c.json(toResponse(row, ownerGithubUsername));
+            // A prompt agent deploys the platform template to a managed worker:
+            // the stored bearer token IS the generated worker auth token that
+            // gen sends to the (public) workers.dev URL, so direct callers
+            // without it are rejected. The owner's config is injected as
+            // bindings alongside a freshly minted, scoped owner key.
+            const deployConfig =
+                input.promptAgent !== undefined
+                    ? requireWorkerDeployConfig(c.env)
+                    : null;
+            let promptAgentDeploy: Awaited<
+                ReturnType<typeof buildPromptAgentDeploy>
+            > | null = null;
+            let workerDeployed = false;
+            try {
+                promptAgentDeploy =
+                    deployConfig && input.promptAgent !== undefined
+                        ? await buildPromptAgentDeploy({
+                              authClient: c.var.auth.client,
+                              dbBinding: c.env.DB,
+                              userId: user.id,
+                              agentName: input.name,
+                              config: input.promptAgent,
+                              genBaseUrl:
+                                  (c.env as { GEN_BASE_URL?: string })
+                                      .GEN_BASE_URL ??
+                                  "https://gen.pollinations.ai",
+                          })
+                        : null;
+                const workerAuthToken = promptAgentDeploy
+                    ? crypto.randomUUID().replaceAll("-", "")
+                    : null;
+                const baseUrl =
+                    deployConfig && promptAgentDeploy && workerAuthToken
+                        ? await deployCommunityWorker(
+                              deployConfig,
+                              communityWorkerScriptName(id),
+                              promptAgentDeploy.source,
+                              workerAuthToken,
+                              promptAgentDeploy.extraBindings,
+                          )
+                        : normalizeInputBaseUrl(input.baseUrl ?? "");
+                workerDeployed = promptAgentDeploy !== null;
+                const bearerToken =
+                    workerAuthToken ??
+                    normalizeInputBearerToken(input.bearerToken ?? "");
+                const [row] = await db
+                    .insert(schema.communityEndpoint)
+                    .values({
+                        id,
+                        ownerUserId: user.id,
+                        name: input.name,
+                        description: input.description || null,
+                        modality,
+                        imagePricing,
+                        baseUrl,
+                        promptAgent:
+                            promptAgentDeploy?.storedPromptAgent ?? null,
+                        upstreamModel: input.upstreamModel ?? input.name,
+                        bearerTokenCiphertext: await encryptSecret(
+                            bearerToken,
+                            c.env.BETTER_AUTH_SECRET,
+                        ),
+                        visibility: input.visibility,
+                        ...prices,
+                        createdAt: new Date(),
+                        updatedAt: new Date(),
+                    })
+                    .returning();
+                return c.json(toResponse(row, ownerGithubUsername));
+            } catch (error) {
+                // The worker is live but the row failed — remove the orphan so
+                // there's no callable script without a backing endpoint, and
+                // revoke the prompt agent's minted key.
+                if (deployConfig && workerDeployed) {
+                    await deleteCommunityWorker(
+                        deployConfig,
+                        communityWorkerScriptName(id),
+                    );
+                }
+                if (promptAgentDeploy) {
+                    await db
+                        .delete(schema.apikey)
+                        .where(eq(schema.apikey.id, promptAgentDeploy.keyId));
+                }
+                throw error;
+            }
         },
     )
     .post(
@@ -591,6 +705,22 @@ export const communityEndpointsRoutes = new Hono<Env>()
             const modality = normalizeCommunityEndpointModality(
                 endpoint.modality,
             );
+            if (input.promptAgent !== undefined && modality !== "text") {
+                throw new HTTPException(400, {
+                    message: "Prompt agents must use text modality",
+                });
+            }
+            if (
+                input.promptAgent !== undefined ||
+                (endpoint.promptAgent !== null &&
+                    (input.baseUrl !== undefined ||
+                        input.bearerToken !== undefined))
+            ) {
+                throw new HTTPException(400, {
+                    message:
+                        "Prompt-agent configuration is immutable; recreate the model to change it",
+                });
+            }
             await ensureModelNameAvailable(
                 db,
                 user.id,
@@ -613,7 +743,12 @@ export const communityEndpointsRoutes = new Hono<Env>()
             if (input.upstreamModel !== undefined) {
                 update.upstreamModel = input.upstreamModel;
             }
-            if (input.bearerToken !== undefined) {
+            // A caller-supplied bearer token only applies to self-hosted
+            // endpoints; prompt-agent deploys manage their own token above.
+            if (
+                input.bearerToken !== undefined &&
+                endpoint.promptAgent === null
+            ) {
                 update.bearerTokenCiphertext = await encryptSecret(
                     normalizeInputBearerToken(input.bearerToken),
                     c.env.BETTER_AUTH_SECRET,
@@ -708,7 +843,23 @@ export const communityEndpointsRoutes = new Hono<Env>()
             const { id } = c.req.param();
             const db = drizzle(c.env.DB, { schema });
             requireCommunityEndpointManagePermission(c.var.auth.apiKey);
-            await requireOwnedEndpoint(db, id, user.id);
+            const endpoint = await requireOwnedEndpoint(db, id, user.id);
+            // Retire the deployed worker first; a failure here must not leave
+            // a callable script with no backing row, so it happens before the
+            // D1 delete. Then revoke the minted owner key injected into the
+            // worker so it can no longer spend once the agent is gone.
+            const storedPromptAgent = parseStoredPromptAgent(
+                endpoint.promptAgent,
+            );
+            if (storedPromptAgent) {
+                await deleteCommunityWorker(
+                    requireWorkerDeployConfig(c.env),
+                    communityWorkerScriptName(endpoint.id),
+                );
+                await db
+                    .delete(schema.apikey)
+                    .where(eq(schema.apikey.id, storedPromptAgent.keyId));
+            }
             await db
                 .delete(schema.communityEndpoint)
                 .where(

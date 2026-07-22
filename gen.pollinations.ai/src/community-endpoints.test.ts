@@ -105,9 +105,10 @@ async function createEnterFrontendApi(): Promise<Hono<Env>> {
 async function fetchEnterApi(
     app: Hono<Env>,
     request: Request,
+    envOverride: typeof env = env,
 ): Promise<Response> {
     const ctx = createExecutionContext();
-    return app.fetch(request, env, ctx);
+    return app.fetch(request, envOverride, ctx);
 }
 
 async function signedSessionCookie(token: string): Promise<string> {
@@ -2475,3 +2476,208 @@ fixtureTest("rejects a community model name containing a slash", async () => {
 
     expect(response.status).toBe(400);
 });
+
+fixtureTest(
+    "rejects community registration unless exactly one of baseUrl or promptAgent is provided",
+    async () => {
+        const ownerGithubUsername = `owner-${crypto.randomUUID().slice(0, 8)}`;
+        const ownerUserId = await createTestUser({
+            githubId: COMMUNITY_ENDPOINT_ALLOWED_TEST_GITHUB_ID,
+            githubUsername: ownerGithubUsername,
+        });
+        const sessionToken = `session-${crypto.randomUUID()}`;
+        await db.insert(sessionTable).values({
+            id: `session-${crypto.randomUUID()}`,
+            token: sessionToken,
+            userId: ownerUserId,
+            expiresAt: new Date(Date.now() + 60 * 60 * 1000),
+            createdAt: new Date(),
+            updatedAt: new Date(),
+        });
+
+        const enterApi = await createEnterCommunityApi();
+        const cookie = await signedSessionCookie(sessionToken);
+        const register = (body: Record<string, unknown>) =>
+            fetchEnterApi(
+                enterApi,
+                new Request("http://localhost:3000/api/community-endpoints", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Cookie: cookie,
+                    },
+                    body: JSON.stringify({
+                        name: `bee-${crypto.randomUUID().slice(0, 8)}`,
+                        bearerToken: "sk_saved_token",
+                        ...body,
+                    }),
+                }),
+            );
+
+        const both = await register({
+            baseUrl: "https://api.example.com/v1",
+            promptAgent: {
+                systemPrompt: "You are a tutor.",
+                baseModel: "openai-fast",
+            },
+        });
+        expect(both.status).toBe(400);
+
+        const neither = await register({});
+        expect(neither.status).toBe(400);
+    },
+);
+
+fixtureTest(
+    "deploys the prompt-agent template with config bindings and a minted owner key",
+    async () => {
+        const ownerGithubUsername = `owner-${crypto.randomUUID().slice(0, 8)}`;
+        const modelName = `bee-${crypto.randomUUID().slice(0, 8)}`;
+        const ownerUserId = await createTestUser({
+            githubId: COMMUNITY_ENDPOINT_ALLOWED_TEST_GITHUB_ID,
+            githubUsername: ownerGithubUsername,
+        });
+        const sessionToken = `session-${crypto.randomUUID()}`;
+        await db.insert(sessionTable).values({
+            id: `session-${crypto.randomUUID()}`,
+            token: sessionToken,
+            userId: ownerUserId,
+            expiresAt: new Date(Date.now() + 60 * 60 * 1000),
+            createdAt: new Date(),
+            updatedAt: new Date(),
+        });
+
+        const cfRequests: Request[] = [];
+        const fetchMock = vi.fn(async (input, init) => {
+            const request = new Request(input, init);
+            const url = new URL(request.url);
+            if (url.hostname !== "api.cloudflare.com") {
+                throw new Error(`Unexpected fetch: ${request.url}`);
+            }
+            cfRequests.push(request.clone() as Request);
+            if (
+                request.method === "GET" &&
+                url.pathname.endsWith("/workers/subdomain")
+            ) {
+                return Response.json({
+                    success: true,
+                    result: { subdomain: "staging-sub" },
+                });
+            }
+            return Response.json({ success: true, result: {} });
+        });
+        vi.stubGlobal("fetch", fetchMock);
+
+        const deployEnv = {
+            ...env,
+            CF_WORKER_DEPLOY_ACCOUNT_ID: "cf-account",
+            CF_WORKER_DEPLOY_API_TOKEN: "cf-deploy-token",
+        };
+        const enterApi = await createEnterCommunityApi();
+        const cookie = await signedSessionCookie(sessionToken);
+        const promptAgent = {
+            systemPrompt: "You are a terse SQL tutor.",
+            baseModel: "openai-fast",
+            tools: ["web_search"],
+            mcpServers: [{ name: "docs", url: "https://mcp.example.com/rpc" }],
+        };
+        // No baseUrl, no bearerToken — a prompt agent manages its own.
+        const createResponse = await fetchEnterApi(
+            enterApi,
+            new Request("http://localhost:3000/api/community-endpoints", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Cookie: cookie,
+                },
+                body: JSON.stringify({
+                    name: modelName,
+                    promptAgent,
+                    visibility: "public",
+                    promptTextPrice: 0.1,
+                    completionTextPrice: 0.1,
+                }),
+            }),
+            deployEnv,
+        );
+        expect(createResponse.status).toBe(200);
+        const created = (await createResponse.json()) as {
+            id: string;
+            baseUrl: string;
+            promptAgent: typeof promptAgent | null;
+        };
+        // The config is surfaced as a nested promptAgent object; the internal
+        // key id never leaks.
+        expect(created.promptAgent).toMatchObject({
+            systemPrompt: "You are a terse SQL tutor.",
+            baseModel: "openai-fast",
+            tools: ["web_search"],
+        });
+        expect(created.promptAgent).not.toHaveProperty("keyId");
+        expect(created).not.toHaveProperty("source");
+        expect(created.baseUrl).toBe(
+            `https://bee-${created.id}.staging-sub.workers.dev/v1`,
+        );
+
+        const scriptName = `bee-${created.id}`;
+        const putRequest = cfRequests.find(
+            (request) => request.method === "PUT",
+        );
+        if (!putRequest) throw new Error("No worker upload PUT captured");
+        const form = await putRequest.formData();
+        const metadata = JSON.parse(String(form.get("metadata")));
+        const bindingByName = Object.fromEntries(
+            (metadata.bindings ?? []).map((b: { name: string }) => [b.name, b]),
+        );
+        // The template config is injected as secret_text bindings alongside the
+        // auth token, and the minted owner key is present (never returned).
+        for (const name of [
+            "BEE_AUTH_TOKEN",
+            "SYSTEM_PROMPT",
+            "BASE_MODEL",
+            "TOOLS_JSON",
+            "MCP_JSON",
+            "POLLINATIONS_KEY",
+            "GEN_BASE_URL",
+        ]) {
+            expect(bindingByName[name]).toMatchObject({ type: "secret_text" });
+        }
+        expect(bindingByName.SYSTEM_PROMPT.text).toBe(
+            "You are a terse SQL tutor.",
+        );
+        expect(bindingByName.BASE_MODEL.text).toBe("openai-fast");
+        expect(JSON.parse(bindingByName.TOOLS_JSON.text)).toEqual([
+            "web_search",
+        ]);
+        expect(JSON.parse(bindingByName.MCP_JSON.text)).toEqual([
+            { name: "docs", url: "https://mcp.example.com/rpc" },
+        ]);
+        expect(bindingByName.POLLINATIONS_KEY.text).toMatch(/^sk_/);
+        // The deployed module is the platform template, not user source.
+        await expect((form.get("index.mjs") as File).text()).resolves.toContain(
+            "MAX_TOOL_ROUNDS",
+        );
+
+        // Delete retires the worker and the minted owner key.
+        cfRequests.length = 0;
+        const deleteResponse = await fetchEnterApi(
+            enterApi,
+            new Request(
+                `http://localhost:3000/api/community-endpoints/${created.id}`,
+                {
+                    method: "DELETE",
+                    headers: { Cookie: cookie },
+                },
+            ),
+            deployEnv,
+        );
+        expect(deleteResponse.status).toBe(200);
+        const deleteWorkerCall = cfRequests.find(
+            (request) => request.method === "DELETE",
+        );
+        if (!deleteWorkerCall) throw new Error("No worker DELETE captured");
+        expect(new URL(deleteWorkerCall.url).pathname).toBe(
+            `/client/v4/accounts/cf-account/workers/scripts/${scriptName}`,
+        );
+    },
+);

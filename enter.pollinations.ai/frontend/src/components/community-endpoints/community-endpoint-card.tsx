@@ -64,6 +64,11 @@ export function CommunityEndpointCard({
                             )}
                             {VISIBILITY_LABELS[endpoint.visibility]}
                         </Chip>
+                        {endpoint.promptAgent && (
+                            <Chip intent="news" size="sm">
+                                Agent
+                            </Chip>
+                        )}
                     </div>
                     {endpoint.description && (
                         <p className="mt-1 text-sm text-theme-text-muted">

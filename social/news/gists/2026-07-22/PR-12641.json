@@ -1,0 +1,34 @@
+{
+  "pr_number": 12641,
+  "title": "chore: archive legacy generation events",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/12641",
+  "merged_at": "2026-07-22T23:25:56Z",
+  "labels": [],
+  "pr_body_excerpt": "## What this changes\n\n- Removes append permission from `generation_event` while keeping historical read access.\n- Removes the temporary `generation_event` → `generation_event_v2` bridge.\n- Marks v2 as the principal datasource for ingestion and analytics.\n\nThe old table and all of its historical rows are retained; this PR does not delete or rename it.\n\n## Blocked until cutover verification\n\nDo not deploy or merge this PR until #12640 is live and production confirms:\n\n- v2 continues receiving direct gen Worker events.\n- `generation_event` row count and maximum timestamp have stopped changing.\n- v2 contains no missing user IDs or cache hits.\n\nThe Tinybird deployment will remove a materialization and therefore requires explicit destructive-operation approval, first in staging and then in production.\n\n## Checks\n\n- `git diff --check` passes.\n- No endpoint or materialization in the final stack reads `generation_event`.\n\nDepends on #12640 and #12572.\n",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "The old hive ledger rests",
+    "blurb": "The legacy generation-event ledger is now read-only, with its history safely kept on the shelf. New analytics pollen flows straight into v2 instead of taking the temporary bridge.",
+    "summary": "Archived the legacy `generation_event` datasource by removing append permission and the `generation_event` → `generation_event_v2` materialization, making `generation_event_v2` the primary ingestion and analytics source while retaining historical reads.",
+    "impact": "Generation events now have a single v2 path for ingestion and analytics, while existing `generation_event` rows remain available for historical queries.",
+    "keywords": [
+      "observability",
+      "tinybird",
+      "generation-events",
+      "analytics",
+      "datasources",
+      "migration"
+    ],
+    "visual_concept": "Depict a cozy archive migration: Polli the bee carefully places a labeled old event ledger onto a warm library shelf while a healthy v2 code-plant receives data directly from a glowing retro terminal. The old ledger remains visible and preserved, but a removed little bridge between two garden beds makes the new direct path clear.",
+    "image_prompt": "Cozy pixel art scene in a warm garden-library where Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and tiny archivist glasses, shelves a preserved book labeled \"EVENTS\" while a retro terminal directly waters a thriving \"V2\" code-plant; a small unused bridge rests nearby, with pixel flowers and vines around it. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, retro gaming vibes, dark purple (#110518) pixel-font labels, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-22/PR-12641.jpg",
+    "prompt": "Cozy pixel art scene in a warm garden-library where Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and tiny archivist glasses, shelves a preserved book labeled \"EVENTS\" while a retro terminal directly waters a thriving \"V2\" code-plant; a small unused bridge rests nearby, with pixel flowers and vines around it. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, retro gaming vibes, dark purple (#110518) pixel-font labels, nostalgic but beautiful."
+  },
+  "generated_at": "2026-07-22T23:26:59.330539+00:00"
+}

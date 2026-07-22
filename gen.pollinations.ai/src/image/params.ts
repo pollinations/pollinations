@@ -98,6 +98,10 @@ export const ImageParamsSchema = z
             ])
             .optional(),
         audio: sanitizedBoolean.catch(true), // generateAudio defaults to true
+        // Output resolution for resolution-priced video models (veo, wan-pro,
+        // p-video). Absent → the model's default (720p). Drives both the
+        // provider call and cost-variant selection.
+        resolution: z.enum(["720p", "1080p"]).optional().catch(undefined),
     })
     .superRefine((data, ctx) => {
         if (data.model === "gpt-image-2" && data.transparent) {

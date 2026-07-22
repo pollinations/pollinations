@@ -153,9 +153,10 @@ const WAN_26_CONFIG: WanVariantConfig = {
     },
 };
 
-// Wan 2.7 is offered at two locked resolutions as separate models (one price
-// each): wan-pro @720p ($0.10/s) and wan-pro-1080p @1080p ($0.15/s). The t2v/i2v
-// schemas are identical apart from the resolution value, so share a factory.
+// Wan 2.7 serves both resolutions from one model: 720p base ($0.10/s) and a
+// 1080p cost variant ($0.15/s, selected at billing time from the resolution
+// pricing input). The t2v/i2v schemas are identical apart from the
+// resolution value, so share a factory.
 function makeWan27Config(
     resolution: "720p" | "1080p",
     trackingName: string,
@@ -198,7 +199,7 @@ function makeWan27Config(
 }
 
 const WAN_27_CONFIG = makeWan27Config("720p", "wan-pro");
-const WAN_27_1080P_CONFIG = makeWan27Config("1080p", "wan-pro-1080p");
+const WAN_27_1080P_CONFIG = makeWan27Config("1080p", "wan-pro");
 
 async function generateWanVideo(
     config: WanVariantConfig,
@@ -300,18 +301,17 @@ export function callWanFastAPI(
     return generateWanVideo(WAN_FAST_CONFIG, prompt, safeParams);
 }
 
-/** Wan 2.7 via Replicate — T2V / I2V at 720p with native audio + keyframes. */
+/**
+ * Wan 2.7 via Replicate — T2V / I2V with native audio + keyframes. The
+ * request's `resolution` param picks 720p (default) or 1080p; 1080p bills
+ * via the "1080p" cost variant (single higher rate, matching the previous
+ * wan-pro-1080p model).
+ */
 export function callWanProAPI(
     prompt: string,
     safeParams: ImageParams,
 ): Promise<VideoGenerationResult> {
-    return generateWanVideo(WAN_27_CONFIG, prompt, safeParams);
-}
-
-/** Wan 2.7 via Replicate at locked 1080p (billed at the higher i2v rate). */
-export function callWanPro1080pAPI(
-    prompt: string,
-    safeParams: ImageParams,
-): Promise<VideoGenerationResult> {
-    return generateWanVideo(WAN_27_1080P_CONFIG, prompt, safeParams);
+    const config =
+        safeParams.resolution === "1080p" ? WAN_27_1080P_CONFIG : WAN_27_CONFIG;
+    return generateWanVideo(config, prompt, safeParams);
 }

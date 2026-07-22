@@ -382,6 +382,36 @@ async function generateVideoResult(
     return createAndReturnVideo(originalPrompt, safeParams, c.get("requestId"));
 }
 
+// Legacy resolution-suffixed model names (now aliases of their canonical
+// models) imply the locked resolution they shipped with, so existing callers
+// keep byte-identical behavior and pricing.
+const LEGACY_RESOLUTION_ALIASES: Record<string, "1080p"> = {
+    "veo-1080p": "1080p",
+    "veo-3.1-fast-1080p": "1080p",
+    "veo-1080": "1080p",
+    "wan-pro-1080p": "1080p",
+    "wan2.7-1080p": "1080p",
+    "wan-pro-1080": "1080p",
+    "p-video-1080p": "1080p",
+    "pruna-video-1080p": "1080p",
+};
+
+// Resolve the effective resolution (explicit param beats legacy alias) and
+// register it as pricing input so billing selects the matching cost variant.
+// This single call site covers every image/video model — handlers never pick
+// rates, they only consume safeParams.resolution.
+function applyResolutionPricing(
+    c: ImageContext,
+    safeParams: ImageParams,
+): void {
+    const legacyResolution =
+        LEGACY_RESOLUTION_ALIASES[c.var.model.requested ?? ""];
+    if (!safeParams.resolution && legacyResolution) {
+        safeParams.resolution = legacyResolution;
+    }
+    c.var.track.setPricingInput({ resolution: safeParams.resolution });
+}
+
 export async function generateImageOrVideoResponse(
     c: ImageContext,
     prompt: string,
@@ -390,6 +420,7 @@ export async function generateImageOrVideoResponse(
     syncImageEnvironment(c.env);
     const originalPrompt = decodePrompt(prompt || "random_prompt");
     const safeParams = parseImageParams(c, body);
+    applyResolutionPricing(c, safeParams);
 
     try {
         if (isVideoModel(safeParams.model)) {

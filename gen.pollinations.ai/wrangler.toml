@@ -34,9 +34,17 @@ bucket_name = "pollinations-text-enter"
 name = "POLLEN_RATE_LIMITER"
 class_name = "PollenRateLimiter"
 
+[[durable_objects.bindings]]
+name = "COMMUNITY_MODEL_LIMITER"
+class_name = "CommunityModelLimiter"
+
 [[migrations]]
 tag = "v1"
 new_classes = ["PollenRateLimiter"]
+
+[[migrations]]
+tag = "v2"
+new_sqlite_classes = ["CommunityModelLimiter"]
 
 [vars]
 ENVIRONMENT = "development"
@@ -109,9 +117,17 @@ simple = { limit = 10000, period = 10 }
 name = "POLLEN_RATE_LIMITER"
 class_name = "PollenRateLimiter"
 
+[[env.production.durable_objects.bindings]]
+name = "COMMUNITY_MODEL_LIMITER"
+class_name = "CommunityModelLimiter"
+
 [[env.production.migrations]]
 tag = "v1"
 new_classes = ["PollenRateLimiter"]
+
+[[env.production.migrations]]
+tag = "v2"
+new_sqlite_classes = ["CommunityModelLimiter"]
 
 [env.production.vars]
 ENVIRONMENT = "production"
@@ -169,9 +185,17 @@ simple = { limit = 10000, period = 10 }
 name = "POLLEN_RATE_LIMITER"
 class_name = "PollenRateLimiter"
 
+[[env.staging.durable_objects.bindings]]
+name = "COMMUNITY_MODEL_LIMITER"
+class_name = "CommunityModelLimiter"
+
 [[env.staging.migrations]]
 tag = "v1"
 new_classes = ["PollenRateLimiter"]
+
+[[env.staging.migrations]]
+tag = "v2"
+new_sqlite_classes = ["CommunityModelLimiter"]
 
 [env.staging.vars]
 ENVIRONMENT = "staging"
@@ -221,9 +245,17 @@ simple = { limit = 10000, period = 10 }
 name = "POLLEN_RATE_LIMITER"
 class_name = "PollenRateLimiter"
 
+[[env.test.durable_objects.bindings]]
+name = "COMMUNITY_MODEL_LIMITER"
+class_name = "CommunityModelLimiter"
+
 [[env.test.migrations]]
 tag = "v1"
 new_classes = ["PollenRateLimiter"]
+
+[[env.test.migrations]]
+tag = "v2"
+new_sqlite_classes = ["CommunityModelLimiter"]
 
 [env.test.vars]
 ENVIRONMENT = "test"

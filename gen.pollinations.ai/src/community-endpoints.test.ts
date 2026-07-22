@@ -449,6 +449,147 @@ fixtureTest(
 );
 
 fixtureTest(
+    "limits concurrent community model requests across keys for one account",
+    async () => {
+        const ownerGithubUsername = `owner-${crypto.randomUUID().slice(0, 8)}`;
+        const modelName = `limited-${crypto.randomUUID().slice(0, 8)}`;
+        const modelId = communityModelId(ownerGithubUsername, modelName);
+        const ownerUserId = await createTestUser({
+            githubId: COMMUNITY_ENDPOINT_ALLOWED_TEST_GITHUB_ID,
+            githubUsername: ownerGithubUsername,
+        });
+        await db.insert(communityEndpointTable).values({
+            id: `endpoint-${crypto.randomUUID()}`,
+            ownerUserId,
+            visibility: "public",
+            name: modelName,
+            description: "Concurrency-limited community endpoint",
+            baseUrl: "https://api.example.com/v1",
+            upstreamModel: "gpt-4.1-mini",
+            bearerTokenCiphertext: await encryptSecret(
+                "Bearer sk_saved_token",
+                env.BETTER_AUTH_SECRET,
+            ),
+            promptTextPrice: 0,
+            completionTextPrice: 0,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+        });
+
+        const callerUserId = await createTestUser({ tierBalance: 100 });
+        const [{ key: firstKey }, { key: secondKey }] = await Promise.all([
+            createTestApiKey({ userId: callerUserId, name: "first-key" }),
+            createTestApiKey({ userId: callerUserId, name: "second-key" }),
+        ]);
+
+        let upstreamRequests = 0;
+        const fetchMock = vi.fn(async (input, init) => {
+            const request = new Request(input, init);
+            if (isPortkeyChatCompletionsRequest(request)) {
+                upstreamRequests++;
+                if (upstreamRequests === 1) {
+                    let sent = false;
+                    return new Response(
+                        new ReadableStream<Uint8Array>({
+                            async pull(controller) {
+                                if (sent) return;
+                                sent = true;
+                                await new Promise((resolve) =>
+                                    setTimeout(resolve, 250),
+                                );
+                                const encoder = new TextEncoder();
+                                controller.enqueue(
+                                    encoder.encode(
+                                        `data: ${JSON.stringify({
+                                            id: "chatcmpl_stream",
+                                            object: "chat.completion.chunk",
+                                            choices: [
+                                                {
+                                                    index: 0,
+                                                    delta: { content: "ok" },
+                                                    finish_reason: "stop",
+                                                },
+                                            ],
+                                            usage: {
+                                                prompt_tokens: 2,
+                                                completion_tokens: 3,
+                                                total_tokens: 5,
+                                            },
+                                        })}\n\n`,
+                                    ),
+                                );
+                                controller.enqueue(
+                                    encoder.encode("data: [DONE]\n\n"),
+                                );
+                                controller.close();
+                            },
+                        }),
+                        {
+                            headers: { "Content-Type": "text/event-stream" },
+                        },
+                    );
+                }
+
+                return Response.json({
+                    id: "chatcmpl_after_release",
+                    object: "chat.completion",
+                    choices: [
+                        {
+                            index: 0,
+                            message: { role: "assistant", content: "ok" },
+                            finish_reason: "stop",
+                        },
+                    ],
+                    usage: {
+                        prompt_tokens: 2,
+                        completion_tokens: 3,
+                        total_tokens: 5,
+                    },
+                });
+            }
+            if (isBillingFetch(request)) return Response.json({ data: [] });
+            throw new Error(`Unexpected fetch: ${request.url}`);
+        });
+        vi.stubGlobal("fetch", fetchMock);
+
+        const request = (key: string, stream: boolean) =>
+            new Request("https://gen.pollinations.ai/v1/chat/completions", {
+                method: "POST",
+                headers: {
+                    Authorization: `Bearer ${key}`,
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    model: modelId,
+                    messages: [{ role: "user", content: "hello" }],
+                    stream,
+                }),
+            });
+
+        const firstResponse = await SELF.fetch(request(firstKey, true));
+        expect(firstResponse.status).toBe(200);
+        const firstBody = firstResponse.text();
+
+        const concurrentResponse = await SELF.fetch(request(secondKey, false));
+        expect(concurrentResponse.status).toBe(429);
+        expect(concurrentResponse.headers.get("Retry-After")).toBe("1");
+        await expect(concurrentResponse.json()).resolves.toMatchObject({
+            error: "concurrency_limit_exceeded",
+        });
+        expect(upstreamRequests).toBe(1);
+
+        await firstBody;
+
+        const afterReleaseResponse = await SELF.fetch(
+            request(secondKey, false),
+        );
+        expect(afterReleaseResponse.status).toBe(200);
+        await afterReleaseResponse.text();
+        expect(upstreamRequests).toBe(2);
+    },
+);
+
+fixtureTest(
     "a private model is owner-only and a zero-priced public model is free",
     async ({ apiKey }) => {
         const ownerGithubUsername = `owner-${crypto.randomUUID().slice(0, 8)}`;

@@ -9,6 +9,7 @@ import type { Env } from "@/env.ts";
 import { handleImagePrompt, handleRegisterServer } from "@/image/handler.ts";
 import { auth } from "@/middleware/auth.ts";
 import { balance } from "@/middleware/balance.ts";
+import { communityConcurrencyLimit } from "@/middleware/community-concurrency.ts";
 import {
     audioCache,
     imageCache,
@@ -143,6 +144,7 @@ const chatCompletionHandlers = factory.createHandlers(
     track("generate.text"),
     textCache,
     generationAccess,
+    communityConcurrencyLimit,
     async (c) => {
         // Use resolved model from middleware for the backend request
         const requestBody = await applySafetyToChatRequest(c, {
@@ -695,6 +697,7 @@ export const proxyRoutes = new Hono<Env>()
         track("generate.text"),
         textCache,
         generationAccess,
+        communityConcurrencyLimit,
         async (c) => {
             const requestBody = await applySafetyToChatRequest(c, {
                 ...(c.req.valid(
@@ -744,6 +747,7 @@ export const proxyRoutes = new Hono<Env>()
         track("generate.text"),
         textCache,
         generationAccess,
+        communityConcurrencyLimit,
         async (c) => {
             // Use resolved model from middleware
             const model = c.var.model.resolved;

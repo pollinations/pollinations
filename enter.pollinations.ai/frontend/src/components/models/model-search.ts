@@ -6,7 +6,8 @@ export const MODEL_CATEGORIES = [
     "audio",
     "realtime",
     "text",
-    "community",
+    "community-text",
+    "community-image",
     "embedding",
 ] as const;
 

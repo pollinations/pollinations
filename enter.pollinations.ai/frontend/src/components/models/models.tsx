@@ -13,13 +13,21 @@ import {
     TrendUpIcon,
 } from "@pollinations/ui";
 import { useNavigate, useSearch } from "@tanstack/react-router";
-import { type FC, useCallback, useEffect, useMemo, useState } from "react";
+import {
+    type FC,
+    useCallback,
+    useEffect,
+    useMemo,
+    useRef,
+    useState,
+} from "react";
 import { CommunityEndpoints } from "../community-endpoints";
 import {
     type ApiModelInfo,
     fetchModelCatalog,
     getModelPricesFromCatalog,
 } from "./model-catalog.ts";
+import { getModelDisplayCategory } from "./model-categories.ts";
 import { getModelDisplayName } from "./model-info.ts";
 import type { ModelSortDirection, ModelSortKey } from "./model-search.ts";
 import {
@@ -46,7 +54,8 @@ const SECTION_ORDER: SectionType[] = [
     "audio",
     "realtime",
     "text",
-    "community",
+    "community-text",
+    "community-image",
     "embedding",
 ];
 
@@ -58,7 +67,8 @@ const SEARCH_LABELS: Record<SectionType, string> = {
     audio: "audio",
     realtime: "realtime",
     text: "text",
-    community: "community",
+    "community-text": "community text",
+    "community-image": "community image",
     embedding: "embedding",
 };
 
@@ -72,25 +82,32 @@ const DEFAULT_SORT_DIRECTIONS: Record<ModelSortKey, ModelSortDirection> = {
 function matchesQuery(model: ModelPrice, query: string): boolean {
     if (!query) return true;
     const displayName = getModelDisplayName(model) ?? "";
-    const haystack =
-        `${model.name} ${displayName} ${model.description ?? ""} ${model.brand ?? ""}`.toLowerCase();
+    const haystack = `${displayName} ${model.brand ?? ""}`.toLowerCase();
     return haystack.includes(query);
 }
 
 function categorizeModels(
     models: ModelPrice[],
 ): Record<SectionType, ModelPrice[]> {
-    return {
+    const categorized: Record<SectionType, ModelPrice[]> = {
         all: models,
-        image: models.filter((m) => m.type === "image"),
-        video: models.filter((m) => m.type === "video"),
-        "3d": models.filter((m) => m.type === "3d"),
-        audio: models.filter((m) => m.type === "audio"),
-        realtime: models.filter((m) => m.type === "realtime"),
-        text: models.filter((m) => m.type === "text" && !m.community),
-        community: models.filter((m) => m.community),
-        embedding: models.filter((m) => m.type === "embedding"),
+        image: [],
+        video: [],
+        "3d": [],
+        audio: [],
+        realtime: [],
+        text: [],
+        "community-text": [],
+        "community-image": [],
+        embedding: [],
     };
+
+    for (const model of models) {
+        categorized[getModelDisplayCategory(model.type, model.community)].push(
+            model,
+        );
+    }
+    return categorized;
 }
 
 export const Models: FC<ModelsProps> = ({
@@ -100,7 +117,9 @@ export const Models: FC<ModelsProps> = ({
     const navigate = useNavigate({ from: "/models" });
     const modelSearch = useSearch({ from: "/_dashboard/models" });
     const activeTab = modelSearch.category ?? "all";
-    const search = modelSearch.q ?? "";
+    const urlSearch = modelSearch.q ?? "";
+    const [search, setSearch] = useState(urlSearch);
+    const lastPushedSearchRef = useRef(urlSearch);
     const sortKey = modelSearch.sort ?? "perPollen";
     const sortDir = modelSearch.dir ?? DEFAULT_SORT_DIRECTIONS[sortKey];
     const [catalogModels, setCatalogModels] = useState<ApiModelInfo[]>([]);
@@ -135,38 +154,44 @@ export const Models: FC<ModelsProps> = ({
         void loadModelCatalog();
     }, [loadModelCatalog]);
 
-    // Tab visibility follows the full catalog so a search query never hides
-    // or auto-switches away from a tab — only its contents are filtered.
-    const sectionModelsAll = useMemo(
-        () => categorizeModels(allModels),
-        [allModels],
-    );
     const sectionModels = useMemo(
         () => categorizeModels(filteredModels),
         [filteredModels],
     );
     const searchLabel = SEARCH_LABELS[activeTab];
-    const availableSections =
-        allModels.length > 0
-            ? SECTION_ORDER.filter(
-                  (section) => sectionModelsAll[section].length,
-              )
-            : SECTION_ORDER;
 
-    useEffect(() => {
-        if (!availableSections.includes(activeTab)) {
+    const pushSearch = useCallback(
+        (nextSearch: string) => {
+            if (nextSearch === lastPushedSearchRef.current) return;
+
+            lastPushedSearchRef.current = nextSearch;
             void navigate({
                 search: (previous) => ({
                     ...previous,
-                    category:
-                        availableSections[0] === "all"
-                            ? undefined
-                            : availableSections[0],
+                    q: nextSearch || undefined,
                 }),
                 replace: true,
             });
-        }
-    }, [activeTab, availableSections, navigate]);
+        },
+        [navigate],
+    );
+
+    useEffect(() => {
+        if (urlSearch === lastPushedSearchRef.current) return;
+
+        lastPushedSearchRef.current = urlSearch;
+        setSearch(urlSearch);
+    }, [urlSearch]);
+
+    useEffect(() => {
+        if (search === lastPushedSearchRef.current) return;
+
+        const timeout = window.setTimeout(() => {
+            pushSearch(search);
+        }, 200);
+
+        return () => window.clearTimeout(timeout);
+    }, [pushSearch, search]);
 
     const setActiveTab = (category: SectionType) => {
         void navigate({
@@ -174,16 +199,6 @@ export const Models: FC<ModelsProps> = ({
                 ...previous,
                 category: category === "all" ? undefined : category,
             }),
-        });
-    };
-
-    const setSearch = (q: string) => {
-        void navigate({
-            search: (previous) => ({
-                ...previous,
-                q: q || undefined,
-            }),
-            replace: true,
         });
     };
 
@@ -238,20 +253,22 @@ export const Models: FC<ModelsProps> = ({
             >
                 <div className="mb-4 flex flex-col items-start gap-3">
                     <div className="flex flex-wrap gap-1.5">
-                        {availableSections.map((section) => (
+                        {SECTION_ORDER.map((section) => (
                             <TabButton
                                 key={section}
                                 active={activeTab === section}
                                 onClick={() => setActiveTab(section)}
                                 ariaLabel={
-                                    section === "community"
-                                        ? "Community alpha models"
+                                    section === "community-text" ||
+                                    section === "community-image"
+                                        ? `${sectionLabels[section]} alpha models`
                                         : undefined
                                 }
                             >
                                 <span className="inline-flex items-center gap-1.5">
                                     {sectionLabels[section]}
-                                    {section === "community" && (
+                                    {(section === "community-text" ||
+                                        section === "community-image") && (
                                         <Chip intent="alpha" size="sm">
                                             Alpha
                                         </Chip>
@@ -266,6 +283,7 @@ export const Models: FC<ModelsProps> = ({
                             type="search"
                             value={search}
                             onChange={(e) => setSearch(e.target.value)}
+                            onBlur={() => pushSearch(search)}
                             placeholder={`Search ${searchLabel} models…`}
                             aria-label={`Search ${searchLabel} models`}
                             className="w-full pl-9"
@@ -292,7 +310,12 @@ export const Models: FC<ModelsProps> = ({
                             audioModels={sectionModels.audio}
                             realtimeModels={sectionModels.realtime}
                             textModels={sectionModels.text}
-                            communityModels={sectionModels.community}
+                            communityTextModels={
+                                sectionModels["community-text"]
+                            }
+                            communityImageModels={
+                                sectionModels["community-image"]
+                            }
                             embeddingModels={sectionModels.embedding}
                             activeTab={activeTab}
                             sortKey={sortKey}

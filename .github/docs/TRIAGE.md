@@ -6,28 +6,28 @@
 
 ## AI Agents
 
-- **repo-polly-assistant.yml** - AI assistant (Polly) via pollinations.ai, triggered by `polly` in issues/PRs. Whitelisted users only.
+- **repo-polli-assistant.yml** - AI assistant (Polli) via pollinations.ai, triggered by `polli` in issues/PRs. Whitelisted users only.
 
 ## Issue Automation Pipeline
 
-- **repo-triage-new-issues.yml** - Automated triage on every new issue. Calls Polly API to detect duplicates, already-resolved issues, and minor auto-fixable problems.
+- **repo-triage-new-issues.yml** - Automated triage on every new issue. Calls Polli API to detect duplicates, already-resolved issues, and minor auto-fixable problems.
 
 ### Flow
 
 ```mermaid
 %%{init: {'theme': 'dark'}}%%
 flowchart TD
-    A[Issue Opened] --> B{Bot or TIER?}
+    A[Issue Opened] --> B{Bot or app submission?}
     B -->|Yes| C[Skip]
-    B -->|No| D[Call Polly API]
+    B -->|No| D[Call Polli API]
     D -->|3 retries| E{Parse JSON verdict}
     E -->|Parse fail| C
     E -->|Success| F{Check action + confidence}
     F -->|duplicate >= 0.85| G[Comment + Close as not_planned]
     F -->|resolved >= 0.85| H[Comment + Close as completed]
-    F -->|auto_fix >= 0.70| I[Comment + Add polly label]
+    F -->|auto_fix >= 0.70| I[Comment + Add POLLI label]
     F -->|skip / below threshold| C
-    I --> J[repo-auto-fix-polly-issues.yml triggered]
+    I --> J[repo-auto-fix-polli-issues.yml triggered]
 ```
 
 ### Model Routing (Auto-Fix)
@@ -56,7 +56,7 @@ Routes issues and PRs to the appropriate project board using AI classification:
 **Features:**
 
 - **PRs always go to Dev**: Every pull request routes to Dev #20 regardless of author. Gets a single `DEV-*` label.
-- **TIER-\* bypass**: Items with `TIER-*` labels skip AI classification and route directly to Apps project
+- **App bypass**: `APP-SUBMISSION` issues skip AI classification and route directly to the Apps project
 - **NEWS skip**: Items with `NEWS` label are skipped entirely (label is used by the social pipeline, not project routing)
 - AI classification via `gen.pollinations.ai` with retry + random seed
 - Sets Priority field on Support items (see [Priority Rules](#priority-rules))
@@ -80,7 +80,7 @@ Priority is only set on Support items. The AI picks one of two values; `Urgent` 
 ```mermaid
 %%{init: {'theme': 'dark'}}%%
 flowchart TD
-    A[Issue/PR Opened] --> AA{Has TIER-* label?}
+    A[Issue/PR Opened] --> AA{Has APP-SUBMISSION?}
     AA -->|Yes| AB[Add to Apps #23]
     AB --> AC[Done - skip AI]
     AA -->|No| AN{Has NEWS label?}
@@ -121,14 +121,14 @@ flowchart TD
     D --> E[Always routed to Dev #20]
 ```
 
-### AI Assistant (Polly)
+### AI Assistant (Polli)
 
 ```mermaid
 %%{init: {'theme': 'dark'}}%%
 flowchart TD
-    A[User mentions 'polly' in issue/PR/comment] --> B{User whitelisted?}
+    A[User mentions 'polli' in issue/PR/comment] --> B{User whitelisted?}
     B -->|No| C[Posts unauthorized message]
-    B -->|Yes| D[repo-polly-assistant.yml]
+    B -->|Yes| D[repo-polli-assistant.yml]
     D --> E[Starts pollinations.ai router]
     E --> F[Claude Code Action responds]
     F --> G[AI assists with code/questions]
@@ -153,15 +153,14 @@ flowchart TD
 
 ### Apps Project Labels (App Submissions)
 
-Any `TIER-*` labeled issue routes to the Apps project (#23). The state machine:
+`APP-SUBMISSION` issues route to the Apps project (#23). AI pre-review provides evidence for a human decision; the issue body remains the publishing source.
 
-| Label                 | Purpose                           | Applied by                                         |
-| --------------------- | --------------------------------- | -------------------------------------------------- |
-| `TIER-APP`            | New app submission                | Issue template                                     |
-| `TIER-APP-INCOMPLETE` | Needs user action (info/register) | `apps-review-submissions.yml`                        |
-| `TIER-APP-REVIEW`     | Issue awaiting maintainer review  | `apps-review-submissions.yml` (stripped on approval) |
-| `TIER-APP-APPROVED`   | Maintainer approved, PR created   | Maintainer (manual)                                |
-| `TIER-APP-REJECTED`   | Submission rejected               | `apps-review-submissions.yml`                        |
+| Label              | Purpose                         | Applied by                       |
+| ------------------ | ------------------------------- | -------------------------------- |
+| `APP-SUBMISSION`   | Persistent app submission type  | Issue template                   |
+| `APP-NEEDS-INFO`   | Submitter action needed         | `apps-review-submissions.yml`    |
+| `APP-REVIEW`       | Ready for maintainer review     | `apps-review-submissions.yml`    |
+| `APP-APPROVED`     | Approved for catalog publishing | Maintainer                       |
 
 ### Dev Labels
 
@@ -201,9 +200,6 @@ Any `TIER-*` labeled issue routes to the Apps project (#23). The state machine:
 | `CREDITS` | Pollen balance and usage quota issues | `project-manager.py` |
 | `BILLING` | Payment/credit card   | `project-manager.py` |
 | `ACCOUNT` | Account/login/auth    | `project-manager.py` |
-| `TIER`    | Account-level Pollen wallet balance and usage-limit questions | `project-manager.py` |
-
-(`TIER` is unrelated to the `TIER-APP-*` family used for app submissions.)
 
 ### News Labels
 

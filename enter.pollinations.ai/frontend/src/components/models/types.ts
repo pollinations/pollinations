@@ -7,7 +7,10 @@ export type ModelCategory =
     | "embedding"
     | "realtime";
 
-export type ModelDisplayCategory = ModelCategory | "community";
+export type ModelDisplayCategory =
+    | ModelCategory
+    | "community-text"
+    | "community-image";
 
 export type ModelCapability =
     | "tool_calling"

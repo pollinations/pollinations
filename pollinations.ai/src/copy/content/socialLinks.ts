@@ -65,7 +65,7 @@ export const LINKS = {
     discordPollenBeta:
         "https://discord.com/channels/885844321461485618/1432378056126894343",
     githubSubmitApp:
-        "https://github.com/pollinations/pollinations/issues/new?template=tier-app-submission.yml",
+        "https://github.com/pollinations/pollinations/issues/new?template=app-submission.yml",
     byopDocs:
         "https://github.com/pollinations/pollinations/blob/main/BRING_YOUR_OWN_POLLEN.md",
     githubFork: "https://github.com/pollinations/pollinations/fork",

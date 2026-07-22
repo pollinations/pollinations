@@ -4,7 +4,7 @@ import {
     getCatalogDisplayName,
     getCatalogModelId,
 } from "./model-catalog.ts";
-import type { ModelDisplayCategory } from "./types.ts";
+import type { ModelCategory, ModelDisplayCategory } from "./types.ts";
 
 export type ModelCategoryLabel =
     | "Text"
@@ -14,7 +14,8 @@ export type ModelCategoryLabel =
     | "Audio"
     | "Realtime"
     | "Embedding"
-    | "Community";
+    | "Community Text"
+    | "Community Image";
 export type ModelCategoryModel = { id: string; label: string };
 export type ModelCategoryGroup = {
     category: ModelDisplayCategory;
@@ -38,7 +39,8 @@ const CATEGORY_ORDER: ModelDisplayCategory[] = [
     "audio",
     "realtime",
     "embedding",
-    "community",
+    "community-text",
+    "community-image",
 ];
 
 const CATEGORY_LABELS: Record<ModelDisplayCategory, ModelCategoryLabel> = {
@@ -49,7 +51,8 @@ const CATEGORY_LABELS: Record<ModelDisplayCategory, ModelCategoryLabel> = {
     audio: "Audio",
     realtime: "Realtime",
     embedding: "Embedding",
-    community: "Community",
+    "community-text": "Community Text",
+    "community-image": "Community Image",
 };
 
 const CATEGORY_MODALITIES: Record<
@@ -63,7 +66,8 @@ const CATEGORY_MODALITIES: Record<
     audio: "audio",
     realtime: "realtime",
     embedding: "embeddings",
-    community: "text",
+    "community-text": "text",
+    "community-image": "images",
 };
 
 const ALL_MODALITIES: ModelCategoryGroup["modality"][] = [
@@ -76,17 +80,28 @@ const ALL_MODALITIES: ModelCategoryGroup["modality"][] = [
     "embeddings",
 ];
 
+export function getModelDisplayCategory(
+    category: ModelCategory,
+    community = false,
+): ModelDisplayCategory {
+    if (community && (category === "text" || category === "image")) {
+        return `community-${category}`;
+    }
+    return category;
+}
+
 export function getModelCategoriesFromCatalog(
     models: ApiModelInfo[],
 ): ModelCategoryGroup[] {
     return CATEGORY_ORDER.map((category) => {
         const label = CATEGORY_LABELS[category];
         const categoryModels = models
-            .filter((model) =>
-                category === "community"
-                    ? model.community === true
-                    : getCatalogCategory(model) === category &&
-                      model.community !== true,
+            .filter(
+                (model) =>
+                    getModelDisplayCategory(
+                        getCatalogCategory(model),
+                        model.community,
+                    ) === category,
             )
             .map((model) => {
                 const id = getCatalogModelId(model);
@@ -111,15 +126,16 @@ export function computeCategoryModalities(
     allowedModels: string[] | null,
     categories: ModelCategoryGroup[] = [],
 ): ModelCategoryGroup["modality"][] {
-    if (allowedModels === null) {
-        return categories.length > 0
-            ? categories.map(({ modality }) => modality)
-            : ALL_MODALITIES;
+    if (categories.length === 0) {
+        return allowedModels === null ? ALL_MODALITIES : [];
     }
 
-    const selected = new Set(allowedModels);
+    const selected = allowedModels === null ? null : new Set(allowedModels);
     const modalities = categories
-        .filter(({ models }) => models.some(({ id }) => selected.has(id)))
+        .filter(
+            ({ models }) =>
+                selected === null || models.some(({ id }) => selected.has(id)),
+        )
         .map(({ modality }) => modality);
-    return modalities;
+    return [...new Set(modalities)];
 }

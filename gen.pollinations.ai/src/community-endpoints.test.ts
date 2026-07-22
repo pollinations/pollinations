@@ -1563,6 +1563,47 @@ fixtureTest(
             disabledReason: "was failing",
         });
 
+        const reactivateResponse = await fetchEnterApi(
+            enterApi,
+            new Request(
+                `http://localhost:3000/api/account/my-models/${createdId}/update`,
+                {
+                    method: "POST",
+                    headers: {
+                        Authorization: `Bearer ${key}`,
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({ active: true }),
+                },
+            ),
+        );
+        expect(reactivateResponse.status).toBe(200);
+        await expect(reactivateResponse.json()).resolves.toMatchObject({
+            disabled: false,
+            disabledReason: null,
+            disabledAt: null,
+        });
+
+        const deactivateResponse = await fetchEnterApi(
+            enterApi,
+            new Request(
+                `http://localhost:3000/api/account/my-models/${createdId}/update`,
+                {
+                    method: "POST",
+                    headers: {
+                        Authorization: `Bearer ${key}`,
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({ active: false }),
+                },
+            ),
+        );
+        expect(deactivateResponse.status).toBe(200);
+        await expect(deactivateResponse.json()).resolves.toMatchObject({
+            disabled: true,
+            disabledReason: "Deactivated by owner",
+        });
+
         // Minimum-price policy is independent of visibility: any non-negative
         // owner price is accepted by this API.
         const tinyPriceResponse = await fetchEnterApi(

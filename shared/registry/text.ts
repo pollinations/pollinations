@@ -1,3 +1,4 @@
+import { defineCostVariants, longContextAbove } from "./cost-variants";
 import {
     GEMINI_3_SEARCH_BILLING,
     GEMINI_25_GROUNDING_BILLING,
@@ -10,11 +11,7 @@ import {
     PERPLEXITY_REASONING_BILLING,
 } from "./perplexity-billing";
 import { perMillion } from "./price-helpers";
-import {
-    defineCostVariants,
-    longContextAbove,
-    type ModelDefinition,
-} from "./registry";
+import type { ModelDefinition } from "./registry";
 
 // Voices available for openai-audio model - exported for schema validation
 export const AUDIO_VOICES = [

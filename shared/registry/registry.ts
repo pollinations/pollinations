@@ -1,5 +1,18 @@
 import { roundPollenLedgerAmount } from "../billing/precision.ts";
 import { AUDIO_SERVICES, type AudioModelName } from "./audio";
+import type { CostVariantContext, PricingInput } from "./cost-variants";
+
+// Re-export so consumers can keep importing the variant API from the
+// registry entry point (the helpers live in cost-variants.ts to avoid a
+// module-evaluation cycle with the service maps).
+export {
+    type CostVariantContext,
+    defineCostVariants,
+    longContextAbove,
+    type PricingInput,
+    totalPromptTokens,
+} from "./cost-variants";
+
 import { EMBEDDING_SERVICES, type EmbeddingServiceId } from "./embeddings";
 import { IMAGE_SERVICES, type ImageModelName } from "./image";
 import { MODEL3D_SERVICES, type Model3dName } from "./model3d";
@@ -85,22 +98,6 @@ export type BillingRules = {
     adjustments?: BillingAdjustmentRule[];
 };
 
-// Normalized request facts that can affect pricing (resolution, input mode,
-// option toggles). Set once per request by the service layer via the track
-// middleware's pricing input, consumed only by selectCostVariant. Keep this
-// vocabulary small: a key earns its place when a live model prices on it.
-export type PricingInput = {
-    resolution?: string;
-    hasImage?: boolean;
-    audio?: boolean;
-    draft?: boolean;
-};
-
-export type CostVariantContext = {
-    usage: Usage;
-    input?: PricingInput;
-};
-
 // Per-rule billing breakdown, returned in parallel to the numeric usage maps.
 // The model's single priceMultiplier applies uniformly to tokens and
 // adjustments alike (there is no per-rule multiplier), so adjustment prices
@@ -164,6 +161,9 @@ export type ModelDefinition = {
     // audio (e.g. Stable Audio) from per-character TTS, which share cost fields.
     flatRate?: boolean;
     hidden?: boolean; // Hidden from /models endpoints and dashboard, but still usable via API
+    // Video-only: supported output resolutions; first entry is the default.
+    // Non-default resolutions usually pair with a cost variant of the same name.
+    resolutions?: string[];
     videoCapabilities?: VideoCapability[]; // Video-only: which frame controls the provider supports
     maxReferenceImages?: number; // Models with image input: effective accepted reference images
     maxReferenceVideos?: number; // Models with video input: effective accepted reference videos
@@ -211,49 +211,6 @@ function derivePrice(
             (v as number) * priceMultiplier,
         ]),
     ) as PriceDefinition;
-}
-
-// Prompt-side token count used by long-context selectors: every prompt token
-// bucket counts toward the provider's context threshold (cached and modality
-// tokens included); promptAudioSeconds is a duration, not a token count.
-const PROMPT_TOKEN_TYPES: UsageType[] = [
-    "promptTextTokens",
-    "promptCachedTokens",
-    "promptCacheWriteTokens",
-    "promptAudioTokens",
-    "promptImageTokens",
-    "promptVideoTokens",
-];
-
-export function totalPromptTokens(usage: Usage): number {
-    return PROMPT_TOKEN_TYPES.reduce(
-        (total, usageType) => total + (usage[usageType] ?? 0),
-        0,
-    );
-}
-
-// Selector factory for provider long-context tiers: strictly greater than the
-// threshold reprices the ENTIRE request (Vertex: "If a query input context is
-// longer than 200K tokens, all tokens (input and output) are charged at long
-// context rates"; Azure meters requests as <272k / >272k context length).
-export function longContextAbove(minPromptTokens: number) {
-    return ({ usage }: CostVariantContext): "long_context" | undefined =>
-        totalPromptTokens(usage) > minPromptTokens
-            ? "long_context"
-            : undefined;
-}
-
-// Pairs variant sheets with their selector so TypeScript checks that the
-// selector can only return names that exist in the sheets.
-export function defineCostVariants<
-    const V extends Record<string, CostDefinition>,
->(
-    costVariants: V,
-    selectCostVariant: (
-        context: CostVariantContext,
-    ) => (keyof V & string) | undefined,
-): Pick<ModelDefinition, "costVariants" | "selectCostVariant"> {
-    return { costVariants, selectCostVariant };
 }
 
 // Resolve the variant name for one request. Never throws: a throwing or

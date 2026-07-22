@@ -268,6 +268,29 @@ export const communityEndpointGroup = sqliteTable("community_endpoint_group", {
   index("idx_community_endpoint_group_admin_user_id").on(table.adminUserId),
 ]);
 
+// Pending invitations to join a community model group.
+export const communityEndpointInvitation = sqliteTable("community_endpoint_invitation", {
+  id: text("id").primaryKey(),
+  groupSlug: text("group_slug")
+    .notNull()
+    .references(() => communityEndpointGroup.slug, { onDelete: "cascade" }),
+  inviterUserId: text("inviter_user_id")
+    .notNull()
+    .references(() => user.id, { onDelete: "cascade" }),
+  inviteeUserId: text("invitee_user_id")
+    .notNull()
+    .references(() => user.id, { onDelete: "cascade" }),
+  status: text("status", { enum: ["pending", "accepted", "declined"] })
+    .default("pending")
+    .notNull(),
+  createdAt: integer("created_at", { mode: "timestamp" })
+    .defaultNow()
+    .notNull(),
+}, (table) => [
+  index("idx_community_endpoint_invitation_group_slug").on(table.groupSlug),
+  index("idx_community_endpoint_invitation_invitee_user_id").on(table.inviteeUserId),
+]);
+
 // Drizzle relations for query builder joins
 export const userRelations = relations(user, ({ many }) => ({
   apikeys: many(apikey),
@@ -332,6 +355,22 @@ export const communityEndpointGroupRelations = relations(communityEndpointGroup,
     references: [user.id],
   }),
   members: many(communityEndpoint),
+  invitations: many(communityEndpointInvitation),
+}));
+
+export const communityEndpointInvitationRelations = relations(communityEndpointInvitation, ({ one }) => ({
+  group: one(communityEndpointGroup, {
+    fields: [communityEndpointInvitation.groupSlug],
+    references: [communityEndpointGroup.slug],
+  }),
+  inviter: one(user, {
+    fields: [communityEndpointInvitation.inviterUserId],
+    references: [user.id],
+  }),
+  invitee: one(user, {
+    fields: [communityEndpointInvitation.inviteeUserId],
+    references: [user.id],
+  }),
 }));
 
 // Device Authorization Grant (RFC 8628) table

@@ -617,6 +617,7 @@ If `-a "$USER"` doesn't match, try without `-a` (`security find-generic-password
 
 Format: `<what it does or what makes it distinct>`. ≤ ~70 chars when possible.
 
+- Write user-facing catalog copy for developers: make the model's practical use clear without exposing internal routing or implementation details.
 - Say what the model **does** or what makes it **different** ("Fast & affordable image generation", "Long-context MoE for retrieval"). Capability over branding.
 - **Do not repeat the model name/title** in the description. The model manager renders the display name separately, so descriptions like "Seedream 5.0 Pro - Premium image generation" are redundant.
 - **No provider/inference attribution** in the description — no "(OpenRouter)", "via DashScope", "OpenAI's", etc. `provider` and `brand` fields carry that.

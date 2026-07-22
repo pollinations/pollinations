@@ -1,0 +1,25 @@
+DESCRIPTION >
+    Product usage in Pollen per month, provider, and model: cost/price/request
+    totals (paid vs. quests) and byop/model payout totals. Maintained by
+    op_pollen_populate directly from generation_event, so op_pollen_api never
+    scans raw event history (generation_event is 500M+ rows in prod).
+
+TOKEN "tinybird_read" READ
+
+SCHEMA >
+    `month` LowCardinality(String),
+    `provider` LowCardinality(String),
+    `model` LowCardinality(String),
+    `cost_paid` AggregateFunction(sum, Float64),
+    `cost_quests` AggregateFunction(sum, Float64),
+    `price_paid` AggregateFunction(sum, Float64),
+    `price_quests` AggregateFunction(sum, Float64),
+    `requests_paid` AggregateFunction(sum, UInt64),
+    `requests_quests` AggregateFunction(sum, UInt64),
+    `byop_paid` AggregateFunction(sum, Float64),
+    `byop_quests` AggregateFunction(sum, Float64),
+    `model_paid` AggregateFunction(sum, Float64),
+    `model_quests` AggregateFunction(sum, Float64)
+
+ENGINE AggregatingMergeTree
+ENGINE_SORTING_KEY month, provider, model

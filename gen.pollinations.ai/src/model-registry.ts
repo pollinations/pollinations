@@ -33,7 +33,7 @@ export type GenerationModelEntry = {
     aliases: string[];
     eventType: EventType;
     supportedEndpoints: string[];
-    definition: ModelDefinition<string>;
+    definition: ModelDefinition;
     info: ModelInfo;
     communityEndpoint?: CommunityEndpointRuntime;
     visible: boolean;

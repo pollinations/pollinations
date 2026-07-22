@@ -8,6 +8,10 @@ import {
 
 export const LEGACY_COMMUNITY_MODEL_PREFIX = "community/";
 export const COMMUNITY_MODEL_REWARD_RATE = 0.75;
+// Zero is free; positive owner-declared prices start at this floor.
+export const MIN_COMMUNITY_PRICE_PER_MILLION_TOKENS = 0.000001;
+export const MIN_COMMUNITY_PRICE_PER_TOKEN =
+    MIN_COMMUNITY_PRICE_PER_MILLION_TOKENS / 1_000_000;
 const BEARER_PREFIX = /^Bearer(?:\s+|$)/i;
 
 const COMMUNITY_PRICE_FIELD_BY_USAGE_TYPE = {
@@ -73,9 +77,6 @@ export const COMMUNITY_ENDPOINT_VISIBILITIES = ["private", "public"] as const;
 
 export type CommunityEndpointVisibility =
     (typeof COMMUNITY_ENDPOINT_VISIBILITIES)[number];
-
-export const DEFAULT_COMMUNITY_ENDPOINT_VISIBILITY: CommunityEndpointVisibility =
-    "private";
 
 export type CommunityEndpointRuntime = {
     id: string;
@@ -179,7 +180,10 @@ export function communityPriceDefinition(
     const pricing: PriceDefinition = {};
     for (const field of COMMUNITY_ENDPOINT_PRICE_FIELDS) {
         const price = endpoint[field.key];
-        if (Number.isFinite(price) && price > 0) {
+        // Zero is an intentional rate here (private models, unpriced usage
+        // buckets), not a missing one: keep it explicit so billing charges 0
+        // instead of warning about a missing conversion rate on every call.
+        if (Number.isFinite(price) && price >= 0) {
             pricing[field.usageType] = price;
         }
     }
@@ -188,7 +192,7 @@ export function communityPriceDefinition(
 
 export function communityModelDefinition(
     endpoint: CommunityModelDefinitionInput,
-): ModelDefinition<string> {
+): ModelDefinition {
     const parsed = parseCommunityModelId(endpoint.modelId);
     const description = endpoint.description?.trim();
     const legacyAlias = parsed
@@ -198,7 +202,6 @@ export function communityModelDefinition(
         legacyAlias && legacyAlias !== endpoint.modelId ? [legacyAlias] : [];
     return {
         aliases,
-        modelId: endpoint.modelId,
         provider: "community",
         brand: "Community",
         category: "text",

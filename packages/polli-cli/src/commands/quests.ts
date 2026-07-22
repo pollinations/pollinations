@@ -136,7 +136,7 @@ export const questsCommand = new Command("quests")
                         0,
                     );
                     printInfo(
-                        `${claimable.length} reward(s) ready to claim (${total} pollen) — claim them at ${ENTER_URL}/#quests`,
+                        `${claimable.length} reward(s) ready to claim (${total} pollen) — claim them at ${ENTER_URL}/quests`,
                     );
                 }
             }

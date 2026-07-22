@@ -76,6 +76,11 @@ custom_domain = true
 binding = "ENTER"
 service = "pollinations-enter-production"
 
+[[env.production.vpc_networks]]
+binding = "KLEIN_VPC"
+tunnel_id = "c340d8d9-c1f3-4a13-8115-38b59faac3d5"
+remote = true
+
 [[env.production.d1_databases]]
 remote = true
 binding = "DB"
@@ -228,13 +233,17 @@ BETTER_AUTH_SECRET = "not-a-secret-workers-test-only"
 TINYBIRD_INGEST_TOKEN = "not-a-secret-workers-test-only"
 TINYBIRD_INGEST_URL = "http://localhost:7181/v0/events?name=generation_event"
 PORTKEY_GATEWAY_URL = "https://portkey.test"
+AI_GATEWAY_API_KEY = "not-a-secret-workers-test-only"
 AWS_ACCESS_KEY_ID = "not-a-secret-workers-test-only"
 AWS_SECRET_ACCESS_KEY = "not-a-secret-workers-test-only"
 AWS_REGION = "us-east-1"
 AZURE_MYCELI_PROD_API_KEY = "not-a-secret-workers-test-only"
 AZURE_MYCELI_PROD_EASTUS2_API_KEY = "not-a-secret-workers-test-only"
 AZURE_MYCELI_PROD_IMG_WESTUS3_API_KEY = "not-a-secret-workers-test-only"
+AZURE_MYCELI_PROD_POLANDCENTRAL_API_KEY = "not-a-secret-workers-test-only"
 AZURE_MYCELI_PROD_SWEDEN_API_KEY = "not-a-secret-workers-test-only"
+AZURE_MYCELI_PROD_UAENORTH_API_KEY = "not-a-secret-workers-test-only"
+AZURE_MYCELI_PROD_WESTUS3_API_KEY = "not-a-secret-workers-test-only"
 AZURE_CONTENT_SAFETY_API_KEY = "not-a-secret-workers-test-only"
 AZURE_CONTENT_SAFETY_ENDPOINT = "https://content-safety.test"
 FIREWORKS_API_KEY = "not-a-secret-workers-test-only"
@@ -247,7 +256,6 @@ GOOGLE_PRIVATE_KEY = "not-a-secret-workers-test-only"
 GOOGLE_PRIVATE_KEY_ID = "not-a-secret-workers-test-only"
 GOOGLE_PROJECT_ID = "test-project"
 KLEIN_URL = "https://klein.test"
-LTX2_BASE_URL = "https://ltx2.test"
 NOVA_REEL_S3_BUCKET = "test-bucket"
 OPENAI_API_KEY = "not-a-secret-workers-test-only"
 PERPLEXITY_API_KEY = "not-a-secret-workers-test-only"

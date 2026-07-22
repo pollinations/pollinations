@@ -90,7 +90,7 @@ BYOP lets your users connect their Pollinations account to your app and spend th
 1. You spend Pollen from your wallet, not the developer's.
 2. Apps may add a 25% share — shown at sign-in.
 3. Quest Pollen pays first; Paid Pollen covers it if Quest Pollen can't.
-4. Revoke or cap any app at [enter.pollinations.ai](https://enter.pollinations.ai).
+4. Revoke or cap any app at [enter.pollinations.ai](https://enter.pollinations.ai/keys).
 
 📖 **[Full BYOP guide →](https://github.com/pollinations/pollinations/blob/main/BRING_YOUR_OWN_POLLEN.md)**
 

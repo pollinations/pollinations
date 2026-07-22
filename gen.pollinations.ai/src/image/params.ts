@@ -99,6 +99,16 @@ export const ImageParamsSchema = z
             .optional(),
         audio: sanitizedBoolean.catch(true), // generateAudio defaults to true
     })
+    .superRefine((data, ctx) => {
+        if (data.model === "gpt-image-2" && data.transparent) {
+            ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                path: ["transparent"],
+                message:
+                    "Transparent backgrounds are not supported by gpt-image-2.",
+            });
+        }
+    })
     .transform((data) => {
         // Capture whether the caller actually specified dimensions BEFORE we
         // fill in model defaults. Models like seedream-4 can route to a

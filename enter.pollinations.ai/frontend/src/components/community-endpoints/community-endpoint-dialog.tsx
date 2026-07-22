@@ -1,6 +1,8 @@
 import {
     Alert,
     Button,
+    ButtonGroup,
+    CheckIcon,
     ChevronIcon,
     Dialog,
     DialogTitle,
@@ -10,22 +12,19 @@ import {
     IconButton,
     Input,
     ScrollArea,
+    TabButton,
     Textarea,
     XIcon,
 } from "@pollinations/ui";
-import {
-    COMMUNITY_ENDPOINT_PRICE_FIELDS,
-    type CommunityEndpointVisibility,
-} from "@shared/community-endpoints.ts";
+import type { CommunityEndpointVisibility } from "@shared/community-endpoints.ts";
 import type { FormEvent, ReactNode } from "react";
 import { useEffect, useState } from "react";
 import { apiClient } from "../../api.ts";
 import {
+    BASE_TEXT_PRICE_KEYS,
     formWithVisiblePrices,
-    hasPositivePriceInput,
     hasValidVisibleFormPrices,
     PriceGroups,
-    REQUIRED_SHARED_PRICE_KEYS,
     returnedPriceFields,
     savedEndpointPriceKeys,
     visiblePriceFieldKeys,
@@ -330,12 +329,12 @@ export function CommunityEndpointDialog({
     const isPromptAgent = form.mode === "prompt-agent";
     const returnedFields =
         isShared && !isPromptAgent ? returnedPriceFields(testState) : [];
-    // Reveal the base text fields (always billed, and required to publish), plus
-    // whatever the test observed or the model already had saved.
+    // Reveal the optional base text prices plus whatever the test observed or
+    // the model already had saved. Blank and zero prices mean free.
     const visiblePriceKeys = new Set(
         isShared
             ? visiblePriceFieldKeys(savedPriceKeys, returnedFields, [
-                  ...REQUIRED_SHARED_PRICE_KEYS,
+                  ...BASE_TEXT_PRICE_KEYS,
               ])
             : [],
     );
@@ -343,17 +342,6 @@ export function CommunityEndpointDialog({
         form,
         visiblePriceKeys,
     );
-    // A public model must price the always-billed base text fields (public
-    // callers are never billed zero) plus every bucket a test observed.
-    const hasRequiredSharedPrices =
-        !isShared ||
-        [...REQUIRED_SHARED_PRICE_KEYS, ...returnedFields.map((f) => f.key)]
-            .map((key) =>
-                COMMUNITY_ENDPOINT_PRICE_FIELDS.find((f) => f.key === key),
-            )
-            .every(
-                (field) => field != null && hasPositivePriceInput(form, field),
-            );
     // First-time publishing of an external endpoint re-observes its billed
     // buckets, so it needs a successful test. A model already saved as public
     // has server-validated pricing, so re-editing it (e.g. a price or
@@ -390,7 +378,6 @@ export function CommunityEndpointDialog({
         form.name.trim() !== "" &&
         modeRequirementsMet &&
         hasValidVisiblePrices &&
-        hasRequiredSharedPrices &&
         saveRequirementMet;
 
     return (
@@ -506,28 +493,38 @@ export function CommunityEndpointDialog({
                         label="Visibility"
                         helper={
                             isShared
-                                ? "Public: listed in /models and callable by anyone. Test the endpoint and set your per-1M-token pricing below."
+                                ? "Public: listed in /models and callable by anyone. Set optional per-1M-token prices below, or leave them at 0 for free."
                                 : canPublish
                                   ? "Private: callable only by you and shown only in model lists authenticated with your API key."
                                   : "Private: callable only by you. Publishing publicly requires approval."
                         }
                         alignLabelRow
                     >
-                        <div className="flex gap-2">
-                            <ToggleButton
+                        <ButtonGroup aria-label="Model visibility">
+                            <TabButton
                                 active={form.visibility === "private"}
                                 onClick={() => updateVisibility("private")}
+                                size="sm"
+                                className="min-w-24 gap-1.5"
                             >
+                                {form.visibility === "private" && (
+                                    <CheckIcon className="h-3.5 w-3.5" />
+                                )}
                                 Private
-                            </ToggleButton>
-                            <ToggleButton
+                            </TabButton>
+                            <TabButton
                                 active={form.visibility === "public"}
                                 disabled={!canPublish}
                                 onClick={() => updateVisibility("public")}
+                                size="sm"
+                                className="min-w-24 gap-1.5"
                             >
+                                {form.visibility === "public" && (
+                                    <CheckIcon className="h-3.5 w-3.5" />
+                                )}
                                 Public
-                            </ToggleButton>
-                        </div>
+                            </TabButton>
+                        </ButtonGroup>
                     </FieldStack>
 
                     {isPromptAgent ? (
@@ -567,31 +564,39 @@ export function CommunityEndpointDialog({
                                 </FieldStack>
                                 <FieldStack
                                     label="Provider model ID"
-                                    helper={providerModelHelper(
-                                        modelOptions,
-                                        modelListState,
-                                    )}
+                                    helper={
+                                        canPublish
+                                            ? providerModelHelper(
+                                                  modelOptions,
+                                                  modelListState,
+                                              )
+                                            : "Enter the upstream model ID manually."
+                                    }
                                     alignLabelRow
                                     action={
-                                        <Button
-                                            type="button"
-                                            size="sm"
-                                            intent="info"
-                                            className="shrink-0 text-sm"
-                                            disabled={
-                                                !hasToken ||
-                                                form.baseUrl.trim() === "" ||
-                                                modelListState.status ===
-                                                    "loading"
-                                            }
-                                            onClick={() =>
-                                                void handleFetchModels()
-                                            }
-                                        >
-                                            {modelListState.status === "loading"
-                                                ? "Fetching…"
-                                                : "Fetch models"}
-                                        </Button>
+                                        canPublish ? (
+                                            <Button
+                                                type="button"
+                                                size="sm"
+                                                intent="info"
+                                                className="shrink-0 text-sm"
+                                                disabled={
+                                                    !hasToken ||
+                                                    form.baseUrl.trim() ===
+                                                        "" ||
+                                                    modelListState.status ===
+                                                        "loading"
+                                                }
+                                                onClick={() =>
+                                                    void handleFetchModels()
+                                                }
+                                            >
+                                                {modelListState.status ===
+                                                "loading"
+                                                    ? "Fetching…"
+                                                    : "Fetch models"}
+                                            </Button>
+                                        ) : undefined
                                     }
                                 >
                                     {modelOptions.length > 0 ? (
@@ -733,28 +738,30 @@ export function CommunityEndpointDialog({
                                 />
                             </FieldStack>
 
-                            <div className="flex flex-wrap items-center gap-3">
-                                <Button
-                                    type="button"
-                                    intent="info"
-                                    onClick={() => void handleTest()}
-                                    disabled={
-                                        !hasToken ||
-                                        form.baseUrl.trim() === "" ||
-                                        testState.status === "loading"
-                                    }
-                                >
-                                    {testState.status === "loading"
-                                        ? "Testing…"
-                                        : "Test endpoint"}
-                                </Button>
-                                {testState.status === "error" &&
-                                    testState.message && (
-                                        <p className="text-sm text-intent-danger-text">
-                                            {testState.message}
-                                        </p>
-                                    )}
-                            </div>
+                            {canPublish && (
+                                <div className="flex flex-wrap items-center gap-3">
+                                    <Button
+                                        type="button"
+                                        intent="info"
+                                        onClick={() => void handleTest()}
+                                        disabled={
+                                            !hasToken ||
+                                            form.baseUrl.trim() === "" ||
+                                            testState.status === "loading"
+                                        }
+                                    >
+                                        {testState.status === "loading"
+                                            ? "Testing…"
+                                            : "Test endpoint"}
+                                    </Button>
+                                    {testState.status === "error" &&
+                                        testState.message && (
+                                            <p className="text-sm text-intent-danger-text">
+                                                {testState.message}
+                                            </p>
+                                        )}
+                                </div>
+                            )}
                         </>
                     )}
 

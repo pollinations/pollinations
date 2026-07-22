@@ -22,7 +22,8 @@ import {
     formatUsdCentsCompact,
     POLLEN_PACKS,
 } from "@shared/pollen-packs.ts";
-import { type FC, type ReactNode, useState } from "react";
+import { Link } from "@tanstack/react-router";
+import type { FC, ReactNode } from "react";
 import { AutoTopUpPanel, type BillingState } from "./auto-top-up-panel.tsx";
 import { PaymentTrustBadge } from "./payment-trust-badge.tsx";
 import { PollenPackSlider } from "./pollen-pack-controls.tsx";
@@ -187,19 +188,10 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
                         Your wallet holds Pollen you've purchased plus Pollen
                         you've earned.{" "}
                         <InlineLink
-                            as="button"
-                            type="button"
+                            as={Link}
+                            to="/news"
+                            hash="how-does-my-pollen-wallet-work"
                             external={false}
-                            onClick={() => {
-                                const slug = "how-does-my-pollen-wallet-work";
-                                if (window.location.hash === `#${slug}`) {
-                                    window.dispatchEvent(
-                                        new HashChangeEvent("hashchange"),
-                                    );
-                                } else {
-                                    window.location.hash = slug;
-                                }
-                            }}
                         >
                             How it works
                         </InlineLink>
@@ -267,16 +259,15 @@ export const SidebarWallet: FC<SidebarWalletProps> = ({
 
 type BuyPollenPanelProps = {
     initialBillingState: BillingState | null;
+    selectedPackAmount: number;
+    onSelectedPackAmountChange: (amount: number) => void;
 };
 
 export const BuyPollenPanel: FC<BuyPollenPanelProps> = ({
     initialBillingState,
+    selectedPackAmount,
+    onSelectedPackAmountChange,
 }) => {
-    const [selectedPackAmount, setSelectedPackAmount] = useState(
-        POLLEN_PACKS.find((pack) => pack.amountUsd === 5)?.amountUsd ??
-            POLLEN_PACKS[0]?.amountUsd ??
-            5,
-    );
     const selectedPackIndex = Math.max(
         0,
         POLLEN_PACKS.findIndex((pack) => pack.amountUsd === selectedPackAmount),
@@ -299,7 +290,7 @@ export const BuyPollenPanel: FC<BuyPollenPanelProps> = ({
                         <div className="w-full min-w-0 flex-1 pb-20 sm:pb-0">
                             <PollenPackSlider
                                 value={selectedPack.amountUsd}
-                                onChange={setSelectedPackAmount}
+                                onChange={onSelectedPackAmountChange}
                                 selectedBadgeLabel={chargeLabel}
                                 selectedBadgeDetail={`incl. ${formatUsdCentsCompact(serviceFeeCents)} fee`}
                             />

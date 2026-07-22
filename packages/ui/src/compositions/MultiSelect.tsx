@@ -17,6 +17,7 @@ export type MultiSelectProps = {
     placeholder: string;
     disabled?: boolean;
     disabledText?: string;
+    disabledTooltip?: string;
     align?: "start" | "end";
     label?: string;
 };
@@ -37,6 +38,7 @@ export const MultiSelect: FC<MultiSelectProps> = ({
     placeholder,
     disabled,
     disabledText,
+    disabledTooltip,
     align = "start",
     label,
 }) => {
@@ -70,7 +72,7 @@ export const MultiSelect: FC<MultiSelectProps> = ({
                 {labelNode}
                 <Tooltip
                     triggerAs="span"
-                    content="No items available"
+                    content={disabledTooltip || "No items available"}
                     align="center"
                     className="polli:inline-flex"
                 >

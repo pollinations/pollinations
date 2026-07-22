@@ -17,7 +17,7 @@ afterEach(() => {
     vi.restoreAllMocks();
 });
 
-const SUBMIT_URL = "https://sharktide-lightning.hf.space/v1/3d/generations";
+const SUBMIT_URL = "https://api.inferenceport.ai/v1/3d/generations";
 
 describe("runInferenceportSync", () => {
     it("POSTs to ?sync=true and returns GLB from data[0]", async () => {

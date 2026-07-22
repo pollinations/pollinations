@@ -26,7 +26,7 @@ export type ModelVariables = {
         /** The resolved canonical model name */
         resolved: string;
         /** Static registry definition, or a dynamic definition resolved from D1. */
-        definition: ModelDefinition<string>;
+        definition: ModelDefinition;
         communityEndpoint?: CommunityEndpointRuntime;
     };
     formData?: FormData;
@@ -97,7 +97,7 @@ export async function resolveModelDefinition(
 
 /**
  * Middleware that extracts, defaults, and resolves the model from the request.
- * Must run before auth and track middlewares.
+ * Must run after auth and before track so private endpoints can be owner-gated.
  */
 export function resolveModel(
     eventType: EventType,

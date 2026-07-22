@@ -271,6 +271,23 @@ describe("gen worker routing", () => {
         expect(models.every((m) => m.category === "video")).toBe(true);
     });
 
+    it("lists Sana with flat per-image pricing", async () => {
+        const response = await fetchWorker("/image/models", envWithEnter());
+
+        expect(response.status).toBe(200);
+        const models = (await response.json()) as {
+            name: string;
+            pricing: Record<string, string>;
+        }[];
+        expect(models.find((model) => model.name === "sana")).toMatchObject({
+            name: "sana",
+            pricing: {
+                completionImageTokens: "0.0001",
+                currency: "pollen",
+            },
+        });
+    });
+
     it("serves OpenAI-compatible models without auth", async () => {
         const response = await fetchWorker("/v1/models", envWithEnter());
 
@@ -341,6 +358,124 @@ describe("gen worker routing", () => {
             expect(servedModel?.context_length).toBeGreaterThan(0);
             expect(servedModel?.context_length).toBe(model.context_length);
         }
+    });
+
+    it("advertises audio input support for gemini-fast", async () => {
+        const response = await fetchWorker("/text/models", envWithEnter());
+
+        expect(response.status).toBe(200);
+        const models = (await response.json()) as {
+            name: string;
+            input_modalities?: string[];
+        }[];
+        const model = models.find(
+            (candidate) => candidate.name === "gemini-fast",
+        );
+
+        expect(model?.input_modalities).toEqual([
+            "text",
+            "image",
+            "audio",
+            "video",
+        ]);
+    });
+
+    it("distinguishes Perplexity Sonar search presets", async () => {
+        const response = await fetchWorker("/text/models", envWithEnter());
+
+        expect(response.status).toBe(200);
+        const models = (await response.json()) as {
+            name: string;
+            title?: string;
+            description?: string;
+        }[];
+
+        expect(
+            models.find((model) => model.name === "perplexity-fast"),
+        ).toMatchObject({
+            title: "Perplexity Sonar Fast Search",
+            description:
+                "Quick web searches with cited answers; keeps it brief",
+        });
+        expect(
+            models.find((model) => model.name === "perplexity-high"),
+        ).toMatchObject({
+            title: "Perplexity Sonar High-Context Search",
+            description:
+                "Digs through many sources for thorough, cited research answers",
+        });
+        expect(
+            models.find((model) => model.name === "perplexity"),
+        ).toMatchObject({
+            description:
+                "Advanced web search that synthesizes multiple sources with citations",
+        });
+        expect(
+            models.find((model) => model.name === "perplexity-reasoning"),
+        ).toMatchObject({
+            description:
+                "Thinks step by step while searching the web; slower but more rigorous",
+        });
+        expect(models.some((model) => model.name === "perplexity-deep")).toBe(
+            false,
+        );
+    });
+});
+
+describe("model status", () => {
+    it("reports the source timestamp and marks stale fallback data", async () => {
+        let now = 1_000;
+        vi.spyOn(Date, "now").mockImplementation(() => now);
+        const upstream = vi
+            .spyOn(globalThis, "fetch")
+            .mockResolvedValueOnce(Response.json({ data: [{ model: "test" }] }))
+            .mockRejectedValueOnce(new Error("Tinybird unavailable"));
+
+        const fresh = await fetchWorker("/v1/models/status?minutes=9876");
+        expect(fresh.status).toBe(200);
+        expect(fresh.headers.get("X-Model-Status-Timestamp")).toBe(
+            "1970-01-01T00:00:01.000Z",
+        );
+        expect(fresh.headers.get("X-Model-Status-Stale")).toBeNull();
+
+        now = 2_000;
+        const cached = await fetchWorker("/v1/models/status?minutes=9876");
+        expect(cached.status).toBe(200);
+        expect(cached.headers.get("X-Model-Status-Timestamp")).toBe(
+            "1970-01-01T00:00:01.000Z",
+        );
+        expect(upstream).toHaveBeenCalledTimes(1);
+
+        now = 62_000;
+        const stale = await fetchWorker("/v1/models/status?minutes=9876");
+        expect(stale.status).toBe(200);
+        expect(stale.headers.get("X-Model-Status-Timestamp")).toBe(
+            "1970-01-01T00:00:01.000Z",
+        );
+        expect(stale.headers.get("X-Model-Status-Stale")).toBe("true");
+        expect(upstream).toHaveBeenCalledTimes(2);
+    });
+
+    it("evicts old entries when the in-memory cache reaches its bound", async () => {
+        const upstream = vi
+            .spyOn(globalThis, "fetch")
+            .mockImplementation(async (request) => {
+                const minutes = new URL(
+                    new Request(request).url,
+                ).searchParams.get("minutes");
+                return Response.json({ data: [{ model: `test-${minutes}` }] });
+            });
+
+        for (let minutes = 8_000; minutes <= 8_032; minutes++) {
+            const response = await fetchWorker(
+                `/v1/models/status?minutes=${minutes}`,
+            );
+            expect(response.status).toBe(200);
+        }
+
+        const evicted = await fetchWorker("/v1/models/status?minutes=8000");
+        expect(evicted.status).toBe(200);
+        expect(upstream).toHaveBeenCalledTimes(34);
     });
 });
 
@@ -613,10 +748,14 @@ it("lists stable-audio-3-medium in audio models", async () => {
     const response = await fetchWorker("/audio/models");
 
     expect(response.status).toBe(200);
-    const models = (await response.json()) as { name: string }[];
-    expect(models.some((model) => model.name === "stable-audio-3-medium")).toBe(
-        true,
+    const models = (await response.json()) as {
+        name: string;
+        input_modalities?: string[];
+    }[];
+    const model = models.find(
+        (candidate) => candidate.name === "stable-audio-3-medium",
     );
+    expect(model?.input_modalities).toEqual(["text", "audio"]);
 });
 
 fixtureTest(
@@ -820,10 +959,16 @@ it("lists stable-audio-3-large in audio models", async () => {
     const response = await fetchWorker("/audio/models");
 
     expect(response.status).toBe(200);
-    const models = (await response.json()) as { name: string }[];
-    expect(models.some((model) => model.name === "stable-audio-3-large")).toBe(
-        true,
+    const models = (await response.json()) as {
+        name: string;
+        aliases: string[];
+        input_modalities?: string[];
+    }[];
+    const model = models.find(
+        (candidate) => candidate.name === "stable-audio-3-large",
     );
+    expect(model?.aliases).toContain("stable-audio-3");
+    expect(model?.input_modalities).toEqual(["text", "audio"]);
 });
 
 fixtureTest(

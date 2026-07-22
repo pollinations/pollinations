@@ -206,8 +206,8 @@ export const communityEndpoint = sqliteTable("community_endpoint", {
   promptAgent: text("prompt_agent"),
   upstreamModel: text("upstream_model").notNull(),
   bearerTokenCiphertext: text("bearer_token_ciphertext").notNull(),
-  // Models are created private (owner-only and free). Publishing is a separate,
-  // allowlist-gated update that requires pricing.
+  // Models default to private (owner-only and free). Public visibility is
+  // allowlist-gated and may be free or owner-priced.
   visibility: text("visibility", { enum: ["private", "public"] })
     .default("private")
     .notNull(),

@@ -2,6 +2,24 @@
 
 All notable changes to `@pollinations/sdk` will be documented in this file.
 
+## [5.1.0-alpha.5] - 2026-07-14
+
+### Added
+- Added `UploadOptions.tags` for publishing multipart uploads to public tag galleries.
+
+### Changed
+- Media upload response types now match unique-id storage and optional tags.
+
+## [5.1.0-alpha.4] - 2026-07-14
+
+### Removed (Breaking)
+- Removed automatic request retries and the `maxRetries` client option.
+
+### Changed
+- Seed values, including `-1`, are passed through for the API to resolve.
+- Video duration validation is left to each model's API contract.
+- `PollinationsError.retryAfter` reflects only the server's `Retry-After` header.
+
 ## [5.1.0-alpha.3] - 2026-07-10
 
 ### Removed (Breaking)

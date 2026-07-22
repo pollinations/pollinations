@@ -1,10 +1,8 @@
 export interface PollinationsConfig {
-    /** API key for authentication (get one at https://enter.pollinations.ai) */
+    /** API key for authentication (get one at https://enter.pollinations.ai/keys) */
     apiKey?: string;
     /** Base URL for the API (defaults to https://gen.pollinations.ai) */
     baseUrl?: string;
-    /** Maximum number of retry attempts (default: 3) */
-    maxRetries?: number;
     /** Default timeout in ms for all requests (default: 300000 = 5min) */
     timeout?: number;
     /** Timeout in ms for text requests (default: 300000 = 5min) */
@@ -91,7 +89,7 @@ export interface ImageResponse {
 export interface VideoGenerateOptions extends RequestOptions {
     /** Video model to use (default: 'veo') */
     model?: VideoModel;
-    /** Duration in seconds (1-30, varies by model) */
+    /** Duration in seconds (supported range varies by model) */
     duration?: number;
     /** Aspect ratio (e.g., '16:9', '9:16', '1:1') */
     aspectRatio?: string;
@@ -431,7 +429,7 @@ export type AudioVoice = string;
 export type AudioFormat = "wav" | "mp3" | "flac" | "opus" | "pcm16";
 
 /** Dedicated audio/music model */
-export type AudioModel = "elevenlabs" | "elevenmusic" | "acestep" | string;
+export type AudioModel = "elevenlabs" | "elevenmusic" | string;
 
 /** Options for text-to-speech generation (GET /audio/{text} or POST /v1/audio/speech) */
 export interface AudioGenerateOptions extends RequestOptions {
@@ -439,7 +437,7 @@ export interface AudioGenerateOptions extends RequestOptions {
     voice?: AudioVoice;
     /** Audio model to use (default: 'elevenlabs') */
     model?: AudioModel;
-    /** Duration in seconds (for music models like elevenmusic, acestep) */
+    /** Duration in seconds (for music models like elevenmusic) */
     duration?: number;
     /** Seed for reproducibility */
     seed?: number;
@@ -525,11 +523,13 @@ export interface UploadOptions extends RequestOptions {
     name?: string;
     /** Content type (auto-detected if omitted) */
     contentType?: string;
+    /** Tags that publish the upload to public tag galleries */
+    tags?: string[];
 }
 
 /** Response from media upload */
 export interface UploadResponse {
-    /** Content-addressed hash ID */
+    /** Unique media id (also the retrieval id) */
     id: string;
     /** Public URL for the uploaded media */
     url: string;
@@ -537,8 +537,8 @@ export interface UploadResponse {
     contentType: string;
     /** File size in bytes */
     size: number;
-    /** Whether the file was already uploaded (dedup) */
-    duplicate: boolean;
+    /** Tags the upload was published with; present only when tagged */
+    tags?: string[];
 }
 
 // ============================================================================
@@ -924,7 +924,7 @@ export class PollinationsError extends Error {
     status: number;
     details?: Record<string, unknown>;
     requestId?: string;
-    /** Retry-After value in seconds (for 429 rate limit errors) */
+    /** Retry-After header value in seconds */
     retryAfter?: number;
 
     constructor(

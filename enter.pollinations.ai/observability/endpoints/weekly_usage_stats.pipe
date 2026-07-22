@@ -22,7 +22,7 @@ SQL >
         uniq(if(user_id != 'undefined' AND user_id != '', user_id, NULL)) AS active_users,
         if(active_users > 0, total_tokens / active_users, 0) AS tokens_per_user,
         if(active_users > 0, total_requests / active_users, 0) AS requests_per_user
-    FROM generation_event
+    FROM generation_event_v2
     WHERE
         {% if defined(start_date) %}
         start_time >= toDate({{ String(start_date) }})

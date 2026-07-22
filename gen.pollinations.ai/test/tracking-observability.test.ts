@@ -298,7 +298,7 @@ async function captureFallbackEvent(extraHeaders: Record<string, string>) {
             LOG_FORMAT: "text",
             BETTER_AUTH_SECRET: "test_secret",
             TINYBIRD_INGEST_URL:
-                "https://tinybird.test/v0/events?name=generation_event",
+                "https://tinybird.test/v0/events?name=generation_event_v2",
             TINYBIRD_INGEST_TOKEN: "test_tinybird_token",
         } as CloudflareBindings,
         ctx,
@@ -365,7 +365,7 @@ describe("tracking observability", () => {
                 LOG_FORMAT: "text",
                 BETTER_AUTH_SECRET: "test_secret",
                 TINYBIRD_INGEST_URL:
-                    "https://tinybird.test/v0/events?name=generation_event",
+                    "https://tinybird.test/v0/events?name=generation_event_v2",
                 TINYBIRD_INGEST_TOKEN: "test_tinybird_token",
             } as CloudflareBindings,
             ctx,
@@ -376,7 +376,7 @@ describe("tracking observability", () => {
         expect(response.status).toBe(200);
         expect(tinybirdRequests).toHaveLength(1);
         expect(tinybirdRequests[0].url).toBe(
-            "https://tinybird.test/v0/events?name=generation_event",
+            "https://tinybird.test/v0/events?name=generation_event_v2",
         );
         expect(tinybirdRequests[0].headers.get("authorization")).toBe(
             "Bearer test_tinybird_token",
@@ -425,7 +425,7 @@ describe("tracking observability", () => {
                 LOG_FORMAT: "text",
                 BETTER_AUTH_SECRET: "test_secret",
                 TINYBIRD_INGEST_URL:
-                    "https://tinybird.test/v0/events?name=generation_event",
+                    "https://tinybird.test/v0/events?name=generation_event_v2",
                 TINYBIRD_INGEST_TOKEN: "test_tinybird_token",
             } as CloudflareBindings,
             ctx,
@@ -461,7 +461,7 @@ describe("tracking observability", () => {
                 LOG_FORMAT: "text",
                 BETTER_AUTH_SECRET: "test_secret",
                 TINYBIRD_INGEST_URL:
-                    "https://tinybird.test/v0/events?name=generation_event",
+                    "https://tinybird.test/v0/events?name=generation_event_v2",
                 TINYBIRD_INGEST_TOKEN: "test_tinybird_token",
             } as CloudflareBindings,
             ctx,
@@ -526,7 +526,7 @@ describe("tracking observability", () => {
                 LOG_FORMAT: "text",
                 BETTER_AUTH_SECRET: "test_secret",
                 TINYBIRD_INGEST_URL:
-                    "https://tinybird.test/v0/events?name=generation_event",
+                    "https://tinybird.test/v0/events?name=generation_event_v2",
                 TINYBIRD_INGEST_TOKEN: "test_tinybird_token",
             } as unknown as CloudflareBindings,
             ctx,
@@ -606,7 +606,7 @@ describe("tracking observability", () => {
                 LOG_FORMAT: "text",
                 BETTER_AUTH_SECRET: "test_secret",
                 TINYBIRD_INGEST_URL:
-                    "https://tinybird.test/v0/events?name=generation_event",
+                    "https://tinybird.test/v0/events?name=generation_event_v2",
                 TINYBIRD_INGEST_TOKEN: "test_tinybird_token",
             } as unknown as CloudflareBindings,
             ctx,
@@ -671,7 +671,7 @@ describe("tracking observability", () => {
                 LOG_FORMAT: "text",
                 BETTER_AUTH_SECRET: "test_secret",
                 TINYBIRD_INGEST_URL:
-                    "https://tinybird.test/v0/events?name=generation_event",
+                    "https://tinybird.test/v0/events?name=generation_event_v2",
                 TINYBIRD_INGEST_TOKEN: "test_tinybird_token",
             } as CloudflareBindings,
             ctx,
@@ -727,7 +727,7 @@ describe("tracking observability", () => {
                 LOG_FORMAT: "text",
                 BETTER_AUTH_SECRET: "test_secret",
                 TINYBIRD_INGEST_URL:
-                    "https://tinybird.test/v0/events?name=generation_event",
+                    "https://tinybird.test/v0/events?name=generation_event_v2",
                 TINYBIRD_INGEST_TOKEN: "test_tinybird_token",
             } as CloudflareBindings,
             ctx,
@@ -788,7 +788,7 @@ describe("tracking observability", () => {
                 LOG_FORMAT: "text",
                 BETTER_AUTH_SECRET: "test_secret",
                 TINYBIRD_INGEST_URL:
-                    "https://tinybird.test/v0/events?name=generation_event",
+                    "https://tinybird.test/v0/events?name=generation_event_v2",
                 TINYBIRD_INGEST_TOKEN: "test_tinybird_token",
             } as CloudflareBindings,
             ctx,
@@ -834,7 +834,7 @@ describe("tracking observability", () => {
                 LOG_FORMAT: "text",
                 BETTER_AUTH_SECRET: "test_secret",
                 TINYBIRD_INGEST_URL:
-                    "https://tinybird.test/v0/events?name=generation_event",
+                    "https://tinybird.test/v0/events?name=generation_event_v2",
                 TINYBIRD_INGEST_TOKEN: "test_tinybird_token",
             } as CloudflareBindings,
             ctx,

@@ -33,7 +33,8 @@ bash setup-vast.sh
 
 The tunnel token is written to a mode `0600` token file and is not included in
 the `cloudflared` process arguments. Model and server settings are persisted in
-the ignored `.env.flux` file.
+the ignored `.env.flux` file. The setup also installs `/root/onstart.sh`, which
+Vast runs after a container restart to restore both supervised services.
 
 ## Verify before traffic cutover
 
@@ -58,6 +59,7 @@ tail -f /tmp/flux.log
 tail -f /tmp/cloudflared.log
 screen -r flux
 screen -r cloudflared
+/root/onstart.sh
 ```
 
 The setup defaults are `QUEUE_LIMIT=10`, `MAX_PIXELS=1048576`, and

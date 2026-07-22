@@ -157,11 +157,25 @@ log "Writing run environment to $NUNCHAKU_DIR/.env.flux..."
 } > "$NUNCHAKU_DIR/.env.flux"
 chmod 600 "$NUNCHAKU_DIR/.env.flux"
 
-log "Starting server in screen session 'flux' (restart loop, log: /tmp/flux.log)..."
+cat > /root/run-flux.sh <<EOF
+#!/bin/bash
+cd "$NUNCHAKU_DIR"
+source venv/bin/activate
+source .env.flux
+exec python server.py
+EOF
+
+cat > /root/onstart.sh <<EOF
+#!/bin/bash
 screen -S flux -X quit 2>/dev/null || true
-screen -dmS flux bash -c "cd $NUNCHAKU_DIR && source venv/bin/activate && source .env.flux && \
-    while true; do python server.py 2>&1 | tee -a /tmp/flux.log; \
-    echo \"[setup-vast] server exited, restarting in 5s\" | tee -a /tmp/flux.log; sleep 5; done"
+screen -S cloudflared -X quit 2>/dev/null || true
+screen -dmS flux bash -c 'while true; do /root/run-flux.sh 2>&1 | tee -a /tmp/flux.log; echo "[setup-vast] server exited, restarting in 5s" | tee -a /tmp/flux.log; sleep 5; done'
+screen -dmS cloudflared bash -c 'while true; do cloudflared tunnel run --token-file "$TUNNEL_TOKEN_FILE" 2>&1 | tee -a /tmp/cloudflared.log; sleep 5; done'
+EOF
+chmod 700 /root/run-flux.sh /root/onstart.sh
+
+log "Starting durable Flux and tunnel services (logs: /tmp/flux.log, /tmp/cloudflared.log)..."
+/root/onstart.sh
 
 log "Done. Model load takes 2-3 min on first start."
 log "  Logs:       tail -f /tmp/flux.log"

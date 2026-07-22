@@ -270,6 +270,17 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.000002,
       "promptVideoTokens": 0.000002,
     },
+    "costVariants": {
+      "long_context": {
+        "completionTextTokens": 0.000018,
+        "promptAudioTokens": 0.000004,
+        "promptCacheWriteTokens": 0.000004,
+        "promptCachedTokens": 0.0000004,
+        "promptImageTokens": 0.000004,
+        "promptTextTokens": 0.000004,
+        "promptVideoTokens": 0.000004,
+      },
+    },
     "price": {
       "completionTextTokens": 0.000012,
       "promptAudioTokens": 0.000002,
@@ -365,6 +376,13 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "completionTextTokens": 0.000015,
       "promptCachedTokens": 0.00000025,
       "promptTextTokens": 0.0000025,
+    },
+    "costVariants": {
+      "long_context": {
+        "completionTextTokens": 0.0000225,
+        "promptCachedTokens": 0.0000005,
+        "promptTextTokens": 0.000005,
+      },
     },
     "price": {
       "completionTextTokens": 0.000015,
@@ -1026,6 +1044,13 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptCachedTokens": 0.0000005,
       "promptTextTokens": 0.000005,
     },
+    "costVariants": {
+      "long_context": {
+        "completionTextTokens": 0.000045,
+        "promptCachedTokens": 0.000001,
+        "promptTextTokens": 0.00001,
+      },
+    },
     "price": {
       "completionTextTokens": 0.00003,
       "promptCachedTokens": 0.0000005,
@@ -1048,17 +1073,14 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "completionImageTokens": 0.01,
     },
   },
-  "p-video-1080p": {
-    "cost": {
-      "completionVideoSeconds": 0.04,
-    },
-    "price": {
-      "completionVideoSeconds": 0.04,
-    },
-  },
-  "p-video-720p": {
+  "p-video": {
     "cost": {
       "completionVideoSeconds": 0.02,
+    },
+    "costVariants": {
+      "1080p": {
+        "completionVideoSeconds": 0.04,
+      },
     },
     "price": {
       "completionVideoSeconds": 0.02,
@@ -1375,19 +1397,14 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "completionAudioSeconds": 0.02,
       "completionVideoSeconds": 0.08,
     },
+    "costVariants": {
+      "1080p": {
+        "completionVideoSeconds": 0.1,
+      },
+    },
     "price": {
       "completionAudioSeconds": 0.02,
       "completionVideoSeconds": 0.08,
-    },
-  },
-  "veo-1080p": {
-    "cost": {
-      "completionAudioSeconds": 0.02,
-      "completionVideoSeconds": 0.1,
-    },
-    "price": {
-      "completionAudioSeconds": 0.02,
-      "completionVideoSeconds": 0.1,
     },
   },
   "wan": {
@@ -1426,16 +1443,13 @@ exports[`effective cost and price per model — snapshot 1`] = `
     "cost": {
       "completionVideoSeconds": 0.1,
     },
+    "costVariants": {
+      "1080p": {
+        "completionVideoSeconds": 0.15,
+      },
+    },
     "price": {
       "completionVideoSeconds": 0.1,
-    },
-  },
-  "wan-pro-1080p": {
-    "cost": {
-      "completionVideoSeconds": 0.15,
-    },
-    "price": {
-      "completionVideoSeconds": 0.15,
     },
   },
   "whisper": {

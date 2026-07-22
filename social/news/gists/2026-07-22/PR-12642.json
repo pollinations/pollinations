@@ -1,0 +1,34 @@
+{
+  "pr_number": 12642,
+  "title": "feat: simplify app submission workflow",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/12642",
+  "merged_at": "2026-07-22T21:10:25Z",
+  "labels": [],
+  "pr_body_excerpt": "- Replaces the `TIER-APP*` state machine with four clear `APP-*` labels and an evidence-based human review gate.\n- Checks the live app and optional repository through a size-bounded, DNS-pinned fetch path; sanitizes AI comments.\n- Freezes publishing to the approval-event issue snapshot, revalidates it, and serializes `APPS.md` auto-merge PRs.\n- Makes label changes atomic and publication failures visible, cleanly retryable, and safe from stale branches.\n- Updates submission links, Apps routing, migration triggers, catalog sync, KPI pagination, tests, and contributor docs.\n\nValidation: 5 parser/snapshot tests, Python syntax and fetch-safety checks, YAML parsing, Biome, generated catalog check, and KPI production build.\n\nRollout: add `APP-SUBMISSION` to every historical app issue, including closed/rejected issues, and map open legacy review-state labels after merge.",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Apps get a clearer garden gate",
+    "blurb": "App submissions now travel through four plain `APP-*` labels instead of a small state-machine thicket. Polli has put up a tidy review gate, and the catalog only blooms from the approved snapshot.",
+    "summary": "Reworked community app submissions around four `APP-*` labels, evidence-based review of live apps and optional repositories, approval-snapshot publishing, and serialized `APPS.md` catalog updates.",
+    "impact": "Contributors get a clearer submission path, while approved apps are revalidated and published from the reviewed version with visible, safe-to-retry failures.",
+    "keywords": [
+      "community-apps",
+      "app-submissions",
+      "github-actions",
+      "app-catalog",
+      "review-workflow",
+      "APPS.md"
+    ],
+    "visual_concept": "Depict the old tangled label path replaced by four neat garden signposts labeled `APP-*`, leading to a small approved app greenhouse and a glowing catalog book. Polli, wearing a tiny gardener's hat and carrying a clipboard, inspects an app seedling with the eager CRT Monitor Robot; the scene represents human review, a frozen approved snapshot, and orderly publication.",
+    "image_prompt": "Cozy pixel art scene of Polli, a cute pixel bee with a yellow body, dark brown horizontal stripes, black oval eyes, bright pink rectangular cheek blush, small smile, light blue translucent wings, and a tiny gardener's hat, holding a clipboard beside four neat garden signposts marked `APP-*`; an eager chunky CRT monitor robot helps guide a code-plant from an approved greenhouse into a glowing `APPS.md` catalog book. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel mint-lavender-peach gradient background, flowers and vines, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, dark purple (#110518) pixel outlines, nostalgic but beautiful and emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-22/PR-12642.jpg",
+    "prompt": "Cozy pixel art scene of Polli, a cute pixel bee with a yellow body, dark brown horizontal stripes, black oval eyes, bright pink rectangular cheek blush, small smile, light blue translucent wings, and a tiny gardener's hat, holding a clipboard beside four neat garden signposts marked `APP-*`; an eager chunky CRT monitor robot helps guide a code-plant from an approved greenhouse into a glowing `APPS.md` catalog book. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel mint-lavender-peach gradient background, flowers and vines, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, dark purple (#110518) pixel outlines, nostalgic but beautiful and emotionally warm."
+  },
+  "generated_at": "2026-07-22T21:18:30.724147+00:00"
+}

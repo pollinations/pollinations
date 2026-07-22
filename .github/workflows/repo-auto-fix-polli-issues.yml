@@ -1,5 +1,5 @@
-# Pollinations AI - Auto-fix issues labeled "polly"
-# Trigger: Add "polly" label | Whitelist: voodoohop, ElliotEtag, Circuit-Overtime, Itachi-1824, pollinations-ai bot to an issue
+# Pollinations AI - Auto-fix issues labeled "POLLI"
+# Trigger: Add "POLLI" label | Whitelist: voodoohop, ElliotEtag, Circuit-Overtime, Itachi-1824, pollinations-ai bot to an issue
 
 name: Repo / Auto-fix Polli issues
 
@@ -13,7 +13,7 @@ concurrency:
 
 jobs:
   auto-fix:
-    if: github.event.label.name == 'polly'
+    if: github.event.label.name == 'POLLI'
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -47,13 +47,13 @@ jobs:
                 owner: context.repo.owner,
                 repo: context.repo.repo,
                 issue_number: context.issue.number,
-                name: 'polly'
+                name: 'POLLI'
               });
               await github.rest.issues.createComment({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
                 issue_number: context.issue.number,
-                body: `Sorry @${labeledBy}, only maintainers can trigger Polli auto-fix by adding the \`polly\` label.`
+                body: `Sorry @${labeledBy}, only maintainers can trigger Polli auto-fix by adding the \`POLLI\` label.`
               });
               core.setOutput('authorized', 'false');
             } else {

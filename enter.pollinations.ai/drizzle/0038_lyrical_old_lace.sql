@@ -1,1 +1,0 @@
-ALTER TABLE `community_endpoint` ADD `image_pricing` text DEFAULT 'request' NOT NULL;

@@ -1,7 +1,7 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "8a85bd11-ed02-4a69-a9cf-241c607ab2c2",
+  "id": "e1002425-b239-4c21-bfd7-f634377ffae4",
   "prevId": "adc29eb5-86d6-4428-b5e2-63f116bf22a3",
   "tables": {
     "account": {
@@ -385,6 +385,14 @@
           "notNull": true,
           "autoincrement": false,
           "default": "'text'"
+        },
+        "image_pricing": {
+          "name": "image_pricing",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "'request'"
         },
         "base_url": {
           "name": "base_url",

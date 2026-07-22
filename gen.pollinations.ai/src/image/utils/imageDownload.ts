@@ -67,8 +67,25 @@ export async function downloadUserImage(
         );
     }
 
-    const buffer = Buffer.from(await imageResponse.arrayBuffer());
-    return { buffer, mimeType: detectMimeType(buffer) };
+    let buffer: Buffer;
+    try {
+        buffer = Buffer.from(await imageResponse.arrayBuffer());
+    } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        throw new HttpError(
+            `Failed to read image ${imageUrl}: ${message}`,
+            400,
+            { validation: true },
+        );
+    }
+
+    const mimeType = detectImageMimeType(buffer);
+    if (!mimeType) {
+        throw new HttpError(`Unsupported image format from ${imageUrl}`, 400, {
+            validation: true,
+        });
+    }
+    return { buffer, mimeType };
 }
 
 export async function downloadImageAsBase64(

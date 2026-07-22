@@ -1,8 +1,6 @@
 import {
-    GEMINI_3_SEARCH_BILLING,
     OPENROUTER_GEMINI_SEARCH_BILLING,
     withOpenRouterGeminiCacheStorage,
-    withVertexCacheStorage,
 } from "./gemini-billing";
 import {
     PERPLEXITY_FAST_BILLING,
@@ -384,7 +382,7 @@ export const TEXT_SERVICES = {
     },
     "gemini-3-flash": {
         aliases: ["gemini-3-flash-preview"],
-        provider: "google",
+        provider: "openrouter",
         brand: "Google",
         category: "text",
         addedDate: new Date("2025-10-07").getTime(),
@@ -395,9 +393,14 @@ export const TEXT_SERVICES = {
             promptCachedTokens: perMillion(0.05),
             promptCacheWriteTokens: perMillion(0.5),
             promptAudioTokens: perMillion(1.0),
+            promptImageTokens: perMillion(0.5),
+            promptVideoTokens: perMillion(0.5),
             completionTextTokens: perMillion(3.0),
         },
-        billing: withVertexCacheStorage(GEMINI_3_SEARCH_BILLING, 1.0),
+        billing: withOpenRouterGeminiCacheStorage(
+            OPENROUTER_GEMINI_SEARCH_BILLING,
+            1.0,
+        ),
         title: "Gemini 3 Flash",
         description:
             "Pro-grade reasoning at high speed, with web search and a huge context window",
@@ -407,13 +410,12 @@ export const TEXT_SERVICES = {
         maxReferenceVideos: 10, // Gemini API video-understanding upload limit.
         tools: true,
         search: true,
-        codeExecution: true,
         contextLength: 1048576,
         isSpecialized: false,
     },
     "gemini": {
         aliases: ["gemini-3.6-flash", "gemini-3.5-flash"],
-        provider: "google",
+        provider: "openrouter",
         brand: "Google",
         category: "text",
         addedDate: new Date("2026-05-19").getTime(),
@@ -426,10 +428,14 @@ export const TEXT_SERVICES = {
             promptCachedTokens: perMillion(0.15),
             promptCacheWriteTokens: perMillion(1.5),
             promptAudioTokens: perMillion(1.5), // Audio billed at same rate as text
+            promptImageTokens: perMillion(1.5),
             promptVideoTokens: perMillion(1.5),
             completionTextTokens: perMillion(7.5),
         },
-        billing: withVertexCacheStorage(GEMINI_3_SEARCH_BILLING, 1.0),
+        billing: withOpenRouterGeminiCacheStorage(
+            OPENROUTER_GEMINI_SEARCH_BILLING,
+            1.0,
+        ),
         title: "Gemini 3.6 Flash",
         description:
             "Sharp, fast reasoning over text, images, audio and video, plus web search",
@@ -439,7 +445,6 @@ export const TEXT_SERVICES = {
         maxReferenceVideos: 10, // Gemini API video-understanding upload limit.
         tools: true,
         search: true,
-        codeExecution: true,
         contextLength: 1048576,
         isSpecialized: false,
     },
@@ -460,10 +465,14 @@ export const TEXT_SERVICES = {
             promptCachedTokens: perMillion(0.025),
             promptCacheWriteTokens: perMillion(0.25),
             promptAudioTokens: perMillion(0.5),
+            promptImageTokens: perMillion(0.25),
             promptVideoTokens: perMillion(0.25),
             completionTextTokens: perMillion(1.5),
         },
-        billing: withOpenRouterGeminiCacheStorage({}),
+        billing: withOpenRouterGeminiCacheStorage(
+            OPENROUTER_GEMINI_SEARCH_BILLING,
+            1.0,
+        ),
         title: "Gemini 3.1 Flash Lite",
         description:
             "Quick, low-cost answers across text, images, audio and video",
@@ -473,7 +482,6 @@ export const TEXT_SERVICES = {
         maxReferenceVideos: 10, // Gemini API video-understanding upload limit.
         tools: true,
         search: true,
-        codeExecution: true,
         contextLength: 1048576,
         isSpecialized: false,
     },
@@ -484,16 +492,20 @@ export const TEXT_SERVICES = {
         category: "text",
         addedDate: new Date("2025-12-18").getTime(),
         priceMultiplier: 1,
-        paidOnly: true,
+        paidOnly: false,
         cost: {
             promptTextTokens: perMillion(0.1), // per 1M tokens
             promptCachedTokens: perMillion(0.01), // per 1M tokens
             promptCacheWriteTokens: perMillion(0.1), // per 1M tokens
             promptAudioTokens: perMillion(0.3), // per 1M tokens
+            promptImageTokens: perMillion(0.1), // per 1M tokens
             promptVideoTokens: perMillion(0.1), // per 1M tokens
             completionTextTokens: perMillion(0.4), // per 1M tokens
         },
-        billing: withOpenRouterGeminiCacheStorage({}),
+        billing: withOpenRouterGeminiCacheStorage(
+            OPENROUTER_GEMINI_SEARCH_BILLING,
+            1.0,
+        ),
         title: "Gemini 2.5 Flash Lite",
         description:
             "Cheapest way to handle everyday multimodal tasks; trades depth for speed",
@@ -503,7 +515,6 @@ export const TEXT_SERVICES = {
         maxReferenceVideos: 10, // Gemini API video-understanding upload limit.
         tools: true,
         search: true,
-        codeExecution: true,
         contextLength: 1048576,
         isSpecialized: false,
     },
@@ -727,10 +738,13 @@ export const TEXT_SERVICES = {
             promptCachedTokens: perMillion(0.01),
             promptCacheWriteTokens: perMillion(0.1),
             promptAudioTokens: perMillion(0.3),
+            promptImageTokens: perMillion(0.1),
+            promptVideoTokens: perMillion(0.1),
             completionTextTokens: perMillion(0.4),
         },
         billing: withOpenRouterGeminiCacheStorage(
             OPENROUTER_GEMINI_SEARCH_BILLING,
+            1.0,
         ),
         title: "Google Gemini 2.5 Flash Lite Search",
         description:
@@ -741,7 +755,6 @@ export const TEXT_SERVICES = {
         maxReferenceVideos: 10, // Gemini API video-understanding upload limit.
         tools: false,
         search: true,
-        codeExecution: true,
         contextLength: 1048576,
         isSpecialized: false,
     },
@@ -759,11 +772,13 @@ export const TEXT_SERVICES = {
             promptCachedTokens: perMillion(0.025),
             promptCacheWriteTokens: perMillion(0.25),
             promptAudioTokens: perMillion(0.5),
+            promptImageTokens: perMillion(0.25),
             promptVideoTokens: perMillion(0.25),
             completionTextTokens: perMillion(1.5),
         },
         billing: withOpenRouterGeminiCacheStorage(
             OPENROUTER_GEMINI_SEARCH_BILLING,
+            1.0,
         ),
         title: "Gemini 3.1 Flash Lite Search",
         description: "Low-cost answers grounded in live web search results",
@@ -773,7 +788,6 @@ export const TEXT_SERVICES = {
         maxReferenceVideos: 10, // Gemini API video-understanding upload limit.
         tools: false,
         search: true,
-        codeExecution: true,
         contextLength: 1048576,
         isSpecialized: false,
     },
@@ -791,11 +805,13 @@ export const TEXT_SERVICES = {
             promptCachedTokens: perMillion(0.15),
             promptCacheWriteTokens: perMillion(1.5),
             promptAudioTokens: perMillion(1.5),
+            promptImageTokens: perMillion(1.5),
             promptVideoTokens: perMillion(1.5),
             completionTextTokens: perMillion(7.5),
         },
         billing: withOpenRouterGeminiCacheStorage(
             OPENROUTER_GEMINI_SEARCH_BILLING,
+            1.0,
         ),
         title: "Gemini 3.6 Flash Search",
         description: "Premium web research with grounded, up-to-date answers",
@@ -805,7 +821,6 @@ export const TEXT_SERVICES = {
         maxReferenceVideos: 10, // Gemini API video-understanding upload limit.
         tools: false,
         search: true,
-        codeExecution: true,
         contextLength: 1048576,
         isSpecialized: false,
     },
@@ -1237,7 +1252,7 @@ export const TEXT_SERVICES = {
     },
     "gemini-large": {
         aliases: ["gemini-3.1-pro", "gemini-2.5-pro"],
-        provider: "google",
+        provider: "openrouter",
         brand: "Google",
         category: "text",
         addedDate: new Date("2025-11-19").getTime(),
@@ -1252,7 +1267,10 @@ export const TEXT_SERVICES = {
             promptVideoTokens: perMillion(2.0),
             completionTextTokens: perMillion(12.0),
         },
-        billing: withVertexCacheStorage(GEMINI_3_SEARCH_BILLING, 4.5),
+        billing: withOpenRouterGeminiCacheStorage(
+            OPENROUTER_GEMINI_SEARCH_BILLING,
+            4.5,
+        ),
         title: "Gemini 3.1 Pro",
         description:
             "Top-tier multimodal reasoning over huge documents, images and video",
@@ -1263,7 +1281,6 @@ export const TEXT_SERVICES = {
         tools: true,
         reasoning: true,
         search: true,
-        codeExecution: false, // Disabled - was breaking gemini-large
         contextLength: 1048576,
         isSpecialized: false,
     },

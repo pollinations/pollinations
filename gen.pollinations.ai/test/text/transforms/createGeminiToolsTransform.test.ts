@@ -5,6 +5,12 @@ import { resolveModelConfig } from "../../../src/text/utils/modelResolver.js";
 describe("OpenRouter Gemini routing", () => {
     const routes = [
         [
+            "gemini-3-flash",
+            "google/gemini-3-flash-preview",
+            "google-vertex/global",
+        ],
+        ["gemini", "google/gemini-3.6-flash", "google-vertex/global"],
+        [
             "gemini-flash-lite-3.1",
             "google/gemini-3.1-flash-lite",
             "google-vertex/global",
@@ -19,6 +25,11 @@ describe("OpenRouter Gemini routing", () => {
         [
             "gemini-search-large",
             "google/gemini-3.6-flash",
+            "google-vertex/global",
+        ],
+        [
+            "gemini-large",
+            "google/gemini-3.1-pro-preview",
             "google-vertex/global",
         ],
     ] as const;
@@ -39,21 +50,54 @@ describe("OpenRouter Gemini routing", () => {
         });
     });
 
-    it("keeps services that depend on Vertex code execution on Vertex", () => {
-        const routes = [
-            ["gemini-3-flash", "gemini-3-flash-preview"],
-            ["gemini", "gemini-3.6-flash"],
-            ["gemini-large", "gemini-3.1-pro-preview"],
-        ] as const;
+    it.each([
+        "gemini-3-flash",
+        "gemini",
+        "gemini-flash-lite-3.1",
+        "gemini-fast",
+        "gemini-large",
+    ])("does not inject code execution for %s", async (model) => {
+        const transform = findModelByName(model)?.transform;
+        if (!transform) throw new Error(`${model} transform missing`);
 
-        for (const [model, upstreamModel] of routes) {
-            const { options } = resolveModelConfig([], { model });
-            expect(options.model).toBe(upstreamModel);
-            expect(options.modelConfig).toMatchObject({
-                provider: "vertex-ai",
-            });
-            expect(options.provider).toBeUndefined();
-        }
+        const { options } = await transform([], {});
+
+        expect(options.tools).toBeUndefined();
+    });
+
+    it.each([
+        "gemini-search",
+        "gemini-search-fast",
+        "gemini-search-large",
+    ])("injects search but not code execution for %s", async (model) => {
+        const transform = findModelByName(model)?.transform;
+        if (!transform) throw new Error(`${model} transform missing`);
+
+        const { options } = await transform([], {});
+
+        expect(options.tools).not.toContainEqual({ type: "code_execution" });
+        expect(options.tools).toContainEqual({
+            type: "openrouter:web_search",
+            parameters: { engine: "native" },
+        });
+    });
+
+    it.each(
+        routes.map(([model]) => model),
+    )("adapts explicit Google Search for %s", async (model) => {
+        const transform = findModelByName(model)?.transform;
+        if (!transform) throw new Error(`${model} transform missing`);
+
+        const { options } = await transform([], {
+            tools: [{ type: "google_search" }],
+        });
+
+        expect(options.tools).toEqual([
+            {
+                type: "openrouter:web_search",
+                parameters: { engine: "native" },
+            },
+        ]);
     });
 });
 

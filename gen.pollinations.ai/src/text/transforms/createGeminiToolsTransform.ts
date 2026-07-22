@@ -1,24 +1,31 @@
+import type { TransformFn } from "../types.ts";
 import { addDefaultTools } from "./pipe.ts";
 
-export type GeminiToolName = "code_execution" | "google_search";
-
-/**
- * Converts a Gemini tool name to the OpenAI function format expected by Portkey gateway.
- */
-function toOpenAIFunctionFormat(name: GeminiToolName) {
-    return {
-        type: "function" as const,
-        function: { name },
-    };
-}
-
-/**
- * Creates a transform that adds Gemini-specific tools (code execution, search, URL context).
- * Only applies if the user hasn't passed their own tools.
- */
-export function createGeminiToolsTransform(toolNames: GeminiToolName[]) {
-    return addDefaultTools(toolNames.map(toOpenAIFunctionFormat));
-}
+/** Converts Pollinations' public Gemini search tool to OpenRouter's native tool. */
+export const adaptGoogleSearchToolForOpenRouter: TransformFn = (
+    messages,
+    options,
+) => ({
+    messages,
+    options: {
+        ...options,
+        ...(options.tools === undefined
+            ? {}
+            : {
+                  tools: options.tools.map((tool) =>
+                      typeof tool === "object" &&
+                      tool !== null &&
+                      "type" in tool &&
+                      tool.type === "google_search"
+                          ? {
+                                type: "openrouter:web_search",
+                                parameters: { engine: "native" },
+                            }
+                          : tool,
+                  ),
+              }),
+    },
+});
 
 /** Adds OpenRouter's provider-native Google Search tool without an Exa route. */
 export function createOpenRouterNativeWebSearchTransform() {

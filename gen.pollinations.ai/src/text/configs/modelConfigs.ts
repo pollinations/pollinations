@@ -1,4 +1,3 @@
-import googleCloudAuth from "../auth/googleCloudAuth.js";
 import {
     createAzureModelConfig,
     createBedrockNativeConfig,
@@ -18,21 +17,6 @@ import {
 
 type PortkeyConfigFactory = () => Record<string, unknown>;
 type PortkeyConfigMap = Record<string, PortkeyConfigFactory>;
-
-/** Creates a Vertex AI config for Gemini models. */
-function createVertexGeminiConfig(
-    modelId: string,
-    region: string,
-): PortkeyConfigFactory {
-    return () => ({
-        provider: "vertex-ai",
-        authKey: googleCloudAuth.getAccessToken,
-        "vertex-project-id": process.env.GOOGLE_PROJECT_ID,
-        "vertex-region": region,
-        "vertex-model-id": modelId,
-        "strict-openai-compliance": "false",
-    });
-}
 
 /** Creates a no-fallback OpenRouter route pinned to one Vertex deployment. */
 function createPinnedOpenRouterGeminiConfig(
@@ -282,18 +266,15 @@ export const portkeyConfig: PortkeyConfigMap = {
     "nova-2-lite": () =>
         createBedrockNativeConfig({ model: "us.amazon.nova-2-lite-v1:0" }),
 
-    // -- Google Vertex AI (Gemini) --------------------------------------------
-    "gemini-3-flash-preview": createVertexGeminiConfig(
-        "gemini-3-flash-preview",
-        "global",
-    ),
-    "gemini-3.1-pro-preview": createVertexGeminiConfig(
-        "gemini-3.1-pro-preview",
-        "global",
-    ),
-    "gemini-3.6-flash": createVertexGeminiConfig("gemini-3.6-flash", "global"),
-
     // -- OpenRouter (Gemini via pinned Google Vertex routes) -----------------
+    "google/gemini-3-flash-preview": createPinnedOpenRouterGeminiConfig(
+        "gemini-3-flash-preview",
+        "google-vertex/global",
+    ),
+    "google/gemini-3.1-pro-preview": createPinnedOpenRouterGeminiConfig(
+        "gemini-3.1-pro-preview",
+        "google-vertex/global",
+    ),
     "google/gemini-2.5-flash-lite": createPinnedOpenRouterGeminiConfig(
         "gemini-2.5-flash-lite",
         "google-vertex/eu",

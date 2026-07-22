@@ -5,7 +5,7 @@ import { BASE_PROMPTS } from "./prompts/systemPrompts.js";
 import { createClaudeThinkingTransform } from "./transforms/createClaudeThinkingTransform.ts";
 import { createGeminiThinkingTransform } from "./transforms/createGeminiThinkingTransform.ts";
 import {
-    createGeminiToolsTransform,
+    adaptGoogleSearchToolForOpenRouter,
     createOpenRouterNativeWebSearchTransform,
 } from "./transforms/createGeminiToolsTransform.ts";
 import { createMessageTransform } from "./transforms/createMessageTransform.js";
@@ -35,8 +35,8 @@ interface ModelDefinition {
     transform?: TransformFn;
 }
 
-// Gemini ignores logit_bias on direct Vertex, while the OpenRouter 2.5 search
-// route currently returns 500 when it is combined with native web search.
+// The OpenRouter 2.5 route returns 500 when logit_bias is combined with native
+// web search.
 const stripLogitBias: TransformFn = (messages, options) => {
     const supportedOptions = { ...options };
     delete supportedOptions.logit_bias;
@@ -229,20 +229,20 @@ const models: ModelDefinition[] = [
     },
     {
         name: "gemini-3-flash",
-        config: portkeyConfig["gemini-3-flash-preview"],
+        config: portkeyConfig["google/gemini-3-flash-preview"],
         transform: pipe(
             sanitizeToolSchemas,
-            createGeminiToolsTransform(["code_execution"]),
+            adaptGoogleSearchToolForOpenRouter,
             removeToolsForJsonResponse,
             createGeminiThinkingTransform("v3-flash"),
         ),
     },
     {
         name: "gemini",
-        config: portkeyConfig["gemini-3.6-flash"],
+        config: portkeyConfig["google/gemini-3.6-flash"],
         transform: pipe(
             sanitizeToolSchemas,
-            createGeminiToolsTransform(["code_execution"]),
+            adaptGoogleSearchToolForOpenRouter,
             removeToolsForJsonResponse,
             // Gemini 3.6 requires reasoning; map `none` to its lowest level.
             createGeminiThinkingTransform("v3-pro"),
@@ -253,6 +253,7 @@ const models: ModelDefinition[] = [
         config: portkeyConfig["google/gemini-3.1-flash-lite"],
         transform: pipe(
             sanitizeToolSchemas,
+            adaptGoogleSearchToolForOpenRouter,
             createGeminiThinkingTransform("v3-flash"),
         ),
     },
@@ -261,6 +262,7 @@ const models: ModelDefinition[] = [
         config: portkeyConfig["google/gemini-2.5-flash-lite"],
         transform: pipe(
             sanitizeToolSchemas,
+            adaptGoogleSearchToolForOpenRouter,
             createGeminiThinkingTransform("v2.5"),
         ),
     },
@@ -269,6 +271,7 @@ const models: ModelDefinition[] = [
         config: portkeyConfig["google/gemini-2.5-flash-lite"],
         transform: pipe(
             sanitizeToolSchemas,
+            adaptGoogleSearchToolForOpenRouter,
             stripLogitBias,
             createOpenRouterNativeWebSearchTransform(),
             createGeminiThinkingTransform("v2.5"),
@@ -279,6 +282,7 @@ const models: ModelDefinition[] = [
         config: portkeyConfig["google/gemini-3.1-flash-lite"],
         transform: pipe(
             sanitizeToolSchemas,
+            adaptGoogleSearchToolForOpenRouter,
             createOpenRouterNativeWebSearchTransform(),
             createGeminiThinkingTransform("v3-flash"),
         ),
@@ -288,6 +292,7 @@ const models: ModelDefinition[] = [
         config: portkeyConfig["google/gemini-3.6-flash"],
         transform: pipe(
             sanitizeToolSchemas,
+            adaptGoogleSearchToolForOpenRouter,
             createOpenRouterNativeWebSearchTransform(),
             // Gemini 3.6 requires reasoning; map `none` to its lowest level.
             createGeminiThinkingTransform("v3-pro"),
@@ -350,10 +355,10 @@ const models: ModelDefinition[] = [
     },
     {
         name: "gemini-large",
-        config: portkeyConfig["gemini-3.1-pro-preview"],
+        config: portkeyConfig["google/gemini-3.1-pro-preview"],
         transform: pipe(
             sanitizeToolSchemas,
-            createGeminiToolsTransform(["code_execution"]),
+            adaptGoogleSearchToolForOpenRouter,
             removeToolsForJsonResponse,
             createGeminiThinkingTransform("v3-pro"),
         ),

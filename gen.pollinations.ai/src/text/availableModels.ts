@@ -7,6 +7,7 @@ import { createGeminiThinkingTransform } from "./transforms/createGeminiThinking
 import {
     adaptGoogleSearchToolForOpenRouter,
     createOpenRouterNativeWebSearchTransform,
+    stripLogitBiasForNativeWebSearch,
 } from "./transforms/createGeminiToolsTransform.ts";
 import { createMessageTransform } from "./transforms/createMessageTransform.js";
 import { createPerplexitySearchTransform } from "./transforms/createPerplexitySearchTransform.ts";
@@ -34,14 +35,6 @@ interface ModelDefinition {
     config: (typeof portkeyConfig)[string];
     transform?: TransformFn;
 }
-
-// The OpenRouter 2.5 route returns 500 when logit_bias is combined with native
-// web search.
-const stripLogitBias: TransformFn = (messages, options) => {
-    const supportedOptions = { ...options };
-    delete supportedOptions.logit_bias;
-    return { messages, options: supportedOptions };
-};
 
 const models: ModelDefinition[] = [
     {
@@ -263,6 +256,7 @@ const models: ModelDefinition[] = [
         transform: pipe(
             sanitizeToolSchemas,
             adaptGoogleSearchToolForOpenRouter,
+            stripLogitBiasForNativeWebSearch,
             createGeminiThinkingTransform("v2.5"),
         ),
     },
@@ -272,8 +266,8 @@ const models: ModelDefinition[] = [
         transform: pipe(
             sanitizeToolSchemas,
             adaptGoogleSearchToolForOpenRouter,
-            stripLogitBias,
             createOpenRouterNativeWebSearchTransform(),
+            stripLogitBiasForNativeWebSearch,
             createGeminiThinkingTransform("v2.5"),
         ),
     },

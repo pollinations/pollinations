@@ -99,6 +99,24 @@ describe("OpenRouter Gemini routing", () => {
             },
         ]);
     });
+
+    it.each(
+        routes.map(([model]) => model),
+    )("adapts legacy Google Search functions for %s", async (model) => {
+        const transform = findModelByName(model)?.transform;
+        if (!transform) throw new Error(`${model} transform missing`);
+
+        const { options } = await transform([], {
+            tools: [{ type: "function", function: { name: "google_search" } }],
+        });
+
+        expect(options.tools).toEqual([
+            {
+                type: "openrouter:web_search",
+                parameters: { engine: "native" },
+            },
+        ]);
+    });
 });
 
 describe("OpenRouter Gemini native search", () => {
@@ -144,5 +162,28 @@ describe("OpenRouter Gemini native search", () => {
         });
 
         expect(options.logit_bias).toBeUndefined();
+    });
+
+    it("drops logit_bias from explicit search on the 2.5 general route", async () => {
+        const transform = findModelByName("gemini-fast")?.transform;
+        if (!transform) throw new Error("gemini-fast transform missing");
+
+        const { options } = await transform([], {
+            tools: [{ type: "google_search" }],
+            logit_bias: { "1": -1 },
+        });
+
+        expect(options.logit_bias).toBeUndefined();
+    });
+
+    it("preserves logit_bias without native search on the 2.5 route", async () => {
+        const transform = findModelByName("gemini-fast")?.transform;
+        if (!transform) throw new Error("gemini-fast transform missing");
+
+        const { options } = await transform([], {
+            logit_bias: { "1": -1 },
+        });
+
+        expect(options.logit_bias).toEqual({ "1": -1 });
     });
 });

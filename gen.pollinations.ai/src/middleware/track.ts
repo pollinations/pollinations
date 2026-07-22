@@ -342,12 +342,17 @@ export const track = (eventType: EventType) =>
                     { event: finalEvent },
                 );
 
-                await sendToTinybird(
-                    finalEvent,
-                    c.env.TINYBIRD_INGEST_URL,
-                    c.env.TINYBIRD_INGEST_TOKEN,
-                    log,
-                );
+                if (
+                    userTracking.userId &&
+                    !responseTracking.cacheData.cacheHit
+                ) {
+                    await sendToTinybird(
+                        finalEvent,
+                        c.env.TINYBIRD_INGEST_URL,
+                        c.env.TINYBIRD_INGEST_TOKEN,
+                        log,
+                    );
+                }
 
                 if (shouldRunAutoTopUp && userTracking.userId) {
                     await triggerAutoTopUp(c.env, userTracking.userId, log);

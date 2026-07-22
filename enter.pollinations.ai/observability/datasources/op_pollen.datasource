@@ -1,8 +1,8 @@
 DESCRIPTION >
     Product usage in Pollen per month, provider, and model: cost/price/request
     totals (paid vs. quests) and byop/model payout totals. Maintained by
-    op_pollen_populate directly from generation_event, so op_pollen_api never
-    scans raw event history (generation_event is 500M+ rows in prod).
+    op_pollen_populate directly from generation_event_v2, so op_pollen_api never
+    scans raw event history (generation_event_v2 has hundreds of millions of rows).
 
 TOKEN "tinybird_read" READ
 

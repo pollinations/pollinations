@@ -98,7 +98,7 @@ describe("error observability", () => {
                 LOG_LEVEL: "debug",
                 LOG_FORMAT: "text",
                 TINYBIRD_INGEST_URL:
-                    "https://tinybird.test/v0/events?name=generation_event",
+                    "https://tinybird.test/v0/events?name=generation_event_v2",
                 TINYBIRD_INGEST_TOKEN: "test_tinybird_token",
             } as CloudflareBindings,
             ctx,
@@ -217,7 +217,7 @@ describe("error observability", () => {
                 LOG_LEVEL: "debug",
                 LOG_FORMAT: "text",
                 TINYBIRD_INGEST_URL:
-                    "https://tinybird.test/v0/events?name=generation_event",
+                    "https://tinybird.test/v0/events?name=generation_event_v2",
                 TINYBIRD_INGEST_TOKEN: "test_tinybird_token",
             } as CloudflareBindings,
             ctx,
@@ -299,7 +299,7 @@ describe("error observability", () => {
                 LOG_LEVEL: "debug",
                 LOG_FORMAT: "text",
                 TINYBIRD_INGEST_URL:
-                    "https://tinybird.test/v0/events?name=generation_event",
+                    "https://tinybird.test/v0/events?name=generation_event_v2",
                 TINYBIRD_INGEST_TOKEN: "test_tinybird_token",
             } as CloudflareBindings,
             ctx,
@@ -369,7 +369,7 @@ describe("error observability", () => {
                 LOG_LEVEL: "debug",
                 LOG_FORMAT: "text",
                 TINYBIRD_INGEST_URL:
-                    "https://tinybird.test/v0/events?name=generation_event",
+                    "https://tinybird.test/v0/events?name=generation_event_v2",
                 TINYBIRD_INGEST_TOKEN: "test_tinybird_token",
             } as CloudflareBindings,
             ctx,
@@ -434,7 +434,7 @@ describe("error observability", () => {
                 LOG_FORMAT: "text",
                 PORTKEY_GATEWAY_URL: "https://portkey.test",
                 TINYBIRD_INGEST_URL:
-                    "https://tinybird.test/v0/events?name=generation_event",
+                    "https://tinybird.test/v0/events?name=generation_event_v2",
                 TINYBIRD_INGEST_TOKEN: "test_tinybird_token",
             } as CloudflareBindings,
             ctx,
@@ -504,7 +504,7 @@ describe("error observability", () => {
                 LOG_FORMAT: "text",
                 PORTKEY_GATEWAY_URL: "https://portkey.test",
                 TINYBIRD_INGEST_URL:
-                    "https://tinybird.test/v0/events?name=generation_event",
+                    "https://tinybird.test/v0/events?name=generation_event_v2",
                 TINYBIRD_INGEST_TOKEN: "test_tinybird_token",
             } as CloudflareBindings,
             ctx,

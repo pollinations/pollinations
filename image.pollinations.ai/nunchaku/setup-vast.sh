@@ -32,8 +32,9 @@
 #                     use mit-han-lab/svdq-int4-flux.1-schnell on Ada GPUs
 #   MAX_PIXELS        default 1048576 (1024x1024, matches FP4/5090);
 #                     use 810000 on RTX 4090
-#   QUEUE_LIMIT       default 10 (server.py sheds load with 503 beyond this;
-#                     gateway then falls back to Fireworks)
+#   QUEUE_LIMIT       default 3 (one running plus two waiting; server.py sheds
+#                     additional load with 503 so the gateway falls back to
+#                     Fireworks instead of building a long user-facing queue)
 #   SERVICE_TYPE      default flux
 #   GIT_BRANCH        default main
 #   SKIP_CLONE        use files already in $WORK_DIR (hosts w/ broken GitHub egress)
@@ -151,7 +152,7 @@ log "Writing run environment to $NUNCHAKU_DIR/.env.flux..."
     printf 'export SERVICE_TYPE=%q\n' "$SERVICE_TYPE"
     printf 'export QUANT_MODEL_PATH=%q\n' "$QUANT_MODEL_PATH"
     printf 'export MAX_PIXELS=%q\n' "$MAX_PIXELS"
-    printf 'export QUEUE_LIMIT=%q\n' "${QUEUE_LIMIT:-10}"
+    printf 'export QUEUE_LIMIT=%q\n' "${QUEUE_LIMIT:-3}"
     printf 'export CUDA_VISIBLE_DEVICES=%q\n' "${CUDA_VISIBLE_DEVICES:-0}"
     printf 'export HF_XET_HIGH_PERFORMANCE=1\n'
 } > "$NUNCHAKU_DIR/.env.flux"

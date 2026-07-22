@@ -62,6 +62,11 @@ screen -r cloudflared
 /root/onstart.sh
 ```
 
-The setup defaults are `QUEUE_LIMIT=10`, `MAX_PIXELS=1048576`, and
+The setup defaults are `QUEUE_LIMIT=3`, `MAX_PIXELS=1048576`, and
 `mit-han-lab/svdq-fp4-flux.1-schnell`. Override them only through the documented
 environment variables in `setup-vast.sh`.
+
+`QUEUE_LIMIT=3` means one request can run while two wait. Additional requests
+receive 503 immediately so the gateway can use Fireworks rather than building a
+long user-facing queue. Keep Fireworks enabled as burst capacity; add a second
+Vast GPU only when its measured avoided fallback cost exceeds its hourly cost.

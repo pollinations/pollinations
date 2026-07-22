@@ -71,7 +71,9 @@ POLLINATIONS_API_KEY=... bash image.pollinations.ai/nunchaku/verify-vast.sh  # r
 ```
 
 **Key behavior:** FP4 nunchaku, 4 steps, full 1024x1024 (`MAX_PIXELS=1048576`);
-`QUEUE_LIMIT=10` sheds load with 503 → gateway falls back to Fireworks.
+`QUEUE_LIMIT=3` allows one running request plus two waiting; additional load is
+shed with 503 so the gateway falls back to Fireworks instead of making users
+wait in a long queue.
 
 ## Provider: Vast.ai — FLUX.2 Klein 4B (RTX 3090)
 

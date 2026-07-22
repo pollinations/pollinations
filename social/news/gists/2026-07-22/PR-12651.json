@@ -1,0 +1,35 @@
+{
+  "pr_number": 12651,
+  "title": "feat: route Google text models through OpenRouter",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/12651",
+  "merged_at": "2026-07-22T21:14:15Z",
+  "labels": [],
+  "pr_body_excerpt": "- Routes all eight Google text services through exact OpenRouter Google Vertex endpoints with `allow_fallbacks: false`; upgrades `gemini` and `gemini-search-large` from Gemini 3.5 Flash to 3.6 Flash while preserving old aliases.\n- Preserves function tools, multimodal input, streaming, reasoning, and Google Search. Public and legacy function-shaped `google_search` tools are translated to OpenRouter native search; Gemini 2.5 drops `logit_bias` only on search requests. Server-side code execution is intentionally removed by product decision.\n- Makes `gemini-fast` the Quest Pollen option (`paidOnly: false`); the other seven remain paid-only. All retain multiplier `1`.\n- Bills reported image/video inputs, OpenRouter native search at $0.014/request, and five-minute cache storage at the Flash/Pro rates. Long-context tiering and rare usage-less `max_tokens=1` responses remain explicitly assigned to the incoming pricing-system PR.\n- Validated with Biome, both typechecks, all 629 Gen tests, 276 focused Enter model/pricing tests, and local E2E for every service: text, tools, native search, search billing, image/audio/video, and streaming. Full Enter: 549 pass; 63 unrelated Stripe tests require unavailable Stripe secrets.\n",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Google found a clearer route",
+    "blurb": "Eight Google text models have moved onto their exact OpenRouter Vertex paths, with the old aliases still humming along. Polli put up better signposts; the tools, streams, images, and searches all made it through.",
+    "summary": "Routed all eight Google text services through exact OpenRouter Google Vertex endpoints with fallbacks disabled, upgraded gemini and gemini-search-large to Gemini 3.6 Flash while preserving aliases, and translated legacy google_search tools into OpenRouter native search.",
+    "impact": "Developers get Gemini 3.6 Flash plus reliable support for streaming, reasoning, function tools, multimodal inputs, and billed native Google Search across the Google model lineup; gemini-fast is now available as the non-paid Quest Pollen option.",
+    "keywords": [
+      "google",
+      "openrouter",
+      "gemini",
+      "vertex-ai",
+      "search",
+      "tools",
+      "models"
+    ],
+    "visual_concept": "Depict a cozy garden routing station where eight labeled pollen paths flow from Google-colored-but-pastel cloud signposts into a single OpenRouter gate, representing exact model routing without fallbacks. Polli should be a cheerful route keeper with a tiny navigator cap, directing glowing text, image, audio, video, tool, and search packets toward a retro terminal, while code-plants and small flowers grow around the cables.",
+    "image_prompt": "A cozy pixel art garden routing station where Polli, the cute yellow bee with dark brown stripes, black oval eyes, pink rectangular cheek blushes, light blue translucent wings, and a tiny navigator cap happily directs eight glowing pastel data paths from cloud signposts through a friendly retro OpenRouter gateway; a CRT terminal shows simple pixel text “GEMINI 3.6”, with little search magnifying-glass packets, tool icons, and code-plants flowering nearby. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel mint-lavender-peach gradient background, chunky retro sprites, warm lighting, subtle CRT glow, lo-fi vibes like Stardew Valley or A Short Hike, nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-22/PR-12651.jpg",
+    "prompt": "A cozy pixel art garden routing station where Polli, the cute yellow bee with dark brown stripes, black oval eyes, pink rectangular cheek blushes, light blue translucent wings, and a tiny navigator cap happily directs eight glowing pastel data paths from cloud signposts through a friendly retro OpenRouter gateway; a CRT terminal shows simple pixel text “GEMINI 3.6”, with little search magnifying-glass packets, tool icons, and code-plants flowering nearby. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel mint-lavender-peach gradient background, chunky retro sprites, warm lighting, subtle CRT glow, lo-fi vibes like Stardew Valley or A Short Hike, nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-07-22T21:18:00.162291+00:00"
+}

@@ -1,5 +1,6 @@
 import { remapUpstreamStatus, UpstreamError } from "@shared/error.ts";
 import { IMMUTABLE_CACHE_CONTROL } from "@shared/http/cache-control.ts";
+import { IMAGE_SERVICES } from "@shared/registry/image.ts";
 import type { Context } from "hono";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
 import type { Env } from "@/env.ts";
@@ -382,19 +383,17 @@ async function generateVideoResult(
     return createAndReturnVideo(originalPrompt, safeParams, c.get("requestId"));
 }
 
-// Legacy resolution-suffixed model names (now aliases of their canonical
-// models) imply the locked resolution they shipped with, so existing callers
-// keep byte-identical behavior and pricing.
-export const LEGACY_RESOLUTION_ALIASES: Record<string, "1080p"> = {
-    "veo-1080p": "1080p",
-    "veo-3.1-fast-1080p": "1080p",
-    "veo-1080": "1080p",
-    "wan-pro-1080p": "1080p",
-    "wan2.7-1080p": "1080p",
-    "wan-pro-1080": "1080p",
-    "p-video-1080p": "1080p",
-    "pruna-video-1080p": "1080p",
-};
+// Legacy resolution-suffixed model names (now registry aliases of their
+// canonical models) imply the locked resolution they shipped with. Derived
+// from the registry so a new -1080p/-1080 alias can never silently bill the
+// base resolution.
+export const LEGACY_RESOLUTION_ALIASES: Record<string, "1080p"> =
+    Object.fromEntries(
+        Object.values(IMAGE_SERVICES)
+            .flatMap((def) => def.aliases)
+            .filter((alias) => /-(1080p|1080)$/.test(alias))
+            .map((alias) => [alias, "1080p" as const]),
+    );
 
 // Resolve the effective resolution (explicit param beats legacy alias) and
 // register it as pricing input so billing selects the matching cost variant.

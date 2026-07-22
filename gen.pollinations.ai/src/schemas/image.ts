@@ -111,7 +111,7 @@ const GenerateImageRequestQueryParamsBaseSchema = z.object({
     }),
     resolution: z.enum(["480p", "720p", "1080p"]).optional().meta({
         description:
-            "Output resolution for resolution-priced video models (`veo`, `wan-pro`, `p-video`, `seedance-pro`). Defaults to 720p. Non-default resolutions bill at the model's rate for that tier — see `pricing` on `/image/models`.",
+            "Output resolution for resolution-priced video models (`veo`, `wan-pro`, `p-video`, `seedance-pro`). Defaults to 720p. Non-default resolutions bill at the model's rate for that tier.",
     }),
 });
 

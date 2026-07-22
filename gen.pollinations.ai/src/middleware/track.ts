@@ -118,9 +118,6 @@ type ResponseTrackingData = {
     // merged, multiplier applied). The tracking event records this sheet so
     // recorded rates always reproduce the billed totals.
     priceDefinition?: PriceDefinition;
-    // Applied cost variant name (financial identity; modelUsed stays
-    // observational).
-    costVariant?: string;
     contentFilterResults?: GenerationEventContentFilterParams;
 };
 
@@ -131,8 +128,8 @@ export type TrackVariables = {
         streamRequested: boolean;
         overrideResponseTracking: (response: Response) => void;
         // Service layers (text/image/video/3d response builders) register the
-        // normalized request facts that can affect pricing (resolution, audio,
-        // …). Consumed once at billing time by selectCostVariant.
+        // normalized request facts that can affect pricing (currently
+        // resolution). Consumed once at billing time by selectCostVariant.
         setPricingInput: (input: PricingInput) => void;
     };
 };
@@ -522,14 +519,13 @@ async function trackResponse(
     // Single pass: cost, price, and the per-rule fee breakdown all derive from
     // one walk over the billing rules, so the event's adjustment maps always
     // match the billed totals and clamp warnings log once per request.
-    const { cost, price, adjustments, priceDefinition, costVariant } =
-        calculateUsageBilling(
-            resolvedModelRequested,
-            modelUsage.usage,
-            requestTracking.modelDefinition,
-            modelUsage.output,
-            pricingInput,
-        );
+    const { cost, price, adjustments, priceDefinition } = calculateUsageBilling(
+        resolvedModelRequested,
+        modelUsage.usage,
+        requestTracking.modelDefinition,
+        modelUsage.output,
+        pricingInput,
+    );
     return {
         responseOk: response.ok,
         responseStatus: response.status,
@@ -540,7 +536,6 @@ async function trackResponse(
         price,
         adjustments,
         priceDefinition,
-        costVariant,
         modelUsed: modelUsage.model,
         usage: modelUsage.usage,
         contentFilterResults,

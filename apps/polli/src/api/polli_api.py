@@ -26,7 +26,7 @@ class ChatRequest(BaseModel):
     """
 
     messages: list[Message]
-    model: str | None = None  # ignored — always routes to polli
+    model: str | None = None  # ignored — always routes to polly
 
     # Generation parameters — all passed through to the underlying LLM
     temperature: float | None = None
@@ -139,7 +139,7 @@ def create_api_app(pollinations_client, config):
         if request.stream:
             raise HTTPException(
                 status_code=400,
-                detail="Streaming is not supported for the polli model. Use stream=false.",
+                detail="Streaming is not supported for the polly model. Use stream=false.",
             )
 
         thread_history = None
@@ -205,7 +205,7 @@ def create_api_app(pollinations_client, config):
                     "id": f"chatcmpl-{uuid4_hex()[:24]}",
                     "object": "chat.completion",
                     "created": int(time.time()),
-                    "model": "polli",
+                    "model": "polly",
                     "choices": [
                         {
                             "index": 0,

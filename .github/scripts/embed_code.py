@@ -5,7 +5,7 @@ Two modes:
   --mode full        Embed every matching file in the repo (first-time backfill / manual re-embed).
   --mode incremental  Embed only files changed between two git refs; delete vectors for removed/renamed files.
 
-Chunking mirrors apps/polly/src/services/embeddings.py's Python fallback path so search results
+Chunking mirrors apps/polli/src/services/embeddings.py's Python fallback path so search results
 stay consistent between the one-time backfill and future incremental updates.
 """
 
@@ -510,7 +510,7 @@ def _language_for(rel_path: str) -> str:
 
 def _app_for(rel_path: str) -> str:
     """Top-level path segment — the monorepo's app/service boundary, e.g.
-    "enter.pollinations.ai" or "apps/polly". Lets search be scoped to one part of the repo.
+    "enter.pollinations.ai" or "apps/polli". Lets search be scoped to one part of the repo.
 
     Root-level files (README.md, package.json, ...) share a single "(root)" bucket rather
     than each becoming its own one-file "app", which would make this field useless as a filter.

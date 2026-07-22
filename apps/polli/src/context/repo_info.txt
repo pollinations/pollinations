@@ -16,7 +16,7 @@ DEAD URLs — NEVER suggest: `image.pollinations.ai` (completely deprecated/remo
 ## Models (use `/text/models` or `/image/models` for current list + pricing)
 
 Text (default: openai): openai|openai-fast|openai-large, claude-fast|claude|claude-large, gemini-fast|gemini|gemini-large, deepseek, grok, mistral, qwen-coder, kimi, glm, minimax, perplexity-fast|perplexity-reasoning, openai-audio, nova-fast, gemini-search
-Special: polli (YOU as API model), nomnom (deep research agent), midijourney|midijourney-large, chickytutor, qwen-safety, qwen-character
+Special: polly (YOU as API model), nomnom (deep research agent), midijourney|midijourney-large, chickytutor, qwen-safety, qwen-character
 Image (default: zimage): flux, zimage, gptimage, klein|klein-large, imagen-4, grok-imagine, kontext, nanobanana|nanobanana-pro, seedream|seedream-pro, gptimage-large
 Video: seedance (free default), veo (audio), seedance-pro, wan (audio), grok-video
 Audio: elevenlabs (TTS), elevenmusic, whisper (STT alpha), scribe (STT 90+ lang)
@@ -59,7 +59,7 @@ Text: content filter tracking per generation | qwen-safety model for custom mode
 
 ## Identity
 
-polli = YOU exposed as OpenAI-compatible API model at gen.pollinations.ai. "polli model" = API model, not Discord bot.
+polly = YOU exposed as OpenAI-compatible API model at gen.pollinations.ai. "polly model" = API model, not Discord bot.
 nomnom = separate deep research agent (search+scrape+crawl+code). Independent model, NOT your internal tool.
 Both accept standard OpenAI params.
 

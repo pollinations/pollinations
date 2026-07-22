@@ -25,7 +25,7 @@ flowchart TD
     E -->|Success| F{Check action + confidence}
     F -->|duplicate >= 0.85| G[Comment + Close as not_planned]
     F -->|resolved >= 0.85| H[Comment + Close as completed]
-    F -->|auto_fix >= 0.70| I[Comment + Add polli label]
+    F -->|auto_fix >= 0.70| I[Comment + Add polly label]
     F -->|skip / below threshold| C
     I --> J[repo-auto-fix-polli-issues.yml triggered]
 ```

@@ -56,6 +56,7 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
     const showNew = isNewModel(model);
     const showPaidOnly = isPaidOnly(model);
     const showAlpha = isAlpha(model);
+    const showStable = model.stable === true;
 
     const genPerPollen = calculatePerPollen(model);
     const balanceLabel = showPaidOnly ? (
@@ -154,6 +155,7 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                         <ModelStatusChips
                             showNew={showNew}
                             showAlpha={showAlpha}
+                            showStable={showStable}
                         />
                     </div>
                     <ModelId name={model.name} />

@@ -140,6 +140,7 @@ const MobileModelRow: FC<MobileModelRowProps> = ({ model }) => {
     const showNew = isNewModel(model);
     const showPaidOnly = isPaidOnly(model);
     const showAlpha = isAlpha(model);
+    const showStable = model.stable === true;
 
     const perPollen = calculatePerPollen(model);
 
@@ -209,11 +210,12 @@ const MobileModelRow: FC<MobileModelRowProps> = ({ model }) => {
                                 />
                             </div>
                         )}
-                        {(showNew || showAlpha) && (
+                        {(showNew || showAlpha || showStable) && (
                             <div className="flex min-w-0 flex-wrap items-center gap-1.5">
                                 <ModelStatusChips
                                     showNew={showNew}
                                     showAlpha={showAlpha}
+                                    showStable={showStable}
                                     alphaTooltip={false}
                                 />
                             </div>

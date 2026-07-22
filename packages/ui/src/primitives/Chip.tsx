@@ -2,7 +2,13 @@ import type { ComponentPropsWithoutRef, FC } from "react";
 import { cn } from "../lib/cn.ts";
 
 /** Semantic chip labels for status and metadata badges. */
-type ChipIntent = "news" | "alpha" | "neutral" | "warning" | "danger";
+type ChipIntent =
+    | "news"
+    | "alpha"
+    | "neutral"
+    | "warning"
+    | "danger"
+    | "stable";
 
 const chipSizes = {
     sm: "polli:px-2 polli:py-0.5 polli:text-xs",
@@ -16,6 +22,7 @@ const intentClasses: Record<ChipIntent, string> = {
     neutral: "polli:bg-ink-100/80 polli:text-ink-900",
     warning: "polli:bg-intent-warning-bg-light polli:text-intent-warning-text",
     danger: "polli:bg-intent-danger-bg-light polli:text-intent-danger-text",
+    stable: "polli:bg-intent-success-bg-light polli:text-intent-success-text",
 };
 
 export type ChipProps = ComponentPropsWithoutRef<"span"> & {

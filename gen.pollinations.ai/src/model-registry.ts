@@ -1,4 +1,7 @@
-import type { CommunityEndpointRuntime } from "@shared/community-endpoints.ts";
+import type {
+    CommunityEndpointGroupRuntime,
+    CommunityEndpointRuntime,
+} from "@shared/community-endpoints.ts";
 import {
     type ModelInfo,
     modelInfoFromDefinition,
@@ -36,6 +39,8 @@ export type GenerationModelEntry = {
     definition: ModelDefinition<string>;
     info: ModelInfo;
     communityEndpoint?: CommunityEndpointRuntime;
+    /** Set when this entry represents a community model group. */
+    group?: CommunityEndpointGroupRuntime;
     visible: boolean;
 };
 
@@ -99,6 +104,7 @@ function communityEntryToGenerationEntry(
         definition: entry.definition,
         info: entry.info,
         communityEndpoint: entry.communityEndpoint,
+        group: entry.group,
         // Public endpoints appear for everyone. Private endpoints are added
         // back for their owner by visibleEntries().
         visible:

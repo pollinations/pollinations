@@ -4,15 +4,17 @@ import type { FC } from "react";
 type ModelStatusChipsProps = {
     showNew: boolean;
     showAlpha: boolean;
+    showStable?: boolean;
     alphaTooltip?: boolean;
 };
 
 export const ModelStatusChips: FC<ModelStatusChipsProps> = ({
     showNew,
     showAlpha,
+    showStable = false,
     alphaTooltip = true,
 }) => {
-    if (!showNew && !showAlpha) {
+    if (!showNew && !showAlpha && !showStable) {
         return null;
     }
 
@@ -38,6 +40,16 @@ export const ModelStatusChips: FC<ModelStatusChipsProps> = ({
                         ALPHA
                     </Chip>
                 ))}
+            {showStable && (
+                <Tooltip
+                    triggerAs="span"
+                    content="Community model group — backed by multiple providers for higher reliability"
+                >
+                    <Chip intent="stable" size="sm">
+                        STABLE
+                    </Chip>
+                </Tooltip>
+            )}
         </span>
     );
 };

@@ -281,12 +281,18 @@ async function getVisibleVideoModelEntries(c: Context<Env>) {
 
 async function getOrderedVisibleModelEntries(c: Context<Env>) {
     const entries = await getVisibleModelEntries(c);
+    const communityEntries = entries.filter((entry) => entry.communityEndpoint);
+    // Groups first, then standalone community models.
+    const sortedCommunity = [
+        ...communityEntries.filter((entry) => entry.group),
+        ...communityEntries.filter((entry) => !entry.group),
+    ];
     return [
         ...entries.filter(
             (entry) =>
                 entry.eventType === "generate.text" && !entry.communityEndpoint,
         ),
-        ...entries.filter((entry) => entry.communityEndpoint),
+        ...sortedCommunity,
         ...entries.filter((entry) => entry.eventType === "generate.image"),
         ...entries.filter((entry) => entry.eventType === "generate.realtime"),
         ...entries.filter((entry) => entry.eventType === "generate.audio"),

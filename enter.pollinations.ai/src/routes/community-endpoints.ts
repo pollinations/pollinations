@@ -56,7 +56,7 @@ const UpdatePriceFieldsSchema = Object.fromEntries(
     ]),
 ) as unknown as Record<
     CommunityEndpointPriceKey,
-    z.ZodType<number | undefined>
+    z.ZodOptional<z.ZodType<number>>
 >;
 
 const VisibilitySchema = z
@@ -94,6 +94,7 @@ const UpdateEndpointSchema = z.object({
     bearerToken: EndpointFieldsSchema.bearerToken.optional(),
     visibility: VisibilitySchema.optional(),
     imagePricing: ImagePricingSchema.optional(),
+    active: z.boolean().optional(),
     ...UpdatePriceFieldsSchema,
 });
 const ModelListSchema = z.object({
@@ -595,6 +596,13 @@ export const communityEndpointsRoutes = new Hono<Env>()
             }
             if (input.visibility !== undefined) {
                 update.visibility = input.visibility;
+            }
+            if (input.active !== undefined) {
+                update.disabledAt = input.active ? null : new Date();
+                update.disabledReason = input.active
+                    ? null
+                    : "Deactivated by owner";
+                update.disabledBy = input.active ? null : "owner";
             }
             const storedImagePricing = normalizeCommunityEndpointImagePricing(
                 endpoint.imagePricing,

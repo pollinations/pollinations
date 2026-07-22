@@ -57,7 +57,9 @@ export function CommunityEndpoints({
         bearerToken: string,
     ): Promise<void> {
         const response = await apiClient.account["my-models"].$post({
-            json: { ...payload, bearerToken },
+            // A prompt agent mints its own worker token; only self-hosted
+            // endpoints carry a caller-supplied bearer token.
+            json: bearerToken ? { ...payload, bearerToken } : payload,
         });
         if (!response.ok) throw new Error(await readError(response));
         await loadEndpoints();

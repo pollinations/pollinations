@@ -201,6 +201,9 @@ export const communityEndpoint = sqliteTable("community_endpoint", {
   name: text("name").notNull(),
   description: text("description"),
   baseUrl: text("base_url").notNull(),
+  // Prompt agents store their config JSON (+ minted key id) here; null when
+  // the owner hosts the endpoint themselves (baseUrl-only registration).
+  promptAgent: text("prompt_agent"),
   upstreamModel: text("upstream_model").notNull(),
   bearerTokenCiphertext: text("bearer_token_ciphertext").notNull(),
   // Models default to private (owner-only and free). Public visibility is

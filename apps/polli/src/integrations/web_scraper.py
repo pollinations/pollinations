@@ -127,6 +127,155 @@ async def _try_scrapling(url: str, timeout: int) -> str | None:
         return None
 
 
+X_HOSTS = {"x.com", "www.x.com", "twitter.com", "www.twitter.com", "mobile.twitter.com"}
+FXTWITTER_API = "https://api.fxtwitter.com"
+
+# A login wall answers 200 with a page full of chrome and no article. Passing that back as
+# a successful scrape is worse than failing: the model cannot tell it apart from real
+# content and will happily summarise the navigation menu.
+LOGIN_WALL_MARKERS = (
+    "log in to x",
+    "sign in to x",
+    "sign up for twitter",
+    "javascript is not available",
+    "enable javascript and cookies to continue",
+    "you must log in to continue",
+    "please log in to continue",
+    "attention required! | cloudflare",
+    "verify you are human",
+    "whoa there, pardner",
+    "your request has been blocked",
+)
+
+
+def _looks_like_login_wall(text: str) -> bool:
+    """Whether scraped text is a gate rather than the page that was asked for."""
+    if not text:
+        return False
+    head = text[:4000].lower()
+    if not any(marker in head for marker in LOGIN_WALL_MARKERS):
+        return False
+    # Long pages that merely mention logging in are usually genuine articles, so only
+    # treat this as a wall when there is little else on the page.
+    return len(text.strip()) < 8000
+
+
+def _format_x_content(payload: dict) -> tuple[str, str] | None:
+    """Render an fxtwitter payload as (title, markdown)."""
+    tweet = payload.get("tweet")
+    if tweet:
+        author = tweet.get("author") or {}
+        handle = author.get("screen_name", "unknown")
+        name = author.get("name", handle)
+        lines = [
+            f"# Post by {name} (@{handle})",
+            "",
+            tweet.get("text", ""),
+            "",
+            f"- Posted: {tweet.get('created_at', 'unknown')}",
+            f"- Likes: {tweet.get('likes', 0):,} | Reposts: {tweet.get('retweets', 0):,} "
+            f"| Replies: {tweet.get('replies', 0):,}",
+            f"- URL: {tweet.get('url', '')}",
+        ]
+        if tweet.get("replying_to"):
+            lines.append(f"- Replying to: @{tweet['replying_to']}")
+        media = (tweet.get("media") or {}).get("all") or []
+        for item in media:
+            if item.get("url"):
+                lines.append(f"- Media ({item.get('type', 'media')}): {item['url']}")
+        note = tweet.get("community_note")
+        if note:
+            lines += ["", "**Community note:**", str(note)[:1500]]
+        return f"Post by @{handle}", "\n".join(lines)
+
+    user = payload.get("user")
+    if user:
+        handle = user.get("screen_name", "unknown")
+        lines = [
+            f"# @{handle} — {user.get('name', '')}".rstrip(),
+            "",
+            user.get("description", ""),
+            "",
+            f"- Followers: {user.get('followers', 0):,} | Following: {user.get('following', 0):,}",
+            f"- Posts: {user.get('tweets', 0):,}",
+            f"- URL: {user.get('url', '')}",
+        ]
+        return f"@{handle}", "\n".join(lines)
+
+    return None
+
+
+async def _try_x_api(url: str, timeout: int) -> dict | None:
+    """Read an x.com URL through fxtwitter's public JSON API.
+
+    x.com serves a login wall to anything without a session, so scraping it yields
+    navigation text rather than the post. fxtwitter returns the post itself, needs no
+    credentials, and works from a datacenter IP.
+    """
+    parsed = parse_url(url)
+    if parsed.netloc.lower() not in X_HOSTS:
+        return None
+
+    path = parsed.path.rstrip("/")
+    if not path or path == "/":
+        return None
+
+    api_url = f"{FXTWITTER_API}{path}"
+    try:
+        import aiohttp
+
+        async with aiohttp.ClientSession() as session:
+            async with session.get(
+                api_url,
+                headers={"User-Agent": "polli-bot/1.0"},
+                timeout=aiohttp.ClientTimeout(total=timeout),
+            ) as response:
+                if response.status != 200:
+                    logger.debug("fxtwitter returned %s for %s", response.status, url)
+                    return None
+                payload = await response.json(content_type=None)
+    except Exception as e:
+        logger.debug("fxtwitter request failed for %s: %s", url, e)
+        return None
+
+    if payload.get("code") != 200:
+        return None
+
+    formatted = _format_x_content(payload)
+    if not formatted:
+        return None
+
+    title, markdown = formatted
+    return {"success": True, "url": url, "title": title, "markdown": markdown, "_fetcher": "fxtwitter"}
+
+
+async def _try_jina(url: str, timeout: int) -> str | None:
+    """Last-resort read through Jina Reader, which fetches from its own infrastructure.
+
+    Useful when the target blocks this host specifically. It cannot defeat a block that
+    also covers Jina, so callers must still handle failure.
+    """
+    try:
+        import aiohttp
+
+        async with aiohttp.ClientSession() as session:
+            async with session.get(
+                f"https://r.jina.ai/{url}",
+                headers={"User-Agent": "polli-bot/1.0", "X-Return-Format": "markdown"},
+                timeout=aiohttp.ClientTimeout(total=timeout),
+            ) as response:
+                if response.status != 200:
+                    return None
+                text = await response.text()
+    except Exception as e:
+        logger.debug("Jina Reader failed for %s: %s", url, e)
+        return None
+
+    if not text or _looks_like_login_wall(text):
+        return None
+    return text
+
+
 async def scrape_url(
     url: str,
     extraction_strategy: str | None = None,
@@ -166,6 +315,13 @@ async def scrape_url(
     except Exception:
         return {"success": False, "url": url, "error": "Invalid URL format"}
 
+    # ── Layer 0: x.com via fxtwitter ──────────────────────────────────────────
+    # Ahead of the generic fetchers because they can only ever reach the login wall.
+    x_result = await _try_x_api(url, min(timeout, 15))
+    if x_result:
+        logger.debug(f"fxtwitter succeeded for {url}")
+        return x_result
+
     # ── Layer 1: rnet (Rust HTTP + Chrome TLS) ────────────────────────────────
     # ── Layer 2: scrapling AsyncFetcher (curl_cffi stealth) ──────────────────
     # Fast path for basic markdown — skip browser entirely when not needed.
@@ -187,17 +343,24 @@ async def scrape_url(
     ):
         rnet_timeout = min(timeout, 12)
         md = await _try_rnet(url, rnet_timeout)
-        if md:
+        if md and not _looks_like_login_wall(md):
             logger.debug(f"rnet succeeded for {url}")
             return {"success": True, "url": url, "title": "", "markdown": md, "_fetcher": "rnet"}
 
         scrapling_timeout = min(timeout, 18)
         md = await _try_scrapling(url, scrapling_timeout)
-        if md:
+        if md and not _looks_like_login_wall(md):
             logger.debug(f"scrapling succeeded for {url}")
             return {"success": True, "url": url, "title": "", "markdown": md, "_fetcher": "scrapling"}
 
-        logger.debug(f"rnet+scrapling both failed for {url}, falling back to crawl4ai")
+        # Reaching a login wall means this host is the problem, so ask Jina to fetch it
+        # from elsewhere before spending a browser launch on the same wall.
+        jina_md = await _try_jina(url, min(timeout, 25))
+        if jina_md:
+            logger.debug(f"jina succeeded for {url}")
+            return {"success": True, "url": url, "title": "", "markdown": jina_md, "_fetcher": "jina"}
+
+        logger.debug(f"rnet+scrapling+jina all failed for {url}, falling back to crawl4ai")
 
     # ── Layer 3: crawl4ai (Playwright browser) ────────────────────────────────
     # Used when: browser features needed, or rnet/scrapling returned empty.
@@ -311,6 +474,16 @@ async def _scrape_with_crawl4ai(
                     "success": False,
                     "url": url,
                     "error": f"Failed to fetch page: {result.error_message or 'Unknown error'}",
+                }
+
+            # The browser renders a login wall as happily as a real page, so check here
+            # too rather than handing the model a page of navigation text.
+            rendered = (getattr(result.markdown, "raw_markdown", None) or "") if result.markdown else ""
+            if _looks_like_login_wall(rendered):
+                return {
+                    "success": False,
+                    "url": url,
+                    "error": "Page requires a login or blocked automated access; no content available.",
                 }
 
             response = {
@@ -841,7 +1014,10 @@ async def web_scrape_handler(
         return {
             "error": f"Unknown action: {action}",
             "available_actions": [
-                "scrape - Single URL to markdown (rnet → scrapling → crawl4ai)",
+                "scrape - Single URL to markdown (rnet → scrapling → Jina → crawl4ai). "
+                "x.com/twitter.com links are read through fxtwitter, so posts and profiles "
+                "come back as real content. Reddit blocks this server, so reddit.com links "
+                "return an error rather than a page.",
                 "extract - URL + LLM extraction",
                 "css_extract - URL + CSS schema (fast)",
                 "semantic - URL + cosine clustering",

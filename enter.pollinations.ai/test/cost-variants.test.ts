@@ -1,5 +1,9 @@
 import { describe, expect, it, vi } from "vitest";
 import {
+    getImageModelsInfo,
+    getTextModelsInfo,
+} from "../../shared/registry/model-info.ts";
+import {
     calculateUsageBilling,
     getModels,
     getRegistryModelDefinition,
@@ -89,6 +93,20 @@ describe("long-context cost variants", () => {
         ).toBe(10);
     });
 
+    it("midijourney-large reprices >272K like its shared gpt-5.5 deployment", () => {
+        const midi = getRegistryModelDefinition("midijourney-large");
+        const billing = calculateUsageBilling(
+            "midijourney-large",
+            { promptTextTokens: 272_001, completionTextTokens: 1_000 },
+            midi,
+        );
+        expect(billing.costVariant).toBe("long_context");
+        expect(billing.cost.totalCost).toBeCloseTo(
+            272_001 * (10 / 1e6) + 1_000 * (45 / 1e6),
+            12,
+        );
+    });
+
     it("sums mixed prompt modalities toward the threshold", () => {
         const billing = calculateUsageBilling(
             "gemini-large",
@@ -176,6 +194,47 @@ describe("resolution cost variants", () => {
                 12,
             );
         }
+    });
+});
+
+describe("image-input cost variants", () => {
+    it("qwen-image bills the edit rate with a reference image, t2i without", () => {
+        const qwen = getRegistryModelDefinition("qwen-image");
+        const generate = calculateUsageBilling(
+            "qwen-image",
+            { completionImageTokens: 1 },
+            qwen,
+            undefined,
+            { hasImage: false },
+        );
+        expect(generate.costVariant).toBeUndefined();
+        expect(generate.cost.totalCost).toBeCloseTo(0.025, 12);
+
+        const edit = calculateUsageBilling(
+            "qwen-image",
+            { completionImageTokens: 1 },
+            qwen,
+            undefined,
+            { hasImage: true },
+        );
+        expect(edit.costVariant).toBe("edit");
+        expect(edit.cost.totalCost).toBeCloseTo(0.03, 12);
+    });
+});
+
+describe("model info exposure", () => {
+    it("publishes resolutions and per-variant effective pricing", () => {
+        const pVideo = getImageModelsInfo().find((m) => m.name === "p-video");
+        expect(pVideo?.resolutions).toEqual(["720p", "1080p"]);
+        expect(pVideo?.pricing_variants?.["1080p"]).toMatchObject({
+            completionVideoSeconds: "0.04",
+            currency: "pollen",
+        });
+
+        const gpt54 = getTextModelsInfo().find((m) => m.name === "gpt-5.4");
+        expect(gpt54?.pricing_variants?.long_context?.promptTextTokens).toBe(
+            "0.000005",
+        );
     });
 });
 

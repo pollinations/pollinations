@@ -23,6 +23,7 @@ import { Hono } from "hono";
 import { requestId } from "hono/request-id";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { Env } from "@/env.ts";
+import { handleImagePrompt } from "@/image/handler.ts";
 import { logger } from "@/middleware/logger.ts";
 import type { ModelVariables } from "@/middleware/model.ts";
 import { reduceAdjustmentsToEventFields, track } from "@/middleware/track.ts";
@@ -896,7 +897,11 @@ describe("cost-variant telemetry", () => {
         return requests;
     }
 
-    function baseMiddleware(app: Hono<Env>, model: ModelVariables["model"]) {
+    function baseMiddleware(
+        app: Hono<Env>,
+        model: ModelVariables["model"],
+        consumePollen: (amount: number) => Promise<void> = async () => {},
+    ) {
         app.use("*", requestId());
         app.use("*", logger);
         app.use("*", async (c, next) => {
@@ -911,7 +916,7 @@ describe("cost-variant telemetry", () => {
             c.set("balance", {
                 getBalance: async () => ({ tierBalance: 1, packBalance: 0 }),
             });
-            c.set("frontendKeyRateLimit", { consumePollen: async () => {} });
+            c.set("frontendKeyRateLimit", { consumePollen });
             c.set("model", model);
             await next();
         });
@@ -956,6 +961,91 @@ describe("cost-variant telemetry", () => {
         expect(event.totalCost).toBeCloseTo(10 * 0.04, 10);
         expect(event.totalPrice).toBeCloseTo(10 * 0.04, 10);
         expect(event.tokenPriceCompletionVideoSeconds).toBeCloseTo(0.04, 10);
+    });
+
+    it("bills the 1080p variant through the real image handler for a legacy alias", async () => {
+        const tinybirdRequests: Request[] = [];
+        let replicateInput: Record<string, unknown> | undefined;
+        vi.spyOn(globalThis, "fetch").mockImplementation(
+            async (input, init) => {
+                const request = new Request(input, init);
+                if (
+                    request.url ===
+                    "https://api.replicate.com/v1/models/prunaai/p-video/predictions"
+                ) {
+                    replicateInput = (await request.clone().json()) as Record<
+                        string,
+                        unknown
+                    >;
+                    return Response.json({
+                        id: "p-video-test",
+                        status: "succeeded",
+                        output: "https://output.test/video.mp4",
+                        metrics: { video_output_duration_seconds: 2 },
+                    });
+                }
+                if (request.url === "https://output.test/video.mp4") {
+                    return new Response(
+                        new Uint8Array([
+                            0, 0, 0, 20, 102, 116, 121, 112, 105, 115, 111, 109,
+                            0, 0, 0, 0, 105, 115, 111, 109,
+                        ]),
+                        { headers: { "content-type": "video/mp4" } },
+                    );
+                }
+                if (
+                    request.url ===
+                    "https://tinybird.test/v0/events?name=generation_event"
+                ) {
+                    tinybirdRequests.push(request);
+                    return new Response("ok");
+                }
+                throw new Error(`Unexpected fetch in test: ${request.url}`);
+            },
+        );
+        const consumePollen = vi.fn<(amount: number) => Promise<void>>(
+            async () => {},
+        );
+
+        const app = new Hono<Env>();
+        baseMiddleware(
+            app,
+            {
+                requested: "p-video-1080p",
+                resolved: "p-video",
+                definition: getRegistryModelDefinition("p-video"),
+            },
+            consumePollen,
+        );
+        app.get("/image/:prompt", track("generate.image"), (c) =>
+            handleImagePrompt(c, c.req.param("prompt")),
+        );
+
+        const ctx = createExecutionContext();
+        const response = await app.fetch(
+            new Request("https://gen.pollinations.ai/image/test?duration=2"),
+            {
+                ...BINDINGS,
+                REPLICATE_API_TOKEN: "test_replicate_token",
+            } as CloudflareBindings,
+            ctx,
+        );
+        await waitOnExecutionContext(ctx);
+
+        expect(response.status).toBe(200);
+        expect(response.headers.get("content-type")).toBe("video/mp4");
+        // The legacy alias implied the resolution all the way to the provider.
+        expect(replicateInput).toMatchObject({
+            input: { resolution: "1080p", duration: 2 },
+        });
+        expect(tinybirdRequests).toHaveLength(1);
+        const event = (await tinybirdRequests[0].json()) as Record<
+            string,
+            number
+        >;
+        expect(event.totalCost).toBeCloseTo(2 * 0.04, 10);
+        expect(event.tokenPriceCompletionVideoSeconds).toBeCloseTo(0.04, 10);
+        expect(consumePollen).toHaveBeenCalledWith(0.08);
     });
 
     it("bills and emits the long-context sheet when usage crosses the threshold", async () => {

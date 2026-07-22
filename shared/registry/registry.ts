@@ -450,6 +450,13 @@ export function getRegistryModelDefinition(model: ModelName): ModelDefinition {
     return definition;
 }
 
+export function getPriceDefinitionForCost(
+    cost: CostDefinition,
+    priceMultiplier: number,
+): PriceDefinition {
+    return derivePrice(cost, priceMultiplier);
+}
+
 export function getPriceDefinitionForModel(
     svc: ModelDefinition,
 ): PriceDefinition {

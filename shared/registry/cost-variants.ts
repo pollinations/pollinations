@@ -10,12 +10,14 @@ import type {
     UsageType,
 } from "./registry";
 
-// Normalized request facts that can affect pricing (currently just
-// resolution). Set once per request by the service layer via the track
+// Normalized request facts that can affect pricing (resolution, image-input
+// presence). Set once per request by the service layer via the track
 // middleware's pricing input, consumed only by selectCostVariant. Keep this
 // vocabulary small: a key earns its place when a live model prices on it.
 export type PricingInput = {
     resolution?: string;
+    // Request carries at least one reference image (image-to-image/edit path).
+    hasImage?: boolean;
 };
 
 export type CostVariantContext = {

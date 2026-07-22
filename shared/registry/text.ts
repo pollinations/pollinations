@@ -862,6 +862,18 @@ export const TEXT_SERVICES = {
             promptCachedTokens: perMillion(0.5),
             completionTextTokens: perMillion(30.0),
         },
+        // Same Azure gpt-5.5 deployment as openai-large, so the verified
+        // GPT-5.5 long-context meters ($10/$1/$45 >272k) apply here too.
+        ...defineCostVariants(
+            {
+                long_context: {
+                    promptTextTokens: perMillion(10.0),
+                    promptCachedTokens: perMillion(1.0),
+                    completionTextTokens: perMillion(45.0),
+                },
+            },
+            longContextAbove(272_000),
+        ),
         title: "MIDIjourney Large",
         description:
             "Composes richer, more detailed MIDI arrangements; costs more per piece",

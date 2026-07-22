@@ -396,19 +396,19 @@ export const LEGACY_RESOLUTION_ALIASES: Record<string, "1080p"> =
     );
 
 // Resolve the effective resolution (explicit param beats legacy alias) and
-// register it as pricing input so billing selects the matching cost variant.
-// This single call site covers every image/video model — handlers never pick
-// rates, they only consume safeParams.resolution.
-function applyResolutionPricing(
-    c: ImageContext,
-    safeParams: ImageParams,
-): void {
+// register the request's pricing facts so billing selects the matching cost
+// variant. This single call site covers every image/video model — handlers
+// never pick rates, they only consume safeParams.
+function applyPricingInput(c: ImageContext, safeParams: ImageParams): void {
     const legacyResolution =
         LEGACY_RESOLUTION_ALIASES[c.var.model.requested ?? ""];
     if (!safeParams.resolution && legacyResolution) {
         safeParams.resolution = legacyResolution;
     }
-    c.var.track.setPricingInput({ resolution: safeParams.resolution });
+    c.var.track.setPricingInput({
+        resolution: safeParams.resolution,
+        hasImage: (safeParams.image?.length ?? 0) > 0,
+    });
 }
 
 export async function generateImageOrVideoResponse(
@@ -419,7 +419,7 @@ export async function generateImageOrVideoResponse(
     syncImageEnvironment(c.env);
     const originalPrompt = decodePrompt(prompt || "random_prompt");
     const safeParams = parseImageParams(c, body);
-    applyResolutionPricing(c, safeParams);
+    applyPricingInput(c, safeParams);
 
     try {
         if (isVideoModel(safeParams.model)) {

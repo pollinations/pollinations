@@ -1,4 +1,7 @@
-import { costVariantsByResolution } from "./cost-variants";
+import {
+    costVariantsByResolution,
+    defineCostVariants,
+} from "./cost-variants";
 import { perMillion } from "./price-helpers";
 import type { ModelDefinition } from "./registry";
 
@@ -561,10 +564,19 @@ export const IMAGE_SERVICES = {
         paidOnly: true,
         priceMultiplier: 1,
         // Moved off Alibaba DashScope to Replicate: qwen/qwen-image (t2i,
-        // $0.025) + qwen/qwen-image-edit-plus (edit, $0.03). Billed at $0.03.
+        // $0.025) + qwen/qwen-image-edit-plus (edit, $0.03). The edit variant
+        // mirrors the handler's routing: any reference image → edit-plus.
         cost: {
-            completionImageTokens: 0.03, // per image
+            completionImageTokens: 0.025, // per image (t2i)
         },
+        ...defineCostVariants(
+            {
+                edit: {
+                    completionImageTokens: 0.03, // per image (edit)
+                },
+            },
+            ({ input }) => (input?.hasImage ? "edit" : undefined),
+        ),
         title: "Qwen Image Plus",
         description:
             "Versatile image creation and editing, strong at text inside images",

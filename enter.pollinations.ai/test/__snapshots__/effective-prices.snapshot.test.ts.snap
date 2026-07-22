@@ -770,6 +770,13 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptCachedTokens": 0.0000005,
       "promptTextTokens": 0.000005,
     },
+    "costVariants": {
+      "long_context": {
+        "completionTextTokens": 0.000045,
+        "promptCachedTokens": 0.000001,
+        "promptTextTokens": 0.00001,
+      },
+    },
     "price": {
       "completionTextTokens": 0.00003,
       "promptCachedTokens": 0.0000005,
@@ -1160,10 +1167,15 @@ exports[`effective cost and price per model — snapshot 1`] = `
   },
   "qwen-image": {
     "cost": {
-      "completionImageTokens": 0.03,
+      "completionImageTokens": 0.025,
+    },
+    "costVariants": {
+      "edit": {
+        "completionImageTokens": 0.03,
+      },
     },
     "price": {
-      "completionImageTokens": 0.03,
+      "completionImageTokens": 0.025,
     },
   },
   "qwen-large": {

@@ -6,8 +6,9 @@
  *   - text-to-image → qwen/qwen-image            ($0.025/img)
  *   - image editing → qwen/qwen-image-edit-plus  ($0.03/img, multi-image)
  *
- * We bill a single $0.03/img rate (registry), so the t2i path runs slightly
- * under cost — acceptable, and avoids under-billing the edit path.
+ * The registry bills each path at its real rate: $0.025 base (t2i) with an
+ * "edit" cost variant at $0.03, selected on reference-image presence — the
+ * same condition that routes to the edit model below.
  */
 
 import debug from "debug";

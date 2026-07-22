@@ -1,0 +1,35 @@
+{
+  "pr_number": 12664,
+  "title": "Add Ai Anime Legends Generator to image",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/12664",
+  "merged_at": "2026-07-22T22:50:59Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds [Ai Anime Legends Generator](https://anime.caasexpresss.com) to image\n- Ai Anime Legends Generator generates anime legends using AI.\n\nFixes #10355",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Legends enter the garden",
+    "blurb": "Ai Anime Legends Generator has landed in the app garden. It turns a prompt into an anime legend, because apparently folklore needed an API too.",
+    "summary": "Added Ai Anime Legends Generator to the community app directory, linking users to anime.caasexpresss.com for AI-generated anime legend creations.",
+    "impact": "Users can now discover Ai Anime Legends Generator alongside other Pollinations-powered apps and make anime-inspired legendary characters from prompts.",
+    "keywords": [
+      "community-app",
+      "image-generation",
+      "anime",
+      "app-directory",
+      "AI-art"
+    ],
+    "visual_concept": "Depict Polli as a tiny fantasy artist wearing a painter's beret, helping a friendly anime-style pixel hero emerge from a glowing retro image-generator monitor. Surround them with blooming code-flowers, a small legend book, and vine-wrapped terminals to represent the newly listed community image app.",
+    "image_prompt": "Cozy pixel art scene of the pollinations.ai bee mascot, with yellow body, dark brown stripes, pink cheek blush, light blue wings, and a tiny painter's beret, presenting a friendly anime-inspired pixel hero stepping out of a warm CRT image-generator monitor; a little book labeled \"LEGENDS\" rests beside blooming code-plants and pixel flowers. Cozy 8-bit pixel art aesthetic with a prominent lime green (#ecf874) and soft pastel gradient background, chunky retro sprites, warm lighting, retro gaming vibes, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-22/PR-12664.jpg",
+    "prompt": "Cozy pixel art scene of the pollinations.ai bee mascot, with yellow body, dark brown stripes, pink cheek blush, light blue wings, and a tiny painter's beret, presenting a friendly anime-inspired pixel hero stepping out of a warm CRT image-generator monitor; a little book labeled \"LEGENDS\" rests beside blooming code-plants and pixel flowers. Cozy 8-bit pixel art aesthetic with a prominent lime green (#ecf874) and soft pastel gradient background, chunky retro sprites, warm lighting, retro gaming vibes, nostalgic but beautiful."
+  },
+  "generated_at": "2026-07-22T22:52:03.361781+00:00",
+  "app_name": "Ai Anime Legends Generator",
+  "app_url": "https://anime.caasexpresss.com"
+}

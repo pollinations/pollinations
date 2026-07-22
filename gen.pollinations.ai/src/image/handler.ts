@@ -385,7 +385,7 @@ async function generateVideoResult(
 // Legacy resolution-suffixed model names (now aliases of their canonical
 // models) imply the locked resolution they shipped with, so existing callers
 // keep byte-identical behavior and pricing.
-const LEGACY_RESOLUTION_ALIASES: Record<string, "1080p"> = {
+export const LEGACY_RESOLUTION_ALIASES: Record<string, "1080p"> = {
     "veo-1080p": "1080p",
     "veo-3.1-fast-1080p": "1080p",
     "veo-1080": "1080p",

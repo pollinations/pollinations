@@ -21,7 +21,10 @@ import { normalizeSafeValue, type SafeValue } from "@shared/schemas/safety.ts";
 import type { Context } from "hono";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
 import type { Env } from "@/env.ts";
-import { generateImageOrVideoResponse } from "@/image/handler.ts";
+import {
+    generateImageOrVideoResponse,
+    LEGACY_RESOLUTION_ALIASES,
+} from "@/image/handler.ts";
 import { applySafety, withSafetyHeaders } from "@/middleware/safety.ts";
 import { arrayBufferToBase64 } from "@/util.ts";
 import { requireGenerationAccess } from "@/utils/generation-access.ts";
@@ -227,6 +230,16 @@ export async function handleImageGeneration(c: Context<Env>) {
             ...resolved,
         }))
             imageUrl.searchParams.set(key, String(value));
+        // The rebuilt URL must reproduce the resolution tier: `model` is the
+        // canonical id, so an explicit body resolution or one implied by a
+        // legacy suffixed name (veo-1080p, …) would otherwise be lost and the
+        // URL would regenerate — and bill — the base resolution.
+        const resolution =
+            (typeof body.resolution === "string"
+                ? body.resolution
+                : undefined) ??
+            LEGACY_RESOLUTION_ALIASES[c.var.model.requested ?? ""];
+        if (resolution) imageUrl.searchParams.set("resolution", resolution);
         const safeValue = normalizeSafeValue(body.safe as SafeValue);
         if (safeValue) {
             imageUrl.searchParams.set("safe", safeValue);

@@ -21,6 +21,12 @@ source "$ENV_FILE"
 : "${PLN_GPU_TOKEN:?PLN_GPU_TOKEN missing from $ENV_FILE}"
 : "${PUBLIC_IP:?PUBLIC_IP missing from $ENV_FILE}"
 
+PYTHON="$SCRIPT_DIR/venv/bin/python"
+if [ ! -x "$PYTHON" ]; then
+    echo "Missing $PYTHON; run setup-vast.sh first" >&2
+    exit 1
+fi
+
 CANARY_DIR=$(mktemp -d)
 trap 'rm -rf "$CANARY_DIR"' EXIT
 
@@ -42,7 +48,7 @@ curl -fsS --max-time 180 "https://$PUBLIC_IP/generate" \
     --data "{\"prompts\":[\"$PROMPT\"],\"width\":$WIDTH,\"height\":$HEIGHT,\"steps\":4,\"seed\":$SEED}" \
     > "$CANARY_DIR/direct.json"
 
-python - "$CANARY_DIR/direct.json" "$CANARY_DIR/direct.jpg" <<'PY'
+"$PYTHON" - "$CANARY_DIR/direct.json" "$CANARY_DIR/direct.jpg" <<'PY'
 import base64
 import json
 import sys
@@ -58,7 +64,7 @@ curl -fsS --max-time 180 "$PUBLIC_URL" \
     -H "Authorization: Bearer $POLLINATIONS_API_KEY" \
     > "$CANARY_DIR/public.jpg"
 
-python - "$CANARY_DIR/direct.jpg" "$CANARY_DIR/public.jpg" <<'PY'
+"$PYTHON" - "$CANARY_DIR/direct.jpg" "$CANARY_DIR/public.jpg" <<'PY'
 import sys
 from PIL import Image, ImageChops, ImageStat
 

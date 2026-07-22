@@ -468,11 +468,17 @@ def _language_for(rel_path: str) -> str:
 
 def _app_for(rel_path: str) -> str:
     """Top-level path segment — the monorepo's app/service boundary, e.g.
-    "enter.pollinations.ai" or "apps/polly". Lets search be scoped to one part of the repo."""
+    "enter.pollinations.ai" or "apps/polly". Lets search be scoped to one part of the repo.
+
+    Root-level files (README.md, package.json, ...) share a single "(root)" bucket rather
+    than each becoming its own one-file "app", which would make this field useless as a filter.
+    """
     parts = Path(rel_path).parts
-    if len(parts) >= 2 and parts[0] == "apps":
+    if len(parts) == 1:
+        return "(root)"
+    if parts[0] == "apps" and len(parts) >= 3:
         return f"apps/{parts[1]}"
-    return parts[0] if parts else rel_path
+    return parts[0]
 
 
 def _metadata_size(metadata: dict) -> int:

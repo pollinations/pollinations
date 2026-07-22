@@ -621,13 +621,15 @@ async def tool_discord_search(
             accessible_channel_ids.add(thread.id)
     action = action.lower()
     if query:
-        mentions = parse_discord_mentions(query)
-        if mentions["user_ids"] and not user_id:
-            user_id = mentions["user_ids"][0]
-        if mentions["channel_ids"] and not channel_id:
-            channel_id = mentions["channel_ids"][0]
-        if mentions["role_ids"] and not role_id:
-            role_id = mentions["role_ids"][0]
+        # Deliberately not `mentions`: that parameter is a single snowflake passed straight
+        # to the search API, and overwriting it with this dict makes Discord reject the call.
+        parsed = parse_discord_mentions(query)
+        if parsed["user_ids"] and not user_id:
+            user_id = parsed["user_ids"][0]
+        if parsed["channel_ids"] and not channel_id:
+            channel_id = parsed["channel_ids"][0]
+        if parsed["role_ids"] and not role_id:
+            role_id = parsed["role_ids"][0]
     if channel_name and not channel_id:
         ch_mentions = parse_discord_mentions(channel_name)
         if ch_mentions["channel_ids"]:

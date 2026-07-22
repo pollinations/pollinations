@@ -28,12 +28,13 @@ async function putCode(
     overrides: Record<string, unknown> = {},
 ): Promise<void> {
     const stored = {
-        key: "sk_test_access_token",
+        key: "at_test_access_token",
         clientId: "pk_test_client",
         redirectUri: REDIRECT_URI,
         scope: "profile",
         codeChallenge: await s256(VERIFIER),
         expiresIn: 604800,
+        resource: null,
         ...overrides,
     };
     await env.KV.put(`oauth-code:${code}`, JSON.stringify(stored), {
@@ -80,6 +81,7 @@ describe("OAuth authorization server metadata", () => {
         ]);
         expect(meta.code_challenge_methods_supported).toEqual(["S256"]);
         expect(meta.token_endpoint_auth_methods_supported).toEqual(["none"]);
+        expect(meta.client_id_metadata_document_supported).toBe(true);
     });
 });
 
@@ -95,8 +97,8 @@ describe("POST /api/oauth/token (authorization_code + PKCE)", () => {
         expect(res.status).toBe(200);
         expect(res.headers.get("Cache-Control")).toBe("no-store");
         const body = (await res.json()) as Record<string, unknown>;
-        expect(body.access_token).toBe("sk_test_access_token");
-        expect(body.token_type).toBe("bearer");
+        expect(body.access_token).toBe("at_test_access_token");
+        expect(body.token_type).toBe("Bearer");
         expect(body.scope).toBe("profile");
         expect(body.expires_in).toBe(604800);
 
@@ -120,7 +122,34 @@ describe("POST /api/oauth/token (authorization_code + PKCE)", () => {
         });
         expect(res.status).toBe(200);
         const body = (await res.json()) as { access_token: string };
-        expect(body.access_token).toBe("sk_test_access_token");
+        expect(body.access_token).toBe("at_test_access_token");
+    });
+
+    test("requires the resource used when the authorization code was created", async () => {
+        const resource = "https://mcp.pollinations.ai";
+        const missingCode = crypto.randomUUID();
+        await putCode(missingCode, { resource });
+
+        const missing = await SELF.fetch(
+            `${BASE}/api/oauth/token`,
+            formPost(validTokenParams(missingCode)),
+        );
+        expect(missing.status).toBe(400);
+        await expect(missing.json()).resolves.toMatchObject({
+            error: "invalid_grant",
+            error_description: "resource mismatch",
+        });
+
+        const matchingCode = crypto.randomUUID();
+        await putCode(matchingCode, { resource });
+        const matching = await SELF.fetch(
+            `${BASE}/api/oauth/token`,
+            formPost({
+                ...validTokenParams(matchingCode),
+                resource: `${resource}/`,
+            }),
+        );
+        expect(matching.status).toBe(200);
     });
 
     test("omitting redirect_uri is rejected (RFC 6749 §4.1.3)", async () => {
@@ -256,7 +285,7 @@ describe("POST /api/oauth/token (authorization_code + PKCE)", () => {
             token_type: string;
         };
         expect(body.access_token).toBe("sk_device_key");
-        expect(body.token_type).toBe("bearer");
+        expect(body.token_type).toBe("Bearer");
     });
 
     test("scope narrowed to zero is echoed as an empty scope (RFC 6749 §5.1)", async () => {
@@ -278,7 +307,6 @@ describe("POST /api/oauth/code (consent-side code creation)", () => {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
-                apiKey: "sk_x",
                 clientId: "pk_x",
                 redirectUri: REDIRECT_URI,
                 codeChallenge: await s256(VERIFIER),
@@ -320,7 +348,7 @@ describe("POST /api/oauth/code (consent-side code creation)", () => {
         );
         expect(metaRes.status).toBe(200);
 
-        // Consent approve: park the minted key behind a code
+        // Consent approve: mint an access token and park it behind a code
         const codeRes = await SELF.fetch(`${BASE}/api/oauth/code`, {
             method: "POST",
             headers: {
@@ -328,17 +356,22 @@ describe("POST /api/oauth/code (consent-side code creation)", () => {
                 Cookie: `better-auth.session_token=${sessionToken}`,
             },
             body: JSON.stringify({
-                apiKey: "sk_minted_by_consent",
                 clientId: client.key,
                 redirectUri: REDIRECT_URI,
                 scope: "profile",
                 codeChallenge: await s256(VERIFIER),
                 codeChallengeMethod: "S256",
                 expiresIn: 3600,
+                pollenBudget: 5,
+                accountPermissions: ["profile"],
             }),
         });
-        expect(codeRes.status).toBe(200);
-        const { code } = (await codeRes.json()) as { code: string };
+        const codeBody = (await codeRes.json()) as {
+            code?: string;
+            error?: string;
+        };
+        expect(codeRes.status, JSON.stringify(codeBody)).toBe(200);
+        const { code } = codeBody as { code: string };
         expect(code).toBeTruthy();
 
         // Client-side exchange, exactly what alp's backend will send
@@ -359,11 +392,75 @@ describe("POST /api/oauth/code (consent-side code creation)", () => {
             expires_in: number;
             scope: string;
         };
-        expect(token.access_token).toBe("sk_minted_by_consent");
-        expect(token.token_type).toBe("bearer");
+        expect(token.access_token.startsWith("at_")).toBe(true);
+        expect(token.token_type).toBe("Bearer");
         expect(token.expires_in).toBe(3600);
         expect(token.scope).toBe("profile");
+
+        const keyRes = await SELF.fetch(`${BASE}/api/account/key`, {
+            headers: { Authorization: `Bearer ${token.access_token}` },
+        });
+        expect(keyRes.status).toBe(200);
+        await expect(keyRes.json()).resolves.toMatchObject({
+            valid: true,
+            type: "access",
+        });
+
+        const boundCodeRes = await SELF.fetch(`${BASE}/api/oauth/code`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                Cookie: `better-auth.session_token=${sessionToken}`,
+            },
+            body: JSON.stringify({
+                clientId: client.key,
+                redirectUri: REDIRECT_URI,
+                codeChallenge: await s256(VERIFIER),
+                codeChallengeMethod: "S256",
+                expiresIn: 3600,
+                resource: "https://mcp.pollinations.ai/",
+            }),
+        });
+        expect(boundCodeRes.status).toBe(200);
+        const { code: boundCode } = (await boundCodeRes.json()) as {
+            code: string;
+        };
+        const boundTokenRes = await SELF.fetch(
+            `${BASE}/api/oauth/token`,
+            formPost({
+                grant_type: "authorization_code",
+                code: boundCode,
+                client_id: client.key,
+                redirect_uri: REDIRECT_URI,
+                code_verifier: VERIFIER,
+                resource: "https://mcp.pollinations.ai",
+            }),
+        );
+        expect(boundTokenRes.status).toBe(200);
+        const boundToken = (await boundTokenRes.json()) as {
+            access_token: string;
+        };
+
+        // A token bound to the future MCP resource cannot be reused directly
+        // against Enter.
+        const wrongResource = await SELF.fetch(`${BASE}/api/account/key`, {
+            headers: { Authorization: `Bearer ${boundToken.access_token}` },
+        });
+        expect(wrongResource.status).toBe(401);
     }, 30000);
+
+    test("rejects special-use CIMD hosts", async () => {
+        const query = new URLSearchParams({
+            client_id: "https://127.0.0.1/oauth-client.json",
+            redirect_uri: REDIRECT_URI,
+        });
+
+        const response = await SELF.fetch(
+            `${BASE}/api/app-lookup?${query.toString()}`,
+        );
+        expect(response.status).toBe(200);
+        await expect(response.json()).resolves.toEqual({ found: false });
+    });
 
     test("rejects an unregistered redirect_uri", async ({
         sessionToken,
@@ -389,7 +486,6 @@ describe("POST /api/oauth/code (consent-side code creation)", () => {
                 Cookie: `better-auth.session_token=${sessionToken}`,
             },
             body: JSON.stringify({
-                apiKey: "sk_minted_by_consent",
                 clientId: client.key,
                 redirectUri: "https://evil.example/cb",
                 codeChallenge: await s256(VERIFIER),
@@ -432,7 +528,6 @@ describe("POST /api/oauth/code (consent-side code creation)", () => {
                 Cookie: `better-auth.session_token=${sessionToken}`,
             },
             body: JSON.stringify({
-                apiKey: "sk_minted_by_consent",
                 clientId: client.key,
                 redirectUri: `${REDIRECT_URI}?next=https://evil.example`,
                 codeChallenge: await s256(VERIFIER),
@@ -454,7 +549,6 @@ describe("POST /api/oauth/code (consent-side code creation)", () => {
                 Cookie: `better-auth.session_token=${sessionToken}`,
             },
             body: JSON.stringify({
-                apiKey: "sk_x",
                 clientId: "pk_x",
                 redirectUri: REDIRECT_URI,
                 codeChallenge: "too-short",

@@ -262,7 +262,7 @@ describe("Device Authorization Flow", () => {
         };
         expect(tokenRes.status).toBe(200);
         expect(tokenBody.access_token).toBe(key);
-        expect(tokenBody.token_type).toBe("bearer");
+        expect(tokenBody.token_type).toBe("Bearer");
         expect(tokenBody.scope).toBe("generate");
 
         // Replay protection: row deleted, so polling returns invalid_grant

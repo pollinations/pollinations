@@ -231,7 +231,7 @@ function handleHome(res, session) {
          <h3>userinfo</h3><pre>${escapeHtml(JSON.stringify(session.profile, null, 2))}</pre>
          <h3>token response</h3><pre>${escapeHtml(
              JSON.stringify(
-                 { ...session.tokenResponse, access_token: "sk_…redacted" },
+                 { ...session.tokenResponse, access_token: "at_…redacted" },
                  null,
                  2,
              ),

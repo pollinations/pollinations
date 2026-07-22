@@ -67,7 +67,7 @@ type RealtimeBillingContext = {
     userGithubUsername?: string;
     apiKeyId?: string;
     apiKeyName?: string;
-    apiKeyType?: "secret" | "publishable";
+    apiKeyType?: "secret" | "publishable" | "access";
     apiKeyCreatedVia?: string;
     apiKeyCreatedForApp?: string;
     apiKeyCreatedForUserId?: string;
@@ -644,7 +644,10 @@ async function createRealtimeBillingContext(
         userGithubUsername: user.githubUsername ?? undefined,
         apiKeyId: c.var.auth.apiKey?.id,
         apiKeyName: c.var.auth.apiKey?.name,
-        apiKeyType: apiKeyMetadata?.keyType as "secret" | "publishable",
+        apiKeyType: apiKeyMetadata?.keyType as
+            | "secret"
+            | "publishable"
+            | "access",
         apiKeyCreatedVia: apiKeyMetadata?.createdVia as string | undefined,
         apiKeyCreatedForApp: c.var.auth.apiKey?.byopClientName ?? undefined,
         apiKeyCreatedForUserId:

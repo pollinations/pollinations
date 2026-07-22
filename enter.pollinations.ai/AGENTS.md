@@ -589,7 +589,7 @@ https://enter.pollinations.ai/authorize?response_type=code&redirect_uri=YOUR_CAL
 
 | Param | Description | Example |
 |-------|-------------|---------|
-| `client_id` | Publishable key (shows app name + author); `app_key` is legacy alias | `pk_abc123` |
+| `client_id` | Publishable key or HTTPS Client ID Metadata Document URL; `app_key` is the legacy `pk_` alias | `pk_abc123` |
 | `redirect_uri` | Registered callback URL; `redirect_url` is legacy alias | `https://myapp.com/callback` |
 | `response_type` | `code` for OAuth code flow; omit for legacy fragment flow | `code` |
 | `code_challenge` | PKCE S256 challenge for code flow | `abc...` |
@@ -621,13 +621,14 @@ https://myapp.com/callback?code=oauth_code&state=random
 
 Exchange it at `POST /api/oauth/token` with form-encoded `grant_type=authorization_code`, `code`, `client_id`, `redirect_uri`, and `code_verifier`. Response:
 ```
-{ "access_token": "sk_xxxxx", "token_type": "bearer" }
+{ "access_token": "at_xxxxx", "token_type": "Bearer" }
 ```
 
 ### App Lookup Endpoint
 
 `GET /api/app-lookup` — resolves app attribution (no auth required):
-- `?app_key=pk_xxx` (or `?client_id=pk_xxx`) — direct key lookup; returns `{ found: false }` if absent
+- `?client_id=...` — resolves a `pk_` app or HTTPS Client ID Metadata Document; returns `{ found: false }` if invalid
+- `?app_key=pk_xxx` — legacy alias for registered apps
 
 URL-based identity lookup was removed — identity is derived from `client_id` only, never from the redirect URL. When `client_id` is present, the requested `redirect_uri` must exactly match one registered redirect URI. See PR #10447.
 

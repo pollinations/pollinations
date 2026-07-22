@@ -1,35 +1,11 @@
-import * as schema from "@shared/db/better-auth.ts";
 import { validator } from "@shared/middleware/validator.ts";
-import { eq } from "drizzle-orm";
-import { drizzle } from "drizzle-orm/d1";
 import { Hono } from "hono";
 import { describeRoute } from "hono-openapi";
 import { z } from "zod";
 import { createAuth } from "../auth.ts";
 import type { Env } from "../env.ts";
-import { getRedirectUris, parseMetadata } from "./metadata-utils.ts";
+import { resolveOAuthClient } from "../services/oauth-client.ts";
 import { redirectUriMatchesAllowlist } from "./url-utils.ts";
-
-async function resolveAttribution(
-    db: ReturnType<typeof drizzle<typeof schema>>,
-    keyRow: typeof schema.apikey.$inferSelect,
-) {
-    const meta = parseMetadata(keyRow.metadata);
-    const user = await db.query.user.findFirst({
-        where: eq(schema.user.id, keyRow.userId),
-    });
-    const redirectUris = getRedirectUris(meta);
-    return {
-        found: true as const,
-        clientId: keyRow.id,
-        userId: keyRow.userId,
-        userName: user?.name,
-        githubUsername: user?.githubUsername || undefined,
-        appName: keyRow.name,
-        redirectUris,
-        earningsEnabled: meta.earningsEnabled === true,
-    };
-}
 
 /**
  * Public endpoint to resolve an app_key (client_id) to attribution info.
@@ -42,10 +18,9 @@ async function resolveAttribution(
 const AppLookupQuerySchema = z.object({
     client_id: z
         .string()
-        .startsWith("pk_")
         .optional()
         .describe(
-            "Your publishable App Key (pk_...). When provided, the consent screen shows your app name and GitHub username. Canonical OAuth name.",
+            "A registered publishable App Key (pk_...) or HTTPS Client ID Metadata Document URL.",
         ),
     app_key: z
         .string()
@@ -82,33 +57,26 @@ export const appLookupRoutes = new Hono<Env>().get(
             return c.json({ found: false });
         }
 
-        const db = drizzle(c.env.DB, { schema });
         const auth = createAuth(c.env);
-        const result = await auth.api.verifyApiKey({
-            body: { key: resolvedAppKey },
+        const client = await resolveOAuthClient({
+            db: c.env.DB,
+            auth,
+            clientId: resolvedAppKey,
         });
-        if (result.valid && result.key) {
-            const keyRow = await db.query.apikey.findFirst({
-                where: eq(schema.apikey.id, result.key.id),
-            });
-            if (keyRow) {
-                // Bind client_id to redirect_uri before delivering attribution.
-                // Without this, a stolen client_id could be paired with any
-                // redirect: the consent screen would brand the legitimate app
-                // (confused-deputy) and the minted sk_ would land at the
-                // attacker's URL. RFC 6749 §3.1.2 / RFC 8252 §7.3.
-                if (redirectUri) {
-                    const meta = parseMetadata(keyRow.metadata);
-                    const allowlist = getRedirectUris(meta);
-                    if (!redirectUriMatchesAllowlist(redirectUri, allowlist)) {
-                        return c.json({
-                            found: false as const,
-                            error: "redirect_uri_mismatch" as const,
-                        });
-                    }
-                }
-                return c.json(await resolveAttribution(db, keyRow));
+        if (client) {
+            // Bind client_id to redirect_uri before delivering attribution.
+            // Without this, the consent screen could brand a legitimate app
+            // while delivering its token to an attacker-controlled callback.
+            if (
+                redirectUri &&
+                !redirectUriMatchesAllowlist(redirectUri, client.redirectUris)
+            ) {
+                return c.json({
+                    found: false as const,
+                    error: "redirect_uri_mismatch" as const,
+                });
             }
+            return c.json({ found: true as const, ...client });
         }
 
         return c.json({ found: false });

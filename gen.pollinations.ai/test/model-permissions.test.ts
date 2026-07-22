@@ -32,6 +32,43 @@ test("filters OpenAI-compatible model list by API key permissions", async ({
     expect(modelIds).toContain(RESTRICTED_TEXT_TEST_MODEL);
 });
 
+test("accepts access tokens only at their OAuth resource", async () => {
+    const createAccessToken = (resource: string) =>
+        createTestApiKey({
+            type: "access",
+            oauth: {
+                clientId: "https://client.example/oauth-client.json",
+                resource,
+            },
+            allowedModels: [RESTRICTED_TEXT_TEST_MODEL],
+            user: { tierBalance: 100 },
+        });
+    const [{ key: genToken }, { key: mcpToken }] = await Promise.all([
+        createAccessToken("https://gen.pollinations.ai"),
+        createAccessToken("https://mcp.pollinations.ai"),
+    ]);
+
+    const accepted = await fetchWorker("/v1/models", {
+        headers: { Authorization: `Bearer ${genToken}` },
+    });
+    expect(accepted.status).toBe(200);
+    const acceptedBody = (await accepted.json()) as {
+        data: { id: string }[];
+    };
+    expect(acceptedBody.data.map(({ id }) => id)).toEqual([
+        RESTRICTED_TEXT_TEST_MODEL,
+    ]);
+
+    const rejected = await fetchWorker("/v1/models", {
+        headers: { Authorization: `Bearer ${mcpToken}` },
+    });
+    expect(rejected.status).toBe(200);
+    const rejectedBody = (await rejected.json()) as {
+        data: { id: string }[];
+    };
+    expect(rejectedBody.data.length).toBeGreaterThan(1);
+});
+
 test("filters image model list by API key permissions", async ({
     restrictedApiKey,
 }) => {

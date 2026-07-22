@@ -8,7 +8,12 @@ import {
     redirectUriMatchesAllowlist,
 } from "./redirect-uri.ts";
 
-export type ApiKeyType = "secret" | "publishable";
+export type ApiKeyType = "secret" | "publishable" | "access";
+
+export type OAuthAccessTokenMetadata = {
+    clientId: string;
+    resource?: string;
+};
 
 export type CallerMetadata = {
     redirectUris?: string[];
@@ -31,6 +36,7 @@ type CreateApiKeyForUserInput = {
     pollenBudget?: number | null;
     accountPermissions?: string[] | null;
     metadata?: CallerMetadata;
+    oauth?: OAuthAccessTokenMetadata;
     allowAccountKeysPermission: boolean;
     defaultCreatedVia: string;
 };
@@ -235,6 +241,7 @@ export async function createApiKeyForUser({
     pollenBudget,
     accountPermissions,
     metadata,
+    oauth,
     allowAccountKeysPermission,
     defaultCreatedVia,
 }: CreateApiKeyForUserInput) {
@@ -246,6 +253,12 @@ export async function createApiKeyForUser({
     );
 
     const isPublishable = type === "publishable";
+    const isAccessToken = type === "access";
+    if (isAccessToken !== Boolean(oauth)) {
+        throw new HTTPException(400, {
+            message: "OAuth metadata is required only for access tokens",
+        });
+    }
     const callerMetadata = pickCallerMetadata(metadata, isPublishable);
     if (Array.isArray(callerMetadata.redirectUris)) {
         for (const uri of callerMetadata.redirectUris as string[]) {
@@ -265,11 +278,15 @@ export async function createApiKeyForUser({
         permissions.account = safeAccountPerms;
     }
 
-    const prefix = isPublishable ? "pk" : "sk";
+    const prefix = isPublishable ? "pk" : isAccessToken ? "at" : "sk";
     const baseMetadata = {
         ...callerMetadata,
         keyType: type,
         createdVia: defaultCreatedVia,
+        ...(oauth && {
+            oauthClientId: oauth.clientId,
+            ...(oauth.resource && { oauthResource: oauth.resource }),
+        }),
     };
 
     const created = await authClient.api.createApiKey({

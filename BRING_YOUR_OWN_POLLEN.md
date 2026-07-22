@@ -43,7 +43,7 @@ curl -X POST https://gen.pollinations.ai/account/keys \
 
 ## ⚙️ Web Apps (OAuth Code Flow)
 
-Use the OAuth authorization-code flow with PKCE for new web integrations. It keeps the `sk_...` key out of the browser callback URL and works with standard OAuth clients.
+Use the OAuth authorization-code flow with PKCE for new web integrations. It returns a temporary `at_...` OAuth access token and works with standard OAuth clients.
 
 Discovery is available at:
 
@@ -73,13 +73,14 @@ https://enter.pollinations.ai/authorize?response_type=code&redirect_uri=https://
 
 | Param | What it does | Example |
 |-------|-------------|---------|
-| `client_id` | Your publishable key — shows app name + author on consent screen, tracks traffic and developer earnings | `pk_abc123` |
+| `client_id` | Your publishable key, or an HTTPS Client ID Metadata Document URL for a public client | `pk_abc123` |
 | `redirect_uri` | Where users return after authorizing — must exactly match a Redirect URI on the App Key, query string included (loopback `http://localhost` matches any port) | `https://myapp.com/callback` |
 | `response_type` | Use `code` for the OAuth authorization-code flow | `code` |
 | `state` | Opaque value echoed back on the callback for CSRF protection | `any-random-string` |
 | `code_challenge` | Base64url SHA-256 of your PKCE verifier | `abc...` |
 | `code_challenge_method` | Must be `S256` | `S256` |
 | `scope` | Account access (space or comma separated) | `usage keys` |
+| `resource` | Optional RFC 8707 token audience. MCP clients must send their canonical MCP server URI here and repeat it at token exchange. | `https://mcp.example.com` |
 | `models` | Restrict to specific models | `flux,openai,gptimage` |
 | `budget` | Numeric Pollen cap. Defaults to `5`; users can clear the budget field on the consent screen for unlimited. | `10` |
 | `expiry` | User-authorized key lifetime in days (default: 7) | `7` |
@@ -104,10 +105,12 @@ curl -X POST https://enter.pollinations.ai/api/oauth/token \
   -d 'client_id=pk_yourkey' \
   -d 'redirect_uri=https://myapp.com/callback' \
   -d 'code_verifier=YOUR_PKCE_VERIFIER'
-# → { "access_token": "sk_...", "token_type": "bearer", "expires_in": 604800, "scope": "profile usage" }
+# → { "access_token": "at_...", "token_type": "Bearer", "expires_in": 604800, "scope": "profile usage" }
 ```
 
 The authorization code is single-use and expires after 10 minutes. Token responses use RFC 6749 error objects such as `invalid_grant`, `invalid_request`, and `unsupported_grant_type`.
+
+If the authorization request included `resource`, include the same value in the token request. The resulting token is accepted only by that resource.
 
 Scopes: `profile` (name + email), `usage` (account balance + usage), `keys` (account admin — create/list/revoke keys). The response's `scope` echoes what the user actually granted, which may be narrower than requested. Generation needs no scope — spending is bounded by the budget and expiry the user approved. There are no refresh tokens; re-run the flow when the key expires. Issued keys appear in the user's dashboard like any other API key and can be edited or revoked there at any time — revocation is immediate.
 
@@ -187,7 +190,7 @@ curl -X POST https://enter.pollinations.ai/api/device/token \
   -H 'Content-Type: application/json' \
   -d '{"device_code": "..."}'
 # pending → { "error": "authorization_pending" }
-# done    → { "access_token": "sk_...", "token_type": "bearer" }
+# done    → { "access_token": "sk_...", "token_type": "Bearer" }
 ```
 
 The same device-code exchange is also available through the standard token endpoint:

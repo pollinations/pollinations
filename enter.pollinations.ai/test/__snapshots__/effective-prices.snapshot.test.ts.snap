@@ -184,18 +184,20 @@ exports[`effective cost and price per model — snapshot 1`] = `
   },
   "gemini": {
     "cost": {
-      "completionTextTokens": 0.000009,
+      "completionTextTokens": 0.0000075,
       "promptAudioTokens": 0.0000015,
       "promptCacheWriteTokens": 0.0000015,
       "promptCachedTokens": 0.00000015,
       "promptTextTokens": 0.0000015,
+      "promptVideoTokens": 0.0000015,
     },
     "price": {
-      "completionTextTokens": 0.000009,
+      "completionTextTokens": 0.0000075,
       "promptAudioTokens": 0.0000015,
       "promptCacheWriteTokens": 0.0000015,
       "promptCachedTokens": 0.00000015,
       "promptTextTokens": 0.0000015,
+      "promptVideoTokens": 0.0000015,
     },
   },
   "gemini-2": {
@@ -235,6 +237,7 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptCacheWriteTokens": 0.0000001,
       "promptCachedTokens": 0.00000001,
       "promptTextTokens": 0.0000001,
+      "promptVideoTokens": 0.0000001,
     },
     "price": {
       "completionTextTokens": 0.0000004,
@@ -242,6 +245,7 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptCacheWriteTokens": 0.0000001,
       "promptCachedTokens": 0.00000001,
       "promptTextTokens": 0.0000001,
+      "promptVideoTokens": 0.0000001,
     },
   },
   "gemini-flash-lite-3.1": {
@@ -251,6 +255,7 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptCacheWriteTokens": 0.00000025,
       "promptCachedTokens": 0.000000025,
       "promptTextTokens": 0.00000025,
+      "promptVideoTokens": 0.00000025,
     },
     "price": {
       "completionTextTokens": 0.0000015,
@@ -258,6 +263,7 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptCacheWriteTokens": 0.00000025,
       "promptCachedTokens": 0.000000025,
       "promptTextTokens": 0.00000025,
+      "promptVideoTokens": 0.00000025,
     },
   },
   "gemini-large": {
@@ -303,6 +309,7 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptCacheWriteTokens": 0.00000025,
       "promptCachedTokens": 0.000000025,
       "promptTextTokens": 0.00000025,
+      "promptVideoTokens": 0.00000025,
     },
     "price": {
       "completionTextTokens": 0.0000015,
@@ -310,22 +317,25 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptCacheWriteTokens": 0.00000025,
       "promptCachedTokens": 0.000000025,
       "promptTextTokens": 0.00000025,
+      "promptVideoTokens": 0.00000025,
     },
   },
   "gemini-search-large": {
     "cost": {
-      "completionTextTokens": 0.000009,
+      "completionTextTokens": 0.0000075,
       "promptAudioTokens": 0.0000015,
       "promptCacheWriteTokens": 0.0000015,
       "promptCachedTokens": 0.00000015,
       "promptTextTokens": 0.0000015,
+      "promptVideoTokens": 0.0000015,
     },
     "price": {
-      "completionTextTokens": 0.000009,
+      "completionTextTokens": 0.0000075,
       "promptAudioTokens": 0.0000015,
       "promptCacheWriteTokens": 0.0000015,
       "promptCachedTokens": 0.00000015,
       "promptTextTokens": 0.0000015,
+      "promptVideoTokens": 0.0000015,
     },
   },
   "gemma": {

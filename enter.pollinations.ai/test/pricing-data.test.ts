@@ -408,6 +408,11 @@ test("Gemini grounding cost is added by family billing rules", () => {
             },
         ],
     };
+    const openRouterSearchOutput = {
+        usage: {
+            server_tool_use_details: { web_search_requests: 2 },
+        },
+    };
 
     const geminiSearchCost = calculateCost(
         "gemini-search",
@@ -427,12 +432,12 @@ test("Gemini grounding cost is added by family billing rules", () => {
     const geminiSearchFastCost = calculateCost(
         "gemini-search-fast",
         usage,
-        groundedOutput,
+        openRouterSearchOutput,
     );
     const geminiSearchLargeCost = calculateCost(
         "gemini-search-large",
         usage,
-        groundedOutput,
+        openRouterSearchOutput,
     );
     const ungroundedGeminiSearchFastCost = calculateCost(
         "gemini-search-fast",
@@ -448,7 +453,7 @@ test("Gemini grounding cost is added by family billing rules", () => {
     // Gemini 3.x bills per non-empty search query.
     expect(gemini3FlashCost.totalCost).toBeCloseTo(3.528, 8);
     expect(geminiSearchFastCost.totalCost).toBeCloseTo(1.778, 8);
-    expect(geminiSearchLargeCost.totalCost).toBeCloseTo(10.528, 8);
+    expect(geminiSearchLargeCost.totalCost).toBeCloseTo(9.028, 8);
     expect(ungroundedGeminiSearchFastCost.totalCost).toBeCloseTo(1.75, 8);
 });
 
@@ -590,6 +595,16 @@ test("Gemini grounding is detected on streamed chunk output", () => {
             },
         ],
     };
+    const openRouterStreamOutput = {
+        streamEvents: [
+            { choices: [{ delta: { content: "searching" } }] },
+            {
+                usage: {
+                    server_tool_use_details: { web_search_requests: 2 },
+                },
+            },
+        ],
+    };
 
     // Same totals as the non-stream fixtures: grounding billed once per
     // prompt for Gemini 2.5, per unique query for Gemini 3.x.
@@ -600,7 +615,8 @@ test("Gemini grounding is detected on streamed chunk output", () => {
         calculatePrice("gemini-search", usage, streamOutput).totalPrice,
     ).toBeCloseTo(0.535, 8);
     expect(
-        calculateCost("gemini-search-fast", usage, streamOutput).totalCost,
+        calculateCost("gemini-search-fast", usage, openRouterStreamOutput)
+            .totalCost,
     ).toBeCloseTo(1.778, 8);
 });
 
@@ -818,10 +834,7 @@ test("Gemini counters never throw on malformed provider metadata", () => {
     }
 });
 
-test("vertex gemini models price cache writes at the standard input rate", () => {
-    // Google bills explicit-cache creation at the standard input token rate
-    // (GCP Billing Catalog, verified 2026-07-03). The gateway reports the
-    // created prefix as cache_creation_input_tokens → promptCacheWriteTokens.
+test("Gemini models price cache writes at the standard input rate", () => {
     const models = [
         "gemini-3-flash",
         "gemini",
@@ -844,6 +857,22 @@ test("vertex gemini models price cache writes at the standard input rate", () =>
     }
 });
 
+test("changed Gemini routes price separately reported video input tokens", () => {
+    for (const model of [
+        "gemini",
+        "gemini-flash-lite-3.1",
+        "gemini-fast",
+        "gemini-search-fast",
+        "gemini-search-large",
+    ] as const) {
+        const cost = getRegistryModelDefinition(model).cost;
+        expect(
+            cost.promptVideoTokens,
+            `${model}.promptVideoTokens must match its input-token rate`,
+        ).toBe(cost.promptTextTokens);
+    }
+});
+
 test("bedrock nova models price cache writes free and reads at 25% of input", () => {
     // AWS Price List API (verified 2026-07-05): Nova cache writes are a $0
     // SKU; cache reads bill at 25% of the standard input rate.
@@ -860,9 +889,9 @@ test("bedrock nova models price cache writes free and reads at 25% of input", ()
 test("vertex cache storage adjustment bills cache-creating requests", () => {
     // Flash-family storage: $1.00 / 1M token-hours, 1-hour TTL per create.
     const created = calculateBillingAdjustments(
-        getRegistryModelDefinition("gemini-fast"),
+        getRegistryModelDefinition("gemini-3-flash"),
         { usage: { cache_creation_input_tokens: 1_000_000 } },
-        "gemini-fast",
+        "gemini-3-flash",
     );
     expect(created).toEqual([
         {
@@ -878,14 +907,14 @@ test("vertex cache storage adjustment bills cache-creating requests", () => {
 
     // Stream responses carry usage on the final chunk.
     const streamed = calculateBillingAdjustments(
-        getRegistryModelDefinition("gemini-fast"),
+        getRegistryModelDefinition("gemini-3-flash"),
         {
             streamEvents: [
                 { choices: [{}] },
                 { usage: { cache_creation_input_tokens: 21500 } },
             ],
         },
-        "gemini-fast",
+        "gemini-3-flash",
     );
     expect(streamed).toHaveLength(1);
     expect(streamed[0].units).toBe(21500);
@@ -929,6 +958,71 @@ test("vertex cache storage adjustment bills cache-creating requests", () => {
                 getRegistryModelDefinition("gemini-fast"),
                 { usage: { cache_creation_input_tokens: bad } },
                 "gemini-fast",
+            ),
+        ).toEqual([]);
+    }
+});
+
+test("OpenRouter Gemini adjustments use provider-reported cache and search usage", () => {
+    const cacheWrite = calculateBillingAdjustments(
+        getRegistryModelDefinition("gemini-fast"),
+        {
+            usage: {
+                prompt_tokens_details: { cache_write_tokens: 1_000_000 },
+            },
+        },
+        "gemini-fast",
+    );
+    expect(cacheWrite).toHaveLength(1);
+    expect(cacheWrite[0]).toMatchObject({
+        ruleId: "openrouter.google.cache_storage.v1",
+        kind: "cache_storage",
+        unit: "token_hour",
+        units: 1_000_000,
+    });
+    expect(cacheWrite[0].unitCost).toBeCloseTo(1 / 12_000_000, 15);
+    expect(cacheWrite[0].cost).toBeCloseTo(1 / 12, 15);
+    expect(cacheWrite[0].price).toBeCloseTo(1 / 12, 15);
+
+    const streamedSearch = calculateBillingAdjustments(
+        getRegistryModelDefinition("gemini-search-fast"),
+        {
+            streamEvents: [
+                { choices: [{}] },
+                {
+                    usage: {
+                        server_tool_use_details: { web_search_requests: 2 },
+                    },
+                },
+            ],
+        },
+        "gemini-search-fast",
+    );
+    expect(streamedSearch).toEqual([
+        {
+            ruleId: "openrouter.google.web_search.v1",
+            kind: "search_request",
+            unit: "request",
+            units: 2,
+            unitCost: 0.014,
+            cost: 0.028,
+            price: 0.028,
+        },
+    ]);
+
+    for (const bad of [-5, "2", null, true, {}]) {
+        expect(
+            calculateBillingAdjustments(
+                getRegistryModelDefinition("gemini-search-fast"),
+                {
+                    usage: {
+                        prompt_tokens_details: { cache_write_tokens: bad },
+                        server_tool_use_details: {
+                            web_search_requests: bad,
+                        },
+                    },
+                },
+                "gemini-search-fast",
             ),
         ).toEqual([]);
     }

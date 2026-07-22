@@ -19,3 +19,13 @@ function toOpenAIFunctionFormat(name: GeminiToolName) {
 export function createGeminiToolsTransform(toolNames: GeminiToolName[]) {
     return addDefaultTools(toolNames.map(toOpenAIFunctionFormat));
 }
+
+/** Adds OpenRouter's provider-native Google Search tool without an Exa route. */
+export function createOpenRouterNativeWebSearchTransform() {
+    return addDefaultTools([
+        {
+            type: "openrouter:web_search",
+            parameters: { engine: "native" },
+        },
+    ]);
+}

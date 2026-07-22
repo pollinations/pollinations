@@ -1,4 +1,7 @@
-import type { CommunityEndpointGroupRuntime, CommunityEndpointRuntime } from "@shared/community-endpoints.ts";
+import type {
+    CommunityEndpointGroupRuntime,
+    CommunityEndpointRuntime,
+} from "@shared/community-endpoints.ts";
 import { DEFAULT_AUDIO_MODEL } from "@shared/registry/audio.ts";
 import { DEFAULT_EMBEDDING_MODEL } from "@shared/registry/embeddings.ts";
 import { DEFAULT_IMAGE_MODEL } from "@shared/registry/image.ts";

@@ -292,7 +292,7 @@ export function groupModelDefinition(
     group: CommunityEndpointGroupRuntime,
     modelName: string,
 ): ModelDefinition {
-    const modelId = groupModelId(group.slug, modelName);
+    const _modelId = groupModelId(group.slug, modelName);
     return {
         aliases: [],
         provider: "community",

@@ -1,0 +1,34 @@
+{
+  "pr_number": 12640,
+  "title": "feat: cut generation analytics over to v2",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/12640",
+  "merged_at": "2026-07-22T22:23:50Z",
+  "labels": [],
+  "pr_body_excerpt": "## What this changes\n\n- Switches generation analytics endpoints and downstream materializations to `generation_event_v2`.\n- Sends new gen Worker events directly to v2 in every environment.\n- Keeps the temporary old-to-v2 bridge active until production cutover is verified.\n\n## Required deployment order\n\nTinybird cannot change a materialization's source in one deployment:\n\n1. Deploy commit `5e4d1c06a` to remove the six old-source materializations. This requires explicit destructive-operation approval.\n2. Deploy commit `f47605398` to recreate them from v2, rebuild their targets, and switch endpoints.\n3. Verify Tinybird, then merge this PR so GitHub Actions deploys the gen Worker writer change.\n\nDo not merge before both Tinybird phases are live and verified.\n\n## Checks\n\n- 40 focused Worker tests pass on the refreshed head.\n- Gen type checking passes.\n- Biome and `git diff --check` pass.\n- Tinybird staging dry-run for phase one reports only the six expected materialization removals.\n- Live v1→v2 bridge verification matched recent rows with zero cache hits or invalid user IDs.\n\nDepends on #12572. Cleanup: #12641.\n",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Analytics changes hives",
+    "blurb": "The generation telemetry bees have moved into their v2 combs. The old-to-new pollen bridge stays up while the hive checks every cell.",
+    "summary": "Migrated generation analytics endpoints, Tinybird materializations, and gen Worker event writes from generation_event to generation_event_v2, while retaining the verified v1-to-v2 bridge through production cutover.",
+    "impact": "Internal dashboards and downstream metrics now read the v2 generation-event pipeline, with the bridge preserving continuity while the new Tinybird materializations settle in.",
+    "keywords": [
+      "analytics",
+      "generation_event_v2",
+      "Tinybird",
+      "observability",
+      "gen-worker",
+      "materializations"
+    ],
+    "visual_concept": "Depict Polli as a careful data gardener moving glowing event-pollen from an old honeycomb pipeline into a newer labeled v2 honeycomb, while a small CRT monitor robot verifies the flow. Tiny code-plants and a gentle bridge between the two combs represent the temporary compatibility path and continuity checks.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot wearing a tiny engineer hard hat, guiding glowing data pollen across a small garden bridge from an old honeycomb terminal to a fresh lime green (#ecf874) honeycomb labeled \"EVENT V2\"; a chunky CRT monitor robot happily checks the stream beside sprouting code-plants. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley, with dark purple (#110518) outlines and subtle CRT glow."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-22/PR-12640.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot wearing a tiny engineer hard hat, guiding glowing data pollen across a small garden bridge from an old honeycomb terminal to a fresh lime green (#ecf874) honeycomb labeled \"EVENT V2\"; a chunky CRT monitor robot happily checks the stream beside sprouting code-plants. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley, with dark purple (#110518) outlines and subtle CRT glow."
+  },
+  "generated_at": "2026-07-22T22:24:49.848327+00:00"
+}

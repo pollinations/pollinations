@@ -1,0 +1,34 @@
+{
+  "pr_number": 12655,
+  "title": "fix: validate reference image downloads",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/12655",
+  "merged_at": "2026-07-22T18:35:38Z",
+  "labels": [],
+  "pr_body_excerpt": "- Returns validation-classified 400 errors when a user-supplied image body disconnects during download.\n- Rejects successful responses with unrecognized image bytes instead of relabeling them as JPEG.\n- Classifies Replicate `cannot identify image file` prediction failures as user-input errors.\n- Adds downloader and Replicate regression coverage and corrects the Seedream reference-image fixture.\n\nRoot cause: malformed or interrupted reference-image downloads escaped as 500s, so repeated requests from individual callers made `wan-fast` and `wan-image-pro` appear broadly degraded in the model monitor.\n\nImpact: invalid or unavailable reference images now produce actionable 400 responses and no longer count as model availability failures. Provider routing and successful image handling are unchanged.\n\nChecks:\n- `npm run typecheck`\n- `npx biome check --write ...`\n- `npx vitest run test/image` — 157 passed",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Bad pixels, better answers",
+    "blurb": "Reference images now get checked at the garden gate. Polli will tell you when an upload is broken instead of blaming the whole flowerbed.",
+    "summary": "Reference-image downloads now validate their bytes and classify interrupted downloads or Replicate \"cannot identify image file\" failures as actionable 400 input errors instead of 500s.",
+    "impact": "People using wan-fast and wan-image-pro with unavailable or malformed reference images will receive a clear client error, while model availability monitoring stays focused on actual provider failures.",
+    "keywords": [
+      "image-generation",
+      "reference-images",
+      "validation",
+      "replicate",
+      "wan-fast",
+      "wan-image-pro"
+    ],
+    "visual_concept": "Polli is a careful image gardener inspecting a delivered reference-picture parcel with a little magnifying glass, separating a torn or scrambled pixel image from healthy image seedlings. A friendly CRT monitor robot can display a clear \"400\" notice, while code-plants and intact framed pixel landscapes show that the generation garden is still healthy.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny inspector cap, examining a torn pixel-image parcel with a magnifying glass beside a healthy garden of framed reference images and code-plants; a cute CRT monitor robot displays a simple pixel-font \"400\" while intact image flowers bloom nearby. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel lavender-to-warm-cream gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-22/PR-12655.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny inspector cap, examining a torn pixel-image parcel with a magnifying glass beside a healthy garden of framed reference images and code-plants; a cute CRT monitor robot displays a simple pixel-font \"400\" while intact image flowers bloom nearby. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel lavender-to-warm-cream gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
+  },
+  "generated_at": "2026-07-22T18:36:42.264943+00:00"
+}

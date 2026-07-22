@@ -1,7 +1,6 @@
 import {
-    GEMINI_3_SEARCH_BILLING,
-    GEMINI_25_GROUNDING_BILLING,
-    withVertexCacheStorage,
+    OPENROUTER_GEMINI_SEARCH_BILLING,
+    withOpenRouterGeminiCacheStorage,
 } from "./gemini-billing";
 import {
     PERPLEXITY_FAST_BILLING,
@@ -383,7 +382,7 @@ export const TEXT_SERVICES = {
     },
     "gemini-3-flash": {
         aliases: ["gemini-3-flash-preview"],
-        provider: "google",
+        provider: "openrouter",
         brand: "Google",
         category: "text",
         addedDate: new Date("2025-10-07").getTime(),
@@ -394,9 +393,14 @@ export const TEXT_SERVICES = {
             promptCachedTokens: perMillion(0.05),
             promptCacheWriteTokens: perMillion(0.5),
             promptAudioTokens: perMillion(1.0),
+            promptImageTokens: perMillion(0.5),
+            promptVideoTokens: perMillion(0.5),
             completionTextTokens: perMillion(3.0),
         },
-        billing: withVertexCacheStorage(GEMINI_3_SEARCH_BILLING, 1.0),
+        billing: withOpenRouterGeminiCacheStorage(
+            OPENROUTER_GEMINI_SEARCH_BILLING,
+            1.0,
+        ),
         title: "Gemini 3 Flash",
         description:
             "Pro-grade reasoning at high speed, with web search and a huge context window",
@@ -406,13 +410,12 @@ export const TEXT_SERVICES = {
         maxReferenceVideos: 10, // Gemini API video-understanding upload limit.
         tools: true,
         search: true,
-        codeExecution: true,
         contextLength: 1048576,
         isSpecialized: false,
     },
     "gemini": {
-        aliases: ["gemini-3.5-flash"],
-        provider: "google",
+        aliases: ["gemini-3.6-flash", "gemini-3.5-flash"],
+        provider: "openrouter",
         brand: "Google",
         category: "text",
         addedDate: new Date("2026-05-19").getTime(),
@@ -425,10 +428,15 @@ export const TEXT_SERVICES = {
             promptCachedTokens: perMillion(0.15),
             promptCacheWriteTokens: perMillion(1.5),
             promptAudioTokens: perMillion(1.5), // Audio billed at same rate as text
-            completionTextTokens: perMillion(9.0),
+            promptImageTokens: perMillion(1.5),
+            promptVideoTokens: perMillion(1.5),
+            completionTextTokens: perMillion(7.5),
         },
-        billing: withVertexCacheStorage(GEMINI_3_SEARCH_BILLING, 1.0),
-        title: "Gemini 3.5 Flash",
+        billing: withOpenRouterGeminiCacheStorage(
+            OPENROUTER_GEMINI_SEARCH_BILLING,
+            1.0,
+        ),
+        title: "Gemini 3.6 Flash",
         description:
             "Sharp, fast reasoning over text, images, audio and video, plus web search",
         inputModalities: ["text", "image", "audio", "video"],
@@ -437,7 +445,6 @@ export const TEXT_SERVICES = {
         maxReferenceVideos: 10, // Gemini API video-understanding upload limit.
         tools: true,
         search: true,
-        codeExecution: true,
         contextLength: 1048576,
         isSpecialized: false,
     },
@@ -447,7 +454,7 @@ export const TEXT_SERVICES = {
             "gemini-3.1-flash-lite-preview",
             "gemini-flash-lite",
         ],
-        provider: "google",
+        provider: "openrouter",
         brand: "Google",
         category: "text",
         addedDate: new Date("2026-04-03").getTime(),
@@ -458,9 +465,14 @@ export const TEXT_SERVICES = {
             promptCachedTokens: perMillion(0.025),
             promptCacheWriteTokens: perMillion(0.25),
             promptAudioTokens: perMillion(0.5),
+            promptImageTokens: perMillion(0.25),
+            promptVideoTokens: perMillion(0.25),
             completionTextTokens: perMillion(1.5),
         },
-        billing: withVertexCacheStorage(GEMINI_3_SEARCH_BILLING, 1.0),
+        billing: withOpenRouterGeminiCacheStorage(
+            OPENROUTER_GEMINI_SEARCH_BILLING,
+            1.0,
+        ),
         title: "Gemini 3.1 Flash Lite",
         description:
             "Quick, low-cost answers across text, images, audio and video",
@@ -470,26 +482,30 @@ export const TEXT_SERVICES = {
         maxReferenceVideos: 10, // Gemini API video-understanding upload limit.
         tools: true,
         search: true,
-        codeExecution: true,
         contextLength: 1048576,
         isSpecialized: false,
     },
     "gemini-fast": {
         aliases: ["gemini-2.5-flash-lite"],
-        provider: "google",
+        provider: "openrouter",
         brand: "Google",
         category: "text",
         addedDate: new Date("2025-12-18").getTime(),
         priceMultiplier: 1,
-        paidOnly: true,
+        paidOnly: false,
         cost: {
             promptTextTokens: perMillion(0.1), // per 1M tokens
             promptCachedTokens: perMillion(0.01), // per 1M tokens
             promptCacheWriteTokens: perMillion(0.1), // per 1M tokens
             promptAudioTokens: perMillion(0.3), // per 1M tokens
+            promptImageTokens: perMillion(0.1), // per 1M tokens
+            promptVideoTokens: perMillion(0.1), // per 1M tokens
             completionTextTokens: perMillion(0.4), // per 1M tokens
         },
-        billing: withVertexCacheStorage(GEMINI_25_GROUNDING_BILLING, 1.0),
+        billing: withOpenRouterGeminiCacheStorage(
+            OPENROUTER_GEMINI_SEARCH_BILLING,
+            1.0,
+        ),
         title: "Gemini 2.5 Flash Lite",
         description:
             "Cheapest way to handle everyday multimodal tasks; trades depth for speed",
@@ -499,7 +515,6 @@ export const TEXT_SERVICES = {
         maxReferenceVideos: 10, // Gemini API video-understanding upload limit.
         tools: true,
         search: true,
-        codeExecution: true,
         contextLength: 1048576,
         isSpecialized: false,
     },
@@ -711,22 +726,26 @@ export const TEXT_SERVICES = {
     },
     "gemini-search": {
         aliases: ["gemini-2.5-flash-search", "gemini-2.5-flash-lite-search"],
-        provider: "google",
+        provider: "openrouter",
         brand: "Google",
         category: "text",
         addedDate: new Date("2025-10-10").getTime(),
         paidOnly: true,
         priceMultiplier: 1,
-        // Vertex base rates for gemini-2.5-flash-lite. Grounding is added by
-        // calculateCost when the response includes web search metadata.
+        // OpenRouter base rates for the pinned Google Vertex EU route.
         cost: {
             promptTextTokens: perMillion(0.1),
             promptCachedTokens: perMillion(0.01),
             promptCacheWriteTokens: perMillion(0.1),
             promptAudioTokens: perMillion(0.3),
+            promptImageTokens: perMillion(0.1),
+            promptVideoTokens: perMillion(0.1),
             completionTextTokens: perMillion(0.4),
         },
-        billing: withVertexCacheStorage(GEMINI_25_GROUNDING_BILLING, 1.0),
+        billing: withOpenRouterGeminiCacheStorage(
+            OPENROUTER_GEMINI_SEARCH_BILLING,
+            1.0,
+        ),
         title: "Google Gemini 2.5 Flash Lite Search",
         description:
             "Answers grounded in live web search; fast and cheap, not a deep reasoner",
@@ -736,30 +755,31 @@ export const TEXT_SERVICES = {
         maxReferenceVideos: 10, // Gemini API video-understanding upload limit.
         tools: false,
         search: true,
-        codeExecution: true,
         contextLength: 1048576,
         isSpecialized: false,
     },
     "gemini-search-fast": {
         aliases: ["gemini-3.1-flash-lite-search"],
-        provider: "google",
+        provider: "openrouter",
         brand: "Google",
         category: "text",
         addedDate: new Date("2026-05-26").getTime(),
         paidOnly: true,
         priceMultiplier: 1,
-        // Vertex base rates for gemini-3.1-flash-lite. Grounding fee
-        // dropped to $14/1K queries on Gemini 3 (vs $35/1K on 2.x), with 5K
-        // free queries/month shared across all Gemini 3 models; absorbed by
-        // Pollinations.
+        // OpenRouter base rates for the pinned Google Vertex global route.
         cost: {
             promptTextTokens: perMillion(0.25),
             promptCachedTokens: perMillion(0.025),
             promptCacheWriteTokens: perMillion(0.25),
             promptAudioTokens: perMillion(0.5),
+            promptImageTokens: perMillion(0.25),
+            promptVideoTokens: perMillion(0.25),
             completionTextTokens: perMillion(1.5),
         },
-        billing: withVertexCacheStorage(GEMINI_3_SEARCH_BILLING, 1.0),
+        billing: withOpenRouterGeminiCacheStorage(
+            OPENROUTER_GEMINI_SEARCH_BILLING,
+            1.0,
+        ),
         title: "Gemini 3.1 Flash Lite Search",
         description: "Low-cost answers grounded in live web search results",
         inputModalities: ["text", "image", "audio", "video"],
@@ -768,29 +788,32 @@ export const TEXT_SERVICES = {
         maxReferenceVideos: 10, // Gemini API video-understanding upload limit.
         tools: false,
         search: true,
-        codeExecution: true,
         contextLength: 1048576,
         isSpecialized: false,
     },
     "gemini-search-large": {
-        aliases: ["gemini-3.5-flash-search"],
-        provider: "google",
+        aliases: ["gemini-3.6-flash-search", "gemini-3.5-flash-search"],
+        provider: "openrouter",
         brand: "Google",
         category: "text",
         addedDate: new Date("2026-05-26").getTime(),
         paidOnly: true,
         priceMultiplier: 1,
-        // Vertex base rates for gemini-3.5-flash. Grounding fee $14/1K queries
-        // with 5K/month free shared across Gemini 3; absorbed by Pollinations.
+        // OpenRouter base rates for the pinned Google Vertex global route.
         cost: {
             promptTextTokens: perMillion(1.5),
             promptCachedTokens: perMillion(0.15),
             promptCacheWriteTokens: perMillion(1.5),
             promptAudioTokens: perMillion(1.5),
-            completionTextTokens: perMillion(9.0),
+            promptImageTokens: perMillion(1.5),
+            promptVideoTokens: perMillion(1.5),
+            completionTextTokens: perMillion(7.5),
         },
-        billing: withVertexCacheStorage(GEMINI_3_SEARCH_BILLING, 1.0),
-        title: "Gemini 3.5 Flash Search",
+        billing: withOpenRouterGeminiCacheStorage(
+            OPENROUTER_GEMINI_SEARCH_BILLING,
+            1.0,
+        ),
+        title: "Gemini 3.6 Flash Search",
         description: "Premium web research with grounded, up-to-date answers",
         inputModalities: ["text", "image", "audio", "video"],
         outputModalities: ["text"],
@@ -798,7 +821,6 @@ export const TEXT_SERVICES = {
         maxReferenceVideos: 10, // Gemini API video-understanding upload limit.
         tools: false,
         search: true,
-        codeExecution: true,
         contextLength: 1048576,
         isSpecialized: false,
     },
@@ -1230,7 +1252,7 @@ export const TEXT_SERVICES = {
     },
     "gemini-large": {
         aliases: ["gemini-3.1-pro", "gemini-2.5-pro"],
-        provider: "google",
+        provider: "openrouter",
         brand: "Google",
         category: "text",
         addedDate: new Date("2025-11-19").getTime(),
@@ -1245,7 +1267,10 @@ export const TEXT_SERVICES = {
             promptVideoTokens: perMillion(2.0),
             completionTextTokens: perMillion(12.0),
         },
-        billing: withVertexCacheStorage(GEMINI_3_SEARCH_BILLING, 4.5),
+        billing: withOpenRouterGeminiCacheStorage(
+            OPENROUTER_GEMINI_SEARCH_BILLING,
+            4.5,
+        ),
         title: "Gemini 3.1 Pro",
         description:
             "Top-tier multimodal reasoning over huge documents, images and video",
@@ -1256,7 +1281,6 @@ export const TEXT_SERVICES = {
         tools: true,
         reasoning: true,
         search: true,
-        codeExecution: false, // Disabled - was breaking gemini-large
         contextLength: 1048576,
         isSpecialized: false,
     },

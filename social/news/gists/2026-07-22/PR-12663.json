@@ -11,25 +11,25 @@
     "user_facing": true,
     "publish_tier": "daily",
     "importance": "major",
-    "headline": "Laguna joins the garden",
-    "blurb": "A new paid-only Poolside model has landed in the hive. Laguna S 2.1 brings a very large context window, tool use, and optional reasoning without making anyone memorize its full botanical name.",
-    "summary": "Added Poolside's paid-only Laguna S 2.1 text model through the laguna service, with three aliases, tools and optional reasoning support, a 1,048,576-token context window, and fixed OpenRouter routing to poolside/laguna-s-2.1.",
-    "impact": "Developers can now call laguna-s-2.1, laguna-s2.1, or poolside-laguna-s-2.1 for long-context chat, streaming, tool workflows, reasoning, caching, and metered usage at $0.10/M input, $0.01/M cached input, and $0.20/M output tokens.",
+    "headline": "Laguna joins the hive",
+    "blurb": "A new paid-only lagoon has appeared in the model garden. Laguna S 2.1 brings a very large context window, tools, and optional reasoning—without pretending it can paint pixels or speak JSON schemas.",
+    "summary": "Added the paid-only Poolside Laguna S 2.1 text model, available as `laguna`, `laguna-s2.1`, and `poolside-laguna-s-2.1`, with tools, optional reasoning, a 1,048,576-token context window, and pinned OpenRouter routing to `poolside/laguna-s-2.1`.",
+    "impact": "Developers can now use Laguna S 2.1 through the existing text API for million-token-context conversations and tool workflows, with exact rates of $0.10/M input, $0.01/M cached input, and $0.20/M output.",
     "keywords": [
       "laguna-s-2.1",
       "poolside",
+      "openrouter",
       "text-models",
       "tools",
       "reasoning",
-      "long-context",
-      "openrouter"
+      "long-context"
     ],
-    "visual_concept": "Depict Laguna S 2.1 as a calm pastel lagoon-like terminal pond with an enormous scrolling code scroll looping around it to symbolize the 1,048,576-token context window. Polli, wearing tiny explorer goggles, guides a small tool-equipped retro monitor robot across stepping stones while code-plants grow along the shore; the fixed Poolside route is represented by one clear signpost pointing to a cozy terminal dock.",
-    "image_prompt": "Cozy pixel art scene of Polli, the cute pixel bee mascot with a yellow body, dark brown horizontal stripes, black antennae and oval eyes, bright pink rectangular cheek blush, a happy smile, and small rounded light blue translucent wings, wearing tiny explorer goggles as she guides a cute CRT monitor robot across a pastel lagoon of scrolling code toward a terminal dock labeled \"LAGUNA S 2.1\"; enormous code-scroll vines and blooming code-plants suggest long context and tool use, with lime green (#ecf874) glowing prominently in the water and flowers. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, dark purple (#110518) outlines, nostalgic but beautiful and emotionally warm."
+    "visual_concept": "Depict Laguna as a calm pastel lagoon in the pollinations model garden: a huge scroll of code and conversation winding around its shore represents the 1,048,576-token context window, while small tool icons rest on lily pads. Polli, wearing a tiny explorer hat and holding a map, guides the eager CRT Monitor Robot toward a sign reading “LAGUNA S 2.1”; code-plants and flowers make the new model feel like a discovered part of the ecosystem.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink cheek blush and light blue wings, wearing a tiny explorer hat and holding a map beside a serene pastel lagoon, where an enormous scrolling code parchment curls around the water to represent long context and little tool icons float on lily pads; an eager chunky CRT monitor robot points at a pixel sign reading “LAGUNA S 2.1.” Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel mint-lavender-peach gradient background, code-plants and flowers along the shore, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, nostalgic but beautiful and emotionally warm."
   },
   "image": {
     "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-22/PR-12663.jpg",
-    "prompt": "Cozy pixel art scene of Polli, the cute pixel bee mascot with a yellow body, dark brown horizontal stripes, black antennae and oval eyes, bright pink rectangular cheek blush, a happy smile, and small rounded light blue translucent wings, wearing tiny explorer goggles as she guides a cute CRT monitor robot across a pastel lagoon of scrolling code toward a terminal dock labeled \"LAGUNA S 2.1\"; enormous code-scroll vines and blooming code-plants suggest long context and tool use, with lime green (#ecf874) glowing prominently in the water and flowers. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, dark purple (#110518) outlines, nostalgic but beautiful and emotionally warm."
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink cheek blush and light blue wings, wearing a tiny explorer hat and holding a map beside a serene pastel lagoon, where an enormous scrolling code parchment curls around the water to represent long context and little tool icons float on lily pads; an eager chunky CRT monitor robot points at a pixel sign reading “LAGUNA S 2.1.” Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel mint-lavender-peach gradient background, code-plants and flowers along the shore, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, nostalgic but beautiful and emotionally warm."
   },
-  "generated_at": "2026-07-22T22:19:57.416198+00:00"
+  "generated_at": "2026-07-22T22:31:44.677031+00:00"
 }

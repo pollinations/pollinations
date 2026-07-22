@@ -1,0 +1,34 @@
+{
+  "pr_number": 12654,
+  "title": "fix: attribute Cloudflare Images transform failures",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/12654",
+  "merged_at": "2026-07-22T18:53:41Z",
+  "labels": [],
+  "pr_body_excerpt": "- Wraps Cloudflare Images binding input/output/body-read failures as attributed `HttpError` responses.\n- Records the transform stage and stable `images.cloudflare.com` upstream host in error telemetry.\n- Preserves the original runtime error message, including `Network connection lost`.\n- Adds focused coverage for output and response-body failures.\n\nRoot cause: `wan-image-pro` failures remained hostless after Replicate prediction and download boundaries were instrumented, leaving the subsequent PNG-to-JPEG Images binding transform ambiguous.\n\nChecks:\n- `npx biome check --write gen.pollinations.ai/src/image/utils/imageTransform.ts gen.pollinations.ai/test/image/imageTransform.test.ts`\n- `npx vitest run test/image/imageTransform.test.ts --reporter=verbose`\n- `npm run typecheck`",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "The missing host found",
+    "blurb": "A few lost image-transform errors now leave a proper trail of pollen. The hive can tell when Cloudflare's PNG-to-JPEG step is the one having a moment.",
+    "summary": "Cloudflare Images binding input, output, and response-body failures in the image transform path now return attributed HttpError responses with the transform stage and stable images.cloudflare.com host, while preserving runtime messages such as \"Network connection lost.\"",
+    "impact": "Maintainers can now distinguish wan-image-pro failures occurring during the Cloudflare PNG-to-JPEG transform from earlier Replicate prediction or download boundaries, making transform incidents faster to diagnose.",
+    "keywords": [
+      "image-transform",
+      "cloudflare-images",
+      "telemetry",
+      "http-errors",
+      "wan-image-pro",
+      "testing"
+    ],
+    "visual_concept": "Polli acts as a tiny detective in a cozy image-processing garden, following a dotted trail from a PNG flower through a Cloudflare-style pixel cloud to a JPEG jar. A CRT monitor robot displays the newly labeled host and transform stage, representing errors that now carry useful attribution instead of disappearing into an ambiguous boundary.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny detective hat, tracing a dotted path from a PNG code-flower through a soft pixel cloud into a labeled JPEG jar while a chunky CRT monitor robot displays \"images.cloudflare.com\" and \"TRANSFORM\" in simple pixel text. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel mint-lavender-cream gradient background, code-plants and small flowers, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-22/PR-12654.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny detective hat, tracing a dotted path from a PNG code-flower through a soft pixel cloud into a labeled JPEG jar while a chunky CRT monitor robot displays \"images.cloudflare.com\" and \"TRANSFORM\" in simple pixel text. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel mint-lavender-cream gradient background, code-plants and small flowers, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
+  },
+  "generated_at": "2026-07-22T18:54:50.925921+00:00"
+}

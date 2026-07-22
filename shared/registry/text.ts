@@ -1,3 +1,4 @@
+import { defineCostVariants } from "./cost-variants";
 import {
     GEMINI_3_SEARCH_BILLING,
     GEMINI_25_GROUNDING_BILLING,
@@ -10,7 +11,64 @@ import {
     PERPLEXITY_REASONING_BILLING,
 } from "./perplexity-billing";
 import { perMillion } from "./price-helpers";
-import type { ModelDefinition } from "./registry";
+import type {
+    BillingContext,
+    CostDefinition,
+    ModelDefinition,
+    UsageType,
+} from "./registry";
+
+const PROMPT_USAGE_TYPES = [
+    "promptTextTokens",
+    "promptCachedTokens",
+    "promptCacheWriteTokens",
+    "promptAudioTokens",
+    "promptImageTokens",
+    "promptVideoTokens",
+] as const satisfies readonly UsageType[];
+
+function totalPromptTokens(usage: BillingContext["usage"]): number {
+    return PROMPT_USAGE_TYPES.reduce(
+        (total, usageType) => total + (usage[usageType] ?? 0),
+        0,
+    );
+}
+
+function withLongContextPricing(
+    cost: CostDefinition,
+    threshold: number,
+    inputMultiplier: number,
+    outputMultiplier: number,
+) {
+    // These providers reprice the entire request above the threshold. Azure's
+    // ShortCo/LongCo Std Gl meters (including cached input and cache writes)
+    // and Vertex's <=/>200K table were verified against their official pricing
+    // APIs on 2026-07-22. Keep the rate transformation next to the selector so
+    // newly reported prompt buckets cannot accidentally remain at short rates.
+    const longContextCost = Object.fromEntries(
+        Object.entries(cost).map(([usageType, rate]) => [
+            usageType,
+            rate *
+                (usageType.startsWith("prompt")
+                    ? inputMultiplier
+                    : outputMultiplier),
+        ]),
+    ) as CostDefinition;
+
+    return {
+        cost,
+        ...defineCostVariants(
+            {
+                standard: {},
+                "long-context": longContextCost,
+            },
+            ({ usage }) =>
+                totalPromptTokens(usage) > threshold
+                    ? "long-context"
+                    : "standard",
+        ),
+    };
+}
 
 // Voices available for openai-audio model - exported for schema validation
 export const AUDIO_VOICES = [
@@ -105,11 +163,16 @@ export const TEXT_SERVICES = {
         category: "text",
         addedDate: new Date("2025-10-07").getTime(),
         priceMultiplier: 1,
-        cost: {
-            promptTextTokens: perMillion(2.5),
-            promptCachedTokens: perMillion(0.25),
-            completionTextTokens: perMillion(15.0),
-        },
+        ...withLongContextPricing(
+            {
+                promptTextTokens: perMillion(2.5),
+                promptCachedTokens: perMillion(0.25),
+                completionTextTokens: perMillion(15.0),
+            },
+            272_000,
+            2,
+            1.5,
+        ),
         title: "GPT-5.4",
         description:
             "Deep reasoning for the hardest questions; slower and pricier than lighter tiers",
@@ -150,11 +213,16 @@ export const TEXT_SERVICES = {
         category: "text",
         addedDate: new Date("2026-05-02").getTime(),
         priceMultiplier: 1,
-        cost: {
-            promptTextTokens: perMillion(5.0),
-            promptCachedTokens: perMillion(0.5),
-            completionTextTokens: perMillion(30.0),
-        },
+        ...withLongContextPricing(
+            {
+                promptTextTokens: perMillion(5.0),
+                promptCachedTokens: perMillion(0.5),
+                completionTextTokens: perMillion(30.0),
+            },
+            272_000,
+            2,
+            1.5,
+        ),
         title: "GPT-5.5",
         description:
             "Frontier reasoning for complex, multi-step problems; takes its time thinking",
@@ -173,12 +241,17 @@ export const TEXT_SERVICES = {
         category: "text",
         addedDate: new Date("2026-07-10").getTime(),
         priceMultiplier: 0.5,
-        cost: {
-            promptTextTokens: perMillion(5.0),
-            promptCachedTokens: perMillion(0.5),
-            promptCacheWriteTokens: perMillion(6.25),
-            completionTextTokens: perMillion(30.0),
-        },
+        ...withLongContextPricing(
+            {
+                promptTextTokens: perMillion(5.0),
+                promptCachedTokens: perMillion(0.5),
+                promptCacheWriteTokens: perMillion(6.25),
+                completionTextTokens: perMillion(30.0),
+            },
+            272_000,
+            2,
+            1.5,
+        ),
         title: "ChatGPT 5.6 Sol",
         description: "Frontier reasoning for complex multimodal tasks",
         inputModalities: ["text", "image"],
@@ -196,12 +269,17 @@ export const TEXT_SERVICES = {
         category: "text",
         addedDate: new Date("2026-07-10").getTime(),
         priceMultiplier: 0.5,
-        cost: {
-            promptTextTokens: perMillion(2.5),
-            promptCachedTokens: perMillion(0.25),
-            promptCacheWriteTokens: perMillion(3.125),
-            completionTextTokens: perMillion(15.0),
-        },
+        ...withLongContextPricing(
+            {
+                promptTextTokens: perMillion(2.5),
+                promptCachedTokens: perMillion(0.25),
+                promptCacheWriteTokens: perMillion(3.125),
+                completionTextTokens: perMillion(15.0),
+            },
+            272_000,
+            2,
+            1.5,
+        ),
         title: "ChatGPT 5.6 Terra",
         description: "Balanced reasoning for general multimodal tasks",
         inputModalities: ["text", "image"],
@@ -219,12 +297,17 @@ export const TEXT_SERVICES = {
         category: "text",
         addedDate: new Date("2026-07-10").getTime(),
         priceMultiplier: 0.5,
-        cost: {
-            promptTextTokens: perMillion(1.0),
-            promptCachedTokens: perMillion(0.1),
-            promptCacheWriteTokens: perMillion(1.25),
-            completionTextTokens: perMillion(6.0),
-        },
+        ...withLongContextPricing(
+            {
+                promptTextTokens: perMillion(1.0),
+                promptCachedTokens: perMillion(0.1),
+                promptCacheWriteTokens: perMillion(1.25),
+                completionTextTokens: perMillion(6.0),
+            },
+            272_000,
+            2,
+            1.5,
+        ),
         title: "ChatGPT 5.6 Luna",
         description: "Fast low-cost reasoning for everyday multimodal tasks",
         inputModalities: ["text", "image"],
@@ -828,11 +911,16 @@ export const TEXT_SERVICES = {
         category: "text",
         addedDate: new Date("2026-03-23").getTime(),
         priceMultiplier: 1,
-        cost: {
-            promptTextTokens: perMillion(5.0),
-            promptCachedTokens: perMillion(0.5),
-            completionTextTokens: perMillion(30.0),
-        },
+        ...withLongContextPricing(
+            {
+                promptTextTokens: perMillion(5.0),
+                promptCachedTokens: perMillion(0.5),
+                completionTextTokens: perMillion(30.0),
+            },
+            272_000,
+            2,
+            1.5,
+        ),
         title: "MIDIjourney Large",
         description:
             "Composes richer, more detailed MIDI arrangements; costs more per piece",
@@ -1236,15 +1324,20 @@ export const TEXT_SERVICES = {
         addedDate: new Date("2025-11-19").getTime(),
         priceMultiplier: 1,
         paidOnly: true,
-        cost: {
-            promptTextTokens: perMillion(2.0),
-            promptCachedTokens: perMillion(0.2),
-            promptCacheWriteTokens: perMillion(2.0),
-            promptAudioTokens: perMillion(2.0),
-            promptImageTokens: perMillion(2.0),
-            promptVideoTokens: perMillion(2.0),
-            completionTextTokens: perMillion(12.0),
-        },
+        ...withLongContextPricing(
+            {
+                promptTextTokens: perMillion(2.0),
+                promptCachedTokens: perMillion(0.2),
+                promptCacheWriteTokens: perMillion(2.0),
+                promptAudioTokens: perMillion(2.0),
+                promptImageTokens: perMillion(2.0),
+                promptVideoTokens: perMillion(2.0),
+                completionTextTokens: perMillion(12.0),
+            },
+            200_000,
+            2,
+            1.5,
+        ),
         billing: withVertexCacheStorage(GEMINI_3_SEARCH_BILLING, 4.5),
         title: "Gemini 3.1 Pro",
         description:

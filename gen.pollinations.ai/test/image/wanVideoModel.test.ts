@@ -3,7 +3,6 @@ import { syncImageEnv } from "../../src/image/env.ts";
 import {
     callWanAPI,
     callWanFastAPI,
-    callWanPro1080pAPI,
     callWanProAPI,
 } from "../../src/image/models/wanVideoModel.ts";
 import type { ImageParams } from "../../src/image/params.ts";
@@ -34,6 +33,7 @@ const baseParams: ImageParams = {
     reasoning: "balanced",
     audio: true,
     duration: 5,
+    resolution: "720p",
 };
 
 /**
@@ -100,7 +100,7 @@ afterEach(() => {
 });
 
 describe("wanVideoModel billing usage", () => {
-    it("bills video seconds only (audio bundled) for wan-pro at locked 720p", async () => {
+    it("bills video seconds only (audio bundled) for wan-pro at 720p", async () => {
         setReplicateEnv();
         const calls: ReplicateCall[] = [];
         mockReplicateFetch(calls, 5);
@@ -121,20 +121,20 @@ describe("wanVideoModel billing usage", () => {
         });
     });
 
-    it("wan-pro-1080p locks to 1080p and bills as wan-pro-1080p", async () => {
+    it("passes 1080p on the canonical wan-pro model", async () => {
         setReplicateEnv();
         const calls: ReplicateCall[] = [];
         mockReplicateFetch(calls, 5);
 
-        const result = await callWanPro1080pAPI("a calm ocean at sunrise", {
+        const result = await callWanProAPI("a calm ocean at sunrise", {
             ...baseParams,
-            model: "wan-pro-1080p",
+            resolution: "1080p",
         });
 
         expect(calls[0].model).toBe("wan-video/wan-2.7-t2v");
         expect(calls[0].input.resolution).toBe("1080p");
         expect(result.trackingData).toEqual({
-            actualModel: "wan-pro-1080p",
+            actualModel: "wan-pro",
             usage: { completionVideoSeconds: 5 },
         });
     });

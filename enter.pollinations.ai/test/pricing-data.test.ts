@@ -10,17 +10,20 @@ import {
     getTextModelsInfo,
 } from "@shared/registry/model-info.ts";
 import {
+    applyModelAliasDefaults,
     calculateBillingAdjustments,
     calculateCost,
     calculatePrice,
+    calculateUsageBilling,
     getCostDefinition,
     getModels,
     getPriceDefinition,
     getRegistryModelDefinition,
+    type ModelDefinition,
     type ModelName,
 } from "@shared/registry/registry.ts";
 import { TEXT_SERVICES } from "@shared/registry/text.ts";
-import { expect, test } from "vitest";
+import { expect, test, vi } from "vitest";
 import {
     formatPriceFlat,
     formatPricePer1M,
@@ -394,6 +397,271 @@ test("updated provider prices are reflected for xAI media and OpenRouter text", 
     ).toBeCloseTo(0.352, 8);
 });
 
+test("long-context text pricing switches at the provider thresholds", () => {
+    const standard = calculateUsageBilling(
+        "gpt-5.4",
+        { promptTextTokens: 272_000, completionTextTokens: 1_000 },
+        getRegistryModelDefinition("gpt-5.4"),
+    );
+    expect(standard.costVariant).toBe("standard");
+    expect(standard.costDefinition.promptTextTokens).toBe(0.0000025);
+    expect(standard.costDefinition.completionTextTokens).toBe(0.000015);
+
+    expect(
+        getRegistryModelDefinition("gpt-5.4").resolveCostVariant?.({
+            usage: {
+                promptTextTokens: 272_000,
+                promptAudioSeconds: 999_999,
+            },
+        }),
+    ).toBe("standard");
+
+    const long = calculateUsageBilling(
+        "gpt-5.4",
+        {
+            promptTextTokens: 1,
+            promptCachedTokens: 272_000,
+            completionTextTokens: 1_000,
+        },
+        getRegistryModelDefinition("gpt-5.4"),
+    );
+    expect(long.costVariant).toBe("long-context");
+    expect(long.costDefinition.promptTextTokens).toBe(0.000005);
+    expect(long.costDefinition.promptCachedTokens).toBe(0.0000005);
+    expect(long.costDefinition.completionTextTokens).toBe(0.0000225);
+
+    const discounted = calculateUsageBilling(
+        "gpt-5.6-sol",
+        { promptTextTokens: 272_001, completionTextTokens: 1 },
+        getRegistryModelDefinition("gpt-5.6-sol"),
+    );
+    expect(discounted.costVariant).toBe("long-context");
+    expect(discounted.priceDefinition.promptTextTokens).toBe(
+        discounted.costDefinition.promptTextTokens / 2,
+    );
+    expect(discounted.priceDefinition.completionTextTokens).toBe(
+        discounted.costDefinition.completionTextTokens / 2,
+    );
+    expect(discounted.costDefinition.promptCacheWriteTokens).toBe(0.0000125);
+
+    const gemini = calculateUsageBilling(
+        "gemini-large",
+        {
+            promptTextTokens: 100_000,
+            promptAudioTokens: 50_000,
+            promptImageTokens: 50_001,
+            completionTextTokens: 1_000,
+        },
+        getRegistryModelDefinition("gemini-large"),
+    );
+    expect(gemini.costVariant).toBe("long-context");
+    expect(gemini.costDefinition.promptImageTokens).toBe(0.000004);
+    expect(gemini.costDefinition.completionTextTokens).toBe(0.000018);
+});
+
+test("media billing selectors use normalized request facts", () => {
+    expect(
+        calculateCost(
+            "veo",
+            { completionVideoSeconds: 2 },
+            { input: { resolution: "1080p" } },
+        ).totalCost,
+    ).toBe(0.2);
+
+    const cases = [
+        ["veo", { resolution: "1080p" }, "1080p", 0.1],
+        ["seedance-pro", { resolution: "480p" }, "480p", 0.015],
+        ["seedance-2.0", { resolution: "480p" }, "480p", 0.08],
+        ["wan", { resolution: "1080p" }, "1080p", 0.15],
+        [
+            "wan-pro",
+            { resolution: "1080p", image: ["frame"] },
+            "1080p-i2v",
+            0.15,
+        ],
+        ["p-video", { resolution: "1080p", draft: true }, "1080p-draft", 0.01],
+        ["grok-video-pro", { resolution: "480p" }, "480p", 0.05],
+    ] as const;
+
+    for (const [model, input, variant, rate] of cases) {
+        const billing = calculateUsageBilling(
+            model,
+            { completionVideoSeconds: 2 },
+            getRegistryModelDefinition(model),
+            { input },
+        );
+        expect(billing.costVariant).toBe(variant);
+        expect(billing.costDefinition.completionVideoSeconds).toBe(rate);
+        expect(billing.cost.totalCost).toBeCloseTo(rate * 2, 10);
+    }
+
+    const qwenGenerate = calculateUsageBilling(
+        "qwen-image",
+        { completionImageTokens: 1 },
+        getRegistryModelDefinition("qwen-image"),
+        { input: { image: [] } },
+    );
+    const qwenEdit = calculateUsageBilling(
+        "qwen-image",
+        { completionImageTokens: 1 },
+        getRegistryModelDefinition("qwen-image"),
+        { input: { image: ["reference"] } },
+    );
+    expect(qwenGenerate).toMatchObject({
+        costVariant: "generate",
+        cost: { totalCost: 0.025 },
+    });
+    expect(qwenEdit).toMatchObject({
+        costVariant: "edit",
+        cost: { totalCost: 0.03 },
+    });
+
+    const trellis = calculateUsageBilling(
+        "trellis-2",
+        { completionImageTokens: 1 },
+        getRegistryModelDefinition("trellis-2"),
+        { input: { quality: "high" } },
+    );
+    expect(trellis).toMatchObject({
+        costVariant: "high",
+        cost: { totalCost: 0.35 },
+    });
+});
+
+test("variant resolver faults warn and keep base-rate billing observable", () => {
+    const base: ModelDefinition = {
+        aliases: [],
+        provider: "test",
+        brand: "Test",
+        category: "text",
+        addedDate: 0,
+        priceMultiplier: 1,
+        cost: { promptTextTokens: 1 },
+        title: "Test",
+    };
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+
+    const missingResolver = calculateUsageBilling(
+        "missing-resolver",
+        { promptTextTokens: 1 },
+        {
+            ...base,
+            costVariants: { expensive: { promptTextTokens: 2 } },
+        },
+    );
+    const unknownVariant = calculateUsageBilling(
+        "bad-variant",
+        { promptTextTokens: 1 },
+        {
+            ...base,
+            costVariants: { expensive: { promptTextTokens: 2 } },
+            resolveCostVariant: () => "typo",
+        },
+    );
+    const throwingResolver = calculateUsageBilling(
+        "throwing-resolver",
+        { promptTextTokens: 1 },
+        {
+            ...base,
+            costVariants: { expensive: { promptTextTokens: 2 } },
+            resolveCostVariant: () => {
+                throw new Error("broken selector");
+            },
+        },
+    );
+
+    for (const billing of [missingResolver, unknownVariant, throwingResolver]) {
+        expect(billing).toMatchObject({
+            cost: { totalCost: 1 },
+            price: { totalPrice: 1 },
+        });
+        expect(billing.costVariant).toBeUndefined();
+    }
+    expect(warn).toHaveBeenCalledTimes(3);
+    warn.mockRestore();
+});
+
+test("registry cost variants are complete and only override base usage keys", () => {
+    for (const model of getModels()) {
+        const definition = getRegistryModelDefinition(model);
+        expect(Boolean(definition.costVariants), model).toBe(
+            Boolean(definition.resolveCostVariant),
+        );
+
+        for (const alias of Object.keys(definition.aliasDefaults ?? {})) {
+            expect(definition.aliases, `${model}/${alias}`).toContain(alias);
+        }
+
+        for (const [variant, override] of Object.entries(
+            definition.costVariants ?? {},
+        )) {
+            for (const usageType of Object.keys(override)) {
+                expect(
+                    Object.keys(definition.cost),
+                    `${model}/${variant}/${usageType}`,
+                ).toContain(usageType);
+            }
+        }
+
+        for (const resolution of definition.resolutions ?? []) {
+            if (!definition.costVariants) continue;
+            const variant = definition.resolveCostVariant?.({
+                usage: {},
+                input: { resolution, image: [] },
+            });
+            expect(
+                variant && definition.costVariants?.[variant],
+                `${model}/${resolution}`,
+            ).toBeTruthy();
+        }
+    }
+});
+
+test("legacy variant aliases preserve their implied request defaults", () => {
+    const cases = [
+        ["veo", "veo-1080p", "1080p"],
+        ["wan-pro", "wan-pro-1080p", "1080p-t2v"],
+        ["p-video", "p-video-1080p", "1080p-standard"],
+        ["trellis-2", "trellis-2-high", "high"],
+    ] as const;
+
+    for (const [model, alias, expectedVariant] of cases) {
+        const definition = getRegistryModelDefinition(model);
+        const input = applyModelAliasDefaults(definition, alias, {});
+        expect(definition.resolveCostVariant?.({ usage: {}, input })).toBe(
+            expectedVariant,
+        );
+    }
+
+    const veo = getRegistryModelDefinition("veo");
+    const explicitOverride = applyModelAliasDefaults(veo, "veo-1080p", {
+        resolution: "720p",
+    });
+    expect(
+        veo.resolveCostVariant?.({ usage: {}, input: explicitOverride }),
+    ).toBe("720p");
+});
+
+test("model metadata exposes full variant rates and supported resolutions", () => {
+    const imageModels = getImageModelsInfo();
+    expect(imageModels.some(({ name }) => name === "p-video-720p")).toBe(false);
+    expect(imageModels.some(({ name }) => name === "p-video-1080p")).toBe(
+        false,
+    );
+
+    const pVideo = imageModels.find(({ name }) => name === "p-video");
+    expect(pVideo).toMatchObject({
+        aliases: expect.arrayContaining(["p-video-720p", "p-video-1080p"]),
+        resolutions: ["720p", "1080p"],
+        pricing_variants: {
+            "720p-standard": { completionVideoSeconds: "0.02" },
+            "720p-draft": { completionVideoSeconds: "0.005" },
+            "1080p-standard": { completionVideoSeconds: "0.04" },
+            "1080p-draft": { completionVideoSeconds: "0.01" },
+        },
+    });
+});
+
 test("Gemini grounding cost is added by family billing rules", () => {
     const usage = {
         promptTextTokens: 1_000_000,
@@ -409,35 +677,25 @@ test("Gemini grounding cost is added by family billing rules", () => {
         ],
     };
 
-    const geminiSearchCost = calculateCost(
-        "gemini-search",
-        usage,
-        groundedOutput,
-    );
-    const geminiSearchPrice = calculatePrice(
-        "gemini-search",
-        usage,
-        groundedOutput,
-    );
-    const gemini3FlashCost = calculateCost(
-        "gemini-3-flash",
-        usage,
-        groundedOutput,
-    );
-    const geminiSearchFastCost = calculateCost(
-        "gemini-search-fast",
-        usage,
-        groundedOutput,
-    );
-    const geminiSearchLargeCost = calculateCost(
-        "gemini-search-large",
-        usage,
-        groundedOutput,
-    );
+    const geminiSearchCost = calculateCost("gemini-search", usage, {
+        output: groundedOutput,
+    });
+    const geminiSearchPrice = calculatePrice("gemini-search", usage, {
+        output: groundedOutput,
+    });
+    const gemini3FlashCost = calculateCost("gemini-3-flash", usage, {
+        output: groundedOutput,
+    });
+    const geminiSearchFastCost = calculateCost("gemini-search-fast", usage, {
+        output: groundedOutput,
+    });
+    const geminiSearchLargeCost = calculateCost("gemini-search-large", usage, {
+        output: groundedOutput,
+    });
     const ungroundedGeminiSearchFastCost = calculateCost(
         "gemini-search-fast",
         usage,
-        { choices: [] },
+        { output: { choices: [] } },
     );
 
     // Gemini 2.5 Search bills once per grounded prompt, not once per query.
@@ -519,13 +777,16 @@ test("Perplexity request search fee prefers provider-reported request cost", () 
     };
 
     expect(
-        calculateCost("perplexity-fast", usage, responseOutput).totalCost,
+        calculateCost("perplexity-fast", usage, { output: responseOutput })
+            .totalCost,
     ).toBeCloseTo(2.006, 8);
     expect(
-        calculatePrice("perplexity-fast", usage, responseOutput).totalPrice,
+        calculatePrice("perplexity-fast", usage, { output: responseOutput })
+            .totalPrice,
     ).toBeCloseTo(2.006, 8);
     expect(
-        calculateCost("perplexity-fast", usage, streamOutput).totalCost,
+        calculateCost("perplexity-fast", usage, { output: streamOutput })
+            .totalCost,
     ).toBeCloseTo(2.012, 8);
 });
 
@@ -542,30 +803,30 @@ test("Perplexity provider-reported request cost clamps-and-alerts, never throws"
     for (const requestCost of malformed) {
         const output = { usage: { cost: { request_cost: requestCost } } };
         expect(
-            calculateCost("perplexity-fast", usage, output).totalCost,
+            calculateCost("perplexity-fast", usage, { output }).totalCost,
         ).toBeCloseTo(2.005, 8);
         expect(
-            calculatePrice("perplexity-fast", usage, output).totalPrice,
+            calculatePrice("perplexity-fast", usage, { output }).totalPrice,
         ).toBeCloseTo(2.005, 8);
     }
 
     // A finite non-negative value within 10× the static fee is billed verbatim.
     const reasonable = { usage: { cost: { request_cost: 0.04 } } };
     expect(
-        calculateCost("perplexity-fast", usage, reasonable).totalCost,
+        calculateCost("perplexity-fast", usage, { output: reasonable })
+            .totalCost,
     ).toBeCloseTo(2.04, 8);
 
     // A value above 10× the static fee is clamped down to the static fee.
     const runaway = { usage: { cost: { request_cost: 9.99 } } };
     expect(
-        calculateCost("perplexity-fast", usage, runaway).totalCost,
+        calculateCost("perplexity-fast", usage, { output: runaway }).totalCost,
     ).toBeCloseTo(2.005, 8);
 
     // Absent cost data falls back to the static registry fee.
-    expect(calculateCost("perplexity-fast", usage, {}).totalCost).toBeCloseTo(
-        2.005,
-        8,
-    );
+    expect(
+        calculateCost("perplexity-fast", usage, { output: {} }).totalCost,
+    ).toBeCloseTo(2.005, 8);
 });
 
 test("Gemini grounding is detected on streamed chunk output", () => {
@@ -594,13 +855,16 @@ test("Gemini grounding is detected on streamed chunk output", () => {
     // Same totals as the non-stream fixtures: grounding billed once per
     // prompt for Gemini 2.5, per unique query for Gemini 3.x.
     expect(
-        calculateCost("gemini-search", usage, streamOutput).totalCost,
+        calculateCost("gemini-search", usage, { output: streamOutput })
+            .totalCost,
     ).toBeCloseTo(0.535, 8);
     expect(
-        calculatePrice("gemini-search", usage, streamOutput).totalPrice,
+        calculatePrice("gemini-search", usage, { output: streamOutput })
+            .totalPrice,
     ).toBeCloseTo(0.535, 8);
     expect(
-        calculateCost("gemini-search-fast", usage, streamOutput).totalCost,
+        calculateCost("gemini-search-fast", usage, { output: streamOutput })
+            .totalCost,
     ).toBeCloseTo(1.778, 8);
 });
 
@@ -666,7 +930,7 @@ test("Gemini 2.5 grounded prompt is billed on web chunks even without queries", 
         ],
     };
     expect(
-        calculateCost("gemini-search", usage, chunksOnly).totalCost,
+        calculateCost("gemini-search", usage, { output: chunksOnly }).totalCost,
     ).toBeCloseTo(0.535, 8);
 
     // groundingSupports alone (no queries, no web chunks) is NOT billable
@@ -682,7 +946,8 @@ test("Gemini 2.5 grounded prompt is billed on web chunks even without queries", 
         ],
     };
     expect(
-        calculateCost("gemini-search", usage, supportsOnly).totalCost,
+        calculateCost("gemini-search", usage, { output: supportsOnly })
+            .totalCost,
     ).toBeCloseTo(0.5, 8);
 });
 
@@ -715,13 +980,16 @@ test("Gemini 2.5 retrievalQueries-only response is not billed as grounded", () =
     const noGrounding = { choices: [{ groundingMetadata: {} }] };
 
     expect(
-        calculateCost("gemini-search", usage, retrievalOnly).totalCost,
+        calculateCost("gemini-search", usage, { output: retrievalOnly })
+            .totalCost,
     ).toBeCloseTo(0.5, 8);
     expect(
-        calculateCost("gemini-search", usage, malformedWebChunk).totalCost,
+        calculateCost("gemini-search", usage, { output: malformedWebChunk })
+            .totalCost,
     ).toBeCloseTo(0.5, 8);
     expect(
-        calculateCost("gemini-search", usage, noGrounding).totalCost,
+        calculateCost("gemini-search", usage, { output: noGrounding })
+            .totalCost,
     ).toBeCloseTo(0.5, 8);
 });
 
@@ -767,16 +1035,19 @@ test("Gemini 3.x search query fee counts distinct queries and dedups chunks", ()
     };
 
     expect(
-        calculateCost("gemini-3-flash", usage, zeroQueries).totalCost,
+        calculateCost("gemini-3-flash", usage, { output: zeroQueries })
+            .totalCost,
     ).toBeCloseTo(3.5, 8);
     expect(
-        calculateCost("gemini-3-flash", usage, oneQuery).totalCost,
+        calculateCost("gemini-3-flash", usage, { output: oneQuery }).totalCost,
     ).toBeCloseTo(3.514, 8);
     expect(
-        calculateCost("gemini-3-flash", usage, threeQueries).totalCost,
+        calculateCost("gemini-3-flash", usage, { output: threeQueries })
+            .totalCost,
     ).toBeCloseTo(3.542, 8);
     expect(
-        calculateCost("gemini-3-flash", usage, dupAcrossChunks).totalCost,
+        calculateCost("gemini-3-flash", usage, { output: dupAcrossChunks })
+            .totalCost,
     ).toBeCloseTo(3.542, 8);
 
     // Queries differing only in surrounding whitespace are the same query.
@@ -786,7 +1057,8 @@ test("Gemini 3.x search query fee counts distinct queries and dedups chunks", ()
         ],
     };
     expect(
-        calculateCost("gemini-3-flash", usage, whitespaceDup).totalCost,
+        calculateCost("gemini-3-flash", usage, { output: whitespaceDup })
+            .totalCost,
     ).toBeCloseTo(3.514, 8);
 });
 
@@ -810,10 +1082,10 @@ test("Gemini counters never throw on malformed provider metadata", () => {
     ];
     for (const output of malformed) {
         expect(
-            calculateCost("gemini-3-flash", usage, output).totalCost,
+            calculateCost("gemini-3-flash", usage, { output }).totalCost,
         ).toBeCloseTo(3.5, 8);
         expect(
-            calculateCost("gemini-search", usage, output).totalCost,
+            calculateCost("gemini-search", usage, { output }).totalCost,
         ).toBeCloseTo(0.5, 8);
     }
 });

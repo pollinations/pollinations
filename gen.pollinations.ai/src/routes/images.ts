@@ -29,7 +29,13 @@ import { requireGenerationAccess } from "@/utils/generation-access.ts";
 // --- Helpers ---
 
 const QUALITY_MAP: Record<string, string> = { standard: "medium", hd: "high" };
-const PASSTHROUGH_PARAMS = ["safe", "transparent", "guidance_scale"] as const;
+const PASSTHROUGH_PARAMS = [
+    "safe",
+    "transparent",
+    "guidance_scale",
+    "resolution",
+    "draft",
+] as const;
 
 function imageResponse(
     data: { url?: string; b64_json?: string },
@@ -150,11 +156,11 @@ async function parseEditInput(c: Context): Promise<{
             size: (formData.get("size") as string) || undefined,
             quality: (formData.get("quality") as string) || undefined,
             safe: formData.get("safe") as string | null,
-            extra: {
-                ...(formData.has("safe")
-                    ? { safe: formData.get("safe") as string }
-                    : {}),
-            },
+            extra: Object.fromEntries(
+                PASSTHROUGH_PARAMS.flatMap((key) =>
+                    formData.has(key) ? [[key, formData.get(key)]] : [],
+                ),
+            ),
         };
     }
 
@@ -223,8 +229,9 @@ export async function handleImageGeneration(c: Context<Env>) {
             `${origin}/image/${encodeURIComponent(safePrompt)}`,
         );
         for (const [key, value] of Object.entries({
-            model,
+            model: c.var.model.requested,
             ...resolved,
+            ...collectPassthrough(body),
         }))
             imageUrl.searchParams.set(key, String(value));
         const safeValue = normalizeSafeValue(body.safe as SafeValue);

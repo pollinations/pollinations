@@ -10,16 +10,6 @@ import {
 // Confirmed model value per inferenceport docs: "trellis2" (no hyphen).
 export const TRELLIS2_INFERENCEPORT_MODEL_ID = "trellis2";
 
-// Maps our registry model IDs to inferenceport's resolution values.
-export const TRELLIS2_INFERENCEPORT_RESOLUTION_BY_MODEL_ID: Record<
-    string,
-    "low" | "medium" | "high"
-> = {
-    "trellis-2-low": "low",
-    "trellis-2-medium": "medium",
-    "trellis-2-high": "high",
-};
-
 export async function callTrellis2(
     params: Model3dParams,
 ): Promise<Model3dGenerationResult> {
@@ -29,8 +19,7 @@ export async function callTrellis2(
         const result = await runInferenceportSync({
             model: TRELLIS2_INFERENCEPORT_MODEL_ID,
             imageUrls: [params.image[0]],
-            resolution:
-                TRELLIS2_INFERENCEPORT_RESOLUTION_BY_MODEL_ID[params.model],
+            resolution: params.quality ?? "low",
         });
         if (!result.glbBase64) {
             throw new InferenceportError("trellis-2 returned no GLB output");

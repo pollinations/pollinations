@@ -27,6 +27,7 @@ const baseParams: ImageParams = {
     reasoning: "balanced",
     audio: true,
     duration: 5,
+    resolution: "720p",
 };
 
 function mockXaiFetch(requests: XaiRequest[]) {
@@ -123,6 +124,21 @@ describe("xaiVideoModel aspect ratio handling", () => {
             aspectRatio: undefined,
         });
         expect(aspectRatio).toBe("1:1");
+    });
+
+    it("passes the selected 480p resolution to xAI", async () => {
+        syncImageEnv({ XAI_API_KEY: "xai-test-key" } as CloudflareBindings, [
+            "XAI_API_KEY",
+        ]);
+        const requests: XaiRequest[] = [];
+        mockXaiFetch(requests);
+
+        await callXaiVideoAPI("a calm ocean at sunrise", {
+            ...baseParams,
+            resolution: "480p",
+        });
+
+        expect(requests[0].body.resolution).toBe("480p");
     });
 
     it("tracks the xAI start-frame image input fee", async () => {

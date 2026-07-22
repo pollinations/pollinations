@@ -25,7 +25,7 @@ curl "https://gen.pollinations.ai/audio/Hello%20world?voice=nova" \
 ### 3D (cURL)
 
 ```bash
-curl "https://gen.pollinations.ai/3d/no_prompt_for_trellis_needed?image=https://inferenceport.ai/img/trellis.jpg&model=trellis-2-low" \
+curl "https://gen.pollinations.ai/3d/no_prompt_for_trellis_needed?image=https://inferenceport.ai/img/trellis.jpg&model=trellis-2&quality=low" \
   -H "Authorization: Bearer YOUR_API_KEY" -o model.glb
 ```
 

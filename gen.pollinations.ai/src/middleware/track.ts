@@ -28,7 +28,6 @@ import { sendToTinybird } from "@shared/events.ts";
 import { PUBLIC_URLS } from "@shared/public-urls.ts";
 import {
     type BillingAdjustment,
-    type CostDefinition,
     calculateUsageBilling,
     getPriceDefinitionForModel,
     type ModelDefinition,
@@ -94,7 +93,6 @@ type RequestTrackingData = {
     resolvedModelRequested: string;
     modelProvider?: string;
     modelDefinition: ModelDefinition;
-    modelCostDefinition: CostDefinition;
     modelPriceDefinition: PriceDefinition;
     streamRequested: boolean;
     referrerData: ReferrerData;
@@ -110,6 +108,8 @@ type ResponseTrackingData = {
     usage?: Usage;
     cost?: UsageCost;
     price?: UsagePrice;
+    priceDefinition?: PriceDefinition;
+    costVariant?: string;
     // Per-rule billing adjustment breakdown for the billed generation. Absent on
     // cache hits / not-billed paths, which return before cost calculation.
     adjustments?: BillingAdjustment[];
@@ -122,6 +122,7 @@ export type TrackVariables = {
         resolvedModelRequested: string;
         streamRequested: boolean;
         overrideResponseTracking: (response: Response) => void;
+        setBillingInput: (input: unknown) => void;
     };
 };
 
@@ -175,6 +176,7 @@ export const track = (eventType: EventType) =>
         } satisfies UserData;
 
         let responseOverride: Response | null = null;
+        let billingInput: unknown;
 
         c.set("track", {
             modelRequested: requestTracking.modelRequested,
@@ -182,6 +184,9 @@ export const track = (eventType: EventType) =>
             streamRequested: requestTracking.streamRequested,
             overrideResponseTracking: (response: Response) => {
                 responseOverride = response;
+            },
+            setBillingInput: (input: unknown) => {
+                billingInput = input;
             },
         });
 
@@ -201,6 +206,7 @@ export const track = (eventType: EventType) =>
                     eventType,
                     requestTracking,
                     response,
+                    billingInput,
                 );
                 // trackResponse consumes SSE text and JSON bodies, so for
                 // those endTime marks actual response completion — not
@@ -407,9 +413,8 @@ async function trackRequest(
 
     const modelDefinition = modelInfo.definition;
     const modelProvider = modelDefinition.provider;
-    const modelCostDefinition = modelDefinition.cost;
     const modelPriceDefinition = getPriceDefinitionForModel(modelDefinition);
-    if (!modelCostDefinition || !modelPriceDefinition) {
+    if (!modelPriceDefinition) {
         throw new Error(
             `Failed to get price definition for model: ${resolvedModelRequested}`,
         );
@@ -422,7 +427,6 @@ async function trackRequest(
         resolvedModelRequested,
         modelProvider,
         modelDefinition,
-        modelCostDefinition,
         modelPriceDefinition,
         streamRequested,
         referrerData,
@@ -451,6 +455,7 @@ async function trackResponse(
     eventType: EventType,
     requestTracking: RequestTrackingData,
     response: Response,
+    billingInput?: unknown,
 ): Promise<ResponseTrackingData> {
     const log = getLogger(["hono", "track", "response"]);
     const { resolvedModelRequested } = requestTracking;
@@ -504,12 +509,13 @@ async function trackResponse(
     // Single pass: cost, price, and the per-rule fee breakdown all derive from
     // one walk over the billing rules, so the event's adjustment maps always
     // match the billed totals and clamp warnings log once per request.
-    const { cost, price, adjustments } = calculateUsageBilling(
-        resolvedModelRequested,
-        modelUsage.usage,
-        requestTracking.modelDefinition,
-        modelUsage.output,
-    );
+    const { cost, price, adjustments, priceDefinition, costVariant } =
+        calculateUsageBilling(
+            resolvedModelRequested,
+            modelUsage.usage,
+            requestTracking.modelDefinition,
+            { input: billingInput, output: modelUsage.output },
+        );
     return {
         responseOk: response.ok,
         responseStatus: response.status,
@@ -518,6 +524,8 @@ async function trackResponse(
         fallbackUsed,
         cost,
         price,
+        priceDefinition,
+        costVariant,
         adjustments,
         modelUsed: modelUsage.model,
         usage: modelUsage.usage,
@@ -708,6 +716,7 @@ function createTrackingEvent({
         resolvedModelRequested: requestTracking.resolvedModelRequested,
         modelUsed: responseTracking.modelUsed,
         modelProviderUsed: requestTracking.modelProvider,
+        costVariant: responseTracking.costVariant,
         fallbackUsed: responseTracking.fallbackUsed,
 
         isBilledUsage: responseTracking.isBilledUsage,
@@ -715,7 +724,10 @@ function createTrackingEvent({
         ...balanceTracking,
         ...reduceAdjustmentsToEventFields(responseTracking.adjustments),
 
-        ...priceToEventParams(requestTracking.modelPriceDefinition),
+        ...priceToEventParams(
+            responseTracking.priceDefinition ??
+                requestTracking.modelPriceDefinition,
+        ),
         ...usageToEventParams(responseTracking.usage),
 
         totalCost: responseTracking.cost?.totalCost || 0,

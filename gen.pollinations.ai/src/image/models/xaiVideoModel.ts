@@ -26,7 +26,7 @@ interface XaiVideoStatusResponse {
 
 /**
  * Generates a video using the official xAI video API (grok-imagine-video).
- * Always uses 720p resolution. Async: submit → poll → download.
+ * Uses the normalized request resolution. Async: submit → poll → download.
  */
 export async function callXaiVideoAPI(
     prompt: string,
@@ -47,7 +47,7 @@ export async function callXaiVideoAPI(
     const requestBody: Record<string, unknown> = {
         model: "grok-imagine-video",
         prompt,
-        resolution: "720p",
+        resolution: safeParams.resolution,
         duration: durationSeconds,
     };
 

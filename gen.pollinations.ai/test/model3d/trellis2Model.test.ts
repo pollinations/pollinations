@@ -15,9 +15,10 @@ afterEach(() => {
     vi.restoreAllMocks();
 });
 
-function params(model: string): Model3dParams {
+function params(quality: "low" | "medium" | "high" = "low"): Model3dParams {
     return {
-        model,
+        model: "trellis-2",
+        quality,
         image: ["https://example.com/ref.jpg"],
         safe: false,
     };
@@ -34,7 +35,7 @@ describe("callTrellis2", () => {
             .spyOn(globalThis, "fetch")
             .mockResolvedValue(syncSuccessResponse());
 
-        await callTrellis2(params("trellis-2-medium"));
+        await callTrellis2(params("medium"));
 
         const [url, init] = fetchSpy.mock.calls[0] as [string, RequestInit];
         expect(url).toContain("?sync=true");
@@ -44,26 +45,26 @@ describe("callTrellis2", () => {
     });
 
     it.each([
-        ["trellis-2-low", "low"],
-        ["trellis-2-medium", "medium"],
-        ["trellis-2-high", "high"],
-    ])("sends correct resolution for %s", async (modelId, expectedResolution) => {
+        "low",
+        "medium",
+        "high",
+    ] as const)("sends correct %s quality", async (quality) => {
         const fetchSpy = vi
             .spyOn(globalThis, "fetch")
             .mockResolvedValue(syncSuccessResponse());
 
-        await callTrellis2(params(modelId));
+        await callTrellis2(params(quality));
 
         const body = JSON.parse(
             (fetchSpy.mock.calls[0] as [string, RequestInit])[1].body as string,
         );
-        expect(body.resolution).toBe(expectedResolution);
+        expect(body.resolution).toBe(quality);
     });
 
     it("returns a GLB buffer from the sync response", async () => {
         vi.spyOn(globalThis, "fetch").mockResolvedValue(syncSuccessResponse());
 
-        const result = await callTrellis2(params("trellis-2-low"));
+        const result = await callTrellis2(params());
 
         expect(result.contentType).toBe("model/gltf-binary");
         expect(result.buffer.length).toBeGreaterThan(0);
@@ -72,7 +73,7 @@ describe("callTrellis2", () => {
     it("throws when no image is provided", async () => {
         await expect(
             callTrellis2({
-                model: "trellis-2-low",
+                model: "trellis-2",
                 image: [],
                 safe: false,
             }),
@@ -84,7 +85,7 @@ describe("callTrellis2", () => {
             .spyOn(globalThis, "fetch")
             .mockResolvedValue(syncSuccessResponse());
 
-        await callTrellis2({ ...params("trellis-2-low"), seed: 12345 });
+        await callTrellis2({ ...params(), seed: 12345 });
 
         const body = JSON.parse(
             (fetchSpy.mock.calls[0] as [string, RequestInit])[1].body as string,

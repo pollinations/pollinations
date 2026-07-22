@@ -1,5 +1,6 @@
 import { z } from "zod";
 import {
+    getPriceDefinitionForCost,
     getPriceDefinitionForModel,
     getRegistryModelDefinition,
     getVisibleAudioModels,
@@ -44,6 +45,14 @@ export const ModelInfoSchema = z.object({
     pricing: z
         .record(z.string(), z.string())
         .and(z.object({ currency: z.literal("pollen") })),
+    pricing_variants: z
+        .record(
+            z.string(),
+            z
+                .record(z.string(), z.string())
+                .and(z.object({ currency: z.literal("pollen") })),
+        )
+        .optional(),
     title: z.string(),
     description: z.string().optional(),
     input_modalities: z.array(z.string()).optional(),
@@ -60,6 +69,7 @@ export const ModelInfoSchema = z.object({
     paid_only: z.boolean().optional(),
     alpha: z.boolean().optional(),
     flat_rate: z.boolean().optional(),
+    resolutions: z.array(z.string()).optional(),
     added_date: z.number().optional(),
 });
 
@@ -100,6 +110,24 @@ function pricingInfoFromDefinition(
     return pricing;
 }
 
+function pricingVariantsFromDefinition(
+    service: ModelDefinition,
+): Record<string, Record<string, string> & { currency: "pollen" }> | undefined {
+    if (!service.costVariants) return undefined;
+
+    return Object.fromEntries(
+        Object.entries(service.costVariants).map(([variant, override]) => [
+            variant,
+            pricingInfoFromDefinition(
+                getPriceDefinitionForCost(
+                    { ...service.cost, ...override },
+                    service.priceMultiplier,
+                ),
+            ),
+        ]),
+    );
+}
+
 export function modelInfoFromDefinition(
     name: string,
     service: ModelDefinition,
@@ -112,6 +140,7 @@ export function modelInfoFromDefinition(
         brand: service.brand,
         community: options.community || undefined,
         pricing: pricingInfoFromDefinition(getPriceDefinitionForModel(service)),
+        pricing_variants: pricingVariantsFromDefinition(service),
         // User-facing metadata from service definition
         title: service.title,
         description: service.description,
@@ -129,6 +158,7 @@ export function modelInfoFromDefinition(
         paid_only: service.paidOnly,
         alpha: service.alpha,
         flat_rate: service.flatRate,
+        resolutions: service.resolutions ? [...service.resolutions] : undefined,
         added_date: service.addedDate,
     };
 }

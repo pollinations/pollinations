@@ -1,5 +1,6 @@
 import { AUDIO_SERVICES } from "@shared/registry/audio";
 import { IMAGE_SERVICES } from "@shared/registry/image";
+import { MODEL3D_SERVICES } from "@shared/registry/model3d";
 import type { ModelDefinition } from "@shared/registry/registry.js";
 import {
     calculateCost,
@@ -49,6 +50,13 @@ test.for(
 });
 
 test.for(
+    serviceAliasTestCases(MODEL3D_SERVICES),
+)("3D service alias %s is resolved to %s", ([alias, shouldResolveTo]) => {
+    const resolved = resolveModelName(alias);
+    expect(resolved).toBe(shouldResolveTo);
+});
+
+test.for(
     serviceAliasTestCases(AUDIO_SERVICES),
 )("Audio service alias %s is resolved to %s", ([alias, shouldResolveTo]) => {
     const resolved = resolveModelName(alias);
@@ -62,13 +70,15 @@ test("gemini-search applies grounding cost on top of shared token rates", () => 
     };
     const geminiFastCost = calculateCost("gemini-fast", usage);
     const geminiSearchCost = calculateCost("gemini-search", usage, {
-        choices: [
-            {
-                groundingMetadata: {
-                    webSearchQueries: ["latest Gemini pricing"],
+        output: {
+            choices: [
+                {
+                    groundingMetadata: {
+                        webSearchQueries: ["latest Gemini pricing"],
+                    },
                 },
-            },
-        ],
+            ],
+        },
     });
 
     expect(geminiSearchCost.totalCost).toBeGreaterThan(

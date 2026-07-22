@@ -52,6 +52,10 @@ export const Generate3dRequestQueryParamsSchema = z.object({
         description:
             "Seed for varied generations. Passed through to models that support it (`hyper3d-rodin`); otherwise only affects the media-cache key, so a new seed forces a fresh generation for the same prompt/image.",
     }),
+    quality: z.enum(["low", "medium", "high"]).optional().default("low").meta({
+        description:
+            "Output detail for `trellis-2`. Higher quality costs more; see `pricing_variants` on `/3d/models`.",
+    }),
     safe: SafeSchema,
 });
 

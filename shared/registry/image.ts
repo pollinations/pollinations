@@ -1,5 +1,31 @@
+import { defineCostVariants } from "./cost-variants";
 import { perMillion } from "./price-helpers";
-import type { ModelDefinition } from "./registry";
+import type { BillingContext, ModelDefinition } from "./registry";
+
+type ImageBillingInput = {
+    resolution?: string;
+    image?: unknown[];
+    draft?: boolean;
+};
+
+function imageBillingInput(context: BillingContext): ImageBillingInput {
+    return context.input && typeof context.input === "object"
+        ? (context.input as ImageBillingInput)
+        : {};
+}
+
+function resolutionVariant<const Resolutions extends readonly string[]>(
+    context: BillingContext,
+    resolutions: Resolutions,
+): Resolutions[number] {
+    const resolution = imageBillingInput(context).resolution ?? resolutions[0];
+    if (!resolutions.includes(resolution)) {
+        throw new Error(
+            `Unsupported billing resolution "${resolution}". Supported: ${resolutions.join(", ")}`,
+        );
+    }
+    return resolution as Resolutions[number];
+}
 
 export const DEFAULT_IMAGE_MODEL = "zimage" as const;
 
@@ -347,38 +373,44 @@ export const IMAGE_SERVICES = {
         outputModalities: ["image"],
     },
     "veo": {
-        aliases: ["veo-3.1-fast", "veo-720p", "video"],
+        aliases: [
+            "veo-3.1-fast",
+            "veo-720p",
+            "video",
+            "veo-1080p",
+            "veo-3.1-fast-1080p",
+            "veo-1080",
+        ],
+        aliasDefaults: {
+            "veo-3.1-fast": { resolution: "720p" },
+            "veo-720p": { resolution: "720p" },
+            video: { resolution: "720p" },
+            "veo-1080p": { resolution: "1080p" },
+            "veo-3.1-fast-1080p": { resolution: "1080p" },
+            "veo-1080": { resolution: "1080p" },
+        },
         provider: "google",
         brand: "Google",
         category: "video",
         addedDate: new Date("2025-11-27").getTime(),
         paidOnly: true,
         priceMultiplier: 1,
+        // Google Veo 3.1 Fast: $0.08/s at 720p, $0.10/s at 1080p, plus
+        // $0.02/s when audio is requested (existing provider-backed rates).
         cost: {
-            completionVideoSeconds: 0.08, // per sec (720p video)
+            completionVideoSeconds: 0.08,
             completionAudioSeconds: 0.02, // per sec when audio is enabled
         },
-        title: "Veo 3.1 Fast 720p",
-        description: "Fast text-to-video with optional audio at 720p",
-        inputModalities: ["text", "image"],
-        outputModalities: ["video"],
-        videoCapabilities: ["start_frame", "end_frame", "audio_output"],
-        maxReferenceImages: 2, // Video keyframe slots: start + end.
-    },
-    "veo-1080p": {
-        aliases: ["veo-3.1-fast-1080p", "veo-1080"],
-        provider: "google",
-        brand: "Google",
-        category: "video",
-        addedDate: new Date("2026-07-15").getTime(),
-        paidOnly: true,
-        priceMultiplier: 1,
-        cost: {
-            completionVideoSeconds: 0.1, // per sec (1080p video)
-            completionAudioSeconds: 0.02, // per sec when audio is enabled
-        },
-        title: "Veo 3.1 Fast 1080p",
-        description: "Fast text-to-video with optional audio at 1080p",
+        ...defineCostVariants(
+            {
+                "720p": {},
+                "1080p": { completionVideoSeconds: 0.1 },
+            },
+            (context) => resolutionVariant(context, ["720p", "1080p"]),
+        ),
+        resolutions: ["720p", "1080p"],
+        title: "Veo 3.1 Fast",
+        description: "Fast text-to-video with optional audio",
         inputModalities: ["text", "image"],
         outputModalities: ["video"],
         videoCapabilities: ["start_frame", "end_frame", "audio_output"],
@@ -392,15 +424,23 @@ export const IMAGE_SERVICES = {
         addedDate: new Date("2025-12-04").getTime(),
         priceMultiplier: 1,
         paidOnly: true,
-        // Replicate bytedance/seedance-1-pro-fast is per-second tiered by
-        // resolution (480p $0.015, 720p $0.025, 1080p $0.06). Handler is locked
-        // to 720p; revisit if/when the registry supports tiered pricing.
+        // Replicate bytedance/seedance-1-pro-fast, priced per output second:
+        // 480p $0.015, 720p $0.025, 1080p $0.06.
         cost: {
-            completionVideoSeconds: 0.025, // per sec at 720p
+            completionVideoSeconds: 0.025,
         },
+        ...defineCostVariants(
+            {
+                "720p": {},
+                "480p": { completionVideoSeconds: 0.015 },
+                "1080p": { completionVideoSeconds: 0.06 },
+            },
+            (context) => resolutionVariant(context, ["720p", "480p", "1080p"]),
+        ),
+        resolutions: ["720p", "480p", "1080p"],
         title: "Seedance Pro-Fast",
         description:
-            "720p video from text or a start image, with strong prompt adherence",
+            "Video from text or a start image with strong prompt adherence",
         inputModalities: ["text", "image"],
         outputModalities: ["video"],
         videoCapabilities: ["start_frame"],
@@ -414,13 +454,22 @@ export const IMAGE_SERVICES = {
         addedDate: new Date("2026-05-07").getTime(),
         priceMultiplier: 1,
         paidOnly: true,
-        // non_video_in tier @ 720p; see Economics' replicate connector guide
+        // Replicate bytedance/seedance-2.0 non_video_in meters (the handler
+        // exposes text and image input, not the more expensive video_in mode):
+        // 480p $0.08/s and 720p $0.18/s.
         cost: {
             completionVideoSeconds: 0.18,
         },
+        ...defineCostVariants(
+            {
+                "720p": {},
+                "480p": { completionVideoSeconds: 0.08 },
+            },
+            (context) => resolutionVariant(context, ["720p", "480p"]),
+        ),
+        resolutions: ["720p", "480p"],
         title: "Seedance 2.0",
-        description:
-            "720p video with natively synced sound, from text or images",
+        description: "Video with natively synced sound, from text or images",
         inputModalities: ["text", "image"],
         outputModalities: ["video", "audio"],
         videoCapabilities: ["start_frame", "end_frame", "audio_output"],
@@ -434,14 +483,21 @@ export const IMAGE_SERVICES = {
         addedDate: new Date("2026-01-21").getTime(),
         priceMultiplier: 1,
         paidOnly: true,
-        // Replicate wan-2.6, locked to 720p ($0.10/s). Native audio is bundled
-        // into the per-second rate, so there is no separate audio line.
+        // Replicate wan-video/wan-2.6 T2V/I2V: $0.10/s at 720p and
+        // $0.15/s at 1080p; native audio is bundled.
         cost: {
-            completionVideoSeconds: 0.1, // per sec (720p, includes audio)
+            completionVideoSeconds: 0.1,
         },
+        ...defineCostVariants(
+            {
+                "720p": {},
+                "1080p": { completionVideoSeconds: 0.15 },
+            },
+            (context) => resolutionVariant(context, ["720p", "1080p"]),
+        ),
+        resolutions: ["720p", "1080p"],
         title: "Wan 2.6",
-        description:
-            "Video with sound from text or an image (720p, 5/10/15s clips)",
+        description: "Video with sound from text or an image (5/10/15s clips)",
         inputModalities: ["text", "image"],
         outputModalities: ["video"],
         videoCapabilities: ["start_frame", "audio_output"],
@@ -460,6 +516,7 @@ export const IMAGE_SERVICES = {
         cost: {
             completionVideoSeconds: 0.01, // per sec (480p, silent)
         },
+        resolutions: ["480p"],
         title: "Wan 2.2",
         description:
             "Cheap 5-second silent clips at 480p — great for quick drafts",
@@ -469,41 +526,50 @@ export const IMAGE_SERVICES = {
         maxReferenceImages: 2, // Video keyframe slots: start + end.
     },
     "wan-pro": {
-        aliases: ["wan2.7", "wan-2.7"],
+        aliases: [
+            "wan2.7",
+            "wan-2.7",
+            "wan-pro-1080p",
+            "wan2.7-1080p",
+            "wan-pro-1080",
+        ],
+        aliasDefaults: {
+            "wan2.7": { resolution: "720p" },
+            "wan-2.7": { resolution: "720p" },
+            "wan-pro-1080p": { resolution: "1080p" },
+            "wan2.7-1080p": { resolution: "1080p" },
+            "wan-pro-1080": { resolution: "1080p" },
+        },
         provider: "replicate",
         brand: "Alibaba",
         category: "video",
         addedDate: new Date("2026-05-26").getTime(),
         priceMultiplier: 1,
         paidOnly: true,
-        // Replicate wan-2.7, locked to 720p ($0.10/s). Audio bundled into the
-        // per-second rate. 1080p would be a separate model (one price each).
+        // Replicate Wan 2.7: T2V is $0.10/s at either resolution; I2V is
+        // $0.10/s at 720p and $0.15/s at 1080p. Native audio is bundled.
         cost: {
-            completionVideoSeconds: 0.1, // per sec (720p, includes audio)
+            completionVideoSeconds: 0.1,
         },
+        ...defineCostVariants(
+            {
+                "720p-t2v": {},
+                "720p-i2v": {},
+                "1080p-t2v": {},
+                "1080p-i2v": { completionVideoSeconds: 0.15 },
+            },
+            (context) => {
+                const input = imageBillingInput(context);
+                const resolution = resolutionVariant(context, [
+                    "720p",
+                    "1080p",
+                ]);
+                return `${resolution}-${input.image?.length ? "i2v" : "t2v"}` as const;
+            },
+        ),
+        resolutions: ["720p", "1080p"],
         title: "Wan 2.7",
-        description: "Keyframe-controlled video with sound at 720p",
-        inputModalities: ["text", "image"],
-        outputModalities: ["video", "audio"],
-        videoCapabilities: ["start_frame", "end_frame", "audio_output"],
-        maxReferenceImages: 2, // Video keyframe slots: start + end.
-    },
-    "wan-pro-1080p": {
-        aliases: ["wan2.7-1080p", "wan-pro-1080"],
-        provider: "replicate",
-        brand: "Alibaba",
-        category: "video",
-        addedDate: new Date("2026-06-13").getTime(),
-        priceMultiplier: 1,
-        paidOnly: true,
-        // Replicate wan-2.7 locked to 1080p. i2v bills $0.15/s at 1080p and t2v
-        // $0.10/s; we charge the single higher rate so the model has one price
-        // and never under-bills. Audio bundled into the per-second rate.
-        cost: {
-            completionVideoSeconds: 0.15, // per sec (1080p, includes audio)
-        },
-        title: "Wan 2.7 1080p",
-        description: "Keyframe-controlled video with sound in full 1080p",
+        description: "Keyframe-controlled video with sound",
         inputModalities: ["text", "image"],
         outputModalities: ["video", "audio"],
         videoCapabilities: ["start_frame", "end_frame", "audio_output"],
@@ -561,11 +627,19 @@ export const IMAGE_SERVICES = {
         addedDate: new Date("2026-03-23").getTime(),
         paidOnly: true,
         priceMultiplier: 1,
-        // Moved off Alibaba DashScope to Replicate: qwen/qwen-image (t2i,
-        // $0.025) + qwen/qwen-image-edit-plus (edit, $0.03). Billed at $0.03.
+        // Replicate qwen/qwen-image is $0.025 per generated image;
+        // qwen/qwen-image-edit-plus is $0.03 per edited image.
         cost: {
-            completionImageTokens: 0.03, // per image
+            completionImageTokens: 0.025,
         },
+        ...defineCostVariants(
+            {
+                generate: {},
+                edit: { completionImageTokens: 0.03 },
+            },
+            (context) =>
+                imageBillingInput(context).image?.length ? "edit" : "generate",
+        ),
         title: "Qwen Image Plus",
         description:
             "Versatile image creation and editing, strong at text inside images",
@@ -623,12 +697,22 @@ export const IMAGE_SERVICES = {
         addedDate: new Date("2026-03-23").getTime(),
         priceMultiplier: 1,
         paidOnly: true,
+        // xAI grok-imagine-video: 480p $0.05/s, 720p $0.07/s, plus
+        // $0.002 for an input image.
         cost: {
             promptImageTokens: 0.002, // per start-frame image
-            completionVideoSeconds: 0.07, // per sec at 720p
+            completionVideoSeconds: 0.07,
         },
+        ...defineCostVariants(
+            {
+                "720p": {},
+                "480p": { completionVideoSeconds: 0.05 },
+            },
+            (context) => resolutionVariant(context, ["720p", "480p"]),
+        ),
+        resolutions: ["720p", "480p"],
         title: "Grok Video Pro",
-        description: "Short videos from text or an image (720p, 1-15s)",
+        description: "Short videos from text or an image (1-15s)",
         inputModalities: ["text", "image"],
         outputModalities: ["video"],
         videoCapabilities: ["start_frame"],
@@ -645,6 +729,7 @@ export const IMAGE_SERVICES = {
         cost: {
             completionVideoSeconds: 0.0988, // per sec at 720p
         },
+        resolutions: ["720p"],
         title: "HappyHorse 1.1",
         description: "Text and first-frame video generation at 720p",
         inputModalities: ["text", "image"],
@@ -702,41 +787,50 @@ export const IMAGE_SERVICES = {
         outputModalities: ["image"],
         maxReferenceImages: 5, // Pollinations route cap.
     },
-    // Pruna p-video is one Replicate model (prunaai/p-video) priced per second
-    // by resolution: 720p $0.02/s, 1080p $0.04/s. The registry carries one flat
-    // rate per model, so we expose the two tiers as separate models, each with
-    // its real per-second cost. `p-video` aliases to the 720p tier.
-    "p-video-720p": {
-        aliases: ["p-video", "pruna-video"],
+    "p-video": {
+        aliases: [
+            "pruna-video",
+            "p-video-720p",
+            "p-video-1080p",
+            "pruna-video-1080p",
+        ],
+        aliasDefaults: {
+            "pruna-video": { resolution: "720p" },
+            "p-video-720p": { resolution: "720p" },
+            "p-video-1080p": { resolution: "1080p" },
+            "pruna-video-1080p": { resolution: "1080p" },
+        },
         provider: "replicate",
         brand: "Pruna",
         category: "video",
         addedDate: new Date("2026-03-14").getTime(),
         priceMultiplier: 1,
         paidOnly: true,
+        // Replicate prunaai/p-video pricing per output second:
+        // standard 720p/1080p $0.02/$0.04; draft 720p/1080p $0.005/$0.01.
         cost: {
-            completionVideoSeconds: 0.02, // Replicate 720p per sec
+            completionVideoSeconds: 0.02,
         },
-        title: "Pruna p-video 720p",
-        description: "Affordable video from text or an image at 720p",
-        inputModalities: ["text", "image"],
-        outputModalities: ["video"],
-        videoCapabilities: ["start_frame"],
-        maxReferenceImages: 1, // Video keyframe slots: start only.
-    },
-    "p-video-1080p": {
-        aliases: ["pruna-video-1080p"],
-        provider: "replicate",
-        brand: "Pruna",
-        category: "video",
-        addedDate: new Date("2026-06-09").getTime(),
-        priceMultiplier: 1,
-        paidOnly: true,
-        cost: {
-            completionVideoSeconds: 0.04, // Replicate 1080p per sec
-        },
-        title: "Pruna p-video 1080p",
-        description: "Affordable video from text or an image at 1080p",
+        ...defineCostVariants(
+            {
+                "720p-standard": {},
+                "720p-draft": { completionVideoSeconds: 0.005 },
+                "1080p-standard": { completionVideoSeconds: 0.04 },
+                "1080p-draft": { completionVideoSeconds: 0.01 },
+            },
+            (context) => {
+                const input = imageBillingInput(context);
+                const resolution = resolutionVariant(context, [
+                    "720p",
+                    "1080p",
+                ]);
+                return `${resolution}-${input.draft ? "draft" : "standard"}` as const;
+            },
+        ),
+        resolutions: ["720p", "1080p"],
+        title: "Pruna p-video",
+        description:
+            "Affordable video from text or an image, with a draft mode",
         inputModalities: ["text", "image"],
         outputModalities: ["video"],
         videoCapabilities: ["start_frame"],
@@ -768,6 +862,7 @@ export const IMAGE_SERVICES = {
         cost: {
             completionVideoSeconds: 0.08, // per sec
         },
+        resolutions: ["720p"],
         title: "Nova Reel",
         description:
             "Long-form video — clips from 6 seconds up to 2 minutes at 720p",

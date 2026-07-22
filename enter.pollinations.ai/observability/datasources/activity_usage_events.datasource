@@ -9,6 +9,7 @@ SCHEMA >
     `event_id` String,
     `type` LowCardinality(String),
     `resolved_model` LowCardinality(String),
+    `cost_variant` LowCardinality(String),
     `api_key_id` String,
     `api_key` String,
     `api_key_type` LowCardinality(String),

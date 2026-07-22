@@ -28,9 +28,7 @@ function baseParams(model: string): Model3dParams {
 // upstream host is hit first for each model id.
 describe("createAndReturnModel3d dispatch", () => {
     it.each([
-        ["trellis-2-low", "api.inferenceport.ai"],
-        ["trellis-2-medium", "api.inferenceport.ai"],
-        ["trellis-2-high", "api.inferenceport.ai"],
+        ["trellis-2", "api.inferenceport.ai"],
         ["hyper3d-rodin", "queue.fal.run"],
     ])("routes %s to the expected primary provider host", async (model, expectedHost) => {
         const fetchSpy = vi

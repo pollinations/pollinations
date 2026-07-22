@@ -23,6 +23,7 @@ import { Hono } from "hono";
 import { requestId } from "hono/request-id";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { Env } from "@/env.ts";
+import { handleImagePrompt } from "@/image/handler.ts";
 import { logger } from "@/middleware/logger.ts";
 import type { ModelVariables } from "@/middleware/model.ts";
 import { reduceAdjustmentsToEventFields, track } from "@/middleware/track.ts";
@@ -39,6 +40,7 @@ function createTestApp(
         resolved: "openai",
         definition: getRegistryModelDefinition("openai"),
     },
+    responseHeaders: Record<string, string> = {},
 ) {
     const app = new Hono<Env>();
 
@@ -86,6 +88,7 @@ function createTestApp(
                         "x-model-used": "gpt-5-nano-2025-08-07",
                         "x-usage-prompt-text-tokens": "1000",
                         "x-usage-completion-text-tokens": "500",
+                        ...responseHeaders,
                     },
                 },
             ),
@@ -370,6 +373,239 @@ describe("tracking observability", () => {
         });
         expect(consumePollen).toHaveBeenCalledWith(expect.any(Number));
         expect(consumePollen.mock.calls[0]?.[0]).toBeGreaterThan(0);
+    });
+
+    it("emits the selected cost variant and effective long-context rates", async () => {
+        const tinybirdRequests: Request[] = [];
+        vi.spyOn(globalThis, "fetch").mockImplementation(
+            async (input, init) => {
+                tinybirdRequests.push(new Request(input, init));
+                return new Response("ok");
+            },
+        );
+        const consumePollen = vi.fn<(amount: number) => Promise<void>>(
+            async () => {},
+        );
+        const model = {
+            requested: "gpt-5.4",
+            resolved: "gpt-5.4",
+            definition: getRegistryModelDefinition("gpt-5.4"),
+        } satisfies ModelVariables["model"];
+
+        const ctx = createExecutionContext();
+        await createTestApp(consumePollen, undefined, model, {
+            "x-model-used": "gpt-5.4",
+            "x-usage-prompt-text-tokens": "272001",
+            "x-usage-completion-text-tokens": "1000",
+        }).fetch(
+            new Request("https://gen.pollinations.ai/v1/chat/completions", {
+                method: "POST",
+                headers: { "content-type": "application/json" },
+                body: JSON.stringify({
+                    model: "gpt-5.4",
+                    messages: [{ role: "user", content: "test" }],
+                }),
+            }),
+            {
+                ENVIRONMENT: "test",
+                LOG_LEVEL: "debug",
+                LOG_FORMAT: "text",
+                BETTER_AUTH_SECRET: "test_secret",
+                TINYBIRD_INGEST_URL:
+                    "https://tinybird.test/v0/events?name=generation_event",
+                TINYBIRD_INGEST_TOKEN: "test_tinybird_token",
+            } as CloudflareBindings,
+            ctx,
+        );
+        await waitOnExecutionContext(ctx);
+
+        const event = (await tinybirdRequests[0].json()) as TinybirdEvent;
+        expect(event).toMatchObject({
+            costVariant: "long-context",
+            tokenPricePromptText: 0.000005,
+            tokenPriceCompletionText: 0.0000225,
+        });
+        expect(consumePollen).toHaveBeenCalledWith(
+            272_001 * 0.000005 + 1_000 * 0.0000225,
+        );
+    });
+
+    it("keeps billing and telemetry when a variant resolver throws", async () => {
+        const tinybirdRequests: Request[] = [];
+        vi.spyOn(globalThis, "fetch").mockImplementation(
+            async (input, init) => {
+                tinybirdRequests.push(new Request(input, init));
+                return new Response("ok");
+            },
+        );
+        vi.spyOn(console, "warn").mockImplementation(() => {});
+        const consumePollen = vi.fn<(amount: number) => Promise<void>>(
+            async () => {},
+        );
+        const baseDefinition = getRegistryModelDefinition("openai");
+        const model = {
+            requested: "resolver-fault-test",
+            resolved: "resolver-fault-test",
+            definition: {
+                ...baseDefinition,
+                costVariants: {
+                    expensive: { promptTextTokens: 1 },
+                },
+                resolveCostVariant: () => {
+                    throw new Error("selector fault");
+                },
+            },
+        } satisfies ModelVariables["model"];
+
+        const ctx = createExecutionContext();
+        await createTestApp(consumePollen, undefined, model).fetch(
+            new Request("https://gen.pollinations.ai/v1/chat/completions", {
+                method: "POST",
+                headers: { "content-type": "application/json" },
+                body: JSON.stringify({
+                    model: "resolver-fault-test",
+                    messages: [{ role: "user", content: "test" }],
+                }),
+            }),
+            {
+                ENVIRONMENT: "test",
+                LOG_LEVEL: "debug",
+                LOG_FORMAT: "text",
+                BETTER_AUTH_SECRET: "test_secret",
+                TINYBIRD_INGEST_URL:
+                    "https://tinybird.test/v0/events?name=generation_event",
+                TINYBIRD_INGEST_TOKEN: "test_tinybird_token",
+            } as CloudflareBindings,
+            ctx,
+        );
+        await waitOnExecutionContext(ctx);
+
+        expect(tinybirdRequests).toHaveLength(1);
+        const event = (await tinybirdRequests[0].json()) as TinybirdEvent;
+        expect(event).toMatchObject({
+            resolvedModelRequested: "resolver-fault-test",
+            isBilledUsage: true,
+            tokenPricePromptText:
+                (baseDefinition.cost.promptTextTokens ?? 0) *
+                baseDefinition.priceMultiplier,
+        });
+        expect(event).not.toHaveProperty("costVariant");
+        expect(consumePollen).toHaveBeenCalledOnce();
+        expect(consumePollen.mock.calls[0][0]).toBeCloseTo(
+            (1_000 * (baseDefinition.cost.promptTextTokens ?? 0) +
+                500 * (baseDefinition.cost.completionTextTokens ?? 0)) *
+                baseDefinition.priceMultiplier,
+            12,
+        );
+    });
+
+    it("bills a media variant selected by the real image handler", async () => {
+        const tinybirdRequests: Request[] = [];
+        let replicateInput: Record<string, unknown> | undefined;
+        vi.spyOn(globalThis, "fetch").mockImplementation(
+            async (input, init) => {
+                const request = new Request(input, init);
+                if (
+                    request.url ===
+                    "https://api.replicate.com/v1/models/prunaai/p-video/predictions"
+                ) {
+                    replicateInput = (await request.clone().json()) as Record<
+                        string,
+                        unknown
+                    >;
+                    return Response.json({
+                        id: "p-video-test",
+                        status: "succeeded",
+                        output: "https://output.test/video.mp4",
+                        metrics: { video_output_duration_seconds: 2 },
+                    });
+                }
+                if (request.url === "https://output.test/video.mp4") {
+                    return new Response(
+                        new Uint8Array([
+                            0, 0, 0, 20, 102, 116, 121, 112, 105, 115, 111, 109,
+                            0, 0, 0, 0, 105, 115, 111, 109,
+                        ]),
+                        { headers: { "content-type": "video/mp4" } },
+                    );
+                }
+                if (
+                    request.url ===
+                    "https://tinybird.test/v0/events?name=generation_event"
+                ) {
+                    tinybirdRequests.push(request);
+                    return new Response("ok");
+                }
+                throw new Error(`Unexpected fetch in test: ${request.url}`);
+            },
+        );
+
+        const consumePollen = vi.fn<(amount: number) => Promise<void>>(
+            async () => {},
+        );
+        const app = new Hono<Env>();
+        app.use("*", requestId());
+        app.use("*", logger);
+        app.use("*", async (c, next) => {
+            c.set("auth", {
+                user: undefined,
+                requireAuthorization: async () => {},
+                requireUser: () => {
+                    throw new Error("user should not be required in this test");
+                },
+                requireModelAccess: () => {},
+            });
+            c.set("balance", {
+                getBalance: async () => ({ tierBalance: 1, packBalance: 0 }),
+            });
+            c.set("frontendKeyRateLimit", { consumePollen });
+            c.set("model", {
+                requested: "p-video-1080p",
+                resolved: "p-video",
+                definition: getRegistryModelDefinition("p-video"),
+            });
+            await next();
+        });
+        app.get("/image/:prompt", track("generate.image"), (c) =>
+            handleImagePrompt(c, c.req.param("prompt")),
+        );
+
+        const ctx = createExecutionContext();
+        const response = await app.fetch(
+            new Request(
+                "https://gen.pollinations.ai/image/test?draft=true&duration=2",
+            ),
+            {
+                ENVIRONMENT: "test",
+                LOG_LEVEL: "debug",
+                LOG_FORMAT: "text",
+                BETTER_AUTH_SECRET: "test_secret",
+                REPLICATE_API_TOKEN: "test_replicate_token",
+                TINYBIRD_INGEST_URL:
+                    "https://tinybird.test/v0/events?name=generation_event",
+                TINYBIRD_INGEST_TOKEN: "test_tinybird_token",
+            } as CloudflareBindings,
+            ctx,
+        );
+        await waitOnExecutionContext(ctx);
+
+        expect(response.status).toBe(200);
+        expect(response.headers.get("content-type")).toBe("video/mp4");
+        expect(replicateInput).toMatchObject({
+            input: {
+                resolution: "1080p",
+                draft: true,
+                duration: 2,
+            },
+        });
+        expect(tinybirdRequests).toHaveLength(1);
+        await expect(tinybirdRequests[0].json()).resolves.toMatchObject({
+            costVariant: "1080p-draft",
+            totalCost: 0.02,
+            devPrice: 0.02,
+            tokenPriceCompletionVideoSeconds: 0.01,
+        });
+        expect(consumePollen).toHaveBeenCalledWith(0.02);
     });
 
     it("does not trigger auto top-up while post-deduction pack balance is above threshold", async () => {

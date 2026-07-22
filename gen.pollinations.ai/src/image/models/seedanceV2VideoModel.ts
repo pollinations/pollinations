@@ -1,8 +1,8 @@
 /**
  * ByteDance Seedance 2.0 video generation via Replicate.
  *
- * v1: 720p locked, T2V/I2V/reference modes via the existing safeParams.image
- * convention. Audio + image input are free; only resolution + reference_videos
+ * T2V/I2V/reference modes use the existing safeParams.image convention.
+ * Audio + image input are free; only resolution + reference_videos
  * are price multipliers, and we don't expose reference_videos (would trigger
  * "video_in" tier).
  */
@@ -54,7 +54,7 @@ export function resolveSeedanceV2AspectRatio(
 interface SeedanceV2Input {
     prompt: string;
     duration: number;
-    resolution: "720p";
+    resolution: "480p" | "720p";
     aspect_ratio: SeedanceV2AspectRatio;
     generate_audio: boolean;
     seed?: number;
@@ -87,7 +87,7 @@ export async function callSeedanceV2API(
     const input: SeedanceV2Input = {
         prompt,
         duration,
-        resolution: "720p",
+        resolution: safeParams.resolution as SeedanceV2Input["resolution"],
         aspect_ratio: resolveSeedanceV2AspectRatio(safeParams.aspectRatio),
         generate_audio: safeParams.audio,
     };

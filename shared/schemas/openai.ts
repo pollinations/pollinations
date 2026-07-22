@@ -556,6 +556,14 @@ const imageQualityField = z
         description:
             "Image quality. OpenAI 'standard'/'hd' mapped to Pollinations equivalents",
     });
+const videoResolutionField = z.enum(["480p", "720p", "1080p"]).optional().meta({
+    description:
+        "Video resolution (Pollinations extension). Supported values vary by model.",
+});
+const videoDraftField = z.boolean().optional().default(false).meta({
+    description:
+        "Use the cheaper draft tier where supported (Pollinations extension).",
+});
 
 export const CreateImageRequestSchema = z
     .object({
@@ -566,6 +574,8 @@ export const CreateImageRequestSchema = z
         n: imageNField,
         size: imageSizeField,
         quality: imageQualityField,
+        resolution: videoResolutionField,
+        draft: videoDraftField,
         response_format: z
             .enum(["url", "b64_json"])
             .optional()
@@ -642,6 +652,8 @@ export const CreateImageEditRequestSchema = z
         n: imageNField,
         size: imageSizeField,
         quality: imageQualityField,
+        resolution: videoResolutionField,
+        draft: videoDraftField,
         safe: SafeSchema,
     })
     .passthrough()

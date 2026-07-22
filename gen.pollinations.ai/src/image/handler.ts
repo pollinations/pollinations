@@ -1,5 +1,6 @@
 import { remapUpstreamStatus, UpstreamError } from "@shared/error.ts";
 import { IMMUTABLE_CACHE_CONTROL } from "@shared/http/cache-control.ts";
+import { applyModelAliasDefaults } from "@shared/registry/registry.ts";
 import type { Context } from "hono";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
 import type { Env } from "@/env.ts";
@@ -106,8 +107,14 @@ function parseImageParams(
 ): ImageParams {
     const queryParams = Object.fromEntries(new URL(c.req.url).searchParams);
     const mergedParams = {
-        ...queryParams,
-        ...body,
+        ...applyModelAliasDefaults(
+            c.var.model.definition,
+            c.var.model.requested,
+            {
+                ...queryParams,
+                ...body,
+            },
+        ),
         model: c.var.model.resolved,
     };
     delete (mergedParams as Record<string, unknown>).prompt;
@@ -390,6 +397,7 @@ export async function generateImageOrVideoResponse(
     syncImageEnvironment(c.env);
     const originalPrompt = decodePrompt(prompt || "random_prompt");
     const safeParams = parseImageParams(c, body);
+    c.var.track.setBillingInput(safeParams);
 
     try {
         if (isVideoModel(safeParams.model)) {

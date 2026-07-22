@@ -1048,15 +1048,7 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "completionImageTokens": 0.01,
     },
   },
-  "p-video-1080p": {
-    "cost": {
-      "completionVideoSeconds": 0.04,
-    },
-    "price": {
-      "completionVideoSeconds": 0.04,
-    },
-  },
-  "p-video-720p": {
+  "p-video": {
     "cost": {
       "completionVideoSeconds": 0.02,
     },
@@ -1138,10 +1130,10 @@ exports[`effective cost and price per model — snapshot 1`] = `
   },
   "qwen-image": {
     "cost": {
-      "completionImageTokens": 0.03,
+      "completionImageTokens": 0.025,
     },
     "price": {
-      "completionImageTokens": 0.03,
+      "completionImageTokens": 0.025,
     },
   },
   "qwen-large": {
@@ -1330,28 +1322,12 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.0000002,
     },
   },
-  "trellis-2-high": {
-    "cost": {
-      "completionImageTokens": 0.35,
-    },
-    "price": {
-      "completionImageTokens": 0.35,
-    },
-  },
-  "trellis-2-low": {
+  "trellis-2": {
     "cost": {
       "completionImageTokens": 0.24,
     },
     "price": {
       "completionImageTokens": 0.24,
-    },
-  },
-  "trellis-2-medium": {
-    "cost": {
-      "completionImageTokens": 0.29,
-    },
-    "price": {
-      "completionImageTokens": 0.29,
     },
   },
   "universal-2": {
@@ -1378,16 +1354,6 @@ exports[`effective cost and price per model — snapshot 1`] = `
     "price": {
       "completionAudioSeconds": 0.02,
       "completionVideoSeconds": 0.08,
-    },
-  },
-  "veo-1080p": {
-    "cost": {
-      "completionAudioSeconds": 0.02,
-      "completionVideoSeconds": 0.1,
-    },
-    "price": {
-      "completionAudioSeconds": 0.02,
-      "completionVideoSeconds": 0.1,
     },
   },
   "wan": {
@@ -1428,14 +1394,6 @@ exports[`effective cost and price per model — snapshot 1`] = `
     },
     "price": {
       "completionVideoSeconds": 0.1,
-    },
-  },
-  "wan-pro-1080p": {
-    "cost": {
-      "completionVideoSeconds": 0.15,
-    },
-    "price": {
-      "completionVideoSeconds": 0.15,
     },
   },
   "whisper": {

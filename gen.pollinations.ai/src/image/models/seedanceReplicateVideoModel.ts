@@ -6,10 +6,8 @@
  * bytedance/seedance-1-lite endpoint is reproducibly broken (E004 incident
  * 1cah9wlWR9 at all resolutions, May 2026) and BytePlus is being deprecated.
  *
- * v1: 720p locked, matching seedance-2.0. Replicate prices 480p / 720p / 1080p
- * differently ($0.015 / $0.025 / $0.06 per sec for pro-fast); the registry
- * only carries a single per-second rate, so we ship 720p and revisit tiered
- * pricing as a follow-up rather than under-bill 1080p or over-bill 480p.
+ * Replicate exposes 480p, 720p, and 1080p; the registry resolves the matching
+ * per-second rate from the normalized request input.
  */
 
 import debug from "debug";
@@ -68,7 +66,7 @@ function resolveSeedanceAspectRatio(
 interface SeedanceInput {
     prompt: string;
     duration: number;
-    resolution: "720p";
+    resolution: "480p" | "720p" | "1080p";
     aspect_ratio: SeedanceAspectRatio;
     fps: 24;
     camera_fixed: boolean;
@@ -135,7 +133,7 @@ async function generateSeedanceVideo(
     const input: SeedanceInput = {
         prompt,
         duration,
-        resolution: "720p",
+        resolution: safeParams.resolution as SeedanceInput["resolution"],
         aspect_ratio: resolveSeedanceAspectRatio(safeParams),
         fps: 24,
         camera_fixed: false,

@@ -21,6 +21,7 @@ export const Model3dParamsSchema = z.object({
     // part of the media-cache key, letting callers force a fresh generation
     // for the same prompt by varying the seed.
     seed: z.coerce.number().int().optional().catch(undefined),
+    quality: z.enum(["low", "medium", "high"]).optional().catch(undefined),
     safe: z
         .union([z.string(), z.boolean()])
         .transform((value) => {

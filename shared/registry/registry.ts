@@ -50,6 +50,14 @@ export type CostDefinition = { [K in UsageType]?: number };
 // User-facing charge rates in Pollen per usage unit, derived from cost × multiplier.
 export type PriceDefinition = CostDefinition;
 
+export type BillingContext = {
+    usage: Usage;
+    input?: unknown;
+    output?: unknown;
+};
+
+export type UsageBillingContext = Omit<BillingContext, "usage">;
+
 export type ModelName =
     | ImageModelName
     | TextModelName
@@ -101,6 +109,9 @@ export type BillingAdjustment = {
 
 export type ModelDefinition = {
     aliases: string[];
+    // Defaults implied by legacy aliases that previously represented a fixed
+    // model variant. Explicit request parameters override these defaults.
+    aliasDefaults?: Record<string, Record<string, unknown>>;
     provider: string;
     // Optional secondary provider for binary-asset models with provider-level
     // fallback (3D only, as of this field). Purely descriptive metadata for
@@ -110,6 +121,11 @@ export type ModelDefinition = {
     brand: string;
     category: Category;
     cost: CostDefinition;
+    // Named partial overrides of the base cost. Registry invariants require a
+    // resolver when variants exist; runtime resolver faults warn and bill base
+    // rates so a post-response billing error cannot drop the debit and event.
+    costVariants?: Record<string, Partial<CostDefinition>>;
+    resolveCostVariant?: (context: BillingContext) => string;
     // USD-cost to Pollen-price multiplier. Required on every model — there is
     // no implicit default. Typical values: 1 (sold at cost) or 1.5 (paid markup).
     priceMultiplier: number;
@@ -138,10 +154,22 @@ export type ModelDefinition = {
     // audio (e.g. Stable Audio) from per-character TTS, which share cost fields.
     flatRate?: boolean;
     hidden?: boolean; // Hidden from /models endpoints and dashboard, but still usable via API
+    resolutions?: readonly string[]; // Ordered supported resolutions; first is the default.
     videoCapabilities?: VideoCapability[]; // Video-only: which frame controls the provider supports
     maxReferenceImages?: number; // Models with image input: effective accepted reference images
     maxReferenceVideos?: number; // Models with video input: effective accepted reference videos
 };
+
+export function applyModelAliasDefaults(
+    svc: ModelDefinition,
+    requestedModel: string,
+    input: Record<string, unknown>,
+): Record<string, unknown> {
+    return {
+        ...svc.aliasDefaults?.[requestedModel],
+        ...input,
+    };
+}
 
 // Helper: Convert usage counts to rated USD-equivalent cost or Pollen charge.
 // When a usage type is reported by upstream but the registry has no rate for it,
@@ -174,11 +202,16 @@ function convertUsage(
     return convertedUsage as Usage;
 }
 
-function derivePrice(svc: ModelDefinition): PriceDefinition {
-    const m = svc.priceMultiplier;
-    if (m === 1) return svc.cost;
+function derivePrice(
+    costDefinition: CostDefinition,
+    priceMultiplier: number,
+): PriceDefinition {
+    if (priceMultiplier === 1) return costDefinition;
     return Object.fromEntries(
-        Object.entries(svc.cost).map(([k, v]) => [k, (v as number) * m]),
+        Object.entries(costDefinition).map(([k, v]) => [
+            k,
+            (v as number) * priceMultiplier,
+        ]),
     ) as PriceDefinition;
 }
 
@@ -195,6 +228,60 @@ function calculateLinearCost(
     return {
         ...usageCost,
         totalCost,
+    };
+}
+
+function resolveUsageCost(
+    model: string,
+    usage: Usage,
+    svc: ModelDefinition,
+    context: UsageBillingContext,
+): {
+    usageCost: UsageCost;
+    effectiveRates: CostDefinition;
+    costVariant?: string;
+} {
+    let costVariant: string | undefined;
+    try {
+        costVariant = svc.resolveCostVariant?.({ usage, ...context });
+    } catch (error) {
+        console.warn(
+            `[registry] Cost variant resolver failed for model=${model} — billing base rates`,
+            error,
+        );
+        return {
+            usageCost: calculateLinearCost(model, usage, svc.cost),
+            effectiveRates: svc.cost,
+        };
+    }
+
+    if (!costVariant) {
+        if (svc.costVariants) {
+            console.warn(
+                `[registry] Model ${model} defines cost variants without a billing resolver — billing base rates`,
+            );
+        }
+        return {
+            usageCost: calculateLinearCost(model, usage, svc.cost),
+            effectiveRates: svc.cost,
+        };
+    }
+
+    const variantCost = svc.costVariants?.[costVariant];
+    if (!variantCost) {
+        console.warn(
+            `[registry] Unknown cost variant for model=${model}: ${costVariant} — billing base rates`,
+        );
+        return {
+            usageCost: calculateLinearCost(model, usage, svc.cost),
+            effectiveRates: svc.cost,
+        };
+    }
+    const effectiveRates = { ...svc.cost, ...variantCost };
+    return {
+        usageCost: calculateLinearCost(model, usage, effectiveRates),
+        effectiveRates,
+        costVariant,
     };
 }
 
@@ -232,22 +319,30 @@ export type UsageBilling = {
     cost: UsageCost;
     price: UsagePrice;
     adjustments: BillingAdjustment[];
+    costDefinition: CostDefinition;
+    priceDefinition: PriceDefinition;
+    costVariant?: string;
 };
 
 export function calculateUsageBilling(
     model: string,
     usage: Usage,
     svc: ModelDefinition,
-    output?: unknown,
+    context: UsageBillingContext = {},
 ): UsageBilling {
-    const adjustments = calculateBillingAdjustments(svc, output, model);
+    const adjustments = calculateBillingAdjustments(svc, context.output, model);
     const adjustmentCost = adjustments.reduce((total, a) => total + a.cost, 0);
     const adjustmentPrice = adjustments.reduce(
         (total, a) => total + a.price,
         0,
     );
 
-    const usageCost = calculateLinearCost(model, usage, svc.cost);
+    const { usageCost, effectiveRates, costVariant } = resolveUsageCost(
+        model,
+        usage,
+        svc,
+        context,
+    );
     const cost =
         adjustmentCost === 0
             ? usageCost
@@ -273,7 +368,14 @@ export function calculateUsageBilling(
         totalPrice: roundPollenLedgerAmount(tokenTotalPrice + adjustmentPrice),
     };
 
-    return { cost, price, adjustments };
+    return {
+        cost,
+        price,
+        adjustments,
+        costDefinition: effectiveRates,
+        priceDefinition: derivePrice(effectiveRates, svc.priceMultiplier),
+        costVariant,
+    };
 }
 
 const MODEL_REGISTRY = {
@@ -373,7 +475,14 @@ export function getRegistryModelDefinition(model: ModelName): ModelDefinition {
 export function getPriceDefinitionForModel(
     svc: ModelDefinition,
 ): PriceDefinition {
-    return derivePrice(svc);
+    return derivePrice(svc.cost, svc.priceMultiplier);
+}
+
+export function getPriceDefinitionForCost(
+    cost: CostDefinition,
+    priceMultiplier: number,
+): PriceDefinition {
+    return derivePrice(cost, priceMultiplier);
 }
 
 /**
@@ -398,23 +507,23 @@ export function getPriceDefinition(model: ModelName): PriceDefinition | null {
 export function calculateCost(
     model: ModelName,
     usage: Usage,
-    output?: unknown,
+    context: UsageBillingContext = {},
 ): UsageCost {
     const svc = MODEL_REGISTRY[model];
     if (!svc)
         throw new Error(
             `Failed to get current cost for model: ${model.toString()}`,
         );
-    return calculateCostForModelDefinition(model, usage, svc, output);
+    return calculateCostForModelDefinition(model, usage, svc, context);
 }
 
 export function calculateCostForModelDefinition(
     model: string,
     usage: Usage,
     svc: ModelDefinition,
-    output?: unknown,
+    context: UsageBillingContext = {},
 ): UsageCost {
-    return calculateUsageBilling(model, usage, svc, output).cost;
+    return calculateUsageBilling(model, usage, svc, context).cost;
 }
 
 /**
@@ -434,23 +543,23 @@ export function calculateCostWithDefinition(
 export function calculatePrice(
     model: ModelName,
     usage: Usage,
-    output?: unknown,
+    context: UsageBillingContext = {},
 ): UsagePrice {
     const svc = MODEL_REGISTRY[model];
     if (!svc)
         throw new Error(
             `Failed to get current price for model: ${model.toString()}`,
         );
-    return calculatePriceForModelDefinition(model, usage, svc, output);
+    return calculatePriceForModelDefinition(model, usage, svc, context);
 }
 
 export function calculatePriceForModelDefinition(
     model: string,
     usage: Usage,
     svc: ModelDefinition,
-    output?: unknown,
+    context: UsageBillingContext = {},
 ): UsagePrice {
-    return calculateUsageBilling(model, usage, svc, output).price;
+    return calculateUsageBilling(model, usage, svc, context).price;
 }
 
 /**

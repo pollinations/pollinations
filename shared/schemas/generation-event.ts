@@ -63,6 +63,7 @@ export type TinybirdEvent = {
     resolvedModelRequested?: string;
     modelUsed?: string;
     modelProviderUsed?: string;
+    costVariant?: string;
     /** True when Portkey served from a non-primary fallback target. */
     fallbackUsed?: boolean;
     isBilledUsage: boolean;

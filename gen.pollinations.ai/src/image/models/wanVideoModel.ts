@@ -6,14 +6,11 @@
  * into separate models, so each variant routes by whether a first frame is
  * supplied:
  *   - wan-fast → wan-2.2-t2v-fast / wan-2.2-i2v-fast  (480p, ~5s, silent)
- *   - wan      → wan-2.6-t2v      / wan-2.6-i2v       (720p, native audio)
- *   - wan-pro  → wan-2.7-t2v      / wan-2.7-i2v       (720p, native audio)
+ *   - wan      → wan-2.6-t2v      / wan-2.6-i2v       (720p/1080p, native audio)
+ *   - wan-pro  → wan-2.7-t2v      / wan-2.7-i2v       (720p/1080p, native audio)
  *
- * ONE PRICE PER MODEL: Replicate prices Wan video per-second by resolution
- * (720p vs 1080p) — so each model is LOCKED to a single resolution to keep a
- * single rate. wan/wan-pro lock to 720p ($0.10/s, audio bundled); wan-fast
- * locks to 480p (flat $0.05 per fixed-length clip). 1080p, if ever wanted,
- * would be a separate model. This mirrors the Seedance 720p-locked convention.
+ * The registry selects the exact per-second rate from the normalized
+ * resolution and input mode. wan-fast remains a fixed 480p tier.
  */
 
 import debug from "debug";
@@ -138,33 +135,32 @@ const WAN_26_CONFIG: WanVariantConfig = {
     resolveDuration: (p) => snapDuration(p.duration, WAN_26_DURATIONS),
     buildInput(mode, prompt, safeParams, frames) {
         const duration = snapDuration(safeParams.duration, WAN_26_DURATIONS);
+        const resolution = safeParams.resolution as "720p" | "1080p";
         if (mode === "i2v") {
             return withSeed(
-                { prompt, image: frames[0], resolution: "720p", duration },
+                { prompt, image: frames[0], resolution, duration },
                 safeParams,
             );
         }
-        // t2v uses an explicit size; lock to the 720p landscape/portrait pair.
+        const portrait = pickAspect(safeParams, WAN_FAST_RATIOS) === "9:16";
         const size =
-            pickAspect(safeParams, WAN_FAST_RATIOS) === "9:16"
-                ? "720*1280"
-                : "1280*720";
+            resolution === "1080p"
+                ? portrait
+                    ? "1080*1920"
+                    : "1920*1080"
+                : portrait
+                  ? "720*1280"
+                  : "1280*720";
         return withSeed({ prompt, size, duration }, safeParams);
     },
 };
 
-// Wan 2.7 is offered at two locked resolutions as separate models (one price
-// each): wan-pro @720p ($0.10/s) and wan-pro-1080p @1080p ($0.15/s). The t2v/i2v
-// schemas are identical apart from the resolution value, so share a factory.
-function makeWan27Config(
-    resolution: "720p" | "1080p",
-    trackingName: string,
-): WanVariantConfig {
+function makeWan27Config(): WanVariantConfig {
     return {
         t2vModel: "wan-video/wan-2.7-t2v",
         i2vModel: "wan-video/wan-2.7-i2v",
-        trackingName,
-        displayName: `Wan 2.7${resolution === "1080p" ? " 1080p" : ""}`,
+        trackingName: "wan-pro",
+        displayName: "Wan 2.7",
         resolveDuration: (p) =>
             Math.max(
                 WAN_PRO_MIN_DURATION,
@@ -172,6 +168,7 @@ function makeWan27Config(
             ),
         buildInput(mode, prompt, safeParams, frames) {
             const duration = this.resolveDuration(safeParams);
+            const resolution = safeParams.resolution as "720p" | "1080p";
             if (mode === "i2v") {
                 return withSeed(
                     {
@@ -197,8 +194,7 @@ function makeWan27Config(
     };
 }
 
-const WAN_27_CONFIG = makeWan27Config("720p", "wan-pro");
-const WAN_27_1080P_CONFIG = makeWan27Config("1080p", "wan-pro-1080p");
+const WAN_27_CONFIG = makeWan27Config();
 
 async function generateWanVideo(
     config: WanVariantConfig,
@@ -284,7 +280,7 @@ async function generateWanVideo(
     };
 }
 
-/** Wan 2.6 via Replicate — T2V / I2V at 720p with native audio. */
+/** Wan 2.6 via Replicate — T2V / I2V with native audio. */
 export function callWanAPI(
     prompt: string,
     safeParams: ImageParams,
@@ -300,18 +296,10 @@ export function callWanFastAPI(
     return generateWanVideo(WAN_FAST_CONFIG, prompt, safeParams);
 }
 
-/** Wan 2.7 via Replicate — T2V / I2V at 720p with native audio + keyframes. */
+/** Wan 2.7 via Replicate — T2V / I2V with native audio + keyframes. */
 export function callWanProAPI(
     prompt: string,
     safeParams: ImageParams,
 ): Promise<VideoGenerationResult> {
     return generateWanVideo(WAN_27_CONFIG, prompt, safeParams);
-}
-
-/** Wan 2.7 via Replicate at locked 1080p (billed at the higher i2v rate). */
-export function callWanPro1080pAPI(
-    prompt: string,
-    safeParams: ImageParams,
-): Promise<VideoGenerationResult> {
-    return generateWanVideo(WAN_27_1080P_CONFIG, prompt, safeParams);
 }

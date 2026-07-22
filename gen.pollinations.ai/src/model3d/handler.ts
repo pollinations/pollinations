@@ -1,5 +1,6 @@
 import { remapUpstreamStatus, UpstreamError } from "@shared/error.ts";
 import { IMMUTABLE_CACHE_CONTROL } from "@shared/http/cache-control.ts";
+import { applyModelAliasDefaults } from "@shared/registry/registry.ts";
 import { buildUsageHeaders } from "@shared/registry/usage-headers.ts";
 import type { Context } from "hono";
 import type { Env } from "@/env.ts";
@@ -22,6 +23,7 @@ export async function generate3dResponse(
     syncModel3dEnvironment(c.env);
     const originalPrompt = decodePrompt(prompt || "");
     const safeParams = parseModel3dParams(c, body);
+    c.var.track.setBillingInput(safeParams);
 
     try {
         const result = await createAndReturnModel3d(originalPrompt, safeParams);
@@ -68,8 +70,14 @@ export function parseModel3dParams(
 ): Model3dParams {
     const queryParams = Object.fromEntries(new URL(c.req.url).searchParams);
     const mergedParams = {
-        ...queryParams,
-        ...body,
+        ...applyModelAliasDefaults(
+            c.var.model.definition,
+            c.var.model.requested,
+            {
+                ...queryParams,
+                ...body,
+            },
+        ),
         model: c.var.model.resolved,
     };
     delete (mergedParams as Record<string, unknown>).prompt;

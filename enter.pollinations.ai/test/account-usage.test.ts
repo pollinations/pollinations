@@ -230,7 +230,8 @@ test("GET /api/account/usage forwards stable cursor and returns event cursor", a
             cursor_event_id: "event-2",
             timestamp: "2026-04-14 12:10:00",
             type: "generate.text",
-            model: "openai-fast",
+            model: "gpt-5.4",
+            cost_variant: "long-context",
             api_key_id: "key_abc123",
             api_key: "alpha",
             api_key_type: "secret",
@@ -262,6 +263,7 @@ test("GET /api/account/usage forwards stable cursor and returns event cursor", a
     };
     expect(body.usage[0].cursor_event_id).toBe("event-2");
     expect(body.usage[0].api_key_id).toBe("key_abc123");
+    expect(body.usage[0].cost_variant).toBe("long-context");
 
     const usageCalls = mocks.tinybird.state.pipeCalls.filter((call) =>
         call.url.includes("activity_usage_transactions.json"),
@@ -352,7 +354,8 @@ test("GET /api/account/usage?format=csv renders rows and sets filename from limi
             cursor_event_id: "event-1",
             timestamp: "2026-04-14 12:10:00",
             type: "generate.text",
-            model: "openai-fast",
+            model: "gpt-5.4",
+            cost_variant: "standard",
             api_key_id: "key_abc123",
             api_key: "alpha",
             api_key_type: "secret",
@@ -386,10 +389,11 @@ test("GET /api/account/usage?format=csv renders rows and sets filename from limi
     const csv = await response.text();
     const lines = csv.trim().split("\n");
     expect(lines).toHaveLength(2);
-    expect(lines[0]).toContain("timestamp,type,model");
+    expect(lines[0]).toContain("timestamp,type,model,cost_variant");
     expect(lines[0]).not.toContain("cursor_event_id");
     expect(lines[1]).toContain("2026-04-14 12:10:00");
     expect(lines[1]).toContain("alpha");
+    expect(lines[1]).toContain("standard");
 
     const usageCalls = mocks.tinybird.state.pipeCalls.filter((call) =>
         call.url.includes("activity_usage_transactions.json"),

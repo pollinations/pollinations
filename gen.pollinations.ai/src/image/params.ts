@@ -1,4 +1,5 @@
 import { IMAGE_SERVICES, type ImageModelName } from "@shared/registry/image.ts";
+import type { ModelDefinition } from "@shared/registry/registry.ts";
 import { z } from "zod";
 import { getDefaultSideLength } from "./models.js";
 
@@ -7,6 +8,7 @@ const allowedModels = Object.keys(IMAGE_SERVICES) as [
     ...ImageModelName[],
 ];
 const validQualities = ["low", "medium", "high", "hd"] as const;
+const validResolutions = ["480p", "720p", "1080p"] as const;
 // Maximum seed value - use INT32_MAX for compatibility with strict providers like Vertex AI
 const MAX_RANDOM_SEED = 2147483647; // INT32_MAX (2^31 - 1)
 
@@ -71,6 +73,8 @@ export const ImageParamsSchema = z
             })
             .catch([]),
         transparent: sanitizedBoolean.catch(false),
+        resolution: z.enum(validResolutions).optional(),
+        draft: sanitizedBoolean.optional().catch(undefined),
         reasoning: z
             .union([z.string(), z.boolean()])
             .transform((v) => {
@@ -97,7 +101,7 @@ export const ImageParamsSchema = z
                 "adaptive",
             ])
             .optional(),
-        audio: sanitizedBoolean.catch(true), // generateAudio defaults to true
+        audio: sanitizedBoolean.catch(false),
     })
     .superRefine((data, ctx) => {
         if (data.model === "gpt-image-2" && data.transparent) {
@@ -106,6 +110,31 @@ export const ImageParamsSchema = z
                 path: ["transparent"],
                 message:
                     "Transparent backgrounds are not supported by gpt-image-2.",
+            });
+        }
+
+        const supportedResolutions = (
+            IMAGE_SERVICES[data.model] as ModelDefinition
+        ).resolutions;
+        if (
+            data.resolution &&
+            (!supportedResolutions ||
+                !supportedResolutions.includes(data.resolution))
+        ) {
+            ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                path: ["resolution"],
+                message: supportedResolutions
+                    ? `Resolution "${data.resolution}" is not supported by ${data.model}. Supported: ${supportedResolutions.join(", ")}.`
+                    : `Resolution is not supported by ${data.model}.`,
+            });
+        }
+
+        if (data.draft && data.model !== "p-video") {
+            ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                path: ["draft"],
+                message: `Draft mode is not supported by ${data.model}.`,
             });
         }
     })
@@ -122,7 +151,17 @@ export const ImageParamsSchema = z
             data.height,
         );
 
-        return { ...data, width, height, dimensionsExplicit };
+        const resolution =
+            data.resolution ??
+            (IMAGE_SERVICES[data.model] as ModelDefinition).resolutions?.[0];
+
+        return {
+            ...data,
+            width,
+            height,
+            dimensionsExplicit,
+            ...(resolution ? { resolution } : {}),
+        };
     });
 
 export type ImageParams = z.infer<typeof ImageParamsSchema>;

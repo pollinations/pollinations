@@ -1,6 +1,7 @@
-import type { ModelDefinition } from "./registry";
+import { defineCostVariants } from "./cost-variants";
+import type { BillingContext, ModelDefinition } from "./registry";
 
-export const DEFAULT_3D_MODEL = "trellis-2-low" as const;
+export const DEFAULT_3D_MODEL = "trellis-2" as const;
 
 export type Model3dName = keyof typeof MODEL3D_SERVICES;
 
@@ -9,8 +10,13 @@ export type Model3dName = keyof typeof MODEL3D_SERVICES;
 // new UsageType, which would require new fields in
 // shared/schemas/generation-event.ts and a Tinybird schema change.
 export const MODEL3D_SERVICES = {
-    "trellis-2-low": {
-        aliases: [],
+    "trellis-2": {
+        aliases: ["trellis-2-low", "trellis-2-medium", "trellis-2-high"],
+        aliasDefaults: {
+            "trellis-2-low": { quality: "low" },
+            "trellis-2-medium": { quality: "medium" },
+            "trellis-2-high": { quality: "high" },
+        },
         provider: "inferenceport",
         brand: "Microsoft",
         category: "3d",
@@ -19,49 +25,33 @@ export const MODEL3D_SERVICES = {
         flatRate: true,
 
         cost: {
-            completionImageTokens: 0.24, // per generation, "low" resolution
+            completionImageTokens: 0.24,
         },
-        title: "Trellis 2 (Low)",
-        description:
-            "Turns a photo into a 3D model — fastest option, lowest detail",
-        inputModalities: ["image"],
-        outputModalities: ["3d"],
-        maxReferenceImages: 1,
-    },
-    "trellis-2-medium": {
-        aliases: [],
-        provider: "inferenceport",
-        brand: "Microsoft",
-        category: "3d",
-        addedDate: new Date("2026-06-24").getTime(),
-        priceMultiplier: 1,
-        flatRate: true,
-
-        cost: {
-            completionImageTokens: 0.29, // per generation, "medium" resolution
-        },
-        title: "Trellis 2 (Medium)",
-        description:
-            "Turns a photo into a 3D model with balanced detail and cost",
-        inputModalities: ["image"],
-        outputModalities: ["3d"],
-        maxReferenceImages: 1,
-    },
-    "trellis-2-high": {
-        aliases: [],
-        provider: "inferenceport",
-        brand: "Microsoft",
-        category: "3d",
-        addedDate: new Date("2026-06-24").getTime(),
-        priceMultiplier: 1,
-        flatRate: true,
-
-        cost: {
-            completionImageTokens: 0.35, // per generation, "high" resolution
-        },
-        title: "Trellis 2 (High)",
-        description:
-            "Turns a photo into a 3D model at maximum detail; the priciest tier",
+        ...defineCostVariants(
+            {
+                low: {},
+                medium: { completionImageTokens: 0.29 },
+                high: { completionImageTokens: 0.35 },
+            },
+            ({ input }: BillingContext) => {
+                const quality =
+                    (input && typeof input === "object" && "quality" in input
+                        ? (input as { quality?: string }).quality
+                        : undefined) ?? "low";
+                if (
+                    quality !== "low" &&
+                    quality !== "medium" &&
+                    quality !== "high"
+                ) {
+                    throw new Error(
+                        `Unsupported Trellis 2 quality: ${quality}`,
+                    );
+                }
+                return quality;
+            },
+        ),
+        title: "Trellis 2",
+        description: "Turns a photo into a 3D model at configurable detail",
         inputModalities: ["image"],
         outputModalities: ["3d"],
         maxReferenceImages: 1,

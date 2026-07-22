@@ -9,6 +9,7 @@ SQL >
         event_id,
         event_type AS type,
         resolved_model_requested AS resolved_model,
+        if(cost_variant = 'undefined', '', cost_variant) AS cost_variant,
         api_key_id,
         api_key_name AS api_key,
         api_key_type,

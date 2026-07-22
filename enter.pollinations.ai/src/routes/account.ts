@@ -435,6 +435,7 @@ const USAGE_CSV_COLUMNS = [
     "timestamp",
     "type",
     "model",
+    "cost_variant",
     "api_key",
     "api_key_type",
     "meter_source",
@@ -736,6 +737,10 @@ const usageRecordSchema = z.object({
         .string()
         .describe("Request type (e.g., 'generate.image', 'generate.text')"),
     model: z.string().nullable().describe("Model used for generation"),
+    cost_variant: z
+        .string()
+        .nullable()
+        .describe("Pricing variant selected for this request, when applicable"),
     api_key_id: z
         .string()
         .nullable()

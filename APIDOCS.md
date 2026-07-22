@@ -446,14 +446,16 @@ Browse all available models and their capabilities at [`/image/models`](https://
 | Param | In | Type | Description |
 |---|---|---|---|
 | `prompt` * | `path` | `string` | Text description of the image to generate |
-| `model` * | `query` | `string` | Model to use. **Image:** flux, zimage, gptimage, kontext, seedream5, seedream5-pro, nanobanana, nanobanana-pro, klein. **Video:** veo, veo-1080p, seedance, seedance-pro, wan, nova-reel. See /image/models for full list. · default: `"zimage"` |
-| `width` | `query` | `integer` | Width in pixels. For images, exact pixels. For video models, used for aspect ratio and, unless the model name fixes a tier, mapped to the nearest resolution. · default: `1024` |
-| `height` | `query` | `integer` | Height in pixels. For images, exact pixels. For video models, used for aspect ratio and, unless the model name fixes a tier, mapped to the nearest resolution. · default: `1024` |
+| `model` * | `query` | `string` | Model to use. **Image:** flux, zimage, gptimage, kontext, seedream5, seedream5-pro, nanobanana, nanobanana-pro, klein. **Video:** veo, seedance-pro, seedance-2.0, wan, wan-pro, p-video, nova-reel. See /image/models for full list. · default: `"zimage"` |
+| `width` | `query` | `integer` | Width in pixels. For images, exact pixels. For video models, used for aspect ratio. · default: `1024` |
+| `height` | `query` | `integer` | Height in pixels. For images, exact pixels. For video models, used for aspect ratio. · default: `1024` |
 | `seed` | `query` | `integer` | Seed for reproducible results. Use -1 for random. Supported by: flux, zimage, seedream, klein, seedance, nova-reel. Other models ignore this parameter. · default: `0` · range: `-1…2147483647` |
 | `safe` | `query` | `string` \| `boolean` | Safety features: comma-separated list of privacy, secrets, sexual, violence, shield, true, nsfw. true enables privacy,secrets; nsfw enables sexual,violence. Also accepted in the Pollinations-Safe header. Defaults to off; false and 0 are accepted as off. |
 | `quality` | `query` | `"low"` \| `"medium"` \| `"high"` \| `"hd"` | Image quality level. Only supported by `gptimage`, `gptimage-large`, and `gpt-image-2`. · default: `"medium"` |
-| `image` | `query` | `string` | Reference image URL(s) for image editing or video generation. Separate multiple URLs with `\|` or `,`. **Image models:** Used for editing/style reference (kontext, gptimage, seedream, klein, nanobanana). **Video models:** `image[0]` = starting frame (I2V); `image[1]` = ending frame for first+last-frame interpolation. End-frame supported by `veo`, `veo-1080p`, `seedance`, `seedance-2.0`, and `wan-fast`; other video models silently drop `image[1]`. See `video_capabilities` on `/image/models` or `/models` for per-model support. |
+| `image` | `query` | `string` | Reference image URL(s) for image editing or video generation. Separate multiple URLs with `\|` or `,`. **Image models:** Used for editing/style reference (kontext, gptimage, seedream, klein, nanobanana). **Video models:** `image[0]` = starting frame (I2V); `image[1]` = ending frame for first+last-frame interpolation. End-frame supported by `veo`, `seedance-2.0`, `wan-fast`, and `wan-pro`; other video models reject or ignore `image[1]`. See `video_capabilities` on `/image/models` or `/models` for per-model support. |
 | `transparent` | `query` | `boolean` | Generate image with transparent background. Only supported by `gptimage` and `gptimage-large`. · default: `false` |
+| `resolution` | `query` | `"480p"` \| `"720p"` \| `"1080p"` | Video resolution. Supported values vary by model and are listed in `resolutions` on `/image/models` and `/models`. |
+| `draft` | `query` | `boolean` | Use the cheaper draft tier. Currently supported by `p-video`. · default: `false` |
 
 <sub>`*` = required parameter</sub>
 
@@ -485,6 +487,8 @@ Generate images from text prompts. Supports `response_format: "url"` (returns a 
 | `n` | `integer` | Number of images to generate (currently max 1) · default: `1` · range: `1…1` |
 | `size` | `string` | Image size as WIDTHxHEIGHT (e.g., 1024x1024, 512x512) · default: `"1024x1024"` |
 | `quality` | `"standard"` \| `"hd"` \| `"low"` \| `"medium"` \| `"high"` | Image quality. OpenAI 'standard'/'hd' mapped to Pollinations equivalents · default: `"medium"` |
+| `resolution` | `"480p"` \| `"720p"` \| `"1080p"` | Video resolution. Supported values vary by model and are listed in `resolutions` on `/image/models` and `/models`. |
+| `draft` | `boolean` | Use the cheaper draft tier. Currently supported by `p-video`. · default: `false` |
 | `response_format` | `"url"` \| `"b64_json"` | Return format. "url" returns a pollinations.ai URL, "b64_json" returns base64-encoded image data · default: `"b64_json"` |
 | `user` | `string` | End-user identifier for abuse tracking |
 | `image` | `string` \| `string`[] | Reference image URL(s) for image-to-image generation (Pollinations extension) |
@@ -513,6 +517,7 @@ OpenAI-compatible image editing endpoint.
 
 Edit images using a text prompt and one or more source images.
 Accepts JSON with image URLs or multipart/form-data with file uploads.
+Video-capable models also accept `resolution`; `p-video` accepts `draft`.
 
 **Authentication:** Include your API key as `Authorization: Bearer YOUR_API_KEY`.
 
@@ -536,7 +541,9 @@ curl -X POST "https://gen.pollinations.ai/v1/images/edits" \
 
 Generate a video from a text prompt. Returns MP4.
 
-**Available models:** `veo`, `veo-1080p`, `seedance-pro`, `seedance-2.0`, `wan`, `wan-fast`, `wan-pro`, `wan-pro-1080p`, `grok-video-pro`, `happyhorse-1.1`, `p-video-720p`, `p-video-1080p`, `nova-reel`.
+**Available models:** `veo`, `seedance-pro`, `seedance-2.0`, `wan`, `wan-fast`, `wan-pro`, `grok-video-pro`, `happyhorse-1.1`, `p-video`, `nova-reel`.
+
+Legacy resolution-specific model names remain accepted as aliases and retain their original resolution unless `resolution` is passed explicitly.
 
 Use `duration` to set video length, `aspectRatio` for orientation, and `audio` where the selected model supports audio output.
 
@@ -549,15 +556,17 @@ Browse all available models and their `video_capabilities` at [`/image/models`](
 | Param | In | Type | Description |
 |---|---|---|---|
 | `prompt` * | `path` | `string` | Text description of the video to generate |
-| `model` * | `query` | `string` | Model to use. **Image:** flux, zimage, gptimage, kontext, seedream5, seedream5-pro, nanobanana, nanobanana-pro, klein. **Video:** veo, veo-1080p, seedance, seedance-pro, wan, nova-reel. See /image/models for full list. · default: `"zimage"` |
-| `width` | `query` | `integer` | Width in pixels. For images, exact pixels. For video models, used for aspect ratio and, unless the model name fixes a tier, mapped to the nearest resolution. · default: `1024` |
-| `height` | `query` | `integer` | Height in pixels. For images, exact pixels. For video models, used for aspect ratio and, unless the model name fixes a tier, mapped to the nearest resolution. · default: `1024` |
+| `model` * | `query` | `string` | Model to use. **Image:** flux, zimage, gptimage, kontext, seedream5, seedream5-pro, nanobanana, nanobanana-pro, klein. **Video:** veo, seedance-pro, seedance-2.0, wan, wan-pro, p-video, nova-reel. See /image/models for full list. · default: `"zimage"` |
+| `width` | `query` | `integer` | Width in pixels. For images, exact pixels. For video models, used for aspect ratio. · default: `1024` |
+| `height` | `query` | `integer` | Height in pixels. For images, exact pixels. For video models, used for aspect ratio. · default: `1024` |
 | `seed` | `query` | `integer` | Seed for reproducible results. Use -1 for random. Supported by: flux, zimage, seedream, klein, seedance, nova-reel. Other models ignore this parameter. · default: `0` · range: `-1…2147483647` |
 | `safe` | `query` | `string` \| `boolean` | Safety features: comma-separated list of privacy, secrets, sexual, violence, shield, true, nsfw. true enables privacy,secrets; nsfw enables sexual,violence. Also accepted in the Pollinations-Safe header. Defaults to off; false and 0 are accepted as off. |
-| `image` | `query` | `string` | Reference image URL(s) for image editing or video generation. Separate multiple URLs with `\|` or `,`. **Image models:** Used for editing/style reference (kontext, gptimage, seedream, klein, nanobanana). **Video models:** `image[0]` = starting frame (I2V); `image[1]` = ending frame for first+last-frame interpolation. End-frame supported by `veo`, `veo-1080p`, `seedance`, `seedance-2.0`, and `wan-fast`; other video models silently drop `image[1]`. See `video_capabilities` on `/image/models` or `/models` for per-model support. |
-| `duration` | `query` | `integer` | Video duration in seconds. Only applies to video models. `veo` and `veo-1080p`: 4, 6, or 8s. `seedance`: 2-10s. `seedance-2.0`: 4-15s. `wan`: 2-15s. `nova-reel`: 6-120s (multiples of 6). · range: `1…120` |
+| `image` | `query` | `string` | Reference image URL(s) for image editing or video generation. Separate multiple URLs with `\|` or `,`. **Video models:** `image[0]` = starting frame (I2V); `image[1]` = ending frame for first+last-frame interpolation. End-frame supported by `veo`, `seedance-2.0`, `wan-fast`, and `wan-pro`. See `video_capabilities` on `/image/models` or `/models`. |
+| `duration` | `query` | `integer` | Video duration in seconds. `veo`: 4, 6, or 8s. `seedance-pro`: 2-10s. `seedance-2.0`: 4-15s. `wan`: 5, 10, or 15s. `p-video`: 1-20s. `nova-reel`: 6-120s (multiples of 6). · range: `1…120` |
+| `resolution` | `query` | `"480p"` \| `"720p"` \| `"1080p"` | Video resolution. Supported values vary by model and are listed in `resolutions` on `/image/models` and `/models`. |
+| `draft` | `query` | `boolean` | Use the cheaper draft tier. Currently supported by `p-video`. · default: `false` |
 | `aspectRatio` | `query` | `string` | Video aspect ratio (`16:9` or `9:16`). Only applies to video models. If not set, determined by width/height. |
-| `audio` | `query` | `boolean` | Generate audio for the video. Only applies to video models. Note: `wan` generates audio regardless of this flag. For `veo` and `veo-1080p`, set to `true` to enable audio. · default: `false` |
+| `audio` | `query` | `boolean` | Generate audio for the video. Note: `wan` generates audio regardless of this flag. For `veo`, set to `true` to enable audio. · default: `false` |
 
 <sub>`*` = required parameter</sub>
 
@@ -872,7 +881,7 @@ curl "https://gen.pollinations.ai/v1/models" \
 
 #### `GET` `/models` — List Models
 
-Returns all available text, community text, image, video, 3D, realtime, audio, and embedding models with pricing, capabilities, and metadata. When authenticated: the owner's private community models are included, models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance.
+Returns all available text, community text, image, video, 3D, realtime, audio, and embedding models with pricing, capabilities, and metadata. Models with conditional rates include `pricing_variants`; media models with fixed resolution choices include `resolutions`. When authenticated: the owner's private community models are included, models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance.
 
 📤 **Response** · `200` · `application/json` — Success
 
@@ -887,7 +896,7 @@ curl "https://gen.pollinations.ai/models" \
 
 #### `GET` `/3d/models` — List 3D Models
 
-Returns all available 3D model generation models with pricing, capabilities, and metadata. When authenticated: models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance.
+Returns all available 3D model generation models with pricing, capabilities, and metadata. Models with conditional rates include `pricing_variants`. When authenticated: models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance.
 
 📤 **Response** · `200` · `application/json` — Success
 
@@ -902,7 +911,7 @@ curl "https://gen.pollinations.ai/3d/models" \
 
 #### `GET` `/image/models` — List Image & Video Models
 
-Returns all available image and video generation models with pricing, capabilities, and metadata. Video models are included here — check the `outputModalities` field to distinguish image vs video models. When authenticated: models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance.
+Returns all available image and video generation models with pricing, capabilities, and metadata. Video models are included here — check `output_modalities` to distinguish image from video. Models with conditional rates include `pricing_variants`; video models with fixed resolution choices include `resolutions`. When authenticated: models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance.
 
 📤 **Response** · `200` · `application/json` — Success
 
@@ -917,7 +926,7 @@ curl "https://gen.pollinations.ai/image/models" \
 
 #### `GET` `/video/models` — List Video Models
 
-Returns all available video generation models with pricing, capabilities, and metadata. When authenticated: models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance.
+Returns all available video generation models with pricing, capabilities, and metadata. Models with conditional rates include `pricing_variants`; fixed resolution choices are listed in `resolutions`. When authenticated: models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance.
 
 📤 **Response** · `200` · `application/json` — Success
 
@@ -932,7 +941,7 @@ curl "https://gen.pollinations.ai/video/models" \
 
 #### `GET` `/text/models` — List Text Models (Detailed)
 
-Returns all available text generation and community text models with pricing, capabilities, and metadata including context window size, supported modalities, and tool support. When authenticated: the owner's private community models are included, models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance.
+Returns all available text generation and community text models with pricing, capabilities, and metadata including context window size, supported modalities, and tool support. Models with conditional rates include `pricing_variants`. When authenticated: the owner's private community models are included, models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance.
 
 📤 **Response** · `200` · `application/json` — Success
 
@@ -1530,6 +1539,7 @@ Returns your request history with per-request details: model used, token counts,
 | `usage[].cursor_event_id` * | `string` | Event id used with `before_event_id` for stable pagination |
 | `usage[].type` * | `string` | Request type (e.g., 'generate.image', 'generate.text') |
 | `usage[].model` * | `string` \| `null` | Model used for generation |
+| `usage[].cost_variant` * | `string` \| `null` | Pricing variant selected for this request, when applicable |
 | `usage[].api_key_id` * | `string` \| `null` | API key id used for generation |
 | `usage[].api_key` * | `string` \| `null` | API key display name |
 | `usage[].api_key_type` * | `string` \| `null` | Type of API key ('secret', 'publishable') |
@@ -1863,6 +1873,7 @@ Returns usage history for the API key used in the request. No scope required —
 | `usage[].cursor_event_id` * | `string` | Event id used with `before_event_id` for stable pagination |
 | `usage[].type` * | `string` | Request type (e.g., 'generate.image', 'generate.text') |
 | `usage[].model` * | `string` \| `null` | Model used for generation |
+| `usage[].cost_variant` * | `string` \| `null` | Pricing variant selected for this request, when applicable |
 | `usage[].api_key_id` * | `string` \| `null` | API key id used for generation |
 | `usage[].api_key` * | `string` \| `null` | API key display name |
 | `usage[].api_key_type` * | `string` \| `null` | Type of API key ('secret', 'publishable') |
@@ -1943,9 +1954,11 @@ curl "https://gen.pollinations.ai/v1/models/status" \
 
 Generate a 3D model from a text prompt or reference image(s). Returns GLB by default.
 
-**Available models:** `trellis-2-low`, `trellis-2-medium`, `trellis-2-high`, `hyper3d-rodin`. `trellis-2-low` is the default.
+**Available models:** `trellis-2`, `hyper3d-rodin`. `trellis-2` is the default.
 
-Pass reference image URL(s) via the `image` parameter for image-to-3D models (`trellis-2-*`). Separate multiple URLs with `|` or `,`. `hyper3d-rodin` accepts both images and a text prompt.
+Legacy `trellis-2-low`, `trellis-2-medium`, and `trellis-2-high` names remain accepted as aliases; an explicit `quality` parameter takes precedence.
+
+Pass reference image URL(s) via the `image` parameter for image-to-3D models (`trellis-2`). Separate multiple URLs with `|` or `,`. `hyper3d-rodin` accepts both images and a text prompt.
 
 Browse all available models and their input requirements at [`/3d/models`](https://gen.pollinations.ai/3d/models).
 
@@ -1954,9 +1967,10 @@ Browse all available models and their input requirements at [`/3d/models`](https
 | Param | In | Type | Description |
 |---|---|---|---|
 | `prompt` * | `path` | `string` | Text description of the 3D model to generate (required for text-to-3D models; ignored by image-only models) |
-| `model` * | `query` | `"trellis-2-low"` \| `"trellis-2-medium"` \| `"trellis-2-high"` \| `"hyper3d-rodin"` \| `"rodin"` | Model to use. See /3d/models for the full list and per-model input requirements. · default: `"trellis-2-low"` |
+| `model` * | `query` | `"trellis-2"` \| `"trellis-2-low"` \| `"trellis-2-medium"` \| `"trellis-2-high"` \| `"hyper3d-rodin"` \| `"rodin"` | Model to use. See /3d/models for the full list and per-model input requirements. · default: `"trellis-2"` |
 | `image` | `query` | `string` | Reference image URL(s) for image-to-3D generation. Separate multiple URLs with `\|` or `,`. Required for image-only models (e.g. `trellis`, `triposr`, `sf3d`). |
 | `seed` | `query` | `integer` | Seed for varied generations. Passed through to models that support it (`hyper3d-rodin`); otherwise only affects the media-cache key, so a new seed forces a fresh generation for the same prompt/image. |
+| `quality` | `query` | `"low"` \| `"medium"` \| `"high"` | Output detail for `trellis-2`. Higher quality costs more; see `pricing_variants` on `/3d/models`. · default: `"low"` |
 | `safe` | `query` | `string` \| `boolean` | Safety features: comma-separated list of privacy, secrets, sexual, violence, shield, true, nsfw. true enables privacy,secrets; nsfw enables sexual,violence. Also accepted in the Pollinations-Safe header. Defaults to off; false and 0 are accepted as off. |
 
 <sub>`*` = required parameter</sub>
@@ -1966,7 +1980,7 @@ Browse all available models and their input requirements at [`/3d/models`](https
 💻 **Example**
 
 ```bash
-curl "https://gen.pollinations.ai/3d/a%20low-poly%20treasure%20chest?model=trellis-2-low&image=:image" \
+curl "https://gen.pollinations.ai/3d/a%20low-poly%20treasure%20chest?model=trellis-2&quality=low&image=:image" \
   -H "Authorization: Bearer $POLLINATIONS_KEY"
 ```
 

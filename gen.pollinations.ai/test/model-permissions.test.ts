@@ -32,6 +32,30 @@ test("filters OpenAI-compatible model list by API key permissions", async ({
     expect(modelIds).toContain(RESTRICTED_TEXT_TEST_MODEL);
 });
 
+test("includes billing metadata in the OpenAI-compatible model list", async ({
+    paidApiKey,
+}) => {
+    const response = await fetchWorker("/v1/models", {
+        headers: { Authorization: `Bearer ${paidApiKey}` },
+    });
+
+    expect(response.status).toBe(200);
+    const body = (await response.json()) as {
+        data: {
+            id: string;
+            pricing?: Record<string, string> & { currency: "pollen" };
+            requires_paid_balance?: boolean;
+        }[];
+    };
+    const paidModel = body.data.find((model) => model.requires_paid_balance);
+
+    expect(paidModel).toMatchObject({
+        id: expect.any(String),
+        requires_paid_balance: true,
+        pricing: expect.objectContaining({ currency: "pollen" }),
+    });
+});
+
 test("filters image model list by API key permissions", async ({
     restrictedApiKey,
 }) => {

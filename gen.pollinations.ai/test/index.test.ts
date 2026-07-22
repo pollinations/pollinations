@@ -299,6 +299,7 @@ describe("gen worker routing", () => {
                 supported_endpoints?: string[];
                 input_modalities?: string[];
                 output_modalities?: string[];
+                pricing?: Record<string, string> & { currency: "pollen" };
             }[];
         };
         expect(models.object).toBe("list");
@@ -320,6 +321,7 @@ describe("gen worker routing", () => {
             input_modalities: expect.any(Array),
             output_modalities: expect.any(Array),
             supported_endpoints: expect.arrayContaining(["/text/{prompt}"]),
+            pricing: expect.objectContaining({ currency: "pollen" }),
         });
         expect(imageModel?.supported_endpoints).toContain("/image/{prompt}");
         expect(audioModel).toBeDefined();

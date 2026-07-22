@@ -720,6 +720,18 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "completionImageTokens": 0.04,
     },
   },
+  "laguna": {
+    "cost": {
+      "completionTextTokens": 0.0000002,
+      "promptCachedTokens": 0.00000001,
+      "promptTextTokens": 0.0000001,
+    },
+    "price": {
+      "completionTextTokens": 0.0000002,
+      "promptCachedTokens": 0.00000001,
+      "promptTextTokens": 0.0000001,
+    },
+  },
   "llama": {
     "cost": {
       "completionTextTokens": 0.00000071,

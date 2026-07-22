@@ -1205,6 +1205,30 @@ export const TEXT_SERVICES = {
         contextLength: 1048576,
         isSpecialized: false,
     },
+    "laguna": {
+        aliases: ["laguna-s-2.1", "laguna-s2.1", "poolside-laguna-s-2.1"],
+        provider: "openrouter",
+        brand: "Poolside",
+        category: "text",
+        addedDate: new Date("2026-07-22").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1,
+        cost: {
+            // OpenRouter Poolside route rates (2026-07-22).
+            promptTextTokens: perMillion(0.1),
+            promptCachedTokens: perMillion(0.01),
+            completionTextTokens: perMillion(0.2),
+        },
+        title: "Laguna S 2.1",
+        description:
+            "Long-context reasoning for coding agents and complex software tasks",
+        inputModalities: ["text"],
+        outputModalities: ["text"],
+        tools: true,
+        reasoning: true,
+        contextLength: 1048576,
+        isSpecialized: false,
+    },
     "mimo-v2.5": {
         aliases: ["mimo", "mimo-2.5"],
         provider: "openrouter",

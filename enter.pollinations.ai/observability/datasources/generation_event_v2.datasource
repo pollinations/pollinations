@@ -2,8 +2,8 @@ TOKEN tinybird_ingest APPEND
 TOKEN tinybird_read READ
 
 DESCRIPTION >
-Authenticated, non-cached generation events populated from generation_event
-during migration and ready for direct Events API ingestion after cutover
+Principal generation-event datasource for direct ingestion and analytics.
+Contains authenticated, non-cached requests only.
 
 SCHEMA >
 -- Event

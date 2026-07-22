@@ -19,11 +19,16 @@ structured fields.
 
 ## Community Models (Alpha)
 
-Community models are user-owned, OpenAI-compatible text endpoints proxied through `gen.pollinations.ai` under an `owner/model` id (e.g. `Spit-fires/LFM2.5-230M`). Any signed-in user can register a private, owner-only model. Publishing it in the public model catalog requires allowlist approval while the program is in alpha.
+Community models are user-owned, OpenAI-compatible endpoints proxied through `gen.pollinations.ai` under an `owner/model` id (e.g. `Spit-fires/LFM2.5-230M`). Any signed-in user can register a private, owner-only model. Publishing it in the public model catalog requires allowlist approval while the program is in alpha.
 
 **Alpha stage**
 - Inclusion is fairly permissive for now; expect that to tighten before official launch.
 - Text and image generation models are supported now; audio and other modalities are planned next.
+
+**Pricing**
+- Owners set prices when publishing; blank or zero means free.
+- Text models are priced per token (entered per 1M tokens) for each usage bucket the endpoint reports.
+- Image models bill in one of two modes, detected when the endpoint is tested at registration: endpoints that return OpenAI image token usage are priced per 1M tokens; all others charge a fixed price per generated image.
 
 **Payouts**
 - Owners currently earn 75% of the pollen spent on their model.

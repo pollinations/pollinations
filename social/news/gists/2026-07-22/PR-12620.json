@@ -1,0 +1,34 @@
+{
+  "pr_number": 12620,
+  "title": "feat: store chunk content + language/app/git_sha in Vectorize metadata",
+  "author": "Itachi-1824",
+  "url": "https://github.com/pollinations/pollinations/pull/12620",
+  "merged_at": "2026-07-22T11:36:48Z",
+  "labels": [],
+  "pr_body_excerpt": "Vectorize has no equivalent to ChromaDB's `documents` field, so search results came back as coordinates — file path and line range, no code. Anything wanting the actual text had to go fetch it separately.\n\nNow the chunk's text rides along in the metadata, plus `language`, `app` (top-level monorepo dir), and `git_sha`.\n\nMetadata is capped at 10KiB/vector, so chunks shrank to fit: 50 lines / 2000 tokens instead of 100 / 8000. Worst case measures ~3KB, well inside the budget.\n\nAlso swapped the 200KB file-size skip for a content check. Size was the wrong signal — it was dropping `apps/APPS.md` alongside the build artifacts it was aimed at. Now it skips on average line length (minified bundles run 1,900–131,000 chars/line) and generated-file banners. Three bundles skipped, 1,858 files indexed.\n\nIndex is `polli-code-embeddings` — needs a manual `full` run after merge.",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Code search gets the code",
+    "blurb": "The hive stopped returning map coordinates when someone asked for the actual flower. Indexed code chunks now carry their own text, language, app, and commit trail.",
+    "summary": "Updated the polli-code-embeddings Vectorize index so each code chunk stores its content, language, top-level app directory, and git SHA in metadata, while resizing chunks to 50 lines or 2,000 tokens to stay under Vectorize's 10 KiB metadata limit.",
+    "impact": "Internal code-search results can now return the indexed code directly instead of only a file path and line range, and the index keeps useful files such as apps/APPS.md while filtering minified and generated bundles by content.",
+    "keywords": [
+      "Vectorize",
+      "code search",
+      "embeddings",
+      "metadata",
+      "indexing",
+      "developer tooling"
+    ],
+    "visual_concept": "A cozy code garden represents the embeddings index: Polly, wearing tiny librarian glasses, carefully packs glowing code snippets into labeled seed packets marked content, language, app, and git SHA. A helpful CRT monitor robot reads the snippets directly while a few tangled, extra-long minified-code vines are politely sorted into a compost bin.",
+    "image_prompt": "Cozy pixel art scene of Polly the cute yellow-and-brown striped bee mascot wearing tiny librarian glasses, placing glowing code snippets into lime green (#ecf874) seed packets labeled in simple pixel text: 'content', 'language', 'app', and 'git SHA'; a cute CRT monitor robot happily reads the packets beside a garden of code-plants, while tangled long-line code vines go into a small compost bin. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, emotionally warm and nostalgic."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-22/PR-12620.jpg",
+    "prompt": "Cozy pixel art scene of Polly the cute yellow-and-brown striped bee mascot wearing tiny librarian glasses, placing glowing code snippets into lime green (#ecf874) seed packets labeled in simple pixel text: 'content', 'language', 'app', and 'git SHA'; a cute CRT monitor robot happily reads the packets beside a garden of code-plants, while tangled long-line code vines go into a small compost bin. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, emotionally warm and nostalgic."
+  },
+  "generated_at": "2026-07-22T11:37:43.377973+00:00"
+}

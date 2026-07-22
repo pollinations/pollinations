@@ -295,7 +295,6 @@ export function groupModelDefinition(
     const modelId = groupModelId(group.slug, modelName);
     return {
         aliases: [],
-        modelId,
         provider: "community",
         brand: "Community",
         category: "text",

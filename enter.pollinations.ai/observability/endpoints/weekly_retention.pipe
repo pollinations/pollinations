@@ -10,7 +10,7 @@ SQL >
     SELECT
         user_id,
         toStartOfWeek(min(start_time), 1) AS cohort_week
-    FROM generation_event
+    FROM generation_event_v2
     WHERE start_time >= now() - INTERVAL {{Int32(weeks_back, 8)}} WEEK
     AND user_id != 'undefined'
     AND user_id != ''
@@ -22,7 +22,7 @@ SQL >
     SELECT DISTINCT
         user_id,
         toStartOfWeek(start_time, 1) AS activity_week
-    FROM generation_event
+    FROM generation_event_v2
     WHERE start_time >= now() - INTERVAL {{Int32(weeks_back, 8)}} WEEK
     AND user_id != 'undefined'
     AND user_id != ''

@@ -1,0 +1,35 @@
+{
+  "pr_number": 12637,
+  "title": "fix: harden Vast Flux deployment and cap queue",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/12637",
+  "merged_at": "2026-07-22T13:31:24Z",
+  "labels": [],
+  "pr_body_excerpt": "- Restores Flux and its named Cloudflare tunnel automatically after Vast container restarts.\n- Pins the production queue limit to three: one request running, two waiting, then Fireworks fallback.\n- Fixes the end-to-end verifier to use the deployment virtualenv.\n- Documents provisioning, restart, canary, and burst-capacity behavior.\n\nLive verification:\n- Production worker is registered and serving requests through the named tunnel.\n- Concurrency probe returned `200, 200, 200, 503`, confirming Q3 load shedding.\n- Production requests resumed with successful 200 responses after restart.\n\nChecks: `bash -n`, `python3 -m py_compile`, and `git diff --check`.",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Flux learned to queue politely",
+    "blurb": "Flux now wakes itself back up after a Vast restart, tunnel and all. The production queue holds three jobs—one working, two waiting—before Fireworks takes the overflow instead of letting the garden get trampled.",
+    "summary": "Hardened the production Vast Flux deployment to restore its named Cloudflare tunnel after container restarts and capped the queue at three requests (one running, two waiting) before routing overflow to Fireworks.",
+    "impact": "Flux requests recover cleanly after Vast restarts, while burst traffic now gets predictable Q3 load shedding and a Fireworks fallback rather than an unbounded queue.",
+    "keywords": [
+      "Flux",
+      "Vast",
+      "image generation",
+      "queueing",
+      "Cloudflare tunnel",
+      "Fireworks",
+      "reliability"
+    ],
+    "visual_concept": "Depict Flux as a cozy image-generation garden shed that automatically comes back online after a restart: Polly, wearing a tiny mechanic tool belt, reconnects a glowing named tunnel cable to a retro server. Show a small three-slot queue of seed packets—one being processed and two waiting—with excess packets gently redirected down a second path labeled Fireworks; include code-plants and flowers to make the traffic-management metaphor warm rather than stressful.",
+    "image_prompt": "Cozy pixel art scene of Polly, the cute yellow-and-brown striped bee mascot with pink cheek blush, light blue wings, and a tiny mechanic tool belt, reconnecting a glowing Cloudflare-style tunnel cable to a retro Flux image server in a flower-filled garden shed. Three chunky lime green (#ecf874) queue slots show one glowing request running and two seed-packet requests waiting, while extra requests follow a gentle pastel path toward a small terminal labeled \"FIREWORKS\"; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, subtle CRT glow and code-plants."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-22/PR-12637.jpg",
+    "prompt": "Cozy pixel art scene of Polly, the cute yellow-and-brown striped bee mascot with pink cheek blush, light blue wings, and a tiny mechanic tool belt, reconnecting a glowing Cloudflare-style tunnel cable to a retro Flux image server in a flower-filled garden shed. Three chunky lime green (#ecf874) queue slots show one glowing request running and two seed-packet requests waiting, while extra requests follow a gentle pastel path toward a small terminal labeled \"FIREWORKS\"; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, subtle CRT glow and code-plants."
+  },
+  "generated_at": "2026-07-22T13:32:29.198746+00:00"
+}

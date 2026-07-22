@@ -262,6 +262,8 @@ export type CommunityEndpointGroupRuntime = {
     adminUserId: string;
     memberCount: number;
     activeMemberCount: number;
+    /** Active (non-disabled) member endpoints for round-robin routing. */
+    members: CommunityEndpointRuntime[];
 } & CommunityEndpointPrices;
 
 /** Build a group model ID: "group Slug/modelName" → "groupSlug/modelName" */
@@ -308,4 +310,39 @@ export function groupModelDefinition(
         paidOnly: false,
         alpha: true,
     };
+}
+
+// ── Round-Robin Group Router ────────────────────────────────────────────
+
+/** Per-slug round-robin counter (in-memory, resets on cold start). */
+const roundRobinCounters = new Map<string, number>();
+
+/**
+ * Select the next active member from a group using round-robin.
+ * Returns null if no members are available.
+ */
+export function selectGroupMember(
+    group: CommunityEndpointGroupRuntime,
+): CommunityEndpointRuntime | null {
+    if (group.members.length === 0) return null;
+
+    const counter = roundRobinCounters.get(group.slug) ?? 0;
+    const idx = counter % group.members.length;
+    roundRobinCounters.set(group.slug, counter + 1);
+    return group.members[idx];
+}
+
+/**
+ * Get all active members from a group, starting from the next round-robin
+ * index. Useful for fallback: try each member in order until one succeeds.
+ */
+export function groupMemberFallbackOrder(
+    group: CommunityEndpointGroupRuntime,
+): CommunityEndpointRuntime[] {
+    if (group.members.length === 0) return [];
+
+    const counter = roundRobinCounters.get(group.slug) ?? 0;
+    const start = counter % group.members.length;
+    // Reorder: start from next, wrap around
+    return [...group.members.slice(start), ...group.members.slice(0, start)];
 }

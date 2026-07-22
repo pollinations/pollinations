@@ -1,3 +1,4 @@
+import { groupMemberFallbackOrder } from "@shared/community-endpoints.ts";
 import { remapUpstreamStatus, UpstreamError } from "@shared/error.ts";
 import { IMMUTABLE_CACHE_CONTROL } from "@shared/http/cache-control.ts";
 import type { ModelDefinition } from "@shared/registry/registry.ts";
@@ -313,8 +314,103 @@ async function generateTextResponse(
     syncTextEnvironment(c.env);
 
     try {
+        const group = c.var.model?.group;
         const communityEndpoint = c.var.model?.communityEndpoint;
-        const gatewayContext = communityEndpoint
+
+        // Group routing: try each active member in round-robin order,
+        // falling back on pre-stream failure (non-streamed v1 only).
+        if (group && group.members.length > 0 && !requestData.stream) {
+            const members = groupMemberFallbackOrder(group);
+            let lastError: unknown;
+
+            for (const member of members) {
+                try {
+                    const gatewayContext =
+                        await communityEndpointGatewayContext(
+                            member,
+                            c.var.model.definition,
+                            requestData,
+                            c.env.BETTER_AUTH_SECRET,
+                            c.env.PORTKEY_GATEWAY_URL,
+                            c.var.auth?.apiKey?.rawKey || "",
+                        );
+                    const completion = await generateTextPortkey(
+                        requestData.messages,
+                        gatewayContext,
+                    );
+                    completion.id = completion.id || generatePollinationsId();
+
+                    if (completion.error) {
+                        const errorObj =
+                            typeof completion.error === "string"
+                                ? { message: completion.error }
+                                : completion.error;
+                        const error = new Error(
+                            errorObj.message || "Text generation failed",
+                        ) as ServiceError;
+                        if (typeof errorObj.status === "number") {
+                            error.status = remapUpstreamStatus(errorObj.status);
+                            error.upstreamStatus = errorObj.status;
+                        }
+                        error.details = errorObj.details;
+                        // Only retry on server errors (5xx); client errors
+                        // (4xx) are likely model-level, not member-level.
+                        if (
+                            error.status &&
+                            error.status >= 500 &&
+                            error.status < 600
+                        ) {
+                            lastError = error;
+                            continue;
+                        }
+                        throw error;
+                    }
+
+                    const fallbackModel = c.var.model?.resolved;
+                    const trackingResponse = sendOpenAIResponse(
+                        completion,
+                        fallbackModel,
+                    );
+                    const publicCompletion = publicChatCompletion(completion);
+                    if (contentResponse) {
+                        c.var.track?.overrideResponseTracking(
+                            trackingResponse.clone(),
+                        );
+                        return sendTextContentResponse(
+                            publicCompletion,
+                            fallbackModel,
+                        );
+                    }
+                    c.var.track?.overrideResponseTracking(
+                        trackingResponse.clone(),
+                    );
+                    return sendOpenAIResponse(publicCompletion, fallbackModel);
+                } catch (thrown: unknown) {
+                    // Connection errors are retryable; other errors propagate.
+                    if (
+                        thrown instanceof Error &&
+                        (thrown.name === "TypeError" ||
+                            thrown.message?.includes("fetch"))
+                    ) {
+                        lastError = thrown;
+                        continue;
+                    }
+                    throw thrown;
+                }
+            }
+
+            // All members failed — throw the last error.
+            if (lastError) throw lastError;
+        }
+
+        // Standard single-endpoint path (static models or standalone community).
+        // For group models in streaming mode, select a member via round-robin
+        // but don't fall back (v1 scope — mid-stream fallback deferred).
+        const endpointForMember =
+            group && group.members.length > 0
+                ? groupMemberFallbackOrder(group)[0]
+                : communityEndpoint;
+        const gatewayContext = endpointForMember
             ? await communityEndpointGatewayContext(
                   communityEndpoint,
                   c.var.model.definition,

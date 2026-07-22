@@ -161,6 +161,7 @@ export async function getCommunityModelRegistryEntries(
             adminUserId: groupRow.adminUserId,
             memberCount: (groupAllMembers.get(slug) || []).length,
             activeMemberCount: activeMembers.length,
+            members: activeMembers.map((m) => m.endpoint),
             ...communityEndpointPrices(groupRow),
         };
 

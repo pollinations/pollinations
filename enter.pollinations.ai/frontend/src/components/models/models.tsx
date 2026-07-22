@@ -13,7 +13,14 @@ import {
     TrendUpIcon,
 } from "@pollinations/ui";
 import { useNavigate, useSearch } from "@tanstack/react-router";
-import { type FC, useCallback, useEffect, useMemo, useState } from "react";
+import {
+    type FC,
+    useCallback,
+    useEffect,
+    useMemo,
+    useRef,
+    useState,
+} from "react";
 import { CommunityEndpoints } from "../community-endpoints";
 import {
     type ApiModelInfo,
@@ -72,8 +79,7 @@ const DEFAULT_SORT_DIRECTIONS: Record<ModelSortKey, ModelSortDirection> = {
 function matchesQuery(model: ModelPrice, query: string): boolean {
     if (!query) return true;
     const displayName = getModelDisplayName(model) ?? "";
-    const haystack =
-        `${model.name} ${displayName} ${model.description ?? ""} ${model.brand ?? ""}`.toLowerCase();
+    const haystack = `${displayName} ${model.brand ?? ""}`.toLowerCase();
     return haystack.includes(query);
 }
 
@@ -100,7 +106,9 @@ export const Models: FC<ModelsProps> = ({
     const navigate = useNavigate({ from: "/models" });
     const modelSearch = useSearch({ from: "/_dashboard/models" });
     const activeTab = modelSearch.category ?? "all";
-    const search = modelSearch.q ?? "";
+    const urlSearch = modelSearch.q ?? "";
+    const [search, setSearch] = useState(urlSearch);
+    const lastPushedSearchRef = useRef(urlSearch);
     const sortKey = modelSearch.sort ?? "perPollen";
     const sortDir = modelSearch.dir ?? DEFAULT_SORT_DIRECTIONS[sortKey];
     const [catalogModels, setCatalogModels] = useState<ApiModelInfo[]>([]);
@@ -168,22 +176,45 @@ export const Models: FC<ModelsProps> = ({
         }
     }, [activeTab, availableSections, navigate]);
 
+    const pushSearch = useCallback(
+        (nextSearch: string) => {
+            if (nextSearch === lastPushedSearchRef.current) return;
+
+            lastPushedSearchRef.current = nextSearch;
+            void navigate({
+                search: (previous) => ({
+                    ...previous,
+                    q: nextSearch || undefined,
+                }),
+                replace: true,
+            });
+        },
+        [navigate],
+    );
+
+    useEffect(() => {
+        if (urlSearch === lastPushedSearchRef.current) return;
+
+        lastPushedSearchRef.current = urlSearch;
+        setSearch(urlSearch);
+    }, [urlSearch]);
+
+    useEffect(() => {
+        if (search === lastPushedSearchRef.current) return;
+
+        const timeout = window.setTimeout(() => {
+            pushSearch(search);
+        }, 200);
+
+        return () => window.clearTimeout(timeout);
+    }, [pushSearch, search]);
+
     const setActiveTab = (category: SectionType) => {
         void navigate({
             search: (previous) => ({
                 ...previous,
                 category: category === "all" ? undefined : category,
             }),
-        });
-    };
-
-    const setSearch = (q: string) => {
-        void navigate({
-            search: (previous) => ({
-                ...previous,
-                q: q || undefined,
-            }),
-            replace: true,
         });
     };
 
@@ -266,6 +297,7 @@ export const Models: FC<ModelsProps> = ({
                             type="search"
                             value={search}
                             onChange={(e) => setSearch(e.target.value)}
+                            onBlur={() => pushSearch(search)}
                             placeholder={`Search ${searchLabel} models…`}
                             aria-label={`Search ${searchLabel} models`}
                             className="w-full pl-9"

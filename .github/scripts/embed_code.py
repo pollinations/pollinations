@@ -5,7 +5,7 @@ Two modes:
   --mode full        Embed every matching file in the repo (first-time backfill / manual re-embed).
   --mode incremental  Embed only files changed between two git refs; delete vectors for removed/renamed files.
 
-Chunking mirrors apps/polli/src/services/embeddings.py's Python fallback path so search results
+Chunking mirrors apps/polly/src/services/embeddings.py's Python fallback path so search results
 stay consistent between the one-time backfill and future incremental updates.
 """
 
@@ -16,7 +16,10 @@ import json
 import os
 import subprocess
 import sys
+import threading
 import time
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from datetime import datetime, timezone
 from pathlib import Path
 
 import requests
@@ -26,7 +29,7 @@ import xxhash
 CF_ACCOUNT_ID = os.environ["CLOUDFLARE_ACCOUNT_ID"].strip()
 CF_API_TOKEN = os.environ["CLOUDFLARE_API_TOKEN"].strip()
 POLLINATIONS_TOKEN = os.environ["POLLI_VECTOR_DB"].strip()
-INDEX_NAME = os.environ.get("VECTORIZE_INDEX", "polli-code-embeddings")
+INDEX_NAME = os.environ.get("VECTORIZE_INDEX", "polly-code-embeddings")
 EMBED_MODEL = "qwen3-embedding-8b"
 EMBED_DIMENSIONS = 1536
 
@@ -263,8 +266,33 @@ def collect_code_files(repo_root: Path) -> list[Path]:
     return files
 
 
-def embed_batch(texts: list[str], retries: int = 3) -> list[list[float]]:
-    """Embed a batch of texts via Pollinations qwen3-embedding-8b at 1536-dim (MRL truncation)."""
+# Pollinations' /v1/embeddings rejects requests with more than this many input items
+# ("Too big: expected array to have <=32 items") — a single large file can produce more
+# chunks than that, so embed_batch must sub-batch instead of sending everything at once.
+MAX_EMBED_INPUTS_PER_REQUEST = 32
+
+
+def _parse_retry_after(header_value: str | None, fallback: float) -> float:
+    """Retry-After is either a delay in seconds or an HTTP-date (RFC 9110) — handle both,
+    since float() on a date string raises ValueError and would crash the retry loop
+    instead of falling back to a normal backoff."""
+    if not header_value:
+        return fallback
+    try:
+        return float(header_value)
+    except ValueError:
+        pass
+    try:
+        from email.utils import parsedate_to_datetime
+
+        target = parsedate_to_datetime(header_value)
+        delta = (target - datetime.now(timezone.utc)).total_seconds()
+        return max(delta, 0.0)
+    except Exception:
+        return fallback
+
+
+def _embed_single_request(texts: list[str], retries: int = 4) -> list[list[float]]:
     payload = {
         "model": EMBED_MODEL,
         "input": texts,
@@ -278,16 +306,53 @@ def embed_batch(texts: list[str], retries: int = 3) -> list[list[float]]:
     for attempt in range(retries):
         try:
             resp = requests.post(
-                POLLINATIONS_EMBED_URL, json=payload, headers=headers, timeout=60
+                POLLINATIONS_EMBED_URL, json=payload, headers=headers, timeout=90
             )
+            if resp.status_code == 429:
+                # Rate limited — back off longer than a generic error, and respect
+                # Retry-After if the server sends one instead of guessing.
+                wait = _parse_retry_after(
+                    resp.headers.get("Retry-After"), fallback=5 * (attempt + 1)
+                )
+                print(
+                    f"  rate limited (429), waiting {wait}s (attempt {attempt + 1}/{retries})",
+                    file=sys.stderr,
+                )
+                time.sleep(wait)
+                last_err = RuntimeError(
+                    f"Pollinations embed HTTP 429: {resp.text[:300]}"
+                )
+                continue
             if resp.status_code != 200:
                 raise RuntimeError(
                     f"Pollinations embed HTTP {resp.status_code}: {resp.text[:300]}"
                 )
             data = resp.json()
-            sorted_data = sorted(data["data"], key=lambda x: x["index"])
+            items = data["data"]
+            if len(items) != len(texts):
+                # A short/malformed response would otherwise be silently accepted here,
+                # then zip() in the caller truncates and misaligns embeddings to the
+                # wrong chunk — same failure mode as the local blank-chunk bug, just
+                # coming from the API side instead of local filtering.
+                raise RuntimeError(
+                    f"Pollinations embed returned {len(items)} embeddings for {len(texts)} inputs"
+                )
+            sorted_data = sorted(items, key=lambda x: x["index"])
+            indices = [item["index"] for item in sorted_data]
+            if indices != list(range(len(texts))):
+                raise RuntimeError(
+                    f"Pollinations embed returned non-contiguous indices: {indices}"
+                )
             return [item["embedding"] for item in sorted_data]
-        except Exception as e:
+        except requests.exceptions.RequestException as e:
+            last_err = e
+            wait = 2**attempt
+            print(
+                f"  embed batch failed (attempt {attempt + 1}/{retries}): {e} — retrying in {wait}s",
+                file=sys.stderr,
+            )
+            time.sleep(wait)
+        except RuntimeError as e:
             last_err = e
             wait = 2**attempt
             print(
@@ -296,6 +361,16 @@ def embed_batch(texts: list[str], retries: int = 3) -> list[list[float]]:
             )
             time.sleep(wait)
     raise RuntimeError(f"Embedding failed after {retries} attempts: {last_err}")
+
+
+def embed_batch(texts: list[str]) -> list[list[float]]:
+    """Embed texts via Pollinations qwen3-embedding-8b at 1536-dim (MRL truncation),
+    sub-batching to stay under the API's per-request input limit."""
+    embeddings: list[list[float]] = []
+    for i in range(0, len(texts), MAX_EMBED_INPUTS_PER_REQUEST):
+        chunk = texts[i : i + MAX_EMBED_INPUTS_PER_REQUEST]
+        embeddings.extend(_embed_single_request(chunk))
+    return embeddings
 
 
 def vectorize_upsert(rows: list[dict]) -> None:
@@ -379,17 +454,18 @@ def build_rows_for_file(repo_root: Path, rel_path: str) -> list[dict]:
         return []
 
     file_hash = content_hash(content)
-    chunks = chunk_code(content)
-    texts = [c["content"] for c in chunks if c["content"].strip()]
-    if not texts:
+    # Filter once and reuse the same list for both — embed_batch's output is positionally
+    # aligned to `texts`, so zipping it against the unfiltered `chunks` (as a prior version
+    # of this function did) silently shifts every embedding after the first blank chunk:
+    # wrong content ends up stored under the wrong file_path/line-range metadata.
+    valid_chunks = [c for c in chunk_code(content) if c["content"].strip()]
+    if not valid_chunks:
         return []
 
-    embeddings = embed_batch(texts)
+    embeddings = embed_batch([c["content"] for c in valid_chunks])
 
     rows = []
-    for chunk, emb in zip(chunks, embeddings):
-        if not chunk["content"].strip():
-            continue
+    for chunk, emb in zip(valid_chunks, embeddings):
         rows.append(
             {
                 "id": chunk_id_for(rel_path, chunk),
@@ -405,21 +481,81 @@ def build_rows_for_file(repo_root: Path, rel_path: str) -> list[dict]:
     return rows
 
 
-def run_full(repo_root: Path) -> None:
-    files = collect_code_files(repo_root)
-    print(f"Full embed: {len(files)} files found")
-    total_vectors = 0
-    for idx, file_path in enumerate(files, 1):
-        rel_path = str(file_path.relative_to(repo_root))
+# Files are embedded independently — safe to run several at once. Pollinations/Vectorize
+# both take real network round-trips per call, so a sequential loop over ~1800 files
+# spends almost all its time waiting on I/O rather than doing local work.
+#
+# POLLI_VECTOR_DB is an sk_ (secret) key: gen.pollinations.ai's rate-limit middleware
+# (rate-limit-durable.ts) explicitly skips non-publishable keys, so there's no
+# platform-side concurrency wall here — the only real ceiling is pollen balance (402 on
+# empty). Still bounded rather than unbounded to stay a reasonable client of Vectorize's
+# own API and the GitHub Actions runner's resources, not because of a Pollinations limit.
+EMBED_CONCURRENCY = 16
+
+
+def _embed_and_upsert_file(
+    repo_root: Path, rel_path: str
+) -> tuple[str, int, Exception | None]:
+    """Returns (rel_path, vectors_upserted, error) — never raises, so one bad file
+    doesn't take down the whole pool."""
+    try:
         rows = build_rows_for_file(repo_root, rel_path)
         if rows:
             vectorize_upsert(rows)
-            total_vectors += len(rows)
-        if idx % 25 == 0 or idx == len(files):
-            print(
-                f"[{idx}/{len(files)}] files processed, {total_vectors} vectors upserted so far"
-            )
-    print(f"Full embed complete: {total_vectors} vectors across {len(files)} files")
+        return rel_path, len(rows), None
+    except Exception as e:
+        return rel_path, 0, e
+
+
+def run_full(repo_root: Path) -> bool:
+    """Returns True if every file embedded successfully. A partial run must not report
+    success — a green CI check has to mean the index is actually fully populated, not
+    "ran without crashing while silently dropping some files"."""
+    files = collect_code_files(repo_root)
+    print(f"Full embed: {len(files)} files found (concurrency={EMBED_CONCURRENCY})")
+
+    total_vectors = 0
+    processed = 0
+    failed: list[str] = []
+    progress_lock = threading.Lock()
+
+    with ThreadPoolExecutor(max_workers=EMBED_CONCURRENCY) as pool:
+        futures = {
+            pool.submit(
+                _embed_and_upsert_file, repo_root, str(f.relative_to(repo_root))
+            ): f
+            for f in files
+        }
+        for future in as_completed(futures):
+            rel_path, vector_count, error = future.result()
+            with progress_lock:
+                processed += 1
+                if error:
+                    failed.append(rel_path)
+                    print(f"  FAILED {rel_path}: {error}", file=sys.stderr)
+                else:
+                    total_vectors += vector_count
+                if processed % 25 == 0 or processed == len(files):
+                    print(
+                        f"[{processed}/{len(files)}] files processed, {total_vectors} vectors upserted so far"
+                    )
+
+    print(
+        f"Full embed complete: {total_vectors} vectors across {len(files) - len(failed)} files"
+    )
+    if failed:
+        print(
+            f"ERROR: {len(failed)} file(s) failed and were skipped: {', '.join(failed[:20])}",
+            file=sys.stderr,
+        )
+        if len(failed) > 20:
+            print(f"  ...and {len(failed) - 20} more", file=sys.stderr)
+        print(
+            "Re-running is safe — upserts are idempotent by id, so a re-run only fills the gaps.",
+            file=sys.stderr,
+        )
+        return False
+    return True
 
 
 def git_changed_files(
@@ -454,7 +590,53 @@ def git_changed_files(
     return changes
 
 
-def run_incremental(repo_root: Path, base_sha: str, head_sha: str) -> None:
+def _sync_one_change(
+    repo_root: Path, status: str, old_path: str, new_path: str
+) -> tuple[str, int, int, Exception | None]:
+    """Returns (log_line, vectors_upserted, vectors_deleted, error)."""
+    try:
+        deleted = 0
+        if status == "D":
+            stale_ids = vectorize_find_ids_for_file(old_path)
+            vectorize_delete_by_ids(stale_ids)
+            return (
+                f"D  {old_path} — removed {len(stale_ids)} vectors",
+                0,
+                len(stale_ids),
+                None,
+            )
+
+        if status == "R" and old_path != new_path:
+            stale_ids = vectorize_find_ids_for_file(old_path)
+            vectorize_delete_by_ids(stale_ids)
+            deleted += len(stale_ids)
+
+        stale_ids = vectorize_find_ids_for_file(new_path)
+        if stale_ids:
+            vectorize_delete_by_ids(stale_ids)
+            deleted += len(stale_ids)
+
+        rows = build_rows_for_file(repo_root, new_path)
+        if rows:
+            vectorize_upsert(rows)
+            return (
+                f"{status}  {new_path} — {len(rows)} new vectors",
+                len(rows),
+                deleted,
+                None,
+            )
+        return (
+            f"{status}  {new_path} — no embeddable content (empty/binary)",
+            0,
+            deleted,
+            None,
+        )
+    except Exception as e:
+        return f"{status}  {new_path} — FAILED: {e}", 0, 0, e
+
+
+def run_incremental(repo_root: Path, base_sha: str, head_sha: str) -> bool:
+    """Returns True if every changed file synced successfully."""
     changes = git_changed_files(repo_root, base_sha, head_sha)
     print(
         f"Incremental embed: {len(changes)} changed paths between {base_sha[:8]}..{head_sha[:8]}"
@@ -463,40 +645,34 @@ def run_incremental(repo_root: Path, base_sha: str, head_sha: str) -> None:
     relevant = [c for c in changes if is_embeddable_path(c[2])]
     if not relevant:
         print("No relevant files changed — nothing to do")
-        return
+        return True
 
     total_upserted = 0
     total_deleted = 0
+    failed: list[str] = []
 
-    for status, old_path, new_path in relevant:
-        if status == "D":
-            stale_ids = vectorize_find_ids_for_file(old_path)
-            vectorize_delete_by_ids(stale_ids)
-            total_deleted += len(stale_ids)
-            print(f"D  {old_path} — removed {len(stale_ids)} vectors")
-            continue
-
-        if status == "R" and old_path != new_path:
-            stale_ids = vectorize_find_ids_for_file(old_path)
-            vectorize_delete_by_ids(stale_ids)
-            total_deleted += len(stale_ids)
-
-        stale_ids = vectorize_find_ids_for_file(new_path)
-        if stale_ids:
-            vectorize_delete_by_ids(stale_ids)
-            total_deleted += len(stale_ids)
-
-        rows = build_rows_for_file(repo_root, new_path)
-        if rows:
-            vectorize_upsert(rows)
-            total_upserted += len(rows)
-            print(f"{status}  {new_path} — {len(rows)} new vectors")
-        else:
-            print(f"{status}  {new_path} — no embeddable content (empty/binary)")
+    with ThreadPoolExecutor(max_workers=EMBED_CONCURRENCY) as pool:
+        futures = [
+            pool.submit(_sync_one_change, repo_root, status, old, new)
+            for status, old, new in relevant
+        ]
+        for future in as_completed(futures):
+            log_line, upserted, deleted, error = future.result()
+            print(log_line, file=sys.stderr if error else sys.stdout)
+            total_upserted += upserted
+            total_deleted += deleted
+            if error:
+                failed.append(log_line)
 
     print(
         f"Incremental embed complete: {total_upserted} vectors upserted, {total_deleted} stale vectors deleted"
     )
+    if failed:
+        print(f"ERROR: {len(failed)} change(s) failed to sync:", file=sys.stderr)
+        for line in failed:
+            print(f"  {line}", file=sys.stderr)
+        return False
+    return True
 
 
 def main():
@@ -510,11 +686,14 @@ def main():
     repo_root = Path(args.repo_root).resolve()
 
     if args.mode == "full":
-        run_full(repo_root)
+        ok = run_full(repo_root)
     else:
         if not args.base_sha or not args.head_sha:
             parser.error("--base-sha and --head-sha are required for incremental mode")
-        run_incremental(repo_root, args.base_sha, args.head_sha)
+        ok = run_incremental(repo_root, args.base_sha, args.head_sha)
+
+    if not ok:
+        sys.exit(1)
 
 
 if __name__ == "__main__":

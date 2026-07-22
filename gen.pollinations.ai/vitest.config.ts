@@ -13,7 +13,7 @@ const sharedSrc = fileURLToPath(new URL("../shared/", import.meta.url));
 const genAliases = [
     "content-filter.ts",
     "cache",
-    "durable-objects/CommunityModelLimiter.ts",
+    "durable-objects/AccountConcurrencyLimiter.ts",
     "durable-objects/PollenRateLimiter.ts",
     "env.ts",
     "error.ts",
@@ -22,7 +22,7 @@ const genAliases = [
     "logger.ts",
     "middleware/auth.ts",
     "middleware/balance.ts",
-    "middleware/community-concurrency.ts",
+    "middleware/account-concurrency.ts",
     "middleware/logger.ts",
     "middleware/media-cache.ts",
     "middleware/model.ts",

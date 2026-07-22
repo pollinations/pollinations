@@ -35,8 +35,8 @@ name = "POLLEN_RATE_LIMITER"
 class_name = "PollenRateLimiter"
 
 [[durable_objects.bindings]]
-name = "COMMUNITY_MODEL_LIMITER"
-class_name = "CommunityModelLimiter"
+name = "ACCOUNT_CONCURRENCY_LIMITER"
+class_name = "AccountConcurrencyLimiter"
 
 [[migrations]]
 tag = "v1"
@@ -44,7 +44,7 @@ new_classes = ["PollenRateLimiter"]
 
 [[migrations]]
 tag = "v2"
-new_sqlite_classes = ["CommunityModelLimiter"]
+new_sqlite_classes = ["AccountConcurrencyLimiter"]
 
 [vars]
 ENVIRONMENT = "development"
@@ -118,8 +118,8 @@ name = "POLLEN_RATE_LIMITER"
 class_name = "PollenRateLimiter"
 
 [[env.production.durable_objects.bindings]]
-name = "COMMUNITY_MODEL_LIMITER"
-class_name = "CommunityModelLimiter"
+name = "ACCOUNT_CONCURRENCY_LIMITER"
+class_name = "AccountConcurrencyLimiter"
 
 [[env.production.migrations]]
 tag = "v1"
@@ -127,7 +127,7 @@ new_classes = ["PollenRateLimiter"]
 
 [[env.production.migrations]]
 tag = "v2"
-new_sqlite_classes = ["CommunityModelLimiter"]
+new_sqlite_classes = ["AccountConcurrencyLimiter"]
 
 [env.production.vars]
 ENVIRONMENT = "production"
@@ -186,8 +186,8 @@ name = "POLLEN_RATE_LIMITER"
 class_name = "PollenRateLimiter"
 
 [[env.staging.durable_objects.bindings]]
-name = "COMMUNITY_MODEL_LIMITER"
-class_name = "CommunityModelLimiter"
+name = "ACCOUNT_CONCURRENCY_LIMITER"
+class_name = "AccountConcurrencyLimiter"
 
 [[env.staging.migrations]]
 tag = "v1"
@@ -195,7 +195,7 @@ new_classes = ["PollenRateLimiter"]
 
 [[env.staging.migrations]]
 tag = "v2"
-new_sqlite_classes = ["CommunityModelLimiter"]
+new_sqlite_classes = ["AccountConcurrencyLimiter"]
 
 [env.staging.vars]
 ENVIRONMENT = "staging"
@@ -246,8 +246,8 @@ name = "POLLEN_RATE_LIMITER"
 class_name = "PollenRateLimiter"
 
 [[env.test.durable_objects.bindings]]
-name = "COMMUNITY_MODEL_LIMITER"
-class_name = "CommunityModelLimiter"
+name = "ACCOUNT_CONCURRENCY_LIMITER"
+class_name = "AccountConcurrencyLimiter"
 
 [[env.test.migrations]]
 tag = "v1"
@@ -255,7 +255,7 @@ new_classes = ["PollenRateLimiter"]
 
 [[env.test.migrations]]
 tag = "v2"
-new_sqlite_classes = ["CommunityModelLimiter"]
+new_sqlite_classes = ["AccountConcurrencyLimiter"]
 
 [env.test.vars]
 ENVIRONMENT = "test"

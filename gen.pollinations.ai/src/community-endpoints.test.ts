@@ -449,7 +449,7 @@ fixtureTest(
 );
 
 fixtureTest(
-    "limits concurrent community model requests across keys for one account",
+    "limits an unpaid account to one active generation across its API keys",
     async () => {
         const ownerGithubUsername = `owner-${crypto.randomUUID().slice(0, 8)}`;
         const modelName = `limited-${crypto.randomUUID().slice(0, 8)}`;
@@ -585,6 +585,110 @@ fixtureTest(
         );
         expect(afterReleaseResponse.status).toBe(200);
         await afterReleaseResponse.text();
+        expect(upstreamRequests).toBe(2);
+    },
+);
+
+fixtureTest(
+    "lets an account with paid balance run concurrent generations",
+    async () => {
+        const ownerGithubUsername = `owner-${crypto.randomUUID().slice(0, 8)}`;
+        const modelName = `paid-${crypto.randomUUID().slice(0, 8)}`;
+        const modelId = communityModelId(ownerGithubUsername, modelName);
+        const ownerUserId = await createTestUser({
+            githubId: COMMUNITY_ENDPOINT_ALLOWED_TEST_GITHUB_ID,
+            githubUsername: ownerGithubUsername,
+        });
+        await db.insert(communityEndpointTable).values({
+            id: `endpoint-${crypto.randomUUID()}`,
+            ownerUserId,
+            visibility: "public",
+            name: modelName,
+            description: "Paid-bypass community endpoint",
+            baseUrl: "https://api.example.com/v1",
+            upstreamModel: "gpt-4.1-mini",
+            bearerTokenCiphertext: await encryptSecret(
+                "Bearer sk_saved_token",
+                env.BETTER_AUTH_SECRET,
+            ),
+            promptTextPrice: 0,
+            completionTextPrice: 0,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+        });
+
+        // Paid account: packBalance > 0 means the concurrency gate is skipped.
+        const callerUserId = await createTestUser({
+            tierBalance: 0,
+            packBalance: 100,
+        });
+        const [{ key: firstKey }, { key: secondKey }] = await Promise.all([
+            createTestApiKey({ userId: callerUserId, name: "paid-first-key" }),
+            createTestApiKey({ userId: callerUserId, name: "paid-second-key" }),
+        ]);
+
+        let upstreamRequests = 0;
+        let firstArrived: () => void = () => {};
+        const firstUpstreamStarted = new Promise<void>((resolve) => {
+            firstArrived = resolve;
+        });
+        const fetchMock = vi.fn(async (input, init) => {
+            const request = new Request(input, init);
+            if (isPortkeyChatCompletionsRequest(request)) {
+                upstreamRequests++;
+                if (upstreamRequests === 1) {
+                    // Hold the first request open until the second has also
+                    // reached upstream, proving the slot was not required.
+                    firstArrived();
+                    await new Promise((resolve) => setTimeout(resolve, 250));
+                }
+                return Response.json({
+                    id: "chatcmpl_paid",
+                    object: "chat.completion",
+                    choices: [
+                        {
+                            index: 0,
+                            message: { role: "assistant", content: "ok" },
+                            finish_reason: "stop",
+                        },
+                    ],
+                    usage: {
+                        prompt_tokens: 2,
+                        completion_tokens: 3,
+                        total_tokens: 5,
+                    },
+                });
+            }
+            if (isBillingFetch(request)) return Response.json({ data: [] });
+            throw new Error(`Unexpected fetch: ${request.url}`);
+        });
+        vi.stubGlobal("fetch", fetchMock);
+
+        const request = (key: string) =>
+            new Request("https://gen.pollinations.ai/v1/chat/completions", {
+                method: "POST",
+                headers: {
+                    Authorization: `Bearer ${key}`,
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    model: modelId,
+                    messages: [{ role: "user", content: "hello" }],
+                    stream: false,
+                }),
+            });
+
+        const firstPromise = SELF.fetch(request(firstKey));
+        await firstUpstreamStarted;
+        // Second request overlaps the first; a paid account must not be blocked.
+        const secondResponse = await SELF.fetch(request(secondKey));
+        expect(secondResponse.status).toBe(200);
+        await secondResponse.text();
+
+        const firstResponse = await firstPromise;
+        expect(firstResponse.status).toBe(200);
+        await firstResponse.text();
+
         expect(upstreamRequests).toBe(2);
     },
 );

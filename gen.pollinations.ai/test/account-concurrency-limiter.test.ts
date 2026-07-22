@@ -1,14 +1,14 @@
 import { env, runDurableObjectAlarm } from "cloudflare:test";
 import { describe, expect, it } from "vitest";
-import type { CommunityModelLimiter } from "@/durable-objects/CommunityModelLimiter.ts";
+import type { AccountConcurrencyLimiter } from "@/durable-objects/AccountConcurrencyLimiter.ts";
 
-function limiterStub(): DurableObjectStub<CommunityModelLimiter> {
-    const namespace = env.COMMUNITY_MODEL_LIMITER;
+function limiterStub(): DurableObjectStub<AccountConcurrencyLimiter> {
+    const namespace = env.ACCOUNT_CONCURRENCY_LIMITER;
     const id = namespace.idFromName(crypto.randomUUID());
-    return namespace.get(id) as DurableObjectStub<CommunityModelLimiter>;
+    return namespace.get(id) as DurableObjectStub<AccountConcurrencyLimiter>;
 }
 
-describe("CommunityModelLimiter", () => {
+describe("AccountConcurrencyLimiter", () => {
     it("rejects excess leases and ignores stale releases", async () => {
         const stub = limiterStub();
         const first = await stub.acquire();

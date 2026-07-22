@@ -8,17 +8,18 @@ type Lease = {
     expiresAt: number;
 };
 
-export type CommunityModelLeaseResult =
+export type AccountLeaseResult =
     | { allowed: true; leaseId: string }
     | { allowed: false };
 
 /**
- * Coordinates active requests for one caller and one community model.
+ * Coordinates active provider-backed generations for one account.
  *
- * Callers choose the Durable Object name from the account and endpoint IDs.
- * Expiring leases prevent a crashed Worker from permanently occupying a slot.
+ * The Durable Object name is the account (user) id, so a single active slot is
+ * shared across every API key, model, and modality for that account. Expiring
+ * leases prevent a crashed Worker from permanently occupying the slot.
  */
-export class CommunityModelLimiter extends DurableObject {
+export class AccountConcurrencyLimiter extends DurableObject {
     private lease: Lease | undefined;
 
     constructor(ctx: DurableObjectState, env: CloudflareBindings) {
@@ -33,7 +34,7 @@ export class CommunityModelLimiter extends DurableObject {
 
     async acquire(
         leaseTtlMs = DEFAULT_LEASE_TTL_MS,
-    ): Promise<CommunityModelLeaseResult> {
+    ): Promise<AccountLeaseResult> {
         return this.ctx.blockConcurrencyWhile(async () => {
             if (this.lease) {
                 if (this.lease.expiresAt > Date.now())

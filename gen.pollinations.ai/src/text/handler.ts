@@ -412,7 +412,7 @@ async function generateTextResponse(
                 : communityEndpoint;
         const gatewayContext = endpointForMember
             ? await communityEndpointGatewayContext(
-                  communityEndpoint,
+                  endpointForMember,
                   c.var.model.definition,
                   requestData,
                   c.env.BETTER_AUTH_SECRET,

@@ -1,0 +1,33 @@
+{
+  "pr_number": 12632,
+  "title": "chore: update app metrics 2026-07-22",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/12632",
+  "merged_at": "2026-07-22T05:07:23Z",
+  "labels": [],
+  "pr_body_excerpt": "Daily automated update of app metrics, health checks, and greenhouse",
+  "gist": {
+    "category": "community",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "The greenhouse got counted",
+    "blurb": "The garden ledger received its daily tending. App metrics, health checks, and greenhouse notes are freshly pollinated.",
+    "summary": "Updated the apps directory's daily metrics, health checks, and greenhouse status records for 2026-07-22.",
+    "impact": "Community maintainers have a current snapshot of app activity and health across the ecosystem.",
+    "keywords": [
+      "community",
+      "apps",
+      "metrics",
+      "health-checks",
+      "greenhouse"
+    ],
+    "visual_concept": "A cozy greenhouse ledger update: Polly, wearing a tiny gardener visor and carrying a clipboard, checks healthy code-plants with small metric labels while a CRT monitor robot records the numbers. The scene represents routine ecosystem monitoring rather than a new product capability.",
+    "image_prompt": "Cozy pixel art scene in a warm greenhouse where the cute pollinations bee mascot, with a tiny gardener visor and clipboard, checks blooming code-plants beside a helpful CRT monitor robot updating a garden ledger. Prominent soft lime green (#ecf874) leaves and terminal glow, pastel mint and cream background, subtle pixel-font text 'DAILY CHECK', cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-22/PR-12632.jpg",
+    "prompt": "Cozy pixel art scene in a warm greenhouse where the cute pollinations bee mascot, with a tiny gardener visor and clipboard, checks blooming code-plants beside a helpful CRT monitor robot updating a garden ledger. Prominent soft lime green (#ecf874) leaves and terminal glow, pastel mint and cream background, subtle pixel-font text 'DAILY CHECK', cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, nostalgic but beautiful."
+  },
+  "generated_at": "2026-07-22T05:08:16.693947+00:00"
+}

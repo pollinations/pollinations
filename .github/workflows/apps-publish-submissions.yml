@@ -56,6 +56,9 @@ jobs:
           GH_TOKEN: ${{ steps.token.outputs.token }}
           ISSUE_NUMBER: ${{ github.event.issue.number }}
           ISSUE_AUTHOR: ${{ github.event.issue.user.login }}
+          ISSUE_BODY: ${{ github.event.issue.body }}
+          ISSUE_CREATED_AT: ${{ github.event.issue.created_at }}
+          ISSUE_URL: ${{ github.event.issue.html_url }}
         run: |
           TODAY=$(date -u +%F)
           APPROVED_DATE="$TODAY" node .github/scripts/app-validate-submission.js > "$RUNNER_TEMP/app-validation.json"
@@ -83,7 +86,7 @@ jobs:
           BOT_LOGIN: ${{ steps.bot.outputs.login }}
           BOT_ID: ${{ steps.bot.outputs.id }}
         run: |
-          BRANCH="auto/app-${ISSUE_NUMBER}"
+          BRANCH="auto/app-${ISSUE_NUMBER}-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
           git switch -c "$BRANCH" origin/main
           NEW_ROW="$APP_ROW" node .github/scripts/app-prepend-row.js
           node .github/scripts/app-update-greenhouse.js
@@ -145,3 +148,40 @@ jobs:
           GH_TOKEN: ${{ steps.token.outputs.token }}
           ISSUE_NUMBER: ${{ github.event.issue.number }}
         run: gh issue edit "$ISSUE_NUMBER" --repo "$GITHUB_REPOSITORY" --remove-label APP-REVIEW
+
+      - name: Recover failed publication
+        if: failure() && steps.token.outputs.token != ''
+        env:
+          GH_TOKEN: ${{ steps.token.outputs.token }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+        run: |
+          BRANCH="auto/app-${ISSUE_NUMBER}-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          OPEN_PR=$(gh pr list --repo "$GITHUB_REPOSITORY" --head "$BRANCH" --state open --json url --jq '.[0].url // empty' || true)
+          if [ -n "$OPEN_PR" ]; then
+            gh pr close "$OPEN_PR" --repo "$GITHUB_REPOSITORY" --comment "Automated publication failed; closing this attempt so it can be retried cleanly." || true
+          fi
+          if git ls-remote --exit-code --heads origin "$BRANCH" >/dev/null 2>&1; then
+            git push origin --delete "$BRANCH" || true
+          fi
+
+          TARGET_LABEL=APP-REVIEW
+          DETAILS=""
+          if [ -f "$RUNNER_TEMP/app-validation.json" ] && jq -e '.valid == false and (.system_error == null)' "$RUNNER_TEMP/app-validation.json" >/dev/null; then
+            TARGET_LABEL=APP-NEEDS-INFO
+            DETAILS=$(jq -r '.errors[]? | "- " + .' "$RUNNER_TEMP/app-validation.json")
+          fi
+
+          gh issue edit "$ISSUE_NUMBER" --repo "$GITHUB_REPOSITORY" --remove-label APP-APPROVED || true
+          gh issue edit "$ISSUE_NUMBER" --repo "$GITHUB_REPOSITORY" --remove-label APP-REVIEW || true
+          gh issue edit "$ISSUE_NUMBER" --repo "$GITHUB_REPOSITORY" --remove-label APP-NEEDS-INFO || true
+          gh issue edit "$ISSUE_NUMBER" --repo "$GITHUB_REPOSITORY" --add-label "$TARGET_LABEL"
+
+          {
+            echo "Automated app publication did not complete. The issue was moved back to \`$TARGET_LABEL\` and the partial branch/PR was cleaned up."
+            if [ -n "$DETAILS" ]; then
+              echo
+              echo "$DETAILS"
+            fi
+            echo
+            echo "[View the failed workflow run](${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID})."
+          } | gh issue comment "$ISSUE_NUMBER" --repo "$GITHUB_REPOSITORY" --body-file -

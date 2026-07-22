@@ -483,26 +483,26 @@ app.get("/api/kpi/app-submissions", async (c) => {
     const repo = c.env.GITHUB_REPO;
     const since = DATA_START_DATE;
     const weeklySubmissions: Record<string, number> = {};
-    const query = `repo:${repo}+is:issue+label:APP-SUBMISSION+created:>=${since}`;
     let page = 1;
-    let totalCount = 0;
+    let itemCount = 0;
     do {
         const res = await fetch(
-            `https://api.github.com/search/issues?q=${query}&per_page=100&sort=created&order=asc&page=${page}`,
+            `https://api.github.com/repos/${repo}/issues?state=all&labels=APP-SUBMISSION&since=${since}T00:00:00Z&per_page=100&page=${page}`,
             { headers },
         );
         if (!res.ok) break;
-        const data = (await res.json()) as {
-            total_count: number;
-            items: Array<{ created_at: string }>;
-        };
-        totalCount = data.total_count;
-        for (const issue of data.items) {
+        const data = (await res.json()) as Array<{
+            created_at: string;
+            pull_request?: unknown;
+        }>;
+        itemCount = data.length;
+        for (const issue of data) {
+            if (issue.pull_request) continue;
             const week = getWeekStart(new Date(issue.created_at));
             weeklySubmissions[week] = (weeklySubmissions[week] || 0) + 1;
         }
         page++;
-    } while ((page - 1) * 100 < totalCount && page <= 5);
+    } while (itemCount === 100);
 
     const result = Object.entries(weeklySubmissions)
         .map(([week, submitted]) => ({ week, submitted }))

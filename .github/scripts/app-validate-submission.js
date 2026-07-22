@@ -21,17 +21,25 @@ function main() {
     if (!/^[A-Za-z0-9-]+$/.test(ISSUE_AUTHOR || ""))
         throw new Error("ISSUE_AUTHOR is invalid");
 
-    const issue = JSON.parse(
-        gh([
-            "issue",
-            "view",
-            ISSUE_NUMBER,
-            "--repo",
-            "pollinations/pollinations",
-            "--json",
-            "body,createdAt,url",
-        ]),
-    );
+    const issue = Object.hasOwn(process.env, "ISSUE_BODY")
+        ? {
+              body: process.env.ISSUE_BODY,
+              createdAt: process.env.ISSUE_CREATED_AT,
+              url: process.env.ISSUE_URL,
+          }
+        : JSON.parse(
+              gh([
+                  "issue",
+                  "view",
+                  ISSUE_NUMBER,
+                  "--repo",
+                  "pollinations/pollinations",
+                  "--json",
+                  "body,createdAt,url",
+              ]),
+          );
+    if (!issue.createdAt || !issue.url)
+        throw new Error("Issue snapshot metadata is incomplete");
     const submission = parseSubmission(issue.body);
     const errors = validateSubmission(submission);
     const duplicate = findCatalogDuplicate(submission, undefined, ISSUE_AUTHOR);
@@ -66,7 +74,7 @@ function main() {
                     name: parsed.name,
                     webUrl: parsed.appUrl,
                     repoUrl: parsed.repoUrl,
-                    githubUsername: candidate.author.login,
+                    githubUsername: candidate.author?.login || "",
                 },
             ],
             ISSUE_AUTHOR,

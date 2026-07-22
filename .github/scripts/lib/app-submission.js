@@ -37,7 +37,10 @@ function clean(value, maxLength = 200) {
 function section(body, label) {
     const escaped = label.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
     const match = String(body || "").match(
-        new RegExp(`^### ${escaped}\\s*\\n([\\s\\S]*?)(?=\\n### |$)`, "im"),
+        new RegExp(
+            `(?:^|\\n)### ${escaped}\\s*\\n([\\s\\S]*?)(?=\\n### |$)`,
+            "i",
+        ),
     );
     return match ? match[1].trim() : "";
 }

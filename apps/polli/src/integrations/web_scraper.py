@@ -2,8 +2,8 @@ import asyncio
 import logging
 from typing import Any
 
-from .._re import re
-from .._url import parse_url
+from ..utils.regex import re
+from ..utils.url import parse_url
 
 logger = logging.getLogger(__name__)
 
@@ -332,7 +332,7 @@ async def _scrape_with_crawl4ai(
 
             if result.extracted_content:
                 try:
-                    from .._json import loads as _json_loads
+                    from ..utils.json import loads as _json_loads
 
                     response["extracted"] = _json_loads(result.extracted_content)
                 except ValueError:
@@ -568,7 +568,7 @@ async def parse_file_content(
 
     if file_type == "json":
         try:
-            from .._json import loads as _json_loads
+            from ..utils.json import loads as _json_loads
 
             response["parsed"] = _json_loads(content)
             response["content"] = None
@@ -669,7 +669,7 @@ async def fetch_discord_attachment(
 
 async def _llm_extract(content: str, instruction: str) -> str | None:
     try:
-        from .pollinations import pollinations_client
+        from ..ai.client import pollinations_client
 
         result = await pollinations_client.generate_text(
             system_prompt=(

@@ -4,8 +4,8 @@ from typing import Any
 import aiohttp
 import discord
 
-from .._re import re
-from ..config import config
+from ..utils.regex import re
+from ..core.config import config
 
 logger = logging.getLogger(__name__)
 
@@ -40,7 +40,7 @@ class DiscordSearchClient:
     @property
     def headers(self) -> dict:
         return {
-            "Authorization": f"Bot {config.discord_token}",
+            "Authorization": f"Bot {config.discord.token}",
             "Content-Type": "application/json",
         }
 
@@ -541,6 +541,8 @@ async def tool_discord_search(
     pinned: bool | None = None,
     link_hostname: str | None = None,
     attachment_extension: str | None = None,
+    mentions: int | str | None = None,
+    mention_everyone: bool | None = None,
     offset: int = 0,
     _context: dict = None,
     **kwargs,
@@ -570,6 +572,7 @@ async def tool_discord_search(
     role_id = extract_id(role_id, r"<@&(\d+)>")
     message_id = extract_id(message_id, r"(\d+)")
     thread_id = extract_id(thread_id, r"(\d+)")
+    mentions = extract_id(mentions, r"<@!?(\d+)>")
     bot = _context.get("discord_bot")
     bot_member = guild.me if guild else None
     requesting_user_id = _context.get("user_id")
@@ -661,6 +664,8 @@ async def tool_discord_search(
             sort_order=sort_order,
             link_hostname=link_hostname,
             attachment_extension=attachment_extension,
+            mentions=mentions,
+            mention_everyone=mention_everyone,
             limit=limit,
             offset=offset,
             accessible_channel_ids=accessible_channel_ids,

@@ -12,7 +12,7 @@ class TTLCache:
     """TTL cache backed by cachebox (Rust)."""
 
     def __init__(self, maxsize: int = 256, ttl: int = 300):
-        self._c = _CbTTL(maxsize=maxsize, ttl=ttl)
+        self._c = _CbTTL(maxsize, ttl)
 
     def get(self, key: str) -> Any | None:
         try:

@@ -260,6 +260,13 @@
       "when": 1784063115626,
       "tag": "0036_community_endpoint_visibility",
       "breakpoints": true
+    },
+    {
+      "idx": 37,
+      "version": "6",
+      "when": 1753238400000,
+      "tag": "0037_community_model_groups",
+      "breakpoints": true
     }
   ]
 }

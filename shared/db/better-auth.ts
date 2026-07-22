@@ -219,6 +219,10 @@ export const communityEndpoint = sqliteTable("community_endpoint", {
   disabledAt: integer("disabled_at", { mode: "timestamp" }),
   disabledReason: text("disabled_reason"),
   disabledBy: text("disabled_by"),
+  // Group membership: null = standalone, non-null = member of a group.
+  // Unique with owner_user_id + name is already enforced; group_slug is
+  // a nullable FK-like pointer to community_endpoint_group.slug.
+  groupSlug: text("group_slug"),
   createdAt: integer("created_at", { mode: "timestamp" })
     .defaultNow()
     .notNull(),
@@ -232,6 +236,59 @@ export const communityEndpoint = sqliteTable("community_endpoint", {
     table.ownerUserId,
     table.name,
   ),
+  index("idx_community_endpoint_group_slug").on(table.groupSlug),
+]);
+
+// Community model groups: multiple providers offering the same model under
+// a single group/model id. Round-robin routing across active members.
+export const communityEndpointGroup = sqliteTable("community_endpoint_group", {
+  slug: text("slug").primaryKey(),
+  displayName: text("display_name").notNull(),
+  description: text("description"),
+  adminUserId: text("admin_user_id")
+    .notNull()
+    .references(() => user.id, { onDelete: "cascade" }),
+  // Unified pricing: members must match these prices to join.
+  promptTextPrice: real("prompt_text_price").notNull(),
+  promptCachedPrice: real("prompt_cached_price").default(0).notNull(),
+  promptCacheWritePrice: real("prompt_cache_write_price").default(0).notNull(),
+  promptAudioPrice: real("prompt_audio_price").default(0).notNull(),
+  promptImagePrice: real("prompt_image_price").default(0).notNull(),
+  completionTextPrice: real("completion_text_price").notNull(),
+  completionReasoningPrice: real("completion_reasoning_price").default(0).notNull(),
+  completionAudioPrice: real("completion_audio_price").default(0).notNull(),
+  createdAt: integer("created_at", { mode: "timestamp" })
+    .defaultNow()
+    .notNull(),
+  updatedAt: integer("updated_at", { mode: "timestamp" })
+    .defaultNow()
+    .$onUpdate(() => /* @__PURE__ */ new Date())
+    .notNull(),
+}, (table) => [
+  index("idx_community_endpoint_group_admin_user_id").on(table.adminUserId),
+]);
+
+// Pending invitations to join a community model group.
+export const communityEndpointInvitation = sqliteTable("community_endpoint_invitation", {
+  id: text("id").primaryKey(),
+  groupSlug: text("group_slug")
+    .notNull()
+    .references(() => communityEndpointGroup.slug, { onDelete: "cascade" }),
+  inviterUserId: text("inviter_user_id")
+    .notNull()
+    .references(() => user.id, { onDelete: "cascade" }),
+  inviteeUserId: text("invitee_user_id")
+    .notNull()
+    .references(() => user.id, { onDelete: "cascade" }),
+  status: text("status", { enum: ["pending", "accepted", "declined"] })
+    .default("pending")
+    .notNull(),
+  createdAt: integer("created_at", { mode: "timestamp" })
+    .defaultNow()
+    .notNull(),
+}, (table) => [
+  index("idx_community_endpoint_invitation_group_slug").on(table.groupSlug),
+  index("idx_community_endpoint_invitation_invitee_user_id").on(table.inviteeUserId),
 ]);
 
 // Drizzle relations for query builder joins
@@ -288,6 +345,30 @@ export const stripeCardFingerprintAttemptRelations = relations(
 export const communityEndpointRelations = relations(communityEndpoint, ({ one }) => ({
   owner: one(user, {
     fields: [communityEndpoint.ownerUserId],
+    references: [user.id],
+  }),
+}));
+
+export const communityEndpointGroupRelations = relations(communityEndpointGroup, ({ one, many }) => ({
+  admin: one(user, {
+    fields: [communityEndpointGroup.adminUserId],
+    references: [user.id],
+  }),
+  members: many(communityEndpoint),
+  invitations: many(communityEndpointInvitation),
+}));
+
+export const communityEndpointInvitationRelations = relations(communityEndpointInvitation, ({ one }) => ({
+  group: one(communityEndpointGroup, {
+    fields: [communityEndpointInvitation.groupSlug],
+    references: [communityEndpointGroup.slug],
+  }),
+  inviter: one(user, {
+    fields: [communityEndpointInvitation.inviterUserId],
+    references: [user.id],
+  }),
+  invitee: one(user, {
+    fields: [communityEndpointInvitation.inviteeUserId],
     references: [user.id],
   }),
 }));

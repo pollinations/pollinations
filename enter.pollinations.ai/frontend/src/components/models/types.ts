@@ -41,6 +41,7 @@ export type ModelPrice = {
     name: string;
     type: ModelCategory;
     community?: boolean;
+    stable?: boolean;
     displayName?: string;
     description?: string;
     brand?: string;

@@ -41,6 +41,7 @@ export const ModelInfoSchema = z.object({
     ]),
     brand: z.string(),
     community: z.boolean().optional(),
+    stable: z.boolean().optional(),
     pricing: z
         .record(z.string(), z.string())
         .and(z.object({ currency: z.literal("pollen") })),
@@ -84,6 +85,7 @@ function getCapabilities(service: ModelDefinition): ModelCapability[] {
 
 type ModelInfoOptions = {
     community?: boolean;
+    stable?: boolean;
 };
 
 function pricingInfoFromDefinition(
@@ -111,6 +113,7 @@ export function modelInfoFromDefinition(
         category: service.category,
         brand: service.brand,
         community: options.community || undefined,
+        stable: options.stable || undefined,
         pricing: pricingInfoFromDefinition(getPriceDefinitionForModel(service)),
         // User-facing metadata from service definition
         title: service.title,

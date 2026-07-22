@@ -136,6 +136,7 @@ const MobileModelRow: FC<MobileModelRowProps> = ({ model }) => {
     const showNew = isNewModel(model);
     const showPaidOnly = isPaidOnly(model);
     const showAlpha = isAlpha(model);
+    const showStable = model.stable === true;
     const balanceAccess: BalanceAccess = showPaidOnly ? "paid" : "quest";
 
     const perPollen = calculatePerPollen(model);
@@ -205,13 +206,25 @@ const MobileModelRow: FC<MobileModelRowProps> = ({ model }) => {
                                     access={balanceAccess}
                                     className="whitespace-nowrap"
                                 />
-                                <span className="inline-flex items-baseline gap-1 whitespace-nowrap">
-                                    <span className="text-sm font-semibold leading-none tabular-nums text-theme-text-strong">
-                                        {perPollen}
-                                    </span>
-                                    <span className="text-[10px] font-medium leading-none text-theme-text-muted">
-                                        gen/pollen
-                                    </span>
+                            </span>
+                        </div>
+                        {(showNew || showAlpha || showStable) && (
+                            <div className="flex min-w-0 flex-wrap items-center gap-1.5">
+                                <ModelStatusChips
+                                    showNew={showNew}
+                                    showAlpha={showAlpha}
+                                    showStable={showStable}
+                                    alphaTooltip={false}
+                                />
+                            </div>
+                        )}
+                        <div className="flex items-center gap-1.5">
+                            <span className="inline-flex items-baseline gap-1 whitespace-nowrap">
+                                <span className="text-sm font-semibold leading-none tabular-nums text-theme-text-strong">
+                                    {perPollen}
+                                </span>
+                                <span className="text-[10px] font-medium leading-none text-theme-text-muted">
+                                    gen/pollen
                                 </span>
                             </span>
                         </div>

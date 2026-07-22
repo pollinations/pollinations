@@ -27,6 +27,8 @@ const badgeVariants = cva(
                 fresh: "bg-tertiary-strong/25 text-dark border-r-4 border-b-4 border-tertiary-strong shadow-[2px_2px_0_rgb(var(--tertiary-strong)_/_0.3)]",
                 pollen: "bg-accent-strong/25 text-dark border-r-4 border-b-4 border-accent-strong shadow-[2px_2px_0_rgb(var(--accent-strong)_/_0.3)]",
                 buzz: "bg-primary-strong/25 text-dark border-r-4 border-b-4 border-primary-strong shadow-[2px_2px_0_rgb(var(--primary-strong)_/_0.3)]",
+                // Community model group: multi-provider stability indicator
+                stable: "bg-intent-success-bg-light text-intent-success-text border border-intent-success-text/30",
             },
         },
         defaultVariants: {

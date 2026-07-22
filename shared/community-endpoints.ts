@@ -14,6 +14,9 @@ export const MIN_COMMUNITY_PRICE_PER_TOKEN =
     MIN_COMMUNITY_PRICE_PER_MILLION_TOKENS / 1_000_000;
 const BEARER_PREFIX = /^Bearer(?:\s+|$)/i;
 
+// Minimum members required to form or maintain a group.
+export const MIN_GROUP_MEMBERS = 2;
+
 const COMMUNITY_PRICE_FIELD_BY_USAGE_TYPE = {
     promptTextTokens: { key: "promptTextPrice", label: "Prompt text" },
     promptCachedTokens: { key: "promptCachedPrice", label: "Prompt cached" },
@@ -230,4 +233,114 @@ function isBlockedHostname(hostname: string): boolean {
         if (second >= 16 && second <= 31) return true;
     }
     return false;
+}
+
+// ── Community Model Groups ──────────────────────────────────────────────
+
+export type CommunityEndpointGroupRow = {
+    slug: string;
+    displayName: string;
+    description: string | null;
+    adminUserId: string;
+    promptTextPrice: number;
+    promptCachedPrice: number;
+    promptCacheWritePrice: number;
+    promptAudioPrice: number;
+    promptImagePrice: number;
+    completionTextPrice: number;
+    completionReasoningPrice: number;
+    completionAudioPrice: number;
+    createdAt: Date;
+    updatedAt: Date;
+};
+
+export type CommunityEndpointGroupRuntime = {
+    slug: string;
+    displayName: string;
+    description: string | null;
+    adminUserId: string;
+    memberCount: number;
+    activeMemberCount: number;
+    /** Active (non-disabled) member endpoints for round-robin routing. */
+    members: CommunityEndpointRuntime[];
+} & CommunityEndpointPrices;
+
+/** Build a group model ID: "group Slug/modelName" → "groupSlug/modelName" */
+export function groupModelId(groupSlug: string, modelName: string): string {
+    return `${groupSlug}/${modelName}`;
+}
+
+/** Parse a group model ID. Returns null if not a group model. */
+export function parseGroupModelId(
+    modelId: string,
+): { groupSlug: string; modelName: string } | null {
+    const parts = modelId.split("/");
+    if (parts.length !== 2 || !parts[0] || !parts[1]) return null;
+    // Group slugs don't look like GitHub usernames (no uppercase, no underscores
+    // in typical community model IDs). This is a heuristic; the catalog is the
+    // source of truth for whether something is a group.
+    return { groupSlug: parts[0], modelName: parts[1] };
+}
+
+/** Check if a group has enough active members to remain active. */
+export function isGroupActive(activeMemberCount: number): boolean {
+    return activeMemberCount >= MIN_GROUP_MEMBERS;
+}
+
+/** Build a group model definition for catalog projection. */
+export function groupModelDefinition(
+    group: CommunityEndpointGroupRuntime,
+    modelName: string,
+): ModelDefinition {
+    const _modelId = groupModelId(group.slug, modelName);
+    return {
+        aliases: [],
+        provider: "community",
+        brand: "Community",
+        category: "text",
+        cost: communityPriceDefinition(group),
+        priceMultiplier: 1,
+        addedDate: 0,
+        title: group.displayName || modelName,
+        description: group.description || undefined,
+        inputModalities: ["text"],
+        outputModalities: ["text"],
+        paidOnly: false,
+        alpha: true,
+    };
+}
+
+// ── Round-Robin Group Router ────────────────────────────────────────────
+
+/** Per-slug round-robin counter (in-memory, resets on cold start). */
+const roundRobinCounters = new Map<string, number>();
+
+/**
+ * Select the next active member from a group using round-robin.
+ * Returns null if no members are available.
+ */
+export function selectGroupMember(
+    group: CommunityEndpointGroupRuntime,
+): CommunityEndpointRuntime | null {
+    if (group.members.length === 0) return null;
+
+    const counter = roundRobinCounters.get(group.slug) ?? 0;
+    const idx = counter % group.members.length;
+    roundRobinCounters.set(group.slug, counter + 1);
+    return group.members[idx];
+}
+
+/**
+ * Get all active members from a group, starting from the next round-robin
+ * index. Useful for fallback: try each member in order until one succeeds.
+ */
+export function groupMemberFallbackOrder(
+    group: CommunityEndpointGroupRuntime,
+): CommunityEndpointRuntime[] {
+    if (group.members.length === 0) return [];
+
+    const counter = roundRobinCounters.get(group.slug) ?? 0;
+    const start = counter % group.members.length;
+    // Reorder: start from next, wrap around
+    return [...group.members.slice(start), ...group.members.slice(0, start)];
 }

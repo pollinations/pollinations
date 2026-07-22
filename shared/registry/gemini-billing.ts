@@ -1,6 +1,5 @@
 import type { BillingRules } from "./registry";
 
-const GEMINI_25_GROUNDING_COST_PER_PROMPT = 35 / 1000;
 const GEMINI_3_GROUNDING_COST_PER_QUERY = 14 / 1000;
 
 // The gateway creates Vertex cachedContents resources with a 1-hour TTL, so
@@ -11,10 +10,6 @@ const FLASH_CACHE_STORAGE_COST_PER_MILLION_TOKEN_HOURS = 1;
 
 type GroundingMetadata = {
     webSearchQueries?: string[];
-    // Google returns a grounding chunk per source it cites. A `web` entry means
-    // the source is a Google-Search web result (billable grounding evidence);
-    // Vertex-AI-Search chunks are a different, separately-priced product.
-    groundingChunks?: { web?: { uri?: string } }[];
 };
 
 type GroundedOutput = {
@@ -48,22 +43,6 @@ function webSearchQueryStrings(metadata: GroundingMetadata): string[] {
     return metadata.webSearchQueries.filter(
         (q): q is string => typeof q === "string" && q.trim() !== "",
     );
-}
-
-// Gemini 2.5: Google bills one grounded prompt when Google-Search web evidence
-// is returned — search queries fired OR web grounding chunks cited. Bare
-// groundingSupports is deliberately NOT evidence: Vertex-AI-Search grounding
-// (retrievalQueries/retrievedContext, a separately priced product) also emits
-// supports and must not trigger the Google-Search fee.
-function countGeminiGroundedPrompt(output: unknown): number {
-    for (const metadata of eachGroundingMetadata(output)) {
-        if (webSearchQueryStrings(metadata).length > 0) return 1;
-        const chunks = Array.isArray(metadata.groundingChunks)
-            ? metadata.groundingChunks
-            : [];
-        if (chunks.some((chunk) => chunk?.web?.uri)) return 1;
-    }
-    return 0;
 }
 
 // Gemini 3.x: each distinct web-search query fires a fee. Dedup the cumulative
@@ -182,20 +161,6 @@ export function withOpenRouterGeminiCacheStorage(
         ],
     };
 }
-
-export const GEMINI_25_GROUNDING_BILLING: BillingRules = {
-    adjustments: [
-        {
-            id: "google.gemini_2.grounded_prompt.v1",
-            description:
-                "Google Search grounding adds $35 / 1K grounded prompts when grounding metadata is present.",
-            kind: "grounded_prompt",
-            unit: "prompt",
-            unitCost: GEMINI_25_GROUNDING_COST_PER_PROMPT,
-            countUnits: countGeminiGroundedPrompt,
-        },
-    ],
-};
 
 export const GEMINI_3_SEARCH_BILLING: BillingRules = {
     adjustments: [

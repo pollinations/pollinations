@@ -46,7 +46,6 @@ function createPinnedOpenRouterGeminiConfig(
                 provider: {
                     only: [providerTag],
                     allow_fallbacks: false,
-                    require_parameters: true,
                 },
             },
         });
@@ -290,10 +289,6 @@ export const portkeyConfig: PortkeyConfigMap = {
     ),
     "gemini-3.1-pro-preview": createVertexGeminiConfig(
         "gemini-3.1-pro-preview",
-        "global",
-    ),
-    "gemini-2.5-flash-lite": createVertexGeminiConfig(
-        "gemini-2.5-flash-lite",
         "global",
     ),
     "gemini-3.6-flash": createVertexGeminiConfig("gemini-3.6-flash", "global"),

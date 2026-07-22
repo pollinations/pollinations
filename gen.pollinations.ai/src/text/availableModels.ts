@@ -35,6 +35,14 @@ interface ModelDefinition {
     transform?: TransformFn;
 }
 
+// Gemini ignores logit_bias on direct Vertex, while the OpenRouter 2.5 search
+// route currently returns 500 when it is combined with native web search.
+const stripLogitBias: TransformFn = (messages, options) => {
+    const supportedOptions = { ...options };
+    delete supportedOptions.logit_bias;
+    return { messages, options: supportedOptions };
+};
+
 const models: ModelDefinition[] = [
     {
         name: "openai",
@@ -258,10 +266,11 @@ const models: ModelDefinition[] = [
     },
     {
         name: "gemini-search",
-        config: portkeyConfig["gemini-2.5-flash-lite"],
+        config: portkeyConfig["google/gemini-2.5-flash-lite"],
         transform: pipe(
             sanitizeToolSchemas,
-            createGeminiToolsTransform(["google_search"]),
+            stripLogitBias,
+            createOpenRouterNativeWebSearchTransform(),
             createGeminiThinkingTransform("v2.5"),
         ),
     },

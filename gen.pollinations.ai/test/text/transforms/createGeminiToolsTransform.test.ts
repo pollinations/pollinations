@@ -9,6 +9,7 @@ describe("OpenRouter Gemini routing", () => {
             "google/gemini-3.1-flash-lite",
             "google-vertex/global",
         ],
+        ["gemini-search", "google/gemini-2.5-flash-lite", "google-vertex/eu"],
         ["gemini-fast", "google/gemini-2.5-flash-lite", "google-vertex/eu"],
         [
             "gemini-search-fast",
@@ -31,7 +32,6 @@ describe("OpenRouter Gemini routing", () => {
         expect(options.provider).toEqual({
             only: [providerTag],
             allow_fallbacks: false,
-            require_parameters: true,
         });
         expect(options.modelConfig).toMatchObject({
             provider: "openai",
@@ -39,12 +39,11 @@ describe("OpenRouter Gemini routing", () => {
         });
     });
 
-    it("keeps code-execution and 2.5 search services on direct Vertex", () => {
+    it("keeps services that depend on Vertex code execution on Vertex", () => {
         const routes = [
             ["gemini-3-flash", "gemini-3-flash-preview"],
             ["gemini", "gemini-3.6-flash"],
             ["gemini-large", "gemini-3.1-pro-preview"],
-            ["gemini-search", "gemini-2.5-flash-lite"],
         ] as const;
 
         for (const [model, upstreamModel] of routes) {
@@ -60,6 +59,7 @@ describe("OpenRouter Gemini routing", () => {
 
 describe("OpenRouter Gemini native search", () => {
     it.each([
+        "gemini-search",
         "gemini-search-fast",
         "gemini-search-large",
     ])("adds provider-native Google Search for %s", async (model) => {
@@ -89,5 +89,16 @@ describe("OpenRouter Gemini native search", () => {
         const { options } = await transform([], { tools });
 
         expect(options.tools).toEqual(tools);
+    });
+
+    it("drops logit_bias from the 2.5 search route", async () => {
+        const transform = findModelByName("gemini-search")?.transform;
+        if (!transform) throw new Error("gemini-search transform missing");
+
+        const { options } = await transform([], {
+            logit_bias: { "1": -1 },
+        });
+
+        expect(options.logit_bias).toBeUndefined();
     });
 });

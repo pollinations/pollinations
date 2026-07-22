@@ -1,6 +1,5 @@
 import {
     GEMINI_3_SEARCH_BILLING,
-    GEMINI_25_GROUNDING_BILLING,
     OPENROUTER_GEMINI_SEARCH_BILLING,
     withOpenRouterGeminiCacheStorage,
     withVertexCacheStorage,
@@ -716,14 +715,13 @@ export const TEXT_SERVICES = {
     },
     "gemini-search": {
         aliases: ["gemini-2.5-flash-search", "gemini-2.5-flash-lite-search"],
-        provider: "google",
+        provider: "openrouter",
         brand: "Google",
         category: "text",
         addedDate: new Date("2025-10-10").getTime(),
         paidOnly: true,
         priceMultiplier: 1,
-        // Vertex base rates for gemini-2.5-flash-lite. Grounding is added by
-        // calculateCost when the response includes web search metadata.
+        // OpenRouter base rates for the pinned Google Vertex EU route.
         cost: {
             promptTextTokens: perMillion(0.1),
             promptCachedTokens: perMillion(0.01),
@@ -731,7 +729,9 @@ export const TEXT_SERVICES = {
             promptAudioTokens: perMillion(0.3),
             completionTextTokens: perMillion(0.4),
         },
-        billing: withVertexCacheStorage(GEMINI_25_GROUNDING_BILLING, 1.0),
+        billing: withOpenRouterGeminiCacheStorage(
+            OPENROUTER_GEMINI_SEARCH_BILLING,
+        ),
         title: "Google Gemini 2.5 Flash Lite Search",
         description:
             "Answers grounded in live web search; fast and cheap, not a deep reasoner",

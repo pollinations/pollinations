@@ -417,12 +417,12 @@ test("Gemini grounding cost is added by family billing rules", () => {
     const geminiSearchCost = calculateCost(
         "gemini-search",
         usage,
-        groundedOutput,
+        openRouterSearchOutput,
     );
     const geminiSearchPrice = calculatePrice(
         "gemini-search",
         usage,
-        groundedOutput,
+        openRouterSearchOutput,
     );
     const gemini3FlashCost = calculateCost(
         "gemini-3-flash",
@@ -445,10 +445,10 @@ test("Gemini grounding cost is added by family billing rules", () => {
         { choices: [] },
     );
 
-    // Gemini 2.5 Search bills once per grounded prompt, not once per query.
-    // priceMultiplier is 1×, so price equals cost.
-    expect(geminiSearchCost.totalCost).toBeCloseTo(0.535, 8);
-    expect(geminiSearchPrice.totalPrice).toBeCloseTo(0.535, 8);
+    // OpenRouter reports each native search request. priceMultiplier is 1×,
+    // so price equals cost.
+    expect(geminiSearchCost.totalCost).toBeCloseTo(0.528, 8);
+    expect(geminiSearchPrice.totalPrice).toBeCloseTo(0.528, 8);
 
     // Gemini 3.x bills per non-empty search query.
     expect(gemini3FlashCost.totalCost).toBeCloseTo(3.528, 8);
@@ -578,23 +578,6 @@ test("Gemini grounding is detected on streamed chunk output", () => {
         promptTextTokens: 1_000_000,
         completionTextTokens: 1_000_000,
     };
-    const streamOutput = {
-        streamEvents: [
-            { choices: [{ delta: { content: "searching" } }] },
-            {
-                choices: [
-                    {
-                        groundingMetadata: {
-                            webSearchQueries: [
-                                "weather in Berlin",
-                                "Berlin forecast",
-                            ],
-                        },
-                    },
-                ],
-            },
-        ],
-    };
     const openRouterStreamOutput = {
         streamEvents: [
             { choices: [{ delta: { content: "searching" } }] },
@@ -606,14 +589,14 @@ test("Gemini grounding is detected on streamed chunk output", () => {
         ],
     };
 
-    // Same totals as the non-stream fixtures: grounding billed once per
-    // prompt for Gemini 2.5, per unique query for Gemini 3.x.
+    // OpenRouter reports native search usage on the final stream event.
     expect(
-        calculateCost("gemini-search", usage, streamOutput).totalCost,
-    ).toBeCloseTo(0.535, 8);
+        calculateCost("gemini-search", usage, openRouterStreamOutput).totalCost,
+    ).toBeCloseTo(0.528, 8);
     expect(
-        calculatePrice("gemini-search", usage, streamOutput).totalPrice,
-    ).toBeCloseTo(0.535, 8);
+        calculatePrice("gemini-search", usage, openRouterStreamOutput)
+            .totalPrice,
+    ).toBeCloseTo(0.528, 8);
     expect(
         calculateCost("gemini-search-fast", usage, openRouterStreamOutput)
             .totalCost,
@@ -659,86 +642,6 @@ test("Perplexity billing rules carry per-tier request fees privately only", () =
     for (const model of getTextModelsInfo()) {
         expect(model).not.toHaveProperty("billing");
     }
-});
-
-test("Gemini 2.5 grounded prompt is billed on web chunks even without queries", () => {
-    const usage = {
-        promptTextTokens: 1_000_000,
-        completionTextTokens: 1_000_000,
-    };
-    // gemini-search token cost = 0.5; 2.5 grounded prompt fee = 0.035.
-
-    // webSearchQueries empty, but web grounding chunks present → still 1 prompt.
-    const chunksOnly = {
-        choices: [
-            {
-                groundingMetadata: {
-                    webSearchQueries: [],
-                    groundingChunks: [
-                        { web: { uri: "https://example.test/a" } },
-                    ],
-                },
-            },
-        ],
-    };
-    expect(
-        calculateCost("gemini-search", usage, chunksOnly).totalCost,
-    ).toBeCloseTo(0.535, 8);
-
-    // groundingSupports alone (no queries, no web chunks) is NOT billable
-    // evidence — Vertex-AI-Search grounding also emits supports, and only
-    // Google-Search web evidence carries the grounded-prompt fee.
-    const supportsOnly = {
-        choices: [
-            {
-                groundingMetadata: {
-                    groundingSupports: [{ segment: { startIndex: 0 } }],
-                },
-            },
-        ],
-    };
-    expect(
-        calculateCost("gemini-search", usage, supportsOnly).totalCost,
-    ).toBeCloseTo(0.5, 8);
-});
-
-test("Gemini 2.5 retrievalQueries-only response is not billed as grounded", () => {
-    const usage = {
-        promptTextTokens: 1_000_000,
-        completionTextTokens: 1_000_000,
-    };
-    // Vertex-AI-Search (retrievalQueries) is a different product — no
-    // Google-Search grounded-prompt fee. Empty web chunks must also not count.
-    // Includes groundingSupports: a real Vertex-AI-Search response annotates
-    // answer spans too, and that must not trigger the Google-Search fee.
-    const retrievalOnly = {
-        choices: [
-            {
-                groundingMetadata: {
-                    retrievalQueries: ["internal doc lookup"],
-                    groundingChunks: [
-                        { retrievedContext: { uri: "gs://corpus/doc" } },
-                    ],
-                    groundingSupports: [{ segment: { startIndex: 0 } }],
-                },
-            },
-        ],
-    };
-    // A web chunk without a source URI is malformed metadata, not evidence.
-    const malformedWebChunk = {
-        choices: [{ groundingMetadata: { groundingChunks: [{ web: {} }] } }],
-    };
-    const noGrounding = { choices: [{ groundingMetadata: {} }] };
-
-    expect(
-        calculateCost("gemini-search", usage, retrievalOnly).totalCost,
-    ).toBeCloseTo(0.5, 8);
-    expect(
-        calculateCost("gemini-search", usage, malformedWebChunk).totalCost,
-    ).toBeCloseTo(0.5, 8);
-    expect(
-        calculateCost("gemini-search", usage, noGrounding).totalCost,
-    ).toBeCloseTo(0.5, 8);
 });
 
 test("Gemini 3.x search query fee counts distinct queries and dedups chunks", () => {
@@ -929,17 +832,6 @@ test("vertex cache storage adjustment bills cache-creating requests", () => {
     const proStorage = pro.find((a) => a.kind === "cache_storage");
     expect(proStorage?.cost).toBeCloseTo(4.5, 8);
 
-    // Search variants share the same Vertex routes and flash-family storage.
-    const search = calculateBillingAdjustments(
-        getRegistryModelDefinition("gemini-search"),
-        { usage: { cache_creation_input_tokens: 1_000_000 } },
-        "gemini-search",
-    );
-    expect(search.find((a) => a.kind === "cache_storage")?.cost).toBeCloseTo(
-        1.0,
-        8,
-    );
-
     // Cache HITS report cached_tokens, not creation tokens → no storage fee.
     expect(
         calculateBillingAdjustments(
@@ -985,7 +877,7 @@ test("OpenRouter Gemini adjustments use provider-reported cache and search usage
     expect(cacheWrite[0].price).toBeCloseTo(1 / 12, 15);
 
     const streamedSearch = calculateBillingAdjustments(
-        getRegistryModelDefinition("gemini-search-fast"),
+        getRegistryModelDefinition("gemini-search"),
         {
             streamEvents: [
                 { choices: [{}] },
@@ -996,7 +888,7 @@ test("OpenRouter Gemini adjustments use provider-reported cache and search usage
                 },
             ],
         },
-        "gemini-search-fast",
+        "gemini-search",
     );
     expect(streamedSearch).toEqual([
         {
@@ -1054,30 +946,24 @@ test("calculateBillingAdjustments returns per-rule breakdown entries", () => {
         },
     ]);
 
-    const gemini25 = calculateBillingAdjustments(
+    const openRouterGeminiSearch = calculateBillingAdjustments(
         getRegistryModelDefinition("gemini-search"),
         {
-            choices: [
-                {
-                    groundingMetadata: {
-                        groundingChunks: [
-                            { web: { uri: "https://example.test/a" } },
-                        ],
-                    },
-                },
-            ],
+            usage: {
+                server_tool_use_details: { web_search_requests: 1 },
+            },
         },
         "gemini-search",
     );
-    expect(gemini25).toEqual([
+    expect(openRouterGeminiSearch).toEqual([
         {
-            ruleId: "google.gemini_2.grounded_prompt.v1",
-            kind: "grounded_prompt",
-            unit: "prompt",
+            ruleId: "openrouter.google.web_search.v1",
+            kind: "search_request",
+            unit: "request",
             units: 1,
-            unitCost: 0.035,
-            cost: 0.035,
-            price: 0.035,
+            unitCost: 0.014,
+            cost: 0.014,
+            price: 0.014,
         },
     ]);
 

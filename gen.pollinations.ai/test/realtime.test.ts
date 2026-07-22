@@ -63,7 +63,7 @@ function mockOpenAIRealtime() {
         .spyOn(globalThis, "fetch")
         .mockImplementation(async (input, init) => {
             const request = new Request(input, init);
-            if (request.url.includes("/v0/events?name=generation_event")) {
+            if (request.url.includes("/v0/events?name=generation_event_v2")) {
                 tinybirdRequests.push(request);
                 return new Response("", { status: 202 });
             }

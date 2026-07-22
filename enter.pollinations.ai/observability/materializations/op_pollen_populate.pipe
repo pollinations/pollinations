@@ -1,7 +1,7 @@
 DESCRIPTION >
     Incrementally maintains op_pollen: cost/price/request totals (paid vs.
     quests) and byop/model payout totals, per month, provider, and model.
-    Computed directly from generation_event at ingest time, mirroring the same
+    Computed directly from generation_event_v2 at ingest time, mirroring the same
     conditions used by activity_usage_events_mv (usage) and
     activity_earnings_byop_mv / activity_earnings_model_rewards_mv (payouts),
     so op_pollen_api never scans raw event history.
@@ -22,7 +22,7 @@ SQL >
         sumState(if(api_key_created_for_user_id != 'undefined' AND total_price > dev_price AND selected_meter_slug = 'v1:meter:tier', total_price - dev_price, 0)) AS byop_quests,
         sumState(if(community_model_reward_user_id != 'undefined' AND community_model_reward_amount > 0 AND selected_meter_slug = 'v1:meter:pack', community_model_reward_amount, 0)) AS model_paid,
         sumState(if(community_model_reward_user_id != 'undefined' AND community_model_reward_amount > 0 AND selected_meter_slug = 'v1:meter:tier', community_model_reward_amount, 0)) AS model_quests
-    FROM generation_event
+    FROM generation_event_v2
     WHERE start_time >= toDateTime('2026-01-01 00:00:00')
       AND (total_price > 0 OR community_model_reward_amount > 0)
     GROUP BY month, provider, model

@@ -16,7 +16,7 @@ SQL >
         count() AS total_requests,
         sum(token_count_prompt_text + token_count_completion_text) AS total_tokens,
         sum(total_price) AS total_revenue
-    FROM generation_event
+    FROM generation_event_v2
     WHERE
         {% if defined(start_date) %}
         start_time >= toDate({{ String(start_date) }})

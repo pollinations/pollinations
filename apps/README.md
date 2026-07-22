@@ -83,7 +83,7 @@ Each app gets:
 
 - Have an account at [enter.pollinations.ai](https://enter.pollinations.ai) (sign up with GitHub)
 - Your app actively uses the Pollinations API — image, text, audio, or video
-- Be **open-source** with a public GitHub repository
+- A public GitHub repository is helpful for review but optional
 - Include a working demo URL (auto-deployed or external)
 - Include a clear `README.md` in the app folder explaining what it does, which Pollinations models/APIs it uses, and how to run it locally
 
@@ -97,14 +97,14 @@ Each app gets:
 
 ### How to Submit
 
-Open an issue with the [submission template](https://github.com/pollinations/pollinations/issues/new?template=tier-app-submission.yml) and fill out the fields. If your integration isn't obvious from poking at the app, drop in a screenshot or short clip — otherwise skip it.
+Open an issue with the [submission template](https://github.com/pollinations/pollinations/issues/new?template=app-submission.yml) and fill out the fields.
 
 ### What Happens Next
 
-- A bot checks the basics (registered, not a duplicate, attribution present)
-- A maintainer takes a look
-- If it's good, your app lands on [pollinations.ai/apps](https://pollinations.ai/apps) and you earn a Pollen reward
-- If something's off, we'll comment with what to fix
+- An AI pre-review checks the live app, optional repository, duplicates, and evidence of Pollinations integration
+- If information is missing, the bot comments with specific questions
+- A maintainer verifies apps that are ready for review
+- Approved apps are added automatically to [pollinations.ai/apps](https://pollinations.ai/apps)
 
 ### After
 
@@ -115,7 +115,7 @@ Open an issue with the [submission template](https://github.com/pollinations/pol
 
 - No clear Pollinations API usage
 - Vague or incomplete app descriptions
-- Missing or private repository
+- No working app or evidence of Pollinations integration
 - Spam, affiliate links, or misleading "money earning" claims
 - Very low-effort generators
 
@@ -144,7 +144,7 @@ Grab a logo and link it to [pollinations.ai](https://pollinations.ai): [mark](ht
 - 🔆 [**Greenhouse**](GREENHOUSE.md) — Curated highlights from every category
 - 📋 [**All Apps**](APPS.md) — Full table for community created apps.
 - 🌐 [Browse on pollinations.ai](https://pollinations.ai/apps)
-- ✏️ [Submit your app](https://github.com/pollinations/pollinations/issues/new?template=tier-app-submission.yml)
+- ✏️ [Submit your app](https://github.com/pollinations/pollinations/issues/new?template=app-submission.yml)
 
 ## Resources
 

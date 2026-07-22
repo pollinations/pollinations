@@ -431,7 +431,7 @@ const _SuggestedQuestion = ({ question, onClick, icon }) => (
     </motion.div>
 );
 
-const PollyChat = () => {
+const PolliChat = () => {
     const [messages, setMessages] = useState([]);
     const [inputValue, setInputValue] = useState("");
     const [isLoading, setIsLoading] = useState(false);
@@ -439,7 +439,7 @@ const PollyChat = () => {
     const [faqData, setFaqData] = useState([]);
     const messagesEndRef = useRef(null);
     const messagesContainerRef = useRef(null);
-    const pollyAPI = useRef(new socBotAPI()); // API class name unchanged
+    const polliAPI = useRef(new socBotAPI()); // API class name unchanged
 
     // Group FAQ by category
     const _faqByCategory = faqData.reduce((acc, item) => {
@@ -457,7 +457,7 @@ const PollyChat = () => {
             {
                 id: 1,
                 content:
-                    "Hello! I'm Polly, your AI assistant for Google Summer of Code 2026 at pollinations.ai! 🌱\n\nI'm here to help you with everything related to GSoC - from understanding the program to choosing projects, application guidance, and technical support.\n\nWhat would you like to know about GSoC 2026?",
+                    "Hello! I'm Polli, your AI assistant for Google Summer of Code 2026 at pollinations.ai! 🌱\n\nI'm here to help you with everything related to GSoC - from understanding the program to choosing projects, application guidance, and technical support.\n\nWhat would you like to know about GSoC 2026?",
                 isBot: true,
                 timestamp: new Date().toISOString(),
             },
@@ -506,7 +506,7 @@ const PollyChat = () => {
         setMessages((prev) => [...prev, typingMessage]);
 
         try {
-            const response = await pollyAPI.current.sendMessage(messageText);
+            const response = await polliAPI.current.sendMessage(messageText);
             setMessages((prev) => {
                 const withoutTyping = prev.filter((msg) => !msg.isTyping);
                 return [
@@ -550,7 +550,7 @@ const PollyChat = () => {
         await handleSendMessage(question);
     };
 
-    const _suggestedQuestions = pollyAPI.current.getSuggestedQuestions();
+    const _suggestedQuestions = polliAPI.current.getSuggestedQuestions();
     const _questionIcons = [
         <LightbulbOutlined key="lightbulb-1" />,
         <RocketLaunchOutlined key="rocket-1" />,
@@ -641,7 +641,7 @@ const PollyChat = () => {
                                 WebkitTextFillColor: "transparent",
                             }}
                         >
-                            Hello I am Polly, your GSoC guide.
+                            Hello I am Polli, your GSoC guide.
                         </Typography>
                     </Box>
                 </motion.div>
@@ -862,4 +862,4 @@ const PollyChat = () => {
     );
 };
 
-export default PollyChat;
+export default PolliChat;

@@ -156,8 +156,8 @@ export function createOVHcloudOAIConfig(
 }
 
 /**
- * Creates a Polly model configuration (community model - Pollinations AI assistant).
- * Uses user's API key for billing passthrough - Polly calls Pollinations internally.
+ * Creates a Polli model configuration (community model - Pollinations AI assistant).
+ * Uses user's API key for billing passthrough - Polli calls Pollinations internally.
  */
 export function createPollyConfig(
     overrides: ModelOverride = {},

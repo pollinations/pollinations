@@ -53,7 +53,7 @@ Return ONLY the JSON object. No markdown fences, no explanation.
 - Caption: 300-800 characters, friendly tone, emojis welcome
 - Hashtags: 8-15 relevant tags (mix of brand + discovery tags)
 - Always use carousel format with exactly 3 images
-- Rotate characters across the carousel: e.g. Polly solo, Polly + Robot, Polly + Nomnom. Don't repeat the same pairing
+- Rotate characters across the carousel: e.g. Polli solo, Polli + Robot, Polli + Nomnom. Don't repeat the same pairing
 - Translate technical updates into vibes — "faster generation" = "your ideas come to life quicker"
 
 Output Format (JSON only):

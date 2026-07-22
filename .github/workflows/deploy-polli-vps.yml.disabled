@@ -1,0 +1,66 @@
+name: Deploy / Polli Discord bot
+
+permissions:
+  contents: read
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'apps/polli/**'
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          sparse-checkout: apps/polli
+
+      - name: Copy source to VPS
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.DISCORD_POLLY_HOST }}
+          username: ${{ secrets.DISCORD_POLLY_USER }}
+          key: ${{ secrets.DISCORD_POLLY_SSH_KEY }}
+          source: "apps/polli/"
+          target: "/tmp/polli-deploy"
+          strip_components: 2
+          overwrite: true
+
+      - name: Deploy and restart service
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.DISCORD_POLLY_HOST }}
+          username: ${{ secrets.DISCORD_POLLY_USER }}
+          key: ${{ secrets.DISCORD_POLLY_SSH_KEY }}
+          script: |
+            set -e
+
+            echo "Syncing source to /root/polli..."
+            rsync -av \
+              --exclude '.env' \
+              --exclude 'data/' \
+              --exclude 'venv/' \
+              --exclude '.git/' \
+              --exclude '*.pem' \
+              --exclude 'src/extensions/' \
+              /tmp/polli-deploy/ /root/polli/
+
+            echo "Installing dependencies..."
+            cd /root/polli
+            ./venv/bin/python -m pip install -r requirements.txt -q
+
+            systemctl daemon-reload
+
+            echo "Restarting polli service..."
+            systemctl restart polli.service
+            sleep 5
+
+            systemctl is-active polli.service || exit 1
+            echo "Polli bot deployed successfully"
+
+            rm -rf /tmp/polli-deploy

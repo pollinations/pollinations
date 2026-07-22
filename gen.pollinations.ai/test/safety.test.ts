@@ -10,6 +10,7 @@ import type { LoggerVariables } from "@/middleware/logger.ts";
 import {
     applySafety,
     applySafetyToChatRequest,
+    applySafetyToResponseRequest,
     withSafetyHeaders,
 } from "@/middleware/safety.ts";
 import type { BedrockResponse } from "@/utils/bedrock-guardrail.ts";
@@ -57,6 +58,14 @@ function safetyApp() {
             const safeBody = await applySafetyToChatRequest(
                 c,
                 body as Parameters<typeof applySafetyToChatRequest>[1],
+            );
+            return withSafetyHeaders(c, Response.json(safeBody));
+        })
+        .post("/responses", async (c) => {
+            const body = await c.req.json();
+            const safeBody = await applySafetyToResponseRequest(
+                c,
+                body as Parameters<typeof applySafetyToResponseRequest>[1],
             );
             return withSafetyHeaders(c, Response.json(safeBody));
         });
@@ -375,6 +384,68 @@ describe("applySafetyToChatRequest", { timeout: 30000 }, () => {
                             },
                         },
                         { type: "text", text: "phone {PHONE}" },
+                    ],
+                },
+            ],
+        });
+    });
+
+    it("checks nested Responses API text without changing image inputs", async () => {
+        guardrailResponse = intervened(
+            {
+                sensitiveInformationPolicy: {
+                    piiEntities: [
+                        {
+                            action: "ANONYMIZED",
+                            match: "a@example.com",
+                            type: "EMAIL",
+                        },
+                    ],
+                },
+            },
+            [{ text: "system" }, { text: "email {EMAIL}" }],
+        );
+
+        const response = await safetyApp().request(
+            "/responses",
+            {
+                method: "POST",
+                body: JSON.stringify({
+                    model: "openai-large",
+                    safe: "privacy",
+                    instructions: "system",
+                    input: [
+                        {
+                            role: "user",
+                            content: [
+                                {
+                                    type: "input_text",
+                                    text: "email a@example.com",
+                                },
+                                {
+                                    type: "input_image",
+                                    image_url: "https://example.com/image.png",
+                                },
+                            ],
+                        },
+                    ],
+                }),
+            },
+            configuredEnv,
+        );
+
+        expect(response.status).toBe(200);
+        expect(fetchMock).toHaveBeenCalledOnce();
+        expect(await response.json()).toMatchObject({
+            instructions: "system",
+            input: [
+                {
+                    content: [
+                        { type: "input_text", text: "email {EMAIL}" },
+                        {
+                            type: "input_image",
+                            image_url: "https://example.com/image.png",
+                        },
                     ],
                 },
             ],

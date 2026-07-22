@@ -1,5 +1,6 @@
 import type {
     CreateChatCompletionRequest,
+    CreateResponseRequest,
     MessageContentPart,
 } from "@shared/schemas/openai.ts";
 import type { SafeValue } from "@shared/schemas/safety.ts";
@@ -233,6 +234,88 @@ export async function applySafetyToChatRequest(
         messages: nextMessages,
         ...(nextSystem !== undefined ? { system: nextSystem } : {}),
     };
+}
+
+type ResponseBody = CreateResponseRequest & Record<string, unknown>;
+type ResponseTextTarget = { path: (string | number)[]; text: string };
+
+export async function applySafetyToResponseRequest(
+    c: SafetyContext,
+    body: ResponseBody,
+): Promise<ResponseBody> {
+    const targets = [
+        ...collectResponseTextTargets(body.instructions, ["instructions"]),
+        ...collectResponseTextTargets(body.input, ["input"]),
+    ];
+    const safeTexts = await applySafetyToTexts(
+        c,
+        targets.map((target) => target.text),
+        body.safe as SafeValue,
+    );
+
+    let next: unknown = body;
+    for (const [index, target] of targets.entries()) {
+        const safeText = safeTexts[index];
+        if (safeText !== target.text) {
+            next = replaceAtPath(next, target.path, safeText);
+        }
+    }
+    return next as ResponseBody;
+}
+
+function collectResponseTextTargets(
+    value: unknown,
+    path: (string | number)[],
+): ResponseTextTarget[] {
+    if (typeof value === "string") return [{ path, text: value }];
+    if (Array.isArray(value)) {
+        return value.flatMap((item, index) =>
+            collectResponseTextTargets(item, [...path, index]),
+        );
+    }
+    if (!value || typeof value !== "object") return [];
+
+    const item = value as Record<string, unknown>;
+    const targets: ResponseTextTarget[] = [];
+    if (item.type === "input_text" && typeof item.text === "string") {
+        targets.push({ path: [...path, "text"], text: item.text });
+    }
+    if (
+        typeof item.content === "string" &&
+        (typeof item.role === "string" || item.type === "message")
+    ) {
+        targets.push({ path: [...path, "content"], text: item.content });
+    } else if (Array.isArray(item.content)) {
+        targets.push(
+            ...collectResponseTextTargets(item.content, [...path, "content"]),
+        );
+    }
+    return targets;
+}
+
+function replaceAtPath(
+    value: unknown,
+    path: (string | number)[],
+    replacement: string,
+): unknown {
+    if (path.length === 0) return replacement;
+    const [head, ...tail] = path;
+    if (typeof head === "number" && Array.isArray(value)) {
+        const next = [...value];
+        next[head] = replaceAtPath(next[head], tail, replacement);
+        return next;
+    }
+    if (
+        typeof head === "string" &&
+        value !== null &&
+        typeof value === "object" &&
+        !Array.isArray(value)
+    ) {
+        const next = { ...(value as Record<string, unknown>) };
+        next[head] = replaceAtPath(next[head], tail, replacement);
+        return next;
+    }
+    return value;
 }
 
 type ChatTextTarget =

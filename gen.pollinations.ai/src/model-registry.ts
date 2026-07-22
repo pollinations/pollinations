@@ -66,8 +66,15 @@ function eventTypeForCategory(category: Category): EventType {
     return "generate.image";
 }
 
-function supportedEndpointsForEventType(eventType: EventType): string[] {
-    if (eventType === "generate.text") return TEXT_MODEL_ENDPOINTS;
+function supportedEndpointsForDefinition(
+    eventType: EventType,
+    definition: ModelDefinition<string>,
+): string[] {
+    if (eventType === "generate.text") {
+        return definition.responses
+            ? [...TEXT_MODEL_ENDPOINTS, "/v1/responses"]
+            : TEXT_MODEL_ENDPOINTS;
+    }
     if (eventType === "generate.audio") return ["/audio/{text}"];
     if (eventType === "generate.embedding") return ["/v1/embeddings"];
     if (eventType === "generate.realtime") return ["/v1/realtime"];
@@ -81,7 +88,10 @@ const STATIC_ENTRIES: GenerationModelEntry[] = getModels().map((modelName) => {
         id: modelName,
         aliases: definition.aliases,
         eventType,
-        supportedEndpoints: supportedEndpointsForEventType(eventType),
+        supportedEndpoints: supportedEndpointsForDefinition(
+            eventType,
+            definition,
+        ),
         definition,
         info: modelInfoFromDefinition(modelName, definition),
         visible: definition.hidden !== true,

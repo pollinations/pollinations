@@ -49,6 +49,9 @@ import {
     CreateChatCompletionResponseSchema,
     CreateImageRequestSchema,
     CreateImageResponseSchema,
+    type CreateResponseRequest,
+    CreateResponseRequestSchema,
+    CreateResponseResponseSchema,
     GetModelsResponseSchema,
 } from "@shared/schemas/openai.ts";
 import { SafeSchema, type SafeValue } from "@shared/schemas/safety.ts";
@@ -58,6 +61,7 @@ import { z } from "zod";
 import {
     applySafety,
     applySafetyToChatRequest,
+    applySafetyToResponseRequest,
     applySafetyToTexts,
     withSafetyHeaders,
 } from "@/middleware/safety.ts";
@@ -72,6 +76,7 @@ import { RealtimeRequestQueryParamsSchema } from "@/schemas/realtime.ts";
 import { GenerateTextRequestQueryParamsSchema } from "@/schemas/text.ts";
 import {
     handleChatCompletionLocal,
+    handleCreateResponseLocal,
     handleSimpleTextLocal,
     handleTextContentLocal,
 } from "@/text/handler.ts";
@@ -185,6 +190,24 @@ const chatCompletionHandlers = factory.createHandlers(
                 },
             }),
         );
+    },
+);
+
+const createResponseHandlers = factory.createHandlers(
+    textBodyLimit,
+    validator("json", CreateResponseRequestSchema),
+    resolveModel("generate.text"),
+    track("generate.text"),
+    generationAccess,
+    async (c) => {
+        const requestBody = await applySafetyToResponseRequest(c, {
+            ...(c.req.valid("json" as never) as CreateResponseRequest),
+            model: c.var.model.resolved,
+        });
+
+        const response = await handleCreateResponseLocal(c, requestBody);
+        assertStreamContentType(c, response);
+        return withSafetyHeaders(c, response);
     },
 );
 
@@ -617,6 +640,30 @@ export const proxyRoutes = new Hono<Env>()
             },
         }),
         ...chatCompletionHandlers,
+    )
+    .post(
+        "/v1/responses",
+        describeRoute({
+            tags: ["✍️ Text"],
+            summary: "Create Response",
+            description: [
+                "Generate an OpenAI Responses API-compatible response for models that list `/v1/responses` in `/v1/models`.",
+                "",
+                "Supports streaming with `stream: true` and extractable reasoning summaries through `reasoning.summary`. Responses are not stored upstream, so `store` must be `false` or omitted.",
+            ].join("\n"),
+            responses: {
+                200: {
+                    description: "Success",
+                    content: {
+                        "application/json": {
+                            schema: resolver(CreateResponseResponseSchema),
+                        },
+                    },
+                },
+                ...errorResponseDescriptions(400, 401, 402, 403, 429, 500, 502),
+            },
+        }),
+        ...createResponseHandlers,
     )
     .post(
         "/v1/embeddings",

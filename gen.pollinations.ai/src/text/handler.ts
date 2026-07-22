@@ -5,12 +5,20 @@ import {
     buildUsageHeaders,
     FALLBACK_TARGET_HEADER,
     openaiUsageToUsage,
+    responsesUsageToUsage,
 } from "@shared/registry/usage-headers.ts";
+import {
+    type CreateResponseRequest,
+    type CreateResponseResponse,
+    CreateResponseResponseSchema,
+    type ResponseUsage,
+} from "@shared/schemas/openai.ts";
 import type { Context } from "hono";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
 import type { Env } from "@/env.ts";
 import { fixWavHeader } from "../routes/audio.js";
 import { communityEndpointGatewayContext } from "./communityEndpoint.ts";
+import { generateResponsePortkey } from "./generateResponsePortkey.js";
 import { generateTextPortkey } from "./generateTextPortkey.js";
 import { type ExpressLikeRequest, getRequestData } from "./requestUtils.js";
 import type { ChatCompletion, RequestData, ServiceError } from "./types.js";
@@ -175,6 +183,45 @@ function sendOpenAIResponse(
         }),
         { headers },
     );
+}
+
+function sendResponsesApiResponse(
+    responseBody: CreateResponseResponse,
+    upstreamHeaders: Headers,
+): Response {
+    const headers = new Headers();
+    if (responseBody.usage && responseBody.model) {
+        const usage = responsesUsageToUsage(
+            responseBody.usage as ResponseUsage,
+        );
+        for (const [key, value] of Object.entries(
+            buildUsageHeaders(responseBody.model, usage),
+        )) {
+            headers.set(key, String(value));
+        }
+    }
+    const fallbackTarget = upstreamHeaders.get(
+        "x-portkey-last-used-option-index",
+    );
+    if (fallbackTarget) headers.set(FALLBACK_TARGET_HEADER, fallbackTarget);
+    headers.set("Content-Type", "application/json; charset=utf-8");
+
+    return new Response(JSON.stringify(responseBody), { headers });
+}
+
+function sendResponsesApiStream(upstream: Response): Response {
+    const headers = new Headers({
+        "Content-Type":
+            upstream.headers.get("content-type") ||
+            "text/event-stream; charset=utf-8",
+        "Cache-Control": "no-cache",
+        Connection: "keep-alive",
+    });
+    const fallbackTarget = upstream.headers.get(
+        "x-portkey-last-used-option-index",
+    );
+    if (fallbackTarget) headers.set(FALLBACK_TARGET_HEADER, fallbackTarget);
+    return new Response(upstream.body, { headers });
 }
 
 function sendTextContentResponse(
@@ -370,6 +417,41 @@ export async function handleChatCompletionLocal(
     const req = createExpressLikeRequest(c, body, "/openai");
     const requestData = getRequestData(req);
     return generateTextResponse(c, requestData, false);
+}
+
+export async function handleCreateResponseLocal(
+    c: TextContext,
+    body: CreateResponseRequest & Record<string, unknown>,
+): Promise<Response> {
+    syncTextEnvironment(c.env);
+
+    try {
+        const upstream = await generateResponsePortkey(body, {
+            userApiKey: c.var.auth?.apiKey?.rawKey || "",
+            portkeyGatewayUrl: c.env.PORTKEY_GATEWAY_URL,
+        });
+        if (body.stream === true) return sendResponsesApiStream(upstream);
+
+        const responseText = await upstream.text();
+        let responseBody: CreateResponseResponse;
+        try {
+            responseBody = CreateResponseResponseSchema.parse(
+                JSON.parse(responseText),
+                { reportInput: true },
+            );
+        } catch (error) {
+            const invalidResponse = new Error(
+                `Upstream returned an invalid Responses API object: ${error instanceof Error ? error.message : String(error)}`,
+            ) as ServiceError;
+            invalidResponse.status = 502;
+            invalidResponse.upstreamStatus = 200;
+            invalidResponse.details = responseText;
+            throw invalidResponse;
+        }
+        return sendResponsesApiResponse(responseBody, upstream.headers);
+    } catch (thrown: unknown) {
+        throwTextError(thrown as ServiceError, c);
+    }
 }
 
 export async function handleTextContentLocal(

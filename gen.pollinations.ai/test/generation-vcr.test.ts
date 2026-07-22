@@ -163,12 +163,79 @@ async function fakeImageBackendResponse(request: Request) {
 }
 
 async function fakePortkeyResponse(request: Request) {
+    const path = new URL(request.url).pathname;
     const body = (await request.json()) as {
+        input?: unknown;
         messages?: Array<{ content?: unknown }>;
         model?: string;
+        reasoning?: unknown;
         stream?: boolean;
     };
     const model = body.model || "openai-fast";
+
+    if (path === "/v1/responses") {
+        if (request.headers.get("x-portkey-azure-api-version") !== "v1") {
+            return Response.json(
+                {
+                    error: {
+                        message: "Azure OpenAI Responses API requires v1",
+                    },
+                },
+                { status: 400 },
+            );
+        }
+
+        const responseObject = {
+            id: "resp_vcr",
+            object: "response",
+            created_at: 1,
+            model,
+            status: "completed",
+            output: [
+                {
+                    type: "reasoning",
+                    summary: [
+                        {
+                            type: "summary_text",
+                            text: "snapshot reasoning summary",
+                        },
+                    ],
+                },
+                {
+                    type: "message",
+                    role: "assistant",
+                    content: [
+                        { type: "output_text", text: "snapshot final answer" },
+                    ],
+                },
+            ],
+            output_text: "snapshot final answer",
+            usage: {
+                input_tokens: 54,
+                input_tokens_details: { cached_tokens: 10 },
+                output_tokens: 96,
+                output_tokens_details: { reasoning_tokens: 89 },
+                total_tokens: 150,
+            },
+        };
+        if (body.stream) {
+            const events = [
+                {
+                    type: "response.output_text.delta",
+                    delta: "snapshot final answer",
+                },
+                { type: "response.completed", response: responseObject },
+            ];
+            return new Response(
+                events
+                    .map((event) => `data: ${JSON.stringify(event)}\n\n`)
+                    .join(""),
+                { headers: { "content-type": "text/event-stream" } },
+            );
+        }
+        return Response.json(responseObject);
+    }
+
     const prompt =
         body.messages?.map((m) => contentToText(m.content)).join("\n") || "";
 
@@ -613,6 +680,104 @@ test("non-stream chat completions keep moderation telemetry in generation events
         moderationPromptHateSeverity: "safe",
         moderationPromptSexualSeverity: "safe",
         moderationCompletionViolenceSeverity: "medium",
+        isBilledUsage: true,
+    });
+});
+
+test("responses API returns reasoning summaries through Portkey", async ({
+    paidApiKey,
+    mocks,
+}) => {
+    await mocks.enable("tinybird", "vcr");
+
+    const { response, wait } = await fetchWorker("/v1/responses", {
+        method: "POST",
+        headers: {
+            "content-type": "application/json",
+            authorization: `Bearer ${paidApiKey}`,
+        },
+        body: JSON.stringify({
+            model: "openai-large",
+            input: "vcr responses summary",
+            reasoning: { effort: "high", summary: "auto" },
+            max_output_tokens: 400,
+        }),
+    });
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get("x-usage-prompt-text-tokens")).toBe("44");
+    expect(response.headers.get("x-usage-prompt-cached-tokens")).toBe("10");
+    expect(response.headers.get("x-usage-completion-text-tokens")).toBe("7");
+    expect(response.headers.get("x-usage-completion-reasoning-tokens")).toBe(
+        "89",
+    );
+    await expect(response.json()).resolves.toMatchObject({
+        object: "response",
+        output: [
+            {
+                type: "reasoning",
+                summary: [
+                    {
+                        type: "summary_text",
+                        text: "snapshot reasoning summary",
+                    },
+                ],
+            },
+            {
+                type: "message",
+            },
+        ],
+    });
+    await wait();
+
+    expect(mocks.tinybird.state.events).toHaveLength(1);
+    expect(mocks.tinybird.state.events[0]).toMatchObject({
+        eventType: "generate.text",
+        responseStatus: 200,
+        modelRequested: "openai-large",
+        tokenCountPromptText: 44,
+        tokenCountPromptCached: 10,
+        tokenCountCompletionText: 7,
+        tokenCountCompletionReasoning: 89,
+        isBilledUsage: true,
+    });
+});
+
+test("responses API streams events and bills completed usage", async ({
+    paidApiKey,
+    mocks,
+}) => {
+    await mocks.enable("tinybird", "portkeyDirect");
+
+    const { response, wait } = await fetchWorker("/v1/responses", {
+        method: "POST",
+        headers: {
+            "content-type": "application/json",
+            authorization: `Bearer ${paidApiKey}`,
+        },
+        body: JSON.stringify({
+            model: "openai-large",
+            input: "vcr responses stream",
+            stream: true,
+        }),
+    });
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get("content-type")).toContain("text/event-stream");
+    const stream = await response.text();
+    expect(stream).toContain('"type":"response.output_text.delta"');
+    expect(stream).toContain('"type":"response.completed"');
+    await wait();
+
+    expect(mocks.tinybird.state.events).toHaveLength(1);
+    expect(mocks.tinybird.state.events[0]).toMatchObject({
+        eventType: "generate.text",
+        responseStatus: 200,
+        modelRequested: "openai-large",
+        tokenCountPromptText: 44,
+        tokenCountPromptCached: 10,
+        tokenCountCompletionText: 7,
+        tokenCountCompletionReasoning: 89,
         isBilledUsage: true,
     });
 });

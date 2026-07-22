@@ -38,7 +38,7 @@ export function base64ToBuffer(base64: string): Buffer {
     return buffer;
 }
 
-export function detectMimeType(buffer: Uint8Array): string {
+function detectKnownMimeType(buffer: Uint8Array): string | undefined {
     if (
         buffer[0] === 0x89 &&
         buffer[1] === 0x50 &&
@@ -66,7 +66,11 @@ export function detectMimeType(buffer: Uint8Array): string {
         return "image/gif";
     }
     if (buffer[0] === 0x42 && buffer[1] === 0x4d) return "image/bmp";
-    return "image/jpeg";
+    return undefined;
+}
+
+export function detectMimeType(buffer: Uint8Array): string {
+    return detectKnownMimeType(buffer) ?? "image/jpeg";
 }
 
 export async function downloadUserImage(
@@ -93,8 +97,25 @@ export async function downloadUserImage(
         );
     }
 
-    const buffer = Buffer.from(await imageResponse.arrayBuffer());
-    return { buffer, mimeType: detectMimeType(buffer) };
+    let buffer: Buffer;
+    try {
+        buffer = Buffer.from(await imageResponse.arrayBuffer());
+    } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        throw new HttpError(
+            `Failed to read image ${imageUrl}: ${message}`,
+            400,
+            { validation: true },
+        );
+    }
+
+    const mimeType = detectKnownMimeType(buffer);
+    if (!mimeType) {
+        throw new HttpError(`Unsupported image format from ${imageUrl}`, 400, {
+            validation: true,
+        });
+    }
+    return { buffer, mimeType };
 }
 
 export async function downloadImageAsBase64(

@@ -1,0 +1,33 @@
+{
+  "pr_number": 12667,
+  "title": "fix: use Luna for app pre-review",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/12667",
+  "merged_at": "2026-07-22T23:18:41Z",
+  "labels": [],
+  "pr_body_excerpt": "- Uses `gpt-5.6-luna` for app-submission AI pre-review.\n- Avoids the 403 from `openai-large`, which is not allowed for `PLN_GITHUB_POLLY_KEY`.\n- Keeps the evidence-gathering and human-review workflow unchanged.\n\nValidation: `python3 -m py_compile .github/scripts/app-review-agent.py` and `git diff --check`.",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Polly gets Luna eyes",
+    "blurb": "The app pre-review bee has a new pair of glasses. Luna now handles the first pass, while the evidence trail and human review stay exactly where they belong.",
+    "summary": "Updated the GitHub app-submission pre-review agent to use gpt-5.6-luna instead of openai-large, avoiding 403 errors with PLN_GITHUB_POLLY_KEY while preserving evidence gathering and human review.",
+    "impact": "App submissions can move through the existing AI-assisted pre-review workflow more reliably, with the same evidence and human approval steps intact.",
+    "keywords": [
+      "app-review",
+      "gpt-5.6-luna",
+      "github",
+      "automation",
+      "reliability"
+    ],
+    "visual_concept": "Polli wears tiny reviewer glasses beside a cozy retro terminal showing a Luna moon icon and a successful app-review checklist; code-plants and submission papers represent the unchanged evidence-gathering workflow, while a friendly human-review stamp waits nearby.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush and light blue wings, wearing tiny reviewer glasses beside a retro CRT terminal glowing lime green (#ecf874) with a small moon icon and a completed app-review checklist; code-plants, flowers, and neatly stacked evidence papers grow around the desk, with a warm human-review stamp nearby. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, dark purple (#110518) outlines, emotionally warm and inviting."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-22/PR-12667.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush and light blue wings, wearing tiny reviewer glasses beside a retro CRT terminal glowing lime green (#ecf874) with a small moon icon and a completed app-review checklist; code-plants, flowers, and neatly stacked evidence papers grow around the desk, with a warm human-review stamp nearby. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, dark purple (#110518) outlines, emotionally warm and inviting."
+  },
+  "generated_at": "2026-07-22T23:19:41.419450+00:00"
+}

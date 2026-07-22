@@ -1507,7 +1507,7 @@ export const TEXT_SERVICES = {
             promptTextTokens: perMillion(0),
             completionTextTokens: perMillion(0),
         },
-        title: "Polly by @Itachi-1824",
+        title: "Polli by @Itachi-1824",
         description:
             "Community-built assistant with GitHub, code search and web tools (alpha)",
         inputModalities: ["text", "image"],

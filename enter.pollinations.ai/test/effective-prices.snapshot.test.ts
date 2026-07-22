@@ -3,6 +3,7 @@ import {
     getCostDefinition,
     getModels,
     getPriceDefinition,
+    getRegistryModelDefinition,
 } from "../../shared/registry/registry.ts";
 
 const SNAPSHOT_NUMBER_PRECISION = 15;
@@ -49,13 +50,19 @@ test("effective cost and price per model — snapshot", () => {
     const snapshot = Object.fromEntries(
         getModels()
             .sort()
-            .map((m) => [
-                m,
-                {
-                    cost: getCostDefinition(m),
-                    price: getPriceDefinition(m),
-                },
-            ]),
+            .map((m) => {
+                const { costVariants } = getRegistryModelDefinition(m);
+                return [
+                    m,
+                    {
+                        cost: getCostDefinition(m),
+                        // Named alternate rate sheets (long-context tiers,
+                        // resolution variants) are money too — lock them.
+                        ...(costVariants ? { costVariants } : {}),
+                        price: getPriceDefinition(m),
+                    },
+                ];
+            }),
     );
     // Keep IEEE-754 noise out of the review artifact without rounding production
     // registry rates just to make the snapshot prettier.

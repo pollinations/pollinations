@@ -1,6 +1,6 @@
 import { remapUpstreamStatus, UpstreamError } from "@shared/error.ts";
 import { IMMUTABLE_CACHE_CONTROL } from "@shared/http/cache-control.ts";
-import { DEFAULT_IMAGE_MODEL } from "@shared/registry/image.ts";
+import { DEFAULT_IMAGE_MODEL, IMAGE_SERVICES } from "@shared/registry/image.ts";
 import type { Context } from "hono";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
 import type { Env } from "@/env.ts";
@@ -395,6 +395,37 @@ async function generateVideoResult(
     );
 }
 
+// Legacy resolution-suffixed model names (now registry aliases of their
+// canonical models) imply the locked resolution they shipped with. Derived
+// from the registry so a new -1080p/-1080 alias can never silently bill the
+// base resolution.
+export const LEGACY_RESOLUTION_ALIASES: Record<string, "1080p"> =
+    Object.fromEntries(
+        Object.values(IMAGE_SERVICES)
+            .flatMap((def) => def.aliases)
+            .filter((alias) => /-(1080p|1080)$/.test(alias))
+            .map((alias) => [alias, "1080p" as const]),
+    );
+
+// Resolve the effective resolution (explicit param beats legacy alias) and
+// register the request's pricing facts so billing selects the matching cost
+// variant. This single call site covers every image/video model — handlers
+// never pick rates, they only consume safeParams.
+function applyPricingInput(
+    c: ImageContext,
+    safeParams: RuntimeImageParams,
+): void {
+    const legacyResolution =
+        LEGACY_RESOLUTION_ALIASES[c.var.model.requested ?? ""];
+    if (!safeParams.resolution && legacyResolution) {
+        safeParams.resolution = legacyResolution;
+    }
+    c.var.track.setPricingInput({
+        resolution: safeParams.resolution,
+        hasImage: (safeParams.image?.length ?? 0) > 0,
+    });
+}
+
 export async function generateImageOrVideoResponse(
     c: ImageContext,
     prompt: string,
@@ -403,6 +434,7 @@ export async function generateImageOrVideoResponse(
     syncImageEnvironment(c.env);
     const originalPrompt = decodePrompt(prompt || "random_prompt");
     const safeParams = parseImageParams(c, body);
+    applyPricingInput(c, safeParams);
 
     try {
         const communityEndpoint = c.var.model.communityEndpoint;

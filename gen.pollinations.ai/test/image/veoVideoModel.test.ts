@@ -1,9 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { syncImageEnv } from "../../src/image/env.ts";
-import {
-    callVeo1080pAPI,
-    callVeoAPI,
-} from "../../src/image/models/veoVideoModel.ts";
+import { callVeoAPI } from "../../src/image/models/veoVideoModel.ts";
 import type { ImageParams } from "../../src/image/params.ts";
 import googleCloudAuth from "../../src/text/auth/googleCloudAuth.ts";
 
@@ -90,14 +87,14 @@ describe("veoVideoModel fixed-resolution tiers", () => {
         });
     });
 
-    it("locks veo-1080p to 1080p and reports enabled audio", async () => {
+    it("uses 1080p from the resolution param and reports enabled audio", async () => {
         setGoogleEnv();
         const requests: Array<Record<string, unknown>> = [];
         mockVeoFetch(requests);
 
-        const result = await callVeo1080pAPI("a calm ocean at sunrise", {
+        const result = await callVeoAPI("a calm ocean at sunrise", {
             ...baseParams,
-            model: "veo-1080p",
+            resolution: "1080p",
             width: 1280,
             height: 720,
         });
@@ -108,7 +105,7 @@ describe("veoVideoModel fixed-resolution tiers", () => {
             generateAudio: true,
         });
         expect(result.trackingData).toEqual({
-            actualModel: "veo-1080p",
+            actualModel: "veo",
             usage: {
                 completionVideoSeconds: 4,
                 completionAudioSeconds: 4,

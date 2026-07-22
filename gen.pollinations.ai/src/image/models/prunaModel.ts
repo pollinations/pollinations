@@ -247,11 +247,10 @@ export async function callPrunaImageEditAPI(
 // =============================================================================
 
 // prunaai/p-video is one Replicate model priced per second by resolution
-// (720p $0.02/s, 1080p $0.04/s). The registry carries one flat rate per model,
-// so each tier is its own model (p-video-720p / p-video-1080p) and the
-// resolution is locked here rather than inferred from the requested height —
-// this keeps recorded cost exact and lets the user opt into the 1080p rate
-// explicitly by model name.
+// (720p $0.02/s, 1080p $0.04/s). One registry model: the request's
+// `resolution` param picks the tier explicitly (never inferred from the
+// requested height) and billing selects the matching cost variant, so
+// recorded cost stays exact.
 async function generatePrunaVideo(
     resolution: "720p" | "1080p",
     prompt: string,
@@ -310,7 +309,7 @@ async function generatePrunaVideo(
         mimeType: "video/mp4",
         durationSeconds: billedDuration,
         trackingData: {
-            actualModel: `p-video-${resolution}`,
+            actualModel: "p-video",
             usage: {
                 completionVideoSeconds: billedDuration,
             },
@@ -318,16 +317,13 @@ async function generatePrunaVideo(
     };
 }
 
-/** Pruna p-video at 720p ($0.02/s). */
-export const callPrunaVideo720API = (
+/** Pruna p-video ($0.02/s at 720p; the 1080p cost variant bills $0.04/s). */
+export const callPrunaVideoAPI = (
     prompt: string,
     safeParams: ImageParams,
 ): Promise<VideoGenerationResult> =>
-    generatePrunaVideo("720p", prompt, safeParams);
-
-/** Pruna p-video at 1080p ($0.04/s). */
-export const callPrunaVideo1080API = (
-    prompt: string,
-    safeParams: ImageParams,
-): Promise<VideoGenerationResult> =>
-    generatePrunaVideo("1080p", prompt, safeParams);
+    generatePrunaVideo(
+        safeParams.resolution === "1080p" ? "1080p" : "720p",
+        prompt,
+        safeParams,
+    );

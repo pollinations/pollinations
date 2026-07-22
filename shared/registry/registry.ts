@@ -1,5 +1,19 @@
 import { roundPollenLedgerAmount } from "../billing/precision.ts";
 import { AUDIO_SERVICES, type AudioModelName } from "./audio";
+import type { CostVariantContext, PricingInput } from "./cost-variants";
+
+// Re-export so consumers can keep importing the variant API from the
+// registry entry point (the helpers live in cost-variants.ts to avoid a
+// module-evaluation cycle with the service maps).
+export {
+    type CostVariantContext,
+    defineCostVariants,
+    longContextAbove,
+    matchResolution,
+    type PricingInput,
+    totalPromptTokens,
+} from "./cost-variants";
+
 import { EMBEDDING_SERVICES, type EmbeddingServiceId } from "./embeddings";
 import { IMAGE_SERVICES, type ImageModelName } from "./image";
 import { MODEL3D_SERVICES, type Model3dName } from "./model3d";
@@ -110,6 +124,16 @@ export type ModelDefinition = {
     brand: string;
     category: Category;
     cost: CostDefinition;
+    // Named alternate rate sheets, merged over `cost` when selectCostVariant
+    // picks one (keys not listed in a variant inherit the base rate). Rates
+    // are always data — selectors return a NAME, never a number. Provider
+    // tiers (long-context, resolution) each map to one named sheet here.
+    costVariants?: Record<string, CostDefinition>;
+    // Picks the rate sheet for one request, evaluated once at billing time
+    // inside calculateUsageBilling. Must be pure and never throw. Returning
+    // undefined (or an unknown name — warned) bills at base rates. Selection
+    // is code; money is data.
+    selectCostVariant?: (context: CostVariantContext) => string | undefined;
     // USD-cost to Pollen-price multiplier. Required on every model — there is
     // no implicit default. Typical values: 1 (sold at cost) or 1.5 (paid markup).
     priceMultiplier: number;
@@ -138,6 +162,9 @@ export type ModelDefinition = {
     // audio (e.g. Stable Audio) from per-character TTS, which share cost fields.
     flatRate?: boolean;
     hidden?: boolean; // Hidden from /models endpoints and dashboard, but still usable via API
+    // Video-only: supported output resolutions; first entry is the default.
+    // Non-default resolutions usually pair with a cost variant of the same name.
+    resolutions?: string[];
     videoCapabilities?: VideoCapability[]; // Video-only: which frame controls the provider supports
     maxReferenceImages?: number; // Models with image input: effective accepted reference images
     maxReferenceVideos?: number; // Models with video input: effective accepted reference videos
@@ -174,12 +201,47 @@ function convertUsage(
     return convertedUsage as Usage;
 }
 
-function derivePrice(svc: ModelDefinition): PriceDefinition {
-    const m = svc.priceMultiplier;
-    if (m === 1) return svc.cost;
+function derivePrice(
+    costDefinition: CostDefinition,
+    priceMultiplier: number,
+): PriceDefinition {
+    if (priceMultiplier === 1) return costDefinition;
     return Object.fromEntries(
-        Object.entries(svc.cost).map(([k, v]) => [k, (v as number) * m]),
+        Object.entries(costDefinition).map(([k, v]) => [
+            k,
+            (v as number) * priceMultiplier,
+        ]),
     ) as PriceDefinition;
+}
+
+// Resolve the variant name for one request. Never throws: a throwing or
+// misconfigured selector logs and falls back to base rates — a selector bug
+// must never drop the tracking event or bill zero.
+function selectCostVariant(
+    model: string,
+    usage: Usage,
+    svc: ModelDefinition,
+    input?: PricingInput,
+): string | undefined {
+    if (!svc.selectCostVariant) return undefined;
+    let name: string | undefined;
+    try {
+        name = svc.selectCostVariant({ usage, input });
+    } catch (error) {
+        console.warn(
+            `[registry] selectCostVariant threw for model=${model} — billing base rates`,
+            error,
+        );
+        return undefined;
+    }
+    if (name === undefined) return undefined;
+    if (!svc.costVariants?.[name]) {
+        console.warn(
+            `[registry] Unknown cost variant "${name}" for model=${model} — billing base rates`,
+        );
+        return undefined;
+    }
+    return name;
 }
 
 function calculateLinearCost(
@@ -232,6 +294,13 @@ export type UsageBilling = {
     cost: UsageCost;
     price: UsagePrice;
     adjustments: BillingAdjustment[];
+    // Per-unit Pollen price sheet actually applied (effective cost ×
+    // multiplier). Telemetry must record THIS sheet, not the request-time
+    // base sheet, so recorded rates always reproduce the billed totals.
+    priceDefinition: PriceDefinition;
+    // Name of the applied cost variant, if any (financial identity — distinct
+    // from modelUsed, which stays observational).
+    costVariant?: string;
 };
 
 export function calculateUsageBilling(
@@ -239,6 +308,7 @@ export function calculateUsageBilling(
     usage: Usage,
     svc: ModelDefinition,
     output?: unknown,
+    input?: PricingInput,
 ): UsageBilling {
     const adjustments = calculateBillingAdjustments(svc, output, model);
     const adjustmentCost = adjustments.reduce((total, a) => total + a.cost, 0);
@@ -247,7 +317,11 @@ export function calculateUsageBilling(
         0,
     );
 
-    const usageCost = calculateLinearCost(model, usage, svc.cost);
+    const costVariant = selectCostVariant(model, usage, svc, input);
+    const effectiveCost = costVariant
+        ? { ...svc.cost, ...svc.costVariants?.[costVariant] }
+        : svc.cost;
+    const usageCost = calculateLinearCost(model, usage, effectiveCost);
     const cost =
         adjustmentCost === 0
             ? usageCost
@@ -273,7 +347,13 @@ export function calculateUsageBilling(
         totalPrice: roundPollenLedgerAmount(tokenTotalPrice + adjustmentPrice),
     };
 
-    return { cost, price, adjustments };
+    return {
+        cost,
+        price,
+        adjustments,
+        priceDefinition: derivePrice(effectiveCost, svc.priceMultiplier),
+        costVariant,
+    };
 }
 
 const MODEL_REGISTRY = {
@@ -370,10 +450,17 @@ export function getRegistryModelDefinition(model: ModelName): ModelDefinition {
     return definition;
 }
 
+export function getPriceDefinitionForCost(
+    cost: CostDefinition,
+    priceMultiplier: number,
+): PriceDefinition {
+    return derivePrice(cost, priceMultiplier);
+}
+
 export function getPriceDefinitionForModel(
     svc: ModelDefinition,
 ): PriceDefinition {
-    return derivePrice(svc);
+    return derivePrice(svc.cost, svc.priceMultiplier);
 }
 
 /**

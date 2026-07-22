@@ -1,5 +1,6 @@
 import { z } from "zod";
 import {
+    getPriceDefinitionForCost,
     getPriceDefinitionForModel,
     getRegistryModelDefinition,
     getVisibleAudioModels,
@@ -44,6 +45,17 @@ export const ModelInfoSchema = z.object({
     pricing: z
         .record(z.string(), z.string())
         .and(z.object({ currency: z.literal("pollen") })),
+    // Effective per-variant rate sheets (base merged with each cost variant),
+    // for models whose price depends on request facts like resolution.
+    pricing_variants: z
+        .record(
+            z.string(),
+            z
+                .record(z.string(), z.string())
+                .and(z.object({ currency: z.literal("pollen") })),
+        )
+        .optional(),
+    resolutions: z.array(z.string()).optional(),
     title: z.string(),
     description: z.string().optional(),
     input_modalities: z.array(z.string()).optional(),
@@ -100,6 +112,23 @@ function pricingInfoFromDefinition(
     return pricing;
 }
 
+function pricingVariantsFromDefinition(
+    service: ModelDefinition,
+): Record<string, ModelInfo["pricing"]> | undefined {
+    if (!service.costVariants) return undefined;
+    return Object.fromEntries(
+        Object.entries(service.costVariants).map(([variant, override]) => [
+            variant,
+            pricingInfoFromDefinition(
+                getPriceDefinitionForCost(
+                    { ...service.cost, ...override },
+                    service.priceMultiplier,
+                ),
+            ),
+        ]),
+    );
+}
+
 export function modelInfoFromDefinition(
     name: string,
     service: ModelDefinition,
@@ -112,6 +141,8 @@ export function modelInfoFromDefinition(
         brand: service.brand,
         community: options.community || undefined,
         pricing: pricingInfoFromDefinition(getPriceDefinitionForModel(service)),
+        pricing_variants: pricingVariantsFromDefinition(service),
+        resolutions: service.resolutions ? [...service.resolutions] : undefined,
         // User-facing metadata from service definition
         title: service.title,
         description: service.description,

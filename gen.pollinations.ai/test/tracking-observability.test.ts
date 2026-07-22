@@ -23,6 +23,7 @@ import { Hono } from "hono";
 import { requestId } from "hono/request-id";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { Env } from "@/env.ts";
+import { handleImagePrompt } from "@/image/handler.ts";
 import { logger } from "@/middleware/logger.ts";
 import type { ModelVariables } from "@/middleware/model.ts";
 import { reduceAdjustmentsToEventFields, track } from "@/middleware/track.ts";
@@ -971,5 +972,260 @@ describe("reduceAdjustmentsToEventFields", () => {
         const parsedWithout = JSON.parse(serializedWithout);
         expect(parsedWithout).not.toHaveProperty("adjustmentCosts");
         expect(parsedWithout).not.toHaveProperty("adjustmentUnits");
+    });
+});
+
+// End-to-end guard for the cost-variant billing path: pricing input set by the
+// handler must reach calculateUsageBilling, and the emitted event must carry
+// the EFFECTIVE merged price sheet (not the request-time base sheet). Both
+// mutations — dropping pricingInput, or emitting requestTracking's sheet —
+// under-bill or corrupt telemetry while every unit test stays green.
+describe("cost-variant telemetry", () => {
+    // Events for unauthenticated requests are skipped (#12572), so these
+    // tests bill against the same inserted user as the main describe.
+    beforeEach(async () => {
+        const db = drizzle(env.DB);
+        const userId = `cost-variant-telemetry-${crypto.randomUUID()}`;
+        await db.insert(userTable).values({
+            id: userId,
+            email: `${userId}@test.local`,
+            name: "Cost Variant Telemetry Test",
+            tierBalance: 10_000,
+            packBalance: 0,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+        });
+        const [user] = await db
+            .select()
+            .from(userTable)
+            .where(eq(userTable.id, userId))
+            .limit(1);
+        if (!user) throw new Error("Expected inserted tracking user");
+        trackingUser = user;
+    });
+
+    const BINDINGS = {
+        DB: env.DB,
+        ENVIRONMENT: "test",
+        LOG_LEVEL: "debug",
+        LOG_FORMAT: "text",
+        BETTER_AUTH_SECRET: "test_secret",
+        TINYBIRD_INGEST_URL:
+            "https://tinybird.test/v0/events?name=generation_event",
+        TINYBIRD_INGEST_TOKEN: "test_tinybird_token",
+    } as CloudflareBindings;
+
+    function captureTinybird() {
+        const requests: Request[] = [];
+        vi.spyOn(globalThis, "fetch").mockImplementation(
+            async (input, init) => {
+                requests.push(new Request(input, init));
+                return new Response("ok");
+            },
+        );
+        return requests;
+    }
+
+    function baseMiddleware(
+        app: Hono<Env>,
+        model: ModelVariables["model"],
+        consumePollen: (amount: number) => Promise<void> = async () => {},
+    ) {
+        app.use("*", requestId());
+        app.use("*", logger);
+        app.use("*", async (c, next) => {
+            c.set("auth", {
+                user: trackingUser,
+                requireAuthorization: async () => {},
+                requireUser: () => trackingUser,
+                requireModelAccess: () => {},
+            });
+            c.set("balance", {
+                getBalance: async () => ({ tierBalance: 1, packBalance: 0 }),
+            });
+            c.set("frontendKeyRateLimit", { consumePollen });
+            c.set("model", model);
+            await next();
+        });
+    }
+
+    it("bills and emits the 1080p variant sheet from handler pricing input", async () => {
+        const tinybirdRequests = captureTinybird();
+        const app = new Hono<Env>();
+        baseMiddleware(app, {
+            requested: "p-video-1080p",
+            resolved: "p-video",
+            definition: getRegistryModelDefinition("p-video"),
+        });
+        app.get("/image/test", track("generate.image"), (c) => {
+            // Mirrors applyResolutionPricing: the image handler resolves the
+            // legacy alias to a resolution and registers it as pricing input.
+            c.var.track.setPricingInput({ resolution: "1080p" });
+            return new Response("fake-mp4-bytes", {
+                headers: {
+                    "content-type": "video/mp4",
+                    "x-model-used": "p-video",
+                    "x-usage-completion-video-seconds": "10",
+                },
+            });
+        });
+
+        const ctx = createExecutionContext();
+        const response = await app.fetch(
+            new Request("https://gen.pollinations.ai/image/test"),
+            BINDINGS,
+            ctx,
+        );
+        await waitOnExecutionContext(ctx);
+
+        expect(response.status).toBe(200);
+        expect(tinybirdRequests).toHaveLength(1);
+        const event = (await tinybirdRequests[0].json()) as Record<
+            string,
+            number
+        >;
+        // 10s at the 1080p variant rate ($0.04/s), not the 720p base (0.02).
+        expect(event.totalCost).toBeCloseTo(10 * 0.04, 10);
+        expect(event.totalPrice).toBeCloseTo(10 * 0.04, 10);
+        expect(event.tokenPriceCompletionVideoSeconds).toBeCloseTo(0.04, 10);
+    });
+
+    it("bills the 1080p variant through the real image handler for a legacy alias", async () => {
+        const tinybirdRequests: Request[] = [];
+        let replicateInput: Record<string, unknown> | undefined;
+        vi.spyOn(globalThis, "fetch").mockImplementation(
+            async (input, init) => {
+                const request = new Request(input, init);
+                if (
+                    request.url ===
+                    "https://api.replicate.com/v1/models/prunaai/p-video/predictions"
+                ) {
+                    replicateInput = (await request.clone().json()) as Record<
+                        string,
+                        unknown
+                    >;
+                    return Response.json({
+                        id: "p-video-test",
+                        status: "succeeded",
+                        output: "https://output.test/video.mp4",
+                        metrics: { video_output_duration_seconds: 2 },
+                    });
+                }
+                if (request.url === "https://output.test/video.mp4") {
+                    return new Response(
+                        new Uint8Array([
+                            0, 0, 0, 20, 102, 116, 121, 112, 105, 115, 111, 109,
+                            0, 0, 0, 0, 105, 115, 111, 109,
+                        ]),
+                        { headers: { "content-type": "video/mp4" } },
+                    );
+                }
+                if (
+                    request.url ===
+                    "https://tinybird.test/v0/events?name=generation_event"
+                ) {
+                    tinybirdRequests.push(request);
+                    return new Response("ok");
+                }
+                throw new Error(`Unexpected fetch in test: ${request.url}`);
+            },
+        );
+        const consumePollen = vi.fn<(amount: number) => Promise<void>>(
+            async () => {},
+        );
+
+        const app = new Hono<Env>();
+        baseMiddleware(
+            app,
+            {
+                requested: "p-video-1080p",
+                resolved: "p-video",
+                definition: getRegistryModelDefinition("p-video"),
+            },
+            consumePollen,
+        );
+        app.get("/image/:prompt", track("generate.image"), (c) =>
+            handleImagePrompt(c, c.req.param("prompt")),
+        );
+
+        const ctx = createExecutionContext();
+        const response = await app.fetch(
+            new Request("https://gen.pollinations.ai/image/test?duration=2"),
+            {
+                ...BINDINGS,
+                REPLICATE_API_TOKEN: "test_replicate_token",
+            } as CloudflareBindings,
+            ctx,
+        );
+        await waitOnExecutionContext(ctx);
+
+        expect(response.status).toBe(200);
+        expect(response.headers.get("content-type")).toBe("video/mp4");
+        // The legacy alias implied the resolution all the way to the provider.
+        expect(replicateInput).toMatchObject({
+            input: { resolution: "1080p", duration: 2 },
+        });
+        expect(tinybirdRequests).toHaveLength(1);
+        const event = (await tinybirdRequests[0].json()) as Record<
+            string,
+            number
+        >;
+        expect(event.totalCost).toBeCloseTo(2 * 0.04, 10);
+        expect(event.tokenPriceCompletionVideoSeconds).toBeCloseTo(0.04, 10);
+        expect(consumePollen).toHaveBeenCalledWith(0.08);
+    });
+
+    it("bills and emits the long-context sheet when usage crosses the threshold", async () => {
+        const tinybirdRequests = captureTinybird();
+        const app = new Hono<Env>();
+        baseMiddleware(app, {
+            requested: "gpt-5.4",
+            resolved: "gpt-5.4",
+            definition: getRegistryModelDefinition("gpt-5.4"),
+        });
+        app.post(
+            "/v1/chat/completions",
+            track("generate.text"),
+            () =>
+                new Response(JSON.stringify({ choices: [{ message: {} }] }), {
+                    headers: {
+                        "content-type": "application/json",
+                        "x-model-used": "gpt-5.4",
+                        "x-usage-prompt-text-tokens": "272001",
+                        "x-usage-completion-text-tokens": "1000",
+                    },
+                }),
+        );
+
+        const ctx = createExecutionContext();
+        const response = await app.fetch(
+            new Request("https://gen.pollinations.ai/v1/chat/completions", {
+                method: "POST",
+                headers: { "content-type": "application/json" },
+                body: JSON.stringify({
+                    model: "gpt-5.4",
+                    stream: false,
+                    messages: [{ role: "user", content: "test" }],
+                }),
+            }),
+            BINDINGS,
+            ctx,
+        );
+        await waitOnExecutionContext(ctx);
+
+        expect(response.status).toBe(200);
+        expect(tinybirdRequests).toHaveLength(1);
+        const event = (await tinybirdRequests[0].json()) as Record<
+            string,
+            number
+        >;
+        // One token above 272K: whole request at long-context rates
+        // ($5/M prompt, $22.50/M completion), reflected per-unit and in total.
+        expect(event.tokenPricePromptText).toBeCloseTo(5 / 1e6, 12);
+        expect(event.tokenPriceCompletionText).toBeCloseTo(22.5 / 1e6, 12);
+        expect(event.totalCost).toBeCloseTo(
+            272_001 * (5 / 1e6) + 1_000 * (22.5 / 1e6),
+            9,
+        );
     });
 });

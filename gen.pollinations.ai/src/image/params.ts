@@ -1,4 +1,5 @@
 import { IMAGE_SERVICES, type ImageModelName } from "@shared/registry/image.ts";
+import type { ModelDefinition } from "@shared/registry/registry.ts";
 import { z } from "zod";
 import { getDefaultSideLength } from "./models.js";
 
@@ -98,8 +99,26 @@ export const ImageParamsSchema = z
             ])
             .optional(),
         audio: sanitizedBoolean.catch(true), // generateAudio defaults to true
+        // Output resolution for resolution-priced video models (veo, wan-pro,
+        // p-video, seedance-pro). Absent → the model's default (the first
+        // entry in its registry `resolutions`). Drives both the provider call
+        // and cost-variant selection; validated against the model below.
+        resolution: z.enum(["480p", "720p", "1080p"]).optional(),
     })
     .superRefine((data, ctx) => {
+        if (data.resolution) {
+            const supported = (IMAGE_SERVICES[data.model] as ModelDefinition)
+                .resolutions;
+            if (!supported?.includes(data.resolution)) {
+                ctx.addIssue({
+                    code: z.ZodIssueCode.custom,
+                    path: ["resolution"],
+                    message: supported
+                        ? `Resolution "${data.resolution}" is not supported by ${data.model}. Supported: ${supported.join(", ")}.`
+                        : `${data.model} does not accept a resolution parameter.`,
+                });
+            }
+        }
         if (data.model === "gpt-image-2" && data.transparent) {
             ctx.addIssue({
                 code: z.ZodIssueCode.custom,

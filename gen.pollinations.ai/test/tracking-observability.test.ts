@@ -979,7 +979,31 @@ describe("reduceAdjustmentsToEventFields", () => {
 // mutations — dropping pricingInput, or emitting requestTracking's sheet —
 // under-bill or corrupt telemetry while every unit test stays green.
 describe("cost-variant telemetry", () => {
+    // Events for unauthenticated requests are skipped (#12572), so these
+    // tests bill against the same inserted user as the main describe.
+    beforeEach(async () => {
+        const db = drizzle(env.DB);
+        const userId = `cost-variant-telemetry-${crypto.randomUUID()}`;
+        await db.insert(userTable).values({
+            id: userId,
+            email: `${userId}@test.local`,
+            name: "Cost Variant Telemetry Test",
+            tierBalance: 10_000,
+            packBalance: 0,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+        });
+        const [user] = await db
+            .select()
+            .from(userTable)
+            .where(eq(userTable.id, userId))
+            .limit(1);
+        if (!user) throw new Error("Expected inserted tracking user");
+        trackingUser = user;
+    });
+
     const BINDINGS = {
+        DB: env.DB,
         ENVIRONMENT: "test",
         LOG_LEVEL: "debug",
         LOG_FORMAT: "text",
@@ -1009,11 +1033,9 @@ describe("cost-variant telemetry", () => {
         app.use("*", logger);
         app.use("*", async (c, next) => {
             c.set("auth", {
-                user: undefined,
+                user: trackingUser,
                 requireAuthorization: async () => {},
-                requireUser: () => {
-                    throw new Error("user should not be required in this test");
-                },
+                requireUser: () => trackingUser,
                 requireModelAccess: () => {},
             });
             c.set("balance", {

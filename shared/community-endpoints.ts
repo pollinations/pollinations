@@ -291,7 +291,7 @@ export function isGroupActive(activeMemberCount: number): boolean {
 export function groupModelDefinition(
     group: CommunityEndpointGroupRuntime,
     modelName: string,
-): ModelDefinition<string> {
+): ModelDefinition {
     const modelId = groupModelId(group.slug, modelName);
     return {
         aliases: [],

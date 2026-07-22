@@ -10,7 +10,11 @@ import {
     PERPLEXITY_REASONING_BILLING,
 } from "./perplexity-billing";
 import { perMillion } from "./price-helpers";
-import type { ModelDefinition } from "./registry";
+import {
+    defineCostVariants,
+    longContextAbove,
+    type ModelDefinition,
+} from "./registry";
 
 // Voices available for openai-audio model - exported for schema validation
 export const AUDIO_VOICES = [
@@ -110,6 +114,20 @@ export const TEXT_SERVICES = {
             promptCachedTokens: perMillion(0.25),
             completionTextTokens: perMillion(15.0),
         },
+        // Azure meters GPT-5.4 as separate "<272k" / ">272k context length"
+        // SKUs — the whole request bills at one tier (2x input & cached,
+        // 1.5x output). Verified against azure.microsoft.com/pricing and the
+        // Retail Prices API ("5.4 longco *" meters), 2026-07-22.
+        ...defineCostVariants(
+            {
+                long_context: {
+                    promptTextTokens: perMillion(5.0),
+                    promptCachedTokens: perMillion(0.5),
+                    completionTextTokens: perMillion(22.5),
+                },
+            },
+            longContextAbove(272_000),
+        ),
         title: "GPT-5.4",
         description:
             "Deep reasoning for the hardest questions; slower and pricier than lighter tiers",
@@ -155,6 +173,20 @@ export const TEXT_SERVICES = {
             promptCachedTokens: perMillion(0.5),
             completionTextTokens: perMillion(30.0),
         },
+        // Azure "GPT-5.5 Long Context Global" meters: $10/$1/$45 (verified
+        // 2026-07-22). Azure prints no numeric threshold for 5.5; 272k is
+        // presumed from meter symmetry with GPT-5.4 (identical 1,050,000
+        // context window and meter structure).
+        ...defineCostVariants(
+            {
+                long_context: {
+                    promptTextTokens: perMillion(10.0),
+                    promptCachedTokens: perMillion(1.0),
+                    completionTextTokens: perMillion(45.0),
+                },
+            },
+            longContextAbove(272_000),
+        ),
         title: "GPT-5.5",
         description:
             "Frontier reasoning for complex, multi-step problems; takes its time thinking",
@@ -1245,6 +1277,27 @@ export const TEXT_SERVICES = {
             promptVideoTokens: perMillion(2.0),
             completionTextTokens: perMillion(12.0),
         },
+        // Vertex >200K prompt-token tier, whole-request: "If a query input
+        // context is longer than 200K tokens, all tokens (input and output)
+        // are charged at long context rates." Input-side 2x (all prompt
+        // modalities; cache write bills as input), output 1.5x. Verified
+        // cloud.google.com/vertex-ai/generative-ai/pricing 2026-07-22.
+        // Cache STORAGE ($4.50/M token-hours) is untiered — stays an
+        // adjustment below.
+        ...defineCostVariants(
+            {
+                long_context: {
+                    promptTextTokens: perMillion(4.0),
+                    promptCachedTokens: perMillion(0.4),
+                    promptCacheWriteTokens: perMillion(4.0),
+                    promptAudioTokens: perMillion(4.0),
+                    promptImageTokens: perMillion(4.0),
+                    promptVideoTokens: perMillion(4.0),
+                    completionTextTokens: perMillion(18.0),
+                },
+            },
+            longContextAbove(200_000),
+        ),
         billing: withVertexCacheStorage(GEMINI_3_SEARCH_BILLING, 4.5),
         title: "Gemini 3.1 Pro",
         description:

@@ -18,6 +18,10 @@ const POLL_INTERVAL_MS = 5000;
 // instead of consuming Worker time until the runtime kills the request.
 // Seedance 2.0 typical wall time is 40-90s; 5min covers slow runs + queueing.
 const POLL_MAX_ATTEMPTS = 60;
+// Replicate starts this deadline when it creates the prediction. It covers the
+// 60s synchronous wait plus the 5min local polling budget, and also cleans up
+// the prediction if the client disconnects before local cancellation runs.
+const CANCEL_AFTER = "6m";
 
 export class ReplicateError extends Error {
     /**
@@ -47,7 +51,7 @@ interface ReplicatePrediction<TOutput> {
         | "aborted";
     output?: TOutput;
     error?: string | null;
-    urls?: { get?: string };
+    urls?: { get?: string; cancel?: string };
     metrics?: {
         predict_time?: number;
         video_output_duration_seconds?: number;
@@ -90,9 +94,13 @@ export async function runReplicatePrediction<TInput, TOutput>(
         url,
         body,
         prefer: `wait=${PREFER_WAIT_SECONDS}`,
+        cancelAfter: CANCEL_AFTER,
     });
     const pollUrl =
         prediction.urls?.get || `${API_BASE}/predictions/${prediction.id}`;
+    const cancelUrl =
+        prediction.urls?.cancel ||
+        `${API_BASE}/predictions/${prediction.id}/cancel`;
 
     let pollAttempts = 0;
     while (
@@ -100,6 +108,7 @@ export async function runReplicatePrediction<TInput, TOutput>(
         prediction.status === "processing"
     ) {
         if (pollAttempts >= POLL_MAX_ATTEMPTS) {
+            await cancelReplicatePrediction(token, cancelUrl);
             throw new ReplicateError(
                 `Replicate prediction ${prediction.id} timed out after ${(POLL_MAX_ATTEMPTS * POLL_INTERVAL_MS) / 1000}s (status=${prediction.status})`,
                 504,
@@ -137,6 +146,21 @@ export async function runReplicatePrediction<TInput, TOutput>(
     };
 }
 
+async function cancelReplicatePrediction(
+    token: string,
+    cancelUrl: string,
+): Promise<void> {
+    try {
+        await replicateFetch<unknown>(token, {
+            method: "POST",
+            url: cancelUrl,
+        });
+    } catch {
+        // Best effort only: preserve the original timeout response. The
+        // create-time Cancel-After header remains the cleanup safety net.
+    }
+}
+
 async function replicateFetch<T>(
     token: string,
     args: {
@@ -144,6 +168,7 @@ async function replicateFetch<T>(
         url: string;
         body?: Record<string, unknown>;
         prefer?: string;
+        cancelAfter?: string;
     },
 ): Promise<T> {
     const headers: Record<string, string> = {
@@ -151,6 +176,7 @@ async function replicateFetch<T>(
     };
     if (args.body) headers["Content-Type"] = "application/json";
     if (args.prefer) headers.Prefer = args.prefer;
+    if (args.cancelAfter) headers["Cancel-After"] = args.cancelAfter;
 
     let response: Response;
     try {

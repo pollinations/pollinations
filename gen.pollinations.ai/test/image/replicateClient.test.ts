@@ -57,6 +57,7 @@ describe("runReplicatePrediction", () => {
         const headers = new Headers(init.headers);
         expect(headers.get("Authorization")).toBe("Bearer r8_test_token");
         expect(headers.get("Prefer")).toBe("wait=60");
+        expect(headers.get("Cancel-After")).toBe("6m");
         const body = JSON.parse(init.body as string);
         expect(body.input).toEqual({ prompt: "test" });
         expect(body.version).toBeUndefined();
@@ -183,19 +184,32 @@ describe("runReplicatePrediction", () => {
 
     it("times out with 504 when prediction stays processing past poll budget", async () => {
         vi.useFakeTimers();
-        const fetchSpy = vi.spyOn(globalThis, "fetch").mockImplementation(
-            async () =>
-                new Response(
+        const cancelUrl =
+            "https://api.replicate.com/v1/predictions/pred_stuck/cancel-custom";
+        const fetchSpy = vi
+            .spyOn(globalThis, "fetch")
+            .mockImplementation(async (url) => {
+                if (url === cancelUrl) {
+                    return new Response(
+                        JSON.stringify({
+                            id: "pred_stuck",
+                            status: "canceled",
+                        }),
+                        { status: 200 },
+                    );
+                }
+                return new Response(
                     JSON.stringify({
                         id: "pred_stuck",
                         status: "processing",
                         urls: {
                             get: "https://api.replicate.com/v1/predictions/pred_stuck",
+                            cancel: cancelUrl,
                         },
                     }),
                     { status: 201 },
-                ),
-        );
+                );
+            });
 
         const promise = runReplicatePrediction({
             model: MODEL,
@@ -209,8 +223,63 @@ describe("runReplicatePrediction", () => {
         });
         await vi.advanceTimersByTimeAsync(60 * 5_000 + 1_000);
         await assertion;
-        // 1 POST + up to 60 GET polls
-        expect(fetchSpy.mock.calls.length).toBeLessThanOrEqual(61);
+
+        expect(fetchSpy).toHaveBeenCalledTimes(62);
+        const [requestUrl, init] = fetchSpy.mock.calls.at(-1) as [
+            string,
+            RequestInit,
+        ];
+        expect(requestUrl).toBe(cancelUrl);
+        expect(init.method).toBe("POST");
+        expect(new Headers(init.headers).get("Authorization")).toBe(
+            "Bearer r8_test_token",
+        );
+        vi.useRealTimers();
+    });
+
+    it("preserves the 504 when fallback cancellation fails", async () => {
+        vi.useFakeTimers();
+        const cancelUrl =
+            "https://api.replicate.com/v1/predictions/pred_stuck/cancel";
+        const fetchSpy = vi
+            .spyOn(globalThis, "fetch")
+            .mockImplementation(async (url) => {
+                if (url === cancelUrl) {
+                    return new Response("upstream cancellation failure", {
+                        status: 500,
+                    });
+                }
+                return new Response(
+                    JSON.stringify({
+                        id: "pred_stuck",
+                        status: "processing",
+                        urls: {
+                            get: "https://api.replicate.com/v1/predictions/pred_stuck",
+                        },
+                    }),
+                    { status: 201 },
+                );
+            });
+
+        const promise = runReplicatePrediction({
+            model: MODEL,
+            input: { prompt: "x" },
+        });
+        // Attach rejection handler before advancing timers so the rejection
+        // is observed (avoids Vitest "unhandled rejection" complaint).
+        const assertion = expect(promise).rejects.toMatchObject({
+            name: "ReplicateError",
+            status: 504,
+        });
+        await vi.advanceTimersByTimeAsync(60 * 5_000 + 1_000);
+        await assertion;
+
+        const [requestUrl, init] = fetchSpy.mock.calls.at(-1) as [
+            string,
+            RequestInit,
+        ];
+        expect(requestUrl).toBe(cancelUrl);
+        expect(init.method).toBe("POST");
         vi.useRealTimers();
     });
 

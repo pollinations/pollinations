@@ -160,6 +160,16 @@ export const portkeyConfig: PortkeyConfigMap = {
             model: "qwen/qwen3.7-max",
             defaultOptions: { provider: { sort: "price" } },
         }),
+    "poolside/laguna-s-2.1": () =>
+        createOpenRouterModelConfig({
+            model: "poolside/laguna-s-2.1",
+            defaultOptions: {
+                provider: {
+                    only: ["Poolside"],
+                    allow_fallbacks: false,
+                },
+            },
+        }),
 
     // -- OpenRouter (Gemma) ---------------------------------------------------
     // Moved off DeepInfra: OpenRouter serves the same SKU ~cheaper ($0.06/$0.33

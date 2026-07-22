@@ -2,7 +2,7 @@ name: Apps / Pre-review submissions
 
 on:
   issues:
-    types: [opened, edited, labeled]
+    types: [opened, edited]
   workflow_dispatch:
     inputs:
       issue_number:
@@ -19,7 +19,6 @@ jobs:
     if: |
       github.event_name == 'workflow_dispatch' ||
       (github.event.issue.state == 'open' &&
-       (github.event.action != 'labeled' || github.event.label.name == 'APP-SUBMISSION') &&
        (contains(github.event.issue.labels.*.name, 'APP-SUBMISSION') ||
         startsWith(github.event.issue.title, '[App Submission]')) &&
        !contains(github.event.issue.labels.*.name, 'APP-APPROVED'))

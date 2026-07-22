@@ -338,6 +338,14 @@ const models: ModelDefinition[] = [
         transform: stripCacheControl,
     },
     {
+        name: "laguna",
+        config: portkeyConfig["poolside/laguna-s-2.1"],
+        transform: pipe(
+            sanitizeToolSchemas,
+            createReasoningEffortTransform("toggle"),
+        ),
+    },
+    {
         name: "mimo-v2.5",
         config: portkeyConfig["xiaomi/mimo-v2.5"],
         transform: stripCacheControl,

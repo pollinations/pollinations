@@ -40,7 +40,6 @@ import {
     MCP_SERVER_NAME_PATTERN,
     type McpServerRow,
     nextFormState,
-    type PromptAgentBuiltinTool,
     providerModelHelper,
     readError,
     toEndpointPayload,
@@ -172,15 +171,6 @@ export function CommunityEndpointDialog({
         }));
         setTestState(idleAction);
         setError(null);
-    }
-
-    function toggleBuiltinTool(tool: PromptAgentBuiltinTool): void {
-        setForm((current) => ({
-            ...current,
-            builtinTools: current.builtinTools.includes(tool)
-                ? current.builtinTools.filter((t) => t !== tool)
-                : [...current.builtinTools, tool],
-        }));
     }
 
     function updateMcpServer(
@@ -588,7 +578,6 @@ export function CommunityEndpointDialog({
                             form={form}
                             disabled={isEdit}
                             onChange={updateForm}
-                            onToggleTool={toggleBuiltinTool}
                             onAddMcp={addMcpServer}
                             onUpdateMcp={updateMcpServer}
                             onRemoveMcp={removeMcpServer}

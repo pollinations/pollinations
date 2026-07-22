@@ -1,8 +1,8 @@
 // Provisioning for NO-CODE prompt agents. A prompt agent is registered as
-// `{ systemPrompt, baseModel, tools, mcpServers }` with no user code: the
+// `{ systemPrompt, baseModel, mcpServers }` with no user code: the
 // platform deploys the fixed prompt-agent-template worker (reusing the
 // source-deploy path) with the config injected as env bindings, and mints a
-// dedicated owner sk_ key the template uses for its internal gen/image calls.
+// dedicated owner sk_ key the template uses for its internal gen calls.
 //
 // The structured config is stored in the endpoint's `prompt_agent` column as
 // JSON. The minted key's id is stored alongside so it can be removed when the
@@ -10,8 +10,6 @@
 import { createApiKeyForUser } from "@shared/auth/api-key-creation.ts";
 import { z } from "zod";
 import { PROMPT_AGENT_TEMPLATE_SOURCE } from "./prompt-agent-template.ts";
-
-export const PROMPT_AGENT_BUILTIN_TOOLS = ["web_search", "image"] as const;
 
 const McpServerSchema = z.object({
     // Namespaces the server's tools (mcp__<name>__<tool>); lowercase to match
@@ -30,15 +28,10 @@ export const PromptAgentSchema = z
     .object({
         systemPrompt: z.string().trim().min(1).max(8000),
         baseModel: z.string().trim().min(1).max(253),
-        tools: z
-            .array(z.enum(PROMPT_AGENT_BUILTIN_TOOLS))
-            .max(PROMPT_AGENT_BUILTIN_TOOLS.length)
-            .optional()
-            .default([]),
         mcpServers: z.array(McpServerSchema).max(8).optional().default([]),
     })
     .describe(
-        "No-code agent config: a system prompt over a base model, with optional built-in tools and MCP servers. The platform deploys and runs it; no worker source or bearerToken is needed.",
+        "No-code agent config: a system prompt over a base model, with optional MCP servers. The platform deploys and runs it; no worker source or bearerToken is needed.",
     );
 
 export type PromptAgentConfig = z.infer<typeof PromptAgentSchema>;
@@ -121,7 +114,6 @@ export async function buildPromptAgentDeploy(input: {
     const extraBindings = [
         { name: "SYSTEM_PROMPT", text: input.config.systemPrompt },
         { name: "BASE_MODEL", text: input.config.baseModel },
-        { name: "TOOLS_JSON", text: JSON.stringify(input.config.tools) },
         { name: "MCP_JSON", text: JSON.stringify(input.config.mcpServers) },
         { name: "POLLINATIONS_KEY", text: key },
         { name: "GEN_BASE_URL", text: input.genBaseUrl },

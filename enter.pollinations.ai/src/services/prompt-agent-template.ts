@@ -1,11 +1,11 @@
 // Platform-authored template worker for NO-CODE prompt agents.
 //
-// A beginner registers `{ systemPrompt, baseModel, tools, mcpServers }` and no
+// A beginner registers `{ systemPrompt, baseModel, mcpServers }` and no
 // code. The platform deploys THIS fixed module (via the same source-deploy path
 // as user-written bees), injecting the config as env bindings. The worker runs a
 // bounded OpenAI tool-calling loop on the owner's key: it calls the base model
-// with the declared tools, executes any tool calls (built-in tools hit our own
-// gen/image endpoints; MCP tools go to the owner's MCP server over HTTP), feeds
+// with the declared MCP tools, executes any tool calls against the owner's MCP
+// servers over HTTP, feeds
 // results back, and repeats until the model answers. It returns the standard
 // chat.completion shape with summed usage plus `usage.tool_call_counts` for
 // observability (a future pricing PR will consume the reported counts).
@@ -17,9 +17,8 @@
 // Bindings the platform injects at deploy time (all secret_text):
 //   SYSTEM_PROMPT    the agent's system prompt
 //   BASE_MODEL       the Pollinations model id the loop calls
-//   TOOLS_JSON       JSON array of built-in tool names, e.g. ["web_search","image"]
 //   MCP_JSON         JSON array of { name, url } public MCP servers
-//   POLLINATIONS_KEY owner sk_ key used for every internal gen/image/model call
+//   POLLINATIONS_KEY owner sk_ key used for internal base-model calls
 //   GEN_BASE_URL     the gateway origin the key is valid against (env-specific:
 //                    prod uses gen.pollinations.ai, staging its own gen). The
 //                    minted key only works against the env that issued it, so
@@ -38,98 +37,10 @@ const MAX_TOOL_ROUNDS = 8;
 const MCP_PROTOCOL_VERSION = "2025-06-18";
 const MCP_TIMEOUT_MS = 30_000;
 
-// --- built-in tools -------------------------------------------------------
-// Each entry is { schema (OpenAI function def the base model sees), run (executes
-// the call, returns a string result) }. run() throws on upstream error.
-function builtinTools(env) {
-    const key = env.POLLINATIONS_KEY;
-    const authHeader = { authorization: "Bearer " + key };
-    const GEN = genBase(env);
-    return {
-        web_search: {
-            schema: {
-                type: "function",
-                function: {
-                    name: "web_search",
-                    description:
-                        "Search the web and return concise relevant results for a query.",
-                    parameters: {
-                        type: "object",
-                        properties: {
-                            query: {
-                                type: "string",
-                                description: "The search query.",
-                            },
-                        },
-                        required: ["query"],
-                    },
-                },
-            },
-            async run(args, usage) {
-                const res = await fetch(GEN + "/v1/chat/completions", {
-                    method: "POST",
-                    headers: {
-                        "content-type": "application/json",
-                        ...authHeader,
-                    },
-                    body: JSON.stringify({
-                        model: "openai-fast",
-                        messages: [
-                            {
-                                role: "user",
-                                content:
-                                    "Search the web and list the most relevant facts for: " +
-                                    String(args?.query ?? ""),
-                            },
-                        ],
-                    }),
-                });
-                if (!res.ok)
-                    throw new Error(
-                        "web_search " + res.status + ": " + (await res.text()),
-                    );
-                const data = await res.json();
-                addUsage(usage, data.usage);
-                return data.choices?.[0]?.message?.content ?? "";
-            },
-        },
-        image: {
-            schema: {
-                type: "function",
-                function: {
-                    name: "image",
-                    description:
-                        "Generate an image from a text prompt and return its URL.",
-                    parameters: {
-                        type: "object",
-                        properties: {
-                            prompt: {
-                                type: "string",
-                                description: "The image description.",
-                            },
-                        },
-                        required: ["prompt"],
-                    },
-                },
-            },
-            async run(args) {
-                const prompt = encodeURIComponent(String(args?.prompt ?? ""));
-                const url = GEN + "/image/" + prompt;
-                const res = await fetch(url, { headers: authHeader });
-                if (!res.ok)
-                    throw new Error(
-                        "image " + res.status + ": " + (await res.text()),
-                    );
-                return res.url || url;
-            },
-        },
-    };
-}
-
 // --- MCP client (Streamable HTTP JSON-RPC) --------------------------------
 // Minimal client: initialize -> tools/list -> tools/call. One fetch per call,
 // throws on error. Tool names are namespaced mcp__<server>__<tool> so multiple
-// servers (and built-ins) never collide.
+// servers never collide.
 function mcpToolName(serverName, toolName) {
     return "mcp__" + serverName + "__" + toolName;
 }
@@ -276,14 +187,8 @@ async function callModel(env, model, messages, toolSchemas) {
 }
 
 async function runAgent(env, userMessages) {
-    const builtinNames = JSON.parse(env.TOOLS_JSON || "[]");
     const mcpServers = JSON.parse(env.MCP_JSON || "[]");
-    const available = builtinTools(env);
-    const tools = {};
-    for (const name of builtinNames) {
-        if (available[name]) tools[name] = available[name];
-    }
-    Object.assign(tools, await loadMcpTools(mcpServers));
+    const tools = await loadMcpTools(mcpServers);
     const toolSchemas = Object.values(tools).map((t) => t.schema);
 
     const messages = [];
@@ -330,12 +235,13 @@ async function runAgent(env, userMessages) {
                 // failed call is not re-attempted; the error is surfaced. The
                 // call is still counted (the owner's tool ran).
                 try {
-                    result = await tool.run(args, usage);
+                    result = await tool.run(args);
                 } catch (err) {
                     result = "Error: " + String(err);
                 }
-                toolCallCounts[billedToolName(name)] =
-                    (toolCallCounts[billedToolName(name)] ?? 0) + 1;
+                // Every MCP tool counts under a single "mcp_call" line in
+                // usage.tool_call_counts.
+                toolCallCounts.mcp_call = (toolCallCounts.mcp_call ?? 0) + 1;
             }
             messages.push({
                 role: "tool",
@@ -354,12 +260,6 @@ async function runAgent(env, userMessages) {
         toolCallCounts,
         finishReason: "length",
     };
-}
-
-// MCP tools count under a single "mcp_call" line; built-ins count under their
-// own name in usage.tool_call_counts.
-function billedToolName(name) {
-    return name.startsWith("mcp__") ? "mcp_call" : name;
 }
 
 function isAuthorized(request, env) {

@@ -30,7 +30,6 @@ async function loadTemplate(): Promise<AgentModule["default"]> {
 const BASE_ENV = {
     SYSTEM_PROMPT: "You are a test agent.",
     BASE_MODEL: "openai",
-    TOOLS_JSON: JSON.stringify(["web_search"]),
     MCP_JSON: "[]",
     POLLINATIONS_KEY: "sk_test",
     GEN_BASE_URL: "https://gen.test.example",
@@ -66,71 +65,7 @@ describe("prompt-agent template", () => {
         expect(res.status).toBe(401);
     });
 
-    it("runs the tool loop and returns a chat.completion with tool_call_counts", async () => {
-        // web_search runs as an internal chat call, so every completions call
-        // after the first tool-requesting turn returns content.
-        let n = 0;
-        const fetchMock = vi.fn(async () => {
-            n++;
-            if (n === 1) {
-                return Response.json({
-                    choices: [
-                        {
-                            message: {
-                                role: "assistant",
-                                content: "",
-                                tool_calls: [
-                                    {
-                                        id: "c1",
-                                        function: {
-                                            name: "web_search",
-                                            arguments: '{"query":"x"}',
-                                        },
-                                    },
-                                ],
-                            },
-                        },
-                    ],
-                    usage: { prompt_tokens: 10, completion_tokens: 5 },
-                });
-            }
-            return Response.json({
-                choices: [{ message: { role: "assistant", content: "done" } }],
-                usage: { prompt_tokens: 4, completion_tokens: 2 },
-            });
-        });
-        vi.stubGlobal("fetch", fetchMock);
-
-        const agent = await loadTemplate();
-        const res = await agent.fetch(
-            chatRequest({ messages: [{ role: "user", content: "hi" }] }),
-            BASE_ENV,
-        );
-        expect(res.status).toBe(200);
-        const json = (await res.json()) as {
-            choices: { message: { content: string }; finish_reason: string }[];
-            usage: {
-                prompt_tokens: number;
-                tool_call_counts: Record<string, number>;
-            };
-        };
-        expect(json.choices[0].message.content).toBe("done");
-        expect(json.choices[0].finish_reason).toBe("stop");
-        // web_search ran once and its usage summed into the total.
-        expect(json.usage.tool_call_counts).toEqual({ web_search: 1 });
-        expect(json.usage.prompt_tokens).toBeGreaterThan(10);
-        // Calls the injected gateway (the minted key is only valid there), not
-        // the hardcoded production origin.
-        for (const call of fetchMock.mock.calls) {
-            const url =
-                typeof call[0] === "string"
-                    ? call[0]
-                    : (call[0] as Request).url;
-            expect(new URL(url).origin).toBe("https://gen.test.example");
-        }
-    });
-
-    it("initializes MCP and reuses the negotiated session", async () => {
+    it("runs the MCP tool loop and reuses the negotiated session", async () => {
         const mcpRequests: Request[] = [];
         let modelCalls = 0;
         const fetchMock = vi.fn(
@@ -177,6 +112,9 @@ describe("prompt-agent template", () => {
                 }
 
                 modelCalls++;
+                // Base-model calls go to the injected gateway (the minted key
+                // is only valid there), never the hardcoded production origin.
+                expect(url.origin).toBe("https://gen.test.example");
                 if (modelCalls === 1) {
                     return Response.json({
                         choices: [
@@ -196,12 +134,14 @@ describe("prompt-agent template", () => {
                                 },
                             },
                         ],
+                        usage: { prompt_tokens: 10, completion_tokens: 5 },
                     });
                 }
                 return Response.json({
                     choices: [
                         { message: { role: "assistant", content: "done" } },
                     ],
+                    usage: { prompt_tokens: 4, completion_tokens: 2 },
                 });
             },
         );
@@ -212,7 +152,6 @@ describe("prompt-agent template", () => {
             chatRequest({ messages: [{ role: "user", content: "hi" }] }),
             {
                 ...BASE_ENV,
-                TOOLS_JSON: "[]",
                 MCP_JSON: JSON.stringify([
                     { name: "docs", url: "https://mcp.example.com/rpc" },
                 ]),
@@ -221,11 +160,17 @@ describe("prompt-agent template", () => {
 
         expect(res.status).toBe(200);
         const json = (await res.json()) as {
-            choices: { message: { content: string } }[];
-            usage: { tool_call_counts: Record<string, number> };
+            choices: { message: { content: string }; finish_reason: string }[];
+            usage: {
+                prompt_tokens: number;
+                tool_call_counts: Record<string, number>;
+            };
         };
         expect(json.choices[0].message.content).toBe("done");
+        expect(json.choices[0].finish_reason).toBe("stop");
         expect(json.usage.tool_call_counts).toEqual({ mcp_call: 1 });
+        // Usage from both model rounds is summed into the total.
+        expect(json.usage.prompt_tokens).toBe(14);
         const bodies = await Promise.all(
             mcpRequests.map(
                 (request) =>
@@ -291,60 +236,92 @@ describe("prompt-agent template", () => {
     });
 
     it("feeds a failing tool's error back to the model instead of 502", async () => {
-        let n = 0;
-        const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
-            const url = new URL(
-                typeof input === "string" ? input : (input as Request).url,
-            );
-            n++;
-            // First turn: ask for the image tool.
-            if (n === 1) {
+        let modelCalls = 0;
+        const fetchMock = vi.fn(
+            async (input: RequestInfo | URL, init?: RequestInit) => {
+                const request = new Request(input, init);
+                const url = new URL(request.url);
+                if (url.hostname === "mcp.example.com") {
+                    const body = (await request.json()) as { method: string };
+                    if (body.method === "initialize") {
+                        return Response.json({
+                            jsonrpc: "2.0",
+                            id: 1,
+                            result: { protocolVersion: "2025-06-18" },
+                        });
+                    }
+                    if (body.method === "notifications/initialized") {
+                        return new Response(null, { status: 202 });
+                    }
+                    if (body.method === "tools/list") {
+                        return Response.json({
+                            jsonrpc: "2.0",
+                            id: 2,
+                            result: {
+                                tools: [
+                                    {
+                                        name: "lookup",
+                                        inputSchema: { type: "object" },
+                                    },
+                                ],
+                            },
+                        });
+                    }
+                    // tools/call fails upstream.
+                    return new Response("upstream boom", { status: 500 });
+                }
+
+                modelCalls++;
+                // First turn: ask for the MCP tool.
+                if (modelCalls === 1) {
+                    return Response.json({
+                        choices: [
+                            {
+                                message: {
+                                    role: "assistant",
+                                    content: "",
+                                    tool_calls: [
+                                        {
+                                            id: "c1",
+                                            function: {
+                                                name: "mcp__docs__lookup",
+                                                arguments: "{}",
+                                            },
+                                        },
+                                    ],
+                                },
+                            },
+                        ],
+                        usage: { prompt_tokens: 3, completion_tokens: 1 },
+                    });
+                }
+                // Next model turn recovers and answers.
                 return Response.json({
                     choices: [
                         {
                             message: {
                                 role: "assistant",
-                                content: "",
-                                tool_calls: [
-                                    {
-                                        id: "c1",
-                                        function: {
-                                            name: "image",
-                                            arguments: '{"prompt":"cat"}',
-                                        },
-                                    },
-                                ],
+                                content: "sorry, lookup failed",
                             },
                         },
                     ],
-                    usage: { prompt_tokens: 3, completion_tokens: 1 },
+                    usage: { prompt_tokens: 2, completion_tokens: 2 },
                 });
-            }
-            // The image tool hits /image/* and fails.
-            if (url.pathname.startsWith("/image/")) {
-                return new Response("upstream boom", { status: 500 });
-            }
-            // Next model turn recovers and answers.
-            return Response.json({
-                choices: [
-                    {
-                        message: {
-                            role: "assistant",
-                            content: "sorry, image failed",
-                        },
-                    },
-                ],
-                usage: { prompt_tokens: 2, completion_tokens: 2 },
-            });
-        });
+            },
+        );
         vi.stubGlobal("fetch", fetchMock);
 
         const agent = await loadTemplate();
         const res = await agent.fetch(
             chatRequest({
-                messages: [{ role: "user", content: "draw a cat" }],
+                messages: [{ role: "user", content: "look up cats" }],
             }),
-            { ...BASE_ENV, TOOLS_JSON: JSON.stringify(["image"]) },
+            {
+                ...BASE_ENV,
+                MCP_JSON: JSON.stringify([
+                    { name: "docs", url: "https://mcp.example.com/rpc" },
+                ]),
+            },
         );
         // A tool failure does not fail the request.
         expect(res.status).toBe(200);
@@ -352,8 +329,8 @@ describe("prompt-agent template", () => {
             choices: { message: { content: string } }[];
             usage: { tool_call_counts: Record<string, number> };
         };
-        expect(json.choices[0].message.content).toBe("sorry, image failed");
+        expect(json.choices[0].message.content).toBe("sorry, lookup failed");
         // The (failed) tool call is still counted — the owner's tool ran.
-        expect(json.usage.tool_call_counts).toEqual({ image: 1 });
+        expect(json.usage.tool_call_counts).toEqual({ mcp_call: 1 });
     });
 });

@@ -6,50 +6,12 @@ import {
     Textarea,
     XIcon,
 } from "@pollinations/ui";
-import type { ReactNode } from "react";
-import {
-    type EndpointFormState,
-    type McpServerRow,
-    PROMPT_AGENT_BUILTIN_TOOLS,
-    type PromptAgentBuiltinTool,
-} from "./types.ts";
-
-const BUILTIN_TOOL_LABELS: Record<PromptAgentBuiltinTool, string> = {
-    web_search: "Web search",
-    image: "Image",
-};
-
-function ToggleButton({
-    active,
-    disabled,
-    onClick,
-    children,
-}: {
-    active: boolean;
-    disabled: boolean;
-    onClick: () => void;
-    children: ReactNode;
-}) {
-    return (
-        <Button
-            type="button"
-            size="sm"
-            intent={active ? "info" : undefined}
-            aria-pressed={active}
-            disabled={disabled}
-            className={active ? "text-sm" : "text-sm opacity-70"}
-            onClick={onClick}
-        >
-            {children}
-        </Button>
-    );
-}
+import type { EndpointFormState, McpServerRow } from "./types.ts";
 
 export function PromptAgentFields({
     form,
     disabled,
     onChange,
-    onToggleTool,
     onAddMcp,
     onUpdateMcp,
     onRemoveMcp,
@@ -57,7 +19,6 @@ export function PromptAgentFields({
     form: EndpointFormState;
     disabled: boolean;
     onChange: (key: keyof EndpointFormState, value: string) => void;
-    onToggleTool: (tool: PromptAgentBuiltinTool) => void;
     onAddMcp: () => void;
     onUpdateMcp: (
         index: number,
@@ -102,25 +63,6 @@ export function PromptAgentFields({
                     disabled={disabled}
                     onChange={(e) => onChange("baseModel", e.target.value)}
                 />
-            </FieldStack>
-
-            <FieldStack
-                label="Built-in tools"
-                helper="Tools the agent can call."
-                alignLabelRow
-            >
-                <div className="flex flex-wrap gap-2">
-                    {PROMPT_AGENT_BUILTIN_TOOLS.map((tool) => (
-                        <ToggleButton
-                            key={tool}
-                            active={form.builtinTools.includes(tool)}
-                            disabled={disabled}
-                            onClick={() => onToggleTool(tool)}
-                        >
-                            {BUILTIN_TOOL_LABELS[tool]}
-                        </ToggleButton>
-                    ))}
-                </div>
             </FieldStack>
 
             <FieldStack

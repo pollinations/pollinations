@@ -17,18 +17,11 @@ type EndpointFormPrices = Record<CommunityEndpointPriceKey, string>;
 // (external), or have the platform deploy and run a no-code prompt agent.
 export type EndpointMode = "external" | "prompt-agent";
 
-// Built-in tools a prompt agent can be granted; mirrors PROMPT_AGENT_BUILTIN_TOOLS
-// on the backend.
-export const PROMPT_AGENT_BUILTIN_TOOLS = ["web_search", "image"] as const;
-export type PromptAgentBuiltinTool =
-    (typeof PROMPT_AGENT_BUILTIN_TOOLS)[number];
-
 export type McpServerRow = { name: string; url: string };
 
 export type PromptAgentConfig = {
     systemPrompt: string;
     baseModel: string;
-    tools: PromptAgentBuiltinTool[];
     mcpServers: { name: string; url: string }[];
 };
 
@@ -69,7 +62,6 @@ export type EndpointFormState = {
     // Prompt-agent fields; only read when mode === "prompt-agent".
     systemPrompt: string;
     baseModel: string;
-    builtinTools: PromptAgentBuiltinTool[];
     mcpServers: McpServerRow[];
 } & EndpointFormPrices;
 
@@ -118,7 +110,6 @@ export const emptyForm: EndpointFormState = {
     bearerToken: "",
     systemPrompt: "",
     baseModel: "",
-    builtinTools: [],
     mcpServers: [],
     ...emptyPriceForm,
 };
@@ -203,7 +194,6 @@ export function endpointToForm(endpoint: CommunityEndpoint): EndpointFormState {
         bearerToken: "",
         systemPrompt: promptAgent?.systemPrompt ?? "",
         baseModel: promptAgent?.baseModel ?? "",
-        builtinTools: promptAgent?.tools ?? [],
         mcpServers: (promptAgent?.mcpServers ?? []).map((server) => ({
             name: server.name,
             url: server.url,
@@ -332,7 +322,6 @@ export function toPromptAgentConfig(
     return {
         systemPrompt,
         baseModel,
-        tools: form.builtinTools,
         mcpServers: mcpServersToPayload(form.mcpServers),
     };
 }

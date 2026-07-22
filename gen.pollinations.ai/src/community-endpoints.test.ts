@@ -2578,7 +2578,6 @@ fixtureTest(
         const promptAgent = {
             systemPrompt: "You are a terse SQL tutor.",
             baseModel: "openai-fast",
-            tools: ["web_search"],
             mcpServers: [{ name: "docs", url: "https://mcp.example.com/rpc" }],
         };
         // No baseUrl, no bearerToken — a prompt agent manages its own.
@@ -2611,7 +2610,6 @@ fixtureTest(
         expect(created.promptAgent).toMatchObject({
             systemPrompt: "You are a terse SQL tutor.",
             baseModel: "openai-fast",
-            tools: ["web_search"],
         });
         expect(created.promptAgent).not.toHaveProperty("keyId");
         expect(created).not.toHaveProperty("source");
@@ -2635,7 +2633,6 @@ fixtureTest(
             "BEE_AUTH_TOKEN",
             "SYSTEM_PROMPT",
             "BASE_MODEL",
-            "TOOLS_JSON",
             "MCP_JSON",
             "POLLINATIONS_KEY",
             "GEN_BASE_URL",
@@ -2646,9 +2643,6 @@ fixtureTest(
             "You are a terse SQL tutor.",
         );
         expect(bindingByName.BASE_MODEL.text).toBe("openai-fast");
-        expect(JSON.parse(bindingByName.TOOLS_JSON.text)).toEqual([
-            "web_search",
-        ]);
         expect(JSON.parse(bindingByName.MCP_JSON.text)).toEqual([
             { name: "docs", url: "https://mcp.example.com/rpc" },
         ]);

@@ -36,7 +36,11 @@ import {
 } from "../services/community-endpoint-openai.ts";
 import { hasDirectAccountPermission } from "./account-permissions.ts";
 
-const ModalitySchema = z.enum(COMMUNITY_ENDPOINT_MODALITIES);
+const ModalitySchema = z
+    .enum(COMMUNITY_ENDPOINT_MODALITIES)
+    .describe(
+        'Upstream API family. "text" uses `/v1/chat/completions`; "image" uses `/v1/images/generations` and currently supports text-to-image generation only.',
+    );
 const ImagePricingSchema = z
     .enum(COMMUNITY_ENDPOINT_IMAGE_PRICING_MODES)
     .describe(
@@ -48,7 +52,10 @@ const PriceSchema = z
     .min(0)
     .refine((price) => price === 0 || price >= MIN_COMMUNITY_PRICE_PER_TOKEN, {
         message: `Price must be 0 (free) or at least ${MIN_COMMUNITY_PRICE_PER_TOKEN} per token (${MIN_COMMUNITY_PRICE_PER_MILLION_TOKENS} per 1M tokens)`,
-    });
+    })
+    .describe(
+        'Pollen price. Token rates are per token internally (the dashboard displays per 1M); `completionImagePrice` is per generated image when `imagePricing` is "request".',
+    );
 const UpdatePriceFieldsSchema = Object.fromEntries(
     COMMUNITY_ENDPOINT_PRICE_FIELDS.map((field) => [
         field.key,
@@ -74,7 +81,12 @@ const EndpointFieldsSchema = {
         .max(120)
         .regex(/^[^/]+$/, "Model name cannot contain '/'"),
     description: z.string().trim().max(240).optional(),
-    baseUrl: z.string().url(),
+    baseUrl: z
+        .string()
+        .url()
+        .describe(
+            "OpenAI-compatible `/v1` base URL or full `/chat/completions` or `/images/generations` URL.",
+        ),
     upstreamModel: z.string().trim().min(1).max(253).optional(),
     bearerToken: z.string().min(1),
 } as const;
@@ -137,6 +149,19 @@ const CommunityEndpointTestResponseSchema = z
     .object({
         ok: z.boolean(),
         message: z.string(),
+        usage: z
+            .record(z.string(), z.unknown())
+            .describe(
+                "Raw provider usage, or `{ images: 1 }` when an image provider returns no token usage.",
+            ),
+        billableUsage: z
+            .record(z.string(), z.number())
+            .describe(
+                "Normalized billable usage fields used to reveal applicable prices.",
+            ),
+        imagePricing: ImagePricingSchema.optional().describe(
+            "Image tests only: pricing mode detected from the provider response.",
+        ),
     })
     .passthrough();
 const CommunityEndpointDeleteResponseSchema = z.object({
@@ -480,7 +505,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
             tags: ["👤 Account"],
             summary: "Test My Model Endpoint",
             description:
-                "Test an OpenAI-compatible upstream model before publishing it. Requires community model publishing approval; API keys also require `account:keys`.",
+                "Test an OpenAI-compatible upstream model before publishing it. Image tests also detect token pricing when valid OpenAI image usage is returned; otherwise they select fixed per-image pricing. Requires community model publishing approval; API keys also require `account:keys`.",
             responses: {
                 200: {
                     description: "Endpoint test result",

@@ -19,14 +19,16 @@ structured fields.
 
 ## Community Models (Alpha)
 
-Community models are user-owned, OpenAI-compatible text endpoints proxied through `gen.pollinations.ai` under an `owner/model` id (e.g. `Spit-fires/LFM2.5-230M`). Any signed-in user can register a private, owner-only model. Publishing it in the public model catalog requires allowlist approval while the program is in alpha.
+Community models are user-owned, OpenAI-compatible text or image-generation endpoints proxied through `gen.pollinations.ai` under an `owner/model` id (e.g. `Spit-fires/LFM2.5-230M`). Text providers serve `/v1/chat/completions`; image providers serve `/v1/images/generations`. Any signed-in user can register a private, owner-only model. Publishing it in the public model catalog requires allowlist approval while the program is in alpha.
 
 **Alpha stage**
 - Inclusion is fairly permissive for now; expect that to tighten before official launch.
 - Text and image generation models are supported now; audio and other modalities are planned next.
+- Community image models are text-to-image only and are exposed through `/image/{prompt}` and `/v1/images/generations`. OpenAI-compatible calls must use `response_format: "b64_json"`; reference images and `/v1/images/edits` are not supported yet.
 
 **Payouts**
 - Owners currently earn 75% of the pollen spent on their model.
+- Public image pricing is selected by the endpoint test: providers returning valid OpenAI image token usage use per-1M-token prices; otherwise the configured fixed Pollen price is charged once per successful generated image.
 - Payouts are like-for-like: a request paid with paid pollen pays the owner in paid pollen; a request paid with quest pollen pays the owner in quest pollen. Quest pollen can't be cashed out — it can only be spent on non-paid models.
 - Owners will be able to switch their model to paid-only.
 - Dollar payouts are planned but not available yet (legal/compliance work in progress).
@@ -39,8 +41,8 @@ Community models are user-owned, OpenAI-compatible text endpoints proxied throug
 - Models can be pulled (and repeat offenders potentially blocked) for instability or suspected abuse — e.g. silently changing prices or serving a different model than advertised.
 
 **Automated health monitoring**
-- An automated monitor checks each community model's error rate and latency. Models with sustained failures get deactivated automatically — no human involvement needed for that direction.
+- An automated monitor currently checks community text models for error rate and latency. Models with sustained failures get deactivated automatically — no human involvement needed for that direction. Community image models are not monitored yet.
 - Reactivating a deactivated model is manual and owner-only, from the dashboard. There's no auto-reactivation, so if your model was turned off, fix the underlying issue before reactivating it, or it may just fail again.
 - Check your model's live health — request counts, success rate, errors, and latency — at [model-monitor.pollinations.ai/debug](https://model-monitor.pollinations.ai/debug).
 
-To request account-level permission to publish community models, submit a [publisher allowlist request](https://github.com/pollinations/pollinations/issues/new?template=community-model-allowlist.yml). The form does not register individual models. Private models can be registered and tested without approval under **Models → My Models** at [enter.pollinations.ai](https://enter.pollinations.ai). Registration and management are also documented under the Account section of this reference, or via the [CLI](/docs/guides/cli) (`polli my-models`).
+To request account-level permission to publish community models, submit a [publisher allowlist request](https://github.com/pollinations/pollinations/issues/new?template=community-model-allowlist.yml). The form does not register individual models. Private models can be registered and called without approval under **Models → My Models** at [enter.pollinations.ai](https://enter.pollinations.ai); fetching upstream models, testing the upstream endpoint, and publishing require approval. Registration and management are also documented under the Account section of this reference. The dashboard and Account API support text and image models; the [CLI](/docs/guides/cli) (`polli my-models`) currently supports text models only.

@@ -1,4 +1,5 @@
 import { Buffer } from "node:buffer";
+import { detectImageMimeType } from "@shared/image-mime.ts";
 import { HttpError } from "../httpError.ts";
 
 export function bufferToUint8Array(buffer: Buffer): Uint8Array<ArrayBuffer> {
@@ -38,39 +39,8 @@ export function base64ToBuffer(base64: string): Buffer {
     return buffer;
 }
 
-function detectKnownMimeType(buffer: Uint8Array): string | undefined {
-    if (
-        buffer[0] === 0x89 &&
-        buffer[1] === 0x50 &&
-        buffer[2] === 0x4e &&
-        buffer[3] === 0x47
-    ) {
-        return "image/png";
-    }
-    if (buffer[0] === 0xff && buffer[1] === 0xd8 && buffer[2] === 0xff) {
-        return "image/jpeg";
-    }
-    if (
-        buffer[0] === 0x52 &&
-        buffer[1] === 0x49 &&
-        buffer[2] === 0x46 &&
-        buffer[3] === 0x46 &&
-        buffer[8] === 0x57 &&
-        buffer[9] === 0x45 &&
-        buffer[10] === 0x42 &&
-        buffer[11] === 0x50
-    ) {
-        return "image/webp";
-    }
-    if (buffer[0] === 0x47 && buffer[1] === 0x49 && buffer[2] === 0x46) {
-        return "image/gif";
-    }
-    if (buffer[0] === 0x42 && buffer[1] === 0x4d) return "image/bmp";
-    return undefined;
-}
-
 export function detectMimeType(buffer: Uint8Array): string {
-    return detectKnownMimeType(buffer) ?? "image/jpeg";
+    return detectImageMimeType(buffer) ?? "image/jpeg";
 }
 
 export async function downloadUserImage(
@@ -109,7 +79,7 @@ export async function downloadUserImage(
         );
     }
 
-    const mimeType = detectKnownMimeType(buffer);
+    const mimeType = detectImageMimeType(buffer);
     if (!mimeType) {
         throw new HttpError(`Unsupported image format from ${imageUrl}`, 400, {
             validation: true,

@@ -1,5 +1,50 @@
 # Pollinations Model Changelog
 
+## 2026-07-22
+
+### Added
+- `gpt-oss` (OpenAI, text) — tool calling and reasoning.
+- `gemma-4-31b` (Google, text) — text/image input; tool calling and reasoning.
+- `grok-4.5` (xAI, text) — text/image input; tool calling and reasoning; paid-only.
+- `perplexity-high` (Perplexity, text) — web search.
+- `kimi-k3` (Moonshot AI, text) — text/image input; tool calling and reasoning; paid-only.
+- `mimo-v2.5` (Xiaomi, text) — text/image input; tool calling and reasoning.
+- `mimo-v2.5-pro` (Xiaomi, text) — tool calling and reasoning.
+- `qwen3.7-max` (Qwen, text) — tool calling and reasoning; paid-only.
+- `sana` (NVIDIA, image) — text-to-image.
+- `veo-1080p` (Google, video) — text/image-to-video with start/end frames and audio output; paid-only.
+- `happyhorse-1.1` (Alibaba, video) — text/image-to-video with start-frame input; paid-only.
+- Community text models: `morriszdweck/mistral-fat`, `Minor-fun/gemini-3.1-pro-preview`, `Minor-fun/gemini-3.5-flash`, `sharktide/inferenceport-ai-kimi-k2.7-code`, `sharktide/inferenceport-ai-kimi-k2.5`, `sharktide/inferenceport-ai-minimax-m3`, `sharktide/inferenceport-ai-qwen-3.6-27b`, `sharktide/inferenceport-ai-lightning-text-v2`, `Catniti/agnes-1.5-flash`, `timemachine-studio/mercury2`, `timemachine-studio/minimax-m3`, `YoannDev90/laguna-xs-2.1:free`, `YoannDev90/diffusiongemma-26b-a4b-it:free`, `YoannDev90/llama-3.1-8b-instant:free`, `CloudCompile/afforda-claude-haiku-4.5`, `CloudCompile/agnes-2.0-flash`, `vendouple/grok-4.5`, `CloudCompile/agnes-image-2.1-flash-2k`, `CloudCompile/agnes-video-v2.0`, `sharktide/inferenceport-ai-codestral-2508`, `vendouple/kimi-k3`, `sharktide/inferenceport-ai-gemini-2.5-flash`, `Catniti/openai-fast`, `Catniti/auto-router-1`, `Catniti/gemma-4-31b`, `CloudCompile/agnes-image-2.1-flash-1k`, `CloudCompile/grok-4.5`, `Catniti/deepseek-v4-flash`, `Catniti/gemini-3.6-flash`, `MarcosFRG/ternary-bonsai-27b`, `MarcosFRG/north-mini-code`, `vendouple/claude-opus-4-8`, `vendouple/gemini-3.6-flash`, `YoannDev90/laguna-s-2.1:free`.
+
+### Changed
+- `gpt-5.6-sol` — price cut ~35%.
+- `gpt-5.6-terra` — price cut ~35%.
+- `gpt-5.6-luna` — price cut ~35%.
+- `qwen-large` — price cut ~20%.
+- `tomdacatto/ezra` — price cut ~50%.
+- `MarcosFRG/glm-5.2` — price cut ~55%.
+- `Catniti/glm-4.7` — price cut ~25%.
+- `vendouple/deepseek-v3.2` — price cut ~50%.
+- `vendouple/unlocked-deepseek` — price cut ~40%.
+- `Catniti/claude-sonnet-4.6` — price cut ~65%.
+- `veo` — video price cut ~45%.
+- `klein` — image price cut ~50%.
+- `flux` — image price +15%.
+- `zimage` — image price +100%.
+- `smplstuff/falcon-h1-tiny` — price +900%.
+- `Minor-fun/deepseek-v3.2` — price +55%.
+- `gemini-fast` — added audio input.
+- `stable-audio-3-medium` — added audio input.
+- `stable-audio-3-large` — added audio input.
+- `cohere-embed-v4` — added image input.
+- `qwen3-embedding-8b` — context length increased from 32,768 to 40,960 tokens.
+
+### Removed
+- `perplexity-deep` (was: text)
+- `ltx-2` (was: video)
+- `acestep` (was: audio)
+- Community text models: `CloudCompile/gemma-4-e2b`, `MarcosFRG/deepseek-v4-pro`, `Spit-fires/diffusiongemma-26b-a4b-it`, `morriszdweck/kimi-k2.6-cheap`, `Catniti/gpt-4.0`, `Catniti/nemotron-3-ultra-550b-a55b`, `Catniti/Laguna-xs-2.1`, `MarcosFRG/minimax-m2.7`, `MarcosFRG/deepseek-v3.2`, `vendouple/gpt-5.6-sol`, `MarcosFRG/gemini-3.1-pro-preview`, `MarcosFRG/step-3.5-flash`, `Catniti/openai-o4-mini`, `Catniti/glm-4.7-flash`, `solarnode-developement/free`, `YoannDev90/diffusiongemma-26b-a4b-it`, `Catniti/gpt-5.6-luna`, `vendouple/gpt-5.6-terra`, `vendouple/gemma-4-31B`, `Minor-fun/LongCat-2.0`.
+
 ## 2026-07-15
 
 ### Added

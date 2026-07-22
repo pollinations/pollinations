@@ -1,0 +1,8 @@
+{
+  "platform": "discord",
+  "scope": "models_weekly",
+  "date": "2026-07-22",
+  "previous_date": "2026-07-15",
+  "generated_at": "2026-07-22T14:45:57.294713+00:00",
+  "text": "<@&1424461167883194418> Model updates — 2026-07-22\n\n### 🆕 New\n- 🧠 **GPT-OSS 20B** (OpenAI) — tool calling + reasoning\n- 🧠 **Gemma 4 31B** (Google) — vision, tools + reasoning\n- 🧠 **Grok 4.5** (xAI) — vision, tools + reasoning\n- 🧠 **Perplexity Sonar High-Context Search** (Perplexity) — web search\n- 🧠 **Kimi K3** (Moonshot AI) — vision, tools + reasoning\n- 🧠 **MiMo V2.5** / **MiMo V2.5 Pro** (Xiaomi) — tools + reasoning\n- 🧠 **Qwen3.7 Max** (Qwen) — tools + reasoning\n- 🎨 **Sana Sprint 1.6B** (NVIDIA) — text-to-image\n- 🎬 **Veo 3.1 Fast 1080p** (Google) — image input, start/end frames + audio output\n- 🎬 **HappyHorse 1.1** (Alibaba) — image input + start-frame video\n\n### 🗑️ Removed\n- `perplexity-deep` (text)\n- `ltx-2` (video)\n- `acestep` (audio)\n\n### ⬇️ Price cuts\n- 🎨 Image: Klein (~50% off)\n- 🎬 Video: Veo (~45% off)\n- 🧠 Text: GPT-5.6 Sol, Terra, Luna (~35%); Qwen Large (~20%); GLM 5.2 (~55%); Claude Sonnet 4.6 (~65%)\n\n### ⬆️ Price increases\n- 🎨 Image: Flux (~15% more) · Z-Image (~100% more)\n- 🧠 Text: Falcon H1 Tiny (~900% more) · DeepSeek V3.2 (~55% more)\n\n### ✨ Capability updates\n- `gemini-fast` — added audio input\n- `stable-audio-3-medium` · `stable-audio-3-large` — added audio input\n- `cohere-embed-v4` — added image input\n\nExplore at https://gen.pollinations.ai/docs"
+}

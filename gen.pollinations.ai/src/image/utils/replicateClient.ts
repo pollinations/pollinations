@@ -18,6 +18,7 @@ const POLL_INTERVAL_MS = 5000;
 // instead of consuming Worker time until the runtime kills the request.
 // Seedance 2.0 typical wall time is 40-90s; 5min covers slow runs + queueing.
 const POLL_MAX_ATTEMPTS = 60;
+const CANCEL_REQUEST_TIMEOUT_MS = 5000;
 // Replicate starts this deadline when it creates the prediction. It covers the
 // 60s synchronous wait plus the 5min local polling budget, and also cleans up
 // the prediction if the client disconnects before local cancellation runs.
@@ -150,14 +151,27 @@ async function cancelReplicatePrediction(
     token: string,
     cancelUrl: string,
 ): Promise<void> {
+    const controller = new AbortController();
+    let timeoutId: ReturnType<typeof setTimeout> | undefined;
     try {
-        await replicateFetch<unknown>(token, {
-            method: "POST",
-            url: cancelUrl,
-        });
+        await Promise.race([
+            replicateFetch<unknown>(token, {
+                method: "POST",
+                url: cancelUrl,
+                signal: controller.signal,
+            }),
+            new Promise<never>((_, reject) => {
+                timeoutId = setTimeout(() => {
+                    controller.abort();
+                    reject(new Error("Replicate cancellation timed out"));
+                }, CANCEL_REQUEST_TIMEOUT_MS);
+            }),
+        ]);
     } catch {
         // Best effort only: preserve the original timeout response. The
         // create-time Cancel-After header remains the cleanup safety net.
+    } finally {
+        if (timeoutId !== undefined) clearTimeout(timeoutId);
     }
 }
 
@@ -169,6 +183,7 @@ async function replicateFetch<T>(
         body?: Record<string, unknown>;
         prefer?: string;
         cancelAfter?: string;
+        signal?: AbortSignal;
     },
 ): Promise<T> {
     const headers: Record<string, string> = {
@@ -184,6 +199,7 @@ async function replicateFetch<T>(
             method: args.method,
             headers,
             body: args.body ? JSON.stringify(args.body) : undefined,
+            signal: args.signal,
         });
     } catch (error) {
         const message = error instanceof Error ? error.message : String(error);

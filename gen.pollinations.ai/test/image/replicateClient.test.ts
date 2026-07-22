@@ -283,6 +283,43 @@ describe("runReplicatePrediction", () => {
         vi.useRealTimers();
     });
 
+    it("preserves the 504 when cancellation never settles", async () => {
+        vi.useFakeTimers();
+        const cancelUrl =
+            "https://api.replicate.com/v1/predictions/pred_stuck/cancel";
+        const cancelSignals: AbortSignal[] = [];
+        vi.spyOn(globalThis, "fetch").mockImplementation(async (url, init) => {
+            if (url === cancelUrl) {
+                cancelSignals.push(init?.signal as AbortSignal);
+                return new Promise<Response>(() => {});
+            }
+            return new Response(
+                JSON.stringify({
+                    id: "pred_stuck",
+                    status: "processing",
+                    urls: {
+                        get: "https://api.replicate.com/v1/predictions/pred_stuck",
+                    },
+                }),
+                { status: 201 },
+            );
+        });
+
+        const promise = runReplicatePrediction({
+            model: MODEL,
+            input: { prompt: "x" },
+        });
+        const assertion = expect(promise).rejects.toMatchObject({
+            name: "ReplicateError",
+            status: 504,
+        });
+        await vi.advanceTimersByTimeAsync(60 * 5_000 + 5_001);
+        await assertion;
+
+        expect(cancelSignals).toHaveLength(1);
+        expect(cancelSignals[0].aborted).toBe(true);
+    });
+
     it("classifies generic prediction failures as 500 (upstream error)", async () => {
         vi.spyOn(globalThis, "fetch").mockResolvedValue(
             new Response(

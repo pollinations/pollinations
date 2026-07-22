@@ -1,0 +1,36 @@
+{
+  "pr_number": 12666,
+  "title": "Add Arika to chat",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/12666",
+  "merged_at": "2026-07-22T23:14:23Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds [Arika](https://arika.hizumi.in) to chat\n- Arika provides a conversational AI experience designed to feel more human and less robotic.\n\nFixes #10161",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "A warmer chat flower",
+    "blurb": "Arika joined the greenhouse: a conversational AI built to sound a little less like a vending machine. Polli has brought a tiny scarf for the occasion.",
+    "summary": "Added Arika, a conversational AI experience designed to feel more human and less robotic, to the community app listings in README.md, apps/APPS.md, and apps/GREENHOUSE.md.",
+    "impact": "People browsing Pollinations community projects can now discover Arika as another place to have warmer, more natural-feeling AI conversations.",
+    "keywords": [
+      "community",
+      "apps",
+      "Arika",
+      "chat",
+      "conversational-ai",
+      "greenhouse"
+    ],
+    "visual_concept": "Depict Arika as a cozy, friendly chat companion represented by a softly glowing retro terminal with warm speech bubbles, growing in the Pollinations app greenhouse. Polli, wearing a tiny scarf, tends a flowering code-plant beside it, showing that a new conversational project has joined the community garden.",
+    "image_prompt": "A cozy greenhouse scene where the main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears a tiny scarf while watering a flowering code-plant beside a friendly retro chat terminal glowing with warm speech bubbles labeled “ARIKA.” Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel mint-lavender-peach gradient background, chunky retro sprites, warm lighting, subtle CRT glow, retro gaming vibes, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-22/PR-12666.jpg",
+    "prompt": "A cozy greenhouse scene where the main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears a tiny scarf while watering a flowering code-plant beside a friendly retro chat terminal glowing with warm speech bubbles labeled “ARIKA.” Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel mint-lavender-peach gradient background, chunky retro sprites, warm lighting, subtle CRT glow, retro gaming vibes, nostalgic but beautiful."
+  },
+  "generated_at": "2026-07-22T23:15:24.057514+00:00",
+  "app_name": "Arika",
+  "app_url": "https://arika.hizumi.in"
+}

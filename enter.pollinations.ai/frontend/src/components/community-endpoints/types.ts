@@ -8,7 +8,6 @@ import {
     type CommunityEndpointVisibility,
     communityEndpointPriceFieldsForModality,
     MIN_COMMUNITY_PRICE_PER_MILLION_TOKENS,
-    MIN_COMMUNITY_PRICE_PER_UNIT,
 } from "@shared/community-endpoints.ts";
 import type { Usage } from "@shared/registry/registry.ts";
 
@@ -140,11 +139,13 @@ export function isValidPriceInput(
     if (!trimmed) return true;
     if (trimmed.includes(",")) return false;
     const parsed = Number(trimmed);
-    const minimum =
-        priceUnit === "million"
-            ? MIN_COMMUNITY_PRICE_PER_MILLION_TOKENS
-            : MIN_COMMUNITY_PRICE_PER_UNIT;
-    return Number.isFinite(parsed) && (parsed === 0 || parsed >= minimum);
+    return (
+        Number.isFinite(parsed) &&
+        parsed >= 0 &&
+        (priceUnit === "image" ||
+            parsed === 0 ||
+            parsed >= MIN_COMMUNITY_PRICE_PER_MILLION_TOKENS)
+    );
 }
 
 export function endpointToForm(endpoint: CommunityEndpoint): EndpointFormState {

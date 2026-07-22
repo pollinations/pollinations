@@ -14,8 +14,6 @@ import {
     type CommunityEndpointImagePricing,
     type CommunityEndpointModality,
     communityEndpointPriceFieldsForModality,
-    MIN_COMMUNITY_PRICE_PER_MILLION_TOKENS,
-    MIN_COMMUNITY_PRICE_PER_UNIT,
 } from "@shared/community-endpoints.ts";
 import { PRICE_ICON } from "../models/model-icons.tsx";
 import type { PriceKind } from "../models/types.ts";
@@ -183,10 +181,6 @@ function PriceInputCell({
     const inputId = `community-${field.key}`;
     const hasError = state.invalid;
     const unitLabel = field.priceUnit === "image" ? "/image" : "/1M";
-    const minimum =
-        field.priceUnit === "million"
-            ? MIN_COMMUNITY_PRICE_PER_MILLION_TOKENS
-            : MIN_COMMUNITY_PRICE_PER_UNIT;
 
     return (
         <TableCell align="right" className="w-40 align-top">
@@ -216,7 +210,7 @@ function PriceInputCell({
                 </div>
                 {hasError && (
                     <p className="mt-1 text-right text-xs text-intent-danger-text">
-                        0 (free) or at least {minimum} {unitLabel}
+                        Enter 0 (free) or a valid positive price.
                     </p>
                 )}
             </div>

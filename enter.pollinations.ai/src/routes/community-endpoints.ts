@@ -42,27 +42,18 @@ const ImagePricingSchema = z
     .describe(
         'Image models only. "request": the generated-image price is charged once per generation. "tokens": provider-returned OpenAI image token usage is charged against per-token prices. Detected by the endpoint test.',
     );
+const PriceSchema = z
+    .number()
+    .finite()
+    .min(0)
+    .refine((price) => price === 0 || price >= MIN_COMMUNITY_PRICE_PER_TOKEN, {
+        message: `Price must be 0 (free) or at least ${MIN_COMMUNITY_PRICE_PER_TOKEN} per token (${MIN_COMMUNITY_PRICE_PER_MILLION_TOKENS} per 1M tokens)`,
+    });
 const UpdatePriceFieldsSchema = Object.fromEntries(
-    COMMUNITY_ENDPOINT_PRICE_FIELDS.map((field) => {
-        // completionImagePrice is per image for "request" endpoints but per
-        // token for "tokens" endpoints, so it shares the per-token floor.
-        const minimum = MIN_COMMUNITY_PRICE_PER_TOKEN;
-        const unit =
-            field.priceUnit === "image"
-                ? "per image or per token"
-                : `per token (${MIN_COMMUNITY_PRICE_PER_MILLION_TOKENS} per 1M tokens)`;
-        return [
-            field.key,
-            z
-                .number()
-                .finite()
-                .min(0)
-                .refine((price) => price === 0 || price >= minimum, {
-                    message: `Price must be 0 (free) or at least ${minimum} ${unit}`,
-                })
-                .optional(),
-        ];
-    }),
+    COMMUNITY_ENDPOINT_PRICE_FIELDS.map((field) => [
+        field.key,
+        PriceSchema.optional(),
+    ]),
 ) as unknown as Record<
     CommunityEndpointPriceKey,
     z.ZodType<number | undefined>

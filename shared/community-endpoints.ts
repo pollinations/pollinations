@@ -1,5 +1,4 @@
 import { isCommunityModelAllowedGithubId } from "./auth/github-id-list.ts";
-import { POLLEN_BILLING_PRECISION } from "./billing/precision.ts";
 import type { ModelDefinition, PriceDefinition } from "./registry/registry.ts";
 import {
     OPENAI_CHAT_USAGE_PATHS,
@@ -23,7 +22,6 @@ export const COMMUNITY_ENDPOINT_IMAGE_PRICING_MODES = [
 export const MIN_COMMUNITY_PRICE_PER_MILLION_TOKENS = 0.000001;
 export const MIN_COMMUNITY_PRICE_PER_TOKEN =
     MIN_COMMUNITY_PRICE_PER_MILLION_TOKENS / 1_000_000;
-export const MIN_COMMUNITY_PRICE_PER_UNIT = 10 ** -POLLEN_BILLING_PRECISION;
 const BEARER_PREFIX = /^Bearer(?:\s+|$)/i;
 
 export type CommunityEndpointModality =

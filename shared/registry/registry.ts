@@ -85,6 +85,22 @@ export type BillingRules = {
     adjustments?: BillingAdjustmentRule[];
 };
 
+// Normalized request facts that can affect pricing (resolution, input mode,
+// option toggles). Set once per request by the service layer via the track
+// middleware's pricing input, consumed only by selectCostVariant. Keep this
+// vocabulary small: a key earns its place when a live model prices on it.
+export type PricingInput = {
+    resolution?: string;
+    hasImage?: boolean;
+    audio?: boolean;
+    draft?: boolean;
+};
+
+export type CostVariantContext = {
+    usage: Usage;
+    input?: PricingInput;
+};
+
 // Per-rule billing breakdown, returned in parallel to the numeric usage maps.
 // The model's single priceMultiplier applies uniformly to tokens and
 // adjustments alike (there is no per-rule multiplier), so adjustment prices
@@ -110,6 +126,16 @@ export type ModelDefinition = {
     brand: string;
     category: Category;
     cost: CostDefinition;
+    // Named alternate rate sheets, merged over `cost` when selectCostVariant
+    // picks one (keys not listed in a variant inherit the base rate). Rates
+    // are always data — selectors return a NAME, never a number. Provider
+    // tiers (long-context, resolution) each map to one named sheet here.
+    costVariants?: Record<string, CostDefinition>;
+    // Picks the rate sheet for one request, evaluated once at billing time
+    // inside calculateUsageBilling. Must be pure and never throw. Returning
+    // undefined (or an unknown name — warned) bills at base rates. Selection
+    // is code; money is data.
+    selectCostVariant?: (context: CostVariantContext) => string | undefined;
     // USD-cost to Pollen-price multiplier. Required on every model — there is
     // no implicit default. Typical values: 1 (sold at cost) or 1.5 (paid markup).
     priceMultiplier: number;
@@ -174,12 +200,90 @@ function convertUsage(
     return convertedUsage as Usage;
 }
 
-function derivePrice(svc: ModelDefinition): PriceDefinition {
-    const m = svc.priceMultiplier;
-    if (m === 1) return svc.cost;
+function derivePrice(
+    costDefinition: CostDefinition,
+    priceMultiplier: number,
+): PriceDefinition {
+    if (priceMultiplier === 1) return costDefinition;
     return Object.fromEntries(
-        Object.entries(svc.cost).map(([k, v]) => [k, (v as number) * m]),
+        Object.entries(costDefinition).map(([k, v]) => [
+            k,
+            (v as number) * priceMultiplier,
+        ]),
     ) as PriceDefinition;
+}
+
+// Prompt-side token count used by long-context selectors: every prompt token
+// bucket counts toward the provider's context threshold (cached and modality
+// tokens included); promptAudioSeconds is a duration, not a token count.
+const PROMPT_TOKEN_TYPES: UsageType[] = [
+    "promptTextTokens",
+    "promptCachedTokens",
+    "promptCacheWriteTokens",
+    "promptAudioTokens",
+    "promptImageTokens",
+    "promptVideoTokens",
+];
+
+export function totalPromptTokens(usage: Usage): number {
+    return PROMPT_TOKEN_TYPES.reduce(
+        (total, usageType) => total + (usage[usageType] ?? 0),
+        0,
+    );
+}
+
+// Selector factory for provider long-context tiers: strictly greater than the
+// threshold reprices the ENTIRE request (Vertex: "If a query input context is
+// longer than 200K tokens, all tokens (input and output) are charged at long
+// context rates"; Azure meters requests as <272k / >272k context length).
+export function longContextAbove(minPromptTokens: number) {
+    return ({ usage }: CostVariantContext): "long_context" | undefined =>
+        totalPromptTokens(usage) > minPromptTokens
+            ? "long_context"
+            : undefined;
+}
+
+// Pairs variant sheets with their selector so TypeScript checks that the
+// selector can only return names that exist in the sheets.
+export function defineCostVariants<
+    const V extends Record<string, CostDefinition>,
+>(
+    costVariants: V,
+    selectCostVariant: (
+        context: CostVariantContext,
+    ) => (keyof V & string) | undefined,
+): Pick<ModelDefinition, "costVariants" | "selectCostVariant"> {
+    return { costVariants, selectCostVariant };
+}
+
+// Resolve the variant name for one request. Never throws: a throwing or
+// misconfigured selector logs and falls back to base rates — a selector bug
+// must never drop the tracking event or bill zero.
+function selectCostVariant(
+    model: string,
+    usage: Usage,
+    svc: ModelDefinition,
+    input?: PricingInput,
+): string | undefined {
+    if (!svc.selectCostVariant) return undefined;
+    let name: string | undefined;
+    try {
+        name = svc.selectCostVariant({ usage, input });
+    } catch (error) {
+        console.warn(
+            `[registry] selectCostVariant threw for model=${model} — billing base rates`,
+            error,
+        );
+        return undefined;
+    }
+    if (name === undefined) return undefined;
+    if (!svc.costVariants?.[name]) {
+        console.warn(
+            `[registry] Unknown cost variant "${name}" for model=${model} — billing base rates`,
+        );
+        return undefined;
+    }
+    return name;
 }
 
 function calculateLinearCost(
@@ -232,6 +336,13 @@ export type UsageBilling = {
     cost: UsageCost;
     price: UsagePrice;
     adjustments: BillingAdjustment[];
+    // Per-unit Pollen price sheet actually applied (effective cost ×
+    // multiplier). Telemetry must record THIS sheet, not the request-time
+    // base sheet, so recorded rates always reproduce the billed totals.
+    priceDefinition: PriceDefinition;
+    // Name of the applied cost variant, if any (financial identity — distinct
+    // from modelUsed, which stays observational).
+    costVariant?: string;
 };
 
 export function calculateUsageBilling(
@@ -239,6 +350,7 @@ export function calculateUsageBilling(
     usage: Usage,
     svc: ModelDefinition,
     output?: unknown,
+    input?: PricingInput,
 ): UsageBilling {
     const adjustments = calculateBillingAdjustments(svc, output, model);
     const adjustmentCost = adjustments.reduce((total, a) => total + a.cost, 0);
@@ -247,7 +359,11 @@ export function calculateUsageBilling(
         0,
     );
 
-    const usageCost = calculateLinearCost(model, usage, svc.cost);
+    const costVariant = selectCostVariant(model, usage, svc, input);
+    const effectiveCost = costVariant
+        ? { ...svc.cost, ...svc.costVariants?.[costVariant] }
+        : svc.cost;
+    const usageCost = calculateLinearCost(model, usage, effectiveCost);
     const cost =
         adjustmentCost === 0
             ? usageCost
@@ -273,7 +389,13 @@ export function calculateUsageBilling(
         totalPrice: roundPollenLedgerAmount(tokenTotalPrice + adjustmentPrice),
     };
 
-    return { cost, price, adjustments };
+    return {
+        cost,
+        price,
+        adjustments,
+        priceDefinition: derivePrice(effectiveCost, svc.priceMultiplier),
+        costVariant,
+    };
 }
 
 const MODEL_REGISTRY = {
@@ -373,7 +495,7 @@ export function getRegistryModelDefinition(model: ModelName): ModelDefinition {
 export function getPriceDefinitionForModel(
     svc: ModelDefinition,
 ): PriceDefinition {
-    return derivePrice(svc);
+    return derivePrice(svc.cost, svc.priceMultiplier);
 }
 
 /**

@@ -33,6 +33,7 @@ import {
     getPriceDefinitionForModel,
     type ModelDefinition,
     type PriceDefinition,
+    type PricingInput,
     type Usage,
     type UsageCost,
     type UsagePrice,
@@ -113,6 +114,13 @@ type ResponseTrackingData = {
     // Per-rule billing adjustment breakdown for the billed generation. Absent on
     // cache hits / not-billed paths, which return before cost calculation.
     adjustments?: BillingAdjustment[];
+    // Effective per-unit price sheet applied at billing time (cost variant
+    // merged, multiplier applied). The tracking event records this sheet so
+    // recorded rates always reproduce the billed totals.
+    priceDefinition?: PriceDefinition;
+    // Applied cost variant name (financial identity; modelUsed stays
+    // observational).
+    costVariant?: string;
     contentFilterResults?: GenerationEventContentFilterParams;
 };
 
@@ -122,6 +130,10 @@ export type TrackVariables = {
         resolvedModelRequested: string;
         streamRequested: boolean;
         overrideResponseTracking: (response: Response) => void;
+        // Service layers (text/image/video/3d response builders) register the
+        // normalized request facts that can affect pricing (resolution, audio,
+        // …). Consumed once at billing time by selectCostVariant.
+        setPricingInput: (input: PricingInput) => void;
     };
 };
 
@@ -175,6 +187,7 @@ export const track = (eventType: EventType) =>
         } satisfies UserData;
 
         let responseOverride: Response | null = null;
+        let pricingInput: PricingInput | undefined;
 
         c.set("track", {
             modelRequested: requestTracking.modelRequested,
@@ -182,6 +195,9 @@ export const track = (eventType: EventType) =>
             streamRequested: requestTracking.streamRequested,
             overrideResponseTracking: (response: Response) => {
                 responseOverride = response;
+            },
+            setPricingInput: (input: PricingInput) => {
+                pricingInput = input;
             },
         });
 
@@ -201,6 +217,7 @@ export const track = (eventType: EventType) =>
                     eventType,
                     requestTracking,
                     response,
+                    pricingInput,
                 );
                 // trackResponse consumes SSE text and JSON bodies, so for
                 // those endTime marks actual response completion — not
@@ -451,6 +468,7 @@ async function trackResponse(
     eventType: EventType,
     requestTracking: RequestTrackingData,
     response: Response,
+    pricingInput?: PricingInput,
 ): Promise<ResponseTrackingData> {
     const log = getLogger(["hono", "track", "response"]);
     const { resolvedModelRequested } = requestTracking;
@@ -504,12 +522,14 @@ async function trackResponse(
     // Single pass: cost, price, and the per-rule fee breakdown all derive from
     // one walk over the billing rules, so the event's adjustment maps always
     // match the billed totals and clamp warnings log once per request.
-    const { cost, price, adjustments } = calculateUsageBilling(
-        resolvedModelRequested,
-        modelUsage.usage,
-        requestTracking.modelDefinition,
-        modelUsage.output,
-    );
+    const { cost, price, adjustments, priceDefinition, costVariant } =
+        calculateUsageBilling(
+            resolvedModelRequested,
+            modelUsage.usage,
+            requestTracking.modelDefinition,
+            modelUsage.output,
+            pricingInput,
+        );
     return {
         responseOk: response.ok,
         responseStatus: response.status,
@@ -519,6 +539,8 @@ async function trackResponse(
         cost,
         price,
         adjustments,
+        priceDefinition,
+        costVariant,
         modelUsed: modelUsage.model,
         usage: modelUsage.usage,
         contentFilterResults,
@@ -715,7 +737,12 @@ function createTrackingEvent({
         ...balanceTracking,
         ...reduceAdjustmentsToEventFields(responseTracking.adjustments),
 
-        ...priceToEventParams(requestTracking.modelPriceDefinition),
+        // Billed rows record the effective sheet resolved at billing time
+        // (cost variant merged); not-billed rows fall back to the base sheet.
+        ...priceToEventParams(
+            responseTracking.priceDefinition ??
+                requestTracking.modelPriceDefinition,
+        ),
         ...usageToEventParams(responseTracking.usage),
 
         totalCost: responseTracking.cost?.totalCost || 0,

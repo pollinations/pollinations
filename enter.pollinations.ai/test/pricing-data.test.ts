@@ -404,8 +404,8 @@ test("long-context text pricing switches at the provider thresholds", () => {
         getRegistryModelDefinition("gpt-5.4"),
     );
     expect(standard.costVariant).toBe("standard");
-    expect(standard.costDefinition.promptTextTokens).toBe(0.0000025);
-    expect(standard.costDefinition.completionTextTokens).toBe(0.000015);
+    expect(standard.priceDefinition.promptTextTokens).toBe(0.0000025);
+    expect(standard.priceDefinition.completionTextTokens).toBe(0.000015);
 
     expect(
         getRegistryModelDefinition("gpt-5.4").resolveCostVariant?.({
@@ -426,23 +426,24 @@ test("long-context text pricing switches at the provider thresholds", () => {
         getRegistryModelDefinition("gpt-5.4"),
     );
     expect(long.costVariant).toBe("long-context");
-    expect(long.costDefinition.promptTextTokens).toBe(0.000005);
-    expect(long.costDefinition.promptCachedTokens).toBe(0.0000005);
-    expect(long.costDefinition.completionTextTokens).toBe(0.0000225);
+    expect(long.priceDefinition.promptTextTokens).toBe(0.000005);
+    expect(long.priceDefinition.promptCachedTokens).toBe(0.0000005);
+    expect(long.priceDefinition.completionTextTokens).toBe(0.0000225);
 
     const discounted = calculateUsageBilling(
         "gpt-5.6-sol",
-        { promptTextTokens: 272_001, completionTextTokens: 1 },
+        {
+            promptTextTokens: 272_001,
+            promptCacheWriteTokens: 1,
+            completionTextTokens: 1,
+        },
         getRegistryModelDefinition("gpt-5.6-sol"),
     );
     expect(discounted.costVariant).toBe("long-context");
-    expect(discounted.priceDefinition.promptTextTokens).toBe(
-        discounted.costDefinition.promptTextTokens / 2,
-    );
-    expect(discounted.priceDefinition.completionTextTokens).toBe(
-        discounted.costDefinition.completionTextTokens / 2,
-    );
-    expect(discounted.costDefinition.promptCacheWriteTokens).toBe(0.0000125);
+    expect(discounted.priceDefinition.promptTextTokens).toBe(0.000005);
+    expect(discounted.priceDefinition.completionTextTokens).toBe(0.0000225);
+    expect(discounted.priceDefinition.promptCacheWriteTokens).toBe(0.00000625);
+    expect(discounted.cost.promptCacheWriteTokens).toBe(0.0000125);
 
     const gemini = calculateUsageBilling(
         "gemini-large",
@@ -455,8 +456,8 @@ test("long-context text pricing switches at the provider thresholds", () => {
         getRegistryModelDefinition("gemini-large"),
     );
     expect(gemini.costVariant).toBe("long-context");
-    expect(gemini.costDefinition.promptImageTokens).toBe(0.000004);
-    expect(gemini.costDefinition.completionTextTokens).toBe(0.000018);
+    expect(gemini.priceDefinition.promptImageTokens).toBe(0.000004);
+    expect(gemini.priceDefinition.completionTextTokens).toBe(0.000018);
 });
 
 test("media billing selectors use normalized request facts", () => {
@@ -491,7 +492,7 @@ test("media billing selectors use normalized request facts", () => {
             { input },
         );
         expect(billing.costVariant).toBe(variant);
-        expect(billing.costDefinition.completionVideoSeconds).toBe(rate);
+        expect(billing.priceDefinition.completionVideoSeconds).toBe(rate);
         expect(billing.cost.totalCost).toBeCloseTo(rate * 2, 10);
     }
 

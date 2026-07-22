@@ -1,5 +1,5 @@
 import { defineCostVariants } from "./cost-variants";
-import type { BillingContext, ModelDefinition } from "./registry";
+import type { ModelDefinition } from "./registry";
 
 export const DEFAULT_3D_MODEL = "trellis-2" as const;
 
@@ -33,22 +33,9 @@ export const MODEL3D_SERVICES = {
                 medium: { completionImageTokens: 0.29 },
                 high: { completionImageTokens: 0.35 },
             },
-            ({ input }: BillingContext) => {
-                const quality =
-                    (input && typeof input === "object" && "quality" in input
-                        ? (input as { quality?: string }).quality
-                        : undefined) ?? "low";
-                if (
-                    quality !== "low" &&
-                    quality !== "medium" &&
-                    quality !== "high"
-                ) {
-                    throw new Error(
-                        `Unsupported Trellis 2 quality: ${quality}`,
-                    );
-                }
-                return quality;
-            },
+            ({ input }) =>
+                (input as { quality?: "low" | "medium" | "high" } | undefined)
+                    ?.quality ?? "low",
         ),
         title: "Trellis 2",
         description: "Turns a photo into a 3D model at configurable detail",

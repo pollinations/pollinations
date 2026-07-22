@@ -231,58 +231,39 @@ function calculateLinearCost(
     };
 }
 
-function resolveUsageCost(
+function selectCostVariant(
     model: string,
     usage: Usage,
     svc: ModelDefinition,
     context: UsageBillingContext,
-): {
-    usageCost: UsageCost;
-    effectiveRates: CostDefinition;
-    costVariant?: string;
-} {
-    let costVariant: string | undefined;
-    try {
-        costVariant = svc.resolveCostVariant?.({ usage, ...context });
-    } catch (error) {
-        console.warn(
-            `[registry] Cost variant resolver failed for model=${model} — billing base rates`,
-            error,
-        );
-        return {
-            usageCost: calculateLinearCost(model, usage, svc.cost),
-            effectiveRates: svc.cost,
-        };
-    }
-
-    if (!costVariant) {
+): string | undefined {
+    if (!svc.resolveCostVariant) {
         if (svc.costVariants) {
             console.warn(
                 `[registry] Model ${model} defines cost variants without a billing resolver — billing base rates`,
             );
         }
-        return {
-            usageCost: calculateLinearCost(model, usage, svc.cost),
-            effectiveRates: svc.cost,
-        };
+        return undefined;
     }
 
-    const variantCost = svc.costVariants?.[costVariant];
-    if (!variantCost) {
+    let costVariant: string;
+    try {
+        costVariant = svc.resolveCostVariant({ usage, ...context });
+    } catch (error) {
+        console.warn(
+            `[registry] Cost variant resolver failed for model=${model} — billing base rates`,
+            error,
+        );
+        return undefined;
+    }
+
+    if (!svc.costVariants?.[costVariant]) {
         console.warn(
             `[registry] Unknown cost variant for model=${model}: ${costVariant} — billing base rates`,
         );
-        return {
-            usageCost: calculateLinearCost(model, usage, svc.cost),
-            effectiveRates: svc.cost,
-        };
+        return undefined;
     }
-    const effectiveRates = { ...svc.cost, ...variantCost };
-    return {
-        usageCost: calculateLinearCost(model, usage, effectiveRates),
-        effectiveRates,
-        costVariant,
-    };
+    return costVariant;
 }
 
 // Single source of truth: the per-rule breakdown. Cost/price totals are derived
@@ -319,7 +300,6 @@ export type UsageBilling = {
     cost: UsageCost;
     price: UsagePrice;
     adjustments: BillingAdjustment[];
-    costDefinition: CostDefinition;
     priceDefinition: PriceDefinition;
     costVariant?: string;
 };
@@ -337,12 +317,11 @@ export function calculateUsageBilling(
         0,
     );
 
-    const { usageCost, effectiveRates, costVariant } = resolveUsageCost(
-        model,
-        usage,
-        svc,
-        context,
-    );
+    const costVariant = selectCostVariant(model, usage, svc, context);
+    const effectiveRates = costVariant
+        ? { ...svc.cost, ...svc.costVariants?.[costVariant] }
+        : svc.cost;
+    const usageCost = calculateLinearCost(model, usage, effectiveRates);
     const cost =
         adjustmentCost === 0
             ? usageCost
@@ -372,7 +351,6 @@ export function calculateUsageBilling(
         cost,
         price,
         adjustments,
-        costDefinition: effectiveRates,
         priceDefinition: derivePrice(effectiveRates, svc.priceMultiplier),
         costVariant,
     };

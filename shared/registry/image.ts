@@ -1,6 +1,10 @@
 import { defineCostVariants } from "./cost-variants";
 import { perMillion } from "./price-helpers";
-import type { BillingContext, ModelDefinition } from "./registry";
+import type {
+    BillingContext,
+    CostDefinition,
+    ModelDefinition,
+} from "./registry";
 
 type ImageBillingInput = {
     resolution?: string;
@@ -25,6 +29,18 @@ function resolutionVariant<const Resolutions extends readonly string[]>(
         );
     }
     return resolution as Resolutions[number];
+}
+
+function withResolutionPricing(
+    costVariants: Record<string, Partial<CostDefinition>>,
+) {
+    const resolutions = Object.keys(costVariants);
+    return {
+        costVariants,
+        resolveCostVariant: (context: BillingContext) =>
+            resolutionVariant(context, resolutions),
+        resolutions,
+    };
 }
 
 export const DEFAULT_IMAGE_MODEL = "zimage" as const;
@@ -401,14 +417,10 @@ export const IMAGE_SERVICES = {
             completionVideoSeconds: 0.08,
             completionAudioSeconds: 0.02, // per sec when audio is enabled
         },
-        ...defineCostVariants(
-            {
-                "720p": {},
-                "1080p": { completionVideoSeconds: 0.1 },
-            },
-            (context) => resolutionVariant(context, ["720p", "1080p"]),
-        ),
-        resolutions: ["720p", "1080p"],
+        ...withResolutionPricing({
+            "720p": {},
+            "1080p": { completionVideoSeconds: 0.1 },
+        }),
         title: "Veo 3.1 Fast",
         description: "Fast text-to-video with optional audio",
         inputModalities: ["text", "image"],
@@ -429,15 +441,11 @@ export const IMAGE_SERVICES = {
         cost: {
             completionVideoSeconds: 0.025,
         },
-        ...defineCostVariants(
-            {
-                "720p": {},
-                "480p": { completionVideoSeconds: 0.015 },
-                "1080p": { completionVideoSeconds: 0.06 },
-            },
-            (context) => resolutionVariant(context, ["720p", "480p", "1080p"]),
-        ),
-        resolutions: ["720p", "480p", "1080p"],
+        ...withResolutionPricing({
+            "720p": {},
+            "480p": { completionVideoSeconds: 0.015 },
+            "1080p": { completionVideoSeconds: 0.06 },
+        }),
         title: "Seedance Pro-Fast",
         description:
             "Video from text or a start image with strong prompt adherence",
@@ -460,14 +468,10 @@ export const IMAGE_SERVICES = {
         cost: {
             completionVideoSeconds: 0.18,
         },
-        ...defineCostVariants(
-            {
-                "720p": {},
-                "480p": { completionVideoSeconds: 0.08 },
-            },
-            (context) => resolutionVariant(context, ["720p", "480p"]),
-        ),
-        resolutions: ["720p", "480p"],
+        ...withResolutionPricing({
+            "720p": {},
+            "480p": { completionVideoSeconds: 0.08 },
+        }),
         title: "Seedance 2.0",
         description: "Video with natively synced sound, from text or images",
         inputModalities: ["text", "image"],
@@ -488,14 +492,10 @@ export const IMAGE_SERVICES = {
         cost: {
             completionVideoSeconds: 0.1,
         },
-        ...defineCostVariants(
-            {
-                "720p": {},
-                "1080p": { completionVideoSeconds: 0.15 },
-            },
-            (context) => resolutionVariant(context, ["720p", "1080p"]),
-        ),
-        resolutions: ["720p", "1080p"],
+        ...withResolutionPricing({
+            "720p": {},
+            "1080p": { completionVideoSeconds: 0.15 },
+        }),
         title: "Wan 2.6",
         description: "Video with sound from text or an image (5/10/15s clips)",
         inputModalities: ["text", "image"],
@@ -703,14 +703,10 @@ export const IMAGE_SERVICES = {
             promptImageTokens: 0.002, // per start-frame image
             completionVideoSeconds: 0.07,
         },
-        ...defineCostVariants(
-            {
-                "720p": {},
-                "480p": { completionVideoSeconds: 0.05 },
-            },
-            (context) => resolutionVariant(context, ["720p", "480p"]),
-        ),
-        resolutions: ["720p", "480p"],
+        ...withResolutionPricing({
+            "720p": {},
+            "480p": { completionVideoSeconds: 0.05 },
+        }),
         title: "Grok Video Pro",
         description: "Short videos from text or an image (1-15s)",
         inputModalities: ["text", "image"],

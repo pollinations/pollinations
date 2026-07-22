@@ -118,8 +118,7 @@ export const ImageParamsSchema = z
         ).resolutions;
         if (
             data.resolution &&
-            (!supportedResolutions ||
-                !supportedResolutions.includes(data.resolution))
+            !supportedResolutions?.includes(data.resolution)
         ) {
             ctx.addIssue({
                 code: z.ZodIssueCode.custom,

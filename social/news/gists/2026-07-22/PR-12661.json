@@ -1,0 +1,33 @@
+{
+  "pr_number": 12661,
+  "title": "fix: terminate app validation output",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/12661",
+  "merged_at": "2026-07-22T21:44:42Z",
+  "labels": [],
+  "pr_body_excerpt": "- Terminates validator JSON output with a newline on success and failure\n- Prevents GitHub Actions output delimiters from joining the JSON payload\n- Adds a regression assertion for newline-terminated output\n\nChecks:\n- npx biome check --write .github/scripts/app-validate-submission.js .github/scripts/app-submission.test.js\n- node --test .github/scripts/app-submission.test.js",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "JSON gets breathing room",
+    "blurb": "The app validator now puts a newline after its JSON, as nature and shell parsers intended. GitHub Actions delimiters can stop trying to merge with the payload.",
+    "summary": "Updated the app-submission validator to newline-terminate JSON output on both success and failure, preventing GitHub Actions output delimiters from joining the payload, with a regression test to keep it that way.",
+    "impact": "App submission workflow output now remains cleanly parseable in GitHub Actions for successful and failed validation runs.",
+    "keywords": [
+      "github-actions",
+      "app-validation",
+      "json",
+      "workflow",
+      "regression-test"
+    ],
+    "visual_concept": "Polli in a tiny maintainer tool belt gently places a line break between a glowing JSON scroll and a GitHub Actions-style workflow gate, while a small code-plant grows beside the terminal; the visual metaphor is giving machine-readable output its own clean space.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny tool belt, carefully adding a glowing newline to a JSON scroll before it enters a retro workflow terminal; a code-plant blooms beside it and the terminal glows prominently lime green (#ecf874). Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, dark purple (#110518) outlines, with subtle pixel-font text: \"JSON\\n\"."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-22/PR-12661.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny tool belt, carefully adding a glowing newline to a JSON scroll before it enters a retro workflow terminal; a code-plant blooms beside it and the terminal glows prominently lime green (#ecf874). Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, dark purple (#110518) outlines, with subtle pixel-font text: \"JSON\\n\"."
+  },
+  "generated_at": "2026-07-22T21:45:34.809525+00:00"
+}

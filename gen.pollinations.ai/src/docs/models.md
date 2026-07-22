@@ -26,9 +26,13 @@ Community models are user-owned, OpenAI-compatible text or image-generation endp
 - Text and image generation models are supported now; audio and other modalities are planned next.
 - Community image models are text-to-image only and are exposed through `/image/{prompt}` and `/v1/images/generations`. OpenAI-compatible calls must use `response_format: "b64_json"`; reference images and `/v1/images/edits` are not supported yet.
 
+**Pricing**
+- Owners set prices when publishing; blank or zero means free.
+- Text models are priced per token (entered per 1M tokens) for each usage bucket the endpoint reports.
+- Image models bill in one of two modes, detected when the endpoint is tested at registration: endpoints that return OpenAI image token usage are priced per 1M tokens; all others charge a fixed price per generated image.
+
 **Payouts**
 - Owners currently earn 75% of the pollen spent on their model.
-- Public image pricing is selected by the endpoint test: providers returning valid OpenAI image token usage use per-1M-token prices; otherwise the configured fixed Pollen price is charged once per successful generated image.
 - Payouts are like-for-like: a request paid with paid pollen pays the owner in paid pollen; a request paid with quest pollen pays the owner in quest pollen. Quest pollen can't be cashed out — it can only be spent on non-paid models.
 - Owners will be able to switch their model to paid-only.
 - Dollar payouts are planned but not available yet (legal/compliance work in progress).

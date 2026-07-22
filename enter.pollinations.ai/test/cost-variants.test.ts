@@ -88,6 +88,24 @@ describe("long-context cost variants", () => {
             }),
         ).toBe(10);
     });
+
+    it("sums mixed prompt modalities toward the threshold", () => {
+        const billing = calculateUsageBilling(
+            "gemini-large",
+            {
+                promptTextTokens: 100_000,
+                promptAudioTokens: 50_000,
+                promptImageTokens: 50_001,
+                completionTextTokens: 1_000,
+            },
+            geminiLarge,
+        );
+        expect(billing.costVariant).toBe("long_context");
+        expect(billing.cost.completionTextTokens).toBeCloseTo(
+            1_000 * (18 / 1e6),
+            12,
+        );
+    });
 });
 
 describe("resolution cost variants", () => {
@@ -136,6 +154,28 @@ describe("resolution cost variants", () => {
             { resolution: "1080p" },
         );
         expect(billing.cost.totalCost).toBeCloseTo(5 * 0.15, 12);
+    });
+
+    it("seedance-pro bills its 480p and 1080p tiers, 720p base otherwise", () => {
+        const seedancePro = getRegistryModelDefinition("seedance-pro");
+        const tiers = [
+            [undefined, 0.025],
+            ["480p", 0.015],
+            ["1080p", 0.06],
+        ] as const;
+        for (const [resolution, rate] of tiers) {
+            const billing = calculateUsageBilling(
+                "seedance-pro",
+                { completionVideoSeconds: 6 },
+                seedancePro,
+                undefined,
+                resolution ? { resolution } : undefined,
+            );
+            expect(billing.cost.totalCost, `${resolution}`).toBeCloseTo(
+                6 * rate,
+                12,
+            );
+        }
     });
 });
 
@@ -188,6 +228,21 @@ describe("selection safety", () => {
         expect(billing.cost.totalCost).toBeCloseTo(1_000 * 1e-6, 12);
         expect(warn).toHaveBeenCalled();
         warn.mockRestore();
+    });
+
+    it("applies the price multiplier to the effective variant sheet", () => {
+        const billing = calculateUsageBilling(
+            "test-model",
+            { promptTextTokens: 1_000_000 },
+            fakeModel({
+                priceMultiplier: 2,
+                costVariants: { premium: { promptTextTokens: 3e-6 } },
+                selectCostVariant: () => "premium",
+            }),
+        );
+        expect(billing.cost.totalCost).toBeCloseTo(3, 12);
+        expect(billing.price.totalPrice).toBeCloseTo(6, 12);
+        expect(billing.priceDefinition.promptTextTokens).toBeCloseTo(6e-6, 15);
     });
 });
 

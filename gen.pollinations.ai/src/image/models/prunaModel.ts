@@ -322,4 +322,8 @@ export const callPrunaVideoAPI = (
     prompt: string,
     safeParams: ImageParams,
 ): Promise<VideoGenerationResult> =>
-    generatePrunaVideo(safeParams.resolution ?? "720p", prompt, safeParams);
+    generatePrunaVideo(
+        safeParams.resolution === "1080p" ? "1080p" : "720p",
+        prompt,
+        safeParams,
+    );

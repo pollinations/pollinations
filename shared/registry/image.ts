@@ -394,14 +394,30 @@ export const IMAGE_SERVICES = {
         priceMultiplier: 1,
         paidOnly: true,
         // Replicate bytedance/seedance-1-pro-fast is per-second tiered by
-        // resolution (480p $0.015, 720p $0.025, 1080p $0.06). Handler is locked
-        // to 720p; revisit if/when the registry supports tiered pricing.
+        // resolution: 480p $0.015, 720p $0.025 (default), 1080p $0.06.
         cost: {
-            completionVideoSeconds: 0.025, // per sec at 720p
+            completionVideoSeconds: 0.025, // per sec (720p, default)
         },
+        ...defineCostVariants(
+            {
+                "480p": {
+                    completionVideoSeconds: 0.015, // per sec (480p)
+                },
+                "1080p": {
+                    completionVideoSeconds: 0.06, // per sec (1080p)
+                },
+            },
+            ({ input }) =>
+                input?.resolution === "480p"
+                    ? "480p"
+                    : input?.resolution === "1080p"
+                      ? "1080p"
+                      : undefined,
+        ),
+        resolutions: ["720p", "480p", "1080p"],
         title: "Seedance Pro-Fast",
         description:
-            "720p video from text or a start image, with strong prompt adherence",
+            "Video from text or a start image, with strong prompt adherence",
         inputModalities: ["text", "image"],
         outputModalities: ["video"],
         videoCapabilities: ["start_frame"],

@@ -538,7 +538,7 @@ Generate a video from a text prompt. Returns MP4.
 
 **Available models:** `veo`, `seedance-pro`, `seedance-2.0`, `wan`, `wan-fast`, `wan-pro`, `grok-video-pro`, `happyhorse-1.1`, `p-video`, `nova-reel`.
 
-`veo`, `wan-pro`, and `p-video` accept a `resolution` parameter (`720p` default, `1080p`); 1080p requests bill at the model's 1080p rate. The former `veo-1080p`, `wan-pro-1080p`, and `p-video-1080p`/`p-video-720p` model names keep working as aliases that imply their resolution.
+`veo`, `wan-pro`, and `p-video` accept a `resolution` parameter (`720p` default, `1080p`), and `seedance-pro` additionally accepts `480p`; non-default resolutions bill at the model's rate for that tier. The former `veo-1080p`, `wan-pro-1080p`, and `p-video-1080p`/`p-video-720p` model names keep working as aliases that imply their resolution.
 
 Use `duration` to set video length, `aspectRatio` for orientation, and `audio` where the selected model supports audio output.
 

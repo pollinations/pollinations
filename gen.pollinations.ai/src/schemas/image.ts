@@ -109,9 +109,9 @@ const GenerateImageRequestQueryParamsBaseSchema = z.object({
         description:
             "Generate audio for the video. Only applies to video models. Note: `wan` generates audio regardless of this flag. For `veo`, set to `true` to enable audio.",
     }),
-    resolution: z.enum(["720p", "1080p"]).optional().meta({
+    resolution: z.enum(["480p", "720p", "1080p"]).optional().meta({
         description:
-            "Output resolution for resolution-priced video models (`veo`, `wan-pro`, `p-video`). Defaults to 720p. 1080p bills at the model's 1080p rate — see `pricing` on `/image/models`.",
+            "Output resolution for resolution-priced video models (`veo`, `wan-pro`, `p-video`, `seedance-pro`). Defaults to 720p. Non-default resolutions bill at the model's rate for that tier — see `pricing` on `/image/models`.",
     }),
 });
 

@@ -241,7 +241,11 @@ export const callVeoAPI = (
     prompt: string,
     safeParams: ImageParams,
 ): Promise<VideoGenerationResult> =>
-    generateVeoVideo(safeParams.resolution ?? "720p", prompt, safeParams);
+    generateVeoVideo(
+        safeParams.resolution === "1080p" ? "1080p" : "720p",
+        prompt,
+        safeParams,
+    );
 
 /**
  * Poll Veo operation until completion using fetchPredictOperation

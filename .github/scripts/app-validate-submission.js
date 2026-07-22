@@ -104,7 +104,7 @@ function main() {
         metadata,
         row: errors.length === 0 ? buildRow(submission, metadata) : "",
     };
-    process.stdout.write(JSON.stringify(result));
+    process.stdout.write(`${JSON.stringify(result)}\n`);
     if (!result.valid) process.exitCode = 2;
 }
 
@@ -112,7 +112,7 @@ try {
     main();
 } catch (error) {
     process.stdout.write(
-        JSON.stringify({ valid: false, system_error: error.message }),
+        `${JSON.stringify({ valid: false, system_error: error.message })}\n`,
     );
     process.exitCode = 1;
 }

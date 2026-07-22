@@ -1,5 +1,5 @@
-# Pollinations AI - Auto-fix issues labeled "polli"
-# Trigger: Add "polli" label | Whitelist: voodoohop, ElliotEtag, Circuit-Overtime, Itachi-1824, pollinations-ai bot to an issue
+# Pollinations AI - Auto-fix issues labeled "polly"
+# Trigger: Add "polly" label | Whitelist: voodoohop, ElliotEtag, Circuit-Overtime, Itachi-1824, pollinations-ai bot to an issue
 
 name: Repo / Auto-fix Polli issues
 
@@ -53,7 +53,7 @@ jobs:
                 owner: context.repo.owner,
                 repo: context.repo.repo,
                 issue_number: context.issue.number,
-                body: `Sorry @${labeledBy}, only maintainers can trigger Polli auto-fix by adding the \`polli\` label.`
+                body: `Sorry @${labeledBy}, only maintainers can trigger Polli auto-fix by adding the \`polly\` label.`
               });
               core.setOutput('authorized', 'false');
             } else {

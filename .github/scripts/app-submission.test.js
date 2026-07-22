@@ -119,5 +119,6 @@ if (args[0] === "issue" && args[1] === "list") {
     fs.rmSync(fakeBin, { recursive: true, force: true });
 
     assert.equal(result.status, 0, result.stderr || result.stdout);
+    assert.ok(result.stdout.endsWith("\n"));
     assert.equal(JSON.parse(result.stdout).submission.name, "Sunflower Studio");
 });

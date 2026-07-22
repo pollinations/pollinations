@@ -7,9 +7,9 @@ import {
 } from "@/embeddings/handler.ts";
 import type { Env } from "@/env.ts";
 import { handleImagePrompt, handleRegisterServer } from "@/image/handler.ts";
+import { accountConcurrencyLimit } from "@/middleware/account-concurrency.ts";
 import { auth } from "@/middleware/auth.ts";
 import { balance } from "@/middleware/balance.ts";
-import { accountConcurrencyLimit } from "@/middleware/account-concurrency.ts";
 import {
     audioCache,
     imageCache,
@@ -104,10 +104,10 @@ const textBodyLimit = bodyLimit({
 // Shared handler for image and video generation (used by both /image/ and /video/ routes)
 const imageVideoHandlers = factory.createHandlers(
     resolveModel("generate.image"),
-    track("generate.image"),
     imageCache,
-    generationAccess,
     accountConcurrencyLimit,
+    track("generate.image"),
+    generationAccess,
     async (c) => {
         const query = c.req.valid("query" as never) as { safe?: SafeValue };
         const prompt = await applySafety(
@@ -123,10 +123,10 @@ const imageVideoHandlers = factory.createHandlers(
 // same as video, to avoid touching Tinybird/EventType consumers).
 const model3dHandlers = factory.createHandlers(
     resolveModel("generate.image", { defaultModel: DEFAULT_3D_MODEL }),
-    track("generate.image"),
     model3dCache,
-    generationAccess,
     accountConcurrencyLimit,
+    track("generate.image"),
+    generationAccess,
     async (c) => {
         const query = c.req.valid("query" as never) as { safe?: SafeValue };
         const prompt = await applySafety(
@@ -143,10 +143,10 @@ const chatCompletionHandlers = factory.createHandlers(
     textBodyLimit,
     validator("json", CreateChatCompletionRequestSchema),
     resolveModel("generate.text"),
-    track("generate.text"),
     textCache,
-    generationAccess,
     accountConcurrencyLimit,
+    track("generate.text"),
+    generationAccess,
     async (c) => {
         // Use resolved model from middleware for the backend request
         const requestBody = await applySafetyToChatRequest(c, {
@@ -657,9 +657,9 @@ export const proxyRoutes = new Hono<Env>()
         textBodyLimit,
         validator("json", CreateEmbeddingRequestSchema),
         resolveModel("generate.embedding"),
+        accountConcurrencyLimit,
         track("generate.embedding"),
         generationAccess,
-        accountConcurrencyLimit,
         async (c) => {
             const requestBody = c.req.valid("json" as never) as z.infer<
                 typeof CreateEmbeddingRequestSchema
@@ -697,10 +697,10 @@ export const proxyRoutes = new Hono<Env>()
         textBodyLimit,
         validator("json", CreateChatCompletionRequestSchema),
         resolveModel("generate.text"),
-        track("generate.text"),
         textCache,
-        generationAccess,
         accountConcurrencyLimit,
+        track("generate.text"),
+        generationAccess,
         async (c) => {
             const requestBody = await applySafetyToChatRequest(c, {
                 ...(c.req.valid(
@@ -747,10 +747,10 @@ export const proxyRoutes = new Hono<Env>()
         ),
         validator("query", GenerateTextRequestQueryParamsSchema),
         resolveModel("generate.text"),
-        track("generate.text"),
         textCache,
-        generationAccess,
         accountConcurrencyLimit,
+        track("generate.text"),
+        generationAccess,
         async (c) => {
             // Use resolved model from middleware
             const model = c.var.model.resolved;
@@ -1053,10 +1053,10 @@ export const proxyRoutes = new Hono<Env>()
             }),
         ),
         resolveModel("generate.audio"),
-        track("generate.audio"),
         audioCache,
-        generationAccess,
         accountConcurrencyLimit,
+        track("generate.audio"),
+        generationAccess,
         handleSimpleAudio,
     )
     .post(
@@ -1085,8 +1085,8 @@ export const proxyRoutes = new Hono<Env>()
         }),
         validator("json", CreateImageRequestSchema),
         resolveModel("generate.image"),
-        track("generate.image"),
         accountConcurrencyLimit,
+        track("generate.image"),
         handleImageGeneration,
     )
     .post(
@@ -1115,8 +1115,8 @@ export const proxyRoutes = new Hono<Env>()
             },
         }),
         resolveModel("generate.image"),
-        track("generate.image"),
         accountConcurrencyLimit,
+        track("generate.image"),
         handleImageEdit,
     );
 

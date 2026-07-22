@@ -694,6 +694,55 @@ fixtureTest(
 );
 
 fixtureTest(
+    "the account slot is shared across modalities (audio blocked while slot held)",
+    async () => {
+        // An unpaid account that already holds its single slot (e.g. a text
+        // generation in flight) must be blocked on a DIFFERENT modality. This
+        // pins the account-global invariant: the limiter is keyed by user, not
+        // by model or route, so /v1/audio/* cannot bypass it.
+        const callerUserId = await createTestUser({
+            tierBalance: 100,
+            packBalance: 0,
+        });
+        const { key } = await createTestApiKey({
+            userId: callerUserId,
+            name: "cross-modality-key",
+        });
+
+        // Occupy the account's slot directly via the Durable Object, keyed the
+        // same way the middleware keys it (idFromName(userId)).
+        const namespace = env.ACCOUNT_CONCURRENCY_LIMITER;
+        const stub = namespace.get(namespace.idFromName(callerUserId));
+        const held = await stub.acquire();
+        expect(held.allowed).toBe(true);
+
+        // A concurrent audio (TTS) request must be rejected before reaching the
+        // provider — the limiter runs ahead of the handler, so no upstream mock
+        // is needed.
+        const audioResponse = await SELF.fetch(
+            "https://gen.pollinations.ai/v1/audio/speech",
+            {
+                method: "POST",
+                headers: {
+                    Authorization: `Bearer ${key}`,
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    model: "elevenlabs",
+                    input: "hello",
+                    voice: "alloy",
+                }),
+            },
+        );
+        expect(audioResponse.status).toBe(429);
+        expect(audioResponse.headers.get("Retry-After")).toBe("1");
+        await expect(audioResponse.json()).resolves.toMatchObject({
+            error: "concurrency_limit_exceeded",
+        });
+    },
+);
+
+fixtureTest(
     "a private model is owner-only and a zero-priced public model is free",
     async ({ apiKey }) => {
         const ownerGithubUsername = `owner-${crypto.randomUUID().slice(0, 8)}`;

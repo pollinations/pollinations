@@ -9,7 +9,7 @@ import type { RequestData, TransformOptions } from "./types.js";
 
 export async function communityEndpointGatewayContext(
     endpoint: CommunityEndpointRuntime,
-    modelDefinition: ModelDefinition<string>,
+    modelDefinition: ModelDefinition,
     requestData: RequestData,
     secret: string,
     portkeyGatewayUrl: string,

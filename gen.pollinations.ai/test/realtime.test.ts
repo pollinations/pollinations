@@ -179,26 +179,23 @@ test("proxies an OpenAI-compatible realtime WebSocket with a paid key", async ({
 }) => {
     const upstream = mockOpenAIRealtime();
 
-    const { response, ctx } = await fetchWorkerWithContext(
-        "/v1/realtime?model=gpt-realtime-2",
-        {
-            headers: {
-                Authorization: `Bearer ${paidApiKey}`,
-                Upgrade: "websocket",
-            },
+    const { response, ctx } = await fetchWorkerWithContext("/v1/realtime", {
+        headers: {
+            Authorization: `Bearer ${paidApiKey}`,
+            Upgrade: "websocket",
         },
-    );
+    });
 
     expect(response.status).toBe(101);
     expect(response.webSocket).toBeDefined();
     expect(upstream.request.url).toBe(
-        "https://myceli-prod-swedencentral.cognitiveservices.azure.com/openai/v1/realtime?model=gpt-realtime-2",
+        "https://myceli-prod-swedencentral.openai.azure.com/openai/v1/realtime?model=gpt-realtime-2-1",
     );
     expect(upstream.request.headers.get("Upgrade")).toBe("websocket");
-    // Azure auth uses the api-key header, never the caller's Pollinations key.
+    // Provider auth uses the Azure key, never the caller's Pollinations key.
     expect(upstream.request.headers.get("api-key")).toBeTruthy();
-    expect(upstream.request.headers.get("Authorization")).toBeNull();
     expect(upstream.request.headers.get("api-key")).not.toBe(paidApiKey);
+    expect(upstream.request.headers.get("Authorization")).toBeNull();
     expect(upstream.request.headers.get("OpenAI-Safety-Identifier")).toMatch(
         /^[a-f0-9]{64}$/,
     );
@@ -219,7 +216,7 @@ test("proxies an OpenAI-compatible realtime WebSocket with a paid key", async ({
     const downstreamMessage = nextMessage(client);
     const serverEvent = JSON.stringify({
         type: "session.created",
-        session: { model: "gpt-realtime-2" },
+        session: { model: "gpt-realtime-2-1" },
     });
     upstream.server.send(serverEvent);
     await expect(downstreamMessage).resolves.toBe(serverEvent);
@@ -717,10 +714,13 @@ test("includes realtime model in OpenAI-compatible model discovery", async ({
     const publicBody = (await publicResponse.json()) as {
         data: { id: string; supported_endpoints?: string[] }[];
     };
-    const realtimeModel = publicBody.data.find(
-        (model) => model.id === "gpt-realtime-2",
+    const realtimeModels = publicBody.data.filter((model) =>
+        ["gpt-realtime-2", "gpt-realtime-2.1"].includes(model.id),
     );
-    expect(realtimeModel?.supported_endpoints).toContain("/v1/realtime");
+    expect(realtimeModels).toHaveLength(2);
+    for (const model of realtimeModels) {
+        expect(model.supported_endpoints).toContain("/v1/realtime");
+    }
 
     const restrictedResponse = await fetchWorker("/v1/models", {
         headers: { Authorization: `Bearer ${restrictedApiKey}` },
@@ -732,4 +732,22 @@ test("includes realtime model in OpenAI-compatible model discovery", async ({
     expect(restrictedBody.data.map((model) => model.id)).not.toContain(
         "gpt-realtime-2",
     );
+    expect(restrictedBody.data.map((model) => model.id)).not.toContain(
+        "gpt-realtime-2.1",
+    );
+});
+
+test("rejects realtime access for empty model permissions", async () => {
+    const { key } = await createTestApiKey({
+        allowedModels: [],
+        user: { packBalance: 1 },
+    });
+    const response = await fetchWorker("/v1/realtime?model=gpt-realtime-2", {
+        headers: {
+            Authorization: `Bearer ${key}`,
+            Upgrade: "websocket",
+        },
+    });
+
+    expect(response.status).toBe(403);
 });

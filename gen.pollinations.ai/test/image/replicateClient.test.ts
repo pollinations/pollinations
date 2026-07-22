@@ -137,6 +137,26 @@ describe("runReplicatePrediction", () => {
         });
     });
 
+    it("classifies provider capacity errors (E003) as 503", async () => {
+        vi.spyOn(globalThis, "fetch").mockResolvedValue(
+            new Response(
+                JSON.stringify({
+                    id: "pred_capacity",
+                    status: "failed",
+                    error: "ModelError: Service is currently unavailable due to high demand. Please try again later. (E003) (1cah9wlWR9)",
+                }),
+                { status: 201 },
+            ),
+        );
+
+        await expect(
+            runReplicatePrediction({ model: MODEL, input: { prompt: "x" } }),
+        ).rejects.toMatchObject({
+            name: "ReplicateError",
+            status: 503,
+        });
+    });
+
     it("treats aborted predictions as terminal failures", async () => {
         vi.spyOn(globalThis, "fetch").mockResolvedValue(
             new Response(
@@ -258,6 +278,21 @@ describe("runReplicatePrediction", () => {
             "https://api.replicate.com/v1/predictions/pred_poll",
         );
         vi.useRealTimers();
+    });
+
+    it("wraps network-level fetch failures with the endpoint URL", async () => {
+        vi.spyOn(globalThis, "fetch").mockRejectedValue(
+            new TypeError("Network connection lost"),
+        );
+
+        await expect(
+            runReplicatePrediction({ model: MODEL, input: { prompt: "x" } }),
+        ).rejects.toMatchObject({
+            name: "ReplicateError",
+            status: 502,
+            url: OFFICIAL_PREDICTION_URL,
+            message: `Replicate POST ${OFFICIAL_PREDICTION_URL} network failure: Network connection lost`,
+        });
     });
 
     it("maps Replicate auth/infra HTTP errors to 502", async () => {

@@ -1,7 +1,6 @@
 import type { Logger } from "@logtape/logtape";
 import { ensureUpstreamOk, UpstreamError } from "@shared/error.ts";
 import {
-    AUDIO_SERVICES,
     type AudioModelName,
     ELEVENLABS_VOICES,
     resolveElevenLabsVoiceId,
@@ -58,7 +57,7 @@ const CreateSpeechRequestSchema = z
             }),
         duration: z.number().min(0.5).max(300).optional().meta({
             description:
-                "Output duration in seconds (elevenmusic/acestep 3-300; eleven-sfx 0.5-30)",
+                "Output duration in seconds (elevenmusic 3-300; eleven-sfx 0.5-30)",
             example: 30,
         }),
         seconds: z.number().min(1).max(380).optional().meta({
@@ -112,11 +111,6 @@ const CreateSpeechRequestSchema = z
                 "Seed for deterministic output. Same seed + params = best-effort return of the same cached result. Omit for random.",
             example: 42,
         }),
-        style: z.string().optional().meta({
-            description:
-                "Style/genre tags for music generation (acestep only). If omitted, style is auto-detected from the input text.",
-            example: "brazilian berimbau instrumental",
-        }),
         instruct: z.string().optional().meta({
             description:
                 "Emotion/style instruction (qwen-tts-instruct only). e.g. 'excited and cheerful'.",
@@ -133,7 +127,6 @@ type SimpleAudioQuery = {
     seconds?: number;
     steps?: number;
     negative_prompt?: string;
-    style?: string;
     instrumental?: boolean;
     seed?: number;
     voice: string;
@@ -216,9 +209,16 @@ export function fixWavHeader(buffer: ArrayBuffer): ArrayBuffer {
     return buffer; // no data chunk found
 }
 
-export async function generateSpeech(opts: {
-    modelName: string;
-    modelId: string;
+const ELEVENLABS_TTS_MODEL_IDS = {
+    elevenlabs: "eleven_v3",
+    elevenflash: "eleven_flash_v2_5",
+    "eleven-multilingual-v2": "eleven_multilingual_v2",
+} as const satisfies Partial<Record<AudioModelName, string>>;
+
+type ElevenLabsTtsModelName = keyof typeof ELEVENLABS_TTS_MODEL_IDS;
+
+export async function generateElevenLabsSpeech(opts: {
+    modelName: ElevenLabsTtsModelName;
     text: string;
     voice: string;
     responseFormat: string;
@@ -226,8 +226,8 @@ export async function generateSpeech(opts: {
     apiKey: string;
     log: Logger;
 }): Promise<Response> {
-    const { modelName, modelId, text, voice, responseFormat, apiKey, log } =
-        opts;
+    const { modelName, text, voice, responseFormat, apiKey, log } = opts;
+    const modelId = ELEVENLABS_TTS_MODEL_IDS[modelName];
 
     if (!apiKey) {
         throw new UpstreamError(500 as ContentfulStatusCode, {
@@ -599,7 +599,7 @@ export async function generateMusic(
         });
     }
 
-    const modelId = AUDIO_SERVICES.elevenmusic.modelId;
+    const modelId = "music_v2";
     let uploadedSongId: string | undefined;
     let compositionPlan = opts.compositionPlan;
     let conditioningRef = opts.conditioningRef;
@@ -771,7 +771,7 @@ export async function generateSoundEffect(opts: {
         });
     }
 
-    const modelId = AUDIO_SERVICES["eleven-sfx"].modelId;
+    const modelId = "eleven_text_to_sound_v2";
     const elevenLabsUrl = "https://api.elevenlabs.io/v1/sound-generation";
 
     const body: Record<string, unknown> = { text: prompt, model_id: modelId };
@@ -819,12 +819,12 @@ export async function generateSoundEffect(opts: {
 const QWEN_TTS_ENDPOINT =
     "https://dashscope-intl.aliyuncs.com/api/v1/services/aigc/multimodal-generation/generation";
 
-const QWEN_TTS_MODELS = [
-    "qwen-tts",
-    "qwen-tts-instruct",
-] as const satisfies readonly AudioModelName[];
+const QWEN_TTS_MODEL_IDS = {
+    "qwen-tts": "qwen3-tts-flash",
+    "qwen-tts-instruct": "qwen3-tts-instruct-flash",
+} as const satisfies Partial<Record<AudioModelName, string>>;
 
-type QwenTtsModelName = (typeof QWEN_TTS_MODELS)[number];
+type QwenTtsModelName = keyof typeof QWEN_TTS_MODEL_IDS;
 
 const QWEN_TTS_OPENAI_VOICE_MAP: Record<string, string> = {
     alloy: "Chelsie",
@@ -844,13 +844,9 @@ function resolveQwenVoice(voice: string): string {
     return QWEN_TTS_OPENAI_VOICE_MAP[voice] ?? voice;
 }
 
-export function isQwenTtsModel(model: string): model is QwenTtsModelName {
-    return QWEN_TTS_MODELS.includes(model as QwenTtsModelName);
-}
-
 function requireTextToAudioModel(
     model: string,
-    definition: ModelDefinition<string>,
+    definition: ModelDefinition,
 ): void {
     const acceptsText = definition.inputModalities?.includes("text");
     const returnsAudio = definition.outputModalities?.includes("audio");
@@ -1012,7 +1008,6 @@ async function parseSpeechRequest(c: AudioContext): Promise<
                 "extract_composition_plan",
             ),
             seed: parseOptionalNumber(formData.get("seed"), "seed"),
-            style: (formData.get("style") as string | null) || undefined,
             instruct: (formData.get("instruct") as string | null) || undefined,
             loop: parseOptionalBoolean(formData.get("loop"), "loop"),
             prompt_influence: parseOptionalNumber(
@@ -1046,14 +1041,14 @@ async function parseSpeechRequest(c: AudioContext): Promise<
 
 export async function generateQwenTts(opts: {
     modelName: QwenTtsModelName;
-    modelId: string;
     text: string;
     voice: string;
     instruct?: string;
     apiKey: string;
     log: Logger;
 }): Promise<Response> {
-    const { modelName, modelId, text, voice, instruct, apiKey, log } = opts;
+    const { modelName, text, voice, instruct, apiKey, log } = opts;
+    const modelId = QWEN_TTS_MODEL_IDS[modelName];
 
     if (!apiKey) {
         throw new UpstreamError(500 as ContentfulStatusCode, {
@@ -1126,143 +1121,6 @@ export async function generateQwenTts(opts: {
     return new Response(audioBuffer, {
         status: 200,
         headers: { "Content-Type": "audio/wav", ...usageHeaders },
-    });
-}
-
-export async function generateAceStepMusic(opts: {
-    prompt: string;
-    style?: string;
-    durationSeconds?: number;
-    serviceUrl: string;
-    serviceToken: string;
-    log: Logger;
-}): Promise<Response> {
-    const { prompt, style, serviceUrl, serviceToken, log } = opts;
-    const duration = opts.durationSeconds ?? 15;
-
-    if (prompt.length > 10000) {
-        throw new UpstreamError(400 as ContentfulStatusCode, {
-            message: `Prompt too long: ${prompt.length} characters. Maximum is 10000.`,
-        });
-    }
-
-    log.info(
-        "ACE-Step request: chars={chars}, duration={duration}, style={style}",
-        { chars: prompt.length, duration, style: style ?? "(auto)" },
-    );
-
-    const authHeaders = { Authorization: `Bearer ${serviceToken}` };
-
-    const submitUrl = `${serviceUrl}/release_task`;
-    const rawSubmitResponse = await fetch(submitUrl, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", ...authHeaders },
-        body: JSON.stringify({
-            prompt: style ?? "",
-            lyrics: prompt,
-            audio_duration: duration,
-            batch_size: 1,
-            thinking: true,
-            audio_format: "mp3",
-        }),
-    });
-    const submitResponse = await ensureUpstreamOk(rawSubmitResponse, submitUrl);
-
-    const submitData = (await submitResponse.json()) as {
-        data?: { task_id?: string };
-    };
-    const taskId = submitData?.data?.task_id;
-    if (!taskId) {
-        throw new UpstreamError(500 as ContentfulStatusCode, {
-            message: "ACE-Step did not return a task_id",
-        });
-    }
-
-    // Poll until done (status 1=success, 2=failed)
-    // CF Workers have wall-clock limits; cap at 120s (typical gen is 8-12s)
-    const maxPollTime = 120_000;
-    const pollInterval = 2_000;
-    const startTime = Date.now();
-    let audioPath: string | undefined;
-    let consecutiveErrors = 0;
-
-    while (Date.now() - startTime < maxPollTime) {
-        await new Promise((r) => setTimeout(r, pollInterval));
-
-        const pollResponse = await fetch(`${serviceUrl}/query_result`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json", ...authHeaders },
-            body: JSON.stringify({ task_id_list: [taskId] }),
-        });
-
-        if (!pollResponse.ok) {
-            if (++consecutiveErrors >= 3) {
-                const errorText = await pollResponse.text();
-                throw new UpstreamError(502 as ContentfulStatusCode, {
-                    message:
-                        errorText ||
-                        `ACE-Step polling failed: ${pollResponse.status}`,
-                    upstreamStatus: pollResponse.status,
-                    responseBody: errorText,
-                });
-            }
-            continue;
-        }
-        consecutiveErrors = 0;
-
-        const pollData = (await pollResponse.json()) as {
-            data?: Array<{ task_id: string; status: number; result?: string }>;
-        };
-        const task = pollData?.data?.[0];
-        if (!task) continue;
-
-        if (task.status === 2) {
-            throw new UpstreamError(500 as ContentfulStatusCode, {
-                message: "ACE-Step generation failed",
-            });
-        }
-
-        if (task.status === 1 && task.result) {
-            const results = JSON.parse(task.result) as Array<{
-                file?: string;
-            }>;
-            if (results?.[0]?.file) {
-                audioPath = results[0].file;
-                break;
-            }
-        }
-    }
-
-    if (!audioPath) {
-        throw new UpstreamError(504 as ContentfulStatusCode, {
-            message: "ACE-Step generation timed out",
-        });
-    }
-
-    const audioUrl = `${serviceUrl}${audioPath}`;
-    const audioResponse = await ensureUpstreamOk(
-        await fetch(audioUrl, { headers: authHeaders }),
-        audioUrl,
-    );
-    const audioBuffer = await audioResponse.arrayBuffer();
-
-    // Use requested duration for billing (more accurate than byte-size heuristic)
-    const usageHeaders = buildUsageHeaders(
-        "acestep",
-        createCompletionAudioSecondsUsage(duration),
-    );
-
-    log.info("ACE-Step success: {bytes} bytes, {duration}s", {
-        bytes: audioBuffer.byteLength,
-        duration,
-    });
-
-    return new Response(audioBuffer, {
-        status: 200,
-        headers: {
-            "Content-Type": "audio/mpeg",
-            ...usageHeaders,
-        },
     });
 }
 
@@ -1584,7 +1442,6 @@ async function dispatchAudioGeneration(
         seconds?: number;
         steps?: number;
         negativePrompt?: string;
-        style?: string;
         instrumental?: boolean;
         storeForInpainting?: boolean;
         extractCompositionPlan?: boolean;
@@ -1598,7 +1455,6 @@ async function dispatchAudioGeneration(
         dashScopeApiKey: string;
         falKey?: string;
         stabilityApiKey?: string;
-        env: Env["Bindings"];
         log: Logger;
     },
 ): Promise<Response> {
@@ -1611,7 +1467,6 @@ async function dispatchAudioGeneration(
         seconds,
         steps,
         negativePrompt,
-        style,
         instrumental,
         storeForInpainting,
         extractCompositionPlan,
@@ -1625,23 +1480,8 @@ async function dispatchAudioGeneration(
         dashScopeApiKey,
         falKey,
         stabilityApiKey,
-        env,
         log,
     } = opts;
-
-    if (c.var.model.resolved === "acestep") {
-        return withSafetyHeaders(
-            c,
-            await generateAceStepMusic({
-                prompt: text,
-                style,
-                durationSeconds: duration,
-                serviceUrl: env.MUSIC_SERVICE_URL,
-                serviceToken: env.PLN_GPU_TOKEN,
-                log,
-            }),
-        );
-    }
 
     if (c.var.model.resolved === "elevenmusic") {
         return withSafetyHeaders(
@@ -1709,34 +1549,40 @@ async function dispatchAudioGeneration(
         );
     }
 
-    if (isQwenTtsModel(c.var.model.resolved)) {
-        return withSafetyHeaders(
-            c,
-            await generateQwenTts({
-                modelName: c.var.model.resolved as QwenTtsModelName,
-                modelId: c.var.model.definition.modelId,
-                text,
-                voice,
-                instruct,
-                apiKey: dashScopeApiKey,
-                log,
-            }),
-        );
+    switch (c.var.model.resolved) {
+        case "elevenlabs":
+        case "elevenflash":
+        case "eleven-multilingual-v2":
+            return withSafetyHeaders(
+                c,
+                await generateElevenLabsSpeech({
+                    modelName: c.var.model.resolved,
+                    text,
+                    voice,
+                    responseFormat,
+                    seed,
+                    apiKey,
+                    log,
+                }),
+            );
+        case "qwen-tts":
+        case "qwen-tts-instruct":
+            return withSafetyHeaders(
+                c,
+                await generateQwenTts({
+                    modelName: c.var.model.resolved,
+                    text,
+                    voice,
+                    instruct,
+                    apiKey: dashScopeApiKey,
+                    log,
+                }),
+            );
+        default:
+            throw new UpstreamError(500 as ContentfulStatusCode, {
+                message: `No audio provider route configured for model: ${c.var.model.resolved}`,
+            });
     }
-
-    return withSafetyHeaders(
-        c,
-        await generateSpeech({
-            modelName: c.var.model.resolved,
-            modelId: c.var.model.definition.modelId,
-            text,
-            voice,
-            responseFormat,
-            seed,
-            apiKey,
-            log,
-        }),
-    );
 }
 
 export async function handleSimpleAudio(c: AudioContext): Promise<Response> {
@@ -1771,7 +1617,6 @@ export async function handleSimpleAudio(c: AudioContext): Promise<Response> {
         seconds: query.seconds,
         steps: query.steps,
         negativePrompt: query.negative_prompt,
-        style: query.style,
         instrumental: query.instrumental,
         instruct: query.instruct,
         loop: query.loop,
@@ -1780,7 +1625,6 @@ export async function handleSimpleAudio(c: AudioContext): Promise<Response> {
         dashScopeApiKey: c.env.DASHSCOPE_API_KEY,
         falKey: c.env.FAL_KEY,
         stabilityApiKey: c.env.STABILITY_API_KEY,
-        env: c.env,
         log,
     });
 }
@@ -1901,7 +1745,7 @@ export const audioRoutes = new Hono<Env>()
             description: [
                 "Generate speech or music from text. Compatible with the OpenAI TTS API for JSON requests.",
                 "",
-                "Set `model` to `elevenmusic`, `acestep`, `stable-audio-3-medium`, or `stable-audio-3-large` to generate music. Send multipart/form-data with `reference_audio` plus `input` to run audio-to-audio (style transfer) on `stable-audio-3-medium` or `stable-audio-3-large`, or reference-audio conditioning on `elevenmusic`; for ElevenLabs inpainting, pass a `composition_plan`.",
+                "Set `model` to `elevenmusic`, `stable-audio-3-medium`, or `stable-audio-3-large` to generate music. Send multipart/form-data with `reference_audio` plus `input` to run audio-to-audio (style transfer) on `stable-audio-3-medium` or `stable-audio-3-large`, or reference-audio conditioning on `elevenmusic`; for ElevenLabs inpainting, pass a `composition_plan`.",
                 "",
                 `**Available voices:** ${ELEVENLABS_VOICES.join(", ")}`,
                 "",
@@ -1953,7 +1797,6 @@ export const audioRoutes = new Hono<Env>()
                 composition_plan,
                 reference_audio,
                 seed,
-                style,
                 instruct,
                 loop,
                 prompt_influence,
@@ -1984,7 +1827,6 @@ export const audioRoutes = new Hono<Env>()
                 seconds,
                 steps,
                 negativePrompt: negative_prompt,
-                style,
                 instrumental,
                 storeForInpainting: store_for_inpainting,
                 extractCompositionPlan: extract_composition_plan,
@@ -1998,7 +1840,6 @@ export const audioRoutes = new Hono<Env>()
                 dashScopeApiKey: c.env.DASHSCOPE_API_KEY,
                 falKey: c.env.FAL_KEY,
                 stabilityApiKey: c.env.STABILITY_API_KEY,
-                env: c.env,
                 log,
             });
         },

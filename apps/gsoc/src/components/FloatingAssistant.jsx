@@ -13,7 +13,7 @@ const FloatingAssistant = () => {
     }
 
     return (
-        <Tooltip title="Chat with Polly" placement="left">
+        <Tooltip title="Chat with Polli" placement="left">
             <Fab
                 component={Link}
                 to="/bot"
@@ -46,7 +46,7 @@ const FloatingAssistant = () => {
                     <Box
                         component="img"
                         src="/polli_white.svg"
-                        alt="Polly"
+                        alt="Polli"
                         sx={{
                             width: 28,
                             height: 28,

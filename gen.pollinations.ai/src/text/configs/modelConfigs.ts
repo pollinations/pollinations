@@ -1,4 +1,3 @@
-import googleCloudAuth from "../auth/googleCloudAuth.js";
 import {
     createAzureModelConfig,
     createBedrockNativeConfig,
@@ -19,19 +18,21 @@ import {
 type PortkeyConfigFactory = () => Record<string, unknown>;
 type PortkeyConfigMap = Record<string, PortkeyConfigFactory>;
 
-/** Creates a Vertex AI config for Gemini models. */
-function createVertexGeminiConfig(
+/** Creates a no-fallback OpenRouter route pinned to one Vertex deployment. */
+function createPinnedOpenRouterGeminiConfig(
     modelId: string,
-    region: string,
+    providerTag: string,
 ): PortkeyConfigFactory {
-    return () => ({
-        provider: "vertex-ai",
-        authKey: googleCloudAuth.getAccessToken,
-        "vertex-project-id": process.env.GOOGLE_PROJECT_ID,
-        "vertex-region": region,
-        "vertex-model-id": modelId,
-        "strict-openai-compliance": "false",
-    });
+    return () =>
+        createOpenRouterModelConfig({
+            model: `google/${modelId}`,
+            defaultOptions: {
+                provider: {
+                    only: [providerTag],
+                    allow_fallbacks: false,
+                },
+            },
+        });
 }
 
 // =============================================================================
@@ -265,26 +266,27 @@ export const portkeyConfig: PortkeyConfigMap = {
     "nova-2-lite": () =>
         createBedrockNativeConfig({ model: "us.amazon.nova-2-lite-v1:0" }),
 
-    // -- Google Vertex AI (Gemini) --------------------------------------------
-    "gemini-3-flash-preview": createVertexGeminiConfig(
+    // -- OpenRouter (Gemini via pinned Google Vertex routes) -----------------
+    "google/gemini-3-flash-preview": createPinnedOpenRouterGeminiConfig(
         "gemini-3-flash-preview",
-        "global",
+        "google-vertex/global",
     ),
-    "gemini-3.1-pro-preview": createVertexGeminiConfig(
+    "google/gemini-3.1-pro-preview": createPinnedOpenRouterGeminiConfig(
         "gemini-3.1-pro-preview",
-        "global",
+        "google-vertex/global",
     ),
-    "gemini-2.5-flash-lite": createVertexGeminiConfig(
+    "google/gemini-2.5-flash-lite": createPinnedOpenRouterGeminiConfig(
         "gemini-2.5-flash-lite",
-        "global",
+        "google-vertex/eu",
     ),
-    // The gemini-3.1-flash-lite-preview publisher model was retired by Google
-    // (404 as of 2026-07); only the GA id resolves.
-    "gemini-3.1-flash-lite": createVertexGeminiConfig(
+    "google/gemini-3.1-flash-lite": createPinnedOpenRouterGeminiConfig(
         "gemini-3.1-flash-lite",
-        "global",
+        "google-vertex/global",
     ),
-    "gemini-3.5-flash": createVertexGeminiConfig("gemini-3.5-flash", "global"),
+    "google/gemini-3.6-flash": createPinnedOpenRouterGeminiConfig(
+        "gemini-3.6-flash",
+        "google-vertex/global",
+    ),
 
     // -- Perplexity -----------------------------------------------------------
     "sonar": () => createPerplexityModelConfig({ model: "sonar" }),

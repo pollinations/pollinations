@@ -889,8 +889,8 @@ function makeAdjustment(
 ): BillingAdjustment {
     return {
         ruleId,
-        kind: "search_query",
-        unit: "query",
+        kind: "search_request",
+        unit: "request",
         units,
         unitCost: units === 0 ? 0 : cost / units,
         cost,
@@ -907,18 +907,18 @@ describe("reduceAdjustmentsToEventFields", () => {
     it("maps a single adjustment to keyed cost/units records", () => {
         expect(
             reduceAdjustmentsToEventFields([
-                makeAdjustment("google.gemini_3.search_query.v1", 0.042, 3),
+                makeAdjustment("openrouter.google.web_search.v1", 0.042, 3),
             ]),
         ).toEqual({
-            adjustmentCosts: { "google.gemini_3.search_query.v1": 0.042 },
-            adjustmentUnits: { "google.gemini_3.search_query.v1": 3 },
+            adjustmentCosts: { "openrouter.google.web_search.v1": 0.042 },
+            adjustmentUnits: { "openrouter.google.web_search.v1": 3 },
         });
     });
 
     it("maps two distinct rule ids into both records", () => {
         expect(
             reduceAdjustmentsToEventFields([
-                makeAdjustment("google.gemini_3.search_query.v1", 0.042, 3),
+                makeAdjustment("openrouter.google.web_search.v1", 0.042, 3),
                 makeAdjustment(
                     "perplexity.sonar_low.search_request.v1",
                     0.006,
@@ -927,11 +927,11 @@ describe("reduceAdjustmentsToEventFields", () => {
             ]),
         ).toEqual({
             adjustmentCosts: {
-                "google.gemini_3.search_query.v1": 0.042,
+                "openrouter.google.web_search.v1": 0.042,
                 "perplexity.sonar_low.search_request.v1": 0.006,
             },
             adjustmentUnits: {
-                "google.gemini_3.search_query.v1": 3,
+                "openrouter.google.web_search.v1": 3,
                 "perplexity.sonar_low.search_request.v1": 1,
             },
         });
@@ -943,17 +943,17 @@ describe("reduceAdjustmentsToEventFields", () => {
             id: "evt_with",
             isBilledUsage: true,
             ...reduceAdjustmentsToEventFields([
-                makeAdjustment("google.gemini_3.search_query.v1", 0.042, 3),
+                makeAdjustment("openrouter.google.web_search.v1", 0.042, 3),
             ]),
         } as unknown as TinybirdEvent;
         const parsedWith = JSON.parse(
             JSON.stringify(removeUnset(withAdjustments)),
         );
         expect(parsedWith.adjustmentCosts).toEqual({
-            "google.gemini_3.search_query.v1": 0.042,
+            "openrouter.google.web_search.v1": 0.042,
         });
         expect(parsedWith.adjustmentUnits).toEqual({
-            "google.gemini_3.search_query.v1": 3,
+            "openrouter.google.web_search.v1": 3,
         });
 
         // No adjustments → neither key is present in the serialized payload

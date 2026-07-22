@@ -146,7 +146,7 @@ function generateGarden(apps) {
 
 🐝 **Buzz** = 100+ requests/24h · 🏵️ **Pollen** = Sign in with Pollinations · 🫧 **Fresh** = Added in the last 30 days
 
-📋 [Full app table](APPS.md) · 🌐 [Browse on pollinations.ai](https://pollinations.ai/apps) · ✏️ [Submit your app](https://github.com/pollinations/pollinations/issues/new?template=tier-app-submission.yml)
+📋 [Full app table](APPS.md) · 🌐 [Browse on pollinations.ai](https://pollinations.ai/apps) · ✏️ [Submit your app](https://github.com/pollinations/pollinations/issues/new?template=app-submission.yml)
 
 ---
 

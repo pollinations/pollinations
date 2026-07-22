@@ -43,7 +43,7 @@ curl -X POST https://gen.pollinations.ai/account/keys \
 
 ## ⚙️ Web Apps (OAuth Code Flow)
 
-Use the OAuth authorization-code flow with PKCE for new web integrations. It returns a temporary `at_...` OAuth access token and works with standard OAuth clients.
+Use the OAuth authorization-code flow with PKCE for new web integrations. It returns a restricted `sk_...` key as the OAuth access token and works with standard OAuth clients.
 
 Discovery is available at:
 
@@ -105,7 +105,7 @@ curl -X POST https://enter.pollinations.ai/api/oauth/token \
   -d 'client_id=pk_yourkey' \
   -d 'redirect_uri=https://myapp.com/callback' \
   -d 'code_verifier=YOUR_PKCE_VERIFIER'
-# → { "access_token": "at_...", "token_type": "Bearer", "expires_in": 604800, "scope": "profile usage" }
+# → { "access_token": "sk_...", "token_type": "Bearer", "expires_in": 604800, "scope": "profile usage" }
 ```
 
 The authorization code is single-use and expires after 10 minutes. Token responses use RFC 6749 error objects such as `invalid_grant`, `invalid_request`, and `unsupported_grant_type`.

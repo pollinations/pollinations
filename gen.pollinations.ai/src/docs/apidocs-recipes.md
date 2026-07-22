@@ -31,7 +31,7 @@ The header is preferred for everything except browser flows that can't set custo
 
 ## 🔓 Sign in with Pollinations (OAuth 2.1)
 
-Third-party apps can obtain a credential on behalf of a Pollinations user — the OAuth 2.1 authorization-code flow with PKCE (S256) for web apps, or the device flow (RFC 8628) for CLIs. Register a **publishable App Key** (`pk_…`) with your redirect URIs at [enter.pollinations.ai](https://enter.pollinations.ai/keys), or publish a Client ID Metadata Document. Authorization-code grants return an opaque `at_` access token bound to the budget, expiry, scopes, and optional resource the user approved.
+Third-party apps can obtain a credential on behalf of a Pollinations user — the OAuth 2.1 authorization-code flow with PKCE (S256) for web apps, or the device flow (RFC 8628) for CLIs. Register a **publishable App Key** (`pk_…`) with your redirect URIs at [enter.pollinations.ai](https://enter.pollinations.ai/keys), or publish a Client ID Metadata Document. Authorization-code grants return an opaque, restricted `sk_` key as the access token, bound to the budget, expiry, scopes, and optional resource the user approved.
 
 Endpoints are discoverable via RFC 8414 metadata — resolve them from there rather than hardcoding:
 

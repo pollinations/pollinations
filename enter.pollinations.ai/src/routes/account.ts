@@ -1546,11 +1546,7 @@ export const accountRoutes = new Hono<Env>()
                                             "Whether the API key is valid and active",
                                         ),
                                     type: z
-                                        .enum([
-                                            "publishable",
-                                            "secret",
-                                            "access",
-                                        ])
+                                        .enum(["publishable", "secret"])
                                         .describe("Type of API key"),
                                     name: z
                                         .string()

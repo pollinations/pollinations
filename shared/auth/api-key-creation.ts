@@ -8,9 +8,9 @@ import {
     redirectUriMatchesAllowlist,
 } from "./redirect-uri.ts";
 
-export type ApiKeyType = "secret" | "publishable" | "access";
+export type ApiKeyType = "secret" | "publishable";
 
-export type OAuthAccessTokenMetadata = {
+export type OAuthKeyMetadata = {
     clientId: string;
     resource?: string;
 };
@@ -36,7 +36,7 @@ type CreateApiKeyForUserInput = {
     pollenBudget?: number | null;
     accountPermissions?: string[] | null;
     metadata?: CallerMetadata;
-    oauth?: OAuthAccessTokenMetadata;
+    oauth?: OAuthKeyMetadata;
     allowAccountKeysPermission: boolean;
     defaultCreatedVia: string;
 };
@@ -253,10 +253,9 @@ export async function createApiKeyForUser({
     );
 
     const isPublishable = type === "publishable";
-    const isAccessToken = type === "access";
-    if (isAccessToken !== Boolean(oauth)) {
+    if (isPublishable && oauth) {
         throw new HTTPException(400, {
-            message: "OAuth metadata is required only for access tokens",
+            message: "OAuth metadata is only valid for secret keys",
         });
     }
     const callerMetadata = pickCallerMetadata(metadata, isPublishable);
@@ -278,7 +277,7 @@ export async function createApiKeyForUser({
         permissions.account = safeAccountPerms;
     }
 
-    const prefix = isPublishable ? "pk" : isAccessToken ? "at" : "sk";
+    const prefix = isPublishable ? "pk" : "sk";
     const baseMetadata = {
         ...callerMetadata,
         keyType: type,

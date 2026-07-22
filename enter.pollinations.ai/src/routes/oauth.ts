@@ -83,9 +83,9 @@ const CreateCodeSchema = z.object({
 
 /**
  * OAuth 2.1 authorization-code grant with PKCE (S256 only), layered on the
- * same consent UI as the device flow. The server mints an at_ access token and
- * parks it in KV behind a single-use authorization code. The legacy fragment
- * (#api_key=) flow is untouched.
+ * same consent UI as the device flow. The server mints a restricted sk_ key
+ * and parks it in KV behind a single-use authorization code. The legacy
+ * fragment (#api_key=) flow is untouched.
  *
  * POST /code     — called by the consent page after the user approves
  * POST /token    — code+PKCE (and device_code) exchange, RFC 6749 §3.2
@@ -135,7 +135,7 @@ export const oauthRoutes = new Hono<Env>()
                 dbBinding: c.env.DB,
                 userId: user.id,
                 name: client.appName,
-                type: "access",
+                type: "secret",
                 expiresIn: body.expiresIn ?? undefined,
                 allowedModels: body.allowedModels,
                 pollenBudget: body.pollenBudget,

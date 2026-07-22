@@ -6,9 +6,8 @@ All generation requests require an API key from [enter.pollinations.ai](https://
 |------|--------|----------|-------------|-------------|
 | Secret | `sk_` | Server-side apps | None | Personal developer key. Never expose in client-side code. |
 | App Key (BYOP) | `pk_` | Client-side & Frontend apps | None | Publishable key used in the **BYOP (Bring Your Own Pollen)** flow to authorize users' balances. |
-| OAuth access token | `at_` | Delegated access | None | Temporary user-authorized token with permissions, budget, expiry, and optional audience binding. |
 
-> **Note:** Publishable Keys (`pk_`) for direct client-side requests have been replaced by the **BYOP (Bring Your Own Pollen)** auth flow. Frontend applications should use the OAuth authorization-code flow with PKCE to obtain a temporary user-authorized access token (`at_`). The legacy fragment redirect and device flow remain supported.
+> **Note:** Publishable Keys (`pk_`) for direct client-side requests have been replaced by the **BYOP (Bring Your Own Pollen)** auth flow. Frontend applications should use the OAuth authorization-code flow with PKCE to obtain a temporary, restricted Secret Key (`sk_`) as the access token. The legacy fragment redirect and device flow remain supported.
 
 Two ways to authenticate generation requests:
 

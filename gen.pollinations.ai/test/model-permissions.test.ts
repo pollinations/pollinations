@@ -32,10 +32,10 @@ test("filters OpenAI-compatible model list by API key permissions", async ({
     expect(modelIds).toContain(RESTRICTED_TEXT_TEST_MODEL);
 });
 
-test("accepts access tokens only at their OAuth resource", async () => {
-    const createAccessToken = (resource: string) =>
+test("accepts OAuth keys only at their resource", async () => {
+    const createOAuthKey = (resource: string) =>
         createTestApiKey({
-            type: "access",
+            type: "secret",
             oauth: {
                 clientId: "https://client.example/oauth-client.json",
                 resource,
@@ -44,8 +44,8 @@ test("accepts access tokens only at their OAuth resource", async () => {
             user: { tierBalance: 100 },
         });
     const [{ key: genToken }, { key: mcpToken }] = await Promise.all([
-        createAccessToken("https://gen.pollinations.ai"),
-        createAccessToken("https://mcp.pollinations.ai"),
+        createOAuthKey("https://gen.pollinations.ai"),
+        createOAuthKey("https://mcp.pollinations.ai"),
     ]);
 
     const accepted = await fetchWorker("/v1/models", {

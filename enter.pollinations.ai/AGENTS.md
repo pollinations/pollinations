@@ -621,7 +621,7 @@ https://myapp.com/callback?code=oauth_code&state=random
 
 Exchange it at `POST /api/oauth/token` with form-encoded `grant_type=authorization_code`, `code`, `client_id`, `redirect_uri`, and `code_verifier`. Response:
 ```
-{ "access_token": "at_xxxxx", "token_type": "Bearer" }
+{ "access_token": "sk_xxxxx", "token_type": "Bearer" }
 ```
 
 ### App Lookup Endpoint

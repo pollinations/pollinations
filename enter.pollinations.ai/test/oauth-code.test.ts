@@ -28,7 +28,7 @@ async function putCode(
     overrides: Record<string, unknown> = {},
 ): Promise<void> {
     const stored = {
-        key: "at_test_access_token",
+        key: "sk_test_access_token",
         clientId: "pk_test_client",
         redirectUri: REDIRECT_URI,
         scope: "profile",
@@ -97,7 +97,7 @@ describe("POST /api/oauth/token (authorization_code + PKCE)", () => {
         expect(res.status).toBe(200);
         expect(res.headers.get("Cache-Control")).toBe("no-store");
         const body = (await res.json()) as Record<string, unknown>;
-        expect(body.access_token).toBe("at_test_access_token");
+        expect(body.access_token).toBe("sk_test_access_token");
         expect(body.token_type).toBe("Bearer");
         expect(body.scope).toBe("profile");
         expect(body.expires_in).toBe(604800);
@@ -122,7 +122,7 @@ describe("POST /api/oauth/token (authorization_code + PKCE)", () => {
         });
         expect(res.status).toBe(200);
         const body = (await res.json()) as { access_token: string };
-        expect(body.access_token).toBe("at_test_access_token");
+        expect(body.access_token).toBe("sk_test_access_token");
     });
 
     test("requires the resource used when the authorization code was created", async () => {
@@ -348,7 +348,7 @@ describe("POST /api/oauth/code (consent-side code creation)", () => {
         );
         expect(metaRes.status).toBe(200);
 
-        // Consent approve: mint an access token and park it behind a code
+        // Consent approve: mint a restricted key and park it behind a code
         const codeRes = await SELF.fetch(`${BASE}/api/oauth/code`, {
             method: "POST",
             headers: {
@@ -392,7 +392,7 @@ describe("POST /api/oauth/code (consent-side code creation)", () => {
             expires_in: number;
             scope: string;
         };
-        expect(token.access_token.startsWith("at_")).toBe(true);
+        expect(token.access_token.startsWith("sk_")).toBe(true);
         expect(token.token_type).toBe("Bearer");
         expect(token.expires_in).toBe(3600);
         expect(token.scope).toBe("profile");
@@ -403,7 +403,7 @@ describe("POST /api/oauth/code (consent-side code creation)", () => {
         expect(keyRes.status).toBe(200);
         await expect(keyRes.json()).resolves.toMatchObject({
             valid: true,
-            type: "access",
+            type: "secret",
         });
 
         const boundCodeRes = await SELF.fetch(`${BASE}/api/oauth/code`, {

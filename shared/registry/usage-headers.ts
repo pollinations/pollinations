@@ -97,11 +97,6 @@ export function getOpenAIImageUsage(value: unknown): OpenAIImageUsage | null {
     return usage as OpenAIImageUsage;
 }
 
-export const OPENAI_IMAGE_USAGE_PATHS = {
-    promptTextTokens: ["input_tokens_details.text_tokens"],
-    completionImageTokens: ["output_tokens"],
-} as const satisfies Partial<Record<UsageType, readonly string[]>>;
-
 export function usageToOpenAIImageUsage(usage: Usage): OpenAIImageUsage {
     const inputTextTokens =
         (usage.promptTextTokens ?? 0) +

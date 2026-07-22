@@ -441,10 +441,7 @@ function withFinalResponseHeaders(
     override: Response,
     final: Response,
 ): Response {
-    const headers = new Headers(override.headers);
-    for (const [name, value] of final.headers) {
-        headers.set(name, value);
-    }
+    const headers = new Headers(final.headers);
     const contentType = override.headers.get("content-type");
     if (contentType) {
         headers.set("content-type", contentType);

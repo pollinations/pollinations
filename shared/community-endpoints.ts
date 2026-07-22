@@ -328,11 +328,7 @@ export function communityImageGenerationsUrl(baseUrl: string): string {
 
 export function communityOpenAIBaseUrl(baseUrl: string): string {
     const normalized = normalizeCommunityEndpointBaseUrl(baseUrl);
-    for (const suffix of [
-        "/chat/completions",
-        "/images/generations",
-        "/images/edits",
-    ]) {
+    for (const suffix of ["/chat/completions", "/images/generations"]) {
         if (normalized.endsWith(suffix)) {
             return normalized.slice(0, -suffix.length);
         }

@@ -1,0 +1,33 @@
+{
+  "pr_number": 12662,
+  "title": "fix: stop app review label reruns",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/12662",
+  "merged_at": "2026-07-22T22:00:38Z",
+  "labels": [],
+  "pr_body_excerpt": "- Stops the pre-review workflow from reacting to label changes\n- Keeps automatic review on issue creation and edits, plus manual dispatch\n- Prevents state labels from starting skipped runs that cancel successful reviews\n\nRoot cause:\nThe workflow-level concurrency rule was evaluated before the job-level label filter, so APP-SUBMISSION and APP-NEEDS-INFO events cancelled active runs.\n\nChecks:\n- YAML syntax validation\n- Trigger-shape verification\n- git diff --check",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Reviews stop swatting themselves",
+    "blurb": "The app-review hive now ignores its own state-label fluttering. Successful reviews can finish their work without a skipped run barging in and cancelling them.",
+    "summary": "Updated the app submission pre-review workflow to ignore label-change events while retaining automatic reviews on issue creation and edits plus manual dispatch, preventing APP-SUBMISSION and APP-NEEDS-INFO labels from cancelling active reviews.",
+    "impact": "App contributors will get more reliable automatic submission reviews, since state-label updates no longer replace successful in-progress runs with skipped ones.",
+    "keywords": [
+      "app-submissions",
+      "github-actions",
+      "workflow",
+      "reviews",
+      "concurrency"
+    ],
+    "visual_concept": "Depict Polli as a careful review gardener tending a healthy app-submission code plant while friendly label-tags drift harmlessly past a protected retro review terminal; the terminal shows a completed checkmark rather than being interrupted. Use small flowers and vines to represent submissions continuing smoothly.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light-blue wings, and tiny librarian glasses, tending a blooming code-plant beside a retro CRT review terminal glowing lime green (#ecf874) with a large pixel checkmark; harmless little label tags float past without disturbing it. Cozy 8-bit pixel art aesthetic, soft pastel mint-lavender-cream gradients, warm lighting, garden flowers and vines, subtle pixel-font text: 'REVIEW COMPLETE', retro gaming vibes, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-22/PR-12662.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light-blue wings, and tiny librarian glasses, tending a blooming code-plant beside a retro CRT review terminal glowing lime green (#ecf874) with a large pixel checkmark; harmless little label tags float past without disturbing it. Cozy 8-bit pixel art aesthetic, soft pastel mint-lavender-cream gradients, warm lighting, garden flowers and vines, subtle pixel-font text: 'REVIEW COMPLETE', retro gaming vibes, nostalgic but beautiful."
+  },
+  "generated_at": "2026-07-22T22:02:01.766060+00:00"
+}

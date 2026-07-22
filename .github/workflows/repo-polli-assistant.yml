@@ -42,7 +42,9 @@ jobs:
         with:
           github-token: ${{ steps.token.outputs.token }}
           script: |
-            // Strict case check: ensure lowercase 'polli' exists
+            // Strict check: lowercase 'polli' as a standalone word. The job-level
+            // contains() gate is a coarse pre-filter only — 'polli' is a substring of
+            // 'pollinations', so ordinary mentions reach here and must be rejected.
             let body = '';
             if (context.eventName === 'issue_comment' || context.eventName === 'pull_request_review_comment') {
               body = context.payload.comment?.body || '';
@@ -52,10 +54,10 @@ jobs:
               body = context.payload.review?.body || '';
             }
 
-            if (!body.includes('polli')) {
-              console.log('Strict check failed: "polli" must be lowercase.');
+            if (!/(?<![a-z0-9])polli(?![a-z0-9])/.test(body)) {
+              console.log('Strict check failed: "polli" must appear as a lowercase standalone word.');
               core.setOutput('authorized', 'false');
-              return; 
+              return;
             }
 
             const whitelist = ['voodoohop', 'ElliotEtag', 'Circuit-Overtime', 'Itachi-1824'];

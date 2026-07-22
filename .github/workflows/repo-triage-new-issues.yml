@@ -28,7 +28,7 @@ jobs:
       - name: Triage Issue
         uses: actions/github-script@v7
         env:
-          POLLINATIONS_TOKEN: ${{ secrets.PLN_GITHUB_AUTOPOLLI_KEY }}
+          POLLINATIONS_TOKEN: ${{ secrets.PLN_GITHUB_AUTOPOLLY_KEY }}
         with:
           github-token: ${{ steps.token.outputs.token }}
           script: |
@@ -40,7 +40,7 @@ jobs:
               console.log('Skipping: TIER-labeled issue');
               return;
             }
-            const hasPolliLabel = issue.labels?.some(l => l.name === 'polli');
+            const hasPolliLabel = issue.labels?.some(l => l.name === 'polly');
             if (hasPolliLabel) {
               console.log('Skipping: already has polli label');
               return;
@@ -56,12 +56,12 @@ jobs:
 
             DO NOT skip tool calls. DO NOT guess based on your training data alone. Every verdict must be backed by actual search results from find_similar and code_search.
 
-            Schema: {"comment":"your reply to post on the issue, or null if nothing to say","close":true|false,"close_reason":"completed|not_planned|null","add_label":"polli|null","confidence":0.0-1.0,"reason":"1-2 sentences referencing what you found in search results"}
+            Schema: {"comment":"your reply to post on the issue, or null if nothing to say","close":true|false,"close_reason":"completed|not_planned|null","add_label":"polly|null","confidence":0.0-1.0,"reason":"1-2 sentences referencing what you found in search results"}
 
             You decide dynamically what to do. Any combination is valid:
             - Comment only (answer a question, explain behavior, help the user)
             - Comment + close (duplicate found, issue already resolved)
-            - Comment + add "polli" label (minor fix Polli can auto-fix)
+            - Comment + add "polly" label (minor fix Polli can auto-fix)
             - Close without comment (spam, test issues)
             - Do nothing (null comment, close=false, no label) — only when you genuinely cannot help
 
@@ -69,7 +69,7 @@ jobs:
             - If you know the answer to a question or can explain the behavior — ALWAYS comment. Don't skip just because it's a "support question".
             - If find_similar found a DIFFERENT matching open issue — comment referencing it + close with close_reason "not_planned".
             - If code_search found the fix exists — comment explaining where + close with close_reason "completed".
-            - If the issue is a minor well-defined fix (typo, small bug, config change) — comment + add_label "polli".
+            - If the issue is a minor well-defined fix (typo, small bug, config change) — comment + add_label "polly".
             - If the issue reports an outage or model errors — use your tools to investigate (code_search for error handlers, find_similar for related reports, doc_search for service architecture). Comment with what you found, even partial context helps.
             - If the issue is spam, test, or gibberish — close with close_reason "not_planned", no comment needed.
             - If you genuinely can't help (too vague, needs internal access, needs human judgment) — do nothing.
@@ -86,7 +86,7 @@ jobs:
               { role: 'user', content: 'Issue #9998:\nTitle: grok-large returning 429 errors constantly\nBody: Every request to grok-large returns HTTP 429. Been like this for hours. Is the model down?' },
               { role: 'assistant', content: '{"comment":"Looked into it — grok-large routes to Azure OpenAI (model grok-4-20-reasoning in text.pollinations.ai/configs/modelConfigs.ts). 429s usually mean the Azure deployment hit its TPM quota. find_similar shows #10032 and #9709 report the same pattern. The team is aware — this is an upstream Azure capacity issue, not a Pollinations bug. Try again in a bit or use a different model like openai-large in the meantime!","close":false,"close_reason":null,"add_label":null,"confidence":0.90,"reason":"code_search found grok-large Azure config. find_similar found related 429 reports. Upstream quota issue."}' },
               { role: 'user', content: 'Issue #9997:\nTitle: Fix broken link in README contributing section\nBody: The link to CONTRIBUTING.md in the main README.md points to /docs/CONTRIBUTING.md but the file is at /CONTRIBUTING.md in the repo root.' },
-              { role: 'assistant', content: '{"comment":"Looks like a quick link fix! Polli will take care of this.","close":false,"close_reason":null,"add_label":"polli","confidence":0.90,"reason":"code_search confirmed README.md still has the broken link. Minor fix."}' },
+              { role: 'assistant', content: '{"comment":"Looks like a quick link fix! Polli will take care of this.","close":false,"close_reason":null,"add_label":"polly","confidence":0.90,"reason":"code_search confirmed README.md still has the broken link. Minor fix."}' },
               { role: 'user', content: 'Issue #9996:\nTitle: Audio generation returns 500 error\nBody: Calling /audio/hello with voice=nova returns a 500 internal server error. Started happening after the last deploy.' },
               { role: 'assistant', content: '{"comment":"This was fixed! The audio route had a missing voice parameter validation. Fix landed in enter.pollinations.ai/src/routes/audio.ts.","close":true,"close_reason":"completed","add_label":null,"confidence":0.92,"reason":"code_search found the fix in enter.pollinations.ai/src/routes/audio.ts."}' },
               { role: 'user', content: 'Issue #9995:\nTitle: Inquiry regarding API rate limits\nBody: I have $194 balance. Why am I still rate limited? I thought buying pollen removes limits.' },
@@ -99,7 +99,7 @@ jobs:
                 && (typeof value.comment === 'string' || value.comment === null)
                 && typeof value.close === 'boolean'
                 && ['completed', 'not_planned', null].includes(value.close_reason)
-                && ['polli', null].includes(value.add_label)
+                && ['polly', null].includes(value.add_label)
                 && Number.isFinite(Number(value.confidence))
                 && typeof value.reason === 'string';
             }
@@ -151,7 +151,7 @@ jobs:
                     'Authorization': `Bearer ${process.env.POLLINATIONS_TOKEN}`,
                   },
                   body: JSON.stringify({
-                    model: 'polli',
+                    model: 'polly',
                     seed: SEEDS[attempt],
                     messages: [
                       { role: 'system', content: systemPrompt },
@@ -213,9 +213,9 @@ jobs:
             }
 
             // Add label if requested
-            if (verdict.add_label === 'polli' && verdict.confidence >= 0.70) {
-              await github.rest.issues.addLabels({ owner, repo, issue_number, labels: ['polli'] });
-              actions.push('labeled polli');
+            if (verdict.add_label === 'polly' && verdict.confidence >= 0.70) {
+              await github.rest.issues.addLabels({ owner, repo, issue_number, labels: ['polly'] });
+              actions.push('labeled polly');
             }
 
             console.log(`#${issue_number}: ${actions.length ? actions.join(', ') : 'no action'}`);

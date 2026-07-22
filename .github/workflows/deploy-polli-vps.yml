@@ -40,10 +40,7 @@ jobs:
           script: |
             set -e
 
-            # Runtime paths stay 'polly': the deployed host has /root/polly and
-            # polly.service already provisioned. Renaming those is a separate
-            # migration, not part of the source-level rename.
-            echo "Syncing source to /root/polly..."
+            echo "Syncing source to /root/polli..."
             rsync -av \
               --exclude '.env' \
               --exclude 'data/' \
@@ -51,19 +48,19 @@ jobs:
               --exclude '.git/' \
               --exclude '*.pem' \
               --exclude 'src/extensions/' \
-              /tmp/polli-deploy/ /root/polly/
+              /tmp/polli-deploy/ /root/polli/
 
             echo "Installing dependencies..."
-            cd /root/polly
+            cd /root/polli
             ./venv/bin/python -m pip install -r requirements.txt -q
 
             systemctl daemon-reload
 
-            echo "Restarting polly service..."
-            systemctl restart polly.service
+            echo "Restarting polli service..."
+            systemctl restart polli.service
             sleep 5
 
-            systemctl is-active polly.service || exit 1
+            systemctl is-active polli.service || exit 1
             echo "Polli bot deployed successfully"
 
             rm -rf /tmp/polli-deploy

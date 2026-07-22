@@ -1,5 +1,6 @@
 import {
     Alert,
+    Button,
     CardIcon,
     CheckIcon,
     Chip,
@@ -27,12 +28,16 @@ import {
 
 type CommunityEndpointCardProps = {
     endpoint: CommunityEndpoint;
+    isToggling: boolean;
+    onToggle: () => void;
     onEdit: () => void;
     onDelete: () => void;
 };
 
 export function CommunityEndpointCard({
     endpoint,
+    isToggling,
+    onToggle,
     onEdit,
     onDelete,
 }: CommunityEndpointCardProps) {
@@ -67,6 +72,19 @@ export function CommunityEndpointCard({
                     )}
                 </div>
                 <div className="flex shrink-0 items-center gap-1">
+                    <Button
+                        type="button"
+                        size="sm"
+                        intent={endpoint.disabled ? "info" : "danger"}
+                        disabled={isToggling}
+                        onClick={onToggle}
+                    >
+                        {isToggling
+                            ? "Saving…"
+                            : endpoint.disabled
+                              ? "Reactivate"
+                              : "Deactivate"}
+                    </Button>
                     <IconButton
                         intent="info"
                         title="Edit model"
@@ -95,9 +113,6 @@ export function CommunityEndpointCard({
                         <span className="text-sm">
                             {endpoint.disabledReason ??
                                 "Deactivated due to repeated failures."}
-                        </span>
-                        <span className="text-sm">
-                            Edit, test, then save the model to reactivate it.
                         </span>
                     </div>
                 </Alert>

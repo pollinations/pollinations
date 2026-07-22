@@ -31,7 +31,7 @@ export type CommunityModelRegistryEntry = {
     id: string;
     aliases: string[];
     info: ModelInfo;
-    definition: ModelDefinition<string>;
+    definition: ModelDefinition;
     communityEndpoint: CommunityEndpointRuntime;
     /** Set when this entry represents a group (multi-provider). */
     group?: CommunityEndpointGroupRuntime;

@@ -34,6 +34,7 @@ export function CommunityEndpoints({
     const [createOpen, setCreateOpen] = useState(false);
     const [editing, setEditing] = useState<CommunityEndpoint | null>(null);
     const [deleting, setDeleting] = useState<CommunityEndpoint | null>(null);
+    const [togglingId, setTogglingId] = useState<string | null>(null);
 
     const loadEndpoints = useCallback(async (): Promise<void> => {
         setError(null);
@@ -101,21 +102,52 @@ export function CommunityEndpoints({
         }
     }
 
+    async function handleToggle(endpoint: CommunityEndpoint): Promise<void> {
+        setTogglingId(endpoint.id);
+        setError(null);
+        try {
+            const response = await apiClient.account["my-models"][
+                ":id"
+            ].update.$post({
+                param: { id: endpoint.id },
+                json: { active: endpoint.disabled },
+            });
+            if (!response.ok) throw new Error(await readError(response));
+            const updated = (await response.json()) as CommunityEndpoint;
+            setEndpoints((current) =>
+                current.map((item) =>
+                    item.id === updated.id ? updated : item,
+                ),
+            );
+            await onChange?.();
+        } catch (thrown) {
+            setError(
+                thrown instanceof Error
+                    ? thrown.message
+                    : "Model status update failed",
+            );
+        } finally {
+            setTogglingId(null);
+        }
+    }
+
     const privateModelGuidance = (
         <>
             Your models are private — callable only by you and shown only when{" "}
             <strong>/models</strong> is authenticated with your API key. Enter
             the upstream model ID manually, then test the saved model by calling
-            its model ID. To request public publishing access, open a{" "}
+            its model ID. Public publishing is allowlist-only. To request
+            publishing access for your account, submit a{" "}
             <a
-                href="https://github.com/pollinations/pollinations/issues/new?title=Community%20model%20publishing%20request"
+                href="https://github.com/pollinations/pollinations/issues/new?template=community-model-allowlist.yml"
                 target="_blank"
                 rel="noreferrer"
                 className="underline hover:text-theme-text-strong"
             >
-                GitHub issue
+                community model publisher allowlist request
             </a>{" "}
-            or ask in{" "}
+            form. You can register and test private models without approval. For
+            questions, ask in{" "}
             <a
                 href="https://discord.gg/pollinations-ai-885844321461485618"
                 target="_blank"
@@ -178,6 +210,8 @@ export function CommunityEndpoints({
                             <CommunityEndpointCard
                                 key={endpoint.id}
                                 endpoint={endpoint}
+                                isToggling={togglingId === endpoint.id}
+                                onToggle={() => void handleToggle(endpoint)}
                                 onEdit={() => setEditing(endpoint)}
                                 onDelete={() => setDeleting(endpoint)}
                             />

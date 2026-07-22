@@ -5,8 +5,8 @@ import {
     createFireworksModelConfig,
     createInceptionModelConfig,
     createOpenRouterModelConfig,
-    createOVHcloudMistralConfig,
     createOVHcloudModelConfig,
+    createOVHcloudOAIConfig,
     createPerplexityModelConfig,
     createPollyConfig,
     createVercelAIGatewayModelConfig,
@@ -128,12 +128,49 @@ export const portkeyConfig: PortkeyConfigMap = {
             "grok-4.3",
         ),
 
+    // -- OpenRouter (frontier models) ----------------------------------------
+    "moonshotai/kimi-k3": () =>
+        createOpenRouterModelConfig({
+            model: "moonshotai/kimi-k3",
+            defaultOptions: { provider: { sort: "price" } },
+        }),
+    "x-ai/grok-4.5": () =>
+        createOpenRouterModelConfig({
+            model: "x-ai/grok-4.5",
+            defaultOptions: { provider: { sort: "price" } },
+        }),
+    "xiaomi/mimo-v2.5": () =>
+        createOpenRouterModelConfig({
+            model: "xiaomi/mimo-v2.5",
+            defaultOptions: { provider: { sort: "price" } },
+        }),
+    "xiaomi/mimo-v2.5-pro": () =>
+        createOpenRouterModelConfig({
+            model: "xiaomi/mimo-v2.5-pro",
+            defaultOptions: { provider: { sort: "price" } },
+        }),
+    "qwen/qwen3.7-plus": () =>
+        createOpenRouterModelConfig({
+            model: "qwen/qwen3.7-plus",
+            defaultOptions: { provider: { sort: "price" } },
+        }),
+    "qwen/qwen3.7-max": () =>
+        createOpenRouterModelConfig({
+            model: "qwen/qwen3.7-max",
+            defaultOptions: { provider: { sort: "price" } },
+        }),
+
     // -- OpenRouter (Gemma) ---------------------------------------------------
     // Moved off DeepInfra: OpenRouter serves the same SKU ~cheaper ($0.06/$0.33
     // posted vs $0.07/$0.34) and is credit-eligible.
     "google/gemma-4-26b-a4b-it": () =>
         createOpenRouterModelConfig({
             model: "google/gemma-4-26b-a4b-it",
+        }),
+    "google/gemma-4-31b-it": () =>
+        createOpenRouterModelConfig({
+            model: "google/gemma-4-31b-it",
+            defaultOptions: { provider: { sort: "price" } },
         }),
 
     // -- Inception Labs (Mercury) -------------------------------------------
@@ -255,11 +292,6 @@ export const portkeyConfig: PortkeyConfigMap = {
     "sonar-reasoning-pro": () =>
         createPerplexityModelConfig({ model: "sonar-reasoning-pro" }),
 
-    // -- Fireworks AI (Qwen) -----------------------------------------------------
-    "accounts/fireworks/models/qwen3p7-plus": () =>
-        createFireworksModelConfig({
-            model: "accounts/fireworks/models/qwen3p7-plus",
-        }),
     "accounts/fireworks/models/glm-5p2": () =>
         createFireworksModelConfig({
             model: "accounts/fireworks/models/glm-5p2",
@@ -324,11 +356,16 @@ export const portkeyConfig: PortkeyConfigMap = {
             model: "stepfun/step-3.7-flash",
         }),
 
-    // -- OVHcloud (Qwen) ------------------------------------------------------
+    // -- OVHcloud -------------------------------------------------------------
+    "gpt-oss-20b": () =>
+        createOVHcloudOAIConfig({
+            model: "gpt-oss-20b",
+            "max-tokens": 1500,
+        }),
     "qwen3-coder-30b-a3b-instruct": () =>
         createOVHcloudModelConfig({ model: "Qwen3-Coder-30B-A3B-Instruct" }),
     "Qwen3Guard-Gen-8B": () =>
-        createOVHcloudMistralConfig({ model: "Qwen3Guard-Gen-8B" }),
+        createOVHcloudOAIConfig({ model: "Qwen3Guard-Gen-8B" }),
 
     // -- Community Models -----------------------------------------------------
     "polly": () =>

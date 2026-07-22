@@ -11,6 +11,10 @@ import {
     user as userTable,
 } from "@shared/db/better-auth.ts";
 import { validator } from "@shared/middleware/validator.ts";
+import {
+    filterPermissionsToVisibleModels,
+    getVisibleModelIdsForUser,
+} from "@shared/registry/visible-model-ids.ts";
 import { and, desc, eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import type { Context } from "hono";
@@ -1377,10 +1381,24 @@ export const accountRoutes = new Hono<Env>()
                 .from(apikeyTable)
                 .where(eq(apikeyTable.userId, user.id))
                 .all();
+            const parsedPermissions = keys.map((key) => {
+                if (!key.permissions) return null;
+                try {
+                    return JSON.parse(key.permissions);
+                } catch {
+                    return null;
+                }
+            });
+            const hasModelRestrictions = parsedPermissions.some((permissions) =>
+                Array.isArray(permissions?.models),
+            );
+            const visibleModelIds = hasModelRestrictions
+                ? await getVisibleModelIdsForUser(c.env.DB, user.id)
+                : null;
 
             c.header("Cache-Control", "private, no-store, max-age=0");
             return c.json({
-                data: keys.map((key) => ({
+                data: keys.map((key, index) => ({
                     id: key.id,
                     name: key.name,
                     start: key.start,
@@ -1388,15 +1406,12 @@ export const accountRoutes = new Hono<Env>()
                     createdAt: key.createdAt,
                     expiresAt: key.expiresAt,
                     lastRequest: key.lastRequest,
-                    permissions: key.permissions
-                        ? (() => {
-                              try {
-                                  return JSON.parse(key.permissions);
-                              } catch {
-                                  return null;
-                              }
-                          })()
-                        : null,
+                    permissions: visibleModelIds
+                        ? filterPermissionsToVisibleModels(
+                              parsedPermissions[index],
+                              visibleModelIds,
+                          )
+                        : parsedPermissions[index],
                     metadata: parseMetadata(key.metadata),
                     pollenBalance: key.pollenBalance,
                     enabled: key.enabled,
@@ -1654,9 +1669,20 @@ export const accountRoutes = new Hono<Env>()
             }
 
             // Format permissions for response
+            const userId = c.var.auth.user?.id;
+            const visibleModelIds =
+                userId && Array.isArray(apiKey.permissions?.models)
+                    ? await getVisibleModelIdsForUser(c.env.DB, userId)
+                    : null;
+            const effectivePermissions = visibleModelIds
+                ? filterPermissionsToVisibleModels(
+                      apiKey.permissions ?? null,
+                      visibleModelIds,
+                  )
+                : (apiKey.permissions ?? null);
             const permissions = {
-                models: apiKey.permissions?.models || null,
-                account: apiKey.permissions?.account || null,
+                models: effectivePermissions?.models ?? null,
+                account: effectivePermissions?.account ?? null,
             };
 
             return c.json({

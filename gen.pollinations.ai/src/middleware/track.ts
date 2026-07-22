@@ -78,7 +78,7 @@ type ModelVariables = {
     model: {
         requested: string;
         resolved: string;
-        definition: ModelDefinition<string>;
+        definition: ModelDefinition;
         communityEndpoint?: CommunityEndpointRuntime;
     };
 };
@@ -93,7 +93,7 @@ type RequestTrackingData = {
     modelRequested: string | null;
     resolvedModelRequested: string;
     modelProvider?: string;
-    modelDefinition: ModelDefinition<string>;
+    modelDefinition: ModelDefinition;
     modelCostDefinition: CostDefinition;
     modelPriceDefinition: PriceDefinition;
     streamRequested: boolean;
@@ -328,12 +328,17 @@ export const track = (eventType: EventType) =>
                     { event: finalEvent },
                 );
 
-                await sendToTinybird(
-                    finalEvent,
-                    c.env.TINYBIRD_INGEST_URL,
-                    c.env.TINYBIRD_INGEST_TOKEN,
-                    log,
-                );
+                if (
+                    userTracking.userId &&
+                    !responseTracking.cacheData.cacheHit
+                ) {
+                    await sendToTinybird(
+                        finalEvent,
+                        c.env.TINYBIRD_INGEST_URL,
+                        c.env.TINYBIRD_INGEST_TOKEN,
+                        log,
+                    );
+                }
 
                 if (shouldRunAutoTopUp && userTracking.userId) {
                     await triggerAutoTopUp(c.env, userTracking.userId, log);

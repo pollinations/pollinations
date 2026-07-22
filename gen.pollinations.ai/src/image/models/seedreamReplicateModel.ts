@@ -318,6 +318,8 @@ async function callSeedreamReplicateAPI(
             throw new HttpError(
                 `${variant.displayName} generation failed: ${err.message}`,
                 err.status ?? 500,
+                undefined,
+                err.url,
             );
         }
         throw err;

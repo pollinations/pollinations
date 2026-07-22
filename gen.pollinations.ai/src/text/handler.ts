@@ -73,7 +73,7 @@ function createExpressLikeRequest(
 
 function prepareRequestParameters(
     requestParams: RequestData,
-    modelDefinition: ModelDefinition<string>,
+    modelDefinition: ModelDefinition,
 ): RequestData {
     const isAudioModel =
         modelDefinition.outputModalities?.includes("audio") ?? false;

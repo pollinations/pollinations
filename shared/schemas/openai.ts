@@ -597,10 +597,21 @@ const ImageDataSchema = z.object({
     revised_prompt: z.string().optional(),
 });
 
+export const ImageUsageSchema = z.object({
+    input_tokens: z.number().int().nonnegative(),
+    output_tokens: z.number().int().nonnegative(),
+    total_tokens: z.number().int().nonnegative(),
+    input_tokens_details: z.object({
+        text_tokens: z.number().int().nonnegative(),
+        image_tokens: z.number().int().nonnegative(),
+    }),
+});
+
 export const CreateImageResponseSchema = z
     .object({
         created: z.number().int(),
         data: z.array(ImageDataSchema),
+        usage: ImageUsageSchema,
     })
     .meta({ $id: "CreateImageResponse" });
 

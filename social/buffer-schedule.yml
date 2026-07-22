@@ -16,11 +16,6 @@ twitter:
   days: [1, 2, 3, 4, 5, 6]  # Mon-Sat (1=Monday, 7=Sunday)
   preferred: "15:00"  # 15:00 UTC
 
-instagram:
-  # Daily (except Sunday — weekly covers it)
-  days: [1, 2, 3, 4, 5, 6]  # Mon-Sat
-  preferred: "15:00"  # 15:00 UTC
-
 # ── Daily platforms (not via Buffer) ─────────────────────────────────
 # Reddit daily: deployed to VPS via SSH at 15:00 UTC cron (news-publish-social.yml)
 # Discord daily: realtime per-PR webhook only (publish_realtime.py)
@@ -37,6 +32,11 @@ weekly:
 linkedin:
   # Weekly only — staged to Buffer on Sunday with the weekly digest.
   # No daily LinkedIn posts. LinkedIn algorithm rewards quality over frequency.
+  days: [7]  # Sunday only
+  preferred: "18:00"  # 18:00 UTC
+
+instagram:
+  # Weekly only — staged with the Sunday digest.
   days: [7]  # Sunday only
   preferred: "18:00"  # 18:00 UTC
 
@@ -57,7 +57,7 @@ linkedin:
 #   publish_realtime.py posts to Discord
 #
 # news-generate-summary.yml — daily 06:00 UTC cron:
-#   Mon-Sat: generate_daily.py → commit to news → stage X + IG to Buffer → README PR to main
+#   Mon-Sat: generate_daily.py → commit to news → stage X to Buffer → README PR to main
 #   Sunday:  generate_weekly.py → commit to news → stage X + LI + IG to Buffer
 #
 # news-publish-social.yml — Mon-Sat 15:00 UTC + Sunday 18:00 UTC cron:

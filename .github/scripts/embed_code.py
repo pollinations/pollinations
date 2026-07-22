@@ -5,13 +5,14 @@ Two modes:
   --mode full        Embed every matching file in the repo (first-time backfill / manual re-embed).
   --mode incremental  Embed only files changed between two git refs; delete vectors for removed/renamed files.
 
-Chunking mirrors apps/polly/src/services/embeddings.py's Python fallback path so search results
+Chunking mirrors apps/polli/src/services/embeddings.py's Python fallback path so search results
 stay consistent between the one-time backfill and future incremental updates.
 """
 
 from __future__ import annotations
 
 import argparse
+import codecs
 import json
 import os
 import subprocess
@@ -159,12 +160,27 @@ GENERATED_MARKER_SCAN_LINES = 5
 
 
 def is_probably_binary(sample: bytes) -> bool:
-    """Backstop for binary files that slip through the extension blocklist."""
+    """Backstop for binary files that slip through the extension blocklist.
+
+    Judged on decoded characters rather than raw bytes. Every non-ASCII character is
+    multi-byte in UTF-8, so a byte-level ratio counts one box-drawing character as two or
+    three "non-text" bytes — which read pollinations.ai/src/theme/palette.ts (ordinary
+    TypeScript with a box-drawing comment banner) as 30.1% binary and dropped it from the
+    index.
+    """
     if b"\x00" in sample:
         return True
-    text_chars = bytes(range(32, 127)) + b"\n\r\t\f\b"
-    nontext = sum(b not in text_chars for b in sample)
-    return bool(sample) and (nontext / len(sample)) > 0.30
+    # An incremental decoder tolerates a character split across the sample boundary; a
+    # plain decode() raises there, which by itself flagged ordinary source files.
+    text = codecs.getincrementaldecoder("utf-8")("replace").decode(sample)
+    if not text:
+        return False
+    # Real binary data yields replacement characters in bulk; a stray one means nothing.
+    if text.count("�") / len(text) > 0.05:
+        return True
+    allowed_controls = {"\n", "\r", "\t", "\f", "\b", "\v"}
+    control_count = sum(1 for ch in text if ch < " " and ch not in allowed_controls)
+    return (control_count / len(text)) > 0.05
 
 
 def is_generated(text: str) -> bool:
@@ -494,7 +510,7 @@ def _language_for(rel_path: str) -> str:
 
 def _app_for(rel_path: str) -> str:
     """Top-level path segment — the monorepo's app/service boundary, e.g.
-    "enter.pollinations.ai" or "apps/polly". Lets search be scoped to one part of the repo.
+    "enter.pollinations.ai" or "apps/polli". Lets search be scoped to one part of the repo.
 
     Root-level files (README.md, package.json, ...) share a single "(root)" bucket rather
     than each becoming its own one-file "app", which would make this field useless as a filter.

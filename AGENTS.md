@@ -135,7 +135,7 @@ curl "http://localhost:8788/v1/chat/completions" -H "Authorization: Bearer $TOKE
 - Run `npm run decrypt-vars` before tests in enter.pollinations.ai.
 - Test API keys in `enter.pollinations.ai/.testingtokens`.
 - Before model changes, read and follow `.claude/skills/model-management/SKILL.md`.
-- Don't request PR reviews or comment `polly` unless the user explicitly asks.
+- Don't request PR reviews or comment `polli` unless the user explicitly asks.
 - Model descriptions must describe only capabilities or differentiators; never repeat the model title or name.
 
 ## Testing

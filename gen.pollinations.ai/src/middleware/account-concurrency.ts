@@ -50,24 +50,30 @@ function releaseAfterBody(
  * Emergency abuse mitigation: limits an account with no paid balance to a
  * single active provider-backed generation across all API keys and modalities.
  *
- * Accounts holding paid balance (`packBalance > 0`) bypass the limiter, so this
- * only constrains free / quest-only accounts — the population a coordinated
- * flood is cheapest to run from. Cache hits never reach this middleware, so
- * they don't occupy the slot. The slot is held for the full response, including
- * streaming, and released on completion, cancellation, or error.
+ * Accounts that have ever been funded (`packBalance !== 0`) bypass the limiter,
+ * so this only constrains free / quest-only accounts — the population a
+ * coordinated flood is cheapest to run from. Cache hits never reach this
+ * middleware, so they don't occupy the slot. The slot is held for the full
+ * response, including streaming, and released on completion, cancellation, or
+ * error.
  */
-export const accountConcurrencyLimit =
-    createMiddleware<AccountConcurrencyEnv>(async (c, next) => {
+export const accountConcurrencyLimit = createMiddleware<AccountConcurrencyEnv>(
+    async (c, next) => {
         const user = c.var.auth.user;
         const userId = user?.id;
         // Unauthenticated requests are rejected upstream by generationAccess.
         if (!userId) return next();
 
-        // Paid accounts bypass the gate entirely. packBalance is already on the
-        // full user row loaded by auth (SELECT *), so this is free.
+        // Accounts that have ever been funded bypass the gate entirely. A
+        // non-zero pack balance is a sufficient in-request signal: positive
+        // means they hold credit now, negative means they paid and then spent
+        // past zero (deductions aren't floored at 0, so spent-down payers land
+        // negative, never exactly 0). Only null (never funded) and 0 (free
+        // account, never purchased a pack) are limited. packBalance is already
+        // on the full user row loaded by auth (SELECT *), so this is free.
         // biome-ignore lint/suspicious/noExplicitAny: packBalance comes from SELECT *, not on the narrow AuthUser type
         const packBalance = ((user as any).packBalance ?? 0) as number;
-        if (packBalance > 0) return next();
+        if (packBalance !== 0) return next();
 
         const namespace = c.env.ACCOUNT_CONCURRENCY_LIMITER;
         // A missing binding is a deployment/configuration failure, not a silent
@@ -137,4 +143,5 @@ export const accountConcurrencyLimit =
             statusText: response.statusText,
             headers: response.headers,
         });
-    });
+    },
+);

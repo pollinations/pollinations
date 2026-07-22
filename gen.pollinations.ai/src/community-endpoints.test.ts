@@ -743,6 +743,55 @@ fixtureTest(
 );
 
 fixtureTest(
+    "an account that spent past zero (negative pack balance) bypasses the limit",
+    async () => {
+        // A negative pack balance can only result from paying and then spending
+        // past zero, so it is a definite "has paid" signal and must bypass the
+        // gate just like a positive balance. Only null/0 (never funded) is
+        // limited. This guards the packBalance !== 0 bypass condition.
+        const callerUserId = await createTestUser({
+            tierBalance: 0,
+            packBalance: -5,
+        });
+        const { key } = await createTestApiKey({
+            userId: callerUserId,
+            name: "spent-down-payer-key",
+        });
+
+        // Occupy the account's slot; a same-account request must NOT be blocked,
+        // because the limiter bypasses funded (incl. spent-down) accounts before
+        // ever consulting the Durable Object.
+        const namespace = env.ACCOUNT_CONCURRENCY_LIMITER;
+        const stub = namespace.get(namespace.idFromName(callerUserId));
+        const held = await stub.acquire();
+        expect(held.allowed).toBe(true);
+
+        const response = await SELF.fetch(
+            "https://gen.pollinations.ai/v1/audio/speech",
+            {
+                method: "POST",
+                headers: {
+                    Authorization: `Bearer ${key}`,
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    model: "elevenlabs",
+                    input: "hello",
+                    voice: "alloy",
+                }),
+            },
+        );
+        // The request gets past the limiter (it may fail downstream for other
+        // reasons in the test env), but it must NOT be the concurrency 429.
+        if (response.status === 429) {
+            await expect(response.json()).resolves.not.toMatchObject({
+                error: "concurrency_limit_exceeded",
+            });
+        }
+    },
+);
+
+fixtureTest(
     "a private model is owner-only and a zero-priced public model is free",
     async ({ apiKey }) => {
         const ownerGithubUsername = `owner-${crypto.randomUUID().slice(0, 8)}`;

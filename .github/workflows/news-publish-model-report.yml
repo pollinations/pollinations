@@ -16,7 +16,7 @@ on:
         default: false
 
 # Lock the default GITHUB_TOKEN to read-only — all writes to the news branch
-# go through the POLLY_BOT App token created in the first step, which is
+# go through the POLLI_BOT App token created in the first step, which is
 # scoped via the App's installation permissions, not this block.
 permissions:
   contents: read

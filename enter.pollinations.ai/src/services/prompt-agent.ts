@@ -5,24 +5,13 @@
 // dedicated owner sk_ key the template uses for its internal gen/image calls.
 //
 // The structured config is stored in the endpoint's `prompt_agent` column as
-// JSON; `prompt_agent IS NOT NULL` gating drives create-rollback,
-// update-redeploy, and delete-cleanup uniformly. The minted key's id is stored
-// alongside so it can be removed when the agent is deleted.
+// JSON. The minted key's id is stored alongside so it can be removed when the
+// agent is deleted.
 import { createApiKeyForUser } from "@shared/auth/api-key-creation.ts";
 import { z } from "zod";
 import { PROMPT_AGENT_TEMPLATE_SOURCE } from "./prompt-agent-template.ts";
 
 export const PROMPT_AGENT_BUILTIN_TOOLS = ["web_search", "image"] as const;
-
-// The minted owner key is scoped so a leaked key (it lives in the deployed
-// worker's binding, readable inside the sandbox) can't drain the owner's
-// balance. It carries no model allowlist — an agent may call any text or image
-// model — but it expires quickly and can only ever spend a few pollen before
-// it locks (both the pre-request check and post-response debit are enforced on
-// the key's own `pollenBalance`). Each redeploy mints a fresh key and deletes
-// the old one, so the effective exposure window is one deploy's lifetime.
-const OWNER_KEY_EXPIRES_IN_SECONDS = 10 * 60;
-const OWNER_KEY_POLLEN_BUDGET = 5;
 
 const McpServerSchema = z.object({
     // Namespaces the server's tools (mcp__<name>__<tool>); lowercase to match
@@ -35,7 +24,6 @@ const McpServerSchema = z.object({
             "MCP server name must be lowercase alphanumeric with _ or - (max 40 chars)",
         ),
     url: z.string().url(),
-    auth: z.string().min(1).optional(),
 });
 
 export const PromptAgentSchema = z
@@ -100,8 +88,6 @@ async function mintOwnerKey(
         userId,
         name: `prompt-agent:${agentName}`,
         type: "secret",
-        expiresIn: OWNER_KEY_EXPIRES_IN_SECONDS,
-        pollenBudget: OWNER_KEY_POLLEN_BUDGET,
         allowAccountKeysPermission: false,
         defaultCreatedVia: "prompt-agent",
     });

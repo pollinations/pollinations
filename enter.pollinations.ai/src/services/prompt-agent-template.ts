@@ -18,7 +18,7 @@
 //   SYSTEM_PROMPT    the agent's system prompt
 //   BASE_MODEL       the Pollinations model id the loop calls
 //   TOOLS_JSON       JSON array of built-in tool names, e.g. ["web_search","image"]
-//   MCP_JSON         JSON array of { name, url, auth? } MCP servers
+//   MCP_JSON         JSON array of { name, url } public MCP servers
 //   POLLINATIONS_KEY owner sk_ key used for every internal gen/image/model call
 //   GEN_BASE_URL     the gateway origin the key is valid against (env-specific:
 //                    prod uses gen.pollinations.ai, staging its own gen). The
@@ -35,6 +35,8 @@ function genBase(env) {
 // throws on error. This only bounds how many tool rounds one request may take so
 // a looping model can't run up unbounded cost on the owner's key.
 const MAX_TOOL_ROUNDS = 8;
+const MCP_PROTOCOL_VERSION = "2025-06-18";
+const MCP_TIMEOUT_MS = 30_000;
 
 // --- built-in tools -------------------------------------------------------
 // Each entry is { schema (OpenAI function def the base model sees), run (executes
@@ -132,27 +134,35 @@ function mcpToolName(serverName, toolName) {
     return "mcp__" + serverName + "__" + toolName;
 }
 
-async function mcpRpc(server, method, params) {
+async function mcpRpc(server, session, method, params, notification = false) {
     const headers = {
         "content-type": "application/json",
         accept: "application/json, text/event-stream",
     };
-    if (server.auth) headers.authorization = "Bearer " + server.auth;
+    if (session.id) headers["Mcp-Session-Id"] = session.id;
+    if (session.protocolVersion) {
+        headers["MCP-Protocol-Version"] = session.protocolVersion;
+    }
+    const request = {
+        jsonrpc: "2.0",
+        method,
+        params: params ?? {},
+    };
+    if (!notification) request.id = session.nextId++;
     const res = await fetch(server.url, {
         method: "POST",
         headers,
-        body: JSON.stringify({
-            jsonrpc: "2.0",
-            id: 1,
-            method,
-            params: params ?? {},
-        }),
+        body: JSON.stringify(request),
+        signal: AbortSignal.timeout(MCP_TIMEOUT_MS),
     });
     if (!res.ok)
         throw new Error(
             "mcp " + server.name + " " + method + " " + res.status + ": " +
                 (await res.text()),
         );
+    const sessionId = res.headers.get("Mcp-Session-Id");
+    if (sessionId) session.id = sessionId;
+    if (notification) return undefined;
     // Streamable HTTP may answer with a single JSON body or an SSE stream; for a
     // one-shot request/response we accept either and read the first JSON-RPC
     // message out of the body.
@@ -182,12 +192,22 @@ function parseJsonRpc(text) {
 async function loadMcpTools(servers) {
     const tools = {};
     for (const server of servers) {
-        await mcpRpc(server, "initialize", {
-            protocolVersion: "2025-06-18",
+        const session = { id: null, protocolVersion: null, nextId: 1 };
+        const initialized = await mcpRpc(server, session, "initialize", {
+            protocolVersion: MCP_PROTOCOL_VERSION,
             capabilities: {},
             clientInfo: { name: "pollinations-prompt-agent", version: "1.0" },
         });
-        const list = await mcpRpc(server, "tools/list", {});
+        session.protocolVersion =
+            initialized?.protocolVersion ?? MCP_PROTOCOL_VERSION;
+        await mcpRpc(
+            server,
+            session,
+            "notifications/initialized",
+            {},
+            true,
+        );
+        const list = await mcpRpc(server, session, "tools/list", {});
         for (const tool of list?.tools ?? []) {
             const name = mcpToolName(server.name, tool.name);
             tools[name] = {
@@ -203,7 +223,7 @@ async function loadMcpTools(servers) {
                     },
                 },
                 async run(args) {
-                    const result = await mcpRpc(server, "tools/call", {
+                    const result = await mcpRpc(server, session, "tools/call", {
                         name: tool.name,
                         arguments: args ?? {},
                     });

@@ -9,12 +9,9 @@ import {
     Dropdown,
     DropdownItem,
     FieldStack,
-    IconButton,
     Input,
     ScrollArea,
     TabButton,
-    Textarea,
-    XIcon,
 } from "@pollinations/ui";
 import type { CommunityEndpointVisibility } from "@shared/community-endpoints.ts";
 import type { FormEvent, ReactNode } from "react";
@@ -29,6 +26,7 @@ import {
     savedEndpointPriceKeys,
     visiblePriceFieldKeys,
 } from "./price-table.tsx";
+import { PromptAgentFields } from "./prompt-agent-fields.tsx";
 import {
     type ActionState,
     type CommunityEndpoint,
@@ -42,23 +40,17 @@ import {
     MCP_SERVER_NAME_PATTERN,
     type McpServerRow,
     nextFormState,
-    PROMPT_AGENT_BUILTIN_TOOLS,
     type PromptAgentBuiltinTool,
     providerModelHelper,
     readError,
     toEndpointPayload,
 } from "./types.ts";
 
-const BUILTIN_TOOL_LABELS: Record<PromptAgentBuiltinTool, string> = {
-    web_search: "Web search",
-    image: "Image",
-};
-
 function isValidMcpRow(row: McpServerRow): boolean {
     const name = row.name.trim();
     const url = row.url.trim();
     // Fully-empty rows are dropped on submit, so treat them as valid here.
-    if (!name && !url && !row.auth.trim()) return true;
+    if (!name && !url) return true;
     try {
         new URL(url);
     } catch {
@@ -149,6 +141,7 @@ export function CommunityEndpointDialog({
     function updateForm(key: keyof EndpointFormState, value: string): void {
         setForm((current) => nextFormState(current, key, value));
         if (
+            key === "modality" ||
             key === "name" ||
             key === "upstreamModel" ||
             key === "baseUrl" ||
@@ -156,7 +149,7 @@ export function CommunityEndpointDialog({
         ) {
             setTestState(idleAction);
         }
-        if (key === "baseUrl" || key === "bearerToken") {
+        if (key === "modality" || key === "baseUrl" || key === "bearerToken") {
             setModelOptions([]);
             setModelListState(idleAction);
             setProviderModelMenuOpen(false);
@@ -172,7 +165,11 @@ export function CommunityEndpointDialog({
     }
 
     function updateMode(mode: EndpointMode): void {
-        setForm((current) => ({ ...current, mode }));
+        setForm((current) => ({
+            ...current,
+            mode,
+            modality: mode === "prompt-agent" ? "text" : current.modality,
+        }));
         setTestState(idleAction);
         setError(null);
     }
@@ -202,10 +199,7 @@ export function CommunityEndpointDialog({
     function addMcpServer(): void {
         setForm((current) => ({
             ...current,
-            mcpServers: [
-                ...current.mcpServers,
-                { name: "", url: "", auth: "" },
-            ],
+            mcpServers: [...current.mcpServers, { name: "", url: "" }],
         }));
     }
 
@@ -253,21 +247,41 @@ export function CommunityEndpointDialog({
                 json: {
                     baseUrl: form.baseUrl.trim(),
                     bearerToken: form.bearerToken.trim(),
+                    modality: form.modality,
                     model: form.upstreamModel.trim() || form.name.trim(),
                 },
             });
             if (!response.ok) throw new Error(await readError(response));
             const body =
                 (await response.json()) as CommunityEndpointTestResponse;
-            const returnedFields = returnedPriceFields({
-                status: "success",
-                usage: body.usage,
-                billableUsage: body.billableUsage,
-            });
+            const detectedImagePricing =
+                form.modality === "image"
+                    ? (body.imagePricing ?? "request")
+                    : form.imagePricing;
+            const returnedFields = returnedPriceFields(
+                {
+                    status: "success",
+                    usage: body.usage,
+                    billableUsage: body.billableUsage,
+                },
+                form.modality,
+                detectedImagePricing,
+            );
             if (returnedFields.length === 0) {
                 throw new Error(
-                    "Endpoint responded, but did not return billable token usage",
+                    form.modality === "image"
+                        ? "Endpoint responded, but did not return image data"
+                        : "Endpoint responded, but did not return billable usage",
                 );
+            }
+            if (detectedImagePricing !== form.imagePricing) {
+                setForm((current) => ({
+                    ...current,
+                    imagePricing: detectedImagePricing,
+                    promptTextPrice: "",
+                    promptImagePrice: "",
+                    completionImagePrice: "",
+                }));
             }
             setTestState({
                 status: "success",
@@ -294,16 +308,9 @@ export function CommunityEndpointDialog({
             const payload = toEndpointPayload(
                 formWithVisiblePrices(form, visiblePriceKeys),
             );
-            // An unchanged prompt-agent config would still redeploy the worker
-            // and rotate the minted key; omit it so metadata-only edits are
-            // cheap. The API treats a missing promptAgent as "keep as is".
-            if (
-                isEdit &&
-                payload.promptAgent &&
-                endpoint?.promptAgent &&
-                JSON.stringify(payload.promptAgent) ===
-                    JSON.stringify(endpoint.promptAgent)
-            ) {
+            // Agent configuration is immutable after creation. Metadata and
+            // visibility can still be edited without redeploying the worker.
+            if (isEdit && endpoint?.promptAgent) {
                 payload.promptAgent = undefined;
             }
             await onSubmit(payload, form.bearerToken.trim());
@@ -328,13 +335,19 @@ export function CommunityEndpointDialog({
     // saved, so there is no create-time endpoint to test.
     const isPromptAgent = form.mode === "prompt-agent";
     const returnedFields =
-        isShared && !isPromptAgent ? returnedPriceFields(testState) : [];
-    // Reveal the optional base text prices plus whatever the test observed or
-    // the model already had saved. Blank and zero prices mean free.
+        isShared && !isPromptAgent
+            ? returnedPriceFields(testState, form.modality, form.imagePricing)
+            : [];
+    // Reveal the modality's base price plus whatever the test observed or the
+    // model already had saved. Blank and zero prices mean free.
+    const basePriceKeys =
+        form.modality === "image"
+            ? (["completionImagePrice"] as const)
+            : BASE_TEXT_PRICE_KEYS;
     const visiblePriceKeys = new Set(
         isShared
             ? visiblePriceFieldKeys(savedPriceKeys, returnedFields, [
-                  ...BASE_TEXT_PRICE_KEYS,
+                  ...basePriceKeys,
               ])
             : [],
     );
@@ -452,6 +465,49 @@ export function CommunityEndpointDialog({
                         </FieldStack>
                     )}
 
+                    {!isPromptAgent && (
+                        <FieldStack
+                            label="Modality"
+                            helper={
+                                isEdit
+                                    ? "Existing models keep their registered modality."
+                                    : "Choose the public API family this endpoint serves."
+                            }
+                            alignLabelRow
+                        >
+                            <div className="grid grid-cols-2 gap-2">
+                                {(["text", "image"] as const).map(
+                                    (modality) => {
+                                        const selected =
+                                            form.modality === modality;
+                                        return (
+                                            <button
+                                                key={modality}
+                                                type="button"
+                                                disabled={isEdit}
+                                                className={`rounded-md border px-3 py-2 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-60 ${
+                                                    selected
+                                                        ? "border-theme-border-active bg-theme-bg-active text-theme-text-strong"
+                                                        : "border-divider bg-surface text-theme-text-muted hover:bg-surface-opaque"
+                                                }`}
+                                                onClick={() =>
+                                                    updateForm(
+                                                        "modality",
+                                                        modality,
+                                                    )
+                                                }
+                                            >
+                                                {modality === "image"
+                                                    ? "Image"
+                                                    : "Text"}
+                                            </button>
+                                        );
+                                    },
+                                )}
+                            </div>
+                        </FieldStack>
+                    )}
+
                     <div className="grid gap-4 sm:grid-cols-2">
                         <FieldStack
                             label="Model ID"
@@ -530,6 +586,7 @@ export function CommunityEndpointDialog({
                     {isPromptAgent ? (
                         <PromptAgentFields
                             form={form}
+                            disabled={isEdit}
                             onChange={updateForm}
                             onToggleTool={toggleBuiltinTool}
                             onAddMcp={addMcpServer}
@@ -541,7 +598,7 @@ export function CommunityEndpointDialog({
                             <div className="grid gap-4 sm:grid-cols-2">
                                 <FieldStack
                                     label="Endpoint URL"
-                                    helper="OpenAI-compatible /v1 base URL or full chat completions URL."
+                                    helper="OpenAI-compatible /v1 base URL, or full chat/image generation URL."
                                     alignLabelRow
                                 >
                                     <Input
@@ -614,7 +671,12 @@ export function CommunityEndpointDialog({
                                                         value={
                                                             form.upstreamModel
                                                         }
-                                                        placeholder="gpt-4o-mini"
+                                                        placeholder={
+                                                            form.modality ===
+                                                            "image"
+                                                                ? "gpt-image-2"
+                                                                : "gpt-4o-mini"
+                                                        }
                                                         className="w-full pr-10"
                                                         autoComplete="off"
                                                         autoCapitalize="none"
@@ -682,7 +744,11 @@ export function CommunityEndpointDialog({
                                         <Input
                                             name="community-upstream-id"
                                             value={form.upstreamModel}
-                                            placeholder="gpt-4o-mini"
+                                            placeholder={
+                                                form.modality === "image"
+                                                    ? "gpt-image-2"
+                                                    : "gpt-4o-mini"
+                                            }
                                             autoComplete="off"
                                             autoCapitalize="none"
                                             spellCheck={false}
@@ -768,6 +834,8 @@ export function CommunityEndpointDialog({
                     {isShared && (
                         <PriceGroups
                             form={form}
+                            modality={form.modality}
+                            imagePricing={form.imagePricing}
                             testState={testState}
                             visiblePriceKeys={visiblePriceKeys}
                             onChange={updateForm}
@@ -804,171 +872,5 @@ export function CommunityEndpointDialog({
                 </div>
             </form>
         </Dialog>
-    );
-}
-
-// The no-code prompt-agent config: a system prompt over a base model, plus
-// optional built-in tools and MCP servers. Editable in both create and edit —
-// saving a changed config redeploys the agent's worker and rotates its key.
-function PromptAgentFields({
-    form,
-    onChange,
-    onToggleTool,
-    onAddMcp,
-    onUpdateMcp,
-    onRemoveMcp,
-}: {
-    form: EndpointFormState;
-    onChange: (key: keyof EndpointFormState, value: string) => void;
-    onToggleTool: (tool: PromptAgentBuiltinTool) => void;
-    onAddMcp: () => void;
-    onUpdateMcp: (
-        index: number,
-        key: keyof McpServerRow,
-        value: string,
-    ) => void;
-    onRemoveMcp: (index: number) => void;
-}) {
-    return (
-        <div className="space-y-4">
-            <FieldStack
-                label="System prompt"
-                helper="The agent's instructions, sent as the system message on every call."
-                alignLabelRow
-            >
-                <Textarea
-                    name="prompt-agent-system-prompt"
-                    value={form.systemPrompt}
-                    placeholder="You are a helpful assistant that…"
-                    rows={6}
-                    maxLength={8000}
-                    onChange={(e) => onChange("systemPrompt", e.target.value)}
-                />
-            </FieldStack>
-
-            <FieldStack
-                label="Base model"
-                helper="A Pollinations model id the agent runs on, e.g. openai or claude."
-                alignLabelRow
-            >
-                <Input
-                    name="prompt-agent-base-model"
-                    value={form.baseModel}
-                    placeholder="openai"
-                    autoComplete="off"
-                    autoCapitalize="none"
-                    spellCheck={false}
-                    onChange={(e) => onChange("baseModel", e.target.value)}
-                />
-            </FieldStack>
-
-            <FieldStack
-                label="Built-in tools"
-                helper="Tools the agent can call. Fees are charged per call under the tool name."
-                alignLabelRow
-            >
-                <div className="flex flex-wrap gap-2">
-                    {PROMPT_AGENT_BUILTIN_TOOLS.map((tool) => (
-                        <ToggleButton
-                            key={tool}
-                            active={form.builtinTools.includes(tool)}
-                            onClick={() => onToggleTool(tool)}
-                        >
-                            {BUILTIN_TOOL_LABELS[tool]}
-                        </ToggleButton>
-                    ))}
-                </div>
-            </FieldStack>
-
-            <FieldStack
-                label="MCP servers"
-                helper="Streamable-HTTP MCP servers whose tools the agent can call (billed as mcp_call)."
-                alignLabelRow
-                action={
-                    <Button
-                        type="button"
-                        size="sm"
-                        intent="info"
-                        className="shrink-0 text-sm"
-                        onClick={onAddMcp}
-                    >
-                        Add MCP server
-                    </Button>
-                }
-            >
-                {form.mcpServers.length > 0 && (
-                    <div className="grid gap-2">
-                        {form.mcpServers.map((row, index) => (
-                            <div
-                                // biome-ignore lint/suspicious/noArrayIndexKey: rows have no stable id until named
-                                key={index}
-                                className="flex items-center gap-2"
-                            >
-                                <Input
-                                    name={`prompt-agent-mcp-name-${index}`}
-                                    value={row.name}
-                                    placeholder="my-server"
-                                    autoComplete="off"
-                                    autoCapitalize="none"
-                                    spellCheck={false}
-                                    className="w-40 shrink-0"
-                                    onChange={(e) =>
-                                        onUpdateMcp(
-                                            index,
-                                            "name",
-                                            e.target.value,
-                                        )
-                                    }
-                                />
-                                <Input
-                                    name={`prompt-agent-mcp-url-${index}`}
-                                    type="url"
-                                    inputMode="url"
-                                    value={row.url}
-                                    placeholder="https://mcp.example.com"
-                                    autoComplete="off"
-                                    autoCapitalize="none"
-                                    spellCheck={false}
-                                    className="flex-1"
-                                    onChange={(e) =>
-                                        onUpdateMcp(
-                                            index,
-                                            "url",
-                                            e.target.value,
-                                        )
-                                    }
-                                />
-                                <Input
-                                    name={`prompt-agent-mcp-auth-${index}`}
-                                    type="password"
-                                    value={row.auth}
-                                    placeholder="Bearer token (optional)"
-                                    autoComplete="off"
-                                    data-lpignore="true"
-                                    data-1p-ignore="true"
-                                    data-bwignore="true"
-                                    className="w-48 shrink-0"
-                                    onChange={(e) =>
-                                        onUpdateMcp(
-                                            index,
-                                            "auth",
-                                            e.target.value,
-                                        )
-                                    }
-                                />
-                                <IconButton
-                                    intent="danger"
-                                    title="Remove MCP server"
-                                    tooltip="Remove MCP server"
-                                    onClick={() => onRemoveMcp(index)}
-                                >
-                                    <XIcon className="h-4 w-4" />
-                                </IconButton>
-                            </div>
-                        ))}
-                    </div>
-                )}
-            </FieldStack>
-        </div>
     );
 }

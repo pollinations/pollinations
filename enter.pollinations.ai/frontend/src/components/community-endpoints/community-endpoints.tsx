@@ -34,6 +34,7 @@ export function CommunityEndpoints({
     const [createOpen, setCreateOpen] = useState(false);
     const [editing, setEditing] = useState<CommunityEndpoint | null>(null);
     const [deleting, setDeleting] = useState<CommunityEndpoint | null>(null);
+    const [togglingId, setTogglingId] = useState<string | null>(null);
 
     const loadEndpoints = useCallback(async (): Promise<void> => {
         setError(null);
@@ -100,6 +101,35 @@ export function CommunityEndpoints({
                     ? thrown.message
                     : "Endpoint delete failed",
             );
+        }
+    }
+
+    async function handleToggle(endpoint: CommunityEndpoint): Promise<void> {
+        setTogglingId(endpoint.id);
+        setError(null);
+        try {
+            const response = await apiClient.account["my-models"][
+                ":id"
+            ].update.$post({
+                param: { id: endpoint.id },
+                json: { active: endpoint.disabled },
+            });
+            if (!response.ok) throw new Error(await readError(response));
+            const updated = (await response.json()) as CommunityEndpoint;
+            setEndpoints((current) =>
+                current.map((item) =>
+                    item.id === updated.id ? updated : item,
+                ),
+            );
+            await onChange?.();
+        } catch (thrown) {
+            setError(
+                thrown instanceof Error
+                    ? thrown.message
+                    : "Model status update failed",
+            );
+        } finally {
+            setTogglingId(null);
         }
     }
 
@@ -173,7 +203,7 @@ export function CommunityEndpoints({
                             </p>
                             <p className="text-sm text-theme-text-muted">
                                 {canPublish
-                                    ? "Publish an OpenAI-compatible endpoint with your own per-1M-token pricing."
+                                    ? "Publish an OpenAI-compatible text or image endpoint with your own pricing."
                                     : privateModelGuidance}
                             </p>
                         </Surface>
@@ -182,6 +212,8 @@ export function CommunityEndpoints({
                             <CommunityEndpointCard
                                 key={endpoint.id}
                                 endpoint={endpoint}
+                                isToggling={togglingId === endpoint.id}
+                                onToggle={() => void handleToggle(endpoint)}
                                 onEdit={() => setEditing(endpoint)}
                                 onDelete={() => setDeleting(endpoint)}
                             />
@@ -198,7 +230,7 @@ export function CommunityEndpoints({
                                     shown only when model lists use your API
                                     key. Make one public to list it for everyone
                                     in <strong>/models</strong> and bill callers
-                                    at your per-1M-token pricing.
+                                    at your configured pricing.
                                 </>
                             ) : (
                                 privateModelGuidance

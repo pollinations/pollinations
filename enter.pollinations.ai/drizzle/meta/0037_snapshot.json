@@ -1,7 +1,7 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "5a8a262c-a770-42b0-96a9-219cb3154b5a",
+  "id": "e1002425-b239-4c21-bfd7-f634377ffae4",
   "prevId": "adc29eb5-86d6-4428-b5e2-63f116bf22a3",
   "tables": {
     "account": {
@@ -378,18 +378,27 @@
           "notNull": false,
           "autoincrement": false
         },
+        "modality": {
+          "name": "modality",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "'text'"
+        },
+        "image_pricing": {
+          "name": "image_pricing",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "'request'"
+        },
         "base_url": {
           "name": "base_url",
           "type": "text",
           "primaryKey": false,
           "notNull": true,
-          "autoincrement": false
-        },
-        "prompt_agent": {
-          "name": "prompt_agent",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
           "autoincrement": false
         },
         "upstream_model": {
@@ -470,6 +479,14 @@
         },
         "completion_audio_price": {
           "name": "completion_audio_price",
+          "type": "real",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 0
+        },
+        "completion_image_price": {
+          "name": "completion_image_price",
           "type": "real",
           "primaryKey": false,
           "notNull": true,

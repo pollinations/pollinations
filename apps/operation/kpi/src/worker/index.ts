@@ -480,47 +480,31 @@ app.get("/api/kpi/app-submissions", async (c) => {
     };
     if (token) headers.Authorization = `token ${token}`;
 
-    // Fetch all TIER-APP issues (submissions) across the full app-review state machine.
-    // GitHub Search API lets us get created/closed dates with labels in one call.
     const repo = c.env.GITHUB_REPO;
     const since = DATA_START_DATE;
-
-    // TIER-APP label gets replaced as issues progress, so search each label separately.
-    // GitHub Search API treats comma-separated labels as AND, not OR.
-    const labels = [
-        "TIER-APP",
-        "TIER-APP-REVIEW",
-        "TIER-APP-APPROVED",
-        "TIER-APP-REJECTED",
-        "TIER-APP-INCOMPLETE",
-    ];
-    const seenIssues = new Set<number>();
     const weeklySubmissions: Record<string, number> = {};
-
-    for (const label of labels) {
-        const query = `repo:${repo}+is:issue+label:${label}+created:>=${since}`;
-        let page = 1;
-        let totalCount = 0;
-        do {
-            const res = await fetch(
-                `https://api.github.com/search/issues?q=${query}&per_page=100&sort=created&order=asc&page=${page}`,
-                { headers },
-            );
-            if (!res.ok) break;
-            const data = (await res.json()) as {
-                total_count: number;
-                items: Array<{ number: number; created_at: string }>;
-            };
-            totalCount = data.total_count;
-            for (const issue of data.items) {
-                if (seenIssues.has(issue.number)) continue;
-                seenIssues.add(issue.number);
-                const week = getWeekStart(new Date(issue.created_at));
-                weeklySubmissions[week] = (weeklySubmissions[week] || 0) + 1;
-            }
-            page++;
-        } while ((page - 1) * 100 < totalCount && page <= 5);
-    }
+    let page = 1;
+    let itemCount = 0;
+    do {
+        const res = await fetch(
+            `https://api.github.com/repos/${repo}/issues?state=all&labels=APP-SUBMISSION&since=${since}T00:00:00Z&per_page=100&page=${page}`,
+            { headers },
+        );
+        if (!res.ok) break;
+        const data = (await res.json()) as Array<{
+            created_at: string;
+            pull_request?: unknown;
+        }>;
+        itemCount = data.length;
+        for (const issue of data) {
+            if (issue.pull_request) continue;
+            const createdAt = new Date(issue.created_at);
+            if (createdAt.getTime() < DATA_START_TIMESTAMP_MS) continue;
+            const week = getWeekStart(createdAt);
+            weeklySubmissions[week] = (weeklySubmissions[week] || 0) + 1;
+        }
+        page++;
+    } while (itemCount === 100);
 
     const result = Object.entries(weeklySubmissions)
         .map(([week, submitted]) => ({ week, submitted }))

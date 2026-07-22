@@ -259,7 +259,11 @@ function modelPriceFromCatalog(model: ApiModelInfo): ModelPrice | null {
     }
 
     if (price.type === "image") {
-        if (promptTextTokens || promptImageTokens) {
+        if (
+            model.flat_rate === false ||
+            promptTextTokens ||
+            promptImageTokens
+        ) {
             return {
                 ...price,
                 prices: priceLines(

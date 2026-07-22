@@ -143,7 +143,7 @@ custom_domain = true
 [[env.staging.d1_databases]]
 binding = "DB"
 database_name = "staging-pollinations-enter-db"
-database_id = "63da5347-3fa8-4410-a68f-c9e83956f76a"
+database_id = "2cb1cf1a-a18a-4cad-a4bb-be64e3c0e39f"
 migrations_dir = "drizzle"
 
 [[env.staging.kv_namespaces]]
@@ -170,7 +170,7 @@ STRIPE_AUTO_TOP_UP_PMC_ID = "pmc_1TUpob6O03AauPe8EgmA4mvg"
 STRIPE_PMC = "pmc_1SrYT96O03AauPe8ijLy6sZU"
 # Staging OAuth lockdown — GitHub IDs are immutable; emails allow one-off
 # team access when the exact GitHub account is unknown. Issue #11137.
-STAGING_ALLOWED_GITHUB_IDS = "36901823,5099901,235942848,248917639,241978997,118118458"
+STAGING_ALLOWED_GITHUB_IDS = "36901823,5099901,235942848,248917639,241978997,118118458,189873015"
 STAGING_ALLOWED_EMAILS = "elliot@pollinations.ai"
 [env.dev]
 

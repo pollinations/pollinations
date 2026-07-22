@@ -1,8 +1,12 @@
 import {
     COMMUNITY_ENDPOINT_PRICE_FIELDS,
+    type CommunityEndpointImagePricing,
+    type CommunityEndpointModality,
+    type CommunityEndpointPriceField,
     type CommunityEndpointPriceKey,
     type CommunityEndpointPrices,
     type CommunityEndpointVisibility,
+    communityEndpointPriceFieldsForModality,
     MIN_COMMUNITY_PRICE_PER_MILLION_TOKENS,
 } from "@shared/community-endpoints.ts";
 import type { Usage } from "@shared/registry/registry.ts";
@@ -19,13 +23,13 @@ export const PROMPT_AGENT_BUILTIN_TOOLS = ["web_search", "image"] as const;
 export type PromptAgentBuiltinTool =
     (typeof PROMPT_AGENT_BUILTIN_TOOLS)[number];
 
-export type McpServerRow = { name: string; url: string; auth: string };
+export type McpServerRow = { name: string; url: string };
 
 export type PromptAgentConfig = {
     systemPrompt: string;
     baseModel: string;
     tools: PromptAgentBuiltinTool[];
-    mcpServers: { name: string; url: string; auth?: string }[];
+    mcpServers: { name: string; url: string }[];
 };
 
 export type CommunityEndpoint = {
@@ -33,6 +37,8 @@ export type CommunityEndpoint = {
     modelId: string;
     name: string;
     description: string | null;
+    modality: CommunityEndpointModality;
+    imagePricing: CommunityEndpointImagePricing;
     baseUrl: string;
     upstreamModel: string;
     // No-code prompt-agent config, present only when the endpoint is a prompt
@@ -48,6 +54,9 @@ export type CommunityEndpoint = {
 
 export type EndpointFormState = {
     mode: EndpointMode;
+    modality: CommunityEndpointModality;
+    // Detected by the endpoint test for image models; "request" until tested.
+    imagePricing: CommunityEndpointImagePricing;
     name: string;
     description: string;
     // private → owner-only, shown only to the owner, no owner-set price;
@@ -65,6 +74,8 @@ export type EndpointFormState = {
 } & EndpointFormPrices;
 
 export type EndpointPayload = {
+    modality: CommunityEndpointModality;
+    imagePricing: CommunityEndpointImagePricing;
     name: string;
     description: string;
     // Exactly one of baseUrl / promptAgent is sent, per the mode.
@@ -81,6 +92,7 @@ export type CommunityEndpointTestResponse = {
     message?: string;
     usage?: CommunityEndpointUsage;
     billableUsage?: Usage;
+    imagePricing?: CommunityEndpointImagePricing;
 };
 
 export type ActionState = {
@@ -96,6 +108,8 @@ const emptyPriceForm = Object.fromEntries(
 
 export const emptyForm: EndpointFormState = {
     mode: "external",
+    modality: "text",
+    imagePricing: "request",
     name: "",
     description: "",
     visibility: "private",
@@ -118,7 +132,7 @@ export const VISIBILITY_LABELS: Record<CommunityEndpointVisibility, string> = {
 
 const TOKENS_PER_MILLION = 1_000_000;
 
-/** Stored prices are per-token; the UI shows and accepts them per 1M tokens. */
+/** Token prices are entered per million; fixed media prices stay per unit. */
 export function pricePerTokenToPerMillion(value: number): string {
     return String(Number((value * TOKENS_PER_MILLION).toPrecision(15)));
 }
@@ -130,21 +144,57 @@ export function pricePerMillionToPerToken(value: string): number {
     return Number(trimmed) / TOKENS_PER_MILLION;
 }
 
-export function isValidPriceInput(value: string): boolean {
+export function storedPriceToFormValue(
+    value: number,
+    priceUnit: CommunityEndpointPriceField["priceUnit"] = "million",
+): string {
+    if (value <= 0) return "";
+    return priceUnit === "million"
+        ? pricePerTokenToPerMillion(value)
+        : String(Number(value.toPrecision(15)));
+}
+
+export function formPriceToStoredPrice(
+    value: string,
+    priceUnit: CommunityEndpointPriceField["priceUnit"] = "million",
+): number {
+    const trimmed = value.trim();
+    if (!trimmed) return 0;
+    if (!isValidPriceInput(trimmed, priceUnit)) return Number.NaN;
+    return priceUnit === "million"
+        ? pricePerMillionToPerToken(trimmed)
+        : Number(trimmed);
+}
+
+export function isValidPriceInput(
+    value: string,
+    priceUnit: CommunityEndpointPriceField["priceUnit"] = "million",
+): boolean {
     const trimmed = value.trim();
     if (!trimmed) return true;
     if (trimmed.includes(",")) return false;
     const parsed = Number(trimmed);
     return (
         Number.isFinite(parsed) &&
-        (parsed === 0 || parsed >= MIN_COMMUNITY_PRICE_PER_MILLION_TOKENS)
+        parsed >= 0 &&
+        (priceUnit === "image" ||
+            parsed === 0 ||
+            parsed >= MIN_COMMUNITY_PRICE_PER_MILLION_TOKENS)
     );
 }
 
 export function endpointToForm(endpoint: CommunityEndpoint): EndpointFormState {
     const promptAgent = endpoint.promptAgent;
+    const fields = new Map(
+        communityEndpointPriceFieldsForModality(
+            endpoint.modality,
+            endpoint.imagePricing,
+        ).map((field) => [field.key, field]),
+    );
     return {
         mode: promptAgent ? "prompt-agent" : "external",
+        modality: endpoint.modality,
+        imagePricing: endpoint.imagePricing,
         name: endpoint.name,
         description: endpoint.description ?? "",
         visibility: endpoint.visibility,
@@ -157,28 +207,52 @@ export function endpointToForm(endpoint: CommunityEndpoint): EndpointFormState {
         mcpServers: (promptAgent?.mcpServers ?? []).map((server) => ({
             name: server.name,
             url: server.url,
-            auth: server.auth ?? "",
         })),
         ...(Object.fromEntries(
-            COMMUNITY_ENDPOINT_PRICE_FIELDS.map((field) => [
-                field.key,
-                endpoint[field.key] > 0
-                    ? pricePerTokenToPerMillion(endpoint[field.key])
-                    : "",
-            ]),
+            COMMUNITY_ENDPOINT_PRICE_FIELDS.map((field) => {
+                const modalityField = fields.get(field.key);
+                return [
+                    field.key,
+                    modalityField
+                        ? storedPriceToFormValue(
+                              endpoint[field.key],
+                              modalityField.priceUnit,
+                          )
+                        : "",
+                ];
+            }),
         ) as EndpointFormPrices),
     };
 }
 
-function formPricesToPayload(form: EndpointFormState): CommunityEndpointPrices {
+function formPricesToPayload(
+    form: EndpointFormState,
+    modality: CommunityEndpointModality,
+    imagePricing: CommunityEndpointImagePricing,
+): CommunityEndpointPrices {
+    const allowed = new Map(
+        communityEndpointPriceFieldsForModality(modality, imagePricing).map(
+            (field) => [field.key, field],
+        ),
+    );
     return Object.fromEntries(
         COMMUNITY_ENDPOINT_PRICE_FIELDS.map((field) => {
-            if (!isValidPriceInput(form[field.key])) {
+            const modalityField = allowed.get(field.key);
+            if (!modalityField) return [field.key, 0];
+            if (!isValidPriceInput(form[field.key], modalityField.priceUnit)) {
+                const unit =
+                    modalityField.priceUnit === "image" ? "image" : "1M units";
                 throw new Error(
-                    `Prices must be 0 (free) or at least ${MIN_COMMUNITY_PRICE_PER_MILLION_TOKENS} per 1M tokens, using a dot decimal`,
+                    `Prices must be 0 (free) or a positive amount per ${unit}, using a dot decimal`,
                 );
             }
-            return [field.key, pricePerMillionToPerToken(form[field.key])];
+            return [
+                field.key,
+                formPriceToStoredPrice(
+                    form[field.key],
+                    modalityField.priceUnit,
+                ),
+            ];
         }),
     ) as CommunityEndpointPrices;
 }
@@ -200,7 +274,7 @@ function hasObservedUsagePath(
 
 export function hasObservedPriceField(
     usage: CommunityEndpointUsage | undefined,
-    field: (typeof COMMUNITY_ENDPOINT_PRICE_FIELDS)[number],
+    field: CommunityEndpointPriceField,
 ): boolean {
     return field.rawUsagePaths.some((path) =>
         hasObservedUsagePath(usage, path),
@@ -210,7 +284,7 @@ export function hasObservedPriceField(
 export function observedUsageValue(
     usage: CommunityEndpointUsage | undefined,
     billableUsage: Usage | undefined,
-    field: (typeof COMMUNITY_ENDPOINT_PRICE_FIELDS)[number],
+    field: CommunityEndpointPriceField,
 ): number | null {
     return hasObservedPriceField(usage, field)
         ? (billableUsage?.[field.usageType] ?? 0)
@@ -221,9 +295,8 @@ export function observedUsageValue(
 // _ or -, max 40 chars) so client and server reject the same names.
 export const MCP_SERVER_NAME_PATTERN = /^[a-z0-9][a-z0-9_-]{0,39}$/;
 
-// Validates and trims the MCP server rows, dropping fully-empty rows and the
-// optional auth. Mirrors the backend McpServerSchema so the API rejects the
-// same inputs.
+// Validates and trims the MCP server rows, dropping fully-empty rows. Mirrors
+// the backend McpServerSchema so the API rejects the same inputs.
 function mcpServersToPayload(
     rows: McpServerRow[],
 ): PromptAgentConfig["mcpServers"] {
@@ -231,8 +304,7 @@ function mcpServersToPayload(
     for (const row of rows) {
         const name = row.name.trim();
         const url = row.url.trim();
-        const auth = row.auth.trim();
-        if (!name && !url && !auth) continue;
+        if (!name && !url) continue;
         if (!MCP_SERVER_NAME_PATTERN.test(name)) {
             throw new Error(
                 `MCP server name "${name}" must be lowercase alphanumeric with _ or - (max 40 chars)`,
@@ -241,7 +313,7 @@ function mcpServersToPayload(
         if (!url) {
             throw new Error(`MCP server "${name}" needs a URL`);
         }
-        servers.push(auth ? { name, url, auth } : { name, url });
+        servers.push({ name, url });
     }
     return servers;
 }
@@ -267,11 +339,15 @@ export function toPromptAgentConfig(
 
 export function toEndpointPayload(form: EndpointFormState): EndpointPayload {
     const modelName = form.name.trim();
+    const modality = form.mode === "prompt-agent" ? "text" : form.modality;
+    const imagePricing = modality === "image" ? form.imagePricing : "request";
     const shared = {
+        modality,
+        imagePricing,
         name: modelName,
         description: form.description.trim(),
         visibility: form.visibility,
-        ...formPricesToPayload(form),
+        ...formPricesToPayload(form, modality, imagePricing),
     };
     if (form.mode === "prompt-agent") {
         return {
@@ -294,6 +370,12 @@ export function nextFormState(
     key: keyof EndpointFormState,
     value: string,
 ): EndpointFormState {
+    if (key === "modality") {
+        return {
+            ...current,
+            modality: value === "image" ? "image" : "text",
+        };
+    }
     const next = { ...current, [key]: value };
     if (
         key === "upstreamModel" &&

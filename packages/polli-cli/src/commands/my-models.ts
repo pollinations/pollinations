@@ -212,10 +212,6 @@ const update = addPriceOptions(
         .option("--name <name>", "Model name")
         .option("--description <text>", "Model description")
         .option("--base-url <url>", "OpenAI-compatible base URL")
-        .option(
-            "--prompt-agent <file>",
-            "JSON config file to redeploy the prompt agent from",
-        )
         .option("--upstream-model <model>", "Upstream model id")
         .option("--bearer-token <token>", "Upstream bearer token")
         .option(

@@ -126,7 +126,128 @@ describe("prompt-agent template", () => {
                 typeof call[0] === "string"
                     ? call[0]
                     : (call[0] as Request).url;
-            expect(url.startsWith("https://gen.test.example")).toBe(true);
+            expect(new URL(url).origin).toBe("https://gen.test.example");
+        }
+    });
+
+    it("initializes MCP and reuses the negotiated session", async () => {
+        const mcpRequests: Request[] = [];
+        let modelCalls = 0;
+        const fetchMock = vi.fn(
+            async (input: RequestInfo | URL, init?: RequestInit) => {
+                const request = new Request(input, init);
+                const url = new URL(request.url);
+                if (url.hostname === "mcp.example.com") {
+                    mcpRequests.push(request.clone());
+                    const body = (await request.json()) as {
+                        method: string;
+                    };
+                    if (body.method === "initialize") {
+                        return Response.json(
+                            {
+                                jsonrpc: "2.0",
+                                id: 1,
+                                result: { protocolVersion: "2025-06-18" },
+                            },
+                            { headers: { "Mcp-Session-Id": "session-1" } },
+                        );
+                    }
+                    if (body.method === "notifications/initialized") {
+                        return new Response(null, { status: 202 });
+                    }
+                    if (body.method === "tools/list") {
+                        return Response.json({
+                            jsonrpc: "2.0",
+                            id: 2,
+                            result: {
+                                tools: [
+                                    {
+                                        name: "lookup",
+                                        inputSchema: { type: "object" },
+                                    },
+                                ],
+                            },
+                        });
+                    }
+                    return Response.json({
+                        jsonrpc: "2.0",
+                        id: 3,
+                        result: { content: [{ type: "text", text: "found" }] },
+                    });
+                }
+
+                modelCalls++;
+                if (modelCalls === 1) {
+                    return Response.json({
+                        choices: [
+                            {
+                                message: {
+                                    role: "assistant",
+                                    content: "",
+                                    tool_calls: [
+                                        {
+                                            id: "c1",
+                                            function: {
+                                                name: "mcp__docs__lookup",
+                                                arguments: "{}",
+                                            },
+                                        },
+                                    ],
+                                },
+                            },
+                        ],
+                    });
+                }
+                return Response.json({
+                    choices: [
+                        { message: { role: "assistant", content: "done" } },
+                    ],
+                });
+            },
+        );
+        vi.stubGlobal("fetch", fetchMock);
+
+        const agent = await loadTemplate();
+        const res = await agent.fetch(
+            chatRequest({ messages: [{ role: "user", content: "hi" }] }),
+            {
+                ...BASE_ENV,
+                TOOLS_JSON: "[]",
+                MCP_JSON: JSON.stringify([
+                    { name: "docs", url: "https://mcp.example.com/rpc" },
+                ]),
+            },
+        );
+
+        expect(res.status).toBe(200);
+        const json = (await res.json()) as {
+            choices: { message: { content: string } }[];
+            usage: { tool_call_counts: Record<string, number> };
+        };
+        expect(json.choices[0].message.content).toBe("done");
+        expect(json.usage.tool_call_counts).toEqual({ mcp_call: 1 });
+        const bodies = await Promise.all(
+            mcpRequests.map(
+                (request) =>
+                    request.json() as Promise<{
+                        id?: number;
+                        method: string;
+                    }>,
+            ),
+        );
+        expect(bodies.map((body) => body.method)).toEqual([
+            "initialize",
+            "notifications/initialized",
+            "tools/list",
+            "tools/call",
+        ]);
+        expect(bodies.map((body) => body.id)).toEqual([1, undefined, 2, 3]);
+        expect(mcpRequests[0].headers.get("Mcp-Session-Id")).toBeNull();
+        for (const request of mcpRequests.slice(1)) {
+            expect(request.headers.get("Mcp-Session-Id")).toBe("session-1");
+            expect(request.headers.get("MCP-Protocol-Version")).toBe(
+                "2025-06-18",
+            );
         }
     });
 

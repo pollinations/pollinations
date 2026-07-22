@@ -23,6 +23,8 @@ interface ReplicateRequest {
 }
 
 const REPLICATE_IMAGE_URL = "https://replicate.delivery/x/seedream-output.png";
+const INPUT_IMAGE_URL = "https://example.com/ref.jpg";
+const JPEG_BYTES = new Uint8Array([0xff, 0xd8, 0xff, 0xdb]);
 
 function mockReplicateFetch(requests: ReplicateRequest[]) {
     return vi
@@ -34,6 +36,9 @@ function mockReplicateFetch(requests: ReplicateRequest[]) {
                     new TextEncoder().encode("png-bytes").buffer,
                     { status: 200 },
                 );
+            }
+            if (href === INPUT_IMAGE_URL) {
+                return new Response(JPEG_BYTES, { status: 200 });
             }
             const body = init?.body
                 ? (JSON.parse(init.body as string) as Record<string, unknown>)
@@ -162,7 +167,7 @@ describe("seedreamReplicateModel - seedream-pro 4.5", () => {
         const params: ImageParams = {
             ...baseParams,
             model: "seedream-pro",
-            image: ["https://example.com/ref.jpg"],
+            image: [INPUT_IMAGE_URL],
         };
         await callSeedreamProAPI("test prompt", params);
 
@@ -310,7 +315,7 @@ describe("seedreamReplicateModel - seedream 4.0 custom-size mode", () => {
             width: 1792,
             height: 1024,
             dimensionsExplicit: true,
-            image: ["https://example.com/ref.jpg"],
+            image: [INPUT_IMAGE_URL],
         };
         await callSeedreamAPI("test", params);
 
@@ -330,7 +335,7 @@ describe("seedreamReplicateModel - seedream 4.0 custom-size mode", () => {
 
         const params: ImageParams = {
             ...baseParams,
-            image: ["https://example.com/ref.jpg"],
+            image: [INPUT_IMAGE_URL],
             // dimensionsExplicit defaults to false in baseParams
         };
         await callSeedreamAPI("test", params);

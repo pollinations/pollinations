@@ -1,15 +1,21 @@
 import {
+    COMMUNITY_ENDPOINT_IMAGE_PRICING_MODES,
+    COMMUNITY_ENDPOINT_MODALITIES,
     COMMUNITY_ENDPOINT_PRICE_FIELDS,
     COMMUNITY_ENDPOINT_VISIBILITIES,
     type CommunityEndpointPriceKey,
     type CommunityEndpointVisibility,
+    communityEndpointPriceFieldsForModality,
     communityEndpointPrices,
+    communityEndpointPricesForModality,
     communityModelId,
     isCommunityEndpointOwnerAllowed,
     MIN_COMMUNITY_PRICE_PER_MILLION_TOKENS,
     MIN_COMMUNITY_PRICE_PER_TOKEN,
     normalizeCommunityEndpointBaseUrl,
     normalizeCommunityEndpointBearerToken,
+    normalizeCommunityEndpointImagePricing,
+    normalizeCommunityEndpointModality,
 } from "@shared/community-endpoints.ts";
 import * as schema from "@shared/db/better-auth.ts";
 import { validator } from "@shared/middleware/validator.ts";
@@ -26,6 +32,7 @@ import { auth } from "../middleware/auth.ts";
 import {
     listCommunityEndpointModels,
     testCommunityEndpoint,
+    testCommunityImageEndpoint,
 } from "../services/community-endpoint-openai.ts";
 import {
     buildPromptAgentDeploy,
@@ -40,13 +47,26 @@ import {
 } from "../services/worker-deploy.ts";
 import { hasDirectAccountPermission } from "./account-permissions.ts";
 
+const ModalitySchema = z
+    .enum(COMMUNITY_ENDPOINT_MODALITIES)
+    .describe(
+        'Upstream API family. "text" uses `/v1/chat/completions`; "image" uses `/v1/images/generations` and currently supports text-to-image generation only.',
+    );
+const ImagePricingSchema = z
+    .enum(COMMUNITY_ENDPOINT_IMAGE_PRICING_MODES)
+    .describe(
+        'Image models only. "request": the generated-image price is charged once per generation. "tokens": provider-returned OpenAI image token usage is charged against per-token prices. Detected by the endpoint test.',
+    );
 const PriceSchema = z
     .number()
     .finite()
     .min(0)
     .refine((price) => price === 0 || price >= MIN_COMMUNITY_PRICE_PER_TOKEN, {
         message: `Price must be 0 (free) or at least ${MIN_COMMUNITY_PRICE_PER_TOKEN} per token (${MIN_COMMUNITY_PRICE_PER_MILLION_TOKENS} per 1M tokens)`,
-    });
+    })
+    .describe(
+        'Pollen price. Token rates are per token internally (the dashboard displays per 1M); `completionImagePrice` is per generated image when `imagePricing` is "request".',
+    );
 const UpdatePriceFieldsSchema = Object.fromEntries(
     COMMUNITY_ENDPOINT_PRICE_FIELDS.map((field) => [
         field.key,
@@ -54,7 +74,7 @@ const UpdatePriceFieldsSchema = Object.fromEntries(
     ]),
 ) as unknown as Record<
     CommunityEndpointPriceKey,
-    z.ZodType<number | undefined>
+    z.ZodOptional<z.ZodType<number>>
 >;
 
 const VisibilitySchema = z
@@ -72,7 +92,12 @@ const EndpointFieldsSchema = {
         .max(120)
         .regex(/^[^/]+$/, "Model name cannot contain '/'"),
     description: z.string().trim().max(240).optional(),
-    baseUrl: z.string().url(),
+    baseUrl: z
+        .string()
+        .url()
+        .describe(
+            "OpenAI-compatible `/v1` base URL or full `/chat/completions` or `/images/generations` URL.",
+        ),
     upstreamModel: z.string().trim().min(1).max(253).optional(),
     bearerToken: z.string().min(1),
 } as const;
@@ -85,6 +110,8 @@ const CreateEndpointSchema = z
         // A bearer token is only meaningful for self-hosted baseUrl endpoints;
         // prompt-agent deploys mint and manage their own worker token.
         bearerToken: EndpointFieldsSchema.bearerToken.optional(),
+        modality: ModalitySchema.optional().default("text"),
+        imagePricing: ImagePricingSchema.optional().default("request"),
         visibility: VisibilitySchema.optional().default("private"),
         ...UpdatePriceFieldsSchema,
     })
@@ -100,6 +127,10 @@ const CreateEndpointSchema = z
         {
             message: "bearerToken is required when registering with baseUrl",
         },
+    )
+    .refine(
+        (input) => input.promptAgent === undefined || input.modality === "text",
+        { message: "Prompt agents must use text modality" },
     );
 const UpdateEndpointSchema = z
     .object({
@@ -110,6 +141,8 @@ const UpdateEndpointSchema = z
         upstreamModel: EndpointFieldsSchema.upstreamModel,
         bearerToken: EndpointFieldsSchema.bearerToken.optional(),
         visibility: VisibilitySchema.optional(),
+        imagePricing: ImagePricingSchema.optional(),
+        active: z.boolean().optional(),
         ...UpdatePriceFieldsSchema,
     })
     .refine(
@@ -125,6 +158,7 @@ const TestEndpointSchema = z.object({
     baseUrl: z.string().url(),
     bearerToken: z.string().min(1),
     model: z.string().trim().min(1).max(253),
+    modality: ModalitySchema.optional().default("text"),
 });
 const ResponsePriceFieldsSchema = Object.fromEntries(
     COMMUNITY_ENDPOINT_PRICE_FIELDS.map((field) => [field.key, z.number()]),
@@ -134,6 +168,8 @@ const CommunityEndpointResponseSchema = z.object({
     modelId: z.string(),
     name: z.string(),
     description: z.string().nullable(),
+    modality: ModalitySchema,
+    imagePricing: ImagePricingSchema,
     baseUrl: z.string(),
     promptAgent: PromptAgentSchema.nullable().describe(
         "No-code agent config when this endpoint is a prompt agent; null otherwise.",
@@ -157,6 +193,19 @@ const CommunityEndpointTestResponseSchema = z
     .object({
         ok: z.boolean(),
         message: z.string(),
+        usage: z
+            .record(z.string(), z.unknown())
+            .describe(
+                "Raw provider usage, or `{ images: 1 }` when an image provider returns no token usage.",
+            ),
+        billableUsage: z
+            .record(z.string(), z.number())
+            .describe(
+                "Normalized billable usage fields used to reveal applicable prices.",
+            ),
+        imagePricing: ImagePricingSchema.optional().describe(
+            "Image tests only: pricing mode detected from the provider response.",
+        ),
     })
     .passthrough();
 const CommunityEndpointDeleteResponseSchema = z.object({
@@ -225,6 +274,7 @@ async function requireOwnerGithubUsername(
 }
 
 function toResponse(row: CommunityEndpointRow, ownerGithubUsername: string) {
+    const modality = normalizeCommunityEndpointModality(row.modality);
     // A prompt agent stores its config (and the minted key id) in the
     // prompt_agent column; surface only the nested config — never the raw
     // blob or the internal key id.
@@ -234,6 +284,8 @@ function toResponse(row: CommunityEndpointRow, ownerGithubUsername: string) {
         modelId: communityModelId(ownerGithubUsername, row.name),
         name: row.name,
         description: row.description,
+        modality,
+        imagePricing: normalizeCommunityEndpointImagePricing(row.imagePricing),
         baseUrl: row.baseUrl,
         promptAgent: storedPromptAgent?.promptAgent ?? null,
         upstreamModel: row.upstreamModel,
@@ -350,10 +402,10 @@ export const communityEndpointsRoutes = new Hono<Env>()
             tags: ["👤 Account"],
             summary: "List My Models",
             description:
-                "List private and public community text models owned by the authenticated account. API keys require `account:keys`.",
+                "List private and public community models owned by the authenticated account. API keys require `account:keys`.",
             responses: {
                 200: {
-                    description: "Registered community text models",
+                    description: "Registered community models",
                     content: {
                         "application/json": {
                             schema: resolver(
@@ -389,10 +441,10 @@ export const communityEndpointsRoutes = new Hono<Env>()
             tags: ["👤 Account"],
             summary: "Create My Model",
             description:
-                "Register a private or public community text model. Private is the default. Public models require an allowlisted account and may be free or priced. API keys require `account:keys`. The upstream bearer token is encrypted and never returned.",
+                "Register a private or public community text or image model. Private is the default. Public models require an allowlisted account and may be free or priced. API keys require `account:keys`. The upstream bearer token is encrypted and never returned.",
             responses: {
                 200: {
-                    description: "Created community text model",
+                    description: "Created community model",
                     content: {
                         "application/json": {
                             schema: resolver(CommunityEndpointResponseSchema),
@@ -415,11 +467,16 @@ export const communityEndpointsRoutes = new Hono<Env>()
                 user.id,
             );
             await ensureModelNameAvailable(db, user.id, input.name);
-            // A private model is owner-only and free, so owner-declared public
-            // pricing only applies when public.
+            const modality = input.promptAgent ? "text" : input.modality;
+            const imagePricing =
+                modality === "image" ? input.imagePricing : "request";
             const prices =
                 input.visibility === "public"
-                    ? communityEndpointPrices(input)
+                    ? communityEndpointPricesForModality(
+                          input,
+                          modality,
+                          imagePricing,
+                      )
                     : communityEndpointPrices({});
             await enforcePublishingAccess(db, user.id, input.visibility);
             const id = crypto.randomUUID();
@@ -432,38 +489,42 @@ export const communityEndpointsRoutes = new Hono<Env>()
                 input.promptAgent !== undefined
                     ? requireWorkerDeployConfig(c.env)
                     : null;
-            const promptAgentDeploy =
-                deployConfig && input.promptAgent !== undefined
-                    ? await buildPromptAgentDeploy({
-                          authClient: c.var.auth.client,
-                          dbBinding: c.env.DB,
-                          userId: user.id,
-                          agentName: input.name,
-                          config: input.promptAgent,
-                          genBaseUrl:
-                              (c.env as { GEN_BASE_URL?: string })
-                                  .GEN_BASE_URL ??
-                              "https://gen.pollinations.ai",
-                      })
-                    : null;
-            const workerAuthToken = promptAgentDeploy
-                ? crypto.randomUUID().replaceAll("-", "")
-                : null;
-            const baseUrl =
-                deployConfig && promptAgentDeploy && workerAuthToken
-                    ? await deployCommunityWorker(
-                          deployConfig,
-                          communityWorkerScriptName(id),
-                          promptAgentDeploy.source,
-                          workerAuthToken,
-                          promptAgentDeploy.extraBindings,
-                      )
-                    : normalizeInputBaseUrl(input.baseUrl ?? "");
-            // Guaranteed present in baseUrl mode by CreateEndpointSchema.
-            const bearerToken =
-                workerAuthToken ??
-                normalizeInputBearerToken(input.bearerToken ?? "");
+            let promptAgentDeploy: Awaited<
+                ReturnType<typeof buildPromptAgentDeploy>
+            > | null = null;
+            let workerDeployed = false;
             try {
+                promptAgentDeploy =
+                    deployConfig && input.promptAgent !== undefined
+                        ? await buildPromptAgentDeploy({
+                              authClient: c.var.auth.client,
+                              dbBinding: c.env.DB,
+                              userId: user.id,
+                              agentName: input.name,
+                              config: input.promptAgent,
+                              genBaseUrl:
+                                  (c.env as { GEN_BASE_URL?: string })
+                                      .GEN_BASE_URL ??
+                                  "https://gen.pollinations.ai",
+                          })
+                        : null;
+                const workerAuthToken = promptAgentDeploy
+                    ? crypto.randomUUID().replaceAll("-", "")
+                    : null;
+                const baseUrl =
+                    deployConfig && promptAgentDeploy && workerAuthToken
+                        ? await deployCommunityWorker(
+                              deployConfig,
+                              communityWorkerScriptName(id),
+                              promptAgentDeploy.source,
+                              workerAuthToken,
+                              promptAgentDeploy.extraBindings,
+                          )
+                        : normalizeInputBaseUrl(input.baseUrl ?? "");
+                workerDeployed = promptAgentDeploy !== null;
+                const bearerToken =
+                    workerAuthToken ??
+                    normalizeInputBearerToken(input.bearerToken ?? "");
                 const [row] = await db
                     .insert(schema.communityEndpoint)
                     .values({
@@ -471,6 +532,8 @@ export const communityEndpointsRoutes = new Hono<Env>()
                         ownerUserId: user.id,
                         name: input.name,
                         description: input.description || null,
+                        modality,
+                        imagePricing,
                         baseUrl,
                         promptAgent:
                             promptAgentDeploy?.storedPromptAgent ?? null,
@@ -490,7 +553,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
                 // The worker is live but the row failed — remove the orphan so
                 // there's no callable script without a backing endpoint, and
                 // revoke the prompt agent's minted key.
-                if (deployConfig) {
+                if (deployConfig && workerDeployed) {
                     await deleteCommunityWorker(
                         deployConfig,
                         communityWorkerScriptName(id),
@@ -556,7 +619,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
             tags: ["👤 Account"],
             summary: "Test My Model Endpoint",
             description:
-                "Test an OpenAI-compatible upstream model before publishing it. Requires community model publishing approval; API keys also require `account:keys`.",
+                "Test an OpenAI-compatible upstream model before publishing it. Image tests also detect token pricing when valid OpenAI image usage is returned; otherwise they select fixed per-image pricing. Requires community model publishing approval; API keys also require `account:keys`.",
             responses: {
                 200: {
                     description: "Endpoint test result",
@@ -588,10 +651,16 @@ export const communityEndpointsRoutes = new Hono<Env>()
             );
             if (throttled) return throttled;
             try {
-                const result = await testCommunityEndpoint(input);
+                const result =
+                    input.modality === "image"
+                        ? await testCommunityImageEndpoint(input)
+                        : await testCommunityEndpoint(input);
                 return c.json({
                     ok: true,
-                    message: "Endpoint responded with usage",
+                    message:
+                        input.modality === "image"
+                            ? "Endpoint responded with image data"
+                            : "Endpoint responded with usage",
                     ...result,
                 });
             } catch (error) {
@@ -605,10 +674,10 @@ export const communityEndpointsRoutes = new Hono<Env>()
             tags: ["👤 Account"],
             summary: "Update My Model",
             description:
-                "Update a community text model owned by the authenticated account. Changing visibility to public publishes it and requires an allowlisted account; public models may be free or priced. API keys require `account:keys`.",
+                "Update a community model owned by the authenticated account. Changing visibility to public publishes it and requires an allowlisted account; public models may be free or priced. API keys require `account:keys`.",
             responses: {
                 200: {
-                    description: "Updated community text model",
+                    description: "Updated community model",
                     content: {
                         "application/json": {
                             schema: resolver(CommunityEndpointResponseSchema),
@@ -633,6 +702,25 @@ export const communityEndpointsRoutes = new Hono<Env>()
                 user.id,
             );
             const endpoint = await requireOwnedEndpoint(db, id, user.id);
+            const modality = normalizeCommunityEndpointModality(
+                endpoint.modality,
+            );
+            if (input.promptAgent !== undefined && modality !== "text") {
+                throw new HTTPException(400, {
+                    message: "Prompt agents must use text modality",
+                });
+            }
+            if (
+                input.promptAgent !== undefined ||
+                (endpoint.promptAgent !== null &&
+                    (input.baseUrl !== undefined ||
+                        input.bearerToken !== undefined))
+            ) {
+                throw new HTTPException(400, {
+                    message:
+                        "Prompt-agent configuration is immutable; recreate the model to change it",
+                });
+            }
             await ensureModelNameAvailable(
                 db,
                 user.id,
@@ -645,57 +733,12 @@ export const communityEndpointsRoutes = new Hono<Env>()
             > = {
                 updatedAt: new Date(),
             };
-            // Switching a prompt agent to a baseUrl endpoint retires its worker
-            // (below) and must also revoke its minted owner key so it can no
-            // longer spend. Redeploying a prompt agent mints a fresh key, so
-            // the previous one is revoked either way.
-            const previousPromptAgent = parseStoredPromptAgent(
-                endpoint.promptAgent,
-            );
             if (input.name !== undefined) update.name = input.name;
             if (input.description !== undefined) {
                 update.description = input.description || null;
             }
             if (input.baseUrl !== undefined) {
-                // Switching to a self-hosted URL retires the deployed worker
-                // so it is no longer publicly callable.
                 update.baseUrl = normalizeInputBaseUrl(input.baseUrl);
-                update.promptAgent = null;
-                if (endpoint.promptAgent !== null) {
-                    await deleteCommunityWorker(
-                        requireWorkerDeployConfig(c.env),
-                        communityWorkerScriptName(endpoint.id),
-                    );
-                }
-            }
-            if (input.promptAgent !== undefined) {
-                // Redeploy the same id-keyed script with the new config, a
-                // freshly minted owner key, and a fresh worker auth token; the
-                // token becomes the stored bearer token gen sends.
-                const deployConfig = requireWorkerDeployConfig(c.env);
-                const promptAgentDeploy = await buildPromptAgentDeploy({
-                    authClient: c.var.auth.client,
-                    dbBinding: c.env.DB,
-                    userId: user.id,
-                    agentName: input.name ?? endpoint.name,
-                    config: input.promptAgent,
-                    genBaseUrl:
-                        (c.env as { GEN_BASE_URL?: string }).GEN_BASE_URL ??
-                        "https://gen.pollinations.ai",
-                });
-                const workerAuthToken = crypto.randomUUID().replaceAll("-", "");
-                update.baseUrl = await deployCommunityWorker(
-                    deployConfig,
-                    communityWorkerScriptName(endpoint.id),
-                    promptAgentDeploy.source,
-                    workerAuthToken,
-                    promptAgentDeploy.extraBindings,
-                );
-                update.promptAgent = promptAgentDeploy.storedPromptAgent;
-                update.bearerTokenCiphertext = await encryptSecret(
-                    workerAuthToken,
-                    c.env.BETTER_AUTH_SECRET,
-                );
             }
             if (input.upstreamModel !== undefined) {
                 update.upstreamModel = input.upstreamModel;
@@ -704,7 +747,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
             // endpoints; prompt-agent deploys manage their own token above.
             if (
                 input.bearerToken !== undefined &&
-                input.promptAgent === undefined
+                endpoint.promptAgent === null
             ) {
                 update.bearerTokenCiphertext = await encryptSecret(
                     normalizeInputBearerToken(input.bearerToken),
@@ -714,9 +757,32 @@ export const communityEndpointsRoutes = new Hono<Env>()
             if (input.visibility !== undefined) {
                 update.visibility = input.visibility;
             }
-            for (const field of COMMUNITY_ENDPOINT_PRICE_FIELDS) {
+            if (input.active !== undefined) {
+                update.disabledAt = input.active ? null : new Date();
+                update.disabledReason = input.active
+                    ? null
+                    : "Deactivated by owner";
+                update.disabledBy = input.active ? null : "owner";
+            }
+            const storedImagePricing = normalizeCommunityEndpointImagePricing(
+                endpoint.imagePricing,
+            );
+            const effectiveImagePricing =
+                modality === "image" && input.imagePricing !== undefined
+                    ? input.imagePricing
+                    : storedImagePricing;
+            update.imagePricing = effectiveImagePricing;
+            for (const field of communityEndpointPriceFieldsForModality(
+                modality,
+                effectiveImagePricing,
+            )) {
                 if (input[field.key] !== undefined) {
                     update[field.key] = input[field.key];
+                } else if (effectiveImagePricing !== storedImagePricing) {
+                    // Switching modes changes the unit of the shared price
+                    // columns (per image ↔ per token); stored values must not
+                    // be reinterpreted, so unsent prices reset to free.
+                    update[field.key] = 0;
                 }
             }
             const effectiveVisibility = input.visibility ?? endpoint.visibility;
@@ -725,7 +791,11 @@ export const communityEndpointsRoutes = new Hono<Env>()
             const effectivePrices =
                 effectiveVisibility === "private"
                     ? communityEndpointPrices({})
-                    : communityEndpointPrices({ ...endpoint, ...update });
+                    : communityEndpointPricesForModality(
+                          { ...endpoint, ...update },
+                          modality,
+                          effectiveImagePricing,
+                      );
             await enforcePublishingAccess(db, user.id, effectiveVisibility);
             // Persist visibility together with the complete effective price
             // set on every update, so concurrent partial updates cannot
@@ -742,15 +812,6 @@ export const communityEndpointsRoutes = new Hono<Env>()
                     ),
                 )
                 .returning();
-            // Revoke the old prompt agent's minted key after the row no longer
-            // references it (the worker was retired or redeployed above).
-            const replacedKey =
-                input.baseUrl !== undefined || input.promptAgent !== undefined;
-            if (previousPromptAgent && replacedKey) {
-                await db
-                    .delete(schema.apikey)
-                    .where(eq(schema.apikey.id, previousPromptAgent.keyId));
-            }
             return c.json(toResponse(row, ownerGithubUsername));
         },
     )
@@ -760,10 +821,10 @@ export const communityEndpointsRoutes = new Hono<Env>()
             tags: ["👤 Account"],
             summary: "Delete My Model",
             description:
-                "Delete a community text model owned by the authenticated account. API keys require `account:keys`.",
+                "Delete a community model owned by the authenticated account. API keys require `account:keys`.",
             responses: {
                 200: {
-                    description: "Deleted community text model",
+                    description: "Deleted community model",
                     content: {
                         "application/json": {
                             schema: resolver(

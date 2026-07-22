@@ -1336,6 +1336,7 @@ Update a community text model owned by the authenticated account. Changing visib
 | `upstreamModel` | `string` | length: `1…253` |
 | `bearerToken` | `string` | — |
 | `visibility` | `"private"` \| `"public"` | "private": owner-only, shown only to the owner, with no owner-set price. "public": anyone and listed in the catalog; it may be free or priced. Publishing requires an allowlisted account. |
+| `active` | `boolean` | — |
 | `promptTextPrice` | `number` | — |
 | `promptCachedPrice` | `number` | — |
 | `promptCacheWritePrice` | `number` | — |

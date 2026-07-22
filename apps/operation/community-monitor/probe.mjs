@@ -2,16 +2,11 @@
 import { randomUUID } from "node:crypto";
 import fs from "node:fs";
 
-// One probe sweep across all active community models via gen.pollinations.ai.
-// Cost-weighted: cheap models get more requests than expensive ones (see
-// planRequestCounts), every model capped at MAX_REQUESTS_PER_MODEL so no
-// upstream -- free or paid -- ever gets hammered. ~TARGET_POLLEN is a spend
-// ceiling to aim under, not a hard target -- in practice the current
-// community catalog is cheap enough that even every model hitting the cap
-// lands around 0.05-0.1 pollen/cycle, well under target. That's fine: the
-// point is coverage (every model probed every cycle), not spend. If pricier
-// models join the catalog, the budget top-up logic will use more of the
-// headroom automatically -- no need to chase the target by loosening the cap.
+// One probe sweep across active community text and image models via
+// gen.pollinations.ai. Text probes are cost-weighted and run every cycle;
+// image probes run once per model every four hours and are always capped at
+// one generation. This keeps coverage current without spending or generating
+// media every 15 minutes.
 // Actual spend is reconciled from real `usage` tokens and fed back into
 // state.json so next cycle's budget self-corrects (overspend -> undershoot).
 // Writes /home/ubuntu/monitor/probe-results.json and prints a summary table.
@@ -21,10 +16,16 @@ if (!TOKEN) {
     console.error("POLLI_TOKEN missing");
     process.exit(1);
 }
-const GEN = "https://gen.pollinations.ai";
+const GEN = process.env.POLLINATIONS_GEN_URL ?? "https://gen.pollinations.ai";
 const CONCURRENCY = 4;
-const TIMEOUT_MS = 45_000;
-const STATE_PATH = "/home/ubuntu/monitor/state.json";
+const TEXT_TIMEOUT_MS = 45_000;
+const IMAGE_TIMEOUT_MS = 150_000;
+const IMAGE_PROBE_INTERVAL_MS = 4 * 60 * 60 * 1000;
+const STATE_PATH =
+    process.env.MONITOR_STATE_PATH ?? "/home/ubuntu/monitor/state.json";
+const RESULTS_PATH =
+    process.env.MONITOR_RESULTS_PATH ??
+    "/home/ubuntu/monitor/probe-results.json";
 const TARGET_POLLEN = 0.5;
 // Keep next cycle's budget within a sane band around the target so one wild
 // cycle (e.g. a model timing out after burning tokens) can't spiral.
@@ -35,6 +36,14 @@ const MAX_TOKENS = 10;
 // `usage` in each response, not from these constants.
 const EST_PROMPT_TOKENS = 20;
 const EST_COMPLETION_TOKENS = 8;
+const EST_IMAGE_OUTPUT_TOKENS = 1120;
+
+const modelArgIndex = process.argv.indexOf("--model");
+const onlyModel = modelArgIndex === -1 ? null : process.argv[modelArgIndex + 1];
+if (modelArgIndex !== -1 && !onlyModel) {
+    console.error("--model requires an owner/model id");
+    process.exit(1);
+}
 
 function readState() {
     try {
@@ -48,12 +57,23 @@ function readState() {
 async function fetchCommunityModels() {
     const list = await fetch(`${GEN}/models`).then((r) => r.json());
     const models = Array.isArray(list) ? list : (list.data ?? list);
-    return models.filter((m) => m.community && m.name?.includes("/"));
+    return models.filter(
+        (m) =>
+            m.community &&
+            m.name?.includes("/") &&
+            (m.category === "text" || m.category === "image"),
+    );
 }
 
 function estimateCost(model) {
     const p = Number(model.pricing?.promptTextTokens ?? 0);
     const c = Number(model.pricing?.completionTextTokens ?? 0);
+    if (model.category === "image") {
+        const image = Number(model.pricing?.completionImageTokens ?? 0);
+        return model.flat_rate
+            ? image
+            : p * EST_PROMPT_TOKENS + image * EST_IMAGE_OUTPUT_TOKENS;
+    }
     return p * EST_PROMPT_TOKENS + c * EST_COMPLETION_TOKENS;
 }
 
@@ -79,13 +99,16 @@ const MAX_REQUESTS_PER_MODEL = 4;
 // all cases, so no single model -- expensive or free -- ever gets hammered.
 function planRequestCounts(models, budget) {
     const perModelCost = new Map(models.map((m) => [m.name, estimateCost(m)]));
-    const byCostAsc = [...models].sort(
-        (a, b) => perModelCost.get(a.name) - perModelCost.get(b.name),
-    );
+    const textByCostAsc = models
+        .filter((m) => m.category === "text")
+        .sort((a, b) => perModelCost.get(a.name) - perModelCost.get(b.name));
 
-    const tierSize = Math.ceil(byCostAsc.length / TIER_TARGETS.length);
     const counts = new Map();
-    byCostAsc.forEach((m, i) => {
+    const tierSize = Math.max(
+        1,
+        Math.ceil(textByCostAsc.length / TIER_TARGETS.length),
+    );
+    textByCostAsc.forEach((m, i) => {
         const tier = Math.min(
             Math.floor(i / tierSize),
             TIER_TARGETS.length - 1,
@@ -95,20 +118,23 @@ function planRequestCounts(models, budget) {
             Math.min(TIER_TARGETS[tier], MAX_REQUESTS_PER_MODEL),
         );
     });
+    for (const model of models) {
+        if (model.category === "image") counts.set(model.name, 1);
+    }
 
-    let spent = byCostAsc.reduce(
+    let spent = models.reduce(
         (sum, m) => sum + perModelCost.get(m.name) * counts.get(m.name),
         0,
     );
 
-    const byCostDesc = [...byCostAsc].reverse();
+    const textByCostDesc = [...textByCostAsc].reverse();
 
     if (spent > budget) {
         // Trim extras (never below 1) from the most expensive models first,
         // since those are the ones we most want to under-test vs. cheap ones.
         let i = 0;
-        while (spent > budget && i < byCostDesc.length) {
-            const m = byCostDesc[i];
+        while (spent > budget && i < textByCostDesc.length) {
+            const m = textByCostDesc[i];
             const n = counts.get(m.name);
             const cost = perModelCost.get(m.name);
             if (n > 1) {
@@ -122,7 +148,9 @@ function planRequestCounts(models, budget) {
         // Top up toward budget using the MOST expensive payable models first
         // -- each request there moves spend further per request than another
         // cheap-model request would, and every model is still capped.
-        const payable = byCostDesc.filter((m) => perModelCost.get(m.name) > 0);
+        const payable = textByCostDesc.filter(
+            (m) => perModelCost.get(m.name) > 0,
+        );
         let progressed = payable.length > 0;
         while (spent < budget && progressed) {
             progressed = false;
@@ -187,7 +215,40 @@ function billingSanityFlags(usage, content) {
     return flags;
 }
 
-async function probe(model) {
+function imageBillingSanityFlags(usage) {
+    const flags = [];
+    if (!usage) {
+        flags.push("no image usage object returned");
+        return flags;
+    }
+    const input = usage.input_tokens;
+    const output = usage.output_tokens;
+    const total = usage.total_tokens;
+    const text = usage.input_tokens_details?.text_tokens;
+    const image = usage.input_tokens_details?.image_tokens;
+    if (output === 0) flags.push("output_tokens=0 despite a generated image");
+    if (
+        input != null &&
+        text != null &&
+        image != null &&
+        input !== text + image
+    )
+        flags.push(
+            "image input_tokens differs from text_tokens + image_tokens",
+        );
+    if (
+        input != null &&
+        output != null &&
+        total != null &&
+        total !== input + output
+    )
+        flags.push(
+            "image total_tokens differs from input_tokens + output_tokens",
+        );
+    return flags;
+}
+
+async function probeText(model) {
     const started = Date.now();
     const marker = `ok-${randomUUID().slice(0, 8)}`;
     const prompt = `Reply with exactly: ${marker}`;
@@ -196,7 +257,7 @@ async function probe(model) {
     // and, with it, the whole sweep -- forever. This exact hang killed every
     // sweep from 2026-07-20 08:29 until it was found a day later.
     const ctrl = new AbortController();
-    const t = setTimeout(() => ctrl.abort(), TIMEOUT_MS);
+    const t = setTimeout(() => ctrl.abort(), TEXT_TIMEOUT_MS);
     try {
         const res = await fetch(`${GEN}/v1/chat/completions`, {
             method: "POST",
@@ -205,7 +266,7 @@ async function probe(model) {
                 "Content-Type": "application/json",
             },
             body: JSON.stringify({
-                model,
+                model: model.name,
                 messages: [{ role: "user", content: prompt }],
                 max_tokens: MAX_TOKENS,
             }),
@@ -224,7 +285,8 @@ async function probe(model) {
             }
         }
         const result = {
-            model,
+            model: model.name,
+            category: model.category,
             ok: res.ok,
             status: res.status,
             ms: Date.now() - started,
@@ -236,7 +298,8 @@ async function probe(model) {
         return result;
     } catch (err) {
         return {
-            model,
+            model: model.name,
+            category: model.category,
             ok: false,
             status: "ERR",
             ms: Date.now() - started,
@@ -247,10 +310,88 @@ async function probe(model) {
     }
 }
 
+async function probeImage(model) {
+    const started = Date.now();
+    const marker = `image-${randomUUID().slice(0, 8)}`;
+    const ctrl = new AbortController();
+    const t = setTimeout(() => ctrl.abort(), IMAGE_TIMEOUT_MS);
+    try {
+        const res = await fetch(`${GEN}/v1/images/generations`, {
+            method: "POST",
+            headers: {
+                Authorization: `Bearer ${TOKEN}`,
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+                model: model.name,
+                prompt: `A plain test card labeled ${marker}`,
+                n: 1,
+                response_format: "b64_json",
+            }),
+            signal: ctrl.signal,
+        });
+        const body = await res.text();
+        let parsed;
+        try {
+            parsed = JSON.parse(body);
+        } catch {
+            // handled below as an invalid successful response
+        }
+        const imageBase64 = parsed?.data?.[0]?.b64_json;
+        const hasImage =
+            typeof imageBase64 === "string" &&
+            Buffer.from(imageBase64, "base64").byteLength > 100;
+        const ok = res.ok && hasImage;
+        const result = {
+            model: model.name,
+            category: model.category,
+            ok,
+            status: res.ok && !hasImage ? "INVALID" : res.status,
+            ms: Date.now() - started,
+            usage: parsed?.usage,
+            probeMarker: marker,
+            detail: res.ok
+                ? hasImage
+                    ? undefined
+                    : "successful response did not contain a valid b64_json image"
+                : body.slice(0, 300),
+        };
+        if (res.ok) {
+            result.billingFlags = imageBillingSanityFlags(parsed?.usage);
+        }
+        return result;
+    } catch (err) {
+        return {
+            model: model.name,
+            category: model.category,
+            ok: false,
+            status: "ERR",
+            ms: Date.now() - started,
+            detail: String(err).slice(0, 200),
+        };
+    } finally {
+        clearTimeout(t);
+    }
+}
+
+function probe(model) {
+    return model.category === "image" ? probeImage(model) : probeText(model);
+}
+
 function actualCost(result, priceByModel) {
     if (!result.usage) return 0;
     const price = priceByModel.get(result.model);
     if (!price) return 0;
+    if (result.category === "image") {
+        const inputText = result.usage.input_tokens_details?.text_tokens ?? 0;
+        const inputImage = result.usage.input_tokens_details?.image_tokens ?? 0;
+        const outputImage = result.usage.output_tokens ?? 0;
+        return (
+            inputText * price.promptTextTokens +
+            inputImage * price.promptImageTokens +
+            outputImage * price.completionImageTokens
+        );
+    }
     const promptTokens = result.usage.prompt_tokens ?? 0;
     const completionTokens = result.usage.completion_tokens ?? 0;
     return (
@@ -260,17 +401,45 @@ function actualCost(result, priceByModel) {
 }
 
 const models = await fetchCommunityModels();
+if (onlyModel && !models.some((model) => model.name === onlyModel)) {
+    console.error(`active community model not found: ${onlyModel}`);
+    process.exit(1);
+}
 const priceByModel = new Map(
     models.map((m) => [
         m.name,
         {
             promptTextTokens: Number(m.pricing?.promptTextTokens ?? 0),
+            promptImageTokens: Number(m.pricing?.promptImageTokens ?? 0),
             completionTextTokens: Number(m.pricing?.completionTextTokens ?? 0),
+            completionImageTokens: Number(
+                m.pricing?.completionImageTokens ?? 0,
+            ),
         },
     ]),
 );
 
 const state = readState();
+const now = Date.now();
+const lastImageProbeAt = state.spend?.lastImageProbeAt ?? {};
+const imageProbeDue = (model) => {
+    const previous = Date.parse(lastImageProbeAt[model.name] ?? "");
+    return (
+        !Number.isFinite(previous) || now - previous >= IMAGE_PROBE_INTERVAL_MS
+    );
+};
+const modelsToProbe = onlyModel
+    ? models.filter((model) => model.name === onlyModel)
+    : models.filter(
+          (model) => model.category === "text" || imageProbeDue(model),
+      );
+const skippedImageModels = onlyModel
+    ? []
+    : models
+          .filter(
+              (model) => model.category === "image" && !imageProbeDue(model),
+          )
+          .map((model) => model.name);
 const lastSpend = state.spend?.lastActualPollen;
 // Mean-reversion: if we overspent last cycle, aim lower this cycle, and vice
 // versa. First run (no history) just uses the flat target.
@@ -282,16 +451,21 @@ const budget =
           )
         : TARGET_POLLEN;
 
-const { counts, estimatedSpend } = planRequestCounts(models, budget);
+const { counts, estimatedSpend } = onlyModel
+    ? {
+          counts: new Map([[onlyModel, 1]]),
+          estimatedSpend: estimateCost(modelsToProbe[0]),
+      }
+    : planRequestCounts(modelsToProbe, budget);
 
 const jobs = [];
-for (const model of models) {
+for (const model of modelsToProbe) {
     const n = counts.get(model.name) ?? 1;
-    for (let i = 0; i < n; i++) jobs.push(model.name);
+    for (let i = 0; i < n; i++) jobs.push(model);
 }
 
 // Worker pool, not batched Promise.all: one slow request must not
-// head-of-line-block the other CONCURRENCY-1 slots for up to TIMEOUT_MS.
+// head-of-line-block the other CONCURRENCY-1 slots for up to its timeout.
 const results = [];
 let nextJob = 0;
 await Promise.all(
@@ -314,14 +488,24 @@ const actualSpend = results.reduce(
 // file NOW rather than reusing the startup snapshot: the sweep takes minutes
 // and the agent rewrites state.json in the meantime -- merging into the old
 // snapshot would silently revert those writes.
+const currentState = readState();
 const nextState = {
-    ...readState(),
+    ...currentState,
     spend: {
+        ...currentState.spend,
         lastCycleBudget: budget,
         lastEstimatedPollen: estimatedSpend,
         lastActualPollen: actualSpend,
         lastRequestCount: jobs.length,
         lastRunAt: new Date().toISOString(),
+        lastImageProbeAt: {
+            ...currentState.spend?.lastImageProbeAt,
+            ...Object.fromEntries(
+                modelsToProbe
+                    .filter((model) => model.category === "image")
+                    .map((model) => [model.name, new Date(now).toISOString()]),
+            ),
+        },
     },
 };
 fs.writeFileSync(STATE_PATH, JSON.stringify(nextState, null, 2));
@@ -341,13 +525,12 @@ const out = {
     ts: new Date().toISOString(),
     budget,
     actualSpend,
+    imageProbeIntervalHours: IMAGE_PROBE_INTERVAL_MS / 3_600_000,
+    skippedImageModels,
     results,
     billingFlagsByModel,
 };
-fs.writeFileSync(
-    "/home/ubuntu/monitor/probe-results.json",
-    JSON.stringify(out, null, 2),
-);
+fs.writeFileSync(RESULTS_PATH, JSON.stringify(out, null, 2));
 
 // Per-model summary: worst status per model, plus request count.
 const byModel = new Map();
@@ -369,6 +552,11 @@ for (const r of [...byModel.values()].sort(
 console.log(
     `${results.filter((r) => r.ok).length}/${results.length} requests healthy across ${byModel.size} models`,
 );
+if (skippedImageModels.length) {
+    console.log(
+        `${skippedImageModels.length} image models not due (4h cadence)`,
+    );
+}
 console.log(
     `budget ${budget.toFixed(4)} pollen -> estimated ${estimatedSpend.toFixed(4)}, actual ${actualSpend.toFixed(4)}`,
 );

@@ -1,9 +1,9 @@
 # Community model monitor
 
-Headless coding agent that watches community text models (the `owner/model`
-endpoints registered via My Models), probes them, reads Tinybird health, and
-deactivates ones with sustained failures. Runs on a standalone EC2 box
-(`community-monitor`), not in this repo's CI.
+Headless coding agent that watches community text and image models (the
+`owner/model` endpoints registered via My Models), probes them, reads Tinybird
+health, and deactivates ones with sustained failures. Runs on a standalone EC2
+box (`community-monitor`), not in this repo's CI.
 
 ## What's here vs what's live-only
 
@@ -64,9 +64,9 @@ ssh community-monitor "sudo install -m 0644 /tmp/community-monitor.service \
 
 ## Probe spend
 
-`probe.mjs` fetches live per-token pricing from the public, unauthenticated
-`GET https://gen.pollinations.ai/models` catalog (no D1/wrangler access
-needed on the box) and allocates probe requests per model:
+`probe.mjs` fetches live pricing and modality metadata from the public,
+unauthenticated `GET https://gen.pollinations.ai/models` catalog (no
+D1/wrangler access needed on the box) and allocates probe requests per model:
 
 - Every model gets a rank-based baseline by price quartile (cheapest: 4
   requests, priciest: 1), then extra requests top up toward a ~0.5-pollen
@@ -79,6 +79,12 @@ needed on the box) and allocates probe requests per model:
   budget. The low cap is deliberate: production data showed that larger
   synthetic sweeps can consume a meaningful share of low-capacity community
   providers' quotas. Coverage matters more than reaching the spend target.
+- Community image models use a separate low-load schedule: exactly one
+  `POST /v1/images/generations` probe per model every four hours, with a
+  cache-busted prompt, the model's default image dimensions, and `b64_json`
+  validation. A newly listed model is tested immediately. Use
+  `node probe.mjs --model '<owner/name>'` for an explicit freshness check; this
+  bypasses the cadence but still sends only one request.
 - Actual spend is reconciled from each response's real `usage` tokens (not
   the pre-flight estimate) and written to `state.json`'s `spend` key. Next
   cycle's budget mean-reverts off last cycle's actual spend (overspend ->

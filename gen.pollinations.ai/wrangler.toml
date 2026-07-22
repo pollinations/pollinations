@@ -145,7 +145,7 @@ service = "pollinations-enter-staging"
 [[env.staging.d1_databases]]
 binding = "DB"
 database_name = "staging-pollinations-enter-db"
-database_id = "63da5347-3fa8-4410-a68f-c9e83956f76a"
+database_id = "2cb1cf1a-a18a-4cad-a4bb-be64e3c0e39f"
 migrations_dir = "../enter.pollinations.ai/drizzle"
 
 [[env.staging.kv_namespaces]]
@@ -183,7 +183,7 @@ BEDROCK_GUARDRAIL_ID = "utmttwfzrzp8"
 BEDROCK_GUARDRAIL_VERSION = "2"
 # Staging OAuth lockdown — must match enter.pollinations.ai staging allowlist.
 # Request-time gate in shared/auth/api-key.ts fails closed without it. Issue #11137.
-STAGING_ALLOWED_GITHUB_IDS = "36901823,5099901,235942848,248917639,241978997,118118458"
+STAGING_ALLOWED_GITHUB_IDS = "36901823,5099901,235942848,248917639,241978997,118118458,189873015"
 STAGING_ALLOWED_EMAILS = "elliot@pollinations.ai"
 [env.test]
 

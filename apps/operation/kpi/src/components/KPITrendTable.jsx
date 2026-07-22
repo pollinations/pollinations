@@ -231,7 +231,7 @@ export function KPITrendTable({ weeklyData, title }) {
             category: "Community",
             format: "number",
             tooltip:
-                "New app submissions via GitHub issues (TIER-APP label). Counts issues created this week.",
+                "New app submissions via GitHub issues (APP-SUBMISSION label). Counts issues created this week.",
         },
     ];
 

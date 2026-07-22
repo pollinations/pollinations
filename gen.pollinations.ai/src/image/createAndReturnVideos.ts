@@ -5,8 +5,8 @@
 
 import { getVideoModelIds } from "@shared/registry/image.ts";
 import debug from "debug";
-import { callLtx2API } from "./models/ltx2VideoModel.ts";
 import { callNovaReelAPI } from "./models/novaReelModel.ts";
+import { callHappyHorseAPI } from "./models/openRouterVideoModel.ts";
 import {
     callPrunaVideo720API,
     callPrunaVideo1080API,
@@ -65,9 +65,6 @@ export async function createAndReturnVideo(
         case "wan-pro-1080p":
             result = await callWanPro1080pAPI(prompt, safeParams);
             break;
-        case "ltx-2":
-            result = await callLtx2API(prompt, safeParams);
-            break;
         case "p-video-720p":
             result = await callPrunaVideo720API(prompt, safeParams);
             break;
@@ -79,6 +76,9 @@ export async function createAndReturnVideo(
             break;
         case "grok-video-pro":
             result = await callXaiVideoAPI(prompt, safeParams);
+            break;
+        case "happyhorse-1.1":
+            result = await callHappyHorseAPI(prompt, safeParams);
             break;
         default:
             throw new Error(

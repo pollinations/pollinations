@@ -82,8 +82,10 @@ describe("community endpoint OpenAI service", () => {
                 promptCacheWriteTokens: 0,
                 promptAudioTokens: 0,
                 promptImageTokens: 0,
+                promptVideoTokens: 0,
                 completionTextTokens: 1,
                 completionAudioTokens: 0,
+                completionImageTokens: 0,
                 completionReasoningTokens: 0,
             },
         });

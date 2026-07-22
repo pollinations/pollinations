@@ -42,7 +42,7 @@ Scripts follow a similar pattern:
 
 ## Authentication
 
-Most workflows use **Polly Bot** (GitHub App) for authentication instead of personal access tokens.
+Most workflows use **Polli Bot** (GitHub App) for authentication instead of personal access tokens.
 
 **Benefits:**
 

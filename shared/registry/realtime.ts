@@ -2,13 +2,10 @@ import type { ModelDefinition } from "./registry";
 
 export const DEFAULT_REALTIME_MODEL = "gpt-realtime-2.1" as const;
 export type RealtimeModelName = keyof typeof REALTIME_SERVICES;
-export type RealtimeModelId =
-    (typeof REALTIME_SERVICES)[RealtimeModelName]["modelId"];
 
 export const REALTIME_SERVICES = {
     [DEFAULT_REALTIME_MODEL]: {
         aliases: [],
-        modelId: "gpt-realtime-2-1",
         provider: "azure",
         brand: "OpenAI",
         category: "realtime",
@@ -24,7 +21,7 @@ export const REALTIME_SERVICES = {
         },
         title: "GPT Realtime 2.1",
         description:
-            "GPT Realtime 2.1 - realtime voice reasoning with improved silence and noise handling",
+            "Live voice conversations with instant replies and solid noise handling",
         inputModalities: ["text", "audio", "image"],
         outputModalities: ["text", "audio"],
         tools: true,
@@ -33,7 +30,6 @@ export const REALTIME_SERVICES = {
     },
     "gpt-realtime-2": {
         aliases: [],
-        modelId: "gpt-realtime-2",
         provider: "azure",
         brand: "OpenAI",
         category: "realtime",
@@ -48,14 +44,14 @@ export const REALTIME_SERVICES = {
             completionAudioTokens: 0.000064,
         },
         title: "GPT Realtime 2",
-        description: "GPT Realtime 2 - realtime voice reasoning",
+        description: "Live voice conversations with instant, reasoned replies",
         inputModalities: ["text", "audio", "image"],
         outputModalities: ["text", "audio"],
         tools: true,
         reasoning: true,
         contextLength: 128000,
     },
-} satisfies Record<string, ModelDefinition<string>>;
+} satisfies Record<string, ModelDefinition>;
 
 export const REALTIME_MODEL_NAMES = Object.keys(
     REALTIME_SERVICES,

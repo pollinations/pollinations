@@ -1,4 +1,4 @@
-import { type ModelId, resolveModelName } from "@shared/registry/registry.ts";
+import { resolveModelName } from "@shared/registry/registry.ts";
 import { portkeyConfig } from "./configs/modelConfigs.js";
 import midijourneyPrompt from "./personas/midijourney.js";
 import { BASE_PROMPTS } from "./prompts/systemPrompts.js";
@@ -28,7 +28,7 @@ const claudeAdaptiveThinking = createClaudeThinkingTransform("adaptive");
 
 interface ModelDefinition {
     name: string;
-    config: (typeof portkeyConfig)[ModelId];
+    config: (typeof portkeyConfig)[string];
     transform?: TransformFn;
 }
 
@@ -90,8 +90,12 @@ const models: ModelDefinition[] = [
     },
     {
         name: "qwen-large",
-        config: portkeyConfig["accounts/fireworks/models/qwen3p7-plus"],
-        transform: fireworksThinking,
+        config: portkeyConfig["qwen/qwen3.7-plus"],
+        transform: createReasoningEffortTransform("toggle"),
+    },
+    {
+        name: "qwen3.7-max",
+        config: portkeyConfig["qwen/qwen3.7-max"],
     },
     {
         name: "qwen-vision",
@@ -136,6 +140,10 @@ const models: ModelDefinition[] = [
         config: portkeyConfig["google/gemma-4-26b-a4b-it"],
     },
     {
+        name: "gemma-4-31b",
+        config: portkeyConfig["google/gemma-4-31b-it"],
+    },
+    {
         name: "deepseek-pro",
         config: portkeyConfig["accounts/fireworks/models/deepseek-v4-pro"],
         transform: fireworksThinking,
@@ -154,6 +162,11 @@ const models: ModelDefinition[] = [
     {
         name: "grok-large",
         config: portkeyConfig["grok-4.3"],
+        transform: stripCacheControl,
+    },
+    {
+        name: "grok-4.5",
+        config: portkeyConfig["x-ai/grok-4.5"],
         transform: stripCacheControl,
     },
     {
@@ -282,7 +295,7 @@ const models: ModelDefinition[] = [
         transform: createPerplexitySearchTransform("low"),
     },
     {
-        name: "perplexity-deep",
+        name: "perplexity-high",
         config: portkeyConfig["sonar"],
         transform: createPerplexitySearchTransform("high"),
     },
@@ -305,6 +318,21 @@ const models: ModelDefinition[] = [
         name: "kimi-code",
         config: portkeyConfig["accounts/fireworks/models/kimi-k2p7-code"],
         transform: pipe(stripCacheControl, fireworksThinking),
+    },
+    {
+        name: "kimi-k3",
+        config: portkeyConfig["moonshotai/kimi-k3"],
+        transform: stripCacheControl,
+    },
+    {
+        name: "mimo-v2.5",
+        config: portkeyConfig["xiaomi/mimo-v2.5"],
+        transform: stripCacheControl,
+    },
+    {
+        name: "mimo-v2.5-pro",
+        config: portkeyConfig["xiaomi/mimo-v2.5-pro"],
+        transform: stripCacheControl,
     },
     {
         name: "gemini-large",

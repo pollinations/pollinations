@@ -316,8 +316,9 @@ describe("community endpoint helpers", () => {
     });
 
     it("builds community image models with one fixed per-image price", () => {
+        const modelId = "voodoohop/flux";
         const definition = communityModelDefinition({
-            modelId: "voodoohop/flux",
+            modelId,
             description: "Community image model",
             modality: "image",
             ...communityEndpointPrices({
@@ -334,7 +335,7 @@ describe("community endpoint helpers", () => {
         expect(definition.cost).not.toHaveProperty("promptTextTokens");
         expect(
             calculateUsageBilling(
-                definition.modelId,
+                modelId,
                 { completionImageTokens: 1 },
                 definition,
             ).price.totalPrice,
@@ -342,8 +343,9 @@ describe("community endpoint helpers", () => {
     });
 
     it("builds token-priced community image models when the probe detected usage", () => {
+        const modelId = "voodoohop/gptimage";
         const definition = communityModelDefinition({
-            modelId: "voodoohop/gptimage",
+            modelId,
             description: "Token-priced image model",
             modality: "image",
             imagePricing: "tokens",
@@ -365,7 +367,7 @@ describe("community endpoint helpers", () => {
         });
         expect(
             calculateUsageBilling(
-                definition.modelId,
+                modelId,
                 {
                     promptTextTokens: 100,
                     promptImageTokens: 0,

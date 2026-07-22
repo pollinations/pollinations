@@ -7,9 +7,9 @@ import type { CostVariantContext, PricingInput } from "./cost-variants";
 // module-evaluation cycle with the service maps).
 export {
     type CostVariantContext,
-    costVariantsByResolution,
     defineCostVariants,
     longContextAbove,
+    matchResolution,
     type PricingInput,
     totalPromptTokens,
 } from "./cost-variants";

@@ -1,7 +1,4 @@
-import {
-    costVariantsByResolution,
-    defineCostVariants,
-} from "./cost-variants";
+import { defineCostVariants, matchResolution } from "./cost-variants";
 import { perMillion } from "./price-helpers";
 import type { ModelDefinition } from "./registry";
 
@@ -371,11 +368,14 @@ export const IMAGE_SERVICES = {
             completionVideoSeconds: 0.08, // per sec (720p video)
             completionAudioSeconds: 0.02, // per sec when audio is enabled
         },
-        ...costVariantsByResolution({
-            "1080p": {
-                completionVideoSeconds: 0.1, // per sec (1080p video)
+        ...defineCostVariants(
+            {
+                "1080p": {
+                    completionVideoSeconds: 0.1, // per sec (1080p video)
+                },
             },
-        }),
+            matchResolution("1080p"),
+        ),
         resolutions: ["720p", "1080p"],
         title: "Veo 3.1 Fast",
         description: "Fast text-to-video with optional audio at 720p or 1080p",
@@ -397,14 +397,17 @@ export const IMAGE_SERVICES = {
         cost: {
             completionVideoSeconds: 0.025, // per sec (720p, default)
         },
-        ...costVariantsByResolution({
-            "480p": {
-                completionVideoSeconds: 0.015, // per sec (480p)
+        ...defineCostVariants(
+            {
+                "480p": {
+                    completionVideoSeconds: 0.015, // per sec (480p)
+                },
+                "1080p": {
+                    completionVideoSeconds: 0.06, // per sec (1080p)
+                },
             },
-            "1080p": {
-                completionVideoSeconds: 0.06, // per sec (1080p)
-            },
-        }),
+            matchResolution("480p", "1080p"),
+        ),
         resolutions: ["720p", "480p", "1080p"],
         title: "Seedance Pro-Fast",
         description:
@@ -498,11 +501,14 @@ export const IMAGE_SERVICES = {
         cost: {
             completionVideoSeconds: 0.1, // per sec (720p, includes audio)
         },
-        ...costVariantsByResolution({
-            "1080p": {
-                completionVideoSeconds: 0.15, // per sec (1080p, includes audio)
+        ...defineCostVariants(
+            {
+                "1080p": {
+                    completionVideoSeconds: 0.15, // per sec (1080p, includes audio)
+                },
             },
-        }),
+            matchResolution("1080p"),
+        ),
         resolutions: ["720p", "1080p"],
         title: "Wan 2.7",
         description: "Keyframe-controlled video with sound at 720p or 1080p",
@@ -734,11 +740,14 @@ export const IMAGE_SERVICES = {
         cost: {
             completionVideoSeconds: 0.02, // Replicate 720p per sec
         },
-        ...costVariantsByResolution({
-            "1080p": {
-                completionVideoSeconds: 0.04, // Replicate 1080p per sec
+        ...defineCostVariants(
+            {
+                "1080p": {
+                    completionVideoSeconds: 0.04, // Replicate 1080p per sec
+                },
             },
-        }),
+            matchResolution("1080p"),
+        ),
         resolutions: ["720p", "1080p"],
         title: "Pruna p-video",
         description: "Affordable video from text or an image at 720p or 1080p",

@@ -66,17 +66,10 @@ export function defineCostVariants<
     return { costVariants, selectCostVariant };
 }
 
-// Video resolution tiers: each variant is keyed by the exact resolution string
-// (e.g. "1080p") the request's resolution param must equal to select it. The
-// base rate covers the default resolution, which has no sheet here.
-export function costVariantsByResolution<
-    const V extends Record<string, CostDefinition>,
->(
-    costVariants: V,
-): Pick<ModelDefinition, "costVariants" | "selectCostVariant"> {
-    return defineCostVariants(costVariants, ({ input }) =>
-        input?.resolution && input.resolution in costVariants
-            ? (input.resolution as keyof V & string)
-            : undefined,
-    );
+// Selector factory for resolution-priced models: selects the variant named
+// exactly after the request's resolution. The base rate covers the default
+// resolution, which has no variant sheet.
+export function matchResolution<const R extends string>(...resolutions: R[]) {
+    return ({ input }: CostVariantContext): R | undefined =>
+        resolutions.find((resolution) => resolution === input?.resolution);
 }

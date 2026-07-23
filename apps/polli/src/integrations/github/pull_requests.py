@@ -1,71 +1,16 @@
+import asyncio
 import logging
 from dataclasses import dataclass
 
 import aiohttp
 
-from .._re import re
-from ..config import config
-from . import github_auth
-from .github_graphql import github_graphql
+from ...core.config import config
+from .pr_review import PRReviewMixin
+from . import auth as github_auth
+from .graphql import github_graphql
 
 logger = logging.getLogger(__name__)
 
-# Files to skip during review
-SKIP_FILE_PATTERNS = [
-    re.compile(r"package-lock\.json$"),
-    re.compile(r"yarn\.lock$"),
-    re.compile(r"pnpm-lock\.yaml$"),
-    re.compile(r"\.min\.js$"),
-    re.compile(r"\.min\.css$"),
-    re.compile(r"\.map$"),
-    re.compile(r"\.(svg|png|jpg|jpeg|gif|ico|woff2?|ttf|eot|pyc)$"),
-    re.compile(r"__pycache__|\.egg-info"),
-    re.compile(r"node_modules/|vendor/|dist/|build/"),
-    re.compile(r"migrations/"),
-]
-
-# High priority files (security-sensitive)
-HIGH_PRIORITY_PATTERNS = [
-    "auth",
-    "login",
-    "password",
-    "secret",
-    "token",
-    "api",
-    "security",
-    "crypto",
-    "session",
-    "credential",
-    "key",
-    "private",
-]
-
-# Code file extensions
-CODE_EXTENSIONS = {
-    ".py",
-    ".js",
-    ".ts",
-    ".jsx",
-    ".tsx",
-    ".go",
-    ".rs",
-    ".java",
-    ".cpp",
-    ".c",
-    ".h",
-    ".hpp",
-    ".rb",
-    ".php",
-    ".swift",
-    ".kt",
-    ".scala",
-    ".cs",
-    ".vue",
-    ".svelte",
-}
-
-# Token estimation
-CHARS_PER_TOKEN = 4
 
 
 @dataclass
@@ -80,7 +25,7 @@ class FilePatch:
     tokens: int
 
 
-class GitHubPRManager:
+class GitHubPRManager(PRReviewMixin):
     """GitHub Pull Request operations using GraphQL + REST APIs."""
 
     def __init__(self):
@@ -88,7 +33,7 @@ class GitHubPRManager:
 
     @property
     def repo(self) -> str:
-        return config.github_repo
+        return config.bot.default_repo
 
     @property
     def owner(self) -> str:
@@ -113,7 +58,7 @@ class GitHubPRManager:
             token = await github_auth.github_app_auth.get_token()
             if token:
                 return token
-        return config.github_token if config.github_token else None
+        return config.github.token if config.github.token else None
 
     async def _get_headers(self) -> dict | None:
         token = await self._get_token()
@@ -126,7 +71,7 @@ class GitHubPRManager:
         }
 
     def _has_auth(self) -> bool:
-        return github_auth.github_app_auth is not None or bool(config.github_token)
+        return github_auth.github_app_auth is not None or bool(config.github.token)
 
     # ============================================================
     # PR READ OPERATIONS (GraphQL)
@@ -1304,229 +1249,6 @@ class GitHubPRManager:
             logger.error(f"Error removing reviewers: {e}")
             return {"error": str(e)}
 
-    # ============================================================
-    # AI-POWERED PR REVIEW
-    # ============================================================
-
-    async def review_pr(self, pr_number: int, post_to_github: bool = False, author: str = "Discord User") -> dict:
-        """
-        Generate an AI-powered code review for a PR.
-
-        Args:
-            pr_number: The PR number to review
-            post_to_github: If True, post the review as a GitHub comment.
-                           If False, return the review text for Discord.
-            author: The Discord username requesting the review
-
-        Returns:
-            dict with 'review' text and optionally 'posted_to_github'
-        """
-        from .pollinations import pollinations_client
-
-        # Get PR details
-        pr = await self.get_pr(pr_number)
-        if pr.get("error"):
-            return pr
-
-        # Get PR diff
-        diff_result = await self.get_pr_diff(pr_number)
-        if diff_result.get("error"):
-            return diff_result
-
-        diff = diff_result.get("diff", "")
-        if not diff:
-            return {"error": "No diff available for this PR"}
-
-        # Parse and format diff for AI
-        formatted_diff = self._format_diff_for_review(diff)
-        if not formatted_diff:
-            return {"error": "No reviewable code files in this PR"}
-
-        # Generate review using AI
-        system_prompt = self._get_review_system_prompt()
-        user_prompt = self._get_review_user_prompt(pr, formatted_diff)
-
-        try:
-            review_text = await pollinations_client.generate_text(
-                system_prompt=system_prompt,
-                user_prompt=user_prompt,
-                model=config.pollinations_model,
-                temperature=0.3,
-            )
-
-            if not review_text:
-                return {"error": "Failed to generate review"}
-
-            # Clean up the review
-            review_text = self._parse_review(review_text)
-
-            result = {
-                "success": True,
-                "pr_number": pr_number,
-                "pr_title": pr["title"],
-                "pr_url": pr["url"],
-                "review": review_text,
-                "posted_to_github": False,
-            }
-
-            # Optionally post to GitHub
-            if post_to_github:
-                comment_result = await self.add_comment(
-                    pr_number,
-                    f"## AI Code Review\n\n{review_text}\n\n---\n*Requested by `{author}` via Discord*",
-                    author,
-                )
-                if comment_result.get("success"):
-                    result["posted_to_github"] = True
-
-            return result
-
-        except Exception as e:
-            logger.error(f"Error generating PR review: {e}")
-            return {"error": f"Failed to generate review: {str(e)}"}
-
-    def _format_diff_for_review(self, diff_text: str) -> str:
-        """Format diff in PR-Agent style with __new hunk__ / __old hunk__ sections."""
-        output_parts = []
-        current_lines = []
-        current_filename = None
-
-        for line in diff_text.split("\n"):
-            if line.startswith("diff --git"):
-                # Process previous file
-                if current_filename and current_lines and not self._should_skip_file(current_filename):
-                    formatted = self._format_file_hunks(current_filename, "\n".join(current_lines))
-                    if formatted:
-                        output_parts.append(formatted)
-
-                # Start new file
-                current_lines = [line]
-                match = re.match(r"diff --git a/(.*?) b/(.*)", line)
-                current_filename = match.group(2) if match else "unknown"
-            else:
-                current_lines.append(line)
-
-        # Don't forget last file
-        if current_filename and current_lines and not self._should_skip_file(current_filename):
-            formatted = self._format_file_hunks(current_filename, "\n".join(current_lines))
-            if formatted:
-                output_parts.append(formatted)
-
-        return "\n".join(output_parts)
-
-    def _format_file_hunks(self, filename: str, patch: str) -> str:
-        """Convert a file's patch to PR-Agent style format with line numbers."""
-        lines = patch.split("\n")
-        output = f"\n\n## File: '{filename}'\n"
-
-        new_hunk_lines = []
-        old_hunk_lines = []
-        line_num = 0
-        current_header = ""
-
-        for line in lines:
-            if line.startswith(("diff --git", "index ", "---", "+++")):
-                continue
-
-            if line.startswith("@@"):
-                # Output previous hunk
-                if new_hunk_lines or old_hunk_lines:
-                    output += self._format_hunk(current_header, new_hunk_lines, old_hunk_lines)
-                    new_hunk_lines = []
-                    old_hunk_lines = []
-
-                # Parse new line number
-                match = re.search(r"\+(\d+)", line)
-                line_num = int(match.group(1)) - 1 if match else 0
-                current_header = line
-
-            elif line.startswith("+") and not line.startswith("+++"):
-                line_num += 1
-                new_hunk_lines.append(f"{line_num:4d} {line}")
-            elif line.startswith("-") and not line.startswith("---"):
-                old_hunk_lines.append(line)
-            elif line.startswith(" ") or line == "":
-                line_num += 1
-                new_hunk_lines.append(f"{line_num:4d} {line}")
-
-        # Output final hunk
-        if new_hunk_lines or old_hunk_lines:
-            output += self._format_hunk(current_header, new_hunk_lines, old_hunk_lines)
-
-        return output
-
-    def _format_hunk(self, header: str, new_lines: list, old_lines: list) -> str:
-        """Format a single hunk with __new hunk__ / __old hunk__ sections."""
-        has_additions = any("+" in l for l in new_lines)
-        has_deletions = bool(old_lines)
-
-        if not has_additions and not has_deletions:
-            return ""
-
-        output = f"\n{header}\n__new hunk__\n"
-        output += "\n".join(new_lines) + "\n"
-
-        if has_deletions:
-            output += "__old hunk__\n"
-            output += "\n".join(old_lines) + "\n"
-
-        return output
-
-    def _should_skip_file(self, filename: str) -> bool:
-        """Check if file should be skipped during review."""
-        for pattern in SKIP_FILE_PATTERNS:
-            if pattern.search(filename):
-                return True
-        return False
-
-    def _get_review_system_prompt(self) -> str:
-        """Return the code review system prompt."""
-        return """You are a code reviewer analyzing a Pull Request.
-
-DIFF FORMAT: __new hunk__ = new code with line numbers, __old hunk__ = removed code
-
-Review for:
-1. **Bugs** - Logic errors, edge cases, null checks
-2. **Security** - Injection, XSS, auth issues, secrets in code
-3. **Performance** - N+1 queries, memory leaks, inefficient loops
-
-Skip style/formatting nitpicks. Focus on issues that matter.
-
-OUTPUT FORMAT:
-- If no major issues: Start with "**LGTM** - No major issues found." then optionally list minor suggestions
-- If issues found: List each issue with file:line reference and brief explanation
-
-Keep your review concise (200-500 words). Be direct and actionable."""
-
-    def _get_review_user_prompt(self, pr: dict, diff: str) -> str:
-        """Create the user prompt with PR context."""
-        return f"""**PR #{pr["number"]}:** {pr["title"]}
-
-**Author:** {pr["author"]}
-**Changes:** +{pr["additions"]} -{pr["deletions"]} across {pr["changed_files"]} files
-
-**Description:**
-{pr.get("body", "No description provided")}
-
-**Code Diff:**
-{diff}
-
-Review this PR for bugs, security issues, and performance problems. Be concise."""
-
-    def _parse_review(self, response: str) -> str:
-        """Clean up the review response."""
-        review = response.strip()
-
-        # Remove markdown code blocks if wrapped
-        if review.startswith("```"):
-            lines = review.split("\n")
-            if lines[0].startswith("```"):
-                lines = lines[1:]
-            if lines and lines[-1].strip() == "```":
-                lines = lines[:-1]
-            review = "\n".join(lines)
-
-        return review.strip()
 
 
 # Singleton instance
@@ -1674,7 +1396,7 @@ async def tool_github_pr(
     elif action == "get_history":
         if not pr_number:
             return {"error": "pr_number required for 'get_history' action"}
-        from .github_graphql import github_graphql
+        from .graphql import github_graphql
 
         history = await github_graphql.get_edit_history(
             number=pr_number, is_pr=True, limit=limit or 10, edit_index=edit_index

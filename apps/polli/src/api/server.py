@@ -7,8 +7,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
-from .._uuid import uuid4_hex
-from ..services.pollinations import UpstreamAuthError, _auth_override
+from ..utils.uuid import uuid4_hex
+from ..ai.client import UpstreamAuthError, _auth_override
 
 logger = logging.getLogger(__name__)
 
@@ -26,7 +26,7 @@ class ChatRequest(BaseModel):
     """
 
     messages: list[Message]
-    model: str | None = None  # ignored — always routes to polly
+    model: str | None = None  # ignored — always routes to polli
 
     # Generation parameters — all passed through to the underlying LLM
     temperature: float | None = None
@@ -116,10 +116,7 @@ def create_api_app(pollinations_client, config):
 
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=[
-            "http://localhost:5173",
-            "http://localhost:5174",
-        ],
+        allow_origins=list(config.api.cors_origins),
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],
@@ -139,7 +136,7 @@ def create_api_app(pollinations_client, config):
         if request.stream:
             raise HTTPException(
                 status_code=400,
-                detail="Streaming is not supported for the polly model. Use stream=false.",
+                detail="Streaming is not supported for the polli model. Use stream=false.",
             )
 
         thread_history = None
@@ -205,7 +202,7 @@ def create_api_app(pollinations_client, config):
                     "id": f"chatcmpl-{uuid4_hex()[:24]}",
                     "object": "chat.completion",
                     "created": int(time.time()),
-                    "model": "polly",
+                    "model": "polli",
                     "choices": [
                         {
                             "index": 0,
@@ -230,7 +227,7 @@ def create_api_app(pollinations_client, config):
         uptime = time.time() - app.state.start_time
         return {
             "status": "healthy",
-            "bot_name": config.bot_name,
+            "bot_name": config.bot.name,
             "uptime_seconds": int(uptime),
             "mode": "embedded",
         }

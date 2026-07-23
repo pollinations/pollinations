@@ -106,3 +106,72 @@ export async function toDataUri(url: string): Promise<string> {
     const { buffer, mimeType } = await downloadUserImage(url);
     return `data:${mimeType};base64,${buffer.toString("base64")}`;
 }
+
+/**
+ * Extracts dimensions directly from PNG, JPEG, and WEBP buffers.
+ * Gracefully returns undefined for unsupported formats.
+ */
+export function getImageDimensions(buffer: Buffer | Uint8Array): { width: number; height: number } | undefined {
+    try {
+        const bytes = new Uint8Array(buffer);
+        if (bytes.length < 24) return undefined;
+        const dataView = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+
+        // PNG
+        if (bytes[0] === 0x89 && bytes[1] === 0x50 && bytes[2] === 0x4E && bytes[3] === 0x47) {
+            return { width: dataView.getUint32(16, false), height: dataView.getUint32(20, false) };
+        }
+        // JPEG
+        if (bytes[0] === 0xFF && bytes[1] === 0xD8) {
+            let offset = 2;
+            while (offset < bytes.length - 8) {
+                if (bytes[offset] !== 0xFF) break;
+                const marker = bytes[offset + 1];
+                if (marker === 0xC0 || marker === 0xC1 || marker === 0xC2) {
+                    return { width: dataView.getUint16(offset + 7, false), height: dataView.getUint16(offset + 5, false) };
+                }
+                offset += 2 + dataView.getUint16(offset + 2, false);
+            }
+        }
+        // WEBP
+        if (bytes.length >= 30 && bytes[0] === 0x52 && bytes[1] === 0x49 && bytes[2] === 0x46 && bytes[3] === 0x46 &&
+            bytes[8] === 0x57 && bytes[9] === 0x45 && bytes[10] === 0x42 && bytes[11] === 0x50) {
+            const vp8 = bytes[15];
+            if (vp8 === 0x20) { // VP8 
+                return { width: dataView.getUint16(26, true) & 0x3FFF, height: dataView.getUint16(28, true) & 0x3FFF };
+            }
+            if (vp8 === 0x4C) { // VP8L
+                const b1 = bytes[21];
+                const b2 = bytes[22];
+                const b3 = bytes[23];
+                const b4 = bytes[24];
+                const width = 1 + (((b2 & 0x3F) << 8) | b1);
+                const height = 1 + (((b4 & 0x0F) << 10) | (b3 << 2) | ((b2 & 0xC0) >> 6));
+                return { width, height };
+            }
+            if (vp8 === 0x58) { // VP8X
+                const width = 1 + (bytes[24] | (bytes[25] << 8) | (bytes[26] << 16));
+                const height = 1 + (bytes[27] | (bytes[28] << 8) | (bytes[29] << 16));
+                return { width, height };
+            }
+        }
+    } catch {
+        return undefined;
+    }
+    return undefined;
+}
+
+export async function getImageDimensionsFromUrl(url: string): Promise<{ width: number; height: number } | undefined> {
+    try {
+        let buffer: Buffer;
+        if (url.startsWith("data:")) {
+            buffer = base64ToBuffer(url);
+        } else {
+            const { buffer: fetched } = await downloadUserImage(url);
+            buffer = fetched;
+        }
+        return getImageDimensions(buffer);
+    } catch {
+        return undefined;
+    }
+}

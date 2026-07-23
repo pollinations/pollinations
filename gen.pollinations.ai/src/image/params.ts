@@ -34,8 +34,23 @@ function adjustImageSizeForModel(
     model: ImageModelName,
     width?: number,
     height?: number,
+    sourceWidth?: number,
+    sourceHeight?: number,
 ): { width: number; height: number } {
     const defaultSideLength = getDefaultSideLength(model);
+
+    // If size was omitted but we inferred source bounds, scale proportionally
+    if (width === undefined && height === undefined && sourceWidth && sourceHeight) {
+        const area = sourceWidth * sourceHeight;
+        const targetArea = defaultSideLength * defaultSideLength;
+        if (area > 0) {
+            const scale = Math.sqrt(targetArea / area);
+            // Snap scaling to multiples of 16 (standard chunking)
+            const scaledWidth = Math.max(16, Math.round((sourceWidth * scale) / 16) * 16);
+            const scaledHeight = Math.max(16, Math.round((sourceHeight * scale) / 16) * 16);
+            return { width: scaledWidth, height: scaledHeight };
+        }
+    }
 
     // Use provided dimensions or default - no scaling/limiting
     const sanitizedWidth =
@@ -54,6 +69,8 @@ export const ImageParamsSchema = z
     .object({
         width: sanitizedSideLength,
         height: sanitizedSideLength,
+        source_width: z.number().int().positive().optional(),
+        source_height: z.number().int().positive().optional(),
         seed: sanitizedSeed,
         model: z.enum(allowedModels),
         safe: sanitizedBoolean.catch(false),
@@ -120,6 +137,8 @@ export const ImageParamsSchema = z
             data.model,
             data.width,
             data.height,
+            data.source_width,
+            data.source_height
         );
 
         return { ...data, width, height, dimensionsExplicit };

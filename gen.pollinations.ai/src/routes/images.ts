@@ -25,6 +25,7 @@ import { generateImageOrVideoResponse } from "@/image/handler.ts";
 import { applySafety, withSafetyHeaders } from "@/middleware/safety.ts";
 import { arrayBufferToBase64 } from "@/util.ts";
 import { requireGenerationAccess } from "@/utils/generation-access.ts";
+import { getImageDimensionsFromUrl } from "@/image/utils/imageDownload.ts";
 
 // --- Helpers ---
 
@@ -260,6 +261,15 @@ export async function handleImageEdit(c: Context<Env>) {
         await parseEditInput(c);
     const safePrompt = await applySafety(c, prompt, safe);
     const resolved = resolveParams({ size, quality, seed });
+
+    // If size was omitted, infer source dimensions to maintain aspect ratio
+    if (!size && imageUrls.length > 0) {
+        const dims = await getImageDimensionsFromUrl(imageUrls[0]);
+        if (dims) {
+            extra.source_width = dims.width;
+            extra.source_height = dims.height;
+        }
+    }
 
     const response = await generateImageOrVideoResponse(c, safePrompt, {
         prompt: safePrompt,

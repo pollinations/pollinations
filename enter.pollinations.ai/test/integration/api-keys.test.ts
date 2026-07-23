@@ -642,6 +642,7 @@ describe("API Key Management", () => {
             expect(deviceStyleLookup.status).toBe(200);
             expect(await deviceStyleLookup.json()).toMatchObject({
                 found: true,
+                clientId: appKey.id,
             });
 
             const redirectLookup = await SELF.fetch(

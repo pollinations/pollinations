@@ -6,6 +6,7 @@ import { drizzle } from "drizzle-orm/d1";
 import { alias } from "drizzle-orm/sqlite-core";
 import * as schema from "../db/better-auth.ts";
 import { parseGithubIdList } from "./github-id-list.ts";
+import { normalizeOAuthResource } from "./oauth-resource.ts";
 
 const PUBLISHABLE_KEY_PREFIX = "pk";
 
@@ -204,6 +205,7 @@ export async function authenticateApiKeyRequest(opts: {
     env: ApiKeyAuthBindings;
     client?: VerifyApiKeyClient;
     ctx?: ExecutionContext;
+    resource?: string;
 }): Promise<ApiKeyAuthResult | null> {
     const rawApiKey = extractApiKey(opts.request);
     if (!rawApiKey) return null;
@@ -218,6 +220,16 @@ export async function authenticateApiKeyRequest(opts: {
     if (!keyResult.valid || !keyResult.key) return null;
 
     const key = keyResult.key;
+    const metadata = normalizeMetadata(key.metadata);
+    if (metadata && Object.hasOwn(metadata, "oauthResource")) {
+        const tokenResource = normalizeOAuthResource(metadata.oauthResource);
+        if (
+            !tokenResource ||
+            normalizeOAuthResource(opts.resource) !== tokenResource
+        ) {
+            return null;
+        }
+    }
     const keyId = typeof key.id === "string" ? key.id : undefined;
     if (!keyId) return null;
 
@@ -259,7 +271,7 @@ export async function authenticateApiKeyRequest(opts: {
             id: keyId,
             name: typeof key.name === "string" ? key.name : undefined,
             permissions: normalizePermissions(key.permissions),
-            metadata: normalizeMetadata(key.metadata),
+            metadata,
             pollenBalance: apiKeyExtra?.pollenBalance ?? null,
             byopClientKeyId: apiKeyExtra?.byopClientKeyId ?? null,
             byopClientName: apiKeyExtra?.byopClientName ?? null,

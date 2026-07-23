@@ -29,7 +29,7 @@ Env vars: `CLIENT_ID` (required), `ISSUER` (default
 - **Authorization request**: `response_type=code` with `state` (CSRF) and a
   fresh PKCE S256 `code_challenge` per login.
 - **Token exchange**: form-encoded `POST` to the token endpoint with
-  `code_verifier`; the access token is an opaque `sk_` key.
+  `code_verifier`; the access token is an opaque, restricted `sk_` key.
 - **Userinfo**: `Bearer` call to the advertised `userinfo_endpoint`.
 - **Delegated API access**: a chat completion against `gen.pollinations.ai`
   paid from the signed-in user's pollen, within the budget/expiry they

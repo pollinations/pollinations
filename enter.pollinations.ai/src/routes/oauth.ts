@@ -1,12 +1,18 @@
+import { createApiKeyForUser } from "@shared/auth/api-key-creation.ts";
 import { PKCE_S256_CHALLENGE_REGEX } from "@shared/auth/authorize-config.ts";
+import { normalizeOAuthResource } from "@shared/auth/oauth-resource.ts";
 import { redirectUriMatchesAllowlistExact } from "@shared/auth/redirect-uri.ts";
+import * as schema from "@shared/db/better-auth.ts";
 import { validator } from "@shared/middleware/validator.ts";
+import { eq } from "drizzle-orm";
+import { drizzle } from "drizzle-orm/d1";
 import type { Context } from "hono";
 import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
 import { z } from "zod";
 import type { Env } from "../env.ts";
 import { auth } from "../middleware/auth.ts";
+import { resolveOAuthClient } from "../services/oauth-client.ts";
 import {
     type DeviceTokenRequest,
     exchangeDeviceCode,
@@ -14,7 +20,6 @@ import {
     handleUserinfo,
     parseFormOrJsonBody,
 } from "./device.ts";
-import { getRedirectUris } from "./metadata-utils.ts";
 
 const KV_TTL = 600; // 10 minutes — codes are single-use and short-lived
 const CODE_LENGTH = 40;
@@ -28,6 +33,7 @@ type StoredCode = {
     scope: string | null;
     codeChallenge: string;
     expiresIn: number | null;
+    resource: string | null;
 };
 
 /**
@@ -58,21 +64,28 @@ function tokenError(c: Context<Env>, error: string, description?: string) {
 }
 
 const CreateCodeSchema = z.object({
-    apiKey: z.string().min(1),
-    clientId: z.string().startsWith("pk_"),
+    clientId: z.string().min(1),
     redirectUri: z.string().min(1),
     scope: z.string().optional(),
     codeChallenge: z.string().regex(PKCE_S256_CHALLENGE_REGEX),
     codeChallengeMethod: z.literal("S256"),
-    expiresIn: z.number().int().positive().nullish(),
+    expiresIn: z
+        .number()
+        .int()
+        .positive()
+        .max(365 * 24 * 60 * 60)
+        .nullish(),
+    allowedModels: z.array(z.string()).nullable().optional(),
+    pollenBudget: z.number().nullable().optional(),
+    accountPermissions: z.array(z.string()).nullable().optional(),
+    resource: z.string().optional(),
 });
 
 /**
  * OAuth 2.1 authorization-code grant with PKCE (S256 only), layered on the
- * same trust model as the device flow: the consent page mints the sk_ in the
- * browser and hands it to the server, which parks it in KV behind a
- * single-use authorization code. The legacy fragment (#api_key=) flow is
- * untouched — this is an additional issuance path, not a replacement.
+ * same consent UI as the device flow. The server mints a restricted sk_ key
+ * and parks it in KV behind a single-use authorization code. The legacy
+ * fragment (#api_key=) flow is untouched.
  *
  * POST /code     — called by the consent page after the user approves
  * POST /token    — code+PKCE (and device_code) exchange, RFC 6749 §3.2
@@ -84,27 +97,32 @@ export const oauthRoutes = new Hono<Env>()
         auth({ allowApiKey: false, allowSessionCookie: true }),
         validator("json", CreateCodeSchema),
         async (c) => {
-            c.var.auth.requireUser();
+            const user = c.var.auth.requireUser();
             const body = c.req.valid("json");
+            const resource = body.resource
+                ? normalizeOAuthResource(body.resource)
+                : null;
+            if (body.resource && !resource) {
+                throw new HTTPException(400, {
+                    message: "Invalid OAuth resource",
+                });
+            }
 
-            // Re-validate the client/redirect binding server-side; the same
-            // check runs at sk_ minting, but the code is the artifact that
-            // leaves our origin, so it must never bind an unregistered
-            // redirect (RFC 6749 §3.1.2). verifyApiKey returns the key row
-            // with metadata already parsed.
-            const result = await c.var.auth.client.api.verifyApiKey({
-                body: { key: body.clientId },
+            const client = await resolveOAuthClient({
+                db: c.env.DB,
+                auth: c.var.auth.client,
+                clientId: body.clientId,
             });
-            if (!result.valid || !result.key) {
+            if (!client) {
                 throw new HTTPException(400, {
                     message: "Unknown client_id",
                 });
             }
-            // Exact matching (incl. query) — the code rides the query string,
-            // so the legacy flow's extra-query leniency doesn't apply here.
-            const allowlist = getRedirectUris(result.key.metadata ?? {});
             if (
-                !redirectUriMatchesAllowlistExact(body.redirectUri, allowlist)
+                !redirectUriMatchesAllowlistExact(
+                    body.redirectUri,
+                    client.redirectUris,
+                )
             ) {
                 throw new HTTPException(400, {
                     message:
@@ -112,9 +130,34 @@ export const oauthRoutes = new Hono<Env>()
                 });
             }
 
+            const created = await createApiKeyForUser({
+                authClient: c.var.auth.client,
+                dbBinding: c.env.DB,
+                userId: user.id,
+                name: client.appName,
+                type: "secret",
+                expiresIn: body.expiresIn ?? undefined,
+                allowedModels: body.allowedModels,
+                pollenBudget: body.pollenBudget,
+                accountPermissions: body.accountPermissions,
+                metadata: {
+                    ...(client.registeredApp && {
+                        requestedClientId: body.clientId,
+                    }),
+                    redirectOrigin: new URL(body.redirectUri).origin,
+                    redirectUri: body.redirectUri,
+                },
+                oauth: {
+                    clientId: body.clientId,
+                    ...(resource && { resource }),
+                },
+                allowAccountKeysPermission: true,
+                defaultCreatedVia: "oauth",
+            });
+
             const code = generateCode(CODE_LENGTH);
             const stored: StoredCode = {
-                key: body.apiKey,
+                key: created.key,
                 clientId: body.clientId,
                 redirectUri: body.redirectUri,
                 // "" is meaningful: the user narrowed a requested scope to
@@ -122,10 +165,21 @@ export const oauthRoutes = new Hono<Env>()
                 scope: body.scope ?? null,
                 codeChallenge: body.codeChallenge,
                 expiresIn: body.expiresIn ?? null,
+                resource,
             };
-            await c.env.KV.put(`oauth-code:${code}`, JSON.stringify(stored), {
-                expirationTtl: KV_TTL,
-            });
+            try {
+                await c.env.KV.put(
+                    `oauth-code:${code}`,
+                    JSON.stringify(stored),
+                    { expirationTtl: KV_TTL },
+                );
+            } catch (error) {
+                const db = drizzle(c.env.DB, { schema });
+                await db
+                    .delete(schema.apikey)
+                    .where(eq(schema.apikey.id, created.id));
+                throw error;
+            }
 
             return c.json({ code });
         },
@@ -190,13 +244,22 @@ export const oauthRoutes = new Hono<Env>()
         if (body.redirect_uri !== stored.redirectUri) {
             return tokenError(c, "invalid_grant", "redirect_uri mismatch");
         }
+        const resource = body.resource
+            ? normalizeOAuthResource(body.resource)
+            : null;
+        if (
+            (body.resource && !resource) ||
+            resource !== (stored.resource ?? null)
+        ) {
+            return tokenError(c, "invalid_grant", "resource mismatch");
+        }
         if (!(await verifyPkceS256(body.code_verifier, stored.codeChallenge))) {
             return tokenError(c, "invalid_grant", "PKCE verification failed");
         }
 
         return c.json({
             access_token: stored.key,
-            token_type: "bearer",
+            token_type: "Bearer",
             ...(stored.expiresIn != null && { expires_in: stored.expiresIn }),
             ...(stored.scope != null && { scope: stored.scope }),
         });

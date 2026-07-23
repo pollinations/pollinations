@@ -5,6 +5,7 @@ import {
     type ApiKeyType,
     type CallerMetadata,
     createApiKeyForUser,
+    type OAuthKeyMetadata,
 } from "../../auth/api-key-creation.ts";
 import { user as userTable } from "../../db/better-auth.ts";
 
@@ -28,6 +29,7 @@ export type CreateTestApiKeyOptions = {
     pollenBudget?: number | null;
     accountPermissions?: string[] | null;
     metadata?: CallerMetadata;
+    oauth?: OAuthKeyMetadata;
 };
 
 export async function createTestUser(opts: CreateTestUserOptions = {}) {
@@ -67,6 +69,7 @@ export async function createTestApiKey(opts: CreateTestApiKeyOptions = {}) {
         pollenBudget: opts.pollenBudget,
         accountPermissions: opts.accountPermissions,
         metadata: opts.metadata,
+        oauth: opts.oauth,
         allowAccountKeysPermission: true,
         defaultCreatedVia: "test",
     });

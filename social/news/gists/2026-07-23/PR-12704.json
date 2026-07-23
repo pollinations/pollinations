@@ -1,0 +1,34 @@
+{
+  "pr_number": 12704,
+  "title": "feat: default grok-imagine to 2K resolution",
+  "author": "TRDEFI",
+  "url": "https://github.com/pollinations/pollinations/pull/12704",
+  "merged_at": "2026-07-23T19:25:49Z",
+  "labels": [],
+  "pr_body_excerpt": "Fixes #12584\n\nBasic `grok-imagine` now returns 2K images by default for both text-to-image generation and image editing.\n\nChanges:\n- Added `resolution: \"2k\"` to request body when model is `grok-imagine-image`\n- `grok-imagine-pro` remains on its current resolution and billing tier\n\nReferences #9706",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Grok gets more pixels",
+    "blurb": "Basic grok-imagine now opens its eyes in 2K. The pro bee keeps its existing resolution and billing perch, while the standard path gets a sharper garden.",
+    "summary": "Basic `grok-imagine-image` requests now send `resolution: \"2k\"` by default for both text-to-image generation and image editing, while `grok-imagine-pro` keeps its existing resolution and billing tier.",
+    "impact": "Users of basic grok-imagine will receive sharper 2K outputs by default for new images and edits without changing their requests.",
+    "keywords": [
+      "grok-imagine",
+      "xAI",
+      "image-generation",
+      "2K",
+      "image-editing",
+      "resolution"
+    ],
+    "visual_concept": "Depict Polli as a tiny pixel-art photographer or art restorer using oversized cozy 2K spectacles to inspect a crisp generated landscape on a retro CRT monitor. A standard grok-imagine image blooms into a more detailed garden scene, with pixel flowers and code-plants gaining visible detail; a small separate pro-mode sign quietly remains unchanged.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink cheek blush, light blue wings, and a tiny photographer beret, adjusting a retro CRT monitor that displays a beautifully crisp 2K pixel garden being generated and gently edited. Lime green (#ecf874) glows prominently around code-plants and blooming flowers, with soft mint, lavender, peach, and warm cream gradients; subtle pixel-font text reads \"2K\". Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-23/PR-12704.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink cheek blush, light blue wings, and a tiny photographer beret, adjusting a retro CRT monitor that displays a beautifully crisp 2K pixel garden being generated and gently edited. Lime green (#ecf874) glows prominently around code-plants and blooming flowers, with soft mint, lavender, peach, and warm cream gradients; subtle pixel-font text reads \"2K\". Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, nostalgic but beautiful."
+  },
+  "generated_at": "2026-07-23T19:26:52.920892+00:00"
+}

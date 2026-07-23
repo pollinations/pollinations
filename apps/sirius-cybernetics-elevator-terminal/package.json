@@ -1,0 +1,10 @@
+{
+  "name": "sirius-cybernetics-elevator-terminal",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "go run .",
+    "build": "go build ./...",
+    "smoke": "go run . --smoke"
+  }
+}

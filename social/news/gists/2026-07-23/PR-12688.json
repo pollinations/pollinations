@@ -1,0 +1,33 @@
+{
+  "pr_number": 12688,
+  "title": "ci: restrict production PRs to main",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/12688",
+  "merged_at": "2026-07-23T12:26:25Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds a required production PR source guard.\n- Allows only the repository's `main` branch to target `production`.\n- Rejects forks with a branch also named `main`.\n\nAfter this workflow is promoted to `production`, the existing Production branch ruleset will require its `Require main source` check and remove the repository-admin bypass.\n\nValidation:\n- `actionlint .github/workflows/guard-production-source.yml`\n- `git diff --check`\n",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Production gets a bouncer",
+    "blurb": "The production gate now checks the guest list. Only this repository’s real main branch gets through—forks wearing the same name need not apply.",
+    "summary": "Added a required GitHub Actions guard that permits only the repository’s own main branch to open pull requests targeting production, including rejecting fork branches named main.",
+    "impact": "Production promotions now have a verifiable main-source check before the admin bypass is removed from the Production branch ruleset.",
+    "keywords": [
+      "github-actions",
+      "production",
+      "branch-protection",
+      "ci",
+      "security"
+    ],
+    "visual_concept": "A cozy garden gate labeled PRODUCTION is tended by Polli as a friendly gatekeeper, checking a tiny map marked main from the home hive while politely redirecting an identically labeled map carried by a distant fork-shaped signpost. Vines, flowers, and a small code-plant make the branch-source validation legible without looking ominous.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink cheek blush, light blue wings, and a tiny gardener cap, checking a glowing lime green (#ecf874) map labeled \"main\" at a warm garden gate labeled \"PRODUCTION\"; a second matching map arrives from a small fork-shaped signpost and is gently redirected. Code-plants and pastel flowers grow around the gate, cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-23/PR-12688.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink cheek blush, light blue wings, and a tiny gardener cap, checking a glowing lime green (#ecf874) map labeled \"main\" at a warm garden gate labeled \"PRODUCTION\"; a second matching map arrives from a small fork-shaped signpost and is gently redirected. Code-plants and pastel flowers grow around the gate, cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, nostalgic but beautiful."
+  },
+  "generated_at": "2026-07-23T12:27:16.264169+00:00"
+}

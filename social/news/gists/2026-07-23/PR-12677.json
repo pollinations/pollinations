@@ -1,0 +1,33 @@
+{
+  "pr_number": 12677,
+  "title": "chore: update app metrics 2026-07-23",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/12677",
+  "merged_at": "2026-07-23T05:08:22Z",
+  "labels": [],
+  "pr_body_excerpt": "Daily automated update of app metrics, health checks, and greenhouse",
+  "gist": {
+    "category": "community",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "The greenhouse got counted",
+    "blurb": "The garden ledger has been refreshed: app metrics, health checks, and greenhouse notes are back in season.",
+    "summary": "Updated the automated app metrics, health-check records, and GREENHOUSE.md community app inventory for 2026-07-23.",
+    "impact": "Maintainers get a current snapshot of the app ecosystem, making it easier to spot healthy blooms and projects that need tending.",
+    "keywords": [
+      "apps",
+      "metrics",
+      "health-checks",
+      "greenhouse",
+      "automation"
+    ],
+    "visual_concept": "Depict Polli as a tiny garden keeper checking labeled code-plants in a greenhouse, with a retro terminal showing tidy app-health charts and a clipboard of metrics. The scene represents a routine census of the community app garden rather than a new product capability.",
+    "image_prompt": "Cozy pixel art scene inside a warm community app greenhouse, where the cute pixel art bee mascot with a yellow body, dark brown stripes, pink rectangular cheek blushes, light blue wings, and a tiny gardener hat checks code-plants with a clipboard while a retro CRT terminal displays simple app-health charts. Lime green (#ecf874) glows prominently from flower pots and the terminal beside mint, lavender, peach, and warm cream plants; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, subtle scanlines, pixel-font text: 'APP METRICS'."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-23/PR-12677.jpg",
+    "prompt": "Cozy pixel art scene inside a warm community app greenhouse, where the cute pixel art bee mascot with a yellow body, dark brown stripes, pink rectangular cheek blushes, light blue wings, and a tiny gardener hat checks code-plants with a clipboard while a retro CRT terminal displays simple app-health charts. Lime green (#ecf874) glows prominently from flower pots and the terminal beside mint, lavender, peach, and warm cream plants; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, subtle scanlines, pixel-font text: 'APP METRICS'."
+  },
+  "generated_at": "2026-07-23T05:09:15.407869+00:00"
+}

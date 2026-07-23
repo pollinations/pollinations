@@ -1,0 +1,67 @@
+{
+  "date": "2026-07-22",
+  "period_start": "2026-07-22",
+  "period_end": "2026-07-22",
+  "title": "More image models can plug into the standard API, with sturdier Flux requests",
+  "summary": "A community-heavy day: image APIs opened up, text models expanded, app reviews got calmer, and the catalog became more useful.\n\nCommunity model providers can now serve image generation through both `/image/{prompt}` and the OpenAI-compatible `/v1/images/generations` endpoint, returning standard `b64_json` results. Meanwhile, the Vast Flux deployment now restores its tunnel after restarts, keeps its queue deliberately short, and sends overflow to Fireworks instead of growing an infinite waiting room. Malformed or unavailable reference images now produce useful input errors, and timed-out Replicate jobs are cancelled rather than wandering the provider plains indefinitely.\n\nAll Google text services now use exact Google Vertex routes through OpenRouter, bringing Gemini 3.6 Flash to the existing aliases along with streaming, reasoning, tools, multimodal inputs, and native Google Search support. Poolside Laguna S 2.1 also joined the text API for tool workflows, optional reasoning, and conversations with a million-token context window.\n\nThe app-submission flow now uses a clearer set of `APP-*` states, checks live apps and optional repositories against evidence, and publishes approved snapshots into the catalog safely. Review runs no longer get cancelled just because a workflow applied a state label, which is software briefly discovering that labels can be events.",
+  "pr_count": 14,
+  "prs": [
+    {
+      "number": 12206,
+      "date": "2026-07-22"
+    },
+    {
+      "number": 12637,
+      "date": "2026-07-22"
+    },
+    {
+      "number": 12642,
+      "date": "2026-07-22"
+    },
+    {
+      "number": 12643,
+      "date": "2026-07-22"
+    },
+    {
+      "number": 12646,
+      "date": "2026-07-22"
+    },
+    {
+      "number": 12651,
+      "date": "2026-07-22"
+    },
+    {
+      "number": 12655,
+      "date": "2026-07-22"
+    },
+    {
+      "number": 12656,
+      "date": "2026-07-22"
+    },
+    {
+      "number": 12659,
+      "date": "2026-07-22"
+    },
+    {
+      "number": 12662,
+      "date": "2026-07-22"
+    },
+    {
+      "number": 12663,
+      "date": "2026-07-22"
+    },
+    {
+      "number": 12664,
+      "date": "2026-07-22"
+    },
+    {
+      "number": 12666,
+      "date": "2026-07-22"
+    },
+    {
+      "number": 12668,
+      "date": "2026-07-22"
+    }
+  ],
+  "generated_at": "2026-07-23T07:00:03.935510+00:00"
+}

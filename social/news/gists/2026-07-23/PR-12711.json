@@ -1,0 +1,35 @@
+{
+  "pr_number": 12711,
+  "title": "feat: rebuild observability dashboards",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/12711",
+  "merged_at": "2026-07-23T22:11:34Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds five focused Grafana dashboards for platform usage, users and balances, BYOP apps, community models, and Core API.\n- Preserves all 12 existing dashboards unchanged under `Legacy Observability` and provisions the rebuilt set under `Observability`.\n- Adds the deployed `generation_usage_hourly` and `byop_app_daily` Tinybird aggregate definitions, plus the implementation plan.\n- Uses 30-day defaults, bar-first visuals, shared query results, Paid/Quest terminology, and production-compatible datasource filters.\n\nChecks:\n- `npm run check`\n- Biome check for the Worker entrypoint\n- JSON validation for all 17 dashboards\n- 28 direct Tinybird queries and 45-panel local UI audit\n\nThe PR is intentionally draft. Production Grafana rollout is performed separately through the operations deployment workflow; this PR must not be merged yet.",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "The hive gets better eyes",
+    "blurb": "Five new observability dashboards are ready to watch the garden grow, while all 12 old dashboards remain safely filed under Legacy Observability. Polli has traded guesswork for bar charts.",
+    "summary": "Rebuilt Grafana observability into five focused dashboards for platform usage, users and balances, BYOP apps, community models, and Core API, backed by new Tinybird generation_usage_hourly and byop_app_daily aggregates while preserving all 12 existing dashboards under Legacy Observability.",
+    "impact": "Operations contributors get 30-day, bar-first views with shared query results and production-compatible datasource filters, making platform usage and API health easier to inspect before the separate production rollout.",
+    "keywords": [
+      "observability",
+      "grafana",
+      "tinybird",
+      "dashboards",
+      "operations",
+      "core-api",
+      "byop"
+    ],
+    "visual_concept": "Depict a cozy garden observatory: Polli, wearing tiny analyst glasses, studies five small CRT dashboard screens showing friendly bar charts for platform activity, users, BYOP apps, community models, and the Core API. Nearby, a neatly labeled Legacy Observability filing shelf holds twelve preserved scrolls, while code-plants feed data into the new screens.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and tiny analyst glasses, tending a lime green (#ecf874) garden observatory with five glowing CRT monitors displaying simple bar charts; preserved dashboard scrolls sit on a warm cream shelf labeled in pixel font 'LEGACY'. Code-plants and small flowers feed the screens, with soft pastel mint, lavender, and peach gradients, cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-23/PR-12711.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and tiny analyst glasses, tending a lime green (#ecf874) garden observatory with five glowing CRT monitors displaying simple bar charts; preserved dashboard scrolls sit on a warm cream shelf labeled in pixel font 'LEGACY'. Code-plants and small flowers feed the screens, with soft pastel mint, lavender, and peach gradients, cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, nostalgic but beautiful."
+  },
+  "generated_at": "2026-07-23T22:12:34.429371+00:00"
+}

@@ -598,7 +598,7 @@ export const IMAGE_SERVICES = {
             "grok-imagine-image-quality",
             "grok-imagine-image-pro",
         ],
-        provider: "xai",
+        provider: "openrouter",
         brand: "xAI",
         category: "image",
         addedDate: new Date("2026-03-23").getTime(),
@@ -613,11 +613,11 @@ export const IMAGE_SERVICES = {
             "Higher-fidelity photorealistic images for polished results",
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
-        maxReferenceImages: 1, // xAI image edit route forwards one input image.
+        maxReferenceImages: 1, // OpenRouter image edit route forwards one input image.
     },
     "grok-video-pro": {
         aliases: ["grok-imagine-video"],
-        provider: "xai",
+        provider: "openrouter",
         brand: "xAI",
         category: "video",
         addedDate: new Date("2026-03-23").getTime(),

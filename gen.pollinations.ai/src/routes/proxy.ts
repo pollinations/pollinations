@@ -1,5 +1,6 @@
 import { type Context, Hono } from "hono";
 import { bodyLimit } from "hono/body-limit";
+import { HTTPException } from "hono/http-exception";
 import { resolver as baseResolver, describeRoute } from "hono-openapi";
 import {
     generateEmbeddings,
@@ -8,6 +9,7 @@ import {
 import type { Env } from "@/env.ts";
 import { handleImagePrompt, handleRegisterServer } from "@/image/handler.ts";
 import { auth } from "@/middleware/auth.ts";
+import type { AuthVariables } from "@/middleware/auth.ts";
 import { balance } from "@/middleware/balance.ts";
 import {
     audioCache,
@@ -1113,6 +1115,49 @@ export const proxyRoutes = new Hono<Env>()
         track("generate.image"),
         handleImageEdit,
     );
+
+/**
+ * Build an in-process subset of Gen's generation routes for the hosted MCP
+ * gateway. The caller supplies the already-validated MCP auth context, so the
+ * inbound OAuth token never becomes an upstream Gen bearer credential.
+ */
+export function createMcpGenerationRoutes(
+    authContext: AuthVariables["auth"],
+    parent: Context<Env>,
+): Hono<Env> {
+    return new Hono<Env>()
+        .use("*", async (c, next) => {
+            c.set("auth", {
+                ...authContext,
+                requireModelAccess: () => {
+                    const allowed = authContext.apiKey?.permissions?.models;
+                    const model = c.var.model;
+                    if (allowed && model && !allowed.includes(model.resolved)) {
+                        throw new HTTPException(403, {
+                            message: `Model '${model.requested}' is not allowed for this API key`,
+                        });
+                    }
+                },
+            });
+            c.set("log", parent.var.log);
+            c.set("requestStartedAt", parent.var.requestStartedAt);
+            await next();
+        })
+        .use("*", balance)
+        .post("/v1/chat/completions", ...chatCompletionHandlers)
+        .get(
+            "/image/:prompt{[\\s\\S]+}",
+            validator("param", z.object({ prompt: z.string().min(1) })),
+            validator("query", GenerateImageRequestQueryParamsSchema),
+            ...imageVideoHandlers,
+        )
+        .get(
+            "/video/:prompt{[\\s\\S]+}",
+            validator("param", z.object({ prompt: z.string().min(1) })),
+            validator("query", GenerateImageRequestQueryParamsSchema),
+            ...imageVideoHandlers,
+        );
+}
 
 export function contentFilterResultsToHeaders(
     response: CreateChatCompletionResponse,

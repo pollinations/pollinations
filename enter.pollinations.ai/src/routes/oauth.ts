@@ -1,4 +1,8 @@
 import { PKCE_S256_CHALLENGE_REGEX } from "@shared/auth/authorize-config.ts";
+import {
+    MCP_TOOLS_SCOPE,
+    normalizeMcpResource,
+} from "@shared/auth/mcp-resource.ts";
 import { redirectUriMatchesAllowlistExact } from "@shared/auth/redirect-uri.ts";
 import { validator } from "@shared/middleware/validator.ts";
 import type { Context } from "hono";
@@ -18,6 +22,7 @@ import { getRedirectUris } from "./metadata-utils.ts";
 
 const KV_TTL = 600; // 10 minutes — codes are single-use and short-lived
 const CODE_LENGTH = 40;
+const MAX_CLIENT_METADATA_BYTES = 64 * 1024;
 export const DEVICE_CODE_GRANT = "urn:ietf:params:oauth:grant-type:device_code";
 
 /** What the consent page stored when the user approved the request. */
@@ -28,6 +33,7 @@ type StoredCode = {
     scope: string | null;
     codeChallenge: string;
     expiresIn: number | null;
+    resource: string | null;
 };
 
 /**
@@ -59,13 +65,62 @@ function tokenError(c: Context<Env>, error: string, description?: string) {
 
 const CreateCodeSchema = z.object({
     apiKey: z.string().min(1),
-    clientId: z.string().startsWith("pk_"),
+    clientId: z.string().min(1),
     redirectUri: z.string().min(1),
     scope: z.string().optional(),
     codeChallenge: z.string().regex(PKCE_S256_CHALLENGE_REGEX),
     codeChallengeMethod: z.literal("S256"),
     expiresIn: z.number().int().positive().nullish(),
+    resource: z.string().url().optional(),
 });
+
+function isClientMetadataUrl(clientId: string): boolean {
+    try {
+        const url = new URL(clientId);
+        return (
+            url.protocol === "https:" &&
+            Boolean(url.pathname && url.pathname !== "/") &&
+            !url.username &&
+            !url.password &&
+            url.hostname !== "localhost" &&
+            !url.hostname.endsWith(".localhost") &&
+            !url.hostname.endsWith(".local") &&
+            !url.hostname.endsWith(".internal") &&
+            !/^\d{1,3}(?:\.\d{1,3}){3}$/.test(url.hostname) &&
+            !url.hostname.includes(":")
+        );
+    } catch {
+        return false;
+    }
+}
+
+async function validateClientMetadataDocument(
+    clientId: string,
+    redirectUri: string,
+): Promise<boolean> {
+    if (!isClientMetadataUrl(clientId)) return false;
+
+    const response = await fetch(clientId, {
+        redirect: "error",
+        signal: AbortSignal.timeout(10_000),
+    }).catch(() => null);
+    if (!response?.ok) return false;
+    const size = Number(response.headers.get("content-length"));
+    if (Number.isFinite(size) && size > MAX_CLIENT_METADATA_BYTES) return false;
+    const text = await response.text();
+    if (text.length > MAX_CLIENT_METADATA_BYTES) return false;
+    let metadata: { client_id?: unknown; redirect_uris?: unknown };
+    try {
+        metadata = JSON.parse(text) as typeof metadata;
+    } catch {
+        return false;
+    }
+    return (
+        metadata.client_id === clientId &&
+        Array.isArray(metadata.redirect_uris) &&
+        metadata.redirect_uris.includes(redirectUri)
+    );
+}
 
 /**
  * OAuth 2.1 authorization-code grant with PKCE (S256 only), layered on the
@@ -86,26 +141,63 @@ export const oauthRoutes = new Hono<Env>()
         async (c) => {
             c.var.auth.requireUser();
             const body = c.req.valid("json");
+            const resource = body.resource
+                ? normalizeMcpResource(body.resource)
+                : null;
+            if (body.resource && !resource) {
+                throw new HTTPException(400, {
+                    message: "Unsupported OAuth resource",
+                });
+            }
 
             // Re-validate the client/redirect binding server-side; the same
             // check runs at sk_ minting, but the code is the artifact that
             // leaves our origin, so it must never bind an unregistered
             // redirect (RFC 6749 §3.1.2). verifyApiKey returns the key row
             // with metadata already parsed.
-            const result = await c.var.auth.client.api.verifyApiKey({
-                body: { key: body.clientId },
-            });
-            if (!result.valid || !result.key) {
+            const isMetadataClient = isClientMetadataUrl(body.clientId);
+            const result = isMetadataClient
+                ? null
+                : await c.var.auth.client.api.verifyApiKey({
+                      body: { key: body.clientId },
+                  });
+            if (!isMetadataClient && (!result?.valid || !result.key)) {
+                throw new HTTPException(400, { message: "Unknown client_id" });
+            }
+            if (resource) {
+                const issuedKey = await c.var.auth.client.api.verifyApiKey({
+                    body: { key: body.apiKey },
+                });
+                if (
+                    !issuedKey.valid ||
+                    issuedKey.key?.metadata?.oauthResource !== resource
+                ) {
+                    throw new HTTPException(400, {
+                        message:
+                            "API key is not bound to the requested resource",
+                    });
+                }
+            }
+            if (
+                resource &&
+                !body.scope?.split(/\s+/).includes(MCP_TOOLS_SCOPE)
+            ) {
                 throw new HTTPException(400, {
-                    message: "Unknown client_id",
+                    message: `Scope ${MCP_TOOLS_SCOPE} is required for MCP`,
                 });
             }
             // Exact matching (incl. query) — the code rides the query string,
             // so the legacy flow's extra-query leniency doesn't apply here.
-            const allowlist = getRedirectUris(result.key.metadata ?? {});
-            if (
-                !redirectUriMatchesAllowlistExact(body.redirectUri, allowlist)
-            ) {
+            const redirectAllowed = isMetadataClient
+                ? await validateClientMetadataDocument(
+                      body.clientId,
+                      body.redirectUri,
+                  )
+                : redirectUriMatchesAllowlistExact(
+                      body.redirectUri,
+                      getRedirectUris(result?.key?.metadata ?? {}),
+                  );
+            if (!redirectAllowed) {
                 throw new HTTPException(400, {
                     message:
                         "redirect_uri is not registered for this client_id",
@@ -122,6 +214,7 @@ export const oauthRoutes = new Hono<Env>()
                 scope: body.scope ?? null,
                 codeChallenge: body.codeChallenge,
                 expiresIn: body.expiresIn ?? null,
+                resource,
             };
             await c.env.KV.put(`oauth-code:${code}`, JSON.stringify(stored), {
                 expirationTtl: KV_TTL,
@@ -193,12 +286,16 @@ export const oauthRoutes = new Hono<Env>()
         if (!(await verifyPkceS256(body.code_verifier, stored.codeChallenge))) {
             return tokenError(c, "invalid_grant", "PKCE verification failed");
         }
+        if (stored.resource && body.resource !== stored.resource) {
+            return tokenError(c, "invalid_grant", "resource mismatch");
+        }
 
         return c.json({
             access_token: stored.key,
             token_type: "bearer",
             ...(stored.expiresIn != null && { expires_in: stored.expiresIn }),
             ...(stored.scope != null && { scope: stored.scope }),
+            ...(stored.resource != null && { resource: stored.resource }),
         });
     })
     .get(

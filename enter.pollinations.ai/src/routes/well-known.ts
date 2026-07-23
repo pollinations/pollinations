@@ -1,4 +1,5 @@
 import { CONSENT_PERMISSIONS } from "@shared/auth/authorize-config.ts";
+import { MCP_TOOLS_SCOPE } from "@shared/auth/mcp-resource.ts";
 import { getPublicOrigin } from "@shared/public-origin.ts";
 import { Hono } from "hono";
 import type { Env } from "../env.ts";
@@ -21,11 +22,12 @@ export const wellKnownRoutes = new Hono<Env>().get(
             token_endpoint: `${origin}/api/oauth/token`,
             userinfo_endpoint: `${origin}/api/oauth/userinfo`,
             device_authorization_endpoint: `${origin}/api/device/code`,
-            scopes_supported: [...CONSENT_PERMISSIONS],
+            scopes_supported: [...CONSENT_PERMISSIONS, MCP_TOOLS_SCOPE],
             response_types_supported: ["code"],
             grant_types_supported: ["authorization_code", DEVICE_CODE_GRANT],
             code_challenge_methods_supported: ["S256"],
             token_endpoint_auth_methods_supported: ["none"],
+            client_id_metadata_document_supported: true,
             service_documentation: `${origin}/api/docs`,
         });
     },

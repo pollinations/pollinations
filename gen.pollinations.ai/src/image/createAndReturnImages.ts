@@ -14,7 +14,10 @@ import {
     callIdeogramTurboAPI,
 } from "./models/ideogramReplicateModel.ts";
 import { callNovaCanvasAPI } from "./models/novaCanvasModel.ts";
-import { callOpenRouterGrokImagineProAPI } from "./models/openRouterImageModel.ts";
+import {
+    callOpenRouterGeminiImageAPI,
+    callOpenRouterGrokImagineProAPI,
+} from "./models/openRouterImageModel.ts";
 import {
     callPrunaImageAPI,
     callPrunaImageEditAPI,
@@ -740,7 +743,28 @@ const generateImage = async (
             }
         }
 
-        case "nanobanana":
+        case "nanobanana": {
+            logError(
+                "Nano Banana authentication check:",
+                formatAuthInfo(userInfo),
+            );
+
+            try {
+                if (safeParams.safe) {
+                    await requireSafePrompt(prompt, safeParams, userInfo);
+                }
+
+                return await callOpenRouterGeminiImageAPI(prompt, safeParams);
+            } catch (error) {
+                logError(
+                    "OpenRouter Gemini image generation or safety check failed:",
+                    error.message,
+                );
+                await logGptImageError(prompt, safeParams, userInfo, error);
+                throw error;
+            }
+        }
+
         case "nanobanana-2":
         case "nanobanana-2-lite":
         case "nanobanana-pro": {

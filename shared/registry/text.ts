@@ -1234,6 +1234,30 @@ export const TEXT_SERVICES = {
         contextLength: 1048576,
         isSpecialized: false,
     },
+    "longcat": {
+        aliases: ["longcat-2.0", "longcat-2"],
+        provider: "openrouter",
+        brand: "Meituan",
+        category: "text",
+        addedDate: new Date("2026-07-23").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1,
+        cost: {
+            // OpenRouter AtlasCloud FP8 route rates (2026-07-23).
+            promptTextTokens: perMillion(0.3),
+            promptCachedTokens: perMillion(0.006),
+            completionTextTokens: perMillion(1.2),
+        },
+        title: "LongCat 2.0",
+        description:
+            "Long-context reasoning for coding agents and repository-scale tasks",
+        inputModalities: ["text"],
+        outputModalities: ["text"],
+        tools: true,
+        reasoning: true,
+        contextLength: 1048576,
+        isSpecialized: false,
+    },
     "mimo-v2.5": {
         aliases: ["mimo", "mimo-2.5"],
         provider: "openrouter",

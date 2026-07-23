@@ -762,6 +762,18 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.0000001,
     },
   },
+  "longcat": {
+    "cost": {
+      "completionTextTokens": 0.0000012,
+      "promptCachedTokens": 0.000000006,
+      "promptTextTokens": 0.0000003,
+    },
+    "price": {
+      "completionTextTokens": 0.0000012,
+      "promptCachedTokens": 0.000000006,
+      "promptTextTokens": 0.0000003,
+    },
+  },
   "mercury": {
     "cost": {
       "completionTextTokens": 0.00000075,

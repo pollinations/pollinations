@@ -170,6 +170,16 @@ export const portkeyConfig: PortkeyConfigMap = {
                 },
             },
         }),
+    "meituan/longcat-2.0": () =>
+        createOpenRouterModelConfig({
+            model: "meituan/longcat-2.0",
+            defaultOptions: {
+                provider: {
+                    only: ["atlas-cloud/fp8"],
+                    allow_fallbacks: false,
+                },
+            },
+        }),
 
     // -- OpenRouter (Gemma) ---------------------------------------------------
     // Moved off DeepInfra: OpenRouter serves the same SKU ~cheaper ($0.06/$0.33

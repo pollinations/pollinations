@@ -2,7 +2,6 @@ import {
     Alert,
     Button,
     ButtonGroup,
-    CheckIcon,
     ChevronIcon,
     Dialog,
     DialogTitle,
@@ -12,8 +11,14 @@ import {
     Input,
     ScrollArea,
     TabButton,
+    Textarea,
 } from "@pollinations/ui";
-import type { CommunityEndpointVisibility } from "@shared/community-endpoints.ts";
+import { ModalityTab } from "@pollinations/ui/gen";
+import {
+    COMMUNITY_ENDPOINT_DESCRIPTION_MAX_LENGTH,
+    COMMUNITY_ENDPOINT_TITLE_MAX_LENGTH,
+    type CommunityEndpointVisibility,
+} from "@shared/community-endpoints.ts";
 import type { FormEvent, ReactNode } from "react";
 import { useEffect, useState } from "react";
 import { apiClient } from "../../api.ts";
@@ -277,6 +282,7 @@ export function CommunityEndpointDialog({
     const canSubmit =
         !isSubmitting &&
         form.name.trim() !== "" &&
+        form.title.trim() !== "" &&
         form.baseUrl.trim() !== "" &&
         hasValidVisiblePrices &&
         saveRequirementMet;
@@ -321,19 +327,15 @@ export function CommunityEndpointDialog({
                         }
                         alignLabelRow
                     >
-                        <div className="grid grid-cols-2 gap-2">
+                        <ButtonGroup aria-label="Model modality">
                             {(["text", "image"] as const).map((modality) => {
-                                const selected = form.modality === modality;
                                 return (
-                                    <button
+                                    <ModalityTab
                                         key={modality}
-                                        type="button"
+                                        active={form.modality === modality}
                                         disabled={isEdit}
-                                        className={`rounded-md border px-3 py-2 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-60 ${
-                                            selected
-                                                ? "border-theme-border-active bg-theme-bg-active text-theme-text-strong"
-                                                : "border-divider bg-surface text-theme-text-muted hover:bg-surface-opaque"
-                                        }`}
+                                        size="sm"
+                                        className="min-w-24"
                                         onClick={() =>
                                             updateForm("modality", modality)
                                         }
@@ -341,10 +343,10 @@ export function CommunityEndpointDialog({
                                         {modality === "image"
                                             ? "Image"
                                             : "Text"}
-                                    </button>
+                                    </ModalityTab>
                                 );
                             })}
-                        </div>
+                        </ButtonGroup>
                     </FieldStack>
 
                     <div className="grid gap-4 sm:grid-cols-2">
@@ -367,22 +369,43 @@ export function CommunityEndpointDialog({
                             />
                         </FieldStack>
                         <FieldStack
-                            label="Description"
-                            helper="Shown in the Models list, like registry models."
+                            label="Title"
+                            helper={`Shown as the model name. Up to ${COMMUNITY_ENDPOINT_TITLE_MAX_LENGTH} characters.`}
                             alignLabelRow
                         >
                             <Input
-                                name="community-model-description"
-                                value={form.description}
-                                placeholder="Fast coding model, long context"
+                                name="community-model-title"
+                                value={form.title}
+                                placeholder="Fast Coding Model"
                                 autoComplete="off"
-                                maxLength={240}
+                                maxLength={COMMUNITY_ENDPOINT_TITLE_MAX_LENGTH}
+                                required
                                 onChange={(e) =>
-                                    updateForm("description", e.target.value)
+                                    updateForm("title", e.target.value)
                                 }
                             />
                         </FieldStack>
                     </div>
+
+                    <FieldStack
+                        label="Description"
+                        helper={`Shown below the title in the Models list. Up to ${COMMUNITY_ENDPOINT_DESCRIPTION_MAX_LENGTH} characters.`}
+                        alignLabelRow
+                    >
+                        <Textarea
+                            name="community-model-description"
+                            value={form.description}
+                            placeholder="Fast coding model with a long context window."
+                            autoComplete="off"
+                            maxLength={
+                                COMMUNITY_ENDPOINT_DESCRIPTION_MAX_LENGTH
+                            }
+                            rows={4}
+                            onChange={(e) =>
+                                updateForm("description", e.target.value)
+                            }
+                        />
+                    </FieldStack>
 
                     <FieldStack
                         label="Visibility"
@@ -400,11 +423,8 @@ export function CommunityEndpointDialog({
                                 active={form.visibility === "private"}
                                 onClick={() => updateVisibility("private")}
                                 size="sm"
-                                className="min-w-24 gap-1.5"
+                                className="min-w-24"
                             >
-                                {form.visibility === "private" && (
-                                    <CheckIcon className="h-3.5 w-3.5" />
-                                )}
                                 Private
                             </TabButton>
                             <TabButton
@@ -412,11 +432,8 @@ export function CommunityEndpointDialog({
                                 disabled={!canPublish}
                                 onClick={() => updateVisibility("public")}
                                 size="sm"
-                                className="min-w-24 gap-1.5"
+                                className="min-w-24"
                             >
-                                {form.visibility === "public" && (
-                                    <CheckIcon className="h-3.5 w-3.5" />
-                                )}
                                 Public
                             </TabButton>
                         </ButtonGroup>
@@ -646,6 +663,7 @@ export function CommunityEndpointDialog({
                 <div className="flex shrink-0 justify-end gap-2 p-6 pt-4">
                     <Button
                         type="button"
+                        intent="danger"
                         className="disabled:opacity-50"
                         onClick={() => onOpenChange(false)}
                         disabled={isSubmitting}

@@ -33,10 +33,8 @@ const firstByopExternalUserQuest: QuestDefinition = {
         "A user logs in to your app using the [authorize](https://gen.pollinations.ai/docs#tag/byop) flow.",
     category: "grow",
     scope: "perUser",
-    rewardAmount: 10,
+    rewardAmount: 7,
     balanceBucket: "tier",
-    // Built but not launched — hidden from the UI, not grantable.
-    state: "coming_soon",
 };
 
 const firstPaidSpendInAppQuest: QuestDefinition = {
@@ -46,7 +44,7 @@ const firstPaidSpendInAppQuest: QuestDefinition = {
         "A user makes a paid request in your [BYOP](https://gen.pollinations.ai/docs#tag/byop) app.",
     category: "grow",
     scope: "perUser",
-    rewardAmount: 20,
+    rewardAmount: 15,
     balanceBucket: "tier",
     // Built but not launched — hidden from the UI, not grantable.
     state: "coming_soon",
@@ -61,7 +59,7 @@ const appListedQuest: QuestDefinition = {
     scope: "perUser",
     rewardAmount: 10,
     balanceBucket: "tier",
-    url: "https://github.com/pollinations/pollinations/issues/new?template=tier-app-submission.yml",
+    url: "https://github.com/pollinations/pollinations/issues/new?template=app-submission.yml",
 };
 
 const QUESTS = [

@@ -17,6 +17,24 @@ describe("fetchUpstream", () => {
         await expect(response.json()).resolves.toEqual({ ok: true });
     });
 
+    it("uses a provided fetcher", async () => {
+        const fetcher = vi
+            .fn()
+            .mockResolvedValue(new Response("vpc", { status: 200 }));
+
+        const response = await fetchUpstream(
+            "http://127.0.0.1:8000/health",
+            {},
+            fetcher,
+        );
+
+        expect(fetcher).toHaveBeenCalledWith(
+            "http://127.0.0.1:8000/health",
+            {},
+        );
+        expect(await response.text()).toBe("vpc");
+    });
+
     it("throws HttpError with upstreamUrl populated on non-ok response", async () => {
         vi.spyOn(globalThis, "fetch").mockResolvedValue(
             new Response("backend exploded", { status: 502 }),
@@ -32,6 +50,22 @@ describe("fetchUpstream", () => {
             status: 502,
             upstreamUrl: url,
             message: "Foo failed: backend exploded",
+        });
+    });
+
+    it("throws HttpError with upstreamUrl when fetch itself rejects", async () => {
+        vi.spyOn(globalThis, "fetch").mockRejectedValue(
+            new TypeError("Network connection lost"),
+        );
+
+        const url = "https://replicate.delivery/x/image.png";
+        await expect(
+            fetchUpstream(url, { errorLabel: "Failed to download output" }),
+        ).rejects.toMatchObject({
+            name: "HttpError",
+            status: 502,
+            upstreamUrl: url,
+            message: "Failed to download output: Network connection lost",
         });
     });
 

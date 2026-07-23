@@ -235,7 +235,7 @@ TOKEN=$(grep ENTER_API_TOKEN_REMOTE enter.pollinations.ai/.testingtokens | cut -
 for i in 1 2 3 4 5; do curl -s -o /dev/null -w "HTTP %{http_code}\n" --max-time 60 \
   "https://gen.pollinations.ai/image/verify_${i}_$(date +%s%N)?model=zimage&width=512&height=512&seed=$i" \
   -H "Authorization: Bearer $TOKEN"; done
-# Then confirm the 524 trend dropped in Tinybird (model_health / generation_event, model_requested='zimage').
+# Then confirm the 524 trend dropped in Tinybird (model_health / generation_event_v2, model_requested='zimage').
 ```
 
 The registry is Cloudflare KV-backed (`image:server:<env>:<type>:<hash>`, 240s TTL); workers heartbeat to `gen.pollinations.ai/register`.
@@ -301,11 +301,18 @@ one-liner, and host gotchas live in `image.pollinations.ai/GPU_INSTANCES.md`
 
 **Check:**
 ```bash
-# flux worker(s) registered:
+# flux worker(s) registered — the `url` field is the tunnel to probe, and
+# `lastMs` is the last request's duration (a healthy 5090 is single-digit
+# seconds; tens of seconds means the tunnel is degrading, see below):
 curl -s https://gen.pollinations.ai/register | grep -o '"type":"flux"[^}]*'
-# tunnel + worker up (expect 200):
-curl -s -o /dev/null -w "%{http_code}\n" https://flux-vast-01.pollinations.ai/docs
+# then probe THAT url (expect 200 in ~1s):
+curl -s -o /dev/null -w "%{http_code} %{time_total}s\n" "<url-from-registry>/docs"
 ```
+
+Registry health is NOT data-path health: the worker heartbeats fine even when
+the tunnel in front of it is too slow to serve. Always time the probe. If
+`/docs` (a static page) takes >5s, the tunnel is the problem, not the GPU —
+compare against the worker on localhost via SSH to confirm.
 
 **Pool vs Fireworks split** — invisible in Tinybird (`model_provider_used` is
 static registry data); read it from the worker log (SSH coords from

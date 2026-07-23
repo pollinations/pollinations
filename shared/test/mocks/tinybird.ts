@@ -21,10 +21,12 @@ type PipeCall = {
 export type MockTinybirdState = {
     events: TinybirdGenerationEvent[];
     errorEvents: Record<string, unknown>[];
+    referralEvents: Record<string, unknown>[];
     stripeEvents: Record<string, unknown>[];
     dailyResponse: UsageRow[];
     usageResponse: UsageRow[];
     earningsResponse: UsageRow[];
+    earningsTransactionsResponse: UsageRow[];
     appDirectoryResponse: UsageRow[];
     paidAppSpendResponse: UsageRow[];
     modelModalitiesResponse: UsageRow[];
@@ -35,10 +37,12 @@ export function createMockTinybird(): MockAPI<MockTinybirdState> {
     const state: MockTinybirdState = {
         events: [],
         errorEvents: [],
+        referralEvents: [],
         stripeEvents: [],
         dailyResponse: [],
         usageResponse: [],
         earningsResponse: [],
+        earningsTransactionsResponse: [],
         appDirectoryResponse: [],
         paidAppSpendResponse: [],
         modelModalitiesResponse: [],
@@ -50,7 +54,7 @@ export function createMockTinybird(): MockAPI<MockTinybirdState> {
             const eventName = c.req.query("name");
             const body = await c.req.text();
 
-            if (eventName === "generation_event") {
+            if (eventName === "generation_event_v2") {
                 const events = parseNdjson<TinybirdGenerationEvent>(body);
                 if (
                     events.find((event) =>
@@ -72,6 +76,8 @@ export function createMockTinybird(): MockAPI<MockTinybirdState> {
 
             if (eventName === "error_event") {
                 state.errorEvents.push(...rows);
+            } else if (eventName === "referral_event") {
+                state.referralEvents.push(...rows);
             } else if (eventName === "stripe_event") {
                 state.stripeEvents.push(...rows);
             }
@@ -81,17 +87,21 @@ export function createMockTinybird(): MockAPI<MockTinybirdState> {
                 200,
             );
         })
-        .get("/v0/pipes/user_usage.json", (c) => {
+        .get("/v0/pipes/activity_usage_transactions.json", (c) => {
             state.pipeCalls.push({ url: c.req.url, query: c.req.query() });
             return c.json({ data: state.usageResponse }, 200);
         })
-        .get("/v0/pipes/user_usage_daily_filtered.json", (c) => {
+        .get("/v0/pipes/activity_usage_chart.json", (c) => {
             state.pipeCalls.push({ url: c.req.url, query: c.req.query() });
             return c.json({ data: state.dailyResponse }, 200);
         })
-        .get("/v0/pipes/developer_earnings.json", (c) => {
+        .get("/v0/pipes/activity_earnings_chart.json", (c) => {
             state.pipeCalls.push({ url: c.req.url, query: c.req.query() });
             return c.json({ data: state.earningsResponse }, 200);
+        })
+        .get("/v0/pipes/activity_earnings_transactions.json", (c) => {
+            state.pipeCalls.push({ url: c.req.url, query: c.req.query() });
+            return c.json({ data: state.earningsTransactionsResponse }, 200);
         })
         .get("/v0/pipes/app_directory_public.json", (c) => {
             state.pipeCalls.push({ url: c.req.url, query: c.req.query() });
@@ -104,19 +114,27 @@ export function createMockTinybird(): MockAPI<MockTinybirdState> {
         .get("/v0/pipes/quest_model_modalities.json", (c) => {
             state.pipeCalls.push({ url: c.req.url, query: c.req.query() });
             return c.json({ data: state.modelModalitiesResponse }, 200);
+        })
+        .post("/v0/datasources/:datasource/delete", (c) => {
+            return c.json({ delete_id: "mock-delete" }, 200);
         });
 
     const handlerMap = {
         "localhost:7181": createHonoMockHandler(tinybirdAPI),
+        // The D1→Tinybird sync service uses a hardcoded base URL, so the
+        // real host must be intercepted too or tests hit live Tinybird.
+        "api.europe-west2.gcp.tinybird.co": createHonoMockHandler(tinybirdAPI),
     };
 
     const reset = () => {
         state.events = [];
         state.errorEvents = [];
+        state.referralEvents = [];
         state.stripeEvents = [];
         state.dailyResponse = [];
         state.usageResponse = [];
         state.earningsResponse = [];
+        state.earningsTransactionsResponse = [];
         state.appDirectoryResponse = [];
         state.paidAppSpendResponse = [];
         state.modelModalitiesResponse = [];

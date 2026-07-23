@@ -90,7 +90,7 @@ function PlayPage() {
                         {pageCopy.subtitleSuffix}
                     </Body>
                     <a
-                        href={LINKS.enter}
+                        href={LINKS.enterModels}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="font-headline text-xs font-black hover:underline inline-flex items-center gap-1 text-dark bg-accent-strong px-2 py-0.5"

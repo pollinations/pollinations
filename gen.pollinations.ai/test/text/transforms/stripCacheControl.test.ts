@@ -87,7 +87,7 @@ describe("cache_control passthrough (vertex explicit caching)", () => {
     it.each([
         "gemini-3-flash",
         "gemini",
-        "gemini-flash-lite-3.1",
+        "gemini-flash-lite-3.5",
         "gemini-fast",
         "gemini-large",
     ])("%s transform preserves content-block cache_control markers", async (modelName) => {

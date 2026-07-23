@@ -1,0 +1,155 @@
+import { Chip } from "@pollinations/ui";
+
+export type ProvenanceCode =
+    | "EN"
+    | "WISE"
+    | "TB"
+    | "ST"
+    | "API"
+    | "CLI"
+    | "BQ"
+    | "HC"
+    | "INV"
+    | "EXP"
+    | "ING"
+    | "AGT";
+
+const PROVENANCE: Record<ProvenanceCode, { title: string; display?: string }> =
+    {
+        EN: {
+            title: "Enty - monthly transactions export",
+        },
+        WISE: {
+            title: "Wise - bank activity",
+        },
+        TB: {
+            title: "Tinybird - generation event usage",
+        },
+        ST: {
+            title: "Stripe - revenue and fees, live on refresh",
+        },
+        API: {
+            title: "Vendor API - read live on refresh",
+        },
+        CLI: {
+            title: "Vendor CLI - read live on refresh",
+        },
+        BQ: {
+            title: "BigQuery - vendor usage export",
+        },
+        HC: {
+            title: "Manual, hardcoded, or operator-corrected value",
+        },
+        INV: {
+            title: "Vendor invoice document - ingest evidence",
+        },
+        EXP: {
+            title: "Vendor console or billing export - ingest evidence",
+        },
+        ING: {
+            title: "Ingest batch - agent-extracted evidence entry",
+        },
+        AGT: {
+            title: "Agent-computed row derived from vendor data during reconcile",
+        },
+    };
+
+const SOURCE_META: Record<
+    string,
+    { code: ProvenanceCode; display: string; title?: string }
+> = {
+    enty: { code: "EN", display: "EN" },
+    en: { code: "EN", display: "EN" },
+    wise: { code: "WISE", display: "WISE" },
+    api: { code: "API", display: "API" },
+    cli: { code: "CLI", display: "CLI" },
+    bq: { code: "BQ", display: "BQ" },
+    manual: { code: "HC", display: "HC" },
+    hc: { code: "HC", display: "HC" },
+    stripe: { code: "ST", display: "ST" },
+    st: { code: "ST", display: "ST" },
+    tinybird: { code: "TB", display: "TB" },
+    tb: { code: "TB", display: "TB" },
+    invoice: { code: "INV", display: "INV" },
+    export: { code: "EXP", display: "EXP" },
+    ingest: { code: "ING", display: "ING" },
+    agent: { code: "AGT", display: "AGT" },
+    usage: {
+        code: "HC",
+        display: "HC",
+        title: "Vendor usage is missing; placeholder row is generated for operator fill-in.",
+    },
+};
+
+function sourceMeta(source: string) {
+    const normalized = source.toLowerCase();
+    const meta = SOURCE_META[normalized];
+    if (!meta) {
+        throw new Error(`Unknown source badge: ${source}`);
+    }
+    return meta;
+}
+
+function sourceTitle(source: string, code: ProvenanceCode, custom?: string) {
+    return custom ?? `${source}: ${PROVENANCE[code].title}`;
+}
+
+function InlineSourceBadge({ source }: { source: string }) {
+    if (!source) return null;
+
+    const meta = sourceMeta(source);
+
+    return (
+        <Chip
+            data-theme="neutral"
+            intent="neutral"
+            size="sm"
+            className="font-mono"
+            title={sourceTitle(source, meta.code, meta.title)}
+        >
+            {meta.display}
+        </Chip>
+    );
+}
+
+function normalizeSource(source: string) {
+    const normalized = source.trim().toLowerCase();
+    if (!normalized) return "";
+    if (normalized === "mixed") return "";
+    return normalized;
+}
+
+function uniqueSources(sources: readonly (string | null | undefined)[]) {
+    const normalized = sources
+        .flatMap((source) => (source ?? "").split(/[,+/ ]+/))
+        .map(normalizeSource)
+        .filter(Boolean);
+    return [...new Set(normalized)];
+}
+
+export function SourceCell({
+    sources,
+}: {
+    sources: readonly (string | null | undefined)[];
+}) {
+    const unique = uniqueSources(sources);
+    const seen = new Set<string>();
+    const badges = unique
+        .filter((source) => source !== "usage")
+        .filter((source) => {
+            const meta = sourceMeta(source);
+            const key = `${meta.code}:${meta.display}`;
+            if (seen.has(key)) return false;
+            seen.add(key);
+            return true;
+        });
+    if (badges.length === 0) return <span>-</span>;
+
+    return (
+        <span className="inline-flex items-center gap-1.5 whitespace-nowrap align-middle">
+            {badges.map((source) => (
+                <InlineSourceBadge key={source} source={source} />
+            ))}
+        </span>
+    );
+}

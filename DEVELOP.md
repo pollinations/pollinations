@@ -27,7 +27,7 @@ sops --output-type dotenv decrypt secrets/dev.vars.json > .dev.vars   # enter.po
 sops --output-type dotenv decrypt secrets/env.json > .env             # generation service secrets
 ``` 
 
-The variables are kept encrypted in `**/secrets/*.json`. If you need to edit them, run `sops edit /secrets/file.json`. This will open an editor and when you save the file, write it to the encrypted file. `enter.pollinations.ai` uses `secrets/{dev,staging,prod}.vars.json` for app/runtime secrets; `tools/scripts/rotation/secrets.vars.json` is only for local operator admin credentials used by rotation scripts. (hint: set the editor env variable: `export EDITOR=/path/to/your/editor` to open with your favorite editor)
+The variables are kept encrypted in `**/secrets/*.json`. If you need to edit them, run `sops edit /secrets/file.json`. This will open an editor and when you save the file, write it to the encrypted file. `enter.pollinations.ai` uses `secrets/{dev,staging,prod}.vars.json` for app/runtime secrets. Credential rotation is agent-driven — see `apps/operation/economics/ingest/agent.system.txt`'s `secret` mode and the `## Rotation` section in each `apps/operation/economics/ingest/connectors/*.md` guide. (hint: set the editor env variable: `export EDITOR=/path/to/your/editor` to open with your favorite editor)
 
 
 ###### Common SOPS commands:
@@ -191,7 +191,7 @@ graph TD
         ENTER["🔐 enter.pollinations.ai · API Gateway\n─────────────────\n🔑 OAuth + API Keys (pk_ / sk_)\n💰 Pollen wallet (Quest + Paid buckets)\n⏱️ Rate Limiting (Durable Objects)\n📊 Usage → TinyBird\n🔄 Response dedup"]:::cfWorker
         IMG_ROUTER["🎨 Image/video router\nHono routes · KV heartbeats\nProvider + GPU dispatch"]:::cfWorkerLight
         PORTKEY_W["🔀 portkey.pollinations.ai\nText routing worker"]:::cfWorkerLight
-        MEDIA["📁 media.pollinations.ai\nSHA-256 uploads · 10MB"]:::cfWorkerLight
+        MEDIA["📁 media.pollinations.ai\nUUID uploads · 100MB\nR2 30-day lifecycle"]:::cfWorkerLight
         FRONT["🌐 pollinations.ai\nReact + Vite SPA"]:::cfWorkerLight
     end
 
@@ -239,12 +239,10 @@ graph TD
 
     subgraph PAY["💳 Payments"]
         STRIPE["Stripe · packs"]:::payment
-        POLAR["Polar · subs"]:::payment
         NOWPAY["NOWPay · crypto"]:::payment
     end
 
     STRIPE -.->|"webhooks"| ENTER
-    POLAR -.->|"webhooks"| ENTER
     NOWPAY -.->|"IPN"| ENTER
 
     subgraph SOCIAL["📢 Social Automation"]
@@ -254,7 +252,7 @@ graph TD
     end
 
     subgraph CICD["🔧 GitHub Actions · CI/CD"]
-        GH["29 workflows\n5 deploys · 7 crons\nPolly bot · app review\nBiome · CodeQL · tests"]:::cicd
+        GH["29 workflows\n5 deploys · 7 crons\nPolli bot · app review\nBiome · CodeQL · tests"]:::cicd
         SOPS_S["🔒 SOPS + AGE\n28 secrets"]:::cicd
     end
 
@@ -285,3 +283,9 @@ graph TD
     classDef social fill:#713F12,color:#FEFCE8,stroke:#FACC15,stroke-width:1px
     classDef cicd fill:#374151,color:#F3F4F6,stroke:#9CA3AF,stroke-width:1px
 ```
+
+Billing history: Polar handled pack billing and free daily tier subscriptions
+before the Stripe/D1 migration at the end of January 2026. The remaining Polar
+runtime and webhook integration was removed on May 2, 2026. Historical Polar
+handling for accounting lives in the economics ingest connector prompt
+(`apps/operation/economics/ingest/agent.system.txt`).

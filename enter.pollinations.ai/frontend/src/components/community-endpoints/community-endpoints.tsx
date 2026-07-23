@@ -19,15 +19,22 @@ import {
 
 type CommunityEndpointsProps = {
     onChange?: () => void | Promise<void>;
+    // Allowlisted owners can make models public (set prices, list in /models).
+    // Everyone else can only create and edit private, owner-only models.
+    canPublish: boolean;
 };
 
-export function CommunityEndpoints({ onChange }: CommunityEndpointsProps) {
+export function CommunityEndpoints({
+    onChange,
+    canPublish,
+}: CommunityEndpointsProps) {
     const [endpoints, setEndpoints] = useState<CommunityEndpoint[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [createOpen, setCreateOpen] = useState(false);
     const [editing, setEditing] = useState<CommunityEndpoint | null>(null);
     const [deleting, setDeleting] = useState<CommunityEndpoint | null>(null);
+    const [togglingId, setTogglingId] = useState<string | null>(null);
 
     const loadEndpoints = useCallback(async (): Promise<void> => {
         setError(null);
@@ -95,6 +102,64 @@ export function CommunityEndpoints({ onChange }: CommunityEndpointsProps) {
         }
     }
 
+    async function handleToggle(endpoint: CommunityEndpoint): Promise<void> {
+        setTogglingId(endpoint.id);
+        setError(null);
+        try {
+            const response = await apiClient.account["my-models"][
+                ":id"
+            ].update.$post({
+                param: { id: endpoint.id },
+                json: { active: endpoint.disabled },
+            });
+            if (!response.ok) throw new Error(await readError(response));
+            const updated = (await response.json()) as CommunityEndpoint;
+            setEndpoints((current) =>
+                current.map((item) =>
+                    item.id === updated.id ? updated : item,
+                ),
+            );
+            await onChange?.();
+        } catch (thrown) {
+            setError(
+                thrown instanceof Error
+                    ? thrown.message
+                    : "Model status update failed",
+            );
+        } finally {
+            setTogglingId(null);
+        }
+    }
+
+    const privateModelGuidance = (
+        <>
+            Your models are private — callable only by you and shown only when{" "}
+            <strong>/models</strong> is authenticated with your API key. Enter
+            the upstream model ID manually, then test the saved model by calling
+            its model ID. Public publishing is allowlist-only. To request
+            publishing access for your account, submit a{" "}
+            <a
+                href="https://github.com/pollinations/pollinations/issues/new?template=community-model-allowlist.yml"
+                target="_blank"
+                rel="noreferrer"
+                className="underline hover:text-theme-text-strong"
+            >
+                community model publisher allowlist request
+            </a>{" "}
+            form. You can register and test private models without approval. For
+            questions, ask in{" "}
+            <a
+                href="https://discord.gg/pollinations-ai-885844321461485618"
+                target="_blank"
+                rel="noreferrer"
+                className="underline hover:text-theme-text-strong"
+            >
+                Discord
+            </a>
+            .
+        </>
+    );
+
     return (
         <>
             <Section
@@ -105,6 +170,7 @@ export function CommunityEndpoints({ onChange }: CommunityEndpointsProps) {
                         open={createOpen}
                         onOpenChange={setCreateOpen}
                         onSubmit={handleCreate}
+                        canPublish={canPublish}
                         trigger={
                             <Button
                                 type="button"
@@ -134,9 +200,9 @@ export function CommunityEndpoints({ onChange }: CommunityEndpointsProps) {
                                 Register your first model
                             </p>
                             <p className="text-sm text-theme-text-muted">
-                                Expose an OpenAI-compatible endpoint as a
-                                community model with your own per-1M-token
-                                pricing.
+                                {canPublish
+                                    ? "Publish an OpenAI-compatible text or image endpoint with your own pricing."
+                                    : privateModelGuidance}
                             </p>
                         </Surface>
                     ) : (
@@ -144,20 +210,32 @@ export function CommunityEndpoints({ onChange }: CommunityEndpointsProps) {
                             <CommunityEndpointCard
                                 key={endpoint.id}
                                 endpoint={endpoint}
+                                isToggling={togglingId === endpoint.id}
+                                onToggle={() => void handleToggle(endpoint)}
                                 onEdit={() => setEditing(endpoint)}
                                 onDelete={() => setDeleting(endpoint)}
                             />
                         ))
                     )}
                 </div>
-                <p className="mt-4 flex items-start gap-1.5 border-t border-divider pt-4 text-[13px] leading-snug text-theme-text-muted">
-                    <TokensIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-                    <span>
-                        Published community models appear in{" "}
-                        <strong>/models</strong> and are billed to callers at
-                        your per-1M-token pricing.
-                    </span>
-                </p>
+                {!isLoading && endpoints.length > 0 && (
+                    <p className="mt-4 flex items-start gap-1.5 border-t border-divider pt-4 text-[13px] leading-snug text-theme-text-muted">
+                        <TokensIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                        <span>
+                            {canPublish ? (
+                                <>
+                                    Private models are callable only by you and
+                                    shown only when model lists use your API
+                                    key. Make one public to list it for everyone
+                                    in <strong>/models</strong> and bill callers
+                                    at your configured pricing.
+                                </>
+                            ) : (
+                                privateModelGuidance
+                            )}
+                        </span>
+                    </p>
+                )}
             </Section>
 
             <CommunityEndpointDialog
@@ -166,6 +244,7 @@ export function CommunityEndpoints({ onChange }: CommunityEndpointsProps) {
                 open={!!editing}
                 onOpenChange={(open) => !open && setEditing(null)}
                 onSubmit={handleUpdate}
+                canPublish={canPublish}
             />
 
             <CommunityEndpointDeleteConfirmation

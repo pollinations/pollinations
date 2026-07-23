@@ -7,6 +7,12 @@
 import { UpstreamError } from "@shared/error.ts";
 import { getPublicOrigin } from "@shared/public-origin.ts";
 import {
+    buildUsageHeaders,
+    type OpenAIImageUsage,
+    parseUsageHeaders,
+    usageToOpenAIImageUsage,
+} from "@shared/registry/usage-headers.ts";
+import {
     type CreateImageEditRequest,
     CreateImageEditRequestSchema,
     type CreateImageRequest,
@@ -28,11 +34,29 @@ const PASSTHROUGH_PARAMS = ["safe", "transparent", "guidance_scale"] as const;
 function imageResponse(
     data: { url?: string; b64_json?: string },
     prompt: string,
+    usage: OpenAIImageUsage,
 ) {
     return {
         created: Math.floor(Date.now() / 1000),
         data: [{ ...data, revised_prompt: prompt }],
+        usage,
     };
+}
+
+function responseImageUsage(
+    c: Context<Env>,
+    response: Response,
+): OpenAIImageUsage {
+    const usage = parseUsageHeaders(response.headers);
+    const modelUsed = response.headers.get("x-model-used");
+    if (!modelUsed) throw new Error("Image response is missing x-model-used");
+
+    for (const [name, value] of Object.entries(
+        buildUsageHeaders(modelUsed, usage),
+    )) {
+        c.header(name, value);
+    }
+    return usageToOpenAIImageUsage(usage);
 }
 
 /** Resolve OpenAI params to Pollinations equivalents. */
@@ -176,6 +200,12 @@ export async function handleImageGeneration(c: Context<Env>) {
     const body = c.req.valid("json" as never) as CreateImageRequest &
         Record<string, unknown>;
     const model = c.var.model.resolved;
+    if (body.response_format === "url" && c.var.model.communityEndpoint) {
+        throw new UpstreamError(400 as ContentfulStatusCode, {
+            message:
+                'Community image models support response_format "b64_json" only',
+        });
+    }
     const resolved = resolveParams(body);
     const safePrompt = await applySafety(
         c,
@@ -191,6 +221,7 @@ export async function handleImageGeneration(c: Context<Env>) {
         model,
     });
     c.var.track.overrideResponseTracking(response.clone());
+    const usage = responseImageUsage(c, response);
 
     if (body.response_format === "url") {
         const origin = getPublicOrigin(c);
@@ -209,14 +240,16 @@ export async function handleImageGeneration(c: Context<Env>) {
         await response.arrayBuffer();
         return withSafetyHeaders(
             c,
-            c.json(imageResponse({ url: imageUrl.toString() }, safePrompt)),
+            c.json(
+                imageResponse({ url: imageUrl.toString() }, safePrompt, usage),
+            ),
         );
     }
 
     const base64 = arrayBufferToBase64(await response.arrayBuffer());
     return withSafetyHeaders(
         c,
-        c.json(imageResponse({ b64_json: base64 }, safePrompt)),
+        c.json(imageResponse({ b64_json: base64 }, safePrompt, usage)),
     );
 }
 
@@ -236,10 +269,11 @@ export async function handleImageEdit(c: Context<Env>) {
         model: c.var.model.resolved,
     });
     c.var.track.overrideResponseTracking(response.clone());
+    const usage = responseImageUsage(c, response);
 
     const base64 = arrayBufferToBase64(await response.arrayBuffer());
     return withSafetyHeaders(
         c,
-        c.json(imageResponse({ b64_json: base64 }, safePrompt)),
+        c.json(imageResponse({ b64_json: base64 }, safePrompt, usage)),
     );
 }

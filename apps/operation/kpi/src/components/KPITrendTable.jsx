@@ -94,7 +94,7 @@ export function KPITrendTable({ weeklyData, title }) {
             category: "Acquisition",
             format: "number",
             tooltip:
-                "Users who made at least one API request within 7 days of registration. Source: D1 + Tinybird (generation_event)",
+                "Users who made at least one API request within 7 days of registration. Source: D1 + Tinybird (generation_event_v2)",
         },
         {
             key: "activationRate",
@@ -111,7 +111,7 @@ export function KPITrendTable({ weeklyData, title }) {
             category: "Usage",
             format: "number",
             tooltip:
-                "Weekly Active Users: Unique users with at least one API request this week. Source: Tinybird (uniqExact(user_id) from generation_event)",
+                "Weekly Active Users: Unique users with at least one API request this week. Source: Tinybird (uniqExact(user_id) from generation_event_v2)",
         },
         {
             key: "tokens",
@@ -136,7 +136,7 @@ export function KPITrendTable({ weeklyData, title }) {
             category: "Revenue",
             format: "currency",
             tooltip:
-                "Gross revenue in USD from pollen pack purchases. Source: Polar API (order amounts)",
+                "Gross revenue in USD from pollen pack purchases. Source: Stripe checkout events in Tinybird.",
         },
         {
             key: "packPurchases",
@@ -144,7 +144,7 @@ export function KPITrendTable({ weeklyData, title }) {
             category: "Revenue",
             format: "number",
             tooltip:
-                "Count of completed pollen pack purchases this week. Source: Polar API (successful orders)",
+                "Count of completed pollen pack purchases this week. Source: Stripe checkout events in Tinybird.",
         },
         {
             key: "arpa",
@@ -165,7 +165,7 @@ export function KPITrendTable({ weeklyData, title }) {
                     ? ((w.revenue - (w.costUsd || 0)) / w.revenue) * 100
                     : null,
             tooltip:
-                "Formula: (Revenue - COGS) / Revenue × 100. Higher is better. COGS = compute costs from generation_event.total_cost (GPU, tokens, providers).",
+                "Formula: (Revenue - COGS) / Revenue × 100. Higher is better. COGS = compute costs from generation_event_v2.total_cost (GPU, tokens, providers).",
         },
         {
             key: "revenuePerMTokens",
@@ -231,7 +231,7 @@ export function KPITrendTable({ weeklyData, title }) {
             category: "Community",
             format: "number",
             tooltip:
-                "New app submissions via GitHub issues (TIER-APP label). Counts issues created this week.",
+                "New app submissions via GitHub issues (APP-SUBMISSION label). Counts issues created this week.",
         },
     ];
 

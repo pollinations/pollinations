@@ -3,20 +3,19 @@
 Tier 2: Daily Publish
 
 Publishes daily content from the news branch. Two modes via PUBLISH_MODE env var:
-  - "buffer": Stage Twitter + Instagram to Buffer (called by NEWS_summary.yml after generation)
-  - "direct": Deploy Reddit to VPS (called by NEWS_publish.yml cron at 15:00 UTC)
+  - "buffer": Stage Twitter to Buffer (called by news-generate-summary.yml after generation)
+  - "direct": Deploy Reddit to VPS (called by news-publish-social.yml cron at 15:00 UTC)
   - "all" (default): Both
 
-LinkedIn is weekly-only (no daily posts).
+LinkedIn and Instagram are weekly-only (no daily posts).
 
 See social/PIPELINE.md for full architecture.
 """
 
 import os
 import sys
-import json
 from datetime import datetime, timezone, timedelta
-from typing import Dict, Optional
+from typing import Dict
 import base64
 import io
 from common import (
@@ -24,10 +23,7 @@ from common import (
     read_news_file,
     deploy_reddit_post,
 )
-from buffer_publish import (
-    publish_twitter_post,
-    publish_instagram_post,
-)
+from buffer_publish import publish_twitter_post
 
 # Paths
 DAILY_DIR = "social/news/daily"
@@ -49,7 +45,6 @@ def stage_buffer_posts(daily_dir: str, buffer_token: str, github_token: str, own
 
     for platform, filename, publish_fn in [
         ("twitter", "twitter.json", publish_twitter_post),
-        ("instagram", "instagram.json", publish_instagram_post),
     ]:
         post_path = os.path.join(daily_dir, filename)
         post_data = read_news_file(post_path, github_token, owner, repo)
@@ -87,7 +82,7 @@ def main():
 
     results = {}
 
-    # ── Buffer staging (Twitter + Instagram) ─────────────────────
+    # ── Buffer staging (Twitter) ─────────────────────────────────
     if publish_mode in ("buffer", "all"):
         buffer_token = get_env("BUFFER_ACCESS_TOKEN")
         print(f"\n[Buffer] Staging to Buffer...")

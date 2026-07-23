@@ -82,7 +82,7 @@ If `MONITOR_DRY_RUN=0`, get the D1 mapping before acting:
 ```bash
 npx wrangler --config ../../enter.pollinations.ai/wrangler.toml d1 execute DB \
   --remote --env production --json \
-  --command "SELECT ce.id, u.github_username || '/' || ce.name AS model_id, ce.disabled_at, ce.disabled_reason FROM community_endpoint ce JOIN user u ON ce.owner_user_id = u.id WHERE u.github_username IS NOT NULL ORDER BY model_id"
+  --command "SELECT ce.id, u.github_username || '/' || ce.name AS model_id, ce.disabled_at, ce.disabled_reason FROM community_endpoint ce JOIN user u ON ce.owner_user_id = u.id WHERE u.github_username IS NOT NULL AND ce.modality = 'text' ORDER BY model_id"
 ```
 
 Each row has `id`, `model_id` (the `owner/name` string), `disabled_at`, and

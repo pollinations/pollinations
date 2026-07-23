@@ -195,6 +195,14 @@ ssh enter-services-staging "sudo apt-get install -y build-essential"
 
 ---
 
+# Token Rotation
+
+Internal trust-boundary tokens (`PLN_ENTER_TOKEN`, `PLN_GPU_TOKEN`, Tinybird
+tokens, SOPS recipients): see [token-rotation.md](token-rotation.md) for the
+inventory, rotation mechanisms, deploy path, and rollback.
+
+---
+
 # Notes
 
 - **Production** deploys on push to `production` branch

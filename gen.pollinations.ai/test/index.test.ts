@@ -271,6 +271,23 @@ describe("gen worker routing", () => {
         expect(models.every((m) => m.category === "video")).toBe(true);
     });
 
+    it("lists Sana with flat per-image pricing", async () => {
+        const response = await fetchWorker("/image/models", envWithEnter());
+
+        expect(response.status).toBe(200);
+        const models = (await response.json()) as {
+            name: string;
+            pricing: Record<string, string>;
+        }[];
+        expect(models.find((model) => model.name === "sana")).toMatchObject({
+            name: "sana",
+            pricing: {
+                completionImageTokens: "0.0001",
+                currency: "pollen",
+            },
+        });
+    });
+
     it("serves OpenAI-compatible models without auth", async () => {
         const response = await fetchWorker("/v1/models", envWithEnter());
 
@@ -341,6 +358,124 @@ describe("gen worker routing", () => {
             expect(servedModel?.context_length).toBeGreaterThan(0);
             expect(servedModel?.context_length).toBe(model.context_length);
         }
+    });
+
+    it("advertises audio input support for gemini-fast", async () => {
+        const response = await fetchWorker("/text/models", envWithEnter());
+
+        expect(response.status).toBe(200);
+        const models = (await response.json()) as {
+            name: string;
+            input_modalities?: string[];
+        }[];
+        const model = models.find(
+            (candidate) => candidate.name === "gemini-fast",
+        );
+
+        expect(model?.input_modalities).toEqual([
+            "text",
+            "image",
+            "audio",
+            "video",
+        ]);
+    });
+
+    it("distinguishes Perplexity Sonar search presets", async () => {
+        const response = await fetchWorker("/text/models", envWithEnter());
+
+        expect(response.status).toBe(200);
+        const models = (await response.json()) as {
+            name: string;
+            title?: string;
+            description?: string;
+        }[];
+
+        expect(
+            models.find((model) => model.name === "perplexity-fast"),
+        ).toMatchObject({
+            title: "Perplexity Sonar Fast Search",
+            description:
+                "Quick web searches with cited answers; keeps it brief",
+        });
+        expect(
+            models.find((model) => model.name === "perplexity-high"),
+        ).toMatchObject({
+            title: "Perplexity Sonar High-Context Search",
+            description:
+                "Digs through many sources for thorough, cited research answers",
+        });
+        expect(
+            models.find((model) => model.name === "perplexity"),
+        ).toMatchObject({
+            description:
+                "Advanced web search that synthesizes multiple sources with citations",
+        });
+        expect(
+            models.find((model) => model.name === "perplexity-reasoning"),
+        ).toMatchObject({
+            description:
+                "Thinks step by step while searching the web; slower but more rigorous",
+        });
+        expect(models.some((model) => model.name === "perplexity-deep")).toBe(
+            false,
+        );
+    });
+});
+
+describe("model status", () => {
+    it("reports the source timestamp and marks stale fallback data", async () => {
+        let now = 1_000;
+        vi.spyOn(Date, "now").mockImplementation(() => now);
+        const upstream = vi
+            .spyOn(globalThis, "fetch")
+            .mockResolvedValueOnce(Response.json({ data: [{ model: "test" }] }))
+            .mockRejectedValueOnce(new Error("Tinybird unavailable"));
+
+        const fresh = await fetchWorker("/v1/models/status?minutes=9876");
+        expect(fresh.status).toBe(200);
+        expect(fresh.headers.get("X-Model-Status-Timestamp")).toBe(
+            "1970-01-01T00:00:01.000Z",
+        );
+        expect(fresh.headers.get("X-Model-Status-Stale")).toBeNull();
+
+        now = 2_000;
+        const cached = await fetchWorker("/v1/models/status?minutes=9876");
+        expect(cached.status).toBe(200);
+        expect(cached.headers.get("X-Model-Status-Timestamp")).toBe(
+            "1970-01-01T00:00:01.000Z",
+        );
+        expect(upstream).toHaveBeenCalledTimes(1);
+
+        now = 62_000;
+        const stale = await fetchWorker("/v1/models/status?minutes=9876");
+        expect(stale.status).toBe(200);
+        expect(stale.headers.get("X-Model-Status-Timestamp")).toBe(
+            "1970-01-01T00:00:01.000Z",
+        );
+        expect(stale.headers.get("X-Model-Status-Stale")).toBe("true");
+        expect(upstream).toHaveBeenCalledTimes(2);
+    });
+
+    it("evicts old entries when the in-memory cache reaches its bound", async () => {
+        const upstream = vi
+            .spyOn(globalThis, "fetch")
+            .mockImplementation(async (request) => {
+                const minutes = new URL(
+                    new Request(request).url,
+                ).searchParams.get("minutes");
+                return Response.json({ data: [{ model: `test-${minutes}` }] });
+            });
+
+        for (let minutes = 8_000; minutes <= 8_032; minutes++) {
+            const response = await fetchWorker(
+                `/v1/models/status?minutes=${minutes}`,
+            );
+            expect(response.status).toBe(200);
+        }
+
+        const evicted = await fetchWorker("/v1/models/status?minutes=8000");
+        expect(evicted.status).toBe(200);
+        expect(upstream).toHaveBeenCalledTimes(34);
     });
 });
 
@@ -425,6 +560,165 @@ fixtureTest(
         expect(
             calls.some((url) => new URL(url).hostname === "api.elevenlabs.io"),
         ).toBe(false);
+    },
+);
+
+fixtureTest(
+    "routes simple CSM audio requests through DeepInfra",
+    async ({ paidApiKey }) => {
+        const calls: string[] = [];
+        const deepInfraEndpoint =
+            "https://api.deepinfra.com/v1/openai/audio/speech";
+
+        vi.spyOn(globalThis, "fetch").mockImplementation(
+            async (input, init) => {
+                const request = new Request(input, init);
+                calls.push(request.url);
+
+                if (request.url === deepInfraEndpoint) {
+                    expect(request.headers.get("authorization")).toBe(
+                        "Bearer test-deepinfra-key",
+                    );
+                    await expect(request.json()).resolves.toEqual({
+                        model: "sesame/csm-1b",
+                        input: "Hello CSM",
+                        voice: "read_speech_a",
+                        response_format: "mp3",
+                    });
+
+                    return new Response(
+                        new Uint8Array([0xff, 0xfb, 0x90, 0x64]),
+                        {
+                            headers: { "Content-Type": "audio/mpeg" },
+                        },
+                    );
+                }
+
+                if (
+                    request.url.startsWith(
+                        "https://api.europe-west2.gcp.tinybird.co/v0/pipes/public_model_stats.json",
+                    ) ||
+                    request.url.startsWith("http://localhost:7181/")
+                ) {
+                    return Response.json({ data: [] });
+                }
+
+                throw new Error(`Unexpected fetch: ${request.url}`);
+            },
+        );
+
+        const ctx = createExecutionContext();
+        const response = await worker.fetch(
+            new Request(
+                "https://staging.gen.pollinations.ai/audio/Hello%20CSM?model=csm&voice=read_speech_a&response_format=mp3",
+                {
+                    headers: { Authorization: `Bearer ${paidApiKey}` },
+                },
+            ),
+            {
+                ...env,
+                DEEPINFRA_API_KEY: "test-deepinfra-key",
+            } as unknown as CloudflareBindings,
+            ctx,
+        );
+
+        expect(response.status).toBe(200);
+        expect(response.headers.get("content-type")).toBe("audio/mpeg");
+        expect(response.headers.get("x-model-used")).toBe("csm-1b");
+        expect(response.headers.get("x-usage-completion-audio-tokens")).toBe(
+            "9",
+        );
+        expect(response.headers.get("x-tts-voice")).toBe("read_speech_a");
+        expect(new Uint8Array(await response.arrayBuffer())).toEqual(
+            new Uint8Array([0xff, 0xfb, 0x90, 0x64]),
+        );
+
+        await waitOnExecutionContext(ctx);
+        expect(calls).toContain(deepInfraEndpoint);
+        expect(
+            calls.some((url) => new URL(url).hostname === "openrouter.ai"),
+        ).toBe(false);
+    },
+);
+
+fixtureTest(
+    "validates CSM input before calling DeepInfra",
+    async ({ paidApiKey }) => {
+        const deepInfraEndpoint =
+            "https://api.deepinfra.com/v1/openai/audio/speech";
+        const calls: string[] = [];
+
+        vi.spyOn(globalThis, "fetch").mockImplementation(
+            async (input, init) => {
+                const request = new Request(input, init);
+                calls.push(request.url);
+                if (
+                    request.url.startsWith(
+                        "https://api.europe-west2.gcp.tinybird.co/v0/pipes/public_model_stats.json",
+                    ) ||
+                    request.url.startsWith("http://localhost:7181/")
+                ) {
+                    return Response.json({ data: [] });
+                }
+                throw new Error(`Unexpected fetch: ${request.url}`);
+            },
+        );
+
+        const cases = [
+            {
+                input: "a".repeat(201),
+                voice: "conversational_a",
+                response_format: "mp3",
+                message: "Maximum is 200",
+            },
+            {
+                input: "Hello",
+                voice: "unknown_voice",
+                response_format: "mp3",
+                message: "Invalid voice for csm-1b",
+            },
+            {
+                input: "Hello",
+                voice: "conversational_a",
+                response_format: "aac",
+                message: "Unsupported response_format for csm-1b",
+            },
+        ];
+
+        for (const testCase of cases) {
+            const ctx = createExecutionContext();
+            const response = await worker.fetch(
+                new Request(
+                    "https://staging.gen.pollinations.ai/v1/audio/speech",
+                    {
+                        method: "POST",
+                        headers: {
+                            Authorization: `Bearer ${paidApiKey}`,
+                            "Content-Type": "application/json",
+                        },
+                        body: JSON.stringify({
+                            model: "csm-1b",
+                            input: testCase.input,
+                            voice: testCase.voice,
+                            response_format: testCase.response_format,
+                        }),
+                    },
+                ),
+                {
+                    ...env,
+                    DEEPINFRA_API_KEY: "test-deepinfra-key",
+                } as unknown as CloudflareBindings,
+                ctx,
+            );
+
+            expect(response.status).toBe(400);
+            await expect(response.json()).resolves.toMatchObject({
+                error: { message: expect.stringContaining(testCase.message) },
+            });
+            await waitOnExecutionContext(ctx);
+        }
+
+        expect(calls).not.toContain(deepInfraEndpoint);
     },
 );
 
@@ -613,10 +907,14 @@ it("lists stable-audio-3-medium in audio models", async () => {
     const response = await fetchWorker("/audio/models");
 
     expect(response.status).toBe(200);
-    const models = (await response.json()) as { name: string }[];
-    expect(models.some((model) => model.name === "stable-audio-3-medium")).toBe(
-        true,
+    const models = (await response.json()) as {
+        name: string;
+        input_modalities?: string[];
+    }[];
+    const model = models.find(
+        (candidate) => candidate.name === "stable-audio-3-medium",
     );
+    expect(model?.input_modalities).toEqual(["text", "audio"]);
 });
 
 fixtureTest(
@@ -820,10 +1118,16 @@ it("lists stable-audio-3-large in audio models", async () => {
     const response = await fetchWorker("/audio/models");
 
     expect(response.status).toBe(200);
-    const models = (await response.json()) as { name: string }[];
-    expect(models.some((model) => model.name === "stable-audio-3-large")).toBe(
-        true,
+    const models = (await response.json()) as {
+        name: string;
+        aliases: string[];
+        input_modalities?: string[];
+    }[];
+    const model = models.find(
+        (candidate) => candidate.name === "stable-audio-3-large",
     );
+    expect(model?.aliases).toContain("stable-audio-3");
+    expect(model?.input_modalities).toEqual(["text", "audio"]);
 });
 
 fixtureTest(

@@ -2,12 +2,11 @@
 
 ## App Submission Handling
 
-Two-phase review via `app-review-submission.yml` (AI + human). Source of truth: `apps/APPS.md`.
+Two-phase review via `apps-review-submissions.yml` (AI evidence + human decision). Source of truth: `apps/APPS.md`.
 
-Flow: user opens issue with `TIER-APP` → workflow validates + AI generates preview → bot posts `APP_REVIEW_DATA` JSON + labels `TIER-APP-REVIEW` → maintainer adds `TIER-APP-APPROVED` → workflow prepends row to `apps/APPS.md`, opens PR with auto-merge, closes issue via `Fixes #NNN`.
+Flow: user opens an `APP-SUBMISSION` issue → AI checks the live app and optional repository → `APP-NEEDS-INFO` or `APP-REVIEW` → maintainer adds `APP-APPROVED` → `apps-publish-submissions.yml` validates the issue again, prepends the row to `apps/APPS.md`, and opens an auto-merge PR that closes the issue via `Fixes #NNN`.
 
-Label state machine:
-- `TIER-APP` → `TIER-APP-REJECTED` (duplicate/invalid) | `TIER-APP-INCOMPLETE` (not registered) | `TIER-APP-REVIEW` → `TIER-APP-APPROVED` (merged) | `TIER-APP-REJECTED` (closed)
+`APP-SUBMISSION` is the persistent type label. `APP-NEEDS-INFO`, `APP-REVIEW`, and `APP-APPROVED` describe review state. Quest rewards are detected separately from the merged catalog and are not announced by the submission workflows.
 
 Manual edits: edit `apps/APPS.md`, run `node .github/scripts/app-update-greenhouse.js`.
 
@@ -37,10 +36,15 @@ Guild ID `885844321461485618` (https://discord.gg/pollinations-ai-88584432146148
 
 Primary: `https://gen.pollinations.ai` → routes to `enter.pollinations.ai` for auth/billing.
 
-- Auth: `pk_` (frontend), `sk_` (backend). Keys: https://enter.pollinations.ai
+- Auth: `pk_` (frontend), `sk_` (backend). Keys: https://enter.pollinations.ai/keys
 - Billing: Pollen credits ($1 ≈ 1 Pollen). Full docs: `./APIDOCS.md`
+- Pack checkout: Stripe. Polar is retired from runtime; do not add Polar SDKs,
+  Worker bindings, webhooks, or automated writes. Historical Polar handling
+  (pre-Stripe pack revenue, Nov 2025–Jan 2026) lives in the economics ingest
+  connector prompt (`apps/operation/economics/ingest/agent.system.txt`).
 - Services: Text (Portkey, multi-provider), Image (gen Worker dispatch to providers/GPU backends), Video (Wan/Veo/LTX), Audio (ElevenLabs, TTM)
-- Wallet: Pollen is earned by completing Quests; balances live in the `tier_balance` (shown as Quest Pollen) and `pack_balance` (Paid) buckets. The `tier` data model is kept for compatibility; see `enter.pollinations.ai/src/tier-config.ts`.
+- Wallet: Pollen is earned by completing Quests; balances live in the `tier_balance` (shown as Quest Pollen) and `pack_balance` (Paid) buckets. The legacy `tier` D1 column and `tier_balance` wire name are kept for compatibility; see `shared/db/better-auth.ts`.
+- Referral links must use the canonical landing page with a short `?ref=` value; record analytics behind the page instead of exposing a tracking API as the destination URL.
 
 ### Local Development
 
@@ -72,18 +76,51 @@ curl "http://localhost:8788/v1/chat/completions" -H "Authorization: Bearer $TOKE
 - No backward-compat fallbacks — clean breaks beat bloat. When changing tokens/headers/APIs, update all consumers at once.
 - When user says "keep it simple" — one function, one price, one config. Simplest thing that works.
 
+## Secret Mutation Safety
+
+**CRITICAL — never mutate a secret without the user's separate, explicit, scoped approval.**
+
+- A secret mutation includes creating, replacing, rotating, revoking, regenerating, synchronizing, or deploying a credential, token, API key, certificate, GitHub secret, provider secret, or encrypted SOPS value.
+- Before any mutation, stop and state the exact secret name (never its value), environments, reason, expected impact, execution order, verification, and rollback.
+- Require a new approval in the current conversation after presenting that plan. General instructions such as “go ahead,” “fix it,” “deploy,” “continue,” or approval for the surrounding model/task work do not count.
+- Required approval format: `Yes, you can rotate <SECRET_NAME> in <ENVIRONMENTS> now.`
+- Approval is valid only for the named secret, environments, and one described operation. Never reuse or broaden it.
+- Do not edit a secret file, change provider/GitHub secret state, or open or push a secret-change PR before receiving that approval.
+- If exposure is suspected, report it immediately and stop. Do not revoke or rotate until the explicit approval is received.
+- Read-only inspection may continue, but never print, echo, log, or otherwise expose secret values.
+- Encrypted secret-file changes must use a dedicated PR. Never bundle them into a model, feature, pricing, or refactor PR.
+- Never synchronize production secrets from an unmerged commit or a branch other than `production`.
+- For rotation, add and verify the replacement first, merge the encrypted update, deploy from `production`, run live tests for every affected service, and only then revoke the previous credential.
+
+## Cloudflare Production Deployment Safety
+
+**CRITICAL — production Cloudflare deployments must always run through GitHub Actions:**
+
+- Use the service's production deployment workflow, such as `Deploy / gen.pollinations.ai`; use `workflow_dispatch` when path filters do not trigger it.
+- Dispatch production workflows only from the `production` branch. Select a secret-synchronization input only after the Secret Mutation Safety approval gate.
+- Never run `wrangler deploy --env production`, a production deployment npm script, or a direct production Worker upload from a local machine or agent session.
+- If CI credentials lack a required permission, follow the Secret Mutation Safety approval gate before updating the scoped GitHub Actions secret and rerunning the workflow. Never bypass CI with a local Cloudflare OAuth session.
+- After the workflow succeeds, verify the active Worker version and required bindings before testing production traffic.
+
 ## Tinybird Deployment Safety
 
 **CRITICAL — These rules apply whenever deploying to Tinybird:**
 
 - Two workspaces: `pollinations_enter` (prod) and `pollinations_enter_staging` (staging + dev + local). Pipes and datasources must be deployed to **both** — no CI auto-deploy yet, tracked in #11127.
-- Always deploy to **staging first**, verify, then prod. `tb --cloud deploy --wait` defaults to whichever workspace `.tinyb` points to (prod by default); override with `TB_TOKEN=<staging_admin_token>` for staging.
-- Validate first: `tb --cloud deploy --check --wait` (against both workspaces if either schema is in doubt)
+- Use the Tinybird **Forward CLI** as `tb` (not Classic).
+- Do not rely on `.tinyb` for workspace selection. Always pass an explicit workspace-scoped `TB_TOKEN` with `WORKSPACE:DEPLOY` and `--host https://api.europe-west2.gcp.tinybird.co`; never source deploy credentials from Enter runtime secrets.
+- Always validate and deploy to **staging first**, verify, then prod only when requested.
+- Validate first: `tb --cloud --host "$TB_HOST" deployment create --check --no-allow-destructive-operations`
+- Deploy staging: `tb --cloud --host "$TB_HOST" deployment create --wait --no-allow-destructive-operations`
+- Verify staging: `tb --staging --cloud --host "$TB_HOST" endpoint ls` and `tb --cloud --host "$TB_HOST" deployment ls`
 - Never `--allow-destructive-operations` without explicit permission
-- Never `tb push` (deprecated); use `tb --cloud deploy --wait`
+- Never `tb push` (deprecated). Avoid `tb deploy`; use explicit `deployment create` commands so promotion is never accidental.
+- Never use `--auto` or `deployment promote` without explicit permission.
 - Always `--cloud` (otherwise CLI hits Tinybird Local/Docker)
 - Run from `enter.pollinations.ai/observability`
 - Verify all consumers within a workspace before modifying a pipe (pipes are NOT cross-workspace; each workspace has its own copy)
+- If validation reports datasource or pipe deletion, stop. Restore the missing definition or ask before deleting; do not override with destructive flags.
+- Forward materialized views cannot use `UNION`; split sources into separate materialized pipes writing to the same datasource.
 - Timeouts: use `uniq()` not `uniqExact()`; avoid CTE+JOIN; single-pass queries; for large time ranges use `start_date` parameter week-by-week
 - Full procedure: `.claude/skills/tinybird-deploy/SKILL.md`
 
@@ -113,7 +150,9 @@ curl "http://localhost:8788/v1/chat/completions" -H "Authorization: Bearer $TOKE
 - Don't modify test files to make tests pass — fix the code.
 - Run `npm run decrypt-vars` before tests in enter.pollinations.ai.
 - Test API keys in `enter.pollinations.ai/.testingtokens`.
-- Request PR reviews by including lowercase `polly` in a PR comment.
+- Before model changes, read and follow `.claude/skills/model-management/SKILL.md`.
+- Don't request PR reviews or comment `polli` unless the user explicitly asks.
+- Model descriptions must describe only capabilities or differentiators; never repeat the model title or name.
 
 ## Testing
 
@@ -131,7 +170,7 @@ npx vitest run test/file.test.ts
 - Test real code, not mocks — use direct imports. Don't create mock infrastructure.
 - Read existing tests before adding; prefer extending existing files; follow existing conventions.
 - Snapshots (enter): VCR-style, replayed by default. `TEST_VCR_MODE=record` to record; default `replay-or-record`.
-- `.testingtokens` contains: `ENTER_API_TOKEN_LOCAL`, `ENTER_API_TOKEN_REMOTE`, `ENTER_TOKEN`, `GITHUB_TOKEN`, `POLAR_ACCESS_TOKEN`.
+- `.testingtokens` contains: `ENTER_API_TOKEN_LOCAL`, `ENTER_API_TOKEN_REMOTE`, `ENTER_TOKEN`, `GITHUB_TOKEN`.
 - Production API tests should hit `gen.pollinations.ai`.
 
 ## Architecture & Common Tasks
@@ -139,9 +178,10 @@ npx vitest run test/file.test.ts
 - Frontend → `pollinations.ai/`; image/text/gen gateway → `gen.pollinations.ai/`; image GPU backends → `image.pollinations.ai/`; SDK/React → `packages/sdk/`; MCP → `packages/mcp/`.
 - Text models: add config in `gen.pollinations.ai/src/text/configs/modelConfigs.ts`, entry in `gen.pollinations.ai/src/text/availableModels.ts`. Provider configs (Portkey/Bedrock/OpenAI-compat) in `gen.pollinations.ai/src/text/configs/providerConfigs.ts`.
 - Image models: handler in `gen.pollinations.ai/src/image/`, register in `shared/registry/image.ts`.
-- Update API docs + model registry for new models.
+- Update the model registry and OpenAPI source schemas/routes for new models.
 - API changes: maintain backward compatibility; document; handle errors.
-- API docs: strictly technical, no marketing; link dynamic endpoints (e.g. `/models`) vs hardcoded lists; no internal impl/env vars; minimal examples for both simplified and OpenAI-compatible endpoints.
+- Never edit or regenerate `APIDOCS.md` in a feature PR. It is generated from the live OpenAPI schema after a successful production deploy by `.github/workflows/docs-regenerate-api-reference.yml`, which opens a separate docs PR. Make documentation changes in the source schemas, routes, introductions, or recipes instead.
+- API docs source text: strictly technical, no marketing; link dynamic endpoints (e.g. `/models`) vs hardcoded lists; no internal impl/env vars; minimal examples for both simplified and OpenAI-compatible endpoints.
 - Security: never expose keys/secrets; use env vars; validate input.
 - Temp scratch files go in `temp/` clearly labeled.
 - Shrinking large snapshots: video/image snapshots can be 10–30 MB because stream chunks store raw binary as text (`TextDecoder` output in `vcr.ts:289`). To shrink: replace `response.body.data` array with one tiny chunk `[{"data": "<minimal-bytes>", "delay": 1}]`. For mp4, a valid 20-byte ftyp box is `\x00\x00\x00\x14ftypisom\x00\x00\x00\x00isom` (use `bytes.decode('latin-1')` in Python). Tests only check headers/status, not media content.

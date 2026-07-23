@@ -1,0 +1,93 @@
+{
+  "bot": {
+    "name": "Polli",
+    "default_repo": "pollinations/pollinations",
+    "session_timeout_seconds": 300,
+    "thread_auto_archive_minutes": 60,
+    "thread_history_limit": 50
+  },
+  "discord": {
+    "admin_role_ids": [
+      911279121307414558,
+      1340339234065744006
+    ],
+    "collaborator_role_ids": [
+      1492562906665980105
+    ],
+    "api_base": "https://discord.com/api/v10",
+    "max_message_length": 2000,
+    "max_title_length": 80,
+    "max_images_per_reply": 10,
+    "guild_id": 885844321461485618,
+    "pr_merge_channel_id": 1433858964658852081,
+    "pr_merge_webhook_id": 1433141915397652532
+  },
+  "github": {
+    "bot_username": "polly-bot-pollinations-ai",
+    "admin_users": [
+      "voodoohop",
+      "Itachi-1824",
+      "eulervoid",
+      "ElliotEtag",
+      "Circuit-Overtime"
+    ],
+    "whitelisted_repos": [
+      "pollinations/pollinations"
+    ],
+    "admin_only_mentions": true,
+    "api_base": "https://api.github.com",
+    "graphql_url": "https://api.github.com/graphql",
+    "web_base": "https://github.com",
+    "request_timeout_seconds": 60,
+    "short_request_timeout_seconds": 10,
+    "search_timeout_seconds": 15,
+    "cache_ttl_seconds": 300
+  },
+  "ai": {
+    "api_base": "https://gen.pollinations.ai",
+    "model": "glm",
+    "fallback_model": "kimi-code",
+    "request_timeout_seconds": 60,
+    "max_tokens": 4096,
+    "temperature": 0.7,
+    "task_models": {
+      "web_search": "perplexity",
+      "data_viz": "gemini"
+    }
+  },
+  "code_search": {
+    "enabled": true,
+    "vectorize_index": "polli-code-embeddings",
+    "embed_model": "qwen3-embedding-8b",
+    "embed_dimensions": 1536,
+    "cloudflare_api_base": "https://api.cloudflare.com/client/v4",
+    "timeout_seconds": 30,
+    "cache_ttl_seconds": 300,
+    "default_top_k": 5,
+    "max_top_k": 10,
+    "local_repo_enabled": true,
+    "local_repo_url": "https://github.com/pollinations/pollinations.git",
+    "local_repo_branch": "main",
+    "graph_enabled": true,
+    "codegraph_binary": "codegraph"
+  },
+  "api": {
+    "enabled": true,
+    "port": 55288,
+    "cors_origins": [
+      "http://localhost:5173",
+      "http://localhost:5174"
+    ]
+  },
+  "webhook": {
+    "enabled": false,
+    "port": 8002
+  },
+  "paths": {
+    "data_dir": "data",
+    "logs_dir": "logs"
+  },
+  "logging": {
+    "level": "INFO"
+  }
+}

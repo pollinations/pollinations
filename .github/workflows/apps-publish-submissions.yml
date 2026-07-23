@@ -1,0 +1,187 @@
+name: Apps / Publish approved submission
+
+on:
+  issues:
+    types: [labeled]
+
+concurrency:
+  group: app-publish-submissions
+  queue: max
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    if: |
+      github.event.issue.state == 'open' &&
+      github.event.label.name == 'APP-APPROVED' &&
+      contains(github.event.issue.labels.*.name, 'APP-SUBMISSION')
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write
+      issues: write
+      pull-requests: write
+
+    steps:
+      - name: Generate app token
+        id: token
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ secrets.POLLY_BOT_APP_ID }}
+          private-key: ${{ secrets.POLLY_BOT_PRIVATE_KEY }}
+
+      - name: Get bot identity
+        id: bot
+        env:
+          GH_TOKEN: ${{ steps.token.outputs.token }}
+        run: |
+          BOT_LOGIN="${{ steps.token.outputs.app-slug }}[bot]"
+          BOT_ID=$(gh api "/users/${BOT_LOGIN}" --jq .id)
+          echo "login=$BOT_LOGIN" >> "$GITHUB_OUTPUT"
+          echo "id=$BOT_ID" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+          token: ${{ steps.token.outputs.token }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Revalidate approved submission
+        id: app
+        env:
+          GH_TOKEN: ${{ steps.token.outputs.token }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+          ISSUE_AUTHOR: ${{ github.event.issue.user.login }}
+          ISSUE_BODY: ${{ github.event.issue.body }}
+          ISSUE_CREATED_AT: ${{ github.event.issue.created_at }}
+          ISSUE_URL: ${{ github.event.issue.html_url }}
+        run: |
+          TODAY=$(date -u +%F)
+          APPROVED_DATE="$TODAY" node .github/scripts/app-validate-submission.js > "$RUNNER_TEMP/app-validation.json"
+          jq -e '.valid == true' "$RUNNER_TEMP/app-validation.json" >/dev/null
+          {
+            echo 'row<<APP_ROW_EOF'
+            jq -r .row "$RUNNER_TEMP/app-validation.json"
+            echo 'APP_ROW_EOF'
+            echo "name=$(jq -r .submission.name "$RUNNER_TEMP/app-validation.json")"
+            echo "category=$(jq -r .submission.category "$RUNNER_TEMP/app-validation.json")"
+            echo "url=$(jq -r '.submission.appUrl // .submission.repoUrl' "$RUNNER_TEMP/app-validation.json")"
+            echo "description=$(jq -r .submission.description "$RUNNER_TEMP/app-validation.json")"
+            echo "user_id=$(jq -r .metadata.githubUserId "$RUNNER_TEMP/app-validation.json")"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Add app to catalog
+        id: branch
+        env:
+          APP_ROW: ${{ steps.app.outputs.row }}
+          APP_NAME: ${{ steps.app.outputs.name }}
+          APP_CATEGORY: ${{ steps.app.outputs.category }}
+          ISSUE_AUTHOR: ${{ github.event.issue.user.login }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+          USER_ID: ${{ steps.app.outputs.user_id }}
+          BOT_LOGIN: ${{ steps.bot.outputs.login }}
+          BOT_ID: ${{ steps.bot.outputs.id }}
+        run: |
+          BRANCH="auto/app-${ISSUE_NUMBER}-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          git switch -c "$BRANCH" origin/main
+          NEW_ROW="$APP_ROW" node .github/scripts/app-prepend-row.js
+          node .github/scripts/app-update-greenhouse.js
+          git config user.name "$BOT_LOGIN"
+          git config user.email "${BOT_ID}+${BOT_LOGIN}@users.noreply.github.com"
+          git add apps/APPS.md apps/GREENHOUSE.md README.md
+          git commit -m "Add ${APP_NAME} to ${APP_CATEGORY}
+
+          Co-authored-by: ${ISSUE_AUTHOR} <${USER_ID}+${ISSUE_AUTHOR}@users.noreply.github.com>
+          Fixes #${ISSUE_NUMBER}"
+          git push origin "$BRANCH"
+          echo "name=$BRANCH" >> "$GITHUB_OUTPUT"
+
+      - name: Open and merge catalog PR
+        id: pr
+        env:
+          GH_TOKEN: ${{ steps.token.outputs.token }}
+          APP_NAME: ${{ steps.app.outputs.name }}
+          APP_CATEGORY: ${{ steps.app.outputs.category }}
+          APP_URL: ${{ steps.app.outputs.url }}
+          APP_DESCRIPTION: ${{ steps.app.outputs.description }}
+          BRANCH: ${{ steps.branch.outputs.name }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+        run: |
+          PR_URL=$(gh pr create \
+            --repo "$GITHUB_REPOSITORY" \
+            --head "$BRANCH" \
+            --base main \
+            --title "Add ${APP_NAME} to ${APP_CATEGORY}" \
+            --body "- Adds [${APP_NAME}](${APP_URL}) to ${APP_CATEGORY}
+          - ${APP_DESCRIPTION}
+
+          Fixes #${ISSUE_NUMBER}")
+          gh pr merge "$PR_URL" --repo "$GITHUB_REPOSITORY" --auto --squash --delete-branch
+          echo "url=$PR_URL" >> "$GITHUB_OUTPUT"
+
+      - name: Wait for merge before publishing the next app
+        env:
+          GH_TOKEN: ${{ steps.token.outputs.token }}
+          PR_URL: ${{ steps.pr.outputs.url }}
+        run: |
+          for _ in $(seq 1 60); do
+            STATE=$(gh pr view "$PR_URL" --repo "$GITHUB_REPOSITORY" --json state --jq .state)
+            if [ "$STATE" = "MERGED" ]; then
+              exit 0
+            fi
+            if [ "$STATE" = "CLOSED" ]; then
+              echo "Catalog PR closed without merging"
+              exit 1
+            fi
+            sleep 10
+          done
+          echo "Catalog PR did not merge within 10 minutes"
+          exit 1
+
+      - name: Remove review label
+        if: success() && contains(github.event.issue.labels.*.name, 'APP-REVIEW')
+        env:
+          GH_TOKEN: ${{ steps.token.outputs.token }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+        run: gh issue edit "$ISSUE_NUMBER" --repo "$GITHUB_REPOSITORY" --remove-label APP-REVIEW
+
+      - name: Recover failed publication
+        if: failure() && steps.token.outputs.token != ''
+        env:
+          GH_TOKEN: ${{ steps.token.outputs.token }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+        run: |
+          BRANCH="auto/app-${ISSUE_NUMBER}-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          OPEN_PR=$(gh pr list --repo "$GITHUB_REPOSITORY" --head "$BRANCH" --state open --json url --jq '.[0].url // empty' || true)
+          if [ -n "$OPEN_PR" ]; then
+            gh pr close "$OPEN_PR" --repo "$GITHUB_REPOSITORY" --comment "Automated publication failed; closing this attempt so it can be retried cleanly." || true
+          fi
+          if git ls-remote --exit-code --heads origin "$BRANCH" >/dev/null 2>&1; then
+            git push origin --delete "$BRANCH" || true
+          fi
+
+          TARGET_LABEL=APP-REVIEW
+          DETAILS=""
+          if [ -f "$RUNNER_TEMP/app-validation.json" ] && jq -e '.valid == false and (.system_error == null)' "$RUNNER_TEMP/app-validation.json" >/dev/null; then
+            TARGET_LABEL=APP-NEEDS-INFO
+            DETAILS=$(jq -r '.errors[]? | "- " + .' "$RUNNER_TEMP/app-validation.json")
+          fi
+
+          gh issue edit "$ISSUE_NUMBER" --repo "$GITHUB_REPOSITORY" --remove-label APP-APPROVED || true
+          gh issue edit "$ISSUE_NUMBER" --repo "$GITHUB_REPOSITORY" --remove-label APP-REVIEW || true
+          gh issue edit "$ISSUE_NUMBER" --repo "$GITHUB_REPOSITORY" --remove-label APP-NEEDS-INFO || true
+          gh issue edit "$ISSUE_NUMBER" --repo "$GITHUB_REPOSITORY" --add-label "$TARGET_LABEL"
+
+          {
+            echo "Automated app publication did not complete. The issue was moved back to \`$TARGET_LABEL\` and the partial branch/PR was cleaned up."
+            if [ -n "$DETAILS" ]; then
+              echo
+              echo "$DETAILS"
+            fi
+            echo
+            echo "[View the failed workflow run](${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID})."
+          } | gh issue comment "$ISSUE_NUMBER" --repo "$GITHUB_REPOSITORY" --body-file -

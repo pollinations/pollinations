@@ -1,4 +1,23 @@
 creation_rules:
+    - path_regex: apps/operation/infrastructure/azure-vms/secrets/itachi-operator\.vars\.json$
+      age: >-
+        age1k85e3hjd2tv3wtjv7npjtmp9pwr5cfda22hyz9ajg06uqel3cc5s6c34rd,age1e8fctjh7tttmrkukrshp9dvl50lqhx22p9wt907avc96pj9pfdzs92shdc
+    - path_regex: apps/operation/infrastructure/azure-vms/secrets/elixpo-operator\.vars\.json$
+      age: >-
+        age1k85e3hjd2tv3wtjv7npjtmp9pwr5cfda22hyz9ajg06uqel3cc5s6c34rd,age1zptpgxhs9chnkudu69qut2hn706pmyngasvaz4ppf452un2x7p2ss6j96f
+    - path_regex: (enter|gen)\.pollinations\.ai/secrets/(dev|staging)\.vars\.json$
+      age: >-
+        age1k85e3hjd2tv3wtjv7npjtmp9pwr5cfda22hyz9ajg06uqel3cc5s6c34rd,age1e8fctjh7tttmrkukrshp9dvl50lqhx22p9wt907avc96pj9pfdzs92shdc,age1zptpgxhs9chnkudu69qut2hn706pmyngasvaz4ppf452un2x7p2ss6j96f,age1ry4pg28f38yrnd5nhdl2zrkh8f7vgfu0p6hdu8lwpvpa7vz8ag6qqxy4d6
+    - path_regex: apps/operation/infrastructure/azure-vms/secrets/polli-prod\.vars\.json$
+      age: >-
+        age1k85e3hjd2tv3wtjv7npjtmp9pwr5cfda22hyz9ajg06uqel3cc5s6c34rd,age1ry4pg28f38yrnd5nhdl2zrkh8f7vgfu0p6hdu8lwpvpa7vz8ag6qqxy4d6
+    - path_regex: apps/operation/infrastructure/azure-vms/secrets/lixsearch-prod\.vars\.json$
+      age: >-
+        age1k85e3hjd2tv3wtjv7npjtmp9pwr5cfda22hyz9ajg06uqel3cc5s6c34rd,age1ry4pg28f38yrnd5nhdl2zrkh8f7vgfu0p6hdu8lwpvpa7vz8ag6qqxy4d6
+    - path_regex: apps/operation/economics/ingest/secrets/.*
+      age: age1djc5mjmpvfaqzw5pgujfeqglrrqw05fmjmnnu4zcv2h7xkn2av2q67c7rt
+    - path_regex: apps/operation/economics/secrets/.*
+      age: age1djc5mjmpvfaqzw5pgujfeqglrrqw05fmjmnnu4zcv2h7xkn2av2q67c7rt
     - path_regex: (\.env$|\.encrypted\.env$|\.vars.json$|env\.json$)
       age: >-
-        age1k85e3hjd2tv3wtjv7npjtmp9pwr5cfda22hyz9ajg06uqel3cc5s6c34rd,age1e8fctjh7tttmrkukrshp9dvl50lqhx22p9wt907avc96pj9pfdzs92shdc,age1ry4pg28f38yrnd5nhdl2zrkh8f7vgfu0p6hdu8lwpvpa7vz8ag6qqxy4d6
+        age1k85e3hjd2tv3wtjv7npjtmp9pwr5cfda22hyz9ajg06uqel3cc5s6c34rd,age1ry4pg28f38yrnd5nhdl2zrkh8f7vgfu0p6hdu8lwpvpa7vz8ag6qqxy4d6

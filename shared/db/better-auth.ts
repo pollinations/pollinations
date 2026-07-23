@@ -200,9 +200,21 @@ export const communityEndpoint = sqliteTable("community_endpoint", {
     .references(() => user.id, { onDelete: "cascade" }),
   name: text("name").notNull(),
   description: text("description"),
+  modality: text("modality").default("text").notNull(),
+  // Image endpoints only: "request" bills the fixed per-image price once per
+  // generation; "tokens" bills provider-returned image token usage. Detected
+  // by the registration probe.
+  imagePricing: text("image_pricing", { enum: ["request", "tokens"] })
+    .default("request")
+    .notNull(),
   baseUrl: text("base_url").notNull(),
   upstreamModel: text("upstream_model").notNull(),
   bearerTokenCiphertext: text("bearer_token_ciphertext").notNull(),
+  // Models default to private (owner-only and free). Public visibility is
+  // allowlist-gated and may be free or owner-priced.
+  visibility: text("visibility", { enum: ["private", "public"] })
+    .default("private")
+    .notNull(),
   promptTextPrice: real("prompt_text_price").notNull(),
   promptCachedPrice: real("prompt_cached_price").default(0).notNull(),
   promptCacheWritePrice: real("prompt_cache_write_price").default(0).notNull(),
@@ -211,6 +223,7 @@ export const communityEndpoint = sqliteTable("community_endpoint", {
   completionTextPrice: real("completion_text_price").notNull(),
   completionReasoningPrice: real("completion_reasoning_price").default(0).notNull(),
   completionAudioPrice: real("completion_audio_price").default(0).notNull(),
+  completionImagePrice: real("completion_image_price").default(0).notNull(),
   disabledAt: integer("disabled_at", { mode: "timestamp" }),
   disabledReason: text("disabled_reason"),
   disabledBy: text("disabled_by"),

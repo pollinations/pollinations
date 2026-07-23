@@ -5,8 +5,11 @@
 
 import { getVideoModelIds } from "@shared/registry/image.ts";
 import debug from "debug";
-import { callLtx2API } from "./models/ltx2VideoModel.ts";
 import { callNovaReelAPI } from "./models/novaReelModel.ts";
+import {
+    callHappyHorseAPI,
+    callOpenRouterGrokVideoAPI,
+} from "./models/openRouterVideoModel.ts";
 import {
     callPrunaVideo720API,
     callPrunaVideo1080API,
@@ -14,6 +17,7 @@ import {
 import { callSeedanceProAPI } from "./models/seedanceReplicateVideoModel.ts";
 import { callSeedanceV2API } from "./models/seedanceV2VideoModel.ts";
 import {
+    callVeo1080pAPI,
     callVeoAPI,
     type VideoGenerationResult,
 } from "./models/veoVideoModel.ts";
@@ -23,7 +27,6 @@ import {
     callWanPro1080pAPI,
     callWanProAPI,
 } from "./models/wanVideoModel.ts";
-import { callXaiVideoAPI } from "./models/xaiVideoModel.ts";
 import type { ImageParams } from "./params.ts";
 
 export type { VideoGenerationResult };
@@ -43,6 +46,9 @@ export async function createAndReturnVideo(
         case "veo":
             result = await callVeoAPI(prompt, safeParams);
             break;
+        case "veo-1080p":
+            result = await callVeo1080pAPI(prompt, safeParams);
+            break;
         case "seedance-pro":
             result = await callSeedanceProAPI(prompt, safeParams);
             break;
@@ -61,9 +67,6 @@ export async function createAndReturnVideo(
         case "wan-pro-1080p":
             result = await callWanPro1080pAPI(prompt, safeParams);
             break;
-        case "ltx-2":
-            result = await callLtx2API(prompt, safeParams);
-            break;
         case "p-video-720p":
             result = await callPrunaVideo720API(prompt, safeParams);
             break;
@@ -74,7 +77,10 @@ export async function createAndReturnVideo(
             result = await callNovaReelAPI(prompt, safeParams, requestId);
             break;
         case "grok-video-pro":
-            result = await callXaiVideoAPI(prompt, safeParams);
+            result = await callOpenRouterGrokVideoAPI(prompt, safeParams);
+            break;
+        case "happyhorse-1.1":
+            result = await callHappyHorseAPI(prompt, safeParams);
             break;
         default:
             throw new Error(

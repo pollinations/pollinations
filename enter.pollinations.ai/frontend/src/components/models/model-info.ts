@@ -1,7 +1,6 @@
 import type { Modalities, ModelCapability, ModelPrice } from "./types.ts";
 
 const BRAND_LOGOS: Record<string, string> = {
-    "ACE-Step": "ace-step",
     Alibaba: "alibaba",
     Amazon: "amazon",
     Anthropic: "anthropic",
@@ -16,19 +15,23 @@ const BRAND_LOGOS: Record<string, string> = {
     Google: "google",
     Ideogram: "ideogram",
     Inception: "inception",
-    Lightricks: "lightricks",
+    Meituan: "meituan",
     Meta: "meta",
     Microsoft: "microsoft",
     MiniMax: "minimax",
     Mistral: "mistral",
     "Moonshot AI": "moonshot",
+    NVIDIA: "nvidia",
     OpenAI: "openai",
     Perplexity: "perplexity",
     Pollinations: "pollinations",
+    Poolside: "poolside",
     Pruna: "pruna",
     Qwen: "qwen",
+    Sesame: "sesame",
     "Stability AI": "stability",
     StepFun: "stepfun",
+    Xiaomi: "xiaomi",
     "Z.ai": "zai",
     xAI: "xai",
 };
@@ -177,7 +180,7 @@ export const isNewModel = (model: ModelPrice): boolean => {
 };
 
 /**
- * Check if a model requires paid balance only (no tier balance)
+ * Check if a model requires paid balance only, not Quest Pollen.
  */
 export const isPaidOnly = (model: ModelPrice): boolean =>
     model.paidOnly === true;

@@ -1,0 +1,116 @@
+name: Apps / Pre-review submissions
+
+on:
+  issues:
+    types: [opened, edited]
+  workflow_dispatch:
+    inputs:
+      issue_number:
+        description: Issue number to process
+        required: true
+        type: number
+
+concurrency:
+  group: app-pre-review-${{ github.event.issue.number || inputs.issue_number }}
+  cancel-in-progress: true
+
+jobs:
+  pre-review:
+    if: |
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.issue.state == 'open' &&
+       (contains(github.event.issue.labels.*.name, 'APP-SUBMISSION') ||
+        startsWith(github.event.issue.title, '[App Submission]')) &&
+       !contains(github.event.issue.labels.*.name, 'APP-APPROVED'))
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
+
+    steps:
+      - name: Generate app token
+        id: token
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ secrets.POLLY_BOT_APP_ID }}
+          private-key: ${{ secrets.POLLY_BOT_PRIVATE_KEY }}
+
+      - name: Ensure app review labels
+        env:
+          GH_TOKEN: ${{ steps.token.outputs.token }}
+          EVENT_NAME: ${{ github.event_name }}
+          EVENT_ISSUE: ${{ github.event.issue.number }}
+          INPUT_ISSUE: ${{ inputs.issue_number }}
+        run: |
+          gh label create APP-SUBMISSION --repo "$GITHUB_REPOSITORY" --color 7057ff --description "Community app submission" --force
+          gh label create APP-NEEDS-INFO --repo "$GITHUB_REPOSITORY" --color d876e3 --description "App submission needs more information" --force
+          gh label create APP-REVIEW --repo "$GITHUB_REPOSITORY" --color fbca04 --description "App submission ready for human review" --force
+          gh label create APP-APPROVED --repo "$GITHUB_REPOSITORY" --color 0e8a16 --description "App submission approved for publishing" --force
+          if [ "$EVENT_NAME" = "workflow_dispatch" ]; then
+            ISSUE_NUMBER="$INPUT_ISSUE"
+          else
+            ISSUE_NUMBER="$EVENT_ISSUE"
+          fi
+          gh issue edit "$ISSUE_NUMBER" --repo "$GITHUB_REPOSITORY" --add-label APP-SUBMISSION
+
+      - name: Resolve issue
+        id: issue
+        env:
+          GH_TOKEN: ${{ steps.token.outputs.token }}
+          EVENT_NAME: ${{ github.event_name }}
+          EVENT_ISSUE: ${{ github.event.issue.number }}
+          INPUT_ISSUE: ${{ inputs.issue_number }}
+        run: |
+          if [ "$EVENT_NAME" = "workflow_dispatch" ]; then
+            ISSUE_NUMBER="$INPUT_ISSUE"
+          else
+            ISSUE_NUMBER="$EVENT_ISSUE"
+          fi
+          ISSUE_AUTHOR=$(gh api "repos/${GITHUB_REPOSITORY}/issues/${ISSUE_NUMBER}" --jq .user.login)
+          echo "number=$ISSUE_NUMBER" >> "$GITHUB_OUTPUT"
+          echo "author=$ISSUE_AUTHOR" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install reviewer dependency
+        run: pip install requests
+
+      - name: Validate submission
+        id: validate
+        env:
+          GH_TOKEN: ${{ steps.token.outputs.token }}
+          ISSUE_NUMBER: ${{ steps.issue.outputs.number }}
+          ISSUE_AUTHOR: ${{ steps.issue.outputs.author }}
+        run: |
+          set +e
+          node .github/scripts/app-validate-submission.js > "$RUNNER_TEMP/app-validation.json"
+          STATUS=$?
+          set -e
+          cat "$RUNNER_TEMP/app-validation.json"
+          {
+            echo 'result<<APP_VALIDATION_EOF'
+            cat "$RUNNER_TEMP/app-validation.json"
+            echo 'APP_VALIDATION_EOF'
+          } >> "$GITHUB_OUTPUT"
+          if [ "$STATUS" -eq 1 ]; then
+            exit 1
+          fi
+
+      - name: Run AI pre-review
+        env:
+          GH_TOKEN: ${{ steps.token.outputs.token }}
+          GH_BOT_LOGIN: ${{ steps.token.outputs.app-slug }}[bot]
+          POLLINATIONS_API_KEY: ${{ secrets.PLN_GITHUB_POLLY_KEY }}
+          ISSUE_NUMBER: ${{ steps.issue.outputs.number }}
+          VALIDATION_RESULT: ${{ steps.validate.outputs.result }}
+        run: python .github/scripts/app-review-agent.py

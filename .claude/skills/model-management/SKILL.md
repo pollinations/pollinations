@@ -1,9 +1,9 @@
 ---
 name: model-management
-description: "Add, update, or remove text/image/video/audio/embeddings models. Covers the full lifecycle: files to touch, what to verify, and how to test empirically before merging."
+description: "Add, update, rename, or remove text/image/video/audio/embeddings models. Requires explicit user confirmation of pricing, paid status, provider, GPU ownership, and primary/fallback inference routes before editing, then covers files, empirical verification, and tests."
 ---
 
-> **Read top to bottom on first use.** Then bookmark §6 ([Change matrix](#6-change-matrix--if-you-change-x-verify-y)) and §7 ([Test matrix](#7-test-matrix--if-model-claims-x-run-y)) — those are the daily-driver tables. §9 ([Field-parity audit](#9-field-parity-audit--mandatory-on-new-model--provider-change)) is **mandatory** for new model and provider-change PRs.
+> **Read top to bottom on first use.** The [confirmation gate](#mandatory-confirmation-gate--before-any-model-edit) applies to every model change. Then bookmark §6 ([Change matrix](#6-change-matrix--if-you-change-x-verify-y)) and §7 ([Test matrix](#7-test-matrix--if-model-claims-x-run-y)) — those are the daily-driver tables. §9 ([Field-parity audit](#9-field-parity-audit--mandatory-on-new-model--provider-change)) is **mandatory** for new model and provider-change PRs.
 
 ---
 
@@ -20,6 +20,54 @@ description: "Add, update, or remove text/image/video/audio/embeddings models. C
 | Deleting a model | §6 (row "Delete") |
 | Debugging a live issue | See `model-debugging` skill (currently stale — scheduled for rewrite) |
 
+## Mandatory confirmation gate — before any model edit
+
+Do not edit a model until the user explicitly confirms its business and inference contract. This gate applies to additions, removals, renames, aliases, descriptions, capabilities, modalities, prices, providers, and routing. A change that appears metadata-only does not bypass it.
+
+First inspect the registry and every reachable runtime route. Present the values you found; do not ask the user to discover them for you.
+
+| Confirm | Exact meaning |
+|---|---|
+| Canonical name and aliases | Public name after the change and every compatibility/upstream alias |
+| `priceMultiplier` | Exact multiplier applied after provider cost calculation |
+| `paidOnly` | Whether the model requires purchased pack balance |
+| Pollinations-operated GPU | **Yes** only when Pollinations operates the production inference hardware; a managed provider API is **No**, even though that provider uses GPUs |
+| Registry provider | Primary provider configured for the model; this is not the model brand and not a fallback that happened to serve one request |
+| Primary inference route | Runtime handler/config, deployment or host, and upstream `modelId` |
+| Fallback route | Fallback provider, deployment/host, and upstream `modelId`, or explicitly `none` |
+
+Ask this explicit question, filled with the discovered values:
+
+> Please confirm: the price multiplier is **X**, paid-only is **yes/no**, Pollinations-operated GPU is **yes/no**, the registry provider is **Y**, the primary inference route is **Z**, and the fallback route is **A/none**. Are all of these correct?
+
+Also show the canonical name and aliases immediately above the question. Do not proceed on a general approval such as “looks good” if any value is missing from what was shown.
+
+If a value is unknown, inferred, conflicting, or route-dependent:
+
+1. Label it `UNKNOWN` or describe the conflict.
+2. Ask the user to resolve that exact value.
+3. Wait for explicit confirmation before editing the model.
+
+For batch work, use one table row per model with every field above. The user may approve the complete table in one response, but no blank or inherited cells are allowed.
+
+### Additional approval gate for provider secrets
+
+Model approval never authorizes a provider-secret mutation. If the work would create, replace, rotate, revoke, regenerate, synchronize, or deploy a provider credential or encrypted SOPS value:
+
+1. Stop and present the exact secret name (never its value), environments, reason, impact, execution order, verification, and rollback.
+2. Wait for a separate approval in the current conversation using: `Yes, you can rotate <SECRET_NAME> in <ENVIRONMENTS> now.`
+3. Treat general approval such as “go ahead,” “deploy,” “continue,” or confirmation of the model contract as insufficient.
+4. Do not edit the secret or open or push its PR before approval. After approval, use a dedicated secret-only PR and follow the rotation order in the repository `AGENTS.md`.
+
+If exposure is suspected, report it immediately but do not mutate the credential before receiving this approval.
+
+Keep these concepts separate:
+
+- **Configured** provider/GPU describes the registry's intended primary route.
+- **Used** provider/GPU describes the backend proven to have served a specific request.
+- A fallback can make configured and used values different. Never overwrite the configured registry provider with an observed fallback provider.
+- When the registry has a `selfHosted` field, `selfHosted: true` means the configured primary route uses Pollinations-operated production inference GPUs. It does not prove which backend served an individual request.
+
 ## Related skills — when to hand off
 
 This skill is self-contained for the model lifecycle. Hand off to a dedicated skill when the work clearly belongs elsewhere:
@@ -28,7 +76,7 @@ This skill is self-contained for the model lifecycle. Hand off to a dedicated sk
 |---|---|---|
 | Adding/modifying a Tinybird **pipe or datasource schema** | `tinybird-deploy` | Querying existing pipes/SQL to verify billing rows |
 | Investigating a live model error in prod (logs, error patterns, affected users) | `model-debugging` | Pre-merge empirical testing |
-| Verifying provider invoice ↔ our cost block math, monthly spend rollups | `provider-billing` | Setting the cost block from provider's posted rates |
+| Verifying provider invoice ↔ our cost block math, monthly spend rollups | Economics `apps/operation/economics/ingest/connectors/<provider>.md` | Setting the cost block from provider's posted rates |
 | Deploying gen/enter workers themselves | `enter-services` | Local-only testing before merge |
 
 **Things kept inline (not extracted into their own skills) on purpose:**
@@ -53,7 +101,7 @@ client → gen.pollinations.ai → upstream provider
          enter.pollinations.ai (dashboard, auth, Stripe surfaces)
 ```
 
-**Generation does not go through Enter, and neither does billing tracking.** Gen reads the shared D1/KV bindings directly to validate tokens, check balances, and apply model permissions. Gen also sends the `generation_event` directly to Tinybird (`gen.pollinations.ai/src/middleware/track.ts:290`). The `ENTER` service binding is invoked in only three places:
+**Generation does not go through Enter, and neither does billing tracking.** Gen reads the shared D1/KV bindings directly to validate tokens, check balances, and apply model permissions. Gen also sends `generation_event_v2` directly to Tinybird (`gen.pollinations.ai/src/middleware/track.ts`). The `ENTER` service binding is invoked in only three places:
 
 | File:line | Call site purpose |
 |---|---|
@@ -73,7 +121,6 @@ Implication: **local gen alone covers ~90% of model-management work** — includ
 **Boot Enter locally only if the change touches any of:**
 - Dashboard, auth routes, account APIs (Stripe portal, webhook handlers, login)
 - Pollen pack / `packBalance` mutation logic, auto-top-up flow itself
-- Tier configs (the source of truth in enter — `enter.pollinations.ai/src/tier-config.ts`)
 - Tinybird event schema (the event SHAPE / new datasource column — not the data inside it; gen writes the data)
 - DB seeding / migrations
 
@@ -189,11 +236,12 @@ Provider/runtime secrets (Azure, OpenAI, OpenRouter API keys, etc.) belong in `g
 | `shared/registry/registry.ts` | `convertUsage()` — where missing cost keys log `[registry] Missing conversion rate`. `completionReasoningTokens` is rewritten to `completionTextTokens` **before** the rate lookup (line 118), so it never produces this warning. If you see the warning for reasoning, it actually means `completionTextTokens` is missing. |
 | `shared/registry/usage-headers.ts` | `x-usage-*` header builder/parser; defines every typed usage field (13 total) |
 | `shared/registry/price-helpers.ts` | `perMillion()`, `priceMultiplier` math (`price = usage × cost × priceMultiplier`, rounded to 8 decimals) |
-| `gen.pollinations.ai/src/middleware/track.ts` | Builds the `generation_event` row sent to Tinybird; cache HITs are flagged `isBilledUsage: false` (line 395) |
+| `gen.pollinations.ai/src/middleware/track.ts` | Builds the `generation_event_v2` row sent to Tinybird; cache hits and unauthenticated requests are omitted |
+| `enter.pollinations.ai/frontend/src/components/models/model-info.ts` + `frontend/public/brand-logos/*.svg` | Catalog brand-to-logo mapping and monochrome SVG assets |
 
 ### `priceMultiplier`
 
-Every cost block requires `priceMultiplier`. Current values in the registry: **`1` or `1.5`**, no others. `1.5` is our standard markup for retail; `1` is at-cost or strategically subsidized. Set it explicitly on every new model. Final billed price = `usage × cost × priceMultiplier`.
+Every cost block requires `priceMultiplier`. Do not assume a fixed set of allowed multipliers: inspect the current registry value and obtain explicit user confirmation before keeping or changing it. Set it explicitly on every new model. Final billed price = `usage × cost × priceMultiplier`.
 
 ---
 
@@ -202,6 +250,8 @@ Every cost block requires `priceMultiplier`. Current values in the registry: **`
 > Pricing depends on **both model AND provider.** Always verify pricing on the provider's own website before writing the cost block.
 > `addedDate` is set **once** and **never updated.** Drives the 7-day NEW chip on the dashboard. Use `new Date("YYYY-MM-DD").getTime()` with today's date on first add; do not touch it for later pricing/endpoint/provider changes.
 
+Every row below starts with the [mandatory confirmation gate](#mandatory-confirmation-gate--before-any-model-edit). Verification after editing does not replace confirmation before editing.
+
 | If you change… | …in these files | …re-verify |
 |---|---|---|
 | **Pricing (`cost` block + `priceMultiplier`)** | `shared/registry/{text,image,audio,embeddings}.ts` | §7 one request per declared modality + §8 (usage JSON + `x-usage-*` headers + Tinybird row with correct cost + tail **completely clean** of `[registry] Missing conversion rate`) + §9 (field parity) |
@@ -209,7 +259,7 @@ Every cost block requires `priceMultiplier`. Current values in the registry: **`
 | **modelId** (upstream identifier) | config only | One real call per modality returns 200; §8; §9 if the upstream version is new |
 | **Slug / service name** | `availableModels.ts` + registry `name` + every alias entry referencing it | `aliases.test.ts`; `/v1/models` lists new slug; old slug returns 404 or alias-redirects; `rg <old-slug>` across `apps/`, `pollinations.ai/`, `packages/sdk` for hardcoded refs |
 | **Aliases** | registry `aliases` array | `aliases.test.ts`; each alias resolves to canonical |
-| **Description / brand** | registry only | `/v1/models` shows new copy; **don't touch `addedDate`** |
+| **Description / brand** | registry; for a new brand, `model-info.ts` + `public/brand-logos/<brand>.svg` | Catalog API shows new copy; `getModelBrandLogoPath()` resolves to an existing SVG; visually verify the model row; **don't touch `addedDate`** |
 | **`inputModalities` added** | registry + possibly `gen.pollinations.ai/src/text/transforms/` | §7 row passes empirically (vendor docs are not evidence); error path for unsupported modality returns 4xx, not silent ignore |
 | **`outputModalities` added** | registry + handler | Sample response carries the modality; §8 usage line for the matching cost type present. If declaring two output modalities (e.g. video+audio for `seedance-2.0`), confirm whether the upstream bills bundled into one usage field or returns separate fields — document the choice in the cost block comment. |
 | **Image resolutions / aspect ratios** | handler + (registry comment) | One generation per supported ratio returns 200 with matching dims; unsupported ratios return 4xx; §7 cache row with byte-identical params shows MISS→HIT |
@@ -378,13 +428,13 @@ After every **MISS** call (cache HITs are explicitly NOT billed — see caveat b
 - For MISS: every non-zero header should have a matching registry cost entry.
 - For HIT: **text caches preserve `x-usage-*` headers** so the parsed usage matches the original MISS; **media (image/video/audio) caches drop `x-usage-*` headers** and only preserve selected safety metadata. Don't flag missing media usage headers on a HIT.
 
-### C. Tinybird `generation_event` row
+### C. Tinybird `generation_event_v2` row
 - Local gen / dev → staging workspace → `TINYBIRD_READ_STAGING`
 - Prod gen → prod workspace → `TINYBIRD_READ_PROD`
-- Confirm a row exists for your model with non-zero `token_count_*` and `token_price_*` columns matching the JSON/headers (column list: `enter.pollinations.ai/observability/datasources/generation_event.datasource`).
+- Confirm a row exists for your model with non-zero `token_count_*` and `token_price_*` columns matching the JSON/headers (column list: `enter.pollinations.ai/observability/datasources/generation_event_v2.datasource`).
 - **No row is written for cache HITs** (`isBilledUsage: false` at `gen.pollinations.ai/src/middleware/track.ts:395`). HIT-call verification stops at the `X-Cache: HIT` header.
 
-`model_health` returns counts/errors/latency only, no usage. Query `generation_event` directly to see token + price columns:
+`model_health` returns counts/errors/latency only, no usage. Query `generation_event_v2` directly to see token + price columns:
 ```bash
 TB="https://api.europe-west2.gcp.tinybird.co"
 SQL="SELECT resolved_model_requested AS model, start_time,
@@ -392,7 +442,7 @@ SQL="SELECT resolved_model_requested AS model, start_time,
   token_count_completion_text, token_count_completion_reasoning,
   token_count_completion_image, token_count_completion_video_seconds,
   total_cost, total_price, dev_price, markup_rate
- FROM generation_event
+ FROM generation_event_v2
  WHERE resolved_model_requested = '$MODEL'
    AND start_time >= now() - interval 10 minute
  ORDER BY start_time DESC
@@ -426,7 +476,7 @@ In a separate terminal during testing:
 1. Map to one of the **13 typed usage fields** in `shared/registry/usage-headers.ts` (`promptTextTokens`, `promptCachedTokens`, `promptAudioTokens`, `promptAudioSeconds`, `promptImageTokens`, `promptVideoTokens`, `completionTextTokens`, `completionReasoningTokens`, `completionAudioTokens`, `completionAudioSeconds`, `completionImageTokens`, `completionVideoSeconds`, `completionVideoTokens`),
 2. AND have a corresponding entry in the registry `cost` block (reasoning tokens are an exception — they're rewritten to `completionTextTokens` in `registry.ts:118` before rate lookup, so they don't need a separate cost line; but `completionTextTokens` itself must exist),
 3. AND surface in the response headers as `x-usage-<kebab-case-name>`,
-4. AND land in the Tinybird `generation_event` row via `track.ts`,
+4. AND land in the Tinybird `generation_event_v2` row via `track.ts`,
 5. AND appear in the worker logs (`wrangler tail`) so we can audit historical drift.
 
 If a field exists upstream that we don't map → either extend `usage-headers.ts` + the registry + the Tinybird schema, OR document explicitly in the PR why we're intentionally dropping it (rare; usually "provider bundles X into Y").
@@ -455,7 +505,7 @@ grep -iE "^x-usage-" /tmp/headers.txt
 # 4. Pull the actual billing row Tinybird wrote (wait ~5s for ingest)
 sleep 5
 TB="https://api.europe-west2.gcp.tinybird.co"
-SQL="SELECT * FROM generation_event
+SQL="SELECT * FROM generation_event_v2
  WHERE resolved_model_requested = '$MODEL'
    AND start_time >= now() - interval 2 minute
  ORDER BY start_time DESC LIMIT 1 FORMAT JSON"
@@ -505,8 +555,7 @@ This is acceptable. What's NOT acceptable is silently dropping a separately-bill
                                           test/media-cache.test.ts \
                                           test/text-cache.test.ts \
                                           test/billing-deduction.test.ts \
-                                          test/tracking-observability.test.ts \
-                                          test/openai-schema.test.ts)
+                                          test/tracking-observability.test.ts)
 
 # Modality-specific (run the relevant subset)
 (cd gen.pollinations.ai && npx vitest run test/image/)         # for image models
@@ -521,6 +570,7 @@ This is acceptable. What's NOT acceptable is silently dropping a separately-bill
 
 ## Empirical (must all pass against `localhost:8788`)
 
+- [ ] PR links or includes the explicitly approved confirmation row(s): name, aliases, `priceMultiplier`, `paidOnly`, Pollinations-operated GPU, registry provider, primary route, and fallback route
 - [ ] All [Change matrix](#6-change-matrix--if-you-change-x-verify-y) rows for this change type re-verified
 - [ ] All [Test matrix](#7-test-matrix--if-model-claims-x-run-y) rows for declared capabilities passed (not from docs)
 - [ ] [Output cache](#72-image) tested with **byte-identical requests** if the modality caches
@@ -528,11 +578,14 @@ This is acceptable. What's NOT acceptable is silently dropping a separately-bill
 - [ ] [Four-part usage check](#8-usage-billing-cache-verification) passed on MISS calls
 - [ ] [Field-parity audit](#9-field-parity-audit--mandatory-on-new-model--provider-change) passed (new model or provider change)
 - [ ] `/v1/models` returns the model with correct pricing + modalities
+- [ ] Every new model brand maps to an existing SVG and renders in the catalog; `test/pricing-data.test.ts` passes
 - [ ] `addedDate` set on first add, **untouched** on later edits
-- [ ] `priceMultiplier` set (1 or 1.5)
+- [ ] `priceMultiplier` is set to the explicitly confirmed value
 - [ ] No 5xx in [error-path matrix](#76-error-paths--every-malformed-request-must-return-4xx-never-opaque-5xx)
 - [ ] Burst test passed at expected production concurrency
+- [ ] Any required provider-secret mutation has its own dedicated PR and a separate, scoped approval using the exact format required by `AGENTS.md`
 - [ ] PR description notes any docs/upstream discrepancies found and any bundled-modality choices
+- [ ] `APIDOCS.md` is untouched. It is regenerated from the live OpenAPI schema after production deploy; update source schemas/routes instead.
 
 ---
 
@@ -540,12 +593,14 @@ This is acceptable. What's NOT acceptable is silently dropping a separately-bill
 
 ## 11.1 SOPS — provider secrets
 
+The [additional provider-secret approval gate](#additional-approval-gate-for-provider-secrets) is mandatory before any command that changes these files. Inspection must not print secret values. SOPS edits, GitHub secret updates, provider-side key regeneration/revocation, and production secret synchronization are all separate secret mutations and must remain within the explicitly approved scope.
+
 ```bash
 # Inspect keys in a vars file
 sops --decrypt gen.pollinations.ai/secrets/prod.vars.json \
   | python3 -c "import json,sys; [print(k) for k in json.load(sys.stdin)]"
 
-# Add or update a key
+# Add or update a key — only after the explicit approval gate
 sops set gen.pollinations.ai/secrets/prod.vars.json '["KEY_NAME"]' '"value"'
 
 # Decrypt to .dev.vars for local dev
@@ -575,13 +630,14 @@ If `-a "$USER"` doesn't match, try without `-a` (`security find-generic-password
 
 ## 11.2 Description style
 
-Format: `<Model Name> - <what it does or what makes it distinct>`. ≤ ~70 chars when possible.
+Format: `<what it does or what makes it distinct>`. ≤ ~70 chars when possible.
 
+- Write user-facing catalog copy for developers: make the model's practical use clear without exposing internal routing or implementation details.
 - Say what the model **does** or what makes it **different** ("Fast & affordable image generation", "Long-context MoE for retrieval"). Capability over branding.
+- **Do not repeat the model name/title** in the description. The model manager renders the display name separately, so descriptions like "Seedream 5.0 Pro - Premium image generation" are redundant.
 - **No provider/inference attribution** in the description — no "(OpenRouter)", "via DashScope", "OpenAI's", etc. `provider` and `brand` fields carry that.
-- **No filler.** "X - Image Generation Model" tells the reader nothing. "FLUX.2 Klein 4B - Fast image generation and editing" > "FLUX.2 Klein 4B - Advanced Model".
+- **No filler.** "Image generation model" tells the reader nothing. "Fast image generation and editing" > "Advanced model".
 
 ## 11.3 Wrapper models (e.g. persona-prompted Claude)
 
 For specialized wrappers, the underlying model's capabilities are NOT the same as the product's. Mark `inputModalities` to reflect the **product intent**, not what the underlying model technically supports. Add a one-line comment explaining the discrepancy.
-

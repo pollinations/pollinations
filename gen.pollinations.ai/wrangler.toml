@@ -42,8 +42,7 @@ new_classes = ["PollenRateLimiter"]
 ENVIRONMENT = "development"
 LOG_LEVEL = "trace"
 LOG_FORMAT = "text"
-TINYBIRD_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=generation_event"
-TINYBIRD_TIER_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=tier_event"
+TINYBIRD_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=generation_event_v2"
 AWS_BEDROCK_REGION = "us-east-1"
 BEDROCK_GUARDRAIL_ID = "utmttwfzrzp8"
 BEDROCK_GUARDRAIL_VERSION = "2"
@@ -68,9 +67,19 @@ pattern = "gen.myceli.ai"
 zone_name = "myceli.ai"
 custom_domain = true
 
+[[env.production.routes]]
+pattern = "gen.pollinations.ai"
+zone_name = "pollinations.ai"
+custom_domain = true
+
 [[env.production.services]]
 binding = "ENTER"
 service = "pollinations-enter-production"
+
+[[env.production.vpc_networks]]
+binding = "KLEIN_VPC"
+tunnel_id = "c340d8d9-c1f3-4a13-8115-38b59faac3d5"
+remote = true
 
 [[env.production.d1_databases]]
 remote = true
@@ -108,8 +117,7 @@ new_classes = ["PollenRateLimiter"]
 ENVIRONMENT = "production"
 LOG_LEVEL = "debug"
 LOG_FORMAT = "json"
-TINYBIRD_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=generation_event"
-TINYBIRD_TIER_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=tier_event"
+TINYBIRD_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=generation_event_v2"
 POLLEN_REFILL_PER_HOUR = 1
 AWS_BEDROCK_REGION = "us-east-1"
 BEDROCK_GUARDRAIL_ID = "utmttwfzrzp8"
@@ -125,6 +133,11 @@ pattern = "staging.gen.myceli.ai"
 zone_name = "myceli.ai"
 custom_domain = true
 
+[[env.staging.routes]]
+pattern = "staging.gen.pollinations.ai"
+zone_name = "pollinations.ai"
+custom_domain = true
+
 [[env.staging.services]]
 binding = "ENTER"
 service = "pollinations-enter-staging"
@@ -132,7 +145,7 @@ service = "pollinations-enter-staging"
 [[env.staging.d1_databases]]
 binding = "DB"
 database_name = "staging-pollinations-enter-db"
-database_id = "63da5347-3fa8-4410-a68f-c9e83956f76a"
+database_id = "2cb1cf1a-a18a-4cad-a4bb-be64e3c0e39f"
 migrations_dir = "../enter.pollinations.ai/drizzle"
 
 [[env.staging.kv_namespaces]]
@@ -164,14 +177,13 @@ new_classes = ["PollenRateLimiter"]
 ENVIRONMENT = "staging"
 LOG_LEVEL = "debug"
 LOG_FORMAT = "json"
-TINYBIRD_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=generation_event"
-TINYBIRD_TIER_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=tier_event"
+TINYBIRD_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=generation_event_v2"
 AWS_BEDROCK_REGION = "us-east-1"
 BEDROCK_GUARDRAIL_ID = "utmttwfzrzp8"
 BEDROCK_GUARDRAIL_VERSION = "2"
 # Staging OAuth lockdown — must match enter.pollinations.ai staging allowlist.
 # Request-time gate in shared/auth/api-key.ts fails closed without it. Issue #11137.
-STAGING_ALLOWED_GITHUB_IDS = "36901823,5099901,235942848,248917639,241978997,118118458"
+STAGING_ALLOWED_GITHUB_IDS = "36901823,5099901,235942848,248917639,241978997,118118458,189873015"
 STAGING_ALLOWED_EMAILS = "elliot@pollinations.ai"
 [env.test]
 
@@ -219,16 +231,19 @@ LOG_LEVEL = "trace"
 LOG_FORMAT = "text"
 BETTER_AUTH_SECRET = "not-a-secret-workers-test-only"
 TINYBIRD_INGEST_TOKEN = "not-a-secret-workers-test-only"
-TINYBIRD_INGEST_URL = "http://localhost:7181/v0/events?name=generation_event"
-TINYBIRD_TIER_INGEST_URL = "http://localhost:7181/v0/events?name=tier_event"
+TINYBIRD_INGEST_URL = "http://localhost:7181/v0/events?name=generation_event_v2"
 PORTKEY_GATEWAY_URL = "https://portkey.test"
+AI_GATEWAY_API_KEY = "not-a-secret-workers-test-only"
 AWS_ACCESS_KEY_ID = "not-a-secret-workers-test-only"
 AWS_SECRET_ACCESS_KEY = "not-a-secret-workers-test-only"
 AWS_REGION = "us-east-1"
 AZURE_MYCELI_PROD_API_KEY = "not-a-secret-workers-test-only"
 AZURE_MYCELI_PROD_EASTUS2_API_KEY = "not-a-secret-workers-test-only"
 AZURE_MYCELI_PROD_IMG_WESTUS3_API_KEY = "not-a-secret-workers-test-only"
+AZURE_MYCELI_PROD_POLANDCENTRAL_API_KEY = "not-a-secret-workers-test-only"
 AZURE_MYCELI_PROD_SWEDEN_API_KEY = "not-a-secret-workers-test-only"
+AZURE_MYCELI_PROD_UAENORTH_API_KEY = "not-a-secret-workers-test-only"
+AZURE_MYCELI_PROD_WESTUS3_API_KEY = "not-a-secret-workers-test-only"
 AZURE_CONTENT_SAFETY_API_KEY = "not-a-secret-workers-test-only"
 AZURE_CONTENT_SAFETY_ENDPOINT = "https://content-safety.test"
 FIREWORKS_API_KEY = "not-a-secret-workers-test-only"
@@ -241,7 +256,6 @@ GOOGLE_PRIVATE_KEY = "not-a-secret-workers-test-only"
 GOOGLE_PRIVATE_KEY_ID = "not-a-secret-workers-test-only"
 GOOGLE_PROJECT_ID = "test-project"
 KLEIN_URL = "https://klein.test"
-LTX2_BASE_URL = "https://ltx2.test"
 NOVA_REEL_S3_BUCKET = "test-bucket"
 OPENAI_API_KEY = "not-a-secret-workers-test-only"
 PERPLEXITY_API_KEY = "not-a-secret-workers-test-only"

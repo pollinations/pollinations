@@ -98,7 +98,7 @@
           },
           "format": 1,
           "range": true,
-          "rawSql": "WITH banned_users AS (\n  SELECT github_username\n  FROM d1_user\n  WHERE banned = 1\n  GROUP BY github_username\n)\nSELECT\n  round(SUM(total_price) / GREATEST(1, uniqExact(toDate(start_time))), 2) as api_daily_spend\nFROM generation_event\nWHERE start_time >= $__fromTime AND start_time < $__toTime\n  AND model_provider_used IN ('google', 'aws', 'alibaba', 'azure', 'bytedance')\n  AND is_billed_usage = true\n  AND response_status >= 200 AND response_status < 300\n    AND user_github_username NOT IN (SELECT github_username FROM banned_users)",
+          "rawSql": "WITH banned_users AS (\n  SELECT github_username\n  FROM d1_user\n  WHERE banned = 1\n  GROUP BY github_username\n)\nSELECT\n  round(SUM(total_price) / GREATEST(1, uniqExact(toDate(start_time))), 2) as api_daily_spend\nFROM generation_event_v2\nWHERE start_time >= $__fromTime AND start_time < $__toTime\n  AND model_provider_used IN ('google', 'aws', 'alibaba', 'azure', 'bytedance')\n  AND is_billed_usage = true\n  AND response_status >= 200 AND response_status < 300\n    AND user_github_username NOT IN (SELECT github_username FROM banned_users)",
           "refId": "A"
         }
       ],
@@ -234,7 +234,7 @@
           },
           "format": 1,
           "range": true,
-          "rawSql": "WITH banned_users AS (\n  SELECT github_username\n  FROM d1_user\n  WHERE banned = 1\n  GROUP BY github_username\n)\nSELECT\n  round(SUM(total_price) / GREATEST(1, uniqExact(toDate(start_time))), 2) as free_inference_daily\nFROM generation_event\nWHERE start_time >= $__fromTime AND start_time < $__toTime\n  AND (\n    (model_provider_used IN ('fireworks', 'airforce', 'elevenlabs', 'perplexity', 'azure-2', 'scaleway', 'community'))\n    OR (model_provider_used = 'modal' AND model_used NOT IN ('klein', 'klein-large', 'ltx-2') AND model_used NOT LIKE 'flux_klein%')\n    OR (model_provider_used = 'ovhcloud' AND model_used IN ('Qwen3-Coder-30B-A3B-Instruct', 'Mistral-Small-3.2-24B-Instruct-2506', 'whisper'))\n  )\n  AND is_billed_usage = true\n  AND response_status >= 200 AND response_status < 300\n    AND user_github_username NOT IN (SELECT github_username FROM banned_users)",
+          "rawSql": "WITH banned_users AS (\n  SELECT github_username\n  FROM d1_user\n  WHERE banned = 1\n  GROUP BY github_username\n)\nSELECT\n  round(SUM(total_price) / GREATEST(1, uniqExact(toDate(start_time))), 2) as free_inference_daily\nFROM generation_event_v2\nWHERE start_time >= $__fromTime AND start_time < $__toTime\n  AND (\n    (model_provider_used IN ('fireworks', 'airforce', 'elevenlabs', 'perplexity', 'azure-2', 'scaleway', 'community'))\n    OR (model_provider_used = 'modal' AND model_used NOT IN ('klein', 'klein-large', 'ltx-2') AND model_used NOT LIKE 'flux_klein%')\n    OR (model_provider_used = 'ovhcloud' AND model_used IN ('Qwen3-Coder-30B-A3B-Instruct', 'Mistral-Small-3.2-24B-Instruct-2506', 'whisper'))\n  )\n  AND is_billed_usage = true\n  AND response_status >= 200 AND response_status < 300\n    AND user_github_username NOT IN (SELECT github_username FROM banned_users)",
           "refId": "A",
           "hide": true
         },
@@ -534,7 +534,7 @@
           },
           "format": 1,
           "range": true,
-          "rawSql": "WITH banned_users AS (\n  SELECT github_username\n  FROM d1_user\n  WHERE banned = 1\n  GROUP BY github_username\n)\nSELECT\n  round(SUM(total_price) / GREATEST(1, uniqExact(toDate(start_time))), 2) as spend\nFROM generation_event\nWHERE start_time >= $__fromTime AND start_time < $__toTime\n  AND model_provider_used IN ('google', 'aws', 'alibaba', 'azure', 'bytedance')\n  AND is_billed_usage = true\n  AND response_status >= 200 AND response_status < 300\n    AND user_github_username NOT IN (SELECT github_username FROM banned_users)",
+          "rawSql": "WITH banned_users AS (\n  SELECT github_username\n  FROM d1_user\n  WHERE banned = 1\n  GROUP BY github_username\n)\nSELECT\n  round(SUM(total_price) / GREATEST(1, uniqExact(toDate(start_time))), 2) as spend\nFROM generation_event_v2\nWHERE start_time >= $__fromTime AND start_time < $__toTime\n  AND model_provider_used IN ('google', 'aws', 'alibaba', 'azure', 'bytedance')\n  AND is_billed_usage = true\n  AND response_status >= 200 AND response_status < 300\n    AND user_github_username NOT IN (SELECT github_username FROM banned_users)",
           "refId": "B",
           "hide": true
         },
@@ -677,7 +677,7 @@
           },
           "format": 0,
           "range": true,
-          "rawSql": "WITH banned_users AS (\n  SELECT github_username\n  FROM d1_user\n  WHERE banned = 1\n  GROUP BY github_username\n)\nSELECT\n  toStartOfInterval(start_time, INTERVAL 1 DAY) as time,\n  concat(model_provider_used, ' / ', model_used) as series,\n  SUM(total_price) as cost\nFROM generation_event\nWHERE start_time >= $__fromTime AND start_time < $__toTime\n  AND model_provider_used IN ('google', 'aws', 'alibaba', 'azure', 'bytedance')\n  AND is_billed_usage = true\n  AND response_status >= 200 AND response_status < 300\n    AND user_github_username NOT IN (SELECT github_username FROM banned_users)\nGROUP BY time, series\nORDER BY time, series",
+          "rawSql": "WITH banned_users AS (\n  SELECT github_username\n  FROM d1_user\n  WHERE banned = 1\n  GROUP BY github_username\n)\nSELECT\n  toStartOfInterval(start_time, INTERVAL 1 DAY) as time,\n  concat(model_provider_used, ' / ', model_used) as series,\n  SUM(total_price) as cost\nFROM generation_event_v2\nWHERE start_time >= $__fromTime AND start_time < $__toTime\n  AND model_provider_used IN ('google', 'aws', 'alibaba', 'azure', 'bytedance')\n  AND is_billed_usage = true\n  AND response_status >= 200 AND response_status < 300\n    AND user_github_username NOT IN (SELECT github_username FROM banned_users)\nGROUP BY time, series\nORDER BY time, series",
           "refId": "A"
         }
       ],
@@ -775,7 +775,7 @@
           },
           "format": 0,
           "range": true,
-          "rawSql": "WITH banned_users AS (\n  SELECT github_username\n  FROM d1_user\n  WHERE banned = 1\n  GROUP BY github_username\n)\nSELECT\n  toStartOfInterval(start_time, INTERVAL 1 DAY) as time,\n  concat(model_provider_used, ' / ', model_used) as series,\n  SUM(total_price) as cost\nFROM generation_event\nWHERE start_time >= $__fromTime AND start_time < $__toTime\n  AND model_provider_used IN ('io.net', 'vast.ai')\n  AND is_billed_usage = true\n  AND response_status >= 200 AND response_status < 300\n    AND user_github_username NOT IN (SELECT github_username FROM banned_users)\nGROUP BY time, series\nORDER BY time, series",
+          "rawSql": "WITH banned_users AS (\n  SELECT github_username\n  FROM d1_user\n  WHERE banned = 1\n  GROUP BY github_username\n)\nSELECT\n  toStartOfInterval(start_time, INTERVAL 1 DAY) as time,\n  concat(model_provider_used, ' / ', model_used) as series,\n  SUM(total_price) as cost\nFROM generation_event_v2\nWHERE start_time >= $__fromTime AND start_time < $__toTime\n  AND model_provider_used IN ('io.net', 'vast.ai')\n  AND is_billed_usage = true\n  AND response_status >= 200 AND response_status < 300\n    AND user_github_username NOT IN (SELECT github_username FROM banned_users)\nGROUP BY time, series\nORDER BY time, series",
           "refId": "A"
         }
       ],
@@ -886,7 +886,7 @@
           },
           "format": 0,
           "range": true,
-          "rawSql": "WITH banned_users AS (\n  SELECT github_username\n  FROM d1_user\n  WHERE banned = 1\n  GROUP BY github_username\n)\nSELECT\n  toStartOfInterval(start_time, INTERVAL 1 DAY) as time,\n  concat(model_provider_used, ' / ', model_used) as series,\n  SUM(total_price) as cost\nFROM generation_event\nWHERE start_time >= $__fromTime AND start_time < $__toTime\n  AND (\n    (model_provider_used IN ('fireworks', 'airforce', 'elevenlabs', 'perplexity', 'azure-2', 'scaleway', 'community'))\n    OR (model_provider_used = 'modal' AND model_used NOT IN ('klein', 'klein-large', 'ltx-2') AND model_used NOT LIKE 'flux_klein%')\n    OR (model_provider_used = 'ovhcloud' AND model_used IN ('Qwen3-Coder-30B-A3B-Instruct', 'Mistral-Small-3.2-24B-Instruct-2506', 'whisper'))\n  )\n  AND is_billed_usage = true\n  AND response_status >= 200 AND response_status < 300\n    AND user_github_username NOT IN (SELECT github_username FROM banned_users)\nGROUP BY time, series\nORDER BY time, series",
+          "rawSql": "WITH banned_users AS (\n  SELECT github_username\n  FROM d1_user\n  WHERE banned = 1\n  GROUP BY github_username\n)\nSELECT\n  toStartOfInterval(start_time, INTERVAL 1 DAY) as time,\n  concat(model_provider_used, ' / ', model_used) as series,\n  SUM(total_price) as cost\nFROM generation_event_v2\nWHERE start_time >= $__fromTime AND start_time < $__toTime\n  AND (\n    (model_provider_used IN ('fireworks', 'airforce', 'elevenlabs', 'perplexity', 'azure-2', 'scaleway', 'community'))\n    OR (model_provider_used = 'modal' AND model_used NOT IN ('klein', 'klein-large', 'ltx-2') AND model_used NOT LIKE 'flux_klein%')\n    OR (model_provider_used = 'ovhcloud' AND model_used IN ('Qwen3-Coder-30B-A3B-Instruct', 'Mistral-Small-3.2-24B-Instruct-2506', 'whisper'))\n  )\n  AND is_billed_usage = true\n  AND response_status >= 200 AND response_status < 300\n    AND user_github_username NOT IN (SELECT github_username FROM banned_users)\nGROUP BY time, series\nORDER BY time, series",
           "refId": "A"
         },
         {
@@ -994,7 +994,7 @@
           },
           "format": 0,
           "range": true,
-          "rawSql": "WITH banned_users AS (\n  SELECT github_username\n  FROM d1_user\n  WHERE banned = 1\n  GROUP BY github_username\n)\nSELECT\n  toStartOfInterval(start_time, INTERVAL 1 DAY) as time,\n  concat(model_provider_used, ' / ', model_used) as series,\n  SUM(total_price) as cost\nFROM generation_event\nWHERE start_time >= $__fromTime AND start_time < $__toTime\n  AND (\n    (model_provider_used IN ('runpod', 'lambda'))\n    OR (model_provider_used = 'modal' AND (model_used IN ('klein', 'klein-large', 'ltx-2') OR model_used LIKE 'flux_klein%'))\n    OR (model_provider_used = 'ovhcloud' AND model_used NOT IN ('Qwen3-Coder-30B-A3B-Instruct', 'Mistral-Small-3.2-24B-Instruct-2506', 'whisper'))\n  )\n  AND is_billed_usage = true\n  AND response_status >= 200 AND response_status < 300\n    AND user_github_username NOT IN (SELECT github_username FROM banned_users)\nGROUP BY time, series\nORDER BY time, series",
+          "rawSql": "WITH banned_users AS (\n  SELECT github_username\n  FROM d1_user\n  WHERE banned = 1\n  GROUP BY github_username\n)\nSELECT\n  toStartOfInterval(start_time, INTERVAL 1 DAY) as time,\n  concat(model_provider_used, ' / ', model_used) as series,\n  SUM(total_price) as cost\nFROM generation_event_v2\nWHERE start_time >= $__fromTime AND start_time < $__toTime\n  AND (\n    (model_provider_used IN ('runpod', 'lambda'))\n    OR (model_provider_used = 'modal' AND (model_used IN ('klein', 'klein-large', 'ltx-2') OR model_used LIKE 'flux_klein%'))\n    OR (model_provider_used = 'ovhcloud' AND model_used NOT IN ('Qwen3-Coder-30B-A3B-Instruct', 'Mistral-Small-3.2-24B-Instruct-2506', 'whisper'))\n  )\n  AND is_billed_usage = true\n  AND response_status >= 200 AND response_status < 300\n    AND user_github_username NOT IN (SELECT github_username FROM banned_users)\nGROUP BY time, series\nORDER BY time, series",
           "refId": "A"
         }
       ],
@@ -1163,7 +1163,7 @@
           },
           "format": 1,
           "range": true,
-          "rawSql": "WITH banned_users AS (\n  SELECT github_username\n  FROM d1_user\n  WHERE banned = 1\n  GROUP BY github_username\n)\nSELECT round($credits_fireworks / GREATEST(0.01, SUM(total_price) / GREATEST(1, uniqExact(toDate(start_time)))), 0) as val\nFROM generation_event\nWHERE start_time >= $__fromTime AND start_time < $__toTime\n  AND model_provider_used = 'fireworks'\n  AND is_billed_usage = true\n  AND response_status >= 200 AND response_status < 300\n    AND user_github_username NOT IN (SELECT github_username FROM banned_users)",
+          "rawSql": "WITH banned_users AS (\n  SELECT github_username\n  FROM d1_user\n  WHERE banned = 1\n  GROUP BY github_username\n)\nSELECT round($credits_fireworks / GREATEST(0.01, SUM(total_price) / GREATEST(1, uniqExact(toDate(start_time)))), 0) as val\nFROM generation_event_v2\nWHERE start_time >= $__fromTime AND start_time < $__toTime\n  AND model_provider_used = 'fireworks'\n  AND is_billed_usage = true\n  AND response_status >= 200 AND response_status < 300\n    AND user_github_username NOT IN (SELECT github_username FROM banned_users)",
           "refId": "A"
         },
         {
@@ -1173,7 +1173,7 @@
           },
           "format": 1,
           "range": true,
-          "rawSql": "WITH banned_users AS (\n  SELECT github_username\n  FROM d1_user\n  WHERE banned = 1\n  GROUP BY github_username\n)\nSELECT round($credits_elevenlabs / GREATEST(0.01, SUM(total_price) / GREATEST(1, uniqExact(toDate(start_time)))), 0) as val\nFROM generation_event\nWHERE start_time >= $__fromTime AND start_time < $__toTime\n  AND model_provider_used = 'elevenlabs'\n  AND is_billed_usage = true\n  AND response_status >= 200 AND response_status < 300\n    AND user_github_username NOT IN (SELECT github_username FROM banned_users)",
+          "rawSql": "WITH banned_users AS (\n  SELECT github_username\n  FROM d1_user\n  WHERE banned = 1\n  GROUP BY github_username\n)\nSELECT round($credits_elevenlabs / GREATEST(0.01, SUM(total_price) / GREATEST(1, uniqExact(toDate(start_time)))), 0) as val\nFROM generation_event_v2\nWHERE start_time >= $__fromTime AND start_time < $__toTime\n  AND model_provider_used = 'elevenlabs'\n  AND is_billed_usage = true\n  AND response_status >= 200 AND response_status < 300\n    AND user_github_username NOT IN (SELECT github_username FROM banned_users)",
           "refId": "G"
         },
         {
@@ -1183,7 +1183,7 @@
           },
           "format": 1,
           "range": true,
-          "rawSql": "WITH banned_users AS (\n  SELECT github_username\n  FROM d1_user\n  WHERE banned = 1\n  GROUP BY github_username\n)\nSELECT round($credits_perplexity / GREATEST(0.01, SUM(total_price) / GREATEST(1, uniqExact(toDate(start_time)))), 0) as val\nFROM generation_event\nWHERE start_time >= $__fromTime AND start_time < $__toTime\n  AND model_provider_used = 'perplexity'\n  AND is_billed_usage = true\n  AND response_status >= 200 AND response_status < 300\n    AND user_github_username NOT IN (SELECT github_username FROM banned_users)",
+          "rawSql": "WITH banned_users AS (\n  SELECT github_username\n  FROM d1_user\n  WHERE banned = 1\n  GROUP BY github_username\n)\nSELECT round($credits_perplexity / GREATEST(0.01, SUM(total_price) / GREATEST(1, uniqExact(toDate(start_time)))), 0) as val\nFROM generation_event_v2\nWHERE start_time >= $__fromTime AND start_time < $__toTime\n  AND model_provider_used = 'perplexity'\n  AND is_billed_usage = true\n  AND response_status >= 200 AND response_status < 300\n    AND user_github_username NOT IN (SELECT github_username FROM banned_users)",
           "refId": "H"
         },
         {
@@ -1193,7 +1193,7 @@
           },
           "format": 1,
           "range": true,
-          "rawSql": "WITH banned_users AS (\n  SELECT github_username\n  FROM d1_user\n  WHERE banned = 1\n  GROUP BY github_username\n)\nSELECT round($credits_modal / GREATEST(0.01, SUM(total_price) / GREATEST(1, uniqExact(toDate(start_time)))), 0) as val\nFROM generation_event\nWHERE start_time >= $__fromTime AND start_time < $__toTime\n  AND model_provider_used = 'modal'\n  AND is_billed_usage = true\n  AND response_status >= 200 AND response_status < 300\n    AND user_github_username NOT IN (SELECT github_username FROM banned_users)",
+          "rawSql": "WITH banned_users AS (\n  SELECT github_username\n  FROM d1_user\n  WHERE banned = 1\n  GROUP BY github_username\n)\nSELECT round($credits_modal / GREATEST(0.01, SUM(total_price) / GREATEST(1, uniqExact(toDate(start_time)))), 0) as val\nFROM generation_event_v2\nWHERE start_time >= $__fromTime AND start_time < $__toTime\n  AND model_provider_used = 'modal'\n  AND is_billed_usage = true\n  AND response_status >= 200 AND response_status < 300\n    AND user_github_username NOT IN (SELECT github_username FROM banned_users)",
           "refId": "I"
         },
         {
@@ -1203,7 +1203,7 @@
           },
           "format": 1,
           "range": true,
-          "rawSql": "WITH banned_users AS (\n  SELECT github_username\n  FROM d1_user\n  WHERE banned = 1\n  GROUP BY github_username\n)\nSELECT round($credits_azure_2 / GREATEST(0.01, SUM(total_price) / GREATEST(1, uniqExact(toDate(start_time)))), 0) as val\nFROM generation_event\nWHERE start_time >= $__fromTime AND start_time < $__toTime\n  AND model_provider_used = 'azure-2'\n  AND is_billed_usage = true\n  AND response_status >= 200 AND response_status < 300\n    AND user_github_username NOT IN (SELECT github_username FROM banned_users)",
+          "rawSql": "WITH banned_users AS (\n  SELECT github_username\n  FROM d1_user\n  WHERE banned = 1\n  GROUP BY github_username\n)\nSELECT round($credits_azure_2 / GREATEST(0.01, SUM(total_price) / GREATEST(1, uniqExact(toDate(start_time)))), 0) as val\nFROM generation_event_v2\nWHERE start_time >= $__fromTime AND start_time < $__toTime\n  AND model_provider_used = 'azure-2'\n  AND is_billed_usage = true\n  AND response_status >= 200 AND response_status < 300\n    AND user_github_username NOT IN (SELECT github_username FROM banned_users)",
           "refId": "J"
         },
         {
@@ -1213,7 +1213,7 @@
           },
           "format": 1,
           "range": true,
-          "rawSql": "WITH banned_users AS (\n  SELECT github_username\n  FROM d1_user\n  WHERE banned = 1\n  GROUP BY github_username\n)\nSELECT round($credits_scaleway / GREATEST(0.01, SUM(total_price) / GREATEST(1, uniqExact(toDate(start_time)))), 0) as val\nFROM generation_event\nWHERE start_time >= $__fromTime AND start_time < $__toTime\n  AND model_provider_used = 'scaleway'\n  AND is_billed_usage = true\n  AND response_status >= 200 AND response_status < 300\n    AND user_github_username NOT IN (SELECT github_username FROM banned_users)",
+          "rawSql": "WITH banned_users AS (\n  SELECT github_username\n  FROM d1_user\n  WHERE banned = 1\n  GROUP BY github_username\n)\nSELECT round($credits_scaleway / GREATEST(0.01, SUM(total_price) / GREATEST(1, uniqExact(toDate(start_time)))), 0) as val\nFROM generation_event_v2\nWHERE start_time >= $__fromTime AND start_time < $__toTime\n  AND model_provider_used = 'scaleway'\n  AND is_billed_usage = true\n  AND response_status >= 200 AND response_status < 300\n    AND user_github_username NOT IN (SELECT github_username FROM banned_users)",
           "refId": "K"
         },
         {
@@ -1234,7 +1234,7 @@
           },
           "format": 1,
           "range": true,
-          "rawSql": "WITH banned_users AS (\n  SELECT github_username\n  FROM d1_user\n  WHERE banned = 1\n  GROUP BY github_username\n)\nSELECT\n  GREATEST(0.01, SUM(total_price) / GREATEST(1, uniqExact(toDate(start_time)))) as val\nFROM generation_event\nWHERE start_time >= $__fromTime AND start_time < $__toTime\n  AND model_provider_used = 'ovhcloud'\n  AND is_billed_usage = true\n  AND response_status >= 200 AND response_status < 300\n    AND user_github_username NOT IN (SELECT github_username FROM banned_users)",
+          "rawSql": "WITH banned_users AS (\n  SELECT github_username\n  FROM d1_user\n  WHERE banned = 1\n  GROUP BY github_username\n)\nSELECT\n  GREATEST(0.01, SUM(total_price) / GREATEST(1, uniqExact(toDate(start_time)))) as val\nFROM generation_event_v2\nWHERE start_time >= $__fromTime AND start_time < $__toTime\n  AND model_provider_used = 'ovhcloud'\n  AND is_billed_usage = true\n  AND response_status >= 200 AND response_status < 300\n    AND user_github_username NOT IN (SELECT github_username FROM banned_users)",
           "refId": "C",
           "hide": true
         },
@@ -1370,7 +1370,7 @@
           },
           "format": 1,
           "range": true,
-          "rawSql": "WITH banned_users AS (\n  SELECT github_username\n  FROM d1_user\n  WHERE banned = 1\n  GROUP BY github_username\n)\nSELECT\n  model_provider_used as Provider,\n  round(SUM(total_price), 2) as Total_Cost,\n  round(SUM(total_price) / GREATEST(1, uniqExact(toDate(start_time))), 2) as Daily_Avg\nFROM generation_event\nWHERE start_time >= $__fromTime AND start_time < $__toTime\n  AND is_billed_usage = true\n  AND response_status >= 200 AND response_status < 300\n    AND user_github_username NOT IN (SELECT github_username FROM banned_users)\nGROUP BY model_provider_used\nORDER BY Total_Cost DESC",
+          "rawSql": "WITH banned_users AS (\n  SELECT github_username\n  FROM d1_user\n  WHERE banned = 1\n  GROUP BY github_username\n)\nSELECT\n  model_provider_used as Provider,\n  round(SUM(total_price), 2) as Total_Cost,\n  round(SUM(total_price) / GREATEST(1, uniqExact(toDate(start_time))), 2) as Daily_Avg\nFROM generation_event_v2\nWHERE start_time >= $__fromTime AND start_time < $__toTime\n  AND is_billed_usage = true\n  AND response_status >= 200 AND response_status < 300\n    AND user_github_username NOT IN (SELECT github_username FROM banned_users)\nGROUP BY model_provider_used\nORDER BY Total_Cost DESC",
           "refId": "A"
         },
         {
@@ -1649,7 +1649,7 @@
           },
           "format": 1,
           "range": true,
-          "rawSql": "WITH banned_users AS (\n  SELECT github_username FROM d1_user WHERE banned = 1 GROUP BY github_username\n)\nSELECT\n  round(\n    countIf(user_github_username IN (SELECT github_username FROM banned_users)) * 100.0\n    / nullIf(count(), 0), 1\n  ) AS banned_pct\nFROM generation_event\nWHERE start_time >= $__fromTime AND start_time < $__toTime\n  AND is_billed_usage = true\n  AND response_status >= 200 AND response_status < 300",
+          "rawSql": "WITH banned_users AS (\n  SELECT github_username FROM d1_user WHERE banned = 1 GROUP BY github_username\n)\nSELECT\n  round(\n    countIf(user_github_username IN (SELECT github_username FROM banned_users)) * 100.0\n    / nullIf(count(), 0), 1\n  ) AS banned_pct\nFROM generation_event_v2\nWHERE start_time >= $__fromTime AND start_time < $__toTime\n  AND is_billed_usage = true\n  AND response_status >= 200 AND response_status < 300",
           "refId": "A"
         }
       ],

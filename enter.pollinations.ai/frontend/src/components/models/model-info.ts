@@ -28,6 +28,7 @@ const BRAND_LOGOS: Record<string, string> = {
     Poolside: "poolside",
     Pruna: "pruna",
     Qwen: "qwen",
+    Sesame: "sesame",
     "Stability AI": "stability",
     StepFun: "stepfun",
     Xiaomi: "xiaomi",

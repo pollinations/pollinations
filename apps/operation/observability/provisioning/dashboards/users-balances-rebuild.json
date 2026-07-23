@@ -1,0 +1,1072 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": {
+          "type": "datasource",
+          "uid": "grafana"
+        },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "target": {
+          "limit": 100,
+          "matchAny": false,
+          "tags": [],
+          "type": "dashboard"
+        },
+        "type": "dashboard"
+      }
+    ]
+  },
+  "description": "User growth, current exact wallet state, historical active-user balance observations, and Paid versus Quest consumption. Current values come from the latest D1 snapshot; historical balance bars are generation-event observations and are not full wallet snapshots.",
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [],
+  "liveNow": false,
+  "panels": [
+    {
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "PAD1A0A25CD30D456"
+      },
+      "description": "Exact current values from the latest d1_user snapshot, excluding banned accounts. Registrations use the selected time range and exclude accounts deleted before the latest snapshot. Negative-account counts are explicit anomaly signals.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "decimals": 0,
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "green",
+                "value": 0
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "total_users"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Total users"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "registrations"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "New registrations"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "current_quest_balance"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Current Quest balance"
+              },
+              {
+                "id": "unit",
+                "value": "suffix: Pollen"
+              },
+              {
+                "id": "decimals",
+                "value": 2
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "current_paid_balance"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Current Paid balance"
+              },
+              {
+                "id": "unit",
+                "value": "suffix: Pollen"
+              },
+              {
+                "id": "decimals",
+                "value": 2
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "negative_quest_accounts"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Negative Quest accounts"
+              },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "green",
+                      "value": null
+                    },
+                    {
+                      "color": "red",
+                      "value": 1
+                    }
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "negative_paid_accounts"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Negative Paid accounts"
+              },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "green",
+                      "value": null
+                    },
+                    {
+                      "color": "red",
+                      "value": 1
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 6,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "id": 1,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "horizontal",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "PAD1A0A25CD30D456"
+          },
+          "format": 1,
+          "range": true,
+          "rawSql": "SELECT\n  count() AS total_users,\n  countIf(\n    created_at IS NOT NULL\n    AND fromUnixTimestamp(assumeNotNull(created_at)) >= $__fromTime\n    AND fromUnixTimestamp(assumeNotNull(created_at)) < $__toTime\n  ) AS registrations,\n  round(sum(coalesce(tier_balance, 0)), 2) AS current_quest_balance,\n  round(sum(coalesce(pack_balance, 0)), 2) AS current_paid_balance,\n  countIf(coalesce(tier_balance, 0) < 0) AS negative_quest_accounts,\n  countIf(coalesce(pack_balance, 0) < 0) AS negative_paid_accounts\nFROM d1_user\nWHERE synced_at = (SELECT max(synced_at) FROM d1_user)\n  AND banned = 0\nHAVING count() > 0",
+          "refId": "A"
+        }
+      ],
+      "title": "User and wallet overview",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "PAD1A0A25CD30D456"
+      },
+      "description": "Daily sum of each active user's last observed Quest balance on a successful billed generation. This changes when the active population changes and is not the platform's complete historical wallet stock. One shared query also feeds the Paid and concentration panels.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "fixed"
+          },
+          "custom": {
+            "barAlignment": 0,
+            "drawStyle": "bars",
+            "fillOpacity": 85,
+            "lineWidth": 0,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            }
+          },
+          "decimals": 2,
+          "unit": "suffix: Pollen"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "observed_quest_balance"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Observed Quest balance"
+              },
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "orange",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 6
+      },
+      "id": 2,
+      "options": {
+        "legend": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "PAD1A0A25CD30D456"
+          },
+          "format": 0,
+          "range": true,
+          "rawSql": "SELECT\n  day AS time,\n  round(sum(quest_balance), 2) AS observed_quest_balance,\n  round(sum(paid_balance), 2) AS observed_paid_balance,\n  round(quantile(0.95)(quest_balance), 2) AS quest_p95,\n  round(quantile(0.99)(quest_balance), 2) AS quest_p99,\n  round(max(quest_balance), 2) AS quest_max,\n  round(quantile(0.95)(paid_balance), 2) AS paid_p95,\n  round(quantile(0.99)(paid_balance), 2) AS paid_p99,\n  round(max(paid_balance), 2) AS paid_max,\n  count() AS active_users\nFROM (\n  SELECT\n    toStartOfDay(start_time) AS day,\n    user_id,\n    argMax(balances['v1:meter:tier'], start_time) AS quest_balance,\n    argMax(balances['v1:meter:pack'], start_time) AS paid_balance\n  FROM generation_event_v2\n  WHERE start_time >= greatest($__fromTime, toDateTime('2026-01-09 00:00:00'))\n    AND start_time < $__toTime\n    AND environment IN ('production', 'debug-prod-copy')\n    AND response_status >= 200\n    AND response_status < 300\n    AND is_billed_usage\n    AND user_id NOT IN ('', 'undefined')\n    AND user_id NOT IN (\n      SELECT id\n      FROM d1_user\n      WHERE synced_at = (SELECT max(synced_at) FROM d1_user)\n        AND banned = 1\n    )\n  GROUP BY day, user_id\n)\nGROUP BY day\nORDER BY day",
+          "refId": "A"
+        }
+      ],
+      "title": "Observed Quest balance — active users",
+      "transformations": [
+        {
+          "id": "filterFieldsByName",
+          "options": {
+            "include": {
+              "names": [
+                "time",
+                "observed_quest_balance"
+              ]
+            }
+          }
+        }
+      ],
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "datasource",
+        "uid": "-- Dashboard --"
+      },
+      "description": "Daily sum of each active user's last observed Paid balance on a successful billed generation. This is a balance observation, not cash collected. Reuses the Quest panel query so Tinybird scans generation_event_v2 only once.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "fixed"
+          },
+          "custom": {
+            "barAlignment": 0,
+            "drawStyle": "bars",
+            "fillOpacity": 85,
+            "lineWidth": 0,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            }
+          },
+          "decimals": 2,
+          "unit": "suffix: Pollen"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "observed_paid_balance"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Observed Paid balance"
+              },
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "blue",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 6
+      },
+      "id": 3,
+      "options": {
+        "legend": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "datasource",
+            "uid": "-- Dashboard --"
+          },
+          "panelId": 2,
+          "refId": "A"
+        }
+      ],
+      "title": "Observed Paid balance — active users",
+      "transformations": [
+        {
+          "id": "filterFieldsByName",
+          "options": {
+            "include": {
+              "names": [
+                "time",
+                "observed_paid_balance"
+              ]
+            }
+          }
+        }
+      ],
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "PAD1A0A25CD30D456"
+      },
+      "description": "Daily successful billed generation consumption from generation_usage_hourly, split by the meter selected for the request. Paid is revenue-bearing consumed value; Quest is free Pollen consumption and is not revenue.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "displayName": "${__field.labels.metric}",
+          "custom": {
+            "barAlignment": 0,
+            "drawStyle": "bars",
+            "fillOpacity": 85,
+            "lineWidth": 0,
+            "stacking": {
+              "group": "A",
+              "mode": "normal"
+            }
+          },
+          "decimals": 2,
+          "unit": "suffix: Pollen"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "paid"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "blue",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "quest"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "orange",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 14
+      },
+      "id": 4,
+      "options": {
+        "legend": {
+          "calcs": [
+            "sum"
+          ],
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "PAD1A0A25CD30D456"
+          },
+          "format": 0,
+          "range": true,
+          "rawSql": "SELECT\n  toStartOfDay(hour) AS time,\n  funding_source AS metric,\n  sumMerge(gross_consumption) AS value\nFROM generation_usage_hourly\nWHERE $__timeFilter(hour)\n  AND environment IN ('production', 'debug-prod-copy')\n  AND funding_source IN ('paid', 'quest')\nGROUP BY time, metric\nORDER BY time, metric",
+          "refId": "A"
+        }
+      ],
+      "title": "Quest vs Paid spending",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "datasource",
+        "uid": "-- Dashboard --"
+      },
+      "description": "Daily p95, p99, and maximum observed balances among successful billed active users. These anomaly indicators reuse the Quest panel query; they do not represent percentiles of the complete current wallet population.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "barAlignment": 0,
+            "drawStyle": "bars",
+            "fillOpacity": 75,
+            "lineWidth": 0,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            }
+          },
+          "decimals": 2,
+          "unit": "suffix: Pollen"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "quest_p95"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "light-orange",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "quest_p99"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "orange",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "quest_max"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "semi-dark-orange",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "paid_p95"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "light-blue",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "paid_p99"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "blue",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "paid_max"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "semi-dark-blue",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 10,
+        "w": 12,
+        "x": 0,
+        "y": 22
+      },
+      "id": 5,
+      "options": {
+        "legend": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "datasource",
+            "uid": "-- Dashboard --"
+          },
+          "panelId": 2,
+          "refId": "A"
+        }
+      ],
+      "title": "Observed balance concentration",
+      "transformations": [
+        {
+          "id": "filterFieldsByName",
+          "options": {
+            "include": {
+              "names": [
+                "time",
+                "quest_p95",
+                "quest_p99",
+                "quest_max",
+                "paid_p95",
+                "paid_p99",
+                "paid_max"
+              ]
+            }
+          }
+        }
+      ],
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "PAD1A0A25CD30D456"
+      },
+      "description": "Current non-banned accounts ranked by the largest absolute Quest or Paid balance in the latest d1_user snapshot. Negative extremes are intentionally included because they can expose billing errors or abuse.",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "inspect": false
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": "/.*_balance|magnitude/"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "suffix: Pollen"
+              },
+              {
+                "id": "decimals",
+                "value": 2
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 10,
+        "w": 12,
+        "x": 12,
+        "y": 22
+      },
+      "id": 6,
+      "options": {
+        "cellHeight": "sm",
+        "footer": {
+          "countRows": false,
+          "fields": "",
+          "reducer": [
+            "sum"
+          ],
+          "show": false
+        },
+        "showHeader": true,
+        "sortBy": [
+          {
+            "desc": true,
+            "displayName": "magnitude"
+          }
+        ]
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "PAD1A0A25CD30D456"
+          },
+          "format": 1,
+          "range": true,
+          "rawSql": "SELECT\n  coalesce(nullIf(github_username, ''), nullIf(name, ''), id) AS user,\n  round(coalesce(tier_balance, 0), 2) AS quest_balance,\n  round(coalesce(pack_balance, 0), 2) AS paid_balance,\n  round(coalesce(tier_balance, 0) + coalesce(pack_balance, 0), 2) AS total_balance,\n  round(greatest(abs(coalesce(tier_balance, 0)), abs(coalesce(pack_balance, 0))), 2) AS magnitude\nFROM d1_user\nWHERE synced_at = (SELECT max(synced_at) FROM d1_user)\n  AND banned = 0\nORDER BY magnitude DESC\nLIMIT 50",
+          "refId": "A"
+        }
+      ],
+      "title": "Current balance extremes",
+      "type": "table"
+    },
+    {
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "PAD1A0A25CD30D456"
+      },
+      "description": "Daily registrations from the latest d1_user snapshot, excluding banned accounts. This is current surviving-account history: accounts deleted before the latest sync are absent.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "fixed"
+          },
+          "custom": {
+            "barAlignment": 0,
+            "drawStyle": "bars",
+            "fillOpacity": 85,
+            "lineWidth": 0,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            }
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 32
+      },
+      "id": 7,
+      "options": {
+        "legend": {
+          "calcs": [
+            "sum"
+          ],
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "PAD1A0A25CD30D456"
+          },
+          "format": 0,
+          "range": true,
+          "rawSql": "SELECT\n  toStartOfDay(fromUnixTimestamp(assumeNotNull(created_at))) AS time,\n  count() AS registrations\nFROM d1_user\nWHERE synced_at = (SELECT max(synced_at) FROM d1_user)\n  AND banned = 0\n  AND created_at IS NOT NULL\n  AND $__timeFilter(fromUnixTimestamp(assumeNotNull(created_at)))\nGROUP BY time\nORDER BY time",
+          "refId": "A"
+        }
+      ],
+      "title": "Registrations",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "PAD1A0A25CD30D456"
+      },
+      "description": "Running total of registrations inside the selected range from the latest d1_user snapshot. It is not the platform's all-time user count and excludes accounts deleted before the latest sync.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "fixed"
+          },
+          "custom": {
+            "barAlignment": 0,
+            "drawStyle": "bars",
+            "fillOpacity": 85,
+            "lineWidth": 0,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            }
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 32
+      },
+      "id": 8,
+      "options": {
+        "legend": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "PAD1A0A25CD30D456"
+          },
+          "format": 0,
+          "range": true,
+          "rawSql": "SELECT\n  time,\n  sum(registrations) OVER (ORDER BY time) AS cumulative_registrations\nFROM (\n  SELECT\n    toStartOfDay(fromUnixTimestamp(assumeNotNull(created_at))) AS time,\n    count() AS registrations\n  FROM d1_user\n  WHERE synced_at = (SELECT max(synced_at) FROM d1_user)\n    AND banned = 0\n    AND created_at IS NOT NULL\n    AND $__timeFilter(fromUnixTimestamp(assumeNotNull(created_at)))\n  GROUP BY time\n)\nORDER BY time",
+          "refId": "A"
+        }
+      ],
+      "title": "Cumulative registrations in range",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "PAD1A0A25CD30D456"
+      },
+      "description": "Daily active users and trailing-seven-day active users from merged generation_usage_hourly unique-user states. WAU is recalculated for every displayed day and includes that day plus the six preceding days.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "barAlignment": 0,
+            "drawStyle": "bars",
+            "fillOpacity": 75,
+            "lineWidth": 0,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            }
+          },
+          "unit": "short"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "dau"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "DAU"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "wau"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "WAU (trailing 7d)"
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 40
+      },
+      "id": 9,
+      "options": {
+        "legend": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "PAD1A0A25CD30D456"
+          },
+          "format": 0,
+          "range": true,
+          "rawSql": "WITH\n  toStartOfDay(greatest($__fromTime, toDateTime('2026-01-09 00:00:00'))) AS start_day,\n  assumeNotNull(\n    least(\n      toStartOfDay($__toTime),\n      (\n        SELECT toStartOfDay(coalesce(max(hour), toDateTime('2026-01-09 00:00:00')))\n        FROM generation_usage_hourly\n        WHERE environment IN ('production', 'debug-prod-copy')\n      )\n    )\n  ) AS end_day,\n  dates AS (\n    SELECT start_day + INTERVAL number DAY AS day\n    FROM numbers(toUInt64(greatest(dateDiff('day', start_day, end_day), 0) + 1))\n  )\nSELECT\n  day AS time,\n  uniqMergeIf(users, hour >= day AND hour < day + INTERVAL 1 DAY) AS dau,\n  uniqMergeIf(users, hour >= day - INTERVAL 6 DAY AND hour < day + INTERVAL 1 DAY) AS wau\nFROM dates\nCROSS JOIN generation_usage_hourly\nWHERE hour >= start_day - INTERVAL 6 DAY\n  AND hour < end_day + INTERVAL 1 DAY\n  AND environment IN ('production', 'debug-prod-copy')\nGROUP BY day\nORDER BY day",
+          "refId": "A"
+        }
+      ],
+      "title": "DAU and WAU",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "PAD1A0A25CD30D456"
+      },
+      "description": "Registration-day cohorts that completed their first authenticated generation within seven days. Only cohorts whose full seven-day window has elapsed are included. Registration history is based on current surviving d1_user accounts.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "barAlignment": 0,
+            "drawStyle": "bars",
+            "fillOpacity": 75,
+            "lineWidth": 0,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            }
+          },
+          "unit": "short"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "registrations"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Registered"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "d7_activated"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Activated within 7d"
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 40
+      },
+      "id": 10,
+      "options": {
+        "legend": {
+          "calcs": [
+            "sum"
+          ],
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "PAD1A0A25CD30D456"
+          },
+          "format": 0,
+          "range": true,
+          "rawSql": "SELECT\n  r.registration_day AS time,\n  count() AS registrations,\n  countIf(\n    a.first_activity_time IS NOT NULL\n    AND a.first_activity_time >= fromUnixTimestamp(r.created_at_ts)\n    AND a.first_activity_time <= fromUnixTimestamp(r.created_at_ts) + INTERVAL 7 DAY\n  ) AS d7_activated\nFROM (\n  SELECT\n    id AS user_id,\n    assumeNotNull(created_at) AS created_at_ts,\n    toStartOfDay(fromUnixTimestamp(assumeNotNull(created_at))) AS registration_day\n  FROM d1_user\n  WHERE synced_at = (SELECT max(synced_at) FROM d1_user)\n    AND banned = 0\n    AND created_at IS NOT NULL\n    AND fromUnixTimestamp(assumeNotNull(created_at)) >= $__fromTime\n    AND fromUnixTimestamp(assumeNotNull(created_at)) < $__toTime - INTERVAL 7 DAY\n) r\nLEFT JOIN (\n  SELECT\n    user_id,\n    minMerge(first_activity_time) AS first_activity_time\n  FROM user_first_activity_mv\n  GROUP BY user_id\n) a ON r.user_id = a.user_id\nGROUP BY r.registration_day\nORDER BY r.registration_day",
+          "refId": "A"
+        }
+      ],
+      "title": "D7 activation",
+      "type": "timeseries"
+    }
+  ],
+  "refresh": "5m",
+  "schemaVersion": 41,
+  "tags": [
+    "observability-rebuild",
+    "users",
+    "balances"
+  ],
+  "templating": {
+    "list": []
+  },
+  "time": {
+    "from": "now-30d",
+    "to": "now"
+  },
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "Users & Balances",
+  "uid": "users-balances-rebuild",
+  "version": 1,
+  "weekStart": "monday"
+}

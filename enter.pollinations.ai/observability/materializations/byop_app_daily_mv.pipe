@@ -1,0 +1,70 @@
+DESCRIPTION >
+    Materializes cleanly attributed BYOP traffic from generation_event_v2 at
+    daily app and model grain, including the isolated staging fixture.
+
+NODE byop_app_daily_mv_node
+SQL >
+    SELECT
+        toDate(start_time) AS day,
+        environment,
+        api_key_client_id AS app_id,
+        coalesce(
+            nullIf(nullIf(api_key_created_for_app, ''), 'undefined'), api_key_client_id
+        ) AS app_name,
+        if(
+            api_key_created_for_user_id IN ('', 'undefined'), 'unknown', api_key_created_for_user_id
+        ) AS owner_user_id,
+        coalesce(
+            nullIf(nullIf(resolved_model_requested, ''), 'undefined'),
+            nullIf(nullIf(model_used, ''), 'undefined'),
+            nullIf(nullIf(model_requested, ''), 'undefined'),
+            'unknown'
+        ) AS model,
+        model_provider_used = 'community' AS is_community,
+        multiIf(
+            selected_meter_slug IN ('v1:meter:pack', 'local:pack'),
+            'paid',
+            selected_meter_slug IN ('v1:meter:tier', 'local:tier'),
+            'quest',
+            'unfunded'
+        ) AS funding_source,
+        sumState(toUInt64(1)) AS all_calls,
+        sumState(toUInt64(response_status >= 200 AND response_status < 300)) AS successful_calls,
+        sumState(
+            toUInt64(response_status >= 200 AND response_status < 300 AND is_billed_usage)
+        ) AS billed_calls,
+        uniqState(user_id) AS users,
+        sumState(
+            if(response_status >= 200 AND response_status < 300 AND is_billed_usage, total_price, 0)
+        ) AS gross_consumption,
+        sumState(
+            if(
+                response_status >= 200
+                AND response_status < 300
+                AND is_billed_usage
+                AND api_key_created_for_user_id NOT IN ('', 'undefined')
+                AND total_price > dev_price,
+                total_price - dev_price,
+                0
+            )
+        ) AS byop_reward,
+        sumState(
+            if(
+                response_status >= 200
+                AND response_status < 300
+                AND is_billed_usage
+                AND community_model_reward_user_id NOT IN ('', 'undefined')
+                AND community_model_reward_amount > 0,
+                community_model_reward_amount,
+                0
+            )
+        ) AS community_reward
+    FROM generation_event_v2
+    WHERE
+        environment IN ('production', 'debug-prod-copy')
+        AND api_key_client_id NOT IN ('', 'undefined')
+        AND start_time >= toDateTime('2026-01-09 00:00:00')
+    GROUP BY day, environment, app_id, app_name, owner_user_id, model, is_community, funding_source
+
+TYPE MATERIALIZED
+DATASOURCE byop_app_daily

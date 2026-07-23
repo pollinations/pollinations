@@ -54,7 +54,7 @@ export class ObservabilityGrafana extends Container {
         GF_AUTH_ANONYMOUS_ENABLED: "false",
         GF_AUTH_DISABLE_LOGIN_FORM: "false",
         GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH:
-            "/etc/grafana/provisioning/dashboards/observability.json",
+            "/etc/grafana/provisioning/dashboards/platform-usage-rebuild.json",
         TINYBIRD_READ_TOKEN: requiredSecret("TINYBIRD_READ_TOKEN"),
         TINYBIRD_LEGACY_READ_TOKEN: requiredSecret(
             "TINYBIRD_LEGACY_READ_TOKEN",

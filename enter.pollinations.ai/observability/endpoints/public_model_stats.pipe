@@ -19,7 +19,6 @@ SQL >
     FROM generation_event_v2
     WHERE start_time >= now() - INTERVAL 7 DAY
     AND resolved_model_requested != 'undefined'
-    AND cache_hit = false
     GROUP BY model
     HAVING priced_success_count >= 3
     ORDER BY request_count DESC

@@ -89,7 +89,7 @@ Secrets are stored in `.env` locally and as Worker secrets in production.
 cd apps/operation/observability
 npm install
 
-# Validate Worker config without building the image
+# Validate Worker config and container image (requires Docker)
 npm run check
 
 # Requires Docker locally so Wrangler can build and push the Grafana image.

@@ -205,7 +205,7 @@ app.get("/api/kpi/total-users", async (c) => {
 });
 
 // D7 Activations: users who made their first API request within 7 days of registration
-// Fully computed in Tinybird by joining d1_user with generation_event
+// Fully computed in Tinybird by joining d1_user with generation_event_v2
 app.get("/api/kpi/activations", async (c) => {
     const result = await fetchTinybird(c.env, "kpi_activations", {
         min_created_at: DATA_START_TIMESTAMP_SEC,

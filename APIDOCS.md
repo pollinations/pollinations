@@ -611,11 +611,11 @@ Generate speech or music from text. Compatible with the OpenAI TTS API for JSON 
 
 Set `model` to `elevenmusic`, `stable-audio-3-medium`, or `stable-audio-3-large` to generate music. Send multipart/form-data with `reference_audio` plus `input` to run audio-to-audio (style transfer) on `stable-audio-3-medium` or `stable-audio-3-large`, or reference-audio conditioning on `elevenmusic`; for ElevenLabs inpainting, pass a `composition_plan`.
 
-**Available voices:** alloy, echo, fable, onyx, nova, shimmer, ash, ballad, coral, sage, verse, rachel, domi, bella, elli, charlotte, dorothy, sarah, emily, lily, matilda, adam, antoni, arnold, josh, sam, daniel, charlie, james, fin, callum, liam, george, brian, bill
+**Available voices:** alloy, echo, fable, onyx, nova, shimmer, ash, ballad, coral, sage, verse, rachel, domi, bella, elli, charlotte, dorothy, sarah, emily, lily, matilda, adam, antoni, arnold, josh, sam, daniel, charlie, james, fin, callum, liam, george, brian, bill, conversational_a, conversational_b, read_speech_a, read_speech_b, read_speech_c, read_speech_d
 
 **Output formats:** mp3 (default), opus, aac, flac, wav, pcm
 
-📤 **Response** · `200` · `audio/mpeg`, `audio/opus`, `audio/aac`, `audio/flac`, `audio/wav` — Success - Returns audio data
+📤 **Response** · `200` · `audio/mpeg`, `audio/opus`, `audio/aac`, `audio/flac`, `audio/wav`, `audio/pcm` — Success - Returns audio data
 
 💻 **Example**
 
@@ -687,7 +687,7 @@ Generate speech or music from text via a simple GET request.
 
 **Text-to-speech (default):** Returns spoken audio in the selected voice and format.
 
-**Available voices:** alloy, echo, fable, onyx, nova, shimmer, ash, ballad, coral, sage, verse, rachel, domi, bella, elli, charlotte, dorothy, sarah, emily, lily, matilda, adam, antoni, arnold, josh, sam, daniel, charlie, james, fin, callum, liam, george, brian, bill
+**Available voices:** alloy, echo, fable, onyx, nova, shimmer, ash, ballad, coral, sage, verse, rachel, domi, bella, elli, charlotte, dorothy, sarah, emily, lily, matilda, adam, antoni, arnold, josh, sam, daniel, charlie, james, fin, callum, liam, george, brian, bill, conversational_a, conversational_b, read_speech_a, read_speech_b, read_speech_c, read_speech_d
 
 **Output formats:** mp3 (default), opus, aac, flac, wav, pcm
 
@@ -699,7 +699,7 @@ Generate speech or music from text via a simple GET request.
 |---|---|---|---|
 | `text` * | `path` | `string` | Text to convert to speech, or a music description when model=elevenmusic |
 | `voice` | `query` | `string` | Voice to use for speech generation (TTS only) · default: `"alloy"` |
-| `response_format` | `query` | enum (6) — `"mp3"`, `"opus"`, `"aac"`, … | Audio output format (TTS only). Qwen TTS currently returns WAV regardless of this setting; eleven-sfx supports mp3 only (other values are rejected). · default: `"mp3"` |
+| `response_format` | `query` | enum (6) — `"mp3"`, `"opus"`, `"aac"`, … | Audio output format (TTS only). CSM supports mp3, opus, flac, wav, and pcm; Qwen TTS currently returns WAV regardless of this setting; eleven-sfx supports mp3 only. · default: `"mp3"` |
 | `model` | `query` | `string` | Audio model: TTS (default) or elevenmusic for music generation |
 | `duration` | `query` | `string` | Music duration in seconds, 3-300 (elevenmusic only) |
 | `seconds` | `query` | `number` | Audio duration in seconds for stable-audio-3-medium/large, 1-380 · range: `1…380` |

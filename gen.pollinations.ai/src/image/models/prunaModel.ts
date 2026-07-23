@@ -18,6 +18,7 @@
 
 import debug from "debug";
 import type { ImageGenerationResult } from "../createAndReturnImages.ts";
+import type { VideoGenerationResult } from "../createAndReturnVideos.ts";
 import { HttpError } from "../httpError.ts";
 import type { ImageParams } from "../params.ts";
 import { closestByRatio, closestRatioLogSpace } from "../utils/aspectRatio.ts";
@@ -27,8 +28,6 @@ import {
     ReplicateError,
     runReplicatePrediction,
 } from "../utils/replicateClient.ts";
-
-import type { VideoGenerationResult } from "./veoVideoModel.ts";
 
 const logOps = debug("pollinations:pruna:ops");
 const logError = debug("pollinations:pruna:error");

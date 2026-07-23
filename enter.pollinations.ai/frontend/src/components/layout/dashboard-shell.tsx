@@ -21,6 +21,7 @@ import {
     WalletIcon,
     XIcon,
 } from "@pollinations/ui";
+import { StatusNoticeBanner } from "./status-notice-banner.tsx";
 import logoWordmarkUrl from "@pollinations/ui/brand/lockup-horizontal.svg";
 import { Link, useRouterState } from "@tanstack/react-router";
 import type {
@@ -353,6 +354,7 @@ export const DashboardShell: FC<DashboardShellProps> = ({
                     className="min-h-0 min-w-0 flex-1 overscroll-contain px-4 pt-14 pb-8 lg:px-6 lg:pt-10"
                 >
                     <main className="mx-auto flex max-w-[800px] flex-col gap-6">
+                        <StatusNoticeBanner />
                         {children}
                     </main>
                 </ScrollArea>

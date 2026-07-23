@@ -38,6 +38,14 @@ const GEMINI_ASPECT_RATIOS = [
 interface OpenRouterImageResponse {
     data?: Array<{ b64_json?: string; media_type?: string }>;
     usage?: OpenRouterImageUsage;
+    error?:
+        | string
+        | {
+              message?: string;
+              type?: string;
+              metadata?: { error_type?: string };
+          };
+    message?: string;
 }
 
 interface OpenRouterImageUsage {
@@ -76,6 +84,30 @@ function invalidOpenRouterImageUsage(
 
 function addUsage(usage: Usage, key: keyof Usage, amount: number) {
     if (amount > 0) usage[key] = amount;
+}
+
+function buildOpenRouterNoImageError(data: OpenRouterImageResponse): HttpError {
+    const providerMessage =
+        typeof data.error === "string"
+            ? data.error
+            : data.error?.message || data.message;
+    const errorType =
+        typeof data.error === "object"
+            ? data.error.metadata?.error_type || data.error.type
+            : undefined;
+    const errorText = `${errorType ?? ""} ${providerMessage ?? ""}`;
+    const isContentRejection =
+        /content.?policy|prohibited|refusal|refused|safety/i.test(errorText);
+
+    return new HttpError(
+        providerMessage ||
+            (isContentRejection
+                ? "Image generation rejected by content policy"
+                : "OpenRouter Gemini image API returned no image"),
+        isContentRejection ? 400 : 502,
+        data,
+        OPENROUTER_IMAGE_URL,
+    );
 }
 
 export function mapOpenRouterGeminiImageUsage(
@@ -263,12 +295,7 @@ export async function callOpenRouterGeminiImageAPI(
     const data = (await response.json()) as OpenRouterImageResponse;
     const encodedImage = data.data?.[0]?.b64_json;
     if (!encodedImage) {
-        throw new HttpError(
-            "OpenRouter Gemini image API returned no image",
-            502,
-            data,
-            OPENROUTER_IMAGE_URL,
-        );
+        throw buildOpenRouterNoImageError(data);
     }
     const usage = mapOpenRouterGeminiImageUsage(data.usage);
     const imageBuffer = base64ToBuffer(encodedImage);
@@ -285,7 +312,7 @@ export async function callOpenRouterGeminiImageAPI(
             },
             {
                 generator: config.generator,
-                usage: data.usage,
+                usage,
             },
         );
     } catch (error) {

@@ -10,6 +10,7 @@ import {
 } from "@shared/test/mocks/fetch.ts";
 import { createMockTinybird } from "@shared/test/mocks/tinybird.ts";
 import { afterEach, expect } from "vitest";
+import { syncImageEnv } from "../../src/image/env.ts";
 import worker from "../../src/index.ts";
 
 const png1x1Base64 =
@@ -63,6 +64,10 @@ const test = baseTest.extend<{
 }>({
     // biome-ignore lint/correctness/noEmptyPattern: vitest fixture pattern requires object destructuring
     mocks: async ({}, use) => {
+        syncImageEnv(
+            { OPENROUTER_API_KEY: "openrouter-test-key" } as CloudflareBindings,
+            ["OPENROUTER_API_KEY"],
+        );
         const mocks = createNanobananaMocks();
         await use(mocks);
     },

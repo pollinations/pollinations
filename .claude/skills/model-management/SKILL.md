@@ -50,6 +50,17 @@ If a value is unknown, inferred, conflicting, or route-dependent:
 
 For batch work, use one table row per model with every field above. The user may approve the complete table in one response, but no blank or inherited cells are allowed.
 
+### Additional approval gate for provider secrets
+
+Model approval never authorizes a provider-secret mutation. If the work would create, replace, rotate, revoke, regenerate, synchronize, or deploy a provider credential or encrypted SOPS value:
+
+1. Stop and present the exact secret name (never its value), environments, reason, impact, execution order, verification, and rollback.
+2. Wait for a separate approval in the current conversation using: `Yes, you can rotate <SECRET_NAME> in <ENVIRONMENTS> now.`
+3. Treat general approval such as “go ahead,” “deploy,” “continue,” or confirmation of the model contract as insufficient.
+4. Do not edit the secret or open or push its PR before approval. After approval, use a dedicated secret-only PR and follow the rotation order in the repository `AGENTS.md`.
+
+If exposure is suspected, report it immediately but do not mutate the credential before receiving this approval.
+
 Keep these concepts separate:
 
 - **Configured** provider/GPU describes the registry's intended primary route.
@@ -90,7 +101,7 @@ client → gen.pollinations.ai → upstream provider
          enter.pollinations.ai (dashboard, auth, Stripe surfaces)
 ```
 
-**Generation does not go through Enter, and neither does billing tracking.** Gen reads the shared D1/KV bindings directly to validate tokens, check balances, and apply model permissions. Gen also sends the `generation_event` directly to Tinybird (`gen.pollinations.ai/src/middleware/track.ts:290`). The `ENTER` service binding is invoked in only three places:
+**Generation does not go through Enter, and neither does billing tracking.** Gen reads the shared D1/KV bindings directly to validate tokens, check balances, and apply model permissions. Gen also sends `generation_event_v2` directly to Tinybird (`gen.pollinations.ai/src/middleware/track.ts`). The `ENTER` service binding is invoked in only three places:
 
 | File:line | Call site purpose |
 |---|---|
@@ -225,7 +236,8 @@ Provider/runtime secrets (Azure, OpenAI, OpenRouter API keys, etc.) belong in `g
 | `shared/registry/registry.ts` | `convertUsage()` — where missing cost keys log `[registry] Missing conversion rate`. `completionReasoningTokens` is rewritten to `completionTextTokens` **before** the rate lookup (line 118), so it never produces this warning. If you see the warning for reasoning, it actually means `completionTextTokens` is missing. |
 | `shared/registry/usage-headers.ts` | `x-usage-*` header builder/parser; defines every typed usage field (13 total) |
 | `shared/registry/price-helpers.ts` | `perMillion()`, `priceMultiplier` math (`price = usage × cost × priceMultiplier`, rounded to 8 decimals) |
-| `gen.pollinations.ai/src/middleware/track.ts` | Builds the `generation_event` row sent to Tinybird; cache HITs are flagged `isBilledUsage: false` (line 395) |
+| `gen.pollinations.ai/src/middleware/track.ts` | Builds the `generation_event_v2` row sent to Tinybird; cache hits and unauthenticated requests are omitted |
+| `enter.pollinations.ai/frontend/src/components/models/model-info.ts` + `frontend/public/brand-logos/*.svg` | Catalog brand-to-logo mapping and monochrome SVG assets |
 
 ### `priceMultiplier`
 
@@ -247,7 +259,7 @@ Every row below starts with the [mandatory confirmation gate](#mandatory-confirm
 | **modelId** (upstream identifier) | config only | One real call per modality returns 200; §8; §9 if the upstream version is new |
 | **Slug / service name** | `availableModels.ts` + registry `name` + every alias entry referencing it | `aliases.test.ts`; `/v1/models` lists new slug; old slug returns 404 or alias-redirects; `rg <old-slug>` across `apps/`, `pollinations.ai/`, `packages/sdk` for hardcoded refs |
 | **Aliases** | registry `aliases` array | `aliases.test.ts`; each alias resolves to canonical |
-| **Description / brand** | registry only | `/v1/models` shows new copy; **don't touch `addedDate`** |
+| **Description / brand** | registry; for a new brand, `model-info.ts` + `public/brand-logos/<brand>.svg` | Catalog API shows new copy; `getModelBrandLogoPath()` resolves to an existing SVG; visually verify the model row; **don't touch `addedDate`** |
 | **`inputModalities` added** | registry + possibly `gen.pollinations.ai/src/text/transforms/` | §7 row passes empirically (vendor docs are not evidence); error path for unsupported modality returns 4xx, not silent ignore |
 | **`outputModalities` added** | registry + handler | Sample response carries the modality; §8 usage line for the matching cost type present. If declaring two output modalities (e.g. video+audio for `seedance-2.0`), confirm whether the upstream bills bundled into one usage field or returns separate fields — document the choice in the cost block comment. |
 | **Image resolutions / aspect ratios** | handler + (registry comment) | One generation per supported ratio returns 200 with matching dims; unsupported ratios return 4xx; §7 cache row with byte-identical params shows MISS→HIT |
@@ -566,10 +578,12 @@ This is acceptable. What's NOT acceptable is silently dropping a separately-bill
 - [ ] [Four-part usage check](#8-usage-billing-cache-verification) passed on MISS calls
 - [ ] [Field-parity audit](#9-field-parity-audit--mandatory-on-new-model--provider-change) passed (new model or provider change)
 - [ ] `/v1/models` returns the model with correct pricing + modalities
+- [ ] Every new model brand maps to an existing SVG and renders in the catalog; `test/pricing-data.test.ts` passes
 - [ ] `addedDate` set on first add, **untouched** on later edits
 - [ ] `priceMultiplier` is set to the explicitly confirmed value
 - [ ] No 5xx in [error-path matrix](#76-error-paths--every-malformed-request-must-return-4xx-never-opaque-5xx)
 - [ ] Burst test passed at expected production concurrency
+- [ ] Any required provider-secret mutation has its own dedicated PR and a separate, scoped approval using the exact format required by `AGENTS.md`
 - [ ] PR description notes any docs/upstream discrepancies found and any bundled-modality choices
 - [ ] `APIDOCS.md` is untouched. It is regenerated from the live OpenAPI schema after production deploy; update source schemas/routes instead.
 
@@ -579,12 +593,14 @@ This is acceptable. What's NOT acceptable is silently dropping a separately-bill
 
 ## 11.1 SOPS — provider secrets
 
+The [additional provider-secret approval gate](#additional-approval-gate-for-provider-secrets) is mandatory before any command that changes these files. Inspection must not print secret values. SOPS edits, GitHub secret updates, provider-side key regeneration/revocation, and production secret synchronization are all separate secret mutations and must remain within the explicitly approved scope.
+
 ```bash
 # Inspect keys in a vars file
 sops --decrypt gen.pollinations.ai/secrets/prod.vars.json \
   | python3 -c "import json,sys; [print(k) for k in json.load(sys.stdin)]"
 
-# Add or update a key
+# Add or update a key — only after the explicit approval gate
 sops set gen.pollinations.ai/secrets/prod.vars.json '["KEY_NAME"]' '"value"'
 
 # Decrypt to .dev.vars for local dev

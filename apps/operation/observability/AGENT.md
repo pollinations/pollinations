@@ -102,14 +102,12 @@ Grafana doesn't render escaped newlines in tooltips—they appear as literal `\n
 ## ClickHouse/Tinybird Queries
 
 ### ❌ Don't: Guess field values
-Meter slugs changed over time. Using one historical value can silently return incomplete data.
+Meter slugs changed over time (`v1:meter:tier` → `local:tier`). Using wrong values returns zero data.
 
 ### ✅ Do: Use `IN` clauses for compatibility
 ```sql
 WHERE selected_meter_slug IN ('v1:meter:pack', 'local:pack')
 ```
-
-Keep legacy wire names inside SQL only. Display them as **Paid** and **Quest**.
 
 ### ❌ Don't: Forget time filters
 Queries without `$__timeFilter()` return all data regardless of dashboard time picker.
@@ -175,28 +173,28 @@ Percentages on a different scale shouldn't be stacked with Pollen values.
 ## Conversion & Business Logic Metrics
 
 ### ❌ Don't: Design metrics that are structurally always zero
-Example: "Paid-only users" in a system where Quest balance is consumed before Paid balance.
+Example: "Paid-only users" in a system where free tier is consumed before paid pack.
 
-**Business rule**: Everyone gets Quest Pollen → Quest consumed first → Paid consumed second.
-**Result**: "Paid-only users" = 0 always (impossible to use Paid without first touching Quest).
+**Business rule**: Everyone gets free Pollen → Tier consumed first → Pack consumed second.
+**Result**: "Paid-only users" = 0 always (impossible to use pack without first touching tier).
 
 ### ✅ Do: Model the actual user journey
-Use cohort-based conversion: measure time from **first Quest use** to **first Paid use**.
+Use cohort-based conversion: measure time from **first tier use** to **first pack use**.
 
 ```sql
 -- Cohort conversion: users who converted within 7 days
 SELECT 
-  countIf(first_paid IS NOT NULL
-    AND dateDiff('day', first_quest, first_paid) <= 7) as converted_7d
+  countIf(first_pack IS NOT NULL 
+    AND dateDiff('day', first_tier, first_pack) <= 7) as converted_7d
 FROM (
   SELECT 
     user_github_id,
-    minIf(start_time, selected_meter_slug IN ('v1:meter:tier', 'local:tier')) as first_quest,
-    minIf(start_time, selected_meter_slug IN ('v1:meter:pack', 'local:pack')) as first_paid
-  FROM generation_event
+    minIf(start_time, selected_meter_slug IN ('v1:meter:tier', 'local:tier')) as first_tier,
+    minIf(start_time, selected_meter_slug IN ('v1:meter:pack', 'local:pack')) as first_pack
+  FROM generation_event_v2
   WHERE environment = 'production' AND total_price > 0
   GROUP BY user_github_id
-  HAVING first_quest IS NOT NULL
+  HAVING first_tier IS NOT NULL
 )
 ```
 
@@ -207,21 +205,18 @@ If users who sign up but never use the product aren't meaningful, use **first ev
 
 ## Data Quality Filters
 
-### ❌ Don't: Forget scope and history boundaries
-Undefined values, non-production data, and the known January window skew results.
+### ❌ Don't: Forget to exclude known bad data
+Bug windows, undefined values, and non-production data skew results.
 
 ### ✅ Do: Build global filters into every query
 ```sql
 WHERE $__timeFilter(start_time)
   AND environment = 'production'
-  AND start_time >= toDateTime('2026-01-09 00:00:00')
   AND response_status >= 200 AND response_status < 300
-  AND is_billed_usage
+  AND total_price > 0
+  AND (start_time < toDateTime('2025-12-30 16:59:45') 
+       OR start_time > toDateTime('2026-01-08 18:19:58'))
 ```
-
-The rebuilt aggregates additionally retain `debug-prod-copy` as an isolated
-Tinybird-staging fixture dimension. Local Grafana queries may select it; live
-production results must select `production`.
 
 ---
 
@@ -235,15 +230,10 @@ If you need to add variables in the future, edit the `templating.list` array in 
 
 ## Workflow
 
-1. **Edit Tinybird datafiles locally**
-2. **Validate and create a deployment in `pollinations_enter_staging`**
-3. **Promote inside the Tinybird staging workspace only after explicit approval**
-4. **Run Grafana locally with the staging read token**
-5. **Edit dashboard JSON and restart local Grafana**
-6. **Hard refresh browser and check container logs**
-
-Do not deploy a Pollinations staging app for this workflow. Do not deploy or
-promote Tinybird production assets unless the user explicitly requests it.
+1. **Edit JSON** → Save file
+2. **Restart Grafana** → `docker compose restart grafana`
+3. **Hard refresh browser** → Cmd+Shift+R
+4. **Check for errors** → `docker logs grafana | grep -i error`
 
 ---
 
@@ -270,19 +260,17 @@ If you need color gradients, consider using a table with color-coded cells inste
 
 ---
 
-## Terminology: Paid vs Quest
+## Terminology: Pack vs Tier
 
 Use consistent terminology across all panels:
 
 | Internal Field | Display Name | Meaning |
 |----------------|--------------|---------|
-| `pack_balance`, `v1:meter:pack` | **Paid Pollen** | Pollen purchased by the user |
-| `tier_balance`, `v1:meter:tier` | **Quest Pollen** | Pollen granted through quests or other free funding |
-| `paid_share` | **Paid share** | Share of consumption funded by Paid Pollen |
+| `paid_cost` | **Pack ρ** | Pollen from purchased packs |
+| `free_cost` | **Tier ρ** | Pollen from tier allocation |
+| `paid_share` | **Pack %** | % of consumption from packs |
 
-The `tier` and `pack` names survive only in legacy wire fields and meter slugs.
-Never display **Tier**, **Pack**, or tier-plan names in the rebuilt dashboards.
-Paid consumption is revenue-bearing usage; Quest consumption is not revenue.
+**Never use:** "paid/free", "revenue/subsidy" in user-facing labels.
 
 ---
 

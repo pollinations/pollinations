@@ -7,7 +7,6 @@ import {
     createOVHcloudModelConfig,
     createOVHcloudOAIConfig,
     createPerplexityModelConfig,
-    createPollyConfig,
     createVercelAIGatewayModelConfig,
 } from "./providerConfigs.js";
 
@@ -299,8 +298,8 @@ export const portkeyConfig: PortkeyConfigMap = {
         "gemini-2.5-flash-lite",
         "google-vertex/eu",
     ),
-    "google/gemini-3.1-flash-lite": createPinnedOpenRouterGeminiConfig(
-        "gemini-3.1-flash-lite",
+    "google/gemini-3.5-flash-lite": createPinnedOpenRouterGeminiConfig(
+        "gemini-3.5-flash-lite",
         "google-vertex/global",
     ),
     "google/gemini-3.6-flash": createPinnedOpenRouterGeminiConfig(
@@ -388,10 +387,4 @@ export const portkeyConfig: PortkeyConfigMap = {
         createOVHcloudModelConfig({ model: "Qwen3-Coder-30B-A3B-Instruct" }),
     "Qwen3Guard-Gen-8B": () =>
         createOVHcloudOAIConfig({ model: "Qwen3Guard-Gen-8B" }),
-
-    // -- Community Models -----------------------------------------------------
-    "polly": () =>
-        createPollyConfig({
-            model: "polly",
-        }),
 };

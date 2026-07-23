@@ -242,8 +242,8 @@ const models: ModelDefinition[] = [
         ),
     },
     {
-        name: "gemini-flash-lite-3.1",
-        config: portkeyConfig["google/gemini-3.1-flash-lite"],
+        name: "gemini-flash-lite-3.5",
+        config: portkeyConfig["google/gemini-3.5-flash-lite"],
         transform: pipe(
             sanitizeToolSchemas,
             adaptGoogleSearchToolForOpenRouter,
@@ -273,7 +273,7 @@ const models: ModelDefinition[] = [
     },
     {
         name: "gemini-search-fast",
-        config: portkeyConfig["google/gemini-3.1-flash-lite"],
+        config: portkeyConfig["google/gemini-3.5-flash-lite"],
         transform: pipe(
             sanitizeToolSchemas,
             adaptGoogleSearchToolForOpenRouter,
@@ -425,10 +425,6 @@ const models: ModelDefinition[] = [
         config: portkeyConfig["Mistral-Large-3"],
         // Azure deployment 500s on reasoning_effort.
         transform: stripReasoning,
-    },
-    {
-        name: "polly",
-        config: portkeyConfig["polly"],
     },
     {
         name: "qwen-safety",

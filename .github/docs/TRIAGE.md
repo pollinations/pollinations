@@ -6,7 +6,7 @@
 
 ## AI Agents
 
-- **repo-polli-assistant.yml** - AI assistant (Polli) via pollinations.ai, triggered by `polli` in issues/PRs. Whitelisted users only.
+- **repo-polli-assistant.yml** - AI assistant (Polli) via pollinations.ai, triggered by `!polli` in issues/PRs. Whitelisted users only.
 
 ## Issue Automation Pipeline
 
@@ -126,7 +126,7 @@ flowchart TD
 ```mermaid
 %%{init: {'theme': 'dark'}}%%
 flowchart TD
-    A[User mentions 'polli' in issue/PR/comment] --> B{User whitelisted?}
+    A[User mentions '!polli' in issue/PR/comment] --> B{User whitelisted?}
     B -->|No| C[Posts unauthorized message]
     B -->|Yes| D[repo-polli-assistant.yml]
     D --> E[Starts pollinations.ai router]

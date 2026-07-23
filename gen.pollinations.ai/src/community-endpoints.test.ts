@@ -689,6 +689,349 @@ fixtureTest(
 );
 
 fixtureTest(
+    "limits an unpaid account to one active generation across its API keys",
+    async () => {
+        const ownerGithubUsername = `owner-${crypto.randomUUID().slice(0, 8)}`;
+        const modelName = `limited-${crypto.randomUUID().slice(0, 8)}`;
+        const modelId = communityModelId(ownerGithubUsername, modelName);
+        const ownerUserId = await createTestUser({
+            githubId: COMMUNITY_ENDPOINT_ALLOWED_TEST_GITHUB_ID,
+            githubUsername: ownerGithubUsername,
+        });
+        await db.insert(communityEndpointTable).values({
+            id: `endpoint-${crypto.randomUUID()}`,
+            ownerUserId,
+            visibility: "public",
+            name: modelName,
+            description: "Concurrency-limited community endpoint",
+            baseUrl: "https://api.example.com/v1",
+            upstreamModel: "gpt-4.1-mini",
+            bearerTokenCiphertext: await encryptSecret(
+                "Bearer sk_saved_token",
+                env.BETTER_AUTH_SECRET,
+            ),
+            promptTextPrice: 0,
+            completionTextPrice: 0,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+        });
+
+        const callerUserId = await createTestUser({ tierBalance: 100 });
+        const [{ key: firstKey }, { key: secondKey }] = await Promise.all([
+            createTestApiKey({ userId: callerUserId, name: "first-key" }),
+            createTestApiKey({ userId: callerUserId, name: "second-key" }),
+        ]);
+
+        let upstreamRequests = 0;
+        const fetchMock = vi.fn(async (input, init) => {
+            const request = new Request(input, init);
+            if (isPortkeyChatCompletionsRequest(request)) {
+                upstreamRequests++;
+                if (upstreamRequests === 1) {
+                    let sent = false;
+                    return new Response(
+                        new ReadableStream<Uint8Array>({
+                            async pull(controller) {
+                                if (sent) return;
+                                sent = true;
+                                await new Promise((resolve) =>
+                                    setTimeout(resolve, 250),
+                                );
+                                const encoder = new TextEncoder();
+                                controller.enqueue(
+                                    encoder.encode(
+                                        `data: ${JSON.stringify({
+                                            id: "chatcmpl_stream",
+                                            object: "chat.completion.chunk",
+                                            choices: [
+                                                {
+                                                    index: 0,
+                                                    delta: { content: "ok" },
+                                                    finish_reason: "stop",
+                                                },
+                                            ],
+                                            usage: {
+                                                prompt_tokens: 2,
+                                                completion_tokens: 3,
+                                                total_tokens: 5,
+                                            },
+                                        })}\n\n`,
+                                    ),
+                                );
+                                controller.enqueue(
+                                    encoder.encode("data: [DONE]\n\n"),
+                                );
+                                controller.close();
+                            },
+                        }),
+                        {
+                            headers: { "Content-Type": "text/event-stream" },
+                        },
+                    );
+                }
+
+                return Response.json({
+                    id: "chatcmpl_after_release",
+                    object: "chat.completion",
+                    choices: [
+                        {
+                            index: 0,
+                            message: { role: "assistant", content: "ok" },
+                            finish_reason: "stop",
+                        },
+                    ],
+                    usage: {
+                        prompt_tokens: 2,
+                        completion_tokens: 3,
+                        total_tokens: 5,
+                    },
+                });
+            }
+            if (isBillingFetch(request)) return Response.json({ data: [] });
+            throw new Error(`Unexpected fetch: ${request.url}`);
+        });
+        vi.stubGlobal("fetch", fetchMock);
+
+        const request = (key: string, stream: boolean) =>
+            new Request("https://gen.pollinations.ai/v1/chat/completions", {
+                method: "POST",
+                headers: {
+                    Authorization: `Bearer ${key}`,
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    model: modelId,
+                    messages: [{ role: "user", content: "hello" }],
+                    stream,
+                }),
+            });
+
+        const firstResponse = await SELF.fetch(request(firstKey, true));
+        expect(firstResponse.status).toBe(200);
+        const firstBody = firstResponse.text();
+
+        const concurrentResponse = await SELF.fetch(request(secondKey, false));
+        expect(concurrentResponse.status).toBe(429);
+        expect(concurrentResponse.headers.get("Retry-After")).toBe("1");
+        await expect(concurrentResponse.json()).resolves.toMatchObject({
+            error: "concurrency_limit_exceeded",
+        });
+        expect(upstreamRequests).toBe(1);
+
+        await firstBody;
+
+        const afterReleaseResponse = await SELF.fetch(
+            request(secondKey, false),
+        );
+        expect(afterReleaseResponse.status).toBe(200);
+        await afterReleaseResponse.text();
+        expect(upstreamRequests).toBe(2);
+    },
+);
+
+fixtureTest(
+    "lets an account with paid balance run concurrent generations",
+    async () => {
+        const ownerGithubUsername = `owner-${crypto.randomUUID().slice(0, 8)}`;
+        const modelName = `paid-${crypto.randomUUID().slice(0, 8)}`;
+        const modelId = communityModelId(ownerGithubUsername, modelName);
+        const ownerUserId = await createTestUser({
+            githubId: COMMUNITY_ENDPOINT_ALLOWED_TEST_GITHUB_ID,
+            githubUsername: ownerGithubUsername,
+        });
+        await db.insert(communityEndpointTable).values({
+            id: `endpoint-${crypto.randomUUID()}`,
+            ownerUserId,
+            visibility: "public",
+            name: modelName,
+            description: "Paid-bypass community endpoint",
+            baseUrl: "https://api.example.com/v1",
+            upstreamModel: "gpt-4.1-mini",
+            bearerTokenCiphertext: await encryptSecret(
+                "Bearer sk_saved_token",
+                env.BETTER_AUTH_SECRET,
+            ),
+            promptTextPrice: 0,
+            completionTextPrice: 0,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+        });
+
+        // Paid account: packBalance > 0 means the concurrency gate is skipped.
+        const callerUserId = await createTestUser({
+            tierBalance: 0,
+            packBalance: 100,
+        });
+        const [{ key: firstKey }, { key: secondKey }] = await Promise.all([
+            createTestApiKey({ userId: callerUserId, name: "paid-first-key" }),
+            createTestApiKey({ userId: callerUserId, name: "paid-second-key" }),
+        ]);
+
+        let upstreamRequests = 0;
+        let firstArrived: () => void = () => {};
+        const firstUpstreamStarted = new Promise<void>((resolve) => {
+            firstArrived = resolve;
+        });
+        const fetchMock = vi.fn(async (input, init) => {
+            const request = new Request(input, init);
+            if (isPortkeyChatCompletionsRequest(request)) {
+                upstreamRequests++;
+                if (upstreamRequests === 1) {
+                    // Hold the first request open until the second has also
+                    // reached upstream, proving the slot was not required.
+                    firstArrived();
+                    await new Promise((resolve) => setTimeout(resolve, 250));
+                }
+                return Response.json({
+                    id: "chatcmpl_paid",
+                    object: "chat.completion",
+                    choices: [
+                        {
+                            index: 0,
+                            message: { role: "assistant", content: "ok" },
+                            finish_reason: "stop",
+                        },
+                    ],
+                    usage: {
+                        prompt_tokens: 2,
+                        completion_tokens: 3,
+                        total_tokens: 5,
+                    },
+                });
+            }
+            if (isBillingFetch(request)) return Response.json({ data: [] });
+            throw new Error(`Unexpected fetch: ${request.url}`);
+        });
+        vi.stubGlobal("fetch", fetchMock);
+
+        const request = (key: string) =>
+            new Request("https://gen.pollinations.ai/v1/chat/completions", {
+                method: "POST",
+                headers: {
+                    Authorization: `Bearer ${key}`,
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    model: modelId,
+                    messages: [{ role: "user", content: "hello" }],
+                    stream: false,
+                }),
+            });
+
+        const firstPromise = SELF.fetch(request(firstKey));
+        await firstUpstreamStarted;
+        // Second request overlaps the first; a paid account must not be blocked.
+        const secondResponse = await SELF.fetch(request(secondKey));
+        expect(secondResponse.status).toBe(200);
+        await secondResponse.text();
+
+        const firstResponse = await firstPromise;
+        expect(firstResponse.status).toBe(200);
+        await firstResponse.text();
+
+        expect(upstreamRequests).toBe(2);
+    },
+);
+
+fixtureTest(
+    "the account slot is shared across modalities (audio blocked while slot held)",
+    async () => {
+        // An unpaid account that already holds its single slot (e.g. a text
+        // generation in flight) must be blocked on a DIFFERENT modality. This
+        // pins the account-global invariant: the limiter is keyed by user, not
+        // by model or route, so /v1/audio/* cannot bypass it.
+        const callerUserId = await createTestUser({
+            tierBalance: 100,
+            packBalance: 0,
+        });
+        const { key } = await createTestApiKey({
+            userId: callerUserId,
+            name: "cross-modality-key",
+        });
+
+        // Occupy the account's slot directly via the Durable Object, keyed the
+        // same way the middleware keys it (idFromName(userId)).
+        const namespace = env.ACCOUNT_CONCURRENCY_LIMITER;
+        const stub = namespace.get(namespace.idFromName(callerUserId));
+        const held = await stub.acquire();
+        expect(held.allowed).toBe(true);
+
+        // A concurrent audio (TTS) request must be rejected before reaching the
+        // provider — the limiter runs ahead of the handler, so no upstream mock
+        // is needed.
+        const audioResponse = await SELF.fetch(
+            "https://gen.pollinations.ai/v1/audio/speech",
+            {
+                method: "POST",
+                headers: {
+                    Authorization: `Bearer ${key}`,
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    model: "elevenlabs",
+                    input: "hello",
+                    voice: "alloy",
+                }),
+            },
+        );
+        expect(audioResponse.status).toBe(429);
+        expect(audioResponse.headers.get("Retry-After")).toBe("1");
+        await expect(audioResponse.json()).resolves.toMatchObject({
+            error: "concurrency_limit_exceeded",
+        });
+    },
+);
+
+fixtureTest(
+    "an account that spent past zero (negative pack balance) bypasses the limit",
+    async () => {
+        // A negative pack balance can only result from paying and then spending
+        // past zero, so it is a definite "has paid" signal and must bypass the
+        // gate just like a positive balance. Only null/0 (never funded) is
+        // limited. This guards the packBalance !== 0 bypass condition.
+        const callerUserId = await createTestUser({
+            tierBalance: 0,
+            packBalance: -5,
+        });
+        const { key } = await createTestApiKey({
+            userId: callerUserId,
+            name: "spent-down-payer-key",
+        });
+
+        // Occupy the account's slot; a same-account request must NOT be blocked,
+        // because the limiter bypasses funded (incl. spent-down) accounts before
+        // ever consulting the Durable Object.
+        const namespace = env.ACCOUNT_CONCURRENCY_LIMITER;
+        const stub = namespace.get(namespace.idFromName(callerUserId));
+        const held = await stub.acquire();
+        expect(held.allowed).toBe(true);
+
+        const response = await SELF.fetch(
+            "https://gen.pollinations.ai/v1/audio/speech",
+            {
+                method: "POST",
+                headers: {
+                    Authorization: `Bearer ${key}`,
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    model: "elevenlabs",
+                    input: "hello",
+                    voice: "alloy",
+                }),
+            },
+        );
+        // The request gets past the limiter (it may fail downstream for other
+        // reasons in the test env), but it must NOT be the concurrency 429.
+        if (response.status === 429) {
+            await expect(response.json()).resolves.not.toMatchObject({
+                error: "concurrency_limit_exceeded",
+            });
+        }
+    },
+);
+
+fixtureTest(
     "a private model is owner-only and a zero-priced public model is free",
     async ({ apiKey }) => {
         const ownerGithubUsername = `owner-${crypto.randomUUID().slice(0, 8)}`;

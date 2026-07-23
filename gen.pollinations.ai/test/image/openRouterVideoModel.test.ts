@@ -310,7 +310,7 @@ describe("OpenRouter Grok Video Pro", () => {
         expect(result.durationSeconds).toBe(15);
     });
 
-    it("preserves the existing three-minute timeout", async () => {
+    it("enforces a three-minute timeout", async () => {
         vi.useFakeTimers();
         setOpenRouterEnv();
 
@@ -353,7 +353,9 @@ describe("OpenRouter Grok Video Pro", () => {
         expect(pollAttempts).toBe(6);
     });
 
-    it("rejects non-integer durations before submitting a job", async () => {
+    it.each([
+        0.5, 4.5, 15.5,
+    ])("rejects non-integer duration %s before submitting a job", async (duration) => {
         setOpenRouterEnv();
         const fetchSpy = vi.spyOn(globalThis, "fetch");
 
@@ -361,7 +363,7 @@ describe("OpenRouter Grok Video Pro", () => {
             callOpenRouterGrokVideoAPI("a calm ocean at sunrise", {
                 ...baseParams,
                 model: "grok-video-pro",
-                duration: 4.5,
+                duration,
             }),
         ).rejects.toMatchObject({ status: 400 });
         expect(fetchSpy).not.toHaveBeenCalled();

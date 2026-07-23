@@ -120,14 +120,14 @@ export async function callHappyHorseAPI(
 }
 
 function resolveGrokDuration(duration?: number): number {
-    const resolved = Math.min(Math.max(duration || 5, 1), 15);
-    if (!Number.isInteger(resolved)) {
+    const requested = duration || 5;
+    if (!Number.isInteger(requested)) {
         throw new HttpError(
             "Grok Video Pro duration must be an integer from 1 to 15 seconds",
             400,
         );
     }
-    return resolved;
+    return Math.min(Math.max(requested, 1), 15);
 }
 
 function resolveGrokAspectRatio(safeParams: ImageParams): string | undefined {

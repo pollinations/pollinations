@@ -1,0 +1,33 @@
+{
+  "pr_number": 12686,
+  "title": "fix: require approval for production secret changes",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/12686",
+  "merged_at": "2026-07-23T12:19:36Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds a mandatory, explicit, scoped approval gate before any secret edit or secret-change PR\n- Defines the exact approval sentence and prevents general task approval from counting\n- Adds the same checkpoint to the model-management skill and its SOPS procedure\n- Requires secret changes to remain separate from model and feature PRs\n- Does not modify workflows, environments, or credential values",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Secrets need a second nod",
+    "blurb": "The hive now pauses before touching production secrets. A specific human sentence is required; vague approval pollen does not count.",
+    "summary": "Added an explicit, scoped approval checkpoint for every production secret edit or secret-change PR in AGENTS.md, model-management guidance, and the SOPS procedure, keeping secret work separate from model and feature changes.",
+    "impact": "Contributors now get a clear mandatory approval step before production-secret changes, making sensitive edits easier to review independently.",
+    "keywords": [
+      "production-secrets",
+      "approval",
+      "sops",
+      "model-management",
+      "contributor-guidance"
+    ],
+    "visual_concept": "Depict Polli as a careful keeper of a small locked seed vault labeled \"SECRETS,\" holding a checklist with one clearly stamped approval line while a friendly CRT monitor robot offers a separate sealed envelope. Use garden plants and a fence to show that secret changes stay in their own carefully tended plot.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink cheek blush and light blue wings, wearing a tiny safety helmet and holding a clipboard beside a small locked seed vault labeled \"SECRETS\" in chunky pixel text; a friendly CRT monitor robot presents a single stamped \"APPROVED\" note, while code-plants grow in a separate fenced garden bed. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, retro gaming vibes, with Polli small-to-medium in the scene and subtle CRT glow."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-23/PR-12686.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink cheek blush and light blue wings, wearing a tiny safety helmet and holding a clipboard beside a small locked seed vault labeled \"SECRETS\" in chunky pixel text; a friendly CRT monitor robot presents a single stamped \"APPROVED\" note, while code-plants grow in a separate fenced garden bed. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, retro gaming vibes, with Polli small-to-medium in the scene and subtle CRT glow."
+  },
+  "generated_at": "2026-07-23T12:20:31.406309+00:00"
+}

@@ -1,0 +1,32 @@
+{
+  "pr_number": 12675,
+  "title": "docs: regenerate APIDOCS.md",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/12675",
+  "merged_at": "2026-07-23T01:48:33Z",
+  "labels": [],
+  "pr_body_excerpt": "Auto-generated from OpenAPI spec changes after a successful production deploy.",
+  "gist": {
+    "category": "docs",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "The map got fresh ink",
+    "blurb": "The API reference has been re-synced with the production OpenAPI spec. Fewer stale signposts in the garden.",
+    "summary": "Regenerated APIDOCS.md from the production OpenAPI specification so the published API reference matches the deployed service.",
+    "impact": "Developers reading APIDOCS.md now get documentation aligned with the current production API.",
+    "keywords": [
+      "documentation",
+      "api",
+      "openapi",
+      "developer-experience"
+    ],
+    "visual_concept": "A cozy garden map desk represents the refreshed API reference: Polli, wearing tiny librarian glasses, compares a glowing retro terminal's OpenAPI scroll with a freshly inked field guide. Small code-plants and flowers surround the desk, signaling that the documentation stays in step with the living platform.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and tiny librarian glasses, updating a large API field guide from a glowing retro terminal scroll in a flower-filled garden; lime green (#ecf874) shines prominently from the screen and code-plants. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with subtle pixel-font text: 'API DOCS'."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-23/PR-12675.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and tiny librarian glasses, updating a large API field guide from a glowing retro terminal scroll in a flower-filled garden; lime green (#ecf874) shines prominently from the screen and code-plants. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with subtle pixel-font text: 'API DOCS'."
+  },
+  "generated_at": "2026-07-23T01:49:24.670602+00:00"
+}

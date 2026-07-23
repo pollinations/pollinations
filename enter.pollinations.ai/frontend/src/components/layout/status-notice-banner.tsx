@@ -32,7 +32,7 @@ export const StatusNoticeBanner: FC<StatusNoticeBannerProps> = ({
             try {
                 const response = await fetch("/api/status-notice");
                 if (response.ok) {
-                    const data = await response.json();
+                    const data = (await response.json()) as { notice: StatusNotice | null };
                     setNotice(data.notice);
                 }
             } catch {

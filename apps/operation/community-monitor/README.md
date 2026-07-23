@@ -16,6 +16,10 @@ Committed (source of truth — edit here, then deploy):
   after completion. Headless cycles cannot be remote-controlled; a separate
   persistent `claude --remote-control community-monitor` session runs alongside
   as a phone-accessible console.
+- `update-from-repo.sh` — before each cycle, fetches `origin/main` and atomically
+  refreshes only the committed prompt/runtime files. It does not activate until
+  the updater itself exists on `main`, so deploying an open PR cannot downgrade
+  the live monitor.
 - `healthcheck.sh` — hourly service/state-progress snapshot for external alerting.
 - `.env.example` — the required env var names, no values.
 
@@ -39,25 +43,25 @@ Install Node and the `claude` CLI, clone/copy this directory, populate `.env`
 (see `.env.example`), install `community-monitor.service`, then run
 `systemctl enable --now community-monitor`.
 
-## Deploying a CYCLE.md change
+## Automatic prompt/runtime updates
 
-```bash
-scp apps/operation/community-monitor/CYCLE.md community-monitor:/home/ubuntu/monitor/CYCLE.md
-```
-
-The next fresh cycle reads the new file automatically. Restart the service to
-apply it immediately.
+Once `update-from-repo.sh` and its systemd unit are installed, every fresh cycle
+fetches `origin/main` and updates `CYCLE.md`, `probe.mjs`, `loop.sh`,
+`healthcheck.sh`, and the leaderboard builder. Changes merged to `main` apply on
+the next cycle. `.env`, state, identity mappings, logs, and generated data are
+never copied or removed. Restart the service to apply a merged change
+immediately.
 
 ## Deploying runtime changes
 
 ```bash
-scp apps/operation/community-monitor/{CYCLE.md,probe.mjs,loop.sh,healthcheck.sh} \
+scp apps/operation/community-monitor/{CYCLE.md,probe.mjs,loop.sh,healthcheck.sh,update-from-repo.sh} \
   community-monitor:/home/ubuntu/monitor/
 scp apps/operation/community-monitor/community-monitor.service \
   community-monitor:/tmp/community-monitor.service
 ssh community-monitor "sudo install -m 0644 /tmp/community-monitor.service \
   /etc/systemd/system/community-monitor.service && \
-  chmod +x /home/ubuntu/monitor/{probe.mjs,loop.sh,healthcheck.sh} && \
+  chmod +x /home/ubuntu/monitor/{probe.mjs,loop.sh,healthcheck.sh,update-from-repo.sh} && \
   sudo systemctl daemon-reload && \
   sudo systemctl restart community-monitor"
 ```

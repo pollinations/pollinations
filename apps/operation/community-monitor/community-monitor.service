@@ -9,6 +9,7 @@ Type=simple
 User=ubuntu
 WorkingDirectory=/home/ubuntu/monitor
 EnvironmentFile=/home/ubuntu/monitor/.env
+ExecStartPre=-/home/ubuntu/monitor/update-from-repo.sh
 ExecStart=/home/ubuntu/monitor/loop.sh
 Restart=always
 RestartSec=900

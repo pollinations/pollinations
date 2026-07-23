@@ -6,10 +6,7 @@ const entryPoint = fileURLToPath(
     new URL("../src/services/prompt-agent-worker.ts", import.meta.url),
 );
 const outputFile = fileURLToPath(
-    new URL(
-        "../src/services/generated/prompt-agent-worker.js",
-        import.meta.url,
-    ),
+    new URL("../src/services/dist/prompt-agent-worker.js", import.meta.url),
 );
 
 const result = await build({
@@ -33,7 +30,7 @@ if (process.argv.includes("--check")) {
         process.exitCode = 1;
     }
 } else {
-    await mkdir(new URL("../src/services/generated/", import.meta.url), {
+    await mkdir(new URL("../src/services/dist/", import.meta.url), {
         recursive: true,
     });
     await writeFile(outputFile, source);

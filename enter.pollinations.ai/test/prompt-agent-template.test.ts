@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import promptAgentWorker from "../src/services/generated/prompt-agent-worker.js";
+import promptAgentWorker from "../src/services/dist/prompt-agent-worker.js";
 import { PROMPT_AGENT_TEMPLATE_SOURCE } from "../src/services/prompt-agent-template.ts";
 
 type AgentModule = {

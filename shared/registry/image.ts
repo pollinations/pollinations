@@ -598,7 +598,7 @@ export const IMAGE_SERVICES = {
             "grok-imagine-image-quality",
             "grok-imagine-image-pro",
         ],
-        provider: "xai",
+        provider: "openrouter",
         brand: "xAI",
         category: "image",
         addedDate: new Date("2026-03-23").getTime(),

@@ -20,7 +20,11 @@ const COMMUNITY_TEXT_ENDPOINTS = [
     "/text",
     "/text/{prompt}",
 ];
-const COMMUNITY_IMAGE_ENDPOINTS = ["/v1/images/generations", "/image/{prompt}"];
+const COMMUNITY_IMAGE_ENDPOINTS = [
+    "/v1/images/generations",
+    "/v1/images/edits",
+    "/image/{prompt}",
+];
 
 export function communityTextSupportedEndpoints(): string[] {
     return COMMUNITY_TEXT_ENDPOINTS;

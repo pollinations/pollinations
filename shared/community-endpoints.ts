@@ -326,9 +326,17 @@ export function communityImageGenerationsUrl(baseUrl: string): string {
     return `${communityOpenAIBaseUrl(baseUrl)}/images/generations`;
 }
 
+export function communityImageEditsUrl(baseUrl: string): string {
+    return `${communityOpenAIBaseUrl(baseUrl)}/images/edits`;
+}
+
 export function communityOpenAIBaseUrl(baseUrl: string): string {
     const normalized = normalizeCommunityEndpointBaseUrl(baseUrl);
-    for (const suffix of ["/chat/completions", "/images/generations"]) {
+    for (const suffix of [
+        "/chat/completions",
+        "/images/generations",
+        "/images/edits",
+    ]) {
         if (normalized.endsWith(suffix)) {
             return normalized.slice(0, -suffix.length);
         }

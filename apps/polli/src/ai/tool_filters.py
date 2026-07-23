@@ -246,7 +246,10 @@ TOOL_KEYWORDS = {
     "render_visual": re.compile(
         r"\b(charts?|graphs?|plots?|visualiz\w*|bar\s*chart|line\s*chart|pie\s*chart|"
         r"donut|scatter|heatmap|radar|histogram|diagram|infographic|dashboard|tables?|"
-        r"comparison|matrix|distribut\w*)\b",
+        r"comparison|matrix|distribut\w*|"
+        # Asking to be shown something is a request for a picture as often as for prose.
+        r"draw|sketch|flow\s*chart|flowchart|sequence|gantt|timeline|mindmap|"
+        r"architecture|pipeline|state\s*machine|topology)\b",
         re.IGNORECASE,
     ),
     # NOTE: web_search and code_search are NOT filtered by keywords

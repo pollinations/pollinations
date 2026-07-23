@@ -1,0 +1,34 @@
+{
+  "pr_number": 12698,
+  "title": "fix: change polli trigger word to !polli",
+  "author": "Itachi-1824",
+  "url": "https://github.com/pollinations/pollinations/pull/12698",
+  "merged_at": "2026-07-23T16:10:25Z",
+  "labels": [],
+  "pr_body_excerpt": "- Trigger word for the Polli assistant is now `!polli` instead of `polli`\n- Updated the workflow gate, whitelist regex, and trigger_phrase\n- Updated TRIAGE.md docs to match",
+  "gist": {
+    "category": "improvement",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Polli Gets a Proper Doorbell",
+    "blurb": "Polli now knows when she is being called, rather than politely investigating every mention of her name. Add `!polli` and the hive assistant is on it.",
+    "summary": "Changed the repository Polli assistant trigger from `polli` to `!polli`, updating its workflow gate, whitelist regex, trigger phrase, and triage documentation.",
+    "impact": "GitHub contributors can explicitly summon the assistant with `!polli`, making issue and PR conversations less likely to trigger it accidentally.",
+    "keywords": [
+      "polli",
+      "github",
+      "assistant",
+      "triage",
+      "workflow",
+      "trigger"
+    ],
+    "visual_concept": "Depict Polli as a cozy repository helper standing beside a tiny garden-shed help desk with a clearly labeled `!polli` brass bell. A glowing retro terminal and a few code-plants show that the new exclamation-mark call signal opens the workflow gate, while Polli warmly responds to the intentional ping.",
+    "image_prompt": "Cozy pixel art scene of the cute pixel art bee mascot Polli wearing tiny librarian glasses beside a garden-shed GitHub help desk, happily pressing a small brass bell labeled `!polli` while a retro terminal workflow gate glows open among code-plants and flowers. Polli has a yellow body with dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blush, a small happy smile, and rounded light blue translucent wings; use a prominent lime green (#ecf874) and pastel gradient background with warm lighting, subtle CRT glow, cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-23/PR-12698.jpg",
+    "prompt": "Cozy pixel art scene of the cute pixel art bee mascot Polli wearing tiny librarian glasses beside a garden-shed GitHub help desk, happily pressing a small brass bell labeled `!polli` while a retro terminal workflow gate glows open among code-plants and flowers. Polli has a yellow body with dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blush, a small happy smile, and rounded light blue translucent wings; use a prominent lime green (#ecf874) and pastel gradient background with warm lighting, subtle CRT glow, cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, nostalgic but beautiful."
+  },
+  "generated_at": "2026-07-23T16:11:20.497783+00:00"
+}

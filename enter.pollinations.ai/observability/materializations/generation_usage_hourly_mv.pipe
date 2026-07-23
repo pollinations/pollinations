@@ -1,0 +1,127 @@
+DESCRIPTION >
+    Materializes generation_event_v2 usage at hourly dashboard grain.
+    Includes production plus the isolated debug-prod-copy staging fixture.
+    Reportable production history begins after the known January window.
+
+NODE generation_usage_hourly_mv_node
+SQL >
+    SELECT
+        toStartOfHour(start_time) AS hour,
+        environment,
+        coalesce(
+            nullIf(nullIf(resolved_model_requested, ''), 'undefined'),
+            nullIf(nullIf(model_used, ''), 'undefined'),
+            nullIf(nullIf(model_requested, ''), 'undefined'),
+            'unknown'
+        ) AS model,
+        if(event_type IN ('', 'undefined'), 'unknown', event_type) AS workload,
+        multiIf(
+            selected_meter_slug IN ('v1:meter:pack', 'local:pack'),
+            'paid',
+            selected_meter_slug IN ('v1:meter:tier', 'local:tier'),
+            'quest',
+            'unfunded'
+        ) AS funding_source,
+        api_key_client_id NOT IN ('', 'undefined') AS is_byop,
+        model_provider_used = 'community' AS is_community,
+        multiIf(is_byop, 'byop', is_community, 'community_direct', 'core') AS business_stream,
+        sumState(toUInt64(1)) AS all_calls,
+        sumState(toUInt64(response_status >= 200 AND response_status < 300)) AS successful_calls,
+        sumState(
+            toUInt64(response_status >= 200 AND response_status < 300 AND is_billed_usage)
+        ) AS billed_calls,
+        uniqState(user_id) AS users,
+        uniqIfState(api_key_client_id, toUInt8(is_byop)) AS apps,
+        sumState(
+            if(response_status >= 200 AND response_status < 300 AND is_billed_usage, total_price, 0)
+        ) AS gross_consumption,
+        sumState(
+            if(
+                response_status >= 200
+                AND response_status < 300
+                AND is_billed_usage
+                AND is_byop
+                AND api_key_created_for_user_id NOT IN ('', 'undefined')
+                AND total_price > dev_price,
+                total_price - dev_price,
+                0
+            )
+        ) AS byop_reward,
+        sumState(
+            if(
+                response_status >= 200
+                AND response_status < 300
+                AND is_billed_usage
+                AND community_model_reward_user_id NOT IN ('', 'undefined')
+                AND community_model_reward_amount > 0,
+                community_model_reward_amount,
+                0
+            )
+        ) AS community_reward,
+        sumState(
+            toUInt64(if(response_status >= 200 AND response_status < 300, token_count_prompt_text, 0))
+        ) AS prompt_text_tokens,
+        sumState(
+            toUInt64(if(response_status >= 200 AND response_status < 300, token_count_prompt_cached, 0))
+        ) AS prompt_cached_tokens,
+        sumState(
+            toUInt64(
+                if(response_status >= 200 AND response_status < 300, token_count_prompt_cache_write, 0)
+            )
+        ) AS prompt_cache_write_tokens,
+        sumState(
+            toUInt64(
+                if(response_status >= 200 AND response_status < 300, token_count_completion_text, 0)
+            )
+        ) AS completion_text_tokens,
+        sumState(
+            toUInt64(
+                if(
+                    response_status >= 200 AND response_status < 300,
+                    token_count_completion_reasoning,
+                    0
+                )
+            )
+        ) AS completion_reasoning_tokens,
+        sumState(
+            toUInt64(if(response_status >= 200 AND response_status < 300, token_count_prompt_image, 0))
+        ) AS prompt_image_tokens,
+        sumState(
+            toUInt64(
+                if(response_status >= 200 AND response_status < 300, token_count_completion_image, 0)
+            )
+        ) AS completion_image_tokens,
+        sumState(
+            if(response_status >= 200 AND response_status < 300, token_count_prompt_audio_seconds, 0)
+        ) AS prompt_audio_seconds,
+        sumState(
+            if(
+                response_status >= 200 AND response_status < 300,
+                token_count_completion_audio_seconds,
+                0
+            )
+        ) AS completion_audio_seconds,
+        sumState(
+            if(
+                response_status >= 200 AND response_status < 300,
+                token_count_completion_video_seconds,
+                0
+            )
+        ) AS completion_video_seconds,
+        sumState(
+            toUInt64(
+                if(
+                    response_status >= 200 AND response_status < 300,
+                    token_count_completion_video_tokens,
+                    0
+                )
+            )
+        ) AS completion_video_tokens
+    FROM generation_event_v2
+    WHERE
+        environment IN ('production', 'debug-prod-copy')
+        AND start_time >= toDateTime('2026-01-09 00:00:00')
+    GROUP BY hour, environment, model, workload, funding_source, is_byop, is_community, business_stream
+
+TYPE MATERIALIZED
+DATASOURCE generation_usage_hourly

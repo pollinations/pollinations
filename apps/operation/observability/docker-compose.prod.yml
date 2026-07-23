@@ -12,7 +12,7 @@ services:
       - GF_USERS_ALLOW_SIGN_UP=false
       - GF_AUTH_ANONYMOUS_ENABLED=false
       - GF_AUTH_DISABLE_LOGIN_FORM=false
-      - GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH=/etc/grafana/provisioning/dashboards/observability.json
+      - GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH=/etc/grafana/provisioning/dashboards/rebuild/platform-usage-rebuild.json
       - GF_INSTALL_PLUGINS=grafana-clickhouse-datasource
       - TINYBIRD_READ_TOKEN=${TINYBIRD_READ_TOKEN}
       - TINYBIRD_LEGACY_READ_TOKEN=${TINYBIRD_LEGACY_READ_TOKEN}

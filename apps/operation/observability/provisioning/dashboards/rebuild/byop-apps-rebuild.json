@@ -1,0 +1,996 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": {
+          "type": "datasource",
+          "uid": "grafana"
+        },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "target": {
+          "limit": 100,
+          "matchAny": false,
+          "tags": [],
+          "type": "dashboard"
+        },
+        "type": "dashboard"
+      }
+    ]
+  },
+  "description": "Trusted BYOP client traffic, end users, Paid and Quest consumption, app-owner rewards, and model usage. BYOP attribution requires a populated generation_event_v2 api_key_client_id; the legacy key-name heuristic is intentionally excluded.",
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [],
+  "liveNow": false,
+  "panels": [
+    {
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "PAD1A0A25CD30D456"
+      },
+      "description": "Selected-range BYOP totals from generation_usage_hourly. Apps are clean api_key_client_id values; users are authenticated end users. Paid and Quest are consumed Pollen, while developer rewards are the BYOP markup credited to app owners.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "decimals": 0,
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "active_apps"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Active apps"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "app_users"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "App users"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "byop_calls"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "BYOP calls"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "paid_consumption"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Paid consumption"
+              },
+              {
+                "id": "unit",
+                "value": "suffix: Pollen"
+              },
+              {
+                "id": "decimals",
+                "value": 2
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "quest_consumption"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Quest consumption"
+              },
+              {
+                "id": "unit",
+                "value": "suffix: Pollen"
+              },
+              {
+                "id": "decimals",
+                "value": 2
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "developer_rewards"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Developer rewards"
+              },
+              {
+                "id": "unit",
+                "value": "suffix: Pollen"
+              },
+              {
+                "id": "decimals",
+                "value": 2
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 6,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "id": 1,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "horizontal",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "PAD1A0A25CD30D456"
+          },
+          "format": 1,
+          "range": true,
+          "rawSql": "SELECT\n  uniqIfMerge(apps) AS active_apps,\n  uniqMerge(users) AS app_users,\n  sumMerge(successful_calls) AS byop_calls,\n  round(sumMergeIf(gross_consumption, funding_source = 'paid'), 2) AS paid_consumption,\n  round(sumMergeIf(gross_consumption, funding_source = 'quest'), 2) AS quest_consumption,\n  round(sumMerge(byop_reward), 2) AS developer_rewards\nFROM generation_usage_hourly\nWHERE $__timeFilter(hour)\n  AND environment IN ('production', 'debug-prod-copy')\n  AND is_byop = 1",
+          "refId": "A"
+        }
+      ],
+      "title": "BYOP overview",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "PAD1A0A25CD30D456"
+      },
+      "description": "Daily successful BYOP calls split by generation_event_v2 workload. BYOP means api_key_client_id is populated; community-model calls made through BYOP remain in this dashboard.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "barAlignment": 0,
+            "drawStyle": "bars",
+            "fillOpacity": 85,
+            "lineWidth": 0,
+            "stacking": {
+              "group": "A",
+              "mode": "normal"
+            }
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 24,
+        "x": 0,
+        "y": 6
+      },
+      "id": 2,
+      "options": {
+        "legend": {
+          "calcs": [
+            "sum"
+          ],
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "PAD1A0A25CD30D456"
+          },
+          "format": 0,
+          "range": true,
+          "rawSql": "SELECT\n  toStartOfDay(hour) AS time,\n  sumMergeIf(successful_calls, is_byop = 1 AND workload = 'generate.text') AS text,\n  sumMergeIf(successful_calls, is_byop = 1 AND workload = 'generate.image') AS image,\n  sumMergeIf(successful_calls, is_byop = 1 AND workload = 'generate.embedding') AS embedding,\n  sumMergeIf(successful_calls, is_byop = 1 AND workload = 'generate.audio') AS audio,\n  sumMergeIf(successful_calls, is_byop = 1 AND workload = 'generate.video') AS video,\n  sumMergeIf(\n    successful_calls,\n    is_byop = 1\n    AND workload NOT IN (\n      'generate.text',\n      'generate.image',\n      'generate.embedding',\n      'generate.audio',\n      'generate.video'\n    )\n  ) AS other,\n  round(\n    100 * sumMergeIf(successful_calls, is_byop = 1)\n    / nullIf(sumMerge(successful_calls), 0),\n    2\n  ) AS byop_share_pct,\n  uniqIfMergeIf(apps, is_byop = 1) AS active_apps,\n  uniqMergeIf(users, is_byop = 1) AS app_users,\n  sumMergeIf(gross_consumption, is_byop = 1 AND funding_source = 'paid') AS paid_consumption,\n  sumMergeIf(gross_consumption, is_byop = 1 AND funding_source = 'quest') AS quest_consumption,\n  sumMergeIf(successful_calls, is_byop = 1 AND is_community = 0) AS standard_calls,\n  sumMergeIf(successful_calls, is_byop = 1 AND is_community = 1) AS community_calls,\n  sumMergeIf(byop_reward, is_byop = 1 AND funding_source = 'paid') AS paid_rewards,\n  sumMergeIf(byop_reward, is_byop = 1 AND funding_source = 'quest') AS quest_rewards\nFROM generation_usage_hourly\nWHERE $__timeFilter(hour)\n  AND environment IN ('production', 'debug-prod-copy')\nGROUP BY time\nORDER BY time",
+          "refId": "A"
+        }
+      ],
+      "title": "BYOP request volume",
+      "transformations": [
+        {
+          "id": "filterFieldsByName",
+          "options": {
+            "include": {
+              "names": [
+                "time",
+                "text",
+                "image",
+                "embedding",
+                "audio",
+                "video",
+                "other"
+              ]
+            }
+          }
+        }
+      ],
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "datasource",
+        "uid": "-- Dashboard --"
+      },
+      "description": "Daily percentage of successful authenticated, non-cached generation calls attributed to clean BYOP clients. Numerator and denominator use the same generation_usage_hourly population.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "fixedColor": "purple",
+            "mode": "fixed"
+          },
+          "custom": {
+            "barAlignment": 0,
+            "drawStyle": "bars",
+            "fillOpacity": 85,
+            "lineWidth": 0,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            }
+          },
+          "decimals": 1,
+          "max": 100,
+          "min": 0,
+          "unit": "percent"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "byop_share_pct"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "BYOP share"
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 15
+      },
+      "id": 3,
+      "options": {
+        "legend": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "datasource",
+            "uid": "-- Dashboard --"
+          },
+          "panelId": 2,
+          "refId": "A"
+        }
+      ],
+      "title": "BYOP share of platform",
+      "transformations": [
+        {
+          "id": "filterFieldsByName",
+          "options": {
+            "include": {
+              "names": [
+                "time",
+                "byop_share_pct"
+              ]
+            }
+          }
+        }
+      ],
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "datasource",
+        "uid": "-- Dashboard --"
+      },
+      "description": "Daily approximate unique trusted BYOP client IDs and authenticated end users. Reuses the shared daily BYOP query.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "barAlignment": 0,
+            "drawStyle": "bars",
+            "fillOpacity": 75,
+            "lineWidth": 0,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            }
+          },
+          "unit": "short"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "active_apps"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Active apps"
+              },
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "purple",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "app_users"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "App users"
+              },
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "green",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 15
+      },
+      "id": 4,
+      "options": {
+        "legend": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "datasource",
+            "uid": "-- Dashboard --"
+          },
+          "panelId": 2,
+          "refId": "A"
+        }
+      ],
+      "title": "Active apps and app users",
+      "transformations": [
+        {
+          "id": "filterFieldsByName",
+          "options": {
+            "include": {
+              "names": [
+                "time",
+                "active_apps",
+                "app_users"
+              ]
+            }
+          }
+        }
+      ],
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "datasource",
+        "uid": "-- Dashboard --"
+      },
+      "description": "Daily successful billed Pollen consumed through BYOP, split by end-user funding. Paid is revenue-bearing consumed value; Quest is free Pollen and is not revenue. Reuses the shared daily BYOP query.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "displayName": "${__field.labels.metric}",
+          "custom": {
+            "barAlignment": 0,
+            "drawStyle": "bars",
+            "fillOpacity": 85,
+            "lineWidth": 0,
+            "stacking": {
+              "group": "A",
+              "mode": "normal"
+            }
+          },
+          "decimals": 2,
+          "unit": "suffix: Pollen"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "paid_consumption"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Paid"
+              },
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "blue",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "quest_consumption"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Quest"
+              },
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "orange",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 23
+      },
+      "id": 5,
+      "options": {
+        "legend": {
+          "calcs": [
+            "sum"
+          ],
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "datasource",
+            "uid": "-- Dashboard --"
+          },
+          "panelId": 2,
+          "refId": "A"
+        }
+      ],
+      "title": "Paid vs Quest consumption",
+      "transformations": [
+        {
+          "id": "filterFieldsByName",
+          "options": {
+            "include": {
+              "names": [
+                "time",
+                "paid_consumption",
+                "quest_consumption"
+              ]
+            }
+          }
+        }
+      ],
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "datasource",
+        "uid": "-- Dashboard --"
+      },
+      "description": "Daily successful BYOP calls split by the model provider classification recorded in generation_event_v2. Community calls remain BYOP traffic for business-stream attribution. Reuses the shared daily BYOP query.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "displayName": "${__field.labels.metric}",
+          "custom": {
+            "barAlignment": 0,
+            "drawStyle": "bars",
+            "fillOpacity": 85,
+            "lineWidth": 0,
+            "stacking": {
+              "group": "A",
+              "mode": "normal"
+            }
+          },
+          "unit": "short"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "standard_calls"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Standard"
+              },
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "purple",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "community_calls"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Community"
+              },
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "green",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 31
+      },
+      "id": 6,
+      "options": {
+        "legend": {
+          "calcs": [
+            "sum"
+          ],
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "datasource",
+            "uid": "-- Dashboard --"
+          },
+          "panelId": 2,
+          "refId": "A"
+        }
+      ],
+      "title": "Standard vs community models",
+      "transformations": [
+        {
+          "id": "filterFieldsByName",
+          "options": {
+            "include": {
+              "names": [
+                "time",
+                "standard_calls",
+                "community_calls"
+              ]
+            }
+          }
+        }
+      ],
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "datasource",
+        "uid": "-- Dashboard --"
+      },
+      "description": "Daily BYOP markup rewards credited to app owners, split by the end user's selected Paid or Quest funding bucket. This is credited developer value, not Pollinations gross revenue. Reuses the shared daily BYOP query.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "displayName": "${__field.labels.metric}",
+          "custom": {
+            "barAlignment": 0,
+            "drawStyle": "bars",
+            "fillOpacity": 85,
+            "lineWidth": 0,
+            "stacking": {
+              "group": "A",
+              "mode": "normal"
+            }
+          },
+          "decimals": 2,
+          "unit": "suffix: Pollen"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "paid_rewards"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Paid"
+              },
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "blue",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "quest_rewards"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Quest"
+              },
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "orange",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 31
+      },
+      "id": 7,
+      "options": {
+        "legend": {
+          "calcs": [
+            "sum"
+          ],
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "datasource",
+            "uid": "-- Dashboard --"
+          },
+          "panelId": 2,
+          "refId": "A"
+        }
+      ],
+      "title": "App developer rewards",
+      "transformations": [
+        {
+          "id": "filterFieldsByName",
+          "options": {
+            "include": {
+              "names": [
+                "time",
+                "paid_rewards",
+                "quest_rewards"
+              ]
+            }
+          }
+        }
+      ],
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "PAD1A0A25CD30D456"
+      },
+      "description": "Apps ranked over the selected range from byop_app_daily. Calls are successful calls; users are approximate unique end users. Owner uses the latest D1 GitHub label when available. Top models are weighted by successful calls.",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "inspect": false
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "paid_pollen"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Paid"
+              },
+              {
+                "id": "unit",
+                "value": "suffix: Pollen"
+              },
+              {
+                "id": "decimals",
+                "value": 2
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "quest_pollen"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Quest"
+              },
+              {
+                "id": "unit",
+                "value": "suffix: Pollen"
+              },
+              {
+                "id": "decimals",
+                "value": 2
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "developer_reward"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Developer reward"
+              },
+              {
+                "id": "unit",
+                "value": "suffix: Pollen"
+              },
+              {
+                "id": "decimals",
+                "value": 2
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "community_share_pct"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Community share"
+              },
+              {
+                "id": "unit",
+                "value": "percent"
+              },
+              {
+                "id": "decimals",
+                "value": 1
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "top_models"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Top models"
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 11,
+        "w": 24,
+        "x": 0,
+        "y": 39
+      },
+      "id": 8,
+      "options": {
+        "cellHeight": "sm",
+        "footer": {
+          "countRows": false,
+          "fields": "",
+          "reducer": [
+            "sum"
+          ],
+          "show": false
+        },
+        "showHeader": true,
+        "sortBy": [
+          {
+            "desc": true,
+            "displayName": "calls"
+          }
+        ]
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "PAD1A0A25CD30D456"
+          },
+          "format": 1,
+          "range": true,
+          "rawSql": "WITH\n  app_rollup AS (\n    SELECT\n      app_id,\n      app_name,\n      owner_user_id,\n      sum(model_calls) AS calls,\n      uniqMerge(user_state) AS users,\n      round(sum(paid_pollen), 2) AS paid_pollen,\n      round(sum(quest_pollen), 2) AS quest_pollen,\n      round(sum(developer_reward), 2) AS developer_reward,\n      round(\n        100 * sumIf(model_calls, is_community) / nullIf(sum(model_calls), 0),\n        1\n      ) AS community_share_pct,\n      arrayStringConcat(topKWeighted(3)(model, model_calls), ', ') AS top_models\n    FROM (\n      SELECT\n        app_id,\n        app_name,\n        owner_user_id,\n        model,\n        is_community,\n        sumMerge(successful_calls) AS model_calls,\n        uniqMergeState(users) AS user_state,\n        sumMergeIf(gross_consumption, funding_source = 'paid') AS paid_pollen,\n        sumMergeIf(gross_consumption, funding_source = 'quest') AS quest_pollen,\n        sumMerge(byop_reward) AS developer_reward\n      FROM byop_app_daily\n      WHERE $__timeFilter(day)\n        AND environment IN ('production', 'debug-prod-copy')\n      GROUP BY app_id, app_name, owner_user_id, model, is_community\n    )\n    GROUP BY app_id, app_name, owner_user_id\n  ),\n  latest_users AS (\n    SELECT id, github_username\n    FROM d1_user\n    WHERE synced_at = (SELECT max(synced_at) FROM d1_user)\n  )\nSELECT\n  a.app_name AS app,\n  coalesce(nullIf(u.github_username, ''), a.owner_user_id) AS owner,\n  a.calls,\n  a.users,\n  a.paid_pollen,\n  a.quest_pollen,\n  a.developer_reward,\n  a.community_share_pct,\n  a.top_models\nFROM app_rollup a\nLEFT JOIN latest_users u ON a.owner_user_id = u.id\nORDER BY a.calls DESC\nLIMIT 50",
+          "refId": "A"
+        }
+      ],
+      "title": "Top BYOP apps",
+      "type": "table"
+    }
+  ],
+  "refresh": "5m",
+  "schemaVersion": 41,
+  "tags": [
+    "observability-rebuild",
+    "byop",
+    "apps"
+  ],
+  "templating": {
+    "list": []
+  },
+  "time": {
+    "from": "now-30d",
+    "to": "now"
+  },
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "BYOP Apps",
+  "uid": "byop-apps-rebuild",
+  "version": 1,
+  "weekStart": "monday"
+}

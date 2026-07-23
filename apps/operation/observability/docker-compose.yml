@@ -8,6 +8,7 @@ services:
       - GF_INSTALL_PLUGINS=grafana-clickhouse-datasource
       - GF_SECURITY_ADMIN_USER=${GF_ADMIN_USER:-admin}
       - GF_SECURITY_ADMIN_PASSWORD=${GF_ADMIN_PASSWORD:-admin}
+      - GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH=/etc/grafana/provisioning/dashboards/rebuild/platform-usage-rebuild.json
       - TINYBIRD_READ_TOKEN=${TINYBIRD_READ_TOKEN}
       - TINYBIRD_LEGACY_READ_TOKEN=${TINYBIRD_LEGACY_READ_TOKEN}
       - DISCORD_WEBHOOK_URL=${DISCORD_WEBHOOK_URL}

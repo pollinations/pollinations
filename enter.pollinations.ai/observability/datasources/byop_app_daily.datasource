@@ -1,0 +1,27 @@
+DESCRIPTION >
+    Daily BYOP app usage for app rankings and selected-app drill-downs.
+    Production is the live scope; debug-prod-copy is an isolated staging
+    fixture. BYOP attribution requires a populated api_key_client_id.
+
+TOKEN "tinybird_read" READ
+
+SCHEMA >
+    `day` Date,
+    `environment` LowCardinality(String),
+    `app_id` String,
+    `app_name` String,
+    `owner_user_id` String,
+    `model` LowCardinality(String),
+    `is_community` Bool,
+    `funding_source` LowCardinality(String),
+    `all_calls` AggregateFunction(sum, UInt64),
+    `successful_calls` AggregateFunction(sum, UInt64),
+    `billed_calls` AggregateFunction(sum, UInt64),
+    `users` AggregateFunction(uniq, String),
+    `gross_consumption` AggregateFunction(sum, Float64),
+    `byop_reward` AggregateFunction(sum, Float64),
+    `community_reward` AggregateFunction(sum, Float64)
+
+ENGINE AggregatingMergeTree
+ENGINE_PARTITION_KEY toYYYYMM(day)
+ENGINE_SORTING_KEY day, environment, app_id, owner_user_id, model, is_community, funding_source

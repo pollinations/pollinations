@@ -1,13 +1,24 @@
 apiVersion: 1
 
 providers:
-  - name: 'default'
+  - name: observability
     orgId: 1
-    folder: ''
-    folderUid: ''
+    folder: Observability
+    folderUid: observability
     type: file
     disableDeletion: false
     updateIntervalSeconds: 30
     allowUiUpdates: true
     options:
-      path: /etc/grafana/provisioning/dashboards
+      path: /etc/grafana/provisioning/dashboards/rebuild
+
+  - name: legacy-observability
+    orgId: 1
+    folder: Legacy Observability
+    folderUid: legacy-observability
+    type: file
+    disableDeletion: false
+    updateIntervalSeconds: 30
+    allowUiUpdates: true
+    options:
+      path: /etc/grafana/provisioning/dashboards/legacy

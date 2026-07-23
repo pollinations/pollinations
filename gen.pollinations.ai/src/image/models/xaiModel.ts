@@ -19,11 +19,7 @@ const XAI_EDITS_URL = "https://api.x.ai/v1/images/edits";
  * When `safeParams.image` contains a reference image URL, the request is
  * routed to /v1/images/edits for image-to-image generation. xAI's edits
  * endpoint requires application/json (NOT multipart/form-data — explicitly
- * called out in xAI's docs as a divergence from the OpenAI SDK). The
- * `image` field is a single ImageUrl object: `{url, detail}`, not an array
- * — verified empirically against the live endpoint (array form returns
- * 422). Only the first reference image is forwarded; additional entries
- * in `safeParams.image` are ignored.
+ * called out in xAI's docs as a divergence from the OpenAI SDK).
  */
 export async function callXaiImageAPI(
     prompt: string,
@@ -31,6 +27,7 @@ export async function callXaiImageAPI(
     modelId: string = "grok-imagine-image",
 ): Promise<ImageGenerationResult> {
     const apiKey = getImageEnv("XAI_API_KEY");
+
     if (!apiKey) {
         throw new HttpError(
             "XAI_API_KEY environment variable is required",
@@ -40,10 +37,13 @@ export async function callXaiImageAPI(
 
     const referenceImage = safeParams.image?.[0];
     const isEditMode = !!referenceImage;
+
     const endpoint = isEditMode ? XAI_EDITS_URL : XAI_GENERATE_URL;
 
     logOps(
-        `Calling xAI image API (${modelId}, ${isEditMode ? "edit" : "generate"} mode) with prompt:`,
+        `Calling xAI image API (${modelId}, ${
+            isEditMode ? "edit" : "generate"
+        } mode) with prompt:`,
         prompt,
     );
 
@@ -54,12 +54,34 @@ export async function callXaiImageAPI(
         response_format: "url",
     };
 
-    if (isEditMode && referenceImage) {
-        requestBody.image = { url: referenceImage, detail: "auto" };
+    /**
+     * Basic grok-imagine defaults to 2K output.
+     *
+     * Do not apply this to pro models because their resolution,
+     * pricing, and behavior must remain unchanged.
+     */
+    if (
+        modelId === "grok-imagine-image" ||
+        modelId === "grok-imagine"
+    ) {
+        requestBody.resolution = "2k";
     }
 
-    const aspectRatio = closestAspectRatio(safeParams.width, safeParams.height);
-    if (aspectRatio) requestBody.aspect_ratio = aspectRatio;
+    if (isEditMode && referenceImage) {
+        requestBody.image = {
+            url: referenceImage,
+            detail: "auto",
+        };
+    }
+
+    const aspectRatio = closestAspectRatio(
+        safeParams.width,
+        safeParams.height,
+    );
+
+    if (aspectRatio) {
+        requestBody.aspect_ratio = aspectRatio;
+    }
 
     logOps("Request body:", JSON.stringify(requestBody));
 
@@ -73,7 +95,12 @@ export async function callXaiImageAPI(
         errorLabel: "xAI image generation failed",
     });
 
-    const data = (await response.json()) as { data?: Array<{ url?: string }> };
+    const data = (await response.json()) as {
+        data?: Array<{
+            url?: string;
+        }>;
+    };
+
     const result = data.data?.[0];
 
     if (!result?.url) {
@@ -90,6 +117,7 @@ export async function callXaiImageAPI(
     const imageResponse = await fetchUpstream(result.url, {
         errorLabel: "Failed to download xAI result",
     });
+
     const buffer = Buffer.from(await imageResponse.arrayBuffer());
 
     return {

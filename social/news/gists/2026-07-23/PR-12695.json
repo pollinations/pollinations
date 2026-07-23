@@ -1,0 +1,34 @@
+{
+  "pr_number": 12695,
+  "title": "refactor: route Grok Imagine Pro through OpenRouter",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/12695",
+  "merged_at": "2026-07-23T16:26:47Z",
+  "labels": [],
+  "pr_body_excerpt": "- Routes `grok-imagine-pro` and its existing aliases to the exact `x-ai/grok-imagine-image-quality` OpenRouter endpoint.\n- Preserves text-to-image, one-image editing, 1K output, paid-only access, and the existing $0.05 output / $0.01 input-image prices. Basic `grok-imagine` remains on direct xAI; there is no fallback.\n- Local E2E covered canonical + aliases, square/wide/tall generation, editing, cache MISS/HIT, invalid input, and a 10-request concurrent burst. Staging Tinybird recorded `provider=openrouter`, $0.05 generation, and $0.06 edits.\n- OpenRouter also reports synthetic image-token totals and provider cost; Pollinations intentionally normalizes those to one input/output image because this route is priced per image, not per provider token.\n- Tests: 550 focused registry, image, billing, tracking, VCR, safety, and permission tests; `npm run typecheck`; Biome.",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "A new road for Grok",
+    "blurb": "Grok Imagine Pro has moved its image-making route through OpenRouter, while keeping its familiar aliases, editing tools, and per-image prices intact. Same flower, different pollination path.",
+    "summary": "Routed grok-imagine-pro and its existing aliases through OpenRouter's x-ai/grok-imagine-image-quality endpoint while preserving text-to-image, single-image editing, 1K output, paid-only access, and $0.05 output/$0.01 input-image pricing.",
+    "impact": "Grok Imagine Pro requests now use the OpenRouter provider route with the same generation and editing capabilities, aliases, image-based billing, and cache behavior users already rely on.",
+    "keywords": [
+      "grok-imagine-pro",
+      "openrouter",
+      "image-generation",
+      "image-editing",
+      "billing",
+      "routing"
+    ],
+    "visual_concept": "Depict Grok Imagine Pro as a cozy image garden being redirected through a clearly marked OpenRouter path: Polli guides glowing 1K image postcards along a garden path into a friendly retro terminal labeled OPENROUTER. Include a single editable picture frame and small price-tag flowers to represent preserved image-based generation and editing billing.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks, a small happy smile, and small rounded light blue translucent wings, wearing a tiny courier cap as she carries a glowing image postcard down a lime green (#ecf874) garden path toward a warm CRT terminal with simple pixel text: \"OPENROUTER\"; an editable picture frame, code-plants, and pastel price-tag flowers sit nearby. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, chunky retro sprites, subtle CRT glow, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-23/PR-12695.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks, a small happy smile, and small rounded light blue translucent wings, wearing a tiny courier cap as she carries a glowing image postcard down a lime green (#ecf874) garden path toward a warm CRT terminal with simple pixel text: \"OPENROUTER\"; an editable picture frame, code-plants, and pastel price-tag flowers sit nearby. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, chunky retro sprites, subtle CRT glow, nostalgic but beautiful."
+  },
+  "generated_at": "2026-07-23T16:27:46.406594+00:00"
+}

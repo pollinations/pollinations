@@ -15,12 +15,15 @@ const TOKEN = process.env.BOT_TOKEN_CATGPT;
 const API_KEY = process.env.TEXT_POLLINATIONS_TOKEN;
 const TEXT_API = "https://gen.pollinations.ai/v1/chat/completions";
 const IMAGE_API = "https://gen.pollinations.ai/image";
+const MEDIA_API = "https://media.pollinations.ai/upload";
 const AUTH = API_KEY ? { Authorization: `Bearer ${API_KEY}` } : {};
 
 const ORIGINAL_CATGPT =
     "https://raw.githubusercontent.com/pollinations/pollinations/refs/heads/main/apps/catgpt/images/original-catgpt.png";
-const SELFIE_CATGPT = "https://media.pollinations.ai/657d58ee4c9c22d7";
-const MODEL = "nanobanana";
+// must be a durable URL — media.pollinations.ai uploads expire after 30 days (broke twice: #10826 + Jul 2026)
+const SELFIE_CATGPT =
+    "https://raw.githubusercontent.com/pollinations/pollinations/refs/heads/main/apps/catgpt/images/selfie-catgpt.png";
+const MODEL = "nanobanana-2-lite";
 
 function log(...args: any[]) {
     console.log(`[${new Date().toISOString()}]`, ...args);
@@ -103,6 +106,30 @@ async function fetchImage(url: string): Promise<Buffer> {
     return Buffer.from(res.data);
 }
 
+async function publishImage(image: Buffer): Promise<void> {
+    if (!API_KEY) return;
+    try {
+        const form = new FormData();
+        form.append(
+            "file",
+            new Blob([new Uint8Array(image)], { type: "image/png" }),
+            "catgpt.png",
+        );
+        form.append("tags", "catgpt,catgpt-bot");
+        const response = await fetch(MEDIA_API, {
+            method: "POST",
+            headers: AUTH,
+            body: form,
+            signal: AbortSignal.timeout(30_000),
+        });
+        if (!response.ok) {
+            logError(`Media publish failed: ${response.status}`);
+        }
+    } catch (error) {
+        logError(`Media publish failed: ${String(error)}`);
+    }
+}
+
 const processing = new Set<string>();
 
 async function handleMessage(msg: Message, client: Client): Promise<void> {
@@ -141,6 +168,7 @@ async function handleMessage(msg: Message, client: Client): Promise<void> {
                 name: "catgpt.png",
             });
             await msg.reply({ files: [attachment] });
+            await publishImage(imageBuffer);
             log(`Reply sent for "${question}"`);
             return;
         } catch (err: any) {
@@ -158,6 +186,58 @@ async function handleMessage(msg: Message, client: Client): Promise<void> {
             } catch {}
         }
     }
+}
+
+async function catchUpUnanswered(client: Client): Promise<void> {
+    const channel = await client.channels.fetch(CHANNEL_ID);
+    if (!channel || !("messages" in channel)) return;
+    const messages = await channel.messages.fetch({ limit: 50 });
+    const botId = client.user!.id;
+    const answered = new Set<string>();
+    for (const m of messages.values()) {
+        // only a comic attachment counts as answered — the 😾 error fallback doesn't
+        if (
+            m.author.id === botId &&
+            m.reference?.messageId &&
+            m.attachments.size > 0
+        )
+            answered.add(m.reference.messageId);
+    }
+    const pending = [...messages.values()]
+        .filter(
+            (m) =>
+                !m.author.bot &&
+                !answered.has(m.id) &&
+                m.content.trim() &&
+                !m.content.trim().startsWith("!") &&
+                !m.content.includes("couldn't be bothered"),
+        )
+        .sort((a, b) => a.createdTimestamp - b.createdTimestamp)
+        .slice(-5);
+    log(`Catch-up: ${pending.length} unanswered message(s)`);
+    for (const m of pending) {
+        await handleMessage(m, client).catch((err) =>
+            logError(`Catch-up failed for ${m.id}:`, err.message),
+        );
+    }
+}
+
+// CLI one-shot: tsx bot.ts ask "question" [avatarUrl] — posts a comic to the channel and exits
+async function cliAsk(
+    client: Client,
+    question: string,
+    avatarUrl: string | null,
+): Promise<void> {
+    const catReply = await generateCatReply(question, avatarUrl);
+    const prompt = createPrompt(question, catReply, Boolean(avatarUrl));
+    const imageBuffer = await fetchImage(buildImageUrl(prompt, avatarUrl));
+    const channel = await client.channels.fetch(CHANNEL_ID);
+    if (!channel || !("send" in channel))
+        throw new Error("channel not sendable");
+    await channel.send({
+        files: [new AttachmentBuilder(imageBuffer, { name: "catgpt.png" })],
+    });
+    log(`CLI comic posted for "${question}" → "${catReply}"`);
 }
 
 if (!TOKEN || !CHANNEL_ID) {
@@ -193,12 +273,29 @@ process.on("SIGINT", () => {
 
 client.on("error", (err) => logError("Discord error:", err.message));
 client.once(Events.ClientReady, (c) => {
+    log(
+        `CatGPT bot online as ${c.user.tag} — channel ${CHANNEL_ID} (PID ${process.pid})`,
+    );
+    if (process.argv[2] === "ask") {
+        const question = process.argv[3];
+        if (!question) {
+            console.error('Usage: bot.ts ask "question" [avatarUrl]');
+            process.exit(1);
+        }
+        cliAsk(client, question, process.argv[4] || null)
+            .then(() => process.exit(0))
+            .catch((err) => {
+                logError("CLI ask failed:", err.message);
+                process.exit(1);
+            });
+        return;
+    }
     c.user.setPresence({
         status: "online",
         activities: [{ name: "Ask me anything 😾" }],
     });
-    log(
-        `CatGPT bot online as ${c.user.tag} — channel ${CHANNEL_ID} (PID ${process.pid})`,
+    catchUpUnanswered(client).catch((err) =>
+        logError("Catch-up error:", err.message),
     );
 });
 client.on(Events.MessageCreate, (msg) => {

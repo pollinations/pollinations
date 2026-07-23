@@ -1,7 +1,7 @@
 export const COMMUNITY_MODEL_ALLOWED_GITHUB_IDS = [
     36901823, // ElliotEtag
     5099901, // voodoohop
-    235942848, // thomashmyceli
+    101795137, // lizzieliza
     248917639, // fouchyelliot-rgb
     241978997, // pollen-router
     189873015, // sharktide
@@ -17,13 +17,17 @@ export const COMMUNITY_MODEL_ALLOWED_GITHUB_IDS = [
     45744798, // Minor-fun
     178960782, // morriszdweck
     219871313, // mikl-shortcuts
-    229514703, // sixfingerdev
     45357531, // cemalgnlts
     123343834, // LynxUnbanned
     244879637, // Catniti
     216855486, // Bakhshi7889
     64634725, // vendouple
     182555207, // YoannDev90
+    195966113, // JustScriptzz
+    113566110, // riofndev
+    188266626, // solarnode-developement
+    183505255, // timemachine-studio
+    228371309, // gggff123
 ] as const;
 
 const COMMUNITY_MODEL_ALLOWED_GITHUB_ID_SET = new Set<number>(

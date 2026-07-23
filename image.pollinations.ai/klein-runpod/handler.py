@@ -1,6 +1,6 @@
 """
-FLUX.2 Klein 4B - FastAPI Server for RunPod Pod
-================================================
+FLUX.2 Klein 4B - FastAPI GPU Server
+====================================
 Serves image generation via POST /generate with x-backend-token auth,
 matching the pattern used by z-image and twinflow services.
 

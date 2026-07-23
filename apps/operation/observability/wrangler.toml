@@ -1,0 +1,41 @@
+name = "myceli-observability-grafana"
+main = "src/index.js"
+compatibility_date = "2026-07-01"
+workers_dev = true
+
+routes = [
+  { pattern = "observability.myceli.ai", zone_name = "myceli.ai", custom_domain = true },
+  { pattern = "observability.pollinations.ai", zone_name = "pollinations.ai", custom_domain = true }
+]
+
+[[containers]]
+max_instances = 1
+class_name = "ObservabilityGrafana"
+image = "./Dockerfile"
+instance_type = "standard-1"
+
+[containers.constraints]
+jurisdiction = "eu"
+regions = ["WEUR"]
+
+[[durable_objects.bindings]]
+name = "OBSERVABILITY_GRAFANA"
+class_name = "ObservabilityGrafana"
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["ObservabilityGrafana"]
+
+[triggers]
+crons = ["*/5 * * * *"]
+
+[vars]
+GF_SERVER_ROOT_URL = "https://observability.pollinations.ai"
+GF_ADMIN_USER = "admin"
+GF_ADMIN_EMAIL = "hi@myceli.ai"
+
+# Secrets:
+# - GF_ADMIN_PASSWORD
+# - TINYBIRD_READ_TOKEN
+# - TINYBIRD_LEGACY_READ_TOKEN
+# - DISCORD_WEBHOOK_URL

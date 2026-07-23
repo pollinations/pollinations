@@ -73,7 +73,7 @@ function toFixedPoint(n: number): string {
     return n.toFixed(12).replace(/\.?0+$/, "");
 }
 
-function getCapabilities(service: ModelDefinition<string>): ModelCapability[] {
+function getCapabilities(service: ModelDefinition): ModelCapability[] {
     const capabilities: ModelCapability[] = [];
     if (service.tools) capabilities.push("tool_calling");
     if (service.reasoning) capabilities.push("reasoning");
@@ -102,7 +102,7 @@ function pricingInfoFromDefinition(
 
 export function modelInfoFromDefinition(
     name: string,
-    service: ModelDefinition<string>,
+    service: ModelDefinition,
     options: ModelInfoOptions = {},
 ): ModelInfo {
     return {

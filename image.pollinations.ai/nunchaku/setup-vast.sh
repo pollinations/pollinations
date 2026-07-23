@@ -6,11 +6,10 @@
 # (server.py exits on CUDA errors and expects its supervisor to restart it).
 #
 # IMPORTANT — Cloudflare Tunnel required: the gen worker (Cloudflare Worker)
-# cannot fetch() raw-IP/non-standard-port origins, so a NAT'd http://IP:PORT
-# heartbeat URL is unreachable from routing. Set TUNNEL_NAME and place the
-# pollinations.ai account cert at ~/.cloudflared/cert.pem — this script then
-# creates/routes/runs the tunnel and the worker advertises
-# https://$TUNNEL_NAME.pollinations.ai.
+# cannot fetch() raw-IP/non-standard-port origins. Create a remotely-managed
+# tunnel and its public hostname in the authoritative Cloudflare account before
+# running this script. The Vast host only receives the scoped tunnel token; do
+# not copy a Cloudflare account certificate onto a rental host.
 #
 # Tested against vastai/base-image:cuda-13.0.2-cudnn-devel-ubuntu24.04-py312.
 # The prebuilt nunchaku wheel bundles SM 7.5/8.0/8.6/8.9/120 kernels, so the
@@ -19,20 +18,23 @@
 # Usage (on the instance):
 #   PLN_GPU_TOKEN=... \
 #   HF_TOKEN=... \
-#   TUNNEL_NAME=flux-vast-NN \
+#   CLOUDFLARED_TUNNEL_TOKEN=... \
+#   PUBLIC_HOSTNAME=flux-vast-NN.pollinations.ai \
 #   bash setup-vast.sh
 #
+# Required env details:
+#   HF_TOKEN          black-forest-labs/FLUX.1-schnell is gated (accept-terms);
+#                     token must belong to an account that accepted. Lives in
+#                     enter.pollinations.ai/.testingtokens
+#
 # Optional env:
-#   HF_TOKEN          REQUIRED in practice: black-forest-labs/FLUX.1-schnell is
-#                     gated (accept-terms); token must belong to an account
-#                     that accepted. Lives in enter.pollinations.ai/.testingtokens
 #   QUANT_MODEL_PATH  default mit-han-lab/svdq-fp4-flux.1-schnell (Blackwell);
 #                     use mit-han-lab/svdq-int4-flux.1-schnell on Ada GPUs
 #   MAX_PIXELS        default 1048576 (1024x1024, matches FP4/5090);
 #                     use 810000 on RTX 4090
-#   QUEUE_LIMIT       default 10 (server.py sheds load with 503 beyond this;
-#                     gateway then falls back to Fireworks)
-#   PUBLIC_IP/PUBLIC_PORT  only for tunnel-less setups (no TUNNEL_NAME)
+#   QUEUE_LIMIT       default 3 (one running plus two waiting; server.py sheds
+#                     additional load with 503 so the gateway falls back to
+#                     Fireworks instead of building a long user-facing queue)
 #   SERVICE_TYPE      default flux
 #   GIT_BRANCH        default main
 #   SKIP_CLONE        use files already in $WORK_DIR (hosts w/ broken GitHub egress)
@@ -51,14 +53,21 @@ SUDO=""
 
 log() { echo -e "\033[0;32m[setup-vast]\033[0m $1"; }
 
-if [ -z "$PLN_GPU_TOKEN" ] || { [ -z "$TUNNEL_NAME" ] && [ -z "$PUBLIC_PORT" ]; }; then
-    echo "Usage: PLN_GPU_TOKEN=... TUNNEL_NAME=flux-vast-NN bash setup-vast.sh" >&2
+if [ -z "$PLN_GPU_TOKEN" ] || [ -z "$HF_TOKEN" ] || [ -z "$CLOUDFLARED_TUNNEL_TOKEN" ] || [ -z "$PUBLIC_HOSTNAME" ]; then
+    echo "Usage: PLN_GPU_TOKEN=... HF_TOKEN=... CLOUDFLARED_TUNNEL_TOKEN=... PUBLIC_HOSTNAME=flux-vast-NN.pollinations.ai bash setup-vast.sh" >&2
     exit 1
 fi
 
+case "$PUBLIC_HOSTNAME" in
+    *[!A-Za-z0-9.-]*)
+        echo "PUBLIC_HOSTNAME must be a hostname, without a scheme or path" >&2
+        exit 1
+        ;;
+esac
+
 log "Installing system packages..."
 $SUDO apt-get update -qq
-$SUDO apt-get install -y -qq git screen python3.12-venv python3.12-dev
+$SUDO apt-get install -y -qq curl git screen python3.12-venv python3.12-dev
 
 # CUDA forward-compat libs (shipped in cuda-13 images) fail on GeForce when the
 # host driver is older than the toolkit (CUDA Error 804) — always use the host
@@ -70,34 +79,27 @@ if ls /usr/local/cuda*/compat/libcuda.so* >/dev/null 2>&1; then
     $SUDO ldconfig
 fi
 
-if [ -n "$TUNNEL_NAME" ]; then
-    if [ ! -f "$HOME/.cloudflared/cert.pem" ]; then
-        echo "TUNNEL_NAME set but $HOME/.cloudflared/cert.pem missing (pollinations.ai account cert)" >&2
-        exit 1
-    fi
-    if ! command -v cloudflared >/dev/null; then
-        log "Installing cloudflared..."
-        curl -sL --retry 5 -o /tmp/cloudflared.deb \
-            https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64.deb
-        $SUDO dpkg -i /tmp/cloudflared.deb >/dev/null
-    fi
-    log "Creating tunnel $TUNNEL_NAME → $TUNNEL_NAME.pollinations.ai..."
-    cloudflared tunnel create "$TUNNEL_NAME" 2>&1 | tail -1 || true
-    cloudflared tunnel route dns --overwrite-dns "$TUNNEL_NAME" "$TUNNEL_NAME.pollinations.ai" 2>&1 | tail -1
-    TID=$(cloudflared tunnel list -o json | python3 -c "import json,sys; print([t['id'] for t in json.load(sys.stdin) if t['name']=='$TUNNEL_NAME'][0])")
-    cat > "$HOME/.cloudflared/config.yml" <<CFG
-tunnel: $TID
-credentials-file: $HOME/.cloudflared/$TID.json
-ingress:
-  - hostname: $TUNNEL_NAME.pollinations.ai
-    service: http://localhost:$PORT
-  - service: http_status:404
-CFG
-    screen -S cloudflared -X quit 2>/dev/null || true
-    screen -dmS cloudflared bash -c "while true; do cloudflared tunnel run $TUNNEL_NAME 2>&1 | tee -a /tmp/cloudflared.log; sleep 5; done"
-    PUBLIC_IP="$TUNNEL_NAME.pollinations.ai"
-    PUBLIC_PORT=443
+if ! command -v cloudflared >/dev/null || \
+    ! cloudflared tunnel run --help 2>&1 | grep -q -- '--token-file'; then
+    log "Installing cloudflared..."
+    curl -fsSL --retry 5 -o /tmp/cloudflared.deb \
+        https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64.deb
+    $SUDO dpkg -i /tmp/cloudflared.deb >/dev/null
 fi
+
+# token-file keeps the remotely-managed tunnel token out of process listings.
+# It requires cloudflared 2025.4.0 or newer; fresh hosts install latest above.
+TUNNEL_TOKEN_FILE="$HOME/.cloudflared/tunnel-token"
+install -d -m 700 "$HOME/.cloudflared"
+printf '%s' "$CLOUDFLARED_TUNNEL_TOKEN" > "$TUNNEL_TOKEN_FILE"
+chmod 600 "$TUNNEL_TOKEN_FILE"
+unset CLOUDFLARED_TUNNEL_TOKEN
+
+log "Starting Cloudflare Tunnel for $PUBLIC_HOSTNAME..."
+screen -S cloudflared -X quit 2>/dev/null || true
+screen -dmS cloudflared bash -c "while true; do cloudflared tunnel run --token-file '$TUNNEL_TOKEN_FILE' 2>&1 | tee -a /tmp/cloudflared.log; sleep 5; done"
+PUBLIC_IP="$PUBLIC_HOSTNAME"
+PUBLIC_PORT=443
 
 # Some Vast hosts have unreliable egress to GitHub; SKIP_CLONE=1 uses files
 # already placed in $WORK_DIR (e.g. scp'd from the operator's machine).
@@ -141,28 +143,44 @@ python -c "from nunchaku import NunchakuFluxTransformer2dModel; print('nunchaku 
 python -c "import torch; assert torch.cuda.is_available(); print('CUDA OK:', torch.cuda.get_device_name(0))"
 
 log "Writing run environment to $NUNCHAKU_DIR/.env.flux..."
-cat > "$NUNCHAKU_DIR/.env.flux" <<EOF
-${HF_TOKEN:+export HF_TOKEN=$HF_TOKEN}
-export PLN_GPU_TOKEN=$PLN_GPU_TOKEN
-export PORT=$PORT
-export PUBLIC_PORT=$PUBLIC_PORT
-export SERVICE_TYPE=$SERVICE_TYPE
-export QUANT_MODEL_PATH=$QUANT_MODEL_PATH
-export MAX_PIXELS=$MAX_PIXELS
-export QUEUE_LIMIT=${QUEUE_LIMIT:-10}
-export CUDA_VISIBLE_DEVICES=${CUDA_VISIBLE_DEVICES:-0}
-${PUBLIC_IP:+export PUBLIC_IP=$PUBLIC_IP}
-EOF
+{
+    printf 'export HF_TOKEN=%q\n' "$HF_TOKEN"
+    printf 'export PLN_GPU_TOKEN=%q\n' "$PLN_GPU_TOKEN"
+    printf 'export PORT=%q\n' "$PORT"
+    printf 'export PUBLIC_PORT=%q\n' "$PUBLIC_PORT"
+    printf 'export PUBLIC_IP=%q\n' "$PUBLIC_IP"
+    printf 'export SERVICE_TYPE=%q\n' "$SERVICE_TYPE"
+    printf 'export QUANT_MODEL_PATH=%q\n' "$QUANT_MODEL_PATH"
+    printf 'export MAX_PIXELS=%q\n' "$MAX_PIXELS"
+    printf 'export QUEUE_LIMIT=%q\n' "${QUEUE_LIMIT:-3}"
+    printf 'export CUDA_VISIBLE_DEVICES=%q\n' "${CUDA_VISIBLE_DEVICES:-0}"
+    printf 'export HF_XET_HIGH_PERFORMANCE=1\n'
+} > "$NUNCHAKU_DIR/.env.flux"
 chmod 600 "$NUNCHAKU_DIR/.env.flux"
 
-log "Starting server in screen session 'flux' (restart loop, log: /tmp/flux.log)..."
+cat > /root/run-flux.sh <<EOF
+#!/bin/bash
+cd "$NUNCHAKU_DIR"
+source venv/bin/activate
+source .env.flux
+exec python server.py
+EOF
+
+cat > /root/onstart.sh <<EOF
+#!/bin/bash
 screen -S flux -X quit 2>/dev/null || true
-screen -dmS flux bash -c "cd $NUNCHAKU_DIR && source venv/bin/activate && source .env.flux && \
-    while true; do python server.py 2>&1 | tee -a /tmp/flux.log; \
-    echo \"[setup-vast] server exited, restarting in 5s\" | tee -a /tmp/flux.log; sleep 5; done"
+screen -S cloudflared -X quit 2>/dev/null || true
+screen -dmS flux bash -c 'while true; do /root/run-flux.sh 2>&1 | tee -a /tmp/flux.log; echo "[setup-vast] server exited, restarting in 5s" | tee -a /tmp/flux.log; sleep 5; done'
+screen -dmS cloudflared bash -c 'while true; do cloudflared tunnel run --token-file "$TUNNEL_TOKEN_FILE" 2>&1 | tee -a /tmp/cloudflared.log; sleep 5; done'
+EOF
+chmod 700 /root/run-flux.sh /root/onstart.sh
+
+log "Starting durable Flux and tunnel services (logs: /tmp/flux.log, /tmp/cloudflared.log)..."
+/root/onstart.sh
 
 log "Done. Model load takes 2-3 min on first start."
 log "  Logs:       tail -f /tmp/flux.log"
 log "  Attach:     screen -r flux   (detach: Ctrl+A, D)"
 log "  Local test: curl -s localhost:$PORT/docs >/dev/null && echo up"
 log "  Registered: curl -s https://gen.pollinations.ai/register | grep -o '$SERVICE_TYPE[^,]*'"
+log "  Canary:     POLLINATIONS_API_KEY=... bash verify-vast.sh"

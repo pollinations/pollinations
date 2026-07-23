@@ -6,9 +6,9 @@ At 06:00 UTC daily:
   1. Read gists for yesterday (by merged_at date)
   2. Filter to publish_tier >= "daily"
   3. AI clusters gists into 3-5 narrative arcs
-  4. Generate platform posts using existing prompts: twitter.json, instagram.json, reddit.json
-  5. Generate platform images (1 twitter + 3 instagram + 1 reddit)
-  Note: LinkedIn is weekly-only — no daily LinkedIn posts.
+  4. Generate platform posts using existing prompts: twitter.json, reddit.json
+  5. Generate platform images (1 twitter + 1 reddit)
+  Note: LinkedIn and Instagram are weekly-only — no daily posts.
   6. Generate highlights from gists
   7. Commit all content (posts, images, highlights) to the news branch
 
@@ -18,7 +18,6 @@ See social/PIPELINE.md for full architecture.
 import os
 import sys
 import json
-import time
 import base64
 from datetime import datetime, timezone, timedelta
 from typing import Dict, List, Optional
@@ -264,10 +263,6 @@ def generate_twitter_post(summary: Dict, token: str) -> Optional[Dict]:
     return generate_platform_post("twitter", summary, token,
         "Write a tweet about today's shipped work.", temperature=0.8)
 
-def generate_instagram_post(summary: Dict, token: str) -> Optional[Dict]:
-    return generate_platform_post("instagram", summary, token,
-        "Create a cozy pixel art post about these updates.")
-
 def generate_reddit_post(summary: Dict, token: str) -> Optional[Dict]:
     return generate_platform_post("reddit", summary, token,
         "Create a Reddit post for today's update.")
@@ -277,7 +272,6 @@ def generate_reddit_post(summary: Dict, token: str) -> Optional[Dict]:
 
 def generate_platform_images(
     twitter_post: Optional[Dict],
-    instagram_post: Optional[Dict],
     date_str: str,
     token: str,
     github_token: str,
@@ -287,9 +281,9 @@ def generate_platform_images(
     reddit_post: Optional[Dict] = None,
 ) -> Dict[str, List[str]]:
     """Generate images for all platforms. Returns {platform: [urls]}.
-    Note: LinkedIn is weekly-only, no daily image generation."""
+    Note: LinkedIn and Instagram are weekly-only, with no daily image generation."""
     image_dir = f"{DAILY_REL_DIR}/{date_str}/images"
-    urls = {"twitter": [], "instagram": [], "reddit": []}
+    urls = {"twitter": [], "reddit": []}
 
     # Twitter: 1 image
     if twitter_post and twitter_post.get("image_prompt"):
@@ -307,29 +301,6 @@ def generate_platform_images(
             sys.exit(1)
         urls["twitter"].append(url)
         twitter_post["image"] = {"url": url, "prompt": twitter_post["image_prompt"]}
-
-    # Instagram: up to 3 images (carousel)
-    if instagram_post and instagram_post.get("images"):
-        for i, img_info in enumerate(instagram_post["images"][:3]):
-            prompt = img_info.get("prompt", "")
-            if not prompt:
-                print(f"  FATAL: Daily Instagram image {i+1} is missing a prompt")
-                sys.exit(1)
-            print(f"  Generating Instagram image {i+1}...")
-            img_bytes, _ = generate_image(prompt, token, IMAGE_SIZE, IMAGE_SIZE, i)
-            if not img_bytes:
-                print(f"  FATAL: Daily Instagram image {i+1} generation failed")
-                sys.exit(1)
-            url = commit_image_to_branch(
-                img_bytes, f"{image_dir}/instagram-{i+1}.jpg", branch,
-                github_token, owner, repo
-            )
-            if not url:
-                print(f"  FATAL: Daily Instagram image {i+1} commit failed")
-                sys.exit(1)
-            urls["instagram"].append(url)
-            img_info["url"] = url
-            time.sleep(3)  # Rate limiting
 
     # Reddit: 1 image
     if reddit_post and reddit_post.get("image_prompt"):
@@ -357,7 +328,6 @@ def commit_daily_to_news(
     date_str: str,
     summary_artifact: Dict,
     twitter_post: Optional[Dict],
-    instagram_post: Optional[Dict],
     generated_at: str,
     github_token: str,
     owner: str,
@@ -371,7 +341,7 @@ def commit_daily_to_news(
     # Generate images (commits them directly to news branch)
     print("\n  Generating platform images...")
     generate_platform_images(
-        twitter_post, instagram_post,
+        twitter_post,
         date_str, get_env("POLLINATIONS_TOKEN"),
         github_token, owner, repo, GISTS_BRANCH,
         reddit_post=reddit_post,
@@ -390,19 +360,6 @@ def commit_daily_to_news(
                 period_end=date_str,
                 generated_at=generated_at,
                 raw_post=twitter_post,
-            ),
-        ))
-    if instagram_post:
-        files_to_commit.append((
-            f"{base_path}/instagram.json",
-            normalize_platform_post(
-                platform="instagram",
-                scope="daily",
-                date=date_str,
-                period_start=date_str,
-                period_end=date_str,
-                generated_at=generated_at,
-                raw_post=instagram_post,
             ),
         ))
     if reddit_post:
@@ -515,21 +472,6 @@ def main():
     tweet = twitter_post.get("tweet", "")
     print(f"  Twitter: {tweet[:80]}... ({len(tweet)} chars)")
 
-    print("  Instagram...")
-    instagram_post = generate_instagram_post(summary, pollinations_token)
-    if not instagram_post:
-        print("  FATAL: Daily Instagram post generation failed")
-        sys.exit(1)
-    instagram_images = instagram_post.get("images", [])
-    if not instagram_images:
-        print("  FATAL: Daily Instagram post is missing images")
-        sys.exit(1)
-    if any(not img.get("prompt") for img in instagram_images[:3]):
-        print("  FATAL: Daily Instagram post has an image without a prompt")
-        sys.exit(1)
-    img_count = len(instagram_images)
-    print(f"  Instagram: {img_count} images")
-
     print("  Reddit...")
     reddit_post = generate_reddit_post(summary, pollinations_token)
     if not reddit_post:
@@ -549,7 +491,7 @@ def main():
     success = commit_daily_to_news(
         date_str,
         summary_artifact,
-        twitter_post, instagram_post,
+        twitter_post,
         generated_at,
         github_token, owner, repo,
         reddit_post=reddit_post,

@@ -184,12 +184,12 @@ VALID_LABELS = {
     "dev": {"DEV-BUG", "DEV-FEATURE", "DEV-TRACKING", "DEV-DOCS", "DEV-INFRA", "DEV-CHORE", "DEV-APP", "DEV-UI-UX"},
     "support": {
         ".BUG", ".OUTAGE", ".QUESTION", ".REQUEST", ".DOCS", ".INTEGRATION",
-        "IMAGE", "TEXT", "AUDIO", "VIDEO", "API", "WEB", "CREDITS", "BILLING", "ACCOUNT", "TIER",
+        "IMAGE", "TEXT", "AUDIO", "VIDEO", "API", "WEB", "CREDITS", "BILLING", "ACCOUNT",
     },
 }
 
 SUPPORT_TYPE_LABELS = {".BUG", ".OUTAGE", ".QUESTION", ".REQUEST", ".DOCS", ".INTEGRATION"}
-SUPPORT_SERVICE_LABELS = {"IMAGE", "TEXT", "AUDIO", "VIDEO", "API", "WEB", "CREDITS", "BILLING", "ACCOUNT", "TIER"}
+SUPPORT_SERVICE_LABELS = {"IMAGE", "TEXT", "AUDIO", "VIDEO", "API", "WEB", "CREDITS", "BILLING", "ACCOUNT"}
 
 PROTECTED_LABELS = {
     "dev": {"DEV-TRACKING", "DEV-VOTING"},
@@ -531,9 +531,8 @@ def main():
         return
     
     existing_labels = get_existing_labels()
-    tier_labels = [l for l in existing_labels if l.startswith("TIER-")]
-    if tier_labels:
-        log_debug(f"Found TIER labels: {tier_labels}, routing to Apps project")
+    if "APP-SUBMISSION" in existing_labels:
+        log_debug("Found APP-SUBMISSION label, routing to Apps project")
         project = CONFIG["projects"].get("apps")
         if project:
             item_id = add_to_project(project["id"])
@@ -551,7 +550,7 @@ def main():
         log_debug("Found NEWS label, skipping (used by social pipeline, no project routing)")
         return
 
-    if IS_PULL_REQUEST and re.match(r"^auto/app-\d+-", PR_HEAD_REF):
+    if IS_PULL_REQUEST and re.match(r"^auto/app-\d+(?:-|$)", PR_HEAD_REF):
         log_debug(f"App-submission PR (branch {PR_HEAD_REF}), routing to Apps project")
         project = CONFIG["projects"].get("apps")
         if project:

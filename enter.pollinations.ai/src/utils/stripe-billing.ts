@@ -1310,7 +1310,7 @@ function createAutoTopUpIdempotencyKey(attemptId: string): string {
 
 function getBillingReturnUrl(env: CloudflareBindings): string {
     const baseUrl = env.STRIPE_SUCCESS_URL || PUBLIC_URLS.enter.production;
-    const url = new URL(baseUrl);
+    const url = new URL("/pollen", baseUrl);
     url.searchParams.set("stripe_billing_return", "true");
     return url.toString();
 }

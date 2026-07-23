@@ -1,5 +1,6 @@
 import { remapUpstreamStatus, UpstreamError } from "@shared/error.ts";
 import { IMMUTABLE_CACHE_CONTROL } from "@shared/http/cache-control.ts";
+import { DEFAULT_IMAGE_MODEL } from "@shared/registry/image.ts";
 import type { Context } from "hono";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
 import type { Env } from "@/env.ts";
@@ -11,6 +12,7 @@ import {
     setServerRegistryBinding,
     VALID_TYPES,
 } from "./availableServers.ts";
+import { callCommunityImageEndpoint } from "./communityEndpoint.ts";
 import {
     type AuthResult,
     createAndReturnImageCached,
@@ -23,6 +25,7 @@ import {
 } from "./createAndReturnVideos.ts";
 import { getImageEnv, syncImageEnv } from "./env.ts";
 import { HttpError } from "./httpError.ts";
+import { setKleinVpcBinding } from "./models/fluxKleinModel.ts";
 import { type ImageParams, ImageParamsSchema } from "./params.ts";
 import { sanitizeString, sleep } from "./util.ts";
 import {
@@ -36,6 +39,7 @@ import { setImagesBinding } from "./utils/imageTransform.ts";
 import { buildTrackingHeaders } from "./utils/trackingHeaders.ts";
 
 type ImageContext = Context<Env>;
+type RuntimeImageParams = Omit<ImageParams, "model"> & { model: string };
 
 const IMAGE_ENV_KEYS = [
     "AWS_ACCESS_KEY_ID",
@@ -43,8 +47,12 @@ const IMAGE_ENV_KEYS = [
     "AWS_SECRET_ACCESS_KEY",
     "AZURE_CONTENT_SAFETY_API_KEY",
     "AZURE_CONTENT_SAFETY_ENDPOINT",
-    "AZURE_MYCELI_PROD_EASTUS2_API_KEY",
-    "AZURE_MYCELI_PROD_IMG_WESTUS3_API_KEY",
+    "AZURE_MYCELI_PROD_IMG_15_SWEDEN_API_KEY",
+    "AZURE_MYCELI_PROD_IMG_15_WESTUS3_API_KEY",
+    "AZURE_MYCELI_PROD_IMG_2_EASTUS2_API_KEY",
+    "AZURE_MYCELI_PROD_IMG_2_SWEDEN_API_KEY",
+    "AZURE_MYCELI_PROD_IMG_MINI_SWEDEN_API_KEY",
+    "AZURE_MYCELI_PROD_IMG_MINI_WESTUS3_API_KEY",
     "AZURE_MYCELI_PROD_SWEDEN_API_KEY",
     "DASHSCOPE_API_KEY",
     "FIREWORKS_API_KEY",
@@ -53,9 +61,8 @@ const IMAGE_ENV_KEYS = [
     "GOOGLE_PRIVATE_KEY_ID",
     "GOOGLE_PROJECT_ID",
     "KLEIN_URL",
-    "LTX2_BASE_URL",
     "NOVA_REEL_S3_BUCKET",
-    "OPENAI_API_KEY",
+    "OPENROUTER_API_KEY",
     "PLN_GPU_TOKEN",
     "REPLICATE_API_TOKEN",
     "XAI_API_KEY",
@@ -63,6 +70,7 @@ const IMAGE_ENV_KEYS = [
 
 export function syncImageEnvironment(env: CloudflareBindings): void {
     syncImageEnv(env, IMAGE_ENV_KEYS);
+    setKleinVpcBinding(env.KLEIN_VPC);
     setServerRegistryBinding(env.KV, env.ENVIRONMENT);
     // The Workers test Images binding can return empty bodies; route tests cover provider flow, not CF transforms.
     setImagesBinding(env.ENVIRONMENT === "test" ? undefined : env.IMAGES);
@@ -98,12 +106,15 @@ function decodePrompt(rawPrompt: string): string {
 function parseImageParams(
     c: ImageContext,
     body: Record<string, unknown>,
-): ImageParams {
+): RuntimeImageParams {
     const queryParams = Object.fromEntries(new URL(c.req.url).searchParams);
+    const resolvedModel = c.var.model.resolved;
     const mergedParams = {
         ...queryParams,
         ...body,
-        model: c.var.model.resolved,
+        model: c.var.model.communityEndpoint
+            ? DEFAULT_IMAGE_MODEL
+            : resolvedModel,
     };
     delete (mergedParams as Record<string, unknown>).prompt;
     delete (mergedParams as Record<string, unknown>).key;
@@ -115,7 +126,10 @@ function parseImageParams(
             cause: parseResult.error.issues,
         });
     }
-    return parseResult.data;
+    return {
+        ...parseResult.data,
+        model: resolvedModel,
+    };
 }
 
 function contentDisposition(prompt: string, extension: string): string {
@@ -131,7 +145,7 @@ function contentDisposition(prompt: string, extension: string): string {
 
 function mediaHeaders(
     prompt: string,
-    safeParams: ImageParams,
+    safeParams: RuntimeImageParams,
     result: ImageGenerationResult | VideoGenerationResult,
     contentType: string,
 ): Headers {
@@ -351,13 +365,13 @@ function assertNonEmptyMedia(buffer: Buffer, label: string): void {
 async function generateImageResult(
     c: ImageContext,
     originalPrompt: string,
-    safeParams: ImageParams,
+    safeParams: RuntimeImageParams,
 ): Promise<ImageGenerationResult> {
     const prompt = sanitizeString(String(originalPrompt));
 
     const result = await createAndReturnImageCached(
         prompt,
-        safeParams,
+        safeParams as ImageParams,
         originalPrompt,
         createAuthResult(c),
     );
@@ -372,9 +386,13 @@ async function generateImageResult(
 async function generateVideoResult(
     c: ImageContext,
     originalPrompt: string,
-    safeParams: ImageParams,
+    safeParams: RuntimeImageParams,
 ): Promise<VideoGenerationResult> {
-    return createAndReturnVideo(originalPrompt, safeParams, c.get("requestId"));
+    return createAndReturnVideo(
+        originalPrompt,
+        safeParams as ImageParams,
+        c.get("requestId"),
+    );
 }
 
 export async function generateImageOrVideoResponse(
@@ -387,6 +405,25 @@ export async function generateImageOrVideoResponse(
     const safeParams = parseImageParams(c, body);
 
     try {
+        const communityEndpoint = c.var.model.communityEndpoint;
+        if (communityEndpoint) {
+            const result = await callCommunityImageEndpoint(
+                communityEndpoint,
+                originalPrompt,
+                safeParams,
+                c.env.BETTER_AUTH_SECRET,
+            );
+            assertNonEmptyMedia(result.buffer, "Community image endpoint");
+            return new Response(bufferToUint8Array(result.buffer), {
+                headers: mediaHeaders(
+                    originalPrompt,
+                    safeParams,
+                    result,
+                    detectMimeType(result.buffer),
+                ),
+            });
+        }
+
         if (isVideoModel(safeParams.model)) {
             const result = await generateVideoResult(
                 c,

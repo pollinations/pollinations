@@ -105,6 +105,16 @@ export function createOpenRouterModelConfig(
     );
 }
 
+export function createVercelAIGatewayModelConfig(
+    overrides: ModelOverride = {},
+): ProviderConfig {
+    return createOpenAICompatibleConfig(
+        "https://ai-gateway.vercel.sh/v1",
+        process.env.AI_GATEWAY_API_KEY,
+        overrides,
+    );
+}
+
 export function createInceptionModelConfig(
     overrides: ModelOverride = {},
 ): ProviderConfig {
@@ -135,7 +145,7 @@ export function createOVHcloudModelConfig(
     );
 }
 
-export function createOVHcloudMistralConfig(
+export function createOVHcloudOAIConfig(
     overrides: ModelOverride = {},
 ): ProviderConfig {
     return createOpenAICompatibleConfig(
@@ -143,19 +153,4 @@ export function createOVHcloudMistralConfig(
         process.env.OVHCLOUD_API_KEY,
         overrides,
     );
-}
-
-/**
- * Creates a Polly model configuration (community model - Pollinations AI assistant).
- * Uses user's API key for billing passthrough - Polly calls Pollinations internally.
- */
-export function createPollyConfig(
-    overrides: ModelOverride = {},
-): ProviderConfig {
-    return {
-        provider: "openai",
-        "custom-host": "https://polly.pollinations.ai/v1",
-        useUserApiKey: true,
-        ...overrides,
-    };
 }

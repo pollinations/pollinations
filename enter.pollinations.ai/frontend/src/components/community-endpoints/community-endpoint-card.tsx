@@ -1,34 +1,47 @@
 import {
     Alert,
+    Button,
     CardIcon,
     CheckIcon,
+    Chip,
     ClipboardIcon,
     CopyButton,
     ExternalLinkIcon,
+    GlobeIcon,
     IconButton,
+    LockIcon,
     PencilIcon,
     Surface,
     TerminalIcon,
     TokensIcon,
     XIcon,
 } from "@pollinations/ui";
-import { COMMUNITY_ENDPOINT_PRICE_FIELDS } from "@shared/community-endpoints.ts";
+import { communityEndpointPriceFieldsForModality } from "@shared/community-endpoints.ts";
 import type { ReactNode } from "react";
 import { PriceBadge, type PriceBadgeConfig } from "../models/price-badge.tsx";
 import type { PriceKind } from "../models/types.ts";
-import { type CommunityEndpoint, pricePerTokenToPerMillion } from "./types.ts";
+import {
+    type CommunityEndpoint,
+    storedPriceToFormValue,
+    VISIBILITY_LABELS,
+} from "./types.ts";
 
 type CommunityEndpointCardProps = {
     endpoint: CommunityEndpoint;
+    isToggling: boolean;
+    onToggle: () => void;
     onEdit: () => void;
     onDelete: () => void;
 };
 
 export function CommunityEndpointCard({
     endpoint,
+    isToggling,
+    onToggle,
     onEdit,
     onDelete,
 }: CommunityEndpointCardProps) {
+    const isPublic = endpoint.visibility === "public";
     const priceGroups = communityPriceGroups(endpoint);
 
     return (
@@ -43,6 +56,14 @@ export function CommunityEndpointCard({
                         <h3 className="min-w-0 truncate text-base font-semibold text-theme-text-strong">
                             {endpoint.name}
                         </h3>
+                        <Chip intent={isPublic ? "news" : "neutral"} size="sm">
+                            {isPublic ? (
+                                <GlobeIcon className="h-3 w-3" />
+                            ) : (
+                                <LockIcon className="h-3 w-3" />
+                            )}
+                            {VISIBILITY_LABELS[endpoint.visibility]}
+                        </Chip>
                     </div>
                     {endpoint.description && (
                         <p className="mt-1 text-sm text-theme-text-muted">
@@ -51,6 +72,19 @@ export function CommunityEndpointCard({
                     )}
                 </div>
                 <div className="flex shrink-0 items-center gap-1">
+                    <Button
+                        type="button"
+                        size="sm"
+                        intent={endpoint.disabled ? "info" : "danger"}
+                        disabled={isToggling}
+                        onClick={onToggle}
+                    >
+                        {isToggling
+                            ? "Saving…"
+                            : endpoint.disabled
+                              ? "Reactivate"
+                              : "Deactivate"}
+                    </Button>
                     <IconButton
                         intent="info"
                         title="Edit model"
@@ -80,9 +114,6 @@ export function CommunityEndpointCard({
                             {endpoint.disabledReason ??
                                 "Deactivated due to repeated failures."}
                         </span>
-                        <span className="text-sm">
-                            Edit, test, then save the model to reactivate it.
-                        </span>
                     </div>
                 </Alert>
             )}
@@ -99,6 +130,11 @@ export function CommunityEndpointCard({
                     label="Endpoint"
                     value={endpoint.baseUrl}
                     copyLabel="Copy endpoint"
+                />
+                <CommunityDetailRow
+                    icon={<TerminalIcon className="h-3.5 w-3.5" />}
+                    label="Modality"
+                    value={endpoint.modality}
                 />
                 <CommunityDetailRow
                     icon={<TerminalIcon className="h-3.5 w-3.5" />}
@@ -199,7 +235,10 @@ function communityPriceGroups(
         output: [],
     };
 
-    for (const field of COMMUNITY_ENDPOINT_PRICE_FIELDS) {
+    for (const field of communityEndpointPriceFieldsForModality(
+        endpoint.modality,
+        endpoint.imagePricing,
+    )) {
         const price = endpoint[field.key];
         if (price <= 0) continue;
         const groupKey = communityPriceGroupKey(field.usageType);
@@ -207,10 +246,10 @@ function communityPriceGroups(
         const kind = communityPriceKind(field.usageType);
         groups[groupKey].push({
             badge: {
-                price: pricePerTokenToPerMillion(price),
+                price: storedPriceToFormValue(price, field.priceUnit),
                 kind,
                 subKinds: [kind],
-                unit: "token",
+                unit: field.priceUnit === "million" ? "token" : "request",
             },
         });
     }
@@ -237,6 +276,6 @@ function communityPriceKind(usageType: string): PriceKind {
     if (usageType === "completionReasoningTokens") return "reasoning";
     if (usageType === "promptAudioTokens") return "audioIn";
     if (usageType === "completionAudioTokens") return "audioOut";
-    if (usageType === "promptImageTokens") return "image";
+    if (usageType.includes("Image")) return "image";
     return "text";
 }

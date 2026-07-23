@@ -164,7 +164,7 @@ const login = new Command("login")
             printInfo(
                 "Fallback: printf '%s' '<your-key>' | polli auth login --with-token",
             );
-            printInfo("Get your key at: https://enter.pollinations.ai");
+            printInfo("Get your key at: https://enter.pollinations.ai/keys");
             process.exit(1);
         });
 

@@ -10,7 +10,7 @@ port = 3000
 [assets]
 directory = "dist/client"
 not_found_handling = "single-page-application"
-run_worker_first = [ "/api/*", "/__scheduled", "/.well-known/*" ]
+run_worker_first = [ "/api/*", "/.well-known/*" ]
 
 [[d1_databases]]
 binding = "DB"
@@ -28,8 +28,8 @@ ENVIRONMENT = "development"
 CLOUDFLARE_ACCOUNT_ID = "b6ec751c0862027ba269faf7029b2501"
 LOG_LEVEL = "trace"
 LOG_FORMAT = "text"
-TINYBIRD_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=generation_event"
-TINYBIRD_TIER_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=tier_event"
+D1_EXPORT_TOKEN_SHA256 = "9eb69171319388c1231cd7452b717f4bda9c52a8a836cf7456326b4e3b7c79fb"
+TINYBIRD_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=generation_event_v2"
 TINYBIRD_STRIPE_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=stripe_event"
 # Stripe payments (sandbox for dev)
 STRIPE_MODE = "sandbox"
@@ -41,6 +41,9 @@ STRIPE_AUTO_TOP_UP_PMC_ID = "pmc_1TUpob6O03AauPe8EgmA4mvg"
 STRIPE_PMC = "pmc_1SrYT96O03AauPe8ijLy6sZU"
 
 [env.local]
+
+[env.local.triggers]
+crons = []
 
 [[env.local.d1_databases]]
 binding = "DB"
@@ -58,8 +61,8 @@ ENVIRONMENT = "local"
 CLOUDFLARE_ACCOUNT_ID = "b6ec751c0862027ba269faf7029b2501"
 LOG_LEVEL = "trace"
 LOG_FORMAT = "text"
-TINYBIRD_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=generation_event"
-TINYBIRD_TIER_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=tier_event"
+D1_EXPORT_TOKEN_SHA256 = "9eb69171319388c1231cd7452b717f4bda9c52a8a836cf7456326b4e3b7c79fb"
+TINYBIRD_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=generation_event_v2"
 TINYBIRD_STRIPE_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=stripe_event"
 # Stripe payments (sandbox for local development)
 STRIPE_MODE = "sandbox"
@@ -71,6 +74,12 @@ STRIPE_PMC = "pmc_1SrYT96O03AauPe8ijLy6sZU"
 
 [env.production]
 
+# Explicitly detach cron schedules. Deleting the [triggers] block leaves
+# previously-deployed crons attached (crons undefined = unchanged); only
+# `crons = []` removes them. See Cloudflare Workers cron-triggers docs.
+[env.production.triggers]
+crons = []
+
 [env.production.observability]
 enabled = true
 head_sampling_rate = 1
@@ -78,6 +87,11 @@ head_sampling_rate = 1
 [[env.production.routes]]
 pattern = "enter.myceli.ai"
 zone_name = "myceli.ai"
+custom_domain = true
+
+[[env.production.routes]]
+pattern = "enter.pollinations.ai"
+zone_name = "pollinations.ai"
 custom_domain = true
 
 [[env.production.d1_databases]]
@@ -96,8 +110,8 @@ ENVIRONMENT = "production"
 CLOUDFLARE_ACCOUNT_ID = "b6ec751c0862027ba269faf7029b2501"
 LOG_LEVEL = "debug"
 LOG_FORMAT = "json"
-TINYBIRD_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=generation_event"
-TINYBIRD_TIER_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=tier_event"
+D1_EXPORT_TOKEN_SHA256 = "16787796e725ff98fa6d4c820922cc12fcf85a21bd1221abd984ef6cd1902a8d"
+TINYBIRD_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=generation_event_v2"
 TINYBIRD_STRIPE_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=stripe_event"
 # Stripe payments (live for production)
 STRIPE_MODE = "live"
@@ -109,15 +123,24 @@ STRIPE_AUTO_TOP_UP_PMC_ID = "pmc_1TVU4T7rcjS3l7trqtBuve71"
 STRIPE_PMC = "pmc_1SrY4O7rcjS3l7trnGXDTuat"
 [env.staging]
 
+# See production note above: explicit empty crons detaches the schedule.
+[env.staging.triggers]
+crons = []
+
 [[env.staging.routes]]
 pattern = "staging.enter.myceli.ai"
 zone_name = "myceli.ai"
 custom_domain = true
 
+[[env.staging.routes]]
+pattern = "staging.enter.pollinations.ai"
+zone_name = "pollinations.ai"
+custom_domain = true
+
 [[env.staging.d1_databases]]
 binding = "DB"
 database_name = "staging-pollinations-enter-db"
-database_id = "63da5347-3fa8-4410-a68f-c9e83956f76a"
+database_id = "2cb1cf1a-a18a-4cad-a4bb-be64e3c0e39f"
 migrations_dir = "drizzle"
 
 [[env.staging.kv_namespaces]]
@@ -130,8 +153,8 @@ ENVIRONMENT = "staging"
 CLOUDFLARE_ACCOUNT_ID = "b6ec751c0862027ba269faf7029b2501"
 LOG_LEVEL = "debug"
 LOG_FORMAT = "json"
-TINYBIRD_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=generation_event"
-TINYBIRD_TIER_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=tier_event"
+D1_EXPORT_TOKEN_SHA256 = "9eb69171319388c1231cd7452b717f4bda9c52a8a836cf7456326b4e3b7c79fb"
+TINYBIRD_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=generation_event_v2"
 TINYBIRD_STRIPE_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=stripe_event"
 # Stripe payments: sandbox mode for staging
 STRIPE_MODE = "sandbox"
@@ -142,7 +165,7 @@ STRIPE_AUTO_TOP_UP_PMC_ID = "pmc_1TUpob6O03AauPe8EgmA4mvg"
 STRIPE_PMC = "pmc_1SrYT96O03AauPe8ijLy6sZU"
 # Staging OAuth lockdown — GitHub IDs are immutable; emails allow one-off
 # team access when the exact GitHub account is unknown. Issue #11137.
-STAGING_ALLOWED_GITHUB_IDS = "36901823,5099901,235942848,248917639,241978997,118118458"
+STAGING_ALLOWED_GITHUB_IDS = "36901823,5099901,235942848,248917639,241978997,118118458,189873015"
 STAGING_ALLOWED_EMAILS = "elliot@pollinations.ai"
 [env.dev]
 
@@ -168,8 +191,8 @@ USAGE_DEBUG_USER_ID = "ds1EIz1ELXSNZzzRKJ0jrCsGgLeiVfRh" # pollen@myceli.ai; dev
 CLOUDFLARE_ACCOUNT_ID = "b6ec751c0862027ba269faf7029b2501"
 LOG_LEVEL = "debug"
 LOG_FORMAT = "json"
-TINYBIRD_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=generation_event"
-TINYBIRD_TIER_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=tier_event"
+D1_EXPORT_TOKEN_SHA256 = "9eb69171319388c1231cd7452b717f4bda9c52a8a836cf7456326b4e3b7c79fb"
+TINYBIRD_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=generation_event_v2"
 TINYBIRD_STRIPE_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=stripe_event"
 # TODO: Change back to staging image endpoint once staging services are available
 # Currently using prod services for simplicity
@@ -198,14 +221,13 @@ ENVIRONMENT = "test"
 CLOUDFLARE_ACCOUNT_ID = "b6ec751c0862027ba269faf7029b2501"
 LOG_LEVEL = "trace"
 LOG_FORMAT = "text"
+D1_EXPORT_TOKEN_SHA256 = "93b05a64761af544d325ac158513bef41959e8777a7375981ec7ae41f84cb05d"
 GITHUB_CLIENT_ID = "test_github_client_id"
 GITHUB_CLIENT_SECRET = "test_github_client_secret"
-TINYBIRD_INGEST_URL = "http://localhost:7181/v0/events?name=generation_event"
-TINYBIRD_TIER_INGEST_URL = "http://localhost:7181/v0/events?name=tier_event"
+TINYBIRD_INGEST_URL = "http://localhost:7181/v0/events?name=generation_event_v2"
 TINYBIRD_STRIPE_INGEST_URL = "http://localhost:7181/v0/events?name=stripe_event"
 TINYBIRD_INGEST_TOKEN = "test_tinybird_ingest_token"
 TINYBIRD_READ_TOKEN = "test_tinybird_read_token"
-TINYBIRD_SYNC_TOKEN = "test_tinybird_sync_token"
 STRIPE_MODE = "sandbox"
 STRIPE_SUCCESS_URL = "http://localhost:3000"
 BETTER_AUTH_URL = "http://localhost:3000"

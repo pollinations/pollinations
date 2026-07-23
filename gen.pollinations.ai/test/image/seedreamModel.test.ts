@@ -11,6 +11,7 @@ vi.mock("../../src/image/utils/imageDownload", () => ({
 import { syncImageEnvironment } from "../../src/image/handler.ts";
 import { callSeedream5API } from "../../src/image/models/seedream5ReplicateModel.ts";
 import {
+    callSeedream5ProAPI,
     callSeedreamAPI,
     callSeedreamProAPI,
 } from "../../src/image/models/seedreamReplicateModel.ts";
@@ -22,6 +23,8 @@ interface ReplicateRequest {
 }
 
 const REPLICATE_IMAGE_URL = "https://replicate.delivery/x/seedream-output.png";
+const INPUT_IMAGE_URL = "https://example.com/ref.jpg";
+const JPEG_BYTES = new Uint8Array([0xff, 0xd8, 0xff, 0xdb]);
 
 function mockReplicateFetch(requests: ReplicateRequest[]) {
     return vi
@@ -33,6 +36,9 @@ function mockReplicateFetch(requests: ReplicateRequest[]) {
                     new TextEncoder().encode("png-bytes").buffer,
                     { status: 200 },
                 );
+            }
+            if (href === INPUT_IMAGE_URL) {
+                return new Response(JPEG_BYTES, { status: 200 });
             }
             const body = init?.body
                 ? (JSON.parse(init.body as string) as Record<string, unknown>)
@@ -161,7 +167,7 @@ describe("seedreamReplicateModel - seedream-pro 4.5", () => {
         const params: ImageParams = {
             ...baseParams,
             model: "seedream-pro",
-            image: ["https://example.com/ref.jpg"],
+            image: [INPUT_IMAGE_URL],
         };
         await callSeedreamProAPI("test prompt", params);
 
@@ -309,7 +315,7 @@ describe("seedreamReplicateModel - seedream 4.0 custom-size mode", () => {
             width: 1792,
             height: 1024,
             dimensionsExplicit: true,
-            image: ["https://example.com/ref.jpg"],
+            image: [INPUT_IMAGE_URL],
         };
         await callSeedreamAPI("test", params);
 
@@ -329,7 +335,7 @@ describe("seedreamReplicateModel - seedream 4.0 custom-size mode", () => {
 
         const params: ImageParams = {
             ...baseParams,
-            image: ["https://example.com/ref.jpg"],
+            image: [INPUT_IMAGE_URL],
             // dimensionsExplicit defaults to false in baseParams
         };
         await callSeedreamAPI("test", params);
@@ -480,5 +486,68 @@ describe("seedreamReplicateModel - seedream5 5.0 Lite", () => {
 
         expect(result.trackingData?.actualModel).toBe("seedream5");
         expect(result.trackingData?.usage?.completionImageTokens).toBe(1);
+    });
+});
+
+describe("seedreamReplicateModel - seedream5 5.0 Pro", () => {
+    it("posts to bytedance/seedream-5-pro with paid pro tracking label", async () => {
+        const requests: ReplicateRequest[] = [];
+        mockReplicateFetch(requests);
+
+        const params: ImageParams = {
+            ...baseParams,
+            model: "seedream5-pro",
+            width: 2048,
+            height: 2048,
+        };
+        const result = await callSeedream5ProAPI("test prompt", params);
+
+        expect(requests).toHaveLength(1);
+        expect(requests[0].url).toBe(
+            "https://api.replicate.com/v1/models/bytedance/seedream-5-pro/predictions",
+        );
+        const input = (requests[0].body as { input: Record<string, unknown> })
+            .input;
+        expect(input.size).toBe("2K");
+        expect(input.output_format).toBe("png");
+        expect(input.sequential_image_generation).toBe("disabled");
+        expect(input.max_images).toBe(1);
+        expect(result.trackingData?.actualModel).toBe("seedream5-pro");
+    });
+
+    it("always requests the 2K tier that matches static registry pricing", async () => {
+        const requests: ReplicateRequest[] = [];
+        mockReplicateFetch(requests);
+
+        const params: ImageParams = {
+            ...baseParams,
+            model: "seedream5-pro",
+            width: 1024,
+            height: 1024,
+        };
+        await callSeedream5ProAPI("test prompt", params);
+
+        const input = (requests[0].body as { input: Record<string, unknown> })
+            .input;
+        expect(input.size).toBe("2K");
+    });
+
+    it("rejects more than 10 reference images", async () => {
+        mockReplicateFetch([]);
+
+        const params: ImageParams = {
+            ...baseParams,
+            model: "seedream5-pro",
+            image: Array.from(
+                { length: 11 },
+                (_, i) => `https://example.com/${i}.jpg`,
+            ),
+        };
+
+        await expect(callSeedream5ProAPI("test", params)).rejects.toMatchObject(
+            {
+                status: 400,
+            },
+        );
     });
 });

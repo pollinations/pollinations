@@ -79,7 +79,7 @@ const packagingTypes: PackagingType[] = [
     { id: "can", label: "Can", icon: Package, prompt: "can packaging" },
 ];
 const POLLINATIONS_API = "https://gen.pollinations.ai/image";
-const POLLINATIONS_MEDIA_API = "https://gen.pollinations.ai/media";
+const POLLINATIONS_MEDIA_API = "https://media.pollinations.ai/upload";
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
 const MAX_DISPLAY_SIZE = 10 * 1024 * 1024;
@@ -236,7 +236,10 @@ function App() {
             setFile(null);
         }
     };
-    const uploadToPollinationsMedia = async (file: File): Promise<string> => {
+    const uploadToPollinationsMedia = async (
+        file: File,
+        tag?: string,
+    ): Promise<string> => {
         const validation = validateFile(file, MAX_FILE_SIZE);
         if (!validation.isValid) {
             throw new Error(validation.error || "File validation failed");
@@ -248,6 +251,7 @@ function App() {
 
         const formData = new FormData();
         formData.append("file", file);
+        if (tag) formData.append("tags", tag);
 
         try {
             const response = await fetch(POLLINATIONS_MEDIA_API, {
@@ -385,8 +389,19 @@ ${brandName.trim() ? ` Brand name: "${brandName}".` : ""}
             }
 
             const blob = await response.blob();
-            const blobUrl = URL.createObjectURL(blob);
-            setGeneratedImage(blobUrl);
+            let resultUrl: string;
+            try {
+                resultUrl = await uploadToPollinationsMedia(
+                    new File([blob], "packaging-result.png", {
+                        type: blob.type,
+                    }),
+                    "product-packaging-designer",
+                );
+            } catch (error) {
+                console.error("Failed to publish packaging result:", error);
+                resultUrl = URL.createObjectURL(blob);
+            }
+            setGeneratedImage(resultUrl);
             setImageLoaded(true);
         } catch (error) {
             console.error("Error in generatePackaging:", error);

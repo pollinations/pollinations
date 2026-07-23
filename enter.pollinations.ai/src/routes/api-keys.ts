@@ -5,6 +5,10 @@ import {
 import { sanitizeAuthorizeAccountPermissions } from "@shared/auth/authorize-config.ts";
 import * as schema from "@shared/db/better-auth.ts";
 import { validator } from "@shared/middleware/validator.ts";
+import {
+    filterPermissionsToVisibleModels,
+    getVisibleModelIdsForUser,
+} from "@shared/registry/visible-model-ids.ts";
 import { and, eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { Hono } from "hono";
@@ -269,18 +273,30 @@ export const apiKeysRoutes = new Hono<Env>()
                 where: eq(schema.apikey.userId, user.id),
                 orderBy: (apikey, { desc }) => [desc(apikey.createdAt)],
             });
+            const parsedPermissions = keys.map((key) =>
+                key.permissions ? parsePermissions(key.permissions) : null,
+            );
+            const hasModelRestrictions = parsedPermissions.some((permissions) =>
+                Array.isArray(permissions?.models),
+            );
+            const visibleModelIds = hasModelRestrictions
+                ? await getVisibleModelIdsForUser(c.env.DB, user.id)
+                : null;
 
             return c.json({
-                data: keys.map((key) => ({
+                data: keys.map((key, index) => ({
                     id: key.id,
                     name: key.name,
                     start: key.start,
                     createdAt: key.createdAt,
                     lastRequest: key.lastRequest,
                     expiresAt: key.expiresAt,
-                    permissions: key.permissions
-                        ? parsePermissions(key.permissions)
-                        : null,
+                    permissions: visibleModelIds
+                        ? filterPermissionsToVisibleModels(
+                              parsedPermissions[index],
+                              visibleModelIds,
+                          )
+                        : parsedPermissions[index],
                     metadata: key.metadata ? parseMetadata(key.metadata) : null,
                     pollenBalance: key.pollenBalance,
                     byopClientKeyId: key.byopClientKeyId,
@@ -358,11 +374,25 @@ export const apiKeysRoutes = new Hono<Env>()
             const updated = await db.query.apikey.findFirst({
                 where: eq(schema.apikey.id, id),
             });
+            const permissions = updated?.permissions
+                ? parsePermissions(updated.permissions)
+                : null;
+            const visibleModelIds = Array.isArray(permissions?.models)
+                ? await getVisibleModelIdsForUser(c.env.DB, user.id)
+                : null;
+            const responsePermissions = visibleModelIds
+                ? JSON.stringify(
+                      filterPermissionsToVisibleModels(
+                          permissions,
+                          visibleModelIds,
+                      ),
+                  )
+                : updated?.permissions;
 
             return c.json({
                 id: updated?.id ?? id,
                 name: updated?.name,
-                permissions: updated?.permissions,
+                permissions: responsePermissions,
                 pollenBalance: updated?.pollenBalance ?? null,
                 expiresAt: updated?.expiresAt ?? null,
             });

@@ -78,7 +78,7 @@ type ModelVariables = {
     model: {
         requested: string;
         resolved: string;
-        definition: ModelDefinition<string>;
+        definition: ModelDefinition;
         communityEndpoint?: CommunityEndpointRuntime;
     };
 };
@@ -93,7 +93,7 @@ type RequestTrackingData = {
     modelRequested: string | null;
     resolvedModelRequested: string;
     modelProvider?: string;
-    modelDefinition: ModelDefinition<string>;
+    modelDefinition: ModelDefinition;
     modelCostDefinition: CostDefinition;
     modelPriceDefinition: PriceDefinition;
     streamRequested: boolean;
@@ -102,8 +102,7 @@ type RequestTrackingData = {
 
 type ResponseTrackingData = {
     responseStatus: number;
-    responseOk: boolean;
-    cacheData: CacheData;
+    cacheHit: boolean;
     isBilledUsage: boolean;
     fallbackUsed: boolean;
     modelUsed?: string;
@@ -187,10 +186,11 @@ export const track = (eventType: EventType) =>
 
         await next();
 
-        const endTime = new Date();
-
         c.executionCtx.waitUntil(
             (async () => {
+                const userId = userTracking.userId;
+                if (!userId) return;
+
                 // Routes attach telemetry headers (x-moderation-*, cache
                 // status) to the final response AFTER the override is
                 // captured, so read the body from the override but headers
@@ -204,6 +204,15 @@ export const track = (eventType: EventType) =>
                     requestTracking,
                     response,
                 );
+                if (responseTracking.cacheHit) {
+                    await c.var.frontendKeyRateLimit?.consumePollen(0);
+                    return;
+                }
+                // trackResponse consumes SSE text and JSON bodies, so for
+                // those endTime marks actual response completion — not
+                // time-to-first-byte. Binary bodies (image/audio) are never
+                // read by tracking, so their endTime stays ~header arrival.
+                const endTime = new Date();
 
                 // Capture balance tracking AFTER next() so balanceCheckResult is set
                 const balanceTracking = {
@@ -235,17 +244,21 @@ export const track = (eventType: EventType) =>
                         db: balanceDb,
                         isBilledUsage: responseTracking.isBilledUsage,
                         totalPrice: responseTracking.price?.totalPrice,
-                        userId: userTracking.userId,
+                        userId,
                         apiKeyId: c.var.auth?.apiKey?.id,
                         apiKeyPollenBalance: c.var.auth?.apiKey?.pollenBalance,
                         byopClientKeyId,
                         modelPaidOnly: c.var.model?.definition.paidOnly,
-                        communityModelReward: communityEndpoint
-                            ? {
-                                  userId: communityEndpoint.ownerUserId,
-                                  rewardRate: COMMUNITY_MODEL_REWARD_RATE,
-                              }
-                            : null,
+                        // Only public endpoints pay their owner a reward: a
+                        // private endpoint is owner-called (base cost billed to
+                        // the owner, no markup, no self-credit).
+                        communityModelReward:
+                            communityEndpoint?.visibility === "public"
+                                ? {
+                                      userId: communityEndpoint.ownerUserId,
+                                      rewardRate: COMMUNITY_MODEL_REWARD_RATE,
+                                  }
+                                : null,
                     });
                     markup = deduction.markup;
                     communityModelReward = deduction.communityModelReward;
@@ -258,8 +271,7 @@ export const track = (eventType: EventType) =>
                         deduction.postDeductionPackBalance != null &&
                         deduction.postDeductionPackBalance <=
                             AUTO_TOP_UP_THRESHOLD_POLLEN &&
-                        userTracking.userId &&
-                        (await isAutoTopUpConfigured(db, userTracking.userId))
+                        (await isAutoTopUpConfigured(db, userId))
                     ) {
                         shouldRunAutoTopUp = true;
                     }
@@ -328,8 +340,8 @@ export const track = (eventType: EventType) =>
                     log,
                 );
 
-                if (shouldRunAutoTopUp && userTracking.userId) {
-                    await triggerAutoTopUp(c.env, userTracking.userId, log);
+                if (shouldRunAutoTopUp) {
+                    await triggerAutoTopUp(c.env, userId, log);
                 }
             })(),
         );
@@ -447,20 +459,19 @@ async function trackResponse(
 ): Promise<ResponseTrackingData> {
     const log = getLogger(["hono", "track", "response"]);
     const { resolvedModelRequested } = requestTracking;
-    const cacheInfo = extractCacheHeaders(response);
+    const cacheHit = response.headers.get("x-cache") === "HIT";
     const fallbackUsed = parseFallbackUsed(response);
     const notBilled = (
         extra?: Partial<ResponseTrackingData>,
     ): ResponseTrackingData => ({
-        responseOk: response.ok,
         responseStatus: response.status,
-        cacheData: cacheInfo,
+        cacheHit,
         isBilledUsage: false,
         fallbackUsed,
         ...extra,
     });
 
-    if (!response.ok || cacheInfo.cacheHit) {
+    if (!response.ok || cacheHit) {
         return notBilled();
     }
 
@@ -504,9 +515,8 @@ async function trackResponse(
         modelUsage.output,
     );
     return {
-        responseOk: response.ok,
         responseStatus: response.status,
-        cacheData: cacheInfo,
+        cacheHit,
         isBilledUsage: true,
         fallbackUsed,
         cost,
@@ -695,7 +705,6 @@ function createTrackingEvent({
 
         ...userTracking,
         ...requestTracking.referrerData,
-        ...responseTracking.cacheData,
 
         modelRequested: requestTracking.modelRequested,
         resolvedModelRequested: requestTracking.resolvedModelRequested,
@@ -911,18 +920,6 @@ async function extractUsageAndContentFilterResults(
         return await extractUsageAndContentFilterResultsStream(eventStream);
     }
     return await extractUsageAndContentFilterResultsHeaders(response);
-}
-
-type CacheData = {
-    cacheHit: boolean;
-    cacheKey?: string;
-};
-
-function extractCacheHeaders(response: Response): CacheData {
-    return {
-        cacheHit: response.headers.get("x-cache") === "HIT",
-        cacheKey: response.headers.get("x-cache-key") || undefined,
-    };
 }
 
 type ReferrerData = {

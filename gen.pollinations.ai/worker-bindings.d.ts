@@ -1,5 +1,6 @@
 interface CloudflareBindings {
     ENTER: Fetcher;
+    KLEIN_VPC?: Fetcher;
     BETTER_AUTH_SECRET: string;
     TINYBIRD_INGEST_TOKEN: string;
     ELEVENLABS_API_KEY: string;
@@ -7,8 +8,8 @@ interface CloudflareBindings {
     OVHCLOUD_API_KEY: string;
     PLN_ENTER_TOKEN: string;
     PLN_GPU_TOKEN: string;
-    MUSIC_SERVICE_URL: string;
     DASHSCOPE_API_KEY: string;
+    DEEPINFRA_API_KEY: string;
     FAL_KEY: string;
     INFERENCEPORT_API_KEY?: string;
     STABILITY_API_KEY?: string;
@@ -28,9 +29,9 @@ interface CloudflareBindings {
     LOG_LEVEL?: "trace" | "debug";
     LOG_FORMAT?: "text" | "json";
     TINYBIRD_INGEST_URL: string;
-    TINYBIRD_TIER_INGEST_URL?: string;
     IMAGES?: ImagesBinding;
     PORTKEY_GATEWAY_URL: string;
+    AI_GATEWAY_API_KEY?: string;
     AWS_ACCESS_KEY_ID: string;
     AWS_SECRET_ACCESS_KEY: string;
     AWS_REGION: string;
@@ -41,8 +42,16 @@ interface CloudflareBindings {
     BEDROCK_GUARDRAIL_VERSION?: string;
     AZURE_MYCELI_PROD_API_KEY: string;
     AZURE_MYCELI_PROD_EASTUS2_API_KEY: string;
-    AZURE_MYCELI_PROD_IMG_WESTUS3_API_KEY: string;
+    AZURE_MYCELI_PROD_IMG_15_SWEDEN_API_KEY: string;
+    AZURE_MYCELI_PROD_IMG_15_WESTUS3_API_KEY: string;
+    AZURE_MYCELI_PROD_IMG_2_EASTUS2_API_KEY: string;
+    AZURE_MYCELI_PROD_IMG_2_SWEDEN_API_KEY: string;
+    AZURE_MYCELI_PROD_IMG_MINI_SWEDEN_API_KEY: string;
+    AZURE_MYCELI_PROD_IMG_MINI_WESTUS3_API_KEY: string;
+    AZURE_MYCELI_PROD_POLANDCENTRAL_API_KEY: string;
     AZURE_MYCELI_PROD_SWEDEN_API_KEY: string;
+    AZURE_MYCELI_PROD_UAENORTH_API_KEY: string;
+    AZURE_MYCELI_PROD_WESTUS3_API_KEY: string;
     AZURE_CONTENT_SAFETY_API_KEY: string;
     AZURE_CONTENT_SAFETY_ENDPOINT: string;
     FIREWORKS_API_KEY: string;
@@ -53,7 +62,6 @@ interface CloudflareBindings {
     GOOGLE_PROJECT_ID: string;
     INCEPTION_API_KEY: string;
     KLEIN_URL: string;
-    LTX2_BASE_URL: string;
     NOVA_REEL_S3_BUCKET: string;
     OPENAI_API_KEY: string;
     OPENROUTER_API_KEY: string;

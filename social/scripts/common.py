@@ -20,8 +20,8 @@ POLLINATIONS_API_BASE = "https://gen.pollinations.ai/v1/chat/completions"
 POLLINATIONS_IMAGE_BASE = "https://gen.pollinations.ai/image"
 
 # Models - single source of truth for all social scripts
-MODEL = "gemini-large"  # Text generation model
-IMAGE_MODEL = "nanobanana-2"  # Image generation model
+MODEL = "gpt-5.6-terra"  # Text generation model
+IMAGE_MODEL = "nanobanana-2-lite"  # Image generation model
 
 # Limits and retry settings
 MAX_SEED = 2147483647

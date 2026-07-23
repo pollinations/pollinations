@@ -1,14 +1,13 @@
-import googleCloudAuth from "../auth/googleCloudAuth.js";
 import {
     createAzureModelConfig,
     createBedrockNativeConfig,
     createFireworksModelConfig,
     createInceptionModelConfig,
     createOpenRouterModelConfig,
-    createOVHcloudMistralConfig,
     createOVHcloudModelConfig,
+    createOVHcloudOAIConfig,
     createPerplexityModelConfig,
-    createPollyConfig,
+    createVercelAIGatewayModelConfig,
 } from "./providerConfigs.js";
 
 // =============================================================================
@@ -18,19 +17,21 @@ import {
 type PortkeyConfigFactory = () => Record<string, unknown>;
 type PortkeyConfigMap = Record<string, PortkeyConfigFactory>;
 
-/** Creates a Vertex AI config for Gemini models. */
-function createVertexGeminiConfig(
+/** Creates a no-fallback OpenRouter route pinned to one Vertex deployment. */
+function createPinnedOpenRouterGeminiConfig(
     modelId: string,
-    region: string,
+    providerTag: string,
 ): PortkeyConfigFactory {
-    return () => ({
-        provider: "vertex-ai",
-        authKey: googleCloudAuth.getAccessToken,
-        "vertex-project-id": process.env.GOOGLE_PROJECT_ID,
-        "vertex-region": region,
-        "vertex-model-id": modelId,
-        "strict-openai-compliance": "false",
-    });
+    return () =>
+        createOpenRouterModelConfig({
+            model: `google/${modelId}`,
+            defaultOptions: {
+                provider: {
+                    only: [providerTag],
+                    allow_fallbacks: false,
+                },
+            },
+        });
 }
 
 // =============================================================================
@@ -72,6 +73,26 @@ export const portkeyConfig: PortkeyConfigMap = {
             "gpt-5.5",
         ),
 
+    // -- Azure (Myceli Prod — eastus, GPT-5.6) --------------------------------
+    "gpt-5.6-sol": () =>
+        createAzureModelConfig(
+            process.env.AZURE_MYCELI_PROD_API_KEY,
+            "https://myceli-prod-eastus.openai.azure.com/openai/deployments/gpt-5.6-sol/chat/completions?api-version=2025-04-01-preview",
+            "gpt-5.6-sol",
+        ),
+    "gpt-5.6-terra": () =>
+        createAzureModelConfig(
+            process.env.AZURE_MYCELI_PROD_API_KEY,
+            "https://myceli-prod-eastus.openai.azure.com/openai/deployments/gpt-5.6-terra/chat/completions?api-version=2025-04-01-preview",
+            "gpt-5.6-terra",
+        ),
+    "gpt-5.6-luna": () =>
+        createAzureModelConfig(
+            process.env.AZURE_MYCELI_PROD_API_KEY,
+            "https://myceli-prod-eastus.openai.azure.com/openai/deployments/gpt-5.6-luna/chat/completions?api-version=2025-04-01-preview",
+            "gpt-5.6-luna",
+        ),
+
     // -- Azure (Myceli Prod — swedencentral, audio mini) ------------------------
     "gpt-audio-mini-2025-12-15": () =>
         createAzureModelConfig(
@@ -107,12 +128,69 @@ export const portkeyConfig: PortkeyConfigMap = {
             "grok-4.3",
         ),
 
+    // -- OpenRouter (frontier models) ----------------------------------------
+    "moonshotai/kimi-k3": () =>
+        createOpenRouterModelConfig({
+            model: "moonshotai/kimi-k3",
+            defaultOptions: { provider: { sort: "price" } },
+        }),
+    "x-ai/grok-4.5": () =>
+        createOpenRouterModelConfig({
+            model: "x-ai/grok-4.5",
+            defaultOptions: { provider: { sort: "price" } },
+        }),
+    "xiaomi/mimo-v2.5": () =>
+        createOpenRouterModelConfig({
+            model: "xiaomi/mimo-v2.5",
+            defaultOptions: { provider: { sort: "price" } },
+        }),
+    "xiaomi/mimo-v2.5-pro": () =>
+        createOpenRouterModelConfig({
+            model: "xiaomi/mimo-v2.5-pro",
+            defaultOptions: { provider: { sort: "price" } },
+        }),
+    "qwen/qwen3.7-plus": () =>
+        createOpenRouterModelConfig({
+            model: "qwen/qwen3.7-plus",
+            defaultOptions: { provider: { sort: "price" } },
+        }),
+    "qwen/qwen3.7-max": () =>
+        createOpenRouterModelConfig({
+            model: "qwen/qwen3.7-max",
+            defaultOptions: { provider: { sort: "price" } },
+        }),
+    "poolside/laguna-s-2.1": () =>
+        createOpenRouterModelConfig({
+            model: "poolside/laguna-s-2.1",
+            defaultOptions: {
+                provider: {
+                    only: ["Poolside"],
+                    allow_fallbacks: false,
+                },
+            },
+        }),
+    "meituan/longcat-2.0": () =>
+        createOpenRouterModelConfig({
+            model: "meituan/longcat-2.0",
+            defaultOptions: {
+                provider: {
+                    only: ["atlas-cloud/fp8"],
+                    allow_fallbacks: false,
+                },
+            },
+        }),
+
     // -- OpenRouter (Gemma) ---------------------------------------------------
     // Moved off DeepInfra: OpenRouter serves the same SKU ~cheaper ($0.06/$0.33
     // posted vs $0.07/$0.34) and is credit-eligible.
     "google/gemma-4-26b-a4b-it": () =>
         createOpenRouterModelConfig({
             model: "google/gemma-4-26b-a4b-it",
+        }),
+    "google/gemma-4-31b-it": () =>
+        createOpenRouterModelConfig({
+            model: "google/gemma-4-31b-it",
+            defaultOptions: { provider: { sort: "price" } },
         }),
 
     // -- Inception Labs (Mercury) -------------------------------------------
@@ -207,24 +285,27 @@ export const portkeyConfig: PortkeyConfigMap = {
     "nova-2-lite": () =>
         createBedrockNativeConfig({ model: "us.amazon.nova-2-lite-v1:0" }),
 
-    // -- Google Vertex AI (Gemini) --------------------------------------------
-    "gemini-3-flash-preview": createVertexGeminiConfig(
+    // -- OpenRouter (Gemini via pinned Google Vertex routes) -----------------
+    "google/gemini-3-flash-preview": createPinnedOpenRouterGeminiConfig(
         "gemini-3-flash-preview",
-        "global",
+        "google-vertex/global",
     ),
-    "gemini-3.1-pro-preview": createVertexGeminiConfig(
+    "google/gemini-3.1-pro-preview": createPinnedOpenRouterGeminiConfig(
         "gemini-3.1-pro-preview",
-        "global",
+        "google-vertex/global",
     ),
-    "gemini-2.5-flash-lite": createVertexGeminiConfig(
+    "google/gemini-2.5-flash-lite": createPinnedOpenRouterGeminiConfig(
         "gemini-2.5-flash-lite",
-        "global",
+        "google-vertex/eu",
     ),
-    "gemini-3.1-flash-lite-preview": createVertexGeminiConfig(
-        "gemini-3.1-flash-lite-preview",
-        "global",
+    "google/gemini-3.5-flash-lite": createPinnedOpenRouterGeminiConfig(
+        "gemini-3.5-flash-lite",
+        "google-vertex/global",
     ),
-    "gemini-3.5-flash": createVertexGeminiConfig("gemini-3.5-flash", "global"),
+    "google/gemini-3.6-flash": createPinnedOpenRouterGeminiConfig(
+        "gemini-3.6-flash",
+        "google-vertex/global",
+    ),
 
     // -- Perplexity -----------------------------------------------------------
     "sonar": () => createPerplexityModelConfig({ model: "sonar" }),
@@ -232,11 +313,6 @@ export const portkeyConfig: PortkeyConfigMap = {
     "sonar-reasoning-pro": () =>
         createPerplexityModelConfig({ model: "sonar-reasoning-pro" }),
 
-    // -- Fireworks AI (Qwen) -----------------------------------------------------
-    "accounts/fireworks/models/qwen3p7-plus": () =>
-        createFireworksModelConfig({
-            model: "accounts/fireworks/models/qwen3p7-plus",
-        }),
     "accounts/fireworks/models/glm-5p2": () =>
         createFireworksModelConfig({
             model: "accounts/fireworks/models/glm-5p2",
@@ -248,6 +324,12 @@ export const portkeyConfig: PortkeyConfigMap = {
     "accounts/fireworks/models/minimax-m3": () =>
         createFireworksModelConfig({
             model: "accounts/fireworks/models/minimax-m3",
+        }),
+
+    // -- Vercel AI Gateway (Meta) --------------------------------------------
+    "meta/muse-spark-1.1": () =>
+        createVercelAIGatewayModelConfig({
+            model: "meta/muse-spark-1.1",
         }),
 
     // -- Azure (Myceli Prod — eastus, Meta Llama) ----------------------------
@@ -295,15 +377,14 @@ export const portkeyConfig: PortkeyConfigMap = {
             model: "stepfun/step-3.7-flash",
         }),
 
-    // -- OVHcloud (Qwen) ------------------------------------------------------
+    // -- OVHcloud -------------------------------------------------------------
+    "gpt-oss-20b": () =>
+        createOVHcloudOAIConfig({
+            model: "gpt-oss-20b",
+            "max-tokens": 1500,
+        }),
     "qwen3-coder-30b-a3b-instruct": () =>
         createOVHcloudModelConfig({ model: "Qwen3-Coder-30B-A3B-Instruct" }),
     "Qwen3Guard-Gen-8B": () =>
-        createOVHcloudMistralConfig({ model: "Qwen3Guard-Gen-8B" }),
-
-    // -- Community Models -----------------------------------------------------
-    "polly": () =>
-        createPollyConfig({
-            model: "polly",
-        }),
+        createOVHcloudOAIConfig({ model: "Qwen3Guard-Gen-8B" }),
 };

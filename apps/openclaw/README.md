@@ -6,7 +6,7 @@ Use **25+ AI models** as your OpenClaw brain through a single API.
 
 ## Setup
 
-**Step 1:** Get your API key (comes with free credits) at [enter.pollinations.ai](https://enter.pollinations.ai)
+**Step 1:** Get your API key (comes with free credits) at [enter.pollinations.ai](https://enter.pollinations.ai/keys)
 
 **Step 2:** Run the setup script (requires `jq`):
 
@@ -99,7 +99,7 @@ The [Pollinations skill on ClawHub](https://github.com/openclaw/skills/blob/main
 ## Links
 
 - **API Docs:** https://gen.pollinations.ai/docs
-- **Get API Key:** https://enter.pollinations.ai
+- **Get API Key:** https://enter.pollinations.ai/keys
 - **Models:** https://gen.pollinations.ai/v1/models
 - **GitHub:** https://github.com/pollinations/pollinations
 - **Discord:** https://discord.gg/pollinations-ai-885844321461485618

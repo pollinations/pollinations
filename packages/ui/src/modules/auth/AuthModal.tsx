@@ -1,5 +1,5 @@
 import type { CSSProperties, ReactNode } from "react";
-import logoUrl from "../../assets/logo.svg";
+import logoUrl from "../../brand/mark.svg";
 import { Dialog } from "../../primitives/Dialog.tsx";
 
 const authLogoMaskUrl = `url('${logoUrl}')`;

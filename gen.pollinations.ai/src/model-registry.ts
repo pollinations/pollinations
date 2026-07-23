@@ -12,6 +12,7 @@ import {
 import type { EventType } from "@shared/schemas/generation-event.ts";
 import {
     type CommunityModelRegistryEntry,
+    communityImageSupportedEndpoints,
     communityTextSupportedEndpoints,
     getCommunityModelRegistryEntries,
 } from "./community-models.ts";
@@ -33,7 +34,7 @@ export type GenerationModelEntry = {
     aliases: string[];
     eventType: EventType;
     supportedEndpoints: string[];
-    definition: ModelDefinition<string>;
+    definition: ModelDefinition;
     info: ModelInfo;
     communityEndpoint?: CommunityEndpointRuntime;
     visible: boolean;
@@ -41,7 +42,7 @@ export type GenerationModelEntry = {
 
 export type GenerationModelRegistry = {
     resolve: (model: string) => GenerationModelEntry | null;
-    visibleEntries: () => GenerationModelEntry[];
+    visibleEntries: (callerUserId?: string) => GenerationModelEntry[];
 };
 
 type CachedRegistry = {
@@ -91,15 +92,23 @@ const STATIC_ENTRIES: GenerationModelEntry[] = getModels().map((modelName) => {
 function communityEntryToGenerationEntry(
     entry: CommunityModelRegistryEntry,
 ): GenerationModelEntry {
+    const eventType = eventTypeForCategory(entry.definition.category);
     return {
         id: entry.id,
         aliases: entry.aliases,
-        eventType: "generate.text",
-        supportedEndpoints: communityTextSupportedEndpoints(),
+        eventType,
+        supportedEndpoints:
+            eventType === "generate.image"
+                ? communityImageSupportedEndpoints()
+                : communityTextSupportedEndpoints(),
         definition: entry.definition,
         info: entry.info,
         communityEndpoint: entry.communityEndpoint,
-        visible: entry.communityEndpoint.disabledAt === null,
+        // Public endpoints appear for everyone. Private endpoints are added
+        // back for their owner by visibleEntries().
+        visible:
+            entry.communityEndpoint.disabledAt === null &&
+            entry.communityEndpoint.visibility === "public",
     };
 }
 
@@ -130,7 +139,16 @@ function buildRegistry(
             if (entry?.communityEndpoint?.disabledAt) return null;
             return entry;
         },
-        visibleEntries: () => entries.filter((entry) => entry.visible),
+        visibleEntries: (callerUserId) =>
+            entries.filter((entry) => {
+                if (entry.visible) return true;
+                const endpoint = entry.communityEndpoint;
+                return (
+                    endpoint?.disabledAt === null &&
+                    endpoint.visibility === "private" &&
+                    endpoint.ownerUserId === callerUserId
+                );
+            }),
     };
 }
 

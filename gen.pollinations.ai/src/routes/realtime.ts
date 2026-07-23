@@ -11,7 +11,7 @@ import {
     truncateIpToSubnet,
 } from "@shared/client-ip.ts";
 import { sendToTinybird } from "@shared/events.ts";
-import { DEFAULT_REALTIME_MODEL } from "@shared/registry/realtime.ts";
+import type { RealtimeModelName } from "@shared/registry/realtime.ts";
 import {
     type CostDefinition,
     calculateCostWithDefinition,
@@ -38,15 +38,17 @@ import { RealtimeUsageSchema } from "@/schemas/realtime.ts";
 import { generateRandomId } from "@/util.ts";
 import { checkBalance } from "@/utils/generation-access.ts";
 
-// Azure OpenAI realtime endpoint. The gpt-realtime-2 deployment lives on the
-// Sweden Central myceli resource (same resource as the gpt-audio models). The
-// realtime WebSocket path mirrors OpenAI's: /openai/v1/realtime?model=<deployment>.
+// Azure OpenAI realtime endpoint. The deployments live on the Sweden Central
+// myceli resource (same resource as the gpt-audio models). The realtime
+// WebSocket path mirrors OpenAI's: /openai/v1/realtime?model=<deployment>.
 const AZURE_REALTIME_WEBSOCKET_URL =
-    "https://myceli-prod-swedencentral.cognitiveservices.azure.com/openai/v1/realtime";
-// Azure deployment name for the realtime model (set when deploying via the
-// Azure CLI). Matches DEFAULT_REALTIME_MODEL here, but kept separate because
-// Azure deployment names are independent of the public model id.
-const AZURE_REALTIME_DEPLOYMENT = "gpt-realtime-2";
+    "https://myceli-prod-swedencentral.openai.azure.com/openai/v1/realtime";
+// Azure deployment names, keyed by registry model name. Deployment names are
+// independent of the public model id; the registry only carries public names.
+const REALTIME_DEPLOYMENTS: Record<RealtimeModelName, string> = {
+    "gpt-realtime-2.1": "gpt-realtime-2-1",
+    "gpt-realtime-2": "gpt-realtime-2",
+};
 const CREDENTIAL_QUERY_PARAMS = new Set([
     "access_token",
     "api_key",
@@ -74,7 +76,7 @@ type RealtimeBillingContext = {
     byopClientKeyId?: string | null;
     modelRequested: string;
     resolvedModelRequested: string;
-    modelDefinition: ModelDefinition<string>;
+    modelDefinition: ModelDefinition;
     modelCostDefinition: CostDefinition;
     modelPriceDefinition: PriceDefinition;
     requestId: string;
@@ -95,7 +97,7 @@ type RealtimeBillingContext = {
 
 function requireAllowedModel(c: Context<Env>, model: string): void {
     const allowedModels = c.var.auth.apiKey?.permissions?.models;
-    if (allowedModels?.length && !allowedModels.includes(model)) {
+    if (allowedModels && !allowedModels.includes(model)) {
         throw new HTTPException(403, {
             message: `Model '${model}' is not allowed for this API key`,
         });
@@ -110,17 +112,24 @@ async function createSafetyIdentifier(
     return bytesToHex(await crypto.subtle.digest("SHA-256", data));
 }
 
-function buildUpstreamUrl(): string {
+function buildUpstreamUrl(modelId: string): string {
     const upstreamUrl = new URL(AZURE_REALTIME_WEBSOCKET_URL);
-    upstreamUrl.searchParams.set("model", AZURE_REALTIME_DEPLOYMENT);
+    upstreamUrl.searchParams.set("model", modelId);
     return upstreamUrl.toString();
 }
 
 async function connectAzureRealtime(
     c: Context<Env>,
     userId: string,
+    modelId: string,
 ): Promise<WebSocket | Response> {
-    const response = (await fetch(buildUpstreamUrl(), {
+    if (!c.env.AZURE_MYCELI_PROD_SWEDEN_API_KEY) {
+        throw new HTTPException(503, {
+            message: "Azure realtime provider is not configured.",
+        });
+    }
+
+    const response = (await fetch(buildUpstreamUrl(modelId), {
         headers: {
             "api-key": c.env.AZURE_MYCELI_PROD_SWEDEN_API_KEY,
             "OpenAI-Safety-Identifier": await createSafetyIdentifier(
@@ -677,11 +686,6 @@ export async function handleRealtimeWebSocket(
     const user = c.var.auth.requireUser();
 
     const resolvedModel = c.var.model.resolved;
-    if (resolvedModel !== DEFAULT_REALTIME_MODEL) {
-        throw new HTTPException(400, {
-            message: `Only ${DEFAULT_REALTIME_MODEL} is currently supported for realtime sessions.`,
-        });
-    }
     requireAllowedModel(c, resolvedModel);
 
     // Same model-independent, estimated-price balance gate as every other
@@ -689,13 +693,11 @@ export async function handleRealtimeWebSocket(
     // model definition). checkBalance reads c.var.model.
     await checkBalance(c.var, c.env);
 
-    if (!c.env.AZURE_MYCELI_PROD_SWEDEN_API_KEY) {
-        throw new HTTPException(503, {
-            message: "Azure realtime provider is not configured.",
-        });
-    }
-
-    const upstream = await connectAzureRealtime(c, user.id);
+    const upstream = await connectAzureRealtime(
+        c,
+        user.id,
+        REALTIME_DEPLOYMENTS[c.var.model.resolved as RealtimeModelName],
+    );
     if (upstream instanceof Response) return upstream;
 
     return proxyRealtimeWebSockets(

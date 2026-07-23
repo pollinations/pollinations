@@ -189,19 +189,15 @@ def create_buffer_post(
     if metadata:
         post_input["metadata"] = metadata
 
-    # Map media (REST used media[photo], GraphQL uses assets.images)
+    # Map media to Buffer's ordered GraphQL assets input.
     if media:
         photos = media.get("photos")  # list of URLs (for carousel)
         if photos:
-            post_input["assets"] = {
-                "images": [{"url": u} for u in photos]
-            }
+            post_input["assets"] = [{"image": {"url": url}} for url in photos]
         else:
             image_url = media.get("photo") or media.get("url")
             if image_url:
-                post_input["assets"] = {
-                    "images": [{"url": image_url}]
-                }
+                post_input["assets"] = [{"image": {"url": image_url}}]
 
     result = _graphql_request(
         access_token,

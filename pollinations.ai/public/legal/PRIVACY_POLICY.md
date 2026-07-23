@@ -67,7 +67,7 @@ Where data leaves the EEA, we use approved safeguards (e.g., EU Standard Contrac
 * **API usage metadata:** typically 24 months (billing, fraud, capacity, developer-earnings attribution).
 * **Quest and reward records:** reward ledger records follow wallet/accounting retention where needed for balance, audit, fraud, and dispute purposes. Synced public GitHub quest issue records are retained while needed to display, process, and audit quest rewards.
 * **Generated response caches (text, image, audio, video):** typically up to 30 days, plus any downstream public/browser caches.
-* **Uploaded media files (media.pollinations.ai):** typically up to 30 days from upload; re-uploading the same file resets the timer.
+* **Uploaded media files (media.pollinations.ai):** a 30-day lifecycle applies from upload or the latest refresh. Retrieving the file body refreshes the lifecycle only when the file is at least 15 days old, so actively accessed uploads can remain longer.
 * **App authorization records:** while active. Related usage, billing, security, and dispute records may be retained under the retention periods above.
 * **Support conversations:** we don't run a proprietary ticket system. Support happens on third-party channels (GitHub Issues, Discord) and email. GitHub Issues are public and retained by GitHub; Discord and email retention follows those platforms' own policies. Don't share sensitive data in public channels.
 * **Backups:** encrypted, rolling 30-90 days.

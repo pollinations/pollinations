@@ -13,10 +13,3 @@ export async function getTotalUsers() {
     const data = await res.json();
     return data.total;
 }
-
-export async function getTierDistribution() {
-    const res = await fetch("/api/kpi/tiers");
-    if (!res.ok) return [];
-    const data = await res.json();
-    return data.data;
-}

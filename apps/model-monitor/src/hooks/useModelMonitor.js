@@ -1,11 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
-// Tinybird config
-// Note: This is a READ-ONLY public token, safe to expose in client code
-const TINYBIRD_HOST = "https://api.europe-west2.gcp.tinybird.co";
-const TINYBIRD_PUBLIC_READ_TOKEN =
-    "p.eyJ1IjogImFjYTYzZjc5LThjNTYtNDhlNC05NWJjLWEyYmFjMTY0NmJkMyIsICJpZCI6ICI5ZWZmMGM3Ni1kOTZkLTQwYjgtYWQwOC1mNDFlMmRiYjBmYTIiLCAiaG9zdCI6ICJnY3AtZXVyb3BlLXdlc3QyIn0.6VnVkAQ5h_fkcDZVDUoU38dzTxaw0xo3DnmKkhECbA8";
-
+const MODEL_HEALTH_URL = "https://gen.pollinations.ai/v1/models/status";
 const MODEL_CATALOG_URL = "https://gen.pollinations.ai/models";
 
 // Minutes parameter for the parameterized model_health pipe
@@ -23,7 +18,7 @@ const POLL_INTERVALS = {
     "24h": 120000, // 2 minutes for 24-hour view
     "4h": 60000, // 1 minute for 4-hour view
     "60m": 60000, // 1 minute for stable 60m view
-    "5m": 15000, // 15 seconds for live 5m view
+    "5m": 60000, // Match the model status gateway cache
 };
 
 function resolveDisplayType(model) {
@@ -37,8 +32,9 @@ function resolveDisplayType(model) {
     return "unknown";
 }
 
+const IMAGE_EVENT_TYPES = ["video", "3d"];
 function eventTypeForDisplayType(type) {
-    return type === "video" ? "image" : type;
+    return IMAGE_EVENT_TYPES.includes(type) ? "image" : type;
 }
 
 function normalizeCatalogModel(model) {
@@ -61,12 +57,13 @@ export function useModelMonitor(aggregationWindow = "60m") {
     const [models, setModels] = useState([]);
     const [healthStats, setHealthStats] = useState([]);
     const [lastUpdated, setLastUpdated] = useState(null);
-    const [error, setError] = useState(null);
+    const [catalogError, setCatalogError] = useState(null);
+    const [healthError, setHealthError] = useState(null);
     const [endpointStatus, setEndpointStatus] = useState({
         catalog: null,
     });
-    const tinybirdConfigured = !!TINYBIRD_PUBLIC_READ_TOKEN;
     const intervalRef = useRef(null);
+    const error = healthError || catalogError;
 
     // Fetch model list from gen.pollinations.ai
     const fetchModels = useCallback(async () => {
@@ -86,40 +83,45 @@ export function useModelMonitor(aggregationWindow = "60m") {
 
             setEndpointStatus({ catalog: true });
             setModels(catalogModels);
-            setError(null);
+            setCatalogError(null);
         } catch (err) {
             console.error("Failed to fetch model catalog:", err);
             setEndpointStatus({ catalog: false });
             setModels([]);
-            setError("Failed to fetch model catalog");
+            setCatalogError("Failed to fetch model catalog");
         }
     }, []);
 
-    // Fetch health stats from Tinybird
+    // Fetch health stats through gen.pollinations.ai, which caches Tinybird.
     const fetchHealthStats = useCallback(async () => {
-        if (!TINYBIRD_PUBLIC_READ_TOKEN) {
-            // Use mock data when Tinybird not configured
-            setHealthStats([]);
-            return;
-        }
-
         try {
             const minutes =
                 WINDOW_MINUTES[aggregationWindow] || WINDOW_MINUTES["60m"];
-            const url = `${TINYBIRD_HOST}/v0/pipes/model_health.json?token=${TINYBIRD_PUBLIC_READ_TOKEN}&minutes=${minutes}`;
+            const url = `${MODEL_HEALTH_URL}?minutes=${minutes}`;
             const response = await fetch(url);
 
             if (!response.ok) {
-                throw new Error(`Tinybird error: ${response.status}`);
+                throw new Error(`Model status API error: ${response.status}`);
+            }
+
+            const sourceTimestamp = response.headers.get(
+                "X-Model-Status-Timestamp",
+            );
+            if (!sourceTimestamp) {
+                throw new Error("Model status API omitted its data timestamp");
             }
 
             const data = await response.json();
             setHealthStats(data.data || []);
-            setLastUpdated(new Date());
-            setError(null);
+            setLastUpdated(new Date(sourceTimestamp));
+            setHealthError(
+                response.headers.get("X-Model-Status-Stale") === "true"
+                    ? "Live health data unavailable; showing cached data"
+                    : null,
+            );
         } catch (err) {
             console.error("Failed to fetch health stats:", err);
-            setError("Failed to fetch health stats from Tinybird");
+            setHealthError("Failed to fetch health stats");
         }
     }, [aggregationWindow]);
 
@@ -244,7 +246,6 @@ export function useModelMonitor(aggregationWindow = "60m") {
         pollInterval,
         lastUpdated,
         error,
-        tinybirdConfigured,
         endpointStatus,
         aggregationWindow, // Current window for UI display
     };

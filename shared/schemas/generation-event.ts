@@ -72,11 +72,13 @@ export type TinybirdEvent = {
     tokenPricePromptCached: number;
     tokenPricePromptCacheWrite: number;
     tokenPricePromptAudio: number;
+    tokenPricePromptAudioSeconds: number;
     tokenPricePromptImage: number;
     tokenPricePromptVideo: number;
     tokenPriceCompletionText: number;
     tokenPriceCompletionReasoning: number;
     tokenPriceCompletionAudio: number;
+    tokenPriceCompletionAudioSeconds: number;
     tokenPriceCompletionImage: number;
     tokenPriceCompletionVideoSeconds: number;
     tokenPriceCompletionVideoTokens: number;
@@ -121,10 +123,6 @@ export type TinybirdEvent = {
     moderationCompletionProtectedMaterialCodeDetected?: boolean;
     moderationCompletionProtectedMaterialTextDetected?: boolean;
 
-    // Cache
-    cacheHit?: boolean;
-    cacheKey?: string;
-
     // Error
     errorResponseCode?: string;
     errorSource?: string;
@@ -136,11 +134,13 @@ export type GenerationEventPriceParams = {
     tokenPricePromptCached: number;
     tokenPricePromptCacheWrite: number;
     tokenPricePromptAudio: number;
+    tokenPricePromptAudioSeconds: number;
     tokenPricePromptImage: number;
     tokenPricePromptVideo: number;
     tokenPriceCompletionText: number;
     tokenPriceCompletionReasoning: number;
     tokenPriceCompletionAudio: number;
+    tokenPriceCompletionAudioSeconds: number;
     tokenPriceCompletionImage: number;
     tokenPriceCompletionVideoSeconds: number;
     tokenPriceCompletionVideoTokens: number;
@@ -177,6 +177,8 @@ export function priceToEventParams(
             priceDefinition?.promptCacheWriteTokens || 0,
         tokenPricePromptAudio: 
             priceDefinition?.promptAudioTokens || 0,
+        tokenPricePromptAudioSeconds:
+            priceDefinition?.promptAudioSeconds || 0,
         tokenPricePromptImage:
             priceDefinition?.promptImageTokens || 0,
         tokenPricePromptVideo:
@@ -189,6 +191,8 @@ export function priceToEventParams(
             0,
         tokenPriceCompletionAudio:
             priceDefinition?.completionAudioTokens || 0,
+        tokenPriceCompletionAudioSeconds:
+            priceDefinition?.completionAudioSeconds || 0,
         tokenPriceCompletionImage:
             priceDefinition?.completionImageTokens || 0,
         tokenPriceCompletionVideoSeconds:

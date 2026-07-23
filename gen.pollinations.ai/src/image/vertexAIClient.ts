@@ -6,6 +6,7 @@
 import debug from "debug";
 import googleCloudAuth from "@/text/auth/googleCloudAuth.ts";
 import { getImageEnv } from "./env.ts";
+import { HttpError } from "./httpError.ts";
 import { closestByRatio } from "./utils/aspectRatio.ts";
 
 // Standard aspect ratios supported by Vertex AI Gemini image generation.
@@ -36,8 +37,8 @@ export interface VertexAIImageRequest {
     height?: number;
     seed?: number;
     referenceImages?: VertexAIImageData[];
-    model?: string; // Model ID: gemini-2.5-flash-image (default) or gemini-3-pro-image-preview
-    imageSize?: string; // "1K", "2K", "4K" - supported by gemini-3-pro-image-preview and gemini-3.1-flash-image-preview
+    model?: string; // Model ID: gemini-2.5-flash-image (default) or gemini-3-pro-image
+    imageSize?: string; // "1K", "2K", "4K" - supported by gemini-3-pro-image and gemini-3.1-flash-image
     safe?: boolean; // When true, use stricter safety settings; when false, use BLOCK_ONLY_HIGH
     reasoning?: string; // "fast" | "balanced" | "pro" - controls CoT depth per model
 }
@@ -50,19 +51,37 @@ export interface VertexAIPart {
     };
 }
 
+export interface VertexAISafetyRating {
+    blocked?: boolean;
+    category?: string;
+    probability?: string;
+}
+
+export type VertexAIModality = "TEXT" | "IMAGE" | "AUDIO" | "VIDEO";
+
+export interface VertexAIModalityTokenCount {
+    modality?: VertexAIModality;
+    tokenCount?: number;
+}
+
+export interface VertexAIUsageMetadata {
+    promptTokenCount?: number;
+    candidatesTokenCount?: number;
+    totalTokenCount?: number;
+    thoughtsTokenCount?: number;
+    promptTokensDetails?: VertexAIModalityTokenCount[];
+    candidatesTokensDetails?: VertexAIModalityTokenCount[];
+}
+
 export interface VertexAIResponse {
-    candidates: Array<{
-        content: {
+    candidates?: Array<{
+        content?: {
             parts: Array<VertexAIPart>;
         };
-        finishReason: string;
+        finishReason?: string;
+        safetyRatings?: VertexAISafetyRating[];
     }>;
-    usageMetadata: {
-        promptTokenCount: number;
-        candidatesTokenCount: number;
-        totalTokenCount: number;
-        thoughtsTokenCount?: number;
-    };
+    usageMetadata?: VertexAIUsageMetadata;
 }
 
 /**
@@ -75,9 +94,9 @@ export async function generateImageWithVertexAI(
     mimeType: string | null;
     textResponse?: string;
     finishReason?: string;
-    safetyRatings?: any[];
-    usage: any;
-    fullResponse?: any;
+    safetyRatings?: VertexAISafetyRating[];
+    usage?: VertexAIUsageMetadata;
+    fullResponse?: VertexAIResponse;
 }> {
     try {
         log(
@@ -117,13 +136,13 @@ export async function generateImageWithVertexAI(
         }
 
         // Determine image size based on pixel count
-        // Both gemini-3-pro-image-preview and gemini-3.1-flash-image-preview support imageSize.
+        // Both gemini-3-pro-image and gemini-3.1-flash-image support imageSize.
         // gemini-3.1-flash-lite-image only outputs 1K (Vertex 400s on imageSize 2K/4K),
         // so it is intentionally omitted — it defaults to 1K.
         let imageSize: string | undefined;
         if (
-            (modelId === "gemini-3-pro-image-preview" ||
-                modelId === "gemini-3.1-flash-image-preview") &&
+            (modelId === "gemini-3-pro-image" ||
+                modelId === "gemini-3.1-flash-image") &&
             request.width &&
             request.height
         ) {
@@ -189,7 +208,7 @@ export async function generateImageWithVertexAI(
                 }
                 return { thinkingConfig: { thinkingLevel: "HIGH" } };
             }
-            // For all other models (e.g. gemini-2.5-flash-image, gemini-3-pro-image-preview)
+            // For all other models (e.g. gemini-2.5-flash-image, gemini-3-pro-image)
             // we do NOT send an explicit thinkingConfig to avoid 400 errors,
             // relying on the provider's defaults instead.
             return {};
@@ -303,21 +322,12 @@ export async function generateImageWithVertexAI(
                 errorText,
             );
 
-            // Try to parse error response for content policy violations
-            let errorData = null;
-            try {
-                errorData = JSON.parse(errorText);
-            } catch (parseError) {
-                // Ignore parse errors, use raw text
-            }
-
-            const error = new Error(
+            throw new HttpError(
                 `Vertex AI API error: ${response.status} ${response.statusText} - ${errorText}`,
+                response.status,
+                { body: errorText },
+                endpoint,
             );
-            // Attach error response data for logging
-            (error as any).responseData = errorData;
-            (error as any).statusCode = response.status;
-            throw error;
         }
 
         const data = (await response.json()) as VertexAIResponse;
@@ -341,14 +351,14 @@ export async function generateImageWithVertexAI(
         let mimeType: string | null = null;
         let textResponse: string | null = null;
         let finishReason: string | undefined;
-        let safetyRatings: any[] | undefined;
+        let safetyRatings: VertexAISafetyRating[] | undefined;
 
         if (data.candidates && data.candidates.length > 0) {
             const candidate = data.candidates[0];
 
             // Extract finish reason and safety ratings for error reporting
             finishReason = candidate.finishReason;
-            safetyRatings = (candidate as any).safetyRatings;
+            safetyRatings = candidate.safetyRatings;
 
             // Check if content and parts exist before iterating
             // When safety blocks content, candidate.content or parts may be undefined

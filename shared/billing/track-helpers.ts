@@ -358,7 +358,7 @@ async function deductUserBalance(
         };
 
         log.debug(
-            "Decremented {price} pollen from user {userId} (tier: -{fromTier}, pack: -{fromPack})",
+            "Decremented {price} pollen from user {userId} (quest: -{fromTier}, pack: -{fromPack})",
             {
                 price: amount,
                 userId,

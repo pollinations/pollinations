@@ -80,4 +80,4 @@ See `.env.example` for the full list and where to pull each value from:
 `ENTER_API_TOKEN`, `TINYBIRD_READ_TOKEN`, `CLOUDFLARE_API_TOKEN` for live
 mode only, and Claude Code's own auth (Anthropic API key, or the
 `claude-code-router` + `gen.pollinations.ai` pattern already proven in
-`.github/workflows/issue-polly-auto-fix.yml`).
+`.github/workflows/repo-auto-fix-polli-issues.yml`).

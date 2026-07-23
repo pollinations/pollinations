@@ -50,7 +50,7 @@ async function getKeyInfo() {
                 {
                     authenticated: false,
                     message: "No API key set. Use setApiKey to authenticate.",
-                    info: "Get your API key at https://enter.pollinations.ai",
+                    info: "Get your API key at https://enter.pollinations.ai/keys",
                 },
                 true,
             ),
@@ -96,7 +96,7 @@ async function clearApiKey() {
 export const authTools = [
     [
         "setApiKey",
-        "Set your pollinations.ai API key for authenticated requests. Get your key at https://enter.pollinations.ai",
+        "Set your pollinations.ai API key for authenticated requests. Get your key at https://enter.pollinations.ai/keys",
         {
             key: z
                 .string()

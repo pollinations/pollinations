@@ -1,0 +1,30 @@
+DESCRIPTION >
+    op_pollen: product usage in Pollen with paid/quest splits, computed directly
+    from generation_event_v2. Reads the pre-aggregated op_pollen (cost/price/
+    requests and byop/model payouts, per month/provider/model) instead of
+    scanning raw event history.
+
+TOKEN "operations_read" READ
+
+NODE endpoint
+SQL >
+    SELECT
+        month,
+        provider AS vendor,
+        model,
+        'USD' AS currency,
+        sumMerge(cost_paid) AS cost_paid,
+        sumMerge(cost_quests) AS cost_quests,
+        sumMerge(price_paid) AS price_paid,
+        sumMerge(price_quests) AS price_quests,
+        sumMerge(byop_paid) AS byop_paid,
+        sumMerge(byop_quests) AS byop_quests,
+        sumMerge(model_paid) AS model_paid,
+        sumMerge(model_quests) AS model_quests,
+        sumMerge(requests_paid) AS requests_paid,
+        sumMerge(requests_quests) AS requests_quests
+    FROM op_pollen
+    GROUP BY month, provider, model
+    ORDER BY month DESC, vendor, model
+
+TYPE ENDPOINT

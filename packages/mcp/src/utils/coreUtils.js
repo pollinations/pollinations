@@ -260,7 +260,7 @@ export function parseApiError(status, errorText) {
             }
             return `Bad request: ${errorMessage}`;
         case 401:
-            return `Authentication failed. Please set a valid API key using setApiKey. Get your key at https://enter.pollinations.ai`;
+            return `Authentication failed. Please set a valid API key using setApiKey. Get your key at https://enter.pollinations.ai/keys`;
         case 403:
             return `Access forbidden. Your API key may not have permission for this operation.`;
         case 404:

@@ -366,6 +366,16 @@ function isResponseExampleWorthwhile(ex: unknown): boolean {
     return true;
 }
 
+function operationBaseUrl(spec: Spec, path: string, op: Operation): string {
+    const pathItem = asObj(spec.paths[path]);
+    const server = [op.servers, pathItem.servers, spec.servers]
+        .flatMap(asArr)
+        .map(asObj)
+        .map((item) => asStr(item.url))
+        .find(Boolean);
+    return (server || BASE_URL).replace(/\/$/, "");
+}
+
 // ────────────────────────────────────────────────────────────────────────────
 // Curl example
 // ────────────────────────────────────────────────────────────────────────────
@@ -380,12 +390,15 @@ function buildCurl(
     const params = visibleParams(path, asArr(op.parameters) as Schema[]);
     const queryParams = params.filter((p) => asObj(p).in === "query");
     const pathParams = params.filter((p) => asObj(p).in === "path");
-    let url = `${BASE_URL}${path}`;
+    let url = `${operationBaseUrl(spec, path, op)}${path}`;
     // Substitute path placeholders with real, URL-encoded sample values so
     // curl examples are copy-pasteable. Falls back to `:name` only when the
     // spec provides no example for the parameter.
     url = url.replace(/{(\w+)}/g, (_match, name: string) => {
-        const override = PATH_PARAM_OVERRIDES[name];
+        const override =
+            name === "id" && MEDIA_ID_PATHS.has(path)
+                ? MEDIA_ID_EXAMPLE
+                : PATH_PARAM_OVERRIDES[name];
         if (override !== undefined) return encodeURIComponent(override);
         const param = pathParams.find((p) => asStr(asObj(p).name) === name);
         if (param) {
@@ -441,7 +454,11 @@ function buildCurl(
 
     const curatedMultipart = CURATED_MULTIPART[operationId];
 
-    if (jsonBody.schema) {
+    if (curatedMultipart) {
+        for (const [name, value] of curatedMultipart) {
+            segments.push(`-F "${name}=${value}"`);
+        }
+    } else if (jsonBody.schema) {
         const ex =
             CURATED_BODIES[operationId] ??
             pickExample(spec, asObj(jsonBody.schema), { compact: true });
@@ -449,10 +466,8 @@ function buildCurl(
             segments.push(`-H "Content-Type: application/json"`);
             segments.push(`-d '${JSON.stringify(ex)}'`);
         }
-    } else if (multipartBody.schema || curatedMultipart) {
-        const fields =
-            curatedMultipart ??
-            buildMultipartFields(spec, asObj(multipartBody.schema));
+    } else if (multipartBody.schema) {
+        const fields = buildMultipartFields(spec, asObj(multipartBody.schema));
         for (const [name, value] of fields) {
             segments.push(`-F "${name}=${value}"`);
         }
@@ -468,7 +483,7 @@ function buildCurl(
 function isPublicMediaRead(method: string, path: string): boolean {
     const lower = method.toLowerCase();
     if (lower !== "get" && lower !== "head") return false;
-    return path === "/{hash}" || path === "/{hash}/metadata";
+    return path === "/{id}" || path === "/{id}/metadata" || path === "/media";
 }
 
 /**
@@ -612,19 +627,23 @@ function renderEndpoint(
     out.push("```");
     out.push("");
 
-    // Response example (if we can synthesize one)
+    // Response example: prefer the media-type example injected by
+    // injectSamples() (RESPONSE_EXAMPLES), fall back to schema synthesis.
     const firstOk = successCodes[0];
     if (firstOk) {
         const r = asObj(responses[firstOk]);
         const jsonResp = asObj(asObj(r.content)["application/json"]);
-        if (jsonResp.schema) {
-            const ex = pickExample(spec, asObj(jsonResp.schema));
-            if (isResponseExampleWorthwhile(ex)) {
-                out.push("```json");
-                out.push(JSON.stringify(ex, null, 2));
-                out.push("```");
-                out.push("");
-            }
+        const ex =
+            jsonResp.example !== undefined
+                ? jsonResp.example
+                : jsonResp.schema
+                  ? pickExample(spec, asObj(jsonResp.schema))
+                  : undefined;
+        if (isResponseExampleWorthwhile(ex)) {
+            out.push("```json");
+            out.push(JSON.stringify(ex, null, 2));
+            out.push("```");
+            out.push("");
         }
     }
 
@@ -703,16 +722,18 @@ function renderHeader(spec: Spec): string {
     // `alt` carries the semantic title so screen readers and feeds still get it.
     out.push("<picture>");
     out.push(
-        '  <source media="(prefers-color-scheme: dark)" srcset="assets/logo-text-white.svg">',
+        '  <source media="(prefers-color-scheme: dark)" srcset="packages/ui/src/brand/lockup-horizontal-white.svg">',
     );
     out.push(
-        '  <img alt="Pollinations" src="assets/logo-text-black.svg" width="420">',
+        '  <img alt="Pollinations" src="packages/ui/src/brand/lockup-horizontal-black.svg" width="420">',
     );
     out.push("</picture>");
     out.push("");
     out.push(loadIntroductionTagline());
     out.push("");
     out.push("# API docs");
+    out.push("");
+    out.push(`Also available at [${BASE_URL}/docs](${BASE_URL}/docs)`);
     out.push("");
     out.push(
         `**Version:** \`${spec.info.version}\` · **OpenAPI:** \`${spec.openapi}\` · **Base URL:** \`${BASE_URL}\``,
@@ -735,7 +756,7 @@ function loadIntroductionTagline(): string {
 function renderGettingStarted(): string {
     return `## ${sectionHeading(SECTIONS.start)}
 
-**1. Get an API key** at [enter.pollinations.ai](https://enter.pollinations.ai). Two key types are available:
+**1. Get an API key** at [enter.pollinations.ai](https://enter.pollinations.ai/keys). Two key types are available:
 
 - \`sk_*\` — secret key for backend use (full account access)
 - \`pk_*\` — publishable key, safe to ship in browsers and mobile apps
@@ -870,7 +891,7 @@ All endpoints return errors in this envelope:
 | \`400\` | \`BAD_REQUEST\` | Invalid input. \`details\` includes \`formErrors\` and \`fieldErrors\` for validation failures. |
 | \`401\` | \`UNAUTHORIZED\` | Missing or invalid API key. Provide via \`Authorization: Bearer <key>\` header or \`?key=<key>\` query param. |
 | \`402\` | \`PAYMENT_REQUIRED\` | Insufficient pollen balance or API key budget exhausted. |
-| \`403\` | \`FORBIDDEN\` | Access denied — insufficient permissions or tier for this model. |
+| \`403\` | \`FORBIDDEN\` | Access denied — insufficient permissions or paid-model access for this model. |
 | \`404\` | \`NOT_FOUND\` | Resource not found. |
 | \`405\` | \`METHOD_NOT_ALLOWED\` | HTTP method not supported on this route. |
 | \`409\` | \`CONFLICT\` | Request conflicts with current resource state (e.g. duplicate key name). |
@@ -930,6 +951,27 @@ const CURATED_BODIES: Record<string, Json> = {
         allowedModels: ["openai", "flux"],
         pollenBudget: 100,
     },
+    postV1AudioSpeech: {
+        input: "Hello world",
+        voice: "nova",
+    },
+    postAccountMyModels: {
+        name: "my-community-model",
+        baseUrl: "https://api.example.com/v1",
+        bearerToken: "sk-upstream-token",
+    },
+    postAccountMyModelsModels: {
+        baseUrl: "https://api.example.com/v1",
+        bearerToken: "sk-upstream-token",
+    },
+    postAccountMyModelsTest: {
+        baseUrl: "https://api.example.com/v1",
+        bearerToken: "sk-upstream-token",
+        model: "llama-3.3-70b",
+    },
+    postAccountMyModelsByIdUpdate: {
+        description: "Updated model description",
+    },
 };
 
 /**
@@ -937,8 +979,10 @@ const CURATED_BODIES: Record<string, Json> = {
  * useful `example`. Used to make every curl example copy-pasteable rather
  * than falling back to `:name`-style placeholders. Keyed by parameter name.
  */
+const MEDIA_ID_EXAMPLE = "550e8400-e29b-41d4-a716-446655440000";
+const MEDIA_ID_PATHS = new Set(["/{id}", "/{id}/metadata", "/media/{id}"]);
+
 const PATH_PARAM_OVERRIDES: Record<string, string> = {
-    hash: "a1b2c3d4e5f60718",
     id: "key_abc123",
 };
 

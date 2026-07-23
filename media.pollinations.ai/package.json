@@ -1,12 +1,13 @@
 {
   "name": "media.pollinations.ai",
   "version": "1.0.0",
-  "description": "Media upload service for Pollinations - content-addressed storage for images, audio, and video",
+  "description": "Media upload service for Pollinations - unique-id storage for images, audio, and video",
   "type": "module",
   "scripts": {
     "dev": "wrangler dev",
     "deploy": "wrangler deploy",
     "deploy:production": "wrangler deploy --env production",
+    "migrate:production": "wrangler d1 migrations apply DB --remote --env production",
     "apply-lifecycle:production": "wrangler r2 bucket lifecycle set pollinations-media --file r2-lifecycle.json --force",
     "tail": "wrangler tail",
     "test": "vitest run",
@@ -14,10 +15,10 @@
   },
   "dependencies": {
     "@hono/standard-validator": "^0.2.2",
+    "drizzle-orm": "^0.44.7",
     "hono": "^4.6.0",
     "hono-openapi": "^1.2.0",
-    "zod": "^3.25.76",
-    "zod-openapi": "^4.2.4"
+    "zod": "4.3.5"
   },
   "devDependencies": {
     "@cloudflare/vitest-pool-workers": "^0.10.10",

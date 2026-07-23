@@ -2,33 +2,32 @@
 
 ## Issue & PR Labeling
 
-- **pr-assign-author.yml** - Assigns the PR creator to the PR when opened.
+- **repo-assign-pr-author.yml** - Assigns the PR creator to the PR when opened.
 
 ## AI Agents
 
-- **pr-issue-assistant.yml** - AI assistant (Polly) via pollinations.ai, triggered by `polly` in issues/PRs. Whitelisted users only.
-- **issue-pr-review-changes.yml** - Claude Opus agent triggered by `@claude` in issues/PRs. Performs code reviews and answers questions.
+- **repo-polli-assistant.yml** - AI assistant (Polli) via pollinations.ai, triggered by `!polli` in issues/PRs. Whitelisted users only.
 
 ## Issue Automation Pipeline
 
-- **issue-automation.yml** - Automated triage on every new issue. Calls Polly API to detect duplicates, already-resolved issues, and minor auto-fixable problems.
+- **repo-triage-new-issues.yml** - Automated triage on every new issue. Calls Polli API to detect duplicates, already-resolved issues, and minor auto-fixable problems.
 
 ### Flow
 
 ```mermaid
 %%{init: {'theme': 'dark'}}%%
 flowchart TD
-    A[Issue Opened] --> B{Bot or TIER?}
+    A[Issue Opened] --> B{Bot or app submission?}
     B -->|Yes| C[Skip]
-    B -->|No| D[Call Polly API]
+    B -->|No| D[Call Polli API]
     D -->|3 retries| E{Parse JSON verdict}
     E -->|Parse fail| C
     E -->|Success| F{Check action + confidence}
     F -->|duplicate >= 0.85| G[Comment + Close as not_planned]
     F -->|resolved >= 0.85| H[Comment + Close as completed]
-    F -->|auto_fix >= 0.70| I[Comment + Add polly label]
+    F -->|auto_fix >= 0.70| I[Comment + Add POLLI label]
     F -->|skip / below threshold| C
-    I --> J[issue-polly-auto-fix.yml triggered]
+    I --> J[repo-auto-fix-polli-issues.yml triggered]
 ```
 
 ### Model Routing (Auto-Fix)
@@ -41,9 +40,8 @@ flowchart TD
 
 ## Project Management
 
-- **project-manager.yml** - AI-powered auto-kanban. Classifies issues/PRs and routes to Dev/Support/Apps projects with priority.
-- **issue-close-discarded.yml** - Auto-closes issues marked "Discarded" in project (hourly).
-- **pr-update-project-status.yml** - Updates PR status in project (In Progress/In Review/Done/Discarded).
+- **repo-organize-issues-prs.yml** - AI-powered auto-kanban. Classifies issues/PRs and routes to Dev/Support/Apps projects with priority.
+- **repo-close-discarded-issues.yml** - Auto-closes issues marked "Discarded" in project (hourly).
 
 ### Project Manager (Auto-Kanban)
 
@@ -58,7 +56,7 @@ Routes issues and PRs to the appropriate project board using AI classification:
 **Features:**
 
 - **PRs always go to Dev**: Every pull request routes to Dev #20 regardless of author. Gets a single `DEV-*` label.
-- **TIER-\* bypass**: Items with `TIER-*` labels skip AI classification and route directly to Apps project
+- **App bypass**: `APP-SUBMISSION` issues skip AI classification and route directly to the Apps project
 - **NEWS skip**: Items with `NEWS` label are skipped entirely (label is used by the social pipeline, not project routing)
 - AI classification via `gen.pollinations.ai` with retry + random seed
 - Sets Priority field on Support items (see [Priority Rules](#priority-rules))
@@ -82,7 +80,7 @@ Priority is only set on Support items. The AI picks one of two values; `Urgent` 
 ```mermaid
 %%{init: {'theme': 'dark'}}%%
 flowchart TD
-    A[Issue/PR Opened] --> AA{Has TIER-* label?}
+    A[Issue/PR Opened] --> AA{Has APP-SUBMISSION?}
     AA -->|Yes| AB[Add to Apps #23]
     AB --> AC[Done - skip AI]
     AA -->|No| AN{Has NEWS label?}
@@ -117,20 +115,20 @@ flowchart TD
 ```mermaid
 %%{init: {'theme': 'dark'}}%%
 flowchart TD
-    A[PR opened] --> B[pr-assign-author.yml]
+    A[PR opened] --> B[repo-assign-pr-author.yml]
     B --> C[Author assigned]
-    C --> D[project-manager.yml]
+    C --> D[repo-organize-issues-prs.yml]
     D --> E[Always routed to Dev #20]
 ```
 
-### AI Assistant (Polly)
+### AI Assistant (Polli)
 
 ```mermaid
 %%{init: {'theme': 'dark'}}%%
 flowchart TD
-    A[User mentions 'polly' in issue/PR/comment] --> B{User whitelisted?}
+    A[User mentions '!polli' in issue/PR/comment] --> B{User whitelisted?}
     B -->|No| C[Posts unauthorized message]
-    B -->|Yes| D[pr-issue-assistant.yml]
+    B -->|Yes| D[repo-polli-assistant.yml]
     D --> E[Starts pollinations.ai router]
     E --> F[Claude Code Action responds]
     F --> G[AI assists with code/questions]
@@ -155,15 +153,14 @@ flowchart TD
 
 ### Apps Project Labels (App Submissions)
 
-Any `TIER-*` labeled issue routes to the Apps project (#23). The state machine:
+`APP-SUBMISSION` issues route to the Apps project (#23). AI pre-review provides evidence for a human decision; the issue body remains the publishing source.
 
-| Label                 | Purpose                           | Applied by                                         |
-| --------------------- | --------------------------------- | -------------------------------------------------- |
-| `TIER-APP`            | New app submission                | Issue template                                     |
-| `TIER-APP-INCOMPLETE` | Needs user action (info/register) | `app-review-submission.yml`                        |
-| `TIER-APP-REVIEW`     | Issue awaiting maintainer review  | `app-review-submission.yml` (stripped on approval) |
-| `TIER-APP-APPROVED`   | Maintainer approved, PR created   | Maintainer (manual)                                |
-| `TIER-APP-REJECTED`   | Submission rejected               | `app-review-submission.yml`                        |
+| Label              | Purpose                         | Applied by                       |
+| ------------------ | ------------------------------- | -------------------------------- |
+| `APP-SUBMISSION`   | Persistent app submission type  | Issue template                   |
+| `APP-NEEDS-INFO`   | Submitter action needed         | `apps-review-submissions.yml`    |
+| `APP-REVIEW`       | Ready for maintainer review     | `apps-review-submissions.yml`    |
+| `APP-APPROVED`     | Approved for catalog publishing | Maintainer                       |
 
 ### Dev Labels
 
@@ -203,9 +200,6 @@ Any `TIER-*` labeled issue routes to the Apps project (#23). The state machine:
 | `CREDITS` | Pollen balance and usage quota issues | `project-manager.py` |
 | `BILLING` | Payment/credit card   | `project-manager.py` |
 | `ACCOUNT` | Account/login/auth    | `project-manager.py` |
-| `TIER`    | Account-level Pollen wallet balance and usage-limit questions | `project-manager.py` |
-
-(`TIER` is unrelated to the `TIER-APP-*` family used for app submissions.)
 
 ### News Labels
 
@@ -213,4 +207,4 @@ The `NEWS` label is used by the social pipeline (`social/` workflows), not by Pr
 
 | Label  | Purpose                | Applied by                                          |
 | ------ | ---------------------- | --------------------------------------------------- |
-| `NEWS` | News/social content PR | `readme-daily-update.yml`, `NEWS_summary.yml`, etc. |
+| `NEWS` | News/social content PR | `docs-update-readme-news.yml`, `news-generate-summary.yml`, etc. |

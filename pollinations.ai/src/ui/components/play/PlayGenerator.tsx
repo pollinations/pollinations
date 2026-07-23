@@ -742,7 +742,7 @@ export function PlayGenerator({
             <div className="flex flex-wrap gap-2 mb-6">
                 <Button
                     as="a"
-                    href={LINKS.enter}
+                    href={LINKS.enterKeys}
                     target="_blank"
                     rel="noopener noreferrer"
                     variant="primary"

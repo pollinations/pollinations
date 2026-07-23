@@ -1,9 +1,19 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { syncImageEnv } from "../../src/image/env.ts";
-import { callOpenRouterGrokImagineProAPI } from "../../src/image/models/openRouterImageModel.ts";
+import {
+    callOpenRouterGeminiImageAPI,
+    callOpenRouterGrokImagineProAPI,
+    mapOpenRouterGeminiImageUsage,
+} from "../../src/image/models/openRouterImageModel.ts";
 import type { ImageParams } from "../../src/image/params.ts";
 
 const OPENROUTER_IMAGE_URL = "https://openrouter.ai/api/v1/images";
+const REFERENCE_IMAGE_URL = "https://example.com/reference.png";
+const PNG = Buffer.from(
+    "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=",
+    "base64",
+);
+const PNG_DATA_URI = `data:image/png;base64,${PNG.toString("base64")}`;
 
 const baseParams: ImageParams = {
     model: "grok-imagine-pro",
@@ -133,5 +143,217 @@ describe("OpenRouter Grok Imagine Pro", () => {
             status: 502,
             upstreamUrl: OPENROUTER_IMAGE_URL,
         });
+    });
+});
+
+const geminiUsage = {
+    prompt_tokens: 9,
+    completion_tokens: 1290,
+    total_tokens: 1299,
+    cost: 0.0387027,
+    is_byok: false,
+    prompt_tokens_details: {},
+    completion_tokens_details: {
+        reasoning_tokens: 0,
+        image_tokens: 1290,
+    },
+};
+
+function mockGeminiFetch(
+    requests: Record<string, unknown>[],
+    usage: Record<string, unknown> = geminiUsage,
+) {
+    return vi
+        .spyOn(globalThis, "fetch")
+        .mockImplementation(async (url, init) => {
+            const href = typeof url === "string" ? url : url.toString();
+            if (href === REFERENCE_IMAGE_URL) {
+                return new Response(PNG, {
+                    status: 200,
+                    headers: { "Content-Type": "image/png" },
+                });
+            }
+            if (href !== OPENROUTER_IMAGE_URL) {
+                return new Response("unexpected URL", { status: 404 });
+            }
+
+            requests.push(
+                JSON.parse(init?.body as string) as Record<string, unknown>,
+            );
+            return Response.json({
+                data: [
+                    {
+                        b64_json: PNG.toString("base64"),
+                        media_type: "image/png",
+                    },
+                ],
+                usage,
+            });
+        });
+}
+
+describe("OpenRouter Gemini image", () => {
+    it("pins NanoBanana to Google Vertex with no fallback", async () => {
+        syncImageEnv(
+            { OPENROUTER_API_KEY: "openrouter-test-key" } as CloudflareBindings,
+            ["OPENROUTER_API_KEY"],
+        );
+        const requests: Record<string, unknown>[] = [];
+        mockGeminiFetch(requests);
+
+        const result = await callOpenRouterGeminiImageAPI("test prompt", {
+            ...baseParams,
+            model: "nanobanana",
+            width: 1024,
+            height: 1024,
+        });
+
+        expect(requests).toEqual([
+            {
+                model: "google/gemini-2.5-flash-image",
+                prompt: "test prompt",
+                n: 1,
+                aspect_ratio: "1:1",
+                seed: 42,
+                provider: {
+                    only: ["google-vertex/global"],
+                    allow_fallbacks: false,
+                },
+            },
+        ]);
+        expect(result.trackingData).toEqual({
+            actualModel: "nanobanana",
+            usage: {
+                promptTextTokens: 9,
+                completionImageTokens: 1290,
+            },
+        });
+    });
+
+    it("validates and inlines edit images while preserving exact combined input billing", async () => {
+        syncImageEnv(
+            { OPENROUTER_API_KEY: "openrouter-test-key" } as CloudflareBindings,
+            ["OPENROUTER_API_KEY"],
+        );
+        const requests: Record<string, unknown>[] = [];
+        mockGeminiFetch(requests, {
+            ...geminiUsage,
+            prompt_tokens: 1302,
+            total_tokens: 2592,
+            cost: 0.0390906,
+        });
+
+        const result = await callOpenRouterGeminiImageAPI("edit prompt", {
+            ...baseParams,
+            model: "nanobanana",
+            width: 1280,
+            height: 720,
+            image: [REFERENCE_IMAGE_URL],
+        });
+
+        expect(requests[0]).toEqual({
+            model: "google/gemini-2.5-flash-image",
+            prompt: "edit prompt",
+            n: 1,
+            aspect_ratio: "16:9",
+            seed: 42,
+            provider: {
+                only: ["google-vertex/global"],
+                allow_fallbacks: false,
+            },
+            input_references: [
+                {
+                    type: "image_url",
+                    image_url: { url: PNG_DATA_URI },
+                },
+            ],
+        });
+        expect(result.trackingData.usage).toEqual({
+            promptTextTokens: 1302,
+            completionImageTokens: 1290,
+        });
+    });
+
+    it("maps input-image tokens when OpenRouter supplies the split", () => {
+        expect(
+            mapOpenRouterGeminiImageUsage({
+                ...geminiUsage,
+                prompt_tokens: 1302,
+                total_tokens: 2592,
+                prompt_tokens_details: { image_tokens: 1290 },
+            }),
+        ).toEqual({
+            promptTextTokens: 12,
+            promptImageTokens: 1290,
+            completionImageTokens: 1290,
+        });
+    });
+
+    it("rejects invalid usage instead of underbilling", async () => {
+        syncImageEnv(
+            { OPENROUTER_API_KEY: "openrouter-test-key" } as CloudflareBindings,
+            ["OPENROUTER_API_KEY"],
+        );
+        mockGeminiFetch([], {
+            prompt_tokens: 9,
+            completion_tokens: 1290,
+            total_tokens: 9999,
+            completion_tokens_details: { image_tokens: 1290 },
+        });
+
+        await expect(
+            callOpenRouterGeminiImageAPI("test prompt", {
+                ...baseParams,
+                model: "nanobanana",
+            }),
+        ).rejects.toMatchObject({ status: 502 });
+    });
+
+    it("preserves content-policy rejections as client errors", async () => {
+        syncImageEnv(
+            { OPENROUTER_API_KEY: "openrouter-test-key" } as CloudflareBindings,
+            ["OPENROUTER_API_KEY"],
+        );
+        vi.spyOn(globalThis, "fetch").mockResolvedValue(
+            Response.json({
+                data: [],
+                error: {
+                    message: "Image rejected by provider content policy",
+                    metadata: { error_type: "content_policy_violation" },
+                },
+            }),
+        );
+
+        await expect(
+            callOpenRouterGeminiImageAPI("test prompt", {
+                ...baseParams,
+                model: "nanobanana",
+            }),
+        ).rejects.toMatchObject({
+            status: 400,
+            message: "Image rejected by provider content policy",
+        });
+    });
+
+    it("rejects more than three reference images before fetching", async () => {
+        syncImageEnv(
+            { OPENROUTER_API_KEY: "openrouter-test-key" } as CloudflareBindings,
+            ["OPENROUTER_API_KEY"],
+        );
+        const fetchSpy = vi.spyOn(globalThis, "fetch");
+
+        await expect(
+            callOpenRouterGeminiImageAPI("edit prompt", {
+                ...baseParams,
+                model: "nanobanana",
+                image: [
+                    REFERENCE_IMAGE_URL,
+                    REFERENCE_IMAGE_URL,
+                    REFERENCE_IMAGE_URL,
+                    REFERENCE_IMAGE_URL,
+                ],
+            }),
+        ).rejects.toMatchObject({ status: 400 });
+        expect(fetchSpy).not.toHaveBeenCalled();
     });
 });

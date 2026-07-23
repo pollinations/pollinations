@@ -1,0 +1,35 @@
+{
+  "pr_number": 12647,
+  "title": "Reorganise polli, trim the prompt, and fix a batch of tool bugs",
+  "author": "Itachi-1824",
+  "url": "https://github.com/pollinations/pollinations/pull/12647",
+  "merged_at": "2026-07-23T17:51:27Z",
+  "labels": [],
+  "pr_body_excerpt": "Started as a cleanup of `apps/polli` and turned into a proper pass over the bot. All of this is running on the VM already.\n\n**Reorg.** `src/` was flat with a `services/` folder that had become a dumping ground. Grouped by concern instead — `core`, `ai`, `discord`, `integrations`, `search`, `utils`. Mostly file moves, so the diff is big but there's little new logic. Also folded settings into one `config.json` and dropped the in-bot embedding code now that indexing runs in CI.\n\n**Prompt is ~25% smaller per call.** The system prompt was re-listing every tool and every code_search action that the schemas already describe — cut the duplication, kept the routing judgment the schemas can't express. `github_issue`/`pr`/`project` now use real action enums instead of prose, which also lets non-admins stop seeing merge/approve. Checked the tool-choice on a batch of real questions before and after; it doesn't change.\n\n**Tool fixes along the way:**\n- `discord_search` 400'd on any query with a mention — it was overwriting the `mentions` param (a snowflake) with a dict.\n- x.com/twitter.com links returned the login wall as a successful scrape. Routed through fxtwitter, and now a login wall is reported as a failure instead of fake content.\n- A failed tool call could be retried with identical args forever. It now short-circuits, and when the model loops it's shown what it already searched so it can change tack.\n- Diagrams: a ```mermaid fence in a reply renders inline, no tool call needed.\n\n**Deploy.** Added a workflow that auto-deploys to the VM whenever `apps/polli` changes (replaces the old disabled one, which pointed at the previous VPS).\n\n`bot_username` is unchanged.\n",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Polli stopped chasing her tail",
+    "blurb": "Polli got a garden-shed reorganization and a much shorter instruction manual. She now handles mentions, X links, looping tool calls, and Mermaid diagrams with considerably less ceremonial buzzing.",
+    "summary": "Reorganized the Polli Discord bot by concern, cut duplicated tool instructions from its system prompt by about 25%, fixed mention searches and X/Twitter scraping, prevented identical failed tool-call loops, and added inline Mermaid rendering.",
+    "impact": "Discord users get more reliable searches involving mentions, usable X/Twitter link results via fxtwitter, inline diagrams from Mermaid fences, and a bot that can change course instead of retrying the same failed call forever.",
+    "keywords": [
+      "polli",
+      "discord",
+      "tool-calling",
+      "mermaid",
+      "search",
+      "twitter",
+      "prompt"
+    ],
+    "visual_concept": "Depict Polli tending a neatly reorganized garden-workshop of labeled tool drawers and code-plants, with a small looping vine cut short to represent stopped retry loops. A CRT monitor robot happily displays a clean Mermaid flowchart and a fxtwitter-style bird link card, while a tiny Discord mention tag is correctly sorted into a search basket.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a happy smile, and small rounded light-blue translucent wings, wearing tiny librarian glasses as she organizes labeled tool drawers and trims a looping code-vine in a garden hackerspace. A cheerful chunky CRT monitor robot displays a simple Mermaid diagram while code-plants, flowers, a correctly filed @mention tag, and a bird-link card glow beside prominent lime green (#ecf874) shelves; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-23/PR-12647.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a happy smile, and small rounded light-blue translucent wings, wearing tiny librarian glasses as she organizes labeled tool drawers and trims a looping code-vine in a garden hackerspace. A cheerful chunky CRT monitor robot displays a simple Mermaid diagram while code-plants, flowers, a correctly filed @mention tag, and a bird-link card glow beside prominent lime green (#ecf874) shelves; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, nostalgic but beautiful."
+  },
+  "generated_at": "2026-07-23T17:52:28.868518+00:00"
+}

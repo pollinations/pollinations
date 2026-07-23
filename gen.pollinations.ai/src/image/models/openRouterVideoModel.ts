@@ -4,7 +4,11 @@ import { getImageEnv } from "../env.ts";
 import { HttpError } from "../httpError.ts";
 import type { ImageParams } from "../params.ts";
 import { sleep } from "../util.ts";
-import { closestRatioLogSpace } from "../utils/aspectRatio.ts";
+import {
+    ASPECT_RATIOS,
+    closestAspectRatio,
+    closestRatioLogSpace,
+} from "../utils/aspectRatio.ts";
 import { fetchUpstream } from "../utils/fetchUpstream.ts";
 
 const logOps = debug("pollinations:openrouter-video:ops");
@@ -12,9 +16,11 @@ const logError = debug("pollinations:openrouter-video:error");
 
 const OPENROUTER_VIDEO_URL = "https://openrouter.ai/api/v1/videos";
 const HAPPYHORSE_MODEL = "alibaba/happyhorse-1.1";
+const GROK_VIDEO_MODEL = "x-ai/grok-imagine-video";
 const POLL_INTERVAL_MS = 3000;
 const MAX_POLL_DELAY_MS = 30000;
-const POLL_TIMEOUT_MS = 5 * 60 * 1000;
+const HAPPYHORSE_POLL_TIMEOUT_MS = 5 * 60 * 1000;
+const GROK_POLL_TIMEOUT_MS = 3 * 60 * 1000;
 const HAPPYHORSE_ASPECT_RATIOS = [
     "16:9",
     "9:16",
@@ -71,14 +77,6 @@ export async function callHappyHorseAPI(
     prompt: string,
     safeParams: ImageParams,
 ): Promise<VideoGenerationResult> {
-    const apiKey = getImageEnv("OPENROUTER_API_KEY");
-    if (!apiKey) {
-        throw new HttpError(
-            "OPENROUTER_API_KEY environment variable is required",
-            500,
-        );
-    }
-
     const duration = resolveDuration(safeParams.duration);
     const requestBody: Record<string, unknown> = {
         model: HAPPYHORSE_MODEL,
@@ -97,6 +95,112 @@ export async function callHappyHorseAPI(
                 frame_type: "first_frame",
             },
         ];
+    }
+
+    const { buffer, providerCost } = await generateOpenRouterVideo(
+        requestBody,
+        HAPPYHORSE_POLL_TIMEOUT_MS,
+    );
+
+    logOps("HappyHorse generation complete", {
+        duration,
+        providerCost,
+        bufferSize: buffer.length,
+    });
+
+    return {
+        buffer,
+        mimeType: "video/mp4",
+        durationSeconds: duration,
+        trackingData: {
+            actualModel: "happyhorse-1.1",
+            usage: { completionVideoSeconds: duration },
+        },
+    };
+}
+
+function resolveGrokDuration(duration?: number): number {
+    const resolved = Math.min(Math.max(duration || 5, 1), 15);
+    if (!Number.isInteger(resolved)) {
+        throw new HttpError(
+            "Grok Video Pro duration must be an integer from 1 to 15 seconds",
+            400,
+        );
+    }
+    return resolved;
+}
+
+function resolveGrokAspectRatio(safeParams: ImageParams): string | undefined {
+    if (
+        !safeParams.dimensionsExplicit &&
+        safeParams.aspectRatio &&
+        ASPECT_RATIOS.some(({ label }) => label === safeParams.aspectRatio)
+    ) {
+        return safeParams.aspectRatio;
+    }
+    return closestAspectRatio(safeParams.width, safeParams.height);
+}
+
+export async function callOpenRouterGrokVideoAPI(
+    prompt: string,
+    safeParams: ImageParams,
+): Promise<VideoGenerationResult> {
+    const duration = resolveGrokDuration(safeParams.duration);
+    const requestBody: Record<string, unknown> = {
+        model: GROK_VIDEO_MODEL,
+        prompt,
+        resolution: "720p",
+        duration,
+    };
+
+    const aspectRatio = resolveGrokAspectRatio(safeParams);
+    if (aspectRatio) requestBody.aspect_ratio = aspectRatio;
+
+    if (safeParams.image?.[0]) {
+        requestBody.frame_images = [
+            {
+                type: "image_url",
+                image_url: { url: safeParams.image[0] },
+                frame_type: "first_frame",
+            },
+        ];
+    }
+
+    const { buffer, providerCost } = await generateOpenRouterVideo(
+        requestBody,
+        GROK_POLL_TIMEOUT_MS,
+    );
+
+    logOps("Grok Video Pro generation complete", {
+        duration,
+        providerCost,
+        bufferSize: buffer.length,
+    });
+
+    return {
+        buffer,
+        mimeType: "video/mp4",
+        durationSeconds: duration,
+        trackingData: {
+            actualModel: "grok-video-pro",
+            usage: {
+                ...(safeParams.image?.[0] ? { promptImageTokens: 1 } : {}),
+                completionVideoSeconds: duration,
+            },
+        },
+    };
+}
+
+async function generateOpenRouterVideo(
+    requestBody: Record<string, unknown>,
+    pollTimeoutMs: number,
+): Promise<{ buffer: Buffer; providerCost?: number | null }> {
+    const apiKey = getImageEnv("OPENROUTER_API_KEY");
+    if (!apiKey) {
+        throw new HttpError(
+            "OPENROUTER_API_KEY environment variable is required",
+            500,
+        );
     }
 
     const submitResponse = await fetchUpstream(OPENROUTER_VIDEO_URL, {
@@ -118,7 +222,11 @@ export async function callHappyHorseAPI(
         );
     }
 
-    const completed = await pollVideo(submitted.polling_url, apiKey);
+    const completed = await pollVideo(
+        submitted.polling_url,
+        apiKey,
+        pollTimeoutMs,
+    );
     const videoUrl = completed.unsigned_urls?.[0];
     if (!videoUrl) {
         throw new HttpError(
@@ -139,29 +247,19 @@ export async function callHappyHorseAPI(
     });
     const buffer = Buffer.from(await downloadResponse.arrayBuffer());
 
-    logOps("HappyHorse generation complete", {
-        duration,
-        providerCost: completed.usage?.cost,
-        bufferSize: buffer.length,
-    });
-
     return {
         buffer,
-        mimeType: "video/mp4",
-        durationSeconds: duration,
-        trackingData: {
-            actualModel: "happyhorse-1.1",
-            usage: { completionVideoSeconds: duration },
-        },
+        providerCost: completed.usage?.cost,
     };
 }
 
 async function pollVideo(
     pollingUrl: string,
     apiKey: string,
+    timeoutMs: number,
 ): Promise<OpenRouterVideoResponse> {
     const url = new URL(pollingUrl, OPENROUTER_VIDEO_URL).toString();
-    const deadline = Date.now() + POLL_TIMEOUT_MS;
+    const deadline = Date.now() + timeoutMs;
 
     while (Date.now() < deadline) {
         const response = await fetch(url, {

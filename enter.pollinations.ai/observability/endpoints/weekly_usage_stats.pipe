@@ -19,7 +19,7 @@ SQL >
         sum(token_count_prompt_text + token_count_completion_text) AS total_tokens,
         sum(total_price) AS revenue_usd,
         sum(total_cost) AS cost_usd,
-        uniq(if(user_id != 'undefined' AND user_id != '', user_id, NULL)) AS active_users,
+        uniq(user_id) AS active_users,
         if(active_users > 0, total_tokens / active_users, 0) AS tokens_per_user,
         if(active_users > 0, total_requests / active_users, 0) AS requests_per_user
     FROM generation_event_v2

@@ -90,7 +90,7 @@ client → gen.pollinations.ai → upstream provider
          enter.pollinations.ai (dashboard, auth, Stripe surfaces)
 ```
 
-**Generation does not go through Enter, and neither does billing tracking.** Gen reads the shared D1/KV bindings directly to validate tokens, check balances, and apply model permissions. Gen also sends the `generation_event` directly to Tinybird (`gen.pollinations.ai/src/middleware/track.ts:290`). The `ENTER` service binding is invoked in only three places:
+**Generation does not go through Enter, and neither does billing tracking.** Gen reads the shared D1/KV bindings directly to validate tokens, check balances, and apply model permissions. Gen also sends `generation_event_v2` directly to Tinybird (`gen.pollinations.ai/src/middleware/track.ts`). The `ENTER` service binding is invoked in only three places:
 
 | File:line | Call site purpose |
 |---|---|
@@ -225,7 +225,7 @@ Provider/runtime secrets (Azure, OpenAI, OpenRouter API keys, etc.) belong in `g
 | `shared/registry/registry.ts` | `convertUsage()` — where missing cost keys log `[registry] Missing conversion rate`. `completionReasoningTokens` is rewritten to `completionTextTokens` **before** the rate lookup (line 118), so it never produces this warning. If you see the warning for reasoning, it actually means `completionTextTokens` is missing. |
 | `shared/registry/usage-headers.ts` | `x-usage-*` header builder/parser; defines every typed usage field (13 total) |
 | `shared/registry/price-helpers.ts` | `perMillion()`, `priceMultiplier` math (`price = usage × cost × priceMultiplier`, rounded to 8 decimals) |
-| `gen.pollinations.ai/src/middleware/track.ts` | Builds the `generation_event` row sent to Tinybird; cache HITs are flagged `isBilledUsage: false` (line 395) |
+| `gen.pollinations.ai/src/middleware/track.ts` | Builds the `generation_event_v2` row sent to Tinybird; cache hits and unauthenticated requests are omitted |
 | `enter.pollinations.ai/frontend/src/components/models/model-info.ts` + `frontend/public/brand-logos/*.svg` | Catalog brand-to-logo mapping and monochrome SVG assets |
 
 ### `priceMultiplier`

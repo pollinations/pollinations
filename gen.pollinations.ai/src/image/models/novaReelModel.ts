@@ -1,11 +1,11 @@
 import debug from "debug";
+import type { VideoGenerationResult } from "../createAndReturnVideos.ts";
 import { getImageEnv } from "../env.ts";
 import { HttpError } from "../httpError.ts";
 import type { ImageParams } from "../params.ts";
 import { sleep } from "../util.ts";
 import { downloadUserImage } from "../utils/imageDownload.ts";
 import { transformImage } from "../utils/imageTransform.ts";
-import type { VideoGenerationResult } from "./veoVideoModel.ts";
 
 const logOps = debug("pollinations:nova-reel:ops");
 const logError = debug("pollinations:nova-reel:error");

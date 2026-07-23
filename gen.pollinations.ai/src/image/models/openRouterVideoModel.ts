@@ -10,6 +10,8 @@ import {
     closestRatioLogSpace,
 } from "../utils/aspectRatio.ts";
 import { fetchUpstream } from "../utils/fetchUpstream.ts";
+import { toDataUri } from "../utils/imageDownload.ts";
+import { calculateVideoResolution } from "../utils/videoResolution.ts";
 
 const logOps = debug("pollinations:openrouter-video:ops");
 const logError = debug("pollinations:openrouter-video:error");
@@ -17,10 +19,12 @@ const logError = debug("pollinations:openrouter-video:error");
 const OPENROUTER_VIDEO_URL = "https://openrouter.ai/api/v1/videos";
 const HAPPYHORSE_MODEL = "alibaba/happyhorse-1.1";
 const GROK_VIDEO_MODEL = "x-ai/grok-imagine-video";
+const VEO_MODEL = "google/veo-3.1-fast";
 const POLL_INTERVAL_MS = 3000;
 const MAX_POLL_DELAY_MS = 30000;
 const HAPPYHORSE_POLL_TIMEOUT_MS = 5 * 60 * 1000;
 const GROK_POLL_TIMEOUT_MS = 3 * 60 * 1000;
+const VEO_POLL_TIMEOUT_MS = 3 * 60 * 1000;
 const HAPPYHORSE_ASPECT_RATIOS = [
     "16:9",
     "9:16",
@@ -189,6 +193,95 @@ export async function callOpenRouterGrokVideoAPI(
             },
         },
     };
+}
+
+function resolveVeoDuration(duration?: number): 4 | 6 | 8 {
+    const resolved = duration ?? 4;
+    if (resolved !== 4 && resolved !== 6 && resolved !== 8) {
+        throw new HttpError("Veo duration must be 4, 6, or 8 seconds", 400);
+    }
+    return resolved;
+}
+
+async function generateOpenRouterVeo(
+    resolution: "720p" | "1080p",
+    actualModel: "veo" | "veo-1080p",
+    prompt: string,
+    safeParams: ImageParams,
+): Promise<VideoGenerationResult> {
+    const duration = resolveVeoDuration(safeParams.duration);
+    const generateAudio = safeParams.audio === true;
+    const { aspectRatio } = calculateVideoResolution({
+        width: safeParams.width,
+        height: safeParams.height,
+        aspectRatio: safeParams.aspectRatio,
+    });
+    const requestBody: Record<string, unknown> = {
+        model: VEO_MODEL,
+        prompt,
+        resolution,
+        aspect_ratio: aspectRatio,
+        duration,
+        generate_audio: generateAudio,
+    };
+
+    if (safeParams.image.length > 0) {
+        const frameImages = [
+            {
+                type: "image_url",
+                image_url: { url: await toDataUri(safeParams.image[0]) },
+                frame_type: "first_frame",
+            },
+        ];
+        if (safeParams.image[1]) {
+            frameImages.push({
+                type: "image_url",
+                image_url: { url: await toDataUri(safeParams.image[1]) },
+                frame_type: "last_frame",
+            });
+        }
+        requestBody.frame_images = frameImages;
+    }
+
+    const { buffer, providerCost } = await generateOpenRouterVideo(
+        requestBody,
+        VEO_POLL_TIMEOUT_MS,
+    );
+
+    logOps("Veo generation complete", {
+        actualModel,
+        duration,
+        generateAudio,
+        providerCost,
+        bufferSize: buffer.length,
+    });
+
+    return {
+        buffer,
+        mimeType: "video/mp4",
+        durationSeconds: duration,
+        trackingData: {
+            actualModel,
+            usage: {
+                completionVideoSeconds: duration,
+                ...(generateAudio ? { completionAudioSeconds: duration } : {}),
+            },
+        },
+    };
+}
+
+export function callOpenRouterVeoAPI(
+    prompt: string,
+    safeParams: ImageParams,
+): Promise<VideoGenerationResult> {
+    return generateOpenRouterVeo("720p", "veo", prompt, safeParams);
+}
+
+export function callOpenRouterVeo1080pAPI(
+    prompt: string,
+    safeParams: ImageParams,
+): Promise<VideoGenerationResult> {
+    return generateOpenRouterVeo("1080p", "veo-1080p", prompt, safeParams);
 }
 
 async function generateOpenRouterVideo(

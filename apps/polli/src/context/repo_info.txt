@@ -48,7 +48,7 @@ User auths with GitHub → redirect back with `#api_key=sk_...` in URL fragment.
 
 ## Pricing
 
-$1 = 1 Pollen | BETA: 2x on Stripe purchases ($5=10 pollen) | Checkout: checkout.pollinations.ai
+$1 = 1 Pollen | Checkout: checkout.pollinations.ai (see the order summary there for any active bonus)
 Fields: promptTextTokens, completionTextTokens, promptCachedTokens (discounted), completionImageTokens (flat for diffusion, per-token for LLM), completionVideoSeconds/completionVideoTokens
 Cached responses: FREE (no pollen deducted) | Headers: x-cache HIT/MISS
 

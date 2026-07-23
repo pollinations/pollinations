@@ -111,5 +111,12 @@
         "outputDir": "dist",
         "title": "SlidePainter",
         "description": "AI-powered slide image generator by Pollinations"
+    },
+    "robot-dj": {
+        "subdomain": "robot-dj",
+        "buildCommand": null,
+        "outputDir": ".",
+        "title": "Robot DJ",
+        "description": "A camera-aware AI DJ for your local music library"
     }
 }

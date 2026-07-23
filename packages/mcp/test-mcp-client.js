@@ -3,8 +3,7 @@ import path from "node:path";
 /**
  * End-to-end smoke test for the Pollinations MCP server.
  *
- * Spawns the server over stdio, lists tools, and exercises a small slice
- * (auth + a live text + image-URL call) using a sk_ key from env.
+ * Spawns the server over stdio, lists tools, and exercises a small live slice.
  *
  *   POLLINATIONS_API_KEY=sk_xxx npm run test
  */
@@ -17,7 +16,8 @@ const KEY = process.env.POLLINATIONS_API_KEY;
 
 const transport = new StdioClientTransport({
     command: "node",
-    args: [path.join(__dirname, "pollinations-mcp.js")],
+    args: [path.join(__dirname, "src/index.js")],
+    env: KEY ? { POLLINATIONS_API_KEY: KEY } : undefined,
 });
 const client = new Client(
     { name: "mcp-smoke-test", version: "0.0.1" },
@@ -46,47 +46,107 @@ async function call(name, args = {}) {
     if (res.isError) {
         throw new Error(res.content?.[0]?.text || "tool error");
     }
-    return res.content?.[0]?.text;
+    return res.content || [];
+}
+
+async function callText(name, args = {}) {
+    const content = await call(name, args);
+    return content.find((item) => item.type === "text")?.text;
 }
 
 await client.connect(transport);
 
 await step("listTools", async () => {
     const { tools } = await client.listTools();
-    if (tools.length < 15) throw new Error(`only ${tools.length} tools`);
+    const expected = [
+        "chatCompletion",
+        "generateImage",
+        "generateVideo",
+        "getBalance",
+        "getUsage",
+        "listModels",
+        "textToSpeech",
+        "transcribeAudio",
+    ];
+    const actual = tools.map((tool) => tool.name).sort();
+    if (JSON.stringify(actual) !== JSON.stringify(expected)) {
+        throw new Error(`unexpected tools: ${actual.join(", ")}`);
+    }
+    const byName = Object.fromEntries(tools.map((tool) => [tool.name, tool]));
+    const videoRequired = byName.generateVideo.inputSchema.required || [];
+    if (!videoRequired.includes("model")) {
+        throw new Error("generateVideo.model must be required");
+    }
+    if (byName.chatCompletion.inputSchema.additionalProperties === false) {
+        throw new Error(
+            "chatCompletion must pass unknown Gen parameters through",
+        );
+    }
     return `${tools.length} tools`;
 });
 
-await step("listTextModels (unauthenticated)", () => call("listTextModels"));
+await step("listModels (unauthenticated)", () => callText("listModels"));
 
 if (!KEY) {
     console.log(
         "\nSkipping authenticated calls — set POLLINATIONS_API_KEY=sk_… to exercise the full path.",
     );
 } else {
-    await step("setApiKey", () => call("setApiKey", { key: KEY }));
-    await step("getKeyInfo", () => call("getKeyInfo"));
-    await step("generateText", async () => {
-        const out = await call("generateText", {
-            prompt: "Reply with exactly: pong",
-            model: "openai-fast",
+    await step("chatCompletion", async () => {
+        const out = await callText("chatCompletion", {
+            messages: [
+                {
+                    role: "user",
+                    content: "Reply with exactly: pong",
+                },
+            ],
         });
         if (!/pong/i.test(out)) throw new Error(`unexpected: ${trim(out)}`);
         return out;
     });
-    await step("generateImageUrl", async () => {
-        const out = await call("generateImageUrl", {
+    await step("generateImage URL", async () => {
+        const out = await callText("generateImage", {
             prompt: "a small red apple",
             model: "flux",
             width: 256,
             height: 256,
+            output: "url",
         });
         if (!/pollinations\.ai/.test(out))
             throw new Error(`no URL: ${trim(out)}`);
         return out;
     });
-    await step("getBalance", () => call("getBalance"));
-    await step("clearApiKey", () => call("clearApiKey"));
+    await step("textToSpeech", async () => {
+        const content = await call("textToSpeech", {
+            input: "MCP speech test.",
+            voice: "alloy",
+            response_format: "mp3",
+        });
+        const audio = content.find((item) => item.type === "audio");
+        if (!audio?.data) throw new Error("no audio content returned");
+        return `${audio.mimeType}, ${audio.data.length} base64 chars`;
+    });
+    await step("transcribeAudio", async () => {
+        const out = await callText("transcribeAudio", {
+            audioUrl:
+                "https://raw.githubusercontent.com/openai/whisper/main/tests/jfk.flac",
+            model: "whisper-large-v3",
+        });
+        if (!out) throw new Error("no transcription returned");
+        return "transcription returned";
+    });
+    await step("getBalance", async () => {
+        if (!(await callText("getBalance"))) {
+            throw new Error("no balance response returned");
+        }
+        return "balance response returned";
+    });
+    await step("getUsage", async () => {
+        if (!(await callText("getUsage", { days: 1, limit: 1 }))) {
+            throw new Error("no usage response returned");
+        }
+        return "usage response returned";
+    });
 }
 
 await client.close();

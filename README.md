@@ -154,7 +154,10 @@ Add this to your MCP client configuration:
   "mcpServers": {
     "pollinations": {
       "command": "npx",
-      "args": ["@pollinations/mcp"]
+      "args": ["@pollinations/mcp"],
+      "env": {
+        "POLLINATIONS_API_KEY": "sk_your_key_here"
+      }
     }
   }
 }
@@ -172,9 +175,9 @@ AI assistants can:
 
 - Generate images from text descriptions
 - Create text-to-speech audio with various voice options
-- Play audio responses through the system speakers
+- Run OpenAI-compatible text and multimodal chat completions
 - Access all pollinations.ai models and services
-- List available models, voices, and capabilities
+- List available models and capabilities
 
 **For more advanced usage, check out our [API documentation](APIDOCS.md).**
 

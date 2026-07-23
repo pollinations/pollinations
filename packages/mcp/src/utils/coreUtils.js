@@ -1,20 +1,11 @@
-import { getAuthHeaders, getAuthQueryParam } from "./authUtils.js";
+import { getAuthHeaders } from "./authUtils.js";
 
 export const API_BASE_URL = "https://gen.pollinations.ai";
 
-/**
- * @param {Array} content - Array of content objects (text, image, etc.)
- * @returns {Object} - MCP response object
- */
 export function createMCPResponse(content) {
     return { content };
 }
 
-/**
- * @param {string|Object} text - Text content or object to stringify
- * @param {boolean} [stringify=false] - Whether to stringify the text if it's an object
- * @returns {Object} - Text content object
- */
 export function createTextContent(text, stringify = false) {
     return {
         type: "text",
@@ -22,11 +13,6 @@ export function createTextContent(text, stringify = false) {
     };
 }
 
-/**
- * @param {string} data - Base64-encoded image data
- * @param {string} mimeType - MIME type of the image
- * @returns {Object} - Image content object
- */
 export function createImageContent(data, mimeType) {
     return {
         type: "image",
@@ -35,11 +21,6 @@ export function createImageContent(data, mimeType) {
     };
 }
 
-/**
- * @param {string} data - Base64-encoded audio data
- * @param {string} mimeType - MIME type of the audio
- * @returns {Object} - Audio content object
- */
 export function createAudioContent(data, mimeType) {
     return {
         type: "audio",
@@ -48,18 +29,9 @@ export function createAudioContent(data, mimeType) {
     };
 }
 
-/**
- * @param {string} path - URL path (will be appended to API_BASE_URL)
- * @param {Object} params - Query parameters
- * @param {boolean} includeAuth - Whether to include auth query param (default: false, prefer headers)
- * @returns {string} - Complete URL
- */
-export function buildUrl(path, params = {}, includeAuth = false) {
+export function buildUrl(path, params = {}) {
     const url = new URL(path, API_BASE_URL);
-    const allParams = includeAuth
-        ? { ...params, ...getAuthQueryParam() }
-        : params;
-    Object.entries(allParams).forEach(([key, value]) => {
+    Object.entries(params).forEach(([key, value]) => {
         if (value !== undefined && value !== null) {
             url.searchParams.set(key, String(value));
         }
@@ -67,55 +39,15 @@ export function buildUrl(path, params = {}, includeAuth = false) {
     return url.toString();
 }
 
-/**
- * @param {string} path - URL path (will be appended to API_BASE_URL)
- * @param {Object} params - Query parameters (auth key will be excluded)
- * @returns {string} - Complete URL without auth
- */
-export function buildShareableUrl(path, params = {}) {
-    const url = new URL(path, API_BASE_URL);
-    Object.entries(params).forEach(([key, value]) => {
-        if (
-            value !== undefined &&
-            value !== null &&
-            key !== "key" &&
-            key !== "token"
-        ) {
-            url.searchParams.set(key, String(value));
-        }
-    });
-    return url.toString();
-}
-
-/**
- * @param {string} url - URL to fetch
- * @param {Object} options - Fetch options (can include timeoutMs)
- * @returns {Promise<Response>} - Fetch response
- */
 export async function fetchWithAuth(url, options = {}) {
-    const headers = {
-        ...options.headers,
-        ...getAuthHeaders(),
-    };
-    const timeoutMs = options.timeoutMs || 30000;
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
-    try {
-        return await fetch(url, {
-            ...options,
-            headers,
-            signal: controller.signal,
-        });
-    } finally {
-        clearTimeout(timeoutId);
-    }
+    const { timeoutMs = 30000, ...fetchOptions } = options;
+    return fetch(url, {
+        ...fetchOptions,
+        headers: { ...fetchOptions.headers, ...getAuthHeaders() },
+        signal: AbortSignal.timeout(timeoutMs),
+    });
 }
 
-/**
- * @param {string} url - URL to fetch
- * @param {Object} options - Fetch options
- * @returns {Promise<Object>} - Parsed JSON response
- */
 export async function fetchJsonWithAuth(url, options = {}) {
     const response = await fetchWithAuth(url, options);
     if (!response.ok) {
@@ -125,95 +57,25 @@ export async function fetchJsonWithAuth(url, options = {}) {
     return response.json();
 }
 
-/**
- * Run a vision/audio/video chat-completion prompt against /v1/chat/completions.
- * Consolidates the shared boilerplate across describeImage/analyzeVideo/transcribeAudio.
- *
- * @param {Object} args
- * @param {string} args.model - Model name (e.g. "openai", "gemini-large")
- * @param {string} args.prompt - Text prompt to pair with the media
- * @param {"image_url"|"video_url"|"input_audio"} args.mediaType - Content-block kind
- * @param {string} args.mediaUrl - URL of the media to analyze
- * @returns {Promise<{content: string, model: string}>}
- */
-export async function chatWithMedia({ model, prompt, mediaType, mediaUrl }) {
-    const mediaBlock =
-        mediaType === "input_audio"
-            ? { type: "input_audio", input_audio: { url: mediaUrl } }
-            : { type: mediaType, [mediaType]: { url: mediaUrl } };
-
-    const response = await fetchWithAuth(
-        `${API_BASE_URL}/v1/chat/completions`,
-        {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-                model,
-                messages: [
-                    {
-                        role: "user",
-                        content: [{ type: "text", text: prompt }, mediaBlock],
-                    },
-                ],
-            }),
-        },
-    );
-
-    if (!response.ok) {
-        const errorText = await response.text().catch(() => "Unknown error");
-        throw new Error(parseApiError(response.status, errorText));
-    }
-
-    const result = await response.json();
-    return {
-        content: result.choices?.[0]?.message?.content || "",
-        model: result.model || model,
-    };
-}
-
-/**
- * POST a chat-completion request body to /v1/chat/completions.
- * Strips null/undefined keys, reuses the 30s timeout in fetchWithAuth, and maps
- * errors (with the dedicated rate-limit message). Returns the raw Response so
- * callers can shape the JSON themselves.
- *
- * @param {Object} body - Request body (null/undefined fields are stripped)
- * @returns {Promise<Response>} - Raw fetch response (already checked for !ok)
- */
 export async function postChatCompletion(body) {
-    const cleanedBody = {};
-    for (const [key, value] of Object.entries(body)) {
-        if (value !== undefined && value !== null) {
-            cleanedBody[key] = value;
-        }
-    }
-
     const response = await fetchWithAuth(
         `${API_BASE_URL}/v1/chat/completions`,
         {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(cleanedBody),
+            body: JSON.stringify(body),
             timeoutMs: 30000,
         },
     );
 
     if (!response.ok) {
         const errorText = await response.text().catch(() => "Unknown error");
-        if (response.status === 429) {
-            throw new Error("Rate limited. Please wait before retrying.");
-        }
         throw new Error(parseApiError(response.status, errorText));
     }
 
     return response;
 }
 
-/**
- * @param {string} url - URL to fetch
- * @param {Object} options - Fetch options
- * @returns {Promise<{buffer: ArrayBuffer, contentType: string}>} - Binary data and content type
- */
 export async function fetchBinaryWithAuth(url, options = {}) {
     const response = await fetchWithAuth(url, options);
     if (!response.ok) {
@@ -226,57 +88,17 @@ export async function fetchBinaryWithAuth(url, options = {}) {
     return { buffer, contentType };
 }
 
-/**
- * @param {ArrayBuffer} buffer - Array buffer to convert
- * @returns {string} - Base64 encoded string
- */
 export function arrayBufferToBase64(buffer) {
     return Buffer.from(buffer).toString("base64");
 }
 
-/**
- * @param {number} status - HTTP status code
- * @param {string} errorText - Raw error text from response
- * @returns {string} - User-friendly error message
- */
 export function parseApiError(status, errorText) {
-    let parsed = null;
+    let parsed;
     try {
         parsed = JSON.parse(errorText);
     } catch {}
-    const errorMessage =
+    const error =
         parsed?.error?.message || parsed?.message || parsed?.error || errorText;
-    switch (status) {
-        case 400:
-            if (
-                errorMessage.toLowerCase().includes("content moderation") ||
-                errorMessage.toLowerCase().includes("safety") ||
-                errorMessage.toLowerCase().includes("blocked")
-            ) {
-                return `Content blocked by safety filters. Try rephrasing your prompt or disable 'safe' mode if appropriate.`;
-            }
-            if (errorMessage.toLowerCase().includes("invalid model")) {
-                return `Invalid model specified. Use listImageModels or listTextModels to see available options.`;
-            }
-            return `Bad request: ${errorMessage}`;
-        case 401:
-            return `Authentication failed. Please set a valid API key using setApiKey. Get your key at https://enter.pollinations.ai/keys`;
-        case 403:
-            return `Access forbidden. Your API key may not have permission for this operation.`;
-        case 404:
-            return `Resource not found. The requested endpoint or model may not exist.`;
-        case 429:
-            return (
-                `Rate limited. You're making too many requests. ` +
-                `If using pk_ (publishable) key, consider upgrading to sk_ (secret) key for higher limits.`
-            );
-        case 500:
-            return `Server error: ${errorMessage}. Please try again later.`;
-        case 502:
-        case 503:
-        case 504:
-            return `Service temporarily unavailable. Please try again in a few moments.`;
-        default:
-            return `Request failed (${status}): ${errorMessage}`;
-    }
+    const message = typeof error === "string" ? error : JSON.stringify(error);
+    return `Request failed (${status}): ${message}`;
 }

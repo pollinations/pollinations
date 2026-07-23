@@ -110,6 +110,14 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.00000009,
     },
   },
+  "csm-1b": {
+    "cost": {
+      "completionAudioTokens": 0.000007,
+    },
+    "price": {
+      "completionAudioTokens": 0.000007,
+    },
+  },
   "deepseek": {
     "cost": {
       "completionTextTokens": 0.00000028,

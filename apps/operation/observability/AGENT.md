@@ -191,7 +191,7 @@ FROM (
     user_github_id,
     minIf(start_time, selected_meter_slug IN ('v1:meter:tier', 'local:tier')) as first_tier,
     minIf(start_time, selected_meter_slug IN ('v1:meter:pack', 'local:pack')) as first_pack
-  FROM generation_event
+  FROM generation_event_v2
   WHERE environment = 'production' AND total_price > 0
   GROUP BY user_github_id
   HAVING first_tier IS NOT NULL

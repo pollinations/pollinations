@@ -28,7 +28,7 @@ const resolver = <T extends Parameters<typeof baseResolver>[0]>(schema: T) =>
 
 import { UpstreamError } from "@shared/error.ts";
 import { validator } from "@shared/middleware/validator.ts";
-import { ELEVENLABS_VOICES } from "@shared/registry/audio.ts";
+import { AUDIO_VOICES } from "@shared/registry/audio.ts";
 import {
     DEFAULT_IMAGE_MODEL,
     getImageModelIds,
@@ -919,7 +919,7 @@ export const proxyRoutes = new Hono<Env>()
                 "",
                 "**Text-to-speech (default):** Returns spoken audio in the selected voice and format.",
                 "",
-                `**Available voices:** ${ELEVENLABS_VOICES.join(", ")}`,
+                `**Available voices:** ${AUDIO_VOICES.join(", ")}`,
                 "",
                 "**Output formats:** mp3 (default), opus, aac, flac, wav, pcm",
                 "",
@@ -951,7 +951,7 @@ export const proxyRoutes = new Hono<Env>()
             "query",
             z.object({
                 voice: z
-                    .enum(ELEVENLABS_VOICES as unknown as [string, ...string[]])
+                    .enum(AUDIO_VOICES as unknown as [string, ...string[]])
                     .default("alloy")
                     .meta({
                         description:
@@ -963,7 +963,7 @@ export const proxyRoutes = new Hono<Env>()
                     .default("mp3")
                     .meta({
                         description:
-                            "Audio output format (TTS only). Qwen TTS currently returns WAV regardless of this setting; eleven-sfx supports mp3 only (other values are rejected).",
+                            "Audio output format (TTS only). CSM supports mp3, opus, flac, wav, and pcm; Qwen TTS currently returns WAV regardless of this setting; eleven-sfx supports mp3 only.",
                         example: "mp3",
                     }),
                 model: z.string().optional().meta({

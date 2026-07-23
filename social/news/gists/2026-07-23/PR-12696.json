@@ -1,0 +1,35 @@
+{
+  "pr_number": 12696,
+  "title": "refactor: route Grok Video Pro through OpenRouter",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/12696",
+  "merged_at": "2026-07-23T16:23:15Z",
+  "labels": [],
+  "pr_body_excerpt": "- Routes `grok-video-pro` and `grok-imagine-video` to the exact `x-ai/grok-imagine-video` OpenRouter endpoint. OpenRouter exposes one provider (xAI), so there is no fallback.\n- Preserves 720p, 1–15 seconds, seven aspect ratios, first-frame animation, paid-only access, and the current $0.07/output-second + $0.002/input-image prices. Enforces a deliberate 3-minute failsafe instead of the legacy retry loop, whose mislabeled timing could stretch to about 21 minutes. Removes the now-unused direct xAI video adapter; basic Grok image routes are unchanged.\n- Local E2E passed canonical/alias text-to-video, horizontal/vertical MP4, start-frame animation, cache MISS/HIT, validation, media inspection, and staging Tinybird billing (`provider=openrouter`, $0.07 text, $0.072 start-frame). Raw upstream usage contains only `cost` and `is_byok`; cost matches static per-second billing.\n- Capacity note: current production peak passed 4/4 in 38–68s. In a 5-way saturation run, 4/5 finished in 38–41s and the fifth queued past 120s. Keep the 3-minute failsafe and monitor headroom.\n- Tests: 551 focused registry, image, billing, tracking, VCR, safety, and permission tests; typecheck; Biome. Follow-up duration edge-case tests also pass.\n",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Grok takes the open route",
+    "blurb": "Grok Video Pro found a cleaner path through OpenRouter, without dropping any of its favorite tricks. Same frames, formats, and prices; fewer opportunities for a request to wander the garden for 21 minutes.",
+    "summary": "Routed both `grok-video-pro` and `grok-imagine-video` through OpenRouter's `x-ai/grok-imagine-video` endpoint, preserving 720p output, 1–15 second clips, seven aspect ratios, first-frame animation, paid access, and existing $0.07/output-second plus $0.002/input-image billing while adding a deliberate 3-minute failsafe.",
+    "impact": "Video users keep the same Grok generation features and pricing, with requests now using the OpenRouter xAI provider and a predictable three-minute maximum wait instead of the legacy retry behavior that could run for roughly 21 minutes.",
+    "keywords": [
+      "grok",
+      "video-generation",
+      "openrouter",
+      "xai",
+      "timeouts",
+      "billing",
+      "reliability"
+    ],
+    "visual_concept": "Depict Grok video requests as little film reels and first-frame picture cards traveling through a friendly OpenRouter garden gate toward an xAI-powered retro video workstation. Polli, wearing a tiny director's beret, points at a cozy three-minute sand timer while code-plants grow around the routing path; the scene represents preserved video capabilities with a clearer, bounded route.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow bee mascot with dark brown stripes, black antennae, black oval eyes, bright pink rectangular cheek blush, a happy smile, rounded light-blue translucent wings, and a tiny director's beret, guiding film reels and a picture-card first frame through a lime green (#ecf874) OpenRouter garden gate toward a warm CRT video workstation labeled \"xAI\"; a friendly three-minute pixel sand timer sits beside blooming code-plants and pastel flowers. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, subtle CRT glow, dark purple (#110518) outlines, emotionally warm and nostalgic."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-23/PR-12696.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow bee mascot with dark brown stripes, black antennae, black oval eyes, bright pink rectangular cheek blush, a happy smile, rounded light-blue translucent wings, and a tiny director's beret, guiding film reels and a picture-card first frame through a lime green (#ecf874) OpenRouter garden gate toward a warm CRT video workstation labeled \"xAI\"; a friendly three-minute pixel sand timer sits beside blooming code-plants and pastel flowers. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, subtle CRT glow, dark purple (#110518) outlines, emotionally warm and nostalgic."
+  },
+  "generated_at": "2026-07-23T16:24:18.249963+00:00"
+}

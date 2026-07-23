@@ -219,20 +219,20 @@ test("catalog prices expose 3D flat output generation rates", () => {
     }
 });
 
-test("catalog models resolve 3D brand logo SVG assets", () => {
-    const model3dPrices = getModelPricesFromCatalog(getModel3dModelsInfo());
-    const expectedLogoByBrand = new Map([
-        ["Microsoft", "/brand-logos/microsoft.svg"],
-        ["Deemos", "/brand-logos/deemos.svg"],
-    ]);
+test("catalog models resolve brand logo SVG assets", () => {
+    const logoAssets = new Set(
+        Object.keys(
+            import.meta.glob("../frontend/public/brand-logos/*.svg"),
+        ).map((file) => file.replace("../frontend/public", "")),
+    );
+    const missingLogos = getCatalogModelPrices().flatMap((model) => {
+        const logoPath = getModelBrandLogoPath(model);
+        return logoPath && logoAssets.has(logoPath)
+            ? []
+            : [{ name: model.name, brand: model.brand, logoPath }];
+    });
 
-    expect(model3dPrices.length).toBeGreaterThan(0);
-
-    for (const modelPrice of model3dPrices) {
-        expect(getModelBrandLogoPath(modelPrice)).toBe(
-            expectedLogoByBrand.get(modelPrice.brand ?? ""),
-        );
-    }
+    expect(missingLogos).toEqual([]);
 });
 
 test("model info exposes public capabilities without raw implementation flags", () => {

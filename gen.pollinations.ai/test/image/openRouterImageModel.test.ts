@@ -230,6 +230,84 @@ describe("OpenRouter Gemini image", () => {
         });
     });
 
+    it("routes NanoBanana 2 at the matching resolution and reasoning tier", async () => {
+        syncImageEnv(
+            { OPENROUTER_API_KEY: "openrouter-test-key" } as CloudflareBindings,
+            ["OPENROUTER_API_KEY"],
+        );
+        const requests: Record<string, unknown>[] = [];
+        mockGeminiFetch(requests, {
+            prompt_tokens: 12,
+            completion_tokens: 2536,
+            total_tokens: 2548,
+            cost: 0.151254,
+            prompt_tokens_details: {},
+            completion_tokens_details: {
+                reasoning_tokens: 4,
+                image_tokens: 2520,
+            },
+        });
+
+        const result = await callOpenRouterGeminiImageAPI("test prompt", {
+            ...baseParams,
+            model: "nanobanana-2",
+            width: 1920,
+            height: 1080,
+            reasoning: "pro",
+        });
+
+        expect(requests).toEqual([
+            {
+                model: "google/gemini-3.1-flash-image",
+                prompt: "test prompt",
+                n: 1,
+                aspect_ratio: "16:9",
+                seed: 42,
+                provider: {
+                    only: ["google-vertex/global"],
+                    allow_fallbacks: false,
+                },
+                resolution: "2K",
+                reasoning_effort: "high",
+            },
+        ]);
+        expect(result.trackingData).toEqual({
+            actualModel: "nanobanana-2",
+            usage: {
+                promptTextTokens: 12,
+                completionTextTokens: 12,
+                completionReasoningTokens: 4,
+                completionImageTokens: 2520,
+            },
+        });
+    });
+
+    it.each([
+        [1024, 1024, "1K"],
+        [1920, 1080, "2K"],
+        [3840, 2160, "4K"],
+    ] as const)("maps %sx%s NanoBanana 2 requests to %s", async (width, height, expectedResolution) => {
+        syncImageEnv(
+            {
+                OPENROUTER_API_KEY: "openrouter-test-key",
+            } as CloudflareBindings,
+            ["OPENROUTER_API_KEY"],
+        );
+        const requests: Record<string, unknown>[] = [];
+        mockGeminiFetch(requests);
+
+        await callOpenRouterGeminiImageAPI("test prompt", {
+            ...baseParams,
+            model: "nanobanana-2",
+            width,
+            height,
+            reasoning: "fast",
+        });
+
+        expect(requests[0].resolution).toBe(expectedResolution);
+        expect(requests[0].reasoning_effort).toBe("low");
+    });
+
     it("validates and inlines edit images while preserving exact combined input billing", async () => {
         syncImageEnv(
             { OPENROUTER_API_KEY: "openrouter-test-key" } as CloudflareBindings,

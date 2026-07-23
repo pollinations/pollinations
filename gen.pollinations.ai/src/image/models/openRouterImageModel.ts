@@ -14,14 +14,32 @@ const logError = debug("pollinations:openrouter-image:error");
 
 const OPENROUTER_IMAGE_URL = "https://openrouter.ai/api/v1/images";
 const GROK_IMAGINE_QUALITY_MODEL = "x-ai/grok-imagine-image-quality";
+type GeminiImageConfig = {
+    upstreamModel: string;
+    provider: string;
+    maxReferenceImages: number;
+    generator: string;
+    resolution: "none" | "tiered" | "1K";
+    reasoning: boolean;
+};
 const GEMINI_IMAGE_CONFIGS = {
     nanobanana: {
         upstreamModel: "google/gemini-2.5-flash-image",
         provider: "google-vertex/global",
         maxReferenceImages: 3,
         generator: "Vertex AI Gemini 2.5 Flash Image",
+        resolution: "none",
+        reasoning: false,
     },
-} as const;
+    "nanobanana-2": {
+        upstreamModel: "google/gemini-3.1-flash-image",
+        provider: "google-vertex/global",
+        maxReferenceImages: 14,
+        generator: "Vertex AI Gemini 3.1 Flash Image",
+        resolution: "tiered",
+        reasoning: true,
+    },
+} as const satisfies Record<string, GeminiImageConfig>;
 const GEMINI_ASPECT_RATIOS = [
     { ratio: 1, label: "1:1" },
     { ratio: 16 / 9, label: "16:9" },
@@ -122,6 +140,37 @@ export function mapOpenRouterGeminiImageUsage(
     addUsage(mapped, "completionReasoningTokens", completionReasoningTokens);
     addUsage(mapped, "completionImageTokens", completionImageTokens);
     return mapped;
+}
+
+function resolveGeminiImageResolution(
+    config: GeminiImageConfig,
+    safeParams: ImageParams,
+): "1K" | "2K" | "4K" | undefined {
+    if (config.resolution === "none") return undefined;
+    if (config.resolution === "1K") return "1K";
+
+    const totalPixels = safeParams.width * safeParams.height;
+    const tiers = [
+        { name: "1K" as const, pixels: 1024 * 1024 },
+        { name: "2K" as const, pixels: 1920 * 1080 },
+        { name: "4K" as const, pixels: 3840 * 2160 },
+    ];
+    return tiers.reduce((closest, tier) =>
+        Math.abs(tier.pixels - totalPixels) <
+        Math.abs(closest.pixels - totalPixels)
+            ? tier
+            : closest,
+    ).name;
+}
+
+function resolveGeminiReasoningEffort(
+    config: GeminiImageConfig,
+    safeParams: ImageParams,
+): "low" | "high" | undefined {
+    if (!config.reasoning || safeParams.reasoning === "balanced") {
+        return undefined;
+    }
+    return safeParams.reasoning === "fast" ? "low" : "high";
 }
 
 export async function callOpenRouterGrokImagineProAPI(
@@ -239,6 +288,10 @@ export async function callOpenRouterGeminiImageAPI(
             allow_fallbacks: false,
         },
     };
+    const resolution = resolveGeminiImageResolution(config, safeParams);
+    if (resolution) requestBody.resolution = resolution;
+    const reasoningEffort = resolveGeminiReasoningEffort(config, safeParams);
+    if (reasoningEffort) requestBody.reasoning_effort = reasoningEffort;
 
     if (safeParams.image.length > 0) {
         const inputReferences = [];

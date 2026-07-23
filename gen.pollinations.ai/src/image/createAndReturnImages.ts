@@ -743,7 +743,8 @@ const generateImage = async (
             }
         }
 
-        case "nanobanana": {
+        case "nanobanana":
+        case "nanobanana-2": {
             logError(
                 "Nano Banana authentication check:",
                 formatAuthInfo(userInfo),
@@ -765,7 +766,6 @@ const generateImage = async (
             }
         }
 
-        case "nanobanana-2":
         case "nanobanana-2-lite":
         case "nanobanana-pro": {
             logError(

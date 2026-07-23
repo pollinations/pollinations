@@ -6,6 +6,7 @@ import {
     Textarea,
     XIcon,
 } from "@pollinations/ui";
+import { BaseModelInput } from "./base-model-input.tsx";
 import type { AgentFormState, McpServerRow } from "./types.ts";
 
 export function PromptAgentFields({
@@ -50,18 +51,13 @@ export function PromptAgentFields({
 
             <FieldStack
                 label="Base model"
-                helper="A Pollinations text model id the agent runs on, e.g. openai or claude."
+                helper="Pick a Pollinations text model or type any model ID."
                 alignLabelRow
             >
-                <Input
-                    name="prompt-agent-base-model"
+                <BaseModelInput
                     value={form.baseModel}
-                    placeholder="openai"
-                    autoComplete="off"
-                    autoCapitalize="none"
-                    spellCheck={false}
                     disabled={disabled}
-                    onChange={(e) => onChange("baseModel", e.target.value)}
+                    onChange={(value) => onChange("baseModel", value)}
                 />
             </FieldStack>
 

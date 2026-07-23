@@ -26,27 +26,27 @@ SQL >
         max(start_time) as last_request_at,
         -- Completion tokens per second of full request duration. response_time
         -- now covers the whole streamed response (see #12378), so no separate
-        -- generation-only column is needed. Cache hits are excluded since they
-        -- return full token counts in near-zero time. The same condition is
-        -- used for both sums so numerator and denominator cover identical rows.
+        -- generation-only column is needed. generation_event_v2 contains no
+        -- cache hits. The same condition is used for both sums so numerator
+        -- and denominator cover identical rows.
         if(
             sumIf(
                 response_time,
-                response_status >= 200 AND response_status < 300 AND cache_hit = false
+                response_status >= 200 AND response_status < 300
                 AND (token_count_completion_text > 0 OR token_count_completion_reasoning > 0)
                 AND response_time > 0
             ) > 0,
             round(
                 sumIf(
                     toUInt64(token_count_completion_text) + toUInt64(token_count_completion_reasoning),
-                    response_status >= 200 AND response_status < 300 AND cache_hit = false
+                    response_status >= 200 AND response_status < 300
                     AND (token_count_completion_text > 0 OR token_count_completion_reasoning > 0)
                     AND response_time > 0
                 )
                 / (
                     sumIf(
                         response_time,
-                        response_status >= 200 AND response_status < 300 AND cache_hit = false
+                        response_status >= 200 AND response_status < 300
                         AND (token_count_completion_text > 0 OR token_count_completion_reasoning > 0)
                         AND response_time > 0
                     ) / 1000

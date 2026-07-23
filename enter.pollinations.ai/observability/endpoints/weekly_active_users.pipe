@@ -24,8 +24,6 @@ SQL >
         {% else %}
         start_time >= now() - INTERVAL {{Int32(weeks_back, 12)}} WEEK
         {% end %}
-    AND user_id != 'undefined'
-    AND user_id != ''
     GROUP BY week_start
     ORDER BY week_start ASC
 

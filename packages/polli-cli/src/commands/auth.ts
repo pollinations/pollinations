@@ -26,7 +26,10 @@ interface ProfileResponse {
 }
 
 interface BalanceResponse {
-    balance?: number;
+    total?: number;
+    allowance?: number;
+    pack?: number;
+    currency?: string;
 }
 
 interface DeviceCodeResponse {
@@ -270,7 +273,7 @@ export async function showAuthStatus(): Promise<void> {
         authenticated: true,
         key: masked,
         name: profile.githubUsername ?? "unknown",
-        pollen: balance?.balance ?? "unknown",
+        pollen: balance?.total ?? "unknown",
     });
 }
 

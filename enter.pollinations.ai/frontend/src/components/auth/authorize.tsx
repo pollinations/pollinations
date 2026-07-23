@@ -342,14 +342,12 @@ export function Authorize() {
     useEffect(() => {
         if (!user) return;
 
-        apiClient.customer.balance
+        apiClient.account.balance
             .$get()
             .then((response) => (response.ok ? response.json() : null))
             .then((data) => {
                 if (!data) return;
-                setTotalBalance(
-                    (data.tierBalance ?? 0) + (data.packBalance ?? 0),
-                );
+                setTotalBalance(data.total);
             })
             .catch(() => {});
     }, [user]);

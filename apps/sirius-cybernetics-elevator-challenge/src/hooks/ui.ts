@@ -123,7 +123,7 @@ export function useBYOP() {
                 });
                 if (!res.ok) return;
                 const data = await res.json();
-                setBalance({ balance: data.balance });
+                setBalance({ balance: data.total });
             } catch {
                 // Balance fetch failed silently
             }

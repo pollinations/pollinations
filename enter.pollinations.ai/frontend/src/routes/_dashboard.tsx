@@ -32,7 +32,7 @@ export const Route = createFileRoute("/_dashboard")({
 
         const [
             apiKeysResult,
-            d1BalanceResult,
+            balanceResult,
             profileResult,
             billingState,
             earningsTodayResult,
@@ -40,7 +40,7 @@ export const Route = createFileRoute("/_dashboard")({
             apiClient["api-keys"]
                 .$get()
                 .then((r) => (r.ok ? r.json() : { data: [] })),
-            apiClient.customer.balance
+            apiClient.account.balance
                 .$get()
                 .then((r) => (r.ok ? r.json() : null)),
             apiClient.account.profile
@@ -64,8 +64,8 @@ export const Route = createFileRoute("/_dashboard")({
                 sessionUser.githubUsername ??
                 "",
             apiKeys: (apiKeysResult.data || []) as ApiKey[],
-            tierBalance: d1BalanceResult?.tierBalance ?? 0,
-            packBalance: d1BalanceResult?.packBalance ?? 0,
+            tierBalance: balanceResult?.allowance ?? 0,
+            packBalance: balanceResult?.pack ?? 0,
             communityEndpointsAllowed:
                 profileResult?.communityEndpointsAllowed ?? false,
             billingState,

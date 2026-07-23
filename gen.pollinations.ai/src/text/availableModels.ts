@@ -346,6 +346,14 @@ const models: ModelDefinition[] = [
         ),
     },
     {
+        name: "longcat",
+        config: portkeyConfig["meituan/longcat-2.0"],
+        transform: pipe(
+            sanitizeToolSchemas,
+            createReasoningEffortTransform("toggle"),
+        ),
+    },
+    {
         name: "mimo-v2.5",
         config: portkeyConfig["xiaomi/mimo-v2.5"],
         transform: stripCacheControl,

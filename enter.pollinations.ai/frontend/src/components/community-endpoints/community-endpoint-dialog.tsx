@@ -26,7 +26,6 @@ import {
     savedEndpointPriceKeys,
     visiblePriceFieldKeys,
 } from "./price-table.tsx";
-import { PromptAgentFields } from "./prompt-agent-fields.tsx";
 import {
     type ActionState,
     type CommunityEndpoint,
@@ -37,26 +36,12 @@ import {
     emptyForm,
     endpointToForm,
     idleAction,
-    MCP_SERVER_NAME_PATTERN,
-    type McpServerRow,
+    type ManagedAgent,
     nextFormState,
     providerModelHelper,
     readError,
     toEndpointPayload,
 } from "./types.ts";
-
-function isValidMcpRow(row: McpServerRow): boolean {
-    const name = row.name.trim();
-    const url = row.url.trim();
-    // Fully-empty rows are dropped on submit, so treat them as valid here.
-    if (!name && !url) return true;
-    try {
-        new URL(url);
-    } catch {
-        return false;
-    }
-    return MCP_SERVER_NAME_PATTERN.test(name);
-}
 
 function ToggleButton({
     active,
@@ -93,6 +78,7 @@ function ToggleButton({
 type CommunityEndpointDialogProps = {
     /** Present in edit mode (prefills the form); omit to create. */
     endpoint?: CommunityEndpoint;
+    agents: ManagedAgent[];
     // Allowlisted owners can choose Public. Everyone else sees the same
     // lifecycle control with Public disabled.
     canPublish: boolean;
@@ -105,6 +91,7 @@ type CommunityEndpointDialogProps = {
 
 export function CommunityEndpointDialog({
     endpoint,
+    agents,
     canPublish,
     open,
     onOpenChange,
@@ -167,37 +154,12 @@ export function CommunityEndpointDialog({
         setForm((current) => ({
             ...current,
             mode,
-            modality: mode === "prompt-agent" ? "text" : current.modality,
+            modality: mode === "agent" ? "text" : current.modality,
+            agentId:
+                mode === "agent" ? current.agentId || agents[0]?.id || "" : "",
         }));
         setTestState(idleAction);
         setError(null);
-    }
-
-    function updateMcpServer(
-        index: number,
-        key: keyof McpServerRow,
-        value: string,
-    ): void {
-        setForm((current) => ({
-            ...current,
-            mcpServers: current.mcpServers.map((row, i) =>
-                i === index ? { ...row, [key]: value } : row,
-            ),
-        }));
-    }
-
-    function addMcpServer(): void {
-        setForm((current) => ({
-            ...current,
-            mcpServers: [...current.mcpServers, { name: "", url: "" }],
-        }));
-    }
-
-    function removeMcpServer(index: number): void {
-        setForm((current) => ({
-            ...current,
-            mcpServers: current.mcpServers.filter((_, i) => i !== index),
-        }));
     }
 
     async function handleFetchModels(): Promise<void> {
@@ -298,11 +260,6 @@ export function CommunityEndpointDialog({
             const payload = toEndpointPayload(
                 formWithVisiblePrices(form, visiblePriceKeys),
             );
-            // Agent configuration is immutable after creation. Metadata and
-            // visibility can still be edited without redeploying the worker.
-            if (isEdit && endpoint?.promptAgent) {
-                payload.promptAgent = undefined;
-            }
             await onSubmit(payload, form.bearerToken.trim());
             onOpenChange(false);
         } catch (thrown) {
@@ -321,11 +278,9 @@ export function CommunityEndpointDialog({
     // reveals the test + pricing section immediately. Private models carry no
     // pricing (owner is the only caller).
     const isShared = form.visibility === "public";
-    // A prompt agent is platform-deployed: the worker doesn't exist until
-    // saved, so there is no create-time endpoint to test.
-    const isPromptAgent = form.mode === "prompt-agent";
+    const isManagedAgent = form.mode === "agent";
     const returnedFields =
-        isShared && !isPromptAgent
+        isShared && !isManagedAgent
             ? returnedPriceFields(testState, form.modality, form.imagePricing)
             : [];
     // Reveal the modality's base price plus whatever the test observed or the
@@ -352,13 +307,10 @@ export function CommunityEndpointDialog({
     // pricing entirely. External endpoints always need a token to be callable
     // at all.
     const alreadyPublic = isEdit && endpoint?.visibility === "public";
-    // Prompt agents can't be endpoint-tested before they exist, so publishing
-    // one gates on pricing only.
-    const needsTest = isShared && !alreadyPublic && !isPromptAgent;
+    const needsTest = isShared && !alreadyPublic && !isManagedAgent;
     const testRequirementMet =
         testState.status === "success" && returnedFields.length > 0;
-    // A prompt agent mints and manages its own worker token — no bearer token.
-    const saveRequirementMet = isPromptAgent
+    const saveRequirementMet = isManagedAgent
         ? true
         : needsTest
           ? testRequirementMet && (isEdit || hasToken)
@@ -370,11 +322,8 @@ export function CommunityEndpointDialog({
             : modelOptions.filter((model) =>
                   model.toLowerCase().includes(providerModelQuery),
               );
-    const hasValidMcpServers = form.mcpServers.every(isValidMcpRow);
-    const modeRequirementsMet = isPromptAgent
-        ? form.systemPrompt.trim() !== "" &&
-          form.baseModel.trim() !== "" &&
-          hasValidMcpServers
+    const modeRequirementsMet = isManagedAgent
+        ? form.agentId !== ""
         : form.baseUrl.trim() !== "";
     const canSubmit =
         !isSubmitting &&
@@ -397,15 +346,14 @@ export function CommunityEndpointDialog({
                     {isEdit ? "Edit Model" : "Add Model"}
                 </DialogTitle>
                 <p className="mt-1 text-sm text-theme-text-muted">
-                    {form.mode === "prompt-agent" ? (
+                    {form.mode === "agent" ? (
                         <>
-                            Deploy a no-code agent — a system prompt over a base
-                            model, with optional built-in tools and MCP servers
-                            — as a{" "}
+                            Register an existing managed agent as a{" "}
                             <code>
                                 {"{username}"}/{"{model-id}"}
                             </code>{" "}
-                            model. Pollinations hosts and runs it.
+                            model. Editing the agent later keeps this listing
+                            unchanged.
                         </>
                     ) : (
                         <>
@@ -432,8 +380,8 @@ export function CommunityEndpointDialog({
                         <FieldStack
                             label="How to register"
                             helper={
-                                isPromptAgent
-                                    ? "Pollinations deploys and runs a prompt agent for you — no endpoint or token needed."
+                                isManagedAgent
+                                    ? "Choose an agent you created above."
                                     : "Point at your own OpenAI-compatible endpoint. You host and run it."
                             }
                             alignLabelRow
@@ -446,16 +394,17 @@ export function CommunityEndpointDialog({
                                     External endpoint
                                 </ToggleButton>
                                 <ToggleButton
-                                    active={isPromptAgent}
-                                    onClick={() => updateMode("prompt-agent")}
+                                    active={isManagedAgent}
+                                    disabled={agents.length === 0}
+                                    onClick={() => updateMode("agent")}
                                 >
-                                    Prompt agent
+                                    Managed agent
                                 </ToggleButton>
                             </div>
                         </FieldStack>
                     )}
 
-                    {!isPromptAgent && (
+                    {!isManagedAgent && (
                         <FieldStack
                             label="Modality"
                             helper={
@@ -573,15 +522,36 @@ export function CommunityEndpointDialog({
                         </ButtonGroup>
                     </FieldStack>
 
-                    {isPromptAgent ? (
-                        <PromptAgentFields
-                            form={form}
-                            disabled={isEdit}
-                            onChange={updateForm}
-                            onAddMcp={addMcpServer}
-                            onUpdateMcp={updateMcpServer}
-                            onRemoveMcp={removeMcpServer}
-                        />
+                    {isManagedAgent ? (
+                        <FieldStack
+                            label="Agent"
+                            helper={
+                                isEdit
+                                    ? "The registered agent cannot be replaced. Edit its definition in My Agents."
+                                    : "Only unlisted agents are available."
+                            }
+                            alignLabelRow
+                        >
+                            <select
+                                name="managed-agent"
+                                value={form.agentId}
+                                disabled={isEdit}
+                                required
+                                className="h-10 w-full rounded-md border border-divider bg-surface px-3 text-sm text-theme-text-strong disabled:opacity-60"
+                                onChange={(event) =>
+                                    updateForm("agentId", event.target.value)
+                                }
+                            >
+                                <option value="" disabled>
+                                    Choose an agent
+                                </option>
+                                {agents.map((agent) => (
+                                    <option key={agent.id} value={agent.id}>
+                                        {agent.name}
+                                    </option>
+                                ))}
+                            </select>
+                        </FieldStack>
                     ) : (
                         <>
                             <div className="grid gap-4 sm:grid-cols-2">
@@ -851,11 +821,11 @@ export function CommunityEndpointDialog({
                             : isEdit
                               ? "Save Model"
                               : isShared
-                                ? isPromptAgent
-                                    ? "Publish Agent"
+                                ? isManagedAgent
+                                    ? "Register Agent"
                                     : "Publish Model"
-                                : isPromptAgent
-                                  ? "Add Private Agent"
+                                : isManagedAgent
+                                  ? "Register Private Agent"
                                   : "Add Private Model"}
                     </Button>
                 </div>

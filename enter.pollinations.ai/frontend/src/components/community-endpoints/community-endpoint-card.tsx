@@ -64,7 +64,7 @@ export function CommunityEndpointCard({
                             )}
                             {VISIBILITY_LABELS[endpoint.visibility]}
                         </Chip>
-                        {endpoint.promptAgent && (
+                        {endpoint.agentId && (
                             <Chip intent="news" size="sm">
                                 Agent
                             </Chip>

@@ -6,7 +6,7 @@ import {
     Textarea,
     XIcon,
 } from "@pollinations/ui";
-import type { EndpointFormState, McpServerRow } from "./types.ts";
+import type { AgentFormState, McpServerRow } from "./types.ts";
 
 export function PromptAgentFields({
     form,
@@ -16,9 +16,12 @@ export function PromptAgentFields({
     onUpdateMcp,
     onRemoveMcp,
 }: {
-    form: EndpointFormState;
+    form: AgentFormState;
     disabled: boolean;
-    onChange: (key: keyof EndpointFormState, value: string) => void;
+    onChange: (
+        key: keyof Omit<AgentFormState, "mcpServers">,
+        value: string,
+    ) => void;
     onAddMcp: () => void;
     onUpdateMcp: (
         index: number,
@@ -27,14 +30,11 @@ export function PromptAgentFields({
     ) => void;
     onRemoveMcp: (index: number) => void;
 }) {
-    const editHelper = disabled
-        ? " Recreate the model to change agent configuration."
-        : "";
     return (
         <div className="space-y-4">
             <FieldStack
                 label="System prompt"
-                helper={`The agent's instructions, sent as the system message on every call.${editHelper}`}
+                helper="The agent's instructions, sent as the system message on every call."
                 alignLabelRow
             >
                 <Textarea
@@ -50,7 +50,7 @@ export function PromptAgentFields({
 
             <FieldStack
                 label="Base model"
-                helper={`A Pollinations text model id the agent runs on, e.g. openai or claude.${editHelper}`}
+                helper="A Pollinations text model id the agent runs on, e.g. openai or claude."
                 alignLabelRow
             >
                 <Input
@@ -86,7 +86,6 @@ export function PromptAgentFields({
                     <div className="grid gap-2">
                         {form.mcpServers.map((row, index) => (
                             <div
-                                // biome-ignore lint/suspicious/noArrayIndexKey: rows have no stable id until named
                                 key={index}
                                 className="flex items-center gap-2"
                             >

@@ -1,4 +1,3 @@
-import { readFileSync } from "node:fs";
 import chalk from "chalk";
 import { Command } from "commander";
 import { gen, requireKey } from "../lib/api.js";
@@ -81,6 +80,7 @@ function modelBody(opts: Record<string, unknown>, includeRequired: boolean) {
         ["name", "name"],
         ["description", "description"],
         ["baseUrl", "baseUrl"],
+        ["agentId", "agentId"],
         ["upstreamModel", "upstreamModel"],
         ["bearerToken", "bearerToken"],
     ] as const;
@@ -97,33 +97,18 @@ function modelBody(opts: Record<string, unknown>, includeRequired: boolean) {
         body.visibility = opts.visibility;
     }
 
-    if (opts.promptAgent !== undefined) {
-        try {
-            body.promptAgent = JSON.parse(
-                readFileSync(String(opts.promptAgent), "utf8"),
-            );
-        } catch (err) {
-            printError(
-                `Failed to read/parse --prompt-agent JSON file: ${err instanceof Error ? err.message : "unknown"}`,
-            );
-            process.exit(1);
-        }
-    }
-
     if (includeRequired) {
         if (!body.name) {
             printError("--name is required");
             process.exit(1);
         }
-        const modeCount = [body.baseUrl, body.promptAgent].filter(
+        const modeCount = [body.baseUrl, body.agentId].filter(
             (value) => value !== undefined,
         ).length;
         if (modeCount !== 1) {
-            printError("Provide exactly one of --base-url or --prompt-agent");
+            printError("Provide exactly one of --base-url or --agent-id");
             process.exit(1);
         }
-        // A bearer token is only meaningful for a self-hosted --base-url
-        // endpoint; a prompt agent mints and manages its own.
         if (body.baseUrl !== undefined && !body.bearerToken) {
             printError("--bearer-token is required with --base-url");
             process.exit(1);
@@ -174,10 +159,7 @@ const create = addPriceOptions(
         .requiredOption("--name <name>", "Model name")
         .option("--description <text>", "Model description")
         .option("--base-url <url>", "OpenAI-compatible base URL")
-        .option(
-            "--prompt-agent <file>",
-            "JSON config file for a no-code prompt agent: { systemPrompt, baseModel, tools?, mcpServers? }",
-        )
+        .option("--agent-id <id>", "Managed agent to register")
         .option("--upstream-model <model>", "Upstream model id")
         .option("--bearer-token <token>", "Upstream bearer token")
         .option(

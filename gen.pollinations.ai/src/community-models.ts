@@ -52,10 +52,12 @@ export async function getCommunityModelRegistryEntries(
             description: schema.communityEndpoint.description,
             modality: schema.communityEndpoint.modality,
             imagePricing: schema.communityEndpoint.imagePricing,
-            baseUrl: schema.communityEndpoint.baseUrl,
+            endpointBaseUrl: schema.communityEndpoint.baseUrl,
+            agentBaseUrl: schema.agent.baseUrl,
             upstreamModel: schema.communityEndpoint.upstreamModel,
-            bearerTokenCiphertext:
+            endpointBearerTokenCiphertext:
                 schema.communityEndpoint.bearerTokenCiphertext,
+            agentBearerTokenCiphertext: schema.agent.bearerTokenCiphertext,
             visibility: schema.communityEndpoint.visibility,
             promptTextPrice: schema.communityEndpoint.promptTextPrice,
             promptCachedPrice: schema.communityEndpoint.promptCachedPrice,
@@ -76,10 +78,18 @@ export async function getCommunityModelRegistryEntries(
             schema.user,
             eq(schema.communityEndpoint.ownerUserId, schema.user.id),
         )
+        .leftJoin(
+            schema.agent,
+            eq(schema.communityEndpoint.agentId, schema.agent.id),
+        )
         .where(isNotNull(schema.user.githubUsername));
 
     return rows.flatMap((row): CommunityModelRegistryEntry[] => {
         if (!row.ownerGithubUsername) return [];
+        const baseUrl = row.endpointBaseUrl ?? row.agentBaseUrl;
+        const bearerTokenCiphertext =
+            row.endpointBearerTokenCiphertext ?? row.agentBearerTokenCiphertext;
+        if (!baseUrl || !bearerTokenCiphertext) return [];
         const modelId = communityModelId(row.ownerGithubUsername, row.name);
         const communityEndpoint: CommunityEndpointRuntime = {
             id: row.id,
@@ -91,9 +101,9 @@ export async function getCommunityModelRegistryEntries(
             imagePricing: normalizeCommunityEndpointImagePricing(
                 row.imagePricing,
             ),
-            baseUrl: row.baseUrl,
+            baseUrl,
             upstreamModel: row.upstreamModel,
-            bearerTokenCiphertext: row.bearerTokenCiphertext,
+            bearerTokenCiphertext,
             visibility: row.visibility,
             disabledAt: row.disabledAt ? row.disabledAt.getTime() : null,
             disabledReason: row.disabledReason,

@@ -13,17 +13,29 @@ import type { Usage } from "@shared/registry/registry.ts";
 
 type EndpointFormPrices = Record<CommunityEndpointPriceKey, string>;
 
-// The two ways to register: point at a self-hosted OpenAI-compatible endpoint
-// (external), or have the platform deploy and run a no-code prompt agent.
-export type EndpointMode = "external" | "prompt-agent";
+// A community model can point at an external endpoint or at an independently
+// managed agent.
+export type EndpointMode = "external" | "agent";
 
 export type McpServerRow = { name: string; url: string };
 
-export type PromptAgentConfig = {
+export type ManagedAgent = {
+    id: string;
+    name: string;
     systemPrompt: string;
     baseModel: string;
     mcpServers: { name: string; url: string }[];
+    baseUrl: string;
+    createdAt: string;
+    updatedAt: string;
 };
+
+export type AgentFormState = Pick<
+    ManagedAgent,
+    "name" | "systemPrompt" | "baseModel" | "mcpServers"
+>;
+
+export type AgentPayload = AgentFormState;
 
 export type CommunityEndpoint = {
     id: string;
@@ -34,9 +46,7 @@ export type CommunityEndpoint = {
     imagePricing: CommunityEndpointImagePricing;
     baseUrl: string;
     upstreamModel: string;
-    // No-code prompt-agent config, present only when the endpoint is a prompt
-    // agent; null for self-hosted endpoints.
-    promptAgent: PromptAgentConfig | null;
+    agentId: string | null;
     // private → owner-only, shown only to the owner, no owner-set price;
     // public → globally listed + billed to callers.
     visibility: CommunityEndpointVisibility;
@@ -57,12 +67,9 @@ export type EndpointFormState = {
     // Public is selectable only by allowlisted owners; defaults private.
     visibility: CommunityEndpointVisibility;
     baseUrl: string;
+    agentId: string;
     upstreamModel: string;
     bearerToken: string;
-    // Prompt-agent fields; only read when mode === "prompt-agent".
-    systemPrompt: string;
-    baseModel: string;
-    mcpServers: McpServerRow[];
 } & EndpointFormPrices;
 
 export type EndpointPayload = {
@@ -70,9 +77,9 @@ export type EndpointPayload = {
     imagePricing: CommunityEndpointImagePricing;
     name: string;
     description: string;
-    // Exactly one of baseUrl / promptAgent is sent, per the mode.
+    // Exactly one of baseUrl / agentId is sent, per the mode.
     baseUrl?: string;
-    promptAgent?: PromptAgentConfig;
+    agentId?: string;
     upstreamModel: string;
     visibility: CommunityEndpointVisibility;
 } & CommunityEndpointPrices;
@@ -106,12 +113,17 @@ export const emptyForm: EndpointFormState = {
     description: "",
     visibility: "private",
     baseUrl: "",
+    agentId: "",
     upstreamModel: "",
     bearerToken: "",
+    ...emptyPriceForm,
+};
+
+export const emptyAgentForm: AgentFormState = {
+    name: "",
     systemPrompt: "",
     baseModel: "",
     mcpServers: [],
-    ...emptyPriceForm,
 };
 
 export const idleAction: ActionState = { status: "idle" };
@@ -175,7 +187,6 @@ export function isValidPriceInput(
 }
 
 export function endpointToForm(endpoint: CommunityEndpoint): EndpointFormState {
-    const promptAgent = endpoint.promptAgent;
     const fields = new Map(
         communityEndpointPriceFieldsForModality(
             endpoint.modality,
@@ -183,21 +194,16 @@ export function endpointToForm(endpoint: CommunityEndpoint): EndpointFormState {
         ).map((field) => [field.key, field]),
     );
     return {
-        mode: promptAgent ? "prompt-agent" : "external",
+        mode: endpoint.agentId ? "agent" : "external",
         modality: endpoint.modality,
         imagePricing: endpoint.imagePricing,
         name: endpoint.name,
         description: endpoint.description ?? "",
         visibility: endpoint.visibility,
         baseUrl: endpoint.baseUrl,
+        agentId: endpoint.agentId ?? "",
         upstreamModel: endpoint.upstreamModel,
         bearerToken: "",
-        systemPrompt: promptAgent?.systemPrompt ?? "",
-        baseModel: promptAgent?.baseModel ?? "",
-        mcpServers: (promptAgent?.mcpServers ?? []).map((server) => ({
-            name: server.name,
-            url: server.url,
-        })),
         ...(Object.fromEntries(
             COMMUNITY_ENDPOINT_PRICE_FIELDS.map((field) => {
                 const modalityField = fields.get(field.key);
@@ -285,12 +291,22 @@ export function observedUsageValue(
 // _ or -, max 40 chars) so client and server reject the same names.
 export const MCP_SERVER_NAME_PATTERN = /^[a-z0-9][a-z0-9_-]{0,39}$/;
 
+export function isValidMcpRow(row: McpServerRow): boolean {
+    const name = row.name.trim();
+    const url = row.url.trim();
+    if (!name && !url) return true;
+    try {
+        new URL(url);
+    } catch {
+        return false;
+    }
+    return MCP_SERVER_NAME_PATTERN.test(name);
+}
+
 // Validates and trims the MCP server rows, dropping fully-empty rows. Mirrors
 // the backend McpServerSchema so the API rejects the same inputs.
-function mcpServersToPayload(
-    rows: McpServerRow[],
-): PromptAgentConfig["mcpServers"] {
-    const servers: PromptAgentConfig["mcpServers"] = [];
+function mcpServersToPayload(rows: McpServerRow[]): ManagedAgent["mcpServers"] {
+    const servers: ManagedAgent["mcpServers"] = [];
     for (const row of rows) {
         const name = row.name.trim();
         const url = row.url.trim();
@@ -308,9 +324,9 @@ function mcpServersToPayload(
     return servers;
 }
 
-export function toPromptAgentConfig(
-    form: EndpointFormState,
-): PromptAgentConfig {
+export function toAgentPayload(form: AgentFormState): AgentPayload {
+    const name = form.name.trim();
+    if (!name) throw new Error("Agent name is required");
     const systemPrompt = form.systemPrompt.trim();
     if (!systemPrompt) {
         throw new Error("System prompt is required for a prompt agent");
@@ -320,6 +336,7 @@ export function toPromptAgentConfig(
         throw new Error("Base model is required for a prompt agent");
     }
     return {
+        name,
         systemPrompt,
         baseModel,
         mcpServers: mcpServersToPayload(form.mcpServers),
@@ -328,7 +345,7 @@ export function toPromptAgentConfig(
 
 export function toEndpointPayload(form: EndpointFormState): EndpointPayload {
     const modelName = form.name.trim();
-    const modality = form.mode === "prompt-agent" ? "text" : form.modality;
+    const modality = form.mode === "agent" ? "text" : form.modality;
     const imagePricing = modality === "image" ? form.imagePricing : "request";
     const shared = {
         modality,
@@ -338,12 +355,12 @@ export function toEndpointPayload(form: EndpointFormState): EndpointPayload {
         visibility: form.visibility,
         ...formPricesToPayload(form, modality, imagePricing),
     };
-    if (form.mode === "prompt-agent") {
+    if (form.mode === "agent") {
+        if (!form.agentId) throw new Error("Choose an agent");
         return {
             ...shared,
-            // The template runs the base model; there is no separate upstream id.
+            agentId: form.agentId,
             upstreamModel: modelName,
-            promptAgent: toPromptAgentConfig(form),
         };
     }
     return {

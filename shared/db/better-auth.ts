@@ -193,6 +193,28 @@ export const stripeCardFingerprintAttempt = sqliteTable("stripe_card_fingerprint
   ),
 ]);
 
+export const agent = sqliteTable("agent", {
+  id: text("id").primaryKey(),
+  ownerUserId: text("owner_user_id")
+    .notNull()
+    .references(() => user.id, { onDelete: "cascade" }),
+  name: text("name").notNull(),
+  config: text("config").notNull(),
+  baseUrl: text("base_url").notNull(),
+  bearerTokenCiphertext: text("bearer_token_ciphertext").notNull(),
+  apiKeyId: text("api_key_id").notNull(),
+  createdAt: integer("created_at", { mode: "timestamp" })
+    .defaultNow()
+    .notNull(),
+  updatedAt: integer("updated_at", { mode: "timestamp" })
+    .defaultNow()
+    .$onUpdate(() => /* @__PURE__ */ new Date())
+    .notNull(),
+}, (table) => [
+  index("idx_agent_owner_user_id").on(table.ownerUserId),
+  uniqueIndex("idx_agent_owner_name").on(table.ownerUserId, table.name),
+]);
+
 export const communityEndpoint = sqliteTable("community_endpoint", {
   id: text("id").primaryKey(),
   ownerUserId: text("owner_user_id")
@@ -207,12 +229,14 @@ export const communityEndpoint = sqliteTable("community_endpoint", {
   imagePricing: text("image_pricing", { enum: ["request", "tokens"] })
     .default("request")
     .notNull(),
-  baseUrl: text("base_url").notNull(),
-  // Prompt agents store their config JSON (+ minted key id) here; null when
-  // the owner hosts the endpoint themselves (baseUrl-only registration).
-  promptAgent: text("prompt_agent"),
+  // External models keep their target here. Managed agents resolve their
+  // target through agentId so the agent can outlive its community listing.
+  baseUrl: text("base_url"),
+  agentId: text("agent_id").references(() => agent.id, {
+    onDelete: "restrict",
+  }),
   upstreamModel: text("upstream_model").notNull(),
-  bearerTokenCiphertext: text("bearer_token_ciphertext").notNull(),
+  bearerTokenCiphertext: text("bearer_token_ciphertext"),
   // Models default to private (owner-only and free). Public visibility is
   // allowlist-gated and may be free or owner-priced.
   visibility: text("visibility", { enum: ["private", "public"] })
@@ -243,6 +267,7 @@ export const communityEndpoint = sqliteTable("community_endpoint", {
     table.ownerUserId,
     table.name,
   ),
+  uniqueIndex("idx_community_endpoint_agent_id").on(table.agentId),
 ]);
 
 // Drizzle relations for query builder joins
@@ -252,6 +277,7 @@ export const userRelations = relations(user, ({ many }) => ({
   accounts: many(account),
   stripeAutoTopUpAttempts: many(stripeAutoTopUpAttempt),
   stripeCardFingerprintAttempts: many(stripeCardFingerprintAttempt),
+  agents: many(agent),
   communityEndpoints: many(communityEndpoint),
 }));
 
@@ -301,6 +327,18 @@ export const communityEndpointRelations = relations(communityEndpoint, ({ one })
     fields: [communityEndpoint.ownerUserId],
     references: [user.id],
   }),
+  agent: one(agent, {
+    fields: [communityEndpoint.agentId],
+    references: [agent.id],
+  }),
+}));
+
+export const agentRelations = relations(agent, ({ one }) => ({
+  owner: one(user, {
+    fields: [agent.ownerUserId],
+    references: [user.id],
+  }),
+  communityEndpoint: one(communityEndpoint),
 }));
 
 // Device Authorization Grant (RFC 8628) table

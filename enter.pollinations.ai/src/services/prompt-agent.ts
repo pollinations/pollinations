@@ -4,9 +4,7 @@
 // source-deploy path) with the config injected as env bindings, and mints a
 // dedicated owner sk_ key the template uses for its internal gen calls.
 //
-// The structured config is stored in the endpoint's `prompt_agent` column as
-// JSON. The minted key's id is stored alongside so it can be removed when the
-// agent is deleted.
+// The structured config and deployment metadata are stored on the agent row.
 import { createApiKeyForUser } from "@shared/auth/api-key-creation.ts";
 import { z } from "zod";
 import { PROMPT_AGENT_TEMPLATE_SOURCE } from "./prompt-agent-template.ts";
@@ -36,31 +34,17 @@ export const PromptAgentSchema = z
 
 export type PromptAgentConfig = z.infer<typeof PromptAgentSchema>;
 
-// The blob persisted in the endpoint's `prompt_agent` column. `keyId` lets delete
-// remove the minted owner key; the plaintext key itself lives only in the
-// deployed worker's binding, never in D1.
-type StoredPromptAgent = {
-    promptAgent: PromptAgentConfig;
-    keyId: string;
-};
-
-export function parseStoredPromptAgent(
-    raw: string | null,
-): StoredPromptAgent | null {
-    if (!raw) return null;
+export function parsePromptAgentConfig(raw: string): PromptAgentConfig | null {
     try {
-        const parsed = JSON.parse(raw) as Partial<StoredPromptAgent>;
-        if (!parsed?.promptAgent || typeof parsed.keyId !== "string") {
-            return null;
-        }
-        return parsed as StoredPromptAgent;
+        const parsed = PromptAgentSchema.safeParse(JSON.parse(raw));
+        return parsed.success ? parsed.data : null;
     } catch {
         return null;
     }
 }
 
-function serializeStoredPromptAgent(stored: StoredPromptAgent): string {
-    return JSON.stringify(stored);
+export function serializePromptAgentConfig(config: PromptAgentConfig): string {
+    return JSON.stringify(config);
 }
 
 type AuthClient = Parameters<typeof createApiKeyForUser>[0]["authClient"];
@@ -87,9 +71,20 @@ async function mintOwnerKey(
     return { key: created.key, keyId: created.id };
 }
 
-// Builds the deploy inputs for a prompt agent: the template source, the secret
-// bindings the template reads, and the blob to store in `prompt_agent`. Mints
-// the owner key as a side effect.
+export function promptAgentConfigBindings(
+    config: PromptAgentConfig,
+    genBaseUrl: string,
+): { name: string; text: string }[] {
+    return [
+        { name: "SYSTEM_PROMPT", text: config.systemPrompt },
+        { name: "BASE_MODEL", text: config.baseModel },
+        { name: "MCP_JSON", text: JSON.stringify(config.mcpServers) },
+        { name: "GEN_BASE_URL", text: genBaseUrl },
+    ];
+}
+
+// Builds the first deployment of an agent and mints its dedicated owner key.
+// The plaintext key is injected into the Worker and is never stored in D1.
 export async function buildPromptAgentDeploy(input: {
     authClient: AuthClient;
     dbBinding: D1Database;
@@ -101,7 +96,7 @@ export async function buildPromptAgentDeploy(input: {
     genBaseUrl: string;
 }): Promise<{
     source: string;
-    storedPromptAgent: string;
+    serializedConfig: string;
     extraBindings: { name: string; text: string }[];
     keyId: string;
 }> {
@@ -112,18 +107,12 @@ export async function buildPromptAgentDeploy(input: {
         input.agentName,
     );
     const extraBindings = [
-        { name: "SYSTEM_PROMPT", text: input.config.systemPrompt },
-        { name: "BASE_MODEL", text: input.config.baseModel },
-        { name: "MCP_JSON", text: JSON.stringify(input.config.mcpServers) },
+        ...promptAgentConfigBindings(input.config, input.genBaseUrl),
         { name: "POLLINATIONS_KEY", text: key },
-        { name: "GEN_BASE_URL", text: input.genBaseUrl },
     ];
     return {
         source: PROMPT_AGENT_TEMPLATE_SOURCE,
-        storedPromptAgent: serializeStoredPromptAgent({
-            promptAgent: input.config,
-            keyId,
-        }),
+        serializedConfig: serializePromptAgentConfig(input.config),
         extraBindings,
         keyId,
     };

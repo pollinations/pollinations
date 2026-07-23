@@ -25,13 +25,10 @@ export function requireWorkerDeployConfig(env: unknown): WorkerDeployConfig {
     };
 }
 
-// Script name is derived from the endpoint's UUID (a DNS-safe label already),
-// not the model name: the name can be renamed and slugs of different names
-// can collide (`foo.bar` vs `foo-bar`), which would let one model overwrite
-// another's script. The id is immutable and unique, so a rename redeploys the
-// same script and two endpoints can never share one.
-export function communityWorkerScriptName(endpointId: string): string {
-    return `bee-${endpointId}`;
+// The Worker belongs to the agent, not to an optional community listing. Its
+// URL therefore stays stable when the agent is renamed, edited, or unlisted.
+export function agentWorkerScriptName(agentId: string): string {
+    return `bee-${agentId}`;
 }
 
 async function cfApi(
@@ -73,16 +70,16 @@ async function cfApi(
 // without it anyone with the URL could bypass the gateway's billing and, for
 // agents, spend the owner's key.
 //
-// `extraBindings` are additional secret_text bindings injected alongside
-// BEE_AUTH_TOKEN — used by platform-authored templates (e.g. the prompt-agent
-// template) to receive their config (system prompt, base model, owner key, …).
-// User-written source deploys pass none.
-export async function deployCommunityWorker(
+// Existing secret bindings can be inherited during an edit. This lets the
+// agent keep its owner key without storing the key plaintext outside the
+// Worker.
+export async function deployAgentWorker(
     config: WorkerDeployConfig,
     scriptName: string,
     source: string,
     authToken: string,
     extraBindings: { name: string; text: string }[] = [],
+    inheritedBindingNames: string[] = [],
 ): Promise<string> {
     const form = new FormData();
     form.set(
@@ -101,6 +98,10 @@ export async function deployCommunityWorker(
                     name: binding.name,
                     text: binding.text,
                 })),
+                ...inheritedBindingNames.map((name) => ({
+                    type: "inherit",
+                    name,
+                })),
             ],
         }),
     );
@@ -110,7 +111,10 @@ export async function deployCommunityWorker(
             type: "application/javascript+module",
         }),
     );
-    await cfApi(config, `/workers/scripts/${scriptName}`, {
+    const uploadPath = `/workers/scripts/${scriptName}${
+        inheritedBindingNames.length > 0 ? "?bindings_inherit=strict" : ""
+    }`;
+    await cfApi(config, uploadPath, {
         method: "PUT",
         body: form,
     });
@@ -132,7 +136,7 @@ export async function deployCommunityWorker(
 
 // Removes a deployed worker script so it is no longer publicly callable.
 // Idempotent: a 404 (already gone) is treated as success.
-export async function deleteCommunityWorker(
+export async function deleteAgentWorker(
     config: WorkerDeployConfig,
     scriptName: string,
 ): Promise<void> {

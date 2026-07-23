@@ -34,6 +34,7 @@ import {
     hasAccountReadPermission,
     hasDirectAccountPermission,
 } from "./account-permissions.ts";
+import { agentsRoutes } from "./agents.ts";
 import { communityEndpointsRoutes } from "./community-endpoints.ts";
 import { parseMetadata } from "./metadata-utils.ts";
 
@@ -796,6 +797,7 @@ const usageResponseSchema = z.object({
  */
 export const accountRoutes = new Hono<Env>()
     .use(auth({ allowApiKey: true, allowSessionCookie: true }))
+    .route("/agents", agentsRoutes)
     .route("/my-models", communityEndpointsRoutes)
     .get(
         "/profile",

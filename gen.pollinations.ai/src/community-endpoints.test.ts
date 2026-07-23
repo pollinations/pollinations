@@ -37,6 +37,7 @@ import { drizzle } from "drizzle-orm/d1";
 import { Hono } from "hono";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { Env } from "@/env.ts";
+import { getCommunityModelRegistryEntries } from "./community-models.ts";
 import { callCommunityImageEndpoint } from "./image/communityEndpoint.ts";
 import { resetGenerationModelRegistryCache } from "./model-registry.ts";
 import { communityEndpointGatewayContext } from "./text/communityEndpoint.ts";
@@ -2478,7 +2479,7 @@ fixtureTest("rejects a community model name containing a slash", async () => {
 });
 
 fixtureTest(
-    "rejects community registration unless exactly one of baseUrl or promptAgent is provided",
+    "rejects community registration unless exactly one of baseUrl or agentId is provided",
     async () => {
         const ownerGithubUsername = `owner-${crypto.randomUUID().slice(0, 8)}`;
         const ownerUserId = await createTestUser({
@@ -2516,10 +2517,7 @@ fixtureTest(
 
         const both = await register({
             baseUrl: "https://api.example.com/v1",
-            promptAgent: {
-                systemPrompt: "You are a tutor.",
-                baseModel: "openai-fast",
-            },
+            agentId: crypto.randomUUID(),
         });
         expect(both.status).toBe(400);
 
@@ -2529,10 +2527,11 @@ fixtureTest(
 );
 
 fixtureTest(
-    "deploys the prompt-agent template with config bindings and a minted owner key",
+    "keeps agent deployment and community registration as separate lifecycles",
     async () => {
         const ownerGithubUsername = `owner-${crypto.randomUUID().slice(0, 8)}`;
-        const modelName = `bee-${crypto.randomUUID().slice(0, 8)}`;
+        const agentName = `agent-${crypto.randomUUID().slice(0, 8)}`;
+        const modelName = `model-${crypto.randomUUID().slice(0, 8)}`;
         const ownerUserId = await createTestUser({
             githubId: COMMUNITY_ENDPOINT_ALLOWED_TEST_GITHUB_ID,
             githubUsername: ownerGithubUsername,
@@ -2573,62 +2572,61 @@ fixtureTest(
             CF_WORKER_DEPLOY_ACCOUNT_ID: "cf-account",
             CF_WORKER_DEPLOY_API_TOKEN: "cf-deploy-token",
         };
-        const enterApi = await createEnterCommunityApi();
+        const enterApi = await createEnterFrontendApi();
         const cookie = await signedSessionCookie(sessionToken);
         const promptAgent = {
             systemPrompt: "You are a terse SQL tutor.",
             baseModel: "openai-fast",
             mcpServers: [{ name: "docs", url: "https://mcp.example.com/rpc" }],
         };
-        // No baseUrl, no bearerToken — a prompt agent manages its own.
-        const createResponse = await fetchEnterApi(
+        const createAgentResponse = await fetchEnterApi(
             enterApi,
-            new Request("http://localhost:3000/api/community-endpoints", {
+            new Request("http://localhost:3000/api/account/agents", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
                     Cookie: cookie,
                 },
                 body: JSON.stringify({
-                    name: modelName,
-                    promptAgent,
-                    visibility: "public",
-                    promptTextPrice: 0.1,
-                    completionTextPrice: 0.1,
+                    name: agentName,
+                    ...promptAgent,
                 }),
             }),
             deployEnv,
         );
-        expect(createResponse.status).toBe(200);
-        const created = (await createResponse.json()) as {
+        expect(createAgentResponse.status).toBe(200);
+        const agent = (await createAgentResponse.json()) as {
             id: string;
+            name: string;
             baseUrl: string;
-            promptAgent: typeof promptAgent | null;
+            systemPrompt: string;
+            baseModel: string;
+            mcpServers: typeof promptAgent.mcpServers;
         };
-        // The config is surfaced as a nested promptAgent object; the internal
-        // key id never leaks.
-        expect(created.promptAgent).toMatchObject({
+        expect(agent).toMatchObject({
+            name: agentName,
             systemPrompt: "You are a terse SQL tutor.",
             baseModel: "openai-fast",
         });
-        expect(created.promptAgent).not.toHaveProperty("keyId");
-        expect(created).not.toHaveProperty("source");
-        expect(created.baseUrl).toBe(
-            `https://bee-${created.id}.staging-sub.workers.dev/v1`,
+        expect(agent).not.toHaveProperty("apiKeyId");
+        expect(agent).not.toHaveProperty("bearerTokenCiphertext");
+        expect(agent.baseUrl).toBe(
+            `https://bee-${agent.id}.staging-sub.workers.dev/v1`,
         );
 
-        const scriptName = `bee-${created.id}`;
-        const putRequest = cfRequests.find(
+        const scriptName = `bee-${agent.id}`;
+        const createPutRequest = cfRequests.find(
             (request) => request.method === "PUT",
         );
-        if (!putRequest) throw new Error("No worker upload PUT captured");
-        const form = await putRequest.formData();
-        const metadata = JSON.parse(String(form.get("metadata")));
-        const bindingByName = Object.fromEntries(
-            (metadata.bindings ?? []).map((b: { name: string }) => [b.name, b]),
+        if (!createPutRequest) throw new Error("No worker upload PUT captured");
+        const createForm = await createPutRequest.formData();
+        const createMetadata = JSON.parse(String(createForm.get("metadata")));
+        const createBindingByName = Object.fromEntries(
+            (createMetadata.bindings ?? []).map((binding: { name: string }) => [
+                binding.name,
+                binding,
+            ]),
         );
-        // The template config is injected as secret_text bindings alongside the
-        // auth token, and the minted owner key is present (never returned).
         for (const name of [
             "BEE_AUTH_TOKEN",
             "SYSTEM_PROMPT",
@@ -2637,35 +2635,157 @@ fixtureTest(
             "POLLINATIONS_KEY",
             "GEN_BASE_URL",
         ]) {
-            expect(bindingByName[name]).toMatchObject({ type: "secret_text" });
+            expect(createBindingByName[name]).toMatchObject({
+                type: "secret_text",
+            });
         }
-        expect(bindingByName.SYSTEM_PROMPT.text).toBe(
+        expect(createBindingByName.SYSTEM_PROMPT.text).toBe(
             "You are a terse SQL tutor.",
         );
-        expect(bindingByName.BASE_MODEL.text).toBe("openai-fast");
-        expect(JSON.parse(bindingByName.MCP_JSON.text)).toEqual([
+        expect(createBindingByName.BASE_MODEL.text).toBe("openai-fast");
+        expect(JSON.parse(createBindingByName.MCP_JSON.text)).toEqual([
             { name: "docs", url: "https://mcp.example.com/rpc" },
         ]);
-        expect(bindingByName.POLLINATIONS_KEY.text).toMatch(/^sk_/);
-        // The deployed module is the platform template, not user source.
-        await expect((form.get("index.mjs") as File).text()).resolves.toContain(
-            "pollinations-prompt-agent",
-        );
+        expect(createBindingByName.POLLINATIONS_KEY.text).toMatch(/^sk_/);
+        await expect(
+            (createForm.get("index.mjs") as File).text(),
+        ).resolves.toContain("pollinations-prompt-agent");
 
-        // Delete retires the worker and the minted owner key.
         cfRequests.length = 0;
-        const deleteResponse = await fetchEnterApi(
+        const updateAgentResponse = await fetchEnterApi(
             enterApi,
             new Request(
-                `http://localhost:3000/api/community-endpoints/${created.id}`,
+                `http://localhost:3000/api/account/agents/${agent.id}`,
                 {
-                    method: "DELETE",
-                    headers: { Cookie: cookie },
+                    method: "PATCH",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Cookie: cookie,
+                    },
+                    body: JSON.stringify({
+                        systemPrompt: "You are an editable SQL tutor.",
+                    }),
                 },
             ),
             deployEnv,
         );
-        expect(deleteResponse.status).toBe(200);
+        expect(updateAgentResponse.status).toBe(200);
+        await expect(updateAgentResponse.json()).resolves.toMatchObject({
+            id: agent.id,
+            baseUrl: agent.baseUrl,
+            systemPrompt: "You are an editable SQL tutor.",
+        });
+        const updatePutRequest = cfRequests.find(
+            (request) => request.method === "PUT",
+        );
+        if (!updatePutRequest) throw new Error("No update PUT captured");
+        expect(
+            new URL(updatePutRequest.url).searchParams.get("bindings_inherit"),
+        ).toBe("strict");
+        const updateForm = await updatePutRequest.formData();
+        const updateMetadata = JSON.parse(String(updateForm.get("metadata")));
+        const updateBindingByName = Object.fromEntries(
+            (updateMetadata.bindings ?? []).map((binding: { name: string }) => [
+                binding.name,
+                binding,
+            ]),
+        );
+        expect(updateBindingByName.POLLINATIONS_KEY).toMatchObject({
+            type: "inherit",
+        });
+        expect(updateBindingByName.BEE_AUTH_TOKEN.text).toBe(
+            createBindingByName.BEE_AUTH_TOKEN.text,
+        );
+        expect(updateBindingByName.SYSTEM_PROMPT.text).toBe(
+            "You are an editable SQL tutor.",
+        );
+
+        cfRequests.length = 0;
+        const registerResponse = await fetchEnterApi(
+            enterApi,
+            new Request("http://localhost:3000/api/account/my-models", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Cookie: cookie,
+                },
+                body: JSON.stringify({
+                    name: modelName,
+                    agentId: agent.id,
+                    visibility: "public",
+                    promptTextPrice: 0.1,
+                    completionTextPrice: 0.1,
+                }),
+            }),
+            deployEnv,
+        );
+        expect(registerResponse.status).toBe(200);
+        const registration = (await registerResponse.json()) as {
+            id: string;
+            modelId: string;
+            agentId: string | null;
+            baseUrl: string;
+        };
+        expect(registration.id).not.toBe(agent.id);
+        expect(registration.agentId).toBe(agent.id);
+        expect(registration.baseUrl).toBe(agent.baseUrl);
+        expect(cfRequests).toHaveLength(0);
+        const registryEntry = (
+            await getCommunityModelRegistryEntries(env.DB)
+        ).find((entry) => entry.id === registration.modelId);
+        expect(registryEntry?.communityEndpoint.baseUrl).toBe(agent.baseUrl);
+        expect(registryEntry?.communityEndpoint.bearerTokenCiphertext).toMatch(
+            /^v1:/,
+        );
+
+        const duplicateRegistrationResponse = await fetchEnterApi(
+            enterApi,
+            new Request("http://localhost:3000/api/account/my-models", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Cookie: cookie,
+                },
+                body: JSON.stringify({
+                    name: `${modelName}-duplicate`,
+                    agentId: agent.id,
+                }),
+            }),
+            deployEnv,
+        );
+        expect(duplicateRegistrationResponse.status).toBe(400);
+
+        const deleteRegisteredAgentResponse = await fetchEnterApi(
+            enterApi,
+            new Request(
+                `http://localhost:3000/api/account/agents/${agent.id}`,
+                { method: "DELETE", headers: { Cookie: cookie } },
+            ),
+            deployEnv,
+        );
+        expect(deleteRegisteredAgentResponse.status).toBe(409);
+        expect(cfRequests).toHaveLength(0);
+
+        const deleteListingResponse = await fetchEnterApi(
+            enterApi,
+            new Request(
+                `http://localhost:3000/api/account/my-models/${registration.id}`,
+                { method: "DELETE", headers: { Cookie: cookie } },
+            ),
+            deployEnv,
+        );
+        expect(deleteListingResponse.status).toBe(200);
+        expect(cfRequests).toHaveLength(0);
+
+        const deleteAgentResponse = await fetchEnterApi(
+            enterApi,
+            new Request(
+                `http://localhost:3000/api/account/agents/${agent.id}`,
+                { method: "DELETE", headers: { Cookie: cookie } },
+            ),
+            deployEnv,
+        );
+        expect(deleteAgentResponse.status).toBe(200);
         const deleteWorkerCall = cfRequests.find(
             (request) => request.method === "DELETE",
         );

@@ -1062,7 +1062,7 @@ export const proxyRoutes = new Hono<Env>()
             description: [
                 "OpenAI-compatible image generation endpoint.",
                 "",
-                'Generate images from text prompts. Supports `response_format: "url"` (returns a pollinations.ai URL) or `"b64_json"` (returns base64-encoded image data, default). Community image models are text-to-image only and support `"b64_json"` only.',
+                'Generate images from text prompts. Supports `response_format: "url"` (returns a pollinations.ai URL) or `"b64_json"` (returns base64-encoded image data, default). Community image models support `"b64_json"` only.',
                 "",
                 "**Authentication:** Include your API key as `Authorization: Bearer YOUR_API_KEY`.",
             ].join("\n"),
@@ -1093,7 +1093,7 @@ export const proxyRoutes = new Hono<Env>()
                 "",
                 "Edit images using a text prompt and one or more source images.",
                 "Accepts JSON with image URLs or multipart/form-data with file uploads.",
-                "Community image models do not support edits yet.",
+                "Community image models forward edits to the registrant's OpenAI-compatible endpoint as multipart form data.",
                 "",
                 "**Authentication:** Include your API key as `Authorization: Bearer YOUR_API_KEY`.",
             ].join("\n"),

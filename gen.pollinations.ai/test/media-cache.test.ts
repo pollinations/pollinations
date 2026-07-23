@@ -165,4 +165,44 @@ describe("media cache", () => {
         expect(media.originHits).toBe(1);
         expect(bucket.putCount).toBe(2);
     });
+
+    it("regenerates and replaces cached media for authenticated no-cache requests", async () => {
+        const media = createMediaCacheApp(imageCache, "image/png");
+        const bucket = createTestR2Bucket();
+        const env = createMediaCacheEnv(bucket);
+        const path = "/media/regenerate";
+
+        const warm = await dispatch(
+            media.app,
+            path,
+            { headers: { Authorization: "Bearer test-key" } },
+            env,
+        );
+        expect(await consumeAndWait(warm)).toBe("origin:1");
+
+        const unauthenticated = await dispatch(
+            media.app,
+            `${path}?no-cache=true`,
+            undefined,
+            env,
+        );
+        expect(await consumeAndWait(unauthenticated)).toBe(
+            "Authentication required",
+        );
+        expect(unauthenticated.response.status).toBe(401);
+        expect(media.originHits).toBe(1);
+
+        const regenerate = await dispatch(
+            media.app,
+            `${path}?no-cache=true`,
+            { headers: { Authorization: "Bearer test-key" } },
+            env,
+        );
+        expect(await consumeAndWait(regenerate)).toBe("origin:2");
+
+        const replaced = await dispatch(media.app, path, undefined, env);
+        expect(await consumeAndWait(replaced)).toBe("origin:2");
+        expect(replaced.response.headers.get("X-Cache")).toBe("HIT");
+        expect(media.originHits).toBe(2);
+    });
 });

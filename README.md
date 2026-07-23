@@ -48,16 +48,16 @@ We've launched **https://gen.pollinations.ai** — a single endpoint for all you
 
 ## 🆕 Latest News
 
+- **2026-07-22** – **🎨 Community image endpoints** Community providers can now serve images through the standard `/image/{prompt}` and OpenAI-compatible `/v1/images/generations` APIs. [Try image generation](https://gen.pollinations.ai/image/{prompt})
+- **2026-07-22** – **🚀 Gemini 3.6 Flash** Google text models now run through Vertex endpoints with streaming, reasoning, tools, multimodal inputs, and native Google Search intact. [Browse models](https://gen.pollinations.ai/v1/models)
+- **2026-07-22** – **🤖 Laguna S 2.1** `laguna` brings tool use, optional reasoning, and a mildly excessive 1,048,576-token context window to the text API. [Check the API docs](https://gen.pollinations.ai/docs)
+- **2026-07-22** – **🎨 Anime Legends Generator** Make anime-inspired legendary characters from a prompt. [Try it](https://anime.caasexpresss.com) <!-- app -->
+- **2026-07-22** – **✨ Arika** A community-built conversational AI for chats with slightly less robot energy. [Try it](https://arika.hizumi.in) <!-- app -->
 - **2026-07-20** – **✨ Better embeddings, including multimodal search** Gemini Embedding 2 now uses its GA endpoint, with role-aware Cohere requests and combined text-image embeddings for less approximate vector search.
 - **2026-07-20** – **💡 Model pickers now speak human** All 132 model descriptions were rewritten around practical trade-offs—quality, speed, cost, and capabilities—so apps can help people choose without making them read provider lore. [Browse models](https://gen.pollinations.ai/v1/models)
 - **2026-07-20** – **🚀 Community model publishing has a front door** Prospective publishers can now request allowlist access for public text, image, embedding, speech, and transcription models; private models still need no invitation. [Request access](https://github.com/pollinations/pollinations/issues/new/choose)
 - **2026-07-19** – **⚡ Z-Image gets two RTX 5090 hives** Z-Image now runs across two replicas at ~1.09 images/sec, with p95 generation under 3.75 seconds. The bees have redundancy now. [Try it](https://pollinations.ai/play)
 - **2026-07-16** – **🚀 GPT Realtime 2.1** `gpt-realtime-2.1` is now the default realtime model, giving voice and live-interaction builders a newer verified endpoint while `gpt-realtime-2` remains available. [API Docs](https://gen.pollinations.ai/docs)
-- **2026-07-16** – **✨ Model math, less mysterious** The model table now shows Quest/Paid access clearly, reveals descriptions on hover, and lets you click a model name or ID to copy the exact identifier. [Browse models](https://gen.pollinations.ai/v1/models)
-- **2026-07-15** – **🚀 Private community models** Register a model, test it with your own key, then publish it when it is ready to meet the outdoors. Public models can be free or priced by their owner.
-- **2026-07-15** – **✨ 3D generation, now easier to find** 3D-capable models have joined the [Model Monitor](https://model-monitor.pollinations.ai), with quick-start requests and model details in the [API docs](https://gen.pollinations.ai/docs).
-- **2026-07-15** – **📱 Shareable dashboard routes** Links to Models, Activity, Keys, Pollen, Quests, and News now open exactly where they should, retaining useful view state instead of dumping everyone at the lobby.
-- **2026-07-15** – **🎨 Veo in 720p or 1080p** Video generation now has dedicated Veo 3.1 Fast tiers for 720p and 1080p output, so resolution is explicit rather than a small upstream mystery.
 ---
 
 ## 🌱 Introduction

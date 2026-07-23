@@ -2074,6 +2074,23 @@ fixtureTest(
         expect(listResponse.status).toBe(200);
         await expect(listResponse.json()).resolves.toEqual({ data: [] });
 
+        const missingTitleResponse = await fetchEnterApi(
+            enterApi,
+            new Request("http://localhost:3000/api/account/my-models", {
+                method: "POST",
+                headers: {
+                    Authorization: `Bearer ${key}`,
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    name: "missing-title",
+                    baseUrl: "https://api.example.com/v1",
+                    bearerToken: "sk_saved_token",
+                }),
+            }),
+        );
+        expect(missingTitleResponse.status).toBe(400);
+
         const tooLongTitleResponse = await fetchEnterApi(
             enterApi,
             new Request("http://localhost:3000/api/account/my-models", {

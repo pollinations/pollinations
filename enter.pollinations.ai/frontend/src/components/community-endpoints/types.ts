@@ -17,7 +17,7 @@ type EndpointFormPrices = Record<CommunityEndpointPriceKey, string>;
 // managed agent.
 export type EndpointMode = "external" | "agent";
 
-export type McpServerRow = { name: string; url: string };
+export type McpServerRow = { id: string; name: string; url: string };
 
 export type ManagedAgent = {
     id: string;
@@ -29,12 +29,13 @@ export type ManagedAgent = {
     updatedAt: string;
 };
 
-export type AgentFormState = Pick<
-    ManagedAgent,
-    "name" | "systemPrompt" | "baseModel" | "mcpServers"
->;
+type AgentFields = Pick<ManagedAgent, "name" | "systemPrompt" | "baseModel">;
 
-export type AgentPayload = AgentFormState;
+export type AgentFormState = AgentFields & { mcpServers: McpServerRow[] };
+
+export type AgentPayload = AgentFields & {
+    mcpServers: ManagedAgent["mcpServers"];
+};
 
 export type CommunityEndpoint = {
     id: string;

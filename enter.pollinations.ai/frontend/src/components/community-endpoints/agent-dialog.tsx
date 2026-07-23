@@ -48,6 +48,7 @@ export function AgentDialog({
                       baseModel: agent.baseModel,
                       mcpServers: agent.mcpServers.map((server) => ({
                           ...server,
+                          id: crypto.randomUUID(),
                       })),
                   }
                 : emptyAgentForm,
@@ -65,7 +66,7 @@ export function AgentDialog({
 
     function updateMcpServer(
         index: number,
-        key: keyof McpServerRow,
+        key: keyof Omit<McpServerRow, "id">,
         value: string,
     ): void {
         setForm((current) => ({
@@ -79,7 +80,10 @@ export function AgentDialog({
     function addMcpServer(): void {
         setForm((current) => ({
             ...current,
-            mcpServers: [...current.mcpServers, { name: "", url: "" }],
+            mcpServers: [
+                ...current.mcpServers,
+                { id: crypto.randomUUID(), name: "", url: "" },
+            ],
         }));
     }
 
@@ -127,9 +131,8 @@ export function AgentDialog({
                     {agent ? "Edit Agent" : "Add Agent"}
                 </DialogTitle>
                 <p className="mt-1 text-sm text-theme-text-muted">
-                    Pollinations deploys this prompt and its MCP tools as an
-                    OpenAI-compatible endpoint. Community model registration is
-                    a separate step.
+                    Pollinations runs this prompt and its MCP tools as a managed
+                    agent. Community model registration is a separate step.
                 </p>
             </div>
             <form
@@ -141,7 +144,7 @@ export function AgentDialog({
                     {error && <Alert intent="danger">{error}</Alert>}
                     <FieldStack
                         label="Agent name"
-                        helper="An internal name; changing it does not change the endpoint URL or model listing."
+                        helper="An internal name; changing it does not change the model listing."
                         alignLabelRow
                     >
                         <Input

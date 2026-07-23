@@ -25,7 +25,7 @@ export function PromptAgentFields({
     onAddMcp: () => void;
     onUpdateMcp: (
         index: number,
-        key: keyof McpServerRow,
+        key: keyof Omit<McpServerRow, "id">,
         value: string,
     ) => void;
     onRemoveMcp: (index: number) => void;
@@ -86,7 +86,7 @@ export function PromptAgentFields({
                     <div className="grid gap-2">
                         {form.mcpServers.map((row, index) => (
                             <div
-                                key={index}
+                                key={row.id}
                                 className="flex items-center gap-2"
                             >
                                 <Input

@@ -48,7 +48,8 @@ Actions:
                 "properties": {
                     "action": {
                         "type": "string",
-                        "description": "The action to perform (get, search, create, close, comment, etc.)",
+                        "enum": ["get", "search", "search_user", "find_similar", "create", "comment", "edit", "edit_comment", "delete_comment", "close", "reopen", "label", "unlabel", "assign", "unassign", "milestone", "lock", "link", "get_history", "get_parent", "get_sub_issues", "create_sub_issue", "add_sub_issue", "remove_sub_issue", "list_labels", "list_milestones", "subscribe", "unsubscribe", "unsubscribe_all", "list_subscriptions"],
+                        "description": "Issue operation to perform.",
                     },
                     "issue_number": {
                         "type": "integer",
@@ -164,7 +165,8 @@ Actions:
                 "properties": {
                     "action": {
                         "type": "string",
-                        "description": "The action: list, view, list_items, get_item, add, remove, set_status, set_field",
+                        "enum": ["list", "view", "list_items", "get_item", "add", "remove", "set_status", "set_field"],
+                        "description": "Project operation to perform.",
                     },
                     "project_number": {
                         "type": "integer",
@@ -291,7 +293,8 @@ Actions:
                 "properties": {
                     "action": {
                         "type": "string",
-                        "description": "The action: get, list, get_files, get_diff, get_checks, get_commits, get_threads, get_review_comments, get_file_at_ref, request_review, remove_reviewer, approve, request_changes, merge, update, close, reopen, create, convert_to_draft, ready_for_review, update_branch, comment, inline_comment, suggest, resolve_thread, unresolve_thread, enable_auto_merge, disable_auto_merge, review",
+                        "enum": ["get", "list", "get_files", "get_diff", "get_checks", "get_commits", "get_threads", "get_review_comments", "get_file_at_ref", "get_history", "review", "request_review", "remove_reviewer", "approve", "request_changes", "merge", "update", "close", "reopen", "create", "convert_to_draft", "ready_for_review", "update_branch", "comment", "inline_comment", "suggest", "resolve_thread", "unresolve_thread", "enable_auto_merge", "disable_auto_merge"],
+                        "description": "PR operation to perform.",
                     },
                     "pr_number": {
                         "type": "integer",

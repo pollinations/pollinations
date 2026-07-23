@@ -242,8 +242,8 @@ const models: ModelDefinition[] = [
         ),
     },
     {
-        name: "gemini-flash-lite-3.1",
-        config: portkeyConfig["google/gemini-3.1-flash-lite"],
+        name: "gemini-flash-lite-3.5",
+        config: portkeyConfig["google/gemini-3.5-flash-lite"],
         transform: pipe(
             sanitizeToolSchemas,
             adaptGoogleSearchToolForOpenRouter,
@@ -273,7 +273,7 @@ const models: ModelDefinition[] = [
     },
     {
         name: "gemini-search-fast",
-        config: portkeyConfig["google/gemini-3.1-flash-lite"],
+        config: portkeyConfig["google/gemini-3.5-flash-lite"],
         transform: pipe(
             sanitizeToolSchemas,
             adaptGoogleSearchToolForOpenRouter,
@@ -340,6 +340,14 @@ const models: ModelDefinition[] = [
     {
         name: "laguna",
         config: portkeyConfig["poolside/laguna-s-2.1"],
+        transform: pipe(
+            sanitizeToolSchemas,
+            createReasoningEffortTransform("toggle"),
+        ),
+    },
+    {
+        name: "longcat",
+        config: portkeyConfig["meituan/longcat-2.0"],
         transform: pipe(
             sanitizeToolSchemas,
             createReasoningEffortTransform("toggle"),

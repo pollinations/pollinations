@@ -448,11 +448,13 @@ export const TEXT_SERVICES = {
         contextLength: 1048576,
         isSpecialized: false,
     },
-    "gemini-flash-lite-3.1": {
+    "gemini-flash-lite-3.5": {
         aliases: [
+            "gemini-flash-lite-3.1",
             "gemini-3.1-flash-lite",
             "gemini-3.1-flash-lite-preview",
             "gemini-flash-lite",
+            "gemini-3.5-flash-lite",
         ],
         provider: "openrouter",
         brand: "Google",
@@ -461,21 +463,21 @@ export const TEXT_SERVICES = {
         priceMultiplier: 1,
         paidOnly: true,
         cost: {
-            promptTextTokens: perMillion(0.25),
-            promptCachedTokens: perMillion(0.025),
-            promptCacheWriteTokens: perMillion(0.25),
-            promptAudioTokens: perMillion(0.5),
-            promptImageTokens: perMillion(0.25),
-            promptVideoTokens: perMillion(0.25),
-            completionTextTokens: perMillion(1.5),
+            promptTextTokens: perMillion(0.3),
+            promptCachedTokens: perMillion(0.03),
+            promptCacheWriteTokens: perMillion(0.3),
+            promptAudioTokens: perMillion(0.3),
+            promptImageTokens: perMillion(0.3),
+            promptVideoTokens: perMillion(0.3),
+            completionTextTokens: perMillion(2.5),
         },
         billing: withOpenRouterGeminiCacheStorage(
             OPENROUTER_GEMINI_SEARCH_BILLING,
             1.0,
         ),
-        title: "Gemini 3.1 Flash Lite",
+        title: "Gemini 3.5 Flash Lite",
         description:
-            "Quick, low-cost answers across text, images, audio and video",
+            "Fast multimodal reasoning for high-throughput agents and data processing",
         inputModalities: ["text", "image", "audio", "video"],
         outputModalities: ["text"],
         maxReferenceImages: 3600, // Gemini API image-understanding file limit.
@@ -759,7 +761,10 @@ export const TEXT_SERVICES = {
         isSpecialized: false,
     },
     "gemini-search-fast": {
-        aliases: ["gemini-3.1-flash-lite-search"],
+        aliases: [
+            "gemini-3.1-flash-lite-search",
+            "gemini-3.5-flash-lite-search",
+        ],
         provider: "openrouter",
         brand: "Google",
         category: "text",
@@ -768,20 +773,20 @@ export const TEXT_SERVICES = {
         priceMultiplier: 1,
         // OpenRouter base rates for the pinned Google Vertex global route.
         cost: {
-            promptTextTokens: perMillion(0.25),
-            promptCachedTokens: perMillion(0.025),
-            promptCacheWriteTokens: perMillion(0.25),
-            promptAudioTokens: perMillion(0.5),
-            promptImageTokens: perMillion(0.25),
-            promptVideoTokens: perMillion(0.25),
-            completionTextTokens: perMillion(1.5),
+            promptTextTokens: perMillion(0.3),
+            promptCachedTokens: perMillion(0.03),
+            promptCacheWriteTokens: perMillion(0.3),
+            promptAudioTokens: perMillion(0.3),
+            promptImageTokens: perMillion(0.3),
+            promptVideoTokens: perMillion(0.3),
+            completionTextTokens: perMillion(2.5),
         },
         billing: withOpenRouterGeminiCacheStorage(
             OPENROUTER_GEMINI_SEARCH_BILLING,
             1.0,
         ),
-        title: "Gemini 3.1 Flash Lite Search",
-        description: "Low-cost answers grounded in live web search results",
+        title: "Gemini 3.5 Flash Lite Search",
+        description: "Fast multimodal answers grounded in live web results",
         inputModalities: ["text", "image", "audio", "video"],
         outputModalities: ["text"],
         maxReferenceImages: 3600, // Gemini API image-understanding file limit.
@@ -1222,6 +1227,30 @@ export const TEXT_SERVICES = {
         title: "Laguna S 2.1",
         description:
             "Long-context reasoning for coding agents and complex software tasks",
+        inputModalities: ["text"],
+        outputModalities: ["text"],
+        tools: true,
+        reasoning: true,
+        contextLength: 1048576,
+        isSpecialized: false,
+    },
+    "longcat": {
+        aliases: ["longcat-2.0", "longcat-2"],
+        provider: "openrouter",
+        brand: "Meituan",
+        category: "text",
+        addedDate: new Date("2026-07-23").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1,
+        cost: {
+            // OpenRouter AtlasCloud FP8 route rates (2026-07-23).
+            promptTextTokens: perMillion(0.3),
+            promptCachedTokens: perMillion(0.006),
+            completionTextTokens: perMillion(1.2),
+        },
+        title: "LongCat 2.0",
+        description:
+            "Long-context reasoning for coding agents and repository-scale tasks",
         inputModalities: ["text"],
         outputModalities: ["text"],
         tools: true,

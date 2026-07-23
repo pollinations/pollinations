@@ -170,6 +170,16 @@ export const portkeyConfig: PortkeyConfigMap = {
                 },
             },
         }),
+    "meituan/longcat-2.0": () =>
+        createOpenRouterModelConfig({
+            model: "meituan/longcat-2.0",
+            defaultOptions: {
+                provider: {
+                    only: ["atlas-cloud/fp8"],
+                    allow_fallbacks: false,
+                },
+            },
+        }),
 
     // -- OpenRouter (Gemma) ---------------------------------------------------
     // Moved off DeepInfra: OpenRouter serves the same SKU ~cheaper ($0.06/$0.33
@@ -289,8 +299,8 @@ export const portkeyConfig: PortkeyConfigMap = {
         "gemini-2.5-flash-lite",
         "google-vertex/eu",
     ),
-    "google/gemini-3.1-flash-lite": createPinnedOpenRouterGeminiConfig(
-        "gemini-3.1-flash-lite",
+    "google/gemini-3.5-flash-lite": createPinnedOpenRouterGeminiConfig(
+        "gemini-3.5-flash-lite",
         "google-vertex/global",
     ),
     "google/gemini-3.6-flash": createPinnedOpenRouterGeminiConfig(

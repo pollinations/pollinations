@@ -529,13 +529,13 @@ curl -s "https://api.europe-west2.gcp.tinybird.co/v0/pipes/model_health.json?tok
 
 ### Raw SQL Queries
 
-The prod `TINYBIRD_READ_TOKEN` above can query the raw `generation_event` datasource directly via `/v0/sql` (verified). Reuse `$TB`:
+The prod `TINYBIRD_READ_TOKEN` above can query the raw `generation_event_v2` datasource directly via `/v0/sql` (verified). Reuse `$TB`:
 
 ```bash
 # Find users with frequent 403 errors (last 24 hours)
 curl -s "https://api.europe-west2.gcp.tinybird.co/v0/sql?token=$TB" \
   --data-urlencode "q=SELECT user_id, user_github_username, user_tier, count() as error_403_count
-FROM generation_event
+FROM generation_event_v2
 WHERE response_status = 403
   AND start_time > now() - interval 24 hour
   AND user_id != ''
@@ -547,7 +547,7 @@ LIMIT 20"
 # Find users with 500 errors (actual backend issues)
 curl -s "https://api.europe-west2.gcp.tinybird.co/v0/sql?token=$TB" \
   --data-urlencode "q=SELECT user_github_username, model_requested, error_message, count() as error_count 
-FROM generation_event 
+FROM generation_event_v2
 WHERE response_status >= 500 
   AND start_time > now() - interval 24 hour 
 GROUP BY user_github_username, model_requested, error_message 
@@ -557,7 +557,7 @@ LIMIT 20"
 # Check specific user's recent errors
 curl -s "https://api.europe-west2.gcp.tinybird.co/v0/sql?token=$TB" \
   --data-urlencode "q=SELECT start_time, response_status, model_requested, error_message 
-FROM generation_event 
+FROM generation_event_v2
 WHERE user_github_username = 'USERNAME_HERE' 
   AND start_time > now() - interval 24 hour 
 ORDER BY start_time DESC 
@@ -566,7 +566,7 @@ LIMIT 50"
 
 ### Datasource Schema
 
-The `generation_event` datasource is defined in `enter.pollinations.ai/observability/datasources/generation_event.datasource` and includes:
+The `generation_event_v2` datasource is defined in `enter.pollinations.ai/observability/datasources/generation_event_v2.datasource` and includes:
 - `user_id`, `user_github_username`, `user_tier`
 - `response_status`, `error_message`, `error_response_code`
 - `model_requested`, `model_used`

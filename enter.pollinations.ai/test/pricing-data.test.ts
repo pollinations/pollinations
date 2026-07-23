@@ -219,20 +219,20 @@ test("catalog prices expose 3D flat output generation rates", () => {
     }
 });
 
-test("catalog models resolve 3D brand logo SVG assets", () => {
-    const model3dPrices = getModelPricesFromCatalog(getModel3dModelsInfo());
-    const expectedLogoByBrand = new Map([
-        ["Microsoft", "/brand-logos/microsoft.svg"],
-        ["Deemos", "/brand-logos/deemos.svg"],
-    ]);
+test("catalog models resolve brand logo SVG assets", () => {
+    const logoAssets = new Set(
+        Object.keys(
+            import.meta.glob("../frontend/public/brand-logos/*.svg"),
+        ).map((file) => file.replace("../frontend/public", "")),
+    );
+    const missingLogos = getCatalogModelPrices().flatMap((model) => {
+        const logoPath = getModelBrandLogoPath(model);
+        return logoPath && logoAssets.has(logoPath)
+            ? []
+            : [{ name: model.name, brand: model.brand, logoPath }];
+    });
 
-    expect(model3dPrices.length).toBeGreaterThan(0);
-
-    for (const modelPrice of model3dPrices) {
-        expect(getModelBrandLogoPath(modelPrice)).toBe(
-            expectedLogoByBrand.get(modelPrice.brand ?? ""),
-        );
-    }
+    expect(missingLogos).toEqual([]);
 });
 
 test("model info exposes public capabilities without raw implementation flags", () => {
@@ -443,9 +443,9 @@ test("OpenRouter Gemini search cost is added from provider usage", () => {
 
     // Every pinned OpenRouter route uses the provider-reported request count.
     expect(gemini3FlashCost.totalCost).toBeCloseTo(3.528, 8);
-    expect(geminiSearchFastCost.totalCost).toBeCloseTo(1.778, 8);
+    expect(geminiSearchFastCost.totalCost).toBeCloseTo(2.828, 8);
     expect(geminiSearchLargeCost.totalCost).toBeCloseTo(9.028, 8);
-    expect(ungroundedGeminiSearchFastCost.totalCost).toBeCloseTo(1.75, 8);
+    expect(ungroundedGeminiSearchFastCost.totalCost).toBeCloseTo(2.8, 8);
 });
 
 // Billing internals are intentionally NOT exposed in the public /models schema
@@ -591,7 +591,7 @@ test("Gemini grounding is detected on streamed chunk output", () => {
     expect(
         calculateCost("gemini-search-fast", usage, openRouterStreamOutput)
             .totalCost,
-    ).toBeCloseTo(1.778, 8);
+    ).toBeCloseTo(2.828, 8);
 });
 
 // Billing rules live on the private ModelDefinition (drive the fee), but are
@@ -639,7 +639,7 @@ test("Gemini models price cache writes at the standard input rate", () => {
     const models = [
         "gemini-3-flash",
         "gemini",
-        "gemini-flash-lite-3.1",
+        "gemini-flash-lite-3.5",
         "gemini-fast",
         "gemini-large",
         "gemini-search",
@@ -662,7 +662,7 @@ test("OpenRouter Gemini routes price separately reported media input tokens", ()
     for (const model of [
         "gemini-3-flash",
         "gemini",
-        "gemini-flash-lite-3.1",
+        "gemini-flash-lite-3.5",
         "gemini-fast",
         "gemini-large",
         "gemini-search",
@@ -685,7 +685,7 @@ test("Google text models use OpenRouter without advertising code execution", () 
     const googleModels = [
         "gemini-3-flash",
         "gemini",
-        "gemini-flash-lite-3.1",
+        "gemini-flash-lite-3.5",
         "gemini-fast",
         "gemini-large",
         "gemini-search",
@@ -760,7 +760,7 @@ test("OpenRouter Gemini adjustments use provider-reported cache and search usage
     for (const model of [
         "gemini-3-flash",
         "gemini",
-        "gemini-flash-lite-3.1",
+        "gemini-flash-lite-3.5",
         "gemini-fast",
         "gemini-large",
         "gemini-search",

@@ -21,7 +21,7 @@ POLLINATIONS_API_KEY = os.environ.get("POLLINATIONS_API_KEY", "")
 VALIDATION_RESULT = os.environ.get("VALIDATION_RESULT", "{}")
 
 REPO = "pollinations/pollinations"
-MODEL = "openai-large"
+MODEL = "gpt-5.6-luna"
 POLLINATIONS_API = "https://gen.pollinations.ai/v1/chat/completions"
 COMMENT_MARKER = "<!-- APP_PRE_REVIEW -->"
 POLLINATIONS_MARKERS = (

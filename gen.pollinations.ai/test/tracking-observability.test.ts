@@ -228,6 +228,7 @@ function createHeaderApp(
     extraHeaders: Record<string, string>,
     user: AuthUser | null = trackingUser,
     status = 200,
+    consumePollen: (amount: number) => Promise<void> = async () => {},
 ) {
     const app = new Hono<Env>();
 
@@ -246,7 +247,7 @@ function createHeaderApp(
         c.set("balance", {
             getBalance: async () => ({ tierBalance: 1, packBalance: 0 }),
         });
-        c.set("frontendKeyRateLimit", { consumePollen: async () => {} });
+        c.set("frontendKeyRateLimit", { consumePollen });
         c.set("model", {
             requested: "openai",
             resolved: "openai",
@@ -381,7 +382,8 @@ describe("tracking observability", () => {
         expect(tinybirdRequests[0].headers.get("authorization")).toBe(
             "Bearer test_tinybird_token",
         );
-        await expect(tinybirdRequests[0].json()).resolves.toMatchObject({
+        const event = await tinybirdRequests[0].json();
+        expect(event).toMatchObject({
             requestPath: "/v1/chat/completions",
             environment: "test",
             eventType: "generate.text",
@@ -398,6 +400,8 @@ describe("tracking observability", () => {
             referrerDomain: "example.com",
             ipSubnet: "203.0.113.0",
         });
+        expect(event).not.toHaveProperty("cacheHit");
+        expect(event).not.toHaveProperty("cacheKey");
         expect(consumePollen).toHaveBeenCalledWith(expect.any(Number));
         expect(consumePollen.mock.calls[0]?.[0]).toBeGreaterThan(0);
     });
@@ -406,9 +410,15 @@ describe("tracking observability", () => {
         const tinybirdFetch = vi
             .spyOn(globalThis, "fetch")
             .mockResolvedValue(new Response("ok"));
+        const consumePollen = vi.fn(async (_amount: number) => {});
 
         const ctx = createExecutionContext();
-        const response = await createHeaderApp({ "x-cache": "HIT" }).fetch(
+        const response = await createHeaderApp(
+            { "x-cache": "HIT" },
+            trackingUser,
+            200,
+            consumePollen,
+        ).fetch(
             new Request("https://gen.pollinations.ai/v1/chat/completions", {
                 method: "POST",
                 headers: { "content-type": "application/json" },
@@ -435,6 +445,7 @@ describe("tracking observability", () => {
 
         expect(response.status).toBe(200);
         expect(response.headers.get("x-cache")).toBe("HIT");
+        expect(consumePollen).toHaveBeenCalledWith(0);
         expect(tinybirdFetch).not.toHaveBeenCalled();
     });
 

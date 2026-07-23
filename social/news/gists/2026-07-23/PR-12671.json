@@ -1,0 +1,35 @@
+{
+  "pr_number": 12671,
+  "title": "fix: add missing model brand logos",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/12671",
+  "merged_at": "2026-07-23T00:56:13Z",
+  "labels": [],
+  "pr_body_excerpt": "## What changed\n\n- Adds Meituan, Poolside, Xiaomi, and NVIDIA logo assets to the model catalog.\n- Maps the new brands used by LongCat, Laguna, MiMo, and SANA.\n- Expands logo coverage testing from 3D models to the complete model catalog.\n\n## Why\n\nNew registry brands had no frontend logo mapping or SVG asset, so their catalog rows silently rendered without logos. The existing test only covered Microsoft and Deemos 3D models and did not catch missing brands in other modalities.\n\n## Validation\n\n- `npx vitest run test/pricing-data.test.ts` — 26 passed\n- `npx vite build --config frontend/vite.config.ts`\n- `xmllint --noout` on all four SVGs\n- Visual inspection of all four rendered marks\n",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Every model gets a face",
+    "blurb": "LongCat, Laguna, MiMo, and SANA were in the catalog but missing their little nameplates. Their brands now show up properly, as if the labels finally caught up with the jars.",
+    "summary": "Added Meituan, Poolside, Xiaomi, and NVIDIA SVG assets and catalog brand mappings for LongCat, Laguna, MiMo, and SANA, while expanding logo coverage tests to the full model catalog.",
+    "impact": "Users browsing the model catalog will now see the correct brand marks for LongCat, Laguna, MiMo, and SANA, with tests catching missing logo mappings across every modality.",
+    "keywords": [
+      "model-catalog",
+      "brand-logos",
+      "LongCat",
+      "Laguna",
+      "MiMo",
+      "SANA",
+      "frontend"
+    ],
+    "visual_concept": "A cozy model-catalog display where Polli helps four newly labeled model cards bloom into place, each with a tiny distinct pixel logo badge for Meituan, Poolside, Xiaomi, and NVIDIA. A CRT monitor robot can enthusiastically inspect the complete row of cards while small code-plants and flowers grow around the catalog, representing complete visual coverage.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink rectangular cheek blush, light blue wings, and a tiny librarian visor, carefully placing four small brand-logo badges onto glowing model catalog cards while a chunky CRT monitor robot checks them with happy square pixel eyes. Lime green (#ecf874) catalog glow, warm cream and lavender pastel background, code-plants and tiny flowers around the terminal, subtle pixel-font text: \"LOGOS FOUND\"; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-23/PR-12671.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink rectangular cheek blush, light blue wings, and a tiny librarian visor, carefully placing four small brand-logo badges onto glowing model catalog cards while a chunky CRT monitor robot checks them with happy square pixel eyes. Lime green (#ecf874) catalog glow, warm cream and lavender pastel background, code-plants and tiny flowers around the terminal, subtle pixel-font text: \"LOGOS FOUND\"; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, nostalgic but beautiful."
+  },
+  "generated_at": "2026-07-23T00:57:04.067115+00:00"
+}

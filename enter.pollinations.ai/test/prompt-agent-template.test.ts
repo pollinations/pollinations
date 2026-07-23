@@ -1,10 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import promptAgentWorker from "../src/services/generated/prompt-agent-worker.js";
 import { PROMPT_AGENT_TEMPLATE_SOURCE } from "../src/services/prompt-agent-template.ts";
 
-// Load the template (a self-contained ES module string) as a real module and
-// drive its default fetch handler, mocking global fetch so the base-model and
-// tool calls are controllable. This exercises the tool loop, streaming SSE
-// framing, and tool-error recovery for real rather than by string match.
 type AgentModule = {
     default: {
         fetch: (
@@ -15,16 +12,7 @@ type AgentModule = {
 };
 
 async function loadTemplate(): Promise<AgentModule["default"]> {
-    // The template is a single-file ES module string. The Workers test pool
-    // can't dynamically import a data: URL, so evaluate the body directly:
-    // rewrite `export default {` to `return {` and run it in a function scope.
-    // The template has no imports, so nothing else needs resolving.
-    const body = PROMPT_AGENT_TEMPLATE_SOURCE.replace(
-        /export default \{/,
-        "return {",
-    );
-    const factory = new Function(`${body}`);
-    return factory() as AgentModule["default"];
+    return promptAgentWorker;
 }
 
 const BASE_ENV = {
@@ -52,6 +40,13 @@ describe("prompt-agent template", () => {
         vi.unstubAllGlobals();
     });
 
+    it("builds a self-contained deployable worker", () => {
+        expect(PROMPT_AGENT_TEMPLATE_SOURCE.length).toBeGreaterThan(100_000);
+        expect(PROMPT_AGENT_TEMPLATE_SOURCE).toContain("export{");
+        expect(PROMPT_AGENT_TEMPLATE_SOURCE).not.toContain('from"ai"');
+        expect(PROMPT_AGENT_TEMPLATE_SOURCE).not.toContain('from"@ai-sdk/mcp"');
+    });
+
     it("rejects callers without the auth token", async () => {
         const agent = await loadTemplate();
         const res = await agent.fetch(
@@ -74,15 +69,29 @@ describe("prompt-agent template", () => {
                 const url = new URL(request.url);
                 if (url.hostname === "mcp.example.com") {
                     mcpRequests.push(request.clone());
+                    if (request.method === "GET") {
+                        return new Response(null, { status: 405 });
+                    }
+                    if (request.method === "DELETE") {
+                        return new Response(null, { status: 200 });
+                    }
                     const body = (await request.json()) as {
+                        id?: string;
                         method: string;
                     };
                     if (body.method === "initialize") {
                         return Response.json(
                             {
                                 jsonrpc: "2.0",
-                                id: 1,
-                                result: { protocolVersion: "2025-06-18" },
+                                id: body.id,
+                                result: {
+                                    protocolVersion: "2025-06-18",
+                                    capabilities: { tools: {} },
+                                    serverInfo: {
+                                        name: "test-mcp",
+                                        version: "1.0.0",
+                                    },
+                                },
                             },
                             { headers: { "Mcp-Session-Id": "session-1" } },
                         );
@@ -93,7 +102,7 @@ describe("prompt-agent template", () => {
                     if (body.method === "tools/list") {
                         return Response.json({
                             jsonrpc: "2.0",
-                            id: 2,
+                            id: body.id,
                             result: {
                                 tools: [
                                     {
@@ -106,7 +115,7 @@ describe("prompt-agent template", () => {
                     }
                     return Response.json({
                         jsonrpc: "2.0",
-                        id: 3,
+                        id: body.id,
                         result: { content: [{ type: "text", text: "found" }] },
                     });
                 }
@@ -158,8 +167,9 @@ describe("prompt-agent template", () => {
             },
         );
 
-        expect(res.status).toBe(200);
-        const json = (await res.json()) as {
+        const responseText = await res.text();
+        expect(res.status, responseText).toBe(200);
+        const json = JSON.parse(responseText) as {
             choices: { message: { content: string }; finish_reason: string }[];
             usage: {
                 prompt_tokens: number;
@@ -171,8 +181,11 @@ describe("prompt-agent template", () => {
         expect(json.usage.tool_call_counts).toEqual({ mcp_call: 1 });
         // Usage from both model rounds is summed into the total.
         expect(json.usage.prompt_tokens).toBe(14);
+        const mcpPosts = mcpRequests.filter(
+            (request) => request.method === "POST",
+        );
         const bodies = await Promise.all(
-            mcpRequests.map(
+            mcpPosts.map(
                 (request) =>
                     request.json() as Promise<{
                         id?: number;
@@ -186,9 +199,10 @@ describe("prompt-agent template", () => {
             "tools/list",
             "tools/call",
         ]);
-        expect(bodies.map((body) => body.id)).toEqual([1, undefined, 2, 3]);
-        expect(mcpRequests[0].headers.get("Mcp-Session-Id")).toBeNull();
-        for (const request of mcpRequests.slice(1)) {
+        expect(bodies[1].id).toBeUndefined();
+        expect(bodies.filter((body) => body.id !== undefined).length).toBe(3);
+        expect(mcpPosts[0].headers.get("Mcp-Session-Id")).toBeNull();
+        for (const request of mcpPosts.slice(1)) {
             expect(request.headers.get("Mcp-Session-Id")).toBe("session-1");
             expect(request.headers.get("MCP-Protocol-Version")).toBe(
                 "2025-06-18",
@@ -197,13 +211,54 @@ describe("prompt-agent template", () => {
     });
 
     it("streams SSE with usage on the final chunk when stream:true", async () => {
-        const fetchMock = vi.fn(async () =>
-            Response.json({
+        const upstreamEvents = [
+            {
+                id: "chatcmpl-upstream",
+                object: "chat.completion.chunk",
+                created: 0,
+                model: "openai",
                 choices: [
-                    { message: { role: "assistant", content: "hello world" } },
+                    {
+                        index: 0,
+                        delta: { role: "assistant", content: "hello " },
+                        finish_reason: null,
+                    },
                 ],
-                usage: { prompt_tokens: 6, completion_tokens: 4 },
-            }),
+            },
+            {
+                id: "chatcmpl-upstream",
+                object: "chat.completion.chunk",
+                created: 0,
+                model: "openai",
+                choices: [
+                    {
+                        index: 0,
+                        delta: { content: "world" },
+                        finish_reason: null,
+                    },
+                ],
+            },
+            {
+                id: "chatcmpl-upstream",
+                object: "chat.completion.chunk",
+                created: 0,
+                model: "openai",
+                choices: [{ index: 0, delta: {}, finish_reason: "stop" }],
+                usage: {
+                    prompt_tokens: 6,
+                    completion_tokens: 4,
+                    total_tokens: 10,
+                },
+            },
+        ];
+        const fetchMock = vi.fn(
+            async () =>
+                new Response(
+                    `${upstreamEvents
+                        .map((event) => `data: ${JSON.stringify(event)}\n\n`)
+                        .join("")}data: [DONE]\n\n`,
+                    { headers: { "content-type": "text/event-stream" } },
+                ),
         );
         vi.stubGlobal("fetch", fetchMock);
 
@@ -226,9 +281,16 @@ describe("prompt-agent template", () => {
         const dataEvents = events
             .filter((e) => e !== "[DONE]")
             .map((e) => JSON.parse(e));
-        // First chunk carries the content delta; final chunk carries the
-        // finish_reason and usage (where the gateway reads tool_call_counts).
-        expect(dataEvents[0].choices[0].delta.content).toBe("hello world");
+        expect(dataEvents.find((event) => event.error)).toBeUndefined();
+        const contentEvents = dataEvents.filter(
+            (event) => event.choices[0].delta.content,
+        );
+        expect(contentEvents).toHaveLength(2);
+        expect(
+            contentEvents
+                .map((event) => event.choices[0].delta.content)
+                .join(""),
+        ).toBe("hello world");
         const finalChunk = dataEvents.at(-1);
         expect(finalChunk.choices[0].finish_reason).toBe("stop");
         expect(finalChunk.usage.tool_call_counts).toEqual({});
@@ -242,12 +304,28 @@ describe("prompt-agent template", () => {
                 const request = new Request(input, init);
                 const url = new URL(request.url);
                 if (url.hostname === "mcp.example.com") {
-                    const body = (await request.json()) as { method: string };
+                    if (request.method === "GET") {
+                        return new Response(null, { status: 405 });
+                    }
+                    if (request.method === "DELETE") {
+                        return new Response(null, { status: 200 });
+                    }
+                    const body = (await request.json()) as {
+                        id?: string;
+                        method: string;
+                    };
                     if (body.method === "initialize") {
                         return Response.json({
                             jsonrpc: "2.0",
-                            id: 1,
-                            result: { protocolVersion: "2025-06-18" },
+                            id: body.id,
+                            result: {
+                                protocolVersion: "2025-06-18",
+                                capabilities: { tools: {} },
+                                serverInfo: {
+                                    name: "test-mcp",
+                                    version: "1.0.0",
+                                },
+                            },
                         });
                     }
                     if (body.method === "notifications/initialized") {
@@ -256,7 +334,7 @@ describe("prompt-agent template", () => {
                     if (body.method === "tools/list") {
                         return Response.json({
                             jsonrpc: "2.0",
-                            id: 2,
+                            id: body.id,
                             result: {
                                 tools: [
                                     {
@@ -324,8 +402,9 @@ describe("prompt-agent template", () => {
             },
         );
         // A tool failure does not fail the request.
-        expect(res.status).toBe(200);
-        const json = (await res.json()) as {
+        const responseText = await res.text();
+        expect(res.status, responseText).toBe(200);
+        const json = JSON.parse(responseText) as {
             choices: { message: { content: string } }[];
             usage: { tool_call_counts: Record<string, number> };
         };

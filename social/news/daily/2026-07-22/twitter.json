@@ -1,0 +1,14 @@
+{
+  "platform": "twitter",
+  "scope": "daily",
+  "date": "2026-07-22",
+  "period_start": "2026-07-22",
+  "period_end": "2026-07-22",
+  "generated_at": "2026-07-23T07:00:03.935510+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-07-22/images/twitter.jpg"
+    }
+  ],
+  "text": "shipped today: community image endpoints now plug more models into the standard API; Flux queues are capped and tougher. Google text models route through OpenRouter, Laguna S 2.1 joined, and app submissions stopped arguing with their own labels."
+}

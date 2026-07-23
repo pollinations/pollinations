@@ -184,3 +184,62 @@ test("nanobanana rejects usage that does not sum to its total", async ({
     expect(response.status, await response.clone().text()).toBe(502);
     await wait();
 });
+
+test("nanobanana-2 preserves 4K routing, reasoning, and exact billing", async ({
+    paidApiKey,
+    mocks,
+}) => {
+    await mocks.enable("tinybird", "openrouter");
+    mocks.openrouter.state.usage = {
+        prompt_tokens: 12,
+        completion_tokens: 2524,
+        total_tokens: 2536,
+        cost: 0.151254,
+        prompt_tokens_details: {},
+        completion_tokens_details: {
+            reasoning_tokens: 4,
+            image_tokens: 2520,
+        },
+    };
+
+    const { response, wait } = await fetchWorker(
+        "/image/black%20circle?model=nanobanana-2&width=3840&height=2160&seed=42&reasoning=pro",
+        { headers: { authorization: `Bearer ${paidApiKey}` } },
+    );
+
+    expect(response.status, await response.clone().text()).toBe(200);
+    expect(response.headers.get("x-model-used")).toBe("nanobanana-2");
+    expect(response.headers.get("x-usage-prompt-text-tokens")).toBe("12");
+    expect(response.headers.get("x-usage-completion-reasoning-tokens")).toBe(
+        "4",
+    );
+    expect(response.headers.get("x-usage-completion-image-tokens")).toBe(
+        "2520",
+    );
+    await response.arrayBuffer();
+    await wait();
+
+    expect(mocks.openrouter.state.requests).toHaveLength(1);
+    expect(mocks.openrouter.state.requests[0]).toMatchObject({
+        body: {
+            model: "google/gemini-3.1-flash-image",
+            resolution: "4K",
+            reasoning_effort: "high",
+            provider: {
+                only: ["google-vertex/global"],
+                allow_fallbacks: false,
+            },
+        },
+    });
+    expect(mocks.tinybird.state.events).toHaveLength(1);
+    const event = mocks.tinybird.state.events[0];
+    expect(event).toMatchObject({
+        modelRequested: "nanobanana-2",
+        tokenCountPromptText: 12,
+        tokenCountCompletionReasoning: 4,
+        tokenCountCompletionImage: 2520,
+    });
+    const expectedCost = (12 * 0.5 + 4 * 3 + 2520 * 60) / 1_000_000;
+    expect(event.totalCost).toBeCloseTo(expectedCost, 10);
+    expect(event.totalPrice).toBeCloseTo(expectedCost, 10);
+});

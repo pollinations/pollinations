@@ -2649,7 +2649,7 @@ fixtureTest(
         expect(bindingByName.POLLINATIONS_KEY.text).toMatch(/^sk_/);
         // The deployed module is the platform template, not user source.
         await expect((form.get("index.mjs") as File).text()).resolves.toContain(
-            "MAX_TOOL_ROUNDS",
+            "pollinations-prompt-agent",
         );
 
         // Delete retires the worker and the minted owner key.

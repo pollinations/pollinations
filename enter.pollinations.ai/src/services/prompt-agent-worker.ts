@@ -62,6 +62,7 @@ async function loadMcpTools(servers: McpServer[]): Promise<{
     try {
         for (const server of servers) {
             const client = await createMCPClient({
+                clientName: "pollinations-prompt-agent",
                 transport: {
                     type: "http",
                     url: server.url,

@@ -90,7 +90,7 @@ client → gen.pollinations.ai → upstream provider
          enter.pollinations.ai (dashboard, auth, Stripe surfaces)
 ```
 
-**Generation does not go through Enter, and neither does billing tracking.** Gen reads the shared D1/KV bindings directly to validate tokens, check balances, and apply model permissions. Gen also sends the `generation_event` directly to Tinybird (`gen.pollinations.ai/src/middleware/track.ts:290`). The `ENTER` service binding is invoked in only three places:
+**Generation does not go through Enter, and neither does billing tracking.** Gen reads the shared D1/KV bindings directly to validate tokens, check balances, and apply model permissions. Gen also sends `generation_event_v2` directly to Tinybird (`gen.pollinations.ai/src/middleware/track.ts`). The `ENTER` service binding is invoked in only three places:
 
 | File:line | Call site purpose |
 |---|---|
@@ -225,7 +225,8 @@ Provider/runtime secrets (Azure, OpenAI, OpenRouter API keys, etc.) belong in `g
 | `shared/registry/registry.ts` | `convertUsage()` — where missing cost keys log `[registry] Missing conversion rate`. `completionReasoningTokens` is rewritten to `completionTextTokens` **before** the rate lookup (line 118), so it never produces this warning. If you see the warning for reasoning, it actually means `completionTextTokens` is missing. |
 | `shared/registry/usage-headers.ts` | `x-usage-*` header builder/parser; defines every typed usage field (13 total) |
 | `shared/registry/price-helpers.ts` | `perMillion()`, `priceMultiplier` math (`price = usage × cost × priceMultiplier`, rounded to 8 decimals) |
-| `gen.pollinations.ai/src/middleware/track.ts` | Builds the `generation_event` row sent to Tinybird; cache HITs are flagged `isBilledUsage: false` (line 395) |
+| `gen.pollinations.ai/src/middleware/track.ts` | Builds the `generation_event_v2` row sent to Tinybird; cache hits and unauthenticated requests are omitted |
+| `enter.pollinations.ai/frontend/src/components/models/model-info.ts` + `frontend/public/brand-logos/*.svg` | Catalog brand-to-logo mapping and monochrome SVG assets |
 
 ### `priceMultiplier`
 
@@ -247,7 +248,7 @@ Every row below starts with the [mandatory confirmation gate](#mandatory-confirm
 | **modelId** (upstream identifier) | config only | One real call per modality returns 200; §8; §9 if the upstream version is new |
 | **Slug / service name** | `availableModels.ts` + registry `name` + every alias entry referencing it | `aliases.test.ts`; `/v1/models` lists new slug; old slug returns 404 or alias-redirects; `rg <old-slug>` across `apps/`, `pollinations.ai/`, `packages/sdk` for hardcoded refs |
 | **Aliases** | registry `aliases` array | `aliases.test.ts`; each alias resolves to canonical |
-| **Description / brand** | registry only | `/v1/models` shows new copy; **don't touch `addedDate`** |
+| **Description / brand** | registry; for a new brand, `model-info.ts` + `public/brand-logos/<brand>.svg` | Catalog API shows new copy; `getModelBrandLogoPath()` resolves to an existing SVG; visually verify the model row; **don't touch `addedDate`** |
 | **`inputModalities` added** | registry + possibly `gen.pollinations.ai/src/text/transforms/` | §7 row passes empirically (vendor docs are not evidence); error path for unsupported modality returns 4xx, not silent ignore |
 | **`outputModalities` added** | registry + handler | Sample response carries the modality; §8 usage line for the matching cost type present. If declaring two output modalities (e.g. video+audio for `seedance-2.0`), confirm whether the upstream bills bundled into one usage field or returns separate fields — document the choice in the cost block comment. |
 | **Image resolutions / aspect ratios** | handler + (registry comment) | One generation per supported ratio returns 200 with matching dims; unsupported ratios return 4xx; §7 cache row with byte-identical params shows MISS→HIT |
@@ -416,13 +417,13 @@ After every **MISS** call (cache HITs are explicitly NOT billed — see caveat b
 - For MISS: every non-zero header should have a matching registry cost entry.
 - For HIT: **text caches preserve `x-usage-*` headers** so the parsed usage matches the original MISS; **media (image/video/audio) caches drop `x-usage-*` headers** and only preserve selected safety metadata. Don't flag missing media usage headers on a HIT.
 
-### C. Tinybird `generation_event` row
+### C. Tinybird `generation_event_v2` row
 - Local gen / dev → staging workspace → `TINYBIRD_READ_STAGING`
 - Prod gen → prod workspace → `TINYBIRD_READ_PROD`
-- Confirm a row exists for your model with non-zero `token_count_*` and `token_price_*` columns matching the JSON/headers (column list: `enter.pollinations.ai/observability/datasources/generation_event.datasource`).
+- Confirm a row exists for your model with non-zero `token_count_*` and `token_price_*` columns matching the JSON/headers (column list: `enter.pollinations.ai/observability/datasources/generation_event_v2.datasource`).
 - **No row is written for cache HITs** (`isBilledUsage: false` at `gen.pollinations.ai/src/middleware/track.ts:395`). HIT-call verification stops at the `X-Cache: HIT` header.
 
-`model_health` returns counts/errors/latency only, no usage. Query `generation_event` directly to see token + price columns:
+`model_health` returns counts/errors/latency only, no usage. Query `generation_event_v2` directly to see token + price columns:
 ```bash
 TB="https://api.europe-west2.gcp.tinybird.co"
 SQL="SELECT resolved_model_requested AS model, start_time,
@@ -430,7 +431,7 @@ SQL="SELECT resolved_model_requested AS model, start_time,
   token_count_completion_text, token_count_completion_reasoning,
   token_count_completion_image, token_count_completion_video_seconds,
   total_cost, total_price, dev_price, markup_rate
- FROM generation_event
+ FROM generation_event_v2
  WHERE resolved_model_requested = '$MODEL'
    AND start_time >= now() - interval 10 minute
  ORDER BY start_time DESC
@@ -464,7 +465,7 @@ In a separate terminal during testing:
 1. Map to one of the **13 typed usage fields** in `shared/registry/usage-headers.ts` (`promptTextTokens`, `promptCachedTokens`, `promptAudioTokens`, `promptAudioSeconds`, `promptImageTokens`, `promptVideoTokens`, `completionTextTokens`, `completionReasoningTokens`, `completionAudioTokens`, `completionAudioSeconds`, `completionImageTokens`, `completionVideoSeconds`, `completionVideoTokens`),
 2. AND have a corresponding entry in the registry `cost` block (reasoning tokens are an exception — they're rewritten to `completionTextTokens` in `registry.ts:118` before rate lookup, so they don't need a separate cost line; but `completionTextTokens` itself must exist),
 3. AND surface in the response headers as `x-usage-<kebab-case-name>`,
-4. AND land in the Tinybird `generation_event` row via `track.ts`,
+4. AND land in the Tinybird `generation_event_v2` row via `track.ts`,
 5. AND appear in the worker logs (`wrangler tail`) so we can audit historical drift.
 
 If a field exists upstream that we don't map → either extend `usage-headers.ts` + the registry + the Tinybird schema, OR document explicitly in the PR why we're intentionally dropping it (rare; usually "provider bundles X into Y").
@@ -493,7 +494,7 @@ grep -iE "^x-usage-" /tmp/headers.txt
 # 4. Pull the actual billing row Tinybird wrote (wait ~5s for ingest)
 sleep 5
 TB="https://api.europe-west2.gcp.tinybird.co"
-SQL="SELECT * FROM generation_event
+SQL="SELECT * FROM generation_event_v2
  WHERE resolved_model_requested = '$MODEL'
    AND start_time >= now() - interval 2 minute
  ORDER BY start_time DESC LIMIT 1 FORMAT JSON"
@@ -543,8 +544,7 @@ This is acceptable. What's NOT acceptable is silently dropping a separately-bill
                                           test/media-cache.test.ts \
                                           test/text-cache.test.ts \
                                           test/billing-deduction.test.ts \
-                                          test/tracking-observability.test.ts \
-                                          test/openai-schema.test.ts)
+                                          test/tracking-observability.test.ts)
 
 # Modality-specific (run the relevant subset)
 (cd gen.pollinations.ai && npx vitest run test/image/)         # for image models
@@ -567,6 +567,7 @@ This is acceptable. What's NOT acceptable is silently dropping a separately-bill
 - [ ] [Four-part usage check](#8-usage-billing-cache-verification) passed on MISS calls
 - [ ] [Field-parity audit](#9-field-parity-audit--mandatory-on-new-model--provider-change) passed (new model or provider change)
 - [ ] `/v1/models` returns the model with correct pricing + modalities
+- [ ] Every new model brand maps to an existing SVG and renders in the catalog; `test/pricing-data.test.ts` passes
 - [ ] `addedDate` set on first add, **untouched** on later edits
 - [ ] `priceMultiplier` is set to the explicitly confirmed value
 - [ ] No 5xx in [error-path matrix](#76-error-paths--every-malformed-request-must-return-4xx-never-opaque-5xx)

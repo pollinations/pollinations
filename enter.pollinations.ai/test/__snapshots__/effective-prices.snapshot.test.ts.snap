@@ -110,6 +110,14 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.00000009,
     },
   },
+  "csm-1b": {
+    "cost": {
+      "completionAudioTokens": 0.000007,
+    },
+    "price": {
+      "completionAudioTokens": 0.000007,
+    },
+  },
   "deepseek": {
     "cost": {
       "completionTextTokens": 0.00000028,
@@ -760,6 +768,18 @@ exports[`effective cost and price per model — snapshot 1`] = `
     "price": {
       "completionTextTokens": 0.0000003,
       "promptTextTokens": 0.0000001,
+    },
+  },
+  "longcat": {
+    "cost": {
+      "completionTextTokens": 0.0000012,
+      "promptCachedTokens": 0.000000006,
+      "promptTextTokens": 0.0000003,
+    },
+    "price": {
+      "completionTextTokens": 0.0000012,
+      "promptCachedTokens": 0.000000006,
+      "promptTextTokens": 0.0000003,
     },
   },
   "mercury": {

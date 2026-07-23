@@ -1,0 +1,35 @@
+{
+  "pr_number": 12670,
+  "title": "feat: add LongCat 2.0",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/12670",
+  "merged_at": "2026-07-23T00:32:08Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds the paid-only `longcat` text service with `longcat-2.0` and `longcat-2` aliases, 1M context, reasoning, and function tools.\n- Routes `meituan/longcat-2.0` through OpenRouter's exact `atlas-cloud/fp8` endpoint with `allow_fallbacks: false`; no Pollinations GPU and no fallback.\n- Prices input at $0.30/M, cached input at $0.006/M, and output/reasoning at $1.20/M with multiplier `1`, matching the [live endpoint](https://openrouter.ai/api/v1/models/meituan/longcat-2.0/endpoints).\n- Updates route/reasoning tests, aliases and effective-price snapshots; also fixes stale `generation_event_v2` and removed-test references in the model-management skill.\n- Verified direct and local text, aliases, streaming, reasoning on/off, `max_tokens=1`, forced tools (9/9 valid), prompt caching, paid-only filtering, malformed requests, usage headers, Tinybird rows, and 5/15/30-request bursts. Both workers type-check; 418 focused tests pass. Local telemetry recorded 75 requests, zero 5xx, zero fallbacks, and P95 4.9s.\n\nContract: canonical `longcat`; aliases `longcat-2.0`, `longcat-2`; registry provider OpenRouter; primary OpenRouter → AtlasCloud FP8; paid-only yes; multiplier 1; Pollinations GPU no; fallback none.\n\nNote: one exploratory automatic tool-selection response produced malformed tool output; exact forced tool selection passed every direct and local repetition.\n",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Long context, longer cat",
+    "blurb": "LongCat 2.0 has padded into the text API with a million-token memory, reasoning, and tool use. It knows exactly where the AtlasCloud FP8 endpoint is and declines to wander off.",
+    "summary": "Added the paid-only OpenRouter-backed `longcat` text service, with `longcat-2.0` and `longcat-2` aliases, 1M-token context, reasoning, function tools, and a fixed AtlasCloud FP8 route with no fallbacks.",
+    "impact": "Paid API users can now call LongCat 2.0 for long-context chat, reasoning, streaming, prompt caching, and forced tool workflows at $0.30/M input, $0.006/M cached input, and $1.20/M output or reasoning tokens.",
+    "keywords": [
+      "longcat",
+      "longcat-2.0",
+      "openrouter",
+      "text-api",
+      "reasoning",
+      "function-tools",
+      "long-context"
+    ],
+    "visual_concept": "Depict LongCat as a friendly, oversized pixel cat curled around a very long scroll of code and chat messages, representing its 1M-token context. Polli, wearing tiny librarian glasses, helps the cat organize glowing tool icons beside a cozy retro terminal; code-plants and flowers make the API workspace feel like a garden rather than a server rack.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow bee mascot with dark brown horizontal stripes, black antennae and oval eyes, bright pink rectangular cheek blush, a small smile, rounded translucent light-blue wings, and tiny librarian glasses, helping a friendly long pixel cat curl around an enormous scroll of code and chat messages beside a retro terminal glowing lime green (#ecf874); small tool icons, flowers, and code-plants sprout around them. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, subtle CRT glow, pixel-font text: \"1M CONTEXT\", nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-23/PR-12670.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow bee mascot with dark brown horizontal stripes, black antennae and oval eyes, bright pink rectangular cheek blush, a small smile, rounded translucent light-blue wings, and tiny librarian glasses, helping a friendly long pixel cat curl around an enormous scroll of code and chat messages beside a retro terminal glowing lime green (#ecf874); small tool icons, flowers, and code-plants sprout around them. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, subtle CRT glow, pixel-font text: \"1M CONTEXT\", nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-07-23T00:33:02.921164+00:00"
+}

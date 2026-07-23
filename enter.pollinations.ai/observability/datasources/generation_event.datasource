@@ -1,8 +1,8 @@
-TOKEN tinybird_ingest APPEND
 TOKEN tinybird_read READ
 
 DESCRIPTION >
-Generative AI events with usage, pricing, metadata, moderation, and cache info
+Historical generation events retained for audit after the v2 cutover.
+Read-only; current ingestion and analytics use generation_event_v2.
 
 SCHEMA >
 -- Event

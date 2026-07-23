@@ -128,7 +128,7 @@ async function fetchCommunityModels() {
     if (!res.ok) throw new Error(`models fetch failed: ${res.status}`);
     const catalog = await res.json();
     return catalog
-        .filter((m) => m.community === true)
+        .filter((m) => m.community === true && m.category === "text")
         .map((m) => m.name)
         .sort();
 }

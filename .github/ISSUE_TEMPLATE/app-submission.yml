@@ -1,0 +1,76 @@
+name: Submit an app
+description: Submit a Pollinations-powered app for the community catalog
+title: "[App Submission] "
+labels: [APP-SUBMISSION]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Submit a working app that uses Pollinations. An automated pre-review checks the live app and optional repository, then a maintainer reviews it before publication.
+
+        Read the [submission criteria](https://github.com/pollinations/pollinations/blob/main/apps/README.md#submission-criteria) first.
+
+  - type: input
+    id: app-name
+    attributes:
+      label: App Name
+      placeholder: Sunflower Studio
+    validations:
+      required: true
+
+  - type: textarea
+    id: app-description
+    attributes:
+      label: App Description
+      description: Briefly explain what the app does and how it uses Pollinations.
+      placeholder: Creates collaborative images using the Pollinations image API.
+    validations:
+      required: true
+
+  - type: input
+    id: app-url
+    attributes:
+      label: App URL
+      description: Public URL where reviewers can try the app.
+      placeholder: https://example.com
+    validations:
+      required: true
+
+  - type: input
+    id: github-repo
+    attributes:
+      label: GitHub Repository URL
+      description: Optional public source repository.
+      placeholder: https://github.com/username/repository
+
+  - type: dropdown
+    id: app-category
+    attributes:
+      label: App Category
+      options:
+        - image
+        - video_audio
+        - writing
+        - chat
+        - games
+        - learn
+        - bots
+        - build
+        - business
+    validations:
+      required: true
+
+  - type: input
+    id: app-language
+    attributes:
+      label: App Language
+      description: ISO language code.
+      value: en
+    validations:
+      required: true
+
+  - type: input
+    id: discord-contact
+    attributes:
+      label: Discord Username
+      description: Optional contact username.

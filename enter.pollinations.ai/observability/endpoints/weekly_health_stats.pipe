@@ -3,8 +3,8 @@ DESCRIPTION >
     Availability = 2xx / (2xx + 5xx): server (5xx) failures are downtime, while
     4xx client errors (auth, balance, rate-limit, bad input) are excluded from
     the denominator so they can't dilute the failure rate — matching the model
-    monitor (model_health). Cache hits are excluded entirely: they never reach
-    a model/provider and so can't represent service availability.
+    monitor (model_health). generation_event_v2 contains only requests that
+    reached a model/provider; cache hits are never stored.
     Supports start_date param for single-week queries to avoid Tinybird timeouts.
     Public: aggregate request volume, availability, and latency only — no
     per-user, revenue, or cost data.
@@ -31,10 +31,8 @@ SQL >
         ) AS availability,
         round(quantileIf(0.50)(response_time, response_status >= 200 AND response_status < 300), 0) AS latency_p50_ms,
         round(quantileIf(0.95)(response_time, response_status >= 200 AND response_status < 300), 0) AS latency_p95_ms
-    FROM generation_event
+    FROM generation_event_v2
     WHERE
-        cache_hit = false
-        AND
         {% if defined(start_date) %}
         start_time >= toDate({{ String(start_date) }})
         AND start_time < toDate({{ String(start_date) }}) + INTERVAL 7 DAY

@@ -2,12 +2,11 @@
 
 ## App Submission Handling
 
-Two-phase review via `apps-review-submissions.yml` (AI + human). Source of truth: `apps/APPS.md`.
+Two-phase review via `apps-review-submissions.yml` (AI evidence + human decision). Source of truth: `apps/APPS.md`.
 
-Flow: user opens issue with `TIER-APP` → workflow validates + AI generates preview → bot posts `APP_REVIEW_DATA` JSON + labels `TIER-APP-REVIEW` → maintainer adds `TIER-APP-APPROVED` → workflow prepends row to `apps/APPS.md`, opens PR with auto-merge, closes issue via `Fixes #NNN`.
+Flow: user opens an `APP-SUBMISSION` issue → AI checks the live app and optional repository → `APP-NEEDS-INFO` or `APP-REVIEW` → maintainer adds `APP-APPROVED` → `apps-publish-submissions.yml` validates the issue again, prepends the row to `apps/APPS.md`, and opens an auto-merge PR that closes the issue via `Fixes #NNN`.
 
-Label state machine:
-- `TIER-APP` → `TIER-APP-REJECTED` (duplicate/invalid) | `TIER-APP-INCOMPLETE` (not registered) | `TIER-APP-REVIEW` → `TIER-APP-APPROVED` (merged) | `TIER-APP-REJECTED` (closed)
+`APP-SUBMISSION` is the persistent type label. `APP-NEEDS-INFO`, `APP-REVIEW`, and `APP-APPROVED` describe review state. Quest rewards are detected separately from the merged catalog and are not announced by the submission workflows.
 
 Manual edits: edit `apps/APPS.md`, run `node .github/scripts/app-update-greenhouse.js`.
 
@@ -77,13 +76,30 @@ curl "http://localhost:8788/v1/chat/completions" -H "Authorization: Bearer $TOKE
 - No backward-compat fallbacks — clean breaks beat bloat. When changing tokens/headers/APIs, update all consumers at once.
 - When user says "keep it simple" — one function, one price, one config. Simplest thing that works.
 
+## Secret Mutation Safety
+
+**CRITICAL — never mutate a secret without the user's separate, explicit, scoped approval.**
+
+- A secret mutation includes creating, replacing, rotating, revoking, regenerating, synchronizing, or deploying a credential, token, API key, certificate, GitHub secret, provider secret, or encrypted SOPS value.
+- Before any mutation, stop and state the exact secret name (never its value), environments, reason, expected impact, execution order, verification, and rollback.
+- Require a new approval in the current conversation after presenting that plan. General instructions such as “go ahead,” “fix it,” “deploy,” “continue,” or approval for the surrounding model/task work do not count.
+- Required approval format: `Yes, you can rotate <SECRET_NAME> in <ENVIRONMENTS> now.`
+- Approval is valid only for the named secret, environments, and one described operation. Never reuse or broaden it.
+- Do not edit a secret file, change provider/GitHub secret state, or open or push a secret-change PR before receiving that approval.
+- If exposure is suspected, report it immediately and stop. Do not revoke or rotate until the explicit approval is received.
+- Read-only inspection may continue, but never print, echo, log, or otherwise expose secret values.
+- Encrypted secret-file changes must use a dedicated PR. Never bundle them into a model, feature, pricing, or refactor PR.
+- Never synchronize production secrets from an unmerged commit or a branch other than `production`.
+- For rotation, add and verify the replacement first, merge the encrypted update, deploy from `production`, run live tests for every affected service, and only then revoke the previous credential.
+
 ## Cloudflare Production Deployment Safety
 
 **CRITICAL — production Cloudflare deployments must always run through GitHub Actions:**
 
 - Use the service's production deployment workflow, such as `Deploy / gen.pollinations.ai`; use `workflow_dispatch` when path filters do not trigger it.
+- Dispatch production workflows only from the `production` branch. Select a secret-synchronization input only after the Secret Mutation Safety approval gate.
 - Never run `wrangler deploy --env production`, a production deployment npm script, or a direct production Worker upload from a local machine or agent session.
-- If CI credentials lack a required permission, update the scoped GitHub Actions secret and rerun the workflow. Never bypass CI with a local Cloudflare OAuth session.
+- If CI credentials lack a required permission, follow the Secret Mutation Safety approval gate before updating the scoped GitHub Actions secret and rerunning the workflow. Never bypass CI with a local Cloudflare OAuth session.
 - After the workflow succeeds, verify the active Worker version and required bindings before testing production traffic.
 
 ## Tinybird Deployment Safety

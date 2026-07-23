@@ -27,6 +27,7 @@ import {
     fetchModelCatalog,
     getModelPricesFromCatalog,
 } from "./model-catalog.ts";
+import { getModelDisplayCategory } from "./model-categories.ts";
 import { getModelDisplayName } from "./model-info.ts";
 import type { ModelSortDirection, ModelSortKey } from "./model-search.ts";
 import {
@@ -53,7 +54,8 @@ const SECTION_ORDER: SectionType[] = [
     "audio",
     "realtime",
     "text",
-    "community",
+    "community-text",
+    "community-image",
     "embedding",
 ];
 
@@ -65,7 +67,8 @@ const SEARCH_LABELS: Record<SectionType, string> = {
     audio: "audio",
     realtime: "realtime",
     text: "text",
-    community: "community",
+    "community-text": "community text",
+    "community-image": "community image",
     embedding: "embedding",
 };
 
@@ -86,17 +89,25 @@ function matchesQuery(model: ModelPrice, query: string): boolean {
 function categorizeModels(
     models: ModelPrice[],
 ): Record<SectionType, ModelPrice[]> {
-    return {
+    const categorized: Record<SectionType, ModelPrice[]> = {
         all: models,
-        image: models.filter((m) => m.type === "image"),
-        video: models.filter((m) => m.type === "video"),
-        "3d": models.filter((m) => m.type === "3d"),
-        audio: models.filter((m) => m.type === "audio"),
-        realtime: models.filter((m) => m.type === "realtime"),
-        text: models.filter((m) => m.type === "text" && !m.community),
-        community: models.filter((m) => m.community),
-        embedding: models.filter((m) => m.type === "embedding"),
+        image: [],
+        video: [],
+        "3d": [],
+        audio: [],
+        realtime: [],
+        text: [],
+        "community-text": [],
+        "community-image": [],
+        embedding: [],
     };
+
+    for (const model of models) {
+        categorized[getModelDisplayCategory(model.type, model.community)].push(
+            model,
+        );
+    }
+    return categorized;
 }
 
 export const Models: FC<ModelsProps> = ({
@@ -143,38 +154,11 @@ export const Models: FC<ModelsProps> = ({
         void loadModelCatalog();
     }, [loadModelCatalog]);
 
-    // Tab visibility follows the full catalog so a search query never hides
-    // or auto-switches away from a tab — only its contents are filtered.
-    const sectionModelsAll = useMemo(
-        () => categorizeModels(allModels),
-        [allModels],
-    );
     const sectionModels = useMemo(
         () => categorizeModels(filteredModels),
         [filteredModels],
     );
     const searchLabel = SEARCH_LABELS[activeTab];
-    const availableSections =
-        allModels.length > 0
-            ? SECTION_ORDER.filter(
-                  (section) => sectionModelsAll[section].length,
-              )
-            : SECTION_ORDER;
-
-    useEffect(() => {
-        if (!availableSections.includes(activeTab)) {
-            void navigate({
-                search: (previous) => ({
-                    ...previous,
-                    category:
-                        availableSections[0] === "all"
-                            ? undefined
-                            : availableSections[0],
-                }),
-                replace: true,
-            });
-        }
-    }, [activeTab, availableSections, navigate]);
 
     const pushSearch = useCallback(
         (nextSearch: string) => {
@@ -269,20 +253,22 @@ export const Models: FC<ModelsProps> = ({
             >
                 <div className="mb-4 flex flex-col items-start gap-3">
                     <div className="flex flex-wrap gap-1.5">
-                        {availableSections.map((section) => (
+                        {SECTION_ORDER.map((section) => (
                             <TabButton
                                 key={section}
                                 active={activeTab === section}
                                 onClick={() => setActiveTab(section)}
                                 ariaLabel={
-                                    section === "community"
-                                        ? "Community alpha models"
+                                    section === "community-text" ||
+                                    section === "community-image"
+                                        ? `${sectionLabels[section]} alpha models`
                                         : undefined
                                 }
                             >
                                 <span className="inline-flex items-center gap-1.5">
                                     {sectionLabels[section]}
-                                    {section === "community" && (
+                                    {(section === "community-text" ||
+                                        section === "community-image") && (
                                         <Chip intent="alpha" size="sm">
                                             Alpha
                                         </Chip>
@@ -324,7 +310,12 @@ export const Models: FC<ModelsProps> = ({
                             audioModels={sectionModels.audio}
                             realtimeModels={sectionModels.realtime}
                             textModels={sectionModels.text}
-                            communityModels={sectionModels.community}
+                            communityTextModels={
+                                sectionModels["community-text"]
+                            }
+                            communityImageModels={
+                                sectionModels["community-image"]
+                            }
                             embeddingModels={sectionModels.embedding}
                             activeTab={activeTab}
                             sortKey={sortKey}

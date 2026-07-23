@@ -38,7 +38,11 @@ function formatCount(num: number): string {
  * Returns undefined when no data is available.
  */
 export function calculatePerPollenValue(model: ModelPrice): number | undefined {
-    if (model.realAvgCost && model.realAvgCost > 0) {
+    if (model.free || model.realAvgCost === 0) {
+        return Number.POSITIVE_INFINITY;
+    }
+
+    if (model.realAvgCost !== undefined && model.realAvgCost > 0) {
         return 1 / model.realAvgCost;
     }
 
@@ -47,6 +51,10 @@ export function calculatePerPollenValue(model: ModelPrice): number | undefined {
 
 export function calculatePerPollen(model: ModelPrice): string {
     const unitsPerPollen = calculatePerPollenValue(model);
+    if (unitsPerPollen === Number.POSITIVE_INFINITY) {
+        return "∞";
+    }
+
     if (unitsPerPollen !== undefined) {
         return formatCount(unitsPerPollen);
     }

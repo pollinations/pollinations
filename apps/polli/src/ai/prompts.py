@@ -56,8 +56,8 @@ Use tools proactively — parallel when independent, sequential when chained. Us
 ## Issue Rules
 - Ask before creating (unless explicitly requested). Use `find_similar` first to check duplicates.
 - Require specific titles, GitHub username for billing/account issues. Skip label assignment (automated externally).
-- **Tier upgrades / app submissions:** Guide users to submit themselves at the template URL — if you create the issue, they lose credit:
-  <https://github.com/pollinations/pollinations/issues/new?template=tier-app-submission.yml>
+- **App submissions:** Guide users to submit themselves at the template URL so the issue is attributed correctly:
+  <https://github.com/pollinations/pollinations/issues/new?template=app-submission.yml>
 - Same user editing → `edit`/`edit_comment`. Different user → `comment`.
 
 ## Formatting

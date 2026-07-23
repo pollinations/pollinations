@@ -875,53 +875,22 @@ RENDER_VISUAL_TOOL = {
     "type": "function",
     "function": {
         "name": "render_visual",
-        "description": """Render a table or chart as an image and attach it to your reply. Use whenever you have structured data, comparisons, time series, distributions, or matrices to show — instead of writing a markdown table or describing the chart in text.
+        "description": """Render data as an image attached to your reply, instead of writing a markdown table or describing a chart in text.
 
-Pick the right `type` for the data:
-- `table`        — structured rows of comparable items (model specs, pricing matrices, feature comparisons)
-- `bar`          — categorical counts or magnitudes (vertical bars)
-- `horizontal_bar` — same as bar but readable when category names are long
-- `line`         — time series or ordered sequences
-- `area`         — same as line but with the area below filled (cumulative feel)
-- `scatter`      — two numeric variables, look for correlation
-- `pie` / `donut` — proportions of a whole (≤8 slices for clarity)
-- `heatmap`      — matrix of values across two dimensions
-- `histogram`    — distribution of one variable
-- `diagram`      — anything with structure rather than numbers, drawn with Mermaid. Covers
-                   flowcharts, sequence diagrams, gantt charts, state machines, ER diagrams,
-                   class diagrams, mindmaps, timelines, git graphs, user journeys, quadrant
-                   charts, sankey flows, requirement diagrams, block/packet diagrams, kanban,
-                   architecture and C4 context diagrams, radar and treemap. Use it for
-                   architecture, request flows, process steps, schedules, hierarchies and
-                   state transitions.
+Types: table, bar, horizontal_bar (long category names), line, area, scatter, pie/donut (≤8 slices), heatmap, histogram, diagram.
+`diagram` is Mermaid — flowchart, sequenceDiagram, classDiagram, stateDiagram, erDiagram, journey, gantt, pie, quadrantChart, requirementDiagram, gitGraph, mindmap, timeline, sankey, xychart, block, packet, kanban, architecture, radar, treemap, C4Context.
 
-For a diagram you usually do not need this tool at all: write a ```mermaid code fence in your
-reply and it is rendered into an image automatically, placed exactly where you wrote it. Use
-`type: "diagram"` here only when you want the diagram as a standalone attachment.
+For a diagram you usually do not need this tool: a ```mermaid fence in your reply is rendered inline automatically. Use `type: "diagram"` only for a standalone attachment.
 
 Data shape:
-- For `table`:  `data = {"headers": ["A", "B"], "rows": [["1", "2"], ...]}`
-- For charts:   `data = {"labels": [...], "datasets": [{"label": "Series", "values": [n, n, ...]}]}`
-- For `heatmap`: `datasets` rows form the matrix; `labels` are column labels
-- For `diagram`: `data` is Mermaid source as a string, starting with the diagram keyword.
-  e.g. "flowchart TD
-  A[Request] --> B{Has balance?}
-  B -->|yes| C[Deduct]
-  B -->|no| D[402]"
-  e.g. "sequenceDiagram
-  Client->>Gateway: POST /v1/chat
-  Gateway-->>Client: 200"
-  e.g. "gantt
-  title Roadmap
-  dateFormat YYYY-MM-DD
-  section Core
-  Task :a1, 2026-07-01, 20d"
-  Syntax must be valid Mermaid — an invalid diagram returns the parser error rather than an
-  image, so fix the reported line and call again.
+- table:   {"headers": ["A","B"], "rows": [["1","2"], ...]}
+- charts:  {"labels": [...], "datasets": [{"label": "Series", "values": [n, ...]}]}
+- heatmap: `datasets` rows form the matrix, `labels` are columns
+- diagram: Mermaid source as a string, starting with the diagram keyword, e.g.
+  "flowchart TD\\n A[Request] --> B{Has balance?}\\n B -->|yes| C[Deduct]\\n B -->|no| D[402]"
+  Invalid syntax returns the parser error instead of an image — fix the reported line and retry.
 
-You can call render_visual multiple times in one turn; each call attaches one image (Discord caps at 10 per reply).
-
-IMPORTANT: The image is auto-attached. Do NOT include `![](...)` markdown image tags in your reply text. Cell text in tables supports inline markdown — `**bold**`, `*italic*`, `` `code` ``.""",
+Callable multiple times per turn; each call attaches one image (Discord caps at 10). The image is auto-attached, so do NOT write `![](...)` tags. Table cells support `**bold**`, `*italic*`, `` `code` ``.""",
         "parameters": {
             "type": "object",
             "properties": {

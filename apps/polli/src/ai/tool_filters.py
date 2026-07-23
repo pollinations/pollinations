@@ -223,7 +223,8 @@ TOOL_KEYWORDS = {
         re.IGNORECASE,
     ),
     "github_custom": re.compile(
-        r"\b(stats?|statistics?|activit\w*|stale|spam|health|contributors?|history)\b",
+        r"\b(stats?|statistics?|activit\w*|stale|spam|health|contributors?|history|"
+        r"commits?|changelog|releases?|tags?|branch(es)?|blame|recent\s+changes)\b",
         re.IGNORECASE,
     ),
     # Also matches plain aggregate questions ("how many open issues?"), which previously
@@ -252,6 +253,18 @@ TOOL_KEYWORDS = {
     # AI decides when to use them based on context - they're always available
 }
 
+# Sent when nothing matches. Between them these answer almost any open-ended question:
+# the repo, the web, this server, and a repo summary for "how many/what is there" asks.
+# Anything more specific (PRs, projects, charts) trips a keyword and gets added back.
+DEFAULT_TOOLS = {
+    "code_search",
+    "web_search",
+    "web_scrape",
+    "discord_search",
+    "github_overview",
+    "github_issue",
+}
+
 
 def filter_tools_by_intent(user_message: str, all_tools: list[dict], is_admin: bool = False) -> list[dict]:
     """
@@ -274,9 +287,17 @@ def filter_tools_by_intent(user_message: str, all_tools: list[dict], is_admin: b
         if pattern.search(message_lower):
             matched_tools.add(tool_name)
 
-    # If no matches, return all tools (safe fallback)
+    # No keyword hit does not mean no tool is needed — plenty of real questions ("laguna is
+    # from openrouter right?") match nothing yet still want a lookup. Send the tools that
+    # answer open-ended questions rather than the whole set: it is cheaper on every
+    # iteration, and a shorter list is easier to choose from correctly.
     if not matched_tools:
-        return all_tools
+        fallback = [
+            tool
+            for tool in all_tools
+            if tool.get("function", {}).get("name") in DEFAULT_TOOLS
+        ]
+        return fallback or all_tools
 
     # Always include github_issue if user mentions a number like #123
     if re.search(r"#\d+", user_message):

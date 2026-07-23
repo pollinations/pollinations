@@ -1,0 +1,34 @@
+{
+  "pr_number": 12674,
+  "title": "fix: complete generation event v2 cutover",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/12674",
+  "merged_at": "2026-07-23T10:53:21Z",
+  "labels": [],
+  "pr_body_excerpt": "- Stops building and emitting generation events for unauthenticated requests and cache hits while preserving zero-cost cache rate-limit accounting.\n- Switches remaining dashboards, alerts, leaderboard queries, and operational diagnostics from archived `generation_event` to `generation_event_v2`.\n- Removes unused cache metadata and redundant v2 query guards.\n- Fixes the obsolete Wrangler flag that blocked the observability deployment check.\n\nRoot cause: the writer and Tinybird pipes moved to v2 in #12640, but direct SQL consumers and diagnostic tooling still referenced the archived legacy table.\n\nChecks:\n- Tracking observability tests: 16/16\n- Dashboard JSON, alert YAML, and shell syntax validation\n- Tinybird staging and production deployment checks; no destructive operations or data copying\n- Repository-wide legacy-query audit and `git diff --check`",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "The v2 hive is listening",
+    "blurb": "The observability garden has finished its transplant: dashboards, alerts, and diagnostics now all read from generation_event_v2. Cache hits still count toward zero-cost rate limits, minus the unnecessary event paperwork.",
+    "summary": "Completed the generation_event_v2 cutover by moving remaining SQL dashboards, alerts, leaderboard queries, and diagnostics off archived generation_event, while skipping event emission for unauthenticated requests and cache hits without changing zero-cost cache rate-limit accounting.",
+    "impact": "Operations now get consistent v2 generation metrics across dashboards and diagnostics, while cached and unauthenticated requests avoid unnecessary tracking events.",
+    "keywords": [
+      "observability",
+      "generation_event_v2",
+      "analytics",
+      "rate-limiting",
+      "cache",
+      "tinybird"
+    ],
+    "visual_concept": "A cozy observability control room where Polli helps a CRT monitor robot transplant glowing data vines from an old archived ledger into a healthy v2 garden dashboard. The key symbols are a clearly labeled small \"v2\" terminal screen, tidy dashboard charts, cache-hit seed packets, and code-plants to represent the completed metrics-pipeline migration.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute bee mascot with a yellow body, dark brown horizontal stripes, black antennae, black oval eyes, bright pink rectangular cheek blush, a happy smile, light blue translucent wings, and a tiny gardener tool belt, helping a chunky CRT monitor robot move glowing data-vines from an old archive box into a flourishing terminal labeled \"v2\"; lime green (#ecf874) dashboard charts, cache-hit seeds, flowers, and code-plants fill the warm garden workshop. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, subtle CRT glow, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-23/PR-12674.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute bee mascot with a yellow body, dark brown horizontal stripes, black antennae, black oval eyes, bright pink rectangular cheek blush, a happy smile, light blue translucent wings, and a tiny gardener tool belt, helping a chunky CRT monitor robot move glowing data-vines from an old archive box into a flourishing terminal labeled \"v2\"; lime green (#ecf874) dashboard charts, cache-hit seeds, flowers, and code-plants fill the warm garden workshop. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, subtle CRT glow, nostalgic but beautiful."
+  },
+  "generated_at": "2026-07-23T10:54:21.146422+00:00"
+}

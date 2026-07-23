@@ -1,0 +1,41 @@
+[project]
+name = "polli-agent"
+version = "0.1.0"
+description = "Autonomous multimodal creative agent on Pollinations"
+requires-python = ">=3.10"
+dependencies = [
+    "openai>=1.0",
+    "httpx>=0.25",
+    "pydantic>=2.0",
+    "python-dotenv>=1.0",
+    "aiofiles>=23.0",
+    "Pillow>=10.0",
+    "pydantic-settings>=2.0",
+    "fastapi>=0.110",
+    "uvicorn>=0.29",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "pytest-asyncio>=0.23",
+    "ruff>=0.4",
+    "mypy>=1.9",
+]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 88
+target-version = "py310"
+
+[tool.mypy]
+strict = true
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+polli_agent = ["py.typed"]

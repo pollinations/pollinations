@@ -11,67 +11,14 @@ on:
       - 'package-lock.json'
       - '.github/workflows/deploy-gen-cloudflare.yml'
   workflow_dispatch:
-    inputs:
-      sync_production_secrets:
-        description: 'Synchronize encrypted production secrets (requires approval)'
-        required: false
-        default: false
-        type: boolean
 
 concurrency:
   group: pollinations-cloudflare-production
   cancel-in-progress: false
 
 jobs:
-  preflight:
-    runs-on: ubuntu-latest
-    outputs:
-      sync_production_secrets: ${{ steps.secret-changes.outputs.sync }}
-      deployment_environment: ${{ steps.secret-changes.outputs.environment }}
-    steps:
-      - name: Require the production branch
-        shell: bash
-        run: |
-          if [[ "$GITHUB_REF" != "refs/heads/production" ]]; then
-            echo "::error::Production deployments must run from the production branch."
-            exit 1
-          fi
-
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Detect production secret synchronization
-        id: secret-changes
-        shell: bash
-        env:
-          EVENT_NAME: ${{ github.event_name }}
-          BEFORE_SHA: ${{ github.event.before }}
-          MANUAL_SECRET_SYNC: ${{ inputs.sync_production_secrets }}
-        run: |
-          sync=false
-
-          if [[ "$EVENT_NAME" == "workflow_dispatch" ]]; then
-            sync="$MANUAL_SECRET_SYNC"
-          elif ! git diff --quiet "$BEFORE_SHA" "$GITHUB_SHA" -- \
-            gen.pollinations.ai/secrets/prod.vars.json; then
-            sync=true
-          fi
-
-          echo "sync=$sync" >> "$GITHUB_OUTPUT"
-          if [[ "$sync" == "true" ]]; then
-            echo "environment=production-secrets" >> "$GITHUB_OUTPUT"
-          else
-            echo "environment=production" >> "$GITHUB_OUTPUT"
-          fi
-
   deploy:
-    needs: preflight
     runs-on: ubuntu-latest
-    # The production-secrets environment is restricted to the production branch
-    # and requires manual approval from its configured reviewer.
-    environment: ${{ needs.preflight.outputs.deployment_environment }}
     env:
       CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID_MYCELI }}
     steps:
@@ -113,7 +60,6 @@ jobs:
         run: npm run deploy:production --workspace pollinations-gen
 
       - name: Push generation secrets
-        if: needs.preflight.outputs.sync_production_secrets == 'true'
         env:
           SOPS_AGE_KEY: ${{ secrets.SOPS_AGE_KEY }}
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN_GEN }}

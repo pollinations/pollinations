@@ -85,6 +85,7 @@ curl "http://localhost:8788/v1/chat/completions" -H "Authorization: Bearer $TOKE
 - Require a new approval in the current conversation after presenting that plan. General instructions such as “go ahead,” “fix it,” “deploy,” “continue,” or approval for the surrounding model/task work do not count.
 - Required approval format: `Yes, you can rotate <SECRET_NAME> in <ENVIRONMENTS> now.`
 - Approval is valid only for the named secret, environments, and one described operation. Never reuse or broaden it.
+- Do not edit a secret file, change provider/GitHub secret state, or open or push a secret-change PR before receiving that approval.
 - If exposure is suspected, report it immediately and stop. Do not revoke or rotate until the explicit approval is received.
 - Read-only inspection may continue, but never print, echo, log, or otherwise expose secret values.
 - Encrypted secret-file changes must use a dedicated PR. Never bundle them into a model, feature, pricing, or refactor PR.

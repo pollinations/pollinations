@@ -53,6 +53,10 @@ export async function callXaiImageAPI(
         response_format: "url",
     };
 
+    if (modelId === "grok-imagine-image") {
+        requestBody.resolution = "2k";
+    }
+
     if (isEditMode && referenceImage) {
         requestBody.image = { url: referenceImage, detail: "auto" };
     }

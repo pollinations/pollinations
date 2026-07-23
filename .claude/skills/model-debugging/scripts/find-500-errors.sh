@@ -16,7 +16,7 @@ if [ -z "$TINYBIRD_TOKEN" ] || [ "$TINYBIRD_TOKEN" = "null" ]; then
 fi
 
 QUERY="SELECT user_github_username, model_requested, error_message, count() as error_count 
-FROM generation_event 
+FROM generation_event_v2 
 WHERE response_status >= 500 
   AND start_time > now() - interval $HOURS hour 
 GROUP BY user_github_username, model_requested, error_message 

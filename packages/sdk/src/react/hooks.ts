@@ -58,20 +58,21 @@ function useRequiredAuth(): AuthContextValue {
 
 /** Current auth session state only. Does not fetch account data. */
 export function useAuthState(): AuthStateValue {
-    const { apiKey, isLoggedIn, isHydrated, error } = useRequiredAuth();
+    const { apiKey, isLoggedIn, isHydrated, error, topUpStatus } =
+        useRequiredAuth();
     return useMemo(
-        () => ({ apiKey, isLoggedIn, isHydrated, error }),
-        [apiKey, isLoggedIn, isHydrated, error],
+        () => ({ apiKey, isLoggedIn, isHydrated, error, topUpStatus }),
+        [apiKey, isLoggedIn, isHydrated, error, topUpStatus],
     );
 }
 
-/** Stable login/logout refs and provider config. */
+/** Stable login/logout/top-up actions and provider URLs. */
 export function useAuthActions(): AuthActionsValue {
-    const { login, logout, setApiKey, enterUrl, apiBaseUrl } =
+    const { login, logout, setApiKey, topUp, enterUrl, apiBaseUrl } =
         useRequiredAuth();
     return useMemo(
-        () => ({ login, logout, setApiKey, enterUrl, apiBaseUrl }),
-        [login, logout, setApiKey, enterUrl, apiBaseUrl],
+        () => ({ login, logout, setApiKey, topUp, enterUrl, apiBaseUrl }),
+        [login, logout, setApiKey, topUp, enterUrl, apiBaseUrl],
     );
 }
 
@@ -109,48 +110,55 @@ async function fetchAccountJson<T>(
 function useAccountResource<T>(
     fetcher: AccountFetcher<T>,
     enabled = true,
-): AccountResourceValue<T> {
+    loadOnMount = true,
+): readonly [AccountResourceValue<T>, () => Promise<T | null>] {
     const { apiKey, apiBaseUrl, logout } = useRequiredAuth();
     const [data, setData] = useState<T | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<Error | null>(null);
     const reqIdRef = useRef(0);
 
-    const refresh = useCallback(async () => {
+    const refreshResult = useCallback(async (): Promise<T | null> => {
         const reqId = ++reqIdRef.current;
         if (!enabled || !apiKey) {
             setData(null);
             setIsLoading(false);
             setError(null);
-            return;
+            return null;
         }
 
         setIsLoading(true);
         setError(null);
         try {
             const result = await fetcher(apiBaseUrl, apiKey);
-            if (reqId !== reqIdRef.current) return;
+            if (reqId !== reqIdRef.current) return null;
             setData(result);
+            return result;
         } catch (err) {
-            if (reqId !== reqIdRef.current) return;
+            if (reqId !== reqIdRef.current) return null;
             if (err instanceof PollinationsError && err.status === 401) {
                 logout();
-                return;
+                return null;
             }
             setData(null);
             setError(err instanceof Error ? err : new Error(String(err)));
+            return null;
         } finally {
             if (reqId === reqIdRef.current) setIsLoading(false);
         }
     }, [apiKey, apiBaseUrl, enabled, fetcher, logout]);
 
+    const refresh = useCallback(async () => {
+        await refreshResult();
+    }, [refreshResult]);
+
     useEffect(() => {
-        void refresh();
-    }, [refresh]);
+        if (loadOnMount) void refreshResult();
+    }, [loadOnMount, refreshResult]);
 
     return useMemo(
-        () => ({ data, isLoading, error, refresh }),
-        [data, isLoading, error, refresh],
+        () => [{ data, isLoading, error, refresh }, refreshResult] as const,
+        [data, isLoading, error, refresh, refreshResult],
     );
 }
 
@@ -166,7 +174,7 @@ export function useAccountProfile(options: { enabled?: boolean } = {}) {
             ),
         [],
     );
-    return useAccountResource(fetcher, enabled);
+    return useAccountResource(fetcher, enabled)[0];
 }
 
 export interface UseModelCatalogValue {
@@ -247,9 +255,15 @@ export function useModelCatalog(
     }, [catalog, isLoggedIn, isLoading, error, refresh]);
 }
 
-/** Current visible balance for the delegated key. */
+/**
+ * Current balance visible to the delegated key, including whether it is an
+ * app allowance or wallet balance. After a validated successful top-up
+ * return, refreshes on a bounded 0/2/5/10-second schedule until the observable
+ * account balance changes.
+ */
 export function useAccountBalance(options: { enabled?: boolean } = {}) {
     const { enabled = true } = options;
+    const { topUpStatus } = useRequiredAuth();
     const fetcher = useCallback(
         (apiBaseUrl: string, apiKey: string) =>
             fetchAccountJson<AccountBalance>(
@@ -259,7 +273,49 @@ export function useAccountBalance(options: { enabled?: boolean } = {}) {
             ),
         [],
     );
-    return useAccountResource(fetcher, enabled);
+    const [resource, refreshResult] = useAccountResource(
+        fetcher,
+        enabled,
+        topUpStatus !== "success",
+    );
+
+    useEffect(() => {
+        if (!enabled || topUpStatus !== "success") return;
+
+        let canceled = false;
+        let timeout: ReturnType<typeof setTimeout> | undefined;
+        const wait = (ms: number) =>
+            new Promise<void>((resolve) => {
+                timeout = setTimeout(resolve, ms);
+            });
+
+        void (async () => {
+            const initial = await refreshResult();
+            const baseline = initial?.accountBalance;
+            if (canceled || baseline === undefined) return;
+
+            let elapsed = 0;
+            for (const target of [2_000, 5_000, 10_000]) {
+                await wait(target - elapsed);
+                elapsed = target;
+                if (canceled) return;
+                const next = await refreshResult();
+                if (
+                    next?.accountBalance !== undefined &&
+                    next.accountBalance !== baseline
+                ) {
+                    return;
+                }
+            }
+        })();
+
+        return () => {
+            canceled = true;
+            if (timeout) clearTimeout(timeout);
+        };
+    }, [enabled, refreshResult, topUpStatus]);
+
+    return resource;
 }
 
 /** Current delegated key metadata. */
@@ -270,7 +326,7 @@ export function useAccountKey(options: { enabled?: boolean } = {}) {
             fetchAccountJson<KeyInfo>(apiBaseUrl, apiKey, "/account/key"),
         [],
     );
-    return useAccountResource(fetcher, enabled);
+    return useAccountResource(fetcher, enabled)[0];
 }
 
 /** Usage for the current delegated key only. */
@@ -303,5 +359,5 @@ export function useAccountKeyUsage(
         },
         [days, limit, before, granularity, period],
     );
-    return useAccountResource(fetcher, enabled);
+    return useAccountResource(fetcher, enabled)[0];
 }

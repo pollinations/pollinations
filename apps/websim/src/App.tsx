@@ -18,12 +18,7 @@ import {
 } from "@pollinations/ui";
 import { AppUserMenu } from "@pollinations/ui/app-user-menu/sdk";
 import { useEffect, useRef, useState } from "react";
-import {
-    DEFAULT_MODEL,
-    ENTER_URL,
-    WEB_SIM_MODELS,
-    type WebsimModelId,
-} from "./config";
+import { DEFAULT_MODEL, WEB_SIM_MODELS, type WebsimModelId } from "./config";
 
 const INITIAL_PROMPT =
     "A tiny interactive museum for impossible plants, with a collection wall, specimen cards, and a night mode.";
@@ -42,6 +37,43 @@ function stripHtml(value: string) {
 function errorMessage(error: unknown) {
     if (error instanceof Error) return error.message;
     return String(error || "Generation failed");
+}
+
+type FundingAction = "key_budget" | "account_balance";
+
+class GenerationError extends Error {
+    readonly fundingAction: FundingAction | null;
+
+    constructor(message: string, fundingAction: FundingAction | null = null) {
+        super(message);
+        this.name = "GenerationError";
+        this.fundingAction = fundingAction;
+    }
+}
+
+async function generationErrorFromResponse(response: Response) {
+    if (response.headers.get("content-type")?.includes("application/json")) {
+        const body = (await response.json()) as {
+            error?: {
+                message?: string;
+                details?: { reason?: unknown };
+            };
+        };
+        const reason = body.error?.details?.reason;
+        const fundingAction =
+            reason === "key_budget" || reason === "account_balance"
+                ? reason
+                : null;
+        return new GenerationError(
+            body.error?.message || `Generation failed with ${response.status}`,
+            fundingAction,
+        );
+    }
+
+    const body = stripHtml(await response.text());
+    return new GenerationError(
+        body || `Generation failed with ${response.status}`,
+    );
 }
 
 function saveHtml(html: string) {
@@ -135,12 +167,16 @@ function PreviewPanel({
 
 export function App() {
     const { apiKey, isHydrated } = useAuthState();
-    const { login } = useAuthActions();
+    const { login, topUp } = useAuthActions();
     const [prompt, setPrompt] = useState(INITIAL_PROMPT);
     const [model, setModel] = useState<WebsimModelId>(DEFAULT_MODEL);
     const [html, setHtml] = useState("");
     const [error, setError] = useState<string | null>(null);
+    const [fundingAction, setFundingAction] = useState<FundingAction | null>(
+        null,
+    );
     const [isGenerating, setIsGenerating] = useState(false);
+    const [isBuyingPollen, setIsBuyingPollen] = useState(false);
     const activeRequest = useRef<AbortController | null>(null);
 
     useEffect(() => {
@@ -160,6 +196,7 @@ export function App() {
         activeRequest.current = controller;
         setHtml("");
         setError(null);
+        setFundingAction(null);
         setIsGenerating(true);
 
         try {
@@ -174,10 +211,7 @@ export function App() {
             });
 
             if (!response.ok) {
-                const body = stripHtml(await response.text());
-                throw new Error(
-                    body || `Generation failed with ${response.status}`,
-                );
+                throw await generationErrorFromResponse(response);
             }
 
             setHtml(await response.text());
@@ -185,6 +219,9 @@ export function App() {
             if (err instanceof DOMException && err.name === "AbortError") {
                 return;
             }
+            setFundingAction(
+                err instanceof GenerationError ? err.fundingAction : null,
+            );
             setError(errorMessage(err));
         } finally {
             if (activeRequest.current === controller) {
@@ -198,6 +235,19 @@ export function App() {
         activeRequest.current?.abort();
         activeRequest.current = null;
         setIsGenerating(false);
+    }
+
+    async function buyPollen() {
+        if (isBuyingPollen) return;
+        setIsBuyingPollen(true);
+        setError(null);
+        try {
+            await topUp({ packKey: "p5" });
+        } catch (err) {
+            setError(errorMessage(err));
+        } finally {
+            setIsBuyingPollen(false);
+        }
     }
 
     const generateButton = (
@@ -218,7 +268,7 @@ export function App() {
         >
             <div className="fixed top-4 right-4 z-40 flex items-center gap-2">
                 <ColorModeToggle />
-                <AppUserMenu dashboardHref={ENTER_URL} />
+                <AppUserMenu />
             </div>
 
             <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-5 px-4 pt-16 pb-5 sm:px-6">
@@ -290,7 +340,11 @@ export function App() {
                             </FieldStack>
 
                             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                                <div className="min-h-6">
+                                <div
+                                    role={error ? "alert" : "status"}
+                                    aria-live={error ? "assertive" : "polite"}
+                                    className="flex min-h-6 flex-wrap items-center gap-2"
+                                >
                                     {error ? (
                                         <Text
                                             size="sm"
@@ -299,6 +353,28 @@ export function App() {
                                         >
                                             {error}
                                         </Text>
+                                    ) : null}
+                                    {fundingAction === "key_budget" ? (
+                                        <Button
+                                            type="button"
+                                            size="sm"
+                                            onClick={() => login({ budget: 5 })}
+                                        >
+                                            Renew app allowance
+                                        </Button>
+                                    ) : null}
+                                    {fundingAction === "account_balance" ? (
+                                        <Button
+                                            type="button"
+                                            size="sm"
+                                            disabled={isBuyingPollen}
+                                            aria-busy={isBuyingPollen}
+                                            onClick={() => void buyPollen()}
+                                        >
+                                            {isBuyingPollen
+                                                ? "Opening checkout…"
+                                                : "Buy 5 Pollen"}
+                                        </Button>
                                     ) : null}
                                 </div>
 

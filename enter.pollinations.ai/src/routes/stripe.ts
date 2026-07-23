@@ -1,10 +1,7 @@
 import {
-    calculateServiceFeeCents,
     describePollenPack,
     getPollenPackByKey,
     POLLEN_PACKS,
-    SERVICE_FEE_NAME,
-    SERVICE_FEE_TAX_CODE,
 } from "@shared/pollen-packs.ts";
 import { PUBLIC_URLS } from "@shared/public-urls.ts";
 import type { Context } from "hono";
@@ -13,18 +10,14 @@ import { HTTPException } from "hono/http-exception";
 import { createAuth } from "../auth.ts";
 import type { Env } from "../env.ts";
 import { getCohortFromCountry } from "../utils/currency-router.ts";
-import { createStripeClient } from "../utils/stripe.ts";
 import {
     createBillingPortalSession,
     getBillingOverview,
-    getOrCreateStripeCustomerId,
     processAutoTopUpForUser,
     updateAutoTopUpSettings,
 } from "../utils/stripe-billing.ts";
-import {
-    getStripeNewCardGateStatus,
-    stripeNewCardGateMetadata,
-} from "../utils/stripe-card-gate.ts";
+import { createPackCheckoutSession } from "../utils/stripe-checkout.ts";
+import { stripeTopUpRoutes } from "./stripe-top-up.ts";
 
 /**
  * Stripe pack configuration
@@ -32,6 +25,7 @@ import {
  * localize buyer presentment where supported.
  */
 export const stripeRoutes = new Hono<Env>()
+    .route("/", stripeTopUpRoutes)
     /**
      * GET /api/stripe/checkout/:packKey
      * Create a Stripe Checkout Session for pack purchases.
@@ -66,9 +60,6 @@ export const stripeRoutes = new Hono<Env>()
 
         const userId = session.user.id;
 
-        // Create Stripe client
-        const stripe = createStripeClient(c.env);
-
         // Return checkout sessions to the Pollen page for this environment.
         const baseUrl =
             c.env.STRIPE_SUCCESS_URL || PUBLIC_URLS.enter.production;
@@ -80,99 +71,22 @@ export const stripeRoutes = new Hono<Env>()
         // and does not call FX at runtime.
         const cohort = getCohortFromCountry(c.req.header("cf-ipcountry"));
         // Fail closed if the checkout PMC env var is missing. The alternative
-        // (omit payment_method_configuration → Stripe falls back to account
-        // default PMC) would hide a misconfigured deploy.
-        const pmcId = c.env.STRIPE_PMC;
-        if (!pmcId) {
+        // would silently fall back to Stripe's account default PMC.
+        if (!c.env.STRIPE_PMC) {
             console.error(
                 `Missing required env var STRIPE_PMC for checkout on ${c.env.ENVIRONMENT}`,
             );
             return c.json({ error: "Checkout configuration error" }, 500);
         }
-
         try {
-            const stripeCustomerId = await getOrCreateStripeCustomerId(
-                c.env,
+            const checkoutSession = await createPackCheckoutSession({
+                env: c.env,
                 userId,
-            );
-            const newCardGate = await getStripeNewCardGateStatus(
-                c.env.DB,
-                userId,
-            );
-
-            // packKey identifies the pack; the webhook looks up its fixed USD
-            // amount to credit, independent of how Adaptive Pricing localized
-            // the presentment currency.
-            const packMetadata = {
-                userId,
-                packKey: pack.packKey,
+                pack,
                 cohort,
-                ...stripeNewCardGateMetadata(newCardGate),
-            };
-            const serviceFeeCents = calculateServiceFeeCents(
-                pack.amountUsd * 100,
-            );
-
-            const checkoutSession = await stripe.checkout.sessions.create({
-                mode: "payment",
-                payment_method_configuration: pmcId,
-                line_items: [
-                    {
-                        price_data: {
-                            currency: "usd",
-                            unit_amount: pack.amountUsd * 100,
-                            tax_behavior: "exclusive",
-                            product_data: {
-                                name: pack.checkoutName,
-                                description: pack.checkoutDescription,
-                                images: [pack.checkoutImageUrl],
-                                tax_code: pack.taxCode,
-                            },
-                        },
-                        quantity: 1,
-                    },
-                    {
-                        price_data: {
-                            currency: "usd",
-                            unit_amount: serviceFeeCents,
-                            tax_behavior: "exclusive",
-                            product_data: {
-                                name: SERVICE_FEE_NAME,
-                                tax_code: SERVICE_FEE_TAX_CODE,
-                            },
-                        },
-                        quantity: 1,
-                    },
-                ],
-                adaptive_pricing: { enabled: true },
-                // Enable discount/promotion codes
-                allow_promotion_codes: true,
-                // Automatic tax & VAT
-                automatic_tax: { enabled: true },
-                // Auto billing address - collects only what's needed (country for tax)
-                billing_address_collection: "auto",
-                // Optional VAT/Tax ID collection for businesses (not enforced)
-                tax_id_collection: { enabled: true },
-                customer: stripeCustomerId,
-                customer_update: {
-                    address: "auto",
-                    name: "auto",
-                },
-                payment_intent_data: {
-                    metadata: packMetadata,
-                },
-                // Invoice creation after payment
-                invoice_creation: {
-                    enabled: true,
-                    invoice_data: {
-                        rendering_options: {
-                            amount_tax_display: "exclude_tax",
-                        },
-                    },
-                },
-                metadata: packMetadata,
-                success_url: `${pollenReturnUrl}&stripe_success=true&session_id={CHECKOUT_SESSION_ID}`,
-                cancel_url: `${pollenReturnUrl}&stripe_canceled=true`,
+                mode: "customer",
+                successUrl: `${pollenReturnUrl}&stripe_success=true&session_id={CHECKOUT_SESSION_ID}`,
+                cancelUrl: `${pollenReturnUrl}&stripe_canceled=true`,
             });
 
             // Redirect to Stripe Checkout (will use checkout.pollinations.ai custom domain)

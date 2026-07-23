@@ -584,7 +584,14 @@ export interface AccountProfile {
 
 /** Account balance */
 export interface AccountBalance {
+    /** Backward-compatible visible balance; inspect `scope` for its meaning. */
     balance: number;
+    /** Whether `balance` is the delegated app allowance or account wallet. */
+    scope: "key_budget" | "account";
+    /** Remaining delegated key allowance, or null for an unbudgeted key/session. */
+    keyBudget: number | null;
+    /** Account wallet balance, present only with account usage permission. */
+    accountBalance?: number;
 }
 
 /** Usage record */

@@ -247,6 +247,7 @@ describe("BYOP markup", () => {
         await expect(checkBalance(vars, fakeStatsEnv(1))).rejects.toMatchObject(
             {
                 status: 402,
+                reason: "account_balance",
             },
         );
     });
@@ -295,6 +296,7 @@ describe("BYOP markup", () => {
             checkBalance(vars, fakeStatsEnv(1, "llama-maverick")),
         ).rejects.toMatchObject({
             status: 402,
+            reason: "account_balance",
         });
     });
 
@@ -317,6 +319,7 @@ describe("BYOP markup", () => {
         await expect(checkBalance(vars, fakeStatsEnv(1))).rejects.toMatchObject(
             {
                 status: 402,
+                reason: "key_budget",
             },
         );
     });

@@ -323,6 +323,17 @@ async function upstreamErrorResponse(upstream) {
     const upstreamStatus = upstream?.status || 502;
     const status =
         upstreamStatus >= 400 && upstreamStatus < 500 ? upstreamStatus : 502;
+    const contentType = upstream?.headers.get("content-type") || "";
+    if (upstream && contentType.includes("application/json")) {
+        return new Response(upstream.body, {
+            status,
+            headers: {
+                "Content-Type": contentType,
+                "Cache-Control": "no-store",
+                ...getCorsHeaders(),
+            },
+        });
+    }
     const detail = upstream ? await readResponsePreview(upstream, 4096) : "";
 
     return new Response(

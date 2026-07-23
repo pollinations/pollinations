@@ -47,6 +47,18 @@ type UpstreamErrorOptions = {
     errorCode?: string;
 };
 
+export type PaymentRequiredReason = "key_budget" | "account_balance";
+
+export class PaymentRequiredError extends HTTPException {
+    public readonly name = "PaymentRequiredError" as const;
+    public readonly reason: PaymentRequiredReason;
+
+    constructor(message: string, reason: PaymentRequiredReason) {
+        super(402, { message });
+        this.reason = reason;
+    }
+}
+
 export class UpstreamError extends HTTPException {
     public readonly name = "UpstreamError" as const;
     public readonly requestUrl?: URL;
@@ -115,13 +127,25 @@ const ValidationErrorDetailsSchema = z
     })
     .meta({ $id: "ValidationErrorDetails" });
 
+const PaymentRequiredErrorDetailsSchema = z
+    .object({
+        name: z.literal("PaymentRequiredError"),
+        reason: z.enum(["key_budget", "account_balance"]),
+    })
+    .meta({ $id: "PaymentRequiredErrorDetails" });
+
 export function createErrorResponseSchema(
     status: ContentfulStatusCode,
 ): z.ZodObject {
     const errorDetailsSchema =
         status === 400
             ? ValidationErrorDetailsSchema
-            : GenericErrorDetailsSchema;
+            : status === 402
+              ? z.union([
+                    PaymentRequiredErrorDetailsSchema,
+                    GenericErrorDetailsSchema,
+                ])
+              : GenericErrorDetailsSchema;
     return z.object({
         status: z.literal(status),
         success: z.literal(false),
@@ -213,6 +237,19 @@ export async function handleError<TEnv extends ErrorHandlerEnv>(
         return c.json(
             createUpstreamErrorResponse(err, status, timestamp),
             status,
+        );
+    }
+
+    if (err instanceof PaymentRequiredError) {
+        log.trace("PaymentRequiredError: {message}", {
+            message: err.message,
+        });
+        return c.json(
+            createErrorResponse(err, err.status, timestamp, {
+                name: err.name,
+                reason: err.reason,
+            }),
+            err.status,
         );
     }
 

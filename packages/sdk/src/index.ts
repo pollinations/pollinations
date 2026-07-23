@@ -73,6 +73,10 @@ export {
     type ModelCatalogItem,
     pricingEntries,
 } from "./models.js";
+export {
+    type PaymentRequiredReason,
+    paymentRequiredReason,
+} from "./payment-required.js";
 
 // Export all types
 export type {

@@ -2,7 +2,12 @@ import {
     createExecutionContext,
     waitOnExecutionContext,
 } from "cloudflare:test";
-import { handleError, UpstreamError } from "@shared/error.ts";
+import {
+    createErrorResponseSchema,
+    handleError,
+    PaymentRequiredError,
+    UpstreamError,
+} from "@shared/error.ts";
 import { getRegistryModelDefinition } from "@shared/registry/registry.ts";
 import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
@@ -42,6 +47,72 @@ function createTestApp() {
 }
 
 describe("error observability", () => {
+    it("documents both funding and upstream payment-required details", () => {
+        const schema = createErrorResponseSchema(402);
+        const envelope = {
+            status: 402 as const,
+            success: false as const,
+            error: {
+                code: "PAYMENT_REQUIRED" as const,
+                message: "Payment required",
+                timestamp: new Date().toISOString(),
+            },
+        };
+
+        expect(
+            schema.safeParse({
+                ...envelope,
+                error: {
+                    ...envelope.error,
+                    details: {
+                        name: "PaymentRequiredError",
+                        reason: "account_balance",
+                    },
+                },
+            }).success,
+        ).toBe(true);
+        expect(
+            schema.safeParse({
+                ...envelope,
+                error: {
+                    ...envelope.error,
+                    details: {
+                        name: "UpstreamError",
+                        upstreamStatus: 402,
+                        upstreamHost: "provider.example",
+                    },
+                },
+            }).success,
+        ).toBe(true);
+    });
+
+    it("serializes a machine-readable payment-required reason", async () => {
+        const app = new Hono<Env>();
+        app.get("/payment-required", () => {
+            throw new PaymentRequiredError(
+                "API key budget too low.",
+                "key_budget",
+            );
+        });
+        app.onError(handleError);
+
+        const response = await app.request("/payment-required");
+
+        expect(response.status).toBe(402);
+        await expect(response.json()).resolves.toMatchObject({
+            status: 402,
+            success: false,
+            error: {
+                code: "PAYMENT_REQUIRED",
+                message: "API key budget too low.",
+                details: {
+                    name: "PaymentRequiredError",
+                    reason: "key_budget",
+                },
+            },
+        });
+    });
+
     it("emits structured Tinybird error events for actionable upstream failures", async () => {
         const tinybirdRequests: Request[] = [];
         vi.spyOn(globalThis, "fetch").mockImplementation(

@@ -1,11 +1,14 @@
 import { createContext } from "react";
 import type { AccountPermission } from "../types.js";
+import type { TopUpRequest, TopUpStatus } from "./top-up.js";
 
 export interface AuthStateValue {
     apiKey: string | null;
     isLoggedIn: boolean;
     isHydrated: boolean;
     error: Error | null;
+    /** Validated Checkout return status; cleared after the refresh window. */
+    topUpStatus: TopUpStatus | null;
 }
 
 /**
@@ -28,6 +31,8 @@ export interface AuthActionsValue {
     login: (request?: AuthorizeRequest) => void;
     logout: () => void;
     setApiKey: (apiKey: string | null) => void;
+    /** Create a wallet-bound top-up intent and navigate to Checkout. */
+    topUp: (request?: TopUpRequest) => Promise<void>;
     /** Resolved enter URL, useful for top-up / dashboard links. */
     enterUrl: string;
     /** Resolved account API URL used by opt-in account hooks. */

@@ -19,8 +19,9 @@
  *
  * Returns false on any parse error or empty allowlist.
  *
- * Single source of truth for both /api/app-lookup (consent screen attribution)
- * and createApiKeyForUser (sk_ minting). Keep them aligned.
+ * Single source of truth for /api/app-lookup (consent attribution),
+ * createApiKeyForUser (sk_ minting), and BYOP top-up return validation.
+ * Keep them aligned.
  */
 export function redirectUriMatchesAllowlist(
     uri: string,

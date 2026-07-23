@@ -157,7 +157,8 @@ console.log(`Logged in as ${me.name} (${me.preferred_username})`);
 ### React auth provider
 
 React apps can use the `@pollinations/sdk/react` subpath for shared login
-state. The provider only owns the session token and OAuth flow; account data is
+state. The provider owns the session token, OAuth flow, top-up navigation, and
+validated Checkout return state. Account data and post-checkout refreshes are
 loaded by opt-in hooks.
 
 ```tsx
@@ -194,6 +195,21 @@ export function App() {
 Account hooks are intentionally separate from the provider: `useAccountProfile`,
 `useAccountBalance`, `useAccountKey`, and `useAccountKeyUsage` return the raw
 SDK response shapes plus `{ isLoading, error, refresh }`.
+
+Users can add Pollen without leaving the app for the Enter developer dashboard:
+
+```tsx
+function AddPollenButton() {
+  const { topUp } = useAuthActions();
+  return <button onClick={() => void topUp({ packKey: 'p5' })}>Buy 5 Pollen</button>;
+}
+```
+
+`topUp()` creates a short-lived checkout intent and navigates to Stripe through
+Enter. After the user returns, `useAuthState().topUpStatus` is `"success"` or
+`"canceled"` only when the returned state nonce matches. A success return means
+the payment was submitted; delayed payment methods may credit the wallet later.
+`useAccountBalance()` performs a bounded refresh while confirmation is pending.
 
 #### SSR / Next.js App Router / RSC
 
@@ -513,7 +529,7 @@ console.log(media.url);
 ## Error Handling
 
 ```javascript
-import { generateImage, PollinationsError } from '@pollinations/sdk';
+import { generateImage, paymentRequiredReason, PollinationsError } from '@pollinations/sdk';
 
 try {
   const image = await generateImage('test');
@@ -522,11 +538,16 @@ try {
     console.error(err.message);  // Error message
     console.error(err.code);     // Error code (BAD_REQUEST, UNAUTHORIZED, INSUFFICIENT_BALANCE, etc.)
     console.error(err.status);   // HTTP status (400, 401, 402, 403, 500)
+    console.error(err.details);  // Structured details, when provided
+    console.error(paymentRequiredReason(err)); // key_budget | account_balance | null
   }
 }
 ```
 
 Common error codes: `400` invalid params, `401` missing/invalid key, `402` insufficient balance, `403` permission denied, `500` server error.
+For `402 PAYMENT_REQUIRED`, `details.reason` is `key_budget` when the delegated
+key's app allowance is exhausted and `account_balance` when the user's wallet
+needs more Pollen.
 
 ## Advanced: Client Class
 

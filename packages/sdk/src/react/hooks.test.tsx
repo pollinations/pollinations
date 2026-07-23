@@ -6,7 +6,9 @@ import {
     type AuthStateValue,
 } from "./contexts.js";
 import {
+    type UseAccountBalanceValue,
     type UseAccountKeyValue,
+    useAccountBalance,
     useAccountKey,
     useAuthState,
 } from "./hooks.js";
@@ -45,9 +47,11 @@ function authValue(
         isLoggedIn: true,
         isHydrated: true,
         error: null,
+        topUpStatus: null,
         login: vi.fn(),
         logout: vi.fn(),
         setApiKey: vi.fn(),
+        topUp: vi.fn(),
         enterUrl: "https://enter.example",
         apiBaseUrl: "https://enter.example/api",
         ...overrides,
@@ -57,6 +61,7 @@ function authValue(
 describe("account hooks", () => {
     afterEach(() => {
         vi.restoreAllMocks();
+        vi.useRealTimers();
     });
 
     it("clears account data when disabled", async () => {
@@ -141,5 +146,117 @@ describe("account hooks", () => {
         expect(logout).toHaveBeenCalledTimes(1);
         expect(read<AuthStateValue>(auth).apiKey).toBe("sk_test");
         expect(read<UseAccountKeyValue>(key).data).toBeNull();
+    });
+
+    it("stops top-up polling when the visible account balance changes", async () => {
+        vi.useFakeTimers();
+        const fetchMock = vi
+            .spyOn(globalThis, "fetch")
+            .mockResolvedValueOnce(
+                jsonResponse({
+                    balance: 5,
+                    scope: "account",
+                    keyBudget: null,
+                    accountBalance: 5,
+                }),
+            )
+            .mockResolvedValue(
+                jsonResponse({
+                    balance: 10,
+                    scope: "account",
+                    keyBudget: null,
+                    accountBalance: 10,
+                }),
+            );
+        let balance: UseAccountBalanceValue | null = null;
+
+        function Probe() {
+            balance = useAccountBalance();
+            return null;
+        }
+
+        await act(async () => {
+            create(
+                <AuthContext.Provider
+                    value={authValue({ topUpStatus: "success" })}
+                >
+                    <Probe />
+                </AuthContext.Provider>,
+            );
+        });
+        await waitFor(() => balance?.data?.accountBalance === 5);
+
+        await act(async () => {
+            await vi.advanceTimersByTimeAsync(2_000);
+        });
+        await waitFor(() => balance?.data?.accountBalance === 10);
+        await act(async () => {
+            await vi.advanceTimersByTimeAsync(10_000);
+        });
+
+        expect(fetchMock).toHaveBeenCalledTimes(2);
+    });
+
+    it("bounds top-up polling at 0, 2, 5, and 10 seconds", async () => {
+        vi.useFakeTimers();
+        const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue(
+            jsonResponse({
+                balance: 5,
+                scope: "account",
+                keyBudget: null,
+                accountBalance: 5,
+            }),
+        );
+
+        function Probe() {
+            useAccountBalance();
+            return null;
+        }
+
+        await act(async () => {
+            create(
+                <AuthContext.Provider
+                    value={authValue({ topUpStatus: "success" })}
+                >
+                    <Probe />
+                </AuthContext.Provider>,
+            );
+        });
+        await act(async () => {
+            await vi.advanceTimersByTimeAsync(10_000);
+        });
+
+        expect(fetchMock).toHaveBeenCalledTimes(4);
+    });
+
+    it("does not keep polling when accountBalance is not visible", async () => {
+        vi.useFakeTimers();
+        const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue(
+            jsonResponse({
+                balance: 2,
+                scope: "key_budget",
+                keyBudget: 2,
+            }),
+        );
+
+        function Probe() {
+            useAccountBalance();
+            return null;
+        }
+
+        await act(async () => {
+            create(
+                <AuthContext.Provider
+                    value={authValue({ topUpStatus: "success" })}
+                >
+                    <Probe />
+                </AuthContext.Provider>,
+            );
+        });
+        await act(async () => {
+            await vi.advanceTimersByTimeAsync(10_000);
+        });
+
+        expect(fetchMock).toHaveBeenCalledTimes(1);
     });
 });

@@ -26,3 +26,4 @@ export {
     type PolliProviderProps,
 } from "./PolliProvider.js";
 export type { StorageAdapter, StorageOption } from "./storage.js";
+export type { TopUpRequest, TopUpStatus } from "./top-up.js";

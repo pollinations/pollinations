@@ -4,7 +4,7 @@
     "version": "0.0.0",
     "type": "module",
     "scripts": {
-        "dev": "vite --host 127.0.0.1 --port 4179",
+        "dev": "vite --host 127.0.0.1 --port 4179 --strictPort",
         "predev": "npm run build:deps",
         "build": "npm run build:deps && npm run build:app",
         "build:app": "vite build",

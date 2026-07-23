@@ -6,14 +6,17 @@ import {
     stepCountIs,
     ToolLoopAgent,
 } from "ai";
+import type { PromptAgentConfig } from "./prompt-agent.ts";
 
-type PromptAgentEnv = {
-    SYSTEM_PROMPT?: string;
-    BASE_MODEL: string;
-    MCP_JSON?: string;
-    POLLINATIONS_KEY: string;
-    GEN_BASE_URL?: string;
-    BEE_AUTH_TOKEN?: string;
+export type PromptAgentRequest = {
+    messages?: ModelMessage[];
+    stream?: boolean;
+};
+
+type PromptAgentRuntime = {
+    config: PromptAgentConfig;
+    apiKey: string;
+    genBaseUrl: string;
 };
 
 type McpServer = { name: string; url: string };
@@ -37,13 +40,6 @@ type AgentOutput = {
 const MAX_STEPS = 8;
 const STEP_LIMIT_MESSAGE =
     "The agent reached its maximum number of tool-use steps without a final answer.";
-
-function genBase(env: PromptAgentEnv): string {
-    return (env.GEN_BASE_URL || "https://gen.pollinations.ai").replace(
-        /\/$/,
-        "",
-    );
-}
 
 async function loadMcpTools(servers: McpServer[]): Promise<{
     tools: Record<string, McpTool>;
@@ -85,19 +81,18 @@ async function loadMcpTools(servers: McpServer[]): Promise<{
     return { tools, close };
 }
 
-async function createAgent(env: PromptAgentEnv) {
-    const servers = JSON.parse(env.MCP_JSON || "[]") as McpServer[];
-    const { tools, close } = await loadMcpTools(servers);
+async function createAgent(runtime: PromptAgentRuntime) {
+    const { tools, close } = await loadMcpTools(runtime.config.mcpServers);
     const toolCallCounts: ToolCallCounts = {};
     const pollinations = createOpenAICompatible({
         name: "pollinations",
-        apiKey: env.POLLINATIONS_KEY,
-        baseURL: `${genBase(env)}/v1`,
+        apiKey: runtime.apiKey,
+        baseURL: `${runtime.genBaseUrl.replace(/\/$/, "")}/v1`,
     });
 
     const agent = new ToolLoopAgent({
-        model: pollinations(env.BASE_MODEL),
-        instructions: env.SYSTEM_PROMPT || undefined,
+        model: pollinations(runtime.config.baseModel),
+        instructions: runtime.config.systemPrompt,
         allowSystemInMessages: true,
         tools,
         stopWhen: stepCountIs(MAX_STEPS),
@@ -155,11 +150,11 @@ function contentChunk(
 }
 
 async function runAgent(
-    env: PromptAgentEnv,
+    runtime: PromptAgentRuntime,
     messages: ModelMessage[],
     signal: AbortSignal,
 ): Promise<AgentOutput> {
-    const { agent, close, toolCallCounts } = await createAgent(env);
+    const { agent, close, toolCallCounts } = await createAgent(runtime);
     try {
         const result = await agent.generate({
             messages,
@@ -180,13 +175,13 @@ async function runAgent(
 }
 
 async function streamAgent(
-    env: PromptAgentEnv,
+    runtime: PromptAgentRuntime,
     messages: ModelMessage[],
     signal: AbortSignal,
     id: string,
     created: number,
 ): Promise<Response> {
-    const { agent, close, toolCallCounts } = await createAgent(env);
+    const { agent, close, toolCallCounts } = await createAgent(runtime);
     let result: Awaited<ReturnType<typeof agent.stream>>;
     try {
         result = await agent.stream({ messages, abortSignal: signal });
@@ -204,7 +199,14 @@ async function streamAgent(
                 );
             try {
                 for await (const delta of result.textStream) {
-                    send(contentChunk(id, created, env.BASE_MODEL, delta));
+                    send(
+                        contentChunk(
+                            id,
+                            created,
+                            runtime.config.baseModel,
+                            delta,
+                        ),
+                    );
                 }
                 const [reason, usage, steps] = await Promise.all([
                     result.finishReason,
@@ -217,7 +219,7 @@ async function streamAgent(
                         contentChunk(
                             id,
                             created,
-                            env.BASE_MODEL,
+                            runtime.config.baseModel,
                             STEP_LIMIT_MESSAGE,
                         ),
                     );
@@ -226,7 +228,7 @@ async function streamAgent(
                     id,
                     object: "chat.completion.chunk",
                     created,
-                    model: env.BASE_MODEL,
+                    model: runtime.config.baseModel,
                     choices: [
                         {
                             index: 0,
@@ -257,76 +259,40 @@ async function streamAgent(
     });
 }
 
-function isAuthorized(request: Request, env: PromptAgentEnv): boolean {
-    if (!env.BEE_AUTH_TOKEN) return true;
-    return (
-        request.headers.get("authorization") === `Bearer ${env.BEE_AUTH_TOKEN}`
-    );
+export async function handlePromptAgentRequest(
+    body: PromptAgentRequest,
+    signal: AbortSignal,
+    runtime: PromptAgentRuntime,
+): Promise<Response> {
+    const messages = Array.isArray(body.messages) ? body.messages : [];
+    const id = `chatcmpl-${crypto.randomUUID()}`;
+    const created = Math.floor(Date.now() / 1000);
+    try {
+        if (body.stream) {
+            return await streamAgent(runtime, messages, signal, id, created);
+        }
+        const out = await runAgent(runtime, messages, signal);
+        return Response.json({
+            id,
+            object: "chat.completion",
+            created,
+            model: runtime.config.baseModel,
+            choices: [
+                {
+                    index: 0,
+                    message: {
+                        role: "assistant",
+                        content: out.content,
+                    },
+                    finish_reason: out.finishReason,
+                },
+            ],
+            usage: buildUsage(out.usage, out.toolCallCounts),
+        });
+    } catch (error) {
+        return Response.json(
+            { error: { message: String(error) } },
+            { status: 502 },
+        );
+    }
 }
-
-export const promptAgentWorker = {
-    async fetch(request: Request, env: PromptAgentEnv): Promise<Response> {
-        const url = new URL(request.url);
-        if (
-            request.method === "POST" &&
-            url.pathname.endsWith("/chat/completions")
-        ) {
-            if (!isAuthorized(request, env)) {
-                return Response.json(
-                    { error: { message: "Unauthorized" } },
-                    { status: 401 },
-                );
-            }
-            const body = (await request.json()) as {
-                messages?: ModelMessage[];
-                stream?: boolean;
-            };
-            const messages = Array.isArray(body.messages) ? body.messages : [];
-            const id = `chatcmpl-${crypto.randomUUID()}`;
-            const created = Math.floor(Date.now() / 1000);
-            try {
-                if (body.stream) {
-                    return await streamAgent(
-                        env,
-                        messages,
-                        request.signal,
-                        id,
-                        created,
-                    );
-                }
-                const out = await runAgent(env, messages, request.signal);
-                return Response.json({
-                    id,
-                    object: "chat.completion",
-                    created,
-                    model: env.BASE_MODEL,
-                    choices: [
-                        {
-                            index: 0,
-                            message: {
-                                role: "assistant",
-                                content: out.content,
-                            },
-                            finish_reason: out.finishReason,
-                        },
-                    ],
-                    usage: buildUsage(out.usage, out.toolCallCounts),
-                });
-            } catch (error) {
-                return Response.json(
-                    { error: { message: String(error) } },
-                    { status: 502 },
-                );
-            }
-        }
-        if (url.pathname.endsWith("/models")) {
-            return Response.json({
-                object: "list",
-                data: [{ id: env.BASE_MODEL, object: "model" }],
-            });
-        }
-        return new Response("not found", { status: 404 });
-    },
-};
-
-export default promptAgentWorker;

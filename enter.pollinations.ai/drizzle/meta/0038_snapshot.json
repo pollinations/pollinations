@@ -1,7 +1,7 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "7c49e6b2-6b28-4d5d-aebd-bc468bccbf7b",
+  "id": "1a674593-2586-4c47-956a-7e5a4c85e760",
   "prevId": "e1002425-b239-4c21-bfd7-f634377ffae4",
   "tables": {
     "account": {
@@ -166,8 +166,8 @@
           "notNull": true,
           "autoincrement": false
         },
-        "bearer_token_ciphertext": {
-          "name": "bearer_token_ciphertext",
+        "api_key_ciphertext": {
+          "name": "api_key_ciphertext",
           "type": "text",
           "primaryKey": false,
           "notNull": true,

@@ -52,12 +52,12 @@ export async function getCommunityModelRegistryEntries(
             description: schema.communityEndpoint.description,
             modality: schema.communityEndpoint.modality,
             imagePricing: schema.communityEndpoint.imagePricing,
+            agentId: schema.communityEndpoint.agentId,
             endpointBaseUrl: schema.communityEndpoint.baseUrl,
             agentBaseUrl: schema.agent.baseUrl,
             upstreamModel: schema.communityEndpoint.upstreamModel,
             endpointBearerTokenCiphertext:
                 schema.communityEndpoint.bearerTokenCiphertext,
-            agentBearerTokenCiphertext: schema.agent.bearerTokenCiphertext,
             visibility: schema.communityEndpoint.visibility,
             promptTextPrice: schema.communityEndpoint.promptTextPrice,
             promptCachedPrice: schema.communityEndpoint.promptCachedPrice,
@@ -87,9 +87,12 @@ export async function getCommunityModelRegistryEntries(
     return rows.flatMap((row): CommunityModelRegistryEntry[] => {
         if (!row.ownerGithubUsername) return [];
         const baseUrl = row.endpointBaseUrl ?? row.agentBaseUrl;
-        const bearerTokenCiphertext =
-            row.endpointBearerTokenCiphertext ?? row.agentBearerTokenCiphertext;
-        if (!baseUrl || !bearerTokenCiphertext) return [];
+        if (
+            !baseUrl ||
+            (row.agentId === null && !row.endpointBearerTokenCiphertext)
+        ) {
+            return [];
+        }
         const modelId = communityModelId(row.ownerGithubUsername, row.name);
         const communityEndpoint: CommunityEndpointRuntime = {
             id: row.id,
@@ -102,8 +105,9 @@ export async function getCommunityModelRegistryEntries(
                 row.imagePricing,
             ),
             baseUrl,
-            upstreamModel: row.upstreamModel,
-            bearerTokenCiphertext,
+            agentId: row.agentId,
+            upstreamModel: row.agentId ?? row.upstreamModel,
+            bearerTokenCiphertext: row.endpointBearerTokenCiphertext,
             visibility: row.visibility,
             disabledAt: row.disabledAt ? row.disabledAt.getTime() : null,
             disabledReason: row.disabledReason,

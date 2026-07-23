@@ -1,6 +1,5 @@
 import {
     Chip,
-    ExternalLinkIcon,
     IconButton,
     PencilIcon,
     Surface,
@@ -63,10 +62,6 @@ export function AgentCard({
                 <span className="inline-flex items-center gap-1.5">
                     <TerminalIcon className="h-3.5 w-3.5" />
                     Base model: {agent.baseModel}
-                </span>
-                <span className="inline-flex min-w-0 items-center gap-1.5">
-                    <ExternalLinkIcon className="h-3.5 w-3.5 shrink-0" />
-                    <span className="truncate">{agent.baseUrl}</span>
                 </span>
                 <span className="inline-flex items-center gap-1.5">
                     <TokensIcon className="h-3.5 w-3.5" />

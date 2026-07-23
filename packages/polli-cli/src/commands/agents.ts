@@ -19,7 +19,6 @@ type AgentConfig = {
 type Agent = AgentConfig & {
     id: string;
     name: string;
-    baseUrl: string;
     createdAt: string;
     updatedAt: string;
 };
@@ -46,9 +45,8 @@ function printAgents(agents: Agent[]): void {
             name: agent.name,
             model: agent.baseModel,
             mcp_servers: agent.mcpServers?.length ?? 0,
-            endpoint: agent.baseUrl,
         })),
-        ["id", "name", "model", "mcp_servers", "endpoint"],
+        ["id", "name", "model", "mcp_servers"],
     );
 }
 
@@ -70,7 +68,7 @@ const list = new Command("list")
     });
 
 const create = new Command("create")
-    .description("Create and deploy a prompt agent")
+    .description("Create a prompt agent")
     .requiredOption("--name <name>", "Agent name")
     .requiredOption(
         "--config <file>",
@@ -98,7 +96,7 @@ const create = new Command("create")
     });
 
 const update = new Command("update")
-    .description("Update and redeploy an agent at the same endpoint")
+    .description("Update an agent")
     .argument("<id>", "Agent id")
     .option("--name <name>", "Agent name")
     .option(

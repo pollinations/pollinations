@@ -25,7 +25,6 @@ export type ManagedAgent = {
     systemPrompt: string;
     baseModel: string;
     mcpServers: { name: string; url: string }[];
-    baseUrl: string;
     createdAt: string;
     updatedAt: string;
 };

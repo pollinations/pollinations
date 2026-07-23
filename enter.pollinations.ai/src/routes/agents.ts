@@ -1,6 +1,6 @@
 import * as schema from "@shared/db/better-auth.ts";
 import { validator } from "@shared/middleware/validator.ts";
-import { decryptSecret, encryptSecret } from "@shared/secret-encryption.ts";
+import { encryptSecret } from "@shared/secret-encryption.ts";
 import { and, eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { Hono } from "hono";
@@ -10,19 +10,11 @@ import { z } from "zod";
 import type { Env } from "../env.ts";
 import { auth } from "../middleware/auth.ts";
 import {
-    buildPromptAgentDeploy,
+    createPromptAgentKey,
     PromptAgentSchema,
     parsePromptAgentConfig,
-    promptAgentConfigBindings,
     serializePromptAgentConfig,
 } from "../services/prompt-agent.ts";
-import { PROMPT_AGENT_TEMPLATE_SOURCE } from "../services/prompt-agent-template.ts";
-import {
-    agentWorkerScriptName,
-    deleteAgentWorker,
-    deployAgentWorker,
-    requireWorkerDeployConfig,
-} from "../services/worker-deploy.ts";
 import { requireAccountKeysPermission } from "./account-permissions.ts";
 
 const AgentNameSchema = z.string().trim().min(1).max(120);
@@ -49,7 +41,6 @@ const AgentResponseSchema = z.object({
     systemPrompt: z.string(),
     baseModel: z.string(),
     mcpServers: PromptAgentSchema.shape.mcpServers,
-    baseUrl: z.string(),
     createdAt: z.string(),
     updatedAt: z.string(),
 });
@@ -61,11 +52,8 @@ const AgentDeleteResponseSchema = z.object({ id: z.string() });
 type Db = ReturnType<typeof drizzle<typeof schema>>;
 type AgentRow = typeof schema.agent.$inferSelect;
 
-function genBaseUrl(env: Env["Bindings"]): string {
-    return (
-        (env as { GEN_BASE_URL?: string }).GEN_BASE_URL ??
-        "https://gen.pollinations.ai"
-    );
+function agentRuntimeBaseUrl(env: Env["Bindings"]): string {
+    return `${env.BETTER_AUTH_URL.replace(/\/$/, "")}/api/agent-runtime/v1`;
 }
 
 function toResponse(row: AgentRow) {
@@ -75,7 +63,6 @@ function toResponse(row: AgentRow) {
         id: row.id,
         name: row.name,
         ...config,
-        baseUrl: row.baseUrl,
         createdAt: row.createdAt,
         updatedAt: row.updatedAt,
     };
@@ -182,7 +169,7 @@ export const agentsRoutes = new Hono<Env>()
             tags: ["👤 Account"],
             summary: "Create Agent",
             description:
-                "Create and deploy an editable prompt agent. The agent can later be registered separately as a community model. API keys require `account:keys`.",
+                "Create an editable prompt agent. The agent can later be registered separately as a community model. API keys require `account:keys`.",
             responses: {
                 200: {
                     description: "Created agent",
@@ -206,54 +193,35 @@ export const agentsRoutes = new Hono<Env>()
             await ensureAgentNameAvailable(db, user.id, input.name);
             const id = crypto.randomUUID();
             const config = PromptAgentSchema.parse(input);
-            const deployment = await buildPromptAgentDeploy({
-                authClient: c.var.auth.client,
-                dbBinding: c.env.DB,
-                userId: user.id,
-                agentName: input.name,
-                config,
-                genBaseUrl: genBaseUrl(c.env),
-            });
-            const workerAuthToken = crypto.randomUUID().replaceAll("-", "");
-            const deployConfig = requireWorkerDeployConfig(c.env);
-            let workerDeployed = false;
+            const { key, keyId } = await createPromptAgentKey(
+                c.var.auth.client,
+                c.env.DB,
+                user.id,
+                input.name,
+            );
             try {
-                const baseUrl = await deployAgentWorker(
-                    deployConfig,
-                    agentWorkerScriptName(id),
-                    deployment.source,
-                    workerAuthToken,
-                    deployment.extraBindings,
-                );
-                workerDeployed = true;
                 const [row] = await db
                     .insert(schema.agent)
                     .values({
                         id,
                         ownerUserId: user.id,
                         name: input.name,
-                        config: deployment.serializedConfig,
-                        baseUrl,
-                        bearerTokenCiphertext: await encryptSecret(
-                            workerAuthToken,
+                        config: serializePromptAgentConfig(config),
+                        baseUrl: agentRuntimeBaseUrl(c.env),
+                        apiKeyCiphertext: await encryptSecret(
+                            key,
                             c.env.BETTER_AUTH_SECRET,
                         ),
-                        apiKeyId: deployment.keyId,
+                        apiKeyId: keyId,
                         createdAt: new Date(),
                         updatedAt: new Date(),
                     })
                     .returning();
                 return c.json(toResponse(row));
             } catch (error) {
-                if (workerDeployed) {
-                    await deleteAgentWorker(
-                        deployConfig,
-                        agentWorkerScriptName(id),
-                    );
-                }
                 await db
                     .delete(schema.apikey)
-                    .where(eq(schema.apikey.id, deployment.keyId));
+                    .where(eq(schema.apikey.id, keyId));
                 throw error;
             }
         },
@@ -264,7 +232,7 @@ export const agentsRoutes = new Hono<Env>()
             tags: ["👤 Account"],
             summary: "Update Agent",
             description:
-                "Update an agent and redeploy it at the same URL. Existing community model registration is unchanged. API keys require `account:keys`.",
+                "Update an agent. Existing community model registration is unchanged. API keys require `account:keys`.",
             responses: {
                 200: {
                     description: "Updated agent",
@@ -306,28 +274,11 @@ export const agentsRoutes = new Hono<Env>()
                 mcpServers: input.mcpServers ?? currentConfig.mcpServers,
             });
             const serializedConfig = serializePromptAgentConfig(config);
-            const configChanged = serializedConfig !== existing.config;
-            let baseUrl = existing.baseUrl;
-            if (configChanged) {
-                const workerAuthToken = await decryptSecret(
-                    existing.bearerTokenCiphertext,
-                    c.env.BETTER_AUTH_SECRET,
-                );
-                baseUrl = await deployAgentWorker(
-                    requireWorkerDeployConfig(c.env),
-                    agentWorkerScriptName(id),
-                    PROMPT_AGENT_TEMPLATE_SOURCE,
-                    workerAuthToken,
-                    promptAgentConfigBindings(config, genBaseUrl(c.env)),
-                    ["POLLINATIONS_KEY"],
-                );
-            }
             const [row] = await db
                 .update(schema.agent)
                 .set({
                     name: input.name ?? existing.name,
                     config: serializedConfig,
-                    baseUrl,
                     updatedAt: new Date(),
                 })
                 .where(
@@ -378,10 +329,6 @@ export const agentsRoutes = new Hono<Env>()
                         "Delete the agent's community model registration first",
                 });
             }
-            await deleteAgentWorker(
-                requireWorkerDeployConfig(c.env),
-                agentWorkerScriptName(id),
-            );
             await db
                 .delete(schema.apikey)
                 .where(eq(schema.apikey.id, existing.apiKeyId));

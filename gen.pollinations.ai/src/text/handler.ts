@@ -322,6 +322,7 @@ async function generateTextResponse(
                   c.var.model.definition,
                   requestData,
                   c.env.BETTER_AUTH_SECRET,
+                  c.env.PLN_ENTER_TOKEN,
                   c.env.PORTKEY_GATEWAY_URL,
                   c.var.auth?.apiKey?.rawKey || "",
               )

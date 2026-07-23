@@ -4,7 +4,7 @@ CREATE TABLE `agent` (
 	`name` text NOT NULL,
 	`config` text NOT NULL,
 	`base_url` text NOT NULL,
-	`bearer_token_ciphertext` text NOT NULL,
+	`api_key_ciphertext` text NOT NULL,
 	`api_key_id` text NOT NULL,
 	`created_at` integer DEFAULT (cast((julianday('now') - 2440587.5)*86400000 as integer)) NOT NULL,
 	`updated_at` integer DEFAULT (cast((julianday('now') - 2440587.5)*86400000 as integer)) NOT NULL,

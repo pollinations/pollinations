@@ -1,63 +1,129 @@
+import { env } from "cloudflare:test";
+import * as schema from "@shared/db/better-auth.ts";
+import { encryptSecret } from "@shared/secret-encryption.ts";
+import { createTestUser } from "@shared/test/fixtures/index.ts";
+import { drizzle } from "drizzle-orm/d1";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import promptAgentWorker from "../src/services/dist/prompt-agent-worker.js";
-import { PROMPT_AGENT_TEMPLATE_SOURCE } from "../src/services/prompt-agent-template.ts";
+import { agentRuntimeRoutes } from "../src/routes/agent-runtime.ts";
+import {
+    handlePromptAgentRequest,
+    type PromptAgentRequest,
+} from "../src/services/prompt-agent-runtime.ts";
 
-type AgentModule = {
-    default: {
-        fetch: (
-            request: Request,
-            env: Record<string, string>,
-        ) => Promise<Response>;
-    };
+type PromptAgentRuntime = Parameters<typeof handlePromptAgentRequest>[2];
+
+const BASE_RUNTIME: PromptAgentRuntime = {
+    config: {
+        systemPrompt: "You are a test agent.",
+        baseModel: "openai",
+        mcpServers: [],
+    },
+    apiKey: "sk_test",
+    genBaseUrl: "https://gen.test.example",
 };
 
-async function loadTemplate(): Promise<AgentModule["default"]> {
-    return promptAgentWorker;
+async function runAgent(
+    body: PromptAgentRequest,
+    runtime: PromptAgentRuntime = BASE_RUNTIME,
+): Promise<Response> {
+    return await handlePromptAgentRequest(
+        body,
+        new AbortController().signal,
+        runtime,
+    );
 }
 
-const BASE_ENV = {
-    SYSTEM_PROMPT: "You are a test agent.",
-    BASE_MODEL: "openai",
-    MCP_JSON: "[]",
-    POLLINATIONS_KEY: "sk_test",
-    GEN_BASE_URL: "https://gen.test.example",
-    BEE_AUTH_TOKEN: "secret-token",
-};
-
-function chatRequest(body: Record<string, unknown>): Request {
-    return new Request("https://bee.example.com/v1/chat/completions", {
-        method: "POST",
-        headers: {
-            "content-type": "application/json",
-            authorization: "Bearer secret-token",
-        },
-        body: JSON.stringify(body),
-    });
-}
-
-describe("prompt-agent template", () => {
+describe("prompt-agent runtime", () => {
     beforeEach(() => {
         vi.unstubAllGlobals();
     });
 
-    it("builds a self-contained deployable worker", () => {
-        expect(PROMPT_AGENT_TEMPLATE_SOURCE.length).toBeGreaterThan(100_000);
-        expect(PROMPT_AGENT_TEMPLATE_SOURCE).toContain("export{");
-        expect(PROMPT_AGENT_TEMPLATE_SOURCE).not.toContain('from"ai"');
-        expect(PROMPT_AGENT_TEMPLATE_SOURCE).not.toContain('from"@ai-sdk/mcp"');
-    });
-
-    it("rejects callers without the auth token", async () => {
-        const agent = await loadTemplate();
-        const res = await agent.fetch(
-            new Request("https://bee.example.com/v1/chat/completions", {
+    it("rejects calls without the internal Enter token", async () => {
+        const response = await agentRuntimeRoutes.fetch(
+            new Request("https://enter.example/v1/chat/completions", {
                 method: "POST",
                 headers: { "content-type": "application/json" },
-                body: JSON.stringify({ messages: [] }),
+                body: JSON.stringify({ model: crypto.randomUUID() }),
             }),
-            BASE_ENV,
+            env,
         );
-        expect(res.status).toBe(401);
+        expect(response.status).toBe(401);
+    });
+
+    it("selects agents by the request model", async () => {
+        const response = await agentRuntimeRoutes.fetch(
+            new Request("https://enter.example/v1/chat/completions", {
+                method: "POST",
+                headers: {
+                    "content-type": "application/json",
+                    authorization: `Bearer ${env.PLN_ENTER_TOKEN}`,
+                },
+                body: JSON.stringify({ model: crypto.randomUUID() }),
+            }),
+            env,
+        );
+        expect(response.status).toBe(404);
+    });
+
+    it("loads the selected config and owner key from D1", async () => {
+        const db = drizzle(env.DB, { schema });
+        const agentId = crypto.randomUUID();
+        await db.insert(schema.agent).values({
+            id: agentId,
+            ownerUserId: await createTestUser(),
+            name: `runtime-${agentId}`,
+            config: JSON.stringify({
+                systemPrompt: "Answer briefly.",
+                baseModel: "openai-fast",
+                mcpServers: [],
+            }),
+            baseUrl: "https://enter.test/api/agent-runtime/v1",
+            apiKeyCiphertext: await encryptSecret(
+                "sk_agent_owner",
+                env.BETTER_AUTH_SECRET,
+            ),
+            apiKeyId: crypto.randomUUID(),
+            createdAt: new Date(),
+            updatedAt: new Date(),
+        });
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+                const request = new Request(input, init);
+                expect(request.url).toBe(
+                    "https://gen.test/v1/chat/completions",
+                );
+                expect(request.headers.get("Authorization")).toBe(
+                    "Bearer sk_agent_owner",
+                );
+                return Response.json({
+                    choices: [
+                        { message: { role: "assistant", content: "done" } },
+                    ],
+                    usage: { prompt_tokens: 1, completion_tokens: 1 },
+                });
+            }),
+        );
+
+        const response = await agentRuntimeRoutes.fetch(
+            new Request("https://enter.test/v1/chat/completions", {
+                method: "POST",
+                headers: {
+                    "content-type": "application/json",
+                    authorization: `Bearer ${env.PLN_ENTER_TOKEN}`,
+                },
+                body: JSON.stringify({
+                    model: agentId,
+                    messages: [{ role: "user", content: "hello" }],
+                }),
+            }),
+            { ...env, GEN_BASE_URL: "https://gen.test" },
+        );
+        expect(response.status).toBe(200);
+        await expect(response.json()).resolves.toMatchObject({
+            model: "openai-fast",
+            choices: [{ message: { content: "done" } }],
+        });
     });
 
     it("runs the MCP tool loop and reuses the negotiated session", async () => {
@@ -156,14 +222,16 @@ describe("prompt-agent template", () => {
         );
         vi.stubGlobal("fetch", fetchMock);
 
-        const agent = await loadTemplate();
-        const res = await agent.fetch(
-            chatRequest({ messages: [{ role: "user", content: "hi" }] }),
+        const res = await runAgent(
+            { messages: [{ role: "user", content: "hi" }] },
             {
-                ...BASE_ENV,
-                MCP_JSON: JSON.stringify([
-                    { name: "docs", url: "https://mcp.example.com/rpc" },
-                ]),
+                ...BASE_RUNTIME,
+                config: {
+                    ...BASE_RUNTIME.config,
+                    mcpServers: [
+                        { name: "docs", url: "https://mcp.example.com/rpc" },
+                    ],
+                },
             },
         );
 
@@ -262,14 +330,10 @@ describe("prompt-agent template", () => {
         );
         vi.stubGlobal("fetch", fetchMock);
 
-        const agent = await loadTemplate();
-        const res = await agent.fetch(
-            chatRequest({
-                messages: [{ role: "user", content: "hi" }],
-                stream: true,
-            }),
-            BASE_ENV,
-        );
+        const res = await runAgent({
+            messages: [{ role: "user", content: "hi" }],
+            stream: true,
+        });
         expect(res.status).toBe(200);
         expect(res.headers.get("content-type")).toContain("text/event-stream");
         const text = await res.text();
@@ -389,16 +453,21 @@ describe("prompt-agent template", () => {
         );
         vi.stubGlobal("fetch", fetchMock);
 
-        const agent = await loadTemplate();
-        const res = await agent.fetch(
-            chatRequest({
-                messages: [{ role: "user", content: "look up cats" }],
-            }),
+        const res = await runAgent(
             {
-                ...BASE_ENV,
-                MCP_JSON: JSON.stringify([
-                    { name: "docs", url: "https://mcp.example.com/rpc" },
-                ]),
+                messages: [{ role: "user", content: "look up cats" }],
+            },
+            {
+                ...BASE_RUNTIME,
+                config: {
+                    ...BASE_RUNTIME.config,
+                    mcpServers: [
+                        {
+                            name: "docs",
+                            url: "https://mcp.example.com/rpc",
+                        },
+                    ],
+                },
             },
         );
         // A tool failure does not fail the request.

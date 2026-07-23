@@ -201,7 +201,7 @@ export const agent = sqliteTable("agent", {
   name: text("name").notNull(),
   config: text("config").notNull(),
   baseUrl: text("base_url").notNull(),
-  bearerTokenCiphertext: text("bearer_token_ciphertext").notNull(),
+  apiKeyCiphertext: text("api_key_ciphertext").notNull(),
   apiKeyId: text("api_key_id").notNull(),
   createdAt: integer("created_at", { mode: "timestamp" })
     .defaultNow()

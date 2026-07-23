@@ -20,13 +20,15 @@ import {
     parseCommunityModelId,
 } from "@shared/community-endpoints.ts";
 import {
+    agent as agentTable,
+    apikey as apiKeyTable,
     communityEndpoint as communityEndpointTable,
     session as sessionTable,
 } from "@shared/db/better-auth.ts";
 import { handleError } from "@shared/error.ts";
 import { IMMUTABLE_CACHE_CONTROL } from "@shared/http/cache-control.ts";
 import { calculateUsageBilling } from "@shared/registry/registry.ts";
-import { encryptSecret } from "@shared/secret-encryption.ts";
+import { decryptSecret, encryptSecret } from "@shared/secret-encryption.ts";
 import {
     createTestApiKey,
     createTestUser,
@@ -422,6 +424,7 @@ describe("community endpoint helpers", () => {
                 modality: "image",
                 imagePricing,
                 baseUrl: "https://api.example.com/v1",
+                agentId: null,
                 upstreamModel: "gpt-image-1",
                 visibility: "public",
                 disabledAt: null,
@@ -522,6 +525,7 @@ describe("community endpoint helpers", () => {
             modality: "text",
             imagePricing: "request",
             baseUrl: "https://api.example.com/v1",
+            agentId: null,
             upstreamModel: "gpt-4.1-mini",
             visibility: "public",
             disabledAt: null,
@@ -545,6 +549,7 @@ describe("community endpoint helpers", () => {
                 max_tokens: 5,
             },
             secret,
+            "agent-runtime-token",
             "https://portkey.test",
             "sk_user_key",
         );
@@ -2527,7 +2532,7 @@ fixtureTest(
 );
 
 fixtureTest(
-    "keeps agent deployment and community registration as separate lifecycles",
+    "keeps editable agent definitions and community registration as separate lifecycles",
     async () => {
         const ownerGithubUsername = `owner-${crypto.randomUUID().slice(0, 8)}`;
         const agentName = `agent-${crypto.randomUUID().slice(0, 8)}`;
@@ -2546,34 +2551,15 @@ fixtureTest(
             updatedAt: new Date(),
         });
 
-        const cfRequests: Request[] = [];
-        const fetchMock = vi.fn(async (input, init) => {
-            const request = new Request(input, init);
-            const url = new URL(request.url);
-            if (url.hostname !== "api.cloudflare.com") {
-                throw new Error(`Unexpected fetch: ${request.url}`);
-            }
-            cfRequests.push(request.clone() as Request);
-            if (
-                request.method === "GET" &&
-                url.pathname.endsWith("/workers/subdomain")
-            ) {
-                return Response.json({
-                    success: true,
-                    result: { subdomain: "staging-sub" },
-                });
-            }
-            return Response.json({ success: true, result: {} });
-        });
-        vi.stubGlobal("fetch", fetchMock);
-
-        const deployEnv = {
+        const enterEnv = {
             ...env,
-            CF_WORKER_DEPLOY_ACCOUNT_ID: "cf-account",
-            CF_WORKER_DEPLOY_API_TOKEN: "cf-deploy-token",
+            BETTER_AUTH_URL: "https://enter.test",
         };
         const enterApi = await createEnterFrontendApi();
-        const cookie = await signedSessionCookie(sessionToken);
+        const cookie = (await signedSessionCookie(sessionToken)).replace(
+            "better-auth.session_token",
+            "__Secure-better-auth.session_token",
+        );
         const promptAgent = {
             systemPrompt: "You are a terse SQL tutor.",
             baseModel: "openai-fast",
@@ -2581,7 +2567,7 @@ fixtureTest(
         };
         const createAgentResponse = await fetchEnterApi(
             enterApi,
-            new Request("http://localhost:3000/api/account/agents", {
+            new Request("https://enter.test/api/account/agents", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
@@ -2592,13 +2578,12 @@ fixtureTest(
                     ...promptAgent,
                 }),
             }),
-            deployEnv,
+            enterEnv,
         );
         expect(createAgentResponse.status).toBe(200);
         const agent = (await createAgentResponse.json()) as {
             id: string;
             name: string;
-            baseUrl: string;
             systemPrompt: string;
             baseModel: string;
             mcpServers: typeof promptAgent.mcpServers;
@@ -2609,101 +2594,41 @@ fixtureTest(
             baseModel: "openai-fast",
         });
         expect(agent).not.toHaveProperty("apiKeyId");
+        expect(agent).not.toHaveProperty("apiKeyCiphertext");
         expect(agent).not.toHaveProperty("bearerTokenCiphertext");
-        expect(agent.baseUrl).toBe(
-            `https://bee-${agent.id}.staging-sub.workers.dev/v1`,
+        expect(agent).not.toHaveProperty("baseUrl");
+        const [storedAgent] = await db
+            .select()
+            .from(agentTable)
+            .where(eq(agentTable.id, agent.id));
+        expect(storedAgent.baseUrl).toBe(
+            `${enterEnv.BETTER_AUTH_URL}/api/agent-runtime/v1`,
         );
-
-        const scriptName = `bee-${agent.id}`;
-        const createPutRequest = cfRequests.find(
-            (request) => request.method === "PUT",
-        );
-        if (!createPutRequest) throw new Error("No worker upload PUT captured");
-        const createForm = await createPutRequest.formData();
-        const createMetadata = JSON.parse(String(createForm.get("metadata")));
-        const createBindingByName = Object.fromEntries(
-            (createMetadata.bindings ?? []).map((binding: { name: string }) => [
-                binding.name,
-                binding,
-            ]),
-        );
-        for (const name of [
-            "BEE_AUTH_TOKEN",
-            "SYSTEM_PROMPT",
-            "BASE_MODEL",
-            "MCP_JSON",
-            "POLLINATIONS_KEY",
-            "GEN_BASE_URL",
-        ]) {
-            expect(createBindingByName[name]).toMatchObject({
-                type: "secret_text",
-            });
-        }
-        expect(createBindingByName.SYSTEM_PROMPT.text).toBe(
-            "You are a terse SQL tutor.",
-        );
-        expect(createBindingByName.BASE_MODEL.text).toBe("openai-fast");
-        expect(JSON.parse(createBindingByName.MCP_JSON.text)).toEqual([
-            { name: "docs", url: "https://mcp.example.com/rpc" },
-        ]);
-        expect(createBindingByName.POLLINATIONS_KEY.text).toMatch(/^sk_/);
         await expect(
-            (createForm.get("index.mjs") as File).text(),
-        ).resolves.toContain("pollinations-prompt-agent");
-
-        cfRequests.length = 0;
+            decryptSecret(storedAgent.apiKeyCiphertext, env.BETTER_AUTH_SECRET),
+        ).resolves.toMatch(/^sk_/);
         const updateAgentResponse = await fetchEnterApi(
             enterApi,
-            new Request(
-                `http://localhost:3000/api/account/agents/${agent.id}`,
-                {
-                    method: "PATCH",
-                    headers: {
-                        "Content-Type": "application/json",
-                        Cookie: cookie,
-                    },
-                    body: JSON.stringify({
-                        systemPrompt: "You are an editable SQL tutor.",
-                    }),
+            new Request(`https://enter.test/api/account/agents/${agent.id}`, {
+                method: "PATCH",
+                headers: {
+                    "Content-Type": "application/json",
+                    Cookie: cookie,
                 },
-            ),
-            deployEnv,
+                body: JSON.stringify({
+                    systemPrompt: "You are an editable SQL tutor.",
+                }),
+            }),
+            enterEnv,
         );
         expect(updateAgentResponse.status).toBe(200);
         await expect(updateAgentResponse.json()).resolves.toMatchObject({
             id: agent.id,
-            baseUrl: agent.baseUrl,
             systemPrompt: "You are an editable SQL tutor.",
         });
-        const updatePutRequest = cfRequests.find(
-            (request) => request.method === "PUT",
-        );
-        if (!updatePutRequest) throw new Error("No update PUT captured");
-        expect(
-            new URL(updatePutRequest.url).searchParams.get("bindings_inherit"),
-        ).toBe("strict");
-        const updateForm = await updatePutRequest.formData();
-        const updateMetadata = JSON.parse(String(updateForm.get("metadata")));
-        const updateBindingByName = Object.fromEntries(
-            (updateMetadata.bindings ?? []).map((binding: { name: string }) => [
-                binding.name,
-                binding,
-            ]),
-        );
-        expect(updateBindingByName.POLLINATIONS_KEY).toMatchObject({
-            type: "inherit",
-        });
-        expect(updateBindingByName.BEE_AUTH_TOKEN.text).toBe(
-            createBindingByName.BEE_AUTH_TOKEN.text,
-        );
-        expect(updateBindingByName.SYSTEM_PROMPT.text).toBe(
-            "You are an editable SQL tutor.",
-        );
-
-        cfRequests.length = 0;
         const registerResponse = await fetchEnterApi(
             enterApi,
-            new Request("http://localhost:3000/api/account/my-models", {
+            new Request("https://enter.test/api/account/my-models", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
@@ -2717,7 +2642,7 @@ fixtureTest(
                     completionTextPrice: 0.1,
                 }),
             }),
-            deployEnv,
+            enterEnv,
         );
         expect(registerResponse.status).toBe(200);
         const registration = (await registerResponse.json()) as {
@@ -2728,19 +2653,35 @@ fixtureTest(
         };
         expect(registration.id).not.toBe(agent.id);
         expect(registration.agentId).toBe(agent.id);
-        expect(registration.baseUrl).toBe(agent.baseUrl);
-        expect(cfRequests).toHaveLength(0);
+        expect(registration.baseUrl).toBe(storedAgent.baseUrl);
         const registryEntry = (
             await getCommunityModelRegistryEntries(env.DB)
         ).find((entry) => entry.id === registration.modelId);
-        expect(registryEntry?.communityEndpoint.baseUrl).toBe(agent.baseUrl);
-        expect(registryEntry?.communityEndpoint.bearerTokenCiphertext).toMatch(
-            /^v1:/,
+        expect(registryEntry?.communityEndpoint).toMatchObject({
+            baseUrl: storedAgent.baseUrl,
+            agentId: agent.id,
+            upstreamModel: agent.id,
+            bearerTokenCiphertext: null,
+        });
+        if (!registryEntry) throw new Error("Agent listing was not registered");
+        const gatewayContext = await communityEndpointGatewayContext(
+            registryEntry.communityEndpoint,
+            registryEntry.definition,
+            { messages: [{ role: "user", content: "hello" }] },
+            env.BETTER_AUTH_SECRET,
+            env.PLN_ENTER_TOKEN,
+            env.PORTKEY_GATEWAY_URL,
+            "sk_user_key",
         );
+        expect(gatewayContext.modelConfig).toMatchObject({
+            "custom-host": storedAgent.baseUrl,
+            authKey: env.PLN_ENTER_TOKEN,
+            model: agent.id,
+        });
 
         const duplicateRegistrationResponse = await fetchEnterApi(
             enterApi,
-            new Request("http://localhost:3000/api/account/my-models", {
+            new Request("https://enter.test/api/account/my-models", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
@@ -2751,47 +2692,44 @@ fixtureTest(
                     agentId: agent.id,
                 }),
             }),
-            deployEnv,
+            enterEnv,
         );
         expect(duplicateRegistrationResponse.status).toBe(400);
 
         const deleteRegisteredAgentResponse = await fetchEnterApi(
             enterApi,
-            new Request(
-                `http://localhost:3000/api/account/agents/${agent.id}`,
-                { method: "DELETE", headers: { Cookie: cookie } },
-            ),
-            deployEnv,
+            new Request(`https://enter.test/api/account/agents/${agent.id}`, {
+                method: "DELETE",
+                headers: { Cookie: cookie },
+            }),
+            enterEnv,
         );
         expect(deleteRegisteredAgentResponse.status).toBe(409);
-        expect(cfRequests).toHaveLength(0);
 
         const deleteListingResponse = await fetchEnterApi(
             enterApi,
             new Request(
-                `http://localhost:3000/api/account/my-models/${registration.id}`,
+                `https://enter.test/api/account/my-models/${registration.id}`,
                 { method: "DELETE", headers: { Cookie: cookie } },
             ),
-            deployEnv,
+            enterEnv,
         );
         expect(deleteListingResponse.status).toBe(200);
-        expect(cfRequests).toHaveLength(0);
 
         const deleteAgentResponse = await fetchEnterApi(
             enterApi,
-            new Request(
-                `http://localhost:3000/api/account/agents/${agent.id}`,
-                { method: "DELETE", headers: { Cookie: cookie } },
-            ),
-            deployEnv,
+            new Request(`https://enter.test/api/account/agents/${agent.id}`, {
+                method: "DELETE",
+                headers: { Cookie: cookie },
+            }),
+            enterEnv,
         );
         expect(deleteAgentResponse.status).toBe(200);
-        const deleteWorkerCall = cfRequests.find(
-            (request) => request.method === "DELETE",
-        );
-        if (!deleteWorkerCall) throw new Error("No worker DELETE captured");
-        expect(new URL(deleteWorkerCall.url).pathname).toBe(
-            `/client/v4/accounts/cf-account/workers/scripts/${scriptName}`,
-        );
+        await expect(
+            db
+                .select({ id: apiKeyTable.id })
+                .from(apiKeyTable)
+                .where(eq(apiKeyTable.id, storedAgent.apiKeyId)),
+        ).resolves.toEqual([]);
     },
 );

@@ -78,6 +78,8 @@ function ToggleButton({
 type CommunityEndpointDialogProps = {
     /** Present in edit mode (prefills the form); omit to create. */
     endpoint?: CommunityEndpoint;
+    /** Opens create mode already linked to this managed agent. */
+    initialAgent?: ManagedAgent;
     agents: ManagedAgent[];
     // Allowlisted owners can choose Public. Everyone else sees the same
     // lifecycle control with Public disabled.
@@ -91,6 +93,7 @@ type CommunityEndpointDialogProps = {
 
 export function CommunityEndpointDialog({
     endpoint,
+    initialAgent,
     agents,
     canPublish,
     open,
@@ -112,14 +115,26 @@ export function CommunityEndpointDialog({
     // Reset the form on open and clear local state on close so unsaved values
     // never survive a dismissed dialog.
     useEffect(() => {
-        setForm(open && endpoint ? endpointToForm(endpoint) : emptyForm);
+        setForm(
+            open && endpoint
+                ? endpointToForm(endpoint)
+                : open && initialAgent
+                  ? {
+                        ...emptyForm,
+                        mode: "agent",
+                        modality: "text",
+                        name: initialAgent.name,
+                        agentId: initialAgent.id,
+                    }
+                  : emptyForm,
+        );
         setModelOptions([]);
         setModelListState(idleAction);
         setProviderModelMenuOpen(false);
         setTestState(idleAction);
         setError(null);
         setIsSubmitting(false);
-    }, [open, endpoint]);
+    }, [open, endpoint, initialAgent]);
 
     const hasToken = form.bearerToken.trim().length > 0;
     const tokenForRequest = { bearerToken: form.bearerToken.trim() };
@@ -343,7 +358,11 @@ export function CommunityEndpointDialog({
         >
             <div className="shrink-0 p-6 pb-4">
                 <DialogTitle className="text-lg font-semibold">
-                    {isEdit ? "Edit Model" : "Add Model"}
+                    {isEdit
+                        ? "Edit Model"
+                        : initialAgent
+                          ? "Register Agent as Model"
+                          : "Add Model"}
                 </DialogTitle>
                 <p className="mt-1 text-sm text-theme-text-muted">
                     {form.mode === "agent" ? (
@@ -376,7 +395,7 @@ export function CommunityEndpointDialog({
                 <ScrollArea className="min-h-0 flex-1 space-y-4 overscroll-contain px-6 pb-2">
                     {error && <Alert intent="danger">{error}</Alert>}
 
-                    {!isEdit && (
+                    {!isEdit && !initialAgent && (
                         <FieldStack
                             label="How to register"
                             helper={
@@ -528,14 +547,16 @@ export function CommunityEndpointDialog({
                             helper={
                                 isEdit
                                     ? "The registered agent cannot be replaced. Edit its definition in My Agents."
-                                    : "Only unlisted agents are available."
+                                    : initialAgent
+                                      ? "This listing points to the selected agent. Its definition remains independently editable in My Agents."
+                                      : "Only unlisted agents are available."
                             }
                             alignLabelRow
                         >
                             <select
                                 name="managed-agent"
                                 value={form.agentId}
-                                disabled={isEdit}
+                                disabled={isEdit || !!initialAgent}
                                 required
                                 className="h-10 w-full rounded-md border border-divider bg-surface px-3 text-sm text-theme-text-strong disabled:opacity-60"
                                 onChange={(event) =>

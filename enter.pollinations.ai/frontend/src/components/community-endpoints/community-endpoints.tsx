@@ -43,6 +43,8 @@ export function CommunityEndpoints({
     const [deleting, setDeleting] = useState<CommunityEndpoint | null>(null);
     const [togglingId, setTogglingId] = useState<string | null>(null);
     const [agentCreateOpen, setAgentCreateOpen] = useState(false);
+    const [registeringAgent, setRegisteringAgent] =
+        useState<ManagedAgent | null>(null);
     const [editingAgent, setEditingAgent] = useState<ManagedAgent | null>(null);
     const [deletingAgent, setDeletingAgent] = useState<ManagedAgent | null>(
         null,
@@ -83,7 +85,10 @@ export function CommunityEndpoints({
             json: payload,
         });
         if (!response.ok) throw new Error(await readError(response));
+        const createdAgent = (await response.json()) as ManagedAgent;
         await loadEndpoints();
+        setRegisteringAgent(createdAgent);
+        setCreateOpen(true);
     }
 
     async function handleUpdateAgent(payload: AgentPayload): Promise<void> {
@@ -290,6 +295,10 @@ export function CommunityEndpoints({
                                 registeredModelId={
                                     endpointByAgentId.get(agent.id)?.modelId
                                 }
+                                onRegister={() => {
+                                    setRegisteringAgent(agent);
+                                    setCreateOpen(true);
+                                }}
                                 onEdit={() => setEditingAgent(agent)}
                                 onDelete={() => setDeletingAgent(agent)}
                             />
@@ -303,9 +312,13 @@ export function CommunityEndpoints({
                 framed
                 action={
                     <CommunityEndpointDialog
+                        initialAgent={registeringAgent ?? undefined}
                         agents={unregisteredAgents}
                         open={createOpen}
-                        onOpenChange={setCreateOpen}
+                        onOpenChange={(open) => {
+                            setCreateOpen(open);
+                            if (!open) setRegisteringAgent(null);
+                        }}
                         onSubmit={handleCreate}
                         canPublish={canPublish}
                         trigger={

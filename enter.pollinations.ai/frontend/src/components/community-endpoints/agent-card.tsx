@@ -1,7 +1,9 @@
 import {
+    Button,
     Chip,
     IconButton,
     PencilIcon,
+    SproutIcon,
     Surface,
     TerminalIcon,
     TokensIcon,
@@ -12,11 +14,13 @@ import type { ManagedAgent } from "./types.ts";
 export function AgentCard({
     agent,
     registeredModelId,
+    onRegister,
     onEdit,
     onDelete,
 }: {
     agent: ManagedAgent;
     registeredModelId?: string;
+    onRegister: () => void;
     onEdit: () => void;
     onDelete: () => void;
 }) {
@@ -39,7 +43,19 @@ export function AgentCard({
                         {agent.systemPrompt}
                     </p>
                 </div>
-                <div className="flex shrink-0 items-center gap-1">
+                <div className="flex shrink-0 flex-wrap items-center justify-end gap-1">
+                    {!registeredModelId && (
+                        <Button
+                            type="button"
+                            size="sm"
+                            intent="info"
+                            className="gap-1.5"
+                            onClick={onRegister}
+                        >
+                            <SproutIcon className="h-3.5 w-3.5" />
+                            Register as model
+                        </Button>
+                    )}
                     <IconButton
                         intent="info"
                         title="Edit agent"

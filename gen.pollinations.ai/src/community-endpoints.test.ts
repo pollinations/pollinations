@@ -20,13 +20,15 @@ import {
     parseCommunityModelId,
 } from "@shared/community-endpoints.ts";
 import {
+    agent as agentTable,
+    apikey as apiKeyTable,
     communityEndpoint as communityEndpointTable,
     session as sessionTable,
 } from "@shared/db/better-auth.ts";
 import { handleError } from "@shared/error.ts";
 import { IMMUTABLE_CACHE_CONTROL } from "@shared/http/cache-control.ts";
 import { calculateUsageBilling } from "@shared/registry/registry.ts";
-import { encryptSecret } from "@shared/secret-encryption.ts";
+import { decryptSecret, encryptSecret } from "@shared/secret-encryption.ts";
 import {
     createTestApiKey,
     createTestUser,
@@ -37,6 +39,7 @@ import { drizzle } from "drizzle-orm/d1";
 import { Hono } from "hono";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { Env } from "@/env.ts";
+import { getCommunityModelRegistryEntries } from "./community-models.ts";
 import { callCommunityImageEndpoint } from "./image/communityEndpoint.ts";
 import { resetGenerationModelRegistryCache } from "./model-registry.ts";
 import { communityEndpointGatewayContext } from "./text/communityEndpoint.ts";
@@ -105,9 +108,10 @@ async function createEnterFrontendApi(): Promise<Hono<Env>> {
 async function fetchEnterApi(
     app: Hono<Env>,
     request: Request,
+    envOverride: typeof env = env,
 ): Promise<Response> {
     const ctx = createExecutionContext();
-    return app.fetch(request, env, ctx);
+    return app.fetch(request, envOverride, ctx);
 }
 
 async function signedSessionCookie(token: string): Promise<string> {
@@ -420,6 +424,7 @@ describe("community endpoint helpers", () => {
                 modality: "image",
                 imagePricing,
                 baseUrl: "https://api.example.com/v1",
+                agentId: null,
                 upstreamModel: "gpt-image-1",
                 visibility: "public",
                 disabledAt: null,
@@ -520,6 +525,7 @@ describe("community endpoint helpers", () => {
             modality: "text",
             imagePricing: "request",
             baseUrl: "https://api.example.com/v1",
+            agentId: null,
             upstreamModel: "gpt-4.1-mini",
             visibility: "public",
             disabledAt: null,
@@ -543,6 +549,7 @@ describe("community endpoint helpers", () => {
                 max_tokens: 5,
             },
             secret,
+            "agent-runtime-token",
             "https://portkey.test",
             "sk_user_key",
         );
@@ -2475,3 +2482,254 @@ fixtureTest("rejects a community model name containing a slash", async () => {
 
     expect(response.status).toBe(400);
 });
+
+fixtureTest(
+    "rejects community registration unless exactly one of baseUrl or agentId is provided",
+    async () => {
+        const ownerGithubUsername = `owner-${crypto.randomUUID().slice(0, 8)}`;
+        const ownerUserId = await createTestUser({
+            githubId: COMMUNITY_ENDPOINT_ALLOWED_TEST_GITHUB_ID,
+            githubUsername: ownerGithubUsername,
+        });
+        const sessionToken = `session-${crypto.randomUUID()}`;
+        await db.insert(sessionTable).values({
+            id: `session-${crypto.randomUUID()}`,
+            token: sessionToken,
+            userId: ownerUserId,
+            expiresAt: new Date(Date.now() + 60 * 60 * 1000),
+            createdAt: new Date(),
+            updatedAt: new Date(),
+        });
+
+        const enterApi = await createEnterCommunityApi();
+        const cookie = await signedSessionCookie(sessionToken);
+        const register = (body: Record<string, unknown>) =>
+            fetchEnterApi(
+                enterApi,
+                new Request("http://localhost:3000/api/community-endpoints", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Cookie: cookie,
+                    },
+                    body: JSON.stringify({
+                        name: `bee-${crypto.randomUUID().slice(0, 8)}`,
+                        bearerToken: "sk_saved_token",
+                        ...body,
+                    }),
+                }),
+            );
+
+        const both = await register({
+            baseUrl: "https://api.example.com/v1",
+            agentId: crypto.randomUUID(),
+        });
+        expect(both.status).toBe(400);
+
+        const neither = await register({});
+        expect(neither.status).toBe(400);
+    },
+);
+
+fixtureTest(
+    "keeps editable agent definitions and community registration as separate lifecycles",
+    async () => {
+        const ownerGithubUsername = `owner-${crypto.randomUUID().slice(0, 8)}`;
+        const agentName = `agent-${crypto.randomUUID().slice(0, 8)}`;
+        const modelName = `model-${crypto.randomUUID().slice(0, 8)}`;
+        const ownerUserId = await createTestUser({
+            githubId: COMMUNITY_ENDPOINT_ALLOWED_TEST_GITHUB_ID,
+            githubUsername: ownerGithubUsername,
+        });
+        const sessionToken = `session-${crypto.randomUUID()}`;
+        await db.insert(sessionTable).values({
+            id: `session-${crypto.randomUUID()}`,
+            token: sessionToken,
+            userId: ownerUserId,
+            expiresAt: new Date(Date.now() + 60 * 60 * 1000),
+            createdAt: new Date(),
+            updatedAt: new Date(),
+        });
+
+        const enterEnv = {
+            ...env,
+            BETTER_AUTH_URL: "https://enter.test",
+        };
+        const enterApi = await createEnterFrontendApi();
+        const cookie = (await signedSessionCookie(sessionToken)).replace(
+            "better-auth.session_token",
+            "__Secure-better-auth.session_token",
+        );
+        const promptAgent = {
+            systemPrompt: "You are a terse SQL tutor.",
+            baseModel: "openai-fast",
+            mcpServers: [{ name: "docs", url: "https://mcp.example.com/rpc" }],
+        };
+        const createAgentResponse = await fetchEnterApi(
+            enterApi,
+            new Request("https://enter.test/api/account/agents", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Cookie: cookie,
+                },
+                body: JSON.stringify({
+                    name: agentName,
+                    ...promptAgent,
+                }),
+            }),
+            enterEnv,
+        );
+        expect(createAgentResponse.status).toBe(200);
+        const agent = (await createAgentResponse.json()) as {
+            id: string;
+            name: string;
+            systemPrompt: string;
+            baseModel: string;
+            mcpServers: typeof promptAgent.mcpServers;
+        };
+        expect(agent).toMatchObject({
+            name: agentName,
+            systemPrompt: "You are a terse SQL tutor.",
+            baseModel: "openai-fast",
+        });
+        expect(agent).not.toHaveProperty("apiKeyId");
+        expect(agent).not.toHaveProperty("apiKeyCiphertext");
+        expect(agent).not.toHaveProperty("bearerTokenCiphertext");
+        expect(agent).not.toHaveProperty("baseUrl");
+        const [storedAgent] = await db
+            .select()
+            .from(agentTable)
+            .where(eq(agentTable.id, agent.id));
+        expect(storedAgent.baseUrl).toBe(
+            `${enterEnv.BETTER_AUTH_URL}/api/agent-runtime/v1`,
+        );
+        await expect(
+            decryptSecret(storedAgent.apiKeyCiphertext, env.BETTER_AUTH_SECRET),
+        ).resolves.toMatch(/^sk_/);
+        const updateAgentResponse = await fetchEnterApi(
+            enterApi,
+            new Request(`https://enter.test/api/account/agents/${agent.id}`, {
+                method: "PATCH",
+                headers: {
+                    "Content-Type": "application/json",
+                    Cookie: cookie,
+                },
+                body: JSON.stringify({
+                    systemPrompt: "You are an editable SQL tutor.",
+                }),
+            }),
+            enterEnv,
+        );
+        expect(updateAgentResponse.status).toBe(200);
+        await expect(updateAgentResponse.json()).resolves.toMatchObject({
+            id: agent.id,
+            systemPrompt: "You are an editable SQL tutor.",
+        });
+        const registerResponse = await fetchEnterApi(
+            enterApi,
+            new Request("https://enter.test/api/account/my-models", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Cookie: cookie,
+                },
+                body: JSON.stringify({
+                    name: modelName,
+                    agentId: agent.id,
+                    visibility: "public",
+                    promptTextPrice: 0.1,
+                    completionTextPrice: 0.1,
+                }),
+            }),
+            enterEnv,
+        );
+        expect(registerResponse.status).toBe(200);
+        const registration = (await registerResponse.json()) as {
+            id: string;
+            modelId: string;
+            agentId: string | null;
+            baseUrl: string;
+        };
+        expect(registration.id).not.toBe(agent.id);
+        expect(registration.agentId).toBe(agent.id);
+        expect(registration.baseUrl).toBe(storedAgent.baseUrl);
+        const registryEntry = (
+            await getCommunityModelRegistryEntries(env.DB)
+        ).find((entry) => entry.id === registration.modelId);
+        expect(registryEntry?.communityEndpoint).toMatchObject({
+            baseUrl: storedAgent.baseUrl,
+            agentId: agent.id,
+            upstreamModel: agent.id,
+            bearerTokenCiphertext: null,
+        });
+        if (!registryEntry) throw new Error("Agent listing was not registered");
+        const gatewayContext = await communityEndpointGatewayContext(
+            registryEntry.communityEndpoint,
+            registryEntry.definition,
+            { messages: [{ role: "user", content: "hello" }] },
+            env.BETTER_AUTH_SECRET,
+            env.PLN_ENTER_TOKEN,
+            env.PORTKEY_GATEWAY_URL,
+            "sk_user_key",
+        );
+        expect(gatewayContext.modelConfig).toMatchObject({
+            "custom-host": storedAgent.baseUrl,
+            authKey: env.PLN_ENTER_TOKEN,
+            model: agent.id,
+        });
+
+        const duplicateRegistrationResponse = await fetchEnterApi(
+            enterApi,
+            new Request("https://enter.test/api/account/my-models", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Cookie: cookie,
+                },
+                body: JSON.stringify({
+                    name: `${modelName}-duplicate`,
+                    agentId: agent.id,
+                }),
+            }),
+            enterEnv,
+        );
+        expect(duplicateRegistrationResponse.status).toBe(400);
+
+        const deleteRegisteredAgentResponse = await fetchEnterApi(
+            enterApi,
+            new Request(`https://enter.test/api/account/agents/${agent.id}`, {
+                method: "DELETE",
+                headers: { Cookie: cookie },
+            }),
+            enterEnv,
+        );
+        expect(deleteRegisteredAgentResponse.status).toBe(409);
+
+        const deleteListingResponse = await fetchEnterApi(
+            enterApi,
+            new Request(
+                `https://enter.test/api/account/my-models/${registration.id}`,
+                { method: "DELETE", headers: { Cookie: cookie } },
+            ),
+            enterEnv,
+        );
+        expect(deleteListingResponse.status).toBe(200);
+
+        const deleteAgentResponse = await fetchEnterApi(
+            enterApi,
+            new Request(`https://enter.test/api/account/agents/${agent.id}`, {
+                method: "DELETE",
+                headers: { Cookie: cookie },
+            }),
+            enterEnv,
+        );
+        expect(deleteAgentResponse.status).toBe(200);
+        await expect(
+            db
+                .select({ id: apiKeyTable.id })
+                .from(apiKeyTable)
+                .where(eq(apiKeyTable.id, storedAgent.apiKeyId)),
+        ).resolves.toEqual([]);
+    },
+);

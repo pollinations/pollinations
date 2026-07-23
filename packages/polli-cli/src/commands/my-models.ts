@@ -80,6 +80,7 @@ function modelBody(opts: Record<string, unknown>, includeRequired: boolean) {
         ["name", "name"],
         ["description", "description"],
         ["baseUrl", "baseUrl"],
+        ["agentId", "agentId"],
         ["upstreamModel", "upstreamModel"],
         ["bearerToken", "bearerToken"],
     ] as const;
@@ -97,13 +98,20 @@ function modelBody(opts: Record<string, unknown>, includeRequired: boolean) {
     }
 
     if (includeRequired) {
-        for (const required of ["name", "baseUrl", "bearerToken"]) {
-            if (!body[required]) {
-                printError(
-                    `--${required.replace(/[A-Z]/g, (c) => `-${c.toLowerCase()}`)} is required`,
-                );
-                process.exit(1);
-            }
+        if (!body.name) {
+            printError("--name is required");
+            process.exit(1);
+        }
+        const modeCount = [body.baseUrl, body.agentId].filter(
+            (value) => value !== undefined,
+        ).length;
+        if (modeCount !== 1) {
+            printError("Provide exactly one of --base-url or --agent-id");
+            process.exit(1);
+        }
+        if (body.baseUrl !== undefined && !body.bearerToken) {
+            printError("--bearer-token is required with --base-url");
+            process.exit(1);
         }
     }
 
@@ -150,9 +158,10 @@ const create = addPriceOptions(
         .description("Register an OpenAI-compatible model endpoint")
         .requiredOption("--name <name>", "Model name")
         .option("--description <text>", "Model description")
-        .requiredOption("--base-url <url>", "OpenAI-compatible base URL")
+        .option("--base-url <url>", "OpenAI-compatible base URL")
+        .option("--agent-id <id>", "Managed agent to register")
         .option("--upstream-model <model>", "Upstream model id")
-        .requiredOption("--bearer-token <token>", "Upstream bearer token")
+        .option("--bearer-token <token>", "Upstream bearer token")
         .option(
             "--visibility <visibility>",
             "Model visibility: private (default) or public",

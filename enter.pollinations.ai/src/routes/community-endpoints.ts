@@ -20,7 +20,7 @@ import {
 import * as schema from "@shared/db/better-auth.ts";
 import { validator } from "@shared/middleware/validator.ts";
 import { encryptSecret } from "@shared/secret-encryption.ts";
-import { and, eq } from "drizzle-orm";
+import { and, desc, eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import type { Context } from "hono";
 import { Hono } from "hono";
@@ -34,7 +34,7 @@ import {
     testCommunityEndpoint,
     testCommunityImageEndpoint,
 } from "../services/community-endpoint-openai.ts";
-import { hasDirectAccountPermission } from "./account-permissions.ts";
+import { requireAccountKeysPermission } from "./account-permissions.ts";
 
 const ModalitySchema = z
     .enum(COMMUNITY_ENDPOINT_MODALITIES)
@@ -91,13 +91,39 @@ const EndpointFieldsSchema = {
     bearerToken: z.string().min(1),
 } as const;
 
-const CreateEndpointSchema = z.object({
-    ...EndpointFieldsSchema,
-    modality: ModalitySchema.optional().default("text"),
-    imagePricing: ImagePricingSchema.optional().default("request"),
-    visibility: VisibilitySchema.optional().default("private"),
-    ...UpdatePriceFieldsSchema,
-});
+const CreateEndpointSchema = z
+    .object({
+        ...EndpointFieldsSchema,
+        baseUrl: EndpointFieldsSchema.baseUrl.optional(),
+        agentId: z.string().uuid().optional(),
+        bearerToken: EndpointFieldsSchema.bearerToken.optional(),
+        modality: ModalitySchema.optional().default("text"),
+        imagePricing: ImagePricingSchema.optional().default("request"),
+        visibility: VisibilitySchema.optional().default("private"),
+        ...UpdatePriceFieldsSchema,
+    })
+    .refine(
+        (input) =>
+            [input.baseUrl, input.agentId].filter(
+                (value) => value !== undefined,
+            ).length === 1,
+        { message: "Provide exactly one of baseUrl or agentId" },
+    )
+    .refine(
+        (input) => input.baseUrl === undefined || Boolean(input.bearerToken),
+        {
+            message: "bearerToken is required when registering with baseUrl",
+        },
+    )
+    .refine(
+        (input) => input.agentId === undefined || input.modality === "text",
+        { message: "Managed agents must use text modality" },
+    )
+    .refine(
+        (input) =>
+            input.agentId === undefined || input.bearerToken === undefined,
+        { message: "Managed agent credentials are configured on the agent" },
+    );
 const UpdateEndpointSchema = z.object({
     name: EndpointFieldsSchema.name.optional(),
     description: EndpointFieldsSchema.description,
@@ -130,6 +156,7 @@ const CommunityEndpointResponseSchema = z.object({
     modality: ModalitySchema,
     imagePricing: ImagePricingSchema,
     baseUrl: z.string(),
+    agentId: z.string().nullable(),
     upstreamModel: z.string(),
     visibility: VisibilitySchema,
     ...ResponsePriceFieldsSchema,
@@ -229,8 +256,16 @@ async function requireOwnerGithubUsername(
     });
 }
 
-function toResponse(row: CommunityEndpointRow, ownerGithubUsername: string) {
+function toResponse(
+    row: CommunityEndpointRow,
+    ownerGithubUsername: string,
+    agentBaseUrl: string | null = null,
+) {
     const modality = normalizeCommunityEndpointModality(row.modality);
+    const baseUrl = row.baseUrl ?? agentBaseUrl;
+    if (!baseUrl) {
+        throw new Error(`Community endpoint ${row.id} has no runtime target`);
+    }
     return {
         id: row.id,
         modelId: communityModelId(ownerGithubUsername, row.name),
@@ -238,7 +273,8 @@ function toResponse(row: CommunityEndpointRow, ownerGithubUsername: string) {
         description: row.description,
         modality,
         imagePricing: normalizeCommunityEndpointImagePricing(row.imagePricing),
-        baseUrl: row.baseUrl,
+        baseUrl,
+        agentId: row.agentId,
         upstreamModel: row.upstreamModel,
         visibility: row.visibility,
         ...communityEndpointPrices(row),
@@ -263,6 +299,32 @@ async function requireOwnedEndpoint(db: Db, id: string, ownerUserId: string) {
         });
     }
     return row;
+}
+
+async function requireUnregisteredOwnedAgent(
+    db: Db,
+    id: string,
+    ownerUserId: string,
+) {
+    const agent = await db.query.agent.findFirst({
+        where: and(
+            eq(schema.agent.id, id),
+            eq(schema.agent.ownerUserId, ownerUserId),
+        ),
+    });
+    if (!agent) {
+        throw new HTTPException(404, { message: "Agent not found" });
+    }
+    const registration = await db.query.communityEndpoint.findFirst({
+        columns: { id: true },
+        where: eq(schema.communityEndpoint.agentId, id),
+    });
+    if (registration) {
+        throw new HTTPException(400, {
+            message: "Agent is already registered as a community model",
+        });
+    }
+    return agent;
 }
 
 async function ensureModelNameAvailable(
@@ -292,18 +354,6 @@ function throwEndpointTestError(error: unknown): never {
 }
 
 type EndpointProbeKind = "models" | "test";
-
-function requireCommunityEndpointManagePermission(apiKey?: {
-    permissions?: Record<string, string[]>;
-    metadata?: Record<string, unknown>;
-}): void {
-    if (!apiKey) return;
-    if (!hasDirectAccountPermission(apiKey, "keys")) {
-        throw new HTTPException(403, {
-            message: "API key does not have 'account:keys' permission",
-        });
-    }
-}
 
 // Publishing is allowlist-gated. Pricing is independent: public endpoints may
 // be free or owner-priced.
@@ -372,17 +422,27 @@ export const communityEndpointsRoutes = new Hono<Env>()
         async (c) => {
             const user = c.var.auth.requireUser();
             const db = drizzle(c.env.DB, { schema });
-            requireCommunityEndpointManagePermission(c.var.auth.apiKey);
+            requireAccountKeysPermission(c.var.auth.apiKey);
             const ownerGithubUsername = await requireOwnerGithubUsername(
                 db,
                 user.id,
             );
-            const rows = await db.query.communityEndpoint.findMany({
-                where: eq(schema.communityEndpoint.ownerUserId, user.id),
-                orderBy: (endpoint, { desc }) => [desc(endpoint.createdAt)],
-            });
+            const rows = await db
+                .select({
+                    endpoint: schema.communityEndpoint,
+                    agentBaseUrl: schema.agent.baseUrl,
+                })
+                .from(schema.communityEndpoint)
+                .leftJoin(
+                    schema.agent,
+                    eq(schema.communityEndpoint.agentId, schema.agent.id),
+                )
+                .where(eq(schema.communityEndpoint.ownerUserId, user.id))
+                .orderBy(desc(schema.communityEndpoint.createdAt));
             return c.json({
-                data: rows.map((row) => toResponse(row, ownerGithubUsername)),
+                data: rows.map(({ endpoint, agentBaseUrl }) =>
+                    toResponse(endpoint, ownerGithubUsername, agentBaseUrl),
+                ),
             });
         },
     )
@@ -412,19 +472,27 @@ export const communityEndpointsRoutes = new Hono<Env>()
             const user = c.var.auth.requireUser();
             const input = c.req.valid("json");
             const db = drizzle(c.env.DB, { schema });
-            requireCommunityEndpointManagePermission(c.var.auth.apiKey);
+            requireAccountKeysPermission(c.var.auth.apiKey);
             const ownerGithubUsername = await requireOwnerGithubUsername(
                 db,
                 user.id,
             );
             await ensureModelNameAvailable(db, user.id, input.name);
+            const agent = input.agentId
+                ? await requireUnregisteredOwnedAgent(
+                      db,
+                      input.agentId,
+                      user.id,
+                  )
+                : null;
+            const modality = agent ? "text" : input.modality;
             const imagePricing =
-                input.modality === "image" ? input.imagePricing : "request";
+                modality === "image" ? input.imagePricing : "request";
             const prices =
                 input.visibility === "public"
                     ? communityEndpointPricesForModality(
                           input,
-                          input.modality,
+                          modality,
                           imagePricing,
                       )
                     : communityEndpointPrices({});
@@ -437,21 +505,30 @@ export const communityEndpointsRoutes = new Hono<Env>()
                     ownerUserId: user.id,
                     name: input.name,
                     description: input.description || null,
-                    modality: input.modality,
+                    modality,
                     imagePricing,
-                    baseUrl: normalizeInputBaseUrl(input.baseUrl),
+                    baseUrl: agent
+                        ? null
+                        : normalizeInputBaseUrl(input.baseUrl ?? ""),
+                    agentId: agent?.id ?? null,
                     upstreamModel: input.upstreamModel ?? input.name,
-                    bearerTokenCiphertext: await encryptSecret(
-                        normalizeInputBearerToken(input.bearerToken),
-                        c.env.BETTER_AUTH_SECRET,
-                    ),
+                    bearerTokenCiphertext: agent
+                        ? null
+                        : await encryptSecret(
+                              normalizeInputBearerToken(
+                                  input.bearerToken ?? "",
+                              ),
+                              c.env.BETTER_AUTH_SECRET,
+                          ),
                     visibility: input.visibility,
                     ...prices,
                     createdAt: new Date(),
                     updatedAt: new Date(),
                 })
                 .returning();
-            return c.json(toResponse(row, ownerGithubUsername));
+            return c.json(
+                toResponse(row, ownerGithubUsername, agent?.baseUrl ?? null),
+            );
         },
     )
     .post(
@@ -483,7 +560,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
             const user = c.var.auth.requireUser();
             const input = c.req.valid("json");
             const db = drizzle(c.env.DB, { schema });
-            requireCommunityEndpointManagePermission(c.var.auth.apiKey);
+            requireAccountKeysPermission(c.var.auth.apiKey);
             await requireCommunityEndpointPublishAccess(db, user.id);
             const throttled = await enforceEndpointProbeThrottle(
                 c,
@@ -528,7 +605,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
             const user = c.var.auth.requireUser();
             const input = c.req.valid("json");
             const db = drizzle(c.env.DB, { schema });
-            requireCommunityEndpointManagePermission(c.var.auth.apiKey);
+            requireAccountKeysPermission(c.var.auth.apiKey);
             await requireCommunityEndpointPublishAccess(db, user.id);
             const throttled = await enforceEndpointProbeThrottle(
                 c,
@@ -582,7 +659,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
             const input = c.req.valid("json");
             const { id } = c.req.param();
             const db = drizzle(c.env.DB, { schema });
-            requireCommunityEndpointManagePermission(c.var.auth.apiKey);
+            requireAccountKeysPermission(c.var.auth.apiKey);
             const ownerGithubUsername = await requireOwnerGithubUsername(
                 db,
                 user.id,
@@ -591,6 +668,15 @@ export const communityEndpointsRoutes = new Hono<Env>()
             const modality = normalizeCommunityEndpointModality(
                 endpoint.modality,
             );
+            if (
+                endpoint.agentId !== null &&
+                (input.baseUrl !== undefined || input.bearerToken !== undefined)
+            ) {
+                throw new HTTPException(400, {
+                    message:
+                        "Update managed agent configuration through the agents API",
+                });
+            }
             await ensureModelNameAvailable(
                 db,
                 user.id,
@@ -613,7 +699,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
             if (input.upstreamModel !== undefined) {
                 update.upstreamModel = input.upstreamModel;
             }
-            if (input.bearerToken !== undefined) {
+            if (input.bearerToken !== undefined && endpoint.agentId === null) {
                 update.bearerTokenCiphertext = await encryptSecret(
                     normalizeInputBearerToken(input.bearerToken),
                     c.env.BETTER_AUTH_SECRET,
@@ -677,7 +763,15 @@ export const communityEndpointsRoutes = new Hono<Env>()
                     ),
                 )
                 .returning();
-            return c.json(toResponse(row, ownerGithubUsername));
+            const agent = endpoint.agentId
+                ? await db.query.agent.findFirst({
+                      columns: { baseUrl: true },
+                      where: eq(schema.agent.id, endpoint.agentId),
+                  })
+                : null;
+            return c.json(
+                toResponse(row, ownerGithubUsername, agent?.baseUrl ?? null),
+            );
         },
     )
     .delete(
@@ -707,7 +801,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
             const user = c.var.auth.requireUser();
             const { id } = c.req.param();
             const db = drizzle(c.env.DB, { schema });
-            requireCommunityEndpointManagePermission(c.var.auth.apiKey);
+            requireAccountKeysPermission(c.var.auth.apiKey);
             await requireOwnedEndpoint(db, id, user.id);
             await db
                 .delete(schema.communityEndpoint)

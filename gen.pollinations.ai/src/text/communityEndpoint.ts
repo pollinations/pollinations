@@ -12,13 +12,19 @@ export async function communityEndpointGatewayContext(
     modelDefinition: ModelDefinition,
     requestData: RequestData,
     secret: string,
+    agentRuntimeToken: string,
     portkeyGatewayUrl: string,
     userApiKey: string,
 ): Promise<TransformOptions> {
-    const bearerToken = await decryptSecret(
-        endpoint.bearerTokenCiphertext,
-        secret,
-    );
+    let authKey = agentRuntimeToken;
+    if (!endpoint.agentId) {
+        if (!endpoint.bearerTokenCiphertext) {
+            throw new Error("Community endpoint has no bearer token");
+        }
+        authKey = normalizeCommunityEndpointBearerToken(
+            await decryptSecret(endpoint.bearerTokenCiphertext, secret),
+        );
+    }
     const { messages: _messages, ...requestDataWithoutMessages } = requestData;
 
     return {
@@ -26,8 +32,8 @@ export async function communityEndpointGatewayContext(
         modelConfig: {
             provider: "openai",
             "custom-host": communityOpenAIBaseUrl(endpoint.baseUrl),
-            authKey: normalizeCommunityEndpointBearerToken(bearerToken),
-            model: endpoint.upstreamModel,
+            authKey,
+            model: endpoint.agentId ?? endpoint.upstreamModel,
         },
         modelDef: modelDefinition,
         requestedModel: endpoint.modelId,

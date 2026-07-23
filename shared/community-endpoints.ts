@@ -217,8 +217,9 @@ export type CommunityEndpointRuntime = {
     modality: CommunityEndpointModality;
     imagePricing: CommunityEndpointImagePricing;
     baseUrl: string;
+    agentId: string | null;
     upstreamModel: string;
-    bearerTokenCiphertext: string;
+    bearerTokenCiphertext: string | null;
     visibility: CommunityEndpointVisibility;
     disabledAt: number | null;
     disabledReason: string | null;

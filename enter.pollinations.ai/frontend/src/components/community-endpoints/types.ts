@@ -13,6 +13,30 @@ import type { Usage } from "@shared/registry/registry.ts";
 
 type EndpointFormPrices = Record<CommunityEndpointPriceKey, string>;
 
+// A community model can point at an external endpoint or at an independently
+// managed agent.
+export type EndpointMode = "external" | "agent";
+
+export type McpServerRow = { id: string; name: string; url: string };
+
+export type ManagedAgent = {
+    id: string;
+    name: string;
+    systemPrompt: string;
+    baseModel: string;
+    mcpServers: { name: string; url: string }[];
+    createdAt: string;
+    updatedAt: string;
+};
+
+type AgentFields = Pick<ManagedAgent, "name" | "systemPrompt" | "baseModel">;
+
+export type AgentFormState = AgentFields & { mcpServers: McpServerRow[] };
+
+export type AgentPayload = AgentFields & {
+    mcpServers: ManagedAgent["mcpServers"];
+};
+
 export type CommunityEndpoint = {
     id: string;
     modelId: string;
@@ -22,6 +46,7 @@ export type CommunityEndpoint = {
     imagePricing: CommunityEndpointImagePricing;
     baseUrl: string;
     upstreamModel: string;
+    agentId: string | null;
     // private → owner-only, shown only to the owner, no owner-set price;
     // public → globally listed + billed to callers.
     visibility: CommunityEndpointVisibility;
@@ -31,6 +56,7 @@ export type CommunityEndpoint = {
 } & CommunityEndpointPrices;
 
 export type EndpointFormState = {
+    mode: EndpointMode;
     modality: CommunityEndpointModality;
     // Detected by the endpoint test for image models; "request" until tested.
     imagePricing: CommunityEndpointImagePricing;
@@ -41,6 +67,7 @@ export type EndpointFormState = {
     // Public is selectable only by allowlisted owners; defaults private.
     visibility: CommunityEndpointVisibility;
     baseUrl: string;
+    agentId: string;
     upstreamModel: string;
     bearerToken: string;
 } & EndpointFormPrices;
@@ -50,7 +77,9 @@ export type EndpointPayload = {
     imagePricing: CommunityEndpointImagePricing;
     name: string;
     description: string;
-    baseUrl: string;
+    // Exactly one of baseUrl / agentId is sent, per the mode.
+    baseUrl?: string;
+    agentId?: string;
     upstreamModel: string;
     visibility: CommunityEndpointVisibility;
 } & CommunityEndpointPrices;
@@ -77,15 +106,24 @@ const emptyPriceForm = Object.fromEntries(
 ) as EndpointFormPrices;
 
 export const emptyForm: EndpointFormState = {
+    mode: "external",
     modality: "text",
     imagePricing: "request",
     name: "",
     description: "",
     visibility: "private",
     baseUrl: "",
+    agentId: "",
     upstreamModel: "",
     bearerToken: "",
     ...emptyPriceForm,
+};
+
+export const emptyAgentForm: AgentFormState = {
+    name: "",
+    systemPrompt: "",
+    baseModel: "",
+    mcpServers: [],
 };
 
 export const idleAction: ActionState = { status: "idle" };
@@ -156,12 +194,14 @@ export function endpointToForm(endpoint: CommunityEndpoint): EndpointFormState {
         ).map((field) => [field.key, field]),
     );
     return {
+        mode: endpoint.agentId ? "agent" : "external",
         modality: endpoint.modality,
         imagePricing: endpoint.imagePricing,
         name: endpoint.name,
         description: endpoint.description ?? "",
         visibility: endpoint.visibility,
         baseUrl: endpoint.baseUrl,
+        agentId: endpoint.agentId ?? "",
         upstreamModel: endpoint.upstreamModel,
         bearerToken: "",
         ...(Object.fromEntries(
@@ -247,19 +287,86 @@ export function observedUsageValue(
         : null;
 }
 
+// Mirrors the backend McpServerSchema name pattern (lowercase alphanumeric with
+// _ or -, max 40 chars) so client and server reject the same names.
+export const MCP_SERVER_NAME_PATTERN = /^[a-z0-9][a-z0-9_-]{0,39}$/;
+
+export function isValidMcpRow(row: McpServerRow): boolean {
+    const name = row.name.trim();
+    const url = row.url.trim();
+    if (!name && !url) return true;
+    try {
+        new URL(url);
+    } catch {
+        return false;
+    }
+    return MCP_SERVER_NAME_PATTERN.test(name);
+}
+
+// Validates and trims the MCP server rows, dropping fully-empty rows. Mirrors
+// the backend McpServerSchema so the API rejects the same inputs.
+function mcpServersToPayload(rows: McpServerRow[]): ManagedAgent["mcpServers"] {
+    const servers: ManagedAgent["mcpServers"] = [];
+    for (const row of rows) {
+        const name = row.name.trim();
+        const url = row.url.trim();
+        if (!name && !url) continue;
+        if (!MCP_SERVER_NAME_PATTERN.test(name)) {
+            throw new Error(
+                `MCP server name "${name}" must be lowercase alphanumeric with _ or - (max 40 chars)`,
+            );
+        }
+        if (!url) {
+            throw new Error(`MCP server "${name}" needs a URL`);
+        }
+        servers.push({ name, url });
+    }
+    return servers;
+}
+
+export function toAgentPayload(form: AgentFormState): AgentPayload {
+    const name = form.name.trim();
+    if (!name) throw new Error("Agent name is required");
+    const systemPrompt = form.systemPrompt.trim();
+    if (!systemPrompt) {
+        throw new Error("System prompt is required for a prompt agent");
+    }
+    const baseModel = form.baseModel.trim();
+    if (!baseModel) {
+        throw new Error("Base model is required for a prompt agent");
+    }
+    return {
+        name,
+        systemPrompt,
+        baseModel,
+        mcpServers: mcpServersToPayload(form.mcpServers),
+    };
+}
+
 export function toEndpointPayload(form: EndpointFormState): EndpointPayload {
     const modelName = form.name.trim();
-    const imagePricing =
-        form.modality === "image" ? form.imagePricing : "request";
-    return {
-        modality: form.modality,
+    const modality = form.mode === "agent" ? "text" : form.modality;
+    const imagePricing = modality === "image" ? form.imagePricing : "request";
+    const shared = {
+        modality,
         imagePricing,
         name: modelName,
         description: form.description.trim(),
         visibility: form.visibility,
+        ...formPricesToPayload(form, modality, imagePricing),
+    };
+    if (form.mode === "agent") {
+        if (!form.agentId) throw new Error("Choose an agent");
+        return {
+            ...shared,
+            agentId: form.agentId,
+            upstreamModel: modelName,
+        };
+    }
+    return {
+        ...shared,
         baseUrl: form.baseUrl.trim(),
         upstreamModel: form.upstreamModel.trim() || modelName,
-        ...formPricesToPayload(form, form.modality, imagePricing),
     };
 }
 

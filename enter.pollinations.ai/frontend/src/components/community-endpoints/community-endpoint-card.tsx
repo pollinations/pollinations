@@ -64,6 +64,11 @@ export function CommunityEndpointCard({
                             )}
                             {VISIBILITY_LABELS[endpoint.visibility]}
                         </Chip>
+                        {endpoint.agentId && (
+                            <Chip intent="news" size="sm">
+                                Agent
+                            </Chip>
+                        )}
                     </div>
                     {endpoint.description && (
                         <p className="mt-1 text-sm text-theme-text-muted">
@@ -125,22 +130,26 @@ export function CommunityEndpointCard({
                     value={endpoint.modelId}
                     copyLabel="Copy model id"
                 />
-                <CommunityDetailRow
-                    icon={<ExternalLinkIcon className="h-3.5 w-3.5" />}
-                    label="Endpoint"
-                    value={endpoint.baseUrl}
-                    copyLabel="Copy endpoint"
-                />
+                {!endpoint.agentId && (
+                    <CommunityDetailRow
+                        icon={<ExternalLinkIcon className="h-3.5 w-3.5" />}
+                        label="Endpoint"
+                        value={endpoint.baseUrl}
+                        copyLabel="Copy endpoint"
+                    />
+                )}
                 <CommunityDetailRow
                     icon={<TerminalIcon className="h-3.5 w-3.5" />}
                     label="Modality"
                     value={endpoint.modality}
                 />
-                <CommunityDetailRow
-                    icon={<TerminalIcon className="h-3.5 w-3.5" />}
-                    label="Upstream model"
-                    value={endpoint.upstreamModel}
-                />
+                {!endpoint.agentId && (
+                    <CommunityDetailRow
+                        icon={<TerminalIcon className="h-3.5 w-3.5" />}
+                        label="Upstream model"
+                        value={endpoint.upstreamModel}
+                    />
+                )}
                 {priceGroups.map((group) => (
                     <CommunityDetailRow
                         key={group.key}

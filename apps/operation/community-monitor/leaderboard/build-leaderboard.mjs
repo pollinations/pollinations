@@ -328,6 +328,7 @@ async function polliUpload(pngPath) {
         new Blob([buf], { type: "image/png" }),
         "leaderboard.png",
     );
+    form.append("tags", "community:leaderboard");
 
     const res = await fetch(`${mediaUrl}/upload`, {
         method: "POST",

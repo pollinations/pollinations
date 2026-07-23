@@ -80,7 +80,7 @@ Secrets are stored in `.env` locally and as Worker secrets in production.
 1. Open http://localhost:3000
 2. Edit dashboard in the UI
 3. Dashboard -> Settings -> JSON Model -> Copy
-4. Replace the matching JSON in `provisioning/dashboards/rebuild/` or `provisioning/dashboards/legacy/`
+4. Replace the matching JSON in `provisioning/dashboards/` (current) or `provisioning/dashboards/legacy/`
 5. Restart to verify: `docker compose restart grafana`
 
 ## Cloudflare Deployment

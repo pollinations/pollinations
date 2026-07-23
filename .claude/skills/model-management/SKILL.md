@@ -50,6 +50,17 @@ If a value is unknown, inferred, conflicting, or route-dependent:
 
 For batch work, use one table row per model with every field above. The user may approve the complete table in one response, but no blank or inherited cells are allowed.
 
+### Additional approval gate for provider secrets
+
+Model approval never authorizes a provider-secret mutation. If the work would create, replace, rotate, revoke, regenerate, synchronize, or deploy a provider credential or encrypted SOPS value:
+
+1. Stop and present the exact secret name (never its value), environments, reason, impact, execution order, verification, and rollback.
+2. Wait for a separate approval in the current conversation using: `Yes, you can rotate <SECRET_NAME> in <ENVIRONMENTS> now.`
+3. Treat general approval such as “go ahead,” “deploy,” “continue,” or confirmation of the model contract as insufficient.
+4. Do not edit the secret or open or push its PR before approval. After approval, use a dedicated secret-only PR and follow the rotation order in the repository `AGENTS.md`.
+
+If exposure is suspected, report it immediately but do not mutate the credential before receiving this approval.
+
 Keep these concepts separate:
 
 - **Configured** provider/GPU describes the registry's intended primary route.
@@ -572,6 +583,7 @@ This is acceptable. What's NOT acceptable is silently dropping a separately-bill
 - [ ] `priceMultiplier` is set to the explicitly confirmed value
 - [ ] No 5xx in [error-path matrix](#76-error-paths--every-malformed-request-must-return-4xx-never-opaque-5xx)
 - [ ] Burst test passed at expected production concurrency
+- [ ] Any required provider-secret mutation has its own dedicated PR and a separate, scoped approval using the exact format required by `AGENTS.md`
 - [ ] PR description notes any docs/upstream discrepancies found and any bundled-modality choices
 - [ ] `APIDOCS.md` is untouched. It is regenerated from the live OpenAPI schema after production deploy; update source schemas/routes instead.
 
@@ -581,12 +593,14 @@ This is acceptable. What's NOT acceptable is silently dropping a separately-bill
 
 ## 11.1 SOPS — provider secrets
 
+The [additional provider-secret approval gate](#additional-approval-gate-for-provider-secrets) is mandatory before any command that changes these files. Inspection must not print secret values. SOPS edits, GitHub secret updates, provider-side key regeneration/revocation, and production secret synchronization are all separate secret mutations and must remain within the explicitly approved scope.
+
 ```bash
 # Inspect keys in a vars file
 sops --decrypt gen.pollinations.ai/secrets/prod.vars.json \
   | python3 -c "import json,sys; [print(k) for k in json.load(sys.stdin)]"
 
-# Add or update a key
+# Add or update a key — only after the explicit approval gate
 sops set gen.pollinations.ai/secrets/prod.vars.json '["KEY_NAME"]' '"value"'
 
 # Decrypt to .dev.vars for local dev

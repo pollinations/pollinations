@@ -1,0 +1,24 @@
+name: Guard / production source
+
+on:
+  pull_request:
+    branches:
+      - production
+
+permissions: {}
+
+jobs:
+  require-main-source:
+    name: Require main source
+    runs-on: ubuntu-latest
+    steps:
+      - name: Verify source branch
+        env:
+          BASE_REPOSITORY: ${{ github.repository }}
+          HEAD_BRANCH: ${{ github.head_ref }}
+          HEAD_REPOSITORY: ${{ github.event.pull_request.head.repo.full_name }}
+        run: |
+          if [[ "$HEAD_REPOSITORY" != "$BASE_REPOSITORY" || "$HEAD_BRANCH" != "main" ]]; then
+            echo "Production pull requests must come from this repository's main branch."
+            exit 1
+          fi

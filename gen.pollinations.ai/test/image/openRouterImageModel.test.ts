@@ -359,6 +359,56 @@ describe("OpenRouter Gemini image", () => {
         });
     });
 
+    it("pins NanoBanana Pro to 4K AI Studio with default reasoning", async () => {
+        syncImageEnv(
+            { OPENROUTER_API_KEY: "openrouter-test-key" } as CloudflareBindings,
+            ["OPENROUTER_API_KEY"],
+        );
+        const requests: Record<string, unknown>[] = [];
+        mockGeminiFetch(requests, {
+            prompt_tokens: 14,
+            completion_tokens: 2008,
+            total_tokens: 2022,
+            cost: 0.240124,
+            prompt_tokens_details: {},
+            completion_tokens_details: {
+                reasoning_tokens: 8,
+                image_tokens: 2000,
+            },
+        });
+
+        const result = await callOpenRouterGeminiImageAPI("test prompt", {
+            ...baseParams,
+            model: "nanobanana-pro",
+            width: 3840,
+            height: 2160,
+            reasoning: "pro",
+        });
+
+        expect(requests).toEqual([
+            {
+                model: "google/gemini-3-pro-image",
+                prompt: "test prompt",
+                n: 1,
+                aspect_ratio: "16:9",
+                seed: 42,
+                provider: {
+                    only: ["google-ai-studio/global"],
+                    allow_fallbacks: false,
+                },
+                resolution: "4K",
+            },
+        ]);
+        expect(result.trackingData).toEqual({
+            actualModel: "nanobanana-pro",
+            usage: {
+                promptTextTokens: 14,
+                completionReasoningTokens: 8,
+                completionImageTokens: 2000,
+            },
+        });
+    });
+
     it("validates and inlines edit images while preserving exact combined input billing", async () => {
         syncImageEnv(
             { OPENROUTER_API_KEY: "openrouter-test-key" } as CloudflareBindings,

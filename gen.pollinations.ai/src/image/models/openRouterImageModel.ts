@@ -47,6 +47,14 @@ const GEMINI_IMAGE_CONFIGS = {
         resolution: "1K",
         reasoning: true,
     },
+    "nanobanana-pro": {
+        upstreamModel: "google/gemini-3-pro-image",
+        provider: "google-ai-studio/global",
+        maxReferenceImages: 14,
+        generator: "Google AI Studio Gemini 3 Pro Image",
+        resolution: "tiered",
+        reasoning: false,
+    },
 } as const satisfies Record<string, GeminiImageConfig>;
 const GEMINI_ASPECT_RATIOS = [
     { ratio: 1, label: "1:1" },

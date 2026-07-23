@@ -387,6 +387,32 @@ describe("OpenRouter Gemini image", () => {
         ).rejects.toMatchObject({ status: 502 });
     });
 
+    it("preserves content-policy rejections as client errors", async () => {
+        syncImageEnv(
+            { OPENROUTER_API_KEY: "openrouter-test-key" } as CloudflareBindings,
+            ["OPENROUTER_API_KEY"],
+        );
+        vi.spyOn(globalThis, "fetch").mockResolvedValue(
+            Response.json({
+                data: [],
+                error: {
+                    message: "Image rejected by provider content policy",
+                    metadata: { error_type: "content_policy_violation" },
+                },
+            }),
+        );
+
+        await expect(
+            callOpenRouterGeminiImageAPI("test prompt", {
+                ...baseParams,
+                model: "nanobanana",
+            }),
+        ).rejects.toMatchObject({
+            status: 400,
+            message: "Image rejected by provider content policy",
+        });
+    });
+
     it("rejects more than three reference images before fetching", async () => {
         syncImageEnv(
             { OPENROUTER_API_KEY: "openrouter-test-key" } as CloudflareBindings,

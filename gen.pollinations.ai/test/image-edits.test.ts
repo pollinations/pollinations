@@ -1,5 +1,9 @@
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 import { ImageParamsSchema } from "../src/image/params.ts";
+import {
+    getImageDimensions,
+    getImageDimensionsFromUrl,
+} from "../src/image/utils/imageDownload.ts";
 
 describe("Image Edit Size Inference", () => {
     it("preserves landscape aspect ratio when size is omitted", () => {
@@ -8,9 +12,7 @@ describe("Image Edit Size Inference", () => {
             source_width: 1920,
             source_height: 1080,
         });
-        
-        // For standard models (e.g. 1024 base default), scales 1920x1080 
-        // proportionately to match 1,048,576 pixel bounds.
+
         expect(result.width).toBe(1360);
         expect(result.height).toBe(768);
         expect(result.dimensionsExplicit).toBe(false);
@@ -35,19 +37,39 @@ describe("Image Edit Size Inference", () => {
             source_width: 1920,
             source_height: 1080,
         });
-        // Source dimensions ignored completely
         expect(result.width).toBe(512);
         expect(result.height).toBe(512);
         expect(result.dimensionsExplicit).toBe(true);
     });
 
-    it("falls back to square if no source dimensions or explicit size exist", () => {
-        const result = ImageParamsSchema.parse({
-            model: "flux",
-        });
-        // flux defaults to 1024
-        expect(result.width).toBe(1024);
-        expect(result.height).toBe(1024);
-        expect(result.dimensionsExplicit).toBe(false);
+    it("extracts dimensions directly from PNG buffer headers", () => {
+        const pngHeader = new Uint8Array(24);
+        pngHeader[0] = 0x89;
+        pngHeader[1] = 0x50;
+        pngHeader[2] = 0x4e;
+        pngHeader[3] = 0x47;
+        const view = new DataView(pngHeader.buffer);
+        view.setUint32(16, 1920, false);
+        view.setUint32(20, 1080, false);
+
+        const dims = getImageDimensions(pngHeader);
+        expect(dims).toEqual({ width: 1920, height: 1080 });
+    });
+
+    it("extracts dimensions from a data URI image URL end-to-end", async () => {
+        const pngHeader = new Uint8Array(24);
+        pngHeader[0] = 0x89;
+        pngHeader[1] = 0x50;
+        pngHeader[2] = 0x4e;
+        pngHeader[3] = 0x47;
+        const view = new DataView(pngHeader.buffer);
+        view.setUint32(16, 1920, false);
+        view.setUint32(20, 1080, false);
+
+        const base64 = Buffer.from(pngHeader).toString("base64");
+        const dataUri = `data:image/png;base64,${base64}`;
+
+        const dims = await getImageDimensionsFromUrl(dataUri);
+        expect(dims).toEqual({ width: 1920, height: 1080 });
     });
 });

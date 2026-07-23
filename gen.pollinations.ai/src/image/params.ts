@@ -40,14 +40,25 @@ function adjustImageSizeForModel(
     const defaultSideLength = getDefaultSideLength(model);
 
     // If size was omitted but we inferred source bounds, scale proportionally
-    if (width === undefined && height === undefined && sourceWidth && sourceHeight) {
+    if (
+        width === undefined &&
+        height === undefined &&
+        sourceWidth &&
+        sourceHeight
+    ) {
         const area = sourceWidth * sourceHeight;
         const targetArea = defaultSideLength * defaultSideLength;
         if (area > 0) {
             const scale = Math.sqrt(targetArea / area);
             // Snap scaling to multiples of 16 (standard chunking)
-            const scaledWidth = Math.max(16, Math.round((sourceWidth * scale) / 16) * 16);
-            const scaledHeight = Math.max(16, Math.round((sourceHeight * scale) / 16) * 16);
+            const scaledWidth = Math.max(
+                16,
+                Math.round((sourceWidth * scale) / 16) * 16,
+            );
+            const scaledHeight = Math.max(
+                16,
+                Math.round((sourceHeight * scale) / 16) * 16,
+            );
             return { width: scaledWidth, height: scaledHeight };
         }
     }
@@ -138,7 +149,7 @@ export const ImageParamsSchema = z
             data.width,
             data.height,
             data.source_width,
-            data.source_height
+            data.source_height,
         );
 
         return { ...data, width, height, dimensionsExplicit };

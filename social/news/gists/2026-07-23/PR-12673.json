@@ -1,0 +1,35 @@
+{
+  "pr_number": 12673,
+  "title": "feat: add CSM 1B speech",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/12673",
+  "merged_at": "2026-07-23T01:24:44Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds paid-only `csm-1b` speech through DeepInfra direct, with three aliases, six voices, five output formats, an official Sesame catalog icon, and no fallback.\n- Bills the validated input length at the posted $7/M-character rate with multiplier `1`; wires the existing encrypted DeepInfra secret into the generation worker.\n- Updates the audio schemas, model metadata, route coverage, paid-only behavior, effective-price snapshot, and model-management checklist so new brands must resolve to an existing SVG.\n- Validated with Biome, both worker typechecks, the 143-test Gen regression bundle, focused Enter registry/pricing tests, and authenticated local E2E for aliases, voices, formats, limits, cache, transcription round-trip, ledger deduction, and staging Tinybird parity.\n- Normal requests completed in 0.97–18.9s. Bursts passed 5/5 and 15/15. At 30-way saturation, 27/30 completed before the 120s client timeout; the other three completed and were billed at 125.9–129.0s after client disconnect, then passed individual retries in 2.3–3.3s.\n",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "The hive found its voice",
+    "blurb": "A new voice moved into the garden: CSM 1B speech is now ready to read your text aloud. Six voices, five audio formats, and no mysterious fallback tunnel behind the shed.",
+    "summary": "Added paid-only CSM 1B text-to-speech through DeepInfra Direct, with three model aliases, six voices, five output formats, Sesame branding, and validated character-length billing at $7 per million characters.",
+    "impact": "Developers can now generate CSM 1B speech through the audio API in their chosen supported voice and format, with direct provider routing and no fallback changing the result.",
+    "keywords": [
+      "audio",
+      "text-to-speech",
+      "csm-1b",
+      "deepinfra",
+      "sesame",
+      "voices",
+      "api"
+    ],
+    "visual_concept": "Depict CSM 1B as a cozy speech garden: a retro microphone and a small speaker bloom with six distinct pastel sound-wave flowers, while Polli carefully tunes the direct audio route. Include a tiny Sesame-inspired catalog card or logo placard near the terminal, plus audio-format cassette/disc icons to represent the five output formats.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow bee mascot with dark brown stripes, black oval eyes, pink rectangular blush, light blue rounded wings, and tiny studio headphones, tuning a retro microphone beside a warm CRT terminal while six pastel sound-wave flowers bloom from lime green (#ecf874) code-planters; a small Sesame catalog card and five tiny audio-format cassette icons sit nearby. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, with subtle scanlines and pixel-font text reading “CSM 1B”."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-23/PR-12673.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow bee mascot with dark brown stripes, black oval eyes, pink rectangular blush, light blue rounded wings, and tiny studio headphones, tuning a retro microphone beside a warm CRT terminal while six pastel sound-wave flowers bloom from lime green (#ecf874) code-planters; a small Sesame catalog card and five tiny audio-format cassette icons sit nearby. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, with subtle scanlines and pixel-font text reading “CSM 1B”."
+  },
+  "generated_at": "2026-07-23T01:25:41.606606+00:00"
+}

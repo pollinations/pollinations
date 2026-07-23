@@ -1573,29 +1573,6 @@ export const TEXT_SERVICES = {
         contextLength: 256000,
         isSpecialized: false,
     },
-    "polly": {
-        aliases: ["pollinations-ai", "polly-ai"],
-        provider: "community",
-        brand: "Pollinations",
-        category: "text",
-        addedDate: new Date("2026-02-24").getTime(),
-        priceMultiplier: 1,
-        cost: {
-            promptTextTokens: perMillion(0),
-            completionTextTokens: perMillion(0),
-        },
-        title: "Polli by @Itachi-1824",
-        description:
-            "Community-built assistant with GitHub, code search and web tools (alpha)",
-        inputModalities: ["text", "image"],
-        outputModalities: ["text"],
-        maxReferenceImages: 3, // Pollinations community model cap.
-        tools: true,
-        reasoning: true,
-        codeExecution: true,
-        search: true,
-        isSpecialized: false,
-    },
     "qwen-coder-large": {
         aliases: ["qwen3-coder-next"],
         provider: "openrouter",

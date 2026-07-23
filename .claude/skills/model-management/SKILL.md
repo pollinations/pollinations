@@ -416,13 +416,13 @@ After every **MISS** call (cache HITs are explicitly NOT billed — see caveat b
 - For MISS: every non-zero header should have a matching registry cost entry.
 - For HIT: **text caches preserve `x-usage-*` headers** so the parsed usage matches the original MISS; **media (image/video/audio) caches drop `x-usage-*` headers** and only preserve selected safety metadata. Don't flag missing media usage headers on a HIT.
 
-### C. Tinybird `generation_event` row
+### C. Tinybird `generation_event_v2` row
 - Local gen / dev → staging workspace → `TINYBIRD_READ_STAGING`
 - Prod gen → prod workspace → `TINYBIRD_READ_PROD`
-- Confirm a row exists for your model with non-zero `token_count_*` and `token_price_*` columns matching the JSON/headers (column list: `enter.pollinations.ai/observability/datasources/generation_event.datasource`).
+- Confirm a row exists for your model with non-zero `token_count_*` and `token_price_*` columns matching the JSON/headers (column list: `enter.pollinations.ai/observability/datasources/generation_event_v2.datasource`).
 - **No row is written for cache HITs** (`isBilledUsage: false` at `gen.pollinations.ai/src/middleware/track.ts:395`). HIT-call verification stops at the `X-Cache: HIT` header.
 
-`model_health` returns counts/errors/latency only, no usage. Query `generation_event` directly to see token + price columns:
+`model_health` returns counts/errors/latency only, no usage. Query `generation_event_v2` directly to see token + price columns:
 ```bash
 TB="https://api.europe-west2.gcp.tinybird.co"
 SQL="SELECT resolved_model_requested AS model, start_time,
@@ -430,7 +430,7 @@ SQL="SELECT resolved_model_requested AS model, start_time,
   token_count_completion_text, token_count_completion_reasoning,
   token_count_completion_image, token_count_completion_video_seconds,
   total_cost, total_price, dev_price, markup_rate
- FROM generation_event
+ FROM generation_event_v2
  WHERE resolved_model_requested = '$MODEL'
    AND start_time >= now() - interval 10 minute
  ORDER BY start_time DESC
@@ -464,7 +464,7 @@ In a separate terminal during testing:
 1. Map to one of the **13 typed usage fields** in `shared/registry/usage-headers.ts` (`promptTextTokens`, `promptCachedTokens`, `promptAudioTokens`, `promptAudioSeconds`, `promptImageTokens`, `promptVideoTokens`, `completionTextTokens`, `completionReasoningTokens`, `completionAudioTokens`, `completionAudioSeconds`, `completionImageTokens`, `completionVideoSeconds`, `completionVideoTokens`),
 2. AND have a corresponding entry in the registry `cost` block (reasoning tokens are an exception — they're rewritten to `completionTextTokens` in `registry.ts:118` before rate lookup, so they don't need a separate cost line; but `completionTextTokens` itself must exist),
 3. AND surface in the response headers as `x-usage-<kebab-case-name>`,
-4. AND land in the Tinybird `generation_event` row via `track.ts`,
+4. AND land in the Tinybird `generation_event_v2` row via `track.ts`,
 5. AND appear in the worker logs (`wrangler tail`) so we can audit historical drift.
 
 If a field exists upstream that we don't map → either extend `usage-headers.ts` + the registry + the Tinybird schema, OR document explicitly in the PR why we're intentionally dropping it (rare; usually "provider bundles X into Y").
@@ -493,7 +493,7 @@ grep -iE "^x-usage-" /tmp/headers.txt
 # 4. Pull the actual billing row Tinybird wrote (wait ~5s for ingest)
 sleep 5
 TB="https://api.europe-west2.gcp.tinybird.co"
-SQL="SELECT * FROM generation_event
+SQL="SELECT * FROM generation_event_v2
  WHERE resolved_model_requested = '$MODEL'
    AND start_time >= now() - interval 2 minute
  ORDER BY start_time DESC LIMIT 1 FORMAT JSON"
@@ -543,8 +543,7 @@ This is acceptable. What's NOT acceptable is silently dropping a separately-bill
                                           test/media-cache.test.ts \
                                           test/text-cache.test.ts \
                                           test/billing-deduction.test.ts \
-                                          test/tracking-observability.test.ts \
-                                          test/openai-schema.test.ts)
+                                          test/tracking-observability.test.ts)
 
 # Modality-specific (run the relevant subset)
 (cd gen.pollinations.ai && npx vitest run test/image/)         # for image models

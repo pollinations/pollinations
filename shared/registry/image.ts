@@ -39,6 +39,26 @@ export const IMAGE_SERVICES = {
         outputModalities: ["image"],
         maxReferenceImages: 1, // Azure FLUX.1 Kontext edit route forwards one input image.
     },
+    "mai-image-2.5-flash": {
+        aliases: ["mai-image", "mai-image-flash", "mai-image-2-5-flash"],
+        provider: "azure",
+        brand: "Microsoft",
+        category: "image",
+        addedDate: new Date("2026-07-23").getTime(),
+        paidOnly: false,
+        priceMultiplier: 0.75,
+        cost: {
+            promptTextTokens: perMillion(1.75),
+            promptImageTokens: perMillion(1.75),
+            completionImageTokens: perMillion(19.5),
+        },
+        title: "MAI Image 2.5 Flash",
+        description:
+            "Fast image generation and precise edits with strong text rendering",
+        inputModalities: ["text", "image"],
+        outputModalities: ["image"],
+        maxReferenceImages: 1,
+    },
     "nanobanana": {
         aliases: [],
         provider: "google",

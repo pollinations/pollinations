@@ -108,6 +108,33 @@ export const ImageParamsSchema = z
                     "Transparent backgrounds are not supported by gpt-image-2.",
             });
         }
+
+        if (data.model === "mai-image-2.5-flash") {
+            const width = data.width ?? getDefaultSideLength(data.model);
+            const height = data.height ?? getDefaultSideLength(data.model);
+            if (width < 768 || height < 768) {
+                ctx.addIssue({
+                    code: z.ZodIssueCode.custom,
+                    path: [width < 768 ? "width" : "height"],
+                    message:
+                        "MAI Image dimensions must each be at least 768 pixels.",
+                });
+            } else if (width % 16 !== 0 || height % 16 !== 0) {
+                ctx.addIssue({
+                    code: z.ZodIssueCode.custom,
+                    path: [width % 16 !== 0 ? "width" : "height"],
+                    message:
+                        "MAI Image dimensions must be multiples of 16 pixels.",
+                });
+            } else if (width * height > 1_048_576) {
+                ctx.addIssue({
+                    code: z.ZodIssueCode.custom,
+                    path: ["width"],
+                    message:
+                        "MAI Image width multiplied by height must not exceed 1,048,576 pixels.",
+                });
+            }
+        }
     })
     .transform((data) => {
         // Capture whether the caller actually specified dimensions BEFORE we

@@ -1,0 +1,35 @@
+{
+  "pr_number": 12669,
+  "title": "feat: update Gemini Flash Lite to 3.5",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/12669",
+  "merged_at": "2026-07-23T12:48:29Z",
+  "labels": [],
+  "pr_body_excerpt": "- Updates the general Flash-Lite service and gemini-search-fast from Gemini 3.1 Flash-Lite to stable Gemini 3.5 Flash-Lite.\n- Preserves every existing 3.1 and generic alias, adds 3.5 aliases, and keeps tools, native web search, structured output, reasoning, streaming, and text/image/audio/video input.\n- Pins OpenRouter to google/gemini-3.5-flash-lite on google-vertex/global with fallbacks disabled.\n- Updates posted rates to $0.30/M input, $0.03/M cache read, and $2.50/M output; search and cache-storage billing rules remain unchanged.\n- Verified with both worker typechecks, 442 focused tests, direct OpenRouter probes, and authenticated local E2E across aliases, modalities, search tool shapes, cache, paid-only access, errors, usage headers, and burst traffic. The max_tokens=1 usage omission is identical on the old and new upstream routes and remains tracked in the separate pricing work.",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Flash Lite got fresher",
+    "blurb": "The fast little Gemini lane now runs on stable Gemini 3.5 Flash-Lite. Same familiar aliases, more current nectar under the hood.",
+    "summary": "Updated the general Flash-Lite service and gemini-search-fast from Gemini 3.1 Flash-Lite to stable Gemini 3.5 Flash-Lite, retaining all existing aliases, multimodal inputs, tools, native web search, structured output, reasoning, and streaming.",
+    "impact": "Users can keep using their existing Flash-Lite and Gemini search aliases while requests now route to Gemini 3.5 Flash-Lite at $0.30/M input, $0.03/M cache reads, and $2.50/M output.",
+    "keywords": [
+      "gemini",
+      "gemini-3.5-flash-lite",
+      "text-api",
+      "openrouter",
+      "web-search",
+      "multimodal",
+      "pricing"
+    ],
+    "visual_concept": "A cozy model-upgrade garden: Polli tends a flowering retro terminal labeled “Flash Lite 3.5,” while glowing prompt seeds become text, image, audio, and video sprouts. The scene represents a familiar API path receiving a newer Gemini engine without losing its tools, search, streaming, or aliases.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow bee with dark brown stripes, black antennae, oval eyes, bright pink rectangular cheek blushes, a happy smile, rounded translucent light-blue wings, and tiny mechanic goggles, carefully installing a glowing “3.5” flower cartridge into a retro terminal surrounded by code-plants that bloom into small text, image, audio, and video icons. Prominent soft lime green (#ecf874) terminal glow and pastel mint-lavender-peach garden, with simple pixel-font text “FLASH LITE 3.5”; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-23/PR-12669.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow bee with dark brown stripes, black antennae, oval eyes, bright pink rectangular cheek blushes, a happy smile, rounded translucent light-blue wings, and tiny mechanic goggles, carefully installing a glowing “3.5” flower cartridge into a retro terminal surrounded by code-plants that bloom into small text, image, audio, and video icons. Prominent soft lime green (#ecf874) terminal glow and pastel mint-lavender-peach garden, with simple pixel-font text “FLASH LITE 3.5”; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, nostalgic but beautiful."
+  },
+  "generated_at": "2026-07-23T12:49:25.531380+00:00"
+}

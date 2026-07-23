@@ -15,6 +15,37 @@ RETRY_DELAY = 5
 MAX_SEED = 2**31 - 1
 
 
+def _recent_queries(all_tool_calls: list[dict], tool_names: list[str], limit: int = 8) -> str:
+    """The arguments recently passed to these tools, as a bulleted list.
+
+    Telling a model it is looping is easy to ignore; showing it the queries it already ran
+    gives it something concrete to diverge from.
+    """
+    wanted = set(tool_names)
+    seen: list[str] = []
+    for call in reversed(all_tool_calls):
+        function = call.get("function", {})
+        name = function.get("name", "").split(":")[-1]
+        if name not in wanted:
+            continue
+        try:
+            args = _json_loads(function.get("arguments", "")) or {}
+        except ValueError:
+            continue
+        # Show what identifies the search, not the whole payload.
+        summary = ", ".join(
+            f"{k}={str(v)[:60]}"
+            for k, v in args.items()
+            if k not in ("_context",) and isinstance(v, (str, int, float, bool)) and str(v).strip()
+        )
+        line = f"  - {name}({summary})"
+        if line not in seen:
+            seen.append(line)
+        if len(seen) >= limit:
+            break
+    return "\n".join(reversed(seen)) if seen else "  (no recorded arguments)"
+
+
 def _call_signature(tool_call: dict) -> str:
     """Identify a tool call by name plus arguments, stably.
 
@@ -378,26 +409,39 @@ class PollinationsClient:
                 consecutive_same_tool += 1
                 count = consecutive_same_tool + 1
                 if count >= 3:
-                    logger.info(f"Soft nudge: {current_signature} called {count}x consecutively")
+                    logger.info(f"Loop guidance: {current_signature} called {count}x consecutively")
                     tool_str = ", ".join(tool_names)
-                    if count >= 12:
+                    queries = _recent_queries(all_tool_calls, tool_names)
+                    if count >= 10:
+                        # At this depth the approach itself is what is failing, so lay out
+                        # the situation in full and let the model choose the way out
+                        # rather than ordering it to stop.
                         guidance = (
-                            f"[IMPORTANT: You have called {tool_str} {count} times in a row and are clearly stuck in a loop. "
-                            f"You now have enough context to give a useful answer. "
-                            f"Stop searching and respond directly with what you know — it is better to give a partial answer than to keep looping. "
-                            f"Do not call {tool_str} again.]"
+                            f"[STOP AND RE-PLAN — you have called {tool_str} {count} times in a row.\n"
+                            f"What you have already tried:\n{queries}\n"
+                            f"Repeating this is not working. Something about the approach is wrong, not just the query. "
+                            f"Think about which of these is true, then act on it:\n"
+                            f"  1. The information exists but you are looking in the wrong place — switch tool "
+                            f"(code_search grep vs Vectorize search vs the code graph vs web_search vs github_*), "
+                            f"or search for a different term entirely: a filename, an error string, a symbol.\n"
+                            f"  2. The information is not available to you — say so plainly and answer with what "
+                            f"you do know, naming the gap.\n"
+                            f"  3. You already have the answer and are over-verifying — write the answer now.\n"
+                            f"You decide which. Do not repeat a search you have already run.]"
                         )
-                    elif count >= 7:
+                    elif count >= 6:
                         guidance = (
-                            f"[You have called {tool_str} {count} times consecutively. "
-                            f"You are likely not finding new information. "
-                            f"Synthesize what you have gathered so far and give your best answer. "
-                            f"If you truly need one more lookup, use a different tool or a more specific query — do not repeat the same search.]"
+                            f"[You have called {tool_str} {count} times consecutively without resolving the question.\n"
+                            f"Already tried:\n{queries}\n"
+                            f"Change something material: a different tool, a different search term, or a broader/narrower "
+                            f"scope. If further lookups are unlikely to help, answer with what you have and state what "
+                            f"you could not determine.]"
                         )
                     else:
                         guidance = (
-                            f"[Hint: {tool_str} called {count} times in a row. "
-                            f"Consider whether you already have enough to respond, or try a different tool or query angle.]"
+                            f"[{tool_str} called {count} times in a row. "
+                            f"Check whether you already have enough to answer; if not, vary the tool or the query "
+                            f"rather than repeating a similar search.]"
                         )
                     messages.append({"role": "system", "content": guidance})
             else:

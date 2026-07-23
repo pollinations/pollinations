@@ -1,0 +1,33 @@
+{
+  "pr_number": 12678,
+  "title": "chore: allow gggff123 community publishing",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/12678",
+  "merged_at": "2026-07-23T06:38:30Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds GitHub user `gggff123` (`228371309`) to the community-model publisher allowlist.\n- Keeps the change scoped to the existing static allowlist.\n- Verified the branch is one commit ahead with a one-line diff.\n\nFixes #12634",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "One More Bee in the Garden",
+    "blurb": "gggff123 now has the key to the community-model garden. One small allowlist line, and another contributor can help pollenate the model shelf.",
+    "summary": "Added GitHub user gggff123 (ID 228371309) to the static community-model publisher allowlist so they can publish community models.",
+    "impact": "Community users gain another approved publisher, making it easier for gggff123's model contributions to reach the shared catalog.",
+    "keywords": [
+      "community-models",
+      "publishing",
+      "github",
+      "allowlist",
+      "contributors"
+    ],
+    "visual_concept": "Depict Polli welcoming a new community gardener into a cozy code-garden, with a tiny GitHub-style ID badge opening a gate to shelves of blooming model-seed packets. The scene represents a narrowly scoped publishing permission: one new trusted contributor joining the shared garden.",
+    "image_prompt": "Cozy pixel art scene of Polli, a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings, wearing a tiny gardener scarf as she opens a lime green (#ecf874) garden gate for a new contributor carrying a small GitHub ID badge; code-plants and model-seed packets bloom on nearby shelves. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley, with subtle pixel-font text: 'PUBLISHER OK'."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-23/PR-12678.jpg",
+    "prompt": "Cozy pixel art scene of Polli, a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings, wearing a tiny gardener scarf as she opens a lime green (#ecf874) garden gate for a new contributor carrying a small GitHub ID badge; code-plants and model-seed packets bloom on nearby shelves. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley, with subtle pixel-font text: 'PUBLISHER OK'."
+  },
+  "generated_at": "2026-07-23T06:39:23.644016+00:00"
+}

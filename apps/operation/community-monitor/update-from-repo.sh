@@ -13,7 +13,7 @@ REVISION=$(git -C "$REPO" rev-parse "$REF")
 
 # Do not activate until this updater has landed on main. This lets the service
 # unit be deployed from its PR without replacing newer live files with old main.
-if ! git -C "$REPO" cat-file -e "$REVISION:$SOURCE/update-from-repo.sh"; then
+if ! git -C "$REPO" cat-file -e "$REVISION:$SOURCE/update-from-repo.sh" 2>/dev/null; then
     echo "monitor update skipped: updater is not on main yet"
     exit 0
 fi

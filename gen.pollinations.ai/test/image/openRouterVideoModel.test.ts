@@ -385,6 +385,13 @@ describe("OpenRouter Grok Video Pro", () => {
 function mockVeoFetch(
     requests: Record<string, unknown>[],
     onDownload?: (authorization: string | null) => void,
+    pollResult: Record<string, unknown> = {
+        id: "job-veo-test",
+        polling_url: VEO_POLL_URL,
+        status: "completed",
+        unsigned_urls: [VEO_VIDEO_URL],
+        usage: { cost: 0.48 },
+    },
 ) {
     return vi
         .spyOn(globalThis, "fetch")
@@ -410,13 +417,7 @@ function mockVeoFetch(
             }
 
             if (href === VEO_POLL_URL) {
-                return Response.json({
-                    id: "job-veo-test",
-                    polling_url: VEO_POLL_URL,
-                    status: "completed",
-                    unsigned_urls: [VEO_VIDEO_URL],
-                    usage: { cost: 0.48 },
-                });
+                return Response.json(pollResult);
             }
 
             if (href === VEO_VIDEO_URL) {
@@ -455,6 +456,15 @@ describe("OpenRouter Veo 3.1 Fast", () => {
                 aspect_ratio: "16:9",
                 duration: 4,
                 generate_audio: false,
+                provider: {
+                    options: {
+                        "google-vertex": {
+                            parameters: {
+                                personGeneration: "allow_all",
+                            },
+                        },
+                    },
+                },
             },
         ]);
         expect(downloadAuthorization).toBe("Bearer openrouter-test-key");
@@ -495,6 +505,15 @@ describe("OpenRouter Veo 3.1 Fast", () => {
                 aspect_ratio: "9:16",
                 duration: 4,
                 generate_audio: true,
+                provider: {
+                    options: {
+                        "google-vertex": {
+                            parameters: {
+                                personGeneration: "allow_all",
+                            },
+                        },
+                    },
+                },
                 frame_images: [
                     {
                         type: "image_url",
@@ -575,5 +594,27 @@ describe("OpenRouter Veo 3.1 Fast", () => {
         ).rejects.toMatchObject({ status: 400 });
         expect(requests).toHaveLength(0);
         expect(fetchSpy).toHaveBeenCalledTimes(1);
+    });
+
+    it("preserves content-policy failures as client errors", async () => {
+        setOpenRouterEnv();
+        mockVeoFetch([], undefined, {
+            id: "job-veo-test",
+            polling_url: VEO_POLL_URL,
+            status: "failed",
+            error: "Generation failed due to content policy violation",
+        });
+
+        await expect(
+            callOpenRouterVeoAPI("a rejected prompt", {
+                ...baseParams,
+                model: "veo",
+                duration: 4,
+            }),
+        ).rejects.toMatchObject({
+            status: 400,
+            message:
+                "OpenRouter video generation failed: Generation failed due to content policy violation",
+        });
     });
 });

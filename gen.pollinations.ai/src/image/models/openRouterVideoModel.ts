@@ -203,6 +203,14 @@ function resolveVeoDuration(duration?: number): 4 | 6 | 8 {
     return resolved;
 }
 
+function openRouterVideoFailureStatus(error?: string): 400 | 502 {
+    return /content.?policy|prohibited|refus|safety|invalid.?argument|failed.?precondition/i.test(
+        error ?? "",
+    )
+        ? 400
+        : 502;
+}
+
 async function generateOpenRouterVeo(
     resolution: "720p" | "1080p",
     actualModel: "veo" | "veo-1080p",
@@ -223,6 +231,15 @@ async function generateOpenRouterVeo(
         aspect_ratio: aspectRatio,
         duration,
         generate_audio: generateAudio,
+        provider: {
+            options: {
+                "google-vertex": {
+                    parameters: {
+                        personGeneration: "allow_all",
+                    },
+                },
+            },
+        },
     };
 
     if (safeParams.image.length > 0) {
@@ -382,7 +399,7 @@ async function pollVideo(
             if (["failed", "cancelled", "expired"].includes(result.status)) {
                 throw new HttpError(
                     `OpenRouter video generation ${result.status}: ${result.error ?? "unknown error"}`,
-                    502,
+                    openRouterVideoFailureStatus(result.error),
                     result,
                     url,
                 );

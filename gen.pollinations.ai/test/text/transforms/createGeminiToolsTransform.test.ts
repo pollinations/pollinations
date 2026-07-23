@@ -11,15 +11,15 @@ describe("OpenRouter Gemini routing", () => {
         ],
         ["gemini", "google/gemini-3.6-flash", "google-vertex/global"],
         [
-            "gemini-flash-lite-3.1",
-            "google/gemini-3.1-flash-lite",
+            "gemini-flash-lite-3.5",
+            "google/gemini-3.5-flash-lite",
             "google-vertex/global",
         ],
         ["gemini-search", "google/gemini-2.5-flash-lite", "google-vertex/eu"],
         ["gemini-fast", "google/gemini-2.5-flash-lite", "google-vertex/eu"],
         [
             "gemini-search-fast",
-            "google/gemini-3.1-flash-lite",
+            "google/gemini-3.5-flash-lite",
             "google-vertex/global",
         ],
         [
@@ -53,7 +53,7 @@ describe("OpenRouter Gemini routing", () => {
     it.each([
         "gemini-3-flash",
         "gemini",
-        "gemini-flash-lite-3.1",
+        "gemini-flash-lite-3.5",
         "gemini-fast",
         "gemini-large",
     ])("does not inject code execution for %s", async (model) => {

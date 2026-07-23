@@ -1,0 +1,33 @@
+{
+  "pr_number": 12700,
+  "title": "chore: temporarily remove polly model",
+  "author": "Itachi-1824",
+  "url": "https://github.com/pollinations/pollinations/pull/12700",
+  "merged_at": "2026-07-23T17:16:21Z",
+  "labels": [],
+  "pr_body_excerpt": "- Removes the `polly` community text model (registry entry, routing config, provider config)\n- Temporary — will be re-added later",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Polly Takes a Garden Break",
+    "blurb": "The Polly community text model has stepped out of the registry for a little while. The hive has kept its place warm for its return.",
+    "summary": "Temporarily removed the `polly` community text model from the text-model registry, routing configuration, and provider configuration until it is re-added later.",
+    "impact": "The `polly` model will no longer appear among available text models for now, keeping model selection aligned with the active provider setup.",
+    "keywords": [
+      "polly",
+      "text-models",
+      "model-registry",
+      "routing",
+      "providers"
+    ],
+    "visual_concept": "Depict Polly's temporary absence as a cozy garden pause: Polli tends a clearly labeled empty flower pot beside a retro terminal's model list, with a small seed packet suggesting the model will return. Use growing vines and nearby flowers to make the removal feel like a seasonal rest rather than a failure.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks, a small happy smile, and small rounded light blue translucent wings, wearing a tiny gardener hat while gently watering an empty lime green (#ecf874) flower pot labeled in simple pixel text “POLLY — RESTING”; a retro terminal nearby shows a tidy text-model list, with seeds and code-plants growing around it. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, dark purple (#110518) outlines, subtle CRT glow, nostalgic and emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-23/PR-12700.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks, a small happy smile, and small rounded light blue translucent wings, wearing a tiny gardener hat while gently watering an empty lime green (#ecf874) flower pot labeled in simple pixel text “POLLY — RESTING”; a retro terminal nearby shows a tidy text-model list, with seeds and code-plants growing around it. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, dark purple (#110518) outlines, subtle CRT glow, nostalgic and emotionally warm."
+  },
+  "generated_at": "2026-07-23T17:17:16.002988+00:00"
+}

@@ -6,9 +6,9 @@ from pathlib import Path
 import aiosqlite
 import discord
 
-from .._json import dumps as _json_dumps
-from .._json import loads as _json_loads
-from ..config import config
+from ..utils.json import dumps as _json_dumps
+from ..utils.json import loads as _json_loads
+from ..core.config import config
 
 logger = logging.getLogger(__name__)
 
@@ -277,7 +277,7 @@ class IssueNotifier:
     async def _poll_loop(self):
         """Main polling loop - checks for updates every 2 minutes."""
         # Import here to avoid circular imports
-        from .github_graphql import github_graphql
+        from .github.graphql import github_graphql
 
         while self._running:
             try:
@@ -332,7 +332,7 @@ class IssueNotifier:
 
     async def _check_issue_for_changes(self, issue: dict):
         """Check if an issue has changes and notify subscribers."""
-        from .github_graphql import github_graphql
+        from .github.graphql import github_graphql
 
         issue_number = issue["number"]
         subscriptions = await self.subscriptions.get_subscriptions_for_issue(issue_number)
@@ -429,10 +429,10 @@ class IssueNotifier:
         self, user_id: int, channel_id: int, guild_id: int | None, issue: dict, changes: list[dict]
     ):
         """Send notification to user (DM first, fallback to channel)."""
-        from .pollinations import pollinations_client
+        from ..ai.client import pollinations_client
 
         issue_number = issue["number"]
-        issue_url = issue.get("url", f"https://github.com/{config.github_repo}/issues/{issue_number}")
+        issue_url = issue.get("url", f"https://github.com/{config.bot.default_repo}/issues/{issue_number}")
 
         # Use AI to format a beautiful notification
         message = await pollinations_client.format_notification(issue=issue, changes=changes, issue_url=issue_url)

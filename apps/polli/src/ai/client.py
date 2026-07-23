@@ -1,17 +1,67 @@
 import asyncio
+import json
 import logging
 import random
 import time
 from collections.abc import Callable
 from contextvars import ContextVar
 
-from .._cache import TTLCache
-from .._json import dumps as _json_dumps
-from .._json import loads as _json_loads
+from ..utils.cache import TTLCache
+from ..utils.json import dumps as _json_dumps
+from ..utils.json import loads as _json_loads
 
 MAX_RETRIES = 3
 RETRY_DELAY = 5
 MAX_SEED = 2**31 - 1
+
+
+def _recent_queries(all_tool_calls: list[dict], tool_names: list[str], limit: int = 8) -> str:
+    """The arguments recently passed to these tools, as a bulleted list.
+
+    Telling a model it is looping is easy to ignore; showing it the queries it already ran
+    gives it something concrete to diverge from.
+    """
+    wanted = set(tool_names)
+    seen: list[str] = []
+    for call in reversed(all_tool_calls):
+        function = call.get("function", {})
+        name = function.get("name", "").split(":")[-1]
+        if name not in wanted:
+            continue
+        try:
+            args = _json_loads(function.get("arguments", "")) or {}
+        except ValueError:
+            continue
+        # Show what identifies the search, not the whole payload.
+        summary = ", ".join(
+            f"{k}={str(v)[:60]}"
+            for k, v in args.items()
+            if k not in ("_context",) and isinstance(v, (str, int, float, bool)) and str(v).strip()
+        )
+        line = f"  - {name}({summary})"
+        if line not in seen:
+            seen.append(line)
+        if len(seen) >= limit:
+            break
+    return "\n".join(reversed(seen)) if seen else "  (no recorded arguments)"
+
+
+def _call_signature(tool_call: dict) -> str:
+    """Identify a tool call by name plus arguments, stably.
+
+    Keys are sorted because models re-emit the same call with arbitrary key order; without
+    that, a verbatim repeat would look like a new call. Uses the stdlib dumps rather than
+    the fast serializer elsewhere in this module, which does not sort.
+    """
+    function = tool_call.get("function", {})
+    name = function.get("name", "").split(":")[-1]
+    raw = function.get("arguments", "")
+    try:
+        args = _json_loads(raw)
+    except ValueError:
+        # Unparseable arguments still identify the call — compare them as sent.
+        return f"{name}:{raw}"
+    return f"{name}:{json.dumps(args, sort_keys=True, default=str)}"
 
 
 class UpstreamAuthError(Exception):
@@ -28,16 +78,15 @@ import aiohttp
 # Per-request auth override (used by API mode to pass through user's key)
 _auth_override: ContextVar[str] = ContextVar("auth_override", default="")
 
-from ..config import config
-from ..constants import (
-    API_TIMEOUT,
-    GITHUB_TOOLS,
-    POLLINATIONS_API_BASE,
+from ..core.config import config
+from .prompts import get_tool_system_prompt
+from .tool_filters import (
     filter_admin_actions_from_tools,
     filter_api_tools,
     filter_tools_by_intent,
-    get_tool_system_prompt,
+    get_tools_with_embeddings,
 )
+from .tools import GITHUB_TOOLS
 
 logger = logging.getLogger(__name__)
 
@@ -90,11 +139,11 @@ class PollinationsClient:
 
         headers = {
             "Content-Type": "application/json",
-            "Authorization": f"Bearer {config.pollinations_token}",
+            "Authorization": f"Bearer {config.ai.token}",
         }
 
-        url = f"{POLLINATIONS_API_BASE}/v1/chat/completions"
-        use_model = model or config.pollinations_model
+        url = f"{config.ai.api_base}/v1/chat/completions"
+        use_model = model or config.ai.model
 
         payload = {
             "model": use_model,
@@ -118,7 +167,7 @@ class PollinationsClient:
                 else:
                     error_text = await response.text()
                     if response.status == 402:
-                        logger.warning("generate_text: insufficient balance (402), bailing")
+                        logger.warning(f"generate_text: insufficient balance (402), bailing")
                         return None
                     logger.error(f"generate_text error: HTTP {response.status}: {error_text[:200]}")
                     return None
@@ -272,12 +321,9 @@ class PollinationsClient:
         all_tool_calls = []
         all_tool_results = []
 
-        # Start with all tools, conditionally including code_search if embeddings enabled
-        from ..config import config
-        from ..constants import get_tools_with_embeddings
-
+        # Start with all tools, conditionally including code_search if enabled
         all_tools = get_tools_with_embeddings(
-            GITHUB_TOOLS.copy(), config.local_embeddings_enabled, config.doc_embeddings_enabled
+            GITHUB_TOOLS.copy(), config.code_search.is_configured
         )
 
         is_collaborator = (tool_context or {}).get("is_collaborator", False)
@@ -302,6 +348,11 @@ class PollinationsClient:
         # Soft guidance: track consecutive same-tool calls to nudge the AI
         consecutive_same_tool = 0
         last_tool_signature = None
+
+        # Calls that already failed this turn. The nudge above reacts to a tool being
+        # called repeatedly at all; this catches the narrower case of the identical call
+        # being retried, where the outcome cannot possibly differ.
+        failed_signatures: set[str] = set()
 
         for iteration in range(max_iterations):
             start_time = time.time()
@@ -358,26 +409,39 @@ class PollinationsClient:
                 consecutive_same_tool += 1
                 count = consecutive_same_tool + 1
                 if count >= 3:
-                    logger.info(f"Soft nudge: {current_signature} called {count}x consecutively")
+                    logger.info(f"Loop guidance: {current_signature} called {count}x consecutively")
                     tool_str = ", ".join(tool_names)
-                    if count >= 12:
+                    queries = _recent_queries(all_tool_calls, tool_names)
+                    if count >= 10:
+                        # At this depth the approach itself is what is failing, so lay out
+                        # the situation in full and let the model choose the way out
+                        # rather than ordering it to stop.
                         guidance = (
-                            f"[IMPORTANT: You have called {tool_str} {count} times in a row and are clearly stuck in a loop. "
-                            f"You now have enough context to give a useful answer. "
-                            f"Stop searching and respond directly with what you know — it is better to give a partial answer than to keep looping. "
-                            f"Do not call {tool_str} again.]"
+                            f"[STOP AND RE-PLAN — you have called {tool_str} {count} times in a row.\n"
+                            f"What you have already tried:\n{queries}\n"
+                            f"Repeating this is not working. Something about the approach is wrong, not just the query. "
+                            f"Think about which of these is true, then act on it:\n"
+                            f"  1. The information exists but you are looking in the wrong place — switch tool "
+                            f"(code_search grep vs Vectorize search vs the code graph vs web_search vs github_*), "
+                            f"or search for a different term entirely: a filename, an error string, a symbol.\n"
+                            f"  2. The information is not available to you — say so plainly and answer with what "
+                            f"you do know, naming the gap.\n"
+                            f"  3. You already have the answer and are over-verifying — write the answer now.\n"
+                            f"You decide which. Do not repeat a search you have already run.]"
                         )
-                    elif count >= 7:
+                    elif count >= 6:
                         guidance = (
-                            f"[You have called {tool_str} {count} times consecutively. "
-                            f"You are likely not finding new information. "
-                            f"Synthesize what you have gathered so far and give your best answer. "
-                            f"If you truly need one more lookup, use a different tool or a more specific query — do not repeat the same search.]"
+                            f"[You have called {tool_str} {count} times consecutively without resolving the question.\n"
+                            f"Already tried:\n{queries}\n"
+                            f"Change something material: a different tool, a different search term, or a broader/narrower "
+                            f"scope. If further lookups are unlikely to help, answer with what you have and state what "
+                            f"you could not determine.]"
                         )
                     else:
                         guidance = (
-                            f"[Hint: {tool_str} called {count} times in a row. "
-                            f"Consider whether you already have enough to respond, or try a different tool or query angle.]"
+                            f"[{tool_str} called {count} times in a row. "
+                            f"Check whether you already have enough to answer; if not, vary the tool or the query "
+                            f"rather than repeating a similar search.]"
                         )
                     messages.append({"role": "system", "content": guidance})
             else:
@@ -387,10 +451,21 @@ class PollinationsClient:
             all_tool_calls.extend(tool_calls)
 
             start_time = time.time()
-            tool_results = await self._execute_tools_parallel(tool_calls, discord_username, tool_context=tool_context)
+            tool_results = await self._execute_tools_parallel(
+                tool_calls,
+                discord_username,
+                tool_context=tool_context,
+                blocked_signatures=failed_signatures,
+            )
             tools_time = time.time() - start_time
             logger.info(f"Tools execution took {tools_time:.1f}s")
             all_tool_results.extend(tool_results)
+
+            # A failed call is worth exactly one attempt; remember it so a verbatim retry
+            # is answered from here instead of running again.
+            for tool_call, result in zip(tool_calls, tool_results):
+                if isinstance(result, dict) and result.get("error"):
+                    failed_signatures.add(_call_signature(tool_call))
 
             # Add assistant message with tool calls
             # content must be non-empty string or omitted — Bedrock rejects None/empty
@@ -464,8 +539,14 @@ class PollinationsClient:
         tool_calls: list[dict],
         discord_username: str,
         tool_context: dict | None = None,
+        blocked_signatures: set[str] | None = None,
     ) -> list[dict]:
-        """Execute multiple tool calls in parallel."""
+        """Execute multiple tool calls in parallel.
+
+        ``blocked_signatures`` holds calls that already failed this turn; repeating one
+        verbatim cannot produce a different result, so it is answered without dispatching.
+        """
+        blocked_signatures = blocked_signatures or set()
 
         # Actions that are safe to cache (read-only, no user-specific context)
         CACHEABLE_ACTIONS = {
@@ -489,6 +570,20 @@ class PollinationsClient:
                 args = _json_loads(tool_call["function"]["arguments"])
             except ValueError:
                 args = {}
+
+            # Signature is taken from the model's own arguments, before the context
+            # injection below — otherwise per-request context would make two identical
+            # calls hash differently and this check would never fire.
+            signature = _call_signature(tool_call)
+            if signature in blocked_signatures:
+                logger.info(f"Blocked repeat of failed call: {func_name}")
+                return {
+                    "error": (
+                        "You already made this exact call in this conversation and it failed with "
+                        "the error above. Calling it again with the same arguments will fail again. "
+                        "Either change the arguments, or answer using what you already have."
+                    )
+                }
 
             # Check cache first - only for safe read operations
             action = args.get("action", "")
@@ -545,7 +640,7 @@ class PollinationsClient:
         self,
         messages: list[dict],
         tools: list | None = None,
-        timeout: int = API_TIMEOUT,
+        timeout: int = config.ai.request_timeout_seconds,
         mode: str = "discord",
         api_params: dict | None = None,
     ) -> dict | None:
@@ -560,7 +655,7 @@ class PollinationsClient:
         # API mode: MUST use the user's passed-through key, never the bot's internal token.
         # Discord mode: uses the bot's own token (no override set).
         # _auth_override stores the full "Bearer xxx" header, while
-        # config.pollinations_token is the raw token — hence the f"Bearer ..." fallback.
+        # config.ai.token is the raw token — hence the f"Bearer ..." fallback.
         override = _auth_override.get()
         if mode == "api":
             if not override:
@@ -568,16 +663,16 @@ class PollinationsClient:
                 return None
             auth_token = override
         else:
-            auth_token = override or f"Bearer {config.pollinations_token}"
+            auth_token = override or f"Bearer {config.ai.token}"
         headers = {
             "Content-Type": "application/json",
             "Authorization": auth_token,
         }
 
-        url = f"{POLLINATIONS_API_BASE}/v1/chat/completions"
+        url = f"{config.ai.api_base}/v1/chat/completions"
         last_error = None
 
-        current_model = config.pollinations_model
+        current_model = config.ai.model
         for attempt in range(MAX_RETRIES):
             # Use caller's seed if provided (default 42), otherwise random per attempt
             caller_seed = (api_params or {}).get("seed") if api_params else None
@@ -634,11 +729,9 @@ class PollinationsClient:
                         if response.status == 402:
                             break
                         # Other errors: switch to fallback model on next attempt
-                        if config.pollinations_fallback_model and current_model != config.pollinations_fallback_model:
-                            logger.info(
-                                f"Switching to fallback model {config.pollinations_fallback_model!r} after error"
-                            )
-                            current_model = config.pollinations_fallback_model
+                        if config.ai.fallback_model and current_model != config.ai.fallback_model:
+                            logger.info(f"Switching to fallback model {config.ai.fallback_model!r} after error")
+                            current_model = config.ai.fallback_model
                         # In API mode, propagate auth errors immediately — don't retry
                         if mode == "api" and response.status in (401, 403):
                             raise UpstreamAuthError(response.status, error_text)
@@ -846,26 +939,21 @@ pollinations_client = PollinationsClient()
 # =============================================================================
 
 
-async def web_search_handler(query: str, model: str = "perplexity-fast", **kwargs) -> dict:
+async def web_search_handler(query: str, **kwargs) -> dict:
     """
-    Handle web_search tool calls using various search-enabled models.
+    Handle web_search tool calls via Perplexity (sonar-pro) through Pollinations.
 
-    Supported models:
-    - gemini-search: Gemini 2.0 Flash with Google Search (fast, factual)
-    - perplexity-fast: Perplexity Sonar (balanced, citations)
-    - perplexity-reasoning: Perplexity Sonar Reasoning (deep analysis)
+    gemini-search, perplexity-fast, and perplexity-reasoning are all forbidden on
+    the current Pollinations API key (403). Plain "perplexity" is the only search
+    model confirmed working.
 
     Args:
         query: The search query
-        model: Search model to use (default: perplexity-fast)
 
     Returns:
         Dict with search results or error
     """
-    # Validate model
-    valid_models = ["gemini-search", "perplexity-fast", "perplexity-reasoning"]
-    if model not in valid_models:
-        model = "perplexity-fast"  # Default fallback
+    model = config.ai.model_for("web_search")
 
     messages = [
         {
@@ -877,7 +965,7 @@ async def web_search_handler(query: str, model: str = "perplexity-fast", **kwarg
 
     headers = {
         "Content-Type": "application/json",
-        "Authorization": f"Bearer {config.pollinations_token}",
+        "Authorization": f"Bearer {config.ai.token}",
     }
 
     payload = {
@@ -887,7 +975,7 @@ async def web_search_handler(query: str, model: str = "perplexity-fast", **kwarg
 
     try:
         session = await pollinations_client.get_session()
-        url = f"{POLLINATIONS_API_BASE}/v1/chat/completions"
+        url = f"{config.ai.api_base}/v1/chat/completions"
 
         async with session.post(
             url, json=payload, headers=headers, timeout=aiohttp.ClientTimeout(total=60)
@@ -907,3 +995,4 @@ async def web_search_handler(query: str, model: str = "perplexity-fast", **kwarg
     except Exception as e:
         logger.error(f"Web search error: {e}")
         return {"error": f"Search failed: {str(e)}"}
+

@@ -4,8 +4,8 @@ from typing import Any
 import aiohttp
 import discord
 
-from .._re import re
-from ..config import config
+from ..utils.regex import re
+from ..core.config import config
 
 logger = logging.getLogger(__name__)
 
@@ -40,7 +40,7 @@ class DiscordSearchClient:
     @property
     def headers(self) -> dict:
         return {
-            "Authorization": f"Bot {config.discord_token}",
+            "Authorization": f"Bot {config.discord.token}",
             "Content-Type": "application/json",
         }
 
@@ -541,6 +541,8 @@ async def tool_discord_search(
     pinned: bool | None = None,
     link_hostname: str | None = None,
     attachment_extension: str | None = None,
+    mentions: int | str | None = None,
+    mention_everyone: bool | None = None,
     offset: int = 0,
     _context: dict = None,
     **kwargs,
@@ -570,6 +572,7 @@ async def tool_discord_search(
     role_id = extract_id(role_id, r"<@&(\d+)>")
     message_id = extract_id(message_id, r"(\d+)")
     thread_id = extract_id(thread_id, r"(\d+)")
+    mentions = extract_id(mentions, r"<@!?(\d+)>")
     bot = _context.get("discord_bot")
     bot_member = guild.me if guild else None
     requesting_user_id = _context.get("user_id")
@@ -618,13 +621,15 @@ async def tool_discord_search(
             accessible_channel_ids.add(thread.id)
     action = action.lower()
     if query:
-        mentions = parse_discord_mentions(query)
-        if mentions["user_ids"] and not user_id:
-            user_id = mentions["user_ids"][0]
-        if mentions["channel_ids"] and not channel_id:
-            channel_id = mentions["channel_ids"][0]
-        if mentions["role_ids"] and not role_id:
-            role_id = mentions["role_ids"][0]
+        # Deliberately not `mentions`: that parameter is a single snowflake passed straight
+        # to the search API, and overwriting it with this dict makes Discord reject the call.
+        parsed = parse_discord_mentions(query)
+        if parsed["user_ids"] and not user_id:
+            user_id = parsed["user_ids"][0]
+        if parsed["channel_ids"] and not channel_id:
+            channel_id = parsed["channel_ids"][0]
+        if parsed["role_ids"] and not role_id:
+            role_id = parsed["role_ids"][0]
     if channel_name and not channel_id:
         ch_mentions = parse_discord_mentions(channel_name)
         if ch_mentions["channel_ids"]:
@@ -661,6 +666,8 @@ async def tool_discord_search(
             sort_order=sort_order,
             link_hostname=link_hostname,
             attachment_extension=attachment_extension,
+            mentions=mentions,
+            mention_everyone=mention_everyone,
             limit=limit,
             offset=offset,
             accessible_channel_ids=accessible_channel_ids,

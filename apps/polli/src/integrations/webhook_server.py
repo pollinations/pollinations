@@ -4,9 +4,9 @@ import logging
 
 from aiohttp import web
 
-from .._json import dumps as _json_dumps
-from .._json import loads as _json_loads
-from ..config import config
+from ..utils.json import dumps as _json_dumps
+from ..utils.json import loads as _json_loads
+from ..core.config import config
 
 logger = logging.getLogger(__name__)
 
@@ -26,9 +26,9 @@ class GitHubWebhookServer:
         """Start the webhook server."""
         self.runner = web.AppRunner(self.app)
         await self.runner.setup()
-        self.site = web.TCPSite(self.runner, "0.0.0.0", config.webhook_port)
+        self.site = web.TCPSite(self.runner, "0.0.0.0", config.webhook.port)
         await self.site.start()
-        logger.info(f"GitHub webhook server started on port {config.webhook_port}")
+        logger.info(f"GitHub webhook server started on port {config.webhook.port}")
 
     async def stop(self):
         """Stop the webhook server."""
@@ -42,7 +42,7 @@ class GitHubWebhookServer:
 
     def verify_signature(self, payload: bytes, signature: str) -> bool:
         """Verify GitHub webhook signature."""
-        if not config.webhook_secret:
+        if not config.webhook.secret:
             # SECURITY: Reject all webhooks if no secret configured
             logger.error("GITHUB_WEBHOOK_SECRET not configured - rejecting webhook for security")
             return False
@@ -55,7 +55,7 @@ class GitHubWebhookServer:
         if signature.startswith("sha256="):
             signature = signature[7:]
 
-        expected = hmac.new(config.webhook_secret.encode(), payload, hashlib.sha256).hexdigest()
+        expected = hmac.new(config.webhook.secret.encode(), payload, hashlib.sha256).hexdigest()
 
         return hmac.compare_digest(expected, signature)
 
@@ -78,7 +78,7 @@ class GitHubWebhookServer:
 
         # Check repo whitelist
         repo = data.get("repository", {}).get("full_name", "")
-        if not config.is_repo_whitelisted(repo):
+        if not config.github.is_repo_whitelisted(repo):
             logger.info(f"Ignoring webhook from non-whitelisted repo: {repo}")
             return web.json_response({"status": "ignored", "reason": "repo not whitelisted"})
 
@@ -111,7 +111,7 @@ class GitHubWebhookServer:
         """Check if bot is @mentioned in the body."""
         if not body:
             return False
-        mention = f"@{config.github_bot_username}"
+        mention = f"@{config.github.bot_username}"
         return mention.lower() in body.lower()
 
     async def handle_issue_comment(self, data: dict):
@@ -128,7 +128,7 @@ class GitHubWebhookServer:
 
         # Don't respond to our own comments
         commenter = comment.get("user", {}).get("login", "")
-        if commenter.lower() == config.github_bot_username.lower():
+        if commenter.lower() == config.github.bot_username.lower():
             return
 
         issue = data.get("issue", {})
@@ -162,7 +162,7 @@ class GitHubWebhookServer:
             return
 
         author = issue.get("user", {}).get("login", "")
-        if author.lower() == config.github_bot_username.lower():
+        if author.lower() == config.github.bot_username.lower():
             return
 
         repo = data.get("repository", {})
@@ -193,7 +193,7 @@ class GitHubWebhookServer:
             return
 
         author = pr.get("user", {}).get("login", "")
-        if author.lower() == config.github_bot_username.lower():
+        if author.lower() == config.github.bot_username.lower():
             return
 
         repo = data.get("repository", {})
@@ -226,7 +226,7 @@ class GitHubWebhookServer:
             return
 
         commenter = comment.get("user", {}).get("login", "")
-        if commenter.lower() == config.github_bot_username.lower():
+        if commenter.lower() == config.github.bot_username.lower():
             return
 
         pr = data.get("pull_request", {})
@@ -261,7 +261,7 @@ class GitHubWebhookServer:
             return
 
         reviewer = review.get("user", {}).get("login", "")
-        if reviewer.lower() == config.github_bot_username.lower():
+        if reviewer.lower() == config.github.bot_username.lower():
             return
 
         pr = data.get("pull_request", {})
@@ -291,17 +291,17 @@ class GitHubWebhookServer:
         """
         logger.info(f"Processing GitHub mention: {context['type']} in {context.get('repo')}")
 
-        from .pollinations import pollinations_client
+        from ..ai.client import pollinations_client
 
         # Get the GitHub username
         github_user = context.get("commenter") or context.get("author") or context.get("reviewer")
 
         # Check if user is a GitHub admin
-        is_admin = config.is_github_admin(github_user or "")
+        is_admin = config.github.is_admin(github_user or "")
         logger.info(f"GitHub user @{github_user} is_admin={is_admin}")
 
         # If admin_only_mentions is enabled, reject non-admin users
-        if config.github_admin_only_mentions and not is_admin:
+        if config.github.admin_only_mentions and not is_admin:
             logger.info(f"Rejecting mention from non-admin user @{github_user} (admin_only_mentions=true)")
             error_msg = (
                 f"Sorry @{github_user}, I'm currently configured to only respond to authorized team members. "
@@ -409,8 +409,8 @@ Respond to the reviewer's feedback.{admin_note}"""
 
     async def _post_github_response(self, context: dict, response: str):
         """Post response back to GitHub using shared session."""
-        from .github import github_manager
-        from .github_auth import github_app_auth
+        from .github.client import github_manager
+        from .github.auth import github_app_auth
 
         repo = context.get("repo")
         if not repo:
@@ -426,7 +426,7 @@ Respond to the reviewer's feedback.{admin_note}"""
             }
         else:
             headers = {
-                "Authorization": f"token {config.github_token}",
+                "Authorization": f"token {config.github.token}",
                 "Accept": "application/vnd.github.v3+json",
             }
 
@@ -480,7 +480,7 @@ async def start_webhook_server(discord_bot=None):
     """Start the webhook server if enabled."""
     global webhook_server
 
-    if not config.webhook_enabled:
+    if not config.webhook.enabled:
         logger.info("Webhook server disabled in config")
         return None
 

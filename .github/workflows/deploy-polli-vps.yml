@@ -1,0 +1,87 @@
+name: Deploy / Polli Discord bot
+
+permissions:
+  contents: read
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'apps/polli/**'
+  workflow_dispatch:
+
+# Never let two deploys race; the latest push wins.
+concurrency:
+  group: deploy-polli
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          sparse-checkout: apps/polli
+
+      - name: Copy source to VM
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.POLLI_AZURE_HOST }}
+          username: ${{ secrets.POLLI_AZURE_USER }}
+          key: ${{ secrets.POLLI_AZURE_SSH_KEY }}
+          source: "apps/polli/"
+          target: "/tmp/polli-deploy"
+          strip_components: 2
+          overwrite: true
+
+      - name: Deploy and restart service
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.POLLI_AZURE_HOST }}
+          username: ${{ secrets.POLLI_AZURE_USER }}
+          key: ${{ secrets.POLLI_AZURE_SSH_KEY }}
+          script: |
+            set -euo pipefail
+
+            echo "Syncing source to /home/itachi/polli..."
+            # --delete keeps the deploy tree honest, but the excludes protect
+            # everything that lives only on the box: secrets, the app key,
+            # runtime data, the venv and git metadata.
+            rsync -a --delete \
+              --exclude '.env' \
+              --exclude '*.pem' \
+              --exclude 'data/' \
+              --exclude '.venv/' \
+              --exclude '.git/' \
+              /tmp/polli-deploy/ /home/itachi/polli/
+
+            cd /home/itachi/polli
+
+            # Only touch the venv when requirements actually changed — most deploys are
+            # code-only. --no-deps is deliberate: the pinned set (scrapling/lxml) does not
+            # satisfy pip's resolver, but the packages themselves are already correct, so
+            # re-resolving the full graph would fail a deploy that has nothing wrong with it.
+            # The marker lives outside the synced tree so rsync --delete cannot wipe it.
+            REQ_MARKER="$HOME/.polli-last-requirements.txt"
+            if ! cmp -s requirements.txt "$REQ_MARKER" 2>/dev/null; then
+              echo "requirements.txt changed — installing..."
+              ./.venv/bin/python -m pip install -r requirements.txt -q --no-deps
+              cp requirements.txt "$REQ_MARKER"
+            else
+              echo "requirements.txt unchanged — skipping install"
+            fi
+
+            echo "Restarting polli service..."
+            sudo systemctl restart polli.service
+            sleep 5
+
+            if ! sudo systemctl is-active --quiet polli.service; then
+              echo "Service failed to come up — recent logs:"
+              sudo journalctl -u polli.service -n 30 --no-pager || true
+              exit 1
+            fi
+            echo "Polli bot deployed successfully"
+
+            rm -rf /tmp/polli-deploy

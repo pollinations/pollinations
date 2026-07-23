@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
 import { Hono } from "hono";
 import { statusNoticeRoutes } from "../src/routes/status-notice.ts";
 

@@ -1,0 +1,33 @@
+{
+  "pr_number": 12733,
+  "title": "docs: regenerate APIDOCS.md",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/12733",
+  "merged_at": "2026-07-24T15:07:24Z",
+  "labels": [],
+  "pr_body_excerpt": "Auto-generated from OpenAPI spec changes after a successful production deploy.",
+  "gist": {
+    "category": "docs",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "The map grew new paths",
+    "blurb": "The API map has been regenerated from the live OpenAPI spec. A few more signposts, one fewer wrong turn.",
+    "summary": "Regenerated APIDOCS.md from the production OpenAPI specification so the published API reference reflects the latest deployed endpoints and schema details.",
+    "impact": "Developers reading APIDOCS.md get documentation aligned with the API currently running in production.",
+    "keywords": [
+      "documentation",
+      "OpenAPI",
+      "API reference",
+      "developer experience",
+      "APIDOCS"
+    ],
+    "visual_concept": "Depict Polli as a tiny explorer with a map and round glasses in a cozy code garden, updating a large pixel parchment labeled \"API DOCS\" while fresh paths connect small terminal flowers. The visual metaphor is a reliable map catching up to the living API landscape.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing tiny explorer glasses and a scarf, carefully pinning fresh route markers onto a large parchment labeled \"API DOCS\" in chunky pixel font, while code-plants and small retro terminal flowers grow around it. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-24/PR-12733.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing tiny explorer glasses and a scarf, carefully pinning fresh route markers onto a large parchment labeled \"API DOCS\" in chunky pixel font, while code-plants and small retro terminal flowers grow around it. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
+  },
+  "generated_at": "2026-07-24T15:08:21.000200+00:00"
+}

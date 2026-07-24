@@ -12,6 +12,7 @@ import {
 import type { EventType } from "@shared/schemas/generation-event.ts";
 import {
     type CommunityModelRegistryEntry,
+    communityImageSupportedEndpoints,
     communityTextSupportedEndpoints,
     getCommunityModelRegistryEntries,
 } from "./community-models.ts";
@@ -91,11 +92,15 @@ const STATIC_ENTRIES: GenerationModelEntry[] = getModels().map((modelName) => {
 function communityEntryToGenerationEntry(
     entry: CommunityModelRegistryEntry,
 ): GenerationModelEntry {
+    const eventType = eventTypeForCategory(entry.definition.category);
     return {
         id: entry.id,
         aliases: entry.aliases,
-        eventType: "generate.text",
-        supportedEndpoints: communityTextSupportedEndpoints(),
+        eventType,
+        supportedEndpoints:
+            eventType === "generate.image"
+                ? communityImageSupportedEndpoints()
+                : communityTextSupportedEndpoints(),
         definition: entry.definition,
         info: entry.info,
         communityEndpoint: entry.communityEndpoint,

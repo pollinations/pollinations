@@ -1,10 +1,18 @@
 import {
+    type CommunityEndpointImagePricing,
     communityChatCompletionsUrl,
+    communityImageGenerationsUrl,
     communityOpenAIBaseUrl,
+    normalizeCommunityAssetUrl,
     normalizeCommunityEndpointBearerToken,
 } from "@shared/community-endpoints.ts";
+import { detectImageMimeType } from "@shared/image-mime.ts";
 import type { Usage } from "@shared/registry/registry.ts";
-import { openaiUsageToUsage } from "@shared/registry/usage-headers.ts";
+import {
+    getOpenAIImageUsage,
+    openaiImageUsageToUsage,
+    openaiUsageToUsage,
+} from "@shared/registry/usage-headers.ts";
 
 type EndpointAuth = {
     baseUrl: string;
@@ -18,9 +26,12 @@ export type CommunityEndpointUsage = Record<string, unknown>;
 export type CommunityEndpointTestResult = {
     usage: CommunityEndpointUsage;
     billableUsage: Usage;
+    /** Image tests only: billing mode detected from the probe response. */
+    imagePricing?: CommunityEndpointImagePricing;
 };
 
 const REQUEST_TIMEOUT_MS = 90_000;
+const MAX_IMAGE_BYTES = 20 * 1024 * 1024;
 
 function authorizationHeaders(bearerToken: string): HeadersInit {
     return {
@@ -158,4 +169,126 @@ export async function testCommunityEndpoint({
             usage as Parameters<typeof openaiUsageToUsage>[0],
         ),
     };
+}
+
+export async function testCommunityImageEndpoint({
+    baseUrl,
+    bearerToken,
+    model,
+}: EndpointTestInput): Promise<CommunityEndpointTestResult> {
+    const body = await fetchJson(communityImageGenerationsUrl(baseUrl), {
+        method: "POST",
+        headers: {
+            ...authorizationHeaders(bearerToken),
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+            model,
+            prompt: "A simple green sprout icon on a white background.",
+            n: 1,
+            size: "1024x1024",
+            quality: "medium",
+        }),
+    });
+
+    const imageBytes = await firstImageBytes(body, baseUrl);
+    if (!imageBytes || !detectImageMimeType(imageBytes)) {
+        throw new Error("Endpoint did not return a supported image");
+    }
+
+    // Endpoints that return valid OpenAI image token usage are billed
+    // per token ("tokens"); everything else falls back to a fixed price
+    // per generated image ("request").
+    const openaiUsage = getOpenAIImageUsage(body);
+    if (openaiUsage && openaiUsage.output_tokens > 0) {
+        return {
+            usage: { ...openaiUsage },
+            billableUsage: openaiImageUsageToUsage(openaiUsage),
+            imagePricing: "tokens",
+        };
+    }
+    return {
+        usage: { images: 1 },
+        billableUsage: { completionImageTokens: 1 },
+        imagePricing: "request",
+    };
+}
+
+async function firstImageBytes(
+    body: unknown,
+    endpointBaseUrl: string,
+): Promise<Uint8Array | null> {
+    if (
+        !body ||
+        typeof body !== "object" ||
+        !("data" in body) ||
+        !Array.isArray(body.data)
+    ) {
+        return null;
+    }
+    for (const image of body.data) {
+        if (!image || typeof image !== "object") continue;
+        if (
+            "b64_json" in image &&
+            typeof image.b64_json === "string" &&
+            image.b64_json.length > 0
+        ) {
+            return decodeBase64(image.b64_json);
+        }
+        if (
+            "url" in image &&
+            typeof image.url === "string" &&
+            image.url.length > 0
+        ) {
+            return fetchImageBytes(image.url, endpointBaseUrl);
+        }
+    }
+    return null;
+}
+
+async function fetchImageBytes(
+    value: string,
+    endpointBaseUrl: string,
+): Promise<Uint8Array> {
+    let url: string;
+    try {
+        url = normalizeCommunityAssetUrl(value, endpointBaseUrl);
+    } catch {
+        throw new Error("Endpoint returned an unsafe image URL");
+    }
+    let response: Response;
+    try {
+        response = await fetch(url, {
+            redirect: "manual",
+            signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+        });
+    } catch {
+        throw new Error("Endpoint image URL timed out or could not connect");
+    }
+    if (!response.ok) {
+        throw new Error(`Endpoint image URL responded ${response.status}`);
+    }
+    const contentLength = Number(response.headers.get("content-length"));
+    if (Number.isFinite(contentLength) && contentLength > MAX_IMAGE_BYTES) {
+        throw new Error("Endpoint image is larger than 20 MB");
+    }
+    const bytes = new Uint8Array(await response.arrayBuffer());
+    if (bytes.byteLength > MAX_IMAGE_BYTES) {
+        throw new Error("Endpoint image is larger than 20 MB");
+    }
+    return bytes;
+}
+
+function decodeBase64(value: string): Uint8Array | null {
+    try {
+        const encoded = value
+            .replace(/^data:[^,]+,/, "")
+            .replace(/\s/g, "")
+            .replace(/-/g, "+")
+            .replace(/_/g, "/");
+        const decoded = atob(encoded);
+        return Uint8Array.from(decoded, (character) => character.charCodeAt(0));
+    } catch {
+        return null;
+    }
 }

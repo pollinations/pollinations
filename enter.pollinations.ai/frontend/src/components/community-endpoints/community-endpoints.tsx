@@ -201,7 +201,7 @@ export function CommunityEndpoints({
                             </p>
                             <p className="text-sm text-theme-text-muted">
                                 {canPublish
-                                    ? "Publish an OpenAI-compatible endpoint with your own per-1M-token pricing."
+                                    ? "Publish an OpenAI-compatible text or image endpoint with your own pricing."
                                     : privateModelGuidance}
                             </p>
                         </Surface>
@@ -228,7 +228,7 @@ export function CommunityEndpoints({
                                     shown only when model lists use your API
                                     key. Make one public to list it for everyone
                                     in <strong>/models</strong> and bill callers
-                                    at your per-1M-token pricing.
+                                    at your configured pricing.
                                 </>
                             ) : (
                                 privateModelGuidance

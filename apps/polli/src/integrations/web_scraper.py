@@ -1,0 +1,1029 @@
+import asyncio
+import logging
+from typing import Any
+
+from ..utils.regex import re
+from ..utils.url import parse_url
+
+logger = logging.getLogger(__name__)
+
+_BOT_MARKERS = [
+    "cloudflare",
+    "captcha",
+    "just a moment",
+    "checking your browser",
+    "access denied",
+    "please enable javascript",
+    "are you a robot",
+    "security check",
+    "ddos protection",
+    "cf-browser-verification",
+    "recaptcha",
+]
+
+
+def _is_bot_blocked(html: str, status: int) -> bool:
+    if status in (403, 429, 503):
+        return True
+    if len(html) < 1500:
+        lower = html.lower()
+        return any(m in lower for m in _BOT_MARKERS)
+    return False
+
+
+def _html_to_markdown(html: str) -> str:
+    try:
+        import html2text
+
+        h = html2text.HTML2Text()
+        h.ignore_links = False
+        h.ignore_images = True
+        h.body_width = 0
+        h.unicode_snob = True
+        return h.handle(html).strip()
+    except ImportError:
+        from bs4 import BeautifulSoup
+
+        soup = BeautifulSoup(html, "html.parser")
+        for tag in soup(["script", "style", "noscript", "nav", "footer", "aside"]):
+            tag.decompose()
+        return soup.get_text(separator="\n", strip=True)
+
+
+def _needs_browser(
+    output_format: str,
+    extraction_strategy: str | None,
+    content_filter: str | None,
+    js_code: str | None,
+    wait_for: str | None,
+    screenshot: bool,
+    pdf: bool,
+    stealth_mode: bool,
+    simulate_user: bool,
+    magic_mode: bool,
+    process_iframes: bool,
+    include_links: bool,
+    include_images: bool,
+    include_tables: bool,
+) -> bool:
+    return bool(
+        output_format in ("fit_markdown", "html")
+        or extraction_strategy
+        or content_filter
+        or js_code
+        or wait_for
+        or screenshot
+        or pdf
+        or stealth_mode
+        or simulate_user
+        or magic_mode
+        or process_iframes
+        or include_links
+        or include_images
+        or include_tables
+    )
+
+
+async def _try_rnet(url: str, timeout: int) -> str | None:
+    try:
+        from rnet import Client, Impersonate
+
+        client = Client(
+            timeout=timeout,
+            impersonate=Impersonate.Chrome136,
+            redirect=10,
+        )
+        resp = await client.get(url)
+        status = resp.status
+        if status in (403, 429, 503):
+            return None
+        html = await resp.text()
+        if not html or _is_bot_blocked(html, status):
+            return None
+        md = _html_to_markdown(html)
+        return md if md and len(md) > 50 else None
+    except Exception as e:
+        logger.debug(f"rnet failed for {url}: {e}")
+        return None
+
+
+async def _try_scrapling(url: str, timeout: int) -> str | None:
+    try:
+        from scrapling.fetchers import AsyncFetcher
+
+        page = await asyncio.wait_for(
+            AsyncFetcher().get(url, follow_redirects=True),
+            timeout=timeout,
+        )
+        html = page.html_content if hasattr(page, "html_content") else ""
+        if not html:
+            html = page.body.decode(page.encoding or "utf-8", errors="replace") if hasattr(page, "body") else ""
+        if not html or _is_bot_blocked(html, 200):
+            return None
+        md = _html_to_markdown(html)
+        return md if md and len(md) > 50 else None
+    except Exception as e:
+        logger.debug(f"scrapling failed for {url}: {e}")
+        return None
+
+
+X_HOSTS = {"x.com", "www.x.com", "twitter.com", "www.twitter.com", "mobile.twitter.com"}
+FXTWITTER_API = "https://api.fxtwitter.com"
+
+# A login wall answers 200 with a page full of chrome and no article. Passing that back as
+# a successful scrape is worse than failing: the model cannot tell it apart from real
+# content and will happily summarise the navigation menu.
+LOGIN_WALL_MARKERS = (
+    "log in to x",
+    "sign in to x",
+    "sign up for twitter",
+    "javascript is not available",
+    "enable javascript and cookies to continue",
+    "you must log in to continue",
+    "please log in to continue",
+    "attention required! | cloudflare",
+    "verify you are human",
+    "whoa there, pardner",
+    "your request has been blocked",
+)
+
+
+def _looks_like_login_wall(text: str) -> bool:
+    """Whether scraped text is a gate rather than the page that was asked for."""
+    if not text:
+        return False
+    head = text[:4000].lower()
+    if not any(marker in head for marker in LOGIN_WALL_MARKERS):
+        return False
+    # Long pages that merely mention logging in are usually genuine articles, so only
+    # treat this as a wall when there is little else on the page.
+    return len(text.strip()) < 8000
+
+
+def _format_x_content(payload: dict) -> tuple[str, str] | None:
+    """Render an fxtwitter payload as (title, markdown)."""
+    tweet = payload.get("tweet")
+    if tweet:
+        author = tweet.get("author") or {}
+        handle = author.get("screen_name", "unknown")
+        name = author.get("name", handle)
+        lines = [
+            f"# Post by {name} (@{handle})",
+            "",
+            tweet.get("text", ""),
+            "",
+            f"- Posted: {tweet.get('created_at', 'unknown')}",
+            f"- Likes: {tweet.get('likes', 0):,} | Reposts: {tweet.get('retweets', 0):,} "
+            f"| Replies: {tweet.get('replies', 0):,}",
+            f"- URL: {tweet.get('url', '')}",
+        ]
+        if tweet.get("replying_to"):
+            lines.append(f"- Replying to: @{tweet['replying_to']}")
+        media = (tweet.get("media") or {}).get("all") or []
+        for item in media:
+            if item.get("url"):
+                lines.append(f"- Media ({item.get('type', 'media')}): {item['url']}")
+        note = tweet.get("community_note")
+        if note:
+            lines += ["", "**Community note:**", str(note)[:1500]]
+        return f"Post by @{handle}", "\n".join(lines)
+
+    user = payload.get("user")
+    if user:
+        handle = user.get("screen_name", "unknown")
+        lines = [
+            f"# @{handle} — {user.get('name', '')}".rstrip(),
+            "",
+            user.get("description", ""),
+            "",
+            f"- Followers: {user.get('followers', 0):,} | Following: {user.get('following', 0):,}",
+            f"- Posts: {user.get('tweets', 0):,}",
+            f"- URL: {user.get('url', '')}",
+        ]
+        return f"@{handle}", "\n".join(lines)
+
+    return None
+
+
+async def _try_x_api(url: str, timeout: int) -> dict | None:
+    """Read an x.com URL through fxtwitter's public JSON API.
+
+    x.com serves a login wall to anything without a session, so scraping it yields
+    navigation text rather than the post. fxtwitter returns the post itself, needs no
+    credentials, and works from a datacenter IP.
+    """
+    parsed = parse_url(url)
+    if parsed.netloc.lower() not in X_HOSTS:
+        return None
+
+    path = parsed.path.rstrip("/")
+    if not path or path == "/":
+        return None
+
+    api_url = f"{FXTWITTER_API}{path}"
+    try:
+        import aiohttp
+
+        async with aiohttp.ClientSession() as session:
+            async with session.get(
+                api_url,
+                headers={"User-Agent": "polli-bot/1.0"},
+                timeout=aiohttp.ClientTimeout(total=timeout),
+            ) as response:
+                if response.status != 200:
+                    logger.debug("fxtwitter returned %s for %s", response.status, url)
+                    return None
+                payload = await response.json(content_type=None)
+    except Exception as e:
+        logger.debug("fxtwitter request failed for %s: %s", url, e)
+        return None
+
+    if payload.get("code") != 200:
+        return None
+
+    formatted = _format_x_content(payload)
+    if not formatted:
+        return None
+
+    title, markdown = formatted
+    return {"success": True, "url": url, "title": title, "markdown": markdown, "_fetcher": "fxtwitter"}
+
+
+async def _try_jina(url: str, timeout: int) -> str | None:
+    """Last-resort read through Jina Reader, which fetches from its own infrastructure.
+
+    Useful when the target blocks this host specifically. It cannot defeat a block that
+    also covers Jina, so callers must still handle failure.
+    """
+    try:
+        import aiohttp
+
+        async with aiohttp.ClientSession() as session:
+            async with session.get(
+                f"https://r.jina.ai/{url}",
+                headers={"User-Agent": "polli-bot/1.0", "X-Return-Format": "markdown"},
+                timeout=aiohttp.ClientTimeout(total=timeout),
+            ) as response:
+                if response.status != 200:
+                    return None
+                text = await response.text()
+    except Exception as e:
+        logger.debug("Jina Reader failed for %s: %s", url, e)
+        return None
+
+    if not text or _looks_like_login_wall(text):
+        return None
+    return text
+
+
+async def scrape_url(
+    url: str,
+    extraction_strategy: str | None = None,
+    schema: dict[str, Any] | None = None,
+    instruction: str | None = None,
+    semantic_filter: str | None = None,
+    regex_patterns: list[str] | None = None,
+    content_filter: str | None = None,
+    filter_query: str | None = None,
+    include_links: bool = False,
+    include_images: bool = False,
+    include_raw_html: bool = False,
+    include_tables: bool = False,
+    output_format: str = "markdown",
+    js_code: str | None = None,
+    wait_for: str | None = None,
+    screenshot: bool = False,
+    pdf: bool = False,
+    stealth_mode: bool = False,
+    simulate_user: bool = False,
+    magic_mode: bool = False,
+    scan_full_page: bool = False,
+    process_iframes: bool = False,
+    remove_overlays: bool = True,
+    timeout: int = 30,
+    headless: bool = True,
+    session_id: str | None = None,
+) -> dict:
+    try:
+        parsed = parse_url(url)
+        if not parsed.scheme or not parsed.netloc:
+            return {
+                "success": False,
+                "url": url,
+                "error": "Invalid URL - must include http:// or https://",
+            }
+    except Exception:
+        return {"success": False, "url": url, "error": "Invalid URL format"}
+
+    # ── Layer 0: x.com via fxtwitter ──────────────────────────────────────────
+    # Ahead of the generic fetchers because they can only ever reach the login wall.
+    x_result = await _try_x_api(url, min(timeout, 15))
+    if x_result:
+        logger.debug(f"fxtwitter succeeded for {url}")
+        return x_result
+
+    # ── Layer 1: rnet (Rust HTTP + Chrome TLS) ────────────────────────────────
+    # ── Layer 2: scrapling AsyncFetcher (curl_cffi stealth) ──────────────────
+    # Fast path for basic markdown — skip browser entirely when not needed.
+    if not _needs_browser(
+        output_format=output_format,
+        extraction_strategy=extraction_strategy,
+        content_filter=content_filter,
+        js_code=js_code,
+        wait_for=wait_for,
+        screenshot=screenshot,
+        pdf=pdf,
+        stealth_mode=stealth_mode,
+        simulate_user=simulate_user,
+        magic_mode=magic_mode,
+        process_iframes=process_iframes,
+        include_links=include_links,
+        include_images=include_images,
+        include_tables=include_tables,
+    ):
+        rnet_timeout = min(timeout, 12)
+        md = await _try_rnet(url, rnet_timeout)
+        if md and not _looks_like_login_wall(md):
+            logger.debug(f"rnet succeeded for {url}")
+            return {"success": True, "url": url, "title": "", "markdown": md, "_fetcher": "rnet"}
+
+        scrapling_timeout = min(timeout, 18)
+        md = await _try_scrapling(url, scrapling_timeout)
+        if md and not _looks_like_login_wall(md):
+            logger.debug(f"scrapling succeeded for {url}")
+            return {"success": True, "url": url, "title": "", "markdown": md, "_fetcher": "scrapling"}
+
+        # Reaching a login wall means this host is the problem, so ask Jina to fetch it
+        # from elsewhere before spending a browser launch on the same wall.
+        jina_md = await _try_jina(url, min(timeout, 25))
+        if jina_md:
+            logger.debug(f"jina succeeded for {url}")
+            return {"success": True, "url": url, "title": "", "markdown": jina_md, "_fetcher": "jina"}
+
+        logger.debug(f"rnet+scrapling+jina all failed for {url}, falling back to crawl4ai")
+
+    # ── Layer 3: crawl4ai (Playwright browser) ────────────────────────────────
+    # Used when: browser features needed, or rnet/scrapling returned empty.
+    return await _scrape_with_crawl4ai(
+        url=url,
+        extraction_strategy=extraction_strategy,
+        schema=schema,
+        instruction=instruction,
+        semantic_filter=semantic_filter,
+        regex_patterns=regex_patterns,
+        content_filter=content_filter,
+        filter_query=filter_query,
+        include_links=include_links,
+        include_images=include_images,
+        include_raw_html=include_raw_html,
+        include_tables=include_tables,
+        output_format=output_format,
+        js_code=js_code,
+        wait_for=wait_for,
+        screenshot=screenshot,
+        pdf=pdf,
+        stealth_mode=stealth_mode,
+        simulate_user=simulate_user,
+        magic_mode=magic_mode,
+        scan_full_page=scan_full_page,
+        process_iframes=process_iframes,
+        remove_overlays=remove_overlays,
+        timeout=timeout,
+        headless=headless,
+        session_id=session_id,
+    )
+
+
+async def _scrape_with_crawl4ai(
+    url: str,
+    extraction_strategy: str | None = None,
+    schema: dict[str, Any] | None = None,
+    instruction: str | None = None,
+    semantic_filter: str | None = None,
+    regex_patterns: list[str] | None = None,
+    content_filter: str | None = None,
+    filter_query: str | None = None,
+    include_links: bool = False,
+    include_images: bool = False,
+    include_raw_html: bool = False,
+    include_tables: bool = False,
+    output_format: str = "markdown",
+    js_code: str | None = None,
+    wait_for: str | None = None,
+    screenshot: bool = False,
+    pdf: bool = False,
+    stealth_mode: bool = False,
+    simulate_user: bool = False,
+    magic_mode: bool = False,
+    scan_full_page: bool = False,
+    process_iframes: bool = False,
+    remove_overlays: bool = True,
+    timeout: int = 30,
+    headless: bool = True,
+    session_id: str | None = None,
+) -> dict:
+    try:
+        from crawl4ai import AsyncWebCrawler, BrowserConfig, CacheMode, CrawlerRunConfig
+
+        ext_strategy = None
+        if extraction_strategy:
+            ext_strategy = _build_extraction_strategy(
+                strategy_type=extraction_strategy,
+                schema=schema,
+                instruction=instruction,
+                semantic_filter=semantic_filter,
+                regex_patterns=regex_patterns,
+            )
+
+        from crawl4ai.markdown_generation_strategy import DefaultMarkdownGenerator
+
+        md_generator = None
+        if content_filter:
+            cont_filter = _build_content_filter(filter_type=content_filter, query=filter_query)
+            md_generator = DefaultMarkdownGenerator(content_filter=cont_filter)
+
+        browser_config = BrowserConfig(
+            headless=headless,
+            verbose=False,
+        )
+
+        crawl_config = CrawlerRunConfig(
+            word_count_threshold=10,
+            excluded_tags=["nav", "footer", "aside", "script", "style", "noscript"],
+            remove_overlay_elements=remove_overlays,
+            cache_mode=CacheMode.DISABLED,
+            extraction_strategy=ext_strategy,
+            markdown_generator=md_generator,
+            js_code=js_code,
+            wait_for=wait_for,
+            screenshot=screenshot,
+            pdf=pdf,
+            session_id=session_id,
+            simulate_user=simulate_user or magic_mode,
+            override_navigator=stealth_mode or magic_mode,
+            magic=magic_mode,
+            scan_full_page=scan_full_page,
+            process_iframes=process_iframes,
+        )
+
+        async with AsyncWebCrawler(config=browser_config) as crawler:
+            result = await asyncio.wait_for(crawler.arun(url=url, config=crawl_config), timeout=timeout)
+
+            if not result.success:
+                return {
+                    "success": False,
+                    "url": url,
+                    "error": f"Failed to fetch page: {result.error_message or 'Unknown error'}",
+                }
+
+            # The browser renders a login wall as happily as a real page, so check here
+            # too rather than handing the model a page of navigation text.
+            rendered = (getattr(result.markdown, "raw_markdown", None) or "") if result.markdown else ""
+            if _looks_like_login_wall(rendered):
+                return {
+                    "success": False,
+                    "url": url,
+                    "error": "Page requires a login or blocked automated access; no content available.",
+                }
+
+            response = {
+                "success": True,
+                "url": url,
+                "title": result.metadata.get("title", "") if result.metadata else "",
+                "_fetcher": "crawl4ai",
+            }
+
+            if output_format == "fit_markdown" and result.markdown and result.markdown.fit_markdown:
+                response["markdown"] = result.markdown.fit_markdown
+            elif output_format == "html" and result.html:
+                response["html"] = result.html
+            else:
+                response["markdown"] = result.markdown.raw_markdown if result.markdown else ""
+
+            if include_raw_html and result.html:
+                response["raw_html"] = result.html
+
+            if result.extracted_content:
+                try:
+                    from ..utils.json import loads as _json_loads
+
+                    response["extracted"] = _json_loads(result.extracted_content)
+                except ValueError:
+                    response["extracted"] = result.extracted_content
+
+            if include_links and result.links:
+                internal = result.links.get("internal", [])
+                external = result.links.get("external", [])
+                response["links"] = {
+                    "internal": [l.get("href") for l in internal[:30] if l.get("href")],
+                    "external": [l.get("href") for l in external[:30] if l.get("href")],
+                }
+
+            if include_images and result.media:
+                images = result.media.get("images", [])
+                response["images"] = [img.get("src") for img in images[:20] if img.get("src")]
+
+            if include_tables and hasattr(result, "media") and result.media:
+                tables = result.media.get("tables", [])
+                if tables:
+                    response["tables"] = tables
+
+            if screenshot and result.screenshot:
+                response["screenshot_base64"] = result.screenshot
+
+            if pdf and result.pdf:
+                response["pdf_base64"] = result.pdf
+
+            if result.metadata:
+                response["metadata"] = {
+                    k: v
+                    for k, v in result.metadata.items()
+                    if k in ["title", "description", "author", "language", "og:image"]
+                }
+
+            return response
+
+    except TimeoutError:
+        return {
+            "success": False,
+            "url": url,
+            "error": f"Timeout after {timeout}s - page took too long to load",
+        }
+    except ImportError as e:
+        return {
+            "success": False,
+            "url": url,
+            "error": f"crawl4ai not installed or missing dependency: {e}",
+        }
+    except Exception as e:
+        logger.error(f"Scrape error for {url}: {e}")
+        return {"success": False, "url": url, "error": str(e)}
+
+
+def _build_extraction_strategy(
+    strategy_type: str,
+    schema: dict | None = None,
+    instruction: str | None = None,
+    semantic_filter: str | None = None,
+    regex_patterns: list[str] | None = None,
+):
+    if strategy_type == "llm":
+        from crawl4ai import LLMConfig, LLMExtractionStrategy
+
+        llm_config = LLMConfig(
+            provider="openai/gpt-4o-mini",
+            api_token="dummy",
+        )
+
+        return LLMExtractionStrategy(
+            llm_config=llm_config,
+            instruction=instruction or "Extract the main content and key information.",
+            schema=schema,
+            extraction_type="schema" if schema else "block",
+            apply_chunking=True,
+            chunk_token_threshold=4000,
+            overlap_rate=0.1,
+            input_format="markdown",
+        )
+
+    elif strategy_type == "css":
+        from crawl4ai import JsonCssExtractionStrategy
+
+        if not schema:
+            raise ValueError("schema required for CSS extraction strategy")
+
+        return JsonCssExtractionStrategy(schema=schema, verbose=False)
+
+    elif strategy_type == "xpath":
+        from crawl4ai import JsonXPathExtractionStrategy
+
+        if not schema:
+            raise ValueError("schema required for XPath extraction strategy")
+
+        return JsonXPathExtractionStrategy(schema=schema, verbose=False)
+
+    elif strategy_type == "cosine":
+        from crawl4ai import CosineStrategy
+
+        return CosineStrategy(
+            semantic_filter=semantic_filter,
+            word_count_threshold=20,
+            max_dist=0.2,
+            top_k=5,
+            sim_threshold=0.3,
+            model_name="sentence-transformers/all-MiniLM-L6-v2",
+        )
+
+    elif strategy_type == "regex":
+        from crawl4ai import RegexExtractionStrategy
+
+        pattern_map = {
+            "email": RegexExtractionStrategy.Email,
+            "phone": RegexExtractionStrategy.PhoneIntl,
+            "url": RegexExtractionStrategy.URL,
+            "date": RegexExtractionStrategy.DateISO,
+            "currency": RegexExtractionStrategy.Currency,
+            "ip": RegexExtractionStrategy.IPV4,
+            "hashtag": RegexExtractionStrategy.Hashtag,
+            "twitter": RegexExtractionStrategy.TwitterHandle,
+            "all": RegexExtractionStrategy.All,
+        }
+
+        patterns = regex_patterns or ["email", "url", "phone"]
+        combined_pattern = RegexExtractionStrategy.Nothing
+        for p in patterns:
+            if p.lower() in pattern_map:
+                combined_pattern |= pattern_map[p.lower()]
+
+        return RegexExtractionStrategy(pattern=combined_pattern)
+
+    else:
+        raise ValueError(f"Unknown extraction strategy: {strategy_type}")
+
+
+def _build_content_filter(filter_type: str, query: str | None = None):
+    if filter_type == "bm25":
+        from crawl4ai import BM25ContentFilter
+
+        return BM25ContentFilter(user_query=query, bm25_threshold=1.0, language="english")
+
+    elif filter_type == "pruning":
+        from crawl4ai import PruningContentFilter
+
+        return PruningContentFilter(user_query=query, threshold=0.48, threshold_type="fixed")
+
+    elif filter_type == "llm":
+        from crawl4ai import LLMConfig, LLMContentFilter
+
+        return LLMContentFilter(
+            llm_config=LLMConfig(provider="openai/gpt-4o-mini", api_token="dummy"),
+            instruction=query or "Extract relevant content",
+        )
+
+    else:
+        raise ValueError(f"Unknown content filter: {filter_type}")
+
+
+async def scrape_multiple(
+    urls: list[str],
+    extraction_strategy: str | None = None,
+    schema: dict | None = None,
+    instruction: str | None = None,
+    max_concurrent: int = 5,
+    timeout: int = 30,
+) -> dict:
+    if not urls:
+        return {"success": False, "error": "No URLs provided", "results": []}
+
+    urls = urls[:10]
+
+    semaphore = asyncio.Semaphore(max_concurrent)
+
+    async def scrape_with_limit(url: str) -> dict:
+        async with semaphore:
+            return await scrape_url(
+                url=url,
+                extraction_strategy=extraction_strategy,
+                schema=schema,
+                instruction=instruction,
+                timeout=timeout,
+            )
+
+    tasks = [scrape_with_limit(url) for url in urls]
+    results = await asyncio.gather(*tasks, return_exceptions=True)
+
+    processed_results = []
+    succeeded = 0
+    failed = 0
+
+    for url, result in zip(urls, results):
+        if isinstance(result, Exception):
+            processed_results.append({"success": False, "url": url, "error": str(result)})
+            failed += 1
+        elif result.get("success"):
+            processed_results.append(result)
+            succeeded += 1
+        else:
+            processed_results.append(result)
+            failed += 1
+
+    return {
+        "success": succeeded > 0,
+        "results": processed_results,
+        "succeeded": succeeded,
+        "failed": failed,
+        "total": len(urls),
+    }
+
+
+async def parse_file_content(
+    content: str,
+    file_type: str = "text",
+    instruction: str | None = None,
+    extract_patterns: list[str] | None = None,
+) -> dict:
+    response = {
+        "success": True,
+        "file_type": file_type,
+        "length": len(content),
+        "content": content,
+    }
+
+    if file_type == "text":
+        if content.strip().startswith(("{", "[")):
+            file_type = "json"
+        elif "def " in content or "import " in content or "class " in content:
+            file_type = "code"
+        elif re.search(r"^\d{4}-\d{2}-\d{2}", content, re.MULTILINE):
+            file_type = "log"
+
+    response["detected_type"] = file_type
+
+    if file_type == "json":
+        try:
+            from ..utils.json import loads as _json_loads
+
+            response["parsed"] = _json_loads(content)
+            response["content"] = None
+        except ValueError as e:
+            response["parse_error"] = str(e)
+
+    elif file_type == "yaml":
+        try:
+            import yaml
+
+            response["parsed"] = yaml.safe_load(content)
+            response["content"] = None
+        except Exception as e:
+            response["parse_error"] = str(e)
+
+    if extract_patterns:
+        try:
+            from crawl4ai import RegexExtractionStrategy
+
+            pattern_map = {
+                "email": RegexExtractionStrategy.Email,
+                "phone": RegexExtractionStrategy.PhoneIntl,
+                "url": RegexExtractionStrategy.URL,
+                "date": RegexExtractionStrategy.DateISO,
+                "ip": RegexExtractionStrategy.IPV4,
+            }
+
+            combined = RegexExtractionStrategy.Nothing
+            for p in extract_patterns:
+                if p.lower() in pattern_map:
+                    combined |= pattern_map[p.lower()]
+
+            if combined != RegexExtractionStrategy.Nothing:
+                strategy = RegexExtractionStrategy(pattern=combined, input_format="text")
+                extracted = strategy.extract("file", content)
+                response["extracted_patterns"] = extracted
+        except ImportError:
+            pass
+
+    if instruction:
+        try:
+            extracted = await _llm_extract(content, instruction)
+            if extracted:
+                response["llm_extracted"] = extracted
+        except Exception as e:
+            response["llm_error"] = str(e)
+
+    return response
+
+
+async def fetch_discord_attachment(
+    attachment_url: str,
+    file_type: str | None = None,
+    instruction: str | None = None,
+) -> dict:
+    import aiohttp
+
+    try:
+        async with aiohttp.ClientSession() as session:
+            async with session.get(attachment_url, timeout=aiohttp.ClientTimeout(total=30)) as resp:
+                if resp.status != 200:
+                    return {"success": False, "error": f"HTTP {resp.status}"}
+
+                content = await resp.text()
+
+                if not file_type:
+                    url_lower = attachment_url.lower()
+                    if any(
+                        ext in url_lower
+                        for ext in [
+                            ".py",
+                            ".js",
+                            ".ts",
+                            ".java",
+                            ".cpp",
+                            ".c",
+                            ".go",
+                            ".rs",
+                        ]
+                    ):
+                        file_type = "code"
+                    elif ".json" in url_lower:
+                        file_type = "json"
+                    elif any(ext in url_lower for ext in [".yaml", ".yml"]):
+                        file_type = "yaml"
+                    elif ".log" in url_lower:
+                        file_type = "log"
+                    else:
+                        file_type = "text"
+
+                return await parse_file_content(content=content, file_type=file_type, instruction=instruction)
+
+    except TimeoutError:
+        return {"success": False, "error": "Timeout fetching attachment"}
+    except Exception as e:
+        return {"success": False, "error": str(e)}
+
+
+async def _llm_extract(content: str, instruction: str) -> str | None:
+    try:
+        from ..ai.client import pollinations_client
+
+        result = await pollinations_client.generate_text(
+            system_prompt=(
+                "You are a precise data extraction assistant. "
+                "Extract ONLY the requested information from the content. "
+                "Be concise and structured. Use bullet points or JSON if appropriate. "
+                "If the requested information is not found, say 'Not found'."
+            ),
+            user_prompt=f"Content:\n{content}\n\n---\nExtract: {instruction}",
+            temperature=0.3,
+        )
+
+        return result
+
+    except Exception as e:
+        logger.warning(f"LLM extraction failed: {e}")
+        return None
+
+
+async def web_scrape_handler(
+    action: str = "scrape",
+    url: str | None = None,
+    urls: list[str] | None = None,
+    strategy: str | None = None,
+    schema: dict | None = None,
+    extract: str | None = None,
+    semantic_filter: str | None = None,
+    patterns: list[str] | None = None,
+    content_filter: str | None = None,
+    filter_query: str | None = None,
+    include_links: bool = False,
+    include_images: bool = False,
+    include_tables: bool = False,
+    output_format: str = "markdown",
+    js_code: str | None = None,
+    wait_for: str | None = None,
+    screenshot: bool = False,
+    stealth_mode: bool = False,
+    simulate_user: bool = False,
+    magic_mode: bool = False,
+    scan_full_page: bool = False,
+    process_iframes: bool = False,
+    session_id: str | None = None,
+    file_url: str | None = None,
+    file_content: str | None = None,
+    file_type: str | None = None,
+    **kwargs,
+) -> dict:
+    if action == "parse_file":
+        if not file_content:
+            return {"error": "file_content required for parse_file action"}
+        return await parse_file_content(
+            content=file_content,
+            file_type=file_type or "text",
+            instruction=extract,
+            extract_patterns=patterns,
+        )
+
+    if action == "fetch_file":
+        if not file_url:
+            return {"error": "file_url required for fetch_file action"}
+        return await fetch_discord_attachment(attachment_url=file_url, file_type=file_type, instruction=extract)
+
+    if action == "scrape":
+        if not url:
+            return {"error": "url parameter required for scrape action"}
+        return await scrape_url(
+            url=url,
+            extraction_strategy=strategy,
+            schema=schema,
+            instruction=extract,
+            semantic_filter=semantic_filter,
+            regex_patterns=patterns,
+            content_filter=content_filter,
+            filter_query=filter_query,
+            include_links=include_links,
+            include_images=include_images,
+            include_tables=include_tables,
+            output_format=output_format,
+            js_code=js_code,
+            wait_for=wait_for,
+            screenshot=screenshot,
+            stealth_mode=stealth_mode,
+            simulate_user=simulate_user,
+            magic_mode=magic_mode,
+            scan_full_page=scan_full_page,
+            process_iframes=process_iframes,
+            session_id=session_id,
+        )
+
+    elif action == "extract":
+        if not url:
+            return {"error": "url parameter required for extract action"}
+        if not extract:
+            return {"error": "extract parameter required - describe what to extract"}
+        return await scrape_url(
+            url=url,
+            extraction_strategy="llm",
+            instruction=extract,
+            schema=schema,
+            content_filter=content_filter,
+            filter_query=filter_query,
+            include_links=include_links,
+            include_images=include_images,
+            include_tables=include_tables,
+            stealth_mode=stealth_mode,
+            simulate_user=simulate_user,
+            magic_mode=magic_mode,
+            scan_full_page=scan_full_page,
+            process_iframes=process_iframes,
+            session_id=session_id,
+        )
+
+    elif action == "css_extract":
+        if not url:
+            return {"error": "url parameter required"}
+        if not schema:
+            return {"error": "schema required for CSS extraction"}
+        return await scrape_url(
+            url=url,
+            extraction_strategy="css",
+            schema=schema,
+            include_links=include_links,
+            include_images=include_images,
+            include_tables=include_tables,
+            stealth_mode=stealth_mode,
+            magic_mode=magic_mode,
+            scan_full_page=scan_full_page,
+            process_iframes=process_iframes,
+            session_id=session_id,
+        )
+
+    elif action == "semantic":
+        if not url:
+            return {"error": "url parameter required"}
+        return await scrape_url(
+            url=url,
+            extraction_strategy="cosine",
+            semantic_filter=semantic_filter or filter_query,
+            content_filter=content_filter,
+            filter_query=filter_query,
+            stealth_mode=stealth_mode,
+            magic_mode=magic_mode,
+            scan_full_page=scan_full_page,
+            process_iframes=process_iframes,
+            session_id=session_id,
+        )
+
+    elif action == "regex":
+        if not url:
+            return {"error": "url parameter required"}
+        return await scrape_url(
+            url=url,
+            extraction_strategy="regex",
+            regex_patterns=patterns or ["email", "url", "phone"],
+            stealth_mode=stealth_mode,
+            magic_mode=magic_mode,
+            scan_full_page=scan_full_page,
+            process_iframes=process_iframes,
+            session_id=session_id,
+        )
+
+    elif action == "multi":
+        if not urls:
+            return {"error": "urls parameter required for multi action (list of URLs)"}
+        return await scrape_multiple(urls=urls, extraction_strategy=strategy, schema=schema, instruction=extract)
+
+    else:
+        return {
+            "error": f"Unknown action: {action}",
+            "available_actions": [
+                "scrape - Single URL to markdown (rnet → scrapling → Jina → crawl4ai). "
+                "x.com/twitter.com links are read through fxtwitter, so posts and profiles "
+                "come back as real content. Reddit blocks this server, so reddit.com links "
+                "return an error rather than a page.",
+                "extract - URL + LLM extraction",
+                "css_extract - URL + CSS schema (fast)",
+                "semantic - URL + cosine clustering",
+                "regex - URL + pattern extraction",
+                "multi - Multiple URLs",
+                "parse_file - Parse raw content",
+                "fetch_file - Fetch + parse URL",
+            ],
+        }

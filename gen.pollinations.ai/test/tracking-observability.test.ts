@@ -105,6 +105,8 @@ function createCommunityEndpoint(
         modelId: "test-owner/test-model",
         name: "test-model",
         description: null,
+        modality: "text",
+        imagePricing: "request",
         baseUrl: "https://community.example.test/openai",
         upstreamModel: "upstream-test-model",
         bearerTokenCiphertext: "encrypted",
@@ -226,6 +228,7 @@ function createHeaderApp(
     extraHeaders: Record<string, string>,
     user: AuthUser | null = trackingUser,
     status = 200,
+    consumePollen: (amount: number) => Promise<void> = async () => {},
 ) {
     const app = new Hono<Env>();
 
@@ -244,7 +247,7 @@ function createHeaderApp(
         c.set("balance", {
             getBalance: async () => ({ tierBalance: 1, packBalance: 0 }),
         });
-        c.set("frontendKeyRateLimit", { consumePollen: async () => {} });
+        c.set("frontendKeyRateLimit", { consumePollen });
         c.set("model", {
             requested: "openai",
             resolved: "openai",
@@ -296,7 +299,7 @@ async function captureFallbackEvent(extraHeaders: Record<string, string>) {
             LOG_FORMAT: "text",
             BETTER_AUTH_SECRET: "test_secret",
             TINYBIRD_INGEST_URL:
-                "https://tinybird.test/v0/events?name=generation_event",
+                "https://tinybird.test/v0/events?name=generation_event_v2",
             TINYBIRD_INGEST_TOKEN: "test_tinybird_token",
         } as CloudflareBindings,
         ctx,
@@ -363,7 +366,7 @@ describe("tracking observability", () => {
                 LOG_FORMAT: "text",
                 BETTER_AUTH_SECRET: "test_secret",
                 TINYBIRD_INGEST_URL:
-                    "https://tinybird.test/v0/events?name=generation_event",
+                    "https://tinybird.test/v0/events?name=generation_event_v2",
                 TINYBIRD_INGEST_TOKEN: "test_tinybird_token",
             } as CloudflareBindings,
             ctx,
@@ -374,12 +377,13 @@ describe("tracking observability", () => {
         expect(response.status).toBe(200);
         expect(tinybirdRequests).toHaveLength(1);
         expect(tinybirdRequests[0].url).toBe(
-            "https://tinybird.test/v0/events?name=generation_event",
+            "https://tinybird.test/v0/events?name=generation_event_v2",
         );
         expect(tinybirdRequests[0].headers.get("authorization")).toBe(
             "Bearer test_tinybird_token",
         );
-        await expect(tinybirdRequests[0].json()).resolves.toMatchObject({
+        const event = await tinybirdRequests[0].json();
+        expect(event).toMatchObject({
             requestPath: "/v1/chat/completions",
             environment: "test",
             eventType: "generate.text",
@@ -396,6 +400,8 @@ describe("tracking observability", () => {
             referrerDomain: "example.com",
             ipSubnet: "203.0.113.0",
         });
+        expect(event).not.toHaveProperty("cacheHit");
+        expect(event).not.toHaveProperty("cacheKey");
         expect(consumePollen).toHaveBeenCalledWith(expect.any(Number));
         expect(consumePollen.mock.calls[0]?.[0]).toBeGreaterThan(0);
     });
@@ -404,9 +410,15 @@ describe("tracking observability", () => {
         const tinybirdFetch = vi
             .spyOn(globalThis, "fetch")
             .mockResolvedValue(new Response("ok"));
+        const consumePollen = vi.fn(async (_amount: number) => {});
 
         const ctx = createExecutionContext();
-        const response = await createHeaderApp({ "x-cache": "HIT" }).fetch(
+        const response = await createHeaderApp(
+            { "x-cache": "HIT" },
+            trackingUser,
+            200,
+            consumePollen,
+        ).fetch(
             new Request("https://gen.pollinations.ai/v1/chat/completions", {
                 method: "POST",
                 headers: { "content-type": "application/json" },
@@ -423,7 +435,7 @@ describe("tracking observability", () => {
                 LOG_FORMAT: "text",
                 BETTER_AUTH_SECRET: "test_secret",
                 TINYBIRD_INGEST_URL:
-                    "https://tinybird.test/v0/events?name=generation_event",
+                    "https://tinybird.test/v0/events?name=generation_event_v2",
                 TINYBIRD_INGEST_TOKEN: "test_tinybird_token",
             } as CloudflareBindings,
             ctx,
@@ -433,6 +445,7 @@ describe("tracking observability", () => {
 
         expect(response.status).toBe(200);
         expect(response.headers.get("x-cache")).toBe("HIT");
+        expect(consumePollen).toHaveBeenCalledWith(0);
         expect(tinybirdFetch).not.toHaveBeenCalled();
     });
 
@@ -459,7 +472,7 @@ describe("tracking observability", () => {
                 LOG_FORMAT: "text",
                 BETTER_AUTH_SECRET: "test_secret",
                 TINYBIRD_INGEST_URL:
-                    "https://tinybird.test/v0/events?name=generation_event",
+                    "https://tinybird.test/v0/events?name=generation_event_v2",
                 TINYBIRD_INGEST_TOKEN: "test_tinybird_token",
             } as CloudflareBindings,
             ctx,
@@ -524,7 +537,7 @@ describe("tracking observability", () => {
                 LOG_FORMAT: "text",
                 BETTER_AUTH_SECRET: "test_secret",
                 TINYBIRD_INGEST_URL:
-                    "https://tinybird.test/v0/events?name=generation_event",
+                    "https://tinybird.test/v0/events?name=generation_event_v2",
                 TINYBIRD_INGEST_TOKEN: "test_tinybird_token",
             } as unknown as CloudflareBindings,
             ctx,
@@ -604,7 +617,7 @@ describe("tracking observability", () => {
                 LOG_FORMAT: "text",
                 BETTER_AUTH_SECRET: "test_secret",
                 TINYBIRD_INGEST_URL:
-                    "https://tinybird.test/v0/events?name=generation_event",
+                    "https://tinybird.test/v0/events?name=generation_event_v2",
                 TINYBIRD_INGEST_TOKEN: "test_tinybird_token",
             } as unknown as CloudflareBindings,
             ctx,
@@ -669,7 +682,7 @@ describe("tracking observability", () => {
                 LOG_FORMAT: "text",
                 BETTER_AUTH_SECRET: "test_secret",
                 TINYBIRD_INGEST_URL:
-                    "https://tinybird.test/v0/events?name=generation_event",
+                    "https://tinybird.test/v0/events?name=generation_event_v2",
                 TINYBIRD_INGEST_TOKEN: "test_tinybird_token",
             } as CloudflareBindings,
             ctx,
@@ -725,7 +738,7 @@ describe("tracking observability", () => {
                 LOG_FORMAT: "text",
                 BETTER_AUTH_SECRET: "test_secret",
                 TINYBIRD_INGEST_URL:
-                    "https://tinybird.test/v0/events?name=generation_event",
+                    "https://tinybird.test/v0/events?name=generation_event_v2",
                 TINYBIRD_INGEST_TOKEN: "test_tinybird_token",
             } as CloudflareBindings,
             ctx,
@@ -786,7 +799,7 @@ describe("tracking observability", () => {
                 LOG_FORMAT: "text",
                 BETTER_AUTH_SECRET: "test_secret",
                 TINYBIRD_INGEST_URL:
-                    "https://tinybird.test/v0/events?name=generation_event",
+                    "https://tinybird.test/v0/events?name=generation_event_v2",
                 TINYBIRD_INGEST_TOKEN: "test_tinybird_token",
             } as CloudflareBindings,
             ctx,
@@ -832,7 +845,7 @@ describe("tracking observability", () => {
                 LOG_FORMAT: "text",
                 BETTER_AUTH_SECRET: "test_secret",
                 TINYBIRD_INGEST_URL:
-                    "https://tinybird.test/v0/events?name=generation_event",
+                    "https://tinybird.test/v0/events?name=generation_event_v2",
                 TINYBIRD_INGEST_TOKEN: "test_tinybird_token",
             } as CloudflareBindings,
             ctx,
@@ -887,8 +900,8 @@ function makeAdjustment(
 ): BillingAdjustment {
     return {
         ruleId,
-        kind: "search_query",
-        unit: "query",
+        kind: "search_request",
+        unit: "request",
         units,
         unitCost: units === 0 ? 0 : cost / units,
         cost,
@@ -905,18 +918,18 @@ describe("reduceAdjustmentsToEventFields", () => {
     it("maps a single adjustment to keyed cost/units records", () => {
         expect(
             reduceAdjustmentsToEventFields([
-                makeAdjustment("google.gemini_3.search_query.v1", 0.042, 3),
+                makeAdjustment("openrouter.google.web_search.v1", 0.042, 3),
             ]),
         ).toEqual({
-            adjustmentCosts: { "google.gemini_3.search_query.v1": 0.042 },
-            adjustmentUnits: { "google.gemini_3.search_query.v1": 3 },
+            adjustmentCosts: { "openrouter.google.web_search.v1": 0.042 },
+            adjustmentUnits: { "openrouter.google.web_search.v1": 3 },
         });
     });
 
     it("maps two distinct rule ids into both records", () => {
         expect(
             reduceAdjustmentsToEventFields([
-                makeAdjustment("google.gemini_3.search_query.v1", 0.042, 3),
+                makeAdjustment("openrouter.google.web_search.v1", 0.042, 3),
                 makeAdjustment(
                     "perplexity.sonar_low.search_request.v1",
                     0.006,
@@ -925,11 +938,11 @@ describe("reduceAdjustmentsToEventFields", () => {
             ]),
         ).toEqual({
             adjustmentCosts: {
-                "google.gemini_3.search_query.v1": 0.042,
+                "openrouter.google.web_search.v1": 0.042,
                 "perplexity.sonar_low.search_request.v1": 0.006,
             },
             adjustmentUnits: {
-                "google.gemini_3.search_query.v1": 3,
+                "openrouter.google.web_search.v1": 3,
                 "perplexity.sonar_low.search_request.v1": 1,
             },
         });
@@ -941,17 +954,17 @@ describe("reduceAdjustmentsToEventFields", () => {
             id: "evt_with",
             isBilledUsage: true,
             ...reduceAdjustmentsToEventFields([
-                makeAdjustment("google.gemini_3.search_query.v1", 0.042, 3),
+                makeAdjustment("openrouter.google.web_search.v1", 0.042, 3),
             ]),
         } as unknown as TinybirdEvent;
         const parsedWith = JSON.parse(
             JSON.stringify(removeUnset(withAdjustments)),
         );
         expect(parsedWith.adjustmentCosts).toEqual({
-            "google.gemini_3.search_query.v1": 0.042,
+            "openrouter.google.web_search.v1": 0.042,
         });
         expect(parsedWith.adjustmentUnits).toEqual({
-            "google.gemini_3.search_query.v1": 3,
+            "openrouter.google.web_search.v1": 3,
         });
 
         // No adjustments → neither key is present in the serialized payload

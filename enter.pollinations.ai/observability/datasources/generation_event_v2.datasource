@@ -2,8 +2,8 @@ TOKEN tinybird_ingest APPEND
 TOKEN tinybird_read READ
 
 DESCRIPTION >
-Authenticated, non-cached generation events populated from generation_event
-during migration and ready for direct Events API ingestion after cutover
+Principal generation-event datasource for direct ingestion and analytics.
+Contains authenticated, non-cached requests only.
 
 SCHEMA >
 -- Event
@@ -112,7 +112,8 @@ SCHEMA >
 `moderation_completion_protected_material_code_detected`  Bool `json:$.moderationCompletionProtectedMaterialCodeDetected` DEFAULT false,
 `moderation_completion_protected_material_text_detected`  Bool `json:$.moderationCompletionProtectedMaterialTextDetected` DEFAULT false,
 
--- Cache
+-- Legacy response-cache columns retained for schema compatibility. Direct v2
+-- writes exclude cache hits and leave these at their defaults.
 `cache_hit`                  Bool                    `json:$.cacheHit` DEFAULT false,
 `cache_type`                 LowCardinality(String)  `json:$.cacheType` DEFAULT 'undefined',
 `cache_semantic_similarity`  Nullable(Float32)       `json:$.cacheSemanticSimilarity`,

@@ -23,7 +23,7 @@ Primary evidence sources:
 - API recent predictions: `GET https://api.replicate.com/v1/predictions`
 - API model schema: `GET https://api.replicate.com/v1/models/{owner}/{name}`
 - Pricing evidence: public Replicate model pages. Pricing is not exposed in the model API.
-- Internal usage context: Tinybird `generation_event` rows where `model_provider = 'replicate'`.
+- Internal usage context: Tinybird `generation_event_v2` rows where `model_provider = 'replicate'`.
 
 Required credential:
 
@@ -95,7 +95,7 @@ Known traps:
 Reconciliation notes:
 
 - The invoice or Wise/card charge explains `op_transactions`.
-- Tinybird `generation_event.total_cost` explains internal per-model `op_cloud` attribution.
+- Tinybird `generation_event_v2.total_cost` explains internal per-model `op_cloud` attribution.
 - Replicate prediction exports can help find untracked model IDs, web-created predictions, status mix, and output metrics for video pricing.
 - If invoice total exceeds metered model cost, keep the raw model price unchanged unless independent model-level pricing evidence shows the model itself is underpriced.
 

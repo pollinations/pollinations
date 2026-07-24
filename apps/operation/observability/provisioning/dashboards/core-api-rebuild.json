@@ -1,0 +1,959 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": {
+          "type": "datasource",
+          "uid": "grafana"
+        },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "target": {
+          "limit": 100,
+          "matchAny": false,
+          "tags": [],
+          "type": "dashboard"
+        },
+        "type": "dashboard"
+      }
+    ]
+  },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "links": [],
+  "panels": [
+    {
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "PAD1A0A25CD30D456"
+      },
+      "description": "Selected-range totals from generation_usage_hourly for the mutually exclusive Core API stream. Core means a successful authenticated, non-cached generation that is neither attributed to a trusted BYOP client nor served by a community model. Paid is revenue-bearing consumption; Quest is free consumption.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "decimals": 0,
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "blue",
+                "value": null
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "core_calls"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Core calls"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "core_users"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Core users"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "paid_consumption"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Paid consumption"
+              },
+              {
+                "id": "unit",
+                "value": "suffix: Pollen"
+              },
+              {
+                "id": "decimals",
+                "value": 2
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "quest_consumption"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Quest consumption"
+              },
+              {
+                "id": "unit",
+                "value": "suffix: Pollen"
+              },
+              {
+                "id": "decimals",
+                "value": 2
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 6,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "id": 1,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "horizontal",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "PAD1A0A25CD30D456"
+          },
+          "format": 1,
+          "range": true,
+          "rawSql": "SELECT\n  sumMerge(successful_calls) AS core_calls,\n  uniqMerge(users) AS core_users,\n  round(sumMergeIf(gross_consumption, funding_source = 'paid'), 2) AS paid_consumption,\n  round(sumMergeIf(gross_consumption, funding_source = 'quest'), 2) AS quest_consumption\nFROM generation_usage_hourly\nWHERE $__timeFilter(hour)\n  AND environment IN ('production', 'debug-prod-copy')\n  AND business_stream = 'core'",
+          "refId": "A"
+        }
+      ],
+      "title": "Core API overview",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "PAD1A0A25CD30D456"
+      },
+      "description": "Daily successful Core API calls split by generation_event_v2 workload. This wide query also supplies active users, Paid/Quest consumption, platform share and usage-unit panels, limiting this eight-panel dashboard to four Tinybird requests per refresh.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "barAlignment": 0,
+            "drawStyle": "bars",
+            "fillOpacity": 85,
+            "lineWidth": 0,
+            "stacking": {
+              "group": "A",
+              "mode": "normal"
+            }
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 24,
+        "x": 0,
+        "y": 6
+      },
+      "id": 2,
+      "options": {
+        "legend": {
+          "calcs": [
+            "sum"
+          ],
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "PAD1A0A25CD30D456"
+          },
+          "format": 0,
+          "range": true,
+          "rawSql": "SELECT\n  toStartOfDay(hour) AS time,\n  sumMergeIf(successful_calls, business_stream = 'core' AND workload = 'generate.text') AS text,\n  sumMergeIf(successful_calls, business_stream = 'core' AND workload = 'generate.image') AS image,\n  sumMergeIf(successful_calls, business_stream = 'core' AND workload = 'generate.embedding') AS embedding,\n  sumMergeIf(successful_calls, business_stream = 'core' AND workload = 'generate.audio') AS audio,\n  sumMergeIf(successful_calls, business_stream = 'core' AND workload = 'generate.video') AS video,\n  sumMergeIf(\n    successful_calls,\n    business_stream = 'core'\n    AND workload NOT IN (\n      'generate.text',\n      'generate.image',\n      'generate.embedding',\n      'generate.audio',\n      'generate.video'\n    )\n  ) AS other,\n  uniqMergeIf(users, business_stream = 'core') AS core_users,\n  sumMergeIf(gross_consumption, business_stream = 'core' AND funding_source = 'paid') AS paid_consumption,\n  sumMergeIf(gross_consumption, business_stream = 'core' AND funding_source = 'quest') AS quest_consumption,\n  round(\n    100 * sumMergeIf(successful_calls, business_stream = 'core')\n    / nullIf(sumMerge(successful_calls), 0),\n    2\n  ) AS core_share_pct,\n  sumMergeIf(prompt_text_tokens, business_stream = 'core')\n    + sumMergeIf(prompt_cached_tokens, business_stream = 'core')\n    + sumMergeIf(prompt_cache_write_tokens, business_stream = 'core')\n    + sumMergeIf(completion_text_tokens, business_stream = 'core')\n    + sumMergeIf(completion_reasoning_tokens, business_stream = 'core') AS text_tokens,\n  sumMergeIf(prompt_image_tokens, business_stream = 'core')\n    + sumMergeIf(completion_image_tokens, business_stream = 'core') AS image_tokens,\n  sumMergeIf(completion_video_tokens, business_stream = 'core') AS video_tokens,\n  round(\n    sumMergeIf(prompt_audio_seconds, business_stream = 'core')\n    + sumMergeIf(completion_audio_seconds, business_stream = 'core'),\n    2\n  ) AS audio_seconds,\n  round(sumMergeIf(completion_video_seconds, business_stream = 'core'), 2) AS video_seconds\nFROM generation_usage_hourly\nWHERE $__timeFilter(hour)\n  AND environment IN ('production', 'debug-prod-copy')\nGROUP BY time\nORDER BY time",
+          "refId": "A"
+        }
+      ],
+      "title": "Core request volume",
+      "transformations": [
+        {
+          "id": "filterFieldsByName",
+          "options": {
+            "include": {
+              "names": [
+                "time",
+                "text",
+                "image",
+                "embedding",
+                "audio",
+                "video",
+                "other"
+              ]
+            }
+          }
+        }
+      ],
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "datasource",
+        "uid": "-- Dashboard --"
+      },
+      "description": "Daily unique authenticated users with successful Core API generations. The HyperLogLog state is merged from generation_usage_hourly; this is not the sum of hourly user counts.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "fixedColor": "blue",
+            "mode": "fixed"
+          },
+          "custom": {
+            "barAlignment": 0,
+            "drawStyle": "bars",
+            "fillOpacity": 85,
+            "lineWidth": 0,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            }
+          },
+          "unit": "short"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "core_users"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Core users"
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 15
+      },
+      "id": 3,
+      "options": {
+        "legend": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "datasource",
+            "uid": "-- Dashboard --"
+          },
+          "panelId": 2,
+          "refId": "A"
+        }
+      ],
+      "title": "Core active users",
+      "transformations": [
+        {
+          "id": "filterFieldsByName",
+          "options": {
+            "include": {
+              "names": [
+                "time",
+                "core_users"
+              ]
+            }
+          }
+        }
+      ],
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "datasource",
+        "uid": "-- Dashboard --"
+      },
+      "description": "Daily gross billed Core consumption from generation_usage_hourly. Paid is revenue-bearing Pollen; Quest is free Pollen granted to users and must not be read as revenue.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "barAlignment": 0,
+            "drawStyle": "bars",
+            "fillOpacity": 85,
+            "lineWidth": 0,
+            "stacking": {
+              "group": "A",
+              "mode": "normal"
+            }
+          },
+          "decimals": 2,
+          "unit": "suffix: Pollen"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "paid_consumption"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Paid"
+              },
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "blue",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "quest_consumption"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Quest"
+              },
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "orange",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 15
+      },
+      "id": 4,
+      "options": {
+        "legend": {
+          "calcs": [
+            "sum"
+          ],
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "datasource",
+            "uid": "-- Dashboard --"
+          },
+          "panelId": 2,
+          "refId": "A"
+        }
+      ],
+      "title": "Paid vs Quest consumption",
+      "transformations": [
+        {
+          "id": "filterFieldsByName",
+          "options": {
+            "include": {
+              "names": [
+                "time",
+                "paid_consumption",
+                "quest_consumption"
+              ]
+            }
+          }
+        }
+      ],
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "datasource",
+        "uid": "-- Dashboard --"
+      },
+      "description": "Daily Core successful calls divided by all successful authenticated, non-cached platform generations. BYOP and all community-model traffic are excluded from the numerator but remain in the platform denominator.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "fixedColor": "blue",
+            "mode": "fixed"
+          },
+          "custom": {
+            "barAlignment": 0,
+            "drawStyle": "bars",
+            "fillOpacity": 85,
+            "lineWidth": 0,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            }
+          },
+          "decimals": 1,
+          "max": 100,
+          "min": 0,
+          "unit": "percent"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "core_share_pct"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Core share"
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 23
+      },
+      "id": 5,
+      "options": {
+        "legend": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "datasource",
+            "uid": "-- Dashboard --"
+          },
+          "panelId": 2,
+          "refId": "A"
+        }
+      ],
+      "title": "Core share of platform",
+      "transformations": [
+        {
+          "id": "filterFieldsByName",
+          "options": {
+            "include": {
+              "names": [
+                "time",
+                "core_share_pct"
+              ]
+            }
+          }
+        }
+      ],
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "PAD1A0A25CD30D456"
+      },
+      "description": "Daily successful Core calls for the eight official models with the most calls in the selected range; every remaining model is grouped into Other. This is a model-adoption view, not a health or cost diagnostic.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "displayName": "${__field.labels.metric}",
+          "custom": {
+            "barAlignment": 0,
+            "drawStyle": "bars",
+            "fillOpacity": 85,
+            "lineWidth": 0,
+            "stacking": {
+              "group": "A",
+              "mode": "normal"
+            }
+          },
+          "unit": "short"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Other"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#6B7280",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 23
+      },
+      "id": 6,
+      "options": {
+        "legend": {
+          "calcs": [
+            "sum"
+          ],
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "PAD1A0A25CD30D456"
+          },
+          "format": 0,
+          "range": true,
+          "rawSql": "WITH (\n  SELECT topKWeighted(8)(model, model_calls)\n  FROM (\n    SELECT model, sumMerge(successful_calls) AS model_calls\n    FROM generation_usage_hourly\n    WHERE $__timeFilter(hour)\n      AND environment IN ('production', 'debug-prod-copy')\n      AND business_stream = 'core'\n    GROUP BY model\n  )\n) AS top_models\nSELECT\n  toStartOfDay(hour) AS time,\n  if(has(top_models, model), model, 'Other') AS metric,\n  sumMerge(successful_calls) AS value\nFROM generation_usage_hourly\nWHERE $__timeFilter(hour)\n  AND environment IN ('production', 'debug-prod-copy')\n  AND business_stream = 'core'\nGROUP BY time, metric\nORDER BY time, metric",
+          "refId": "A"
+        }
+      ],
+      "title": "Core model mix",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "PAD1A0A25CD30D456"
+      },
+      "description": "Official models ranked over the selected range using successful Core API calls only. Paid and Quest show gross Pollen consumption. Token fields and native audio/video duration expose usage scale without duplicating model health or provider economics.",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "inspect": false
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "paid_pollen"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Paid"
+              },
+              {
+                "id": "unit",
+                "value": "suffix: Pollen"
+              },
+              {
+                "id": "decimals",
+                "value": 2
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "quest_pollen"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Quest"
+              },
+              {
+                "id": "unit",
+                "value": "suffix: Pollen"
+              },
+              {
+                "id": "decimals",
+                "value": 2
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "text_tokens"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Text tokens"
+              },
+              {
+                "id": "unit",
+                "value": "short"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "image_tokens"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Image tokens"
+              },
+              {
+                "id": "unit",
+                "value": "short"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "audio_seconds"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Audio"
+              },
+              {
+                "id": "unit",
+                "value": "s"
+              },
+              {
+                "id": "decimals",
+                "value": 1
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "video_seconds"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Video"
+              },
+              {
+                "id": "unit",
+                "value": "s"
+              },
+              {
+                "id": "decimals",
+                "value": 1
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 11,
+        "w": 24,
+        "x": 0,
+        "y": 31
+      },
+      "id": 7,
+      "options": {
+        "cellHeight": "sm",
+        "footer": {
+          "countRows": false,
+          "fields": "",
+          "reducer": [
+            "sum"
+          ],
+          "show": false
+        },
+        "showHeader": true,
+        "sortBy": [
+          {
+            "desc": true,
+            "displayName": "calls"
+          }
+        ]
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "PAD1A0A25CD30D456"
+          },
+          "format": 1,
+          "range": true,
+          "rawSql": "SELECT\n  model,\n  sumMerge(successful_calls) AS calls,\n  uniqMerge(users) AS users,\n  round(sumMergeIf(gross_consumption, funding_source = 'paid'), 2) AS paid_pollen,\n  round(sumMergeIf(gross_consumption, funding_source = 'quest'), 2) AS quest_pollen,\n  sumMerge(prompt_text_tokens)\n    + sumMerge(prompt_cached_tokens)\n    + sumMerge(prompt_cache_write_tokens)\n    + sumMerge(completion_text_tokens)\n    + sumMerge(completion_reasoning_tokens) AS text_tokens,\n  sumMerge(prompt_image_tokens) + sumMerge(completion_image_tokens) AS image_tokens,\n  round(sumMerge(prompt_audio_seconds) + sumMerge(completion_audio_seconds), 2) AS audio_seconds,\n  round(sumMerge(completion_video_seconds), 2) AS video_seconds\nFROM generation_usage_hourly\nWHERE $__timeFilter(hour)\n  AND environment IN ('production', 'debug-prod-copy')\n  AND business_stream = 'core'\nGROUP BY model\nORDER BY calls DESC\nLIMIT 50",
+          "refId": "A"
+        }
+      ],
+      "title": "Core model ranking",
+      "type": "table"
+    },
+    {
+      "datasource": {
+        "type": "datasource",
+        "uid": "-- Dashboard --"
+      },
+      "description": "Daily Core usage from generation_usage_hourly. Token-like units use the left axis; native audio and video seconds use the right axis. The series remain separate and are never added into an artificial combined total.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisPlacement": "left",
+            "barAlignment": 0,
+            "drawStyle": "bars",
+            "fillOpacity": 75,
+            "lineWidth": 0,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            }
+          },
+          "unit": "short"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "text_tokens"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Text tokens"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "image_tokens"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Image tokens"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "video_tokens"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Video tokens"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "audio_seconds"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Audio seconds"
+              },
+              {
+                "id": "unit",
+                "value": "s"
+              },
+              {
+                "id": "custom.axisPlacement",
+                "value": "right"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "video_seconds"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Video seconds"
+              },
+              {
+                "id": "unit",
+                "value": "s"
+              },
+              {
+                "id": "custom.axisPlacement",
+                "value": "right"
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 24,
+        "x": 0,
+        "y": 42
+      },
+      "id": 8,
+      "options": {
+        "legend": {
+          "calcs": [
+            "sum"
+          ],
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "datasource",
+            "uid": "-- Dashboard --"
+          },
+          "panelId": 2,
+          "refId": "A"
+        }
+      ],
+      "title": "Core usage units",
+      "transformations": [
+        {
+          "id": "filterFieldsByName",
+          "options": {
+            "include": {
+              "names": [
+                "time",
+                "text_tokens",
+                "image_tokens",
+                "video_tokens",
+                "audio_seconds",
+                "video_seconds"
+              ]
+            }
+          }
+        }
+      ],
+      "type": "timeseries"
+    }
+  ],
+  "refresh": "5m",
+  "schemaVersion": 41,
+  "tags": [
+    "observability-rebuild",
+    "core-api",
+    "models"
+  ],
+  "templating": {
+    "list": []
+  },
+  "time": {
+    "from": "now-30d",
+    "to": "now"
+  },
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "Core API",
+  "uid": "core-api-rebuild",
+  "version": 1,
+  "weekStart": "monday"
+}

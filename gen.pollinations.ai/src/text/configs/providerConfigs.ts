@@ -154,18 +154,3 @@ export function createOVHcloudOAIConfig(
         overrides,
     );
 }
-
-/**
- * Creates a Polli model configuration (community model - Pollinations AI assistant).
- * Uses user's API key for billing passthrough - Polli calls Pollinations internally.
- */
-export function createPollyConfig(
-    overrides: ModelOverride = {},
-): ProviderConfig {
-    return {
-        provider: "openai",
-        "custom-host": "https://polly.pollinations.ai/v1",
-        useUserApiKey: true,
-        ...overrides,
-    };
-}

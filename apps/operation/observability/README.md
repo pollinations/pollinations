@@ -80,7 +80,7 @@ Secrets are stored in `.env` locally and as Worker secrets in production.
 1. Open http://localhost:3000
 2. Edit dashboard in the UI
 3. Dashboard -> Settings -> JSON Model -> Copy
-4. Replace `provisioning/dashboards/observability.json`
+4. Replace the matching JSON in `provisioning/dashboards/` (current) or `provisioning/dashboards/legacy/`
 5. Restart to verify: `docker compose restart grafana`
 
 ## Cloudflare Deployment
@@ -89,7 +89,7 @@ Secrets are stored in `.env` locally and as Worker secrets in production.
 cd apps/operation/observability
 npm install
 
-# Validate Worker config without building the image
+# Validate Worker config and container image (requires Docker)
 npm run check
 
 # Requires Docker locally so Wrangler can build and push the Grafana image.

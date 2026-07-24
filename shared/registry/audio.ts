@@ -45,6 +45,17 @@ export const VOICE_MAPPING: Record<string, string> = {
 
 export const ELEVENLABS_VOICES = Object.keys(VOICE_MAPPING);
 
+export const CSM_VOICES = [
+    "conversational_a",
+    "conversational_b",
+    "read_speech_a",
+    "read_speech_b",
+    "read_speech_c",
+    "read_speech_d",
+] as const;
+
+export const AUDIO_VOICES = [...ELEVENLABS_VOICES, ...CSM_VOICES];
+
 export const DEFAULT_AUDIO_MODEL = "elevenlabs" as const;
 export type AudioModelName = keyof typeof AUDIO_SERVICES;
 
@@ -127,6 +138,24 @@ export const AUDIO_SERVICES = {
         title: "ElevenLabs Music",
         description: "Studio-grade music from a text prompt or reference track",
         inputModalities: ["text", "audio"],
+        outputModalities: ["audio"],
+    },
+    "lyria-3-clip": {
+        aliases: ["lyria", "lyria-3"],
+        provider: "google",
+        brand: "Google",
+        category: "audio",
+        addedDate: new Date("2026-07-24").getTime(),
+        priceMultiplier: 1,
+        paidOnly: true,
+        cost: {
+            // Vertex bills a fixed $0.04 for each 30-second generated clip.
+            completionAudioTokens: 0.04,
+        },
+        title: "Lyria 3 Clip",
+        description:
+            "30-second music with vocals, lyrics, or instrumental arrangements",
+        inputModalities: ["text"],
         outputModalities: ["audio"],
     },
     "eleven-sfx": {
@@ -297,6 +326,25 @@ export const AUDIO_SERVICES = {
             "Text-to-speech you can direct with emotion and style instructions",
         inputModalities: ["text"],
         outputModalities: ["audio"],
+    },
+    "csm-1b": {
+        aliases: ["csm", "sesame-csm", "sesame-csm-1b"],
+        provider: "deepinfra",
+        brand: "Sesame",
+        category: "audio",
+        addedDate: new Date("2026-07-23").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1,
+        cost: {
+            // DeepInfra bills CSM by input character: $7 per 1M characters.
+            completionAudioTokens: 7 / 1_000_000,
+        },
+        title: "CSM 1B",
+        description:
+            "English conversational speech with six reading and dialogue voices",
+        inputModalities: ["text"],
+        outputModalities: ["audio"],
+        voices: [...CSM_VOICES],
     },
 } satisfies Record<string, ModelDefinition>;
 

@@ -62,13 +62,9 @@ test("gemini-search applies grounding cost on top of shared token rates", () => 
     };
     const geminiFastCost = calculateCost("gemini-fast", usage);
     const geminiSearchCost = calculateCost("gemini-search", usage, {
-        choices: [
-            {
-                groundingMetadata: {
-                    webSearchQueries: ["latest Gemini pricing"],
-                },
-            },
-        ],
+        usage: {
+            server_tool_use_details: { web_search_requests: 1 },
+        },
     });
 
     expect(geminiSearchCost.totalCost).toBeGreaterThan(

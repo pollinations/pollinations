@@ -1064,13 +1064,12 @@ describe("cost-variant telemetry", () => {
         const tinybirdRequests = captureTinybird();
         const app = new Hono<Env>();
         baseMiddleware(app, {
-            requested: "p-video-1080p",
+            requested: "p-video",
             resolved: "p-video",
             definition: getRegistryModelDefinition("p-video"),
         });
         app.get("/image/test", track("generate.image"), (c) => {
-            // Mirrors applyResolutionPricing: the image handler resolves the
-            // legacy alias to a resolution and registers it as pricing input.
+            // Mirrors the handler registering an explicit resolution request.
             c.var.track.setPricingInput({ resolution: "1080p" });
             return new Response("fake-mp4-bytes", {
                 headers: {
@@ -1099,7 +1098,7 @@ describe("cost-variant telemetry", () => {
         expect(event.costVariant).toBe("1080p");
     });
 
-    it("bills the 1080p variant through the real image handler for a legacy alias", async () => {
+    it("treats a former resolution model name as an alias only", async () => {
         const tinybirdRequests: Request[] = [];
         let replicateInput: Record<string, unknown> | undefined;
         vi.spyOn(globalThis, "fetch").mockImplementation(
@@ -1170,16 +1169,17 @@ describe("cost-variant telemetry", () => {
 
         expect(response.status).toBe(200);
         expect(response.headers.get("content-type")).toBe("video/mp4");
-        // The legacy alias implied the resolution all the way to the provider.
+        // Aliases resolve model identity only; without an explicit resolution,
+        // the canonical model and its former resolution name use the base tier.
         expect(replicateInput).toMatchObject({
-            input: { resolution: "1080p", duration: 2 },
+            input: { resolution: "720p", duration: 2 },
         });
         expect(tinybirdRequests).toHaveLength(1);
         const event = (await tinybirdRequests[0].json()) as TinybirdEvent;
-        expect(event.totalCost).toBeCloseTo(2 * 0.04, 10);
-        expect(event.tokenPriceCompletionVideoSeconds).toBeCloseTo(0.04, 10);
-        expect(event.costVariant).toBe("1080p");
-        expect(consumePollen).toHaveBeenCalledWith(0.08);
+        expect(event.totalCost).toBeCloseTo(2 * 0.02, 10);
+        expect(event.tokenPriceCompletionVideoSeconds).toBeCloseTo(0.02, 10);
+        expect(event.costVariant).toBeUndefined();
+        expect(consumePollen).toHaveBeenCalledWith(0.04);
     });
 
     it("bills and emits the long-context sheet when usage crosses the threshold", async () => {

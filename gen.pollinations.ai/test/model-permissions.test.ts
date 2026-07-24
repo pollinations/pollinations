@@ -1,5 +1,6 @@
 import { SELF } from "cloudflare:test";
 import { getAudioModelsInfo } from "@shared/registry/model-info.ts";
+import { getRegistryModelDefinition } from "@shared/registry/registry.ts";
 import {
     createTestApiKey,
     RESTRICTED_IMAGE_TEST_MODEL,
@@ -8,6 +9,7 @@ import {
     test,
 } from "@shared/test/fixtures/index.ts";
 import { expect } from "vitest";
+import { isModelAccessAllowed } from "@/middleware/auth.ts";
 
 async function fetchWorker(path: string, init: RequestInit = {}) {
     return SELF.fetch(new Request(`https://gen.pollinations.ai${path}`, init));
@@ -49,6 +51,34 @@ test("filters image model list by API key permissions", async ({
         true,
     );
     expect(modelNames).toContain(RESTRICTED_IMAGE_TEST_MODEL);
+});
+
+test("treats an allowed alias as permission for its canonical model", async () => {
+    const { key } = await createTestApiKey({
+        allowedModels: ["p-video-1080p"],
+        user: { packBalance: 100 },
+    });
+    const headers = { Authorization: `Bearer ${key}` };
+
+    const modelsResponse = await fetchWorker("/image/models", { headers });
+    expect(modelsResponse.status).toBe(200);
+    const models = (await modelsResponse.json()) as { name: string }[];
+    expect(models.map(({ name }) => name)).toEqual(["p-video"]);
+
+    expect(
+        isModelAccessAllowed(["p-video-1080p"], {
+            requested: "p-video",
+            resolved: "p-video",
+            definition: getRegistryModelDefinition("p-video"),
+        }),
+    ).toBe(true);
+    expect(
+        isModelAccessAllowed(["p-video"], {
+            requested: "p-video-1080p",
+            resolved: "p-video",
+            definition: getRegistryModelDefinition("p-video"),
+        }),
+    ).toBe(true);
 });
 
 test("empty model permissions deny access and return an empty catalog", async () => {

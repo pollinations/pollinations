@@ -2,7 +2,7 @@ import { and, eq, isNotNull, isNull, or } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { communityModelId } from "../community-endpoints.ts";
 import * as schema from "../db/better-auth.ts";
-import { getModels } from "./registry.ts";
+import { getModels, resolveModelName } from "./registry.ts";
 
 export async function getVisibleModelIdsForUser(
     dbBinding: D1Database,
@@ -48,10 +48,18 @@ export function filterPermissionsToVisibleModels(
 ): Record<string, string[]> | null {
     if (!Array.isArray(permissions?.models)) return permissions;
 
+    const normalizedModels = permissions.models.flatMap((modelId) => {
+        if (visibleModelIds.has(modelId)) return [modelId];
+        try {
+            const resolved = resolveModelName(modelId);
+            return visibleModelIds.has(resolved) ? [resolved] : [];
+        } catch {
+            return [];
+        }
+    });
+
     return {
         ...permissions,
-        models: permissions.models.filter((modelId) =>
-            visibleModelIds.has(modelId),
-        ),
+        models: [...new Set(normalizedModels)],
     };
 }

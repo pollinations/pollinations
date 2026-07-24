@@ -13,6 +13,7 @@ type ModelVariables = {
     model: {
         requested: string;
         resolved: string;
+        definition: { aliases: string[] };
     };
 };
 
@@ -30,6 +31,16 @@ export type AuthEnv = {
     Bindings: CloudflareBindings;
     Variables: LoggerVariables & AuthVariables & Partial<ModelVariables>;
 };
+
+export function isModelAccessAllowed(
+    allowedNames: readonly string[],
+    model: ModelVariables["model"],
+): boolean {
+    return (
+        allowedNames.includes(model.resolved) ||
+        model.definition.aliases.some((alias) => allowedNames.includes(alias))
+    );
+}
 
 export const auth = () =>
     createMiddleware<AuthEnv>(async (c, next) => {
@@ -74,7 +85,7 @@ export const auth = () =>
             const model = c.var.model;
             if (!model) return;
 
-            if (!apiKey.permissions.models.includes(model.resolved)) {
+            if (!isModelAccessAllowed(apiKey.permissions.models, model)) {
                 throw new HTTPException(403, {
                     message: `Model '${model.requested}' is not allowed for this API key`,
                 });

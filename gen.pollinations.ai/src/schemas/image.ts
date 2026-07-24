@@ -24,7 +24,7 @@ const GenerateImageRequestQueryParamsBaseSchema = z.object({
         }),
     width: z.coerce.number().int().nonnegative().optional().default(1024).meta({
         description:
-            "Width in pixels. For images, exact pixels. For video models, used for aspect ratio and, unless the model name fixes a tier, mapped to the nearest resolution.",
+            "Width in pixels. For images, exact pixels. For video models, used for aspect ratio; use `resolution` to select a resolution tier.",
     }),
     height: z.coerce
         .number()
@@ -34,7 +34,7 @@ const GenerateImageRequestQueryParamsBaseSchema = z.object({
         .default(1024)
         .meta({
             description:
-                "Height in pixels. For images, exact pixels. For video models, used for aspect ratio and, unless the model name fixes a tier, mapped to the nearest resolution.",
+                "Height in pixels. For images, exact pixels. For video models, used for aspect ratio; use `resolution` to select a resolution tier.",
         }),
     seed: z.coerce
         .number()

@@ -352,8 +352,7 @@ export const IMAGE_SERVICES = {
             "veo-3.1-fast",
             "veo-720p",
             "video",
-            // Former veo-1080p model: legacy names imply resolution=1080p
-            // (handler injects the pricing input for them).
+            // Former model names retained as aliases of the canonical model.
             "veo-1080p",
             "veo-3.1-fast-1080p",
             "veo-1080",
@@ -483,7 +482,7 @@ export const IMAGE_SERVICES = {
         aliases: [
             "wan2.7",
             "wan-2.7",
-            // Former wan-pro-1080p model: legacy names imply resolution=1080p.
+            // Former model names retained as aliases of the canonical model.
             "wan-pro-1080p",
             "wan2.7-1080p",
             "wan-pro-1080",
@@ -725,8 +724,7 @@ export const IMAGE_SERVICES = {
     "p-video": {
         aliases: [
             "pruna-video",
-            // Former per-resolution models: legacy names imply their locked
-            // resolution.
+            // Former per-resolution model names retained as aliases.
             "p-video-720p",
             "p-video-1080p",
             "pruna-video-1080p",

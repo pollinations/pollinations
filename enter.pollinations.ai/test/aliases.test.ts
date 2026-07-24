@@ -13,6 +13,7 @@ import {
     type UsageType,
 } from "@shared/registry/registry.js";
 import { TEXT_SERVICES } from "@shared/registry/text";
+import { filterPermissionsToVisibleModels } from "@shared/registry/visible-model-ids";
 import { expect, test } from "vitest";
 
 function serviceAliasTestCases(
@@ -34,25 +35,37 @@ function requiredCostRate(model: ModelName, field: UsageType): number {
     return rate as number;
 }
 
-test.for(
-    serviceAliasTestCases(TEXT_SERVICES),
-)("Text service alias %s is resolved to %s", ([alias, shouldResolveTo]) => {
-    const resolved = resolveModelName(alias);
-    expect(resolved).toBe(shouldResolveTo);
-});
+test.for(serviceAliasTestCases(TEXT_SERVICES))(
+    "Text service alias %s is resolved to %s",
+    ([alias, shouldResolveTo]) => {
+        const resolved = resolveModelName(alias);
+        expect(resolved).toBe(shouldResolveTo);
+    },
+);
 
-test.for(
-    serviceAliasTestCases(IMAGE_SERVICES),
-)("Image service alias %s is resolved to %s", ([alias, shouldResolveTo]) => {
-    const resolved = resolveModelName(alias);
-    expect(resolved).toBe(shouldResolveTo);
-});
+test.for(serviceAliasTestCases(IMAGE_SERVICES))(
+    "Image service alias %s is resolved to %s",
+    ([alias, shouldResolveTo]) => {
+        const resolved = resolveModelName(alias);
+        expect(resolved).toBe(shouldResolveTo);
+    },
+);
 
-test.for(
-    serviceAliasTestCases(AUDIO_SERVICES),
-)("Audio service alias %s is resolved to %s", ([alias, shouldResolveTo]) => {
-    const resolved = resolveModelName(alias);
-    expect(resolved).toBe(shouldResolveTo);
+test.for(serviceAliasTestCases(AUDIO_SERVICES))(
+    "Audio service alias %s is resolved to %s",
+    ([alias, shouldResolveTo]) => {
+        const resolved = resolveModelName(alias);
+        expect(resolved).toBe(shouldResolveTo);
+    },
+);
+
+test("API key permissions expose visible aliases as their canonical model", () => {
+    expect(
+        filterPermissionsToVisibleModels(
+            { models: ["p-video-1080p", "retired-model"] },
+            new Set(["p-video"]),
+        ),
+    ).toEqual({ models: ["p-video"] });
 });
 
 test("gemini-search applies grounding cost on top of shared token rates", () => {

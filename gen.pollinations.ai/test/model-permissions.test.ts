@@ -72,6 +72,32 @@ test("empty model permissions deny access and return an empty catalog", async ()
     expect(generationResponse.status).toBe(403);
 });
 
+test("filters gemini-fast by paid balance", async ({ apiKey, paidApiKey }) => {
+    const freeResponse = await fetchWorker("/v1/models", {
+        headers: { Authorization: `Bearer ${apiKey}` },
+    });
+    const paidResponse = await fetchWorker("/v1/models", {
+        headers: { Authorization: `Bearer ${paidApiKey}` },
+    });
+
+    expect(freeResponse.status).toBe(200);
+    expect(paidResponse.status).toBe(200);
+
+    const freeModels = (await freeResponse.json()) as {
+        data: { id: string }[];
+    };
+    const paidModels = (await paidResponse.json()) as {
+        data: { id: string }[];
+    };
+
+    expect(freeModels.data.some((model) => model.id === "gemini-fast")).toBe(
+        false,
+    );
+    expect(paidModels.data.some((model) => model.id === "gemini-fast")).toBe(
+        true,
+    );
+});
+
 test("filters paid-only audio models by paid balance", async ({
     apiKey,
     paidApiKey,

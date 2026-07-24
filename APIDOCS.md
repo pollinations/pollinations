@@ -435,9 +435,9 @@ curl "https://gen.pollinations.ai/text/Write%20a%20haiku%20about%20coding?model=
 
 #### `GET` `/image/{prompt}` — Generate Image
 
-Generate an image from a text prompt. Returns JPEG or PNG.
+Generate an image from a text prompt. Returns JPEG, PNG, or SVG depending on the selected model.
 
-**Available models:** `sana`, `kontext`, `nanobanana`, `nanobanana-2`, `nanobanana-2-lite`, `nanobanana-pro`, `seedream5`, `seedream5-pro`, `seedream`, `seedream-pro`, `ideogram-v4-turbo`, `ideogram-v4-balanced`, `ideogram-v4-quality`, `gptimage`, `gptimage-large`, `gpt-image-2`, `flux`, `zimage`, `wan-image`, `wan-image-pro`, `qwen-image`, `grok-imagine`, `grok-imagine-pro`, `klein`, `p-image`, `p-image-edit`, `nova-canvas`. `zimage` is the default.
+**Available models:** `sana`, `kontext`, `nanobanana`, `nanobanana-2`, `nanobanana-2-lite`, `nanobanana-pro`, `seedream5`, `seedream5-pro`, `seedream`, `seedream-pro`, `ideogram-v4-turbo`, `ideogram-v4-balanced`, `ideogram-v4-quality`, `gptimage`, `gptimage-large`, `gpt-image-2`, `flux`, `zimage`, `wan-image`, `wan-image-pro`, `qwen-image`, `grok-imagine`, `grok-imagine-pro`, `recraft-v4.1-vector`, `klein`, `p-image`, `p-image-edit`, `nova-canvas`. `zimage` is the default.
 
 Browse all available models and their capabilities at [`/image/models`](https://gen.pollinations.ai/image/models).
 
@@ -457,7 +457,7 @@ Browse all available models and their capabilities at [`/image/models`](https://
 
 <sub>`*` = required parameter</sub>
 
-📤 **Response** · `200` · `image/jpeg`, `image/png` — Success - Returns the generated image
+📤 **Response** · `200` · `image/jpeg`, `image/png`, `image/svg+xml` — Success - Returns the generated image
 
 💻 **Example**
 
@@ -2155,6 +2155,7 @@ Marks the end of a static prompt prefix to cache (Gemini, Claude, and Nova model
 | `data` * | `object`[] | — |
 | `data[].url` | `string` | — |
 | `data[].b64_json` | `string` | — |
+| `data[].media_type` | `string` | MIME type for non-raster output such as image/svg+xml |
 | `data[].revised_prompt` | `string` | — |
 | `usage` * | `object` | — |
 | `usage.input_tokens` * | `integer` | — |

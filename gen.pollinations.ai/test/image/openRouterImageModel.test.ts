@@ -4,17 +4,24 @@ import {
     callOpenRouterGeminiImageAPI,
     callOpenRouterGrokImagineProAPI,
     callOpenRouterRecraftVectorAPI,
+    callOpenRouterSeedreamProAPI,
     mapOpenRouterGeminiImageUsage,
 } from "../../src/image/models/openRouterImageModel.ts";
 import type { ImageParams } from "../../src/image/params.ts";
 
 const OPENROUTER_IMAGE_URL = "https://openrouter.ai/api/v1/images";
 const REFERENCE_IMAGE_URL = "https://example.com/reference.png";
+const WIDE_REFERENCE_IMAGE_URL = "https://example.com/wide-reference.png";
 const PNG = Buffer.from(
     "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=",
     "base64",
 );
 const PNG_DATA_URI = `data:image/png;base64,${PNG.toString("base64")}`;
+const WIDE_PNG = Buffer.alloc(24);
+WIDE_PNG.set([0x89, 0x50, 0x4e, 0x47]);
+WIDE_PNG.writeUInt32BE(2560, 16);
+WIDE_PNG.writeUInt32BE(1440, 20);
+const WIDE_PNG_DATA_URI = `data:image/png;base64,${WIDE_PNG.toString("base64")}`;
 
 const baseParams: ImageParams = {
     model: "grok-imagine-pro",
@@ -535,6 +542,161 @@ describe("OpenRouter Gemini image", () => {
             }),
         ).rejects.toMatchObject({ status: 400 });
         expect(fetchSpy).not.toHaveBeenCalled();
+    });
+});
+
+describe("OpenRouter Seedream 4.5 Pro", () => {
+    function mockSeedreamResponse(requests: Record<string, unknown>[]) {
+        return vi
+            .spyOn(globalThis, "fetch")
+            .mockImplementation(async (url, init) => {
+                const href = typeof url === "string" ? url : url.toString();
+                if (
+                    href === REFERENCE_IMAGE_URL ||
+                    href === WIDE_REFERENCE_IMAGE_URL
+                ) {
+                    return new Response(
+                        href === WIDE_REFERENCE_IMAGE_URL ? WIDE_PNG : PNG,
+                        {
+                            headers: { "Content-Type": "image/png" },
+                        },
+                    );
+                }
+                if (href !== OPENROUTER_IMAGE_URL) {
+                    return new Response("unexpected URL", { status: 404 });
+                }
+                requests.push(
+                    JSON.parse(init?.body as string) as Record<string, unknown>,
+                );
+                return Response.json({
+                    data: [{ b64_json: PNG.toString("base64") }],
+                    usage: {
+                        completion_tokens: 16384,
+                        cost: 0.04,
+                        completion_tokens_details: { image_tokens: 16384 },
+                    },
+                });
+            });
+    }
+
+    it("pins the Seed provider without fallbacks and preserves flat billing", async () => {
+        syncImageEnv(
+            { OPENROUTER_API_KEY: "openrouter-test-key" } as CloudflareBindings,
+            ["OPENROUTER_API_KEY"],
+        );
+        const requests: Record<string, unknown>[] = [];
+        const fetchSpy = mockSeedreamResponse(requests);
+
+        const result = await callOpenRouterSeedreamProAPI("test prompt", {
+            ...baseParams,
+            model: "seedream-pro",
+            width: 2048,
+            height: 2048,
+        });
+
+        expect(fetchSpy).toHaveBeenCalledWith(
+            OPENROUTER_IMAGE_URL,
+            expect.objectContaining({
+                method: "POST",
+                headers: {
+                    Authorization: "Bearer openrouter-test-key",
+                    "Content-Type": "application/json",
+                },
+            }),
+        );
+        expect(requests[0]).toEqual({
+            model: "bytedance-seed/seedream-4.5",
+            prompt: "test prompt",
+            n: 1,
+            size: "2048x2048",
+            provider: {
+                only: ["seed"],
+                allow_fallbacks: false,
+            },
+        });
+        expect(result.buffer).toEqual(PNG);
+        expect(result.trackingData).toEqual({
+            actualModel: "seedream-pro",
+            usage: {
+                completionImageTokens: 1,
+                totalTokenCount: 1,
+            },
+        });
+    });
+
+    it("uses the 4K tier above 2048px and preserves explicit aspect ratios", async () => {
+        syncImageEnv(
+            { OPENROUTER_API_KEY: "openrouter-test-key" } as CloudflareBindings,
+            ["OPENROUTER_API_KEY"],
+        );
+        const requests: Record<string, unknown>[] = [];
+        mockSeedreamResponse(requests);
+
+        await callOpenRouterSeedreamProAPI("wide prompt", {
+            ...baseParams,
+            model: "seedream-pro",
+            width: 4096,
+            height: 2304,
+            aspectRatio: "16:9",
+        });
+
+        expect(requests[0]).toMatchObject({
+            resolution: "4K",
+            aspect_ratio: "16:9",
+        });
+    });
+
+    it("inlines all reference images and matches their aspect ratio automatically", async () => {
+        syncImageEnv(
+            { OPENROUTER_API_KEY: "openrouter-test-key" } as CloudflareBindings,
+            ["OPENROUTER_API_KEY"],
+        );
+        const requests: Record<string, unknown>[] = [];
+        mockSeedreamResponse(requests);
+
+        await callOpenRouterSeedreamProAPI("edit prompt", {
+            ...baseParams,
+            model: "seedream-pro",
+            image: [WIDE_REFERENCE_IMAGE_URL, REFERENCE_IMAGE_URL],
+        });
+
+        expect(requests[0]).toMatchObject({
+            size: "2560x1440",
+            input_references: [
+                {
+                    type: "image_url",
+                    image_url: { url: WIDE_PNG_DATA_URI },
+                },
+                {
+                    type: "image_url",
+                    image_url: { url: PNG_DATA_URI },
+                },
+            ],
+        });
+    });
+
+    it("rejects the unsupported 9:21 ratio and more than 14 references", async () => {
+        syncImageEnv(
+            { OPENROUTER_API_KEY: "openrouter-test-key" } as CloudflareBindings,
+            ["OPENROUTER_API_KEY"],
+        );
+        const params = {
+            ...baseParams,
+            model: "seedream-pro",
+        } satisfies ImageParams;
+
+        await expect(
+            callOpenRouterSeedreamProAPI("test", {
+                ...params,
+                aspectRatio: "9:21",
+            }),
+        ).rejects.toMatchObject({ status: 400 });
+        await expect(
+            callOpenRouterSeedreamProAPI("test", {
+                ...params,
+                image: Array(15).fill(REFERENCE_IMAGE_URL),
+            }),
+        ).rejects.toMatchObject({ status: 400 });
     });
 });
 

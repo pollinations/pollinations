@@ -21,7 +21,7 @@
       }
     ]
   },
-  "description": "Community-model traffic, consumers, Pollen consumption, BYOP overlap, and public model-owner rewards. All community traffic is visible for ecosystem monitoring, but only non-BYOP Paid consumption belongs to the direct-community revenue stream.",
+  "description": "BYOM community-model traffic, consumers, Pollen consumption, BYOP overlap, and public model-owner rewards. All BYOM traffic is visible for ecosystem monitoring; direct and BYOP consumption remain separate product paths.",
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 1,
@@ -34,7 +34,7 @@
         "type": "grafana-clickhouse-datasource",
         "uid": "PAD1A0A25CD30D456"
       },
-      "description": "Selected-range community-model totals from generation_usage_hourly. Calls and users include direct and BYOP traffic. Direct-community Paid consumption excludes BYOP so it remains a mutually exclusive revenue stream. Owner rewards are credited public model-owner value.",
+      "description": "Selected-range BYOM community-model totals from generation_usage_hourly. Calls and users include direct and BYOP traffic. Direct BYOM Paid consumption excludes BYOP so it matches the mutually exclusive product-path view. Owner rewards are credited public model-owner value.",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -74,7 +74,7 @@
             "properties": [
               {
                 "id": "displayName",
-                "value": "Community users"
+                "value": "BYOM users"
               }
             ]
           },
@@ -86,7 +86,7 @@
             "properties": [
               {
                 "id": "displayName",
-                "value": "Community calls"
+                "value": "BYOM calls"
               }
             ]
           },
@@ -118,7 +118,7 @@
             "properties": [
               {
                 "id": "displayName",
-                "value": "Direct-community Paid"
+                "value": "Direct BYOM Paid"
               },
               {
                 "id": "unit",
@@ -163,7 +163,7 @@
         "colorMode": "background",
         "graphMode": "none",
         "justifyMode": "auto",
-        "orientation": "horizontal",
+        "orientation": "vertical",
         "reduceOptions": {
           "calcs": [
             "lastNotNull"
@@ -173,7 +173,7 @@
         },
         "showPercentChange": false,
         "textMode": "auto",
-        "wideLayout": true
+        "wideLayout": false
       },
       "targets": [
         {
@@ -187,7 +187,7 @@
           "refId": "A"
         }
       ],
-      "title": "Community overview",
+      "title": "BYOM overview",
       "type": "stat"
     },
     {
@@ -199,7 +199,7 @@
       "fieldConfig": {
         "defaults": {
           "color": {
-            "mode": "palette-classic"
+            "mode": "palette-classic-by-name"
           },
           "custom": {
             "barAlignment": 0,
@@ -222,7 +222,7 @@
             "properties": [
               {
                 "id": "displayName",
-                "value": "Direct community"
+                "value": "Direct BYOM"
               },
               {
                 "id": "color",
@@ -287,7 +287,7 @@
           "refId": "A"
         }
       ],
-      "title": "Direct vs BYOP community traffic",
+      "title": "Direct vs BYOP BYOM traffic",
       "transformations": [
         {
           "id": "filterFieldsByName",
@@ -327,7 +327,6 @@
             }
           },
           "decimals": 1,
-          "max": 100,
           "min": 0,
           "unit": "percent"
         },
@@ -340,7 +339,7 @@
             "properties": [
               {
                 "id": "displayName",
-                "value": "Community share"
+                "value": "BYOM share"
               }
             ]
           }
@@ -377,7 +376,7 @@
           "refId": "A"
         }
       ],
-      "title": "Community share of platform",
+      "title": "BYOM share of platform",
       "transformations": [
         {
           "id": "filterFieldsByName",
@@ -402,7 +401,7 @@
       "fieldConfig": {
         "defaults": {
           "color": {
-            "mode": "palette-classic"
+            "mode": "palette-classic-by-name"
           },
           "custom": {
             "barAlignment": 0,
@@ -414,6 +413,7 @@
               "mode": "none"
             }
           },
+          "min": 0,
           "unit": "short"
         },
         "overrides": [
@@ -433,6 +433,22 @@
                   "fixedColor": "green",
                   "mode": "fixed"
                 }
+              },
+              {
+                "id": "custom.drawStyle",
+                "value": "line"
+              },
+              {
+                "id": "custom.fillOpacity",
+                "value": 0
+              },
+              {
+                "id": "custom.lineWidth",
+                "value": 2
+              },
+              {
+                "id": "custom.showPoints",
+                "value": "auto"
               }
             ]
           },
@@ -444,7 +460,7 @@
             "properties": [
               {
                 "id": "displayName",
-                "value": "Community users"
+                "value": "BYOM users"
               },
               {
                 "id": "color",
@@ -514,7 +530,7 @@
       "fieldConfig": {
         "defaults": {
           "color": {
-            "mode": "palette-classic"
+            "mode": "palette-classic-by-name"
           },
           "custom": {
             "barAlignment": 0,
@@ -623,11 +639,11 @@
         "type": "datasource",
         "uid": "-- Dashboard --"
       },
-      "description": "Daily non-BYOP community-model consumption. Its Paid series is the mutually exclusive direct-community revenue bucket; BYOP community consumption is excluded and remains attributed to BYOP.",
+      "description": "Daily non-BYOP community-model consumption. Paid and Quest are shown separately; BYOP community consumption is excluded because it belongs to the BYOP path in the additive product-path view.",
       "fieldConfig": {
         "defaults": {
           "color": {
-            "mode": "palette-classic"
+            "mode": "palette-classic-by-name"
           },
           "custom": {
             "barAlignment": 0,
@@ -714,7 +730,7 @@
           "refId": "A"
         }
       ],
-      "title": "Direct-community revenue bucket",
+      "title": "Direct BYOM consumption",
       "transformations": [
         {
           "id": "filterFieldsByName",
@@ -740,7 +756,7 @@
       "fieldConfig": {
         "defaults": {
           "color": {
-            "mode": "palette-classic"
+            "mode": "palette-classic-by-name"
           },
           "custom": {
             "barAlignment": 0,
@@ -827,7 +843,7 @@
           "refId": "A"
         }
       ],
-      "title": "Community owner rewards",
+      "title": "BYOM owner rewards",
       "transformations": [
         {
           "id": "filterFieldsByName",
@@ -849,7 +865,7 @@
         "type": "grafana-clickhouse-datasource",
         "uid": "PAD1A0A25CD30D456"
       },
-      "description": "Community models ranked over the selected range. BYOP share shows ecosystem overlap. Direct Paid is the mutually exclusive direct-community revenue bucket; total Paid includes community calls made through BYOP. Owner reward is credited public model-owner value.",
+      "description": "Community models ranked over the selected range. BYOP share shows ecosystem overlap. Direct Paid is the mutually exclusive direct-BYOM product path; total Paid includes community calls made through BYOP. Owner reward is credited public model-owner value.",
       "fieldConfig": {
         "defaults": {
           "custom": {
@@ -1010,7 +1026,7 @@
           "refId": "A"
         }
       ],
-      "title": "Community model ranking",
+      "title": "BYOM model ranking",
       "type": "table"
     }
   ],
@@ -1030,7 +1046,7 @@
   },
   "timepicker": {},
   "timezone": "browser",
-  "title": "Community Models",
+  "title": "BYOM — Community Models",
   "uid": "community-models-rebuild",
   "version": 1,
   "weekStart": "monday"

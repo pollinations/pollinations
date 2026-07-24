@@ -18,6 +18,7 @@ import {
     callOpenRouterGeminiImageAPI,
     callOpenRouterGrokImagineProAPI,
     callOpenRouterRecraftVectorAPI,
+    callOpenRouterSeedreamProAPI,
 } from "./models/openRouterImageModel.ts";
 import {
     callPrunaImageAPI,
@@ -28,7 +29,6 @@ import { callSeedream5API } from "./models/seedream5ReplicateModel.ts";
 import {
     callSeedream5ProAPI,
     callSeedreamAPI,
-    callSeedreamProAPI,
 } from "./models/seedreamReplicateModel.ts";
 import { callWanImageAPI } from "./models/wanImageModel.ts";
 import { callXaiImageAPI } from "./models/xaiModel.ts";
@@ -813,7 +813,7 @@ const generateImage = async (
             return await callSeedreamAPI(prompt, safeParams);
 
         case "seedream-pro":
-            return await callSeedreamProAPI(prompt, safeParams);
+            return await callOpenRouterSeedreamProAPI(prompt, safeParams);
 
         case "ideogram-v4-turbo":
             return await callIdeogramTurboAPI(prompt, safeParams);

@@ -1,0 +1,35 @@
+{
+  "pr_number": 12731,
+  "title": "feat: add Recraft vector generation",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/12731",
+  "merged_at": "2026-07-24T14:56:30Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds `recraft-v4.1-vector` with `recraft-vector`, `recraft-svg`, and `recraft-v4.1-svg` aliases.\n- Routes only to OpenRouter's `recraft/recraft-v4.1-vector` endpoint through Recraft, with provider fallbacks disabled.\n- Supports text-to-SVG and one reference image, returns real `image/svg+xml`, preserves SVG cache/security headers, exposes `media_type` in OpenAI image responses, and adds the Recraft brand mark.\n- Registers it paid-only at price multiplier 1 and $0.08 per output. OpenRouter's synthetic token count is normalized to one fixed image unit because the provider invoice is exactly $0.08 per result.\n\nValidation:\n- Gen worker: 32 files / 293 tests passed.\n- Enter registry/billing: 3 files / 290 tests passed.\n- TypeScript and Biome passed for both workers.\n- Local paid E2E: GET alias, cached GET, OpenAI generation, and OpenAI edit all returned valid SVG in 9–15s and billed exactly 0.08 Pollen.\n- Capacity: 5/5 succeeded; at 15 and 30 concurrency, capacity overflow returned truthful 429s with zero 5xx/timeouts.\n\nDraft gate: accept/monitor the upstream route's small concurrency ceiling before merge.",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "The hive draws vectors",
+    "blurb": "A new bee in the garden draws SVGs instead of pixels. Recraft Vector now turns prompts and a reference image into clean, real vector artwork.",
+    "summary": "Added the paid-only `recraft-v4.1-vector` image model, with `recraft-vector`, `recraft-svg`, and `recraft-v4.1-svg` aliases, for text-to-SVG and single-reference-image generation through Recraft on OpenRouter at 0.08 Pollen per output.",
+    "impact": "Developers can now request real `image/svg+xml` from Pollinations image and OpenAI-compatible generation/edit endpoints, with SVG cache and security headers preserved and a fixed one-image billing unit.",
+    "keywords": [
+      "recraft",
+      "svg",
+      "vector-generation",
+      "openrouter",
+      "image-api",
+      "openai-compatible",
+      "pollen"
+    ],
+    "visual_concept": "Depict Recraft Vector as a cozy pixel-art drafting garden: Polli helps a small CRT monitor robot turn a prompt card and one framed reference picture into a curling SVG vine made of clean vector paths. Include the Recraft brand mark as a small sign or stamp, plus flower pots containing code-plants, to show that the output is genuine scalable SVG rather than a raster image.",
+    "image_prompt": "Cozy pixel art scene in a warm garden workshop where Polli, the cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks, a small happy smile, rounded light blue translucent wings, and tiny artist beret, guides a cute CRT-monitor robot as it draws a clean curling SVG flower vine from a prompt card and one framed reference image; a tiny Recraft mark appears on a drafting stamp, with code-plants in pots around them. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel mint-lavender-peach gradient background, chunky retro sprites, warm lighting, subtle CRT glow, retro gaming vibes like Stardew Valley or A Short Hike, pixel-font text: \"REAL SVG\", nostalgic but beautiful and emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-24/PR-12731.jpg",
+    "prompt": "Cozy pixel art scene in a warm garden workshop where Polli, the cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks, a small happy smile, rounded light blue translucent wings, and tiny artist beret, guides a cute CRT-monitor robot as it draws a clean curling SVG flower vine from a prompt card and one framed reference image; a tiny Recraft mark appears on a drafting stamp, with code-plants in pots around them. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel mint-lavender-peach gradient background, chunky retro sprites, warm lighting, subtle CRT glow, retro gaming vibes like Stardew Valley or A Short Hike, pixel-font text: \"REAL SVG\", nostalgic but beautiful and emotionally warm."
+  },
+  "generated_at": "2026-07-24T14:57:30.380989+00:00"
+}

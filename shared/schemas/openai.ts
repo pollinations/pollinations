@@ -594,6 +594,9 @@ export type CreateImageRequest = z.infer<typeof CreateImageRequestSchema>;
 const ImageDataSchema = z.object({
     url: z.string().optional(),
     b64_json: z.string().optional(),
+    media_type: z.string().optional().meta({
+        description: "MIME type for non-raster output such as image/svg+xml",
+    }),
     revised_prompt: z.string().optional(),
 });
 

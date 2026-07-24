@@ -141,3 +141,30 @@ test("filters paid-only audio models by paid balance", async ({
     expect(freeModels.some((model) => model.paid_only)).toBe(false);
     expect(paidModels.some((model) => model.paid_only)).toBe(true);
 });
+
+test("requires paid balance for Recraft vector", async ({
+    apiKey,
+    paidApiKey,
+}) => {
+    const freeCatalog = await fetchWorker("/image/models", {
+        headers: { Authorization: `Bearer ${apiKey}` },
+    });
+    const paidCatalog = await fetchWorker("/image/models", {
+        headers: { Authorization: `Bearer ${paidApiKey}` },
+    });
+    const freeModels = (await freeCatalog.json()) as { name: string }[];
+    const paidModels = (await paidCatalog.json()) as { name: string }[];
+
+    expect(
+        freeModels.some((model) => model.name === "recraft-v4.1-vector"),
+    ).toBe(false);
+    expect(
+        paidModels.some((model) => model.name === "recraft-v4.1-vector"),
+    ).toBe(true);
+
+    const generation = await fetchWorker(
+        "/image/paid-only-check?model=recraft-v4.1-vector&seed=24072499",
+        { headers: { Authorization: `Bearer ${apiKey}` } },
+    );
+    expect(generation.status).toBe(402);
+});

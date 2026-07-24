@@ -615,6 +615,24 @@ export const IMAGE_SERVICES = {
         outputModalities: ["image"],
         maxReferenceImages: 1, // OpenRouter image edit route forwards one input image.
     },
+    "recraft-v4.1-vector": {
+        aliases: ["recraft-vector", "recraft-svg", "recraft-v4.1-svg"],
+        provider: "openrouter",
+        brand: "Recraft",
+        category: "image",
+        addedDate: new Date("2026-07-24").getTime(),
+        priceMultiplier: 1,
+        paidOnly: true,
+        cost: {
+            completionImageTokens: 0.08, // fixed per output SVG
+        },
+        title: "Recraft V4.1 Vector",
+        description:
+            "Editable SVG generation and reference-guided vector design",
+        inputModalities: ["text", "image"],
+        outputModalities: ["image"],
+        maxReferenceImages: 1,
+    },
     "grok-video-pro": {
         aliases: ["grok-imagine-video"],
         provider: "openrouter",

@@ -1284,6 +1284,14 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.000001475,
     },
   },
+  "recraft-v4.1-vector": {
+    "cost": {
+      "completionImageTokens": 0.08,
+    },
+    "price": {
+      "completionImageTokens": 0.08,
+    },
+  },
   "sana": {
     "cost": {
       "completionImageTokens": 0.0001,

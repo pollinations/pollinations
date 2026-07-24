@@ -19,6 +19,7 @@ import {
     callPrunaImageAPI,
     callPrunaImageEditAPI,
 } from "./models/prunaModel.ts";
+import { callQwenImage3API } from "./models/qwenImage3Model.ts";
 import { callQwenImageAPI } from "./models/qwenImageModel.ts";
 import { callSeedream5API } from "./models/seedream5ReplicateModel.ts";
 import {
@@ -829,6 +830,9 @@ const generateImage = async (
 
         case "qwen-image":
             return await callQwenImageAPI(prompt, safeParams);
+
+        case "qwen-image-3":
+            return await callQwenImage3API(prompt, safeParams);
 
         case "sana":
             return await callSelfHostedServer(prompt, safeParams, "sana");

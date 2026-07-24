@@ -39,6 +39,14 @@ const GEMINI_IMAGE_CONFIGS = {
         resolution: "tiered",
         reasoning: true,
     },
+    "nanobanana-2-lite": {
+        upstreamModel: "google/gemini-3.1-flash-lite-image",
+        provider: "google-vertex/global",
+        maxReferenceImages: 14,
+        generator: "Vertex AI Gemini 3.1 Flash-Lite Image",
+        resolution: "1K",
+        reasoning: true,
+    },
 } as const satisfies Record<string, GeminiImageConfig>;
 const GEMINI_ASPECT_RATIOS = [
     { ratio: 1, label: "1:1" },

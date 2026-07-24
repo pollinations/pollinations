@@ -243,3 +243,62 @@ test("nanobanana-2 preserves 4K routing, reasoning, and exact billing", async ({
     expect(event.totalCost).toBeCloseTo(expectedCost, 10);
     expect(event.totalPrice).toBeCloseTo(expectedCost, 10);
 });
+
+test("nanobanana-2-lite preserves fixed 1K routing and exact billing", async ({
+    paidApiKey,
+    mocks,
+}) => {
+    await mocks.enable("tinybird", "openrouter");
+    mocks.openrouter.state.usage = {
+        prompt_tokens: 10,
+        completion_tokens: 1124,
+        total_tokens: 1134,
+        cost: 0.0336135,
+        prompt_tokens_details: {},
+        completion_tokens_details: {
+            reasoning_tokens: 4,
+            image_tokens: 1120,
+        },
+    };
+
+    const { response, wait } = await fetchWorker(
+        "/image/white%20triangle?model=nanobanana-lite&width=1920&height=1080&seed=42&reasoning=pro",
+        { headers: { authorization: `Bearer ${paidApiKey}` } },
+    );
+
+    expect(response.status, await response.clone().text()).toBe(200);
+    expect(response.headers.get("x-model-used")).toBe("nanobanana-2-lite");
+    expect(response.headers.get("x-usage-prompt-text-tokens")).toBe("10");
+    expect(response.headers.get("x-usage-completion-reasoning-tokens")).toBe(
+        "4",
+    );
+    expect(response.headers.get("x-usage-completion-image-tokens")).toBe(
+        "1120",
+    );
+    await response.arrayBuffer();
+    await wait();
+
+    expect(mocks.openrouter.state.requests).toHaveLength(1);
+    expect(mocks.openrouter.state.requests[0]).toMatchObject({
+        body: {
+            model: "google/gemini-3.1-flash-lite-image",
+            resolution: "1K",
+            reasoning_effort: "high",
+            provider: {
+                only: ["google-vertex/global"],
+                allow_fallbacks: false,
+            },
+        },
+    });
+    expect(mocks.tinybird.state.events).toHaveLength(1);
+    const event = mocks.tinybird.state.events[0];
+    expect(event).toMatchObject({
+        modelRequested: "nanobanana-lite",
+        tokenCountPromptText: 10,
+        tokenCountCompletionReasoning: 4,
+        tokenCountCompletionImage: 1120,
+    });
+    const expectedCost = (10 * 0.25 + 4 * 1.5 + 1120 * 30) / 1_000_000;
+    expect(event.totalCost).toBeCloseTo(expectedCost, 10);
+    expect(event.totalPrice).toBeCloseTo(expectedCost, 10);
+});

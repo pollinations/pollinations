@@ -308,6 +308,57 @@ describe("OpenRouter Gemini image", () => {
         expect(requests[0].reasoning_effort).toBe("low");
     });
 
+    it("pins NanoBanana 2 Lite to 1K Vertex with no fallback", async () => {
+        syncImageEnv(
+            { OPENROUTER_API_KEY: "openrouter-test-key" } as CloudflareBindings,
+            ["OPENROUTER_API_KEY"],
+        );
+        const requests: Record<string, unknown>[] = [];
+        mockGeminiFetch(requests, {
+            prompt_tokens: 10,
+            completion_tokens: 1124,
+            total_tokens: 1134,
+            cost: 0.0336135,
+            prompt_tokens_details: {},
+            completion_tokens_details: {
+                reasoning_tokens: 4,
+                image_tokens: 1120,
+            },
+        });
+
+        const result = await callOpenRouterGeminiImageAPI("test prompt", {
+            ...baseParams,
+            model: "nanobanana-2-lite",
+            width: 1920,
+            height: 1080,
+            reasoning: "pro",
+        });
+
+        expect(requests).toEqual([
+            {
+                model: "google/gemini-3.1-flash-lite-image",
+                prompt: "test prompt",
+                n: 1,
+                aspect_ratio: "16:9",
+                seed: 42,
+                provider: {
+                    only: ["google-vertex/global"],
+                    allow_fallbacks: false,
+                },
+                resolution: "1K",
+                reasoning_effort: "high",
+            },
+        ]);
+        expect(result.trackingData).toEqual({
+            actualModel: "nanobanana-2-lite",
+            usage: {
+                promptTextTokens: 10,
+                completionReasoningTokens: 4,
+                completionImageTokens: 1120,
+            },
+        });
+    });
+
     it("validates and inlines edit images while preserving exact combined input billing", async () => {
         syncImageEnv(
             { OPENROUTER_API_KEY: "openrouter-test-key" } as CloudflareBindings,

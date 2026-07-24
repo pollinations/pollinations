@@ -744,7 +744,28 @@ const generateImage = async (
 
         case "nanobanana":
         case "nanobanana-2":
-        case "nanobanana-2-lite":
+        case "nanobanana-2-lite": {
+            logError(
+                "Nano Banana authentication check:",
+                formatAuthInfo(userInfo),
+            );
+
+            try {
+                if (safeParams.safe) {
+                    await requireSafePrompt(prompt, safeParams, userInfo);
+                }
+
+                return await callOpenRouterGeminiImageAPI(prompt, safeParams);
+            } catch (error) {
+                logError(
+                    "OpenRouter Gemini image generation or safety check failed:",
+                    error.message,
+                );
+                await logGptImageError(prompt, safeParams, userInfo, error);
+                throw error;
+            }
+        }
+
         case "nanobanana-pro": {
             logError(
                 "Nano Banana authentication check:",

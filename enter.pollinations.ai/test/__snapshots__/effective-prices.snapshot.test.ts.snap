@@ -1164,16 +1164,6 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.000002,
     },
   },
-  "polly": {
-    "cost": {
-      "completionTextTokens": 0,
-      "promptTextTokens": 0,
-    },
-    "price": {
-      "completionTextTokens": 0,
-      "promptTextTokens": 0,
-    },
-  },
   "qwen-coder": {
     "cost": {
       "completionTextTokens": 0.00000022,

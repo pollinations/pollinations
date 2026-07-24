@@ -1,0 +1,59 @@
+{
+  "date": "2026-07-23",
+  "period_start": "2026-07-23",
+  "period_end": "2026-07-23",
+  "title": "More models, more modalities, fewer endpoint migrations",
+  "summary": "A busy model day: new text and speech options, sharper Grok images, steadier video jobs, and a Discord bot with fewer ways to get stuck.\n\nGemini Flash-Lite now runs on stable Gemini 3.5 without changing its existing aliases or multimodal, tool, search, structured-output, reasoning, and streaming features. LongCat 2.0 joins the text API with a 1M-token context window and tool support, while CSM 1B adds six-voice text-to-speech through the audio API. The model catalog also learned the proper logos for several of its newer residents.\n\nBasic Grok Imagine image generation and editing now default to 2K output. Grok Imagine Pro and Grok Video Pro moved onto OpenRouter's xAI routes while keeping their existing capabilities, and video jobs now stop after a deliberate three-minute maximum rather than wandering through legacy retries for much longer.\n\nThe Discord bot was reorganized, its prompt was trimmed, mention search and X links were repaired, Mermaid fences now render inline, and repeated failed tool calls no longer become a small infinite tragedy.",
+  "pr_count": 12,
+  "prs": [
+    {
+      "number": 12647,
+      "date": "2026-07-23"
+    },
+    {
+      "number": 12669,
+      "date": "2026-07-23"
+    },
+    {
+      "number": 12670,
+      "date": "2026-07-23"
+    },
+    {
+      "number": 12671,
+      "date": "2026-07-23"
+    },
+    {
+      "number": 12673,
+      "date": "2026-07-23"
+    },
+    {
+      "number": 12675,
+      "date": "2026-07-23"
+    },
+    {
+      "number": 12678,
+      "date": "2026-07-23"
+    },
+    {
+      "number": 12681,
+      "date": "2026-07-23"
+    },
+    {
+      "number": 12685,
+      "date": "2026-07-23"
+    },
+    {
+      "number": 12695,
+      "date": "2026-07-23"
+    },
+    {
+      "number": 12696,
+      "date": "2026-07-23"
+    },
+    {
+      "number": 12704,
+      "date": "2026-07-23"
+    }
+  ],
+  "generated_at": "2026-07-24T07:00:22.839538+00:00"
+}

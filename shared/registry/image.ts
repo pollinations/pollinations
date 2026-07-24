@@ -41,7 +41,7 @@ export const IMAGE_SERVICES = {
     },
     "nanobanana": {
         aliases: [],
-        provider: "google",
+        provider: "openrouter",
         brand: "Google",
         category: "image",
         addedDate: new Date("2025-10-07").getTime(),

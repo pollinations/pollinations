@@ -14,16 +14,21 @@ import os
 import time
 from io import BytesIO
 
+# Reduce allocator fragmentation on long-running GPU workers. This must be set
+# before importing torch.
+os.environ.setdefault("PYTORCH_CUDA_ALLOC_CONF", "expandable_segments:True")
+
 import torch
 import uvicorn
 from fastapi import Depends, FastAPI, Header, HTTPException
 from PIL import Image, UnidentifiedImageError
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("klein")
 
 MODEL_ID = "black-forest-labs/FLUX.2-klein-4B"
+MAX_PIXELS = 1536 * 1536
 BACKEND_TOKEN = os.getenv("PLN_GPU_TOKEN")
 if not BACKEND_TOKEN:
     logger.critical("PLN_GPU_TOKEN not configured - refusing to start")
@@ -69,6 +74,17 @@ class ImageRequest(BaseModel):
     num_inference_steps: int = 4
     images: list[str] = Field(default=[], description="Base64-encoded reference images for editing")
 
+    @model_validator(mode="after")
+    def validate_total_pixels(self):
+        total_pixels = self.width * self.height
+        if total_pixels > MAX_PIXELS:
+            raise ValueError(
+                f"Requested {self.width}x{self.height} ({total_pixels:,} pixels) "
+                f"exceeds the {MAX_PIXELS:,}-pixel limit. "
+                "Maximum area is 1536x1536, 2048x1152, or equivalent."
+            )
+        return self
+
 
 @app.get("/health")
 async def health():
@@ -104,16 +120,38 @@ async def generate(request: ImageRequest, _=Depends(verify_backend_token)):
         if len(reference_images) == 1:
             reference_images = reference_images[0]
 
+    reference_count = min(len(request.images), 10)
+    logger.info(
+        "Generation started size=%dx%d reference_images=%d",
+        request.width,
+        request.height,
+        reference_count,
+    )
+
     t0 = time.time()
-    image = pipe(
-        image=reference_images,
-        prompt=prompt,
-        height=request.height,
-        width=request.width,
-        guidance_scale=request.guidance_scale,
-        num_inference_steps=request.num_inference_steps,
-        generator=generator,
-    ).images[0]
+    try:
+        image = pipe(
+            image=reference_images,
+            prompt=prompt,
+            height=request.height,
+            width=request.width,
+            guidance_scale=request.guidance_scale,
+            num_inference_steps=request.num_inference_steps,
+            generator=generator,
+        ).images[0]
+    except torch.OutOfMemoryError as error:
+        logger.error(
+            "CUDA OOM size=%dx%d reference_images=%d: %s",
+            request.width,
+            request.height,
+            reference_count,
+            error,
+        )
+        torch.cuda.empty_cache()
+        raise HTTPException(
+            status_code=503,
+            detail="GPU memory exhausted; use smaller dimensions or fewer reference images.",
+        ) from error
     elapsed = time.time() - t0
     logger.info(f"Generation took {elapsed:.2f}s ({request.width}x{request.height})")
 

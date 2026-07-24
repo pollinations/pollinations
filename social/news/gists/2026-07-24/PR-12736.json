@@ -1,0 +1,34 @@
+{
+  "pr_number": 12736,
+  "title": "Move Seedream 4.5 Pro to OpenRouter",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/12736",
+  "merged_at": "2026-07-24T16:58:47Z",
+  "labels": [],
+  "pr_body_excerpt": "- Moves `seedream-pro` from Replicate to OpenRouter's exact `bytedance-seed/seedream-4.5` route, pinned to `seed` with fallback disabled.\n- Preserves the public name, paid-only policy, multiplier 1, `$0.04` flat price, 2K/4K behavior, aspect ratios, image editing, and 14-reference limit.\n- Uses verified explicit 2K presets because OpenRouter's normalized wide/tall 2K sizes fall below Seed's pixel minimum; reference dimensions preserve the previous match-input ratio behavior.\n- Removes the dead Replicate 4.5 route. No secret or deployment changes.\n\nValidation:\n- Gen image/access/billing suites: 243 passed; Enter pricing/catalog suites: 32 passed; both workers type-check.\n- Paid local E2E passed square, wide, tall, 4K, editing, 14 references, invalid ratio/count, exact `0.04` billing, and cache MISS→HIT. All successful media completed within 55 seconds.\n- Repeated local 5-way burst passed 5/5 in 6.5–14.7 seconds. Direct pinned OpenRouter burst passed 15/15 in 12.4–16.9 seconds. An earlier local burst had one transient network disconnect; the immediate repeat and direct provider burst were clean.",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Seedream found a new route",
+    "blurb": "Seedream 4.5 Pro has moved to a pinned OpenRouter route, with its familiar 2K, 4K, editing, and reference-image tricks intact. Same flower, new plumbing.",
+    "summary": "Moved the paid-only `seedream-pro` image model from Replicate to OpenRouter's pinned `bytedance-seed/seedream-4.5` route, preserving its $0.04 price, 2K/4K presets, editing, aspect ratios, and 14-reference limit.",
+    "impact": "Users can keep calling `seedream-pro` exactly as before while generation runs through a verified OpenRouter route with explicit 2K sizes that satisfy Seedream's pixel minimums.",
+    "keywords": [
+      "seedream-pro",
+      "openrouter",
+      "image-generation",
+      "seedream-4.5",
+      "image-editing",
+      "billing"
+    ],
+    "visual_concept": "Depict Seedream Pro as a cozy pixel-art dream garden being carefully rerouted through a new glowing OpenRouter-style gateway: Polli carries a small seed packet labeled \"4.5\" along a garden path toward a retro terminal, while framed 2K, 4K, wide, tall, and edited image sprouts bloom nearby. The scene represents a backend migration that preserves the public model and its creative controls, with Polli acting as the observant gardener checking that every reference-image plant still fits.",
+    "image_prompt": "Cozy pixel art scene of Polli, a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks, a small happy smile, and small rounded light blue translucent wings, wearing a tiny gardener tool belt as she carries a glowing seed packet marked \"4.5\" through a lime green (#ecf874) code garden toward a warm retro gateway terminal; nearby, framed pixel sprouts show square, wide, tall, 2K, 4K, and image-editing canvases, with flowers and vines growing around the cables. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, subtle CRT glow, pixel-font text: \"NEW ROUTE, SAME SEEDREAM\", nostalgic but beautiful and emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-24/PR-12736.jpg",
+    "prompt": "Cozy pixel art scene of Polli, a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks, a small happy smile, and small rounded light blue translucent wings, wearing a tiny gardener tool belt as she carries a glowing seed packet marked \"4.5\" through a lime green (#ecf874) code garden toward a warm retro gateway terminal; nearby, framed pixel sprouts show square, wide, tall, 2K, 4K, and image-editing canvases, with flowers and vines growing around the cables. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, subtle CRT glow, pixel-font text: \"NEW ROUTE, SAME SEEDREAM\", nostalgic but beautiful and emotionally warm."
+  },
+  "generated_at": "2026-07-24T16:59:46.931674+00:00"
+}

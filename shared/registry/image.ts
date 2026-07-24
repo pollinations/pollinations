@@ -41,7 +41,7 @@ export const IMAGE_SERVICES = {
     },
     "nanobanana": {
         aliases: [],
-        provider: "google",
+        provider: "openrouter",
         brand: "Google",
         category: "image",
         addedDate: new Date("2025-10-07").getTime(),
@@ -63,7 +63,7 @@ export const IMAGE_SERVICES = {
     },
     "nanobanana-2": {
         aliases: ["nanobanana2"],
-        provider: "google",
+        provider: "openrouter",
         brand: "Google",
         category: "image",
         addedDate: new Date("2026-02-27").getTime(),
@@ -85,7 +85,7 @@ export const IMAGE_SERVICES = {
     },
     "nanobanana-2-lite": {
         aliases: ["nanobanana2lite", "nanobanana-lite"],
-        provider: "google",
+        provider: "openrouter",
         brand: "Google",
         category: "image",
         addedDate: new Date("2026-06-30").getTime(),
@@ -107,7 +107,7 @@ export const IMAGE_SERVICES = {
     },
     "nanobanana-pro": {
         aliases: [],
-        provider: "google",
+        provider: "openrouter",
         brand: "Google",
         category: "image",
         addedDate: new Date("2025-12-01").getTime(),

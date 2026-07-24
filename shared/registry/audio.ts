@@ -140,6 +140,24 @@ export const AUDIO_SERVICES = {
         inputModalities: ["text", "audio"],
         outputModalities: ["audio"],
     },
+    "lyria-3-clip": {
+        aliases: ["lyria", "lyria-3"],
+        provider: "google",
+        brand: "Google",
+        category: "audio",
+        addedDate: new Date("2026-07-24").getTime(),
+        priceMultiplier: 1,
+        paidOnly: true,
+        cost: {
+            // Vertex bills a fixed $0.04 for each 30-second generated clip.
+            completionAudioTokens: 0.04,
+        },
+        title: "Lyria 3 Clip",
+        description:
+            "30-second music with vocals, lyrics, or instrumental arrangements",
+        inputModalities: ["text"],
+        outputModalities: ["audio"],
+    },
     "eleven-sfx": {
         aliases: ["sfx", "sound-effects", "eleven-sound-effects"],
         provider: "elevenlabs",

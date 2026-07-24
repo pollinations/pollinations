@@ -101,6 +101,10 @@ Grafana doesn't render escaped newlines in tooltips—they appear as literal `\n
 
 ## ClickHouse/Tinybird Queries
 
+### Generation events: V2 only
+
+`generation_event` V1 is retired. All observability dashboards and Tinybird queries must read from `generation_event_v2`; never restore or add a V1 fallback.
+
 ### ❌ Don't: Guess field values
 Meter slugs changed over time (`v1:meter:tier` → `local:tier`). Using wrong values returns zero data.
 

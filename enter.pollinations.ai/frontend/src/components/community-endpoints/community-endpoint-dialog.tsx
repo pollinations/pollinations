@@ -123,7 +123,6 @@ export function CommunityEndpointDialog({
                         ...emptyForm,
                         mode: "agent",
                         modality: "text",
-                        name: initialAgent.name,
                         agentId: initialAgent.id,
                     }
                   : emptyForm,
@@ -575,7 +574,8 @@ export function CommunityEndpointDialog({
                                 </option>
                                 {agents.map((agent) => (
                                     <option key={agent.id} value={agent.id}>
-                                        {agent.name}
+                                        {agent.baseModel} —{" "}
+                                        {agent.systemPrompt.slice(0, 80)}
                                     </option>
                                 ))}
                             </select>

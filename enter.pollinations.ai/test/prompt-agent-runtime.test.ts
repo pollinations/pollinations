@@ -71,7 +71,6 @@ describe("prompt-agent runtime", () => {
         await db.insert(schema.agent).values({
             id: agentId,
             ownerUserId: await createTestUser(),
-            name: `runtime-${agentId}`,
             config: JSON.stringify({
                 systemPrompt: "Answer briefly.",
                 baseModel: "openai-fast",

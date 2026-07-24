@@ -50,13 +50,13 @@ export async function createPromptAgentKey(
     authClient: AuthClient,
     dbBinding: D1Database,
     userId: string,
-    agentName: string,
+    agentId: string,
 ): Promise<{ key: string; keyId: string }> {
     const created = await createApiKeyForUser({
         authClient,
         dbBinding,
         userId,
-        name: `prompt-agent:${agentName}`,
+        name: `prompt-agent:${agentId}`,
         type: "secret",
         allowAccountKeysPermission: false,
         defaultCreatedVia: "prompt-agent",

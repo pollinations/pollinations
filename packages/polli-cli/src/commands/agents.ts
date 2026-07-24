@@ -18,7 +18,6 @@ type AgentConfig = {
 
 type Agent = AgentConfig & {
     id: string;
-    name: string;
     createdAt: string;
     updatedAt: string;
 };
@@ -42,11 +41,10 @@ function printAgents(agents: Agent[]): void {
     printTable(
         agents.map((agent) => ({
             id: chalk.dim(agent.id),
-            name: agent.name,
             model: agent.baseModel,
             mcp_servers: agent.mcpServers?.length ?? 0,
         })),
-        ["id", "name", "model", "mcp_servers"],
+        ["id", "model", "mcp_servers"],
     );
 }
 
@@ -69,7 +67,6 @@ const list = new Command("list")
 
 const create = new Command("create")
     .description("Create a prompt agent")
-    .requiredOption("--name <name>", "Agent name")
     .requiredOption(
         "--config <file>",
         "JSON config: { systemPrompt, baseModel, mcpServers? }",
@@ -80,7 +77,7 @@ const create = new Command("create")
             const agent = await gen<Agent>("/account/agents", {
                 apiKey: key,
                 method: "POST",
-                body: { name: opts.name, ...readConfig(opts.config) },
+                body: readConfig(opts.config),
             });
             if (getOutputMode() === "json") printResult(agent);
             else {
@@ -98,27 +95,19 @@ const create = new Command("create")
 const update = new Command("update")
     .description("Update an agent")
     .argument("<id>", "Agent id")
-    .option("--name <name>", "Agent name")
-    .option(
+    .requiredOption(
         "--config <file>",
         "JSON config: { systemPrompt, baseModel, mcpServers? }",
     )
     .action(async (id, opts) => {
         const key = requireKey();
-        if (!opts.name && !opts.config) {
-            printError("Provide --name or --config");
-            process.exit(1);
-        }
         try {
             const agent = await gen<Agent>(
                 `/account/agents/${encodeURIComponent(id)}`,
                 {
                     apiKey: key,
                     method: "PATCH",
-                    body: {
-                        ...(opts.name ? { name: opts.name } : {}),
-                        ...(opts.config ? readConfig(opts.config) : {}),
-                    },
+                    body: readConfig(opts.config),
                 },
             );
             if (getOutputMode() === "json") printResult(agent);

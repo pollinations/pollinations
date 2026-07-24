@@ -198,7 +198,6 @@ export const agent = sqliteTable("agent", {
   ownerUserId: text("owner_user_id")
     .notNull()
     .references(() => user.id, { onDelete: "cascade" }),
-  name: text("name").notNull(),
   config: text("config").notNull(),
   baseUrl: text("base_url").notNull(),
   apiKeyCiphertext: text("api_key_ciphertext").notNull(),
@@ -212,7 +211,6 @@ export const agent = sqliteTable("agent", {
     .notNull(),
 }, (table) => [
   index("idx_agent_owner_user_id").on(table.ownerUserId),
-  uniqueIndex("idx_agent_owner_name").on(table.ownerUserId, table.name),
 ]);
 
 export const communityEndpoint = sqliteTable("community_endpoint", {

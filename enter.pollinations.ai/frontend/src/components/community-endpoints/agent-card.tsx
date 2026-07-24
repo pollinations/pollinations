@@ -28,7 +28,7 @@ export function AgentCard({
                 <div className="min-w-0">
                     <div className="flex items-center gap-2">
                         <h3 className="truncate text-base font-semibold text-theme-text-strong">
-                            {agent.name}
+                            Agent draft
                         </h3>
                         <Chip intent="neutral" size="sm">
                             Needs listing details

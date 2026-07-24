@@ -19,9 +19,7 @@ export function AgentDeleteConfirmation({
             contentClassName="p-6"
         >
             <p className="mb-6 mt-4">
-                Delete <span className="font-medium">{agent?.name}</span>? Its
-                Worker and dedicated API key will be removed. Registered agents
-                must be unlisted first.
+                Delete this agent draft? Its dedicated API key will be removed.
             </p>
             <div className="flex justify-end gap-2">
                 <Button type="button" onClick={onCancel}>

@@ -3,8 +3,6 @@ import {
     Button,
     Dialog,
     DialogTitle,
-    FieldStack,
-    Input,
     ScrollArea,
 } from "@pollinations/ui";
 import type { FormEvent, ReactNode } from "react";
@@ -43,7 +41,6 @@ export function AgentDialog({
         setForm(
             open && agent
                 ? {
-                      name: agent.name,
                       systemPrompt: agent.systemPrompt,
                       baseModel: agent.baseModel,
                       mcpServers: agent.mcpServers.map((server) => ({
@@ -112,7 +109,6 @@ export function AgentDialog({
 
     const canSubmit =
         !isSubmitting &&
-        form.name.trim() !== "" &&
         form.systemPrompt.trim() !== "" &&
         form.baseModel.trim() !== "" &&
         form.mcpServers.every(isValidMcpRow);
@@ -150,22 +146,6 @@ export function AgentDialog({
             >
                 <ScrollArea className="min-h-0 flex-1 space-y-4 overscroll-contain px-6 pb-2">
                     {error && <Alert intent="danger">{error}</Alert>}
-                    <FieldStack
-                        label="Agent name"
-                        helper="An internal name; changing it does not change the model listing."
-                        alignLabelRow
-                    >
-                        <Input
-                            name="agent-name"
-                            value={form.name}
-                            placeholder="docs-assistant"
-                            maxLength={120}
-                            required
-                            onChange={(event) =>
-                                updateForm("name", event.target.value)
-                            }
-                        />
-                    </FieldStack>
                     <PromptAgentFields
                         form={form}
                         disabled={isSubmitting}

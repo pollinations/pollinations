@@ -17,14 +17,9 @@ import {
 } from "../services/prompt-agent.ts";
 import { requireAccountKeysPermission } from "./account-permissions.ts";
 
-const AgentNameSchema = z.string().trim().min(1).max(120);
-const CreateAgentSchema = z.object({
-    name: AgentNameSchema,
-    ...PromptAgentSchema.shape,
-});
+const CreateAgentSchema = PromptAgentSchema;
 const UpdateAgentSchema = z
     .object({
-        name: AgentNameSchema.optional(),
         systemPrompt: PromptAgentSchema.shape.systemPrompt.optional(),
         baseModel: PromptAgentSchema.shape.baseModel.optional(),
         mcpServers: PromptAgentSchema.shape.mcpServers.optional(),
@@ -37,7 +32,6 @@ const UpdateAgentSchema = z
     );
 const AgentResponseSchema = z.object({
     id: z.string(),
-    name: z.string(),
     systemPrompt: z.string(),
     baseModel: z.string(),
     mcpServers: PromptAgentSchema.shape.mcpServers,
@@ -61,7 +55,6 @@ function toResponse(row: AgentRow) {
     if (!config) throw new Error(`Agent ${row.id} has invalid configuration`);
     return {
         id: row.id,
-        name: row.name,
         ...config,
         createdAt: row.createdAt,
         updatedAt: row.updatedAt,
@@ -79,23 +72,6 @@ async function requireOwnedAgent(db: Db, id: string, ownerUserId: string) {
         throw new HTTPException(404, { message: "Agent not found" });
     }
     return row;
-}
-
-async function ensureAgentNameAvailable(
-    db: Db,
-    ownerUserId: string,
-    name: string,
-    currentId?: string,
-): Promise<void> {
-    const existing = await db.query.agent.findFirst({
-        columns: { id: true },
-        where: and(
-            eq(schema.agent.ownerUserId, ownerUserId),
-            eq(schema.agent.name, name),
-        ),
-    });
-    if (!existing || existing.id === currentId) return;
-    throw new HTTPException(400, { message: "Agent name is already in use" });
 }
 
 export const agentsRoutes = new Hono<Env>()
@@ -190,14 +166,13 @@ export const agentsRoutes = new Hono<Env>()
             const input = c.req.valid("json");
             requireAccountKeysPermission(c.var.auth.apiKey);
             const db = drizzle(c.env.DB, { schema });
-            await ensureAgentNameAvailable(db, user.id, input.name);
             const id = crypto.randomUUID();
             const config = PromptAgentSchema.parse(input);
             const { key, keyId } = await createPromptAgentKey(
                 c.var.auth.client,
                 c.env.DB,
                 user.id,
-                input.name,
+                id,
             );
             try {
                 const [row] = await db
@@ -205,7 +180,6 @@ export const agentsRoutes = new Hono<Env>()
                     .values({
                         id,
                         ownerUserId: user.id,
-                        name: input.name,
                         config: serializePromptAgentConfig(config),
                         baseUrl: agentRuntimeBaseUrl(c.env),
                         apiKeyCiphertext: await encryptSecret(
@@ -256,12 +230,6 @@ export const agentsRoutes = new Hono<Env>()
             const db = drizzle(c.env.DB, { schema });
             const id = c.req.param("id");
             const existing = await requireOwnedAgent(db, id, user.id);
-            await ensureAgentNameAvailable(
-                db,
-                user.id,
-                input.name ?? existing.name,
-                id,
-            );
             const currentConfig = parsePromptAgentConfig(existing.config);
             if (!currentConfig) {
                 throw new Error(
@@ -277,7 +245,6 @@ export const agentsRoutes = new Hono<Env>()
             const [row] = await db
                 .update(schema.agent)
                 .set({
-                    name: input.name ?? existing.name,
                     config: serializedConfig,
                     updatedAt: new Date(),
                 })

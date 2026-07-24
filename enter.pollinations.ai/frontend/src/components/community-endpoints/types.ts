@@ -21,7 +21,6 @@ export type McpServerRow = { id: string; name: string; url: string };
 
 export type ManagedAgent = {
     id: string;
-    name: string;
     systemPrompt: string;
     baseModel: string;
     mcpServers: { name: string; url: string }[];
@@ -29,7 +28,7 @@ export type ManagedAgent = {
     updatedAt: string;
 };
 
-type AgentFields = Pick<ManagedAgent, "name" | "systemPrompt" | "baseModel">;
+type AgentFields = Pick<ManagedAgent, "systemPrompt" | "baseModel">;
 
 export type AgentFormState = AgentFields & { mcpServers: McpServerRow[] };
 
@@ -120,7 +119,6 @@ export const emptyForm: EndpointFormState = {
 };
 
 export const emptyAgentForm: AgentFormState = {
-    name: "",
     systemPrompt: "",
     baseModel: "",
     mcpServers: [],
@@ -325,8 +323,6 @@ function mcpServersToPayload(rows: McpServerRow[]): ManagedAgent["mcpServers"] {
 }
 
 export function toAgentPayload(form: AgentFormState): AgentPayload {
-    const name = form.name.trim();
-    if (!name) throw new Error("Agent name is required");
     const systemPrompt = form.systemPrompt.trim();
     if (!systemPrompt) {
         throw new Error("System prompt is required for a prompt agent");
@@ -336,7 +332,6 @@ export function toAgentPayload(form: AgentFormState): AgentPayload {
         throw new Error("Base model is required for a prompt agent");
     }
     return {
-        name,
         systemPrompt,
         baseModel,
         mcpServers: mcpServersToPayload(form.mcpServers),

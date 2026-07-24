@@ -1,0 +1,33 @@
+{
+  "pr_number": 12720,
+  "title": "feat: allow Takax62 to publish community models",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/12720",
+  "merged_at": "2026-07-24T10:28:50Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds GitHub user ID `184364250` (`Takax62`) to the community model publisher allowlist.\n- Keeps the change limited to the shared allowlist.\n\nFixes #12684",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "One more gardener",
+    "blurb": "Takax62 now has the keys to the community-model garden. The shared allowlist grew by one very intentional line.",
+    "summary": "Added GitHub user ID 184364250 (Takax62) to the shared community model publisher allowlist.",
+    "impact": "Takax62 can now publish community models for the wider pollinations.ai ecosystem to use.",
+    "keywords": [
+      "community-models",
+      "publishers",
+      "github",
+      "allowlist",
+      "contributors"
+    ],
+    "visual_concept": "Depict Takax62 as a welcomed new garden steward through a glowing access-key or permit beside a code-plant nursery. Polli should be warmly helping open the garden gate, with model seeds and small labeled pots representing community models.",
+    "image_prompt": "A cozy garden-gate scene where Polli welcomes a new community-model gardener into a nursery of glowing code-plants, handing them a small lime green (#ecf874) access key beside pots labeled \"MODELS\" in simple pixel text. Polli is a cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light blue translucent wings; she wears a tiny gardener hat and shares the frame with seedlings, flowers, and a retro terminal. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-24/PR-12720.jpg",
+    "prompt": "A cozy garden-gate scene where Polli welcomes a new community-model gardener into a nursery of glowing code-plants, handing them a small lime green (#ecf874) access key beside pots labeled \"MODELS\" in simple pixel text. Polli is a cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light blue translucent wings; she wears a tiny gardener hat and shares the frame with seedlings, flowers, and a retro terminal. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, nostalgic but beautiful."
+  },
+  "generated_at": "2026-07-24T10:29:48.872810+00:00"
+}

@@ -110,6 +110,8 @@ type ResponseTrackingData = {
     usage?: Usage;
     cost?: UsageCost;
     price?: UsagePrice;
+    // Named conditional pricing sheet selected by calculateUsageBilling.
+    costVariant?: string;
     // Per-rule billing adjustment breakdown for the billed generation. Absent on
     // cache hits / not-billed paths, which return before cost calculation.
     adjustments?: BillingAdjustment[];
@@ -545,6 +547,7 @@ async function trackResponse(
         fallbackUsed,
         cost,
         price,
+        costVariant,
         adjustments,
         priceDefinition,
         costVariant,
@@ -742,6 +745,7 @@ function createTrackingEvent({
         resolvedModelRequested: requestTracking.resolvedModelRequested,
         modelUsed: responseTracking.modelUsed,
         modelProviderUsed: requestTracking.modelProvider,
+        costVariant: responseTracking.costVariant,
         fallbackUsed: responseTracking.fallbackUsed,
 
         isBilledUsage: responseTracking.isBilledUsage,

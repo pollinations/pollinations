@@ -51,6 +51,7 @@ export type ModelPrice = {
     outputModalities?: string[];
     capabilities: ModelCapability[];
     paidOnly?: boolean;
+    free?: boolean;
     alpha?: boolean;
     addedDate?: number;
     inputSortPrice?: number;

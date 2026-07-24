@@ -9,6 +9,7 @@ interface CloudflareBindings {
     PLN_ENTER_TOKEN: string;
     PLN_GPU_TOKEN: string;
     DASHSCOPE_API_KEY: string;
+    DEEPINFRA_API_KEY: string;
     FAL_KEY: string;
     INFERENCEPORT_API_KEY?: string;
     STABILITY_API_KEY?: string;

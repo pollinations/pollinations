@@ -22,7 +22,7 @@ if [ -z "$TINYBIRD_TOKEN" ] || [ "$TINYBIRD_TOKEN" = "null" ]; then
 fi
 
 QUERY="SELECT start_time, response_status, model_requested, error_message 
-FROM generation_event 
+FROM generation_event_v2
 WHERE user_github_username = '$USERNAME' 
   AND start_time > now() - interval $HOURS hour 
 ORDER BY start_time DESC 

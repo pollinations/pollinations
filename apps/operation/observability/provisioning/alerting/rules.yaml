@@ -23,7 +23,7 @@ groups:
                     resolved_model_requested AS model,
                     model_provider_used AS provider,
                     count() AS server_errors
-                  FROM generation_event
+                  FROM generation_event_v2
                   WHERE
                     start_time >= now() - INTERVAL 10 MINUTE
                     AND response_status >= 500
@@ -37,7 +37,7 @@ groups:
                     resolved_model_requested AS model,
                     model_provider_used AS provider,
                     count() AS total_requests
-                  FROM generation_event
+                  FROM generation_event_v2
                   WHERE
                     start_time >= now() - INTERVAL 10 MINUTE
                     AND resolved_model_requested != ''
@@ -109,7 +109,7 @@ groups:
                     resolved_model_requested AS model,
                     model_provider_used AS provider,
                     count() AS server_errors
-                  FROM generation_event
+                  FROM generation_event_v2
                   WHERE
                     start_time >= now() - INTERVAL 10 MINUTE
                     AND response_status >= 500
@@ -123,7 +123,7 @@ groups:
                     resolved_model_requested AS model,
                     model_provider_used AS provider,
                     count() AS total_requests
-                  FROM generation_event
+                  FROM generation_event_v2
                   WHERE
                     start_time >= now() - INTERVAL 10 MINUTE
                     AND resolved_model_requested != ''

@@ -1,8 +1,9 @@
 import type { Logger } from "@logtape/logtape";
 import { ensureUpstreamOk, UpstreamError } from "@shared/error.ts";
 import {
+    AUDIO_VOICES,
     type AudioModelName,
-    ELEVENLABS_VOICES,
+    CSM_VOICES,
     resolveElevenLabsVoiceId,
 } from "@shared/registry/audio.ts";
 import type { ModelDefinition } from "@shared/registry/registry.ts";
@@ -44,7 +45,7 @@ const CreateSpeechRequestSchema = z
             .string()
             .default("alloy")
             .meta({
-                description: `The voice to use. Can be any preset name (${ELEVENLABS_VOICES.join(", ")}) OR a custom ElevenLabs voice ID (UUID from your dashboard).`,
+                description: `The voice to use. Model-specific presets include ${AUDIO_VOICES.join(", ")}; ElevenLabs models also accept a custom voice ID.`,
                 example: "rachel",
             }),
         response_format: z
@@ -52,7 +53,7 @@ const CreateSpeechRequestSchema = z
             .default("mp3")
             .meta({
                 description:
-                    "The audio format for the output. Qwen TTS currently returns WAV regardless of this setting; eleven-sfx supports mp3 only (other values are rejected).",
+                    "The audio format for the output. CSM supports mp3, opus, flac, wav, and pcm; Qwen TTS currently returns WAV regardless of this setting; eleven-sfx supports mp3 only.",
                 example: "mp3",
             }),
         duration: z.number().min(0.5).max(300).optional().meta({
@@ -819,6 +820,11 @@ export async function generateSoundEffect(opts: {
 const QWEN_TTS_ENDPOINT =
     "https://dashscope-intl.aliyuncs.com/api/v1/services/aigc/multimodal-generation/generation";
 
+const DEEPINFRA_TTS_ENDPOINT =
+    "https://api.deepinfra.com/v1/openai/audio/speech";
+const DEEPINFRA_CSM_MODEL_ID = "sesame/csm-1b";
+const CSM_AUDIO_FORMATS = ["mp3", "opus", "flac", "wav", "pcm"] as const;
+
 const QWEN_TTS_MODEL_IDS = {
     "qwen-tts": "qwen3-tts-flash",
     "qwen-tts-instruct": "qwen3-tts-instruct-flash",
@@ -1121,6 +1127,84 @@ export async function generateQwenTts(opts: {
     return new Response(audioBuffer, {
         status: 200,
         headers: { "Content-Type": "audio/wav", ...usageHeaders },
+    });
+}
+
+export async function generateCsmSpeech(opts: {
+    text: string;
+    voice: string;
+    responseFormat: string;
+    apiKey: string;
+    log: Logger;
+}): Promise<Response> {
+    const { text, responseFormat, apiKey, log } = opts;
+
+    if (!apiKey) {
+        throw new UpstreamError(500 as ContentfulStatusCode, {
+            message: "CSM speech is not configured (missing DEEPINFRA_API_KEY)",
+        });
+    }
+
+    if (text.length > 200) {
+        throw new UpstreamError(400 as ContentfulStatusCode, {
+            message: `Input text too long: ${text.length} characters. Maximum is 200.`,
+        });
+    }
+
+    const voice = opts.voice === "alloy" ? "conversational_a" : opts.voice;
+    if (!CSM_VOICES.includes(voice as (typeof CSM_VOICES)[number])) {
+        throw new UpstreamError(400 as ContentfulStatusCode, {
+            message: `Invalid voice for csm-1b: ${opts.voice}. Supported voices: ${CSM_VOICES.join(", ")}.`,
+        });
+    }
+
+    if (
+        !CSM_AUDIO_FORMATS.includes(
+            responseFormat as (typeof CSM_AUDIO_FORMATS)[number],
+        )
+    ) {
+        throw new UpstreamError(400 as ContentfulStatusCode, {
+            message: `Unsupported response_format for csm-1b: ${responseFormat}. Supported formats: ${CSM_AUDIO_FORMATS.join(", ")}.`,
+        });
+    }
+
+    log.info("CSM request: voice={voice}, format={format}, chars={chars}", {
+        voice,
+        format: responseFormat,
+        chars: text.length,
+    });
+
+    const response = await ensureUpstreamOk(
+        await fetch(DEEPINFRA_TTS_ENDPOINT, {
+            method: "POST",
+            headers: {
+                Authorization: `Bearer ${apiKey}`,
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+                model: DEEPINFRA_CSM_MODEL_ID,
+                input: text,
+                voice,
+                response_format: responseFormat,
+            }),
+        }),
+        DEEPINFRA_TTS_ENDPOINT,
+    );
+
+    const usageHeaders = {
+        ...buildUsageHeaders("csm-1b", createAudioTokenUsage(text.length)),
+        "x-tts-voice": voice,
+    };
+
+    log.info("CSM success: {chars} characters", { chars: text.length });
+
+    return new Response(response.body, {
+        status: 200,
+        headers: {
+            "Content-Type":
+                response.headers.get("content-type") || "audio/mpeg",
+            ...usageHeaders,
+        },
     });
 }
 
@@ -1453,6 +1537,7 @@ async function dispatchAudioGeneration(
         promptInfluence?: number;
         apiKey: string;
         dashScopeApiKey: string;
+        deepInfraApiKey: string;
         falKey?: string;
         stabilityApiKey?: string;
         log: Logger;
@@ -1478,6 +1563,7 @@ async function dispatchAudioGeneration(
         promptInfluence,
         apiKey,
         dashScopeApiKey,
+        deepInfraApiKey,
         falKey,
         stabilityApiKey,
         log,
@@ -1578,6 +1664,17 @@ async function dispatchAudioGeneration(
                     log,
                 }),
             );
+        case "csm-1b":
+            return withSafetyHeaders(
+                c,
+                await generateCsmSpeech({
+                    text,
+                    voice,
+                    responseFormat,
+                    apiKey: deepInfraApiKey,
+                    log,
+                }),
+            );
         default:
             throw new UpstreamError(500 as ContentfulStatusCode, {
                 message: `No audio provider route configured for model: ${c.var.model.resolved}`,
@@ -1623,6 +1720,7 @@ export async function handleSimpleAudio(c: AudioContext): Promise<Response> {
         promptInfluence: query.prompt_influence,
         apiKey,
         dashScopeApiKey: c.env.DASHSCOPE_API_KEY,
+        deepInfraApiKey: c.env.DEEPINFRA_API_KEY,
         falKey: c.env.FAL_KEY,
         stabilityApiKey: c.env.STABILITY_API_KEY,
         log,
@@ -1747,7 +1845,7 @@ export const audioRoutes = new Hono<Env>()
                 "",
                 "Set `model` to `elevenmusic`, `stable-audio-3-medium`, or `stable-audio-3-large` to generate music. Send multipart/form-data with `reference_audio` plus `input` to run audio-to-audio (style transfer) on `stable-audio-3-medium` or `stable-audio-3-large`, or reference-audio conditioning on `elevenmusic`; for ElevenLabs inpainting, pass a `composition_plan`.",
                 "",
-                `**Available voices:** ${ELEVENLABS_VOICES.join(", ")}`,
+                `**Available voices:** ${AUDIO_VOICES.join(", ")}`,
                 "",
                 "**Output formats:** mp3 (default), opus, aac, flac, wav, pcm",
             ].join("\n"),
@@ -1768,6 +1866,9 @@ export const audioRoutes = new Hono<Env>()
                             schema: { type: "string", format: "binary" },
                         },
                         "audio/wav": {
+                            schema: { type: "string", format: "binary" },
+                        },
+                        "audio/pcm": {
                             schema: { type: "string", format: "binary" },
                         },
                     },
@@ -1838,6 +1939,7 @@ export const audioRoutes = new Hono<Env>()
                 promptInfluence: prompt_influence,
                 apiKey,
                 dashScopeApiKey: c.env.DASHSCOPE_API_KEY,
+                deepInfraApiKey: c.env.DEEPINFRA_API_KEY,
                 falKey: c.env.FAL_KEY,
                 stabilityApiKey: c.env.STABILITY_API_KEY,
                 log,

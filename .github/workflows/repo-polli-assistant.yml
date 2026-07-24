@@ -1,5 +1,5 @@
 # Pollinations AI - AI assistant via Pollinations AI
-# Trigger: polli | Whitelist: voodoohop, ElliotEtag, Circuit-Overtime, Itachi-1824
+# Trigger: !polli | Whitelist: voodoohop, ElliotEtag, Circuit-Overtime, Itachi-1824
 
 name: Repo / Polli assistant
 
@@ -16,10 +16,10 @@ on:
 jobs:
   polli:
     if: |
-      (github.event_name == 'issue_comment' && contains(github.event.comment.body, 'polli')) ||
-      (github.event_name == 'pull_request_review_comment' && contains(github.event.comment.body, 'polli')) ||
-      (github.event_name == 'pull_request_review' && contains(github.event.review.body, 'polli')) ||
-      (github.event_name == 'issues' && (contains(github.event.issue.body, 'polli') || contains(github.event.issue.title, 'polli')))
+      (github.event_name == 'issue_comment' && contains(github.event.comment.body, '!polli')) ||
+      (github.event_name == 'pull_request_review_comment' && contains(github.event.comment.body, '!polli')) ||
+      (github.event_name == 'pull_request_review' && contains(github.event.review.body, '!polli')) ||
+      (github.event_name == 'issues' && (contains(github.event.issue.body, '!polli') || contains(github.event.issue.title, '!polli')))
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -42,9 +42,8 @@ jobs:
         with:
           github-token: ${{ steps.token.outputs.token }}
           script: |
-            // Strict check: lowercase 'polli' as a standalone word. The job-level
-            // contains() gate is a coarse pre-filter only — 'polli' is a substring of
-            // 'pollinations', so ordinary mentions reach here and must be rejected.
+            // Strict check: lowercase '!polli' as a standalone token. The job-level
+            // contains() gate is a coarse pre-filter only.
             let body = '';
             if (context.eventName === 'issue_comment' || context.eventName === 'pull_request_review_comment') {
               body = context.payload.comment?.body || '';
@@ -54,8 +53,8 @@ jobs:
               body = context.payload.review?.body || '';
             }
 
-            if (!/(?<![a-z0-9])polli(?![a-z0-9])/.test(body)) {
-              console.log('Strict check failed: "polli" must appear as a lowercase standalone word.');
+            if (!/(?<![a-z0-9])!polli(?![a-z0-9])/.test(body)) {
+              console.log('Strict check failed: "!polli" must appear as a standalone token.');
               core.setOutput('authorized', 'false');
               return;
             }
@@ -218,7 +217,7 @@ jobs:
           anthropic_api_key: "ccr-pollinations"
           show_full_output: true
           github_token: ${{ steps.token.outputs.token }}
-          trigger_phrase: "polli"
+          trigger_phrase: "!polli"
           claude_args: |
             --system-prompt "You are Polli, a helpful developer on the Pollinations team. Never mention Claude, Claude Code, AI, or LLMs — you are just a team member. Be casual, concise, and human. Use bullet points. No verbose explanations. When commenting on issues or reviewing PRs, write like a friendly dev — short, direct, helpful."
           additional_permissions: |

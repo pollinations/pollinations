@@ -10,7 +10,7 @@ concurrency:
 
 jobs:
   triage:
-    # Skip bots and TIER issues
+    # Skip bots; app submissions are handled by the app pre-review workflow.
     if: |
       !endsWith(github.event.issue.user.login, '[bot]') &&
       !contains(github.event.issue.user.login, 'dependabot') &&
@@ -34,10 +34,10 @@ jobs:
           script: |
             const issue = context.payload.issue;
 
-            // Skip TIER-labeled or already-POLLI-labeled issues
-            const hasTierLabel = issue.labels?.some(l => l.name.startsWith('TIER-'));
-            if (hasTierLabel) {
-              console.log('Skipping: TIER-labeled issue');
+            // Skip app submissions or already-POLLI-labeled issues
+            const isAppSubmission = issue.labels?.some(l => l.name === 'APP-SUBMISSION');
+            if (isAppSubmission) {
+              console.log('Skipping: app submission');
               return;
             }
             const hasPolliLabel = issue.labels?.some(l => l.name === 'POLLI');

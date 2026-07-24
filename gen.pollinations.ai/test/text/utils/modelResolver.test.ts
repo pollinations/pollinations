@@ -45,6 +45,16 @@ describe("resolveModelConfig", () => {
         expect(result.options.model).toBe("us.amazon.nova-micro-v1:0");
     });
 
+    it("pins longcat to the exact OpenRouter endpoint without fallback", () => {
+        const result = resolveModelConfig(messages, { model: "longcat" });
+
+        expect(result.options.model).toBe("meituan/longcat-2.0");
+        expect(result.options.provider).toEqual({
+            only: ["atlas-cloud/fp8"],
+            allow_fallbacks: false,
+        });
+    });
+
     it.each([
         "perplexity-high",
         "perplexity-deep",

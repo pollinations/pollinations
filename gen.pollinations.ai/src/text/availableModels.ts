@@ -4,7 +4,11 @@ import midijourneyPrompt from "./personas/midijourney.js";
 import { BASE_PROMPTS } from "./prompts/systemPrompts.js";
 import { createClaudeThinkingTransform } from "./transforms/createClaudeThinkingTransform.ts";
 import { createGeminiThinkingTransform } from "./transforms/createGeminiThinkingTransform.ts";
-import { createGeminiToolsTransform } from "./transforms/createGeminiToolsTransform.ts";
+import {
+    adaptGoogleSearchToolForOpenRouter,
+    createOpenRouterNativeWebSearchTransform,
+    stripLogitBiasForNativeWebSearch,
+} from "./transforms/createGeminiToolsTransform.ts";
 import { createMessageTransform } from "./transforms/createMessageTransform.js";
 import { createPerplexitySearchTransform } from "./transforms/createPerplexitySearchTransform.ts";
 import { createReasoningEffortTransform } from "./transforms/createReasoningEffortTransform.ts";
@@ -218,65 +222,74 @@ const models: ModelDefinition[] = [
     },
     {
         name: "gemini-3-flash",
-        config: portkeyConfig["gemini-3-flash-preview"],
+        config: portkeyConfig["google/gemini-3-flash-preview"],
         transform: pipe(
             sanitizeToolSchemas,
-            createGeminiToolsTransform(["code_execution"]),
+            adaptGoogleSearchToolForOpenRouter,
             removeToolsForJsonResponse,
             createGeminiThinkingTransform("v3-flash"),
         ),
     },
     {
         name: "gemini",
-        config: portkeyConfig["gemini-3.5-flash"],
+        config: portkeyConfig["google/gemini-3.6-flash"],
         transform: pipe(
             sanitizeToolSchemas,
-            createGeminiToolsTransform(["code_execution"]),
+            adaptGoogleSearchToolForOpenRouter,
             removeToolsForJsonResponse,
-            createGeminiThinkingTransform("v3-flash"),
+            // Gemini 3.6 requires reasoning; map `none` to its lowest level.
+            createGeminiThinkingTransform("v3-pro"),
         ),
     },
     {
-        name: "gemini-flash-lite-3.1",
-        config: portkeyConfig["gemini-3.1-flash-lite"],
+        name: "gemini-flash-lite-3.5",
+        config: portkeyConfig["google/gemini-3.5-flash-lite"],
         transform: pipe(
             sanitizeToolSchemas,
+            adaptGoogleSearchToolForOpenRouter,
             createGeminiThinkingTransform("v3-flash"),
         ),
     },
     {
         name: "gemini-fast",
-        config: portkeyConfig["gemini-2.5-flash-lite"],
+        config: portkeyConfig["google/gemini-2.5-flash-lite"],
         transform: pipe(
             sanitizeToolSchemas,
+            adaptGoogleSearchToolForOpenRouter,
+            stripLogitBiasForNativeWebSearch,
             createGeminiThinkingTransform("v2.5"),
         ),
     },
     {
         name: "gemini-search",
-        config: portkeyConfig["gemini-2.5-flash-lite"],
+        config: portkeyConfig["google/gemini-2.5-flash-lite"],
         transform: pipe(
             sanitizeToolSchemas,
-            createGeminiToolsTransform(["google_search"]),
+            adaptGoogleSearchToolForOpenRouter,
+            createOpenRouterNativeWebSearchTransform(),
+            stripLogitBiasForNativeWebSearch,
             createGeminiThinkingTransform("v2.5"),
         ),
     },
     {
         name: "gemini-search-fast",
-        config: portkeyConfig["gemini-3.1-flash-lite"],
+        config: portkeyConfig["google/gemini-3.5-flash-lite"],
         transform: pipe(
             sanitizeToolSchemas,
-            createGeminiToolsTransform(["google_search"]),
+            adaptGoogleSearchToolForOpenRouter,
+            createOpenRouterNativeWebSearchTransform(),
             createGeminiThinkingTransform("v3-flash"),
         ),
     },
     {
         name: "gemini-search-large",
-        config: portkeyConfig["gemini-3.5-flash"],
+        config: portkeyConfig["google/gemini-3.6-flash"],
         transform: pipe(
             sanitizeToolSchemas,
-            createGeminiToolsTransform(["google_search"]),
-            createGeminiThinkingTransform("v3-flash"),
+            adaptGoogleSearchToolForOpenRouter,
+            createOpenRouterNativeWebSearchTransform(),
+            // Gemini 3.6 requires reasoning; map `none` to its lowest level.
+            createGeminiThinkingTransform("v3-pro"),
         ),
     },
     {
@@ -325,6 +338,22 @@ const models: ModelDefinition[] = [
         transform: stripCacheControl,
     },
     {
+        name: "laguna",
+        config: portkeyConfig["poolside/laguna-s-2.1"],
+        transform: pipe(
+            sanitizeToolSchemas,
+            createReasoningEffortTransform("toggle"),
+        ),
+    },
+    {
+        name: "longcat",
+        config: portkeyConfig["meituan/longcat-2.0"],
+        transform: pipe(
+            sanitizeToolSchemas,
+            createReasoningEffortTransform("toggle"),
+        ),
+    },
+    {
         name: "mimo-v2.5",
         config: portkeyConfig["xiaomi/mimo-v2.5"],
         transform: stripCacheControl,
@@ -336,10 +365,10 @@ const models: ModelDefinition[] = [
     },
     {
         name: "gemini-large",
-        config: portkeyConfig["gemini-3.1-pro-preview"],
+        config: portkeyConfig["google/gemini-3.1-pro-preview"],
         transform: pipe(
             sanitizeToolSchemas,
-            createGeminiToolsTransform(["code_execution"]),
+            adaptGoogleSearchToolForOpenRouter,
             removeToolsForJsonResponse,
             createGeminiThinkingTransform("v3-pro"),
         ),
@@ -396,10 +425,6 @@ const models: ModelDefinition[] = [
         config: portkeyConfig["Mistral-Large-3"],
         // Azure deployment 500s on reasoning_effort.
         transform: stripReasoning,
-    },
-    {
-        name: "polly",
-        config: portkeyConfig["polly"],
     },
     {
         name: "qwen-safety",

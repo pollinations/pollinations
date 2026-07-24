@@ -45,6 +45,17 @@ export const VOICE_MAPPING: Record<string, string> = {
 
 export const ELEVENLABS_VOICES = Object.keys(VOICE_MAPPING);
 
+export const CSM_VOICES = [
+    "conversational_a",
+    "conversational_b",
+    "read_speech_a",
+    "read_speech_b",
+    "read_speech_c",
+    "read_speech_d",
+] as const;
+
+export const AUDIO_VOICES = [...ELEVENLABS_VOICES, ...CSM_VOICES];
+
 export const DEFAULT_AUDIO_MODEL = "elevenlabs" as const;
 export type AudioModelName = keyof typeof AUDIO_SERVICES;
 
@@ -297,6 +308,25 @@ export const AUDIO_SERVICES = {
             "Text-to-speech you can direct with emotion and style instructions",
         inputModalities: ["text"],
         outputModalities: ["audio"],
+    },
+    "csm-1b": {
+        aliases: ["csm", "sesame-csm", "sesame-csm-1b"],
+        provider: "deepinfra",
+        brand: "Sesame",
+        category: "audio",
+        addedDate: new Date("2026-07-23").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1,
+        cost: {
+            // DeepInfra bills CSM by input character: $7 per 1M characters.
+            completionAudioTokens: 7 / 1_000_000,
+        },
+        title: "CSM 1B",
+        description:
+            "English conversational speech with six reading and dialogue voices",
+        inputModalities: ["text"],
+        outputModalities: ["audio"],
+        voices: [...CSM_VOICES],
     },
 } satisfies Record<string, ModelDefinition>;
 

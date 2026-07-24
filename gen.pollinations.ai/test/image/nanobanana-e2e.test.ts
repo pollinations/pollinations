@@ -302,3 +302,64 @@ test("nanobanana-2-lite preserves fixed 1K routing and exact billing", async ({
     expect(event.totalCost).toBeCloseTo(expectedCost, 10);
     expect(event.totalPrice).toBeCloseTo(expectedCost, 10);
 });
+
+test("nanobanana-pro preserves 4K AI Studio routing and exact billing", async ({
+    paidApiKey,
+    mocks,
+}) => {
+    await mocks.enable("tinybird", "openrouter");
+    mocks.openrouter.state.usage = {
+        prompt_tokens: 14,
+        completion_tokens: 2008,
+        total_tokens: 2022,
+        cost: 0.240124,
+        prompt_tokens_details: {},
+        completion_tokens_details: {
+            reasoning_tokens: 8,
+            image_tokens: 2000,
+        },
+    };
+
+    const { response, wait } = await fetchWorker(
+        "/image/purple%20hexagon?model=nanobanana-pro&width=3840&height=2160&seed=42&reasoning=pro",
+        { headers: { authorization: `Bearer ${paidApiKey}` } },
+    );
+
+    expect(response.status, await response.clone().text()).toBe(200);
+    expect(response.headers.get("x-model-used")).toBe("nanobanana-pro");
+    expect(response.headers.get("x-usage-prompt-text-tokens")).toBe("14");
+    expect(response.headers.get("x-usage-completion-reasoning-tokens")).toBe(
+        "8",
+    );
+    expect(response.headers.get("x-usage-completion-image-tokens")).toBe(
+        "2000",
+    );
+    await response.arrayBuffer();
+    await wait();
+
+    expect(mocks.openrouter.state.requests).toHaveLength(1);
+    expect(mocks.openrouter.state.requests[0]).toMatchObject({
+        body: {
+            model: "google/gemini-3-pro-image",
+            resolution: "4K",
+            provider: {
+                only: ["google-ai-studio/global"],
+                allow_fallbacks: false,
+            },
+        },
+    });
+    expect(mocks.openrouter.state.requests[0].body).not.toHaveProperty(
+        "reasoning_effort",
+    );
+    expect(mocks.tinybird.state.events).toHaveLength(1);
+    const event = mocks.tinybird.state.events[0];
+    expect(event).toMatchObject({
+        modelRequested: "nanobanana-pro",
+        tokenCountPromptText: 14,
+        tokenCountCompletionReasoning: 8,
+        tokenCountCompletionImage: 2000,
+    });
+    const expectedCost = (14 * 2 + 8 * 12 + 2000 * 120) / 1_000_000;
+    expect(event.totalCost).toBeCloseTo(expectedCost, 10);
+    expect(event.totalPrice).toBeCloseTo(expectedCost, 10);
+});

@@ -52,7 +52,6 @@ import {
     convertToJpeg as transformToJpeg,
 } from "./utils/imageTransform.ts";
 import type { TrackingData } from "./utils/trackingHeaders.ts";
-import { callVertexAIGemini } from "./vertexAIImageGenerator.js";
 import { writeExifMetadata } from "./writeExifMetadata.ts";
 
 const SANA_BACKEND_URL = "https://ltx2-backend.pollinations.ai/generate";
@@ -778,10 +777,10 @@ const generateImage = async (
                     await requireSafePrompt(prompt, safeParams, userInfo);
                 }
 
-                return await callVertexAIGemini(prompt, safeParams);
+                return await callOpenRouterGeminiImageAPI(prompt, safeParams);
             } catch (error) {
                 logError(
-                    "Vertex AI Gemini image generation or safety check failed:",
+                    "OpenRouter Gemini image generation or safety check failed:",
                     error.message,
                 );
                 await logGptImageError(prompt, safeParams, userInfo, error);

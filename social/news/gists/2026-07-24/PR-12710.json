@@ -1,0 +1,34 @@
+{
+  "pr_number": 12710,
+  "title": "Move NanoBanana 2 Lite to OpenRouter",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/12710",
+  "merged_at": "2026-07-24T14:30:44Z",
+  "labels": [],
+  "pr_body_excerpt": "- Routes `nanobanana-2-lite` through OpenRouter’s pinned Google Vertex endpoint with fallback disabled.\n- Preserves aliases, fixed 1K output, reasoning controls, 14 references, pricing, EXIF, and content-policy 400 responses.\n- Direct generation/edit and local alias E2E passed in 3–5s with exact billing and a byte-identical cache hit.\n- Focused stack verification after syncing `main`: 26/26 Gen image/access tests and 287/287 Enter aliases/pricing tests.\n- Accepted product differences: OpenRouter combines text/image prompt tokens, and its image catalog exposes no safety-settings passthrough. Total billing remains exact; OpenRouter’s own content policy still applies.\n",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "NanoBanana found a new branch",
+    "blurb": "NanoBanana 2 Lite now takes the OpenRouter path, with its familiar aliases, 1K outputs, references, pricing, and cache behavior packed along for the trip. The bee checked the route twice; the cached pixels came back byte-for-byte identical.",
+    "summary": "Routed nanobanana-2-lite through OpenRouter's pinned Google Vertex endpoint with fallback disabled while retaining aliases, fixed 1K output, reasoning controls, up to 14 references, exact billing, EXIF, and content-policy 400 responses.",
+    "impact": "Image and edit requests for nanobanana-2-lite keep their established API behavior and pricing, with verified 3–5 second generation paths and byte-identical cache hits through the new provider route.",
+    "keywords": [
+      "nanobanana-2-lite",
+      "OpenRouter",
+      "Google Vertex",
+      "image generation",
+      "billing",
+      "cache"
+    ],
+    "visual_concept": "Depict NanoBanana 2 Lite as a cozy pixel banana-shaped image cartridge being carefully routed through a signposted OpenRouter garden path toward a glowing Google Vertex-style cloud terminal. Polli, wearing a tiny courier cap, guides the cartridge while a CRT monitor robot verifies a matching cached image; code-plants and 14 small reference-photo flowers suggest preserved image controls and references.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and rounded light blue translucent wings, wearing a tiny courier cap as she guides a banana-shaped image cartridge along a lime green (#ecf874) garden path marked \"OPENROUTER\" toward a warm cloud terminal; a chunky CRT monitor robot proudly compares two identical tiny pixel landscape prints beside code-plants and reference-photo flowers. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, subtle CRT glow, emotionally warm and nostalgic."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-24/PR-12710.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and rounded light blue translucent wings, wearing a tiny courier cap as she guides a banana-shaped image cartridge along a lime green (#ecf874) garden path marked \"OPENROUTER\" toward a warm cloud terminal; a chunky CRT monitor robot proudly compares two identical tiny pixel landscape prints beside code-plants and reference-photo flowers. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, subtle CRT glow, emotionally warm and nostalgic."
+  },
+  "generated_at": "2026-07-24T14:31:51.448974+00:00"
+}

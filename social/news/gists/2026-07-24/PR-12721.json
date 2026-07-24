@@ -1,0 +1,33 @@
+{
+  "pr_number": 12721,
+  "title": "fix: include low-volume model stats",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/12721",
+  "merged_at": "2026-07-24T10:44:16Z",
+  "labels": [],
+  "pr_body_excerpt": "- Raises the public model-stats fetch limit from 200 to 5,000.\n- Keeps the existing three-success reliability threshold unchanged.\n- Rotates the cache key so community image estimates refresh immediately after deployment.\n\nRoot cause: Enter truncated Tinybird results to the 200 highest-volume models, excluding every current community image model.\n\nChecks: `npx biome check shared/utils/model-stats.ts`; `git diff --check`; live `limit=1000` query returned all 243 eligible models.",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "The long tail blooms",
+    "blurb": "The model garden was counting only its loudest flowers. Community image models are back in the public stats, with freshly grown estimates after deploy.",
+    "summary": "Raised the public Tinybird model-stats fetch limit from 200 to 5,000 and rotated its cache key, allowing all 243 eligible models—including community image models—to receive refreshed estimates while retaining the existing three-success threshold.",
+    "impact": "Users can now see community image-model estimates in public stats instead of only the 200 highest-volume models, with the updated data available immediately after deployment.",
+    "keywords": [
+      "model-stats",
+      "community-models",
+      "image-generation",
+      "Tinybird",
+      "cache"
+    ],
+    "visual_concept": "Polli tends a broad garden of small code-plants, where previously overlooked little image-model flowers now have visible stat tags alongside the large plants. A retro terminal shows a growing list of models, while a freshly turned cache-key sign suggests the garden has been refreshed.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny gardener hat, watering a wide garden of code-plants where many small image-model flowers now bloom with little pixel stat labels; a retro terminal glows prominently lime green (#ecf874) with a long list of model names and a small sign reads 'REFRESHED'. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, subtle flowers and vines, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-24/PR-12721.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny gardener hat, watering a wide garden of code-plants where many small image-model flowers now bloom with little pixel stat labels; a retro terminal glows prominently lime green (#ecf874) with a long list of model names and a small sign reads 'REFRESHED'. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, subtle flowers and vines, emotionally warm."
+  },
+  "generated_at": "2026-07-24T10:45:08.964182+00:00"
+}

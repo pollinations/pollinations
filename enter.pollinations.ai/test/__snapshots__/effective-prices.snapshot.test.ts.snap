@@ -782,6 +782,14 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.0000003,
     },
   },
+  "lyria-3-clip": {
+    "cost": {
+      "completionAudioTokens": 0.04,
+    },
+    "price": {
+      "completionAudioTokens": 0.04,
+    },
+  },
   "mercury": {
     "cost": {
       "completionTextTokens": 0.00000075,

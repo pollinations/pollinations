@@ -7,6 +7,7 @@ import { getTextModelsInfo } from "@shared/registry/model-info.ts";
 import { test as fixtureTest } from "@shared/test/fixtures/index.ts";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import worker from "../src/index.ts";
+import googleCloudAuth from "../src/text/auth/googleCloudAuth.ts";
 
 afterEach(() => {
     vi.restoreAllMocks();
@@ -721,6 +722,188 @@ fixtureTest(
         expect(calls).not.toContain(deepInfraEndpoint);
     },
 );
+
+fixtureTest(
+    "routes Lyria aliases through the Vertex interactions API",
+    async ({ paidApiKey }) => {
+        const endpoint =
+            "https://aiplatform.googleapis.com/v1beta1/projects/test-project/locations/global/interactions";
+        const calls: string[] = [];
+        vi.spyOn(googleCloudAuth, "getAccessToken").mockResolvedValue(
+            "test-google-token",
+        );
+
+        vi.spyOn(globalThis, "fetch").mockImplementation(
+            async (input, init) => {
+                const request = new Request(input, init);
+                calls.push(request.url);
+
+                if (request.url === endpoint) {
+                    expect(request.headers.get("authorization")).toBe(
+                        "Bearer test-google-token",
+                    );
+                    await expect(request.json()).resolves.toEqual({
+                        model: "lyria-3-clip-preview",
+                        input: [
+                            {
+                                type: "text",
+                                text: "bright French house with warm vocals",
+                            },
+                        ],
+                    });
+
+                    return Response.json({
+                        status: "completed",
+                        outputs: [
+                            { type: "text", text: "generated lyrics" },
+                            {
+                                type: "audio",
+                                mime_type: "audio/mpeg",
+                                data: "//uQZA==",
+                            },
+                        ],
+                    });
+                }
+
+                if (
+                    request.url.startsWith(
+                        "https://api.europe-west2.gcp.tinybird.co/v0/pipes/public_model_stats.json",
+                    ) ||
+                    request.url.startsWith("http://localhost:7181/")
+                ) {
+                    return Response.json({ data: [] });
+                }
+
+                throw new Error(`Unexpected fetch: ${request.url}`);
+            },
+        );
+
+        const ctx = createExecutionContext();
+        const response = await worker.fetch(
+            new Request(
+                "https://staging.gen.pollinations.ai/audio/bright%20French%20house%20with%20warm%20vocals?model=lyria&duration=30",
+                {
+                    headers: { Authorization: `Bearer ${paidApiKey}` },
+                },
+            ),
+            {
+                ...env,
+                GOOGLE_PROJECT_ID: "test-project",
+            } as unknown as CloudflareBindings,
+            ctx,
+        );
+
+        expect(response.status).toBe(200);
+        expect(response.headers.get("content-type")).toBe("audio/mpeg");
+        expect(response.headers.get("x-model-used")).toBe("lyria-3-clip");
+        expect(response.headers.get("x-usage-completion-audio-tokens")).toBe(
+            "1",
+        );
+        expect(new Uint8Array(await response.arrayBuffer())).toEqual(
+            new Uint8Array([0xff, 0xfb, 0x90, 0x64]),
+        );
+
+        await waitOnExecutionContext(ctx);
+        expect(calls).toContain(endpoint);
+        expect(
+            calls.some((url) => new URL(url).hostname === "api.elevenlabs.io"),
+        ).toBe(false);
+    },
+);
+
+fixtureTest(
+    "rejects unsupported Lyria duration and output format",
+    async ({ paidApiKey }) => {
+        vi.spyOn(googleCloudAuth, "getAccessToken").mockResolvedValue(
+            "test-google-token",
+        );
+        const upstreamCalls: string[] = [];
+        vi.spyOn(globalThis, "fetch").mockImplementation(
+            async (input, init) => {
+                const request = new Request(input, init);
+                upstreamCalls.push(request.url);
+                if (
+                    request.url.startsWith(
+                        "https://api.europe-west2.gcp.tinybird.co/v0/pipes/public_model_stats.json",
+                    ) ||
+                    request.url.startsWith("http://localhost:7181/")
+                ) {
+                    return Response.json({ data: [] });
+                }
+                throw new Error(`Unexpected fetch: ${request.url}`);
+            },
+        );
+
+        const cases = [
+            {
+                body: {
+                    model: "lyria-3-clip",
+                    input: "slow ambient strings",
+                    duration: 20,
+                },
+                message: "fixed 30-second clips",
+            },
+            {
+                body: {
+                    model: "lyria-3",
+                    input: "slow ambient strings",
+                    response_format: "wav",
+                },
+                message: "only supports mp3",
+            },
+        ];
+
+        for (const testCase of cases) {
+            const ctx = createExecutionContext();
+            const response = await worker.fetch(
+                new Request(
+                    "https://staging.gen.pollinations.ai/v1/audio/speech",
+                    {
+                        method: "POST",
+                        headers: {
+                            Authorization: `Bearer ${paidApiKey}`,
+                            "Content-Type": "application/json",
+                        },
+                        body: JSON.stringify(testCase.body),
+                    },
+                ),
+                {
+                    ...env,
+                    GOOGLE_PROJECT_ID: "test-project",
+                } as unknown as CloudflareBindings,
+                ctx,
+            );
+
+            expect(response.status).toBe(400);
+            await expect(response.json()).resolves.toMatchObject({
+                error: { message: expect.stringContaining(testCase.message) },
+            });
+            await waitOnExecutionContext(ctx);
+        }
+
+        expect(
+            upstreamCalls.some(
+                (url) => new URL(url).hostname === "aiplatform.googleapis.com",
+            ),
+        ).toBe(false);
+    },
+);
+
+it("lists Lyria with its aliases and text-to-audio modalities", async () => {
+    const response = await fetchWorker("/audio/models");
+
+    expect(response.status).toBe(200);
+    const models = (await response.json()) as {
+        name: string;
+        aliases?: string[];
+        input_modalities?: string[];
+        output_modalities?: string[];
+    }[];
+    const model = models.find((candidate) => candidate.name === "lyria-3-clip");
+    expect(model?.aliases).toEqual(["lyria", "lyria-3"]);
+    expect(model?.input_modalities).toEqual(["text"]);
+    expect(model?.output_modalities).toEqual(["audio"]);
+});
 
 fixtureTest(
     "routes stable-audio-3-medium requests through fal",

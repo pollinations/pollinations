@@ -1,0 +1,35 @@
+{
+  "pr_number": 12719,
+  "title": "docs: update README — 2026-07-24",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/12719",
+  "merged_at": "2026-07-24T07:54:17Z",
+  "labels": [
+    "NEWS"
+  ],
+  "pr_body_excerpt": "Daily README update: Latest News section. (Recent Apps is refreshed by Apps / Update metrics.)",
+  "gist": {
+    "category": "docs",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "The garden noticeboard turns",
+    "blurb": "The README's Latest News patch got its daily tending. Fresh hive notes are now waiting where newcomers usually land first.",
+    "summary": "Refreshed the root README's Latest News section for 2026-07-24, keeping the project's front-door updates current.",
+    "impact": "Visitors to the repository will see the latest Pollinations news and a maintained entry point into the community.",
+    "keywords": [
+      "readme",
+      "news",
+      "documentation",
+      "community",
+      "repository"
+    ],
+    "visual_concept": "A cozy open-source garden noticeboard represents the README's Latest News section, with freshly pinned pixel notes and tiny blooming code-plants. Polli, wearing a little librarian scarf, updates the board while a friendly CRT monitor robot holds a news card; lime green is prominent in the board trim and glowing leaves.",
+    "image_prompt": "Cozy pixel art scene of Polli, a cute yellow bee with dark brown stripes, pink cheek blush, light blue wings, and a tiny librarian scarf, pinning a fresh \"LATEST NEWS\" note to a garden noticeboard beside blooming code-plants; a cheerful CRT monitor robot holds another update card. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, retro gaming vibes, subtle CRT glow, emotionally warm and nostalgic."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-24/PR-12719.jpg",
+    "prompt": "Cozy pixel art scene of Polli, a cute yellow bee with dark brown stripes, pink cheek blush, light blue wings, and a tiny librarian scarf, pinning a fresh \"LATEST NEWS\" note to a garden noticeboard beside blooming code-plants; a cheerful CRT monitor robot holds another update card. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, retro gaming vibes, subtle CRT glow, emotionally warm and nostalgic."
+  },
+  "generated_at": "2026-07-24T07:55:08.957494+00:00"
+}

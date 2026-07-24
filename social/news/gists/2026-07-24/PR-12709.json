@@ -1,0 +1,35 @@
+{
+  "pr_number": 12709,
+  "title": "Move NanoBanana 2 to OpenRouter",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/12709",
+  "merged_at": "2026-07-24T14:26:38Z",
+  "labels": [],
+  "pr_body_excerpt": "- Routes `nanobanana-2` through OpenRouter’s pinned Google Vertex endpoint with fallback disabled.\n- Preserves aliases, 1K/2K/4K selection, reasoning controls, 14 references, pricing, EXIF, and content-policy 400 responses.\n- Direct 4K generation and 2K editing passed; local alias E2E returned a valid 1024×1024 JPEG in 12.1s with exact billing and a byte-identical cache hit.\n- Focused stack verification after syncing `main`: 26/26 Gen image/access tests and 287/287 Enter aliases/pricing tests.\n- Accepted product differences: OpenRouter combines text/image prompt tokens, and its image catalog exposes no safety-settings passthrough. Total billing remains exact; OpenRouter’s own content policy still applies.\n",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "NanoBanana found a new branch",
+    "blurb": "NanoBanana 2 now grows through OpenRouter’s pinned Google Vertex route. The fruit is the same: aliases, references, resolution controls, exact billing, and cache hits all made the trip intact.",
+    "summary": "Routed the nanobanana-2 image model through OpenRouter’s pinned Google Vertex endpoint with fallback disabled while preserving aliases, 1K/2K/4K output selection, reasoning controls, up to 14 references, EXIF, exact billing, caching, and content-policy 400 responses.",
+    "impact": "NanoBanana 2 users keep the same generation and editing controls—including validated direct 4K generation and 2K edits—now served through the OpenRouter Vertex route with exact billed totals and reliable cached repeats.",
+    "keywords": [
+      "nanobanana-2",
+      "openrouter",
+      "google-vertex",
+      "image-generation",
+      "4k",
+      "billing",
+      "cache"
+    ],
+    "visual_concept": "Depict NanoBanana 2 as a cozy pixel-art banana-shaped image seed being carefully routed through a garden path between a retro terminal and a small OpenRouter-style gateway sign, with separate 1K, 2K, and 4K fruit crates. Polli, wearing a tiny courier cap, carries the seed toward the gateway while code-plants, reference-picture frames, and a glowing cache jar show that controls and results survived the move.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings, wearing a tiny courier cap as she carries a banana-shaped image seed through a lime green (#ecf874) garden gateway labeled \"OPENROUTER\"; nearby retro terminals tend code-plants, reference frames, a glowing cache jar, and chunky crates marked 1K, 2K, and 4K. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with dark purple (#110518) outlines and a warm cream background, nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-24/PR-12709.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings, wearing a tiny courier cap as she carries a banana-shaped image seed through a lime green (#ecf874) garden gateway labeled \"OPENROUTER\"; nearby retro terminals tend code-plants, reference frames, a glowing cache jar, and chunky crates marked 1K, 2K, and 4K. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with dark purple (#110518) outlines and a warm cream background, nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-07-24T14:27:36.780394+00:00"
+}

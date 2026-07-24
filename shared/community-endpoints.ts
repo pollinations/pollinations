@@ -8,6 +8,8 @@ import {
 
 export const LEGACY_COMMUNITY_MODEL_PREFIX = "community/";
 export const COMMUNITY_MODEL_REWARD_RATE = 0.75;
+export const COMMUNITY_ENDPOINT_TITLE_MAX_LENGTH = 42;
+export const COMMUNITY_ENDPOINT_DESCRIPTION_MAX_LENGTH = 160;
 export const COMMUNITY_ENDPOINT_MODALITIES = ["text", "image"] as const;
 // How a community image endpoint is billed. "request" charges the fixed
 // per-image price once per generation; "tokens" charges the provider-returned
@@ -213,6 +215,7 @@ export type CommunityEndpointRuntime = {
     ownerUserId: string;
     modelId: string;
     name: string;
+    title: string;
     description: string | null;
     modality: CommunityEndpointModality;
     imagePricing: CommunityEndpointImagePricing;
@@ -226,6 +229,7 @@ export type CommunityEndpointRuntime = {
 
 export type CommunityModelDefinitionInput = {
     modelId: string;
+    title: string;
     description: string | null;
     modality?: CommunityEndpointModality;
     imagePricing?: CommunityEndpointImagePricing;
@@ -361,6 +365,7 @@ export function communityModelDefinition(
     endpoint: CommunityModelDefinitionInput,
 ): ModelDefinition {
     const parsed = parseCommunityModelId(endpoint.modelId);
+    const title = endpoint.title.trim();
     const description = endpoint.description?.trim();
     const legacyAlias = parsed
         ? legacyCommunityModelId(parsed.ownerGithubUsername, parsed.modelName)
@@ -383,7 +388,7 @@ export function communityModelDefinition(
         cost: communityPriceDefinition(endpoint, modality, imagePricing),
         priceMultiplier: 1,
         addedDate: 0,
-        title: description || parsed?.modelName || endpoint.modelId,
+        title,
         description: description || undefined,
         inputModalities: ["text"],
         outputModalities: isImage ? ["image"] : ["text"],

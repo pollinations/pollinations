@@ -104,6 +104,7 @@ function createCommunityEndpoint(
         ownerUserId,
         modelId: "test-owner/test-model",
         name: "test-model",
+        title: "Test Model",
         description: null,
         modality: "text",
         imagePricing: "request",

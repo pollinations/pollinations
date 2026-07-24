@@ -1,6 +1,8 @@
 import { createExecutionContext, env, SELF } from "cloudflare:test";
 import type { Logger } from "@logtape/logtape";
 import {
+    COMMUNITY_ENDPOINT_DESCRIPTION_MAX_LENGTH,
+    COMMUNITY_ENDPOINT_TITLE_MAX_LENGTH,
     type CommunityEndpointRuntime,
     communityChatCompletionsUrl,
     communityEndpointPriceFieldsForModality,
@@ -298,20 +300,21 @@ describe("community endpoint helpers", () => {
         ).toThrow("Endpoint URL cannot target a private host");
     });
 
-    it("uses the community endpoint description as the model title", () => {
+    it("keeps the community endpoint title and description separate", () => {
         const modelDefinition = communityModelDefinition({
             modelId: "voodoohop/openai",
-            description: "OpenAI via community endpoint",
+            title: "OpenAI Relay",
+            description: "OpenAI-compatible community endpoint",
             ...communityEndpointPrices({
                 promptTextPrice: 0.1,
                 completionTextPrice: 0.1,
             }),
         });
 
-        expect(modelDefinition.title).toBe("OpenAI via community endpoint");
+        expect(modelDefinition.title).toBe("OpenAI Relay");
         expect(modelDefinition.aliases).toEqual(["community/voodoohop/openai"]);
         expect(modelDefinition.description).toBe(
-            "OpenAI via community endpoint",
+            "OpenAI-compatible community endpoint",
         );
     });
 
@@ -319,6 +322,7 @@ describe("community endpoint helpers", () => {
         const modelId = "voodoohop/flux";
         const definition = communityModelDefinition({
             modelId,
+            title: "Community Image",
             description: "Community image model",
             modality: "image",
             ...communityEndpointPrices({
@@ -346,6 +350,7 @@ describe("community endpoint helpers", () => {
         const modelId = "voodoohop/gptimage";
         const definition = communityModelDefinition({
             modelId,
+            title: "Token-Priced Image",
             description: "Token-priced image model",
             modality: "image",
             imagePricing: "tokens",
@@ -416,6 +421,7 @@ describe("community endpoint helpers", () => {
                 ownerUserId: "owner-id",
                 modelId: "voodoohop/gptimage",
                 name: "gptimage",
+                title: "GPT Image",
                 description: null,
                 modality: "image",
                 imagePricing,
@@ -516,6 +522,7 @@ describe("community endpoint helpers", () => {
             ownerUserId: "owner-id",
             modelId: "voodoohop/openai",
             name: "openai",
+            title: "OpenAI Relay",
             description: null,
             modality: "text",
             imagePricing: "request",
@@ -579,6 +586,7 @@ fixtureTest(
             ownerUserId,
             visibility: "public",
             name: modelName,
+            title: "OpenAI Relay",
             description: "OpenAI via community endpoint",
             baseUrl: "https://api.example.com/v1",
             upstreamModel: "gpt-4.1-mini",
@@ -712,6 +720,7 @@ fixtureTest(
             ownerUserId,
             visibility: "private",
             name: modelName,
+            title: "Private Model",
             description: "Private community endpoint",
             baseUrl: "https://api.example.com/v1",
             upstreamModel: "gpt-4.1-mini",
@@ -852,6 +861,7 @@ fixtureTest(
             ownerUserId,
             visibility: "public",
             name: modelName,
+            title: "Streaming Model",
             description: "Streaming community endpoint",
             baseUrl: "https://api.example.com/v1",
             upstreamModel: "gpt-4.1-mini",
@@ -951,6 +961,7 @@ fixtureTest(
             ownerUserId,
             visibility: "public",
             name: modelName,
+            title: "Simple Text Model",
             description: "Simple text community endpoint",
             baseUrl: "https://api.example.com/v1",
             upstreamModel: "gpt-4.1-mini",
@@ -1049,6 +1060,7 @@ fixtureTest(
             ownerUserId,
             visibility: "public",
             name: modelName,
+            title: "Public Community Model",
             description: "Public community model",
             baseUrl: "https://api.example.com/v1",
             upstreamModel: "gpt-4.1-mini",
@@ -1105,7 +1117,7 @@ fixtureTest(
                 category: "text",
                 community: true,
                 alpha: true,
-                title: "Public community model",
+                title: "Public Community Model",
                 description: "Public community model",
                 pricing: {
                     currency: "pollen",
@@ -1145,6 +1157,7 @@ fixtureTest(
             ownerUserId,
             visibility: "public",
             name: modelName,
+            title: "Deactivated Model",
             description: "Deactivated community model",
             baseUrl: "https://api.example.com/v1",
             upstreamModel: "gpt-4.1-mini",
@@ -1207,6 +1220,7 @@ fixtureTest(
             ownerUserId,
             visibility: "public",
             name: modelName,
+            title: "Deactivated Model",
             description: "Deactivated community model",
             baseUrl: "https://api.example.com/v1",
             upstreamModel: "gpt-4.1-mini",
@@ -1316,6 +1330,7 @@ fixtureTest(
                 },
                 body: JSON.stringify({
                     name: `${modelName}-direct-public`,
+                    title: "Denied Public Model",
                     description: "Denied public community endpoint",
                     baseUrl: "https://api.example.com/v1",
                     upstreamModel: "gpt-4.1-mini",
@@ -1340,6 +1355,7 @@ fixtureTest(
                 },
                 body: JSON.stringify({
                     name: privateModelName,
+                    title: "Private Model",
                     description: "Private community endpoint",
                     baseUrl: "https://api.example.com/v1",
                     upstreamModel: "gpt-4.1-mini",
@@ -1386,6 +1402,7 @@ fixtureTest(
             ownerUserId,
             visibility: "public",
             name: modelName,
+            title: "Denied Model",
             description: "Denied community model",
             baseUrl: "https://api.example.com/v1",
             upstreamModel: "gpt-4.1-mini",
@@ -1573,6 +1590,7 @@ fixtureTest(
                 },
                 body: JSON.stringify({
                     name: modelName,
+                    title: "Pollinations Relay",
                     description: "Pollinations upstream through community API",
                     baseUrl: "https://gen.pollinations.ai/v1",
                     upstreamModel: "openai",
@@ -1771,6 +1789,7 @@ fixtureTest(
                 },
                 body: JSON.stringify({
                     name: modelName,
+                    title: "Community Image",
                     description: "OpenAI-compatible image endpoint",
                     modality: "image",
                     visibility: "public",
@@ -2055,6 +2074,62 @@ fixtureTest(
         expect(listResponse.status).toBe(200);
         await expect(listResponse.json()).resolves.toEqual({ data: [] });
 
+        const missingTitleResponse = await fetchEnterApi(
+            enterApi,
+            new Request("http://localhost:3000/api/account/my-models", {
+                method: "POST",
+                headers: {
+                    Authorization: `Bearer ${key}`,
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    name: "missing-title",
+                    baseUrl: "https://api.example.com/v1",
+                    bearerToken: "sk_saved_token",
+                }),
+            }),
+        );
+        expect(missingTitleResponse.status).toBe(400);
+
+        const tooLongTitleResponse = await fetchEnterApi(
+            enterApi,
+            new Request("http://localhost:3000/api/account/my-models", {
+                method: "POST",
+                headers: {
+                    Authorization: `Bearer ${key}`,
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    name: "title-too-long",
+                    title: "x".repeat(COMMUNITY_ENDPOINT_TITLE_MAX_LENGTH + 1),
+                    baseUrl: "https://api.example.com/v1",
+                    bearerToken: "sk_saved_token",
+                }),
+            }),
+        );
+        expect(tooLongTitleResponse.status).toBe(400);
+
+        const tooLongDescriptionResponse = await fetchEnterApi(
+            enterApi,
+            new Request("http://localhost:3000/api/account/my-models", {
+                method: "POST",
+                headers: {
+                    Authorization: `Bearer ${key}`,
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    name: "description-too-long",
+                    title: "Valid Title",
+                    description: "x".repeat(
+                        COMMUNITY_ENDPOINT_DESCRIPTION_MAX_LENGTH + 1,
+                    ),
+                    baseUrl: "https://api.example.com/v1",
+                    bearerToken: "sk_saved_token",
+                }),
+            }),
+        );
+        expect(tooLongDescriptionResponse.status).toBe(400);
+
         const createResponse = await fetchEnterApi(
             enterApi,
             new Request("http://localhost:3000/api/account/my-models", {
@@ -2065,6 +2140,7 @@ fixtureTest(
                 },
                 body: JSON.stringify({
                     name: "my-test-model",
+                    title: "My Test Model",
                     description: "Account API model",
                     baseUrl: "https://api.example.com/v1",
                     upstreamModel: "gpt-4.1-mini",
@@ -2080,6 +2156,8 @@ fixtureTest(
         expect(created).toMatchObject({
             modelId: `${ownerGithubUsername}/my-test-model`,
             name: "my-test-model",
+            title: "My Test Model",
+            description: "Account API model",
             baseUrl: "https://api.example.com/v1",
             upstreamModel: "gpt-4.1-mini",
             visibility: "private",
@@ -2113,6 +2191,7 @@ fixtureTest(
                         "Content-Type": "application/json",
                     },
                     body: JSON.stringify({
+                        title: "Updated Model",
                         description: "Updated description",
                         visibility: "public",
                         promptTextPrice: 0.1,
@@ -2123,6 +2202,7 @@ fixtureTest(
         );
         expect(updateResponse.status).toBe(200);
         await expect(updateResponse.json()).resolves.toMatchObject({
+            title: "Updated Model",
             description: "Updated description",
             visibility: "public",
             promptTextPrice: 0.1,
@@ -2324,6 +2404,7 @@ fixtureTest(
                 },
                 body: JSON.stringify({
                     name: "price-floor-test",
+                    title: "Price Floor Test",
                     baseUrl: "https://api.example.com/v1",
                     upstreamModel: "gpt-4.1-mini",
                     bearerToken: "sk_saved_token",
@@ -2465,6 +2546,7 @@ fixtureTest("rejects a community model name containing a slash", async () => {
             },
             body: JSON.stringify({
                 name: "inferenceport.ai/gpt-oss-20b",
+                title: "Invalid Model Name",
                 description: "name with a slash",
                 baseUrl: "https://api.example.com/v1",
                 upstreamModel: "gpt-oss-20b",

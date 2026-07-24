@@ -154,7 +154,7 @@ polli quests --claimable # only rewards ready to claim
 ```bash
 polli my-models list
 polli my-models models --base-url https://api.example.com/v1 --bearer-token "$UPSTREAM_KEY"
-polli my-models create --name my-model --base-url https://api.example.com/v1 --bearer-token "$UPSTREAM_KEY" --upstream-model gpt-4.1-mini
+polli my-models create --name my-model --title "My Model" --base-url https://api.example.com/v1 --bearer-token "$UPSTREAM_KEY" --upstream-model gpt-4.1-mini
 polli my-models update <id> --description "Updated description"
 polli my-models delete <id>
 ```

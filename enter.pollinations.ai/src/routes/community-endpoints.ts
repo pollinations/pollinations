@@ -1,7 +1,9 @@
 import {
+    COMMUNITY_ENDPOINT_DESCRIPTION_MAX_LENGTH,
     COMMUNITY_ENDPOINT_IMAGE_PRICING_MODES,
     COMMUNITY_ENDPOINT_MODALITIES,
     COMMUNITY_ENDPOINT_PRICE_FIELDS,
+    COMMUNITY_ENDPOINT_TITLE_MAX_LENGTH,
     COMMUNITY_ENDPOINT_VISIBILITIES,
     type CommunityEndpointPriceKey,
     type CommunityEndpointVisibility,
@@ -80,7 +82,12 @@ const EndpointFieldsSchema = {
         .min(1)
         .max(120)
         .regex(/^[^/]+$/, "Model name cannot contain '/'"),
-    description: z.string().trim().max(240).optional(),
+    title: z.string().trim().min(1).max(COMMUNITY_ENDPOINT_TITLE_MAX_LENGTH),
+    description: z
+        .string()
+        .trim()
+        .max(COMMUNITY_ENDPOINT_DESCRIPTION_MAX_LENGTH)
+        .optional(),
     baseUrl: z
         .string()
         .url()
@@ -100,6 +107,7 @@ const CreateEndpointSchema = z.object({
 });
 const UpdateEndpointSchema = z.object({
     name: EndpointFieldsSchema.name.optional(),
+    title: EndpointFieldsSchema.title.optional(),
     description: EndpointFieldsSchema.description,
     baseUrl: EndpointFieldsSchema.baseUrl.optional(),
     upstreamModel: EndpointFieldsSchema.upstreamModel,
@@ -126,6 +134,7 @@ const CommunityEndpointResponseSchema = z.object({
     id: z.string(),
     modelId: z.string(),
     name: z.string(),
+    title: z.string(),
     description: z.string().nullable(),
     modality: ModalitySchema,
     imagePricing: ImagePricingSchema,
@@ -235,6 +244,7 @@ function toResponse(row: CommunityEndpointRow, ownerGithubUsername: string) {
         id: row.id,
         modelId: communityModelId(ownerGithubUsername, row.name),
         name: row.name,
+        title: row.title,
         description: row.description,
         modality,
         imagePricing: normalizeCommunityEndpointImagePricing(row.imagePricing),
@@ -436,6 +446,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
                     id,
                     ownerUserId: user.id,
                     name: input.name,
+                    title: input.title,
                     description: input.description || null,
                     modality: input.modality,
                     imagePricing,
@@ -604,6 +615,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
                 updatedAt: new Date(),
             };
             if (input.name !== undefined) update.name = input.name;
+            if (input.title !== undefined) update.title = input.title;
             if (input.description !== undefined) {
                 update.description = input.description || null;
             }

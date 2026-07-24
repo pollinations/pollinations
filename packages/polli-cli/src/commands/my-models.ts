@@ -40,6 +40,7 @@ interface MyModel {
     id: string;
     modelId: string;
     name: string;
+    title: string;
     description: string | null;
     baseUrl: string;
     upstreamModel: string;
@@ -78,6 +79,7 @@ function modelBody(opts: Record<string, unknown>, includeRequired: boolean) {
     };
     const fields = [
         ["name", "name"],
+        ["title", "title"],
         ["description", "description"],
         ["baseUrl", "baseUrl"],
         ["upstreamModel", "upstreamModel"],
@@ -97,7 +99,7 @@ function modelBody(opts: Record<string, unknown>, includeRequired: boolean) {
     }
 
     if (includeRequired) {
-        for (const required of ["name", "baseUrl", "bearerToken"]) {
+        for (const required of ["name", "title", "baseUrl", "bearerToken"]) {
             if (!body[required]) {
                 printError(
                     `--${required.replace(/[A-Z]/g, (c) => `-${c.toLowerCase()}`)} is required`,
@@ -119,12 +121,21 @@ function printModels(models: MyModel[]) {
         models.map((model) => ({
             id: chalk.dim(model.id),
             model: chalk.hex("#a78bfa").bold(model.modelId),
+            title: model.title,
             visibility: model.visibility,
             upstream: model.upstreamModel,
             base_url: model.baseUrl,
             description: model.description ?? "-",
         })),
-        ["id", "model", "visibility", "upstream", "base_url", "description"],
+        [
+            "id",
+            "model",
+            "title",
+            "visibility",
+            "upstream",
+            "base_url",
+            "description",
+        ],
     );
 }
 
@@ -149,6 +160,7 @@ const create = addPriceOptions(
     new Command("create")
         .description("Register an OpenAI-compatible model endpoint")
         .requiredOption("--name <name>", "Model name")
+        .requiredOption("--title <title>", "Display title (max 42 characters)")
         .option("--description <text>", "Model description")
         .requiredOption("--base-url <url>", "OpenAI-compatible base URL")
         .option("--upstream-model <model>", "Upstream model id")
@@ -183,6 +195,7 @@ const update = addPriceOptions(
         .description("Update one of your models")
         .argument("<id>", "Model id")
         .option("--name <name>", "Model name")
+        .option("--title <title>", "Display title (max 42 characters)")
         .option("--description <text>", "Model description")
         .option("--base-url <url>", "OpenAI-compatible base URL")
         .option("--upstream-model <model>", "Upstream model id")

@@ -13,7 +13,6 @@ import { callSeedream5API } from "../../src/image/models/seedream5ReplicateModel
 import {
     callSeedream5ProAPI,
     callSeedreamAPI,
-    callSeedreamProAPI,
 } from "../../src/image/models/seedreamReplicateModel.ts";
 import type { ImageParams } from "../../src/image/params.ts";
 
@@ -132,69 +131,6 @@ describe("seedreamReplicateModel - seedream 4.0", () => {
         await expect(callSeedreamAPI("test", params)).rejects.toMatchObject({
             status: 400,
         });
-    });
-});
-
-describe("seedreamReplicateModel - seedream-pro 4.5", () => {
-    it("posts to bytedance/seedream-4.5 with size resolved from dimensions", async () => {
-        const requests: ReplicateRequest[] = [];
-        mockReplicateFetch(requests);
-
-        const params: ImageParams = {
-            ...baseParams,
-            model: "seedream-pro",
-            width: 2048,
-            height: 2048,
-        };
-        await callSeedreamProAPI("test prompt", params);
-
-        expect(requests[0].url).toBe(
-            "https://api.replicate.com/v1/models/bytedance/seedream-4.5/predictions",
-        );
-        const input = (requests[0].body as { input: Record<string, unknown> })
-            .input;
-        // 2048px → "2K" bucket on seedream-4.5
-        expect(input.size).toBe("2K");
-        // 4.5 strict-rejects unknown fields — output_format must stay opt-in
-        // (seedream5 only).
-        expect(input.output_format).toBeUndefined();
-    });
-
-    it("routes reference images as data URIs in image_input", async () => {
-        const requests: ReplicateRequest[] = [];
-        mockReplicateFetch(requests);
-
-        const params: ImageParams = {
-            ...baseParams,
-            model: "seedream-pro",
-            image: [INPUT_IMAGE_URL],
-        };
-        await callSeedreamProAPI("test prompt", params);
-
-        // The Replicate POST is the request with a JSON body; example.com may
-        // be fetched first by downloadUserImage. Find the Replicate POST.
-        const post = requests.find((r) =>
-            r.url.includes(
-                "api.replicate.com/v1/models/bytedance/seedream-4.5",
-            ),
-        );
-        if (!post) throw new Error("Replicate POST not captured");
-        const input = (post.body as { input: Record<string, unknown> }).input;
-        expect(Array.isArray(input.image_input)).toBe(true);
-        expect((input.image_input as string[])[0]).toMatch(
-            /^data:image\/jpeg;base64,/,
-        );
-        // aspect_ratio defaults to match_input_image when an image is provided
-        expect(input.aspect_ratio).toBe("match_input_image");
-    });
-
-    it("returns seedream-pro as actualModel", async () => {
-        mockReplicateFetch([]);
-
-        const params: ImageParams = { ...baseParams, model: "seedream-pro" };
-        const result = await callSeedreamProAPI("test prompt", params);
-
-        expect(result.trackingData?.actualModel).toBe("seedream-pro");
     });
 });
 
@@ -362,30 +298,6 @@ describe("seedreamReplicateModel - seedream 4.0 custom-size mode", () => {
         await expect(callSeedreamAPI("test", params)).rejects.toMatchObject({
             status: 400,
         });
-    });
-
-    it("seedream-pro (4.5) ignores dimensionsExplicit — no custom mode", async () => {
-        const requests: ReplicateRequest[] = [];
-        mockReplicateFetch(requests);
-
-        const params: ImageParams = {
-            ...baseParams,
-            model: "seedream-pro",
-            width: 1792,
-            height: 1024,
-            dimensionsExplicit: true,
-        };
-        await callSeedreamProAPI("test", params);
-
-        const input = (requests[0].body as { input: Record<string, unknown> })
-            .input;
-        // 4.5's size enum is only ["2K","4K"] — must stay on preset path
-        // and derive aspect_ratio from the dimensions.
-        expect(input.size).not.toBe("custom");
-        expect(input.size).toBe("2K");
-        expect(input.aspect_ratio).toBe("16:9");
-        expect(input.width).toBeUndefined();
-        expect(input.height).toBeUndefined();
     });
 });
 

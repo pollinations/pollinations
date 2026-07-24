@@ -183,7 +183,7 @@ export const IMAGE_SERVICES = {
     },
     "seedream-pro": {
         aliases: [],
-        provider: "replicate",
+        provider: "openrouter",
         brand: "ByteDance",
         category: "image",
         addedDate: new Date("2025-12-04").getTime(),
@@ -196,7 +196,7 @@ export const IMAGE_SERVICES = {
         description: "Premium photorealism for lifelike scenes and portraits",
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
-        maxReferenceImages: 14, // Pollinations route cap from Replicate schema.
+        maxReferenceImages: 14, // Pollinations route cap from OpenRouter schema.
     },
     // Ideogram 4.0 (turbo/balanced/quality) via Replicate. These are official
     // Replicate models (is_official=true) → billed a FLAT price per output

@@ -1,0 +1,35 @@
+{
+  "pr_number": 12712,
+  "title": "Move NanoBanana Pro to OpenRouter",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/12712",
+  "merged_at": "2026-07-24T14:34:58Z",
+  "labels": [],
+  "pr_body_excerpt": "- Routes `nanobanana-pro` through OpenRouter’s pinned Google AI Studio endpoint with fallback disabled.\n- Preserves 1K/2K/4K selection, default reasoning, 14 references, pricing, EXIF, and content-policy 400 responses.\n- Direct 4K generation (5504×3072, 49.0s), 2K editing (2400×1792, 22.3s), and local E2E (21.2s) passed with exact billing and cache.\n- Focused stack verification after syncing `main`: 26/26 Gen image/access tests and 287/287 Enter aliases/pricing tests.\n- Accepted product differences: OpenRouter combines text/image prompt tokens, and its image catalog exposes no safety-settings passthrough. Total billing remains exact; OpenRouter’s own content policy still applies.\n",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "NanoBanana takes the scenic route",
+    "blurb": "NanoBanana Pro now travels through OpenRouter's pinned Google AI Studio path. The pixels, resolutions, references, billing, and sensible refusal behavior all made the trip intact.",
+    "summary": "Routed the `nanobanana-pro` image model through OpenRouter's pinned Google AI Studio endpoint with fallback disabled, while preserving 1K/2K/4K generation, 14 reference images, default reasoning, EXIF, exact billing, and content-policy 400 responses.",
+    "impact": "Users can keep using NanoBanana Pro for direct 4K generation and 2K editing with the same resolution choices, pricing, caching, and reference-image capacity through the new provider route.",
+    "keywords": [
+      "nanobanana-pro",
+      "openrouter",
+      "image-generation",
+      "google-ai-studio",
+      "4k",
+      "billing",
+      "models"
+    ],
+    "visual_concept": "Depict NanoBanana Pro as a cozy pixel-art banana-shaped image parcel traveling along a well-marked garden path from a retro terminal to an OpenRouter signpost, with clear 1K, 2K, and 4K seed packets beside it. Polli, wearing a tiny courier cap, carefully guides the parcel while a CRT monitor robot checks a bill and a row of 14 little reference-picture frames grows like flowers; this represents the provider move while the model's capabilities and accounting remain intact.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with black oval eyes, pink rectangular cheek blushes, light blue wings, and a tiny courier cap, guiding a smiling banana-shaped image parcel along a lime green (#ecf874) garden path toward a retro signpost labeled \"OPENROUTER\"; a friendly CRT monitor robot checks a tiny receipt beside 1K, 2K, and 4K seed packets and blooming reference-picture flowers. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, dark purple (#110518) outlines, nostalgic but beautiful and emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-24/PR-12712.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with black oval eyes, pink rectangular cheek blushes, light blue wings, and a tiny courier cap, guiding a smiling banana-shaped image parcel along a lime green (#ecf874) garden path toward a retro signpost labeled \"OPENROUTER\"; a friendly CRT monitor robot checks a tiny receipt beside 1K, 2K, and 4K seed packets and blooming reference-picture flowers. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, dark purple (#110518) outlines, nostalgic but beautiful and emotionally warm."
+  },
+  "generated_at": "2026-07-24T14:35:55.469751+00:00"
+}

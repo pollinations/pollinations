@@ -1,0 +1,1642 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Pollinations Observability — Rebuild Plan</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #090d14;
+      --surface: #101722;
+      --surface-2: #151e2b;
+      --surface-3: #1a2635;
+      --border: #263649;
+      --border-strong: #39516d;
+      --text: #eef4fb;
+      --muted: #9badc1;
+      --subtle: #71849b;
+      --orange: #ff9830;
+      --orange-soft: rgba(255, 152, 48, .12);
+      --blue: #5794f2;
+      --blue-soft: rgba(87, 148, 242, .13);
+      --green: #73bf69;
+      --green-soft: rgba(115, 191, 105, .12);
+      --purple: #b877d9;
+      --purple-soft: rgba(184, 119, 217, .12);
+      --yellow: #f2cc0c;
+      --red: #f2495c;
+      --shadow: 0 18px 55px rgba(0, 0, 0, .24);
+      --radius: 14px;
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      background:
+        radial-gradient(circle at 92% 0%, rgba(87, 148, 242, .10), transparent 31rem),
+        radial-gradient(circle at 9% 18%, rgba(255, 152, 48, .08), transparent 28rem),
+        var(--bg);
+      color: var(--text);
+      font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height: 1.55;
+    }
+
+    button, input, select { font: inherit; }
+    a { color: inherit; }
+    strong { font-weight: 650; }
+    code {
+      padding: .12rem .36rem;
+      border: 1px solid var(--border);
+      border-radius: 5px;
+      background: rgba(255, 255, 255, .035);
+      color: #cfe3ff;
+      font-size: .88em;
+    }
+
+    .page {
+      width: min(1500px, calc(100% - 32px));
+      margin: 0 auto;
+      padding: 24px 0 80px;
+    }
+
+    .hero {
+      position: relative;
+      overflow: hidden;
+      padding: 38px;
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      background:
+        linear-gradient(120deg, rgba(255, 152, 48, .10), transparent 38%),
+        linear-gradient(300deg, rgba(87, 148, 242, .12), transparent 42%),
+        var(--surface);
+      box-shadow: var(--shadow);
+    }
+
+    .hero::after {
+      position: absolute;
+      right: -60px;
+      top: -85px;
+      width: 290px;
+      height: 290px;
+      border: 1px solid rgba(255, 255, 255, .05);
+      border-radius: 50%;
+      content: "";
+      box-shadow:
+        0 0 0 32px rgba(255, 255, 255, .018),
+        0 0 0 68px rgba(255, 255, 255, .012);
+      pointer-events: none;
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 14px;
+      color: #ffc983;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: .11em;
+      text-transform: uppercase;
+    }
+
+    .eyebrow::before {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--orange);
+      content: "";
+      box-shadow: 0 0 18px var(--orange);
+    }
+
+    h1, h2, h3, h4, p { margin-top: 0; }
+    h1 {
+      max-width: 960px;
+      margin-bottom: 15px;
+      font-size: clamp(34px, 5vw, 65px);
+      line-height: 1.02;
+      letter-spacing: -.045em;
+    }
+
+    h2 {
+      margin-bottom: 10px;
+      font-size: clamp(25px, 3vw, 36px);
+      line-height: 1.12;
+      letter-spacing: -.025em;
+    }
+
+    h3 {
+      margin-bottom: 8px;
+      font-size: 18px;
+      line-height: 1.25;
+    }
+
+    h4 {
+      margin-bottom: 5px;
+      font-size: 14px;
+    }
+
+    .lede {
+      max-width: 900px;
+      margin-bottom: 26px;
+      color: #c4d1df;
+      font-size: clamp(16px, 2vw, 20px);
+    }
+
+    .hero-meta, .pill-row, .legend, .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      padding: 7px 10px;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      background: rgba(9, 13, 20, .46);
+      color: #c6d3e1;
+      font-size: 12px;
+      white-space: nowrap;
+    }
+
+    .pill strong { color: var(--text); }
+    .pill.orange { border-color: rgba(255, 152, 48, .35); background: var(--orange-soft); }
+    .pill.blue { border-color: rgba(87, 148, 242, .35); background: var(--blue-soft); }
+    .pill.green { border-color: rgba(115, 191, 105, .35); background: var(--green-soft); }
+    .pill.purple { border-color: rgba(184, 119, 217, .35); background: var(--purple-soft); }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 250px minmax(0, 1fr);
+      gap: 28px;
+      margin-top: 28px;
+      align-items: start;
+      min-width: 0;
+    }
+
+    .sidebar {
+      position: sticky;
+      top: 18px;
+      display: grid;
+      gap: 14px;
+      min-width: 0;
+    }
+
+    .toc {
+      padding: 14px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: rgba(16, 23, 34, .88);
+      backdrop-filter: blur(14px);
+      max-width: 100%;
+    }
+
+    .toc-label {
+      display: block;
+      margin: 3px 8px 9px;
+      color: var(--subtle);
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: .09em;
+      text-transform: uppercase;
+    }
+
+    .toc a {
+      display: flex;
+      gap: 9px;
+      align-items: center;
+      padding: 8px;
+      border-radius: 8px;
+      color: var(--muted);
+      font-size: 13px;
+      text-decoration: none;
+    }
+
+    .toc a:hover, .toc a:focus-visible {
+      background: var(--surface-2);
+      color: var(--text);
+      outline: none;
+    }
+
+    .toc-index {
+      display: grid;
+      width: 24px;
+      height: 24px;
+      place-items: center;
+      border: 1px solid var(--border);
+      border-radius: 7px;
+      color: var(--subtle);
+      font-size: 10px;
+    }
+
+    .sidebar-note {
+      padding: 15px;
+      border-left: 2px solid var(--orange);
+      background: linear-gradient(90deg, var(--orange-soft), transparent);
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .content {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr);
+      gap: 60px;
+      width: 100%;
+      min-width: 0;
+    }
+
+    .section { scroll-margin-top: 24px; }
+    .section-intro {
+      max-width: 880px;
+      margin-bottom: 22px;
+      color: var(--muted);
+    }
+
+    .kpi-grid, .decision-grid, .source-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .metric-card, .info-card, .source-card {
+      padding: 18px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--surface);
+    }
+
+    .metric-label, .overline {
+      color: var(--subtle);
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: .075em;
+      text-transform: uppercase;
+    }
+
+    .metric-value {
+      display: block;
+      margin: 8px 0 2px;
+      font-size: 32px;
+      font-weight: 700;
+      letter-spacing: -.04em;
+    }
+
+    .metric-detail, .muted {
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .scope-flow {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+      margin-top: 18px;
+    }
+
+    .scope-step {
+      position: relative;
+      min-height: 155px;
+      padding: 19px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--surface);
+    }
+
+    .scope-step:not(:last-child)::after {
+      position: absolute;
+      z-index: 2;
+      right: -21px;
+      top: 50%;
+      width: 28px;
+      height: 28px;
+      display: grid;
+      place-items: center;
+      border: 1px solid var(--border);
+      border-radius: 50%;
+      background: var(--surface-2);
+      color: var(--muted);
+      content: "→";
+      transform: translateY(-50%);
+    }
+
+    .scope-number {
+      display: block;
+      margin-bottom: 13px;
+      color: var(--orange);
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: .09em;
+      text-transform: uppercase;
+    }
+
+    .scope-step p { margin-bottom: 0; color: var(--muted); font-size: 13px; }
+
+    .callout {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 14px;
+      margin-top: 16px;
+      padding: 17px;
+      border: 1px solid rgba(87, 148, 242, .32);
+      border-radius: var(--radius);
+      background: var(--blue-soft);
+    }
+
+    .callout-icon {
+      display: grid;
+      width: 34px;
+      height: 34px;
+      place-items: center;
+      border-radius: 10px;
+      background: rgba(87, 148, 242, .16);
+      color: #a8cbff;
+      font-weight: 800;
+    }
+
+    .callout p { margin: 2px 0 0; color: #bdcce0; font-size: 13px; }
+
+    .dashboard-shell {
+      overflow: hidden;
+      border: 1px solid var(--border-strong);
+      border-radius: 16px;
+      background: #0c121b;
+      box-shadow: var(--shadow);
+    }
+
+    .dashboard-toolbar {
+      display: flex;
+      gap: 14px;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px;
+      border-bottom: 1px solid var(--border);
+      background: #111a26;
+    }
+
+    .dashboard-tabs {
+      display: flex;
+      gap: 7px;
+      overflow-x: auto;
+      scrollbar-width: thin;
+    }
+
+    .tab-button, .filter-button {
+      min-height: 36px;
+      padding: 7px 11px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: #151f2c;
+      color: var(--muted);
+      cursor: pointer;
+      font-size: 12px;
+      white-space: nowrap;
+    }
+
+    .tab-button:hover, .filter-button:hover { color: var(--text); border-color: var(--border-strong); }
+    .tab-button[aria-selected="true"] {
+      border-color: rgba(255, 152, 48, .58);
+      background: var(--orange-soft);
+      color: #ffd29d;
+    }
+
+    .dashboard-context {
+      padding: 17px 18px;
+      border-bottom: 1px solid var(--border);
+      background: linear-gradient(90deg, rgba(255, 152, 48, .04), transparent);
+    }
+
+    .dashboard-context-top {
+      display: flex;
+      gap: 14px;
+      justify-content: space-between;
+      align-items: start;
+    }
+
+    .dashboard-context p {
+      max-width: 920px;
+      margin-bottom: 0;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .panel-grid {
+      display: grid;
+      grid-template-columns: repeat(12, minmax(0, 1fr));
+      gap: 10px;
+      padding: 10px;
+    }
+
+    .mock-panel {
+      grid-column: span 6;
+      min-width: 0;
+      padding: 14px;
+      border: 1px solid #223145;
+      border-radius: 8px;
+      background: #101823;
+    }
+
+    .mock-panel.wide { grid-column: span 12; }
+    .mock-panel.third { grid-column: span 4; }
+
+    .panel-head {
+      display: flex;
+      gap: 10px;
+      align-items: start;
+      justify-content: space-between;
+      margin-bottom: 7px;
+    }
+
+    .panel-title { font-size: 13px; font-weight: 650; }
+    .panel-kind { color: var(--subtle); font-size: 10px; white-space: nowrap; }
+    .panel-description { min-height: 36px; margin-bottom: 10px; color: var(--muted); font-size: 11px; }
+
+    .chart {
+      position: relative;
+      display: flex;
+      height: 92px;
+      gap: 4px;
+      align-items: end;
+      padding: 8px 4px 0;
+      border-bottom: 1px solid #314158;
+      background:
+        repeating-linear-gradient(to top, transparent 0, transparent 22px, rgba(255, 255, 255, .04) 23px);
+    }
+
+    .bar {
+      display: flex;
+      flex: 1;
+      min-width: 4px;
+      flex-direction: column-reverse;
+      gap: 1px;
+    }
+
+    .bar i { display: block; min-height: 2px; border-radius: 1px 1px 0 0; }
+    .bar i:nth-child(1) { background: var(--orange); }
+    .bar i:nth-child(2) { background: var(--blue); }
+    .bar i:nth-child(3) { background: var(--green); }
+
+    .group-bar { flex-direction: row; align-items: end; gap: 2px; }
+    .group-bar i { flex: 1; }
+
+    .stat-strip {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 10px;
+      min-height: 76px;
+      align-items: center;
+    }
+
+    .mock-stat {
+      padding-left: 9px;
+      border-left: 2px solid var(--orange);
+    }
+
+    .mock-stat:nth-child(2) { border-color: var(--blue); }
+    .mock-stat:nth-child(3) { border-color: var(--green); }
+    .mock-stat:nth-child(4) { border-color: var(--purple); }
+    .mock-stat span { display: block; color: var(--subtle); font-size: 10px; }
+    .mock-stat strong { display: block; margin-top: 4px; font-size: 19px; }
+
+    .rank-list { display: grid; gap: 7px; min-height: 88px; }
+    .rank-row {
+      display: grid;
+      grid-template-columns: minmax(78px, 1fr) 2fr 38px;
+      gap: 8px;
+      align-items: center;
+      font-size: 10px;
+    }
+
+    .rank-track { height: 6px; background: #243246; }
+    .rank-fill { display: block; height: 100%; background: var(--blue); }
+    .rank-value { color: var(--subtle); text-align: right; }
+
+    .panel-foot {
+      display: flex;
+      gap: 7px;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: 10px;
+      color: var(--subtle);
+      font-size: 10px;
+    }
+
+    .phase-dot {
+      display: inline-flex;
+      gap: 5px;
+      align-items: center;
+      color: #a9bad0;
+    }
+
+    .phase-dot::before {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--green);
+      content: "";
+    }
+
+    .phase-dot.phase-2::before { background: var(--purple); }
+
+    .dashboard-register {
+      margin-top: 18px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--surface);
+    }
+
+    .register-head {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      justify-content: space-between;
+      padding: 15px 17px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .register-head p { margin: 0; color: var(--muted); font-size: 12px; }
+    .table-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td {
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--border);
+      text-align: left;
+      vertical-align: top;
+      font-size: 12px;
+    }
+
+    th {
+      background: rgba(255, 255, 255, .02);
+      color: var(--subtle);
+      font-size: 10px;
+      letter-spacing: .055em;
+      text-transform: uppercase;
+    }
+
+    td { color: #c8d3df; }
+    td:first-child { color: var(--text); font-weight: 650; }
+    tbody tr:last-child td { border-bottom: 0; }
+
+    .status {
+      display: inline-flex;
+      padding: 3px 7px;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      font-size: 10px;
+      white-space: nowrap;
+    }
+
+    .status.core { border-color: rgba(115, 191, 105, .35); background: var(--green-soft); color: #b9e4b3; }
+    .status.later { border-color: rgba(184, 119, 217, .35); background: var(--purple-soft); color: #ddb8ef; }
+    .status.conditional { border-color: rgba(242, 204, 12, .35); background: rgba(242, 204, 12, .08); color: #f3dc74; }
+
+    .phase-list {
+      position: relative;
+      display: grid;
+      gap: 0;
+      margin-top: 16px;
+    }
+
+    .phase-list::before {
+      position: absolute;
+      left: 25px;
+      top: 30px;
+      bottom: 30px;
+      width: 1px;
+      background: var(--border-strong);
+      content: "";
+    }
+
+    .phase {
+      position: relative;
+      display: grid;
+      grid-template-columns: 52px minmax(0, 1fr);
+      gap: 16px;
+      padding: 12px 0 24px;
+    }
+
+    .phase-number {
+      z-index: 1;
+      display: grid;
+      width: 52px;
+      height: 52px;
+      place-items: center;
+      border: 1px solid var(--border-strong);
+      border-radius: 15px;
+      background: var(--surface-2);
+      color: var(--orange);
+      font-weight: 750;
+    }
+
+    .phase-body {
+      padding: 18px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--surface);
+    }
+
+    .phase-meta {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin: 10px 0 14px;
+    }
+
+    .task-columns {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 18px;
+    }
+
+    .check-list {
+      display: grid;
+      gap: 8px;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .check-list li {
+      position: relative;
+      padding-left: 20px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .check-list li::before {
+      position: absolute;
+      left: 0;
+      top: .38em;
+      width: 9px;
+      height: 9px;
+      border: 1px solid var(--border-strong);
+      border-radius: 3px;
+      background: rgba(255, 255, 255, .025);
+      content: "";
+    }
+
+    .gate {
+      margin-top: 14px;
+      padding: 11px 13px;
+      border-left: 2px solid var(--green);
+      background: var(--green-soft);
+      color: #c5dfc1;
+      font-size: 12px;
+    }
+
+    .risk-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .risk {
+      display: grid;
+      grid-template-columns: 34px minmax(0, 1fr);
+      gap: 12px;
+      padding: 15px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--surface);
+    }
+
+    .risk-code {
+      display: grid;
+      width: 34px;
+      height: 34px;
+      place-items: center;
+      border-radius: 10px;
+      background: var(--surface-3);
+      color: var(--orange);
+      font-size: 11px;
+      font-weight: 800;
+    }
+
+    .risk p { margin: 4px 0 0; color: var(--muted); font-size: 12px; }
+
+    .source-card {
+      display: grid;
+      align-content: start;
+      gap: 8px;
+      min-height: 185px;
+    }
+
+    .source-card .source-name { font-weight: 700; }
+    .source-card p { margin: 0; color: var(--muted); font-size: 12px; }
+    .source-card.primary { border-color: rgba(87, 148, 242, .40); }
+    .source-card.existing { border-color: rgba(115, 191, 105, .32); }
+    .source-card.conditional { border-color: rgba(242, 204, 12, .30); }
+
+    .contract {
+      margin-top: 16px;
+      padding: 18px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--surface);
+    }
+
+    .contract-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px 22px;
+      margin-top: 14px;
+    }
+
+    .contract-row {
+      display: grid;
+      grid-template-columns: 145px minmax(0, 1fr);
+      gap: 12px;
+      padding-bottom: 9px;
+      border-bottom: 1px solid var(--border);
+      font-size: 12px;
+    }
+
+    .contract-row span:first-child { color: var(--subtle); }
+    .contract-row span:last-child { color: #cbd6e2; }
+
+    .final-gates {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .gate-card {
+      padding: 18px;
+      border: 1px solid var(--border);
+      border-top: 3px solid var(--blue);
+      border-radius: var(--radius);
+      background: var(--surface);
+    }
+
+    .gate-card:nth-child(2) { border-top-color: var(--orange); }
+    .gate-card:nth-child(3) { border-top-color: var(--green); }
+    .gate-card p { margin-bottom: 0; color: var(--muted); font-size: 12px; }
+
+    .footer {
+      display: flex;
+      gap: 15px;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 60px;
+      padding: 22px 2px 0;
+      border-top: 1px solid var(--border);
+      color: var(--subtle);
+      font-size: 12px;
+    }
+
+    @media (max-width: 1120px) {
+      .layout { grid-template-columns: 1fr; }
+      .sidebar { position: static; }
+      .toc { display: flex; overflow-x: auto; }
+      .toc-label, .sidebar-note { display: none; }
+      .toc a { flex: 0 0 auto; }
+      .kpi-grid, .decision-grid, .source-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+
+    @media (max-width: 760px) {
+      .page { width: min(100% - 18px, 1500px); padding-top: 9px; }
+      .hero { padding: 25px 20px; }
+      .content { gap: 46px; }
+      .scope-flow, .task-columns, .risk-grid, .contract-grid, .final-gates { grid-template-columns: 1fr; }
+      .scope-step:not(:last-child)::after { display: none; }
+      .dashboard-toolbar { align-items: stretch; flex-direction: column; }
+      .dashboard-context-top { flex-direction: column; }
+      .mock-panel, .mock-panel.third { grid-column: span 12; }
+      .stat-strip { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .contract-row { grid-template-columns: 1fr; gap: 3px; }
+      .footer { align-items: start; flex-direction: column; }
+    }
+
+    @media (max-width: 520px) {
+      .kpi-grid, .decision-grid, .source-grid { grid-template-columns: 1fr; }
+      .phase { grid-template-columns: 40px minmax(0, 1fr); gap: 10px; }
+      .phase-number { width: 40px; height: 40px; border-radius: 12px; }
+      .phase-list::before { left: 19px; }
+      th, td { padding: 10px; }
+    }
+
+    @media print {
+      :root { color-scheme: light; }
+      body { background: #fff; color: #17202d; }
+      .page { width: 100%; padding: 0; }
+      .hero, .metric-card, .info-card, .source-card, .phase-body, .risk, .contract, .gate-card,
+      .dashboard-register, .dashboard-shell {
+        box-shadow: none;
+        break-inside: avoid;
+      }
+      .sidebar, .dashboard-tabs, .filter-button { display: none; }
+      .layout { display: block; }
+      .content { gap: 34px; }
+      .section { break-before: page; }
+      .section:first-child { break-before: auto; }
+      .dashboard-shell { background: #0c121b; color: #eef4fb; }
+      .muted, .section-intro, .metric-detail, td, .check-list li, .risk p, .source-card p { color: #48576a; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header class="hero">
+      <div class="eyebrow">Implementation blueprint · Version 1.0</div>
+      <h1>Pollinations Observability Rebuild</h1>
+      <p class="lede">
+        A clean rebuild of Grafana around generation event v2, efficient Tinybird aggregates,
+        five clearly scoped dashboards, and a bar-first monitoring experience.
+      </p>
+      <div class="hero-meta">
+        <span class="pill orange"><strong>Default</strong> Last 30 days</span>
+        <span class="pill blue"><strong>History</strong> From 9 Jan 2026 by default</span>
+        <span class="pill green"><strong>Model Movers</strong> 7d vs previous 7d</span>
+        <span class="pill purple"><strong>Approach</strong> New dashboards, old untouched</span>
+      </div>
+    </header>
+
+    <div class="layout">
+      <aside class="sidebar" aria-label="Document navigation">
+        <nav class="toc">
+          <span class="toc-label">Contents</span>
+          <a href="#outcome"><span class="toc-index">01</span>Outcome</a>
+          <a href="#architecture"><span class="toc-index">02</span>Architecture</a>
+          <a href="#mockups"><span class="toc-index">03</span>Dashboard mockups</a>
+          <a href="#data"><span class="toc-index">04</span>Data plan</a>
+          <a href="#delivery"><span class="toc-index">05</span>Implementation</a>
+          <a href="#shortcomings"><span class="toc-index">06</span>Shortcomings</a>
+          <a href="#quality"><span class="toc-index">07</span>Quality gates</a>
+        </nav>
+        <div class="sidebar-note">
+          This is the working specification. Dashboard names, metric contracts and scope boundaries
+          should be changed here before implementation, not improvised panel by panel.
+        </div>
+      </aside>
+
+      <main class="content">
+        <section class="section" id="outcome">
+          <div class="overline">Target outcome</div>
+          <h2>One coherent observability system</h2>
+          <p class="section-intro">
+            Run five purpose-built dashboards alongside the 12 preserved legacy dashboards during
+            migration. Grafana will monitor adoption, load, balances and the three business streams.
+            Errors stay in Tinybird, health stays in Model Monitor, and model economics stays in Economics.
+          </p>
+
+          <div class="kpi-grid">
+            <article class="metric-card">
+              <span class="metric-label">Dashboards</span>
+              <span class="metric-value">5</span>
+              <span class="metric-detail">Platform, balances, BYOP, community and core</span>
+            </article>
+            <article class="metric-card">
+              <span class="metric-label">Active panels</span>
+              <span class="metric-value" id="planned-panel-count">45</span>
+              <span class="metric-detail">45 active · 7 deferred drill-downs</span>
+            </article>
+            <article class="metric-card">
+              <span class="metric-label">Primary new aggregates</span>
+              <span class="metric-value">2</span>
+              <span class="metric-detail">Hourly usage and daily BYOP app activity</span>
+            </article>
+            <article class="metric-card">
+              <span class="metric-label">Query objective</span>
+              <span class="metric-value">&lt;2s</span>
+              <span class="metric-detail">Normal load; always safely below Tinybird’s limit</span>
+            </article>
+          </div>
+
+          <div class="decision-grid" style="margin-top:12px">
+            <article class="info-card">
+              <span class="overline">Visual language</span>
+              <h3>Bars first</h3>
+              <p class="muted">Stacked bars for composition, grouped bars for comparisons, tables for rankings and ownership.</p>
+            </article>
+            <article class="info-card">
+              <span class="overline">Metric vocabulary</span>
+              <h3>Quest and Paid only</h3>
+              <p class="muted">No user-tier segmentation. Quest is free Pollen; Paid is purchased Pollen.</p>
+            </article>
+            <article class="info-card">
+              <span class="overline">Panel contract</span>
+              <h3>Every chart explains itself</h3>
+              <p class="muted">Question, definition, source, caveat, freshness and unit are included in panel descriptions.</p>
+            </article>
+            <article class="info-card">
+              <span class="overline">Release method</span>
+              <h3>Build in parallel</h3>
+              <p class="muted">New UIDs and folder. Existing dashboards remain available until explicit retirement approval.</p>
+            </article>
+          </div>
+        </section>
+
+        <section class="section" id="architecture">
+          <div class="overline">Scope architecture</div>
+          <h2>Three mutually exclusive business streams</h2>
+          <p class="section-intro">
+            Every successful billed generation is assigned once for revenue-bearing consumption:
+            BYOP first, then direct community, then Core API. The Community dashboard may still show
+            all community traffic, including its BYOP overlap, but primary revenue attribution never double-counts it.
+          </p>
+
+          <div class="scope-flow">
+            <article class="scope-step">
+              <span class="scope-number">01 · First match</span>
+              <h3>BYOP Apps</h3>
+              <p><code>api_key_client_id</code> is present. Includes community-model calls made through BYOP.</p>
+            </article>
+            <article class="scope-step">
+              <span class="scope-number">02 · Otherwise</span>
+              <h3>Direct Community</h3>
+              <p><code>model_provider_used = 'community'</code> and the request was not attributed to BYOP.</p>
+            </article>
+            <article class="scope-step">
+              <span class="scope-number">03 · Remainder</span>
+              <h3>Core API</h3>
+              <p>Authenticated generation requests that are neither BYOP nor community-model traffic.</p>
+            </article>
+          </div>
+
+          <div class="callout">
+            <div class="callout-icon">i</div>
+            <div>
+              <strong>Revenue language in Grafana</strong>
+              <p>
+                Paid consumption is revenue-bearing Pollen consumed. Quest consumption is subsidy usage, not revenue.
+                Cash collected, provider cost and profitability remain in the Economics app.
+              </p>
+            </div>
+          </div>
+
+          <div class="contract">
+            <span class="overline">Global dashboard rules</span>
+            <div class="contract-grid">
+              <div class="contract-row"><span>Default range</span><span>Last 30 days on every dashboard</span></div>
+              <div class="contract-row"><span>Data lower bound</span><span>9 January 2026 by default; reopen 1–8 January only if v2 validation proves the legacy bug window was repaired</span></div>
+              <div class="contract-row"><span>Movement window</span><span>Trailing 7×24h versus preceding 7×24h, refreshed hourly</span></div>
+              <div class="contract-row"><span>Top categories</span><span>Top 8 plus Other for stacked model-share charts</span></div>
+              <div class="contract-row"><span>Table limits</span><span>50 rows by default; never unbounded</span></div>
+              <div class="contract-row"><span>Platform scope</span><span>Authenticated, non-cached generation load</span></div>
+              <div class="contract-row"><span>Funding split</span><span>Normalize observed production slugs to Paid or Quest; expected values include <code>v1:meter:pack</code>, <code>local:pack</code>, <code>v1:meter:tier</code> and <code>local:tier</code></span></div>
+              <div class="contract-row"><span>Health/errors/cost</span><span>Model Monitor / Tinybird / Economics, not duplicated here</span></div>
+            </div>
+          </div>
+
+          <div class="dashboard-register">
+            <div class="register-head">
+              <div>
+                <h3 style="margin:0 0 3px">Required decisions before aggregate creation</h3>
+                <p>These contracts must be accepted in Phase 1 and verified against production in Phase 2.</p>
+              </div>
+              <span class="pill orange">Build blockers</span>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Decision</th>
+                    <th>Default position</th>
+                    <th>Required evidence</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>D1 · January history</td>
+                    <td>Start reportable history on 9 January 2026. Do not remove the 30 Dec–8 Jan exclusion unless v2 is proven corrected.</td>
+                    <td>Compare v2 and legacy totals, prices and affected fields across the known window.</td>
+                  </tr>
+                  <tr>
+                    <td>D2 · Funding slugs</td>
+                    <td>Expose only Paid and Quest, but normalize every legitimate historical slug in the materialized pipe.</td>
+                    <td>Enumerate <code>selected_meter_slug</code> values by day and quantify unknown/unclassified rows.</td>
+                  </tr>
+                  <tr>
+                    <td>D3 · BYOP boundary</td>
+                    <td>Clean break: BYOP requires a non-empty <code>api_key_client_id</code>. Legacy hostname/secret-key heuristics are not carried forward.</td>
+                    <td>Quantify clean-client and heuristic-only traffic for 7 and 30 days so the expected parallel-run delta is documented.</td>
+                  </tr>
+                  <tr>
+                    <td>D4 · Call populations</td>
+                    <td>Materialize production only. Keep separate all-call, successful-call and billed-call measures; use <code>is_billed_usage</code> for billing.</td>
+                    <td>Profile response classes, banned-user impact and the existing hardcoded router-user exclusion before choosing the product-metric policy.</td>
+                  </tr>
+                  <tr>
+                    <td>D5 · Model identity</td>
+                    <td>Do not launch Model Movers across a model-key rename boundary without canonical IDs or a versioned alias-normalization map.</td>
+                    <td>Confirm canonical model columns are deployed, or validate an explicit old-name → canonical-name mapping against both 7-day windows.</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <section class="section" id="mockups">
+          <div class="overline">Interactive specification</div>
+          <h2>Dashboard mockups and panel inventory</h2>
+          <p class="section-intro">
+            Select a dashboard to review its intended layout. The mock panels show visualization type,
+            source and delivery phase; the register beneath lists the precise metric contract for implementation.
+          </p>
+
+          <div class="dashboard-shell">
+            <div class="dashboard-toolbar">
+              <div class="dashboard-tabs" id="dashboard-tabs" role="tablist" aria-label="Dashboard mockups"></div>
+              <div class="actions">
+                <span class="pill">Last 30 days</span>
+                <span class="pill" id="active-panel-count"></span>
+              </div>
+            </div>
+            <div class="dashboard-context">
+              <div class="dashboard-context-top">
+                <div>
+                  <h3 id="dashboard-title">Platform &amp; Usage</h3>
+                  <p id="dashboard-note"></p>
+                </div>
+                <span class="pill blue" id="dashboard-scope"></span>
+              </div>
+            </div>
+            <div class="panel-grid" id="panel-grid" aria-live="polite"></div>
+          </div>
+
+          <div class="dashboard-register">
+            <div class="register-head">
+              <div>
+                <h3 id="register-title" style="margin:0 0 3px">Platform &amp; Usage panel register</h3>
+                <p>Implementation definitions for the selected dashboard.</p>
+              </div>
+              <span class="pill" id="register-count"></span>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Panel</th>
+                    <th>Visual</th>
+                    <th>Definition</th>
+                    <th>Source</th>
+                    <th>Delivery</th>
+                  </tr>
+                </thead>
+                <tbody id="panel-register"></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <section class="section" id="data">
+          <div class="overline">Data architecture</div>
+          <h2>Small, explicit and fast backing datasets</h2>
+          <p class="section-intro">
+            We will reuse proven materializations where their grain matches the metric and build only two new
+            aggregates up front. The balance proxy benchmark proved that a shared direct query is viable for the
+            initial 30-day dashboard, so no third balance dataset is required now.
+          </p>
+
+          <div class="source-grid">
+            <article class="source-card primary">
+              <span class="pill green">Production live · 157 · Staging live · 80</span>
+              <span class="source-name">generation_usage_hourly</span>
+              <p>Aggregating datasource fed from <code>generation_event_v2</code>.</p>
+              <p><strong>Input filter:</strong> <code>production</code> plus the isolated <code>debug-prod-copy</code> staging fixture; dashboards must select one environment explicitly.</p>
+              <p><strong>Grain:</strong> hour × environment × canonical model × workload × normalized funding × BYOP × community × business stream.</p>
+              <p><strong>Measures:</strong> all calls, successful 2xx calls, billed calls, users, apps, usage units, Paid/Quest consumption and rewards.</p>
+            </article>
+            <article class="source-card primary">
+              <span class="pill green">Production live · 157 · Staging live · 80</span>
+              <span class="source-name">byop_app_daily</span>
+              <p>Aggregating datasource fed from <code>generation_event_v2</code>.</p>
+              <p><strong>Input filter:</strong> production plus <code>debug-prod-copy</code>; billing measures require 2xx and <code>is_billed_usage</code>.</p>
+              <p><strong>Grain:</strong> day × environment × app × owner × canonical model × community flag × normalized funding.</p>
+              <p><strong>Measures:</strong> all/successful/billed calls, users, gross consumption and developer reward.</p>
+            </article>
+            <article class="source-card existing">
+              <span class="pill green">Existing · reuse</span>
+              <span class="source-name">op_pollen</span>
+              <p>Monthly reconciliation by provider and model from 1 January.</p>
+              <p>Used as a financial sanity check—not for daily charts, movers or user/app breakdowns.</p>
+            </article>
+            <article class="source-card existing">
+              <span class="pill green">Existing · reuse</span>
+              <span class="source-name">d1_user</span>
+              <p>Latest user snapshot, replaced daily around 03:00 UTC.</p>
+              <p>Supports current users, current Quest/Paid totals, current balance extremes and registration dates.</p>
+            </article>
+            <article class="source-card existing">
+              <span class="pill green">Existing · reuse</span>
+              <span class="source-name">user_first_activity_mv</span>
+              <p>First observed authenticated generation activity per user.</p>
+              <p>Supports D7 activation after tightening the definition to the agreed successful-activity contract.</p>
+            </article>
+            <article class="source-card existing">
+              <span class="pill green">Existing · bounded</span>
+              <span class="source-name">activity_usage_events</span>
+              <p>Event-level billed usage sorted for user drill-downs.</p>
+              <p>Use only for selected-user/model investigations with explicit range and row limits.</p>
+            </article>
+            <article class="source-card existing">
+              <span class="pill green">Benchmarked · not required now</span>
+              <span class="source-name">active_wallet_daily</span>
+              <p>The final direct production 30-day proxy read completed in 3.1 seconds over 21.0 million rows / 2.05 GB.</p>
+              <p>Grafana executes it once and shares the result with Quest, Paid and concentration panels. Reconsider this dataset only if the shared query exceeds 6 seconds or longer default history becomes necessary.</p>
+            </article>
+            <article class="source-card conditional">
+              <span class="pill">Deferred evidence layer</span>
+              <span class="source-name">wallet movement feeds</span>
+              <p>Quest claims, authoritative purchase credits, BYOP earnings and community earnings.</p>
+              <p>Needed only for a future wallet bridge/reconciliation panel, not the initial balance trend.</p>
+            </article>
+          </div>
+
+          <div class="contract">
+            <span class="overline">Observed balance contract</span>
+            <h3 style="margin-top:7px">Historical balance bars are an operational proxy</h3>
+            <p class="muted">
+              For each day and active user, select the last balance recorded on a successful billed generation,
+              then sum it. This produces the existing visual without retaining daily D1 snapshots.
+            </p>
+            <div class="contract-grid">
+              <div class="contract-row"><span>Quest series</span><span><code>argMax(balances['v1:meter:tier'], start_time)</code></span></div>
+              <div class="contract-row"><span>Paid series</span><span><code>argMax(balances['v1:meter:pack'], start_time)</code></span></div>
+              <div class="contract-row"><span>Population</span><span>Users with successful billed activity that day; the population changes from day to day</span></div>
+              <div class="contract-row"><span>Excluded</span><span>Wallet holders who made no generation that day</span></div>
+              <div class="contract-row"><span>Normal events</span><span>Balance observed during access check, generally before final deduction</span></div>
+              <div class="contract-row"><span>Realtime events</span><span>Post-deduction settled balance; disclose mixed timing or separate it</span></div>
+              <div class="contract-row"><span>Interpretation</span><span>Movement can reflect a changing active-user population even when individual wallets did not change</span></div>
+              <div class="contract-row"><span>Panel title</span><span>Observed Quest/Paid Balance — Active Users</span></div>
+              <div class="contract-row"><span>Execution</span><span>One v2 query shared across three Grafana panels through the Dashboard datasource</span></div>
+              <div class="contract-row"><span>Exact history</span><span>Add a tiny daily D1 summary only if later required</span></div>
+            </div>
+          </div>
+        </section>
+
+        <section class="section" id="delivery">
+          <div class="overline">Execution sequence</div>
+          <h2>Implementation plan</h2>
+          <p class="section-intro">
+            The work is ordered so that metric correctness and Tinybird performance are proven before time is
+            invested in panel polish. Each phase has an explicit exit gate.
+          </p>
+
+          <div class="phase-list">
+            <article class="phase">
+              <div class="phase-number">01</div>
+              <div class="phase-body">
+                <h3>Freeze metric contracts and ownership</h3>
+                <div class="phase-meta">
+                  <span class="pill orange">Specification</span>
+                  <span class="pill">No deployment</span>
+                </div>
+                <div class="task-columns">
+                  <ul class="check-list">
+                    <li>Confirm the five dashboards and panel inventory in this document.</li>
+                    <li>Lock BYOP → direct community → Core attribution precedence and accept the clean break from hostname/secret-key heuristics.</li>
+                    <li>Lock Paid, Quest, all-call, successful-call, billed-call, user, app, reward and model definitions.</li>
+                    <li>Confirm the observed-active-user balance proxy wording.</li>
+                  </ul>
+                  <ul class="check-list">
+                    <li>Adopt 9 January 2026 as the safe reporting floor unless Phase 2 proves the v2 backfill corrected the old bug window.</li>
+                    <li>Record Model Movers as 7 days versus the preceding 7 days.</li>
+                    <li>Choose the banned-user and hardcoded router-user policy separately for load, product and financial measures.</li>
+                    <li>Confirm canonical-model deployment sequencing or approve an alias-normalization map.</li>
+                    <li>Mark optional panels so they cannot silently expand MVP scope.</li>
+                  </ul>
+                </div>
+                <div class="gate"><strong>Exit gate:</strong> no unresolved metric meaning or overlap remains.</div>
+              </div>
+            </article>
+
+            <article class="phase">
+              <div class="phase-number">02</div>
+              <div class="phase-body">
+                <h3>Profile generation_event_v2 in production, read-only</h3>
+                <div class="phase-meta">
+                  <span class="pill blue">Data quality</span>
+                  <span class="pill">Read-only</span>
+                </div>
+                <div class="task-columns">
+                  <ul class="check-list">
+                    <li>Confirm coverage from 1 January 2026, identify partial backfill dates and test the 30 Dec–8 Jan legacy bug window.</li>
+                    <li>Measure duplicate <code>event_id</code> rate daily and by workload.</li>
+                    <li>Measure financial impact before and after event-level deduplication.</li>
+                    <li>Enumerate meter slugs by day and quantify rows outside the approved Paid/Quest mapping.</li>
+                  </ul>
+                  <ul class="check-list">
+                    <li>Benchmark representative raw 7-, 14- and 30-day queries.</li>
+                    <li>Verify BYOP owner/app label coverage against latest D1 snapshots.</li>
+                    <li>Measure clean-client BYOP versus heuristic-only legacy BYOP traffic for 7 and 30 days.</li>
+                    <li>Profile environment, response class, billed status, banned users and the legacy router-user exclusion.</li>
+                    <li>Check canonical model-key coverage and alias transitions across both Model Movers windows.</li>
+                    <li>Separate normal generation events from realtime settlements.</li>
+                  </ul>
+                </div>
+                <div class="gate"><strong>Exit gate:</strong> duplicate strategy is evidence-based and all required fields meet coverage thresholds.</div>
+              </div>
+            </article>
+
+            <article class="phase">
+              <div class="phase-number">03</div>
+              <div class="phase-body">
+                <h3>Build and validate Tinybird aggregates in staging</h3>
+                <div class="phase-meta">
+                  <span class="pill green">Tinybird staging live · deployment 80</span>
+                  <span class="pill">Non-destructive</span>
+                </div>
+                <div class="task-columns">
+                  <ul class="check-list">
+                    <li>Create <code>generation_usage_hourly</code> and its materialized pipe.</li>
+                    <li>Create <code>byop_app_daily</code> and its materialized pipe.</li>
+                    <li>Use additive states only after duplicate impact is accepted or removed.</li>
+                    <li>Filter production at write time and store separate all, 2xx-success and billed measures.</li>
+                    <li>Normalize every approved historical meter slug to Paid or Quest.</li>
+                  </ul>
+                  <ul class="check-list">
+                    <li>Backfill from 9 January 2026 unless the earlier v2 window has passed the explicit validation gate.</li>
+                    <li>Use canonical model IDs only after their deployment, or apply the approved versioned alias map.</li>
+                    <li>Compare aggregates with v2 source totals by day and business stream.</li>
+                    <li>Reconcile monthly Pollen measures against <code>op_pollen</code>.</li>
+                    <li>Benchmark every dashboard query shape at 30 days.</li>
+                    <li>Keep <code>active_wallet_daily</code> deferred while the shared 30-day direct proxy remains below the 6-second guardrail.</li>
+                  </ul>
+                </div>
+                <div class="gate"><strong>Exit gate:</strong> staging validation passes, no destructive plan appears, aggregate queries complete under 2 seconds, and the one shared balance proxy remains under 6 seconds.</div>
+              </div>
+            </article>
+
+            <article class="phase">
+              <div class="phase-number">04</div>
+              <div class="phase-body">
+                <h3>Create new Grafana dashboards from scratch</h3>
+                <div class="phase-meta">
+                  <span class="pill green">Local build complete · 5/5</span>
+                  <span class="pill">12 legacy dashboards preserved</span>
+                </div>
+                <div class="task-columns">
+                  <ul class="check-list">
+                    <li>Create the five dashboard JSON models with a 30-day default. Platform, Users, BYOP, Community and Core are complete locally.</li>
+                    <li>Provision active dashboards in <code>Observability</code> and preserved originals in <code>Legacy Observability</code>.</li>
+                    <li>Implement Phase 1 panels in the order shown in the mockups.</li>
+                    <li>Use stacked/grouped bars and compact ranking tables.</li>
+                    <li>Apply stable colors for Paid, Quest, BYOP, community and Core.</li>
+                  </ul>
+                  <ul class="check-list">
+                    <li>Add panel descriptions using the standard contract.</li>
+                    <li>Add only bounded model/app selectors; no free grain variable.</li>
+                    <li>Share one result across panels when several visuals use the same source and time grain; BYOP and Community each use three Tinybird requests for eight live panels, while Core uses four requests for eight panels.</li>
+                    <li>Use top 8 + Other and table caps consistently.</li>
+                    <li>Keep deferred panels in this plan, not as placeholder panels in the live dashboards.</li>
+                    <li>Remove Tier display labels while preserving the approved historical data-quality rule centrally in aggregates.</li>
+                    <li>Update the observability <code>AGENT.md</code> terminology guidance to Paid/Quest when the new dashboards land.</li>
+                  </ul>
+                </div>
+                <div class="gate"><strong>Exit gate:</strong> every Phase 1 panel renders locally with the intended source, description and visual form.</div>
+              </div>
+            </article>
+
+            <article class="phase">
+              <div class="phase-number">05</div>
+              <div class="phase-body">
+                <h3>Quality assurance and stakeholder review</h3>
+                <div class="phase-meta">
+                  <span class="pill green">45/45 queries valid · Tinybird staging</span>
+                  <span class="pill orange">40 data-backed · 5 await staging D1</span>
+                  <span class="pill orange">Stakeholder review pending</span>
+                </div>
+                <div class="task-columns">
+                  <ul class="check-list">
+                    <li>Test 7-, 30- and 90-day supported ranges where applicable.</li>
+                    <li>Validate stream totals add to the global total without double-counting.</li>
+                    <li>Validate Paid + Quest equals billed consumption where a split is shown.</li>
+                    <li>Spot-check apps, models, users and rewards against source events.</li>
+                  </ul>
+                  <ul class="check-list">
+                    <li>Verify no page produces a Tinybird timeout during normal use.</li>
+                    <li>Review descriptions for source, caveat, unit and freshness.</li>
+                    <li>Review color, legends, bar stacking and responsive layout.</li>
+                    <li>Capture accepted discrepancies in panel descriptions, not tribal knowledge.</li>
+                  </ul>
+                </div>
+                <div class="gate"><strong>Exit gate:</strong> panel checklist is green and the mockup has been accepted against the running dashboards.</div>
+              </div>
+            </article>
+
+            <article class="phase">
+              <div class="phase-number">06</div>
+              <div class="phase-body">
+                <h3>Production rollout and parallel run</h3>
+                <div class="phase-meta">
+                  <span class="pill green">Tinybird production live · deployment 157</span>
+                  <span class="pill purple">Grafana deployment approval pending</span>
+                  <span class="pill">No legacy deletion</span>
+                </div>
+                <div class="task-columns">
+                  <ul class="check-list">
+                    <li>Tinybird assets are live in production deployment 157 after staging acceptance.</li>
+                    <li>Production datasource freshness, backfill coverage and 30-day query latency are verified.</li>
+                    <li>Deploy the new provisioned Grafana dashboards through the normal workflow.</li>
+                    <li>Link the new folder without changing or deleting old dashboards.</li>
+                  </ul>
+                  <ul class="check-list">
+                    <li>Run old and new dashboards in parallel for no more than one week.</li>
+                    <li>Compare daily totals and investigate material differences.</li>
+                    <li>Add Phase 2 drill-downs only after the core dashboards are stable.</li>
+                    <li>Prepare a separate retirement proposal for legacy dashboards.</li>
+                  </ul>
+                </div>
+                <div class="gate"><strong>Exit gate:</strong> new dashboards are trusted for daily use; legacy retirement remains a separate, reversible decision.</div>
+              </div>
+            </article>
+          </div>
+        </section>
+
+        <section class="section" id="shortcomings">
+          <div class="overline">Known shortcomings and remedies</div>
+          <h2>What can mislead us—and how we contain it</h2>
+          <p class="section-intro">
+            The rebuild should not make a chart look more authoritative than its underlying evidence.
+            These limitations are part of the implementation contract.
+          </p>
+
+          <div class="risk-grid">
+            <article class="risk">
+              <div class="risk-code">R1</div>
+              <div><h3>Duplicate generation events</h3><p>Retries can duplicate logical events. Measure financial and count impact before using additive materialized states; deduplicate or rebuild finalized periods if material.</p></div>
+            </article>
+            <article class="risk">
+              <div class="risk-code">R2</div>
+              <div><h3>Observed balance is not total wallet stock</h3><p>The proxy includes only users with billed activity that day, so it moves with wallet values and population composition. Rename it, emphasize p95/p99 concentration, and use latest D1 for exact current totals and holder tables.</p></div>
+            </article>
+            <article class="risk">
+              <div class="risk-code">R3</div>
+              <div><h3>D1 is current-state only</h3><p>The daily sync replaces the datasource. Do not imply historical account state; registration series from current D1 excludes accounts later deleted.</p></div>
+            </article>
+            <article class="risk">
+              <div class="risk-code">R4</div>
+              <div><h3>Platform load excludes cache and anonymous traffic</h3><p>v2 contains authenticated, non-cached requests. State that scope on the dashboard rather than calling it total edge traffic.</p></div>
+            </article>
+            <article class="risk">
+              <div class="risk-code">R5</div>
+              <div><h3>Provider is configured routing, not final provider truth</h3><p><code>model_provider_used</code> is the registry provider and may not reflect fallback execution. Do not use it as a provider-health or exact provider-load metric.</p></div>
+            </article>
+            <article class="risk">
+              <div class="risk-code">R6</div>
+              <div><h3>Modality cannot rely on event type alone</h3><p>Image routes may represent image, video or 3D workloads. Derive presentation modality from the resolved-model registry contract.</p></div>
+            </article>
+            <article class="risk">
+              <div class="risk-code">R7</div>
+              <div><h3>Paid consumption is not cash collected</h3><p>Paid Pollen consumption is revenue-bearing usage. Stripe cash, discounts, provider cost and profit remain Economics measures.</p></div>
+            </article>
+            <article class="risk">
+              <div class="risk-code">R8</div>
+              <div><h3>Wallet movement feeds are incomplete in Tinybird</h3><p>Quest claims and authoritative purchase-credit ledgers are not yet available. Defer the wallet bridge until those sources are intentionally ingested.</p></div>
+            </article>
+            <article class="risk">
+              <div class="risk-code">R9</div>
+              <div><h3>Tinybird staging has no D1 user snapshot</h3><p>Five current-user and registration panels are query-valid but show no rows locally. Add a privacy-safe representative staging snapshot before final UI acceptance; never copy production identities or replace the production datasource for this purpose.</p></div>
+            </article>
+          </div>
+        </section>
+
+        <section class="section" id="quality">
+          <div class="overline">Definition of done</div>
+          <h2>Acceptance gates</h2>
+          <p class="section-intro">
+            The rebuild is complete only when correctness, speed and operational clarity are demonstrated together.
+          </p>
+
+          <div class="final-gates">
+            <article class="gate-card">
+              <span class="overline">Gate A</span>
+              <h3>Metric integrity</h3>
+              <p>Business-stream totals are mutually exclusive, Paid and Quest are never conflated, duplicate impact is controlled, and each panel has an explicit semantic contract.</p>
+            </article>
+            <article class="gate-card">
+              <span class="overline">Gate B</span>
+              <h3>Performance</h3>
+              <p>Normal 30-day queries complete under 2 seconds, supported worst cases remain safely below 10 seconds, and no dashboard fires an unbounded high-cardinality query.</p>
+            </article>
+            <article class="gate-card">
+              <span class="overline">Gate C</span>
+              <h3>Operational usability</h3>
+              <p>All five dashboards load with 30-day defaults, use consistent bar-first visuals, explain their sources and caveats, and answer distinct daily monitoring questions.</p>
+            </article>
+          </div>
+
+          <div class="contract">
+            <span class="overline">Panel description template</span>
+            <div class="contract-grid">
+              <div class="contract-row"><span>Question</span><span>What operational decision does this panel support?</span></div>
+              <div class="contract-row"><span>Definition</span><span>Exact numerator, denominator, filters and attribution order.</span></div>
+              <div class="contract-row"><span>Source</span><span>Datasource/materialization and key timestamp.</span></div>
+              <div class="contract-row"><span>Caveat</span><span>Coverage, exclusions, proxy behavior or delayed data.</span></div>
+              <div class="contract-row"><span>Freshness</span><span>Hourly materialization, daily D1 snapshot or event-time data.</span></div>
+              <div class="contract-row"><span>Display</span><span>Unit, stacking rule, top-N rule and table limit.</span></div>
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <footer class="footer">
+      <span>Pollinations Observability Rebuild Plan · 23 July 2026</span>
+      <span>Working implementation specification · update before scope changes</span>
+    </footer>
+  </div>
+
+  <script>
+    const dashboards = [
+      {
+        name: "Platform & Usage",
+        scope: "Cross-platform overview",
+        note: "Operational load, adoption, models and the three business streams. Health, detailed errors and model economics stay in their dedicated apps.",
+        panels: [
+          ["Platform overview", "stats", "wide", "Calls, active users, active models and average calls per user.", "generation_usage_hourly", "Phase 1"],
+          ["Generation volume by workload", "stacked", "wide", "Daily authenticated, non-cached generations by text, image, audio, video and other registered workload.", "generation_usage_hourly", "Phase 1"],
+          ["Short-interval platform load", "stacked", "half", "Request rate using an automatically bounded time bucket; workload only, not health.", "generation_usage_hourly / bounded v2", "Phase 1"],
+          ["Active users and BYOP apps", "grouped", "half", "Daily unique end users and active trusted BYOP clients.", "generation_usage_hourly", "Phase 1"],
+          ["Traffic stream mix", "stacked", "half", "Mutually exclusive request attribution: BYOP, direct community and Core API.", "generation_usage_hourly", "Phase 1"],
+          ["Paid consumption by stream", "stacked", "half", "Revenue-bearing Paid Pollen consumed by BYOP, direct community and Core.", "generation_usage_hourly", "Phase 1"],
+          ["Model request mix", "stacked", "wide", "Daily 100%-stacked mix for the top eight resolved requested models, with the remainder grouped as Other.", "generation_usage_hourly", "Phase 1"],
+          ["Model ranking", "table", "half", "Models ranked by calls, share, users, apps, usage units and Paid/Quest mix.", "generation_usage_hourly", "Phase 1"],
+          ["Model Movers", "table", "half", "Request-share change in trailing 7×24h versus the preceding 7×24h, refreshed hourly.", "generation_usage_hourly", "Phase 2"],
+          ["Token throughput", "stacked", "half", "Prompt, cached and completion tokens processed per time bucket.", "generation_usage_hourly", "Phase 1"],
+          ["Media throughput", "grouped", "half", "Images and audio/video duration shown in native units, not combined into one artificial total.", "generation_usage_hourly", "Phase 1"],
+          ["Data coverage", "text", "wide", "Reader-facing source, date-floor, ownership and exclusion note.", "dashboard contract", "Phase 1"]
+        ]
+      },
+      {
+        name: "Users & Balances",
+        scope: "Users, funding and wallet signals",
+        note: "Current exact D1 totals plus historical active-user balance observations from generation events. Quest and Paid replace all legacy tier terminology.",
+        panels: [
+          ["User and wallet overview", "stats", "wide", "Total users, registrations, current Quest/Paid balances and negative-account anomaly counts.", "latest d1_user", "Phase 1"],
+          ["Observed Quest Balance — Active Users", "stacked", "half", "Daily sum of each active user’s last observed Quest balance. Changes also reflect who was active; this is not total wallet stock.", "generation_event_v2 · shared query", "Phase 1"],
+          ["Observed Paid Balance — Active Users", "stacked", "half", "Daily sum of each active user’s last observed Paid balance. Changes also reflect who was active; this is not cash collected.", "generation_event_v2 · shared query", "Phase 1"],
+          ["Quest vs Paid spending", "stacked", "wide", "Daily billed generation consumption split by selected Quest or Paid meter.", "generation_usage_hourly", "Phase 1"],
+          ["Observed balance concentration", "grouped", "half", "Daily p95, p99 and maximum observed balances among active users for anomaly detection.", "generation_event_v2 · shared query", "Phase 1"],
+          ["Current balance extremes", "table", "half", "Current accounts ranked by the largest absolute Quest or Paid balance, including negative anomalies.", "latest d1_user", "Phase 1"],
+          ["Registrations", "stacked", "half", "New registered users per day from current surviving accounts.", "latest d1_user", "Phase 1"],
+          ["Cumulative registered users", "stacked", "half", "Cumulative registrations from current surviving accounts, with deleted-account caveat.", "latest d1_user", "Phase 1"],
+          ["DAU and WAU", "grouped", "half", "Daily and trailing-seven-day unique authenticated users.", "generation_usage_hourly", "Phase 1"],
+          ["D7 activation", "stacked", "half", "Registration cohorts completing their first agreed qualifying generation within seven days.", "user_first_activity_mv + d1_user", "Phase 1"],
+          ["Balance feeding flows", "stacked", "wide", "Quest claims, credited purchases, BYOP earnings and community earnings by day.", "future authoritative wallet feeds", "Phase 2"],
+          ["Wallet bridge and unexplained delta", "table", "wide", "Opening + credits + earnings − spending versus closing balance; requires an exact daily closing anchor.", "future wallet feeds + optional daily D1 summary", "Phase 2"]
+        ]
+      },
+      {
+        name: "BYOP Apps",
+        scope: "First business stream",
+        note: "All requests through trusted BYOP clients, including community-model calls made through BYOP. Paid and Quest consumption are shown separately.",
+        panels: [
+          ["BYOP overview", "stats", "wide", "Active apps, app users, BYOP calls and gross Paid/Quest consumption.", "generation_usage_hourly", "Phase 1"],
+          ["BYOP request volume", "stacked", "wide", "Daily BYOP calls split by registered workload.", "generation_usage_hourly", "Phase 1"],
+          ["BYOP share of platform", "stacked", "half", "Percentage of authenticated, non-cached generation calls attributed to BYOP.", "generation_usage_hourly", "Phase 1"],
+          ["Active apps and app users", "grouped", "half", "Daily active BYOP clients and unique end users.", "generation_usage_hourly", "Phase 1"],
+          ["Paid vs Quest consumption", "stacked", "wide", "Gross Pollen consumed through BYOP, split into revenue-bearing Paid and free Quest.", "generation_usage_hourly", "Phase 1"],
+          ["Standard vs community models", "stacked", "half", "BYOP calls split between standard registry models and community models.", "generation_usage_hourly", "Phase 1"],
+          ["App developer rewards", "stacked", "half", "BYOP markup rewards credited to app owners, split by the end-user funding source.", "generation_usage_hourly", "Phase 1"],
+          ["Top BYOP apps", "table", "wide", "Apps ranked by calls, users, gross consumption, developer reward and leading models.", "byop_app_daily + latest d1 labels", "Phase 1"],
+          ["Selected app activity", "stacked", "half", "Daily calls for one app, split into standard and community-model traffic.", "byop_app_daily", "Phase 2"],
+          ["Selected app model mix", "table", "half", "Models used by the selected app with calls, users and Paid/Quest consumption.", "byop_app_daily", "Phase 2"]
+        ]
+      },
+      {
+        name: "Community Models",
+        scope: "Community ecosystem",
+        note: "All community-model traffic is visible here. BYOP overlap is shown for ecosystem analysis but its primary revenue attribution remains in BYOP.",
+        panels: [
+          ["Community overview", "stats", "wide", "Active community models, users, calls and owner rewards across direct and BYOP traffic.", "generation_usage_hourly", "Phase 1"],
+          ["Direct vs BYOP community traffic", "stacked", "wide", "Daily community-model calls split by direct traffic and BYOP traffic.", "generation_usage_hourly", "Phase 1"],
+          ["Community share of platform", "stacked", "half", "Community-model calls as a share of authenticated, non-cached platform calls.", "generation_usage_hourly", "Phase 1"],
+          ["Active models and users", "grouped", "half", "Daily active community models and unique consumers.", "generation_usage_hourly", "Phase 1"],
+          ["Paid vs Quest consumption", "stacked", "wide", "Gross community-model consumption across both direct and BYOP traffic.", "generation_usage_hourly", "Phase 1"],
+          ["Direct-community revenue bucket", "stacked", "half", "Paid and Quest consumption for community requests not attributed to BYOP.", "generation_usage_hourly", "Phase 1"],
+          ["Community owner rewards", "stacked", "half", "Rewards credited to public community model owners, split by payer funding.", "generation_usage_hourly", "Phase 1"],
+          ["Community model ranking", "table", "wide", "Models ranked by calls, users, Paid/Quest consumption, BYOP share and owner reward.", "generation_usage_hourly", "Phase 1"],
+          ["Top BYOP apps using community", "table", "half", "BYOP apps sending the most calls to community models.", "byop_app_daily", "Phase 2"],
+          ["Selected community model", "grouped", "half", "Daily direct and BYOP calls and consumers for one selected community model.", "generation_usage_hourly", "Phase 2"]
+        ]
+      },
+      {
+        name: "Core API",
+        scope: "Third business stream",
+        note: "Requests that are neither BYOP nor community models. This dashboard stays intentionally compact and provides the official-model baseline.",
+        panels: [
+          ["Core API overview", "stats", "wide", "Core calls, active users, Paid consumption and Quest consumption.", "generation_usage_hourly", "Phase 1"],
+          ["Core request volume", "stacked", "wide", "Daily Core calls split by registered workload.", "generation_usage_hourly", "Phase 1"],
+          ["Core active users", "stacked", "half", "Daily unique authenticated users making Core API requests.", "generation_usage_hourly", "Phase 1"],
+          ["Paid vs Quest consumption", "stacked", "half", "Gross Core consumption split into revenue-bearing Paid and free Quest.", "generation_usage_hourly", "Phase 1"],
+          ["Core share of platform", "stacked", "half", "Core API calls as a share of authenticated, non-cached generation.", "generation_usage_hourly", "Phase 1"],
+          ["Core model mix", "stacked", "half", "Daily request volume for leading official models outside BYOP and community.", "generation_usage_hourly", "Phase 1"],
+          ["Core model ranking", "table", "wide", "Official models ranked by Core calls, users, usage units and Paid/Quest mix.", "generation_usage_hourly", "Phase 1"],
+          ["Core usage units", "grouped", "wide", "Token and native media usage units consumed through the Core stream.", "generation_usage_hourly", "Phase 1"]
+        ]
+      }
+    ];
+
+    const heights = [31, 43, 36, 55, 48, 67, 53, 76, 61, 52, 80, 65, 72, 58, 84, 70];
+
+    function chartMarkup(kind) {
+      if (kind === "stats") {
+        return `<div class="stat-strip">
+          ${["Primary", "Users", "Paid", "Quest"].map((label, index) =>
+            `<div class="mock-stat"><span>${label}</span><strong>${["—", "—", "—", "—"][index]}</strong></div>`
+          ).join("")}
+        </div>`;
+      }
+      if (kind === "table") {
+        return `<div class="rank-list">
+          ${[88, 69, 54, 41].map((width, index) =>
+            `<div class="rank-row"><span>${["First", "Second", "Third", "Fourth"][index]}</span><span class="rank-track"><span class="rank-fill" style="width:${width}%"></span></span><span class="rank-value">—</span></div>`
+          ).join("")}
+        </div>`;
+      }
+      const parts = kind === "stacked" ? 3 : kind === "grouped" ? 2 : 1;
+      return `<div class="chart" aria-hidden="true">
+        ${heights.map((height, index) => {
+          const cls = kind === "grouped" ? "bar group-bar" : "bar";
+          return `<span class="${cls}">${Array.from({length: parts}, (_, part) => {
+            const factor = kind === "stacked" ? (.36 - part * .055) : (.73 - part * .13);
+            return `<i style="height:${Math.max(5, Math.round(height * factor + ((index + part) % 3) * 3))}px"></i>`;
+          }).join("")}</span>`;
+        }).join("")}
+      </div>`;
+    }
+
+    function kindLabel(kind) {
+      return {
+        stats: "KPI strip",
+        stacked: "Stacked bars",
+        grouped: "Grouped bars",
+        table: "Ranked table"
+      }[kind] || "Bars";
+    }
+
+    function widthClass(panel, index) {
+      if (panel[2] === "wide") return "wide";
+      if (panel[2] === "third") return "third";
+      if (panel[1] === "stats" || index === 0) return "wide";
+      return "";
+    }
+
+    function renderDashboard(index) {
+      const dashboard = dashboards[index];
+      document.querySelectorAll(".tab-button").forEach((button, buttonIndex) => {
+        button.setAttribute("aria-selected", String(buttonIndex === index));
+      });
+      document.getElementById("dashboard-title").textContent = dashboard.name;
+      document.getElementById("dashboard-note").textContent = dashboard.note;
+      document.getElementById("dashboard-scope").textContent = dashboard.scope;
+      document.getElementById("active-panel-count").textContent = `${dashboard.panels.length} panels`;
+      document.getElementById("register-count").textContent = `${dashboard.panels.filter(panel => panel[5] === "Phase 1").length} core · ${dashboard.panels.filter(panel => panel[5] === "Phase 2").length} drill-down`;
+      document.getElementById("register-title").textContent = `${dashboard.name} panel register`;
+
+      document.getElementById("panel-grid").innerHTML = dashboard.panels.map((panel, panelIndex) => `
+        <article class="mock-panel ${widthClass(panel, panelIndex)}">
+          <div class="panel-head">
+            <span class="panel-title">${panel[0]}</span>
+            <span class="panel-kind">${kindLabel(panel[1])}</span>
+          </div>
+          <p class="panel-description">${panel[3]}</p>
+          ${chartMarkup(panel[1])}
+          <div class="panel-foot">
+            <span>${panel[4]}</span>
+            <span class="phase-dot ${panel[5] === "Phase 2" ? "phase-2" : ""}">${panel[5]}</span>
+          </div>
+        </article>
+      `).join("");
+
+      document.getElementById("panel-register").innerHTML = dashboard.panels.map(panel => `
+        <tr>
+          <td>${panel[0]}</td>
+          <td>${kindLabel(panel[1])}</td>
+          <td>${panel[3]}</td>
+          <td><code>${panel[4]}</code></td>
+          <td><span class="status ${panel[5] === "Phase 1" ? "core" : "later"}">${panel[5]}</span></td>
+        </tr>
+      `).join("");
+    }
+
+    const tabs = document.getElementById("dashboard-tabs");
+    dashboards.forEach((dashboard, index) => {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "tab-button";
+      button.setAttribute("role", "tab");
+      button.setAttribute("aria-selected", String(index === 0));
+      button.textContent = dashboard.name;
+      button.addEventListener("click", () => renderDashboard(index));
+      tabs.appendChild(button);
+    });
+
+    document.getElementById("planned-panel-count").textContent =
+      dashboards.reduce(
+        (sum, dashboard) =>
+          sum + dashboard.panels.filter(panel => panel[5] === "Phase 1").length,
+        0
+      );
+    renderDashboard(0);
+  </script>
+</body>
+</html>

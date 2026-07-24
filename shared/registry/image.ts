@@ -663,8 +663,7 @@ export const IMAGE_SERVICES = {
             completionImageTokens: 0.005,
         },
         title: "FLUX.2 Klein 4B",
-        description:
-            "Quick image generation and editing with solid quality per dollar",
+        description: "Fast image generation and editing up to 2.4 megapixels",
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
         maxReferenceImages: 10, // Pollinations self-hosted route cap.

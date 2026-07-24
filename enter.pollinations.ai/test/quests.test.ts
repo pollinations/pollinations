@@ -219,7 +219,7 @@ test("catalog returns quest definitions without ledger stats", async ({
     sessionToken: _sessionToken,
 }) => {
     await mocks.enable("github");
-    await env.KV.delete("quests:catalog:v23");
+    await env.KV.delete("quests:catalog:v24");
 
     const response = await SELF.fetch(
         "http://localhost:3000/api/quests/catalog",
@@ -292,6 +292,19 @@ test("catalog returns quest definitions without ledger stats", async ({
         rewardAmount: 7,
         balanceBucket: "tier",
     });
+    expectStableCatalogFields("early_adopter", {
+        state: "available",
+        rewardAmount: 1,
+        balanceBucket: "tier",
+    });
+    expect(byId.get("early_adopter")?.title).toBe(
+        "Six-month Pollinations member",
+    );
+    expectStableCatalogFields("github_established", {
+        state: "available",
+        rewardAmount: 2,
+        balanceBucket: "tier",
+    });
     expectStableCatalogFields("app_paid_request", {
         state: "coming_soon",
         rewardAmount: 15,
@@ -304,7 +317,7 @@ test("catalog includes coming-soon GitHub issue placeholder", async ({
     sessionToken: _sessionToken,
 }) => {
     await mocks.enable("github");
-    await env.KV.delete("quests:catalog:v23");
+    await env.KV.delete("quests:catalog:v24");
 
     const response = await SELF.fetch(
         "http://localhost:3000/api/quests/catalog",
@@ -342,7 +355,7 @@ test("catalog excludes closed GitHub quest issues without merged PRs", async ({
     sessionToken: _sessionToken,
 }) => {
     await mocks.enable("github");
-    await env.KV.delete("quests:catalog:v23");
+    await env.KV.delete("quests:catalog:v24");
 
     seedQuestIssue(mocks.github.state, {
         issueNumber: 801,
@@ -388,7 +401,7 @@ test("account quests merge earned rewards into completed status", async ({
 }) => {
     const db = drizzle(env.DB, { schema });
     await mocks.enable("github", "tinybird");
-    await env.KV.delete("quests:catalog:v23");
+    await env.KV.delete("quests:catalog:v24");
     const user = await getOnlyUser();
 
     const createKeyResponse = await SELF.fetch(
@@ -883,20 +896,50 @@ test("D1 quest check only records the requested user", async ({
     );
 });
 
-test("six-month account quest is coming_soon and never records", async ({
+test("six-month account quest records once after the threshold", async ({
     mocks,
     sessionToken: _sessionToken,
 }) => {
     const db = drizzle(env.DB, { schema });
     const user = await getOnlyUser();
     await mocks.enable("github", "tinybird");
-    // Account old enough to qualify on age, but the quest is coming_soon, so the
-    // account-setup group never evaluates it.
     const oldDate = new Date("2025-01-01T00:00:00Z");
     await db
         .update(schema.user)
         .set({ createdAt: oldDate, updatedAt: oldDate })
         .where(eq(schema.user.id, user.id));
+
+    const first = await checkQuestsForUser(env, user.id);
+    expect(first.recorded).toBeGreaterThanOrEqual(1);
+
+    await checkQuestsForUser(env, user.id);
+
+    const rewards = await db
+        .select({
+            questId: schema.rewards.questId,
+            userId: schema.rewards.userId,
+            pollenAmount: schema.rewards.pollenAmount,
+            balanceBucket: schema.rewards.balanceBucket,
+        })
+        .from(schema.rewards)
+        .where(eq(schema.rewards.questId, "early_adopter"));
+    expect(rewards).toEqual([
+        {
+            questId: "early_adopter",
+            userId: user.id,
+            pollenAmount: 1,
+            balanceBucket: "tier",
+        },
+    ]);
+});
+
+test("six-month account quest waits until the threshold", async ({
+    mocks,
+    sessionToken: _sessionToken,
+}) => {
+    const db = drizzle(env.DB, { schema });
+    const user = await getOnlyUser();
+    await mocks.enable("github", "tinybird");
 
     await checkQuestsForUser(env, user.id);
 
@@ -1103,13 +1146,10 @@ test("quest check continues after one group fails", async ({
     }
 });
 
-test("github established-account quest is coming_soon and never records", async ({
+test("github established-account quest records once per GitHub identity", async ({
     mocks,
     sessionToken: _sessionToken,
 }) => {
-    // Built but launch-gated (state "coming_soon"): even an account well over
-    // the one-year age threshold records no reward, and the group does not call
-    // GitHub profile endpoints for inert quests.
     const db = drizzle(env.DB, { schema });
     const user = await getOnlyUser();
     mocks.github.state.user.created_at = new Date(
@@ -1118,18 +1158,35 @@ test("github established-account quest is coming_soon and never records", async 
     await mocks.enable("github", "tinybird");
 
     mocks.github.state.requests = [];
+    const first = await checkQuestsForUser(env, user.id);
+    expect(first.recorded).toBeGreaterThanOrEqual(1);
+
+    expect(
+        mocks.github.state.requests.some(
+            (request) => request.path === `/user/${user.githubId}`,
+        ),
+    ).toBe(true);
+
+    mocks.github.state.requests = [];
     await checkQuestsForUser(env, user.id);
+
     const establishedRows = await db
-        .select({ id: schema.rewards.id })
+        .select({
+            idempotencyKey: schema.rewards.idempotencyKey,
+            userId: schema.rewards.userId,
+            pollenAmount: schema.rewards.pollenAmount,
+            balanceBucket: schema.rewards.balanceBucket,
+        })
         .from(schema.rewards)
         .where(eq(schema.rewards.questId, "github_established"));
-    expect(establishedRows).toHaveLength(0);
-
-    const [balance] = await db
-        .select({ tierBalance: schema.user.tierBalance })
-        .from(schema.user)
-        .where(eq(schema.user.id, user.id));
-    expect(balance?.tierBalance).toBeCloseTo(user.tierBalance ?? 0);
+    expect(establishedRows).toEqual([
+        {
+            idempotencyKey: `quest:github_established:github:${user.githubId}`,
+            userId: user.id,
+            pollenAmount: 2,
+            balanceBucket: "tier",
+        },
+    ]);
     expect(
         mocks.github.state.requests.some(
             (request) =>
@@ -1137,6 +1194,72 @@ test("github established-account quest is coming_soon and never records", async 
                 request.path.startsWith("/users/"),
         ),
     ).toBe(false);
+});
+
+test("github established-account quest rejects duplicate GitHub identities", async ({
+    mocks,
+    sessionToken: _sessionToken,
+}) => {
+    const db = drizzle(env.DB, { schema });
+    const user = await getOnlyUser();
+    mocks.github.state.user.created_at = "2020-01-01T00:00:00.000Z";
+    await mocks.enable("github", "tinybird");
+
+    await db.insert(schema.user).values({
+        id: "duplicate-github-user",
+        name: "Duplicate GitHub User",
+        email: "duplicate-github-user@example.com",
+        emailVerified: false,
+        image: null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        githubId: user.githubId,
+        githubUsername: user.githubUsername,
+        tierBalance: 0,
+        packBalance: 0,
+    });
+
+    await checkQuestsForUser(env, user.id);
+    mocks.github.state.requests = [];
+    const duplicate = await checkQuestsForUser(env, "duplicate-github-user");
+
+    const establishedRows = await db
+        .select({ userId: schema.rewards.userId })
+        .from(schema.rewards)
+        .where(eq(schema.rewards.questId, "github_established"));
+    expect(establishedRows).toEqual([{ userId: user.id }]);
+    expect(duplicate.recorded).toBe(0);
+    expect(
+        mocks.github.state.requests.some(
+            (request) =>
+                request.path === `/user/${user.githubId}` ||
+                request.path.startsWith("/users/"),
+        ),
+    ).toBe(false);
+});
+
+test("github established-account quest waits until the threshold", async ({
+    mocks,
+    sessionToken: _sessionToken,
+}) => {
+    const db = drizzle(env.DB, { schema });
+    const user = await getOnlyUser();
+    mocks.github.state.user.created_at = new Date().toISOString();
+    await mocks.enable("github", "tinybird");
+
+    mocks.github.state.requests = [];
+    await checkQuestsForUser(env, user.id);
+
+    const establishedRows = await db
+        .select({ id: schema.rewards.id })
+        .from(schema.rewards)
+        .where(eq(schema.rewards.questId, "github_established"));
+    expect(establishedRows).toHaveLength(0);
+    expect(
+        mocks.github.state.requests.some(
+            (request) => request.path === `/user/${user.githubId}`,
+        ),
+    ).toBe(true);
 });
 
 test("github public repo stars quest is coming_soon and never records", async ({

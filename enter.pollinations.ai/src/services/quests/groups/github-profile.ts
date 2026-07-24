@@ -1,4 +1,6 @@
 import { getLogger } from "@logtape/logtape";
+import * as schema from "@shared/db/better-auth.ts";
+import { eq } from "drizzle-orm";
 import { type QuestDefinition, rewardableQuests } from "../definitions.ts";
 import type {
     QuestCard,
@@ -164,11 +166,9 @@ const establishedGitHubAccountQuest: QuestDefinition = {
     title: "Established GitHub account",
     description: "Sign in with a GitHub account that is at least one year old.",
     category: "contribute",
-    scope: "perUser",
+    scope: "perSubject",
     rewardAmount: 2,
     balanceBucket: "tier",
-    // Built but not launched — hidden from the UI, not grantable.
-    state: "coming_soon",
 };
 
 const publicRepoStarsQuest: QuestDefinition = {
@@ -185,6 +185,10 @@ const publicRepoStarsQuest: QuestDefinition = {
 };
 
 const QUESTS = [establishedGitHubAccountQuest, publicRepoStarsQuest];
+
+function establishedAccountRewardKey(githubId: number): string {
+    return `quest:${establishedGitHubAccountQuest.id}:github:${githubId}`;
+}
 
 export async function listQuestCards(
     _ctx: QuestEvaluationContext,
@@ -217,6 +221,24 @@ export async function findRewardProposalsForUser(
         return [];
     }
 
+    if (rewardableQuestIds.has(establishedGitHubAccountQuest.id)) {
+        const existingReward = await ctx.db
+            .select({ id: schema.rewards.id })
+            .from(schema.rewards)
+            .where(
+                eq(
+                    schema.rewards.idempotencyKey,
+                    establishedAccountRewardKey(user.githubId),
+                ),
+            )
+            .limit(1);
+        if (existingReward.length > 0) {
+            rewardableQuestIds.delete(establishedGitHubAccountQuest.id);
+        }
+    }
+
+    if (rewardableQuestIds.size === 0) return [];
+
     const now = new Date();
     const proposals: RewardProposal[] = [];
     const profile = await fetchGitHubProfile(ctx.env, user.githubId);
@@ -248,6 +270,7 @@ export async function findRewardProposalsForUser(
             proposals.push({
                 quest: establishedGitHubAccountQuest,
                 userId: user.id,
+                idempotencySubject: `github:${user.githubId}`,
             });
         }
     }

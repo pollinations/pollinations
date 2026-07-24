@@ -1080,14 +1080,12 @@ describe("cost-variant telemetry", () => {
 
         expect(response.status).toBe(200);
         expect(tinybirdRequests).toHaveLength(1);
-        const event = (await tinybirdRequests[0].json()) as Record<
-            string,
-            number
-        >;
+        const event = (await tinybirdRequests[0].json()) as TinybirdEvent;
         // 10s at the 1080p variant rate ($0.04/s), not the 720p base (0.02).
         expect(event.totalCost).toBeCloseTo(10 * 0.04, 10);
         expect(event.totalPrice).toBeCloseTo(10 * 0.04, 10);
         expect(event.tokenPriceCompletionVideoSeconds).toBeCloseTo(0.04, 10);
+        expect(event.costVariant).toBe("1080p");
     });
 
     it("bills the 1080p variant through the real image handler for a legacy alias", async () => {
@@ -1166,12 +1164,10 @@ describe("cost-variant telemetry", () => {
             input: { resolution: "1080p", duration: 2 },
         });
         expect(tinybirdRequests).toHaveLength(1);
-        const event = (await tinybirdRequests[0].json()) as Record<
-            string,
-            number
-        >;
+        const event = (await tinybirdRequests[0].json()) as TinybirdEvent;
         expect(event.totalCost).toBeCloseTo(2 * 0.04, 10);
         expect(event.tokenPriceCompletionVideoSeconds).toBeCloseTo(0.04, 10);
+        expect(event.costVariant).toBe("1080p");
         expect(consumePollen).toHaveBeenCalledWith(0.08);
     });
 
@@ -1215,14 +1211,12 @@ describe("cost-variant telemetry", () => {
 
         expect(response.status).toBe(200);
         expect(tinybirdRequests).toHaveLength(1);
-        const event = (await tinybirdRequests[0].json()) as Record<
-            string,
-            number
-        >;
+        const event = (await tinybirdRequests[0].json()) as TinybirdEvent;
         // One token above 272K: whole request at long-context rates
         // ($5/M prompt, $22.50/M completion), reflected per-unit and in total.
         expect(event.tokenPricePromptText).toBeCloseTo(5 / 1e6, 12);
         expect(event.tokenPriceCompletionText).toBeCloseTo(22.5 / 1e6, 12);
+        expect(event.costVariant).toBe("long_context");
         expect(event.totalCost).toBeCloseTo(
             272_001 * (5 / 1e6) + 1_000 * (22.5 / 1e6),
             9,

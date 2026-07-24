@@ -111,6 +111,8 @@ type ResponseTrackingData = {
     usage?: Usage;
     cost?: UsageCost;
     price?: UsagePrice;
+    // Named conditional pricing sheet selected by calculateUsageBilling.
+    costVariant?: string;
     // Per-rule billing adjustment breakdown for the billed generation. Absent on
     // cache hits / not-billed paths, which return before cost calculation.
     adjustments?: BillingAdjustment[];
@@ -524,13 +526,14 @@ async function trackResponse(
     // Single pass: cost, price, and the per-rule fee breakdown all derive from
     // one walk over the billing rules, so the event's adjustment maps always
     // match the billed totals and clamp warnings log once per request.
-    const { cost, price, adjustments, priceDefinition } = calculateUsageBilling(
-        resolvedModelRequested,
-        modelUsage.usage,
-        requestTracking.modelDefinition,
-        modelUsage.output,
-        pricingInput,
-    );
+    const { cost, price, adjustments, priceDefinition, costVariant } =
+        calculateUsageBilling(
+            resolvedModelRequested,
+            modelUsage.usage,
+            requestTracking.modelDefinition,
+            modelUsage.output,
+            pricingInput,
+        );
     return {
         responseOk: response.ok,
         responseStatus: response.status,
@@ -539,6 +542,7 @@ async function trackResponse(
         fallbackUsed,
         cost,
         price,
+        costVariant,
         adjustments,
         priceDefinition,
         modelUsed: modelUsage.model,
@@ -730,6 +734,7 @@ function createTrackingEvent({
         resolvedModelRequested: requestTracking.resolvedModelRequested,
         modelUsed: responseTracking.modelUsed,
         modelProviderUsed: requestTracking.modelProvider,
+        costVariant: responseTracking.costVariant,
         fallbackUsed: responseTracking.fallbackUsed,
 
         isBilledUsage: responseTracking.isBilledUsage,

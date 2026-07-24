@@ -12,7 +12,7 @@ description: Detect and analyze abusive accounts on Pollinations. IP clustering,
 **Tinybird query pattern:**
 ```bash
 cd enter.pollinations.ai/observability
-tb --cloud sql "SELECT ... FROM generation_event ..."
+tb --cloud sql "SELECT ... FROM generation_event_v2 ..."
 ```
 
 > **Workspace**: This skill is **prod-only**. The `.tinyb` in `observability/` points to the `pollinations_enter` workspace (prod traffic). Staging traffic lives in `pollinations_enter_staging` and has no real abuse signal — don't waste time analyzing it. To pin a query to staging anyway (e.g. testing a new scoring query), set `TB_TOKEN=<staging_admin_token>` for that one command.
@@ -74,7 +74,7 @@ FROM (
         count() as total_reqs,
         round(sumIf(g.total_price, g.selected_meter_slug IN ('v1:meter:pack', 'local:pack')), 4) as pack_spend,
         countIf(g.response_status >= 400) * 100.0 / count() as err_pct
-    FROM generation_event g
+    FROM generation_event_v2 g
     WHERE g.start_time >= now() - INTERVAL 7 DAY
         AND g.user_id NOT IN ('undefined', '')
     GROUP BY g.user_id
@@ -123,12 +123,12 @@ FROM (
                if(countIf(g.moderation_prompt_sexual_severity NOT IN ('safe', '')) * 100.0 / count() >= 50, 8, 0)) +
             if(countDistinct(g.ip_hash) >= 50, 10, if(countDistinct(g.ip_hash) >= 20, 5, 0))
         , 0) as abuse_score
-    FROM generation_event g
+    FROM generation_event_v2 g
     LEFT JOIN d1_user u ON g.user_id = u.id
         AND u.synced_at = (SELECT max(synced_at) FROM d1_user)
     LEFT JOIN (
         SELECT ip_hash, count(DISTINCT user_id) as ip_cluster_size
-        FROM generation_event
+        FROM generation_event_v2
         WHERE start_time >= now() - INTERVAL 7 DAY
             AND ip_hash NOT IN ('undefined', '')
             AND user_id NOT IN ('undefined', '')
@@ -154,7 +154,7 @@ SELECT
     count(DISTINCT user_id) as unique_users,
     count() as total_requests,
     dateDiff('minute', min(start_time), max(start_time)) as span_min
-FROM generation_event
+FROM generation_event_v2
 WHERE start_time >= now() - INTERVAL 7 DAY
     AND ip_hash NOT IN ('undefined', '')
     AND user_id NOT IN ('undefined', '')
@@ -171,7 +171,7 @@ SELECT DISTINCT
     g.user_id, u.github_username, u.email,
     sumIf(g.total_price, g.selected_meter_slug IN ('v1:meter:pack', 'local:pack')) as pack_spend,
     sum(g.total_price) as total_spend
-FROM generation_event g
+FROM generation_event_v2 g
 LEFT JOIN d1_user u ON g.user_id = u.id
     AND u.synced_at = (SELECT max(synced_at) FROM d1_user)
 WHERE g.start_time >= now() - INTERVAL 7 DAY
@@ -301,7 +301,7 @@ npx wrangler d1 execute production-pollinations-enter-db --remote \
 
 | Table | Key columns for abuse |
 |-------|----------------------|
-| `generation_event` | `user_id`, `ip_hash`, `ip_subnet`, `response_status`, `total_price`, `selected_meter_slug`, `moderation_prompt_*`, `event_type` |
+| `generation_event_v2` | `user_id`, `ip_hash`, `ip_subnet`, `response_status`, `total_price`, `selected_meter_slug`, `moderation_prompt_*`, `event_type` |
 | `d1_user` | `id`, `email`, `github_username`, `banned`, `banReason`, `created_at` |
 
 **IP implementation** (`src/middleware/track.ts`):

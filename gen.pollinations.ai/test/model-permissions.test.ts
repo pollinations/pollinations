@@ -1,6 +1,7 @@
 import { SELF } from "cloudflare:test";
 import { getAudioModelsInfo } from "@shared/registry/model-info.ts";
 import {
+    createTestApiKey,
     RESTRICTED_IMAGE_TEST_MODEL,
     RESTRICTED_TEST_MODELS,
     RESTRICTED_TEXT_TEST_MODEL,
@@ -48,6 +49,27 @@ test("filters image model list by API key permissions", async ({
         true,
     );
     expect(modelNames).toContain(RESTRICTED_IMAGE_TEST_MODEL);
+});
+
+test("empty model permissions deny access and return an empty catalog", async () => {
+    const { key } = await createTestApiKey({
+        allowedModels: [],
+        user: { tierBalance: 100 },
+    });
+    const headers = { Authorization: `Bearer ${key}` };
+
+    const modelsResponse = await fetchWorker("/v1/models", { headers });
+    expect(modelsResponse.status).toBe(200);
+    expect(await modelsResponse.json()).toEqual({
+        object: "list",
+        data: [],
+    });
+
+    const generationResponse = await fetchWorker(
+        `/text/test?model=${RESTRICTED_TEXT_TEST_MODEL}`,
+        { headers },
+    );
+    expect(generationResponse.status).toBe(403);
 });
 
 test("filters paid-only audio models by paid balance", async ({

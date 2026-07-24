@@ -63,7 +63,7 @@ function mockOpenAIRealtime() {
         .spyOn(globalThis, "fetch")
         .mockImplementation(async (input, init) => {
             const request = new Request(input, init);
-            if (request.url.includes("/v0/events?name=generation_event")) {
+            if (request.url.includes("/v0/events?name=generation_event_v2")) {
                 tinybirdRequests.push(request);
                 return new Response("", { status: 202 });
             }
@@ -735,4 +735,19 @@ test("includes realtime model in OpenAI-compatible model discovery", async ({
     expect(restrictedBody.data.map((model) => model.id)).not.toContain(
         "gpt-realtime-2.1",
     );
+});
+
+test("rejects realtime access for empty model permissions", async () => {
+    const { key } = await createTestApiKey({
+        allowedModels: [],
+        user: { packBalance: 1 },
+    });
+    const response = await fetchWorker("/v1/realtime?model=gpt-realtime-2", {
+        headers: {
+            Authorization: `Bearer ${key}`,
+            Upgrade: "websocket",
+        },
+    });
+
+    expect(response.status).toBe(403);
 });

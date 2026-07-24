@@ -249,6 +249,8 @@ async function generateWanVideo(
             throw new HttpError(
                 `${config.displayName} generation failed: ${err.message}`,
                 err.status ?? 500,
+                undefined,
+                err.url,
             );
         }
         throw err;

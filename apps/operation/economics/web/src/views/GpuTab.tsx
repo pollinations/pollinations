@@ -104,7 +104,7 @@ function computeBreakEven(
 }
 
 // GPU rent is attributed at vendor+month grain, not per-pod or per-model:
-// generation_event's provider field is real per-request ground truth, but a
+// generation_event_v2's provider field is real per-request ground truth, but a
 // pod's manually-entered "model" label isn't (one host can run several
 // models at once), so splitting rent across models would just be a guess
 // dressed up as precision. This is still biased when a vendor's Pollen

@@ -235,7 +235,7 @@ TOKEN=$(grep ENTER_API_TOKEN_REMOTE enter.pollinations.ai/.testingtokens | cut -
 for i in 1 2 3 4 5; do curl -s -o /dev/null -w "HTTP %{http_code}\n" --max-time 60 \
   "https://gen.pollinations.ai/image/verify_${i}_$(date +%s%N)?model=zimage&width=512&height=512&seed=$i" \
   -H "Authorization: Bearer $TOKEN"; done
-# Then confirm the 524 trend dropped in Tinybird (model_health / generation_event, model_requested='zimage').
+# Then confirm the 524 trend dropped in Tinybird (model_health / generation_event_v2, model_requested='zimage').
 ```
 
 The registry is Cloudflare KV-backed (`image:server:<env>:<type>:<hash>`, 240s TTL); workers heartbeat to `gen.pollinations.ai/register`.

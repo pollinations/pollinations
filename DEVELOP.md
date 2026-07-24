@@ -252,7 +252,7 @@ graph TD
     end
 
     subgraph CICD["🔧 GitHub Actions · CI/CD"]
-        GH["29 workflows\n5 deploys · 7 crons\nPolly bot · app review\nBiome · CodeQL · tests"]:::cicd
+        GH["29 workflows\n5 deploys · 7 crons\nPolli bot · app review\nBiome · CodeQL · tests"]:::cicd
         SOPS_S["🔒 SOPS + AGE\n28 secrets"]:::cicd
     end
 

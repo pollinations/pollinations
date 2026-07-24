@@ -86,7 +86,7 @@ Binary classification:
 ### `headline`
 Short, creative, playful headline for this PR. Dev-meme energy, bee/garden metaphors welcome.
 Not a PR title — a fun name for what happened. 3-8 words.
-Examples: "The hive has ears", "Rectangles are free", "Welcome, Polly!", "Fresh coat of paint"
+Examples: "The hive has ears", "Rectangles are free", "Welcome, Polli!", "Fresh coat of paint"
 
 ### `blurb`
 Whimsical 1-2 sentence description for the website diary. Fun and approachable, not corporate.

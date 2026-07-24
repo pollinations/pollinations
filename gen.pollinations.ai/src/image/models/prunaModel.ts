@@ -117,6 +117,8 @@ async function runPrunaPrediction<TInput>(
             throw new HttpError(
                 `${displayName} generation failed: ${err.message}`,
                 err.status ?? 500,
+                undefined,
+                err.url,
             );
         }
         throw err;

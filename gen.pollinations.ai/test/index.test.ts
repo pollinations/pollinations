@@ -393,6 +393,47 @@ describe("gen worker routing", () => {
             "video",
         ]);
     });
+
+    it("distinguishes Perplexity Sonar search presets", async () => {
+        const response = await fetchWorker("/text/models", envWithEnter());
+
+        expect(response.status).toBe(200);
+        const models = (await response.json()) as {
+            name: string;
+            title?: string;
+            description?: string;
+        }[];
+
+        expect(
+            models.find((model) => model.name === "perplexity-fast"),
+        ).toMatchObject({
+            title: "Perplexity Sonar Fast Search",
+            description:
+                "Quick web searches with cited answers; keeps it brief",
+        });
+        expect(
+            models.find((model) => model.name === "perplexity-high"),
+        ).toMatchObject({
+            title: "Perplexity Sonar High-Context Search",
+            description:
+                "Digs through many sources for thorough, cited research answers",
+        });
+        expect(
+            models.find((model) => model.name === "perplexity"),
+        ).toMatchObject({
+            description:
+                "Advanced web search that synthesizes multiple sources with citations",
+        });
+        expect(
+            models.find((model) => model.name === "perplexity-reasoning"),
+        ).toMatchObject({
+            description:
+                "Thinks step by step while searching the web; slower but more rigorous",
+        });
+        expect(models.some((model) => model.name === "perplexity-deep")).toBe(
+            false,
+        );
+    });
 });
 
 describe("model status", () => {
@@ -533,6 +574,165 @@ fixtureTest(
         expect(
             calls.some((url) => new URL(url).hostname === "api.elevenlabs.io"),
         ).toBe(false);
+    },
+);
+
+fixtureTest(
+    "routes simple CSM audio requests through DeepInfra",
+    async ({ paidApiKey }) => {
+        const calls: string[] = [];
+        const deepInfraEndpoint =
+            "https://api.deepinfra.com/v1/openai/audio/speech";
+
+        vi.spyOn(globalThis, "fetch").mockImplementation(
+            async (input, init) => {
+                const request = new Request(input, init);
+                calls.push(request.url);
+
+                if (request.url === deepInfraEndpoint) {
+                    expect(request.headers.get("authorization")).toBe(
+                        "Bearer test-deepinfra-key",
+                    );
+                    await expect(request.json()).resolves.toEqual({
+                        model: "sesame/csm-1b",
+                        input: "Hello CSM",
+                        voice: "read_speech_a",
+                        response_format: "mp3",
+                    });
+
+                    return new Response(
+                        new Uint8Array([0xff, 0xfb, 0x90, 0x64]),
+                        {
+                            headers: { "Content-Type": "audio/mpeg" },
+                        },
+                    );
+                }
+
+                if (
+                    request.url.startsWith(
+                        "https://api.europe-west2.gcp.tinybird.co/v0/pipes/public_model_stats.json",
+                    ) ||
+                    request.url.startsWith("http://localhost:7181/")
+                ) {
+                    return Response.json({ data: [] });
+                }
+
+                throw new Error(`Unexpected fetch: ${request.url}`);
+            },
+        );
+
+        const ctx = createExecutionContext();
+        const response = await worker.fetch(
+            new Request(
+                "https://staging.gen.pollinations.ai/audio/Hello%20CSM?model=csm&voice=read_speech_a&response_format=mp3",
+                {
+                    headers: { Authorization: `Bearer ${paidApiKey}` },
+                },
+            ),
+            {
+                ...env,
+                DEEPINFRA_API_KEY: "test-deepinfra-key",
+            } as unknown as CloudflareBindings,
+            ctx,
+        );
+
+        expect(response.status).toBe(200);
+        expect(response.headers.get("content-type")).toBe("audio/mpeg");
+        expect(response.headers.get("x-model-used")).toBe("csm-1b");
+        expect(response.headers.get("x-usage-completion-audio-tokens")).toBe(
+            "9",
+        );
+        expect(response.headers.get("x-tts-voice")).toBe("read_speech_a");
+        expect(new Uint8Array(await response.arrayBuffer())).toEqual(
+            new Uint8Array([0xff, 0xfb, 0x90, 0x64]),
+        );
+
+        await waitOnExecutionContext(ctx);
+        expect(calls).toContain(deepInfraEndpoint);
+        expect(
+            calls.some((url) => new URL(url).hostname === "openrouter.ai"),
+        ).toBe(false);
+    },
+);
+
+fixtureTest(
+    "validates CSM input before calling DeepInfra",
+    async ({ paidApiKey }) => {
+        const deepInfraEndpoint =
+            "https://api.deepinfra.com/v1/openai/audio/speech";
+        const calls: string[] = [];
+
+        vi.spyOn(globalThis, "fetch").mockImplementation(
+            async (input, init) => {
+                const request = new Request(input, init);
+                calls.push(request.url);
+                if (
+                    request.url.startsWith(
+                        "https://api.europe-west2.gcp.tinybird.co/v0/pipes/public_model_stats.json",
+                    ) ||
+                    request.url.startsWith("http://localhost:7181/")
+                ) {
+                    return Response.json({ data: [] });
+                }
+                throw new Error(`Unexpected fetch: ${request.url}`);
+            },
+        );
+
+        const cases = [
+            {
+                input: "a".repeat(201),
+                voice: "conversational_a",
+                response_format: "mp3",
+                message: "Maximum is 200",
+            },
+            {
+                input: "Hello",
+                voice: "unknown_voice",
+                response_format: "mp3",
+                message: "Invalid voice for csm-1b",
+            },
+            {
+                input: "Hello",
+                voice: "conversational_a",
+                response_format: "aac",
+                message: "Unsupported response_format for csm-1b",
+            },
+        ];
+
+        for (const testCase of cases) {
+            const ctx = createExecutionContext();
+            const response = await worker.fetch(
+                new Request(
+                    "https://staging.gen.pollinations.ai/v1/audio/speech",
+                    {
+                        method: "POST",
+                        headers: {
+                            Authorization: `Bearer ${paidApiKey}`,
+                            "Content-Type": "application/json",
+                        },
+                        body: JSON.stringify({
+                            model: "csm-1b",
+                            input: testCase.input,
+                            voice: testCase.voice,
+                            response_format: testCase.response_format,
+                        }),
+                    },
+                ),
+                {
+                    ...env,
+                    DEEPINFRA_API_KEY: "test-deepinfra-key",
+                } as unknown as CloudflareBindings,
+                ctx,
+            );
+
+            expect(response.status).toBe(400);
+            await expect(response.json()).resolves.toMatchObject({
+                error: { message: expect.stringContaining(testCase.message) },
+            });
+            await waitOnExecutionContext(ctx);
+        }
+
+        expect(calls).not.toContain(deepInfraEndpoint);
     },
 );
 

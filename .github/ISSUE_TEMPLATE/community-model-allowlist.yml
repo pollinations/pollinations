@@ -1,0 +1,69 @@
+name: Community Model Publisher Allowlist
+description: Request account access to publish community models
+title: "[Community Model Publisher Access]: "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this form to request account-level access to publish community models in the Pollinations model catalog. It does **not** register or submit a specific model. Private models can be registered without approval.
+
+        Submit this form from the same GitHub account you use to sign in at [enter.pollinations.ai](https://enter.pollinations.ai).
+
+        This issue is public. **Never include API keys, bearer tokens, or other credentials.**
+
+  - type: dropdown
+    id: model-types
+    attributes:
+      label: What kinds of models do you want to publish?
+      description: Select every model type you plan to add.
+      multiple: true
+      options:
+        - Text or chat
+        - Image generation or editing
+        - Embeddings
+        - Speech or text-to-speech
+        - Transcription or speech-to-text
+    validations:
+      required: true
+
+  - type: textarea
+    id: publishing-plans
+    attributes:
+      label: Publishing plans
+      description: Describe the models, providers, or endpoints you plan to publish and why they would be useful in the public catalog.
+      placeholder: |
+        Models/providers:
+        Main capabilities and intended use:
+        Why they are a good fit for the public catalog:
+    validations:
+      required: true
+
+  - type: input
+    id: relevant-links
+    attributes:
+      label: Relevant links
+      description: Optional links to model cards, provider documentation, repositories, demos, or prior work. Do not include credentials.
+      placeholder: "https://..."
+
+  - type: textarea
+    id: availability
+    attributes:
+      label: Availability and limits
+      description: Tell us where the endpoint is hosted and any capacity, rate-limit, or uptime constraints reviewers should know.
+      placeholder: "Hosted on ..., approximately ... concurrent requests, ... rate limit"
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: confirmations
+    attributes:
+      label: Confirmations
+      options:
+        - label: I am submitting from the same GitHub account I use to sign in to Pollinations.
+          required: true
+        - label: I understand that published community models must use OpenAI-compatible upstream endpoints.
+          required: true
+        - label: I have not included API keys, bearer tokens, or other credentials in this issue.
+          required: true
+        - label: I understand that public community models are monitored and may be deactivated for sustained failures or abuse.
+          required: true

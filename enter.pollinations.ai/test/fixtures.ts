@@ -60,7 +60,11 @@ type SignupData = {
  */
 export const createApiKeyViaApi = async (
     sessionToken: string,
-    options: { name: string; type?: "secret" | "publishable" },
+    options: {
+        name: string;
+        type?: "secret" | "publishable";
+        allowedModels?: string[];
+    },
 ) => {
     const response = await SELF.fetch(
         "http://localhost:3000/api/account/keys",

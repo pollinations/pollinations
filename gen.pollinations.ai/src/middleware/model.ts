@@ -26,7 +26,7 @@ export type ModelVariables = {
         /** The resolved canonical model name */
         resolved: string;
         /** Static registry definition, or a dynamic definition resolved from D1. */
-        definition: ModelDefinition<string>;
+        definition: ModelDefinition;
         communityEndpoint?: CommunityEndpointRuntime;
     };
     formData?: FormData;

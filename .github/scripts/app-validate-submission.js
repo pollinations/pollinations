@@ -1,199 +1,118 @@
 #!/usr/bin/env node
 
-/**
- * Validates app submission before Claude processes it.
- *
- * Checks:
- * 1. Issue author is registered at Enter
- * 2. No duplicate submissions
- *
- * Outputs JSON with validation results.
- *
- * Usage:
- *   ISSUE_NUMBER=123 ISSUE_AUTHOR=username node app-validate-submission.js
- */
-
-const { execSync, spawn } = require("node:child_process");
+const { execFileSync } = require("node:child_process");
+const {
+    buildRow,
+    findCatalogDuplicate,
+    parseSubmission,
+    validateSubmission,
+} = require("./lib/app-submission.js");
 
 const ISSUE_NUMBER = process.env.ISSUE_NUMBER;
 const ISSUE_AUTHOR = process.env.ISSUE_AUTHOR;
 
-async function main() {
-    const result = {
-        valid: true,
-        issue_number: ISSUE_NUMBER,
-        issue_author: ISSUE_AUTHOR,
-        checks: {},
-        errors: [],
-        repo_url: null,
-    };
-
-    // 1. Check Enter registration
-    try {
-        // Sanitize username to prevent SQL injection (defense-in-depth)
-        const safeUsername = ISSUE_AUTHOR?.replace(/[^a-zA-Z0-9_-]/g, "") || "";
-        if (!safeUsername) {
-            throw new Error(
-                "ISSUE_AUTHOR is required but was empty or undefined",
-            );
-        }
-        const cmd = `cd enter.pollinations.ai && npx wrangler d1 execute DB --remote --env production --command "SELECT id FROM user WHERE LOWER(github_username) = LOWER('${safeUsername}');" --json`;
-        const output = execSync(cmd, {
-            encoding: "utf-8",
-            stdio: ["pipe", "pipe", "pipe"],
-        });
-        const data = JSON.parse(output);
-        const userRecord = data?.[0]?.results?.[0];
-        const registered = !!userRecord;
-
-        result.checks.registration = {
-            registered,
-            username: safeUsername,
-        };
-
-        if (!registered) {
-            result.valid = false;
-            result.checks.registration.error_code = "NOT_REGISTERED";
-            result.errors.push(
-                `User @${ISSUE_AUTHOR} is not registered at enter.pollinations.ai`,
-            );
-        }
-    } catch (err) {
-        result.checks.registration = {
-            error: err.message,
-            registered: false,
-        };
-        result.valid = false;
-        result.errors.push(`Failed to check registration: ${err.message}`);
-    }
-
-    // 2. Fetch issue to get body for duplicate check and repo URL
-    try {
-        const issueCmd = `gh issue view ${ISSUE_NUMBER} --repo pollinations/pollinations --json body`;
-        const issueData = JSON.parse(execSync(issueCmd, { encoding: "utf-8" }));
-        const body = issueData.body || "";
-
-        // Extract repo URL if present
-        const repoMatch = body.match(/https?:\/\/github\.com\/[^\s)]+/i);
-        if (repoMatch) {
-            result.repo_url = repoMatch[0]
-                .replace(/\.git$/, "")
-                .replace(/\/$/, "");
-        }
-
-        // Extract app URL
-        const urlMatch = body.match(/https?:\/\/[^\s)]+/i);
-        const appUrl = urlMatch ? urlMatch[0] : "";
-
-        // Extract name (first line or "Name:" field)
-        const nameMatch =
-            body.match(/(?:name|app\s*name)\s*[:-]?\s*(.+)/i) ||
-            body.match(/^(.+)$/m);
-        const appName = nameMatch ? nameMatch[1].trim().substring(0, 50) : "";
-
-        // 3. Check duplicates
-        if (appUrl || result.repo_url || appName) {
-            try {
-                const projectJson = JSON.stringify({
-                    name: appName,
-                    url: appUrl,
-                    repo: result.repo_url || "",
-                });
-
-                const dupResult = await new Promise((resolve, reject) => {
-                    const env = { ...process.env };
-                    env.GITHUB_USERNAME = ISSUE_AUTHOR;
-                    env.PROJECT_JSON = projectJson;
-
-                    const proc = spawn(
-                        "node",
-                        [".github/scripts/app-check-duplicate.js"],
-                        {
-                            env,
-                            stdio: ["pipe", "pipe", "pipe"],
-                            cwd: process.cwd(),
-                        },
-                    );
-
-                    let stdout = "";
-                    let stderr = "";
-
-                    proc.stdout.on("data", (data) => {
-                        stdout += data.toString();
-                    });
-
-                    proc.stderr.on("data", (data) => {
-                        stderr += data.toString();
-                    });
-
-                    proc.on("close", (code) => {
-                        if (code !== 0) {
-                            reject(
-                                new Error(
-                                    `Command failed with code ${code}: ${stderr}`,
-                                ),
-                            );
-                        } else {
-                            try {
-                                resolve(JSON.parse(stdout.trim()));
-                            } catch (_err) {
-                                reject(
-                                    new Error(
-                                        `Failed to parse output: ${stdout}`,
-                                    ),
-                                );
-                            }
-                        }
-                    });
-
-                    proc.on("error", reject);
-                });
-
-                result.checks.duplicate = {
-                    isDuplicate: dupResult.isDuplicate,
-                    matchType: dupResult.matchType || undefined,
-                    reason: dupResult.reason || undefined,
-                };
-
-                if (
-                    dupResult.isDuplicate &&
-                    ["url_exact", "repo_exact", "name_user_exact"].includes(
-                        dupResult.matchType,
-                    )
-                ) {
-                    result.valid = false;
-                    result.errors.push(
-                        `Duplicate detected: ${dupResult.matchType} - ${dupResult.reason}`,
-                    );
-                }
-            } catch (err) {
-                result.checks.duplicate = { error: err.message };
-            }
-        }
-
-        // 4. Check for existing PR for this issue
-        try {
-            const prCmd = `gh pr list --repo pollinations/pollinations --search "Fixes #${ISSUE_NUMBER}" --json number,headRefName,url --jq '.[0]'`;
-            const prOutput = execSync(prCmd, { encoding: "utf-8" }).trim();
-            if (prOutput) {
-                result.existing_pr = JSON.parse(prOutput);
-            }
-        } catch {
-            result.existing_pr = null;
-        }
-    } catch (err) {
-        result.errors.push(`Failed to fetch issue: ${err.message}`);
-    }
-
-    console.log(JSON.stringify(result, null, 2));
-
-    // Exit with error if validation failed
-    if (!result.valid) {
-        process.exit(1);
-    }
+function gh(args) {
+    return execFileSync("gh", args, { encoding: "utf8" }).trim();
 }
 
-main().catch((err) => {
-    console.error(JSON.stringify({ valid: false, error: err.message }));
-    process.exit(1);
-});
+function main() {
+    if (!/^\d+$/.test(ISSUE_NUMBER || ""))
+        throw new Error("ISSUE_NUMBER must be numeric");
+    if (!/^[A-Za-z0-9-]+$/.test(ISSUE_AUTHOR || ""))
+        throw new Error("ISSUE_AUTHOR is invalid");
+
+    const issue = Object.hasOwn(process.env, "ISSUE_BODY")
+        ? {
+              body: process.env.ISSUE_BODY,
+              createdAt: process.env.ISSUE_CREATED_AT,
+              url: process.env.ISSUE_URL,
+          }
+        : JSON.parse(
+              gh([
+                  "issue",
+                  "view",
+                  ISSUE_NUMBER,
+                  "--repo",
+                  "pollinations/pollinations",
+                  "--json",
+                  "body,createdAt,url",
+              ]),
+          );
+    if (!issue.createdAt || !issue.url)
+        throw new Error("Issue snapshot metadata is incomplete");
+    const submission = parseSubmission(issue.body);
+    const errors = validateSubmission(submission);
+    const duplicate = findCatalogDuplicate(submission, undefined, ISSUE_AUTHOR);
+    if (duplicate) {
+        errors.push(
+            `This app appears to already be listed as ${duplicate.name} in apps/APPS.md.`,
+        );
+    }
+    const pendingIssues = JSON.parse(
+        gh([
+            "issue",
+            "list",
+            "--repo",
+            "pollinations/pollinations",
+            "--state",
+            "open",
+            "--label",
+            "APP-SUBMISSION",
+            "--limit",
+            "500",
+            "--json",
+            "number,body,url,author",
+        ]),
+    );
+    const pendingDuplicate = pendingIssues.find((candidate) => {
+        if (String(candidate.number) === ISSUE_NUMBER) return false;
+        const parsed = parseSubmission(candidate.body);
+        return findCatalogDuplicate(
+            submission,
+            [
+                {
+                    name: parsed.name,
+                    webUrl: parsed.appUrl,
+                    repoUrl: parsed.repoUrl,
+                    githubUsername: candidate.author?.login || "",
+                },
+            ],
+            ISSUE_AUTHOR,
+        );
+    });
+    if (pendingDuplicate) {
+        errors.push(
+            `This app appears to duplicate open submission #${pendingDuplicate.number}: ${pendingDuplicate.url}`,
+        );
+    }
+
+    const githubUser = JSON.parse(gh(["api", `/users/${ISSUE_AUTHOR}`]));
+    const approvedDate =
+        process.env.APPROVED_DATE || new Date().toISOString().slice(0, 10);
+    const metadata = {
+        githubUsername: ISSUE_AUTHOR,
+        githubUserId: githubUser.id,
+        submittedDate: issue.createdAt.slice(0, 10),
+        issueUrl: issue.url,
+        approvedDate,
+    };
+
+    const result = {
+        valid: errors.length === 0,
+        errors,
+        submission,
+        metadata,
+        row: errors.length === 0 ? buildRow(submission, metadata) : "",
+    };
+    process.stdout.write(`${JSON.stringify(result)}\n`);
+    if (!result.valid) process.exitCode = 2;
+}
+
+try {
+    main();
+} catch (error) {
+    process.stdout.write(
+        `${JSON.stringify({ valid: false, system_error: error.message })}\n`,
+    );
+    process.exitCode = 1;
+}

@@ -295,11 +295,11 @@ export const DashboardShell: FC<DashboardShellProps> = ({
 
     return (
         <div className="flex h-dvh overflow-hidden bg-app-bg text-theme-text-strong">
-            <div className="hidden md:block">{rail}</div>
+            <div className="hidden lg:block">{rail}</div>
             <div
                 ref={drawerRef}
                 className={cn(
-                    "fixed inset-0 z-40 transition-[visibility] md:hidden",
+                    "fixed inset-0 z-40 transition-[visibility] lg:hidden",
                     isDrawerOpen
                         ? "pointer-events-auto visible delay-0"
                         : "pointer-events-none invisible delay-[420ms]",
@@ -343,14 +343,14 @@ export const DashboardShell: FC<DashboardShellProps> = ({
                     </div>
                 </div>
             </div>
-            <div className="flex min-w-0 flex-1 flex-col md:ml-60">
+            <div className="flex min-w-0 flex-1 flex-col lg:ml-60">
                 <MobileMenuButton
                     buttonRef={menuButtonRef}
                     onOpen={() => setIsDrawerOpen(true)}
                 />
                 <ScrollArea
                     ref={mainScrollRef}
-                    className="min-h-0 min-w-0 flex-1 overscroll-contain px-4 pt-14 pb-8 md:px-6 md:pt-10"
+                    className="min-h-0 min-w-0 flex-1 overscroll-contain px-4 pt-14 pb-8 lg:px-6 lg:pt-10"
                 >
                     <main className="mx-auto flex max-w-[800px] flex-col gap-6">
                         {children}
@@ -393,10 +393,10 @@ const DashboardRail: FC<DashboardRailProps> = ({
 }) => (
     <aside
         data-theme="neutral"
-        className="flex min-h-0 flex-1 flex-col px-2 py-4 md:fixed md:inset-y-0 md:left-0 md:z-30 md:w-60 md:border-r md:border-theme-text-strong/10"
+        className="flex min-h-0 flex-1 flex-col px-2 py-4 lg:fixed lg:inset-y-0 lg:left-0 lg:z-30 lg:w-60 lg:border-r lg:border-theme-text-strong/10"
         aria-label="Dashboard navigation"
     >
-        <div className="hidden shrink-0 flex-col gap-2 border-b border-theme-text-strong/10 pb-4 pl-1 md:flex">
+        <div className="hidden shrink-0 flex-col gap-2 border-b border-theme-text-strong/10 pb-4 pl-1 lg:flex">
             <BrandMark size="desktop" />
             <BrandLinks links={brandLinks} />
         </div>
@@ -450,7 +450,7 @@ const MobileMenuButton: FC<{
     <button
         ref={buttonRef}
         type="button"
-        className="fixed left-3 top-3 z-30 flex h-9 w-9 items-center justify-center rounded-full bg-surface-opaque text-theme-text-strong shadow-md ring-1 ring-theme-text-strong/10 hover:bg-surface-opaque md:hidden"
+        className="fixed left-3 top-3 z-30 flex h-9 w-9 items-center justify-center rounded-full bg-surface-opaque text-theme-text-strong shadow-md ring-1 ring-theme-text-strong/10 hover:bg-surface-opaque lg:hidden"
         onClick={onOpen}
         aria-label="Open navigation"
     >

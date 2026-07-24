@@ -14,6 +14,7 @@ import {
     callIdeogramTurboAPI,
 } from "./models/ideogramReplicateModel.ts";
 import { callNovaCanvasAPI } from "./models/novaCanvasModel.ts";
+import { callOpenRouterGrokImagineProAPI } from "./models/openRouterImageModel.ts";
 import {
     callPrunaImageAPI,
     callPrunaImageEditAPI,
@@ -812,11 +813,7 @@ const generateImage = async (
             );
 
         case "grok-imagine-pro":
-            return await callXaiImageAPI(
-                prompt,
-                safeParams,
-                "grok-imagine-image-quality",
-            );
+            return await callOpenRouterGrokImagineProAPI(prompt, safeParams);
 
         case "p-image-edit":
             return await callPrunaImageEditAPI(prompt, safeParams);

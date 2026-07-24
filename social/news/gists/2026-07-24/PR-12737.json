@@ -1,0 +1,35 @@
+{
+  "pr_number": 12737,
+  "title": "feat: add observability consumption paths",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/12737",
+  "merged_at": "2026-07-24T17:51:51Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds a compact Platform & Usage section for Paid Pollen, Quest Pollen, requests, and selected-period totals across four additive product paths.\n- Defines BYOP and BYOM as independent dimensions, including the BYOP + BYOM overlap without double-counting.\n- Renames Community Models to BYOM — Community Models and Core API to Direct API while preserving dashboard UIDs.\n- Updates the visual implementation plan and observability guidance to match the new attribution contract.\n\nValidation:\n- Production Tinybird read-only 30-day query: 0.023s, 145,188 rows, 5.81 MB.\n- Grafana provisioning/runtime check: 17 dashboards, 5 active at root, 12 legacy, no provisioning errors.\n- `npm run check`, Biome, JSON parsing, HTML script parsing, panel-ID/grid checks, and `git diff --check` passed.\n\nNo deployment, Tinybird promotion, or secret mutation is included.",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Four paths, one garden",
+    "blurb": "The observability garden got clearer labels and fewer overlapping footprints. Paid Pollen, Quest Pollen, requests, and product-path totals now have a compact place to bloom.",
+    "summary": "Rebuilt Platform & Usage observability dashboards to track Paid Pollen, Quest Pollen, requests, and selected-period totals across four additive product paths, with BYOP and BYOM counted independently and without double-counting their overlap.",
+    "impact": "Operators can now inspect Direct API, BYOM, BYOP, and BYOP + BYOM usage with preserved dashboard UIDs and clearer attribution in Grafana.",
+    "keywords": [
+      "observability",
+      "grafana",
+      "tinybird",
+      "usage",
+      "pollen",
+      "byop",
+      "byom"
+    ],
+    "visual_concept": "A cozy observability garden with four clearly labeled paths leading to small glowing dashboards: Direct API, BYOM, BYOP, and their shared overlap. Polli, wearing tiny analyst glasses and carrying a clipboard, checks that the overlapping flower bed is counted once while code-plants and Pollen jars represent usage totals.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and tiny analyst glasses, tending a warm dashboard garden with four lime green (#ecf874) signposted paths labeled \"DIRECT API\", \"BYOM\", \"BYOP\", and \"BOTH\"; a small shared flower bed glows without being counted twice, beside retro Grafana-style CRT monitors and Pollen jars. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, with code-plants and gentle vines throughout."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-24/PR-12737.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and tiny analyst glasses, tending a warm dashboard garden with four lime green (#ecf874) signposted paths labeled \"DIRECT API\", \"BYOM\", \"BYOP\", and \"BOTH\"; a small shared flower bed glows without being counted twice, beside retro Grafana-style CRT monitors and Pollen jars. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, with code-plants and gentle vines throughout."
+  },
+  "generated_at": "2026-07-24T17:52:51.300533+00:00"
+}

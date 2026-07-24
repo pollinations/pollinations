@@ -5,9 +5,18 @@ import type { ImageGenerationResult } from "../createAndReturnImages.ts";
 import { getImageEnv } from "../env.ts";
 import { HttpError } from "../httpError.ts";
 import type { ImageParams } from "../params.ts";
-import { closestAspectRatio, closestByRatio } from "../utils/aspectRatio.ts";
+import {
+    closestAspectRatio,
+    closestByRatio,
+    closestRatioLogSpace,
+} from "../utils/aspectRatio.ts";
 import { fetchUpstream } from "../utils/fetchUpstream.ts";
-import { base64ToBuffer, toDataUri } from "../utils/imageDownload.ts";
+import {
+    base64ToBuffer,
+    downloadUserImage,
+    readImageDimensions,
+    toDataUri,
+} from "../utils/imageDownload.ts";
 import { writeExifMetadata } from "../writeExifMetadata.ts";
 
 const logOps = debug("pollinations:openrouter-image:ops");
@@ -16,7 +25,32 @@ const logError = debug("pollinations:openrouter-image:error");
 const OPENROUTER_IMAGE_URL = "https://openrouter.ai/api/v1/images";
 const GROK_IMAGINE_QUALITY_MODEL = "x-ai/grok-imagine-image-quality";
 const RECRAFT_VECTOR_MODEL = "recraft/recraft-v4.1-vector";
+const SEEDREAM_PRO_MODEL = "bytedance-seed/seedream-4.5";
 const SVG_MEDIA_TYPE = "image/svg+xml";
+const SEEDREAM_PRO_ASPECT_RATIOS = [
+    "1:1",
+    "4:3",
+    "3:4",
+    "16:9",
+    "9:16",
+    "3:2",
+    "2:3",
+    "21:9",
+] as const;
+type SeedreamProAspectRatio = (typeof SEEDREAM_PRO_ASPECT_RATIOS)[number];
+// Seed rejects normalized 2K landscape/portrait dimensions below 3,686,400px.
+// These are its canonical 2K presets and preserve the previous route's output
+// ratios without silently promoting every non-square request to 4K.
+const SEEDREAM_PRO_2K_SIZES: Record<SeedreamProAspectRatio, string> = {
+    "1:1": "2048x2048",
+    "4:3": "2304x1728",
+    "3:4": "1728x2304",
+    "16:9": "2560x1440",
+    "9:16": "1440x2560",
+    "3:2": "2496x1664",
+    "2:3": "1664x2496",
+    "21:9": "3024x1296",
+};
 type GeminiImageConfig = {
     upstreamModel: string;
     provider: string;
@@ -140,7 +174,7 @@ function buildOpenRouterNoImageError(data: OpenRouterImageResponse): HttpError {
         providerMessage ||
             (isContentRejection
                 ? "Image generation rejected by content policy"
-                : "OpenRouter Gemini image API returned no image"),
+                : "OpenRouter image API returned no image"),
         isContentRejection ? 400 : 502,
         data,
         OPENROUTER_IMAGE_URL,
@@ -222,6 +256,138 @@ function resolveGeminiReasoningEffort(
         return undefined;
     }
     return safeParams.reasoning === "fast" ? "low" : "high";
+}
+
+function resolveSeedreamProAspectRatio(
+    safeParams: ImageParams,
+    referenceDimensions?: { width: number; height: number },
+): SeedreamProAspectRatio | "auto" {
+    const requested = safeParams.aspectRatio;
+    if (!requested) {
+        if (referenceDimensions) {
+            return closestRatioLogSpace(
+                referenceDimensions.width,
+                referenceDimensions.height,
+                SEEDREAM_PRO_ASPECT_RATIOS,
+            );
+        }
+        return closestRatioLogSpace(
+            safeParams.width,
+            safeParams.height,
+            SEEDREAM_PRO_ASPECT_RATIOS,
+        );
+    }
+    if (requested === "adaptive") {
+        if (!referenceDimensions) return "auto";
+        return closestRatioLogSpace(
+            referenceDimensions.width,
+            referenceDimensions.height,
+            SEEDREAM_PRO_ASPECT_RATIOS,
+        );
+    }
+    if (
+        requested === "9:21" ||
+        !(SEEDREAM_PRO_ASPECT_RATIOS as readonly string[]).includes(requested)
+    ) {
+        throw new HttpError(
+            `aspectRatio "${requested}" is not supported by Seedream 4.5 Pro. Supported: auto, ${SEEDREAM_PRO_ASPECT_RATIOS.join(", ")}.`,
+            400,
+        );
+    }
+    return requested as SeedreamProAspectRatio;
+}
+
+export async function callOpenRouterSeedreamProAPI(
+    prompt: string,
+    safeParams: ImageParams,
+): Promise<ImageGenerationResult> {
+    if (safeParams.image.length > 14) {
+        throw new HttpError(
+            `Seedream 4.5 Pro supports at most 14 reference images (received ${safeParams.image.length}).`,
+            400,
+        );
+    }
+
+    const apiKey = getImageEnv("OPENROUTER_API_KEY");
+    if (!apiKey) {
+        throw new HttpError(
+            "OPENROUTER_API_KEY environment variable is required",
+            500,
+        );
+    }
+
+    const downloadedImages = await Promise.all(
+        safeParams.image.map((image) => downloadUserImage(image)),
+    );
+    const firstImage = downloadedImages[0];
+    // OpenRouter's "auto" currently defaults to square instead of matching a
+    // reference image, so derive the first reference's ratio as the old route did.
+    const referenceDimensions = firstImage
+        ? (readImageDimensions(firstImage.buffer, firstImage.mimeType) ??
+          undefined)
+        : undefined;
+    const inputReferences = downloadedImages.map((downloaded) => ({
+        type: "image_url",
+        image_url: {
+            url: `data:${downloaded.mimeType};base64,${downloaded.buffer.toString("base64")}`,
+        },
+    }));
+
+    const aspectRatio = resolveSeedreamProAspectRatio(
+        safeParams,
+        referenceDimensions,
+    );
+    const use4K = Math.max(safeParams.width, safeParams.height) > 2048;
+    const requestBody: Record<string, unknown> = {
+        model: SEEDREAM_PRO_MODEL,
+        prompt,
+        n: 1,
+        ...(use4K
+            ? { resolution: "4K", aspect_ratio: aspectRatio }
+            : aspectRatio === "auto"
+              ? { resolution: "2K", aspect_ratio: "auto" }
+              : { size: SEEDREAM_PRO_2K_SIZES[aspectRatio] }),
+        provider: {
+            only: ["seed"],
+            allow_fallbacks: false,
+        },
+    };
+    if (inputReferences.length > 0) {
+        requestBody.input_references = inputReferences;
+    }
+
+    const response = await fetchUpstream(OPENROUTER_IMAGE_URL, {
+        method: "POST",
+        headers: {
+            Authorization: `Bearer ${apiKey}`,
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify(requestBody),
+        errorLabel: "OpenRouter Seedream image generation request failed",
+    });
+    const data = (await response.json()) as OpenRouterImageResponse;
+    const encodedImage = data.data?.[0]?.b64_json;
+    if (!encodedImage) {
+        throw buildOpenRouterNoImageError(data);
+    }
+
+    logOps("Seedream 4.5 Pro generation complete", {
+        referenceImages: safeParams.image.length,
+        providerUsage: data.usage,
+    });
+
+    return {
+        buffer: base64ToBuffer(encodedImage),
+        isMature: false,
+        isChild: false,
+        trackingData: {
+            actualModel: "seedream-pro",
+            usage: {
+                completionImageTokens: 1,
+                totalTokenCount: 1,
+            },
+        },
+    };
 }
 
 export async function callOpenRouterGrokImagineProAPI(

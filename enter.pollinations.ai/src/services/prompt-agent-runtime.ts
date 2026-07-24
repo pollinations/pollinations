@@ -1,6 +1,7 @@
 import { createMCPClient } from "@ai-sdk/mcp";
 import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
 import {
+    APICallError,
     type FinishReason,
     type ModelMessage,
     stepCountIs,
@@ -40,6 +41,22 @@ type AgentOutput = {
 const MAX_STEPS = 8;
 const STEP_LIMIT_MESSAGE =
     "The agent reached its maximum number of tool-use steps without a final answer.";
+
+function agentErrorMessage(error: unknown): string {
+    return error instanceof Error ? error.message : String(error);
+}
+
+function agentErrorResponse(error: unknown): Response {
+    return Response.json(
+        { error: { message: agentErrorMessage(error) } },
+        {
+            status:
+                APICallError.isInstance(error) && error.statusCode
+                    ? error.statusCode
+                    : 502,
+        },
+    );
+}
 
 async function loadMcpTools(servers: McpServer[]): Promise<{
     tools: Record<string, McpTool>;
@@ -198,15 +215,18 @@ async function streamAgent(
                     encoder.encode(`data: ${JSON.stringify(payload)}\n\n`),
                 );
             try {
-                for await (const delta of result.textStream) {
-                    send(
-                        contentChunk(
-                            id,
-                            created,
-                            runtime.config.baseModel,
-                            delta,
-                        ),
-                    );
+                for await (const part of result.fullStream) {
+                    if (part.type === "error") throw part.error;
+                    if (part.type === "text-delta") {
+                        send(
+                            contentChunk(
+                                id,
+                                created,
+                                runtime.config.baseModel,
+                                part.text,
+                            ),
+                        );
+                    }
                 }
                 const [reason, usage, steps] = await Promise.all([
                     result.finishReason,
@@ -242,7 +262,8 @@ async function streamAgent(
                 });
                 controller.enqueue(encoder.encode("data: [DONE]\n\n"));
             } catch (error) {
-                send({ error: { message: String(error) } });
+                send({ error: { message: agentErrorMessage(error) } });
+                controller.enqueue(encoder.encode("data: [DONE]\n\n"));
             } finally {
                 await close().catch((error) => console.error(error));
                 controller.close();
@@ -290,9 +311,6 @@ export async function handlePromptAgentRequest(
             usage: buildUsage(out.usage, out.toolCallCounts),
         });
     } catch (error) {
-        return Response.json(
-            { error: { message: String(error) } },
-            { status: 502 },
-        );
+        return agentErrorResponse(error);
     }
 }

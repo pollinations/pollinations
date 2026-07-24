@@ -125,6 +125,27 @@ describe("prompt-agent runtime", () => {
         });
     });
 
+    it("propagates base-model HTTP errors", async () => {
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async () =>
+                Response.json(
+                    { error: { message: "Insufficient balance" } },
+                    { status: 402 },
+                ),
+            ),
+        );
+
+        const response = await runAgent({
+            messages: [{ role: "user", content: "hello" }],
+        });
+
+        expect(response.status).toBe(402);
+        await expect(response.json()).resolves.toEqual({
+            error: { message: "Insufficient balance" },
+        });
+    });
+
     it("runs the MCP tool loop and reuses the negotiated session", async () => {
         const mcpRequests: Request[] = [];
         let modelCalls = 0;
@@ -358,6 +379,29 @@ describe("prompt-agent runtime", () => {
         expect(finalChunk.choices[0].finish_reason).toBe("stop");
         expect(finalChunk.usage.tool_call_counts).toEqual({});
         expect(finalChunk.usage.prompt_tokens).toBe(6);
+    });
+
+    it("streams base-model errors as SSE", async () => {
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async () =>
+                Response.json(
+                    { error: { message: "Insufficient balance" } },
+                    { status: 402 },
+                ),
+            ),
+        );
+
+        const response = await runAgent({
+            messages: [{ role: "user", content: "hello" }],
+            stream: true,
+        });
+
+        expect(response.status).toBe(200);
+        expect(await response.text()).toBe(
+            'data: {"error":{"message":"Insufficient balance"}}\n\n' +
+                "data: [DONE]\n\n",
+        );
     });
 
     it("feeds a failing tool's error back to the model instead of 502", async () => {

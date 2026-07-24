@@ -1,0 +1,35 @@
+{
+  "pr_number": 12724,
+  "title": "fix: harden Klein against GPU OOMs",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/12724",
+  "merged_at": "2026-07-24T14:01:45Z",
+  "labels": [],
+  "pr_body_excerpt": "## What changed\n\n- Caps Klein output area at 2,359,296 pixels (1536×1536, 2048×1152, or equivalent); only 5 of 16,958 historical successes exceeded it.\n- Enables expandable CUDA allocator segments, clears cached allocations after OOM, and returns a controlled 503.\n- Logs only request dimensions and reference-image count before inference for safe incident diagnosis.\n- Pins Diffusers to the exact commit running successfully in production and documents the 2.4 MP limit in the model description.\n\n## Why\n\nTwelve Klein requests failed in one burst because the RTX 3090 had 335 MiB free while PyTorch held 4.59 GiB reserved but unused. The worker recovered, but unrestricted image area allowed a single workload to repeatedly exhaust VRAM.\n\n## Confirmed contract\n\n`klein` / `flux-klein`; multiplier 1; not paid-only; Pollinations-operated Vast GPU; primary route Workers VPC → Vast Klein 4B; no fallback.\n\n## Checks\n\n- Klein boundary and synthetic OOM checks passed\n- Image tests: 166 passed\n- Registry/pricing tests: 285 passed\n- Python compile, Biome, and diff checks passed",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Klein learns its limits",
+    "blurb": "Klein now knows when a canvas is getting a little too ambitious. The GPU gets room to breathe, and oversized requests receive a tidy answer instead of turning the garden shed into a smoke machine.",
+    "summary": "Hardened the Klein / flux-klein image worker with a 2,359,296-pixel output cap, expandable CUDA allocator segments, post-OOM cache clearing, controlled 503 responses, and a production-pinned Diffusers commit.",
+    "impact": "Klein requests up to 1536×1536, 2048×1152, or an equivalent 2.36 MP area now run with more reliable VRAM recovery, while larger requests receive a clear controlled response instead of destabilizing the worker.",
+    "keywords": [
+      "klein",
+      "flux-klein",
+      "image-generation",
+      "gpu",
+      "oom",
+      "reliability",
+      "cuda"
+    ],
+    "visual_concept": "Depict Klein as a cozy retro image-generation workstation with a canvas-size measuring frame set to 2.36 MP and a gently cooling GPU garden shed. Polli, wearing a tiny mechanic tool belt, adjusts a safety valve beside a calm CRT terminal while code-plants and flowers grow around the hardware, showing that sensible limits keep the creative garden running.",
+    "image_prompt": "Cozy pixel art scene of the cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks, a small happy smile, and small rounded light blue translucent wings, wearing a tiny mechanic tool belt as she adjusts a friendly retro GPU workstation beside a canvas-size frame labeled “2.36 MP”; soft code-plants and flowers grow around a calm CRT monitor, with lime green (#ecf874) glowing prominently. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, chunky sprites, subtle CRT glow, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-24/PR-12724.jpg",
+    "prompt": "Cozy pixel art scene of the cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks, a small happy smile, and small rounded light blue translucent wings, wearing a tiny mechanic tool belt as she adjusts a friendly retro GPU workstation beside a canvas-size frame labeled “2.36 MP”; soft code-plants and flowers grow around a calm CRT monitor, with lime green (#ecf874) glowing prominently. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, chunky sprites, subtle CRT glow, nostalgic but beautiful."
+  },
+  "generated_at": "2026-07-24T14:02:48.815505+00:00"
+}

@@ -14,7 +14,10 @@ import {
     callIdeogramTurboAPI,
 } from "./models/ideogramReplicateModel.ts";
 import { callNovaCanvasAPI } from "./models/novaCanvasModel.ts";
-import { callOpenRouterGrokImagineProAPI } from "./models/openRouterImageModel.ts";
+import {
+    callOpenRouterGrokImagineProAPI,
+    callOpenRouterRecraftVectorAPI,
+} from "./models/openRouterImageModel.ts";
 import {
     callPrunaImageAPI,
     callPrunaImageEditAPI,
@@ -80,6 +83,7 @@ type AzureGPTImageUsage = {
 
 export type ImageGenerationResult = {
     buffer: Buffer;
+    mimeType?: string;
     isMature: boolean;
     isChild: boolean;
     // Tracking data for enter service headers
@@ -815,6 +819,9 @@ const generateImage = async (
         case "grok-imagine-pro":
             return await callOpenRouterGrokImagineProAPI(prompt, safeParams);
 
+        case "recraft-v4.1-vector":
+            return await callOpenRouterRecraftVectorAPI(prompt, safeParams);
+
         case "p-image-edit":
             return await callPrunaImageEditAPI(prompt, safeParams);
 
@@ -920,15 +927,19 @@ export async function createAndReturnImageCached(
         const { buffer: _buffer, ...maturity } = result;
         const metadataObj = prepareMetadata(prompt, originalPrompt, safeParams);
 
-        // Process the image buffer
-        const processedBuffer = await processImageBuffer(
-            result.buffer,
-            metadataObj,
-            maturity,
-        );
+        // SVG must stay vector; raster formats retain the existing JPEG + EXIF path.
+        const processedBuffer =
+            result.mimeType === "image/svg+xml"
+                ? result.buffer
+                : await processImageBuffer(
+                      result.buffer,
+                      metadataObj,
+                      maturity,
+                  );
 
         return {
             buffer: processedBuffer,
+            mimeType: result.mimeType,
             isChild,
             isMature,
             trackingData: result.trackingData,

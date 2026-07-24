@@ -155,8 +155,17 @@ function mediaHeaders(
     });
     const extension = contentType.includes("video")
         ? "mp4"
-        : contentType.split("/")[1] || "jpg";
+        : contentType === "image/svg+xml"
+          ? "svg"
+          : contentType.split("/")[1] || "jpg";
     headers.set("Content-Disposition", contentDisposition(prompt, extension));
+    if (contentType === "image/svg+xml") {
+        headers.set(
+            "Content-Security-Policy",
+            "default-src 'none'; style-src 'unsafe-inline'; sandbox",
+        );
+        headers.set("X-Content-Type-Options", "nosniff");
+    }
 
     const trackingHeaders = buildTrackingHeaders(
         safeParams.model,
@@ -448,7 +457,7 @@ export async function generateImageOrVideoResponse(
                 originalPrompt,
                 safeParams,
                 result,
-                detectMimeType(result.buffer),
+                result.mimeType || detectMimeType(result.buffer),
             ),
         });
     } catch (error) {

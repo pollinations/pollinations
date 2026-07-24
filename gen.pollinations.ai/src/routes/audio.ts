@@ -27,6 +27,7 @@ import { frontendKeyRateLimit } from "@/middleware/rate-limit-durable.ts";
 import { edgeRateLimit } from "@/middleware/rate-limit-edge.ts";
 import { applySafety, withSafetyHeaders } from "@/middleware/safety.ts";
 import { track } from "@/middleware/track.ts";
+import googleCloudAuth from "@/text/auth/googleCloudAuth.ts";
 import { arrayBufferToBase64 } from "@/util.ts";
 import { requireGenerationAccess } from "@/utils/generation-access.ts";
 import { transcribeWithAssemblyAi } from "./assemblyai-transcription.ts";
@@ -53,12 +54,12 @@ const CreateSpeechRequestSchema = z
             .default("mp3")
             .meta({
                 description:
-                    "The audio format for the output. CSM supports mp3, opus, flac, wav, and pcm; Qwen TTS currently returns WAV regardless of this setting; eleven-sfx supports mp3 only.",
+                    "The audio format for the output. CSM supports mp3, opus, flac, wav, and pcm; Qwen TTS currently returns WAV regardless of this setting; lyria-3-clip and eleven-sfx support mp3 only.",
                 example: "mp3",
             }),
         duration: z.number().min(0.5).max(300).optional().meta({
             description:
-                "Output duration in seconds (elevenmusic 3-300; eleven-sfx 0.5-30)",
+                "Output duration in seconds (elevenmusic 3-300; lyria-3-clip fixed at 30; eleven-sfx 0.5-30)",
             example: 30,
         }),
         seconds: z.number().min(1).max(380).optional().meta({
@@ -822,6 +823,7 @@ const QWEN_TTS_ENDPOINT =
 
 const DEEPINFRA_TTS_ENDPOINT =
     "https://api.deepinfra.com/v1/openai/audio/speech";
+const LYRIA_3_CLIP_MODEL_ID = "lyria-3-clip-preview";
 const DEEPINFRA_CSM_MODEL_ID = "sesame/csm-1b";
 const CSM_AUDIO_FORMATS = ["mp3", "opus", "flac", "wav", "pcm"] as const;
 
@@ -831,6 +833,15 @@ const QWEN_TTS_MODEL_IDS = {
 } as const satisfies Partial<Record<AudioModelName, string>>;
 
 type QwenTtsModelName = keyof typeof QWEN_TTS_MODEL_IDS;
+
+type LyriaInteractionResponse = {
+    status?: string;
+    outputs?: Array<{
+        type?: string;
+        mime_type?: string;
+        data?: string;
+    }>;
+};
 
 const QWEN_TTS_OPENAI_VOICE_MAP: Record<string, string> = {
     alloy: "Chelsie",
@@ -848,6 +859,89 @@ const QWEN_TTS_OPENAI_VOICE_MAP: Record<string, string> = {
 
 function resolveQwenVoice(voice: string): string {
     return QWEN_TTS_OPENAI_VOICE_MAP[voice] ?? voice;
+}
+
+export async function generateLyria3Clip(opts: {
+    prompt: string;
+    durationSeconds?: number;
+    responseFormat: string;
+    projectId: string;
+    accessToken: string;
+    log: Logger;
+}): Promise<Response> {
+    const {
+        prompt,
+        durationSeconds,
+        responseFormat,
+        projectId,
+        accessToken,
+        log,
+    } = opts;
+
+    if (responseFormat !== "mp3") {
+        throw new UpstreamError(400 as ContentfulStatusCode, {
+            message: `lyria-3-clip only supports mp3 output; response_format=${responseFormat} is not available.`,
+        });
+    }
+    if (durationSeconds !== undefined && durationSeconds !== 30) {
+        throw new UpstreamError(400 as ContentfulStatusCode, {
+            message:
+                "lyria-3-clip generates fixed 30-second clips; duration must be 30 or omitted.",
+        });
+    }
+    if (!projectId || !accessToken) {
+        throw new UpstreamError(500 as ContentfulStatusCode, {
+            message: "Lyria service is not configured",
+        });
+    }
+
+    const endpoint = `https://aiplatform.googleapis.com/v1beta1/projects/${projectId}/locations/global/interactions`;
+    const rawResponse = await fetch(endpoint, {
+        method: "POST",
+        headers: {
+            Authorization: `Bearer ${accessToken}`,
+            "Content-Type": "application/json; charset=utf-8",
+        },
+        body: JSON.stringify({
+            model: LYRIA_3_CLIP_MODEL_ID,
+            input: [{ type: "text", text: prompt }],
+        }),
+    });
+    const response = await ensureUpstreamOk(rawResponse, endpoint);
+    const result = (await response.json()) as LyriaInteractionResponse;
+    const audio = result.outputs?.find(
+        (output) =>
+            output.type === "audio" &&
+            output.mime_type === "audio/mpeg" &&
+            typeof output.data === "string",
+    );
+
+    if (result.status !== "completed" || !audio?.data) {
+        throw new UpstreamError(502 as ContentfulStatusCode, {
+            message: "Lyria returned no completed MP3 audio output",
+        });
+    }
+
+    const binary = atob(audio.data);
+    const audioBytes = new Uint8Array(binary.length);
+    for (let index = 0; index < binary.length; index++) {
+        audioBytes[index] = binary.charCodeAt(index);
+    }
+
+    log.info("Lyria success: {bytes} bytes", {
+        bytes: audioBytes.byteLength,
+    });
+
+    return new Response(audioBytes, {
+        status: 200,
+        headers: {
+            "Content-Type": "audio/mpeg",
+            ...buildUsageHeaders("lyria-3-clip", {
+                // Vertex charges one fixed-price unit per generated clip.
+                completionAudioTokens: 1,
+            }),
+        },
+    });
 }
 
 function requireTextToAudioModel(
@@ -1588,6 +1682,31 @@ async function dispatchAudioGeneration(
         );
     }
 
+    if (c.var.model.resolved === "lyria-3-clip") {
+        const googleEnvKeys = [
+            "GOOGLE_PRIVATE_KEY",
+            "GOOGLE_PRIVATE_KEY_ID",
+            "GOOGLE_CLIENT_EMAIL",
+        ] as const;
+        for (const key of googleEnvKeys) {
+            const value = c.env[key];
+            if (typeof value === "string") process.env[key] = value;
+        }
+        const accessToken = await googleCloudAuth.getAccessToken();
+
+        return withSafetyHeaders(
+            c,
+            await generateLyria3Clip({
+                prompt: text,
+                durationSeconds: duration,
+                responseFormat,
+                projectId: c.env.GOOGLE_PROJECT_ID,
+                accessToken: accessToken ?? "",
+                log,
+            }),
+        );
+    }
+
     if (c.var.model.resolved === "stable-audio-3-medium") {
         return withSafetyHeaders(
             c,
@@ -1843,7 +1962,7 @@ export const audioRoutes = new Hono<Env>()
             description: [
                 "Generate speech or music from text. Compatible with the OpenAI TTS API for JSON requests.",
                 "",
-                "Set `model` to `elevenmusic`, `stable-audio-3-medium`, or `stable-audio-3-large` to generate music. Send multipart/form-data with `reference_audio` plus `input` to run audio-to-audio (style transfer) on `stable-audio-3-medium` or `stable-audio-3-large`, or reference-audio conditioning on `elevenmusic`; for ElevenLabs inpainting, pass a `composition_plan`.",
+                "Set `model` to `elevenmusic`, `lyria-3-clip`, `stable-audio-3-medium`, or `stable-audio-3-large` to generate music. Lyria returns one fixed 30-second MP3 clip. Send multipart/form-data with `reference_audio` plus `input` to run audio-to-audio (style transfer) on `stable-audio-3-medium` or `stable-audio-3-large`, or reference-audio conditioning on `elevenmusic`; for ElevenLabs inpainting, pass a `composition_plan`.",
                 "",
                 `**Available voices:** ${AUDIO_VOICES.join(", ")}`,
                 "",

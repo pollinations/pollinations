@@ -1,0 +1,33 @@
+{
+  "pr_number": 12728,
+  "title": "docs: regenerate APIDOCS.md",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/12728",
+  "merged_at": "2026-07-24T14:17:26Z",
+  "labels": [],
+  "pr_body_excerpt": "Auto-generated from OpenAPI spec changes after a successful production deploy.",
+  "gist": {
+    "category": "docs",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "The map got fresh ink",
+    "blurb": "The API reference has been re-synced with the production OpenAPI spec. Fewer stale signposts in the code garden.",
+    "summary": "Regenerated APIDOCS.md from the current production OpenAPI specification so the published API reference matches deployed behavior.",
+    "impact": "Developers reading APIDOCS.md get documentation aligned with the API currently running in production.",
+    "keywords": [
+      "documentation",
+      "api",
+      "openapi",
+      "reference",
+      "developer-experience"
+    ],
+    "visual_concept": "A cozy documentation garden where Polli tends a large open API reference book beside a retro terminal, with fresh code-vines and tiny flowers growing from its pages to represent the production spec and updated reference. Polli wears librarian glasses and carefully stamps the pages as current.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and tiny librarian glasses, updating a large open API reference book beside a warm retro terminal; fresh code-vines and small flowers sprout from the pages. Cozy 8-bit pixel art aesthetic with a prominent lime green (#ecf874) and soft pastel gradient background, warm lighting, retro gaming vibes, subtle pixel-font text: \"API DOCS\"."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-24/PR-12728.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and tiny librarian glasses, updating a large open API reference book beside a warm retro terminal; fresh code-vines and small flowers sprout from the pages. Cozy 8-bit pixel art aesthetic with a prominent lime green (#ecf874) and soft pastel gradient background, warm lighting, retro gaming vibes, subtle pixel-font text: \"API DOCS\"."
+  },
+  "generated_at": "2026-07-24T14:18:23.913224+00:00"
+}

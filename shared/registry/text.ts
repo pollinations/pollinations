@@ -494,7 +494,7 @@ export const TEXT_SERVICES = {
         category: "text",
         addedDate: new Date("2025-12-18").getTime(),
         priceMultiplier: 1,
-        paidOnly: false,
+        paidOnly: true,
         cost: {
             promptTextTokens: perMillion(0.1), // per 1M tokens
             promptCachedTokens: perMillion(0.01), // per 1M tokens

@@ -74,7 +74,7 @@
             "properties": [
               {
                 "id": "displayName",
-                "value": "Community users"
+                "value": "BYOM users"
               }
             ]
           },
@@ -86,7 +86,7 @@
             "properties": [
               {
                 "id": "displayName",
-                "value": "Community calls"
+                "value": "BYOM calls"
               }
             ]
           },
@@ -118,7 +118,7 @@
             "properties": [
               {
                 "id": "displayName",
-                "value": "Direct-community Paid"
+                "value": "Direct BYOM Paid"
               },
               {
                 "id": "unit",
@@ -163,7 +163,7 @@
         "colorMode": "background",
         "graphMode": "none",
         "justifyMode": "auto",
-        "orientation": "horizontal",
+        "orientation": "vertical",
         "reduceOptions": {
           "calcs": [
             "lastNotNull"
@@ -173,7 +173,7 @@
         },
         "showPercentChange": false,
         "textMode": "auto",
-        "wideLayout": true
+        "wideLayout": false
       },
       "targets": [
         {
@@ -199,7 +199,7 @@
       "fieldConfig": {
         "defaults": {
           "color": {
-            "mode": "palette-classic"
+            "mode": "palette-classic-by-name"
           },
           "custom": {
             "barAlignment": 0,
@@ -327,7 +327,6 @@
             }
           },
           "decimals": 1,
-          "max": 100,
           "min": 0,
           "unit": "percent"
         },
@@ -402,7 +401,7 @@
       "fieldConfig": {
         "defaults": {
           "color": {
-            "mode": "palette-classic"
+            "mode": "palette-classic-by-name"
           },
           "custom": {
             "barAlignment": 0,
@@ -414,6 +413,7 @@
               "mode": "none"
             }
           },
+          "min": 0,
           "unit": "short"
         },
         "overrides": [
@@ -433,6 +433,22 @@
                   "fixedColor": "green",
                   "mode": "fixed"
                 }
+              },
+              {
+                "id": "custom.drawStyle",
+                "value": "line"
+              },
+              {
+                "id": "custom.fillOpacity",
+                "value": 0
+              },
+              {
+                "id": "custom.lineWidth",
+                "value": 2
+              },
+              {
+                "id": "custom.showPoints",
+                "value": "auto"
               }
             ]
           },
@@ -444,7 +460,7 @@
             "properties": [
               {
                 "id": "displayName",
-                "value": "Community users"
+                "value": "BYOM users"
               },
               {
                 "id": "color",
@@ -514,7 +530,7 @@
       "fieldConfig": {
         "defaults": {
           "color": {
-            "mode": "palette-classic"
+            "mode": "palette-classic-by-name"
           },
           "custom": {
             "barAlignment": 0,
@@ -627,7 +643,7 @@
       "fieldConfig": {
         "defaults": {
           "color": {
-            "mode": "palette-classic"
+            "mode": "palette-classic-by-name"
           },
           "custom": {
             "barAlignment": 0,
@@ -740,7 +756,7 @@
       "fieldConfig": {
         "defaults": {
           "color": {
-            "mode": "palette-classic"
+            "mode": "palette-classic-by-name"
           },
           "custom": {
             "barAlignment": 0,
@@ -849,7 +865,7 @@
         "type": "grafana-clickhouse-datasource",
         "uid": "PAD1A0A25CD30D456"
       },
-      "description": "Community models ranked over the selected range. BYOP share shows ecosystem overlap. Direct Paid is the mutually exclusive direct-community revenue bucket; total Paid includes community calls made through BYOP. Owner reward is credited public model-owner value.",
+      "description": "Community models ranked over the selected range. BYOP share shows ecosystem overlap. Direct Paid is the mutually exclusive direct-BYOM product path; total Paid includes community calls made through BYOP. Owner reward is credited public model-owner value.",
       "fieldConfig": {
         "defaults": {
           "custom": {

@@ -128,7 +128,7 @@
         "colorMode": "background",
         "graphMode": "none",
         "justifyMode": "auto",
-        "orientation": "horizontal",
+        "orientation": "vertical",
         "reduceOptions": {
           "calcs": [
             "lastNotNull"
@@ -138,7 +138,7 @@
         },
         "showPercentChange": false,
         "textMode": "auto",
-        "wideLayout": true
+        "wideLayout": false
       },
       "targets": [
         {
@@ -160,11 +160,11 @@
         "type": "grafana-clickhouse-datasource",
         "uid": "PAD1A0A25CD30D456"
       },
-      "description": "Daily successful Direct API calls split by generation_event_v2 workload. This wide query also supplies active users, Paid/Quest consumption, platform share and usage-unit panels, limiting this eight-panel dashboard to four Tinybird requests per refresh.",
+      "description": "Daily successful Direct API calls split by generation_event_v2 workload. A workload with a zero total can appear in the legend without a visible bar; that explicitly means no successful calls of that type occurred in the selected range. This wide query also supplies active users, Paid/Quest consumption, platform share and usage-unit panels, limiting this eight-panel dashboard to four Tinybird requests per refresh.",
       "fieldConfig": {
         "defaults": {
           "color": {
-            "mode": "palette-classic"
+            "mode": "palette-classic-by-name"
           },
           "custom": {
             "barAlignment": 0,
@@ -192,7 +192,7 @@
           "calcs": [
             "sum"
           ],
-          "displayMode": "table",
+          "displayMode": "list",
           "placement": "bottom",
           "showLegend": true
         },
@@ -256,6 +256,7 @@
               "mode": "none"
             }
           },
+          "min": 0,
           "unit": "short"
         },
         "overrides": [
@@ -329,7 +330,7 @@
       "fieldConfig": {
         "defaults": {
           "color": {
-            "mode": "palette-classic"
+            "mode": "palette-classic-by-name"
           },
           "custom": {
             "barAlignment": 0,
@@ -531,7 +532,7 @@
       "fieldConfig": {
         "defaults": {
           "color": {
-            "mode": "palette-classic"
+            "mode": "palette-classic-by-name"
           },
           "displayName": "${__field.labels.metric}",
           "custom": {
@@ -786,11 +787,11 @@
         "type": "datasource",
         "uid": "-- Dashboard --"
       },
-      "description": "Daily Direct API usage from generation_usage_hourly. Token-like units use the left axis; native audio and video seconds use the right axis. The series remain separate and are never added into an artificial combined total.",
+      "description": "Daily Direct API usage from generation_usage_hourly. Token-like units use bars on the left axis; native audio and video duration use lines on the right axis. The unlike units remain separate and are never added into an artificial total.",
       "fieldConfig": {
         "defaults": {
           "color": {
-            "mode": "palette-classic"
+            "mode": "palette-classic-by-name"
           },
           "custom": {
             "axisPlacement": "left",
@@ -815,6 +816,13 @@
               {
                 "id": "displayName",
                 "value": "Text tokens"
+              },
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "green",
+                  "mode": "fixed"
+                }
               }
             ]
           },
@@ -827,18 +835,13 @@
               {
                 "id": "displayName",
                 "value": "Image tokens"
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "video_tokens"
-            },
-            "properties": [
+              },
               {
-                "id": "displayName",
-                "value": "Video tokens"
+                "id": "color",
+                "value": {
+                  "fixedColor": "yellow",
+                  "mode": "fixed"
+                }
               }
             ]
           },
@@ -850,7 +853,14 @@
             "properties": [
               {
                 "id": "displayName",
-                "value": "Audio seconds"
+                "value": "Audio duration"
+              },
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "orange",
+                  "mode": "fixed"
+                }
               },
               {
                 "id": "unit",
@@ -859,6 +869,22 @@
               {
                 "id": "custom.axisPlacement",
                 "value": "right"
+              },
+              {
+                "id": "custom.drawStyle",
+                "value": "line"
+              },
+              {
+                "id": "custom.fillOpacity",
+                "value": 0
+              },
+              {
+                "id": "custom.lineWidth",
+                "value": 2
+              },
+              {
+                "id": "custom.showPoints",
+                "value": "auto"
               }
             ]
           },
@@ -870,7 +896,14 @@
             "properties": [
               {
                 "id": "displayName",
-                "value": "Video seconds"
+                "value": "Video duration"
+              },
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "red",
+                  "mode": "fixed"
+                }
               },
               {
                 "id": "unit",
@@ -879,6 +912,22 @@
               {
                 "id": "custom.axisPlacement",
                 "value": "right"
+              },
+              {
+                "id": "custom.drawStyle",
+                "value": "line"
+              },
+              {
+                "id": "custom.fillOpacity",
+                "value": 0
+              },
+              {
+                "id": "custom.lineWidth",
+                "value": 2
+              },
+              {
+                "id": "custom.showPoints",
+                "value": "auto"
               }
             ]
           }
@@ -925,7 +974,6 @@
                 "time",
                 "text_tokens",
                 "image_tokens",
-                "video_tokens",
                 "audio_seconds",
                 "video_seconds"
               ]

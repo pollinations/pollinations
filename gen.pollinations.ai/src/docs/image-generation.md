@@ -1,6 +1,6 @@
 ## Image Generation
 
-Generate images from text prompts via a simple GET request. Returns JPEG or PNG.
+Generate images from text prompts via a simple GET request. Returns JPEG, PNG, or SVG depending on the selected model.
 
 ```
 https://gen.pollinations.ai/image/a%20cat%20in%20space?model=flux

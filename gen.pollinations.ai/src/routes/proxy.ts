@@ -785,7 +785,7 @@ export const proxyRoutes = new Hono<Env>()
             tags: ["🖼️ Image"],
             summary: "Generate Image",
             description: [
-                "Generate an image from a text prompt. Returns JPEG or PNG.",
+                "Generate an image from a text prompt. Returns JPEG, PNG, or SVG depending on the selected model.",
                 "",
                 `**Available models:** ${imageModelNames}. \`${DEFAULT_IMAGE_MODEL}\` is the default.`,
                 "",
@@ -802,6 +802,12 @@ export const proxyRoutes = new Hono<Env>()
                             },
                         },
                         "image/png": {
+                            schema: {
+                                type: "string",
+                                format: "binary",
+                            },
+                        },
+                        "image/svg+xml": {
                             schema: {
                                 type: "string",
                                 format: "binary",

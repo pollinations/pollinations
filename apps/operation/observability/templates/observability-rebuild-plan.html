@@ -880,7 +880,7 @@
           <h2>One coherent observability system</h2>
           <p class="section-intro">
             Run five purpose-built dashboards alongside the 12 preserved legacy dashboards during
-            migration. Grafana will monitor adoption, load, balances and the three business streams.
+            migration. Grafana will monitor adoption, load, balances and the four additive product paths.
             Errors stay in Tinybird, health stays in Model Monitor, and model economics stays in Economics.
           </p>
 
@@ -888,12 +888,12 @@
             <article class="metric-card">
               <span class="metric-label">Dashboards</span>
               <span class="metric-value">5</span>
-              <span class="metric-detail">Platform, balances, BYOP, community and core</span>
+              <span class="metric-detail">Platform, balances, BYOP, BYOM and Direct API</span>
             </article>
             <article class="metric-card">
               <span class="metric-label">Active panels</span>
-              <span class="metric-value" id="planned-panel-count">45</span>
-              <span class="metric-detail">45 active · 7 deferred drill-downs</span>
+              <span class="metric-value" id="planned-panel-count">47</span>
+              <span class="metric-detail">47 active · 7 deferred drill-downs</span>
             </article>
             <article class="metric-card">
               <span class="metric-label">Primary new aggregates</span>
@@ -933,28 +933,33 @@
 
         <section class="section" id="architecture">
           <div class="overline">Scope architecture</div>
-          <h2>Three mutually exclusive business streams</h2>
+          <h2>Two dimensions, four additive product paths</h2>
           <p class="section-intro">
-            Every successful billed generation is assigned once for revenue-bearing consumption:
-            BYOP first, then direct community, then Core API. The Community dashboard may still show
-            all community traffic, including its BYOP overlap, but primary revenue attribution never double-counts it.
+            BYOP is an app-authentication route and BYOM is community-model usage, so they can overlap.
+            Paid and Quest consumption are reported across four mutually exclusive paths that reconcile to
+            platform totals without hiding the BYOP + BYOM intersection.
           </p>
 
           <div class="scope-flow">
             <article class="scope-step">
-              <span class="scope-number">01 · First match</span>
-              <h3>BYOP Apps</h3>
-              <p><code>api_key_client_id</code> is present. Includes community-model calls made through BYOP.</p>
+              <span class="scope-number">01 · No BYOP · No BYOM</span>
+              <h3>Direct API</h3>
+              <p>API reseller traffic using Pollinations-provided models.</p>
             </article>
             <article class="scope-step">
-              <span class="scope-number">02 · Otherwise</span>
-              <h3>Direct Community</h3>
-              <p><code>model_provider_used = 'community'</code> and the request was not attributed to BYOP.</p>
+              <span class="scope-number">02 · BYOM only</span>
+              <h3>BYOM · Direct</h3>
+              <p>Community-model consumption outside a BYOP app.</p>
             </article>
             <article class="scope-step">
-              <span class="scope-number">03 · Remainder</span>
-              <h3>Core API</h3>
-              <p>Authenticated generation requests that are neither BYOP nor community-model traffic.</p>
+              <span class="scope-number">03 · BYOP only</span>
+              <h3>BYOP · Pollinations models</h3>
+              <p>End-user-authenticated app consumption using Pollinations models.</p>
+            </article>
+            <article class="scope-step">
+              <span class="scope-number">04 · BYOP + BYOM</span>
+              <h3>BYOP · BYOM</h3>
+              <p>End-user-authenticated app consumption using a community model.</p>
             </article>
           </div>
 
@@ -1191,7 +1196,7 @@
                 <div class="task-columns">
                   <ul class="check-list">
                     <li>Confirm the five dashboards and panel inventory in this document.</li>
-                    <li>Lock BYOP → direct community → Core attribution precedence and accept the clean break from hostname/secret-key heuristics.</li>
+                    <li>Lock BYOP and BYOM as independent dimensions and expose their overlap as a fourth additive product path.</li>
                     <li>Lock Paid, Quest, all-call, successful-call, billed-call, user, app, reward and model definitions.</li>
                     <li>Confirm the observed-active-user balance proxy wording.</li>
                   </ul>
@@ -1274,16 +1279,16 @@
                 </div>
                 <div class="task-columns">
                   <ul class="check-list">
-                    <li>Create the five dashboard JSON models with a 30-day default. Platform, Users, BYOP, Community and Core are complete locally.</li>
-                    <li>Provision active dashboards in <code>Observability</code> and preserved originals in <code>Legacy Observability</code>.</li>
+                    <li>Create the five dashboard JSON models with a 30-day default. Platform, Users, BYOP, BYOM and Direct API are complete locally.</li>
+                    <li>Provision active dashboards at the dashboard root and preserved originals in <code>legacy</code>.</li>
                     <li>Implement Phase 1 panels in the order shown in the mockups.</li>
                     <li>Use stacked/grouped bars and compact ranking tables.</li>
-                    <li>Apply stable colors for Paid, Quest, BYOP, community and Core.</li>
+                    <li>Apply stable product-path colors across Paid, Quest and request-volume panels.</li>
                   </ul>
                   <ul class="check-list">
                     <li>Add panel descriptions using the standard contract.</li>
                     <li>Add only bounded model/app selectors; no free grain variable.</li>
-                    <li>Share one result across panels when several visuals use the same source and time grain; BYOP and Community each use three Tinybird requests for eight live panels, while Core uses four requests for eight panels.</li>
+                    <li>Share one result across panels when several visuals use the same source and time grain; the four Platform product-path panels use one query, BYOP and BYOM each use three requests, and Direct API uses four.</li>
                     <li>Use top 8 + Other and table caps consistently.</li>
                     <li>Keep deferred panels in this plan, not as placeholder panels in the live dashboards.</li>
                     <li>Remove Tier display labels while preserving the approved historical data-quality rule centrally in aggregates.</li>
@@ -1449,14 +1454,16 @@
       {
         name: "Platform & Usage",
         scope: "Cross-platform overview",
-        note: "Operational load, adoption, models and the three business streams. Health, detailed errors and model economics stay in their dedicated apps.",
+        note: "Operational load, adoption, models and four additive consumption paths derived from independent BYOP and BYOM dimensions. Health, detailed errors and model economics stay in their dedicated apps.",
         panels: [
           ["Platform overview", "stats", "wide", "Calls, active users, active models and average calls per user.", "generation_usage_hourly", "Phase 1"],
           ["Generation volume by workload", "stacked", "wide", "Daily authenticated, non-cached generations by text, image, audio, video and other registered workload.", "generation_usage_hourly", "Phase 1"],
           ["Short-interval platform load", "stacked", "half", "Request rate using an automatically bounded time bucket; workload only, not health.", "generation_usage_hourly / bounded v2", "Phase 1"],
           ["Active users and BYOP apps", "grouped", "half", "Daily unique end users and active trusted BYOP clients.", "generation_usage_hourly", "Phase 1"],
-          ["Traffic stream mix", "stacked", "half", "Mutually exclusive request attribution: BYOP, direct community and Core API.", "generation_usage_hourly", "Phase 1"],
-          ["Paid consumption by stream", "stacked", "half", "Revenue-bearing Paid Pollen consumed by BYOP, direct community and Core.", "generation_usage_hourly", "Phase 1"],
+          ["Paid Pollen consumption by product path", "stacked", "wide", "Revenue-bearing Paid Pollen across Direct API, direct BYOM, BYOP with Pollinations models and BYOP with BYOM.", "generation_usage_hourly · shared query", "Phase 1"],
+          ["Quest Pollen consumption by product path", "stacked", "half", "Subsidized Quest Pollen across the same four additive product paths.", "generation_usage_hourly · shared query", "Phase 1"],
+          ["Requests by product path", "stacked", "half", "Successful requests across the four paths, separating traffic growth from changes in consumption value.", "generation_usage_hourly · shared query", "Phase 1"],
+          ["Selected-period product path summary", "table", "wide", "Requests, Paid Pollen and Quest Pollen by path for the selected range.", "generation_usage_hourly · shared query", "Phase 1"],
           ["Model request mix", "stacked", "wide", "Daily 100%-stacked mix for the top eight resolved requested models, with the remainder grouped as Other.", "generation_usage_hourly", "Phase 1"],
           ["Model ranking", "table", "half", "Models ranked by calls, share, users, apps, usage units and Paid/Quest mix.", "generation_usage_hourly", "Phase 1"],
           ["Model Movers", "table", "half", "Request-share change in trailing 7×24h versus the preceding 7×24h, refreshed hourly.", "generation_usage_hourly", "Phase 2"],
@@ -1502,35 +1509,35 @@
         ]
       },
       {
-        name: "Community Models",
-        scope: "Community ecosystem",
-        note: "All community-model traffic is visible here. BYOP overlap is shown for ecosystem analysis but its primary revenue attribution remains in BYOP.",
+        name: "BYOM — Community Models",
+        scope: "BYOM ecosystem",
+        note: "All community-model consumption is BYOM. Direct and BYOP traffic remain visible separately so the overlap is explicit.",
         panels: [
-          ["Community overview", "stats", "wide", "Active community models, users, calls and owner rewards across direct and BYOP traffic.", "generation_usage_hourly", "Phase 1"],
-          ["Direct vs BYOP community traffic", "stacked", "wide", "Daily community-model calls split by direct traffic and BYOP traffic.", "generation_usage_hourly", "Phase 1"],
-          ["Community share of platform", "stacked", "half", "Community-model calls as a share of authenticated, non-cached platform calls.", "generation_usage_hourly", "Phase 1"],
+          ["BYOM overview", "stats", "wide", "Active community models, users, calls and owner rewards across direct and BYOP traffic.", "generation_usage_hourly", "Phase 1"],
+          ["Direct vs BYOP BYOM traffic", "stacked", "wide", "Daily community-model calls split by direct traffic and BYOP traffic.", "generation_usage_hourly", "Phase 1"],
+          ["BYOM share of platform", "stacked", "half", "Community-model calls as a share of authenticated, non-cached platform calls.", "generation_usage_hourly", "Phase 1"],
           ["Active models and users", "grouped", "half", "Daily active community models and unique consumers.", "generation_usage_hourly", "Phase 1"],
           ["Paid vs Quest consumption", "stacked", "wide", "Gross community-model consumption across both direct and BYOP traffic.", "generation_usage_hourly", "Phase 1"],
-          ["Direct-community revenue bucket", "stacked", "half", "Paid and Quest consumption for community requests not attributed to BYOP.", "generation_usage_hourly", "Phase 1"],
-          ["Community owner rewards", "stacked", "half", "Rewards credited to public community model owners, split by payer funding.", "generation_usage_hourly", "Phase 1"],
-          ["Community model ranking", "table", "wide", "Models ranked by calls, users, Paid/Quest consumption, BYOP share and owner reward.", "generation_usage_hourly", "Phase 1"],
+          ["Direct BYOM consumption", "stacked", "half", "Paid and Quest consumption for community requests outside BYOP.", "generation_usage_hourly", "Phase 1"],
+          ["BYOM owner rewards", "stacked", "half", "Rewards credited to public community model owners, split by payer funding.", "generation_usage_hourly", "Phase 1"],
+          ["BYOM model ranking", "table", "wide", "Models ranked by calls, users, Paid/Quest consumption, BYOP share and owner reward.", "generation_usage_hourly", "Phase 1"],
           ["Top BYOP apps using community", "table", "half", "BYOP apps sending the most calls to community models.", "byop_app_daily", "Phase 2"],
           ["Selected community model", "grouped", "half", "Daily direct and BYOP calls and consumers for one selected community model.", "generation_usage_hourly", "Phase 2"]
         ]
       },
       {
-        name: "Core API",
+        name: "Direct API",
         scope: "Third business stream",
-        note: "Requests that are neither BYOP nor community models. This dashboard stays intentionally compact and provides the official-model baseline.",
+        note: "API reseller requests that are neither BYOP nor BYOM. This dashboard stays intentionally compact and provides the Pollinations-model baseline.",
         panels: [
-          ["Core API overview", "stats", "wide", "Core calls, active users, Paid consumption and Quest consumption.", "generation_usage_hourly", "Phase 1"],
-          ["Core request volume", "stacked", "wide", "Daily Core calls split by registered workload.", "generation_usage_hourly", "Phase 1"],
-          ["Core active users", "stacked", "half", "Daily unique authenticated users making Core API requests.", "generation_usage_hourly", "Phase 1"],
-          ["Paid vs Quest consumption", "stacked", "half", "Gross Core consumption split into revenue-bearing Paid and free Quest.", "generation_usage_hourly", "Phase 1"],
-          ["Core share of platform", "stacked", "half", "Core API calls as a share of authenticated, non-cached generation.", "generation_usage_hourly", "Phase 1"],
-          ["Core model mix", "stacked", "half", "Daily request volume for leading official models outside BYOP and community.", "generation_usage_hourly", "Phase 1"],
-          ["Core model ranking", "table", "wide", "Official models ranked by Core calls, users, usage units and Paid/Quest mix.", "generation_usage_hourly", "Phase 1"],
-          ["Core usage units", "grouped", "wide", "Token and native media usage units consumed through the Core stream.", "generation_usage_hourly", "Phase 1"]
+          ["Direct API overview", "stats", "wide", "Direct API calls, active users, Paid consumption and Quest consumption.", "generation_usage_hourly", "Phase 1"],
+          ["Direct API request volume", "stacked", "wide", "Daily Direct API calls split by registered workload.", "generation_usage_hourly", "Phase 1"],
+          ["Direct API active users", "stacked", "half", "Daily unique authenticated users making Direct API requests.", "generation_usage_hourly", "Phase 1"],
+          ["Paid vs Quest consumption", "stacked", "half", "Gross Direct API consumption split into revenue-bearing Paid and free Quest.", "generation_usage_hourly", "Phase 1"],
+          ["Direct API share of platform", "stacked", "half", "Direct API calls as a share of authenticated, non-cached generation.", "generation_usage_hourly", "Phase 1"],
+          ["Direct API model mix", "stacked", "half", "Daily request volume for leading Pollinations models outside BYOP and BYOM.", "generation_usage_hourly", "Phase 1"],
+          ["Direct API model ranking", "table", "wide", "Pollinations models ranked by Direct API calls, users, usage units and Paid/Quest mix.", "generation_usage_hourly", "Phase 1"],
+          ["Direct API usage units", "grouped", "wide", "Token and native media usage units consumed through Direct API.", "generation_usage_hourly", "Phase 1"]
         ]
       }
     ];

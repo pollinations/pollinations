@@ -334,17 +334,29 @@
       "type": "timeseries"
     },
     {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 22
+      },
+      "id": 13,
+      "panels": [],
+      "title": "Pollen Consumption Streams",
+      "type": "row"
+    },
+    {
       "datasource": {
         "type": "grafana-clickhouse-datasource",
         "uid": "PAD1A0A25CD30D456"
       },
-      "description": "Daily successful calls assigned once using BYOP-first precedence, then direct community, then Core API.",
+      "description": "Daily revenue-bearing Paid Pollen consumed across four mutually exclusive product paths. BYOP and BYOM overlap is shown explicitly; values are successful billed consumption, not cash collected. This source query also supplies the Quest, request-volume, and selected-period summary panels.",
       "fieldConfig": {
         "defaults": {
           "color": {
             "mode": "palette-classic"
           },
-          "displayName": "${__field.labels.metric}",
           "custom": {
             "barAlignment": 0,
             "drawStyle": "bars",
@@ -355,15 +367,117 @@
               "mode": "normal"
             }
           },
-          "unit": "short"
+          "decimals": 2,
+          "unit": "suffix: Pollen"
         },
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Direct API"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "blue",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "links",
+                "value": [
+                  {
+                    "targetBlank": false,
+                    "title": "Open Direct API",
+                    "url": "/d/core-api-rebuild/direct-api?orgId=1&from=${__from}&to=${__to}&timezone=browser"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "BYOM · Direct"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "orange",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "links",
+                "value": [
+                  {
+                    "targetBlank": false,
+                    "title": "Open BYOM — Community Models",
+                    "url": "/d/community-models-rebuild/byom-community-models?orgId=1&from=${__from}&to=${__to}&timezone=browser"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "BYOP · Pollinations models"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "purple",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "links",
+                "value": [
+                  {
+                    "targetBlank": false,
+                    "title": "Open BYOP Apps",
+                    "url": "/d/byop-apps-rebuild/byop-apps?orgId=1&from=${__from}&to=${__to}&timezone=browser"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "BYOP · BYOM"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "pink",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "links",
+                "value": [
+                  {
+                    "targetBlank": false,
+                    "title": "Open BYOP Apps",
+                    "url": "/d/byop-apps-rebuild/byop-apps?orgId=1&from=${__from}&to=${__to}&timezone=browser"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
       },
       "gridPos": {
-        "h": 8,
-        "w": 12,
+        "h": 9,
+        "w": 24,
         "x": 0,
-        "y": 22
+        "y": 23
       },
       "id": 5,
       "options": {
@@ -386,27 +500,51 @@
             "type": "grafana-clickhouse-datasource",
             "uid": "PAD1A0A25CD30D456"
           },
-          "format": 0,
+          "format": 1,
           "range": true,
-          "rawSql": "SELECT\n  toStartOfDay(hour) AS time,\n  business_stream AS metric,\n  sumMerge(successful_calls) AS value\nFROM generation_usage_hourly\nWHERE $__timeFilter(hour)\n  AND environment IN ('production', 'debug-prod-copy')\nGROUP BY time, metric\nORDER BY time, metric",
+          "rawSql": "SELECT\n  toStartOfDay(hour) AS time,\n  multiIf(\n    is_byop = 1 AND is_community = 1, 'BYOP · BYOM',\n    is_byop = 1, 'BYOP · Pollinations models',\n    is_community = 1, 'BYOM · Direct',\n    'Direct API'\n  ) AS product_path,\n  sumMerge(successful_calls) AS requests,\n  round(sumMergeIf(gross_consumption, funding_source = 'paid'), 2) AS paid_pollen,\n  round(sumMergeIf(gross_consumption, funding_source = 'quest'), 2) AS quest_pollen\nFROM generation_usage_hourly\nWHERE $__timeFilter(hour)\n  AND environment IN ('production', 'debug-prod-copy')\nGROUP BY time, product_path\nORDER BY time, product_path",
           "refId": "A"
         }
       ],
-      "title": "Traffic stream mix",
+      "title": "Paid Pollen consumption by product path",
+      "transformations": [
+        {
+          "id": "partitionByValues",
+          "options": {
+            "fields": [
+              "product_path"
+            ]
+          }
+        },
+        {
+          "id": "filterFieldsByName",
+          "options": {
+            "include": {
+              "pattern": "time|paid_pollen"
+            }
+          }
+        },
+        {
+          "id": "renameByRegex",
+          "options": {
+            "regex": "paid_pollen (.*)",
+            "renamePattern": "$1"
+          }
+        }
+      ],
       "type": "timeseries"
     },
     {
       "datasource": {
-        "type": "grafana-clickhouse-datasource",
-        "uid": "PAD1A0A25CD30D456"
+        "type": "datasource",
+        "uid": "-- Dashboard --"
       },
-      "description": "Daily revenue-bearing Paid Pollen consumed, split into mutually exclusive BYOP, direct community, and Core streams. This is consumed value, not cash collected.",
+      "description": "Daily Quest Pollen consumed across the same four mutually exclusive product paths. Quest Pollen is subsidized usage and is not revenue. Reuses the Paid panel query without another Tinybird request.",
       "fieldConfig": {
         "defaults": {
           "color": {
             "mode": "palette-classic"
           },
-          "displayName": "${__field.labels.metric}",
           "custom": {
             "barAlignment": 0,
             "drawStyle": "bars",
@@ -418,15 +556,116 @@
             }
           },
           "decimals": 2,
-          "unit": "currencyUSD"
+          "unit": "suffix: Pollen"
         },
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Direct API"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "blue",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "links",
+                "value": [
+                  {
+                    "targetBlank": false,
+                    "title": "Open Direct API",
+                    "url": "/d/core-api-rebuild/direct-api?orgId=1&from=${__from}&to=${__to}&timezone=browser"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "BYOM · Direct"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "orange",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "links",
+                "value": [
+                  {
+                    "targetBlank": false,
+                    "title": "Open BYOM — Community Models",
+                    "url": "/d/community-models-rebuild/byom-community-models?orgId=1&from=${__from}&to=${__to}&timezone=browser"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "BYOP · Pollinations models"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "purple",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "links",
+                "value": [
+                  {
+                    "targetBlank": false,
+                    "title": "Open BYOP Apps",
+                    "url": "/d/byop-apps-rebuild/byop-apps?orgId=1&from=${__from}&to=${__to}&timezone=browser"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "BYOP · BYOM"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "pink",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "links",
+                "value": [
+                  {
+                    "targetBlank": false,
+                    "title": "Open BYOP Apps",
+                    "url": "/d/byop-apps-rebuild/byop-apps?orgId=1&from=${__from}&to=${__to}&timezone=browser"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
       },
       "gridPos": {
         "h": 8,
         "w": 12,
-        "x": 12,
-        "y": 22
+        "x": 0,
+        "y": 32
       },
       "id": 6,
       "options": {
@@ -446,17 +685,377 @@
       "targets": [
         {
           "datasource": {
-            "type": "grafana-clickhouse-datasource",
-            "uid": "PAD1A0A25CD30D456"
+            "type": "datasource",
+            "uid": "-- Dashboard --"
           },
-          "format": 0,
-          "range": true,
-          "rawSql": "SELECT\n  toStartOfDay(hour) AS time,\n  business_stream AS metric,\n  sumMerge(gross_consumption) AS value\nFROM generation_usage_hourly\nWHERE $__timeFilter(hour)\n  AND environment IN ('production', 'debug-prod-copy')\n  AND funding_source = 'paid'\nGROUP BY time, metric\nORDER BY time, metric",
-          "refId": "A"
+          "panelId": 5,
+          "refId": "A",
+          "withTransforms": false
         }
       ],
-      "title": "Paid consumption by stream",
+      "title": "Quest Pollen consumption by product path",
+      "transformations": [
+        {
+          "id": "partitionByValues",
+          "options": {
+            "fields": [
+              "product_path"
+            ]
+          }
+        },
+        {
+          "id": "filterFieldsByName",
+          "options": {
+            "include": {
+              "pattern": "time|quest_pollen"
+            }
+          }
+        },
+        {
+          "id": "renameByRegex",
+          "options": {
+            "regex": "quest_pollen (.*)",
+            "renamePattern": "$1"
+          }
+        }
+      ],
       "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "datasource",
+        "uid": "-- Dashboard --"
+      },
+      "description": "Daily successful requests across the four mutually exclusive product paths. Compare this with Pollen consumption to separate traffic growth from changes in usage value. Reuses the Paid panel query.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "barAlignment": 0,
+            "drawStyle": "bars",
+            "fillOpacity": 85,
+            "lineWidth": 0,
+            "stacking": {
+              "group": "A",
+              "mode": "normal"
+            }
+          },
+          "unit": "short"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Direct API"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "blue",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "links",
+                "value": [
+                  {
+                    "targetBlank": false,
+                    "title": "Open Direct API",
+                    "url": "/d/core-api-rebuild/direct-api?orgId=1&from=${__from}&to=${__to}&timezone=browser"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "BYOM · Direct"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "orange",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "links",
+                "value": [
+                  {
+                    "targetBlank": false,
+                    "title": "Open BYOM — Community Models",
+                    "url": "/d/community-models-rebuild/byom-community-models?orgId=1&from=${__from}&to=${__to}&timezone=browser"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "BYOP · Pollinations models"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "purple",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "links",
+                "value": [
+                  {
+                    "targetBlank": false,
+                    "title": "Open BYOP Apps",
+                    "url": "/d/byop-apps-rebuild/byop-apps?orgId=1&from=${__from}&to=${__to}&timezone=browser"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "BYOP · BYOM"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "pink",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "links",
+                "value": [
+                  {
+                    "targetBlank": false,
+                    "title": "Open BYOP Apps",
+                    "url": "/d/byop-apps-rebuild/byop-apps?orgId=1&from=${__from}&to=${__to}&timezone=browser"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 32
+      },
+      "id": 14,
+      "options": {
+        "legend": {
+          "calcs": [
+            "sum"
+          ],
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "datasource",
+            "uid": "-- Dashboard --"
+          },
+          "panelId": 5,
+          "refId": "A",
+          "withTransforms": false
+        }
+      ],
+      "title": "Requests by product path",
+      "transformations": [
+        {
+          "id": "partitionByValues",
+          "options": {
+            "fields": [
+              "product_path"
+            ]
+          }
+        },
+        {
+          "id": "filterFieldsByName",
+          "options": {
+            "include": {
+              "pattern": "time|requests"
+            }
+          }
+        },
+        {
+          "id": "renameByRegex",
+          "options": {
+            "regex": "requests (.*)",
+            "renamePattern": "$1"
+          }
+        }
+      ],
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "datasource",
+        "uid": "-- Dashboard --"
+      },
+      "description": "Selected-range totals for the four mutually exclusive paths. The rows reconcile to platform totals because BYOP plus BYOM overlap is its own path. Reuses the Paid panel query.",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "inspect": false
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Requests"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "short"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": "/.*Pollen/"
+            },
+            "properties": [
+              {
+                "id": "decimals",
+                "value": 2
+              },
+              {
+                "id": "unit",
+                "value": "suffix: Pollen"
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 40
+      },
+      "id": 15,
+      "options": {
+        "cellHeight": "sm",
+        "footer": {
+          "countRows": false,
+          "fields": "",
+          "reducer": [
+            "sum"
+          ],
+          "show": false
+        },
+        "showHeader": true,
+        "sortBy": [
+          {
+            "desc": true,
+            "displayName": "Paid Pollen"
+          }
+        ]
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "datasource",
+            "uid": "-- Dashboard --"
+          },
+          "panelId": 5,
+          "refId": "A",
+          "withTransforms": false
+        }
+      ],
+      "title": "Selected-period product path summary",
+      "transformations": [
+        {
+          "id": "groupBy",
+          "options": {
+            "fields": {
+              "paid_pollen": {
+                "aggregations": [
+                  "sum"
+                ],
+                "operation": "aggregate"
+              },
+              "product_path": {
+                "aggregations": [],
+                "operation": "groupby"
+              },
+              "quest_pollen": {
+                "aggregations": [
+                  "sum"
+                ],
+                "operation": "aggregate"
+              },
+              "requests": {
+                "aggregations": [
+                  "sum"
+                ],
+                "operation": "aggregate"
+              },
+              "time": {
+                "aggregations": []
+              }
+            }
+          }
+        },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "time": true
+            },
+            "indexByName": {
+              "paid_pollen (sum)": 2,
+              "product_path": 0,
+              "quest_pollen (sum)": 3,
+              "requests (sum)": 1
+            },
+            "renameByName": {
+              "paid_pollen (sum)": "Paid Pollen",
+              "product_path": "Product path",
+              "quest_pollen (sum)": "Quest Pollen",
+              "requests (sum)": "Requests"
+            }
+          }
+        }
+      ],
+      "type": "table"
     },
     {
       "datasource": {
@@ -488,7 +1087,7 @@
         "h": 9,
         "w": 24,
         "x": 0,
-        "y": 30
+        "y": 48
       },
       "id": 7,
       "options": {
@@ -552,7 +1151,7 @@
         "h": 10,
         "w": 24,
         "x": 0,
-        "y": 39
+        "y": 57
       },
       "id": 8,
       "options": {
@@ -617,7 +1216,7 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 49
+        "y": 67
       },
       "id": 10,
       "options": {
@@ -691,7 +1290,7 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 49
+        "y": 67
       },
       "id": 11,
       "options": {
@@ -733,7 +1332,7 @@
         "h": 6,
         "w": 24,
         "x": 0,
-        "y": 57
+        "y": 75
       },
       "id": 12,
       "options": {

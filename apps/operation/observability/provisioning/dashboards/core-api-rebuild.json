@@ -31,7 +31,7 @@
         "type": "grafana-clickhouse-datasource",
         "uid": "PAD1A0A25CD30D456"
       },
-      "description": "Selected-range totals from generation_usage_hourly for the mutually exclusive Core API stream. Core means a successful authenticated, non-cached generation that is neither attributed to a trusted BYOP client nor served by a community model. Paid is revenue-bearing consumption; Quest is free consumption.",
+      "description": "Selected-range totals from generation_usage_hourly for the mutually exclusive Direct API stream. Direct API means a successful authenticated, non-cached generation that is neither attributed to a trusted BYOP client nor served by a community model. Paid is revenue-bearing consumption; Quest is free consumption.",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -59,7 +59,7 @@
             "properties": [
               {
                 "id": "displayName",
-                "value": "Core calls"
+                "value": "Direct API calls"
               }
             ]
           },
@@ -71,7 +71,7 @@
             "properties": [
               {
                 "id": "displayName",
-                "value": "Core users"
+                "value": "Direct API users"
               }
             ]
           },
@@ -152,7 +152,7 @@
           "refId": "A"
         }
       ],
-      "title": "Core API overview",
+      "title": "Direct API overview",
       "type": "stat"
     },
     {
@@ -160,7 +160,7 @@
         "type": "grafana-clickhouse-datasource",
         "uid": "PAD1A0A25CD30D456"
       },
-      "description": "Daily successful Core API calls split by generation_event_v2 workload. This wide query also supplies active users, Paid/Quest consumption, platform share and usage-unit panels, limiting this eight-panel dashboard to four Tinybird requests per refresh.",
+      "description": "Daily successful Direct API calls split by generation_event_v2 workload. This wide query also supplies active users, Paid/Quest consumption, platform share and usage-unit panels, limiting this eight-panel dashboard to four Tinybird requests per refresh.",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -213,7 +213,7 @@
           "refId": "A"
         }
       ],
-      "title": "Core request volume",
+      "title": "Direct API request volume",
       "transformations": [
         {
           "id": "filterFieldsByName",
@@ -239,7 +239,7 @@
         "type": "datasource",
         "uid": "-- Dashboard --"
       },
-      "description": "Daily unique authenticated users with successful Core API generations. The HyperLogLog state is merged from generation_usage_hourly; this is not the sum of hourly user counts.",
+      "description": "Daily unique authenticated users with successful Direct API generations. The HyperLogLog state is merged from generation_usage_hourly; this is not the sum of hourly user counts.",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -267,7 +267,7 @@
             "properties": [
               {
                 "id": "displayName",
-                "value": "Core users"
+                "value": "Direct API users"
               }
             ]
           }
@@ -304,7 +304,7 @@
           "refId": "A"
         }
       ],
-      "title": "Core active users",
+      "title": "Direct API active users",
       "transformations": [
         {
           "id": "filterFieldsByName",
@@ -325,7 +325,7 @@
         "type": "datasource",
         "uid": "-- Dashboard --"
       },
-      "description": "Daily gross billed Core consumption from generation_usage_hourly. Paid is revenue-bearing Pollen; Quest is free Pollen granted to users and must not be read as revenue.",
+      "description": "Daily gross billed Direct API consumption from generation_usage_hourly. Paid is revenue-bearing Pollen; Quest is free Pollen granted to users and must not be read as revenue.",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -438,7 +438,7 @@
         "type": "datasource",
         "uid": "-- Dashboard --"
       },
-      "description": "Daily Core successful calls divided by all successful authenticated, non-cached platform generations. BYOP and all community-model traffic are excluded from the numerator but remain in the platform denominator.",
+      "description": "Daily Direct API successful calls divided by all successful authenticated, non-cached platform generations. BYOP and all community-model traffic are excluded from the numerator but remain in the platform denominator.",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -469,7 +469,7 @@
             "properties": [
               {
                 "id": "displayName",
-                "value": "Core share"
+                "value": "Direct API share"
               }
             ]
           }
@@ -506,7 +506,7 @@
           "refId": "A"
         }
       ],
-      "title": "Core share of platform",
+      "title": "Direct API share of platform",
       "transformations": [
         {
           "id": "filterFieldsByName",
@@ -527,7 +527,7 @@
         "type": "grafana-clickhouse-datasource",
         "uid": "PAD1A0A25CD30D456"
       },
-      "description": "Daily successful Core calls for the eight official models with the most calls in the selected range; every remaining model is grouped into Other. This is a model-adoption view, not a health or cost diagnostic.",
+      "description": "Daily successful Direct API calls for the eight official models with the most calls in the selected range; every remaining model is grouped into Other. This is a model-adoption view, not a health or cost diagnostic.",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -597,7 +597,7 @@
           "refId": "A"
         }
       ],
-      "title": "Core model mix",
+      "title": "Direct API model mix",
       "type": "timeseries"
     },
     {
@@ -605,7 +605,7 @@
         "type": "grafana-clickhouse-datasource",
         "uid": "PAD1A0A25CD30D456"
       },
-      "description": "Official models ranked over the selected range using successful Core API calls only. Paid and Quest show gross Pollen consumption. Token fields and native audio/video duration expose usage scale without duplicating model health or provider economics.",
+      "description": "Official models ranked over the selected range using successful Direct API calls only. Paid and Quest show gross Pollen consumption. Token fields and native audio/video duration expose usage scale without duplicating model health or provider economics.",
       "fieldConfig": {
         "defaults": {
           "custom": {
@@ -778,7 +778,7 @@
           "refId": "A"
         }
       ],
-      "title": "Core model ranking",
+      "title": "Direct API model ranking",
       "type": "table"
     },
     {
@@ -786,7 +786,7 @@
         "type": "datasource",
         "uid": "-- Dashboard --"
       },
-      "description": "Daily Core usage from generation_usage_hourly. Token-like units use the left axis; native audio and video seconds use the right axis. The series remain separate and are never added into an artificial combined total.",
+      "description": "Daily Direct API usage from generation_usage_hourly. Token-like units use the left axis; native audio and video seconds use the right axis. The series remain separate and are never added into an artificial combined total.",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -915,7 +915,7 @@
           "refId": "A"
         }
       ],
-      "title": "Core usage units",
+      "title": "Direct API usage units",
       "transformations": [
         {
           "id": "filterFieldsByName",
@@ -940,7 +940,7 @@
   "schemaVersion": 41,
   "tags": [
     "observability-rebuild",
-    "core-api",
+    "direct-api",
     "models"
   ],
   "templating": {
@@ -952,7 +952,7 @@
   },
   "timepicker": {},
   "timezone": "browser",
-  "title": "Core API",
+  "title": "Direct API",
   "uid": "core-api-rebuild",
   "version": 1,
   "weekStart": "monday"

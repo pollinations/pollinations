@@ -1,0 +1,34 @@
+{
+  "pr_number": 12708,
+  "title": "Move NanoBanana to OpenRouter",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/12708",
+  "merged_at": "2026-07-24T14:22:10Z",
+  "labels": [],
+  "pr_body_excerpt": "## Summary\n\n- Routes only `nanobanana` through OpenRouter’s exact `google/gemini-2.5-flash-image` endpoint, pinned to `google-vertex/global` with fallback disabled.\n- Preserves public name, editing, three references, ratios, seed, paid-only access, multiplier, prices, billing, EXIF, and content-policy 400 responses.\n- Restores `gemini-fast` to paid-only access without changing its route or pricing.\n- Sanitizes EXIF to public token usage; provider cost and `is_byok` are never embedded.\n- No secret change, deployment, fallback, or review request.\n\n## Verification\n\n- Direct generation/edit: 6.1s / 9.2s. Local generation/edit: 5.1s / 7.4s.\n- Follow-up paid E2E: valid 1024×1024 JPEG in 7.1s, exact $0.0387051 billing, visually inspected, EXIF inspected with no provider-cost fields.\n- `gemini-fast` paid-balance catalog filtering passes; focused Enter aliases/pricing: 285/285.\n- Gen: 643/643; both workers type-check.\n- CI test setup now injects only a fake in-memory key; no secret is read or changed.\n\n## Accepted product differences\n\n- OpenRouter combines text/reference-image prompt tokens. Total billing is exact because both inputs have the same rate, but the public split is less detailed than Vertex.\n- OpenRouter’s image catalog exposes no safety-settings passthrough, so Vertex’s per-request safety thresholds are not preserved. OpenRouter’s own content policy still applies.\n",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "NanoBanana found a new branch",
+    "blurb": "NanoBanana now pollinates through OpenRouter, with its public name, editing tools, reference images, and careful billing all intact. The bee moved the plumbing without moving the furniture.",
+    "summary": "Routed the paid-only `nanobanana` image model through OpenRouter's pinned `google/gemini-2.5-flash-image` endpoint on `google-vertex/global`, while preserving editing, up to three reference images, ratios, seeds, pricing, billing, EXIF, and content-policy responses.",
+    "impact": "NanoBanana generations and edits keep the same public API and exact billing behavior, with public EXIF now limited to token usage rather than provider-cost or BYOK metadata.",
+    "keywords": [
+      "nanobanana",
+      "openrouter",
+      "gemini-2.5-flash-image",
+      "image-generation",
+      "billing",
+      "exif"
+    ],
+    "visual_concept": "Depict NanoBanana as a small cozy pixel banana-shaped image cartridge being carefully carried from one flowering garden terminal to another labeled OpenRouter. Polli, wearing a tiny courier cap, guides the move while a CRT robot verifies a clean image printout and a code-plant grows beside the route; the visual metaphor is a backend migration that preserves the familiar creative tools.",
+    "image_prompt": "Cozy pixel art scene of Polli, a cute pixel bee mascot with a yellow body, dark brown horizontal stripes, black antennae and oval eyes, bright pink rectangular cheek blushes, a small smile, and rounded translucent light-blue wings, wearing a tiny courier cap as she carries a banana-shaped image cartridge along a garden path from a retro terminal to a friendly sign reading \"OpenRouter\". A CRT monitor robot inspects a crisp pixel-art image beside lime green (#ecf874) code-plants and pastel flowers; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-24/PR-12708.jpg",
+    "prompt": "Cozy pixel art scene of Polli, a cute pixel bee mascot with a yellow body, dark brown horizontal stripes, black antennae and oval eyes, bright pink rectangular cheek blushes, a small smile, and rounded translucent light-blue wings, wearing a tiny courier cap as she carries a banana-shaped image cartridge along a garden path from a retro terminal to a friendly sign reading \"OpenRouter\". A CRT monitor robot inspects a crisp pixel-art image beside lime green (#ecf874) code-plants and pastel flowers; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, nostalgic but beautiful."
+  },
+  "generated_at": "2026-07-24T14:23:06.400370+00:00"
+}

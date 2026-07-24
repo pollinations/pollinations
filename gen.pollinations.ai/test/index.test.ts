@@ -7,6 +7,7 @@ import { getTextModelsInfo } from "@shared/registry/model-info.ts";
 import { test as fixtureTest } from "@shared/test/fixtures/index.ts";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import worker from "../src/index.ts";
+import googleCloudAuth from "../src/text/auth/googleCloudAuth.ts";
 
 afterEach(() => {
     vi.restoreAllMocks();
@@ -288,6 +289,31 @@ describe("gen worker routing", () => {
         });
     });
 
+    it("lists Recraft vector with aliases, modalities, and flat pricing", async () => {
+        const response = await fetchWorker("/image/models", envWithEnter());
+
+        expect(response.status).toBe(200);
+        const models = (await response.json()) as {
+            name: string;
+            aliases?: string[];
+            input_modalities?: string[];
+            output_modalities?: string[];
+            pricing: Record<string, string>;
+        }[];
+        expect(
+            models.find((model) => model.name === "recraft-v4.1-vector"),
+        ).toMatchObject({
+            name: "recraft-v4.1-vector",
+            aliases: ["recraft-vector", "recraft-svg", "recraft-v4.1-svg"],
+            input_modalities: ["text", "image"],
+            output_modalities: ["image"],
+            pricing: {
+                completionImageTokens: "0.08",
+                currency: "pollen",
+            },
+        });
+    });
+
     it("serves OpenAI-compatible models without auth", async () => {
         const response = await fetchWorker("/v1/models", envWithEnter());
 
@@ -478,6 +504,179 @@ describe("model status", () => {
         expect(upstream).toHaveBeenCalledTimes(34);
     });
 });
+
+fixtureTest(
+    "serves Recraft SVG generation and editing through pinned OpenRouter",
+    async ({ paidApiKey }) => {
+        const openRouterEndpoint = "https://openrouter.ai/api/v1/images";
+        const svg =
+            '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 9"><path d="M0 0h16v9H0z"/></svg>';
+        const requests: Record<string, unknown>[] = [];
+
+        vi.spyOn(globalThis, "fetch").mockImplementation(
+            async (input, init) => {
+                const request = new Request(input, init);
+                if (request.url === openRouterEndpoint) {
+                    expect(request.headers.get("authorization")).toBe(
+                        "Bearer test-openrouter-key",
+                    );
+                    requests.push(
+                        (await request.json()) as Record<string, unknown>,
+                    );
+                    return Response.json({
+                        data: [
+                            {
+                                b64_json: Buffer.from(svg).toString("base64"),
+                                media_type: "image/svg+xml",
+                            },
+                        ],
+                        usage: {
+                            prompt_tokens: 0,
+                            completion_tokens: 4175,
+                            total_tokens: 4175,
+                            cost: 0.08,
+                        },
+                    });
+                }
+                if (
+                    request.url.startsWith(
+                        "https://api.europe-west2.gcp.tinybird.co/v0/pipes/public_model_stats.json",
+                    ) ||
+                    request.url.startsWith("http://localhost:7181/")
+                ) {
+                    return Response.json({ data: [] });
+                }
+                throw new Error(`Unexpected fetch: ${request.url}`);
+            },
+        );
+
+        const bindings = {
+            ...env,
+            OPENROUTER_API_KEY: "test-openrouter-key",
+        } as unknown as CloudflareBindings;
+
+        const getContext = createExecutionContext();
+        const getResponse = await worker.fetch(
+            new Request(
+                "https://staging.gen.pollinations.ai/image/vector%20bee?model=recraft-svg&width=1280&height=720&seed=901",
+                {
+                    headers: { Authorization: `Bearer ${paidApiKey}` },
+                },
+            ),
+            bindings,
+            getContext,
+        );
+        expect(getResponse.status).toBe(200);
+        expect(getResponse.headers.get("content-type")).toBe("image/svg+xml");
+        expect(getResponse.headers.get("content-disposition")).toContain(
+            ".svg",
+        );
+        expect(getResponse.headers.get("content-security-policy")).toBe(
+            "default-src 'none'; style-src 'unsafe-inline'; sandbox",
+        );
+        expect(getResponse.headers.get("x-content-type-options")).toBe(
+            "nosniff",
+        );
+        expect(getResponse.headers.get("x-model-used")).toBe(
+            "recraft-v4.1-vector",
+        );
+        expect(getResponse.headers.get("x-usage-completion-image-tokens")).toBe(
+            "1",
+        );
+        expect(await getResponse.text()).toBe(svg);
+        await waitOnExecutionContext(getContext);
+
+        const generationContext = createExecutionContext();
+        const generationResponse = await worker.fetch(
+            new Request(
+                "https://staging.gen.pollinations.ai/v1/images/generations",
+                {
+                    method: "POST",
+                    headers: {
+                        Authorization: `Bearer ${paidApiKey}`,
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({
+                        model: "recraft-vector",
+                        prompt: "vector flower",
+                        response_format: "b64_json",
+                        size: "1024x1024",
+                        seed: 902,
+                    }),
+                },
+            ),
+            bindings,
+            generationContext,
+        );
+        expect(generationResponse.status).toBe(200);
+        const generation = (await generationResponse.json()) as {
+            data: Array<{ b64_json: string; media_type?: string }>;
+            usage: { output_tokens: number; total_tokens: number };
+        };
+        expect(generation.data[0]?.media_type).toBe("image/svg+xml");
+        expect(
+            Buffer.from(
+                generation.data[0]?.b64_json || "",
+                "base64",
+            ).toString(),
+        ).toBe(svg);
+        expect(generation.usage.output_tokens).toBe(1);
+        expect(generation.usage.total_tokens).toBe(1);
+        await waitOnExecutionContext(generationContext);
+
+        const editContext = createExecutionContext();
+        const editResponse = await worker.fetch(
+            new Request("https://staging.gen.pollinations.ai/v1/images/edits", {
+                method: "POST",
+                headers: {
+                    Authorization: `Bearer ${paidApiKey}`,
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    model: "recraft-v4.1-svg",
+                    prompt: "make the flower blue",
+                    image: "https://example.com/source.svg",
+                    size: "1024x1024",
+                    seed: 903,
+                }),
+            }),
+            bindings,
+            editContext,
+        );
+        expect(editResponse.status).toBe(200);
+        const edit = (await editResponse.json()) as {
+            data: Array<{ b64_json: string; media_type?: string }>;
+            usage: {
+                input_tokens_details: { image_tokens: number };
+                output_tokens: number;
+            };
+        };
+        expect(edit.data[0]?.media_type).toBe("image/svg+xml");
+        expect(edit.usage.input_tokens_details.image_tokens).toBe(0);
+        expect(edit.usage.output_tokens).toBe(1);
+        await waitOnExecutionContext(editContext);
+
+        expect(requests).toHaveLength(3);
+        expect(requests[0]).toEqual({
+            model: "recraft/recraft-v4.1-vector",
+            prompt: "vector bee",
+            n: 1,
+            provider: { only: ["recraft"], allow_fallbacks: false },
+            aspect_ratio: "16:9",
+        });
+        expect(requests[2]).toMatchObject({
+            model: "recraft/recraft-v4.1-vector",
+            prompt: "make the flower blue",
+            provider: { only: ["recraft"], allow_fallbacks: false },
+            input_references: [
+                {
+                    type: "image_url",
+                    image_url: { url: "https://example.com/source.svg" },
+                },
+            ],
+        });
+    },
+);
 
 fixtureTest(
     "routes simple qwen audio requests through DashScope",
@@ -721,6 +920,188 @@ fixtureTest(
         expect(calls).not.toContain(deepInfraEndpoint);
     },
 );
+
+fixtureTest(
+    "routes Lyria aliases through the Vertex interactions API",
+    async ({ paidApiKey }) => {
+        const endpoint =
+            "https://aiplatform.googleapis.com/v1beta1/projects/test-project/locations/global/interactions";
+        const calls: string[] = [];
+        vi.spyOn(googleCloudAuth, "getAccessToken").mockResolvedValue(
+            "test-google-token",
+        );
+
+        vi.spyOn(globalThis, "fetch").mockImplementation(
+            async (input, init) => {
+                const request = new Request(input, init);
+                calls.push(request.url);
+
+                if (request.url === endpoint) {
+                    expect(request.headers.get("authorization")).toBe(
+                        "Bearer test-google-token",
+                    );
+                    await expect(request.json()).resolves.toEqual({
+                        model: "lyria-3-clip-preview",
+                        input: [
+                            {
+                                type: "text",
+                                text: "bright French house with warm vocals",
+                            },
+                        ],
+                    });
+
+                    return Response.json({
+                        status: "completed",
+                        outputs: [
+                            { type: "text", text: "generated lyrics" },
+                            {
+                                type: "audio",
+                                mime_type: "audio/mpeg",
+                                data: "//uQZA==",
+                            },
+                        ],
+                    });
+                }
+
+                if (
+                    request.url.startsWith(
+                        "https://api.europe-west2.gcp.tinybird.co/v0/pipes/public_model_stats.json",
+                    ) ||
+                    request.url.startsWith("http://localhost:7181/")
+                ) {
+                    return Response.json({ data: [] });
+                }
+
+                throw new Error(`Unexpected fetch: ${request.url}`);
+            },
+        );
+
+        const ctx = createExecutionContext();
+        const response = await worker.fetch(
+            new Request(
+                "https://staging.gen.pollinations.ai/audio/bright%20French%20house%20with%20warm%20vocals?model=lyria&duration=30",
+                {
+                    headers: { Authorization: `Bearer ${paidApiKey}` },
+                },
+            ),
+            {
+                ...env,
+                GOOGLE_PROJECT_ID: "test-project",
+            } as unknown as CloudflareBindings,
+            ctx,
+        );
+
+        expect(response.status).toBe(200);
+        expect(response.headers.get("content-type")).toBe("audio/mpeg");
+        expect(response.headers.get("x-model-used")).toBe("lyria-3-clip");
+        expect(response.headers.get("x-usage-completion-audio-tokens")).toBe(
+            "1",
+        );
+        expect(new Uint8Array(await response.arrayBuffer())).toEqual(
+            new Uint8Array([0xff, 0xfb, 0x90, 0x64]),
+        );
+
+        await waitOnExecutionContext(ctx);
+        expect(calls).toContain(endpoint);
+        expect(
+            calls.some((url) => new URL(url).hostname === "api.elevenlabs.io"),
+        ).toBe(false);
+    },
+);
+
+fixtureTest(
+    "rejects unsupported Lyria duration and output format",
+    async ({ paidApiKey }) => {
+        vi.spyOn(googleCloudAuth, "getAccessToken").mockResolvedValue(
+            "test-google-token",
+        );
+        const upstreamCalls: string[] = [];
+        vi.spyOn(globalThis, "fetch").mockImplementation(
+            async (input, init) => {
+                const request = new Request(input, init);
+                upstreamCalls.push(request.url);
+                if (
+                    request.url.startsWith(
+                        "https://api.europe-west2.gcp.tinybird.co/v0/pipes/public_model_stats.json",
+                    ) ||
+                    request.url.startsWith("http://localhost:7181/")
+                ) {
+                    return Response.json({ data: [] });
+                }
+                throw new Error(`Unexpected fetch: ${request.url}`);
+            },
+        );
+
+        const cases = [
+            {
+                body: {
+                    model: "lyria-3-clip",
+                    input: "slow ambient strings",
+                    duration: 20,
+                },
+                message: "fixed 30-second clips",
+            },
+            {
+                body: {
+                    model: "lyria-3",
+                    input: "slow ambient strings",
+                    response_format: "wav",
+                },
+                message: "only supports mp3",
+            },
+        ];
+
+        for (const testCase of cases) {
+            const ctx = createExecutionContext();
+            const response = await worker.fetch(
+                new Request(
+                    "https://staging.gen.pollinations.ai/v1/audio/speech",
+                    {
+                        method: "POST",
+                        headers: {
+                            Authorization: `Bearer ${paidApiKey}`,
+                            "Content-Type": "application/json",
+                        },
+                        body: JSON.stringify(testCase.body),
+                    },
+                ),
+                {
+                    ...env,
+                    GOOGLE_PROJECT_ID: "test-project",
+                } as unknown as CloudflareBindings,
+                ctx,
+            );
+
+            expect(response.status).toBe(400);
+            await expect(response.json()).resolves.toMatchObject({
+                error: { message: expect.stringContaining(testCase.message) },
+            });
+            await waitOnExecutionContext(ctx);
+        }
+
+        expect(
+            upstreamCalls.some(
+                (url) => new URL(url).hostname === "aiplatform.googleapis.com",
+            ),
+        ).toBe(false);
+    },
+);
+
+it("lists Lyria with its aliases and text-to-audio modalities", async () => {
+    const response = await fetchWorker("/audio/models");
+
+    expect(response.status).toBe(200);
+    const models = (await response.json()) as {
+        name: string;
+        aliases?: string[];
+        input_modalities?: string[];
+        output_modalities?: string[];
+    }[];
+    const model = models.find((candidate) => candidate.name === "lyria-3-clip");
+    expect(model?.aliases).toEqual(["lyria", "lyria-3"]);
+    expect(model?.input_modalities).toEqual(["text"]);
+    expect(model?.output_modalities).toEqual(["audio"]);
+});
 
 fixtureTest(
     "routes stable-audio-3-medium requests through fal",

@@ -41,7 +41,7 @@ export const IMAGE_SERVICES = {
     },
     "nanobanana": {
         aliases: [],
-        provider: "google",
+        provider: "openrouter",
         brand: "Google",
         category: "image",
         addedDate: new Date("2025-10-07").getTime(),
@@ -63,7 +63,7 @@ export const IMAGE_SERVICES = {
     },
     "nanobanana-2": {
         aliases: ["nanobanana2"],
-        provider: "google",
+        provider: "openrouter",
         brand: "Google",
         category: "image",
         addedDate: new Date("2026-02-27").getTime(),
@@ -85,7 +85,7 @@ export const IMAGE_SERVICES = {
     },
     "nanobanana-2-lite": {
         aliases: ["nanobanana2lite", "nanobanana-lite"],
-        provider: "google",
+        provider: "openrouter",
         brand: "Google",
         category: "image",
         addedDate: new Date("2026-06-30").getTime(),
@@ -107,7 +107,7 @@ export const IMAGE_SERVICES = {
     },
     "nanobanana-pro": {
         aliases: [],
-        provider: "google",
+        provider: "openrouter",
         brand: "Google",
         category: "image",
         addedDate: new Date("2025-12-01").getTime(),
@@ -615,6 +615,24 @@ export const IMAGE_SERVICES = {
         outputModalities: ["image"],
         maxReferenceImages: 1, // OpenRouter image edit route forwards one input image.
     },
+    "recraft-v4.1-vector": {
+        aliases: ["recraft-vector", "recraft-svg", "recraft-v4.1-svg"],
+        provider: "openrouter",
+        brand: "Recraft",
+        category: "image",
+        addedDate: new Date("2026-07-24").getTime(),
+        priceMultiplier: 1,
+        paidOnly: true,
+        cost: {
+            completionImageTokens: 0.08, // fixed per output SVG
+        },
+        title: "Recraft V4.1 Vector",
+        description:
+            "Editable SVG generation and reference-guided vector design",
+        inputModalities: ["text", "image"],
+        outputModalities: ["image"],
+        maxReferenceImages: 1,
+    },
     "grok-video-pro": {
         aliases: ["grok-imagine-video"],
         provider: "openrouter",
@@ -663,8 +681,7 @@ export const IMAGE_SERVICES = {
             completionImageTokens: 0.005,
         },
         title: "FLUX.2 Klein 4B",
-        description:
-            "Quick image generation and editing with solid quality per dollar",
+        description: "Fast image generation and editing up to 2.4 megapixels",
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
         maxReferenceImages: 10, // Pollinations self-hosted route cap.

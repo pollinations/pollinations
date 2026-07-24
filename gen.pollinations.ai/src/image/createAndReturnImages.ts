@@ -6,6 +6,7 @@ import {
 import { getImageEnv } from "./env.ts";
 import { HttpError } from "./httpError.ts";
 import { callAzureFluxKontext } from "./models/azureFluxKontextModel.js";
+import { callAzureMaiImage } from "./models/azureMaiImageModel.ts";
 import { callFireworksFluxSchnellAPI } from "./models/fireworksFluxModel.ts";
 import { callFluxKleinAPI } from "./models/fluxKleinModel.ts";
 import {
@@ -773,6 +774,16 @@ const generateImage = async (
                     "Azure Flux Kontext generation failed:",
                     error.message,
                 );
+                await logGptImageError(prompt, safeParams, userInfo, error);
+                throw error;
+            }
+        }
+
+        case "mai-image-2.5-flash": {
+            try {
+                return await callAzureMaiImage(prompt, safeParams, userInfo);
+            } catch (error) {
+                logError("Azure MAI image generation failed:", error.message);
                 await logGptImageError(prompt, safeParams, userInfo, error);
                 throw error;
             }

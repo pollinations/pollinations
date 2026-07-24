@@ -2535,7 +2535,6 @@ fixtureTest(
     "keeps editable agent definitions and community registration as separate lifecycles",
     async () => {
         const ownerGithubUsername = `owner-${crypto.randomUUID().slice(0, 8)}`;
-        const agentName = `agent-${crypto.randomUUID().slice(0, 8)}`;
         const modelName = `model-${crypto.randomUUID().slice(0, 8)}`;
         const ownerUserId = await createTestUser({
             githubId: COMMUNITY_ENDPOINT_ALLOWED_TEST_GITHUB_ID,
@@ -2573,23 +2572,18 @@ fixtureTest(
                     "Content-Type": "application/json",
                     Cookie: cookie,
                 },
-                body: JSON.stringify({
-                    name: agentName,
-                    ...promptAgent,
-                }),
+                body: JSON.stringify(promptAgent),
             }),
             enterEnv,
         );
         expect(createAgentResponse.status).toBe(200);
         const agent = (await createAgentResponse.json()) as {
             id: string;
-            name: string;
             systemPrompt: string;
             baseModel: string;
             mcpServers: typeof promptAgent.mcpServers;
         };
         expect(agent).toMatchObject({
-            name: agentName,
             systemPrompt: "You are a terse SQL tutor.",
             baseModel: "openai-fast",
         });

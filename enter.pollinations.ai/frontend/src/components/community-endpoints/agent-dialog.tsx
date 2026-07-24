@@ -127,12 +127,20 @@ export function AgentDialog({
             contentClassName="flex max-h-[calc(100dvh-2rem)] flex-col"
         >
             <div className="shrink-0 p-6 pb-4">
-                <DialogTitle className="text-lg font-semibold">
-                    {agent ? "Edit Agent" : "Add Agent"}
-                </DialogTitle>
+                <div className="flex items-center justify-between gap-3">
+                    <DialogTitle className="text-lg font-semibold">
+                        {agent ? "Edit Agent" : "Add Agent"}
+                    </DialogTitle>
+                    {!agent && (
+                        <span className="shrink-0 text-xs font-medium text-theme-text-muted">
+                            Step 1 of 2
+                        </span>
+                    )}
+                </div>
                 <p className="mt-1 text-sm text-theme-text-muted">
-                    Pollinations runs this prompt and its MCP tools as a managed
-                    agent. Community model registration is a separate step.
+                    {agent
+                        ? "Update how this managed agent behaves. Its model listing remains unchanged."
+                        : "Configure the managed agent. You’ll register its model listing next."}
                 </p>
             </div>
             <form
@@ -172,7 +180,11 @@ export function AgentDialog({
                         Cancel
                     </Button>
                     <Button type="submit" intent="info" disabled={!canSubmit}>
-                        {isSubmitting ? "Saving…" : agent ? "Save" : "Create"}
+                        {isSubmitting
+                            ? "Saving…"
+                            : agent
+                              ? "Save"
+                              : "Create & continue"}
                     </Button>
                 </div>
             </form>

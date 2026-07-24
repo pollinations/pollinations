@@ -357,13 +357,20 @@ export function CommunityEndpointDialog({
             contentClassName="flex max-h-[calc(100dvh-2rem)] flex-col"
         >
             <div className="shrink-0 p-6 pb-4">
-                <DialogTitle className="text-lg font-semibold">
-                    {isEdit
-                        ? "Edit Model"
-                        : initialAgent
-                          ? "Register Agent as Model"
-                          : "Add Model"}
-                </DialogTitle>
+                <div className="flex items-center justify-between gap-3">
+                    <DialogTitle className="text-lg font-semibold">
+                        {isEdit
+                            ? "Edit Model"
+                            : initialAgent
+                              ? "Register Agent as Model"
+                              : "Add Model"}
+                    </DialogTitle>
+                    {initialAgent && (
+                        <span className="shrink-0 text-xs font-medium text-theme-text-muted">
+                            Step 2 of 2
+                        </span>
+                    )}
+                </div>
                 <p className="mt-1 text-sm text-theme-text-muted">
                     {form.mode === "agent" ? (
                         <>
@@ -830,7 +837,7 @@ export function CommunityEndpointDialog({
                         onClick={() => onOpenChange(false)}
                         disabled={isSubmitting}
                     >
-                        Cancel
+                        {initialAgent ? "Finish later" : "Cancel"}
                     </Button>
                     <Button
                         type="submit"
@@ -842,12 +849,8 @@ export function CommunityEndpointDialog({
                             : isEdit
                               ? "Save Model"
                               : isShared
-                                ? isManagedAgent
-                                    ? "Register Agent"
-                                    : "Publish Model"
-                                : isManagedAgent
-                                  ? "Register Private Agent"
-                                  : "Add Private Model"}
+                                ? "Publish Model"
+                                : "Add Private Model"}
                     </Button>
                 </div>
             </form>

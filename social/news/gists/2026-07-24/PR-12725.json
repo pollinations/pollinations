@@ -1,0 +1,34 @@
+{
+  "pr_number": 12725,
+  "title": "feat: add Lyria 3 Clip",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/12725",
+  "merged_at": "2026-07-24T14:05:37Z",
+  "labels": [],
+  "pr_body_excerpt": "## Summary\n- Adds paid-only `lyria-3-clip` music generation through Google Vertex global interactions.\n- Adds aliases `lyria` and `lyria-3`; returns one fixed 30-second MP3 with no fallback or default-model change.\n- Bills one completion-audio unit at the official fixed $0.04 clip price.\n- Updates the audio schemas, catalog metadata, effective-price snapshot, and developer-facing description.\n\n## Approved model contract\n| Multiplier | Paid only | Pollinations GPU | Provider / route | Fallback |\n|---:|---:|---:|---|---|\n| 1 | yes | no | Google Vertex global `lyria-3-clip-preview` | none |\n\n## Verification\n- Live local-to-Vertex E2E: valid 30-second stereo MP3s in 11–13s; five concurrent requests passed.\n- GET and OpenAI-compatible POST, aliases, cache, paid-only 402, invalid duration/format, usage headers, and Tinybird billing verified.\n- Billing reconciles at exactly $0.04; cache hits are not billed.\n- Gen typecheck and focused suites pass; Enter typecheck plus 287 pricing/alias tests pass.\n- Google Cloud Console shows 100 global RPM for this project, above the observed 7–9 RPM music peaks. No quota request was submitted.\n\nDraft for review; no production deployment is performed by this PR.",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "The hive found a beat",
+    "blurb": "Lyria 3 Clip has joined the garden: one tidy 30-second music clip, delivered as an MP3. The bees remain contractually unable to improvise a fallback.",
+    "summary": "Added paid-only Google Vertex `lyria-3-clip` music generation, available through the `lyria` and `lyria-3` aliases, producing a fixed 30-second MP3 for $0.04 per completion-audio unit.",
+    "impact": "Developers can now generate verified 30-second stereo music clips through both GET and OpenAI-compatible POST audio requests, while cached results stay free and usage is billed exactly once at $0.04.",
+    "keywords": [
+      "audio",
+      "music-generation",
+      "lyria-3-clip",
+      "google-vertex",
+      "api",
+      "billing"
+    ],
+    "visual_concept": "Depict Lyria as a cozy retro music-making station: a small CRT synthesizer and reel-to-reel player produce a glowing 30-second MP3 cassette, with musical notes becoming flowers and vines. Polli wears oversized pixel headphones and adjusts the mixer, warmly observing the newly grown sound garden.",
+    "image_prompt": "Cozy pixel art scene of Polli, a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings, wearing oversized tiny headphones while adjusting a retro CRT music synthesizer. A glowing lime green (#ecf874) cassette labeled \"30 SEC MP3\" rests beside a reel-to-reel player as pastel musical notes sprout into flowers and code-plants; cozy 8-bit pixel art, soft pastel gradients, warm lighting, retro gaming vibes, nostalgic and emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-24/PR-12725.jpg",
+    "prompt": "Cozy pixel art scene of Polli, a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings, wearing oversized tiny headphones while adjusting a retro CRT music synthesizer. A glowing lime green (#ecf874) cassette labeled \"30 SEC MP3\" rests beside a reel-to-reel player as pastel musical notes sprout into flowers and code-plants; cozy 8-bit pixel art, soft pastel gradients, warm lighting, retro gaming vibes, nostalgic and emotionally warm."
+  },
+  "generated_at": "2026-07-24T14:06:47.391303+00:00"
+}

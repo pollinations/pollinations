@@ -236,6 +236,7 @@ export function CommunityEndpoints({
             endpoint.agentId ? [[endpoint.agentId, endpoint] as const] : [],
         ),
     );
+    const agentById = new Map(agents.map((agent) => [agent.id, agent]));
     const unregisteredAgents = agents.filter(
         (agent) => !endpointByAgentId.has(agent.id),
     );
@@ -246,91 +247,51 @@ export function CommunityEndpoints({
                   !endpointByAgentId.has(agent.id),
           )
         : unregisteredAgents;
+    const hasModels = endpoints.length > 0 || unregisteredAgents.length > 0;
 
     return (
         <>
             {error && <Alert intent="danger">{error}</Alert>}
             <Section
-                title="My Agents"
-                framed
-                action={
-                    <AgentDialog
-                        open={agentCreateOpen}
-                        onOpenChange={setAgentCreateOpen}
-                        onSubmit={handleCreateAgent}
-                        trigger={
-                            <Button
-                                type="button"
-                                className="inline-flex shrink-0 items-center gap-1.5 self-start whitespace-nowrap"
-                            >
-                                <SparklesIcon className="h-4 w-4" />
-                                Add Agent
-                            </Button>
-                        }
-                    />
-                }
-            >
-                <div className="flex flex-col gap-3">
-                    {isLoading ? (
-                        <Surface className="p-6 text-center text-sm text-theme-text-muted">
-                            Loading…
-                        </Surface>
-                    ) : agents.length === 0 ? (
-                        <Surface className="p-6 text-center">
-                            <SparklesIcon className="mx-auto mb-2 h-8 w-8 text-theme-text-muted" />
-                            <p className="mb-2 text-lg font-semibold">
-                                Create your first agent
-                            </p>
-                            <p className="text-sm text-theme-text-muted">
-                                Define its prompt, base model, and optional MCP
-                                servers. Register it as a model when it is
-                                ready.
-                            </p>
-                        </Surface>
-                    ) : (
-                        agents.map((agent) => (
-                            <AgentCard
-                                key={agent.id}
-                                agent={agent}
-                                registeredModelId={
-                                    endpointByAgentId.get(agent.id)?.modelId
-                                }
-                                onRegister={() => {
-                                    setRegisteringAgent(agent);
-                                    setCreateOpen(true);
-                                }}
-                                onEdit={() => setEditingAgent(agent)}
-                                onDelete={() => setDeletingAgent(agent)}
-                            />
-                        ))
-                    )}
-                </div>
-            </Section>
-
-            <Section
                 title="My Models"
                 framed
                 action={
-                    <CommunityEndpointDialog
-                        initialAgent={registeringAgent ?? undefined}
-                        agents={unregisteredAgents}
-                        open={createOpen}
-                        onOpenChange={(open) => {
-                            setCreateOpen(open);
-                            if (!open) setRegisteringAgent(null);
-                        }}
-                        onSubmit={handleCreate}
-                        canPublish={canPublish}
-                        trigger={
-                            <Button
-                                type="button"
-                                className="inline-flex shrink-0 items-center gap-1.5 self-start whitespace-nowrap"
-                            >
-                                <SproutIcon className="h-4 w-4" />
-                                Add Model
-                            </Button>
-                        }
-                    />
+                    <div className="flex flex-wrap justify-end gap-2">
+                        <AgentDialog
+                            open={agentCreateOpen}
+                            onOpenChange={setAgentCreateOpen}
+                            onSubmit={handleCreateAgent}
+                            trigger={
+                                <Button
+                                    type="button"
+                                    className="inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap"
+                                >
+                                    <SparklesIcon className="h-4 w-4" />
+                                    Add Agent
+                                </Button>
+                            }
+                        />
+                        <CommunityEndpointDialog
+                            initialAgent={registeringAgent ?? undefined}
+                            agents={unregisteredAgents}
+                            open={createOpen}
+                            onOpenChange={(open) => {
+                                setCreateOpen(open);
+                                if (!open) setRegisteringAgent(null);
+                            }}
+                            onSubmit={handleCreate}
+                            canPublish={canPublish}
+                            trigger={
+                                <Button
+                                    type="button"
+                                    className="inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap"
+                                >
+                                    <SproutIcon className="h-4 w-4" />
+                                    Add Model
+                                </Button>
+                            }
+                        />
+                    </div>
                 }
             >
                 <div className="flex flex-col gap-3">
@@ -338,29 +299,55 @@ export function CommunityEndpoints({
                         <Surface className="p-6 text-center text-sm text-theme-text-muted">
                             Loading…
                         </Surface>
-                    ) : endpoints.length === 0 ? (
+                    ) : !hasModels ? (
                         <Surface className="p-6 text-center">
                             <SproutIcon className="mx-auto mb-2 h-8 w-8 text-theme-text-muted" />
                             <p className="mb-2 text-lg font-semibold">
-                                Register your first model
+                                Add your first model
                             </p>
                             <p className="text-sm text-theme-text-muted">
                                 {canPublish
-                                    ? "Publish an OpenAI-compatible text or image endpoint with your own pricing."
+                                    ? "Create a managed agent or register an OpenAI-compatible endpoint."
                                     : privateModelGuidance}
                             </p>
                         </Surface>
                     ) : (
-                        endpoints.map((endpoint) => (
-                            <CommunityEndpointCard
-                                key={endpoint.id}
-                                endpoint={endpoint}
-                                isToggling={togglingId === endpoint.id}
-                                onToggle={() => void handleToggle(endpoint)}
-                                onEdit={() => setEditing(endpoint)}
-                                onDelete={() => setDeleting(endpoint)}
-                            />
-                        ))
+                        <>
+                            {unregisteredAgents.map((agent) => (
+                                <AgentCard
+                                    key={agent.id}
+                                    agent={agent}
+                                    onComplete={() => {
+                                        setRegisteringAgent(agent);
+                                        setCreateOpen(true);
+                                    }}
+                                    onEdit={() => setEditingAgent(agent)}
+                                    onDelete={() => setDeletingAgent(agent)}
+                                />
+                            ))}
+                            {endpoints.map((endpoint) => {
+                                const agent = endpoint.agentId
+                                    ? agentById.get(endpoint.agentId)
+                                    : undefined;
+                                return (
+                                    <CommunityEndpointCard
+                                        key={endpoint.id}
+                                        endpoint={endpoint}
+                                        isToggling={togglingId === endpoint.id}
+                                        onToggle={() =>
+                                            void handleToggle(endpoint)
+                                        }
+                                        onEditAgent={
+                                            agent
+                                                ? () => setEditingAgent(agent)
+                                                : undefined
+                                        }
+                                        onEdit={() => setEditing(endpoint)}
+                                        onDelete={() => setDeleting(endpoint)}
+                                    />
+                                );
+                            })}
+                        </>
                     )}
                 </div>
                 {!isLoading && endpoints.length > 0 && (

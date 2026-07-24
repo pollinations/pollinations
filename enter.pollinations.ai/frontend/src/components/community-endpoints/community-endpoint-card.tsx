@@ -11,6 +11,7 @@ import {
     IconButton,
     LockIcon,
     PencilIcon,
+    SparklesIcon,
     Surface,
     TerminalIcon,
     TokensIcon,
@@ -30,6 +31,7 @@ type CommunityEndpointCardProps = {
     endpoint: CommunityEndpoint;
     isToggling: boolean;
     onToggle: () => void;
+    onEditAgent?: () => void;
     onEdit: () => void;
     onDelete: () => void;
 };
@@ -38,6 +40,7 @@ export function CommunityEndpointCard({
     endpoint,
     isToggling,
     onToggle,
+    onEditAgent,
     onEdit,
     onDelete,
 }: CommunityEndpointCardProps) {
@@ -90,10 +93,21 @@ export function CommunityEndpointCard({
                               ? "Reactivate"
                               : "Deactivate"}
                     </Button>
+                    {onEditAgent && (
+                        <IconButton
+                            intent="info"
+                            title="Edit agent"
+                            tooltip="Edit agent"
+                            tooltipAlign="center"
+                            onClick={onEditAgent}
+                        >
+                            <SparklesIcon className="h-4 w-4" />
+                        </IconButton>
+                    )}
                     <IconButton
                         intent="info"
-                        title="Edit model"
-                        tooltip="Edit model"
+                        title="Edit listing"
+                        tooltip="Edit listing"
                         tooltipAlign="center"
                         onClick={onEdit}
                     >

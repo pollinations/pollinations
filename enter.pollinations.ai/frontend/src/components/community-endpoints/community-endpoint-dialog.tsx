@@ -378,8 +378,8 @@ export function CommunityEndpointDialog({
                             <code>
                                 {"{username}"}/{"{model-id}"}
                             </code>{" "}
-                            model. Editing the agent later keeps this listing
-                            unchanged.
+                            model. Editing the agent later keeps this listing in
+                            place.
                         </>
                     ) : (
                         <>
@@ -407,7 +407,7 @@ export function CommunityEndpointDialog({
                             label="How to register"
                             helper={
                                 isManagedAgent
-                                    ? "Choose an agent you created above."
+                                    ? "Choose an agent that still needs listing details."
                                     : "Point at your own OpenAI-compatible endpoint. You host and run it."
                             }
                             alignLabelRow
@@ -553,10 +553,10 @@ export function CommunityEndpointDialog({
                             label="Agent"
                             helper={
                                 isEdit
-                                    ? "The registered agent cannot be replaced. Edit its definition in My Agents."
+                                    ? "The linked agent cannot be replaced. Edit its behavior from the model card."
                                     : initialAgent
-                                      ? "This listing points to the selected agent. Its definition remains independently editable in My Agents."
-                                      : "Only unlisted agents are available."
+                                      ? "Complete this agent by adding its model listing details."
+                                      : "Only agents that still need listing details are available."
                             }
                             alignLabelRow
                         >

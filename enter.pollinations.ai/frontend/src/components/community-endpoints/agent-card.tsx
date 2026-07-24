@@ -13,14 +13,12 @@ import type { ManagedAgent } from "./types.ts";
 
 export function AgentCard({
     agent,
-    registeredModelId,
-    onRegister,
+    onComplete,
     onEdit,
     onDelete,
 }: {
     agent: ManagedAgent;
-    registeredModelId?: string;
-    onRegister: () => void;
+    onComplete: () => void;
     onEdit: () => void;
     onDelete: () => void;
 }) {
@@ -32,11 +30,8 @@ export function AgentCard({
                         <h3 className="truncate text-base font-semibold text-theme-text-strong">
                             {agent.name}
                         </h3>
-                        <Chip
-                            intent={registeredModelId ? "news" : "neutral"}
-                            size="sm"
-                        >
-                            {registeredModelId ? "Registered" : "Unlisted"}
+                        <Chip intent="neutral" size="sm">
+                            Needs listing details
                         </Chip>
                     </div>
                     <p className="mt-1 line-clamp-2 text-sm text-theme-text-muted">
@@ -44,18 +39,16 @@ export function AgentCard({
                     </p>
                 </div>
                 <div className="flex shrink-0 flex-wrap items-center justify-end gap-1">
-                    {!registeredModelId && (
-                        <Button
-                            type="button"
-                            size="sm"
-                            intent="info"
-                            className="gap-1.5"
-                            onClick={onRegister}
-                        >
-                            <SproutIcon className="h-3.5 w-3.5" />
-                            Register as model
-                        </Button>
-                    )}
+                    <Button
+                        type="button"
+                        size="sm"
+                        intent="info"
+                        className="gap-1.5"
+                        onClick={onComplete}
+                    >
+                        <SproutIcon className="h-3.5 w-3.5" />
+                        Complete setup
+                    </Button>
                     <IconButton
                         intent="info"
                         title="Edit agent"
@@ -84,11 +77,6 @@ export function AgentCard({
                     {agent.mcpServers.length} MCP server
                     {agent.mcpServers.length === 1 ? "" : "s"}
                 </span>
-                {registeredModelId && (
-                    <span className="truncate font-mono">
-                        {registeredModelId}
-                    </span>
-                )}
             </div>
         </Surface>
     );

@@ -139,8 +139,8 @@ export function AgentDialog({
                 </div>
                 <p className="mt-1 text-sm text-theme-text-muted">
                     {agent
-                        ? "Update how this managed agent behaves. Its model listing remains unchanged."
-                        : "Configure the managed agent. You’ll register its model listing next."}
+                        ? "Update the agent behavior. Listing details are edited from its model card."
+                        : "Configure the agent now. You can complete its listing next or save it for later."}
                 </p>
             </div>
             <form
@@ -184,7 +184,7 @@ export function AgentDialog({
                             ? "Saving…"
                             : agent
                               ? "Save"
-                              : "Create & continue"}
+                              : "Save & continue"}
                     </Button>
                 </div>
             </form>

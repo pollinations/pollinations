@@ -5,22 +5,24 @@ import {
     buildUsageHeaders,
     FALLBACK_TARGET_HEADER,
     openaiUsageToUsage,
-    responsesUsageToUsage,
 } from "@shared/registry/usage-headers.ts";
 import {
+    CreateChatCompletionResponseSchema,
     type CreateResponseRequest,
-    type CreateResponseResponse,
-    CreateResponseResponseSchema,
-    type ResponseUsage,
 } from "@shared/schemas/openai.ts";
 import type { Context } from "hono";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
 import type { Env } from "@/env.ts";
 import { fixWavHeader } from "../routes/audio.js";
 import { communityEndpointGatewayContext } from "./communityEndpoint.ts";
-import { generateResponsePortkey } from "./generateResponsePortkey.js";
 import { generateTextPortkey } from "./generateTextPortkey.js";
 import { type ExpressLikeRequest, getRequestData } from "./requestUtils.js";
+import {
+    chatCompletionToResponse,
+    responseRequestToChatRequest,
+    responsesErrorResponse,
+    responsesStreamResponse,
+} from "./responses.js";
 import type { ChatCompletion, RequestData, ServiceError } from "./types.js";
 
 type TextContext = Context<Env>;
@@ -185,45 +187,6 @@ function sendOpenAIResponse(
         }),
         { headers },
     );
-}
-
-function sendResponsesApiResponse(
-    responseBody: CreateResponseResponse,
-    upstreamHeaders: Headers,
-): Response {
-    const headers = new Headers();
-    if (responseBody.usage && responseBody.model) {
-        const usage = responsesUsageToUsage(
-            responseBody.usage as ResponseUsage,
-        );
-        for (const [key, value] of Object.entries(
-            buildUsageHeaders(responseBody.model, usage),
-        )) {
-            headers.set(key, String(value));
-        }
-    }
-    const fallbackTarget = upstreamHeaders.get(
-        "x-portkey-last-used-option-index",
-    );
-    if (fallbackTarget) headers.set(FALLBACK_TARGET_HEADER, fallbackTarget);
-    headers.set("Content-Type", "application/json; charset=utf-8");
-
-    return new Response(JSON.stringify(responseBody), { headers });
-}
-
-function sendResponsesApiStream(upstream: Response): Response {
-    const headers = new Headers({
-        "Content-Type":
-            upstream.headers.get("content-type") ||
-            "text/event-stream; charset=utf-8",
-        "Cache-Control": "no-cache",
-        Connection: "keep-alive",
-    });
-    const fallbackTarget = upstream.headers.get(
-        "x-portkey-last-used-option-index",
-    );
-    if (fallbackTarget) headers.set(FALLBACK_TARGET_HEADER, fallbackTarget);
-    return new Response(upstream.body, { headers });
 }
 
 function sendTextContentResponse(
@@ -424,34 +387,66 @@ export async function handleChatCompletionLocal(
 export async function handleCreateResponseLocal(
     c: TextContext,
     body: CreateResponseRequest & Record<string, unknown>,
+    chatRequest = responseRequestToChatRequest(body),
 ): Promise<Response> {
-    syncTextEnvironment(c.env);
-
     try {
-        const upstream = await generateResponsePortkey(body, {
-            userApiKey: c.var.auth?.apiKey?.rawKey || "",
-            portkeyGatewayUrl: c.env.PORTKEY_GATEWAY_URL,
-        });
-        if (body.stream === true) return sendResponsesApiStream(upstream);
+        const agentId = (
+            c.var.model?.communityEndpoint as
+                | ({ agentId?: unknown } & Record<string, unknown>)
+                | undefined
+        )?.agentId;
+        if (agentId && body.tools?.length) {
+            const error = new Error(
+                "tools: managed prompt agents use only their configured MCP tools",
+            ) as ServiceError;
+            error.status = 400;
+            error.code = "unsupported_parameter";
+            (error as ServiceError & { param: string }).param = "tools";
+            error.details = {
+                error: {
+                    type: "invalid_request_error",
+                    code: "unsupported_parameter",
+                    param: "tools",
+                    message:
+                        "Managed prompt agents do not accept request-supplied tools",
+                },
+            };
+            throw error;
+        }
+        const chatResponse = await handleChatCompletionLocal(c, chatRequest);
+        if (body.stream === true) {
+            // Tracking and billing understand the canonical Chat stream. Keep
+            // one clone for them while adapting the client-facing stream.
+            c.var.track?.overrideResponseTracking(chatResponse.clone());
+            return responsesStreamResponse(chatResponse, body);
+        }
 
-        const responseText = await upstream.text();
-        let responseBody: CreateResponseResponse;
+        const responseText = await chatResponse.text();
+        let completion: ChatCompletion;
         try {
-            responseBody = CreateResponseResponseSchema.parse(
+            completion = CreateChatCompletionResponseSchema.parse(
                 JSON.parse(responseText),
                 { reportInput: true },
             );
         } catch (error) {
             const invalidResponse = new Error(
-                `Upstream returned an invalid Responses API object: ${error instanceof Error ? error.message : String(error)}`,
+                `Upstream returned invalid Chat Completions JSON: ${error instanceof Error ? error.message : String(error)}`,
             ) as ServiceError;
             invalidResponse.status = 502;
-            invalidResponse.upstreamStatus = 200;
+            invalidResponse.upstreamStatus = chatResponse.status;
             invalidResponse.details = responseText;
             throw invalidResponse;
         }
-        return sendResponsesApiResponse(responseBody, upstream.headers);
+        const headers = new Headers(chatResponse.headers);
+        headers.set("Content-Type", "application/json; charset=utf-8");
+        return new Response(
+            JSON.stringify(chatCompletionToResponse(completion, body)),
+            { status: chatResponse.status, headers },
+        );
     } catch (thrown: unknown) {
+        if ((thrown as ServiceError).status === 400) {
+            return responsesErrorResponse(thrown);
+        }
         throwTextError(thrown as ServiceError, c);
     }
 }

@@ -272,11 +272,12 @@ const ReasoningConfigSchema = z
         effort: z
             .enum(["none", "minimal", "low", "medium", "high", "xhigh"])
             .optional(),
-        summary: z.enum(["auto", "concise", "detailed"]).optional(),
-        // Deprecated by OpenAI; retained for wire compatibility.
-        generate_summary: z.enum(["auto", "concise", "detailed"]).optional(),
+        // Native reasoning summaries and reusable encrypted reasoning state
+        // require provider Responses support and are deferred from V1.
+        summary: z.null().optional(),
+        generate_summary: z.null().optional(),
     })
-    .passthrough();
+    .strict();
 export const CreateChatCompletionRequestSchema = z
     .object({
         messages: z.array(ChatCompletionRequestMessageSchema),
@@ -358,23 +359,32 @@ export const CreateResponseRequestSchema = z
             description:
                 "AI model for response generation. See /v1/models for models that list /v1/responses.",
         }),
-        input: z.union([z.string(), z.array(z.unknown())]),
+        input: z.union([z.string(), z.array(z.unknown()).min(1)]),
         instructions: z.string().nullish(),
-        reasoning: ReasoningConfigSchema.optional(),
-        max_output_tokens: z.number().int().min(0).optional(),
+        reasoning: ReasoningConfigSchema.nullish(),
+        max_output_tokens: z.number().int().min(0).nullish(),
         stream: z.boolean().optional().default(false),
-        // Response retrieval is not exposed, so persisted upstream state would
-        // be unreachable through Pollinations.
+        // V1 is deliberately stateless. Null/false are accepted because OpenAI
+        // SDKs commonly serialize optional fields that way.
         store: z.literal(false).optional().default(false),
+        previous_response_id: z.null().optional(),
+        conversation: z.null().optional(),
+        background: z.literal(false).nullish(),
+        include: z.array(z.string()).max(0).nullish(),
         text: z.record(z.string(), z.any()).optional(),
         tools: z.array(z.record(z.string(), z.any())).optional(),
         tool_choice: z.any().optional(),
         parallel_tool_calls: z.boolean().optional(),
-        metadata: z.record(z.string(), z.any()).optional(),
+        metadata: z.record(z.string(), z.string()).optional(),
         user: z.string().optional(),
+        temperature: z.number().min(0).max(2).nullish(),
+        top_p: z.number().min(0).max(1).nullish(),
+        frequency_penalty: z.number().min(-2).max(2).nullish(),
+        presence_penalty: z.number().min(-2).max(2).nullish(),
+        truncation: z.literal("disabled").nullish(),
         safe: SafeSchema,
     })
-    .passthrough();
+    .strict();
 
 export type CreateResponseRequest = z.infer<typeof CreateResponseRequestSchema>;
 

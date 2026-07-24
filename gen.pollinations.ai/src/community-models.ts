@@ -17,6 +17,7 @@ import { drizzle } from "drizzle-orm/d1";
 
 const COMMUNITY_TEXT_ENDPOINTS = [
     "/v1/chat/completions",
+    "/v1/responses",
     "/text",
     "/text/{prompt}",
 ];

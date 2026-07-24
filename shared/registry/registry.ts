@@ -125,7 +125,6 @@ export type ModelDefinition = {
     outputModalities?: string[];
     tools?: boolean;
     reasoning?: boolean;
-    responses?: boolean;
     search?: boolean;
     codeExecution?: boolean;
     contextLength?: number;

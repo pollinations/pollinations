@@ -1,6 +1,10 @@
 import { type Context, Hono } from "hono";
 import { bodyLimit } from "hono/body-limit";
-import { resolver as baseResolver, describeRoute } from "hono-openapi";
+import {
+    resolver as baseResolver,
+    describeRoute,
+    validator as openApiValidator,
+} from "hono-openapi";
 import {
     generateEmbeddings,
     getEmbeddingProviderModelId,
@@ -61,7 +65,6 @@ import { z } from "zod";
 import {
     applySafety,
     applySafetyToChatRequest,
-    applySafetyToResponseRequest,
     applySafetyToTexts,
     withSafetyHeaders,
 } from "@/middleware/safety.ts";
@@ -80,6 +83,10 @@ import {
     handleSimpleTextLocal,
     handleTextContentLocal,
 } from "@/text/handler.ts";
+import {
+    responseRequestToChatRequest,
+    responsesErrorResponse,
+} from "@/text/responses.ts";
 import { generationAccess } from "@/utils/generation-access.ts";
 import {
     type GenerationModelEntry,
@@ -105,6 +112,25 @@ const factory = createFactory<Env>();
 const textBodyLimit = bodyLimit({
     maxSize: 20 * 1024 * 1024,
 });
+const responsesJsonValidator = openApiValidator(
+    "json",
+    CreateResponseRequestSchema,
+    (result, c) => {
+        if (result.success) return;
+        const issue = result.error[0];
+        return c.json(
+            {
+                error: {
+                    message: issue?.message || "Invalid Responses API request",
+                    type: "invalid_request_error",
+                    param: issue?.path?.join(".") || null,
+                    code: "invalid_request_error",
+                },
+            },
+            400,
+        );
+    },
+);
 // Shared handler for image and video generation (used by both /image/ and /video/ routes)
 const imageVideoHandlers = factory.createHandlers(
     resolveModel("generate.image"),
@@ -195,17 +221,28 @@ const chatCompletionHandlers = factory.createHandlers(
 
 const createResponseHandlers = factory.createHandlers(
     textBodyLimit,
-    validator("json", CreateResponseRequestSchema),
+    responsesJsonValidator,
     resolveModel("generate.text"),
     track("generate.text"),
     generationAccess,
     async (c) => {
-        const requestBody = await applySafetyToResponseRequest(c, {
+        const requestBody = {
             ...(c.req.valid("json" as never) as CreateResponseRequest),
             model: c.var.model.resolved,
-        });
+        };
+        let adaptedRequest: CreateChatCompletionRequest;
+        try {
+            adaptedRequest = responseRequestToChatRequest(requestBody);
+        } catch (error) {
+            return responsesErrorResponse(error);
+        }
+        const chatRequest = await applySafetyToChatRequest(c, adaptedRequest);
 
-        const response = await handleCreateResponseLocal(c, requestBody);
+        const response = await handleCreateResponseLocal(
+            c,
+            requestBody,
+            chatRequest,
+        );
         assertStreamContentType(c, response);
         return withSafetyHeaders(c, response);
     },
@@ -650,9 +687,11 @@ export const proxyRoutes = new Hono<Env>()
             tags: ["✍️ Text"],
             summary: "Create Response",
             description: [
-                "Generate an OpenAI Responses API-compatible response for models that list `/v1/responses` in `/v1/models`.",
+                "Generate an OpenAI Responses API-compatible response through the same provider stack as Chat Completions. All text models that list `/v1/responses` in `/v1/models` support the endpoint.",
                 "",
-                "Supports streaming with `stream: true` and extractable reasoning summaries through `reasoning.summary`. Responses are not stored upstream, so `store` must be `false` or omitted.",
+                "This first version is stateless, like OpenRouter's Responses API: include the complete conversation and tool history in every request. `store` must be `false` or omitted; `previous_response_id`, `conversation`, `background`, reasoning summaries, and encrypted reusable reasoning state are not supported.",
+                "",
+                "Supports text, image, and inline file input, structured text output, custom function tools, and standard Responses SSE lifecycle events. Hosted OpenAI tools are not supported. Managed prompt agents execute only their configured MCP tools and return the final assistant message.",
             ].join("\n"),
             responses: {
                 200: {

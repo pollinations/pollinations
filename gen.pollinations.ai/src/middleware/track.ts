@@ -41,7 +41,6 @@ import {
     FALLBACK_TARGET_HEADER,
     openaiUsageToUsage,
     parseUsageHeaders,
-    responsesUsageToUsage,
 } from "@shared/registry/usage-headers.ts";
 import type {
     EventType,
@@ -54,11 +53,11 @@ import {
     usageToEventParams,
 } from "@shared/schemas/generation-event.ts";
 import {
+    type CompletionUsage,
     CompletionUsageSchema,
     type ContentFilterResult,
     ContentFilterResultSchema,
     ContentFilterSeveritySchema,
-    ResponseUsageSchema,
 } from "@shared/schemas/openai.ts";
 import { getRoutePath, removeUnset } from "@shared/util.ts";
 import { eq } from "drizzle-orm";
@@ -825,7 +824,7 @@ async function extractUsageAndContentFilterResultsStream(
     contentFilterResults: GenerationEventContentFilterParams;
 }> {
     const log = getLogger(["hono", "track", "stream"]);
-    const ChatEventSchema = z.object({
+    const EventSchema = z.object({
         model: z.string(),
         usage: CompletionUsageSchema.nullish(),
         choices: z.array(
@@ -841,27 +840,19 @@ async function extractUsageAndContentFilterResultsStream(
             )
             .nullish(),
     });
-    const ResponseCompletedEventSchema = z.object({
-        type: z.literal("response.completed"),
-        response: z.object({
-            model: z.string(),
-            usage: ResponseUsageSchema,
-        }),
-    });
 
     let model: string | undefined;
-    let usage: Usage | undefined;
+    let usage: CompletionUsage | undefined;
     let promptFilterResults: ContentFilterResult = {};
     let completionFilterResults: ContentFilterResult = {};
     const streamEvents: unknown[] = [];
 
     for await (const event of events) {
-        const chatResult = ChatEventSchema.safeParse(event);
-        const responseResult = ResponseCompletedEventSchema.safeParse(event);
+        const parseResult = EventSchema.safeParse(event);
         streamEvents.push(event);
 
         const incomingPromptFilterResults =
-            chatResult.data?.prompt_filter_results?.map(
+            parseResult.data?.prompt_filter_results?.map(
                 (entry) => entry.content_filter_results,
             ) || [];
 
@@ -871,26 +862,19 @@ async function extractUsageAndContentFilterResultsStream(
         ]);
 
         const incomingCompletionFilterResults =
-            chatResult.data?.choices[0]?.content_filter_results;
+            parseResult.data?.choices[0]?.content_filter_results;
 
         completionFilterResults = mergeContentFilterResults([
             incomingCompletionFilterResults || {},
             completionFilterResults,
         ]);
 
-        if (chatResult.data?.usage) {
+        if (parseResult.data?.usage) {
             if (usage) {
                 log.warn("Multiple usage objects found in event stream");
             }
-            usage = openaiUsageToUsage(chatResult.data.usage);
-            model = chatResult.data.model;
-        }
-        if (responseResult.data) {
-            if (usage) {
-                log.warn("Multiple usage objects found in event stream");
-            }
-            usage = responsesUsageToUsage(responseResult.data.response.usage);
-            model = responseResult.data.response.model;
+            usage = parseResult.data?.usage;
+            model = parseResult.data?.model;
         }
     }
 
@@ -910,7 +894,7 @@ async function extractUsageAndContentFilterResultsStream(
     return {
         modelUsage: {
             model,
-            usage,
+            usage: openaiUsageToUsage(usage),
             output: streamEvents.length > 0 ? { streamEvents } : undefined,
         },
         contentFilterResults,

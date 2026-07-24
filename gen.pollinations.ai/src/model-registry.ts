@@ -20,6 +20,7 @@ import {
 const REGISTRY_TTL_MS = 60_000;
 const TEXT_MODEL_ENDPOINTS = [
     "/v1/chat/completions",
+    "/v1/responses",
     "/text",
     "/text/{prompt}",
 ];
@@ -67,14 +68,9 @@ function eventTypeForCategory(category: Category): EventType {
     return "generate.image";
 }
 
-function supportedEndpointsForDefinition(
-    eventType: EventType,
-    definition: ModelDefinition<string>,
-): string[] {
+function supportedEndpointsForEventType(eventType: EventType): string[] {
     if (eventType === "generate.text") {
-        return definition.responses
-            ? [...TEXT_MODEL_ENDPOINTS, "/v1/responses"]
-            : TEXT_MODEL_ENDPOINTS;
+        return TEXT_MODEL_ENDPOINTS;
     }
     if (eventType === "generate.audio") return ["/audio/{text}"];
     if (eventType === "generate.embedding") return ["/v1/embeddings"];
@@ -89,10 +85,7 @@ const STATIC_ENTRIES: GenerationModelEntry[] = getModels().map((modelName) => {
         id: modelName,
         aliases: definition.aliases,
         eventType,
-        supportedEndpoints: supportedEndpointsForDefinition(
-            eventType,
-            definition,
-        ),
+        supportedEndpoints: supportedEndpointsForEventType(eventType),
         definition,
         info: modelInfoFromDefinition(modelName, definition),
         visible: definition.hidden !== true,

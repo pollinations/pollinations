@@ -330,11 +330,9 @@ describe("gen worker routing", () => {
         });
         expect(responsesModel?.supported_endpoints).toContain("/v1/responses");
         expect(gemmaModel).toBeDefined();
-        expect(gemmaModel?.supported_endpoints).not.toContain("/v1/responses");
+        expect(gemmaModel?.supported_endpoints).toContain("/v1/responses");
         expect(mistralModel).toBeDefined();
-        expect(mistralModel?.supported_endpoints).not.toContain(
-            "/v1/responses",
-        );
+        expect(mistralModel?.supported_endpoints).toContain("/v1/responses");
         expect(imageModel?.supported_endpoints).toContain("/image/{prompt}");
         expect(audioModel).toBeDefined();
         expect(embeddingModel).toBeDefined();

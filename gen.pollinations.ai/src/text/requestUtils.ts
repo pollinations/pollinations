@@ -31,6 +31,7 @@ export function getRequestData(req: ExpressLikeRequest): RequestData {
         // Passthrough params not handled by validateTextGenerationParams
         tools: data.tools as unknown[] | undefined,
         tool_choice: data.tool_choice,
+        parallel_tool_calls: data.parallel_tool_calls,
         modalities: data.modalities as string[] | undefined,
         audio: data.audio as Record<string, unknown> | undefined,
         response_format: data.response_format as RequestData["response_format"],

@@ -49,6 +49,7 @@ export async function getCommunityModelRegistryEntries(
             ownerUserId: schema.communityEndpoint.ownerUserId,
             ownerGithubUsername: schema.user.githubUsername,
             name: schema.communityEndpoint.name,
+            title: schema.communityEndpoint.title,
             description: schema.communityEndpoint.description,
             modality: schema.communityEndpoint.modality,
             imagePricing: schema.communityEndpoint.imagePricing,
@@ -86,6 +87,7 @@ export async function getCommunityModelRegistryEntries(
             ownerUserId: row.ownerUserId,
             modelId,
             name: row.name,
+            title: row.title,
             description: row.description,
             modality: normalizeCommunityEndpointModality(row.modality),
             imagePricing: normalizeCommunityEndpointImagePricing(

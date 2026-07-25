@@ -3,6 +3,7 @@ import { createAuth } from "./auth.ts";
 import type { Env } from "./env.ts";
 import { frontendApi } from "./frontend-api.ts";
 import { adminRoutes } from "./routes/admin.ts";
+import { statusNoticeRoutes } from "./routes/status-notice.ts";
 import { stripeWebhooksRoutes } from "./routes/stripe-webhooks.ts";
 
 // API keys are created and updated exclusively through our own /api/api-keys
@@ -32,6 +33,7 @@ export const api = new Hono<Env>()
     .route("/auth", authRoutes)
     .route("/", frontendApi)
     .route("/webhooks", stripeWebhooksRoutes)
-    .route("/admin", adminRoutes);
+    .route("/admin", adminRoutes)
+    .route("/status-notice", statusNoticeRoutes);
 
 export type ApiRoutes = typeof api;

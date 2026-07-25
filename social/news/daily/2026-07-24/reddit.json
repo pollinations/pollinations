@@ -1,0 +1,15 @@
+{
+  "platform": "reddit",
+  "scope": "daily",
+  "date": "2026-07-24",
+  "period_start": "2026-07-24",
+  "period_end": "2026-07-24",
+  "generated_at": "2026-07-25T06:55:31.040074+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-07-24/images/reddit.jpg"
+    }
+  ],
+  "title": "SVG, music clips, and model routing updates",
+  "text": "Today was mostly plumbing, plus two new output types.\n\nRecraft vector generation is now available, so apps can request SVG output instead of treating every visual result as pixels. Lyria 3 Clip also landed for short music generation, with clips up to 30 seconds.\n\nThe NanoBanana family (NanoBanana, NanoBanana 2, NanoBanana 2 Lite, and NanoBanana Pro) and Seedream 4.5 Pro were moved to verified OpenRouter routes. This should make routing less surprising and gives us a cleaner provider path for those models.\n\nKlein got more defensive around GPU out-of-memory failures. VRAM remains finite, despite what an eager queue believes, but failures should now recover more gracefully rather than taking down work around them.\n\nCommunity-model publishing was opened up for Takax62, low-volume model stats are now included, and the API docs were regenerated. The stats change is small but useful: models that are quiet should still be visible when people are deciding what to build against.\n\n13 PRs merged total. Changes are in the repo: https://github.com/pollinations/pollinations\n\nAPI reference: https://github.com/pollinations/pollinations/blob/master/APIDOCS.md\n\nThe routing changes and OOM handling are the parts most worth stress-testing. Reports with request details and reproduction steps are especially useful."
+}

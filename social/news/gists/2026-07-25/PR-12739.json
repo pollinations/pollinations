@@ -1,0 +1,33 @@
+{
+  "pr_number": 12739,
+  "title": "chore: update app metrics 2026-07-25",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/12739",
+  "merged_at": "2026-07-25T05:07:37Z",
+  "labels": [],
+  "pr_body_excerpt": "Daily automated update of app metrics, health checks, and greenhouse",
+  "gist": {
+    "category": "community",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "The greenhouse got counted",
+    "blurb": "The daily garden walk is complete. App metrics, health checks, and the greenhouse roster have been refreshed for the hive.",
+    "summary": "Refreshed the app catalog metrics, health-check data, and greenhouse listings in apps/APPS.md and apps/GREENHOUSE.md for 2026-07-25.",
+    "impact": "Community builders and maintainers get an up-to-date view of listed apps and their greenhouse health status.",
+    "keywords": [
+      "community",
+      "apps",
+      "metrics",
+      "health-checks",
+      "greenhouse"
+    ],
+    "visual_concept": "A cozy greenhouse maintenance scene: Polli, wearing a tiny gardener's visor and carrying a clipboard, checks labels on rows of code-plants while a small CRT monitor robot displays updated app-health charts. Freshly counted flowers and sprouting terminal pots represent the refreshed app catalog and metrics.",
+    "image_prompt": "Cozy pixel art scene inside a warm community greenhouse, where the cute pixel art bee mascot with a yellow body, dark brown stripes, pink blush, light blue wings, and a tiny gardener visor checks a clipboard beside code-plants labeled with app metrics; a chunky CRT monitor robot shows a simple healthy green chart. Lime green (#ecf874) appears prominently in glowing plant pots and screen accents, with flowers and vines throughout. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, subtle scanlines, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-25/PR-12739.jpg",
+    "prompt": "Cozy pixel art scene inside a warm community greenhouse, where the cute pixel art bee mascot with a yellow body, dark brown stripes, pink blush, light blue wings, and a tiny gardener visor checks a clipboard beside code-plants labeled with app metrics; a chunky CRT monitor robot shows a simple healthy green chart. Lime green (#ecf874) appears prominently in glowing plant pots and screen accents, with flowers and vines throughout. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, subtle scanlines, emotionally warm."
+  },
+  "generated_at": "2026-07-25T05:08:36.113601+00:00"
+}

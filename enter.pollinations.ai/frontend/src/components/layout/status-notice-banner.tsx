@@ -1,5 +1,4 @@
-import { XIcon } from "@pollinations/ui";
-import { cn } from "@pollinations/ui";
+import { cn, XIcon } from "@pollinations/ui";
 import { type FC, useEffect, useState } from "react";
 
 interface StatusNotice {
@@ -19,8 +18,8 @@ export const StatusNoticeBanner: FC<{ className?: string }> = ({
 
     useEffect(() => {
         fetch("/api/status-notice")
-            .then((r) => r.json())
-            .then((d: { notice: StatusNotice | null }) => {
+            .then((r) => r.json() as Promise<{ notice: StatusNotice | null }>)
+            .then((d) => {
                 setNotice(d.notice);
                 if (d.notice) {
                     try {

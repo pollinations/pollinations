@@ -785,7 +785,7 @@ export const proxyRoutes = new Hono<Env>()
             tags: ["🖼️ Image"],
             summary: "Generate Image",
             description: [
-                "Generate an image from a text prompt. Returns JPEG or PNG.",
+                "Generate an image from a text prompt. Returns JPEG, PNG, or SVG depending on the selected model.",
                 "",
                 `**Available models:** ${imageModelNames}. \`${DEFAULT_IMAGE_MODEL}\` is the default.`,
                 "",
@@ -802,6 +802,12 @@ export const proxyRoutes = new Hono<Env>()
                             },
                         },
                         "image/png": {
+                            schema: {
+                                type: "string",
+                                format: "binary",
+                            },
+                        },
+                        "image/svg+xml": {
                             schema: {
                                 type: "string",
                                 format: "binary",
@@ -923,7 +929,7 @@ export const proxyRoutes = new Hono<Env>()
                 "",
                 "**Output formats:** mp3 (default), opus, aac, flac, wav, pcm",
                 "",
-                "**Music generation:** Set `model=elevenmusic`, `stable-audio-3-medium`, or `stable-audio-3-large` to generate music instead of speech. `elevenmusic` supports `duration` (3-300 seconds) and `instrumental` mode; `stable-audio-3-medium`/`stable-audio-3-large` support `seconds` (1-380), `steps`, `seed`, and `negative_prompt`. Use `POST /v1/audio/speech` with multipart `reference_audio` for style transfer (medium/large), or `POST /v1/audio/music/upload` to register a source track for inpainting.",
+                "**Music generation:** Set `model=elevenmusic`, `lyria-3-clip`, `stable-audio-3-medium`, or `stable-audio-3-large` to generate music instead of speech. `lyria-3-clip` returns a fixed 30-second MP3 clip; `elevenmusic` supports `duration` (3-300 seconds) and `instrumental` mode; `stable-audio-3-medium`/`stable-audio-3-large` support `seconds` (1-380), `steps`, `seed`, and `negative_prompt`. Use `POST /v1/audio/speech` with multipart `reference_audio` for style transfer (medium/large), or `POST /v1/audio/music/upload` to register a source track for inpainting.",
             ].join("\n"),
             responses: {
                 200: {
@@ -942,7 +948,7 @@ export const proxyRoutes = new Hono<Env>()
             z.object({
                 text: z.string().min(1).meta({
                     description:
-                        "Text to convert to speech, or a music description when model=elevenmusic",
+                        "Text to convert to speech, or a music description for a music-generation model",
                     example: "Hello, welcome to Pollinations!",
                 }),
             }),
@@ -963,12 +969,12 @@ export const proxyRoutes = new Hono<Env>()
                     .default("mp3")
                     .meta({
                         description:
-                            "Audio output format (TTS only). CSM supports mp3, opus, flac, wav, and pcm; Qwen TTS currently returns WAV regardless of this setting; eleven-sfx supports mp3 only.",
+                            "Audio output format. CSM supports mp3, opus, flac, wav, and pcm; Qwen TTS currently returns WAV regardless of this setting; lyria-3-clip and eleven-sfx support mp3 only.",
                         example: "mp3",
                     }),
                 model: z.string().optional().meta({
                     description:
-                        "Audio model: TTS (default) or elevenmusic for music generation",
+                        "Audio model: TTS (default) or a music-generation model such as lyria-3-clip",
                     example: "tts-1",
                 }),
                 duration: z
@@ -978,7 +984,7 @@ export const proxyRoutes = new Hono<Env>()
                     .pipe(z.number().min(0.5).max(300).optional())
                     .meta({
                         description:
-                            "Music duration in seconds, 3-300 (elevenmusic only)",
+                            "Music duration in seconds (elevenmusic 3-300; lyria-3-clip fixed at 30)",
                         example: "30",
                     }),
                 seconds: z.coerce.number().min(1).max(380).optional().meta({

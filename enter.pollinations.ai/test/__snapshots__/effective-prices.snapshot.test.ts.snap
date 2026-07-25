@@ -782,6 +782,14 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.0000003,
     },
   },
+  "lyria-3-clip": {
+    "cost": {
+      "completionAudioTokens": 0.04,
+    },
+    "price": {
+      "completionAudioTokens": 0.04,
+    },
+  },
   "mercury": {
     "cost": {
       "completionTextTokens": 0.00000075,
@@ -1164,16 +1172,6 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.000002,
     },
   },
-  "polly": {
-    "cost": {
-      "completionTextTokens": 0,
-      "promptTextTokens": 0,
-    },
-    "price": {
-      "completionTextTokens": 0,
-      "promptTextTokens": 0,
-    },
-  },
   "qwen-coder": {
     "cost": {
       "completionTextTokens": 0.00000022,
@@ -1284,6 +1282,14 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptCacheWriteTokens": 0.00000184375,
       "promptCachedTokens": 0.000000295,
       "promptTextTokens": 0.000001475,
+    },
+  },
+  "recraft-v4.1-vector": {
+    "cost": {
+      "completionImageTokens": 0.08,
+    },
+    "price": {
+      "completionImageTokens": 0.08,
     },
   },
   "sana": {

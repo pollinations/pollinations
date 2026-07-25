@@ -32,7 +32,7 @@ const QUALITY_MAP: Record<string, string> = { standard: "medium", hd: "high" };
 const PASSTHROUGH_PARAMS = ["safe", "transparent", "guidance_scale"] as const;
 
 function imageResponse(
-    data: { url?: string; b64_json?: string },
+    data: { url?: string; b64_json?: string; media_type?: string },
     prompt: string,
     usage: OpenAIImageUsage,
 ) {
@@ -222,6 +222,9 @@ export async function handleImageGeneration(c: Context<Env>) {
     });
     c.var.track.overrideResponseTracking(response.clone());
     const usage = responseImageUsage(c, response);
+    const mediaType = response.headers.get("content-type") || undefined;
+    const mediaData =
+        mediaType === "image/svg+xml" ? { media_type: mediaType } : {};
 
     if (body.response_format === "url") {
         const origin = getPublicOrigin(c);
@@ -241,7 +244,11 @@ export async function handleImageGeneration(c: Context<Env>) {
         return withSafetyHeaders(
             c,
             c.json(
-                imageResponse({ url: imageUrl.toString() }, safePrompt, usage),
+                imageResponse(
+                    { url: imageUrl.toString(), ...mediaData },
+                    safePrompt,
+                    usage,
+                ),
             ),
         );
     }
@@ -249,7 +256,13 @@ export async function handleImageGeneration(c: Context<Env>) {
     const base64 = arrayBufferToBase64(await response.arrayBuffer());
     return withSafetyHeaders(
         c,
-        c.json(imageResponse({ b64_json: base64 }, safePrompt, usage)),
+        c.json(
+            imageResponse(
+                { b64_json: base64, ...mediaData },
+                safePrompt,
+                usage,
+            ),
+        ),
     );
 }
 
@@ -270,10 +283,22 @@ export async function handleImageEdit(c: Context<Env>) {
     });
     c.var.track.overrideResponseTracking(response.clone());
     const usage = responseImageUsage(c, response);
+    const mediaType = response.headers.get("content-type") || undefined;
 
     const base64 = arrayBufferToBase64(await response.arrayBuffer());
     return withSafetyHeaders(
         c,
-        c.json(imageResponse({ b64_json: base64 }, safePrompt, usage)),
+        c.json(
+            imageResponse(
+                {
+                    b64_json: base64,
+                    ...(mediaType === "image/svg+xml"
+                        ? { media_type: mediaType }
+                        : {}),
+                },
+                safePrompt,
+                usage,
+            ),
+        ),
     );
 }

@@ -494,7 +494,7 @@ export const TEXT_SERVICES = {
         category: "text",
         addedDate: new Date("2025-12-18").getTime(),
         priceMultiplier: 1,
-        paidOnly: false,
+        paidOnly: true,
         cost: {
             promptTextTokens: perMillion(0.1), // per 1M tokens
             promptCachedTokens: perMillion(0.01), // per 1M tokens
@@ -1571,29 +1571,6 @@ export const TEXT_SERVICES = {
         tools: true,
         reasoning: true,
         contextLength: 256000,
-        isSpecialized: false,
-    },
-    "polly": {
-        aliases: ["pollinations-ai", "polly-ai"],
-        provider: "community",
-        brand: "Pollinations",
-        category: "text",
-        addedDate: new Date("2026-02-24").getTime(),
-        priceMultiplier: 1,
-        cost: {
-            promptTextTokens: perMillion(0),
-            completionTextTokens: perMillion(0),
-        },
-        title: "Polli by @Itachi-1824",
-        description:
-            "Community-built assistant with GitHub, code search and web tools (alpha)",
-        inputModalities: ["text", "image"],
-        outputModalities: ["text"],
-        maxReferenceImages: 3, // Pollinations community model cap.
-        tools: true,
-        reasoning: true,
-        codeExecution: true,
-        search: true,
         isSpecialized: false,
     },
     "qwen-coder-large": {

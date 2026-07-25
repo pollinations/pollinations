@@ -427,10 +427,6 @@ const models: ModelDefinition[] = [
         transform: stripReasoning,
     },
     {
-        name: "polly",
-        config: portkeyConfig["polly"],
-    },
-    {
         name: "qwen-safety",
         config: portkeyConfig["Qwen3Guard-Gen-8B"],
         // Safety/guard model, no reasoning mode.

@@ -6,7 +6,10 @@
 import { getVideoModelIds } from "@shared/registry/image.ts";
 import debug from "debug";
 import { callNovaReelAPI } from "./models/novaReelModel.ts";
-import { callHappyHorseAPI } from "./models/openRouterVideoModel.ts";
+import {
+    callHappyHorseAPI,
+    callOpenRouterGrokVideoAPI,
+} from "./models/openRouterVideoModel.ts";
 import {
     callPrunaVideo720API,
     callPrunaVideo1080API,
@@ -24,7 +27,6 @@ import {
     callWanPro1080pAPI,
     callWanProAPI,
 } from "./models/wanVideoModel.ts";
-import { callXaiVideoAPI } from "./models/xaiVideoModel.ts";
 import type { ImageParams } from "./params.ts";
 
 export type { VideoGenerationResult };
@@ -75,7 +77,7 @@ export async function createAndReturnVideo(
             result = await callNovaReelAPI(prompt, safeParams, requestId);
             break;
         case "grok-video-pro":
-            result = await callXaiVideoAPI(prompt, safeParams);
+            result = await callOpenRouterGrokVideoAPI(prompt, safeParams);
             break;
         case "happyhorse-1.1":
             result = await callHappyHorseAPI(prompt, safeParams);

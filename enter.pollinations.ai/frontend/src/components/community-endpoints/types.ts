@@ -7,6 +7,8 @@ import {
     type CommunityEndpointPrices,
     type CommunityEndpointVisibility,
     communityEndpointPriceFieldsForModality,
+    MAX_COMMUNITY_PRICE_PER_IMAGE,
+    MAX_COMMUNITY_PRICE_PER_MILLION_TOKENS,
     MIN_COMMUNITY_PRICE_PER_MILLION_TOKENS,
 } from "@shared/community-endpoints.ts";
 import type { Usage } from "@shared/registry/registry.ts";
@@ -144,9 +146,14 @@ export function isValidPriceInput(
     if (!trimmed) return true;
     if (trimmed.includes(",")) return false;
     const parsed = Number(trimmed);
+    const maximum =
+        priceUnit === "image"
+            ? MAX_COMMUNITY_PRICE_PER_IMAGE
+            : MAX_COMMUNITY_PRICE_PER_MILLION_TOKENS;
     return (
         Number.isFinite(parsed) &&
         parsed >= 0 &&
+        parsed <= maximum &&
         (priceUnit === "image" ||
             parsed === 0 ||
             parsed >= MIN_COMMUNITY_PRICE_PER_MILLION_TOKENS)
@@ -205,7 +212,7 @@ function formPricesToPayload(
                 const unit =
                     modalityField.priceUnit === "image" ? "image" : "1M units";
                 throw new Error(
-                    `Prices must be 0 (free) or a positive amount per ${unit}, using a dot decimal`,
+                    `Prices must be within the allowed range per ${unit}, using a dot decimal`,
                 );
             }
             return [

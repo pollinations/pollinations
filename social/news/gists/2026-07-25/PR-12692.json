@@ -1,0 +1,33 @@
+{
+  "pr_number": 12692,
+  "title": "feat: separate community model title from description",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/12692",
+  "merged_at": "2026-07-25T10:30:20Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds a nullable `title` column (one-line migration, no curated data).\n- Required on create, optional on update; 42-char title, 160-char description.\n- Read paths go through `communityEndpointTitle()`, which falls back to\n  description → model slug, so `/models` output is unchanged for every existing\n  row and nothing has to be backfilled before this ships.\n- Shows the title on model cards and in `polli my-models list`.\n\nReplaces the earlier data migration on this branch, which hardcoded 86\n`WHERE name = … AND description = …` pairs — a snapshot of D1 on the day it was\nwritten. Rows added before merge would silently get `substr(name, 1, 42)` (the\nraw slug), staging/local produce different results, and `name` is not unique\nacross owners. Backfilling existing titles is a one-time D1 edit, done separately.\n\nPrior work on this branch is preserved at `backup/add-model-modal-ui-elliot`.\n\nValidation:\n- `gen` + `enter` typechecks clean\n- 44 tests pass (`community-endpoints.test.ts` 28, `tracking-observability.test.ts` 16)\n- biome check clean",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Models get name tags",
+    "blurb": "Community models can now carry a proper short title alongside their description. The raw slug may return to its natural habitat: URLs and terminal corners.",
+    "summary": "Community endpoints now support a required 42-character title on creation and a separate 160-character description, with model cards and `polli my-models list` displaying the title while existing `/models` output safely falls back to description or slug.",
+    "impact": "Model publishers can give their creations clear, readable names without breaking existing model listings or requiring an immediate backfill of older endpoints.",
+    "keywords": [
+      "community-models",
+      "model-titles",
+      "community-endpoints",
+      "polli-cli",
+      "model-cards"
+    ],
+    "visual_concept": "Depict a cozy community-model garden where each code-plant has a tidy handwritten name tag and a longer description card beneath it. Polli, wearing tiny librarian glasses, carefully labels a flowering model plant while a retro terminal shows a friendly `my-models` list; the visual metaphor is giving models human-readable identities while their technical slugs remain quietly useful in the soil.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-dark-brown striped bee mascot with black antennae, oval eyes, bright pink rectangular cheek blushes, a small smile, and rounded translucent light-blue wings, wearing tiny librarian glasses as she adds a neat name tag to a flowering code-plant in a lime green (#ecf874) garden; a warm CRT terminal nearby displays a simple pixel-font `MY MODELS` list, with old slug labels tucked gently into the soil. Cozy 8-bit pixel art aesthetic, soft pastel mint-lavender-peach gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, subtle scanlines, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-25/PR-12692.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-dark-brown striped bee mascot with black antennae, oval eyes, bright pink rectangular cheek blushes, a small smile, and rounded translucent light-blue wings, wearing tiny librarian glasses as she adds a neat name tag to a flowering code-plant in a lime green (#ecf874) garden; a warm CRT terminal nearby displays a simple pixel-font `MY MODELS` list, with old slug labels tucked gently into the soil. Cozy 8-bit pixel art aesthetic, soft pastel mint-lavender-peach gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, subtle scanlines, emotionally warm."
+  },
+  "generated_at": "2026-07-25T10:31:18.815798+00:00"
+}

@@ -199,6 +199,9 @@ export const communityEndpoint = sqliteTable("community_endpoint", {
     .notNull()
     .references(() => user.id, { onDelete: "cascade" }),
   name: text("name").notNull(),
+  // Nullable: rows predating titles fall back to communityEndpointTitle().
+  // Required on create, so only the pre-existing backlog is null.
+  title: text("title"),
   description: text("description"),
   modality: text("modality").default("text").notNull(),
   // Image endpoints only: "request" bills the fixed per-image price once per

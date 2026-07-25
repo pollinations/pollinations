@@ -1,9 +1,9 @@
 import type { Logger } from "@logtape/logtape";
 import { ensureUpstreamOk, UpstreamError } from "@shared/error.ts";
 import {
-    AUDIO_SERVICES,
+    AUDIO_VOICES,
     type AudioModelName,
-    ELEVENLABS_VOICES,
+    CSM_VOICES,
     resolveElevenLabsVoiceId,
 } from "@shared/registry/audio.ts";
 import type { ModelDefinition } from "@shared/registry/registry.ts";
@@ -27,6 +27,7 @@ import { frontendKeyRateLimit } from "@/middleware/rate-limit-durable.ts";
 import { edgeRateLimit } from "@/middleware/rate-limit-edge.ts";
 import { applySafety, withSafetyHeaders } from "@/middleware/safety.ts";
 import { track } from "@/middleware/track.ts";
+import googleCloudAuth from "@/text/auth/googleCloudAuth.ts";
 import { arrayBufferToBase64 } from "@/util.ts";
 import { requireGenerationAccess } from "@/utils/generation-access.ts";
 import { transcribeWithAssemblyAi } from "./assemblyai-transcription.ts";
@@ -45,7 +46,7 @@ const CreateSpeechRequestSchema = z
             .string()
             .default("alloy")
             .meta({
-                description: `The voice to use. Can be any preset name (${ELEVENLABS_VOICES.join(", ")}) OR a custom ElevenLabs voice ID (UUID from your dashboard).`,
+                description: `The voice to use. Model-specific presets include ${AUDIO_VOICES.join(", ")}; ElevenLabs models also accept a custom voice ID.`,
                 example: "rachel",
             }),
         response_format: z
@@ -53,12 +54,12 @@ const CreateSpeechRequestSchema = z
             .default("mp3")
             .meta({
                 description:
-                    "The audio format for the output. Qwen TTS currently returns WAV regardless of this setting; eleven-sfx supports mp3 only (other values are rejected).",
+                    "The audio format for the output. CSM supports mp3, opus, flac, wav, and pcm; Qwen TTS currently returns WAV regardless of this setting; lyria-3-clip and eleven-sfx support mp3 only.",
                 example: "mp3",
             }),
         duration: z.number().min(0.5).max(300).optional().meta({
             description:
-                "Output duration in seconds (elevenmusic 3-300; eleven-sfx 0.5-30)",
+                "Output duration in seconds (elevenmusic 3-300; lyria-3-clip fixed at 30; eleven-sfx 0.5-30)",
             example: 30,
         }),
         seconds: z.number().min(1).max(380).optional().meta({
@@ -210,9 +211,16 @@ export function fixWavHeader(buffer: ArrayBuffer): ArrayBuffer {
     return buffer; // no data chunk found
 }
 
-export async function generateSpeech(opts: {
-    modelName: string;
-    modelId: string;
+const ELEVENLABS_TTS_MODEL_IDS = {
+    elevenlabs: "eleven_v3",
+    elevenflash: "eleven_flash_v2_5",
+    "eleven-multilingual-v2": "eleven_multilingual_v2",
+} as const satisfies Partial<Record<AudioModelName, string>>;
+
+type ElevenLabsTtsModelName = keyof typeof ELEVENLABS_TTS_MODEL_IDS;
+
+export async function generateElevenLabsSpeech(opts: {
+    modelName: ElevenLabsTtsModelName;
     text: string;
     voice: string;
     responseFormat: string;
@@ -220,8 +228,8 @@ export async function generateSpeech(opts: {
     apiKey: string;
     log: Logger;
 }): Promise<Response> {
-    const { modelName, modelId, text, voice, responseFormat, apiKey, log } =
-        opts;
+    const { modelName, text, voice, responseFormat, apiKey, log } = opts;
+    const modelId = ELEVENLABS_TTS_MODEL_IDS[modelName];
 
     if (!apiKey) {
         throw new UpstreamError(500 as ContentfulStatusCode, {
@@ -593,7 +601,7 @@ export async function generateMusic(
         });
     }
 
-    const modelId = AUDIO_SERVICES.elevenmusic.modelId;
+    const modelId = "music_v2";
     let uploadedSongId: string | undefined;
     let compositionPlan = opts.compositionPlan;
     let conditioningRef = opts.conditioningRef;
@@ -765,7 +773,7 @@ export async function generateSoundEffect(opts: {
         });
     }
 
-    const modelId = AUDIO_SERVICES["eleven-sfx"].modelId;
+    const modelId = "eleven_text_to_sound_v2";
     const elevenLabsUrl = "https://api.elevenlabs.io/v1/sound-generation";
 
     const body: Record<string, unknown> = { text: prompt, model_id: modelId };
@@ -813,12 +821,27 @@ export async function generateSoundEffect(opts: {
 const QWEN_TTS_ENDPOINT =
     "https://dashscope-intl.aliyuncs.com/api/v1/services/aigc/multimodal-generation/generation";
 
-const QWEN_TTS_MODELS = [
-    "qwen-tts",
-    "qwen-tts-instruct",
-] as const satisfies readonly AudioModelName[];
+const DEEPINFRA_TTS_ENDPOINT =
+    "https://api.deepinfra.com/v1/openai/audio/speech";
+const LYRIA_3_CLIP_MODEL_ID = "lyria-3-clip-preview";
+const DEEPINFRA_CSM_MODEL_ID = "sesame/csm-1b";
+const CSM_AUDIO_FORMATS = ["mp3", "opus", "flac", "wav", "pcm"] as const;
 
-type QwenTtsModelName = (typeof QWEN_TTS_MODELS)[number];
+const QWEN_TTS_MODEL_IDS = {
+    "qwen-tts": "qwen3-tts-flash",
+    "qwen-tts-instruct": "qwen3-tts-instruct-flash",
+} as const satisfies Partial<Record<AudioModelName, string>>;
+
+type QwenTtsModelName = keyof typeof QWEN_TTS_MODEL_IDS;
+
+type LyriaInteractionResponse = {
+    status?: string;
+    outputs?: Array<{
+        type?: string;
+        mime_type?: string;
+        data?: string;
+    }>;
+};
 
 const QWEN_TTS_OPENAI_VOICE_MAP: Record<string, string> = {
     alloy: "Chelsie",
@@ -838,13 +861,92 @@ function resolveQwenVoice(voice: string): string {
     return QWEN_TTS_OPENAI_VOICE_MAP[voice] ?? voice;
 }
 
-export function isQwenTtsModel(model: string): model is QwenTtsModelName {
-    return QWEN_TTS_MODELS.includes(model as QwenTtsModelName);
+export async function generateLyria3Clip(opts: {
+    prompt: string;
+    durationSeconds?: number;
+    responseFormat: string;
+    projectId: string;
+    accessToken: string;
+    log: Logger;
+}): Promise<Response> {
+    const {
+        prompt,
+        durationSeconds,
+        responseFormat,
+        projectId,
+        accessToken,
+        log,
+    } = opts;
+
+    if (responseFormat !== "mp3") {
+        throw new UpstreamError(400 as ContentfulStatusCode, {
+            message: `lyria-3-clip only supports mp3 output; response_format=${responseFormat} is not available.`,
+        });
+    }
+    if (durationSeconds !== undefined && durationSeconds !== 30) {
+        throw new UpstreamError(400 as ContentfulStatusCode, {
+            message:
+                "lyria-3-clip generates fixed 30-second clips; duration must be 30 or omitted.",
+        });
+    }
+    if (!projectId || !accessToken) {
+        throw new UpstreamError(500 as ContentfulStatusCode, {
+            message: "Lyria service is not configured",
+        });
+    }
+
+    const endpoint = `https://aiplatform.googleapis.com/v1beta1/projects/${projectId}/locations/global/interactions`;
+    const rawResponse = await fetch(endpoint, {
+        method: "POST",
+        headers: {
+            Authorization: `Bearer ${accessToken}`,
+            "Content-Type": "application/json; charset=utf-8",
+        },
+        body: JSON.stringify({
+            model: LYRIA_3_CLIP_MODEL_ID,
+            input: [{ type: "text", text: prompt }],
+        }),
+    });
+    const response = await ensureUpstreamOk(rawResponse, endpoint);
+    const result = (await response.json()) as LyriaInteractionResponse;
+    const audio = result.outputs?.find(
+        (output) =>
+            output.type === "audio" &&
+            output.mime_type === "audio/mpeg" &&
+            typeof output.data === "string",
+    );
+
+    if (result.status !== "completed" || !audio?.data) {
+        throw new UpstreamError(502 as ContentfulStatusCode, {
+            message: "Lyria returned no completed MP3 audio output",
+        });
+    }
+
+    const binary = atob(audio.data);
+    const audioBytes = new Uint8Array(binary.length);
+    for (let index = 0; index < binary.length; index++) {
+        audioBytes[index] = binary.charCodeAt(index);
+    }
+
+    log.info("Lyria success: {bytes} bytes", {
+        bytes: audioBytes.byteLength,
+    });
+
+    return new Response(audioBytes, {
+        status: 200,
+        headers: {
+            "Content-Type": "audio/mpeg",
+            ...buildUsageHeaders("lyria-3-clip", {
+                // Vertex charges one fixed-price unit per generated clip.
+                completionAudioTokens: 1,
+            }),
+        },
+    });
 }
 
 function requireTextToAudioModel(
     model: string,
-    definition: ModelDefinition<string>,
+    definition: ModelDefinition,
 ): void {
     const acceptsText = definition.inputModalities?.includes("text");
     const returnsAudio = definition.outputModalities?.includes("audio");
@@ -1039,14 +1141,14 @@ async function parseSpeechRequest(c: AudioContext): Promise<
 
 export async function generateQwenTts(opts: {
     modelName: QwenTtsModelName;
-    modelId: string;
     text: string;
     voice: string;
     instruct?: string;
     apiKey: string;
     log: Logger;
 }): Promise<Response> {
-    const { modelName, modelId, text, voice, instruct, apiKey, log } = opts;
+    const { modelName, text, voice, instruct, apiKey, log } = opts;
+    const modelId = QWEN_TTS_MODEL_IDS[modelName];
 
     if (!apiKey) {
         throw new UpstreamError(500 as ContentfulStatusCode, {
@@ -1119,6 +1221,84 @@ export async function generateQwenTts(opts: {
     return new Response(audioBuffer, {
         status: 200,
         headers: { "Content-Type": "audio/wav", ...usageHeaders },
+    });
+}
+
+export async function generateCsmSpeech(opts: {
+    text: string;
+    voice: string;
+    responseFormat: string;
+    apiKey: string;
+    log: Logger;
+}): Promise<Response> {
+    const { text, responseFormat, apiKey, log } = opts;
+
+    if (!apiKey) {
+        throw new UpstreamError(500 as ContentfulStatusCode, {
+            message: "CSM speech is not configured (missing DEEPINFRA_API_KEY)",
+        });
+    }
+
+    if (text.length > 200) {
+        throw new UpstreamError(400 as ContentfulStatusCode, {
+            message: `Input text too long: ${text.length} characters. Maximum is 200.`,
+        });
+    }
+
+    const voice = opts.voice === "alloy" ? "conversational_a" : opts.voice;
+    if (!CSM_VOICES.includes(voice as (typeof CSM_VOICES)[number])) {
+        throw new UpstreamError(400 as ContentfulStatusCode, {
+            message: `Invalid voice for csm-1b: ${opts.voice}. Supported voices: ${CSM_VOICES.join(", ")}.`,
+        });
+    }
+
+    if (
+        !CSM_AUDIO_FORMATS.includes(
+            responseFormat as (typeof CSM_AUDIO_FORMATS)[number],
+        )
+    ) {
+        throw new UpstreamError(400 as ContentfulStatusCode, {
+            message: `Unsupported response_format for csm-1b: ${responseFormat}. Supported formats: ${CSM_AUDIO_FORMATS.join(", ")}.`,
+        });
+    }
+
+    log.info("CSM request: voice={voice}, format={format}, chars={chars}", {
+        voice,
+        format: responseFormat,
+        chars: text.length,
+    });
+
+    const response = await ensureUpstreamOk(
+        await fetch(DEEPINFRA_TTS_ENDPOINT, {
+            method: "POST",
+            headers: {
+                Authorization: `Bearer ${apiKey}`,
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+                model: DEEPINFRA_CSM_MODEL_ID,
+                input: text,
+                voice,
+                response_format: responseFormat,
+            }),
+        }),
+        DEEPINFRA_TTS_ENDPOINT,
+    );
+
+    const usageHeaders = {
+        ...buildUsageHeaders("csm-1b", createAudioTokenUsage(text.length)),
+        "x-tts-voice": voice,
+    };
+
+    log.info("CSM success: {chars} characters", { chars: text.length });
+
+    return new Response(response.body, {
+        status: 200,
+        headers: {
+            "Content-Type":
+                response.headers.get("content-type") || "audio/mpeg",
+            ...usageHeaders,
+        },
     });
 }
 
@@ -1451,6 +1631,7 @@ async function dispatchAudioGeneration(
         promptInfluence?: number;
         apiKey: string;
         dashScopeApiKey: string;
+        deepInfraApiKey: string;
         falKey?: string;
         stabilityApiKey?: string;
         log: Logger;
@@ -1476,6 +1657,7 @@ async function dispatchAudioGeneration(
         promptInfluence,
         apiKey,
         dashScopeApiKey,
+        deepInfraApiKey,
         falKey,
         stabilityApiKey,
         log,
@@ -1495,6 +1677,31 @@ async function dispatchAudioGeneration(
                 compositionPlan,
                 referenceAudio,
                 apiKey,
+                log,
+            }),
+        );
+    }
+
+    if (c.var.model.resolved === "lyria-3-clip") {
+        const googleEnvKeys = [
+            "GOOGLE_PRIVATE_KEY",
+            "GOOGLE_PRIVATE_KEY_ID",
+            "GOOGLE_CLIENT_EMAIL",
+        ] as const;
+        for (const key of googleEnvKeys) {
+            const value = c.env[key];
+            if (typeof value === "string") process.env[key] = value;
+        }
+        const accessToken = await googleCloudAuth.getAccessToken();
+
+        return withSafetyHeaders(
+            c,
+            await generateLyria3Clip({
+                prompt: text,
+                durationSeconds: duration,
+                responseFormat,
+                projectId: c.env.GOOGLE_PROJECT_ID,
+                accessToken: accessToken ?? "",
                 log,
             }),
         );
@@ -1547,34 +1754,51 @@ async function dispatchAudioGeneration(
         );
     }
 
-    if (isQwenTtsModel(c.var.model.resolved)) {
-        return withSafetyHeaders(
-            c,
-            await generateQwenTts({
-                modelName: c.var.model.resolved as QwenTtsModelName,
-                modelId: c.var.model.definition.modelId,
-                text,
-                voice,
-                instruct,
-                apiKey: dashScopeApiKey,
-                log,
-            }),
-        );
+    switch (c.var.model.resolved) {
+        case "elevenlabs":
+        case "elevenflash":
+        case "eleven-multilingual-v2":
+            return withSafetyHeaders(
+                c,
+                await generateElevenLabsSpeech({
+                    modelName: c.var.model.resolved,
+                    text,
+                    voice,
+                    responseFormat,
+                    seed,
+                    apiKey,
+                    log,
+                }),
+            );
+        case "qwen-tts":
+        case "qwen-tts-instruct":
+            return withSafetyHeaders(
+                c,
+                await generateQwenTts({
+                    modelName: c.var.model.resolved,
+                    text,
+                    voice,
+                    instruct,
+                    apiKey: dashScopeApiKey,
+                    log,
+                }),
+            );
+        case "csm-1b":
+            return withSafetyHeaders(
+                c,
+                await generateCsmSpeech({
+                    text,
+                    voice,
+                    responseFormat,
+                    apiKey: deepInfraApiKey,
+                    log,
+                }),
+            );
+        default:
+            throw new UpstreamError(500 as ContentfulStatusCode, {
+                message: `No audio provider route configured for model: ${c.var.model.resolved}`,
+            });
     }
-
-    return withSafetyHeaders(
-        c,
-        await generateSpeech({
-            modelName: c.var.model.resolved,
-            modelId: c.var.model.definition.modelId,
-            text,
-            voice,
-            responseFormat,
-            seed,
-            apiKey,
-            log,
-        }),
-    );
 }
 
 export async function handleSimpleAudio(c: AudioContext): Promise<Response> {
@@ -1615,6 +1839,7 @@ export async function handleSimpleAudio(c: AudioContext): Promise<Response> {
         promptInfluence: query.prompt_influence,
         apiKey,
         dashScopeApiKey: c.env.DASHSCOPE_API_KEY,
+        deepInfraApiKey: c.env.DEEPINFRA_API_KEY,
         falKey: c.env.FAL_KEY,
         stabilityApiKey: c.env.STABILITY_API_KEY,
         log,
@@ -1737,9 +1962,9 @@ export const audioRoutes = new Hono<Env>()
             description: [
                 "Generate speech or music from text. Compatible with the OpenAI TTS API for JSON requests.",
                 "",
-                "Set `model` to `elevenmusic`, `stable-audio-3-medium`, or `stable-audio-3-large` to generate music. Send multipart/form-data with `reference_audio` plus `input` to run audio-to-audio (style transfer) on `stable-audio-3-medium` or `stable-audio-3-large`, or reference-audio conditioning on `elevenmusic`; for ElevenLabs inpainting, pass a `composition_plan`.",
+                "Set `model` to `elevenmusic`, `lyria-3-clip`, `stable-audio-3-medium`, or `stable-audio-3-large` to generate music. Lyria returns one fixed 30-second MP3 clip. Send multipart/form-data with `reference_audio` plus `input` to run audio-to-audio (style transfer) on `stable-audio-3-medium` or `stable-audio-3-large`, or reference-audio conditioning on `elevenmusic`; for ElevenLabs inpainting, pass a `composition_plan`.",
                 "",
-                `**Available voices:** ${ELEVENLABS_VOICES.join(", ")}`,
+                `**Available voices:** ${AUDIO_VOICES.join(", ")}`,
                 "",
                 "**Output formats:** mp3 (default), opus, aac, flac, wav, pcm",
             ].join("\n"),
@@ -1760,6 +1985,9 @@ export const audioRoutes = new Hono<Env>()
                             schema: { type: "string", format: "binary" },
                         },
                         "audio/wav": {
+                            schema: { type: "string", format: "binary" },
+                        },
+                        "audio/pcm": {
                             schema: { type: "string", format: "binary" },
                         },
                     },
@@ -1830,6 +2058,7 @@ export const audioRoutes = new Hono<Env>()
                 promptInfluence: prompt_influence,
                 apiKey,
                 dashScopeApiKey: c.env.DASHSCOPE_API_KEY,
+                deepInfraApiKey: c.env.DEEPINFRA_API_KEY,
                 falKey: c.env.FAL_KEY,
                 stabilityApiKey: c.env.STABILITY_API_KEY,
                 log,

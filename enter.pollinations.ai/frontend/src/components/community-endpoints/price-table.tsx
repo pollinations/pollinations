@@ -11,7 +11,9 @@ import {
 } from "@pollinations/ui";
 import {
     COMMUNITY_ENDPOINT_PRICE_FIELDS,
-    MIN_COMMUNITY_PRICE_PER_MILLION_TOKENS,
+    type CommunityEndpointImagePricing,
+    type CommunityEndpointModality,
+    communityEndpointPriceFieldsForModality,
 } from "@shared/community-endpoints.ts";
 import { PRICE_ICON } from "../models/model-icons.tsx";
 import type { PriceKind } from "../models/types.ts";
@@ -24,7 +26,9 @@ import {
     observedUsageValue,
 } from "./types.ts";
 
-export type PriceField = (typeof COMMUNITY_ENDPOINT_PRICE_FIELDS)[number];
+export type PriceField = ReturnType<
+    typeof communityEndpointPriceFieldsForModality
+>[number];
 export type PriceFieldKey = PriceField["key"];
 type PriceColumn = "input" | "output";
 type PriceFormRow = {
@@ -42,16 +46,20 @@ type PriceCellState = {
 
 export function PriceGroups({
     form,
+    modality,
+    imagePricing,
     testState,
     visiblePriceKeys,
     onChange,
 }: {
     form: EndpointFormState;
+    modality: CommunityEndpointModality;
+    imagePricing: CommunityEndpointImagePricing;
     testState: ActionState;
     visiblePriceKeys: Set<PriceFieldKey>;
     onChange: (key: keyof EndpointFormState, value: string) => void;
 }) {
-    const rows = priceFormRows(visiblePriceKeys);
+    const rows = priceFormRows(visiblePriceKeys, modality, imagePricing);
 
     if (rows.length === 0) return null;
 
@@ -68,13 +76,13 @@ export function PriceGroups({
                                 align="right"
                                 className="normal-case tracking-normal"
                             >
-                                Input / 1M
+                                Input price
                             </TableHeaderCell>
                             <TableHeaderCell
                                 align="right"
                                 className="normal-case tracking-normal"
                             >
-                                Output / 1M
+                                Output price
                             </TableHeaderCell>
                         </TableRow>
                     </TableHead>
@@ -172,32 +180,37 @@ function PriceInputCell({
 
     const inputId = `community-${field.key}`;
     const hasError = state.invalid;
+    const unitLabel = field.priceUnit === "image" ? "/image" : "/1M";
 
     return (
         <TableCell align="right" className="w-40 align-top">
             <div className="inline-flex flex-col items-end">
-                <Input
-                    id={inputId}
-                    name={inputId}
-                    type="number"
-                    step="any"
-                    min="0"
-                    inputMode="decimal"
-                    hideNumberSteppers
-                    value={value}
-                    placeholder="0"
-                    autoComplete="off"
-                    aria-label={`${field.label} price per 1M tokens`}
-                    error={hasError}
-                    className="h-9 w-32 max-w-full font-mono tabular-nums text-right"
-                    onChange={(event) =>
-                        onChange(field.key, event.target.value)
-                    }
-                />
+                <div className="flex items-center gap-1.5">
+                    <Input
+                        id={inputId}
+                        name={inputId}
+                        type="number"
+                        step="any"
+                        min="0"
+                        inputMode="decimal"
+                        hideNumberSteppers
+                        value={value}
+                        placeholder="0"
+                        autoComplete="off"
+                        aria-label={`${field.label} price ${unitLabel}`}
+                        error={hasError}
+                        className="h-9 w-28 max-w-full font-mono tabular-nums text-right"
+                        onChange={(event) =>
+                            onChange(field.key, event.target.value)
+                        }
+                    />
+                    <span className="w-10 text-left text-xs text-theme-text-muted">
+                        {unitLabel}
+                    </span>
+                </div>
                 {hasError && (
                     <p className="mt-1 text-right text-xs text-intent-danger-text">
-                        0 (free) or at least{" "}
-                        {MIN_COMMUNITY_PRICE_PER_MILLION_TOKENS} per 1M
+                        Enter 0 (free) or a valid positive price.
                     </p>
                 )}
             </div>
@@ -215,13 +228,20 @@ function priceCellState(
         null;
     return {
         observed,
-        invalid: !isValidPriceInput(form[field.key]),
+        invalid: !isValidPriceInput(form[field.key], field.priceUnit),
     };
 }
 
-function priceFormRows(visiblePriceKeys: Set<PriceFieldKey>): PriceFormRow[] {
+function priceFormRows(
+    visiblePriceKeys: Set<PriceFieldKey>,
+    modality: CommunityEndpointModality,
+    imagePricing: CommunityEndpointImagePricing,
+): PriceFormRow[] {
     const rows = new Map<string, PriceFormRow>();
-    for (const field of COMMUNITY_ENDPOINT_PRICE_FIELDS) {
+    for (const field of communityEndpointPriceFieldsForModality(
+        modality,
+        imagePricing,
+    )) {
         if (!visiblePriceKeys.has(field.key)) continue;
         const column = priceColumn(field);
         if (!column) continue;
@@ -271,9 +291,12 @@ export function savedEndpointPriceKeys(
 ): Set<PriceFieldKey> {
     return new Set(
         endpoint
-            ? COMMUNITY_ENDPOINT_PRICE_FIELDS.filter(
-                  (field) => endpoint[field.key] > 0,
-              ).map((field) => field.key)
+            ? communityEndpointPriceFieldsForModality(
+                  endpoint.modality,
+                  endpoint.imagePricing,
+              )
+                  .filter((field) => endpoint[field.key] > 0)
+                  .map((field) => field.key)
             : [],
     );
 }
@@ -285,11 +308,16 @@ export const BASE_TEXT_PRICE_KEYS: PriceFieldKey[] = [
     "completionTextPrice",
 ];
 
-export function returnedPriceFields(testState: ActionState): PriceField[] {
+export function returnedPriceFields(
+    testState: ActionState,
+    modality: CommunityEndpointModality,
+    imagePricing: CommunityEndpointImagePricing,
+): PriceField[] {
     if (testState.status !== "success") return [];
-    return COMMUNITY_ENDPOINT_PRICE_FIELDS.filter((field) =>
-        hasObservedPriceField(testState.usage, field),
-    );
+    return communityEndpointPriceFieldsForModality(
+        modality,
+        imagePricing,
+    ).filter((field) => hasObservedPriceField(testState.usage, field));
 }
 
 export function visiblePriceFieldKeys(
@@ -310,8 +338,14 @@ export function formWithVisiblePrices(
     visiblePriceKeys: Set<PriceFieldKey>,
 ): EndpointFormState {
     const next = { ...form };
+    const allowed = new Set(
+        communityEndpointPriceFieldsForModality(
+            form.modality,
+            form.imagePricing,
+        ).map((field) => field.key),
+    );
     for (const field of COMMUNITY_ENDPOINT_PRICE_FIELDS) {
-        if (!visiblePriceKeys.has(field.key)) {
+        if (!visiblePriceKeys.has(field.key) || !allowed.has(field.key)) {
             next[field.key] = "";
         }
     }
@@ -322,9 +356,18 @@ export function hasValidVisibleFormPrices(
     form: EndpointFormState,
     visiblePriceKeys: Set<PriceFieldKey>,
 ): boolean {
-    return COMMUNITY_ENDPOINT_PRICE_FIELDS.every(
-        (field) =>
-            !visiblePriceKeys.has(field.key) ||
-            isValidPriceInput(form[field.key]),
+    const fields = new Map(
+        communityEndpointPriceFieldsForModality(
+            form.modality,
+            form.imagePricing,
+        ).map((field) => [field.key, field]),
     );
+    return COMMUNITY_ENDPOINT_PRICE_FIELDS.every((field) => {
+        if (!visiblePriceKeys.has(field.key)) return true;
+        const modalityField = fields.get(field.key);
+        return Boolean(
+            modalityField &&
+                isValidPriceInput(form[field.key], modalityField.priceUnit),
+        );
+    });
 }

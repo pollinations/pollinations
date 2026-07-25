@@ -33,7 +33,8 @@ bash setup-vast.sh
 
 The tunnel token is written to a mode `0600` token file and is not included in
 the `cloudflared` process arguments. Model and server settings are persisted in
-the ignored `.env.flux` file.
+the ignored `.env.flux` file. The setup also installs `/root/onstart.sh`, which
+Vast runs after a container restart to restore both supervised services.
 
 ## Verify before traffic cutover
 
@@ -58,8 +59,14 @@ tail -f /tmp/flux.log
 tail -f /tmp/cloudflared.log
 screen -r flux
 screen -r cloudflared
+/root/onstart.sh
 ```
 
-The setup defaults are `QUEUE_LIMIT=10`, `MAX_PIXELS=1048576`, and
+The setup defaults are `QUEUE_LIMIT=3`, `MAX_PIXELS=1048576`, and
 `mit-han-lab/svdq-fp4-flux.1-schnell`. Override them only through the documented
 environment variables in `setup-vast.sh`.
+
+`QUEUE_LIMIT=3` means one request can run while two wait. Additional requests
+receive 503 immediately so the gateway can use Fireworks rather than building a
+long user-facing queue. Keep Fireworks enabled as burst capacity; add a second
+Vast GPU only when its measured avoided fallback cost exceeds its hourly cost.

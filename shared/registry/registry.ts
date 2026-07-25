@@ -1,26 +1,10 @@
 import { roundPollenLedgerAmount } from "../billing/precision.ts";
-import {
-    AUDIO_SERVICES,
-    type AudioModelId,
-    type AudioModelName,
-} from "./audio";
-import {
-    EMBEDDING_SERVICES,
-    type EmbeddingModelId,
-    type EmbeddingServiceId,
-} from "./embeddings";
-import {
-    IMAGE_SERVICES,
-    type ImageModelId,
-    type ImageModelName,
-} from "./image";
-import { MODEL3D_SERVICES, type Model3dId, type Model3dName } from "./model3d";
-import {
-    REALTIME_SERVICES,
-    type RealtimeModelId,
-    type RealtimeModelName,
-} from "./realtime";
-import { TEXT_SERVICES, type TextModelId, type TextModelName } from "./text";
+import { AUDIO_SERVICES, type AudioModelName } from "./audio";
+import { EMBEDDING_SERVICES, type EmbeddingServiceId } from "./embeddings";
+import { IMAGE_SERVICES, type ImageModelName } from "./image";
+import { MODEL3D_SERVICES, type Model3dName } from "./model3d";
+import { REALTIME_SERVICES, type RealtimeModelName } from "./realtime";
+import { TEXT_SERVICES, type TextModelName } from "./text";
 
 export type Category =
     | "text"
@@ -66,13 +50,6 @@ export type CostDefinition = { [K in UsageType]?: number };
 // User-facing charge rates in Pollen per usage unit, derived from cost × multiplier.
 export type PriceDefinition = CostDefinition;
 
-export type ModelId =
-    | ImageModelId
-    | TextModelId
-    | AudioModelId
-    | EmbeddingModelId
-    | RealtimeModelId
-    | Model3dId;
 export type ModelName =
     | ImageModelName
     | TextModelName
@@ -101,7 +78,7 @@ export type BillingAdjustmentRule = {
     // Optional provider-reported unit cost (e.g. Perplexity usage.cost)
     // resolved via the provider module's clamp-and-alert policy. Must never
     // throw. Defaults to the static unitCost when omitted.
-    resolveUnitCost?: (output: unknown, modelId: string) => number;
+    resolveUnitCost?: (output: unknown, model: string) => number;
 };
 
 export type BillingRules = {
@@ -122,9 +99,8 @@ export type BillingAdjustment = {
     price: number;
 };
 
-export type ModelDefinition<TModelId extends string = ModelId> = {
+export type ModelDefinition = {
     aliases: string[];
-    modelId: TModelId;
     provider: string;
     // Optional secondary provider for binary-asset models with provider-level
     // fallback (3D only, as of this field). Purely descriptive metadata for
@@ -226,15 +202,15 @@ function calculateLinearCost(
 // from this so there is no duplicated rule loop. The registry stays generic:
 // each rule brings its own counter and (optionally) provider-cost resolution.
 export function calculateBillingAdjustments(
-    svc: ModelDefinition<string>,
+    svc: ModelDefinition,
     output: unknown,
+    model: string,
 ): BillingAdjustment[] {
     const adjustments: BillingAdjustment[] = [];
     for (const rule of svc.billing?.adjustments ?? []) {
         const units = rule.countUnits(output);
         if (units === 0) continue;
-        const unitCost =
-            rule.resolveUnitCost?.(output, svc.modelId) ?? rule.unitCost;
+        const unitCost = rule.resolveUnitCost?.(output, model) ?? rule.unitCost;
         const cost = units * unitCost;
         adjustments.push({
             ruleId: rule.id,
@@ -261,10 +237,10 @@ export type UsageBilling = {
 export function calculateUsageBilling(
     model: string,
     usage: Usage,
-    svc: ModelDefinition<string>,
+    svc: ModelDefinition,
     output?: unknown,
 ): UsageBilling {
-    const adjustments = calculateBillingAdjustments(svc, output);
+    const adjustments = calculateBillingAdjustments(svc, output, model);
     const adjustmentCost = adjustments.reduce((total, a) => total + a.cost, 0);
     const adjustmentPrice = adjustments.reduce(
         (total, a) => total + a.price,
@@ -395,7 +371,7 @@ export function getRegistryModelDefinition(model: ModelName): ModelDefinition {
 }
 
 export function getPriceDefinitionForModel(
-    svc: ModelDefinition<string>,
+    svc: ModelDefinition,
 ): PriceDefinition {
     return derivePrice(svc);
 }
@@ -435,7 +411,7 @@ export function calculateCost(
 export function calculateCostForModelDefinition(
     model: string,
     usage: Usage,
-    svc: ModelDefinition<string>,
+    svc: ModelDefinition,
     output?: unknown,
 ): UsageCost {
     return calculateUsageBilling(model, usage, svc, output).cost;
@@ -471,7 +447,7 @@ export function calculatePrice(
 export function calculatePriceForModelDefinition(
     model: string,
     usage: Usage,
-    svc: ModelDefinition<string>,
+    svc: ModelDefinition,
     output?: unknown,
 ): UsagePrice {
     return calculateUsageBilling(model, usage, svc, output).price;

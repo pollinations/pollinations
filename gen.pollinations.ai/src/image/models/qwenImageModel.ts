@@ -126,6 +126,8 @@ export async function callQwenImageAPI(
             throw new HttpError(
                 `${modelLabel} generation failed: ${err.message}`,
                 err.status ?? 500,
+                undefined,
+                err.url,
             );
         }
         throw err;

@@ -11,12 +11,13 @@ import {
 } from "@shared/test/mocks/fetch.ts";
 import { createMockTinybird } from "@shared/test/mocks/tinybird.ts";
 import { afterEach, beforeEach, describe, expect, vi } from "vitest";
+import { applyGeminiTaskInstruction } from "../../src/embeddings/input.ts";
 import { MAX_EMBEDDING_BATCH_SIZE } from "../../src/embeddings/limits.ts";
 import worker from "../../src/index.ts";
 import googleCloudAuth from "../../src/text/auth/googleCloudAuth.ts";
 
 const TEST_EMBEDDING_MODEL = "gemini-2";
-const TEST_PROVIDER_MODEL = "gemini-embedding-2-preview";
+const TEST_PROVIDER_MODEL = "gemini-embedding-2";
 const TEST_OPENAI_SMALL_MODEL = "openai-3-small";
 const TEST_OPENAI_LARGE_MODEL = "openai-3-large";
 const TEST_OPENAI_SMALL_PROVIDER_MODEL = "text-embedding-3-small";
@@ -26,7 +27,7 @@ const TEST_COHERE_PROVIDER_MODEL = "embed-v-4-0";
 const TEST_QWEN_MODEL = "qwen3-embedding-8b";
 const TEST_QWEN_PROVIDER_MODEL = "accounts/fireworks/models/qwen3-embedding-8b";
 const TEST_EMBEDDING_INPUT = "Hello world";
-const VERTEX_HOST = "us-central1-aiplatform.googleapis.com";
+const VERTEX_HOST = "aiplatform.us.rep.googleapis.com";
 const OPENAI_HOST = "api.openai.com";
 const COHERE_AZURE_HOST = "myceli-prod-eastus.cognitiveservices.azure.com";
 const FIREWORKS_HOST = "api.fireworks.ai";
@@ -198,21 +199,23 @@ function createCohereAzureMock(): MockAPI<{
         handlerMap: {
             [COHERE_AZURE_HOST]: async (request) => {
                 const body = (await request.json()) as {
-                    input?: string[];
+                    input?: (string | { image: string; text?: string })[];
                     input_type?: string;
+                    dimensions?: number;
                     model?: string;
                 };
                 state.urls.push(request.url);
                 state.requests.push(body);
 
                 const inputs = body.input ?? [];
+                const dimensions = body.dimensions ?? 1536;
 
                 return Response.json({
                     object: "list",
                     data: inputs.map((_, index) => ({
                         object: "embedding",
                         embedding: Array.from(
-                            { length: 1536 },
+                            { length: dimensions },
                             (_, valueIndex) => index + valueIndex / 10,
                         ),
                         index,
@@ -294,6 +297,12 @@ async function fetchWorker(path: string, init: RequestInit = {}) {
 }
 
 describe("POST /v1/embeddings", () => {
+    test("rejects Gemini task hints without text content", () => {
+        expect(() => applyGeminiTaskInstruction([], "RETRIEVAL_QUERY")).toThrow(
+            "task_type requires non-empty Gemini text input",
+        );
+    });
+
     test("returns an OpenAI-compatible response and tracks billing", async ({
         paidApiKey: apiKey,
         mocks,
@@ -370,7 +379,41 @@ describe("POST /v1/embeddings", () => {
         ).toBe(200);
         const data = JSON.parse(body) as { data: { embedding: number[] }[] };
         expect(data.data[0].embedding).toHaveLength(768);
-        expect(mocks.vertex.state.urls[0]).toContain(TEST_PROVIDER_MODEL);
+        expect(mocks.vertex.state.urls[0]).toBe(
+            `https://${VERTEX_HOST}/v1/projects/test-project/locations/us/publishers/google/models/${TEST_PROVIDER_MODEL}:embedContent`,
+        );
+        await wait();
+    });
+
+    test("converts Gemini task types to the GA prompt instruction", async ({
+        paidApiKey: apiKey,
+        mocks,
+    }) => {
+        await mocks.enable("tinybird", "tinybirdStats", "vertex");
+        const { response, wait } = await fetchWorker("/v1/embeddings", {
+            method: "POST",
+            headers: {
+                "content-type": "application/json",
+                authorization: `Bearer ${apiKey}`,
+            },
+            body: buildEmbeddingsBody({ task_type: "RETRIEVAL_QUERY" }),
+        });
+        const body = await response.text();
+
+        expect(
+            response.status,
+            `Expected 200 but got ${response.status}: ${body}`,
+        ).toBe(200);
+        expect(mocks.vertex.state.requests[0]).toEqual({
+            content: {
+                parts: [
+                    {
+                        text: "task: search result | query: Hello world",
+                    },
+                ],
+            },
+            embedContentConfig: {},
+        });
         await wait();
     });
 
@@ -449,7 +492,7 @@ describe("POST /v1/embeddings", () => {
         await wait();
     });
 
-    test("supports Azure OpenAI text-embedding-3-small", async ({
+    test("supports direct OpenAI text-embedding-3-small", async ({
         apiKey,
         mocks,
     }) => {
@@ -508,7 +551,7 @@ describe("POST /v1/embeddings", () => {
         });
     });
 
-    test("supports Azure OpenAI text-embedding-3-large", async ({
+    test("supports direct OpenAI text-embedding-3-large", async ({
         apiKey,
         mocks,
     }) => {
@@ -602,6 +645,97 @@ describe("POST /v1/embeddings", () => {
         });
     });
 
+    test("passes Cohere query input_type through Azure", async ({
+        apiKey,
+        mocks,
+    }) => {
+        await mocks.enable("tinybird", "tinybirdStats", "cohereAzure");
+        const { response, wait } = await fetchWorker("/v1/embeddings", {
+            method: "POST",
+            headers: {
+                "content-type": "application/json",
+                authorization: `Bearer ${apiKey}`,
+            },
+            body: buildEmbeddingsBody({
+                model: TEST_COHERE_MODEL,
+                input_type: "query",
+            }),
+        });
+
+        expect(response.status).toBe(200);
+        expect(mocks.cohereAzure.state.requests).toEqual([
+            {
+                model: TEST_COHERE_PROVIDER_MODEL,
+                input: [TEST_EMBEDDING_INPUT],
+                input_type: "query",
+            },
+        ]);
+        await wait();
+    });
+
+    test("supports Cohere combined text and image embeddings through Azure", async ({
+        apiKey,
+        mocks,
+    }) => {
+        await mocks.enable("tinybird", "tinybirdStats", "cohereAzure");
+        const { response, wait } = await fetchWorker("/v1/embeddings", {
+            method: "POST",
+            headers: {
+                "content-type": "application/json",
+                authorization: `Bearer ${apiKey}`,
+            },
+            body: buildEmbeddingsBody({
+                model: TEST_COHERE_MODEL,
+                input: [
+                    {
+                        type: "text",
+                        text: "Find visually similar items",
+                    },
+                    {
+                        type: "image_url",
+                        image_url: {
+                            url: "data:image/png;base64,aGVsbG8=",
+                        },
+                    },
+                ],
+                dimensions: 256,
+            }),
+        });
+        const body = await response.text();
+
+        expect(
+            response.status,
+            `Expected 200 but got ${response.status}: ${body}`,
+        ).toBe(200);
+        expect(response.headers.get("x-usage-prompt-image-tokens")).toBe("4");
+        expect(response.headers.get("x-usage-prompt-text-tokens")).toBeNull();
+        expect(mocks.cohereAzure.state.urls[0]).toContain(
+            "/models/images/embeddings?api-version=2024-05-01-preview",
+        );
+        expect(mocks.cohereAzure.state.requests).toEqual([
+            {
+                model: TEST_COHERE_PROVIDER_MODEL,
+                input: [
+                    {
+                        image: "data:image/png;base64,aGVsbG8=",
+                        text: "Find visually similar items",
+                    },
+                ],
+                input_type: "document",
+                dimensions: 256,
+            },
+        ]);
+        await wait();
+
+        expect(mocks.tinybird.state.events[0]).toMatchObject({
+            eventType: "generate.embedding",
+            modelUsed: TEST_COHERE_MODEL,
+            tokenCountPromptImage: 4,
+            tokenCountPromptText: 0,
+            isBilledUsage: true,
+        });
+    });
+
     test("supports Fireworks Qwen3 embeddings at 4096 dimensions", async ({
         apiKey,
         mocks,
@@ -680,7 +814,49 @@ describe("POST /v1/embeddings", () => {
         await wait();
     });
 
-    test("rejects multimodal input for Azure text embeddings", async ({
+    test("rejects Gemini dimensions above its model limit", async ({
+        paidApiKey: apiKey,
+        mocks,
+    }) => {
+        await mocks.enable("tinybird", "tinybirdStats", "vertex");
+        const { response, wait } = await fetchWorker("/v1/embeddings", {
+            method: "POST",
+            headers: {
+                "content-type": "application/json",
+                authorization: `Bearer ${apiKey}`,
+            },
+            body: buildEmbeddingsBody({ dimensions: 3073 }),
+        });
+        const body = await response.text();
+
+        expect(response.status).toBe(400);
+        expect(body).toContain("supports dimensions up to 3072");
+        expect(mocks.vertex.state.requests).toHaveLength(0);
+        await wait();
+    });
+
+    test("rejects unsupported Cohere dimensions", async ({ apiKey, mocks }) => {
+        await mocks.enable("tinybird", "tinybirdStats", "cohereAzure");
+        const { response, wait } = await fetchWorker("/v1/embeddings", {
+            method: "POST",
+            headers: {
+                "content-type": "application/json",
+                authorization: `Bearer ${apiKey}`,
+            },
+            body: buildEmbeddingsBody({
+                model: TEST_COHERE_MODEL,
+                dimensions: 768,
+            }),
+        });
+        const body = await response.text();
+
+        expect(response.status).toBe(400);
+        expect(body).toContain("supports dimensions 256, 512, 1024, 1536");
+        expect(mocks.cohereAzure.state.requests).toHaveLength(0);
+        await wait();
+    });
+
+    test("rejects multimodal input for direct OpenAI embeddings", async ({
         apiKey,
         mocks,
     }) => {
@@ -711,7 +887,7 @@ describe("POST /v1/embeddings", () => {
         await wait();
     });
 
-    test("rejects Gemini task hints for Azure text embeddings", async ({
+    test("rejects Gemini task hints for direct OpenAI embeddings", async ({
         apiKey,
         mocks,
     }) => {
@@ -731,6 +907,30 @@ describe("POST /v1/embeddings", () => {
 
         expect(response.status).toBe(400);
         expect(body).toContain("task_type");
+        expect(mocks.openai.state.requests).toHaveLength(0);
+        await wait();
+    });
+
+    test("rejects Cohere input_type for other providers", async ({
+        apiKey,
+        mocks,
+    }) => {
+        await mocks.enable("tinybird", "tinybirdStats", "openai");
+        const { response, wait } = await fetchWorker("/v1/embeddings", {
+            method: "POST",
+            headers: {
+                "content-type": "application/json",
+                authorization: `Bearer ${apiKey}`,
+            },
+            body: buildEmbeddingsBody({
+                model: TEST_OPENAI_SMALL_MODEL,
+                input_type: "query",
+            }),
+        });
+        const body = await response.text();
+
+        expect(response.status).toBe(400);
+        expect(body).toContain("input_type");
         expect(mocks.openai.state.requests).toHaveLength(0);
         await wait();
     });
@@ -776,6 +976,37 @@ describe("POST /v1/embeddings", () => {
             },
         });
         expect(response.headers.get("x-usage-prompt-image-tokens")).toBe("5");
+        await wait();
+    });
+
+    test("rejects Gemini task hints for multimodal input", async ({
+        paidApiKey: apiKey,
+        mocks,
+    }) => {
+        await mocks.enable("tinybird", "tinybirdStats", "vertex");
+        const { response, wait } = await fetchWorker("/v1/embeddings", {
+            method: "POST",
+            headers: {
+                "content-type": "application/json",
+                authorization: `Bearer ${apiKey}`,
+            },
+            body: buildEmbeddingsBody({
+                input: [
+                    {
+                        type: "image_url",
+                        image_url: {
+                            url: "data:image/png;base64,aGVsbG8=",
+                        },
+                    },
+                ],
+                task_type: "RETRIEVAL_QUERY",
+            }),
+        });
+        const body = await response.text();
+
+        expect(response.status).toBe(400);
+        expect(body).toContain("Gemini text input");
+        expect(mocks.vertex.state.requests).toHaveLength(0);
         await wait();
     });
 
@@ -845,7 +1076,9 @@ describe("embedding models", () => {
         expect(response.status).toBe(200);
         const data = (await response.json()) as {
             name: string;
+            input_modalities?: string[];
             output_modalities?: string[];
+            context_length?: number;
         }[];
         expect(data).toEqual(
             expect.arrayContaining([
@@ -863,10 +1096,12 @@ describe("embedding models", () => {
                 }),
                 expect.objectContaining({
                     name: TEST_COHERE_MODEL,
+                    input_modalities: ["text", "image"],
                     output_modalities: ["embedding"],
                 }),
                 expect.objectContaining({
                     name: TEST_QWEN_MODEL,
+                    context_length: 40960,
                     output_modalities: ["embedding"],
                 }),
             ]),

@@ -1,6 +1,6 @@
 # GPU Instances
 
-Last updated: 2026-07-14
+Last updated: 2026-07-22
 
 ## Capacity Summary
 
@@ -19,7 +19,7 @@ with automatic Fireworks fallback
 
 | Worker | Vast instance | GPU | Listed rate | Status |
 |--------|---------------|-----|-------------|--------|
-| flux-vast-03 | 44731147 | RTX 5090 | $0.374444/hr | OUT OF ROTATION (2026-07-14) — host network degraded; needs reprovision. All Flux traffic is on the Fireworks fallback (~$70/day) |
+| flux-vast-03 | 44731147 | RTX 5090 | $0.374444/hr | ACTIVE (reactivated 2026-07-22) — named tunnel `flux-vast-04.pollinations.ai` |
 
 > Instance IDs/IPs/ports change on recreate — check `vastai show instances`.
 > CRITICAL: workers MUST be behind a named Cloudflare tunnel created in the
@@ -36,9 +36,10 @@ hangs, not errors — and the worker kept heartbeating green the whole time.
 Never point production at a quick tunnel; use a named tunnel.
 
 When reprovisioning, check the host's HuggingFace throughput before committing
-to it (`curl -r 0-5000000 -L <hf-model-url>`): this host managed 384 KB/s, so
-the worker could never finish loading its weights and stalled indefinitely
-mid-download.
+to it (`curl -r 0-5000000 -L <hf-model-url>`): this host previously managed
+384 KB/s and stalled during its cold download. It was reactivated only after
+its 17 GB model cache was complete, so a cold rebuild on this host remains a
+risk.
 
 **Provision a new instance** (see `nunchaku/setup-vast.sh` header for all env):
 ```bash
@@ -65,11 +66,14 @@ instances and destroying the loser is cheap (~$0.40/hr each).
 curl -s https://<named-tunnel-hostname>/docs -o /dev/null -w "%{http_code}\n"   # control-plane only
 curl -s https://gen.pollinations.ai/register -H "Authorization: Bearer $PLN_GPU_TOKEN"  # registry
 # on the instance: screen -r flux / screen -r cloudflared; logs /tmp/flux.log /tmp/cloudflared.log
+# Vast runs /root/onstart.sh after a container restart to restore both services
 POLLINATIONS_API_KEY=... bash image.pollinations.ai/nunchaku/verify-vast.sh  # required before cutover
 ```
 
 **Key behavior:** FP4 nunchaku, 4 steps, full 1024x1024 (`MAX_PIXELS=1048576`);
-`QUEUE_LIMIT=10` sheds load with 503 → gateway falls back to Fireworks.
+`QUEUE_LIMIT=3` allows one running request plus two waiting; additional load is
+shed with 503 so the gateway falls back to Fireworks instead of making users
+wait in a long queue.
 
 ## Provider: Vast.ai — FLUX.2 Klein 4B (RTX 3090)
 

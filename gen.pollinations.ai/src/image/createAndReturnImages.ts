@@ -15,6 +15,12 @@ import {
 } from "./models/ideogramReplicateModel.ts";
 import { callNovaCanvasAPI } from "./models/novaCanvasModel.ts";
 import {
+    callOpenRouterGeminiImageAPI,
+    callOpenRouterGrokImagineProAPI,
+    callOpenRouterRecraftVectorAPI,
+    callOpenRouterSeedreamProAPI,
+} from "./models/openRouterImageModel.ts";
+import {
     callPrunaImageAPI,
     callPrunaImageEditAPI,
 } from "./models/prunaModel.ts";
@@ -23,7 +29,6 @@ import { callSeedream5API } from "./models/seedream5ReplicateModel.ts";
 import {
     callSeedream5ProAPI,
     callSeedreamAPI,
-    callSeedreamProAPI,
 } from "./models/seedreamReplicateModel.ts";
 import { callWanImageAPI } from "./models/wanImageModel.ts";
 import { callXaiImageAPI } from "./models/xaiModel.ts";
@@ -48,7 +53,6 @@ import {
     convertToJpeg as transformToJpeg,
 } from "./utils/imageTransform.ts";
 import type { TrackingData } from "./utils/trackingHeaders.ts";
-import { callVertexAIGemini } from "./vertexAIImageGenerator.js";
 import { writeExifMetadata } from "./writeExifMetadata.ts";
 
 const SANA_BACKEND_URL = "https://ltx2-backend.pollinations.ai/generate";
@@ -79,6 +83,7 @@ type AzureGPTImageUsage = {
 
 export type ImageGenerationResult = {
     buffer: Buffer;
+    mimeType?: string;
     isMature: boolean;
     isChild: boolean;
     // Tracking data for enter service headers
@@ -741,7 +746,28 @@ const generateImage = async (
 
         case "nanobanana":
         case "nanobanana-2":
-        case "nanobanana-2-lite":
+        case "nanobanana-2-lite": {
+            logError(
+                "Nano Banana authentication check:",
+                formatAuthInfo(userInfo),
+            );
+
+            try {
+                if (safeParams.safe) {
+                    await requireSafePrompt(prompt, safeParams, userInfo);
+                }
+
+                return await callOpenRouterGeminiImageAPI(prompt, safeParams);
+            } catch (error) {
+                logError(
+                    "OpenRouter Gemini image generation or safety check failed:",
+                    error.message,
+                );
+                await logGptImageError(prompt, safeParams, userInfo, error);
+                throw error;
+            }
+        }
+
         case "nanobanana-pro": {
             logError(
                 "Nano Banana authentication check:",
@@ -753,10 +779,10 @@ const generateImage = async (
                     await requireSafePrompt(prompt, safeParams, userInfo);
                 }
 
-                return await callVertexAIGemini(prompt, safeParams);
+                return await callOpenRouterGeminiImageAPI(prompt, safeParams);
             } catch (error) {
                 logError(
-                    "Vertex AI Gemini image generation or safety check failed:",
+                    "OpenRouter Gemini image generation or safety check failed:",
                     error.message,
                 );
                 await logGptImageError(prompt, safeParams, userInfo, error);
@@ -787,7 +813,7 @@ const generateImage = async (
             return await callSeedreamAPI(prompt, safeParams);
 
         case "seedream-pro":
-            return await callSeedreamProAPI(prompt, safeParams);
+            return await callOpenRouterSeedreamProAPI(prompt, safeParams);
 
         case "ideogram-v4-turbo":
             return await callIdeogramTurboAPI(prompt, safeParams);
@@ -812,11 +838,10 @@ const generateImage = async (
             );
 
         case "grok-imagine-pro":
-            return await callXaiImageAPI(
-                prompt,
-                safeParams,
-                "grok-imagine-image-quality",
-            );
+            return await callOpenRouterGrokImagineProAPI(prompt, safeParams);
+
+        case "recraft-v4.1-vector":
+            return await callOpenRouterRecraftVectorAPI(prompt, safeParams);
 
         case "p-image-edit":
             return await callPrunaImageEditAPI(prompt, safeParams);
@@ -923,15 +948,19 @@ export async function createAndReturnImageCached(
         const { buffer: _buffer, ...maturity } = result;
         const metadataObj = prepareMetadata(prompt, originalPrompt, safeParams);
 
-        // Process the image buffer
-        const processedBuffer = await processImageBuffer(
-            result.buffer,
-            metadataObj,
-            maturity,
-        );
+        // SVG must stay vector; raster formats retain the existing JPEG + EXIF path.
+        const processedBuffer =
+            result.mimeType === "image/svg+xml"
+                ? result.buffer
+                : await processImageBuffer(
+                      result.buffer,
+                      metadataObj,
+                      maturity,
+                  );
 
         return {
             buffer: processedBuffer,
+            mimeType: result.mimeType,
             isChild,
             isMature,
             trackingData: result.trackingData,

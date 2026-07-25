@@ -6,11 +6,6 @@ const QUALITIES = ["low", "medium", "high", "hd"] as const;
 // Maximum seed value - use INT32_MAX for compatibility with strict providers like Vertex AI
 const MAX_SEED_VALUE = 2147483647; // INT32_MAX (2^31 - 1)
 
-// Build list of valid model names: service IDs + all aliases
-const VALID_IMAGE_MODELS = [
-    ...Object.keys(IMAGE_SERVICES),
-    ...Object.values(IMAGE_SERVICES).flatMap((service) => service.aliases),
-] as const;
 const NOVA_REEL_MODELS = new Set([
     "nova-reel",
     ...IMAGE_SERVICES["nova-reel"].aliases,
@@ -21,10 +16,7 @@ const GenerateImageRequestQueryParamsBaseSchema = z.object({
     model: z
         .preprocess(
             (val) => (val === "" ? undefined : val),
-            z
-                .enum(VALID_IMAGE_MODELS as unknown as [string, ...string[]])
-                .optional()
-                .default(DEFAULT_IMAGE_MODEL),
+            z.string().trim().min(1).optional().default(DEFAULT_IMAGE_MODEL),
         )
         .meta({
             description:

@@ -91,6 +91,7 @@ export function CommunityEndpointDialog({
     function updateForm(key: keyof EndpointFormState, value: string): void {
         setForm((current) => nextFormState(current, key, value));
         if (
+            key === "modality" ||
             key === "name" ||
             key === "upstreamModel" ||
             key === "baseUrl" ||
@@ -98,7 +99,7 @@ export function CommunityEndpointDialog({
         ) {
             setTestState(idleAction);
         }
-        if (key === "baseUrl" || key === "bearerToken") {
+        if (key === "modality" || key === "baseUrl" || key === "bearerToken") {
             setModelOptions([]);
             setModelListState(idleAction);
             setProviderModelMenuOpen(false);
@@ -150,21 +151,43 @@ export function CommunityEndpointDialog({
                 json: {
                     baseUrl: form.baseUrl.trim(),
                     bearerToken: form.bearerToken.trim(),
+                    modality: form.modality,
                     model: form.upstreamModel.trim() || form.name.trim(),
                 },
             });
             if (!response.ok) throw new Error(await readError(response));
             const body =
                 (await response.json()) as CommunityEndpointTestResponse;
-            const returnedFields = returnedPriceFields({
-                status: "success",
-                usage: body.usage,
-                billableUsage: body.billableUsage,
-            });
+            const detectedImagePricing =
+                form.modality === "image"
+                    ? (body.imagePricing ?? "request")
+                    : form.imagePricing;
+            const returnedFields = returnedPriceFields(
+                {
+                    status: "success",
+                    usage: body.usage,
+                    billableUsage: body.billableUsage,
+                },
+                form.modality,
+                detectedImagePricing,
+            );
             if (returnedFields.length === 0) {
                 throw new Error(
-                    "Endpoint responded, but did not return billable token usage",
+                    form.modality === "image"
+                        ? "Endpoint responded, but did not return image data"
+                        : "Endpoint responded, but did not return billable usage",
                 );
+            }
+            if (detectedImagePricing !== form.imagePricing) {
+                // The detected mode changes what the shared image price keys
+                // mean (per image ↔ per 1M tokens), so stale entries reset.
+                setForm((current) => ({
+                    ...current,
+                    imagePricing: detectedImagePricing,
+                    promptTextPrice: "",
+                    promptImagePrice: "",
+                    completionImagePrice: "",
+                }));
             }
             setTestState({
                 status: "success",
@@ -211,13 +234,19 @@ export function CommunityEndpointDialog({
     // reveals the test + pricing section immediately. Private models carry no
     // pricing (owner is the only caller).
     const isShared = form.visibility === "public";
-    const returnedFields = isShared ? returnedPriceFields(testState) : [];
-    // Reveal the optional base text prices plus whatever the test observed or
-    // the model already had saved. Blank and zero prices mean free.
+    const returnedFields = isShared
+        ? returnedPriceFields(testState, form.modality, form.imagePricing)
+        : [];
+    // Reveal the modality's base price plus whatever the test observed or the
+    // model already had saved. Blank and zero prices mean free.
+    const basePriceKeys =
+        form.modality === "image"
+            ? (["completionImagePrice"] as const)
+            : BASE_TEXT_PRICE_KEYS;
     const visiblePriceKeys = new Set(
         isShared
             ? visiblePriceFieldKeys(savedPriceKeys, returnedFields, [
-                  ...BASE_TEXT_PRICE_KEYS,
+                  ...basePriceKeys,
               ])
             : [],
     );
@@ -283,6 +312,41 @@ export function CommunityEndpointDialog({
                 <ScrollArea className="min-h-0 flex-1 space-y-4 overscroll-contain px-6 pb-2">
                     {error && <Alert intent="danger">{error}</Alert>}
 
+                    <FieldStack
+                        label="Modality"
+                        helper={
+                            isEdit
+                                ? "Existing models keep their registered modality."
+                                : "Choose the public API family this endpoint serves."
+                        }
+                        alignLabelRow
+                    >
+                        <div className="grid grid-cols-2 gap-2">
+                            {(["text", "image"] as const).map((modality) => {
+                                const selected = form.modality === modality;
+                                return (
+                                    <button
+                                        key={modality}
+                                        type="button"
+                                        disabled={isEdit}
+                                        className={`rounded-md border px-3 py-2 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-60 ${
+                                            selected
+                                                ? "border-theme-border-active bg-theme-bg-active text-theme-text-strong"
+                                                : "border-divider bg-surface text-theme-text-muted hover:bg-surface-opaque"
+                                        }`}
+                                        onClick={() =>
+                                            updateForm("modality", modality)
+                                        }
+                                    >
+                                        {modality === "image"
+                                            ? "Image"
+                                            : "Text"}
+                                    </button>
+                                );
+                            })}
+                        </div>
+                    </FieldStack>
+
                     <div className="grid gap-4 sm:grid-cols-2">
                         <FieldStack
                             label="Model ID"
@@ -324,7 +388,7 @@ export function CommunityEndpointDialog({
                         label="Visibility"
                         helper={
                             isShared
-                                ? "Public: listed in /models and callable by anyone. Set optional per-1M-token prices below, or leave them at 0 for free."
+                                ? "Public: listed in /models and callable by anyone. Set optional usage prices below, or leave them at 0 for free."
                                 : canPublish
                                   ? "Private: callable only by you and shown only in model lists authenticated with your API key."
                                   : "Private: callable only by you. Publishing publicly requires approval."
@@ -361,7 +425,7 @@ export function CommunityEndpointDialog({
                     <div className="grid gap-4 sm:grid-cols-2">
                         <FieldStack
                             label="Endpoint URL"
-                            helper="OpenAI-compatible /v1 base URL or full chat completions URL."
+                            helper="OpenAI-compatible /v1 base URL, or full chat/image generation URL."
                             alignLabelRow
                         >
                             <Input
@@ -422,7 +486,11 @@ export function CommunityEndpointDialog({
                                             <Input
                                                 name="community-upstream-id"
                                                 value={form.upstreamModel}
-                                                placeholder="gpt-4o-mini"
+                                                placeholder={
+                                                    form.modality === "image"
+                                                        ? "gpt-image-2"
+                                                        : "gpt-4o-mini"
+                                                }
                                                 className="w-full pr-10"
                                                 autoComplete="off"
                                                 autoCapitalize="none"
@@ -485,7 +553,11 @@ export function CommunityEndpointDialog({
                                 <Input
                                     name="community-upstream-id"
                                     value={form.upstreamModel}
-                                    placeholder="gpt-4o-mini"
+                                    placeholder={
+                                        form.modality === "image"
+                                            ? "gpt-image-2"
+                                            : "gpt-4o-mini"
+                                    }
                                     autoComplete="off"
                                     autoCapitalize="none"
                                     spellCheck={false}
@@ -562,6 +634,8 @@ export function CommunityEndpointDialog({
                     {isShared && (
                         <PriceGroups
                             form={form}
+                            modality={form.modality}
+                            imagePricing={form.imagePricing}
                             testState={testState}
                             visiblePriceKeys={visiblePriceKeys}
                             onChange={updateForm}

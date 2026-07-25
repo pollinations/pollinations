@@ -42,7 +42,7 @@ new_classes = ["PollenRateLimiter"]
 ENVIRONMENT = "development"
 LOG_LEVEL = "trace"
 LOG_FORMAT = "text"
-TINYBIRD_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=generation_event"
+TINYBIRD_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=generation_event_v2"
 AWS_BEDROCK_REGION = "us-east-1"
 BEDROCK_GUARDRAIL_ID = "utmttwfzrzp8"
 BEDROCK_GUARDRAIL_VERSION = "2"
@@ -117,7 +117,7 @@ new_classes = ["PollenRateLimiter"]
 ENVIRONMENT = "production"
 LOG_LEVEL = "debug"
 LOG_FORMAT = "json"
-TINYBIRD_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=generation_event"
+TINYBIRD_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=generation_event_v2"
 POLLEN_REFILL_PER_HOUR = 1
 AWS_BEDROCK_REGION = "us-east-1"
 BEDROCK_GUARDRAIL_ID = "utmttwfzrzp8"
@@ -145,7 +145,7 @@ service = "pollinations-enter-staging"
 [[env.staging.d1_databases]]
 binding = "DB"
 database_name = "staging-pollinations-enter-db"
-database_id = "63da5347-3fa8-4410-a68f-c9e83956f76a"
+database_id = "2cb1cf1a-a18a-4cad-a4bb-be64e3c0e39f"
 migrations_dir = "../enter.pollinations.ai/drizzle"
 
 [[env.staging.kv_namespaces]]
@@ -177,13 +177,13 @@ new_classes = ["PollenRateLimiter"]
 ENVIRONMENT = "staging"
 LOG_LEVEL = "debug"
 LOG_FORMAT = "json"
-TINYBIRD_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=generation_event"
+TINYBIRD_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=generation_event_v2"
 AWS_BEDROCK_REGION = "us-east-1"
 BEDROCK_GUARDRAIL_ID = "utmttwfzrzp8"
 BEDROCK_GUARDRAIL_VERSION = "2"
 # Staging OAuth lockdown — must match enter.pollinations.ai staging allowlist.
 # Request-time gate in shared/auth/api-key.ts fails closed without it. Issue #11137.
-STAGING_ALLOWED_GITHUB_IDS = "36901823,5099901,235942848,248917639,241978997,118118458"
+STAGING_ALLOWED_GITHUB_IDS = "36901823,5099901,235942848,248917639,241978997,118118458,189873015"
 STAGING_ALLOWED_EMAILS = "elliot@pollinations.ai"
 [env.test]
 
@@ -231,7 +231,7 @@ LOG_LEVEL = "trace"
 LOG_FORMAT = "text"
 BETTER_AUTH_SECRET = "not-a-secret-workers-test-only"
 TINYBIRD_INGEST_TOKEN = "not-a-secret-workers-test-only"
-TINYBIRD_INGEST_URL = "http://localhost:7181/v0/events?name=generation_event"
+TINYBIRD_INGEST_URL = "http://localhost:7181/v0/events?name=generation_event_v2"
 PORTKEY_GATEWAY_URL = "https://portkey.test"
 AI_GATEWAY_API_KEY = "not-a-secret-workers-test-only"
 AWS_ACCESS_KEY_ID = "not-a-secret-workers-test-only"

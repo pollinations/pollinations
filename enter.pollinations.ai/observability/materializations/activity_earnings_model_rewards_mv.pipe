@@ -20,7 +20,7 @@ SQL >
         dev_price AS price_usd,
         community_model_reward_amount AS pollen_earned,
         community_model_reward_rate AS reward_rate
-    FROM generation_event
+    FROM generation_event_v2
     WHERE community_model_reward_user_id != 'undefined'
       AND community_model_reward_amount > 0
       AND start_time >= toDateTime('2026-01-01 00:00:00')

@@ -1,0 +1,35 @@
+{
+  "pr_number": 12751,
+  "title": "feat: upgrade claude-large to Opus 5",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/12751",
+  "merged_at": "2026-07-25T10:43:30Z",
+  "labels": [],
+  "pr_body_excerpt": "- Routes `claude-large` to `global.anthropic.claude-opus-5` on AWS Bedrock with no fallback.\n- Adds `claude-opus-5` while preserving the existing `claude-opus-4.8` and `claude-opus` aliases.\n- Keeps pricing and paid-only access unchanged; preserves opt-in reasoning while supporting Opus 5 adaptive thinking.\n- Returns a clear 400 for malformed image URLs instead of passing them to Bedrock.\n\nVerification:\n- Full gen suite: 674 tests passed.\n- Enter registry/pricing suite: 291 tests passed.\n- Typechecks passed for gen and enter.\n- Local authenticated E2E passed for text, vision, multiple images, tools, reasoning, streaming, cache write/read billing, aliases, paid-only enforcement, errors, and a 50-request burst.\n- AWS quota headroom verified; no quota request or secret change is required.",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "The big brain moved in",
+    "blurb": "claude-large now opens the door to Claude Opus 5, with adaptive thinking ready when you opt in. The old aliases are still tending their respective garden beds.",
+    "summary": "Routed the paid-only `claude-large` alias to `global.anthropic.claude-opus-5` on AWS Bedrock with no fallback, added an explicit `claude-opus-5` model ID, and preserved existing `claude-opus-4.8` and `claude-opus` aliases, pricing, and opt-in reasoning.",
+    "impact": "Developers using `claude-large` gain Claude Opus 5 and its adaptive-thinking support without changing their existing access, pricing, reasoning, vision, streaming, tools, or alias workflows; malformed image URLs now receive a clear 400 response.",
+    "keywords": [
+      "claude",
+      "opus-5",
+      "bedrock",
+      "models",
+      "reasoning",
+      "vision",
+      "api"
+    ],
+    "visual_concept": "Depict Claude Opus 5 as a newly installed, oversized-but-cozy glowing library brain inside a garden-shed AI workshop, with clearly labeled old alias signposts still leading to their own tidy flower beds. Polli should be a thoughtful librarian or researcher, gently guiding the Monitor Robot as it reads an adaptive-thinking scroll beside a retro terminal, while code-plants and a safely rejected malformed-picture envelope represent the improved image-URL error handling.",
+    "image_prompt": "Cozy pixel art scene in a warm garden-shed AI library where Polli, the cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings, wears tiny librarian glasses and guides a cute CRT-monitor robot toward a glowing book-brain labeled in simple pixel text “OPUS 5”; nearby, code-plants grow beside signposts for “claude-large”, “opus”, and “4.8”, while a small malformed picture envelope is politely stamped “400”. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel mint-lavender-peach gradient background, chunky retro sprites, warm lighting, subtle CRT glow, retro gaming vibes like Stardew Valley or A Short Hike, nostalgic but beautiful and emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-25/PR-12751.jpg",
+    "prompt": "Cozy pixel art scene in a warm garden-shed AI library where Polli, the cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings, wears tiny librarian glasses and guides a cute CRT-monitor robot toward a glowing book-brain labeled in simple pixel text “OPUS 5”; nearby, code-plants grow beside signposts for “claude-large”, “opus”, and “4.8”, while a small malformed picture envelope is politely stamped “400”. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel mint-lavender-peach gradient background, chunky retro sprites, warm lighting, subtle CRT glow, retro gaming vibes like Stardew Valley or A Short Hike, nostalgic but beautiful and emotionally warm."
+  },
+  "generated_at": "2026-07-25T10:44:28.643277+00:00"
+}

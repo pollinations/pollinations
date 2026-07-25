@@ -17,6 +17,7 @@ export type CommunityEndpoint = {
     id: string;
     modelId: string;
     name: string;
+    // Always populated by the API, which falls back for un-backfilled rows.
     title: string;
     description: string | null;
     modality: CommunityEndpointModality;

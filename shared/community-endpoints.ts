@@ -8,8 +8,6 @@ import {
 
 export const LEGACY_COMMUNITY_MODEL_PREFIX = "community/";
 export const COMMUNITY_MODEL_REWARD_RATE = 0.75;
-export const COMMUNITY_ENDPOINT_TITLE_MAX_LENGTH = 42;
-export const COMMUNITY_ENDPOINT_DESCRIPTION_MAX_LENGTH = 160;
 export const COMMUNITY_ENDPOINT_MODALITIES = ["text", "image"] as const;
 // How a community image endpoint is billed. "request" charges the fixed
 // per-image price once per generation; "tokens" charges the provider-returned
@@ -20,6 +18,10 @@ export const COMMUNITY_ENDPOINT_IMAGE_PRICING_MODES = [
     "request",
     "tokens",
 ] as const;
+// Display name shown in the catalog and dashboard, separate from the callable
+// slug (`name`) and the optional longer `description`.
+export const COMMUNITY_ENDPOINT_TITLE_MAX_LENGTH = 42;
+export const COMMUNITY_ENDPOINT_DESCRIPTION_MAX_LENGTH = 160;
 // Zero is free; positive owner-declared prices start at this floor.
 export const MIN_COMMUNITY_PRICE_PER_MILLION_TOKENS = 0.000001;
 export const MIN_COMMUNITY_PRICE_PER_TOKEN =
@@ -215,7 +217,9 @@ export type CommunityEndpointRuntime = {
     ownerUserId: string;
     modelId: string;
     name: string;
-    title: string;
+    // Null on rows created before titles existed; read paths go through
+    // communityEndpointTitle() rather than using this directly.
+    title: string | null;
     description: string | null;
     modality: CommunityEndpointModality;
     imagePricing: CommunityEndpointImagePricing;
@@ -229,7 +233,7 @@ export type CommunityEndpointRuntime = {
 
 export type CommunityModelDefinitionInput = {
     modelId: string;
-    title: string;
+    title?: string | null;
     description: string | null;
     modality?: CommunityEndpointModality;
     imagePricing?: CommunityEndpointImagePricing;
@@ -361,11 +365,28 @@ export function communityPriceDefinition(
     return pricing;
 }
 
+// Titles became a required field after these rows were created, so older
+// endpoints have no stored title. Fall back to what the catalog showed before
+// the column existed (description, then the model slug) so `/models` output is
+// unchanged for un-backfilled rows.
+export function communityEndpointTitle(endpoint: {
+    modelId: string;
+    title?: string | null;
+    description?: string | null;
+}): string {
+    const title = endpoint.title?.trim();
+    if (title) return title;
+    const description = endpoint.description?.trim();
+    if (description) return description;
+    return (
+        parseCommunityModelId(endpoint.modelId)?.modelName ?? endpoint.modelId
+    );
+}
+
 export function communityModelDefinition(
     endpoint: CommunityModelDefinitionInput,
 ): ModelDefinition {
     const parsed = parseCommunityModelId(endpoint.modelId);
-    const title = endpoint.title.trim();
     const description = endpoint.description?.trim();
     const legacyAlias = parsed
         ? legacyCommunityModelId(parsed.ownerGithubUsername, parsed.modelName)
@@ -388,7 +409,7 @@ export function communityModelDefinition(
         cost: communityPriceDefinition(endpoint, modality, imagePricing),
         priceMultiplier: 1,
         addedDate: 0,
-        title,
+        title: communityEndpointTitle(endpoint),
         description: description || undefined,
         inputModalities: ["text"],
         outputModalities: isImage ? ["image"] : ["text"],

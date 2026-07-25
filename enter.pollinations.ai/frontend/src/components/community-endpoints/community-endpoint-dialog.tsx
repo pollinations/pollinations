@@ -2,6 +2,7 @@ import {
     Alert,
     Button,
     ButtonGroup,
+    CheckIcon,
     ChevronIcon,
     Dialog,
     DialogTitle,
@@ -11,9 +12,7 @@ import {
     Input,
     ScrollArea,
     TabButton,
-    Textarea,
 } from "@pollinations/ui";
-import { ModalityTab } from "@pollinations/ui/gen";
 import {
     COMMUNITY_ENDPOINT_DESCRIPTION_MAX_LENGTH,
     COMMUNITY_ENDPOINT_TITLE_MAX_LENGTH,
@@ -327,15 +326,19 @@ export function CommunityEndpointDialog({
                         }
                         alignLabelRow
                     >
-                        <ButtonGroup aria-label="Model modality">
+                        <div className="grid grid-cols-2 gap-2">
                             {(["text", "image"] as const).map((modality) => {
+                                const selected = form.modality === modality;
                                 return (
-                                    <ModalityTab
+                                    <button
                                         key={modality}
-                                        active={form.modality === modality}
+                                        type="button"
                                         disabled={isEdit}
-                                        size="sm"
-                                        className="min-w-24"
+                                        className={`rounded-md border px-3 py-2 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-60 ${
+                                            selected
+                                                ? "border-theme-border-active bg-theme-bg-active text-theme-text-strong"
+                                                : "border-divider bg-surface text-theme-text-muted hover:bg-surface-opaque"
+                                        }`}
                                         onClick={() =>
                                             updateForm("modality", modality)
                                         }
@@ -343,10 +346,10 @@ export function CommunityEndpointDialog({
                                         {modality === "image"
                                             ? "Image"
                                             : "Text"}
-                                    </ModalityTab>
+                                    </button>
                                 );
                             })}
-                        </ButtonGroup>
+                        </div>
                     </FieldStack>
 
                     <div className="grid gap-4 sm:grid-cols-2">
@@ -370,13 +373,13 @@ export function CommunityEndpointDialog({
                         </FieldStack>
                         <FieldStack
                             label="Title"
-                            helper={`Shown as the model name. Up to ${COMMUNITY_ENDPOINT_TITLE_MAX_LENGTH} characters.`}
+                            helper="Display name shown in the Models list."
                             alignLabelRow
                         >
                             <Input
                                 name="community-model-title"
                                 value={form.title}
-                                placeholder="Fast Coding Model"
+                                placeholder="My Model"
                                 autoComplete="off"
                                 maxLength={COMMUNITY_ENDPOINT_TITLE_MAX_LENGTH}
                                 required
@@ -389,18 +392,17 @@ export function CommunityEndpointDialog({
 
                     <FieldStack
                         label="Description"
-                        helper={`Shown below the title in the Models list. Up to ${COMMUNITY_ENDPOINT_DESCRIPTION_MAX_LENGTH} characters.`}
+                        helper="Optional. One line about what the model is good at."
                         alignLabelRow
                     >
-                        <Textarea
+                        <Input
                             name="community-model-description"
                             value={form.description}
-                            placeholder="Fast coding model with a long context window."
+                            placeholder="Fast coding model, long context"
                             autoComplete="off"
                             maxLength={
                                 COMMUNITY_ENDPOINT_DESCRIPTION_MAX_LENGTH
                             }
-                            rows={4}
                             onChange={(e) =>
                                 updateForm("description", e.target.value)
                             }
@@ -423,8 +425,11 @@ export function CommunityEndpointDialog({
                                 active={form.visibility === "private"}
                                 onClick={() => updateVisibility("private")}
                                 size="sm"
-                                className="min-w-24"
+                                className="min-w-24 gap-1.5"
                             >
+                                {form.visibility === "private" && (
+                                    <CheckIcon className="h-3.5 w-3.5" />
+                                )}
                                 Private
                             </TabButton>
                             <TabButton
@@ -432,8 +437,11 @@ export function CommunityEndpointDialog({
                                 disabled={!canPublish}
                                 onClick={() => updateVisibility("public")}
                                 size="sm"
-                                className="min-w-24"
+                                className="min-w-24 gap-1.5"
                             >
+                                {form.visibility === "public" && (
+                                    <CheckIcon className="h-3.5 w-3.5" />
+                                )}
                                 Public
                             </TabButton>
                         </ButtonGroup>
@@ -663,7 +671,6 @@ export function CommunityEndpointDialog({
                 <div className="flex shrink-0 justify-end gap-2 p-6 pt-4">
                     <Button
                         type="button"
-                        intent="danger"
                         className="disabled:opacity-50"
                         onClick={() => onOpenChange(false)}
                         disabled={isSubmitting}

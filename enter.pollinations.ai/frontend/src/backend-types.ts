@@ -4,3 +4,4 @@
 // because route types include hono-openapi declarations.
 export type { FrontendApiRoutes as ApiRoutes } from "../../src/frontend-api.ts";
 export type { QuestCatalogResponse } from "../../src/routes/quests.ts";
+export type { StatusNotice } from "../../src/routes/status-notice.ts";

@@ -1,0 +1,63 @@
+{
+  "date": "2026-07-24",
+  "period_start": "2026-07-24",
+  "period_end": "2026-07-24",
+  "title": "SVGs and 30-second music clips joined the API",
+  "summary": "A format-expanding day: SVG vectors and music clips arrived, image models got sturdier routes, and community models became more visible.\n\nPollinations can now generate real SVG vector artwork with Recraft, including text-to-SVG and single-reference-image requests through the image and OpenAI-compatible endpoints. Lyria 3 Clip also landed, producing verified 30-second stereo MP3s through GET and OpenAI-compatible audio requests. Pixels were apparently not enough formats.\n\nNanoBanana, NanoBanana 2, NanoBanana 2 Lite, NanoBanana Pro, and Seedream Pro now run through pinned OpenRouter provider routes while keeping their existing aliases, editing flows, reference-image support, resolution controls, caching, EXIF behavior, and content-policy responses. NanoBanana 2 and Pro retain direct 4K generation, while Seedream keeps its 2K and 4K presets.\n\nThe Flux Klein worker now caps requests at a tested 2.36-megapixel area, uses a more resilient CUDA allocator setup, clears cache after out-of-memory events, and returns controlled responses for oversized work. Supported large formats such as 1536×1536 and 2048×1152 get a steadier worker instead of an opportunity to discover GPU limits the dramatic way.",
+  "pr_count": 13,
+  "prs": [
+    {
+      "number": 12708,
+      "date": "2026-07-24"
+    },
+    {
+      "number": 12709,
+      "date": "2026-07-24"
+    },
+    {
+      "number": 12710,
+      "date": "2026-07-24"
+    },
+    {
+      "number": 12712,
+      "date": "2026-07-24"
+    },
+    {
+      "number": 12719,
+      "date": "2026-07-24"
+    },
+    {
+      "number": 12720,
+      "date": "2026-07-24"
+    },
+    {
+      "number": 12721,
+      "date": "2026-07-24"
+    },
+    {
+      "number": 12724,
+      "date": "2026-07-24"
+    },
+    {
+      "number": 12725,
+      "date": "2026-07-24"
+    },
+    {
+      "number": 12728,
+      "date": "2026-07-24"
+    },
+    {
+      "number": 12731,
+      "date": "2026-07-24"
+    },
+    {
+      "number": 12733,
+      "date": "2026-07-24"
+    },
+    {
+      "number": 12736,
+      "date": "2026-07-24"
+    }
+  ],
+  "generated_at": "2026-07-25T06:55:31.040074+00:00"
+}

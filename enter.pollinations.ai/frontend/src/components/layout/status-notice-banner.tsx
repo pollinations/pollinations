@@ -8,6 +8,15 @@ import {
     shouldShowStatusNotice,
 } from "./status-notice-state.ts";
 
+const severityToIntent = {
+    info: "info",
+    warning: "warning",
+    critical: "danger",
+} as const satisfies Record<
+    StatusNotice["severity"],
+    "info" | "warning" | "danger"
+>;
+
 export const StatusNoticeBanner: FC<{ className?: string }> = ({
     className,
 }) => {
@@ -38,9 +47,11 @@ export const StatusNoticeBanner: FC<{ className?: string }> = ({
 
     if (!shouldShowStatusNotice(notice, dismissedUpdatedAt)) return null;
 
+    const intent = notice ? severityToIntent[notice.severity] : "warning";
+
     return (
         <Alert
-            intent="warning"
+            intent={intent}
             aria-live="polite"
             className={cn("relative pr-11", className)}
         >

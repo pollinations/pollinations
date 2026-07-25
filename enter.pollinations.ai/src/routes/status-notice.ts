@@ -6,9 +6,14 @@ import type { Env } from "../env.ts";
 
 const KV_KEY = "status-notice:active";
 const ALLOWED_SCHEMES = new Set(["http:", "https:"]);
+const SEVERITY_VALUES = ["info", "warning", "critical"] as const;
+const DEFAULT_SEVERITY = "warning";
+
+export type Severity = (typeof SEVERITY_VALUES)[number];
 
 export type StatusNotice = {
     message: string;
+    severity: Severity;
     linkUrl: string | null;
     linkLabel: string | null;
     updatedAt: string;
@@ -16,6 +21,7 @@ export type StatusNotice = {
 
 const storedNoticeSchema = z.object({
     message: z.string().trim().min(1).max(500),
+    severity: z.enum(SEVERITY_VALUES),
     linkUrl: z.string().url().max(2048).nullable(),
     linkLabel: z.string().trim().min(1).max(80).nullable(),
     updatedAt: z.string().datetime(),
@@ -23,6 +29,7 @@ const storedNoticeSchema = z.object({
 
 const publishNoticeSchema = z.object({
     message: z.string().trim().min(1).max(500),
+    severity: z.enum(SEVERITY_VALUES).optional(),
     linkUrl: z.string().url().max(2048).nullable().optional(),
     linkLabel: z.string().trim().min(1).max(80).nullable().optional(),
 });
@@ -53,7 +60,31 @@ async function readNotice(kv: KVNamespace): Promise<StatusNotice | null> {
     const parsed = storedNoticeSchema.safeParse(
         await kv.get<unknown>(KV_KEY, "json"),
     );
-    return parsed.success ? parsed.data : null;
+    return parsed.success ? (parsed.data as StatusNotice) : null;
+}
+
+/**
+ * Returns true if the normalized payload is identical to the previous notice
+ * (excluding `updatedAt`). Used to implement idempotent re-save: when an admin
+ * re-publishes the exact same notice, we keep the original `updatedAt` and skip
+ * the KV write so the dismiss state on existing dashboards is preserved.
+ */
+function isSamePayload(
+    next: {
+        message: string;
+        severity: Severity;
+        linkUrl: string | null;
+        linkLabel: string | null;
+    },
+    prev: StatusNotice | null,
+): prev is StatusNotice {
+    if (!prev) return false;
+    return (
+        next.message === prev.message &&
+        next.severity === prev.severity &&
+        next.linkUrl === prev.linkUrl &&
+        next.linkLabel === prev.linkLabel
+    );
 }
 
 export const statusNoticePublicRoutes = new Hono<Env>().get(
@@ -85,7 +116,8 @@ export const statusNoticeAdminRoutes = new Hono<Env>()
             security: [{ bearer: [] }],
             responses: {
                 200: {
-                    description: "The published dashboard notice",
+                    description:
+                        "The active dashboard notice (published or unchanged)",
                     content: {
                         "application/json": {
                             schema: resolver(noticeResponseSchema),
@@ -122,10 +154,25 @@ export const statusNoticeAdminRoutes = new Hono<Env>()
                 });
             }
 
-            const notice: StatusNotice = {
+            const nextPayload = {
                 message: parsed.data.message,
+                severity: (parsed.data.severity ??
+                    DEFAULT_SEVERITY) as Severity,
                 linkUrl,
+                // linkLabel is only meaningful when a linkUrl is provided;
+                // strip it otherwise so banner logic never sees a dangling label.
                 linkLabel: linkUrl ? (parsed.data.linkLabel ?? null) : null,
+            };
+
+            const existing = await readNotice(c.env.KV);
+            if (isSamePayload(nextPayload, existing)) {
+                // Idempotent re-save: keep the original updatedAt so users who
+                // already dismissed the notice don't see it reappear.
+                return c.json({ notice: existing });
+            }
+
+            const notice: StatusNotice = {
+                ...nextPayload,
                 updatedAt: new Date().toISOString(),
             };
             await c.env.KV.put(KV_KEY, JSON.stringify(notice));

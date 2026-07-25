@@ -1,0 +1,34 @@
+{
+  "pr_number": 12756,
+  "title": "fix: cap community model prices",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/12756",
+  "merged_at": "2026-07-25T12:29:38Z",
+  "labels": [],
+  "pr_body_excerpt": "- Caps token-priced community models at 50 Pollen per 1M tokens.\n- Caps fixed-price community image models at 0.25 Pollen per image.\n- Enforces the limits in the API and dashboard price inputs.\n- Adds boundary coverage for token and image pricing.\n\nChecks:\n- `biome check` on all changed files\n- `git diff --check`\n\nThe focused local Worker test is currently blocked by an incomplete reused dependency tree (`stripe` missing); GitHub CI installs the locked dependencies.",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Price ceilings, freshly installed",
+    "blurb": "The community model garden now has sensible price rails. Token models stop at 50 Pollen per million tokens, and image models stop at 0.25 Pollen per image.",
+    "summary": "Community endpoint pricing now caps token-priced models at 50 Pollen per 1M tokens and fixed-price image models at 0.25 Pollen per image, enforced in both the API and dashboard inputs.",
+    "impact": "People publishing and using community models get consistent upper price bounds, with the dashboard and API rejecting prices beyond those limits.",
+    "keywords": [
+      "community-models",
+      "pricing",
+      "pollen",
+      "dashboard",
+      "api",
+      "community-endpoints"
+    ],
+    "visual_concept": "A cozy community market garden with two clearly marked price fences: one beside a token-producing code plant labeled 50 Pollen / 1M, and another beside an image-flower printer labeled 0.25 Pollen / image. Polli, wearing a tiny gardener visor and holding a measuring tape, checks that the plants remain safely under their little wooden ceiling signs.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks, a small happy smile, and small rounded light blue translucent wings, wearing a tiny gardener visor and measuring two friendly code-plants beneath wooden price-cap signs reading “50 POLLEN / 1M” and “0.25 / IMAGE”; pixel flowers and a retro dashboard terminal glow nearby. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, chunky sprites, subtle CRT glow, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-25/PR-12756.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks, a small happy smile, and small rounded light blue translucent wings, wearing a tiny gardener visor and measuring two friendly code-plants beneath wooden price-cap signs reading “50 POLLEN / 1M” and “0.25 / IMAGE”; pixel flowers and a retro dashboard terminal glow nearby. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, chunky sprites, subtle CRT glow, nostalgic but beautiful."
+  },
+  "generated_at": "2026-07-25T12:30:43.227701+00:00"
+}

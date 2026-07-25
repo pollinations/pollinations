@@ -20,6 +20,7 @@ import type { ContentfulStatusCode } from "hono/utils/http-status";
 import { describeRoute } from "hono-openapi";
 import { z } from "zod";
 import type { Env } from "@/env.ts";
+import { accountConcurrencyLimit } from "@/middleware/account-concurrency.ts";
 import { auth } from "@/middleware/auth.ts";
 import { balance } from "@/middleware/balance.ts";
 import { resolveModel } from "@/middleware/model.ts";
@@ -1900,6 +1901,7 @@ export const audioRoutes = new Hono<Env>()
             },
         }),
         resolveModel("generate.audio", { defaultModel: "elevenmusic" }),
+        accountConcurrencyLimit,
         track("generate.audio"),
         async (c) => {
             const log = c.get("log").getChild("music-upload");
@@ -1996,6 +1998,7 @@ export const audioRoutes = new Hono<Env>()
             },
         }),
         resolveModel("generate.audio"),
+        accountConcurrencyLimit,
         track("generate.audio"),
         async (c) => {
             const log = c.get("log").getChild("tts");
@@ -2183,6 +2186,7 @@ export const audioRoutes = new Hono<Env>()
         resolveModel("generate.audio", {
             defaultModel: "whisper-large-v3",
         }),
+        accountConcurrencyLimit,
         track("generate.audio"),
         async (c) => {
             const log = c.get("log").getChild("transcription");

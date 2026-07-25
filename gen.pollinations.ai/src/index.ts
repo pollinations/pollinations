@@ -31,6 +31,7 @@ import { modelStatusRoutes } from "./routes/model-status.ts";
 import { proxyRoutes } from "./routes/proxy.ts";
 import { docsLandingHtml, manifestResponse } from "./routes/seo.ts";
 
+export { AccountConcurrencyLimiter } from "./durable-objects/AccountConcurrencyLimiter.ts";
 export { PollenRateLimiter } from "./durable-objects/PollenRateLimiter.ts";
 
 const app = new Hono<Env>();

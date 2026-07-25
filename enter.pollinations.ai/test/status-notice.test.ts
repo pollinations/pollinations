@@ -153,7 +153,9 @@ describe("Status Notice Routes", () => {
 
         it("clears an existing notice", async () => {
             const env = mockEnv();
-            (env.KV.delete as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
+            (env.KV.delete as ReturnType<typeof vi.fn>).mockResolvedValue(
+                undefined,
+            );
 
             const res = await app.request(
                 "/status-notice",

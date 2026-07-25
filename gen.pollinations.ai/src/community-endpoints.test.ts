@@ -2154,6 +2154,7 @@ fixtureTest(
                         "Content-Type": "application/json",
                     },
                     body: JSON.stringify({
+                        title: "Updated Model Title",
                         description: "Updated description",
                         visibility: "public",
                         promptTextPrice: 0.1,
@@ -2164,6 +2165,7 @@ fixtureTest(
         );
         expect(updateResponse.status).toBe(200);
         await expect(updateResponse.json()).resolves.toMatchObject({
+            title: "Updated Model Title",
             description: "Updated description",
             visibility: "public",
             promptTextPrice: 0.1,
@@ -2331,6 +2333,9 @@ fixtureTest(
             data: Record<string, unknown>[];
         };
         expect(secondList.data).toHaveLength(1);
+        expect(secondList.data[0]).toMatchObject({
+            title: "Updated Model Title",
+        });
         expect(secondList.data[0]).not.toHaveProperty("bearerToken");
         expect(secondList.data[0]).not.toHaveProperty("bearerTokenCiphertext");
     },

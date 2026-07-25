@@ -625,6 +625,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
                 updatedAt: new Date(),
             };
             if (input.name !== undefined) update.name = input.name;
+            if (input.title !== undefined) update.title = input.title;
             if (input.description !== undefined) {
                 update.description = input.description || null;
             }

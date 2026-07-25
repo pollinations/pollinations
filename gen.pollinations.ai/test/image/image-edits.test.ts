@@ -1,7 +1,5 @@
 import { describe, expect, it } from "vitest";
-import {
-    getSourceImageDimensions,
-} from "../../src/image/utils/imageDownload.ts";
+import { getSourceImageDimensions } from "../../src/image/utils/imageDownload.ts";
 
 describe("getSourceImageDimensions (data URI)", () => {
     it("extracts PNG dimensions from a minimal data URI", async () => {

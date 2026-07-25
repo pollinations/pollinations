@@ -13,6 +13,9 @@ import {
     communityEndpointTitle,
     communityModelId,
     isCommunityEndpointOwnerAllowed,
+    MAX_COMMUNITY_PRICE_PER_IMAGE,
+    MAX_COMMUNITY_PRICE_PER_MILLION_TOKENS,
+    MAX_COMMUNITY_PRICE_PER_TOKEN,
     MIN_COMMUNITY_PRICE_PER_MILLION_TOKENS,
     MIN_COMMUNITY_PRICE_PER_TOKEN,
     normalizeCommunityEndpointBaseUrl,
@@ -68,6 +71,32 @@ const UpdatePriceFieldsSchema = Object.fromEntries(
     CommunityEndpointPriceKey,
     z.ZodOptional<z.ZodType<number>>
 >;
+
+function enforceCommunityEndpointPriceLimits(
+    source: Partial<Record<CommunityEndpointPriceKey, number>>,
+    modality: (typeof COMMUNITY_ENDPOINT_MODALITIES)[number],
+    imagePricing: (typeof COMMUNITY_ENDPOINT_IMAGE_PRICING_MODES)[number],
+): void {
+    for (const field of communityEndpointPriceFieldsForModality(
+        modality,
+        imagePricing,
+    )) {
+        const price = source[field.key];
+        const maxPrice =
+            field.priceUnit === "image"
+                ? MAX_COMMUNITY_PRICE_PER_IMAGE
+                : MAX_COMMUNITY_PRICE_PER_TOKEN;
+        if (price === undefined || price <= maxPrice) continue;
+
+        const limit =
+            field.priceUnit === "image"
+                ? `${MAX_COMMUNITY_PRICE_PER_IMAGE} Pollen per image`
+                : `${MAX_COMMUNITY_PRICE_PER_MILLION_TOKENS} Pollen per 1M tokens`;
+        throw new HTTPException(400, {
+            message: `${field.label} price must not exceed ${limit}`,
+        });
+    }
+}
 
 const VisibilitySchema = z
     .enum(COMMUNITY_ENDPOINT_VISIBILITIES)
@@ -448,6 +477,11 @@ export const communityEndpointsRoutes = new Hono<Env>()
                           imagePricing,
                       )
                     : communityEndpointPrices({});
+            enforceCommunityEndpointPriceLimits(
+                prices,
+                input.modality,
+                imagePricing,
+            );
             await enforcePublishingAccess(db, user.id, input.visibility);
             const id = crypto.randomUUID();
             const [row] = await db
@@ -683,6 +717,11 @@ export const communityEndpointsRoutes = new Hono<Env>()
                           modality,
                           effectiveImagePricing,
                       );
+            enforceCommunityEndpointPriceLimits(
+                effectivePrices,
+                modality,
+                effectiveImagePricing,
+            );
             await enforcePublishingAccess(db, user.id, effectiveVisibility);
             // Persist visibility together with the complete effective price
             // set on every update, so concurrent partial updates cannot

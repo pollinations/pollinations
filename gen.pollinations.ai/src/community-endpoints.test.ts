@@ -13,6 +13,9 @@ import {
     communityPriceDefinition,
     isCommunityEndpointOwnerAllowed,
     legacyCommunityModelId,
+    MAX_COMMUNITY_PRICE_PER_IMAGE,
+    MAX_COMMUNITY_PRICE_PER_MILLION_TOKENS,
+    MAX_COMMUNITY_PRICE_PER_TOKEN,
     MIN_COMMUNITY_PRICE_PER_MILLION_TOKENS,
     MIN_COMMUNITY_PRICE_PER_TOKEN,
     normalizeCommunityAssetUrl,
@@ -1358,8 +1361,8 @@ fixtureTest(
                     upstreamModel: "gpt-4.1-mini",
                     bearerToken: "sk_saved_token",
                     visibility: "public",
-                    promptTextPrice: 0.1,
-                    completionTextPrice: 0.1,
+                    promptTextPrice: 0.00001,
+                    completionTextPrice: 0.00001,
                 }),
             }),
         );
@@ -1411,8 +1414,8 @@ fixtureTest(
                     },
                     body: JSON.stringify({
                         visibility: "public",
-                        promptTextPrice: 0.1,
-                        completionTextPrice: 0.1,
+                        promptTextPrice: 0.00001,
+                        completionTextPrice: 0.00001,
                     }),
                 },
             ),
@@ -1617,8 +1620,8 @@ fixtureTest(
                     upstreamModel: "openai",
                     bearerToken: "Bearer sk_pollinations_upstream",
                     visibility: "public",
-                    promptTextPrice: 0.1,
-                    completionTextPrice: 0.1,
+                    promptTextPrice: 0.00001,
+                    completionTextPrice: 0.00001,
                 }),
             }),
         );
@@ -1638,8 +1641,8 @@ fixtureTest(
             baseUrl: "https://gen.pollinations.ai/v1",
             upstreamModel: "openai",
             visibility: "public",
-            promptTextPrice: 0.1,
-            completionTextPrice: 0.1,
+            promptTextPrice: 0.00001,
+            completionTextPrice: 0.00001,
         });
 
         const testResponse = await fetchEnterApi(
@@ -2041,6 +2044,43 @@ fixtureTest(
                     new Request(input, init).url === TEST_COMMUNITY_IMAGE_URL,
             ),
         ).toHaveLength(3);
+
+        const maximumImagePriceResponse = await fetchEnterApi(
+            enterApi,
+            new Request(
+                `http://localhost:3000/api/community-endpoints/${registered.id}/update`,
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Cookie: await signedSessionCookie(sessionToken),
+                    },
+                    body: JSON.stringify({
+                        completionImagePrice: MAX_COMMUNITY_PRICE_PER_IMAGE,
+                    }),
+                },
+            ),
+        );
+        expect(maximumImagePriceResponse.status).toBe(200);
+
+        const excessiveImagePriceResponse = await fetchEnterApi(
+            enterApi,
+            new Request(
+                `http://localhost:3000/api/community-endpoints/${registered.id}/update`,
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Cookie: await signedSessionCookie(sessionToken),
+                    },
+                    body: JSON.stringify({
+                        completionImagePrice:
+                            MAX_COMMUNITY_PRICE_PER_IMAGE + 0.01,
+                    }),
+                },
+            ),
+        );
+        expect(excessiveImagePriceResponse.status).toBe(400);
     },
 );
 
@@ -2157,8 +2197,8 @@ fixtureTest(
                         title: "Updated Model Title",
                         description: "Updated description",
                         visibility: "public",
-                        promptTextPrice: 0.1,
-                        completionTextPrice: 0.2,
+                        promptTextPrice: 0.00001,
+                        completionTextPrice: 0.00002,
                     }),
                 },
             ),
@@ -2168,8 +2208,8 @@ fixtureTest(
             title: "Updated Model Title",
             description: "Updated description",
             visibility: "public",
-            promptTextPrice: 0.1,
-            completionTextPrice: 0.2,
+            promptTextPrice: 0.00001,
+            completionTextPrice: 0.00002,
             disabled: true,
             disabledReason: "was failing",
         });
@@ -2264,15 +2304,15 @@ fixtureTest(
                         Authorization: `Bearer ${key}`,
                         "Content-Type": "application/json",
                     },
-                    body: JSON.stringify({ promptTextPrice: 0.3 }),
+                    body: JSON.stringify({ promptTextPrice: 0.00003 }),
                 },
             ),
         );
         expect(priceOnlyResponse.status).toBe(200);
         await expect(priceOnlyResponse.json()).resolves.toMatchObject({
             visibility: "public",
-            promptTextPrice: 0.3,
-            completionTextPrice: 0.2,
+            promptTextPrice: 0.00003,
+            completionTextPrice: 0.00002,
         });
 
         // Making the model private clears all owner-set prices.
@@ -2409,6 +2449,22 @@ fixtureTest(
         await expect(minimumResponse.json()).resolves.toMatchObject({
             promptTextPrice: MIN_COMMUNITY_PRICE_PER_TOKEN,
         });
+
+        const maximumResponse = await updatePrice(
+            MAX_COMMUNITY_PRICE_PER_TOKEN,
+        );
+        expect(maximumResponse.status).toBe(200);
+        await expect(maximumResponse.json()).resolves.toMatchObject({
+            promptTextPrice: MAX_COMMUNITY_PRICE_PER_TOKEN,
+        });
+
+        const aboveMaximumResponse = await updatePrice(
+            MAX_COMMUNITY_PRICE_PER_TOKEN * 1.01,
+        );
+        expect(aboveMaximumResponse.status).toBe(400);
+        expect(await aboveMaximumResponse.text()).toContain(
+            `${MAX_COMMUNITY_PRICE_PER_MILLION_TOKENS} Pollen per 1M tokens`,
+        );
 
         const belowMinimumResponse = await updatePrice(
             MIN_COMMUNITY_PRICE_PER_TOKEN / 10,

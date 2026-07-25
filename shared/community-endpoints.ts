@@ -26,6 +26,12 @@ export const COMMUNITY_ENDPOINT_DESCRIPTION_MAX_LENGTH = 160;
 export const MIN_COMMUNITY_PRICE_PER_MILLION_TOKENS = 0.000001;
 export const MIN_COMMUNITY_PRICE_PER_TOKEN =
     MIN_COMMUNITY_PRICE_PER_MILLION_TOKENS / 1_000_000;
+// Keep typos and malicious configurations from exposing callers to extreme
+// charges.
+export const MAX_COMMUNITY_PRICE_PER_MILLION_TOKENS = 50;
+export const MAX_COMMUNITY_PRICE_PER_TOKEN =
+    MAX_COMMUNITY_PRICE_PER_MILLION_TOKENS / 1_000_000;
+export const MAX_COMMUNITY_PRICE_PER_IMAGE = 0.25;
 const BEARER_PREFIX = /^Bearer(?:\s+|$)/i;
 
 export type CommunityEndpointModality =

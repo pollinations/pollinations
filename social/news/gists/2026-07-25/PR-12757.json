@@ -1,0 +1,35 @@
+{
+  "pr_number": 12757,
+  "title": "fix: batch quest reward inserts safely",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/12757",
+  "merged_at": "2026-07-25T13:41:50Z",
+  "labels": [],
+  "pr_body_excerpt": "- Sends each pending reward as its own prepared insert inside one transactional D1 batch.\n- Removes the schema-sensitive multi-row chunk size that exceeded D1's 100-bound-parameter limit.\n- Preserves idempotency and returns only IDs for rows that were actually inserted.\n- Adds coverage for a 12-reward scan, matching the production failure.\n\nValidation:\n- `npx biome check --write ../shared/billing/rewards.ts test/integration/rewards.test.ts`\n- `npx tsc --noEmit --pretty false`\n- Vitest Workers pool currently exits before loading any test file, including an unrelated existing test.",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Rewards, one seed at a time",
+    "blurb": "The quest reward garden no longer trips over a crowded wheelbarrow. Larger batches now settle safely, with every earned Pollen seed landing where it should.",
+    "summary": "Quest reward processing now sends each pending reward as an individual prepared insert within one transactional D1 batch, avoiding D1's 100-bound-parameter limit while preserving idempotency and inserted-ID reporting.",
+    "impact": "Users completing larger Quest reward batches can reliably receive their earned Pollen, including scans with 12 pending rewards that previously hit the database parameter limit.",
+    "keywords": [
+      "quests",
+      "pollen",
+      "rewards",
+      "D1",
+      "billing",
+      "transactions",
+      "reliability"
+    ],
+    "visual_concept": "Depict Polli as a careful garden keeper using a tiny tool belt to place individual glowing Pollen seeds into separate pots on a conveyor feeding a cozy retro database terminal. A friendly CRT monitor robot counts twelve successful seed pots while code-plants and flowers grow around the terminal, representing transactional, idempotent reward inserts without an overloaded batch.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink cheek blush, light blue wings, and a tiny gardener tool belt, carefully placing glowing Pollen seeds one by one into twelve small lime green (#ecf874) flower pots connected to a retro database terminal; a cute CRT monitor robot happily counts the pots beside blooming code-plants. Cozy 8-bit pixel art aesthetic, soft lime green and pastel gradient background, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, with subtle pixel-font text on the terminal: \"REWARDS SETTLED\"."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-25/PR-12757.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink cheek blush, light blue wings, and a tiny gardener tool belt, carefully placing glowing Pollen seeds one by one into twelve small lime green (#ecf874) flower pots connected to a retro database terminal; a cute CRT monitor robot happily counts the pots beside blooming code-plants. Cozy 8-bit pixel art aesthetic, soft lime green and pastel gradient background, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, with subtle pixel-font text on the terminal: \"REWARDS SETTLED\"."
+  },
+  "generated_at": "2026-07-25T13:42:45.805911+00:00"
+}

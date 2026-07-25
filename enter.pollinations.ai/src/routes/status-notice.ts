@@ -15,10 +15,8 @@ interface StatusNotice {
 const noticeSchema = {
     message: (v: unknown) =>
         typeof v === "string" && v.trim().length > 0 && v.length <= 500,
-    link: (v: unknown) =>
-        v === undefined || typeof v === "string",
-    linkLabel: (v: unknown) =>
-        v === undefined || typeof v === "string",
+    link: (v: unknown) => v === undefined || typeof v === "string",
+    linkLabel: (v: unknown) => v === undefined || typeof v === "string",
 } as const;
 
 function validateUrl(s: string): boolean {
@@ -73,7 +71,10 @@ export const statusNoticeRoutes = new Hono<Env>()
             }
         }
 
-        if (body.linkLabel !== undefined && typeof body.linkLabel !== "string") {
+        if (
+            body.linkLabel !== undefined &&
+            typeof body.linkLabel !== "string"
+        ) {
             throw new HTTPException(400, {
                 message: "Link label must be a string",
             });
@@ -82,7 +83,10 @@ export const statusNoticeRoutes = new Hono<Env>()
         const notice: StatusNotice = {
             message: (body.message as string).trim(),
             link: typeof body.link === "string" ? body.link.trim() : undefined,
-            linkLabel: typeof body.linkLabel === "string" ? body.linkLabel.trim() : undefined,
+            linkLabel:
+                typeof body.linkLabel === "string"
+                    ? body.linkLabel.trim()
+                    : undefined,
             createdAt: new Date().toISOString(),
             createdBy: "admin",
         };

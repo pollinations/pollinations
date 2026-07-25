@@ -68,7 +68,9 @@ describe("Status Notice Routes", () => {
 
         it("creates a notice with valid input", async () => {
             const env = mockEnv();
-            (env.KV.put as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
+            (env.KV.put as ReturnType<typeof vi.fn>).mockResolvedValue(
+                undefined,
+            );
 
             const res = await app.request(
                 "/status-notice",
@@ -78,7 +80,9 @@ describe("Status Notice Routes", () => {
                         "Content-Type": "application/json",
                         Authorization: "Bearer test-admin-token",
                     },
-                    body: JSON.stringify({ message: "Site is down for maintenance" }),
+                    body: JSON.stringify({
+                        message: "Site is down for maintenance",
+                    }),
                 },
                 env,
             );
@@ -147,7 +151,11 @@ describe("Status Notice Routes", () => {
     describe("DELETE /status-notice", () => {
         it("requires admin authorization", async () => {
             const env = mockEnv();
-            const res = await app.request("/status-notice", { method: "DELETE" }, env);
+            const res = await app.request(
+                "/status-notice",
+                { method: "DELETE" },
+                env,
+            );
             expect(res.status).toBe(401);
         });
 

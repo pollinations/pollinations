@@ -263,9 +263,9 @@ export const portkeyConfig: PortkeyConfigMap = {
             model: "us.anthropic.claude-opus-4-7",
             defaultOptions: { max_tokens: 128000 },
         }),
-    "claude-opus-4-8": () =>
+    "claude-opus-5": () =>
         createBedrockNativeConfig({
-            model: "us.anthropic.claude-opus-4-8",
+            model: "global.anthropic.claude-opus-5",
             defaultOptions: { max_tokens: 128000 },
         }),
     "claude-fable-5": () =>

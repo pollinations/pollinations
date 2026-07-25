@@ -1,0 +1,35 @@
+{
+  "pr_number": 12744,
+  "title": "docs: update README — 2026-07-25",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/12744",
+  "merged_at": "2026-07-25T07:45:43Z",
+  "labels": [
+    "NEWS"
+  ],
+  "pr_body_excerpt": "Daily README update: Latest News section. (Recent Apps is refreshed by Apps / Update metrics.)",
+  "gist": {
+    "category": "docs",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Fresh pollen on the README",
+    "blurb": "The hive noticeboard got its daily tending. Latest News is freshly arranged for anyone dropping by the garden.",
+    "summary": "Refreshed the README's Latest News section for 2026-07-25, keeping the project landing page current while Recent Apps continues to update from app metrics.",
+    "impact": "Visitors to the repository will see the latest project news immediately when they open the README.",
+    "keywords": [
+      "readme",
+      "news",
+      "documentation",
+      "community",
+      "github"
+    ],
+    "visual_concept": "Depict Polli as a tiny garden librarian pinning three fresh lime-green news notes onto a cozy README-shaped noticeboard, with small flowers and code-plants growing around it. The scene represents a regularly tended open-source front page rather than a product feature.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny librarian scarf, pinning fresh lime green (#ecf874) news notes onto a large wooden README noticeboard in a flower-filled code garden. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley, with subtle pixel-font text: 'LATEST NEWS'."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-25/PR-12744.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny librarian scarf, pinning fresh lime green (#ecf874) news notes onto a large wooden README noticeboard in a flower-filled code garden. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley, with subtle pixel-font text: 'LATEST NEWS'."
+  },
+  "generated_at": "2026-07-25T07:46:45.230630+00:00"
+}

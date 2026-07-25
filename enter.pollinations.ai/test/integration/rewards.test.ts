@@ -80,6 +80,28 @@ describe("rewards", () => {
         });
     });
 
+    test("records more rewards than fit in one D1 insert", async () => {
+        const db = drizzle(env.DB, { schema });
+        const userId = "reward-user-batched";
+        await seedUser(db, userId);
+
+        const result = await recordRewards(
+            db,
+            Array.from({ length: 12 }, (_, index) => ({
+                idempotencyKey: `batched:${userId}:${index}`,
+                userId,
+                amount: 1,
+                bucket: "tier" as const,
+                questId: `batched-${index}`,
+                title: `Batched reward ${index}`,
+            })),
+        );
+
+        expect(result.recorded).toBe(12);
+        expect(result.rewardIds).toHaveLength(12);
+        expect(await listRewards(db, userId)).toHaveLength(12);
+    });
+
     test("recording is idempotent and claim credits once", async () => {
         const db = drizzle(env.DB, { schema });
         const userId = "reward-user-idem";

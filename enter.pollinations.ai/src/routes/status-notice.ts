@@ -17,6 +17,23 @@ interface StatusNotice {
  */
 let currentNotice: StatusNotice | null = null;
 
+const MAX_MESSAGE_LENGTH = 500;
+const MAX_LINK_LABEL_LENGTH = 100;
+
+function isSameNotice(
+    existing: StatusNotice | null,
+    message: string,
+    link: string | undefined,
+    linkLabel: string | undefined,
+): boolean {
+    if (!existing) return false;
+    return (
+        existing.message === message &&
+        existing.link === (link || undefined) &&
+        existing.linkLabel === (linkLabel || undefined)
+    );
+}
+
 /**
  * Admin-controlled dashboard status notice routes.
  * Allows administrators to publish, update, or clear a dashboard-wide status notice.
@@ -67,9 +84,9 @@ export const statusNoticeRoutes = new Hono<Env>()
             });
         }
 
-        if (message.length > 500) {
+        if (message.length > MAX_MESSAGE_LENGTH) {
             throw new HTTPException(400, {
-                message: "Message must be 500 characters or less",
+                message: `Message must be ${MAX_MESSAGE_LENGTH} characters or less`,
             });
         }
 
@@ -81,7 +98,8 @@ export const statusNoticeRoutes = new Hono<Env>()
 
         if (link && !isValidUrl(link)) {
             throw new HTTPException(400, {
-                message: "Link must be a valid URL",
+                message:
+                    "Link must be a valid absolute URL starting with http:// or https://",
             });
         }
 
@@ -91,11 +109,32 @@ export const statusNoticeRoutes = new Hono<Env>()
             });
         }
 
+        if (linkLabel && linkLabel.length > MAX_LINK_LABEL_LENGTH) {
+            throw new HTTPException(400, {
+                message: `Link label must be ${MAX_LINK_LABEL_LENGTH} characters or less`,
+            });
+        }
+
+        const trimmedMessage = message.trim();
+        const trimmedLink = link ? link.trim() : undefined;
+        const trimmedLinkLabel = linkLabel ? linkLabel.trim() : undefined;
+
+        if (
+            isSameNotice(
+                currentNotice,
+                trimmedMessage,
+                trimmedLink,
+                trimmedLinkLabel,
+            )
+        ) {
+            return c.json({ success: true, notice: currentNotice });
+        }
+
         currentNotice = {
-            message: message.trim(),
-            link: link ? link.trim() : undefined,
-            linkLabel: linkLabel ? linkLabel.trim() : undefined,
-            createdAt: new Date().toISOString(),
+            message: trimmedMessage,
+            link: trimmedLink,
+            linkLabel: trimmedLinkLabel,
+            createdAt: currentNotice?.createdAt ?? new Date().toISOString(),
             createdBy: "admin",
         };
 

@@ -1,6 +1,5 @@
-import { XIcon } from "@pollinations/ui";
-import { cn } from "@pollinations/ui";
-import { type FC, useEffect, useState } from "react";
+import { cn, XIcon } from "@pollinations/ui";
+import { type FC, useCallback, useEffect, useRef, useState } from "react";
 
 interface StatusNotice {
     message: string;
@@ -14,11 +13,13 @@ interface StatusNoticeBannerProps {
 }
 
 const DISMISS_KEY = "pollinations-status-notice-dismissed";
+const POLL_INTERVAL_MS = 60_000;
 
 /**
  * Dashboard-wide status notice banner.
  * Displays admin-published notices about outages, maintenance, or critical updates.
  * Users can dismiss it temporarily; it returns after refresh while still active.
+ * Polls the API every 60s so already-loaded sessions receive updates.
  */
 export const StatusNoticeBanner: FC<StatusNoticeBannerProps> = ({
     className,
@@ -26,24 +27,33 @@ export const StatusNoticeBanner: FC<StatusNoticeBannerProps> = ({
     const [notice, setNotice] = useState<StatusNotice | null>(null);
     const [isDismissed, setIsDismissed] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
+    const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+    const fetchNotice = useCallback(async () => {
+        try {
+            const response = await fetch("/api/status-notice");
+            if (response.ok) {
+                const data = (await response.json()) as {
+                    notice: StatusNotice | null;
+                };
+                setNotice(data.notice);
+            }
+        } catch {
+            // Silently fail - notice is optional
+        } finally {
+            setIsLoading(false);
+        }
+    }, []);
 
     useEffect(() => {
-        const fetchNotice = async () => {
-            try {
-                const response = await fetch("/api/status-notice");
-                if (response.ok) {
-                    const data = (await response.json()) as { notice: StatusNotice | null };
-                    setNotice(data.notice);
-                }
-            } catch {
-                // Silently fail - notice is optional
-            } finally {
-                setIsLoading(false);
+        fetchNotice();
+        pollingRef.current = setInterval(fetchNotice, POLL_INTERVAL_MS);
+        return () => {
+            if (pollingRef.current) {
+                clearInterval(pollingRef.current);
             }
         };
-
-        fetchNotice();
-    }, []);
+    }, [fetchNotice]);
 
     useEffect(() => {
         if (!notice) return;

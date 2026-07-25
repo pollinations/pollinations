@@ -67,6 +67,64 @@ describe("Status Notice Routes", () => {
             });
             expect(res.status).toBe(400);
         });
+
+        it("rejects linkLabel over 100 characters", async () => {
+            const res = await app.request("/status-notice", {
+                method: "PUT",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: "Bearer test-token",
+                },
+                body: JSON.stringify({
+                    message: "Test notice",
+                    link: "https://example.com",
+                    linkLabel: "x".repeat(101),
+                }),
+            });
+            expect(res.status).toBe(400);
+        });
+
+        it("accepts linkLabel up to 100 characters", async () => {
+            const res = await app.request("/status-notice", {
+                method: "PUT",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: "Bearer test-token",
+                },
+                body: JSON.stringify({
+                    message: "Test notice",
+                    link: "https://example.com",
+                    linkLabel: "x".repeat(100),
+                }),
+            });
+            expect(res.status).toBe(200);
+        });
+
+        it("preserves createdAt on no-op PUT with identical content", async () => {
+            const putRes = await app.request("/status-notice", {
+                method: "PUT",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: "Bearer test-token",
+                },
+                body: JSON.stringify({ message: "Test notice" }),
+            });
+            expect(putRes.status).toBe(200);
+            const firstCreatedAt = (await putRes.json()).notice.createdAt;
+
+            const secondRes = await app.request("/status-notice", {
+                method: "PUT",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: "Bearer test-token",
+                },
+                body: JSON.stringify({ message: "Test notice" }),
+            });
+            expect(secondRes.status).toBe(200);
+            const data = await secondRes.json();
+            expect(data.notice.createdAt).toBe(firstCreatedAt);
+            expect(data.notice.message).toBe("Test notice");
+        });
     });
 
     describe("DELETE /status-notice", () => {

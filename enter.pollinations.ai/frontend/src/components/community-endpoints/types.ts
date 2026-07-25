@@ -17,6 +17,8 @@ export type CommunityEndpoint = {
     id: string;
     modelId: string;
     name: string;
+    // Always populated by the API, which falls back for un-backfilled rows.
+    title: string;
     description: string | null;
     modality: CommunityEndpointModality;
     imagePricing: CommunityEndpointImagePricing;
@@ -35,6 +37,7 @@ export type EndpointFormState = {
     // Detected by the endpoint test for image models; "request" until tested.
     imagePricing: CommunityEndpointImagePricing;
     name: string;
+    title: string;
     description: string;
     // private → owner-only, shown only to the owner, no owner-set price;
     // public → globally listed + billed to callers.
@@ -49,6 +52,7 @@ export type EndpointPayload = {
     modality: CommunityEndpointModality;
     imagePricing: CommunityEndpointImagePricing;
     name: string;
+    title: string;
     description: string;
     baseUrl: string;
     upstreamModel: string;
@@ -80,6 +84,7 @@ export const emptyForm: EndpointFormState = {
     modality: "text",
     imagePricing: "request",
     name: "",
+    title: "",
     description: "",
     visibility: "private",
     baseUrl: "",
@@ -159,6 +164,7 @@ export function endpointToForm(endpoint: CommunityEndpoint): EndpointFormState {
         modality: endpoint.modality,
         imagePricing: endpoint.imagePricing,
         name: endpoint.name,
+        title: endpoint.title,
         description: endpoint.description ?? "",
         visibility: endpoint.visibility,
         baseUrl: endpoint.baseUrl,
@@ -255,6 +261,7 @@ export function toEndpointPayload(form: EndpointFormState): EndpointPayload {
         modality: form.modality,
         imagePricing,
         name: modelName,
+        title: form.title.trim(),
         description: form.description.trim(),
         visibility: form.visibility,
         baseUrl: form.baseUrl.trim(),

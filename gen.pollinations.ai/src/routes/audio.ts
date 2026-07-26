@@ -354,6 +354,93 @@ export async function generateElevenLabsSpeech(opts: {
     });
 }
 
+export async function generateElevenLabsSpeechWithTimestamps(opts: {
+    modelName: ElevenLabsTtsModelName;
+    text: string;
+    voice: string;
+    responseFormat: string;
+    seed?: number;
+    apiKey: string;
+    log: Logger;
+}): Promise<Response> {
+    const { modelName, text, voice, responseFormat, seed, apiKey, log } = opts;
+    const modelId = ELEVENLABS_TTS_MODEL_IDS[modelName];
+
+    if (!apiKey) {
+        throw new UpstreamError(500 as ContentfulStatusCode, {
+            message: "TTS service is not configured (missing API key)",
+        });
+    }
+    if (text.length > 10000) {
+        throw new UpstreamError(400 as ContentfulStatusCode, {
+            message: `Input text too long: ${text.length} characters. Maximum is 10000.`,
+        });
+    }
+
+    const voiceId = resolveElevenLabsVoiceId(voice);
+    if (!voiceId || voiceId.length < 8) {
+        throw new UpstreamError(400 as ContentfulStatusCode, {
+            message: `Invalid voice: ${voice}. Use a preset name or valid ElevenLabs voice ID.`,
+        });
+    }
+
+    const outputFormat = mapOutputFormat(responseFormat);
+    const endpoint = `https://api.elevenlabs.io/v1/text-to-speech/${encodeURIComponent(voiceId)}/with-timestamps?output_format=${outputFormat}`;
+    const body: Record<string, unknown> = {
+        text,
+        model_id: modelId,
+        voice_settings: {
+            stability: 0.5,
+            similarity_boost: 0.75,
+            style: 0.0,
+            use_speaker_boost: true,
+        },
+    };
+    if (seed !== undefined) body.seed = seed;
+
+    log.info(
+        "Timestamped TTS request: voice={voice}, format={format}, chars={chars}",
+        {
+            voice,
+            format: responseFormat,
+            chars: text.length,
+        },
+    );
+
+    const response = await ensureUpstreamOk(
+        await fetch(endpoint, {
+            method: "POST",
+            headers: {
+                "xi-api-key": apiKey,
+                "Content-Type": "application/json",
+                Accept: "application/json",
+            },
+            body: JSON.stringify(body),
+        }),
+        endpoint,
+    );
+    const contentType = response.headers.get("content-type") || "";
+    if (!contentType.startsWith("application/json")) {
+        throw new UpstreamError(502 as ContentfulStatusCode, {
+            message: "ElevenLabs returned an invalid timestamp response.",
+        });
+    }
+
+    log.info("Timestamped TTS success: {chars} characters", {
+        chars: text.length,
+    });
+
+    return new Response(response.body, {
+        status: 200,
+        headers: {
+            "Content-Type": contentType,
+            ...buildUsageHeaders(modelName, createAudioTokenUsage(text.length)),
+            "x-tts-voice": voice,
+            "x-pollinations-response-format": "audio-with-timestamps",
+        },
+    });
+}
+
 export async function generateElevenLabsDialogue(opts: {
     inputs: { text: string; voice: string }[];
     responseFormat: string;
@@ -2543,6 +2630,153 @@ export const audioRoutes = new Hono<Env>()
                 deepInfraApiKey: c.env.DEEPINFRA_API_KEY,
                 falKey: c.env.FAL_KEY,
                 stabilityApiKey: c.env.STABILITY_API_KEY,
+                log,
+            });
+        },
+    )
+    .post(
+        "/speech/with-timestamps",
+        describeRoute({
+            tags: ["🔊 Audio"],
+            summary: "Generate Speech with Timestamps",
+            description:
+                "Generate base64-encoded speech with character-level timing for the original and normalized text. Supports the elevenlabs, elevenflash, and eleven-multilingual-v2 models.",
+            requestBody: {
+                required: true,
+                content: {
+                    "application/json": {
+                        schema: {
+                            type: "object",
+                            required: ["input"],
+                            properties: {
+                                model: {
+                                    type: "string",
+                                    default: "elevenlabs",
+                                    enum: [
+                                        "elevenlabs",
+                                        "elevenflash",
+                                        "eleven-multilingual-v2",
+                                    ],
+                                },
+                                input: {
+                                    type: "string",
+                                    maxLength: 10000,
+                                    description:
+                                        "Text to synthesize and align.",
+                                },
+                                voice: {
+                                    type: "string",
+                                    default: "alloy",
+                                    description:
+                                        "Preset voice name or custom ElevenLabs voice ID.",
+                                },
+                                response_format: {
+                                    type: "string",
+                                    enum: ["mp3", "opus", "aac", "wav", "pcm"],
+                                    default: "mp3",
+                                    description:
+                                        "Encoding used for audio_base64.",
+                                },
+                                seed: {
+                                    type: "integer",
+                                    minimum: 0,
+                                    maximum: 4294967295,
+                                },
+                            },
+                        },
+                    },
+                },
+            },
+            responses: {
+                200: {
+                    description:
+                        "Success - Returns base64 audio and character timings",
+                    content: {
+                        "application/json": {
+                            schema: {
+                                type: "object",
+                                required: [
+                                    "audio_base64",
+                                    "alignment",
+                                    "normalized_alignment",
+                                ],
+                                properties: {
+                                    audio_base64: { type: "string" },
+                                    alignment: {
+                                        type: "object",
+                                        properties: {
+                                            characters: {
+                                                type: "array",
+                                                items: { type: "string" },
+                                            },
+                                            character_start_times_seconds: {
+                                                type: "array",
+                                                items: { type: "number" },
+                                            },
+                                            character_end_times_seconds: {
+                                                type: "array",
+                                                items: { type: "number" },
+                                            },
+                                        },
+                                    },
+                                    normalized_alignment: {
+                                        type: "object",
+                                        properties: {
+                                            characters: {
+                                                type: "array",
+                                                items: { type: "string" },
+                                            },
+                                            character_start_times_seconds: {
+                                                type: "array",
+                                                items: { type: "number" },
+                                            },
+                                            character_end_times_seconds: {
+                                                type: "array",
+                                                items: { type: "number" },
+                                            },
+                                        },
+                                    },
+                                },
+                            },
+                        },
+                    },
+                },
+                ...errorResponseDescriptions(400, 401, 402, 403, 500),
+            },
+        }),
+        resolveModel("generate.audio", {
+            defaultModel: "elevenlabs",
+            supportedEndpoint: "/v1/audio/speech/with-timestamps",
+        }),
+        track("generate.audio"),
+        async (c) => {
+            const log = c.get("log").getChild("tts-timestamps");
+            await requireGenerationAccess(c.var, c.env);
+
+            const { input, safe, voice, response_format, seed } =
+                await parseSpeechRequest(c);
+            const modelName = c.var.model.resolved;
+            if (!(modelName in ELEVENLABS_TTS_MODEL_IDS)) {
+                throw new UpstreamError(400 as ContentfulStatusCode, {
+                    message:
+                        "Timestamped speech supports elevenlabs, elevenflash, and eleven-multilingual-v2.",
+                });
+            }
+            if (response_format === "flac") {
+                throw new UpstreamError(400 as ContentfulStatusCode, {
+                    message:
+                        "Timestamped speech supports mp3, opus, aac, wav, and pcm output.",
+                });
+            }
+            const safeInput = await applySafety(c, input, safe);
+
+            return generateElevenLabsSpeechWithTimestamps({
+                modelName: modelName as ElevenLabsTtsModelName,
+                text: safeInput,
+                voice,
+                responseFormat: response_format,
+                seed,
+                apiKey: c.env.ELEVENLABS_API_KEY,
                 log,
             });
         },

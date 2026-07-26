@@ -1,9 +1,10 @@
-import type { FC, ReactNode } from "react";
+import type { ComponentPropsWithoutRef, ElementType, ReactNode } from "react";
 import { cn } from "../lib/cn.ts";
 
-export type TabButtonProps = {
+type TabButtonOwnProps = {
     active: boolean;
-    onClick: () => void;
+    /** Omit when rendering as a link (`as`) and navigation carries the change. */
+    onClick?: () => void;
     children: ReactNode;
     size?: "md" | "sm";
     variant?: "soft" | "ghost";
@@ -11,6 +12,17 @@ export type TabButtonProps = {
     disabled?: boolean;
     className?: string;
 };
+
+/**
+ * Polymorphic like Button, so a tab that navigates can render a real anchor
+ * instead of a click handler — middle-click, right-click and crawlers all
+ * depend on that. Defaults to <button>, so existing call sites are unchanged.
+ */
+export type TabButtonProps<T extends ElementType = "button"> =
+    TabButtonOwnProps & { as?: T } & Omit<
+            ComponentPropsWithoutRef<T>,
+            keyof TabButtonOwnProps | "as"
+        >;
 
 /** Shared pill shape (no colors) — used by every TabButton variant. */
 const tabButtonBaseClass =
@@ -43,7 +55,8 @@ const variantClasses = {
     },
 } as const;
 
-export const TabButton: FC<TabButtonProps> = ({
+export function TabButton<T extends ElementType = "button">({
+    as,
     active,
     onClick,
     children,
@@ -52,15 +65,23 @@ export const TabButton: FC<TabButtonProps> = ({
     ariaLabel,
     disabled = false,
     className,
-}) => {
+    ...rest
+}: TabButtonProps<T>) {
+    const Component: ElementType = as || "button";
+    const isButton = Component === "button";
     const classes = variantClasses[variant];
+
     return (
-        <button
-            type="button"
+        <Component
+            {...rest}
+            {...(isButton ? { type: "button", disabled } : {})}
             onClick={onClick}
             aria-label={ariaLabel}
-            aria-pressed={active}
-            disabled={disabled}
+            // aria-pressed is for toggles; a link that navigates announces its
+            // selected state with aria-current instead.
+            {...(isButton
+                ? { "aria-pressed": active }
+                : { "aria-current": active ? "page" : undefined })}
             className={cn(
                 tabButtonBaseClass,
                 classes.base,
@@ -71,6 +92,6 @@ export const TabButton: FC<TabButtonProps> = ({
             )}
         >
             {children}
-        </button>
+        </Component>
     );
-};
+}

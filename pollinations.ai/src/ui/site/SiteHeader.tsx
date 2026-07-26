@@ -1,5 +1,5 @@
-import { Button } from "@pollinations/ui";
-import { Link } from "@tanstack/react-router";
+import { Button, TabButton } from "@pollinations/ui";
+import { Link, useRouterState } from "@tanstack/react-router";
 import { useHideOnScroll } from "./useHideOnScroll";
 
 const NAV = [
@@ -16,6 +16,9 @@ const EXTERNAL = [
 
 export function SiteHeader() {
     const hidden = useHideOnScroll();
+    const pathname = useRouterState({
+        select: (state) => state.location.pathname,
+    });
 
     return (
         <header
@@ -29,19 +32,22 @@ export function SiteHeader() {
                         pollinations.ai
                     </span>
                 </Link>
-                <nav className="hidden gap-1 text-sm font-semibold md:flex">
+                <nav className="hidden gap-1.5 md:flex">
                     {NAV.map((item) => (
-                        <Link
+                        <TabButton
                             key={item.to}
+                            as={Link}
                             to={item.to}
-                            className="rounded-lg px-3 py-1.5 text-theme-text-base hover:bg-theme-bg-hover"
-                            activeProps={{
-                                className: "text-theme-text-strong",
-                            }}
-                            activeOptions={{ exact: item.to === "/" }}
+                            size="sm"
+                            variant="ghost"
+                            active={
+                                item.to === "/"
+                                    ? pathname === "/"
+                                    : pathname.startsWith(item.to)
+                            }
                         >
                             {item.label}
-                        </Link>
+                        </TabButton>
                     ))}
                 </nav>
             </div>

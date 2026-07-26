@@ -89,6 +89,28 @@ describe("runReplicatePrediction", () => {
         expect(body.input).toEqual({ prompt: "test" });
     });
 
+    it("uses one custom deadline for Cancel-After and local polling", async () => {
+        const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValue(
+            new Response(
+                JSON.stringify({
+                    id: "pred_wan_27",
+                    status: "succeeded",
+                    output: "https://replicate.delivery/x/wan.mp4",
+                }),
+                { status: 201 },
+            ),
+        );
+
+        await runReplicatePrediction({
+            model: "wan-video/wan-2.7-t2v",
+            input: { prompt: "test" },
+            predictionDeadlineMinutes: 15,
+        });
+
+        const [, init] = fetchSpy.mock.calls[0] as [string, RequestInit];
+        expect(new Headers(init.headers).get("Cancel-After")).toBe("15m");
+    });
+
     it("throws ReplicateError on prediction status: failed", async () => {
         vi.spyOn(globalThis, "fetch").mockResolvedValue(
             new Response(
@@ -162,13 +184,39 @@ describe("runReplicatePrediction", () => {
         });
     });
 
-    it("treats aborted predictions as terminal failures", async () => {
+    it.each([
+        "aborted",
+        "canceled",
+    ] as const)("classifies deadline terminal status %s as 504", async (status) => {
         vi.spyOn(globalThis, "fetch").mockResolvedValue(
             new Response(
                 JSON.stringify({
-                    id: "pred_aborted",
-                    status: "aborted",
-                    error: "Prediction aborted before starting",
+                    id: `pred_${status}`,
+                    status,
+                    error: `Prediction ${status}`,
+                }),
+                { status: 201 },
+            ),
+        );
+
+        await expect(
+            runReplicatePrediction({
+                model: MODEL,
+                input: { prompt: "x" },
+            }),
+        ).rejects.toMatchObject({
+            name: "ReplicateError",
+            status: 504,
+        });
+    });
+
+    it("classifies deadline failure messages as 504", async () => {
+        vi.spyOn(globalThis, "fetch").mockResolvedValue(
+            new Response(
+                JSON.stringify({
+                    id: "pred_deadline",
+                    status: "failed",
+                    error: "Prediction exceeded its deadline",
                 }),
                 { status: 201 },
             ),
@@ -178,7 +226,7 @@ describe("runReplicatePrediction", () => {
             runReplicatePrediction({ model: MODEL, input: { prompt: "x" } }),
         ).rejects.toMatchObject({
             name: "ReplicateError",
-            status: 500,
+            status: 504,
         });
     });
 
@@ -221,10 +269,10 @@ describe("runReplicatePrediction", () => {
             name: "ReplicateError",
             status: 504,
         });
-        await vi.advanceTimersByTimeAsync(60 * 5_000 + 1_000);
+        await vi.advanceTimersByTimeAsync(6 * 60_000 + 1_000);
         await assertion;
 
-        expect(fetchSpy).toHaveBeenCalledTimes(62);
+        expect(fetchSpy).toHaveBeenCalledTimes(74);
         const [requestUrl, init] = fetchSpy.mock.calls.at(-1) as [
             string,
             RequestInit,
@@ -271,7 +319,7 @@ describe("runReplicatePrediction", () => {
             name: "ReplicateError",
             status: 504,
         });
-        await vi.advanceTimersByTimeAsync(60 * 5_000 + 1_000);
+        await vi.advanceTimersByTimeAsync(6 * 60_000 + 1_000);
         await assertion;
 
         const [requestUrl, init] = fetchSpy.mock.calls.at(-1) as [
@@ -313,7 +361,7 @@ describe("runReplicatePrediction", () => {
             name: "ReplicateError",
             status: 504,
         });
-        await vi.advanceTimersByTimeAsync(60 * 5_000 + 5_001);
+        await vi.advanceTimersByTimeAsync(6 * 60_000 + 5_001);
         await assertion;
 
         expect(cancelSignals).toHaveLength(1);

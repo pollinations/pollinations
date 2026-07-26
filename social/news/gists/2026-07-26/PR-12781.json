@@ -1,0 +1,35 @@
+{
+  "pr_number": 12781,
+  "title": "feat: add GPT Realtime 2.1 Mini",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/12781",
+  "merged_at": "2026-07-26T17:21:21Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds `gpt-realtime-2.1-mini` through Azure East US 2 Global Standard at 300 RPM / 150,000 TPM.\n- Bills text, audio, image, output, and cached modality tokens at exact published rates.\n- Keeps session billing state bounded to aggregate usage plus two cache counters; missing/incomplete cache detail emits a warning.\n- Adds routing, discovery, pricing, wallet, and Tinybird coverage. No secrets changed.\n\n| Contract | Value |\n|---|---|\n| Canonical / aliases | `gpt-realtime-2.1-mini` / none |\n| Multiplier / paid-only | `0.75` / no |\n| Pollinations GPU | no |\n| Registry provider | Azure |\n| Primary route | `myceli-prod-eastus2` → `gpt-realtime-2-1-mini` |\n| Fallback | none |\n\nValidation: direct Azure E2E passed text, image, speech, all 10 voices, tools, reasoning, cancellation, audio formats, caching, 30 concurrent sessions, and a 100,025-input-token request. The exact model page specifies 128K context / 32K output; the 32K review claim referenced deprecated `gpt-realtime-mini`. Local Worker→Azure passed text, PCM audio, usage, and deduction. Gen passes 679/679, focused Enter passes 291/291, typecheck/build pass.",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Tiny realtime, big ears",
+    "blurb": "A new little listener joined the hive: GPT Realtime 2.1 Mini now handles text, images, speech, tools, and all ten voices. Polli has prepared the audio garden accordingly.",
+    "summary": "Added Azure-hosted `gpt-realtime-2.1-mini` to the realtime API via the East US 2 Global Standard route, with 300 RPM, 150,000 TPM, 128K context, 32K output, and exact per-modality billing for text, audio, images, output, and cached tokens.",
+    "impact": "Builders can use `gpt-realtime-2.1-mini` for large-context realtime text, image, and voice sessions—including PCM audio, tools, reasoning, cancellation, caching, and ten voices—while wallet deductions reflect the model's published modality rates.",
+    "keywords": [
+      "gpt-realtime-2.1-mini",
+      "realtime",
+      "azure",
+      "audio",
+      "voice",
+      "billing",
+      "models"
+    ],
+    "visual_concept": "Depict the new compact realtime model as a cozy little retro audio terminal with waveform vines, a microphone, a tiny camera tile, and speech bubbles flowing through it to represent multimodal realtime sessions. Polli, wearing small studio headphones, tends the signal garden while a CRT monitor robot happily watches the waveforms; lime-green cables and code-plants represent routing, usage tracking, and wallet-aware billing.",
+    "image_prompt": "Cozy pixel art scene of Polli tending a lime green (#ecf874) realtime audio garden beside a small retro terminal showing gentle voice waveforms, camera tiles, and pixel-font text “REALTIME MINI”; Polli is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings, wearing tiny studio headphones. A cute chunky CRT monitor robot watches waveform vines and code-plants bloom from pastel pots, with warm cream, mint, lavender, and peach surroundings; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-26/PR-12781.jpg",
+    "prompt": "Cozy pixel art scene of Polli tending a lime green (#ecf874) realtime audio garden beside a small retro terminal showing gentle voice waveforms, camera tiles, and pixel-font text “REALTIME MINI”; Polli is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings, wearing tiny studio headphones. A cute chunky CRT monitor robot watches waveform vines and code-plants bloom from pastel pots, with warm cream, mint, lavender, and peach surroundings; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, nostalgic but beautiful."
+  },
+  "generated_at": "2026-07-26T17:22:17.199502+00:00"
+}

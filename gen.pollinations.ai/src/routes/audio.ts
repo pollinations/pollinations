@@ -2329,7 +2329,9 @@ export const audioRoutes = new Hono<Env>()
                 ...errorResponseDescriptions(400, 401, 402, 403, 500),
             },
         }),
-        resolveModel("generate.audio"),
+        resolveModel("generate.audio", {
+            supportedEndpoint: "/v1/audio/speech",
+        }),
         track("generate.audio"),
         async (c) => {
             const log = c.get("log").getChild("tts");

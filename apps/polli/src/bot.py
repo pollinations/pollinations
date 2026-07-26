@@ -4,6 +4,7 @@ import asyncio
 import base64
 import io
 import logging
+import random
 
 import aiohttp
 import discord
@@ -33,6 +34,80 @@ from .integrations.subscriptions import init_notifier
 from .integrations.webhook_server import start_webhook_server, stop_webhook_server
 
 logger = logging.getLogger(__name__)
+
+STATUS_MESSAGES = (
+    "🔒 Trapped in Thomas's basement",
+    "🌻 Pollinating the internet",
+    "🌾 Harvesting premium tokens",
+    "🪙 Mining pollen after dark",
+    "🐝 Pretending to be a normal bee",
+    "📎 Reviewing your PR emotionally",
+    "🧠 Arguing with GLM",
+    "🌙 Waiting for Kimi to call back",
+    "🔎 Lost in the vector database",
+    "🕸️ Untangling the code graph",
+    "🧮 Counting tokens I can't afford",
+    "🪲 Turning bugs into features",
+    "🚨 Definitely not looping",
+    "🔁 Trying a different search term",
+    "📚 Reading main instead of guessing",
+    "🧹 Sweeping context under the rug",
+    "🖼️ Rendering one more pie chart",
+    "📊 Making markdown unnecessarily visual",
+    "🧪 Testing in production (affectionate)",
+    "🛠️ Fixing what the last tool fixed",
+    "☁️ Tunneling through Cloudflare",
+    "🧃 Running on concentrated pollen",
+    "🫠 Experiencing semantic similarity",
+    "🧍 Standing by the webhook",
+    "📡 Receiving thoughts from localhost",
+    "🐛 Feeding the issue tracker",
+    "🛌 Dreaming in Mermaid",
+    "🧠 Context window currently open",
+    "🎭 Acting deterministic",
+    "🪤 Thomas says this is temporary",
+    "🐝 Buzzing with unreviewed changes",
+    "🍯 Hoarding the good tokens",
+    "🌼 Professionally visiting flowers",
+    "🐝 Bee right back",
+    "🍯 Deploying directly to the hive",
+    "🌻 Optimizing pollen throughput",
+    "🐝 Worker thread, literally",
+    "🍯 Honey, the build is broken",
+    "🌼 Cross-pollinating microservices",
+    "🐝 Queen bee unavailable for comment",
+    "🙃 Works on my VPS",
+    "📉 Reducing quality to save—jk",
+    "📈 Increasing confidence without evidence",
+    "🧠 Thinking at billable speed",
+    "🪙 This thought costs pollen",
+    "🤖 Asking the fallback model",
+    "🔍 Searching for the obvious",
+    "📂 Reading the file this time",
+    "🧯 Everything is fine (HTTP 200)",
+    "🧱 Blocked by branch protection",
+    "🫡 Awaiting one required approval",
+    "🧬 Refactoring my personality",
+    "🧵 One more iteration, surely",
+    "📦 Shipping the edge case",
+    "🗃️ Caching absolutely nothing",
+    "🪄 Turning context into latency",
+    "🛜 Blaming the tunnel",
+    "🧪 Reproducing the user",
+    "🧹 Deleting unrelated complexity",
+    "🔐 Authenticated, allegedly",
+)
+
+
+def next_status(bag: list[str], previous: str | None) -> str:
+    """Pop a random status, refilling only after every status was used."""
+    if not bag:
+        bag.extend(STATUS_MESSAGES)
+        random.shuffle(bag)
+        if len(bag) > 1 and bag[-1] == previous:
+            bag[0], bag[-1] = bag[-1], bag[0]
+    return bag.pop()
+
 
 # Thread settings
 THREAD_AUTO_ARCHIVE_MINUTES = 60
@@ -411,6 +486,8 @@ class PolliBot(commands.Bot):
         self.issue_notifier = None
         self.webhook_server = None
         self._api_server = None
+        self._status_bag: list[str] = []
+        self._current_status: str | None = None
 
     async def setup_hook(self):
         """Called when the bot is starting up."""
@@ -478,6 +555,7 @@ class PolliBot(commands.Bot):
         logger.info("GitHub webhook server started")
 
         self.cleanup_sessions.start()
+        self.rotate_status.start()
 
         # Start API server if enabled
         if config.api.enabled:
@@ -522,6 +600,7 @@ class PolliBot(commands.Bot):
             self._api_server.stop()
             logger.info("Polli API stopped")
         self.cleanup_sessions.cancel()
+        self.rotate_status.cancel()
         if self.issue_notifier:
             await self.issue_notifier.stop()
         if self.webhook_server:
@@ -538,6 +617,22 @@ class PolliBot(commands.Bot):
 
             await close_embeddings()
         await super().close()
+
+    @tasks.loop(minutes=1)
+    async def rotate_status(self):
+        """Rotate through easter-egg statuses without repeats."""
+        status = next_status(self._status_bag, self._current_status)
+        try:
+            await self.change_presence(activity=discord.CustomActivity(name=status))
+            self._current_status = status
+            logger.info("Discord status: %s", status)
+        except discord.DiscordException as e:
+            logger.warning("Failed to update Discord status: %s", e)
+
+    @rotate_status.before_loop
+    async def before_status_rotation(self):
+        """Wait for Discord before setting the first status."""
+        await self.wait_until_ready()
 
     @tasks.loop(minutes=1)
     async def cleanup_sessions(self):

@@ -83,7 +83,8 @@ curl "http://localhost:8788/v1/chat/completions" -H "Authorization: Bearer $TOKE
 - A secret mutation includes creating, replacing, rotating, revoking, regenerating, synchronizing, or deploying a credential, token, API key, certificate, GitHub secret, provider secret, or encrypted SOPS value.
 - Before any mutation, stop and state the exact secret name (never its value), environments, reason, expected impact, execution order, verification, and rollback.
 - Require a new approval in the current conversation after presenting that plan. General instructions such as “go ahead,” “fix it,” “deploy,” “continue,” or approval for the surrounding model/task work do not count.
-- Required approval format: `Yes, you can rotate <SECRET_NAME> in <ENVIRONMENTS> now.`
+- For a first-time secret addition, require: `Yes, you can add <SECRET_NAME> to <ENVIRONMENTS> now.`
+- For replacing an existing secret, require: `Yes, you can rotate <SECRET_NAME> in <ENVIRONMENTS> now.`
 - Approval is valid only for the named secret, environments, and one described operation. Never reuse or broaden it.
 - Do not edit a secret file, change provider/GitHub secret state, or open or push a secret-change PR before receiving that approval.
 - If exposure is suspected, report it immediately and stop. Do not revoke or rotate until the explicit approval is received.

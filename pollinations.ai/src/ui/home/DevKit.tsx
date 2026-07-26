@@ -83,7 +83,7 @@ const TOOLS: Tool[] = [
 
 export function DevKit() {
     return (
-        <section className="flex flex-col gap-7 pb-16">
+        <section className="flex flex-col gap-7">
             <SectionHeader
                 eyebrow="Dev kit"
                 title="Everything already in your hands"

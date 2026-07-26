@@ -7,7 +7,12 @@ export const Route = createRootRoute({
 });
 
 /**
- * One sheet, owned here rather than repeated per route.
+ * One sheet and one vertical beat, owned here rather than repeated per route.
+ *
+ * The gap lives on this flex column, so sections carry no spacing of their
+ * own. Before, Hello ran 64 / 72 / 64 / 64 / 0 as per-section bottom padding
+ * while Apps used gap-14 and Play gap-10 — five values in five files, which
+ * is what made a long page feel unstructured.
  *
  * The nav sits on the desk, outside the card. What stops it cutting content
  * is that it hides on the way down and only returns on the way up — so it is
@@ -24,7 +29,7 @@ function RootLayout() {
     return (
         <div className="flex min-h-dvh flex-col bg-app-bg font-body text-theme-text-base">
             <SiteHeader />
-            <main className="mx-6 mb-6 flex-1 rounded-[28px] bg-theme-bg-pale px-8 py-14 shadow-container md:px-18">
+            <main className="mx-6 mb-6 flex flex-1 flex-col gap-18 rounded-[28px] bg-theme-bg-pale px-8 py-16 shadow-container md:px-18">
                 <Outlet />
             </main>
             <SiteFooter />

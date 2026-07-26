@@ -53,7 +53,7 @@ $ curl gen.pollinations.ai/v1/chat/completions \\
 
 export function ThreeWays() {
     return (
-        <section className="flex flex-col gap-7 pb-18">
+        <section className="flex flex-col gap-7">
             <SectionHeader
                 eyebrow="The three ways"
                 title="Same API. Your choice who pays."

@@ -45,7 +45,7 @@ function HelloPage() {
 
     return (
         <>
-            <section className="flex flex-wrap items-center gap-14 pb-16">
+            <section className="flex flex-wrap items-center gap-14">
                 <div className="flex min-w-0 flex-1 flex-col gap-8">
                     <PageHeader
                         size="hero"

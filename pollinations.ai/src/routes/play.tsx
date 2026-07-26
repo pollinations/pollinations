@@ -29,7 +29,7 @@ function PlayPage() {
             enterUrl={ENTER_URL}
             permissions={["profile", "usage"]}
         >
-            <div className="flex flex-col gap-10">
+            <>
                 <PageHeader
                     eyebrow="Every model, in the browser"
                     title="Playground"
@@ -38,7 +38,7 @@ function PlayPage() {
                 />
 
                 <Playground />
-            </div>
+            </>
         </PolliProvider>
     );
 }

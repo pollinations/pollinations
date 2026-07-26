@@ -19,9 +19,12 @@ const STEPS = [
  * starts with `--color-*: initial`, which removes Tailwind's default palette
  * entirely, so `white` is not a colour this project has.)
  */
+// Breaks out toward the sheet edge: sections sit at the sheet's 72px padding,
+// this sits at 24px — the mockup's proportion, and part of why the dark band
+// reads as a moment rather than as another section.
 export function MoneyMoves() {
     return (
-        <section className="dark mb-16 grid grid-cols-[repeat(auto-fit,minmax(min(360px,100%),1fr))] items-center gap-12 rounded-3xl bg-brand-dark px-8 py-14 md:px-14">
+        <section className="dark -mx-2 grid grid-cols-[repeat(auto-fit,minmax(min(360px,100%),1fr))] items-center gap-12 rounded-3xl bg-brand-dark px-8 py-14 md:-mx-12 md:px-14">
             <div className="flex flex-col gap-5">
                 <SectionHeader
                     eyebrow="How the money moves"

@@ -121,7 +121,7 @@ function AppsPage() {
     }, [apps, category, badge, q]);
 
     return (
-        <div className="flex flex-col gap-14">
+        <>
             <PageHeader
                 eyebrow={`${loading ? "Apps" : `${apps.length} apps`} built on Pollinations`}
                 title="Ecosystem"
@@ -240,6 +240,6 @@ function AppsPage() {
                     </>
                 )}
             </section>
-        </div>
+        </>
     );
 }

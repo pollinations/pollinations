@@ -544,5 +544,6 @@ describe("genericOpenAIClient", () => {
         );
 
         expect(completion.fallbackTarget).toBeUndefined();
+        expect(completion).not.toHaveProperty("fallbackTarget");
     });
 });

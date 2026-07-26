@@ -10,10 +10,7 @@ import { requestId } from "hono/request-id";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { Env } from "@/env.ts";
 import { logger } from "@/middleware/logger.ts";
-import {
-    getTextResponseUpstreamUrl,
-    handleChatCompletionLocal,
-} from "@/text/handler.ts";
+import { handleChatCompletionLocal } from "@/text/handler.ts";
 
 afterEach(() => {
     vi.restoreAllMocks();
@@ -600,24 +597,50 @@ describe("error observability", () => {
         expect(tinybirdPayload).not.toHaveProperty("upstream_status");
     });
 
-    it("retains the upstream URL on successful text responses", async () => {
+    it("retains request metadata after public usage filtering", async () => {
         vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
-            Response.json({
-                id: "chatcmpl_test",
-                object: "chat.completion",
-                model: "provider-model",
-                choices: [
-                    {
-                        index: 0,
-                        message: { role: "assistant", content: "ok" },
-                        finish_reason: "stop",
+            Response.json(
+                {
+                    id: "chatcmpl_test",
+                    object: "chat.completion",
+                    model: "provider-model",
+                    choices: [
+                        {
+                            index: 0,
+                            message: { role: "assistant", content: "ok" },
+                            finish_reason: "stop",
+                        },
+                    ],
+                    usage: {
+                        prompt_tokens: 1,
+                        completion_tokens: 1,
+                        cost: 0.001,
                     },
-                ],
-            }),
+                },
+                {
+                    headers: {
+                        "x-portkey-last-used-option-index": "config.targets[1]",
+                    },
+                },
+            ),
         );
 
+        let upstreamRequestUrl: URL | undefined;
+        const app = new Hono<Env>();
+        app.use("*", requestId());
+        app.use("*", logger);
+        app.post("/v1/chat/completions", async (c) => {
+            const response = await handleChatCompletionLocal(
+                c,
+                await c.req.json(),
+            );
+            upstreamRequestUrl = c.var.upstreamRequestUrl;
+            return response;
+        });
+        app.onError(handleError);
+
         const ctx = createExecutionContext();
-        const response = await createTextTestApp().fetch(
+        const response = await app.fetch(
             new Request("https://gen.pollinations.ai/v1/chat/completions", {
                 method: "POST",
                 headers: { "content-type": "application/json" },
@@ -637,10 +660,15 @@ describe("error observability", () => {
         );
 
         expect(response.status).toBe(200);
-        expect(getTextResponseUpstreamUrl(response)?.href).toBe(
+        expect(upstreamRequestUrl?.href).toBe(
             "https://portkey.test/v1/chat/completions",
         );
-        expect(await response.text()).not.toContain("upstreamRequestUrl");
+        expect(response.headers.get("x-fallback-target")).toBe(
+            "config.targets[1]",
+        );
+        const responseText = await response.text();
+        expect(responseText).not.toContain("upstreamRequestUrl");
+        expect(responseText).not.toContain('"cost"');
     });
 
     it("keeps user image URL fetch 429 client-facing", async () => {

@@ -71,7 +71,6 @@ import { Generate3dRequestQueryParamsSchema } from "@/schemas/model3d.ts";
 import { RealtimeRequestQueryParamsSchema } from "@/schemas/realtime.ts";
 import { GenerateTextRequestQueryParamsSchema } from "@/schemas/text.ts";
 import {
-    getTextResponseUpstreamUrl,
     handleChatCompletionLocal,
     handleSimpleTextLocal,
     handleTextContentLocal,
@@ -152,9 +151,8 @@ const chatCompletionHandlers = factory.createHandlers(
         });
 
         const response = await handleChatCompletionLocal(c, requestBody);
-        const upstreamRequestUrl = getTextResponseUpstreamUrl(response);
 
-        assertStreamContentType(c, response, upstreamRequestUrl);
+        assertStreamContentType(c, response, c.var.upstreamRequestUrl);
 
         // add content filter headers if not streaming
         let contentFilterHeaders = {};
@@ -170,7 +168,7 @@ const chatCompletionHandlers = factory.createHandlers(
             } catch (parseError) {
                 throw new UpstreamError(502, {
                     message: `Upstream returned response that failed schema validation: ${parseError instanceof Error ? parseError.message : String(parseError)}`,
-                    requestUrl: upstreamRequestUrl,
+                    requestUrl: c.var.upstreamRequestUrl,
                     responseBody: responseText,
                     cause: parseError,
                 });
@@ -711,11 +709,7 @@ export const proxyRoutes = new Hono<Env>()
             });
 
             const response = await handleTextContentLocal(c, requestBody);
-            assertStreamContentType(
-                c,
-                response,
-                getTextResponseUpstreamUrl(response),
-            );
+            assertStreamContentType(c, response, c.var.upstreamRequestUrl);
             return withSafetyHeaders(c, response);
         },
     )

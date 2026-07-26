@@ -17,22 +17,6 @@ import type { ChatCompletion, RequestData, ServiceError } from "./types.js";
 
 type TextContext = Context<Env>;
 
-const textResponseUpstreamUrls = new WeakMap<Response, URL>();
-
-function withTextResponseUpstreamUrl(
-    response: Response,
-    requestUrl: URL | undefined,
-): Response {
-    if (requestUrl) textResponseUpstreamUrls.set(response, requestUrl);
-    return response;
-}
-
-export function getTextResponseUpstreamUrl(
-    response: Response,
-): URL | undefined {
-    return textResponseUpstreamUrls.get(response);
-}
-
 const TEXT_ENV_KEYS = [
     "AI_GATEWAY_API_KEY",
     "AWS_ACCESS_KEY_ID",
@@ -171,38 +155,43 @@ function publicChatCompletion(completion: ChatCompletion): ChatCompletion {
     const usage = publicCompletionUsage(completion.usage);
     if (usage === completion.usage) return completion;
 
-    return {
+    const publicCompletion = {
         ...completion,
         usage,
     };
+    if (completion.fallbackTarget !== undefined) {
+        Object.defineProperty(publicCompletion, "fallbackTarget", {
+            value: completion.fallbackTarget,
+            enumerable: false,
+            configurable: true,
+            writable: true,
+        });
+    }
+    return publicCompletion;
 }
 
 function sendOpenAIResponse(
     completion: ChatCompletion,
     fallbackModel?: string,
-    upstreamRequestUrl = completion.upstreamRequestUrl,
 ): Response {
     const headers = usageHeaders(completion, fallbackModel);
     headers.set("Content-Type", "application/json; charset=utf-8");
 
-    return withTextResponseUpstreamUrl(
-        new Response(
-            JSON.stringify({
-                ...completion,
-                id: completion.id || generatePollinationsId(),
-                object: completion.object || "chat.completion",
-                created: completion.created || Date.now(),
-            }),
-            { headers },
-        ),
-        upstreamRequestUrl,
+    return new Response(
+        JSON.stringify({
+            ...completion,
+            id: completion.id || generatePollinationsId(),
+            object: completion.object || "chat.completion",
+            created: completion.created || Date.now(),
+        }),
+        { headers },
     );
 }
 
 function sendTextContentResponse(
     completion: ChatCompletion,
-    fallbackModel?: string,
-    upstreamRequestUrl = completion.upstreamRequestUrl,
+    fallbackModel: string | undefined,
+    upstreamRequestUrl: URL | undefined,
 ): Response {
     const headers = usageHeaders(completion, fallbackModel);
     headers.set("Cache-Control", IMMUTABLE_CACHE_CONTROL);
@@ -219,10 +208,7 @@ function sendTextContentResponse(
 
     if (typeof message !== "object" || !message) {
         headers.set("Content-Type", "text/plain; charset=utf-8");
-        return withTextResponseUpstreamUrl(
-            new Response(String(message), { headers }),
-            upstreamRequestUrl,
-        );
+        return new Response(String(message), { headers });
     }
 
     const audio = message.audio as Record<string, unknown> | undefined;
@@ -240,10 +226,7 @@ function sendTextContentResponse(
         } else {
             headers.set("Content-Type", "audio/mpeg");
         }
-        return withTextResponseUpstreamUrl(
-            new Response(buffer, { headers }),
-            upstreamRequestUrl,
-        );
+        return new Response(buffer, { headers });
     }
 
     if (message.content !== undefined && message.content !== null) {
@@ -256,25 +239,16 @@ function sendTextContentResponse(
             content += "\n";
         }
         headers.set("Content-Type", "text/plain; charset=utf-8");
-        return withTextResponseUpstreamUrl(
-            new Response(content, { headers }),
-            upstreamRequestUrl,
-        );
+        return new Response(content, { headers });
     }
 
     if (Object.keys(message).length > 0) {
         headers.set("Content-Type", "application/json; charset=utf-8");
-        return withTextResponseUpstreamUrl(
-            new Response(JSON.stringify(message), { headers }),
-            upstreamRequestUrl,
-        );
+        return new Response(JSON.stringify(message), { headers });
     }
 
     headers.set("Content-Type", "text/plain; charset=utf-8");
-    return withTextResponseUpstreamUrl(
-        new Response("", { headers }),
-        upstreamRequestUrl,
-    );
+    return new Response("", { headers });
 }
 
 function sendTextStreamResponse(completion: ChatCompletion): Response {
@@ -290,10 +264,7 @@ function sendTextStreamResponse(completion: ChatCompletion): Response {
     }
 
     if (completion.responseStream instanceof ReadableStream) {
-        return withTextResponseUpstreamUrl(
-            new Response(completion.responseStream, { headers }),
-            completion.upstreamRequestUrl,
-        );
+        return new Response(completion.responseStream, { headers });
     }
 
     // Defensive: upstream produced a null stream body.
@@ -309,10 +280,7 @@ function sendTextStreamResponse(completion: ChatCompletion): Response {
             controller.close();
         },
     });
-    return withTextResponseUpstreamUrl(
-        new Response(fallbackStream, { headers }),
-        completion.upstreamRequestUrl,
-    );
+    return new Response(fallbackStream, { headers });
 }
 
 function base64ToArrayBuffer(value: string): ArrayBuffer {
@@ -369,6 +337,7 @@ async function generateTextResponse(
             requestData.messages,
             gatewayContext,
         );
+        c.set("upstreamRequestUrl", completion.upstreamRequestUrl);
         completion.id = completion.id || generatePollinationsId();
 
         if (requestData.stream) return sendTextStreamResponse(completion);
@@ -382,15 +351,11 @@ async function generateTextResponse(
             return sendTextContentResponse(
                 publicCompletion,
                 fallbackModel,
-                completion.upstreamRequestUrl,
+                c.var.upstreamRequestUrl,
             );
         }
         c.var.track?.overrideResponseTracking(trackingResponse.clone());
-        return sendOpenAIResponse(
-            publicCompletion,
-            fallbackModel,
-            completion.upstreamRequestUrl,
-        );
+        return sendOpenAIResponse(publicCompletion, fallbackModel);
     } catch (thrown: unknown) {
         throwTextError(thrown as ServiceError);
     }

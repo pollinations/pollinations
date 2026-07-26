@@ -25,20 +25,20 @@ function withResponseMetadata(
     fallbackTarget: string | undefined,
     requestUrl: URL,
 ): ChatCompletion {
-    Object.defineProperties(completion, {
-        fallbackTarget: {
+    Object.defineProperty(completion, "upstreamRequestUrl", {
+        value: requestUrl,
+        enumerable: false,
+        configurable: true,
+        writable: true,
+    });
+    if (fallbackTarget !== undefined) {
+        Object.defineProperty(completion, "fallbackTarget", {
             value: fallbackTarget,
             enumerable: false,
             configurable: true,
             writable: true,
-        },
-        upstreamRequestUrl: {
-            value: requestUrl,
-            enumerable: false,
-            configurable: true,
-            writable: true,
-        },
-    });
+        });
+    }
     return completion;
 }
 

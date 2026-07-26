@@ -98,6 +98,10 @@ export interface ServiceError extends Error {
     response?: { data?: unknown };
 }
 
+export type TextVariables = {
+    upstreamRequestUrl?: URL;
+};
+
 /** Request data extracted from incoming HTTP requests. */
 export interface RequestData {
     messages: ChatMessage[];

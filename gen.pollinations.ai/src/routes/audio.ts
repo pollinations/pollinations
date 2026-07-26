@@ -25,7 +25,11 @@ import { balance } from "@/middleware/balance.ts";
 import { resolveModel } from "@/middleware/model.ts";
 import { frontendKeyRateLimit } from "@/middleware/rate-limit-durable.ts";
 import { edgeRateLimit } from "@/middleware/rate-limit-edge.ts";
-import { applySafety, withSafetyHeaders } from "@/middleware/safety.ts";
+import {
+    applySafety,
+    applySafetyToTexts,
+    withSafetyHeaders,
+} from "@/middleware/safety.ts";
 import { track } from "@/middleware/track.ts";
 import googleCloudAuth from "@/text/auth/googleCloudAuth.ts";
 import { arrayBufferToBase64 } from "@/util.ts";
@@ -128,17 +132,27 @@ const CreateDialogueRequestSchema = z
         inputs: z
             .array(
                 z.object({
-                    text: z.string().min(1),
+                    text: z.string().min(1).max(2000),
                     voice: z.string().min(1),
                 }),
             )
-            .min(1),
+            .min(1)
+            .max(25),
         response_format: z
             .enum(["mp3", "opus", "aac", "wav", "pcm"])
             .default("mp3"),
         seed: z.number().int().min(0).max(4294967295).optional(),
         safe: SafeSchema,
     })
+    .refine(
+        ({ inputs }) =>
+            inputs.reduce((total, input) => total + input.text.length, 0) <=
+            2000,
+        {
+            path: ["inputs"],
+            message: "Dialogue input is limited to 2000 total text characters.",
+        },
+    )
     .meta({ $id: "CreateDialogueRequest" });
 
 type AudioContext = Context<Env>;
@@ -280,7 +294,7 @@ export async function generateElevenLabsSpeech(opts: {
         chars: text.length,
     });
 
-    const elevenLabsUrl = `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}?output_format=${outputFormat}`;
+    const elevenLabsUrl = `https://api.elevenlabs.io/v1/text-to-speech/${encodeURIComponent(voiceId)}?output_format=${outputFormat}`;
 
     const elevenLabsBody: Record<string, unknown> = {
         text,
@@ -2167,12 +2181,15 @@ export const audioRoutes = new Hono<Env>()
                 });
             }
 
-            const inputs = await Promise.all(
-                request.inputs.map(async (input) => ({
-                    ...input,
-                    text: await applySafety(c, input.text, request.safe),
-                })),
+            const safeTexts = await applySafetyToTexts(
+                c,
+                request.inputs.map((input) => input.text),
+                request.safe,
             );
+            const inputs = request.inputs.map((input, index) => ({
+                ...input,
+                text: safeTexts[index],
+            }));
             const response = await generateElevenLabsDialogue({
                 inputs,
                 responseFormat: request.response_format,

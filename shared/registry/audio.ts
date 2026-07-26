@@ -79,6 +79,7 @@ export const AUDIO_SERVICES = {
         inputModalities: ["text"],
         outputModalities: ["audio"],
         voices: ELEVENLABS_VOICES as string[],
+        supportedEndpoints: ["/audio/{text}", "/v1/audio/speech"],
     },
     elevenflash: {
         aliases: ["tts-flash", "eleven-flash", "flash"],
@@ -100,6 +101,7 @@ export const AUDIO_SERVICES = {
         inputModalities: ["text"],
         outputModalities: ["audio"],
         voices: ELEVENLABS_VOICES as string[],
+        supportedEndpoints: ["/audio/{text}", "/v1/audio/speech"],
     },
     "eleven-multilingual-v2": {
         aliases: ["multilingual-v2", "eleven-v2", "tts-multilingual"],
@@ -120,6 +122,7 @@ export const AUDIO_SERVICES = {
         inputModalities: ["text"],
         outputModalities: ["audio"],
         voices: ELEVENLABS_VOICES as string[],
+        supportedEndpoints: ["/audio/{text}", "/v1/audio/speech"],
     },
     "eleven-dialogue": {
         aliases: ["dialogue", "text-to-dialogue"],

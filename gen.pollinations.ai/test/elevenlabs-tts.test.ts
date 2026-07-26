@@ -39,4 +39,29 @@ describe("ElevenLabs TTS model routing", () => {
             model_id: expectedModelId,
         });
     });
+
+    it("encodes custom voice IDs at the provider URL boundary", async () => {
+        const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue(
+            new Response(new Uint8Array([1, 2, 3]), {
+                headers: { "content-type": "audio/mpeg" },
+            }),
+        );
+
+        await generateElevenLabsSpeech({
+            modelName: "elevenlabs",
+            text: "Hello",
+            voice: "custom/voice?output_format=pcm_44100",
+            responseFormat: "mp3",
+            apiKey: "test-eleven-key",
+            log,
+        });
+
+        const requestUrl = String(fetchMock.mock.calls[0][0]);
+        expect(requestUrl).toContain(
+            "/text-to-speech/custom%2Fvoice%3Foutput_format%3Dpcm_44100",
+        );
+        expect(new URL(requestUrl).searchParams.get("output_format")).toBe(
+            "mp3_44100_128",
+        );
+    });
 });

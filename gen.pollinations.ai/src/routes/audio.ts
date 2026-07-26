@@ -25,7 +25,11 @@ import { balance } from "@/middleware/balance.ts";
 import { resolveModel } from "@/middleware/model.ts";
 import { frontendKeyRateLimit } from "@/middleware/rate-limit-durable.ts";
 import { edgeRateLimit } from "@/middleware/rate-limit-edge.ts";
-import { applySafety, withSafetyHeaders } from "@/middleware/safety.ts";
+import {
+    applySafety,
+    applySafetyToTexts,
+    withSafetyHeaders,
+} from "@/middleware/safety.ts";
 import { track } from "@/middleware/track.ts";
 import googleCloudAuth from "@/text/auth/googleCloudAuth.ts";
 import { arrayBufferToBase64 } from "@/util.ts";
@@ -128,17 +132,27 @@ const CreateDialogueRequestSchema = z
         inputs: z
             .array(
                 z.object({
-                    text: z.string().min(1),
+                    text: z.string().min(1).max(2000),
                     voice: z.string().min(1),
                 }),
             )
-            .min(1),
+            .min(1)
+            .max(25),
         response_format: z
             .enum(["mp3", "opus", "aac", "wav", "pcm"])
             .default("mp3"),
         seed: z.number().int().min(0).max(4294967295).optional(),
         safe: SafeSchema,
     })
+    .refine(
+        ({ inputs }) =>
+            inputs.reduce((total, input) => total + input.text.length, 0) <=
+            2000,
+        {
+            path: ["inputs"],
+            message: "Dialogue input is limited to 2000 total text characters.",
+        },
+    )
     .meta({ $id: "CreateDialogueRequest" });
 
 type AudioContext = Context<Env>;
@@ -280,7 +294,7 @@ export async function generateElevenLabsSpeech(opts: {
         chars: text.length,
     });
 
-    const elevenLabsUrl = `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}?output_format=${outputFormat}`;
+    const elevenLabsUrl = `https://api.elevenlabs.io/v1/text-to-speech/${encodeURIComponent(voiceId)}?output_format=${outputFormat}`;
 
     const elevenLabsBody: Record<string, unknown> = {
         text,
@@ -438,9 +452,22 @@ export async function generateElevenLabsDialogue(opts: {
 
 const ELEVENLABS_AUDIO_CREDITS_PER_SECOND = 12;
 
-export function getElevenLabsMeteredInputSeconds(response: Response): number {
+export function getElevenLabsMeteredInputSeconds(
+    response: Response,
+    log: Logger,
+): number {
+    // The provider's `character-cost` header is its metering source for these
+    // audio-input APIs. Direct 1s and 61s probes returned 12 and 734 units for
+    // both Voice Changer and Voice Isolator, confirming approximately 12
+    // metering units per input second with no one-minute minimum.
     const characterCost = Number(response.headers.get("character-cost"));
     if (!Number.isFinite(characterCost) || characterCost <= 0) {
+        log.error(
+            "ElevenLabs response missing valid character-cost metering: {characterCost}",
+            {
+                characterCost: response.headers.get("character-cost"),
+            },
+        );
         throw new UpstreamError(502 as ContentfulStatusCode, {
             message:
                 "ElevenLabs response did not include valid input-duration metering.",
@@ -482,7 +509,7 @@ export async function changeVoiceWithElevenLabs(opts: {
     }
 
     const outputFormat = mapOutputFormat(responseFormat);
-    const endpoint = `https://api.elevenlabs.io/v1/speech-to-speech/${voiceId}?output_format=${outputFormat}`;
+    const endpoint = `https://api.elevenlabs.io/v1/speech-to-speech/${encodeURIComponent(voiceId)}?output_format=${outputFormat}`;
     const formData = new FormData();
     formData.append("audio", audio, audio.name || "audio");
     formData.append("model_id", "eleven_multilingual_sts_v2");
@@ -507,7 +534,7 @@ export async function changeVoiceWithElevenLabs(opts: {
         }),
         endpoint,
     );
-    const inputSeconds = getElevenLabsMeteredInputSeconds(response);
+    const inputSeconds = getElevenLabsMeteredInputSeconds(response, log);
     const usageHeaders = {
         ...buildUsageHeaders(
             "eleven-voice-changer",
@@ -2232,12 +2259,15 @@ export const audioRoutes = new Hono<Env>()
                 });
             }
 
-            const inputs = await Promise.all(
-                request.inputs.map(async (input) => ({
-                    ...input,
-                    text: await applySafety(c, input.text, request.safe),
-                })),
+            const safeTexts = await applySafetyToTexts(
+                c,
+                request.inputs.map((input) => input.text),
+                request.safe,
             );
+            const inputs = request.inputs.map((input, index) => ({
+                ...input,
+                text: safeTexts[index],
+            }));
             const response = await generateElevenLabsDialogue({
                 inputs,
                 responseFormat: request.response_format,

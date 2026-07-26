@@ -3,7 +3,9 @@ import { test as workerTest } from "@shared/test/fixtures/index.ts";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { changeVoiceWithElevenLabs } from "../src/routes/audio.ts";
 
+const errorLog = vi.fn();
 const log = {
+    error: errorLog,
     info: vi.fn(),
     warn: vi.fn(),
 } as never;
@@ -70,6 +72,33 @@ describe("ElevenLabs Voice Changer", () => {
         expect(response.headers.get("x-usage-prompt-audio-seconds")).toBe("1");
     });
 
+    it("encodes custom voice IDs at the provider URL boundary", async () => {
+        const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue(
+            new Response(new Uint8Array([1, 2, 3]), {
+                headers: {
+                    "content-type": "audio/mpeg",
+                    "character-cost": "12",
+                },
+            }),
+        );
+
+        await changeVoiceWithElevenLabs({
+            audio: createOneSecondWav(),
+            voice: "custom/voice?output_format=pcm_44100",
+            responseFormat: "mp3",
+            apiKey: "test-eleven-key",
+            log,
+        });
+
+        const requestUrl = String(fetchMock.mock.calls[0][0]);
+        expect(requestUrl).toContain(
+            "/speech-to-speech/custom%2Fvoice%3Foutput_format%3Dpcm_44100",
+        );
+        expect(new URL(requestUrl).searchParams.get("output_format")).toBe(
+            "mp3_44100_128",
+        );
+    });
+
     it("fails closed when provider metering is missing", async () => {
         vi.spyOn(globalThis, "fetch").mockResolvedValue(
             new Response(new Uint8Array([1, 2, 3]), {
@@ -86,6 +115,7 @@ describe("ElevenLabs Voice Changer", () => {
                 log,
             }),
         ).rejects.toMatchObject({ status: 502 });
+        expect(errorLog).toHaveBeenCalledOnce();
     });
 });
 

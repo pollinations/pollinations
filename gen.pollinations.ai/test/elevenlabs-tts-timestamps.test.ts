@@ -78,7 +78,60 @@ describe("ElevenLabs timestamped TTS", () => {
             }),
         ).rejects.toMatchObject({ status: 502 });
     });
+
+    it("encodes custom voice IDs at the provider URL boundary", async () => {
+        const fetchMock = vi
+            .spyOn(globalThis, "fetch")
+            .mockResolvedValue(Response.json(providerResponse));
+
+        await generateElevenLabsSpeechWithTimestamps({
+            modelName: "elevenlabs",
+            text: "Hi",
+            voice: "custom/voice?output_format=pcm_44100",
+            responseFormat: "mp3",
+            apiKey: "test-eleven-key",
+            log,
+        });
+
+        const requestUrl = String(fetchMock.mock.calls[0][0]);
+        expect(requestUrl).toContain(
+            "/text-to-speech/custom%2Fvoice%3Foutput_format%3Dpcm_44100/with-timestamps",
+        );
+        expect(new URL(requestUrl).searchParams.get("output_format")).toBe(
+            "mp3_44100_128",
+        );
+    });
 });
+
+workerTest(
+    "rejects unsupported FLAC instead of returning PCM under the wrong format",
+    async ({ paidApiKey }) => {
+        const response = await SELF.fetch(
+            "https://gen.pollinations.ai/v1/audio/speech/with-timestamps",
+            {
+                method: "POST",
+                headers: {
+                    Authorization: `Bearer ${paidApiKey}`,
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    model: "elevenlabs",
+                    input: "Do not call the provider.",
+                    response_format: "flac",
+                }),
+            },
+        );
+
+        expect(response.status).toBe(400);
+        await expect(response.json()).resolves.toMatchObject({
+            error: {
+                message: expect.stringContaining(
+                    "supports mp3, opus, aac, wav, and pcm",
+                ),
+            },
+        });
+    },
+);
 
 for (const testCase of [
     { model: "elevenlabs", format: "mp3", magic: "ID3" },
@@ -128,6 +181,28 @@ for (const testCase of [
                     ...audioBytes.slice(0, testCase.magic.length),
                 ),
             ).toBe(testCase.magic);
+            if (testCase.format === "wav") {
+                const view = new DataView(audioBytes.buffer);
+                expect(view.getUint32(4, true)).toBe(audioBytes.length - 8);
+                let offset = 12;
+                while (
+                    offset + 8 <= audioBytes.length &&
+                    String.fromCharCode(
+                        ...audioBytes.slice(offset, offset + 4),
+                    ) !== "data"
+                ) {
+                    const chunkSize = view.getUint32(offset + 4, true);
+                    offset += 8 + chunkSize + (chunkSize % 2);
+                }
+                expect(
+                    String.fromCharCode(
+                        ...audioBytes.slice(offset, offset + 4),
+                    ),
+                ).toBe("data");
+                expect(view.getUint32(offset + 4, true)).toBe(
+                    audioBytes.length - offset - 8,
+                );
+            }
             expect(body.alignment.characters.length).toBeGreaterThan(0);
             expect(body.alignment.character_start_times_seconds.length).toBe(
                 body.alignment.characters.length,

@@ -47,10 +47,14 @@
     <meta name="twitter:image" content="https://pollinations.ai/og-image.png" />
     <meta name="twitter:image:alt" content="pollinations.ai logo" />
     
-    <!-- Fonts (display=swap prevents FOIT) -->
+    <!-- LCT Mogi, Fraunces and Uncut Sans are self-hosted by @pollinations/ui.
+         Pixelify Sans is not yet — the package declares --polli-font-pixel but
+         ships no woff2 for it, so it still comes from the CDN here, exactly as
+         enter's index.html does. Remove this once it's vendored into
+         packages/ui/src/fonts. -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=IBM+Plex+Mono:wght@400;700&display=swap" />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400;500;600;700&display=swap" />
 
     <title>pollinations.ai</title>
   </head>

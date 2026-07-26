@@ -12,24 +12,24 @@
     "publish_tier": "daily",
     "importance": "major",
     "headline": "The hive learned dialogue",
-    "blurb": "ElevenLabs v3 can now handle a whole tiny radio play, not just one bee at a time. Send the cast, get the scene back as MP3 or WAV.",
-    "summary": "Added the paid ElevenLabs `eleven-dialogue` model (also available as `dialogue` and `text-to-dialogue`) and `POST /v1/audio/dialogue`, supporting up to 10 voices, 25 turns, and 2,000 total characters at $0.10 per 1K characters.",
-    "impact": "Developers can generate multi-speaker ElevenLabs dialogue through one Pollinations endpoint, while standard TTS continues to work on both `/audio/{text}` and `/v1/audio/speech` routes.",
+    "blurb": "Polli can now hand a whole cast to ElevenLabs without making them take turns at the microphone. Send a script, pick up to ten voices, receive an MP3 or WAV.",
+    "summary": "Added the paid-only ElevenLabs v3 `eleven-dialogue` model (aliases: `dialogue`, `text-to-dialogue`) and `POST /v1/audio/dialogue`, supporting up to 10 voices, 25 turns, and 2,000 total characters with batched safety checks and correctly encoded custom voice IDs.",
+    "impact": "Paid API users can generate multi-speaker dialogue at $0.10 per 1K characters, while the existing ElevenLabs and default TTS routes continue to work across both GET audio and `/v1/audio/speech` endpoints.",
     "keywords": [
       "elevenlabs",
       "audio",
-      "dialogue",
       "text-to-speech",
+      "dialogue",
       "api",
       "voices",
-      "v3"
+      "paid-models"
     ],
-    "visual_concept": "Depict a cozy recording garden where Polli directs a small multi-voice radio drama: several friendly retro microphones or speaker flowers represent the supported voices, while a CRT terminal displays a dialogue script and emits gentle audio waveforms. Polli should wear tiny director headphones and hold a clipboard, with code-plants and an ElevenLabs-style sound studio atmosphere making the new multi-speaker endpoint legible.",
-    "image_prompt": "A cozy pixel art garden recording studio where the cute bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light blue translucent wings wears tiny director headphones and holds a clipboard beside several friendly microphone flowers performing a dialogue; a retro terminal glows lime green (#ecf874) with pixel-font text \"DIALOGUE\" and soft audio waveforms, surrounded by code-plants and pastel flowers. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
+    "visual_concept": "A cozy recording garden represents multi-speaker dialogue: Polli acts as a small sound engineer at a retro mixing desk while several distinct microphone flowers feed speech bubbles into a warmly glowing CRT audio terminal. The scene should show the new multi-voice capability rather than a single narrator, with code-vines and waveform sprouts grounding it in the Pollinations garden.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-dark-brown striped bee mascot with black antennae, oval eyes, pink rectangular cheek blushes, a happy smile, rounded light-blue wings, and tiny studio headphones, adjusting a retro mixing desk as ten little microphone flowers send speech bubbles and waveform vines into a CRT terminal. Prominent soft lime green (#ecf874) glow, warm cream, mint, lavender, and peach pastels, with pixel-font text \"DIALOGUE\" on the screen; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, nostalgic and emotionally warm."
   },
   "image": {
     "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-26/PR-12778.jpg",
-    "prompt": "A cozy pixel art garden recording studio where the cute bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light blue translucent wings wears tiny director headphones and holds a clipboard beside several friendly microphone flowers performing a dialogue; a retro terminal glows lime green (#ecf874) with pixel-font text \"DIALOGUE\" and soft audio waveforms, surrounded by code-plants and pastel flowers. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-dark-brown striped bee mascot with black antennae, oval eyes, pink rectangular cheek blushes, a happy smile, rounded light-blue wings, and tiny studio headphones, adjusting a retro mixing desk as ten little microphone flowers send speech bubbles and waveform vines into a CRT terminal. Prominent soft lime green (#ecf874) glow, warm cream, mint, lavender, and peach pastels, with pixel-font text \"DIALOGUE\" on the screen; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, nostalgic and emotionally warm."
   },
-  "generated_at": "2026-07-26T17:51:06.332193+00:00"
+  "generated_at": "2026-07-26T17:57:25.372138+00:00"
 }

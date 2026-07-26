@@ -97,7 +97,7 @@ export function DevKit() {
                 }
             />
 
-            <div className="grid grid-cols-[repeat(auto-fit,minmax(min(360px,100%),1fr))] gap-5">
+            <div className="grid grid-cols-[repeat(auto-fit,minmax(min(320px,100%),1fr))] gap-5">
                 {TOOLS.map((tool) => (
                     <Surface
                         key={tool.label}

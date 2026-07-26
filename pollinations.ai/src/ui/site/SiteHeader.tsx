@@ -1,5 +1,6 @@
 import { BrandLockup, Button, TabButton } from "@pollinations/ui";
 import { Link, useRouterState } from "@tanstack/react-router";
+import { GUTTER, SHELL } from "./shell";
 import { useHideOnScroll, useScrolled } from "./useHideOnScroll";
 
 const NAV = [
@@ -29,56 +30,62 @@ export function SiteHeader() {
 
     return (
         <header
-            className={`sticky top-0 z-30 flex items-center justify-between gap-6 bg-app-bg px-8 py-5 transition-[transform,box-shadow] duration-300 focus-within:translate-y-0 motion-reduce:transition-none md:px-12 ${
+            className={`sticky top-0 z-30 bg-app-bg py-5 transition-[transform,box-shadow] duration-300 focus-within:translate-y-0 motion-reduce:transition-none ${
                 scrolled ? "shadow-well" : ""
             } ${hidden ? "-translate-y-full" : "translate-y-0"}`}
         >
-            <div className="flex items-center gap-9">
-                <Link
-                    to="/"
-                    className="flex items-center text-theme-text-strong"
-                    aria-label="pollinations.ai — home"
+            <div className={SHELL}>
+                <div
+                    className={`${GUTTER} flex items-center justify-between gap-6`}
                 >
-                    <BrandLockup height={38} label="" />
-                </Link>
-                <nav className="hidden gap-1.5 md:flex">
-                    {NAV.map((item) => (
-                        <TabButton
-                            key={item.to}
-                            as={Link}
-                            to={item.to}
-                            variant="ghost"
-                            active={
-                                item.to === "/"
-                                    ? pathname === "/"
-                                    : pathname.startsWith(item.to)
-                            }
+                    <div className="flex items-center gap-9">
+                        <Link
+                            to="/"
+                            className="flex items-center text-theme-text-strong"
+                            aria-label="pollinations.ai — home"
                         >
-                            {item.label}
-                        </TabButton>
-                    ))}
-                </nav>
-            </div>
-            <div className="flex items-center gap-2">
-                {EXTERNAL.map((item) => (
-                    <TabButton
-                        key={item.href}
-                        as="a"
-                        href={item.href}
-                        variant="ghost"
-                        active={false}
-                        className="hidden sm:inline-flex"
-                    >
-                        {item.label} ↗
-                    </TabButton>
-                ))}
-                <Button
-                    as="a"
-                    href="https://enter.pollinations.ai"
-                    className="bg-brand-dark text-surface-opaque hover:bg-brand-dark"
-                >
-                    Dashboard ↗
-                </Button>
+                            <BrandLockup height={38} label="" />
+                        </Link>
+                        <nav className="hidden gap-1.5 md:flex">
+                            {NAV.map((item) => (
+                                <TabButton
+                                    key={item.to}
+                                    as={Link}
+                                    to={item.to}
+                                    variant="ghost"
+                                    active={
+                                        item.to === "/"
+                                            ? pathname === "/"
+                                            : pathname.startsWith(item.to)
+                                    }
+                                >
+                                    {item.label}
+                                </TabButton>
+                            ))}
+                        </nav>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        {EXTERNAL.map((item) => (
+                            <TabButton
+                                key={item.href}
+                                as="a"
+                                href={item.href}
+                                variant="ghost"
+                                active={false}
+                                className="hidden sm:inline-flex"
+                            >
+                                {item.label} ↗
+                            </TabButton>
+                        ))}
+                        <Button
+                            as="a"
+                            href="https://enter.pollinations.ai"
+                            className="bg-brand-dark text-surface-opaque hover:bg-brand-dark"
+                        >
+                            Dashboard ↗
+                        </Button>
+                    </div>
+                </div>
             </div>
         </header>
     );

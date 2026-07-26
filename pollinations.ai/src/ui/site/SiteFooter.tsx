@@ -1,5 +1,6 @@
 import { BrandLockup } from "@pollinations/ui";
 import { Link } from "@tanstack/react-router";
+import { GUTTER, SHELL } from "./shell";
 
 const COLUMNS = [
     {
@@ -37,45 +38,52 @@ const COLUMNS = [
 
 export function SiteFooter() {
     return (
-        <footer className="flex flex-wrap justify-between gap-10 px-6 pt-11 pb-14 md:px-12">
-            <div className="flex max-w-xs flex-col gap-4">
-                <BrandLockup
-                    height={34}
-                    className="text-theme-text-strong"
-                    label=""
-                />
-                <p className="text-sm text-theme-text-muted">
-                    Open infrastructure for AI apps. Built with the community,
-                    in the open.
-                </p>
-            </div>
-            <div className="flex flex-wrap gap-12">
-                {COLUMNS.map((column) => (
-                    <div key={column.heading} className="flex flex-col gap-2">
-                        <span className="font-pixel text-micro tracking-widest text-theme-text-muted uppercase">
-                            {column.heading}
-                        </span>
-                        {column.links.map((link) =>
-                            "to" in link ? (
-                                <Link
-                                    key={link.label}
-                                    to={link.to}
-                                    className="text-sm text-theme-text-base hover:text-theme-text-strong"
-                                >
-                                    {link.label}
-                                </Link>
-                            ) : (
-                                <a
-                                    key={link.label}
-                                    href={link.href}
-                                    className="text-sm text-theme-text-base hover:text-theme-text-strong"
-                                >
-                                    {link.label} ↗
-                                </a>
-                            ),
-                        )}
-                    </div>
-                ))}
+        <footer className={SHELL}>
+            <div
+                className={`${GUTTER} flex flex-wrap justify-between gap-10 pt-11 pb-14`}
+            >
+                <div className="flex max-w-xs flex-col gap-4">
+                    <BrandLockup
+                        height={34}
+                        className="text-theme-text-strong"
+                        label=""
+                    />
+                    <p className="text-sm text-theme-text-muted">
+                        Open infrastructure for AI apps. Built with the
+                        community, in the open.
+                    </p>
+                </div>
+                <div className="flex flex-wrap gap-12">
+                    {COLUMNS.map((column) => (
+                        <div
+                            key={column.heading}
+                            className="flex flex-col gap-2"
+                        >
+                            <span className="font-pixel text-micro tracking-widest text-theme-text-muted uppercase">
+                                {column.heading}
+                            </span>
+                            {column.links.map((link) =>
+                                "to" in link ? (
+                                    <Link
+                                        key={link.label}
+                                        to={link.to}
+                                        className="text-sm text-theme-text-base hover:text-theme-text-strong"
+                                    >
+                                        {link.label}
+                                    </Link>
+                                ) : (
+                                    <a
+                                        key={link.label}
+                                        href={link.href}
+                                        className="text-sm text-theme-text-base hover:text-theme-text-strong"
+                                    >
+                                        {link.label} ↗
+                                    </a>
+                                ),
+                            )}
+                        </div>
+                    ))}
+                </div>
             </div>
         </footer>
     );

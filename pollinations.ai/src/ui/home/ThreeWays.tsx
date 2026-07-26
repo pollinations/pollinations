@@ -20,8 +20,8 @@ const WAYS: Way[] = [
         body: "Your key, your product. Get free Pollen from Quests to prototype, top up when you go live.",
         filename: "direct-api.sh",
         code: `$ curl gen.pollinations.ai/v1/chat/completions \\
-    -H "Authorization: Bearer sk_..." \\
-    -d '{"model":"openai","messages":[…]}'`,
+  -H "Authorization: Bearer sk_..." \\
+  -d '{"model":"openai","messages":[…]}'`,
         payer: "you",
     },
     {
@@ -33,7 +33,7 @@ const WAYS: Way[] = [
         code: `$ open "enter.pollinations.ai/authorize?client_id=pk_..."
 # user approves → your app receives sk_...
 $ curl gen.pollinations.ai/v1/chat/completions \\
-    -H "Authorization: Bearer sk_..."`,
+  -H "Authorization: Bearer sk_..."`,
         payer: "your user",
         earns: "app reward",
     },
@@ -44,8 +44,8 @@ $ curl gen.pollinations.ai/v1/chat/completions \\
         body: "Apply to publish a community model as owner/model and keep 75% of every call.",
         filename: "byom.sh",
         code: `$ curl gen.pollinations.ai/v1/chat/completions \\
-    -H "Authorization: Bearer sk_..." \\
-    -d '{"model":"owner/community-model", …}'`,
+  -H "Authorization: Bearer sk_..." \\
+  -d '{"model":"owner/community-model", …}'`,
         payer: "the caller",
         earns: "model reward",
     },
@@ -60,7 +60,7 @@ export function ThreeWays() {
                 subtitle="Every flow hits the same generation endpoints — what changes is the key you send and the model you name."
             />
 
-            <div className="grid grid-cols-[repeat(auto-fit,minmax(min(360px,100%),1fr))] gap-5">
+            <div className="grid grid-cols-[repeat(auto-fit,minmax(min(320px,100%),1fr))] gap-5">
                 {WAYS.map((way) => (
                     <Surface
                         key={way.chip}
@@ -93,10 +93,12 @@ export function ThreeWays() {
                             <p className="border-b border-theme-border px-4 py-2 font-pixel text-xs text-theme-text-muted">
                                 {way.filename}
                             </p>
-                            {/* Wraps rather than scrolls — these are three
-                                narrow columns, and a horizontal scrollbar per
-                                card hides the end of every command. */}
-                            <pre className="px-4 py-3 text-[12.5px] leading-relaxed break-words whitespace-pre-wrap text-theme-text-base">
+                            {/* Wraps at whitespace, never mid-token: with
+                                `break-words` a narrow column split
+                                gen.pollinations.ai/v1/chat/comp | letions.
+                                Overflow scrolls as a fallback for any single
+                                token wider than the card. */}
+                            <pre className="overflow-x-auto px-4 py-3 text-[11.5px] leading-relaxed whitespace-pre-wrap text-theme-text-base">
                                 <code>{way.code}</code>
                             </pre>
                         </div>

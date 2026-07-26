@@ -1,6 +1,7 @@
 import { createRootRoute, Outlet } from "@tanstack/react-router";
 import { SiteFooter } from "../ui/site/SiteFooter";
 import { SiteHeader } from "../ui/site/SiteHeader";
+import { SHELL } from "../ui/site/shell";
 
 export const Route = createRootRoute({
     component: RootLayout,
@@ -29,9 +30,11 @@ function RootLayout() {
     return (
         <div className="flex min-h-dvh flex-col bg-app-bg font-body text-theme-text-base">
             <SiteHeader />
-            <main className="mx-6 mb-6 flex flex-1 flex-col gap-18 rounded-[28px] bg-theme-bg-pale px-8 py-16 shadow-container md:px-18">
-                <Outlet />
-            </main>
+            <div className={`${SHELL} mb-6 flex flex-1 flex-col`}>
+                <main className="flex flex-1 flex-col gap-18 rounded-[28px] bg-theme-bg-pale px-8 py-16 shadow-container md:px-18">
+                    <Outlet />
+                </main>
+            </div>
             <SiteFooter />
         </div>
     );

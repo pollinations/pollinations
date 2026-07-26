@@ -452,9 +452,22 @@ export async function generateElevenLabsDialogue(opts: {
 
 const ELEVENLABS_AUDIO_CREDITS_PER_SECOND = 12;
 
-export function getElevenLabsMeteredInputSeconds(response: Response): number {
+export function getElevenLabsMeteredInputSeconds(
+    response: Response,
+    log: Logger,
+): number {
+    // The provider's `character-cost` header is its metering source for these
+    // audio-input APIs. Direct 1s and 61s probes returned 12 and 734 units for
+    // both Voice Changer and Voice Isolator, confirming approximately 12
+    // metering units per input second with no one-minute minimum.
     const characterCost = Number(response.headers.get("character-cost"));
     if (!Number.isFinite(characterCost) || characterCost <= 0) {
+        log.error(
+            "ElevenLabs response missing valid character-cost metering: {characterCost}",
+            {
+                characterCost: response.headers.get("character-cost"),
+            },
+        );
         throw new UpstreamError(502 as ContentfulStatusCode, {
             message:
                 "ElevenLabs response did not include valid input-duration metering.",
@@ -496,7 +509,7 @@ export async function changeVoiceWithElevenLabs(opts: {
     }
 
     const outputFormat = mapOutputFormat(responseFormat);
-    const endpoint = `https://api.elevenlabs.io/v1/speech-to-speech/${voiceId}?output_format=${outputFormat}`;
+    const endpoint = `https://api.elevenlabs.io/v1/speech-to-speech/${encodeURIComponent(voiceId)}?output_format=${outputFormat}`;
     const formData = new FormData();
     formData.append("audio", audio, audio.name || "audio");
     formData.append("model_id", "eleven_multilingual_sts_v2");
@@ -521,7 +534,7 @@ export async function changeVoiceWithElevenLabs(opts: {
         }),
         endpoint,
     );
-    const inputSeconds = getElevenLabsMeteredInputSeconds(response);
+    const inputSeconds = getElevenLabsMeteredInputSeconds(response, log);
     const usageHeaders = {
         ...buildUsageHeaders(
             "eleven-voice-changer",

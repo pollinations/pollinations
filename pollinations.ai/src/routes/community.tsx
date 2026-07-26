@@ -10,8 +10,8 @@ function CommunityPage() {
         <div>
             <PageHeader
                 eyebrow="Open source, open roadmap"
-                title="Contribute"
-                subtitle="Builders shape the platform directly. Share what you need, meet the people using it, and help build what comes next."
+                title="Build it with us."
+                subtitle="Share what you need, meet the people already using it, and help decide what comes next."
             />
         </div>
     );

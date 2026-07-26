@@ -86,7 +86,7 @@ export function DevKit() {
         <section className="flex flex-col gap-7">
             <SectionHeader
                 eyebrow="Dev kit"
-                title="Everything already in your hands"
+                title="Everything already in your hands."
                 aside={
                     <a
                         href="https://gen.pollinations.ai/docs"

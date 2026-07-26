@@ -25,7 +25,10 @@ const UPCOMING = [
 export function OnTheWay() {
     return (
         <section className="flex flex-col gap-6">
-            <SectionHeader eyebrow="Next" title="On the way" />
+            <SectionHeader
+                eyebrow="On the way"
+                title={`${UPCOMING.length} things we\u2019re building.`}
+            />
             <div className="grid grid-cols-[repeat(auto-fit,minmax(min(260px,100%),1fr))] gap-4">
                 {UPCOMING.map((item) => (
                     <div

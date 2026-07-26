@@ -1054,7 +1054,9 @@ export const proxyRoutes = new Hono<Env>()
                 safe: SafeSchema,
             }),
         ),
-        resolveModel("generate.audio"),
+        resolveModel("generate.audio", {
+            supportedEndpoint: "/audio/{text}",
+        }),
         track("generate.audio"),
         audioCache,
         generationAccess,

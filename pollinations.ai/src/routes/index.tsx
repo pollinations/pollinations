@@ -1,4 +1,7 @@
+import polliBee from "@pollinations/ui/brand/polli/polli.png";
 import { createFileRoute } from "@tanstack/react-router";
+import { DevKit } from "../ui/home/DevKit";
+import { ThreeWays } from "../ui/home/ThreeWays";
 
 export const Route = createFileRoute("/")({
     component: HelloPage,
@@ -57,7 +60,18 @@ function HelloPage() {
                         ))}
                     </dl>
                 </div>
+                <img
+                    src={polliBee}
+                    alt=""
+                    aria-hidden="true"
+                    width={340}
+                    height={340}
+                    className="mx-auto w-56 shrink-0 lg:w-[340px]"
+                />
             </section>
+
+            <ThreeWays />
+            <DevKit />
         </div>
     );
 }

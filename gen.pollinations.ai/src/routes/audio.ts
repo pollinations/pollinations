@@ -568,26 +568,26 @@ export async function changeVoiceWithElevenLabs(opts: {
 }
 
 export async function isolateVoiceWithElevenLabs(opts: {
-    media: File;
+    audio: File;
     apiKey: string;
     log: Logger;
 }): Promise<Response> {
-    const { media, apiKey, log } = opts;
+    const { audio, apiKey, log } = opts;
     if (!apiKey) {
         throw new UpstreamError(500 as ContentfulStatusCode, {
             message:
                 "Voice Isolator service is not configured (missing API key)",
         });
     }
-    if (media.size > 50 * 1024 * 1024) {
+    if (audio.size > 50 * 1024 * 1024) {
         throw new UpstreamError(413 as ContentfulStatusCode, {
             message: "Voice Isolator input must be 50 MB or smaller.",
         });
     }
     if (
-        media.type &&
-        !media.type.startsWith("audio/") &&
-        !media.type.startsWith("video/")
+        audio.type &&
+        !audio.type.startsWith("audio/") &&
+        !audio.type.startsWith("video/")
     ) {
         throw new UpstreamError(400 as ContentfulStatusCode, {
             message: "Voice Isolator requires an audio or video file.",
@@ -596,11 +596,11 @@ export async function isolateVoiceWithElevenLabs(opts: {
 
     const endpoint = "https://api.elevenlabs.io/v1/audio-isolation";
     const formData = new FormData();
-    formData.append("audio", media, media.name || "media");
+    formData.append("audio", audio, audio.name || "audio");
 
     log.info("Voice Isolator request: type={type}, bytes={bytes}", {
-        type: media.type,
-        bytes: media.size,
+        type: audio.type,
+        bytes: audio.size,
     });
 
     const response = await ensureUpstreamOk(
@@ -614,7 +614,7 @@ export async function isolateVoiceWithElevenLabs(opts: {
         }),
         endpoint,
     );
-    const inputSeconds = getElevenLabsMeteredInputSeconds(response);
+    const inputSeconds = getElevenLabsMeteredInputSeconds(response, log);
 
     log.info("Voice Isolator success: inputSeconds={seconds}", {
         seconds: inputSeconds,
@@ -2393,7 +2393,7 @@ export const audioRoutes = new Hono<Env>()
         },
     )
     .post(
-        "/isolation",
+        "/voice-isolator",
         describeRoute({
             tags: ["🔊 Audio"],
             summary: "Isolate Speech",
@@ -2405,13 +2405,13 @@ export const audioRoutes = new Hono<Env>()
                     "multipart/form-data": {
                         schema: {
                             type: "object",
-                            required: ["media"],
+                            required: ["audio"],
                             properties: {
                                 model: {
                                     type: "string",
                                     default: "eleven-voice-isolator",
                                 },
-                                media: {
+                                audio: {
                                     type: "string",
                                     format: "binary",
                                     description:
@@ -2437,7 +2437,7 @@ export const audioRoutes = new Hono<Env>()
         }),
         resolveModel("generate.audio", {
             defaultModel: "eleven-voice-isolator",
-            supportedEndpoint: "/v1/audio/isolation",
+            supportedEndpoint: "/v1/audio/voice-isolator",
         }),
         track("generate.audio"),
         async (c) => {
@@ -2453,15 +2453,15 @@ export const audioRoutes = new Hono<Env>()
                 });
             }
 
-            const media = formData.get("media");
-            if (!(media instanceof File)) {
+            const audio = formData.get("audio");
+            if (!(audio instanceof File)) {
                 throw new UpstreamError(400 as ContentfulStatusCode, {
-                    message: "Missing required media file.",
+                    message: "Missing required audio file.",
                 });
             }
 
             return isolateVoiceWithElevenLabs({
-                media,
+                audio,
                 apiKey: c.env.ELEVENLABS_API_KEY,
                 log,
             });

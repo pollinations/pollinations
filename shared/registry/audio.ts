@@ -181,7 +181,7 @@ export const AUDIO_SERVICES = {
             "Removes background noise while preserving clear spoken audio",
         inputModalities: ["audio", "video"],
         outputModalities: ["audio"],
-        supportedEndpoints: ["/v1/audio/isolation"],
+        supportedEndpoints: ["/v1/audio/voice-isolator"],
     },
     elevenmusic: {
         aliases: ["music"],

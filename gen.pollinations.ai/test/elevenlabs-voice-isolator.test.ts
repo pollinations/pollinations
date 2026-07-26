@@ -3,7 +3,9 @@ import { test as workerTest } from "@shared/test/fixtures/index.ts";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { isolateVoiceWithElevenLabs } from "../src/routes/audio.ts";
 
+const errorLog = vi.fn();
 const log = {
+    error: errorLog,
     info: vi.fn(),
     warn: vi.fn(),
 } as never;
@@ -50,7 +52,7 @@ describe("ElevenLabs Voice Isolator", () => {
         );
 
         const response = await isolateVoiceWithElevenLabs({
-            media: createWav(5),
+            audio: createWav(5),
             apiKey: "test-eleven-key",
             log,
         });
@@ -78,7 +80,7 @@ describe("ElevenLabs Voice Isolator", () => {
         );
 
         const response = await isolateVoiceWithElevenLabs({
-            media: new File([new Uint8Array([1, 2, 3])], "input.mp4", {
+            audio: new File([new Uint8Array([1, 2, 3])], "input.mp4", {
                 type: "video/mp4",
             }),
             apiKey: "test-eleven-key",
@@ -97,11 +99,12 @@ describe("ElevenLabs Voice Isolator", () => {
 
         await expect(
             isolateVoiceWithElevenLabs({
-                media: createWav(5),
+                audio: createWav(5),
                 apiKey: "test-eleven-key",
                 log,
             }),
         ).rejects.toMatchObject({ status: 502 });
+        expect(errorLog).toHaveBeenCalledOnce();
     });
 });
 
@@ -123,7 +126,7 @@ workerTest(
         expect(response.status).toBe(400);
         await expect(response.json()).resolves.toMatchObject({
             error: {
-                message: expect.stringContaining("/v1/audio/isolation"),
+                message: expect.stringContaining("/v1/audio/voice-isolator"),
             },
         });
     },
@@ -134,10 +137,10 @@ workerTest.runIf(Boolean(env.ELEVENLABS_API_KEY))(
     async ({ paidApiKey }) => {
         const formData = new FormData();
         formData.append("model", "voice-isolator");
-        formData.append("media", createWav(5));
+        formData.append("audio", createWav(5));
 
         const response = await SELF.fetch(
-            "https://gen.pollinations.ai/v1/audio/isolation",
+            "https://gen.pollinations.ai/v1/audio/voice-isolator",
             {
                 method: "POST",
                 headers: { Authorization: `Bearer ${paidApiKey}` },

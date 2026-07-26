@@ -1,0 +1,35 @@
+{
+  "pr_number": 12778,
+  "title": "feat: add ElevenLabs text to dialogue",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/12778",
+  "merged_at": "2026-07-26T17:50:04Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds `eleven-dialogue` with `dialogue` and `text-to-dialogue` aliases.\n- Adds `POST /v1/audio/dialogue` for up to 10 voices, 25 turns, and 2,000 total characters.\n- Bills the direct ElevenLabs v3 route at $0.10/1K characters, paid-only, multiplier 1, with no fallback or Pollinations GPU.\n- Batches all dialogue safety checks into one guardrail request and rejects oversized input before safety/provider calls.\n- Encodes custom voice IDs at the provider URL boundary and exposes accurate supported endpoints.\n\nValidation:\n- Live full-route MP3 and WAV generations with two voice pairs and alias routing.\n- Exact deductions verified: 9 chars = 0.0009 Pollen; 29 chars = 0.0029 Pollen.\n- 11 focused tests and Gen typecheck pass; oversized, unique-voice, invalid-voice, and URL-injection cases covered.\n- Existing ElevenLabs brand logo resolves in the catalog.\n\n### Endpoint-gating follow-up (2026-07-26)\n\n- Fixed the standard TTS routing regression introduced by endpoint metadata: generic audio defaults now include both /audio/{text} and /v1/audio/speech, and both routes pass their exact endpoint identity.\n- Added route-level coverage for explicit elevenlabs, omitted/default model, and the simple GET route; all return 200.\n- Latest stacked Gen verification: typecheck clean, paid modality E2E clean, and 694/694 tests across 74 files pass.\n- Documented the measured 12 credits/second audio-input metering and its Scale-plan reconciliation in code.\n- CI follow-up: the deterministic route test now injects a test-only provider key through the Worker environment; the secretless GitHub suite passes.",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "The hive learned dialogue",
+    "blurb": "ElevenLabs v3 can now handle a whole tiny radio play, not just one bee at a time. Send the cast, get the scene back as MP3 or WAV.",
+    "summary": "Added the paid ElevenLabs `eleven-dialogue` model (also available as `dialogue` and `text-to-dialogue`) and `POST /v1/audio/dialogue`, supporting up to 10 voices, 25 turns, and 2,000 total characters at $0.10 per 1K characters.",
+    "impact": "Developers can generate multi-speaker ElevenLabs dialogue through one Pollinations endpoint, while standard TTS continues to work on both `/audio/{text}` and `/v1/audio/speech` routes.",
+    "keywords": [
+      "elevenlabs",
+      "audio",
+      "dialogue",
+      "text-to-speech",
+      "api",
+      "voices",
+      "v3"
+    ],
+    "visual_concept": "Depict a cozy recording garden where Polli directs a small multi-voice radio drama: several friendly retro microphones or speaker flowers represent the supported voices, while a CRT terminal displays a dialogue script and emits gentle audio waveforms. Polli should wear tiny director headphones and hold a clipboard, with code-plants and an ElevenLabs-style sound studio atmosphere making the new multi-speaker endpoint legible.",
+    "image_prompt": "A cozy pixel art garden recording studio where the cute bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light blue translucent wings wears tiny director headphones and holds a clipboard beside several friendly microphone flowers performing a dialogue; a retro terminal glows lime green (#ecf874) with pixel-font text \"DIALOGUE\" and soft audio waveforms, surrounded by code-plants and pastel flowers. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-26/PR-12778.jpg",
+    "prompt": "A cozy pixel art garden recording studio where the cute bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light blue translucent wings wears tiny director headphones and holds a clipboard beside several friendly microphone flowers performing a dialogue; a retro terminal glows lime green (#ecf874) with pixel-font text \"DIALOGUE\" and soft audio waveforms, surrounded by code-plants and pastel flowers. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
+  },
+  "generated_at": "2026-07-26T17:51:06.332193+00:00"
+}

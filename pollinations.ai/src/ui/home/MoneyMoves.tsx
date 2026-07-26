@@ -1,4 +1,5 @@
 import { Button, Surface } from "@pollinations/ui";
+import { SectionHeader } from "../site/PageHeader";
 
 const STEPS = [
     "A user signs in to your app with Pollinations, holding Pollen they bought or earned from Quests",
@@ -20,20 +21,13 @@ const STEPS = [
  */
 export function MoneyMoves() {
     return (
-        <section className="dark mx-6 mb-6 grid grid-cols-[repeat(auto-fit,minmax(min(360px,100%),1fr))] items-center gap-12 rounded-3xl bg-brand-dark px-8 py-14 md:px-14">
+        <section className="dark mb-16 grid grid-cols-[repeat(auto-fit,minmax(min(360px,100%),1fr))] items-center gap-12 rounded-3xl bg-brand-dark px-8 py-14 md:px-14">
             <div className="flex flex-col gap-5">
-                <p className="font-pixel text-sm tracking-widest text-theme-text-soft uppercase">
-                    How the money moves
-                </p>
-                <h2 className="font-heading text-4xl leading-tight text-theme-text-strong">
-                    Your app doesn&rsquo;t need a budget to launch.
-                </h2>
-                <p className="max-w-lg leading-relaxed text-theme-text-base">
-                    On most platforms every user you win costs you money. Here,
-                    users hold their own Pollen — bought, or earned free by
-                    completing Quests — so usage scales without a bill landing
-                    on you, and a share of what they spend comes back to you.
-                </p>
+                <SectionHeader
+                    eyebrow="How the money moves"
+                    title={<>Your app doesn&rsquo;t need a budget to launch.</>}
+                    subtitle="On most platforms every user you win costs you money. Here, users hold their own Pollen — bought, or earned free by completing Quests — so usage scales without a bill landing on you, and a share of what they spend comes back to you."
+                />
                 <div className="mt-1 flex flex-wrap items-center gap-5">
                     <Button as="a" href="https://enter.pollinations.ai">
                         Start earning

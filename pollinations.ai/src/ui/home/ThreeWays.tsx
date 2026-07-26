@@ -1,4 +1,5 @@
 import { Chip, Surface } from "@pollinations/ui";
+import { SectionHeader } from "../site/PageHeader";
 
 type Way = {
     chip: string;
@@ -52,19 +53,12 @@ $ curl gen.pollinations.ai/v1/chat/completions \\
 
 export function ThreeWays() {
     return (
-        <section className="flex flex-col gap-7 px-8 pb-18 md:px-18">
-            <div className="flex flex-col gap-2.5">
-                <p className="font-pixel text-sm tracking-widest text-theme-text-soft uppercase">
-                    The three ways
-                </p>
-                <h2 className="max-w-2xl font-heading text-4xl leading-tight text-theme-text-strong">
-                    Same API. Your choice who pays.
-                </h2>
-                <p className="max-w-xl text-theme-text-base">
-                    Every flow hits the same generation endpoints — what changes
-                    is the key you send and the model you name.
-                </p>
-            </div>
+        <section className="flex flex-col gap-7 pb-18">
+            <SectionHeader
+                eyebrow="The three ways"
+                title="Same API. Your choice who pays."
+                subtitle="Every flow hits the same generation endpoints — what changes is the key you send and the model you name."
+            />
 
             <div className="grid grid-cols-[repeat(auto-fit,minmax(min(360px,100%),1fr))] gap-5">
                 {WAYS.map((way) => (

@@ -8,6 +8,7 @@ import {
     isPollen,
     useAppDirectory,
 } from "../data/publicStats";
+import { PageHeader, SectionHeader } from "../ui/site/PageHeader";
 import { APP_BADGES, APP_CATEGORIES, validateAppSearch } from "./-app-search";
 
 export const Route = createFileRoute("/apps")({
@@ -120,43 +121,30 @@ function AppsPage() {
     }, [apps, category, badge, q]);
 
     return (
-        <div className="flex flex-col gap-14 px-8 pt-4 pb-16 md:px-18">
-            <header className="flex flex-wrap items-end justify-between gap-5">
-                <div className="flex flex-col gap-2.5">
-                    <p className="font-pixel text-sm tracking-widest text-theme-text-soft uppercase">
-                        {loading ? "Apps" : `${apps.length} apps`} built on
-                        Pollinations
-                    </p>
-                    <h1 className="font-heading text-5xl text-theme-text-strong">
-                        Ecosystem
-                    </h1>
-                    <p className="max-w-xl text-lg text-theme-text-base">
-                        Apps, tools, and experiments from the community. Browse,
-                        try, ship.
-                    </p>
-                </div>
-                <Button
-                    as="a"
-                    href="https://github.com/pollinations/pollinations/issues/new?template=APP-SUBMISSION.yml"
-                >
-                    Submit your app
-                </Button>
-            </header>
+        <div className="flex flex-col gap-14">
+            <PageHeader
+                eyebrow={`${loading ? "Apps" : `${apps.length} apps`} built on Pollinations`}
+                title="Ecosystem"
+                subtitle="Apps, tools, and experiments from the community. Browse, try, ship."
+                action={
+                    <Button
+                        as="a"
+                        href="https://github.com/pollinations/pollinations/issues/new?template=APP-SUBMISSION.yml"
+                    >
+                        Submit your app
+                    </Button>
+                }
+            />
 
             {spotlight.length > 0 && (
                 <section className="flex flex-col gap-5">
-                    <div className="flex flex-col gap-2">
-                        <p className="font-pixel text-sm tracking-widest text-theme-text-soft uppercase">
-                            Spotlight
-                        </p>
-                        <h2 className="font-heading text-4xl text-theme-text-strong">
-                            Worth your time.
-                        </h2>
-                        <p className="max-w-xl text-theme-text-base">
-                            Picked by hand. Not the busiest — the ones
-                            we&rsquo;d actually send a friend to.
-                        </p>
-                    </div>
+                    <SectionHeader
+                        eyebrow="Spotlight"
+                        title="Worth your time."
+                        subtitle={
+                            "Picked by hand. Not the busiest \u2014 the ones we\u2019d actually send a friend to."
+                        }
+                    />
                     <div className="grid grid-cols-[repeat(auto-fit,minmax(min(320px,100%),1fr))] gap-4">
                         {spotlight.map((app) => (
                             <AppCard key={app.name} app={app} />
@@ -166,19 +154,13 @@ function AppsPage() {
             )}
 
             <section className="flex flex-col gap-5">
-                <div className="flex flex-col gap-2">
-                    <p className="font-pixel text-sm tracking-widest text-theme-text-soft uppercase">
-                        Browse
-                    </p>
-                    <h2 className="font-heading text-4xl text-theme-text-strong">
-                        {loading ? "Everything else." : `All ${apps.length}.`}
-                    </h2>
-                    <p className="max-w-2xl text-theme-text-base">
-                        {
-                            "Filter by what you want to make. Badges are automatic — 🐝 busy this week, 🏵️ runs on your Pollen, 🫧 new this month."
-                        }
-                    </p>
-                </div>
+                <SectionHeader
+                    eyebrow="Browse"
+                    title={loading ? "Everything else." : `All ${apps.length}.`}
+                    subtitle={
+                        "Filter by what you want to make. Badges are automatic \u2014 \ud83d\udc1d busy this week, \ud83c\udff5\ufe0f runs on your Pollen, \ud83e\udee7 new this month."
+                    }
+                />
 
                 <div className="flex flex-wrap gap-2">
                     {APP_CATEGORIES.map((value) => (

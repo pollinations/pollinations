@@ -37,7 +37,7 @@ export function LegalPage({ markdownPath, errorLabel }: LegalPageProps) {
     }, [markdownPath]);
 
     return (
-        <div className="px-8 pt-4 pb-16 md:px-18">
+        <div>
             {failed ? (
                 <p className="text-theme-text-base">
                     The {errorLabel} could not be loaded. Please try again.

@@ -9,11 +9,11 @@ export const Route = createRootRoute({
 /**
  * One sheet, owned here rather than repeated per route.
  *
- * The nav lives *inside* the card as its top row. A floating island on top of
- * a floating sheet was two competing elevations for one idea, and the earlier
- * full-bleed bar cut content because it was a different colour from the sheet
- * it overlapped. Cream on cream removes the boundary entirely — content
- * passing under the nav reads as the card's own header staying put.
+ * The nav sits on the desk, outside the card. What stops it cutting content
+ * is that it hides on the way down and only returns on the way up — so it is
+ * almost never overlapping something you are reading, and when it is, that
+ * was the gesture asking for it. A shadow appears only once it is over
+ * content, so the overlap reads as layering rather than a slice.
  *
  * Site chrome stays here rather than in @pollinations/ui: a marketing top bar
  * and enter's 240px dashboard rail are different information architectures.
@@ -23,8 +23,8 @@ export const Route = createRootRoute({
 function RootLayout() {
     return (
         <div className="flex min-h-dvh flex-col bg-app-bg font-body text-theme-text-base">
-            <main className="m-6 flex-1 rounded-[28px] bg-theme-bg-pale shadow-container">
-                <SiteHeader />
+            <SiteHeader />
+            <main className="mx-6 mb-6 flex-1 rounded-[28px] bg-theme-bg-pale px-8 py-14 shadow-container md:px-18">
                 <Outlet />
             </main>
             <SiteFooter />

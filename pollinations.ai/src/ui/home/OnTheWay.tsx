@@ -1,3 +1,5 @@
+import { SectionHeader } from "../site/PageHeader";
+
 const UPCOMING = [
     {
         title: "Pollinations Login",
@@ -22,15 +24,8 @@ const UPCOMING = [
 
 export function OnTheWay() {
     return (
-        <section className="flex flex-col gap-6 px-8 pb-16 md:px-18">
-            <div className="flex flex-col gap-2.5">
-                <p className="font-pixel text-sm tracking-widest text-theme-text-soft uppercase">
-                    Next
-                </p>
-                <h2 className="font-heading text-4xl text-theme-text-strong">
-                    On the way
-                </h2>
-            </div>
+        <section className="flex flex-col gap-6">
+            <SectionHeader eyebrow="Next" title="On the way" />
             <div className="grid grid-cols-[repeat(auto-fit,minmax(min(260px,100%),1fr))] gap-4">
                 {UPCOMING.map((item) => (
                     <div

@@ -22,12 +22,7 @@ export function useHideOnScroll({
     const [hidden, setHidden] = useState(false);
 
     useEffect(() => {
-        if (
-            window.matchMedia("(prefers-reduced-motion: reduce)").matches ||
-            !window.matchMedia("(max-width: 767px)").matches
-        ) {
-            // Desktop keeps the island pinned: 68px of a tall viewport isn't
-            // worth reclaiming, and things moving under the cursor annoy.
+        if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
             setHidden(false);
             return;
         }
@@ -55,4 +50,32 @@ export function useHideOnScroll({
     }, [revealAt, minDelta]);
 
     return hidden;
+}
+
+/**
+ * True once the page has moved at all. Used to add elevation to the header
+ * only while it is actually overlapping content — at rest it should be
+ * indistinguishable from the desk it sits on.
+ */
+export function useScrolled(at = 4): boolean {
+    const [scrolled, setScrolled] = useState(false);
+
+    useEffect(() => {
+        let frame = 0;
+        const onScroll = () => {
+            if (frame) return;
+            frame = requestAnimationFrame(() => {
+                frame = 0;
+                setScrolled(window.scrollY > at);
+            });
+        };
+        onScroll();
+        window.addEventListener("scroll", onScroll, { passive: true });
+        return () => {
+            window.removeEventListener("scroll", onScroll);
+            if (frame) cancelAnimationFrame(frame);
+        };
+    }, [at]);
+
+    return scrolled;
 }

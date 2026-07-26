@@ -3,6 +3,7 @@ import { AppUserMenu } from "@pollinations/ui/app-user-menu/sdk";
 import { createFileRoute } from "@tanstack/react-router";
 import { ENTER_URL, POLLI_APP_KEY } from "../config";
 import { Playground } from "../ui/play/Playground";
+import { PageHeader } from "../ui/site/PageHeader";
 
 export const Route = createFileRoute("/play")({
     component: PlayPage,
@@ -28,23 +29,13 @@ function PlayPage() {
             enterUrl={ENTER_URL}
             permissions={["profile", "usage"]}
         >
-            <div className="flex flex-col gap-10 px-8 pt-4 pb-16 md:px-18">
-                <header className="flex flex-wrap items-end justify-between gap-5">
-                    <div className="flex flex-col gap-2.5">
-                        <p className="font-pixel text-sm tracking-widest text-theme-text-soft uppercase">
-                            Every model, in the browser
-                        </p>
-                        <h1 className="font-heading text-5xl text-theme-text-strong">
-                            Playground
-                        </h1>
-                        <p className="max-w-xl text-lg text-theme-text-base">
-                            Text, image, audio and video from one workspace.
-                            Sign in and it runs on your own Pollen — nothing to
-                            install.
-                        </p>
-                    </div>
-                    <AppUserMenu dashboardHref={ENTER_URL} />
-                </header>
+            <div className="flex flex-col gap-10">
+                <PageHeader
+                    eyebrow="Every model, in the browser"
+                    title="Playground"
+                    subtitle="Text, image, audio and video from one workspace. Sign in and it runs on your own Pollen — nothing to install."
+                    action={<AppUserMenu dashboardHref={ENTER_URL} />}
+                />
 
                 <Playground />
             </div>

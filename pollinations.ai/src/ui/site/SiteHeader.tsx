@@ -1,6 +1,6 @@
 import { Button, TabButton } from "@pollinations/ui";
 import { Link, useRouterState } from "@tanstack/react-router";
-import { useHideOnScroll } from "./useHideOnScroll";
+import { useHideOnScroll, useScrolled } from "./useHideOnScroll";
 
 const NAV = [
     { to: "/", label: "Hello" },
@@ -16,15 +16,16 @@ const EXTERNAL = [
 
 export function SiteHeader() {
     const hidden = useHideOnScroll();
+    const scrolled = useScrolled();
     const pathname = useRouterState({
         select: (state) => state.location.pathname,
     });
 
     return (
         <header
-            className={`sticky top-0 z-30 flex items-center justify-between gap-6 rounded-t-[28px] bg-theme-bg-pale px-8 py-5 transition-transform duration-300 focus-within:translate-y-0 motion-reduce:transition-none md:px-18 ${
-                hidden ? "-translate-y-full" : "translate-y-0"
-            }`}
+            className={`sticky top-0 z-30 flex items-center justify-between gap-6 bg-app-bg px-8 py-4 transition-[transform,box-shadow] duration-300 focus-within:translate-y-0 motion-reduce:transition-none md:px-12 ${
+                scrolled ? "shadow-well" : ""
+            } ${hidden ? "-translate-y-full" : "translate-y-0"}`}
         >
             <div className="flex items-center gap-8">
                 <Link to="/" className="flex items-center gap-2">

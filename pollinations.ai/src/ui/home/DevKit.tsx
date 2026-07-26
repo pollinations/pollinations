@@ -1,5 +1,6 @@
 import { Surface } from "@pollinations/ui";
 import type { ReactNode } from "react";
+import { SectionHeader } from "../site/PageHeader";
 
 type Tool = {
     label: string;
@@ -82,23 +83,19 @@ const TOOLS: Tool[] = [
 
 export function DevKit() {
     return (
-        <section className="flex flex-col gap-7 px-8 py-16 md:px-18">
-            <div className="flex flex-wrap items-end justify-between gap-4">
-                <div className="flex flex-col gap-2.5">
-                    <p className="font-pixel text-sm tracking-widest text-theme-text-soft uppercase">
-                        Dev kit
-                    </p>
-                    <h2 className="font-heading text-4xl text-theme-text-strong">
-                        Everything already in your hands
-                    </h2>
-                </div>
-                <a
-                    href="https://docs.pollinations.ai"
-                    className="text-sm font-semibold text-theme-text-soft"
-                >
-                    Need the details? read the API docs →
-                </a>
-            </div>
+        <section className="flex flex-col gap-7 pb-16">
+            <SectionHeader
+                eyebrow="Dev kit"
+                title="Everything already in your hands"
+                aside={
+                    <a
+                        href="https://docs.pollinations.ai"
+                        className="text-sm font-semibold text-theme-text-soft"
+                    >
+                        Need the details? read the API docs →
+                    </a>
+                }
+            />
 
             <div className="grid grid-cols-[repeat(auto-fit,minmax(min(360px,100%),1fr))] gap-5">
                 {TOOLS.map((tool) => (

@@ -6,6 +6,7 @@ import { DevKit } from "../ui/home/DevKit";
 import { MoneyMoves } from "../ui/home/MoneyMoves";
 import { OnTheWay } from "../ui/home/OnTheWay";
 import { ThreeWays } from "../ui/home/ThreeWays";
+import { PageHeader } from "../ui/site/PageHeader";
 
 export const Route = createFileRoute("/")({
     component: HelloPage,
@@ -44,23 +45,25 @@ function HelloPage() {
 
     return (
         <>
-            <section className="flex flex-wrap items-center gap-14 px-8 pt-16 pb-14 md:px-18">
-                <div className="flex min-w-0 flex-1 flex-col gap-6">
-                    <p className="font-pixel text-sm tracking-widest text-theme-text-soft uppercase">
-                        The infrastructure for AI apps
-                    </p>
-                    <h1 className="font-heading text-5xl leading-tight text-theme-text-strong lg:text-7xl">
-                        Every model, one wallet.
-                    </h1>
-                    <p className="max-w-xl text-lg leading-relaxed text-theme-text-base">
-                        Text, image, audio and video from a single endpoint,
-                        with{" "}
-                        <strong className="text-theme-text-strong">
-                            a Pollen balance behind every call
-                        </strong>
-                        . Pay as you go, let your users bring their own, or
-                        publish a model and earn every time it&rsquo;s called.
-                    </p>
+            <section className="flex flex-wrap items-center gap-14 pb-16">
+                <div className="flex min-w-0 flex-1 flex-col gap-8">
+                    <PageHeader
+                        size="hero"
+                        eyebrow="The infrastructure for AI apps"
+                        title="Every model, one wallet."
+                        subtitle={
+                            <>
+                                Text, image, audio and video from a single
+                                endpoint, with{" "}
+                                <strong className="text-theme-text-strong">
+                                    a Pollen balance behind every call
+                                </strong>
+                                . Pay as you go, let your users bring their own,
+                                or publish a model and earn every time
+                                it&rsquo;s called.
+                            </>
+                        }
+                    />
                     <div className="flex flex-wrap gap-3">
                         <Button
                             as="a"

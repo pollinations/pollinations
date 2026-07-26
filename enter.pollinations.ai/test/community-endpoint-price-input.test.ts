@@ -1,4 +1,6 @@
 import {
+    MAX_COMMUNITY_PRICE_PER_IMAGE,
+    MAX_COMMUNITY_PRICE_PER_MILLION_TOKENS,
     MIN_COMMUNITY_PRICE_PER_MILLION_TOKENS,
     MIN_COMMUNITY_PRICE_PER_TOKEN,
 } from "@shared/community-endpoints.ts";
@@ -44,5 +46,25 @@ describe("community endpoint price input", () => {
         expect(formPriceToStoredPrice("0.03", "image")).toBe(0.03);
         expect(storedPriceToFormValue(0.03, "image")).toBe("0.03");
         expect(isValidPriceInput("0.000000001", "image")).toBe(true);
+    });
+
+    it("rejects prices above the configured ceilings", () => {
+        expect(
+            isValidPriceInput(String(MAX_COMMUNITY_PRICE_PER_MILLION_TOKENS)),
+        ).toBe(true);
+        expect(
+            isValidPriceInput(
+                String(MAX_COMMUNITY_PRICE_PER_MILLION_TOKENS + 1),
+            ),
+        ).toBe(false);
+        expect(
+            isValidPriceInput(String(MAX_COMMUNITY_PRICE_PER_IMAGE), "image"),
+        ).toBe(true);
+        expect(
+            isValidPriceInput(
+                String(MAX_COMMUNITY_PRICE_PER_IMAGE + 0.01),
+                "image",
+            ),
+        ).toBe(false);
     });
 });

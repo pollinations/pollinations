@@ -1157,6 +1157,7 @@ List private and public community models owned by the authenticated account. API
 | `data[].id` * | `string` | — |
 | `data[].modelId` * | `string` | — |
 | `data[].name` * | `string` | — |
+| `data[].title` * | `string` | — |
 | `data[].description` * | `string` \| `null` | — |
 | `data[].modality` * | `"text"` \| `"image"` | Upstream API family. "text" uses `/v1/chat/completions`; "image" uses `/v1/images/generations` and currently supports text-to-image generation only. |
 | `data[].imagePricing` * | `"request"` \| `"tokens"` | Image models only. "request": the generated-image price is charged once per generation. "tokens": provider-returned OpenAI image token usage is charged against per-token prices. Detected by the endpoint test. |
@@ -1198,7 +1199,8 @@ Register a private or public community text or image model. Private is the defau
 | Field | Type | Description |
 |---|---|---|
 | `name` * | `string` | length: `1…120` |
-| `description` | `string` | max length: `240` |
+| `title` * | `string` | Display name shown in the model catalog. · length: `1…42` |
+| `description` | `string` | max length: `160` |
 | `baseUrl` * | `string · uri` | OpenAI-compatible `/v1` base URL or full `/chat/completions` or `/images/generations` URL. |
 | `upstreamModel` | `string` | length: `1…253` |
 | `bearerToken` * | `string` | — |
@@ -1224,6 +1226,7 @@ Register a private or public community text or image model. Private is the defau
 | `id` * | `string` | — |
 | `modelId` * | `string` | — |
 | `name` * | `string` | — |
+| `title` * | `string` | — |
 | `description` * | `string` \| `null` | — |
 | `modality` * | `"text"` \| `"image"` | Upstream API family. "text" uses `/v1/chat/completions`; "image" uses `/v1/images/generations` and currently supports text-to-image generation only. |
 | `imagePricing` * | `"request"` \| `"tokens"` | Image models only. "request": the generated-image price is charged once per generation. "tokens": provider-returned OpenAI image token usage is charged against per-token prices. Detected by the endpoint test. |
@@ -1353,7 +1356,8 @@ Update a community model owned by the authenticated account. Changing visibility
 | Field | Type | Description |
 |---|---|---|
 | `name` | `string` | length: `1…120` |
-| `description` | `string` | max length: `240` |
+| `title` | `string` | Display name shown in the model catalog. · length: `1…42` |
+| `description` | `string` | max length: `160` |
 | `baseUrl` | `string · uri` | OpenAI-compatible `/v1` base URL or full `/chat/completions` or `/images/generations` URL. |
 | `upstreamModel` | `string` | length: `1…253` |
 | `bearerToken` | `string` | — |
@@ -1379,6 +1383,7 @@ Update a community model owned by the authenticated account. Changing visibility
 | `id` * | `string` | — |
 | `modelId` * | `string` | — |
 | `name` * | `string` | — |
+| `title` * | `string` | — |
 | `description` * | `string` \| `null` | — |
 | `modality` * | `"text"` \| `"image"` | Upstream API family. "text" uses `/v1/chat/completions`; "image" uses `/v1/images/generations` and currently supports text-to-image generation only. |
 | `imagePricing` * | `"request"` \| `"tokens"` | Image models only. "request": the generated-image price is charged once per generation. "tokens": provider-returned OpenAI image token usage is charged against per-token prices. Detected by the endpoint test. |

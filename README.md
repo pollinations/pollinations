@@ -48,6 +48,9 @@ We've launched **https://gen.pollinations.ai** — a single endpoint for all you
 
 ## 🆕 Latest News
 
+- **2026-07-24** – **🎵 Lyria 3 music clips** Generate 30-second stereo MP3s with `lyria` or `lyria-3` through GET audio requests or the OpenAI-compatible API. [Try the API](https://gen.pollinations.ai/docs)
+- **2026-07-24** – **🎨 Recraft SVG generation** Turn prompts—or one reference image—into real SVG files with `recraft-v4.1-vector`, available from image and OpenAI-compatible generation/edit endpoints. [Try it](https://pollinations.ai/play)
+- **2026-07-24** – **✨ Community model stats, including the long tail** Public model estimates now cover all eligible models, including community image models that were previously below the volume cutoff. [View the model monitor](https://model-monitor.pollinations.ai)
 - **2026-07-23** – **🤖 Polli learned diagrams and better search** The Discord bot now renders Mermaid diagrams inline, handles mention searches and X links more reliably, and stops retrying the same broken tool call forever. [Join the chat](https://chat.pollinations.ai)
 - **2026-07-23** – **🚀 Gemini 3.5 Flash-Lite** Existing Flash-Lite and `gemini-search-fast` aliases now run on stable Gemini 3.5 Flash-Lite, keeping multimodal input, tools, web search, structured output, reasoning, and streaming. [Browse models](https://gen.pollinations.ai/v1/models)
 - **2026-07-23** – **🚀 LongCat 2.0** Paid API users can call `longcat`, `longcat-2`, or `longcat-2.0` for reasoning, function tools, streaming, prompt caching, and a rather excessive 1M-token context window. [API docs](https://gen.pollinations.ai/docs)
@@ -55,9 +58,6 @@ We've launched **https://gen.pollinations.ai** — a single endpoint for all you
 - **2026-07-23** – **🎨 Grok Imagine defaults to 2K** Basic `grok-imagine-image` generation and editing now produce sharper 2K images by default. More pixels, same request. [Generate an image](https://gen.pollinations.ai/image/{prompt})
 - **2026-07-22** – **🎨 Community image endpoints** Community providers can now serve images through the standard `/image/{prompt}` and OpenAI-compatible `/v1/images/generations` APIs. [Try image generation](https://gen.pollinations.ai/image/{prompt})
 - **2026-07-22** – **🚀 Gemini 3.6 Flash** Google text models now run through Vertex endpoints with streaming, reasoning, tools, multimodal inputs, and native Google Search intact. [Browse models](https://gen.pollinations.ai/v1/models)
-- **2026-07-22** – **🤖 Laguna S 2.1** `laguna` brings tool use, optional reasoning, and a mildly excessive 1,048,576-token context window to the text API. [Check the API docs](https://gen.pollinations.ai/docs)
-- **2026-07-22** – **🎨 Anime Legends Generator** Make anime-inspired legendary characters from a prompt. [Try it](https://anime.caasexpresss.com) <!-- app -->
-- **2026-07-22** – **✨ Arika** A community-built conversational AI for chats with slightly less robot energy. [Try it](https://arika.hizumi.in) <!-- app -->
 ---
 
 ## 🌱 Introduction

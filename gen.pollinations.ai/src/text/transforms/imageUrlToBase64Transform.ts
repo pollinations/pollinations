@@ -260,7 +260,7 @@ function needsConversion(url: string | undefined): boolean {
     if (!url) return false;
     if (url.startsWith("data:")) return false;
     if (url.startsWith("gs://")) return false;
-    return url.startsWith("http://") || url.startsWith("https://");
+    return true;
 }
 
 interface ContentPart {

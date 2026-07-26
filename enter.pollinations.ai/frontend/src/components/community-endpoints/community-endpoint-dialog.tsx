@@ -13,7 +13,11 @@ import {
     ScrollArea,
     TabButton,
 } from "@pollinations/ui";
-import type { CommunityEndpointVisibility } from "@shared/community-endpoints.ts";
+import {
+    COMMUNITY_ENDPOINT_DESCRIPTION_MAX_LENGTH,
+    COMMUNITY_ENDPOINT_TITLE_MAX_LENGTH,
+    type CommunityEndpointVisibility,
+} from "@shared/community-endpoints.ts";
 import type { FormEvent, ReactNode } from "react";
 import { useEffect, useState } from "react";
 import { apiClient } from "../../api.ts";
@@ -277,6 +281,7 @@ export function CommunityEndpointDialog({
     const canSubmit =
         !isSubmitting &&
         form.name.trim() !== "" &&
+        form.title.trim() !== "" &&
         form.baseUrl.trim() !== "" &&
         hasValidVisiblePrices &&
         saveRequirementMet;
@@ -367,22 +372,42 @@ export function CommunityEndpointDialog({
                             />
                         </FieldStack>
                         <FieldStack
-                            label="Description"
-                            helper="Shown in the Models list, like registry models."
+                            label="Title"
+                            helper="Display name shown in the Models list."
                             alignLabelRow
                         >
                             <Input
-                                name="community-model-description"
-                                value={form.description}
-                                placeholder="Fast coding model, long context"
+                                name="community-model-title"
+                                value={form.title}
+                                placeholder="My Model"
                                 autoComplete="off"
-                                maxLength={240}
+                                maxLength={COMMUNITY_ENDPOINT_TITLE_MAX_LENGTH}
+                                required
                                 onChange={(e) =>
-                                    updateForm("description", e.target.value)
+                                    updateForm("title", e.target.value)
                                 }
                             />
                         </FieldStack>
                     </div>
+
+                    <FieldStack
+                        label="Description"
+                        helper="Optional. One line about what the model is good at."
+                        alignLabelRow
+                    >
+                        <Input
+                            name="community-model-description"
+                            value={form.description}
+                            placeholder="Fast coding model, long context"
+                            autoComplete="off"
+                            maxLength={
+                                COMMUNITY_ENDPOINT_DESCRIPTION_MAX_LENGTH
+                            }
+                            onChange={(e) =>
+                                updateForm("description", e.target.value)
+                            }
+                        />
+                    </FieldStack>
 
                     <FieldStack
                         label="Visibility"

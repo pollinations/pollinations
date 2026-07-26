@@ -1,15 +1,21 @@
 import {
+    COMMUNITY_ENDPOINT_DESCRIPTION_MAX_LENGTH,
     COMMUNITY_ENDPOINT_IMAGE_PRICING_MODES,
     COMMUNITY_ENDPOINT_MODALITIES,
     COMMUNITY_ENDPOINT_PRICE_FIELDS,
+    COMMUNITY_ENDPOINT_TITLE_MAX_LENGTH,
     COMMUNITY_ENDPOINT_VISIBILITIES,
     type CommunityEndpointPriceKey,
     type CommunityEndpointVisibility,
     communityEndpointPriceFieldsForModality,
     communityEndpointPrices,
     communityEndpointPricesForModality,
+    communityEndpointTitle,
     communityModelId,
     isCommunityEndpointOwnerAllowed,
+    MAX_COMMUNITY_PRICE_PER_IMAGE,
+    MAX_COMMUNITY_PRICE_PER_MILLION_TOKENS,
+    MAX_COMMUNITY_PRICE_PER_TOKEN,
     MIN_COMMUNITY_PRICE_PER_MILLION_TOKENS,
     MIN_COMMUNITY_PRICE_PER_TOKEN,
     normalizeCommunityEndpointBaseUrl,
@@ -66,6 +72,32 @@ const UpdatePriceFieldsSchema = Object.fromEntries(
     z.ZodOptional<z.ZodType<number>>
 >;
 
+function enforceCommunityEndpointPriceLimits(
+    source: Partial<Record<CommunityEndpointPriceKey, number>>,
+    modality: (typeof COMMUNITY_ENDPOINT_MODALITIES)[number],
+    imagePricing: (typeof COMMUNITY_ENDPOINT_IMAGE_PRICING_MODES)[number],
+): void {
+    for (const field of communityEndpointPriceFieldsForModality(
+        modality,
+        imagePricing,
+    )) {
+        const price = source[field.key];
+        const maxPrice =
+            field.priceUnit === "image"
+                ? MAX_COMMUNITY_PRICE_PER_IMAGE
+                : MAX_COMMUNITY_PRICE_PER_TOKEN;
+        if (price === undefined || price <= maxPrice) continue;
+
+        const limit =
+            field.priceUnit === "image"
+                ? `${MAX_COMMUNITY_PRICE_PER_IMAGE} Pollen per image`
+                : `${MAX_COMMUNITY_PRICE_PER_MILLION_TOKENS} Pollen per 1M tokens`;
+        throw new HTTPException(400, {
+            message: `${field.label} price must not exceed ${limit}`,
+        });
+    }
+}
+
 const VisibilitySchema = z
     .enum(COMMUNITY_ENDPOINT_VISIBILITIES)
     .describe(
@@ -80,7 +112,17 @@ const EndpointFieldsSchema = {
         .min(1)
         .max(120)
         .regex(/^[^/]+$/, "Model name cannot contain '/'"),
-    description: z.string().trim().max(240).optional(),
+    title: z
+        .string()
+        .trim()
+        .min(1)
+        .max(COMMUNITY_ENDPOINT_TITLE_MAX_LENGTH)
+        .describe("Display name shown in the model catalog."),
+    description: z
+        .string()
+        .trim()
+        .max(COMMUNITY_ENDPOINT_DESCRIPTION_MAX_LENGTH)
+        .optional(),
     baseUrl: z
         .string()
         .url()
@@ -100,6 +142,7 @@ const CreateEndpointSchema = z.object({
 });
 const UpdateEndpointSchema = z.object({
     name: EndpointFieldsSchema.name.optional(),
+    title: EndpointFieldsSchema.title.optional(),
     description: EndpointFieldsSchema.description,
     baseUrl: EndpointFieldsSchema.baseUrl.optional(),
     upstreamModel: EndpointFieldsSchema.upstreamModel,
@@ -126,6 +169,7 @@ const CommunityEndpointResponseSchema = z.object({
     id: z.string(),
     modelId: z.string(),
     name: z.string(),
+    title: z.string(),
     description: z.string().nullable(),
     modality: ModalitySchema,
     imagePricing: ImagePricingSchema,
@@ -235,6 +279,11 @@ function toResponse(row: CommunityEndpointRow, ownerGithubUsername: string) {
         id: row.id,
         modelId: communityModelId(ownerGithubUsername, row.name),
         name: row.name,
+        title: communityEndpointTitle({
+            modelId: communityModelId(ownerGithubUsername, row.name),
+            title: row.title,
+            description: row.description,
+        }),
         description: row.description,
         modality,
         imagePricing: normalizeCommunityEndpointImagePricing(row.imagePricing),
@@ -428,6 +477,11 @@ export const communityEndpointsRoutes = new Hono<Env>()
                           imagePricing,
                       )
                     : communityEndpointPrices({});
+            enforceCommunityEndpointPriceLimits(
+                prices,
+                input.modality,
+                imagePricing,
+            );
             await enforcePublishingAccess(db, user.id, input.visibility);
             const id = crypto.randomUUID();
             const [row] = await db
@@ -436,6 +490,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
                     id,
                     ownerUserId: user.id,
                     name: input.name,
+                    title: input.title,
                     description: input.description || null,
                     modality: input.modality,
                     imagePricing,
@@ -604,6 +659,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
                 updatedAt: new Date(),
             };
             if (input.name !== undefined) update.name = input.name;
+            if (input.title !== undefined) update.title = input.title;
             if (input.description !== undefined) {
                 update.description = input.description || null;
             }
@@ -661,6 +717,11 @@ export const communityEndpointsRoutes = new Hono<Env>()
                           modality,
                           effectiveImagePricing,
                       );
+            enforceCommunityEndpointPriceLimits(
+                effectivePrices,
+                modality,
+                effectiveImagePricing,
+            );
             await enforcePublishingAccess(db, user.id, effectiveVisibility);
             // Persist visibility together with the complete effective price
             // set on every update, so concurrent partial updates cannot

@@ -1,4 +1,3 @@
-import { Button } from "@pollinations/ui";
 import polliBee from "@pollinations/ui/brand/polli/polli.png";
 import { createFileRoute } from "@tanstack/react-router";
 import { compact, usePlatformStats } from "../data/publicStats";
@@ -8,6 +7,7 @@ import { MoneyMoves } from "../ui/home/MoneyMoves";
 import { OnTheWay } from "../ui/home/OnTheWay";
 import { StartBuilding } from "../ui/home/StartBuilding";
 import { ThreeWays } from "../ui/home/ThreeWays";
+import { ActionButton } from "../ui/site/mockup";
 import { PageHeader } from "../ui/site/PageHeader";
 
 export const Route = createFileRoute("/")({
@@ -66,21 +66,15 @@ function HelloPage() {
                         }
                     />
                     <div className="flex flex-wrap gap-3">
-                        <Button
-                            as="a"
-                            href="https://enter.pollinations.ai"
-                            size="lg"
-                        >
+                        <ActionButton href="https://enter.pollinations.ai">
                             Get an API key
-                        </Button>
-                        <Button
-                            as="a"
+                        </ActionButton>
+                        <ActionButton
                             href="https://gen.pollinations.ai/docs"
-                            size="lg"
-                            className="bg-surface-opaque hover:bg-surface-opaque"
+                            tone="plain"
                         >
                             Read the docs
-                        </Button>
+                        </ActionButton>
                     </div>
                     <dl className="mt-2 flex flex-wrap gap-10">
                         {stats.map((stat) => (

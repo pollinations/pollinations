@@ -1,4 +1,5 @@
 import { Chip, Surface } from "@pollinations/ui";
+import { CodeBlock, HOVER_LIFT } from "../site/mockup";
 import { SectionHeader } from "../site/PageHeader";
 
 type Way = {
@@ -65,7 +66,7 @@ export function ThreeWays() {
                     <Surface
                         key={way.chip}
                         variant="card"
-                        className="flex flex-col gap-3 p-7"
+                        className={`flex flex-col gap-3 p-7 ${HOVER_LIFT}`}
                     >
                         <div className="flex flex-wrap items-center gap-2">
                             {/* All three chips share one treatment — the section
@@ -89,19 +90,9 @@ export function ThreeWays() {
                         <p className="text-sm leading-relaxed text-theme-text-base">
                             {way.body}
                         </p>
-                        <div className="dark mt-1 overflow-hidden rounded-xl bg-brand-dark">
-                            <p className="border-b border-theme-border px-4 py-2 font-pixel text-xs text-theme-text-muted">
-                                {way.filename}
-                            </p>
-                            {/* Wraps at whitespace, never mid-token: with
-                                `break-words` a narrow column split
-                                gen.pollinations.ai/v1/chat/comp | letions.
-                                Overflow scrolls as a fallback for any single
-                                token wider than the card. */}
-                            <pre className="overflow-x-auto px-4 py-3 text-[11.5px] leading-relaxed whitespace-pre-wrap text-theme-text-base">
-                                <code>{way.code}</code>
-                            </pre>
-                        </div>
+                        <CodeBlock filename={way.filename}>
+                            {way.code}
+                        </CodeBlock>
                         <p className="mt-auto pt-2 text-xs text-theme-text-muted">
                             Who pays:{" "}
                             <strong className="text-theme-text-strong">

@@ -1,4 +1,4 @@
-import { Button } from "@pollinations/ui";
+import { ActionButton } from "../site/mockup";
 
 /**
  * The closing CTA from the mockup: a solid amber panel, breaking out to the
@@ -18,20 +18,15 @@ export function StartBuilding() {
                 </p>
             </div>
             <div className="flex flex-wrap gap-3">
-                <Button
-                    as="a"
-                    href="https://enter.pollinations.ai"
-                    className="bg-brand-dark text-surface-opaque hover:bg-brand-dark"
-                >
-                    Get an API key ↗
-                </Button>
-                <Button
-                    as="a"
+                <ActionButton href="https://enter.pollinations.ai" tone="dark">
+                    Get an API key
+                </ActionButton>
+                <ActionButton
                     href="https://discord.gg/pollinations-ai-885844321461485618"
-                    className="bg-surface-opaque hover:bg-surface-opaque"
+                    tone="plain"
                 >
-                    Join the Discord ↗
-                </Button>
+                    Join the Discord
+                </ActionButton>
             </div>
         </section>
     );

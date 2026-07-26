@@ -1,5 +1,6 @@
 import { Surface } from "@pollinations/ui";
 import type { ReactNode } from "react";
+import { HOVER_LIFT } from "../site/mockup";
 import { SectionHeader } from "../site/PageHeader";
 
 type Tool = {
@@ -102,7 +103,7 @@ export function DevKit() {
                     <Surface
                         key={tool.label}
                         variant="card"
-                        className="flex flex-col gap-2.5 p-7"
+                        className={`flex flex-col gap-2.5 p-7 ${HOVER_LIFT}`}
                     >
                         <p className="font-pixel text-xs tracking-wider text-theme-text-soft uppercase">
                             {tool.label}

@@ -656,6 +656,71 @@ export async function changeVoiceWithElevenLabs(opts: {
     });
 }
 
+export async function isolateVoiceWithElevenLabs(opts: {
+    audio: File;
+    apiKey: string;
+    log: Logger;
+}): Promise<Response> {
+    const { audio, apiKey, log } = opts;
+    if (!apiKey) {
+        throw new UpstreamError(500 as ContentfulStatusCode, {
+            message:
+                "Voice Isolator service is not configured (missing API key)",
+        });
+    }
+    if (audio.size > 50 * 1024 * 1024) {
+        throw new UpstreamError(413 as ContentfulStatusCode, {
+            message: "Voice Isolator input must be 50 MB or smaller.",
+        });
+    }
+    if (
+        audio.type &&
+        !audio.type.startsWith("audio/") &&
+        !audio.type.startsWith("video/")
+    ) {
+        throw new UpstreamError(400 as ContentfulStatusCode, {
+            message: "Voice Isolator requires an audio or video file.",
+        });
+    }
+
+    const endpoint = "https://api.elevenlabs.io/v1/audio-isolation";
+    const formData = new FormData();
+    formData.append("audio", audio, audio.name || "audio");
+
+    log.info("Voice Isolator request: type={type}, bytes={bytes}", {
+        type: audio.type,
+        bytes: audio.size,
+    });
+
+    const response = await ensureUpstreamOk(
+        await fetch(endpoint, {
+            method: "POST",
+            headers: {
+                "xi-api-key": apiKey,
+                Accept: "audio/mpeg",
+            },
+            body: formData,
+        }),
+        endpoint,
+    );
+    const inputSeconds = getElevenLabsMeteredInputSeconds(response, log);
+
+    log.info("Voice Isolator success: inputSeconds={seconds}", {
+        seconds: inputSeconds,
+    });
+
+    return new Response(response.body, {
+        headers: {
+            "Content-Type":
+                response.headers.get("content-type") || "audio/mpeg",
+            ...buildUsageHeaders(
+                "eleven-voice-isolator",
+                createAudioSecondsUsage(inputSeconds),
+            ),
+        },
+    });
+}
+
 interface ElevenLabsTranscriptionResponse {
     text: string;
     language_code?: string;
@@ -2411,6 +2476,81 @@ export const audioRoutes = new Hono<Env>()
                 voice:
                     typeof voice === "string" && voice !== "" ? voice : "alloy",
                 responseFormat: resolvedFormat,
+                apiKey: c.env.ELEVENLABS_API_KEY,
+                log,
+            });
+        },
+    )
+    .post(
+        "/voice-isolator",
+        describeRoute({
+            tags: ["🔊 Audio"],
+            summary: "Isolate Speech",
+            description:
+                "Remove music, ambient sound, and other background noise from an audio or video file while preserving spoken audio.",
+            requestBody: {
+                required: true,
+                content: {
+                    "multipart/form-data": {
+                        schema: {
+                            type: "object",
+                            required: ["audio"],
+                            properties: {
+                                model: {
+                                    type: "string",
+                                    default: "eleven-voice-isolator",
+                                },
+                                audio: {
+                                    type: "string",
+                                    format: "binary",
+                                    description:
+                                        "Source audio or video, up to 50 MB and at least 4.6 seconds long.",
+                                },
+                            },
+                        },
+                    },
+                },
+            },
+            responses: {
+                200: {
+                    description:
+                        "Success - Returns isolated speech as MP3 audio",
+                    content: {
+                        "audio/mpeg": {
+                            schema: { type: "string", format: "binary" },
+                        },
+                    },
+                },
+                ...errorResponseDescriptions(400, 401, 402, 403, 500),
+            },
+        }),
+        resolveModel("generate.audio", {
+            defaultModel: "eleven-voice-isolator",
+            supportedEndpoint: "/v1/audio/voice-isolator",
+        }),
+        track("generate.audio"),
+        async (c) => {
+            const log = c.get("log").getChild("voice-isolator");
+            await requireGenerationAccess(c.var, c.env);
+
+            let formData: FormData;
+            try {
+                formData = c.get("formData") || (await c.req.formData());
+            } catch {
+                throw new UpstreamError(400 as ContentfulStatusCode, {
+                    message: "Invalid multipart form data",
+                });
+            }
+
+            const audio = formData.get("audio");
+            if (!(audio instanceof File)) {
+                throw new UpstreamError(400 as ContentfulStatusCode, {
+                    message: "Missing required audio file.",
+                });
+            }
+
+            return isolateVoiceWithElevenLabs({
+                audio,
                 apiKey: c.env.ELEVENLABS_API_KEY,
                 log,
             });

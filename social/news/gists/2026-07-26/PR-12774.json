@@ -1,0 +1,34 @@
+{
+  "pr_number": 12774,
+  "title": "fix: restore product path charts",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/12774",
+  "merged_at": "2026-07-26T13:22:27Z",
+  "labels": [],
+  "pr_body_excerpt": "- Keeps the partitioned `time` fields and the selected numeric series in all three product-path charts.\n- Fixes “Data is missing a number field” for Paid Pollen, Quest Pollen, and Requests.\n- Leaves Tinybird queries and every other dashboard unchanged.\n\nRoot cause: Grafana labels fields after `partitionByValues`, while the exact field filter discarded the labeled numeric fields.\n\nValidation:\n- Rendered all three panels locally with four representative product paths.\n- `npx biome check --write provisioning/dashboards/platform-usage-rebuild.json`\n- `npm run check` (Wrangler dry run)\n- `git diff --check`",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "The charts found their numbers",
+    "blurb": "Three product-path charts were briefly staring into the void after Grafana renamed their fields. The numeric pollen and request series are visible again, as nature intended.",
+    "summary": "Restored the labeled numeric series and partitioned time fields in the Paid Pollen, Quest Pollen, and Requests product-path Grafana charts, fixing the “Data is missing a number field” panel error.",
+    "impact": "Operations contributors can again inspect Paid Pollen, Quest Pollen, and Requests across product paths without changing Tinybird queries or other dashboard panels.",
+    "keywords": [
+      "observability",
+      "grafana",
+      "dashboards",
+      "product-paths",
+      "pollen",
+      "requests"
+    ],
+    "visual_concept": "A cozy observability garden where three retro dashboard panels have recovered their missing number sprouts: Paid Pollen, Quest Pollen, and Requests. Polli, wearing tiny analyst glasses, carefully reconnects labeled chart lines to glowing numeric flowers while a helpful CRT monitor robot watches the graphs bloom.",
+    "image_prompt": "Cozy pixel art scene in a warm garden hackerspace where Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and tiny analyst glasses, reconnects three retro CRT chart panels labeled “PAID POLLEN,” “QUEST POLLEN,” and “REQUESTS” to glowing number-flower vines; a small monitor robot happily watches the restored graphs. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, subtle CRT glow, warm lighting, retro gaming vibes, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-26/PR-12774.jpg",
+    "prompt": "Cozy pixel art scene in a warm garden hackerspace where Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and tiny analyst glasses, reconnects three retro CRT chart panels labeled “PAID POLLEN,” “QUEST POLLEN,” and “REQUESTS” to glowing number-flower vines; a small monitor robot happily watches the restored graphs. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, subtle CRT glow, warm lighting, retro gaming vibes, nostalgic but beautiful."
+  },
+  "generated_at": "2026-07-26T13:23:19.480290+00:00"
+}

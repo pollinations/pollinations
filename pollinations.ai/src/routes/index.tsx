@@ -48,7 +48,6 @@ function HelloPage() {
             <section className="flex flex-wrap items-center gap-14">
                 <div className="flex min-w-0 flex-1 flex-col gap-8">
                     <PageHeader
-                        size="hero"
                         eyebrow="The infrastructure for AI apps"
                         title="Every model, one wallet."
                         subtitle={

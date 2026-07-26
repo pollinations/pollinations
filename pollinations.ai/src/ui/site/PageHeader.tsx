@@ -6,8 +6,6 @@ type PageHeaderProps = {
     subtitle?: ReactNode;
     /** Right-aligned control, e.g. "Submit your app" or the account menu. */
     action?: ReactNode;
-    /** `hero` is the landing page only — bigger title, same rhythm. */
-    size?: "page" | "hero";
 };
 
 /**
@@ -23,7 +21,6 @@ export function PageHeader({
     title,
     subtitle,
     action,
-    size = "page",
 }: PageHeaderProps) {
     return (
         <header className="flex flex-wrap items-end justify-between gap-6">
@@ -31,13 +28,10 @@ export function PageHeader({
                 <p className="font-pixel text-sm tracking-widest text-theme-text-soft uppercase">
                     {eyebrow}
                 </p>
-                <h1
-                    className={`font-heading text-theme-text-strong ${
-                        size === "hero"
-                            ? "text-5xl leading-tight lg:text-7xl"
-                            : "text-5xl"
-                    }`}
-                >
+                {/* Every page title is the same size. A smaller heading on
+                    the inner pages made them read as sub-pages of Hello
+                    rather than as peers. */}
+                <h1 className="font-heading text-5xl leading-tight text-theme-text-strong lg:text-7xl">
                     {title}
                 </h1>
                 {subtitle && (

@@ -3,13 +3,27 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useMemo } from "react";
 import {
     type DirectoryApp,
+    formatStars,
+    githubProfileUrl,
     isBuzz,
     isFresh,
     isPollen,
+    platformsOf,
+    sortApps,
     useAppDirectory,
 } from "../data/publicStats";
 import { PageHeader, SectionHeader } from "../ui/site/PageHeader";
-import { APP_BADGES, APP_CATEGORIES, validateAppSearch } from "./-app-search";
+import {
+    APP_CATEGORIES,
+    APP_PLATFORMS,
+    APP_SIGNALS,
+    CATEGORY_LABELS,
+    listOf,
+    PLATFORM_LABELS,
+    SIGNAL_LABELS,
+    toggle,
+    validateAppSearch,
+} from "./-app-search";
 
 export const Route = createFileRoute("/apps")({
     validateSearch: validateAppSearch,
@@ -17,10 +31,10 @@ export const Route = createFileRoute("/apps")({
 });
 
 /**
- * Hand-picked, deliberately. Every badge in APPS.md is computed from traffic
- * or recency, so none of them can express "we think this is good". Until
- * APPS.md grows a Featured column, curation lives here — matched on the Name
- * column, and missing entries simply don't render.
+ * Hand-picked. Every badge in APPS.md is computed from traffic or recency, so
+ * none of them can say "we think this is good". Until APPS.md grows a Featured
+ * column, curation lives here — matched on Name, missing entries just don't
+ * render.
  */
 const SPOTLIGHT = [
     "LLM Playground",
@@ -31,25 +45,7 @@ const SPOTLIGHT = [
     "excelformula.pro",
 ];
 
-const CATEGORY_LABELS: Record<string, string> = {
-    all: "All",
-    image: "🖼️ Image",
-    video_audio: "🎬 Video & Audio",
-    writing: "✍️ Write",
-    chat: "💬 Chat",
-    games: "🎮 Games",
-    learn: "📚 Learn",
-    bots: "🤖 Bots",
-    build: "🛠️ Build",
-    business: "💼 Business",
-};
-
-const BADGE_LABELS: Record<string, string> = {
-    all: "All",
-    buzz: "🐝 Busy",
-    pollen: "🏵️ Pollen",
-    fresh: "🫧 Fresh",
-};
+const SIGNAL_TEST = { buzz: isBuzz, pollen: isPollen, fresh: isFresh } as const;
 
 function badgesFor(app: DirectoryApp): string {
     const badges: string[] = [];
@@ -61,6 +57,10 @@ function badgesFor(app: DirectoryApp): string {
 
 function AppCard({ app }: { app: DirectoryApp }) {
     const href = app.web_url || app.github_repository_url;
+    const stars = formatStars(app.github_repository_stars);
+    const profile = githubProfileUrl(app.github_username);
+    const platform = platformsOf(app)[0];
+
     return (
         <Surface variant="card" className="flex flex-col gap-2 p-5">
             <div className="flex items-start justify-between gap-2">
@@ -73,8 +73,13 @@ function AppCard({ app }: { app: DirectoryApp }) {
                 {app.description}
             </p>
             <div className="mt-auto flex flex-wrap items-center gap-2 pt-2 text-xs text-theme-text-muted">
-                {app.github_username && <span>by {app.github_username}</span>}
-                {app.platform && <span>· {app.platform}</span>}
+                {profile && (
+                    <a href={profile} className="hover:text-theme-text-strong">
+                        {app.github_username}
+                    </a>
+                )}
+                {stars && <span>⭐ {stars}</span>}
+                {platform && <span>· {platform}</span>}
                 {href && (
                     <a
                         href={href}
@@ -89,7 +94,11 @@ function AppCard({ app }: { app: DirectoryApp }) {
 }
 
 function AppsPage() {
-    const { category, badge, q } = Route.useSearch();
+    const search = Route.useSearch();
+    const { q } = search;
+    const category = listOf(APP_CATEGORIES, search.category);
+    const platform = listOf(APP_PLATFORMS, search.platform);
+    const signal = listOf(APP_SIGNALS, search.signal);
     const navigate = useNavigate({ from: Route.fullPath });
     const { data: apps, loading, failed } = useAppDirectory();
 
@@ -103,34 +112,52 @@ function AppsPage() {
         [apps],
     );
 
+    /** Within an axis it's OR; across axes it's AND. An empty axis is no constraint. */
     const filtered = useMemo(() => {
         const needle = q?.toLowerCase();
-        return apps.filter((app) => {
-            if (category && app.category !== category) return false;
-            if (badge === "buzz" && !isBuzz(app)) return false;
-            if (badge === "pollen" && !isPollen(app)) return false;
-            if (badge === "fresh" && !isFresh(app)) return false;
-            if (
-                needle &&
-                !`${app.name} ${app.description}`.toLowerCase().includes(needle)
-            ) {
-                return false;
-            }
-            return true;
-        });
-    }, [apps, category, badge, q]);
+        return apps
+            .filter((app) => {
+                if (category.length) {
+                    const own = app.category?.toLowerCase();
+                    if (!category.some((c) => c === own)) return false;
+                }
+                if (platform.length) {
+                    const own = platformsOf(app);
+                    if (!platform.some((p) => own.includes(p))) return false;
+                }
+                if (signal.length && !signal.some((s) => SIGNAL_TEST[s](app))) {
+                    return false;
+                }
+                if (
+                    needle &&
+                    !`${app.name} ${app.description}`
+                        .toLowerCase()
+                        .includes(needle)
+                ) {
+                    return false;
+                }
+                return true;
+            })
+            .slice()
+            .sort(sortApps);
+    }, [apps, category, platform, signal, q]);
+
+    const hasFilters = Boolean(
+        category.length || platform.length || signal.length || q,
+    );
+    const clear = () => navigate({ search: {} });
 
     return (
         <>
             <PageHeader
                 eyebrow={`${loading ? "Apps" : `${apps.length} apps`} built on Pollinations`}
-                title="See what people made."
+                title="Made by the community."
                 action={
                     <Button
                         as="a"
                         href="https://github.com/pollinations/pollinations/issues/new?template=APP-SUBMISSION.yml"
                     >
-                        Submit your app
+                        Submit your app ↗
                     </Button>
                 }
             />
@@ -140,9 +167,7 @@ function AppsPage() {
                     <SectionHeader
                         eyebrow="Spotlight"
                         title="Worth your time."
-                        subtitle={
-                            "Picked by hand. Not the busiest \u2014 the ones we\u2019d actually send a friend to."
-                        }
+                        subtitle="Picked by hand. Not the busiest — the ones we'd actually send a friend to."
                     />
                     <div className="grid grid-cols-[repeat(auto-fit,minmax(min(320px,100%),1fr))] gap-4">
                         {spotlight.map((app) => (
@@ -156,52 +181,73 @@ function AppsPage() {
                 <SectionHeader
                     eyebrow="Browse"
                     title={loading ? "Everything else." : `All ${apps.length}.`}
-                    subtitle={
-                        "Filter by what you want to make. Badges are automatic \u2014 \ud83d\udc1d busy this week, \ud83c\udff5\ufe0f runs on your Pollen, \ud83e\udee7 new this month."
-                    }
+                    subtitle="Combine as many as you like. Badges are automatic — 🐝 busy this week, 🏵️ runs on your Pollen, 🫧 new this month."
                 />
 
-                <div className="flex flex-wrap gap-2">
-                    {APP_CATEGORIES.map((value) => (
-                        <TabButton
-                            key={value}
-                            size="sm"
-                            active={(category ?? "all") === value}
-                            onClick={() =>
-                                navigate({
-                                    search: (prev) => ({
-                                        ...prev,
-                                        category:
-                                            value === "all" ? undefined : value,
-                                    }),
-                                })
-                            }
-                        >
-                            {CATEGORY_LABELS[value]}
-                        </TabButton>
-                    ))}
-                </div>
-
-                <div className="flex flex-wrap gap-2">
-                    {APP_BADGES.map((value) => (
-                        <TabButton
-                            key={value}
-                            size="sm"
-                            variant="ghost"
-                            active={(badge ?? "all") === value}
-                            onClick={() =>
-                                navigate({
-                                    search: (prev) => ({
-                                        ...prev,
-                                        badge:
-                                            value === "all" ? undefined : value,
-                                    }),
-                                })
-                            }
-                        >
-                            {BADGE_LABELS[value]}
-                        </TabButton>
-                    ))}
+                <div className="flex flex-col gap-2.5">
+                    <div className="flex flex-wrap gap-2">
+                        {APP_CATEGORIES.map((value) => (
+                            <TabButton
+                                key={value}
+                                size="sm"
+                                active={category.includes(value)}
+                                onClick={() =>
+                                    navigate({
+                                        search: (prev) => ({
+                                            ...prev,
+                                            category: toggle(
+                                                prev.category,
+                                                value,
+                                            ),
+                                        }),
+                                    })
+                                }
+                            >
+                                {CATEGORY_LABELS[value]}
+                            </TabButton>
+                        ))}
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                        {APP_SIGNALS.map((value) => (
+                            <TabButton
+                                key={value}
+                                size="sm"
+                                variant="ghost"
+                                active={signal.includes(value)}
+                                onClick={() =>
+                                    navigate({
+                                        search: (prev) => ({
+                                            ...prev,
+                                            signal: toggle(prev.signal, value),
+                                        }),
+                                    })
+                                }
+                            >
+                                {SIGNAL_LABELS[value]}
+                            </TabButton>
+                        ))}
+                        {APP_PLATFORMS.map((value) => (
+                            <TabButton
+                                key={value}
+                                size="sm"
+                                variant="ghost"
+                                active={platform.includes(value)}
+                                onClick={() =>
+                                    navigate({
+                                        search: (prev) => ({
+                                            ...prev,
+                                            platform: toggle(
+                                                prev.platform,
+                                                value,
+                                            ),
+                                        }),
+                                    })
+                                }
+                            >
+                                {PLATFORM_LABELS[value]}
+                            </TabButton>
+                        ))}
+                    </div>
                 </div>
 
                 {failed ? (
@@ -216,7 +262,7 @@ function AppsPage() {
                         <button
                             type="button"
                             className="font-semibold text-theme-text-soft underline"
-                            onClick={() => navigate({ search: {} })}
+                            onClick={clear}
                         >
                             Clear filters
                         </button>
@@ -225,6 +271,18 @@ function AppsPage() {
                     <>
                         <p className="text-sm text-theme-text-muted">
                             {filtered.length} of {apps.length}
+                            {hasFilters && (
+                                <>
+                                    {" · "}
+                                    <button
+                                        type="button"
+                                        className="font-semibold text-theme-text-soft underline"
+                                        onClick={clear}
+                                    >
+                                        Clear filters
+                                    </button>
+                                </>
+                            )}
                         </p>
                         <div className="grid grid-cols-[repeat(auto-fit,minmax(min(320px,100%),1fr))] gap-4">
                             {filtered.slice(0, 60).map((app) => (

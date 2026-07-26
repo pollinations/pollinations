@@ -3,8 +3,10 @@ import polliBee from "@pollinations/ui/brand/polli/polli.png";
 import { createFileRoute } from "@tanstack/react-router";
 import { compact, usePlatformStats } from "../data/publicStats";
 import { DevKit } from "../ui/home/DevKit";
+import { LiveApps } from "../ui/home/LiveApps";
 import { MoneyMoves } from "../ui/home/MoneyMoves";
 import { OnTheWay } from "../ui/home/OnTheWay";
+import { StartBuilding } from "../ui/home/StartBuilding";
 import { ThreeWays } from "../ui/home/ThreeWays";
 import { PageHeader } from "../ui/site/PageHeader";
 
@@ -111,7 +113,9 @@ function HelloPage() {
             {/* Dark panel is inset inside the cream sheet, not a sibling of
                 it — it reads as a band within the page, not a new section. */}
             <MoneyMoves />
+            <LiveApps />
             <OnTheWay />
+            <StartBuilding />
         </>
     );
 }

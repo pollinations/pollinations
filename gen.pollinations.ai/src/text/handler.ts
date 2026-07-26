@@ -1,4 +1,4 @@
-import { remapUpstreamStatus, UpstreamError } from "@shared/error.ts";
+import { UpstreamError } from "@shared/error.ts";
 import { IMMUTABLE_CACHE_CONTROL } from "@shared/http/cache-control.ts";
 import type { ModelDefinition } from "@shared/registry/registry.ts";
 import {
@@ -286,22 +286,18 @@ function serializeDetails(details: unknown): string | undefined {
     return typeof details === "string" ? details : JSON.stringify(details);
 }
 
-function throwTextError(error: ServiceError, c: TextContext): never {
+function throwTextError(error: ServiceError): never {
     const status =
         typeof error.status === "number"
             ? error.status
             : typeof error.code === "number"
               ? error.code
               : 500;
-    const upstreamStatus =
-        typeof error.upstreamStatus === "number"
-            ? error.upstreamStatus
-            : status;
 
     throw new UpstreamError(status as ContentfulStatusCode, {
         message: error.message || "Text generation failed",
-        requestUrl: new URL(c.req.url),
-        upstreamStatus,
+        requestUrl: error.requestUrl,
+        upstreamStatus: error.upstreamStatus,
         responseBody: serializeDetails(error.details || error.response?.data),
         cause: error,
     });
@@ -332,22 +328,6 @@ async function generateTextResponse(
         );
         completion.id = completion.id || generatePollinationsId();
 
-        if (completion.error) {
-            const errorObj =
-                typeof completion.error === "string"
-                    ? { message: completion.error }
-                    : completion.error;
-            const error = new Error(
-                errorObj.message || "Text generation failed",
-            ) as ServiceError;
-            if (typeof errorObj.status === "number") {
-                error.status = remapUpstreamStatus(errorObj.status);
-                error.upstreamStatus = errorObj.status;
-            }
-            error.details = errorObj.details;
-            throw error;
-        }
-
         if (requestData.stream) return sendTextStreamResponse(completion);
         const fallbackModel = c.var.model?.resolved;
         // Provider-reported cost is read post-response in track (clamp-and-alert
@@ -361,7 +341,7 @@ async function generateTextResponse(
         c.var.track?.overrideResponseTracking(trackingResponse.clone());
         return sendOpenAIResponse(publicCompletion, fallbackModel);
     } catch (thrown: unknown) {
-        throwTextError(thrown as ServiceError, c);
+        throwTextError(thrown as ServiceError);
     }
 }
 

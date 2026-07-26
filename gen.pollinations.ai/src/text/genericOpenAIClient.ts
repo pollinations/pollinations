@@ -90,6 +90,7 @@ function createApiError(
     response: { status: number; statusText: string },
     details: unknown,
     modelName: string,
+    requestUrl: URL,
 ): ServiceError {
     const statusMessage = `${response.status} ${response.statusText}`;
     const detailMessage = extractErrorMessage(details);
@@ -100,6 +101,7 @@ function createApiError(
     error.upstreamStatus = response.status;
     error.details = details;
     error.model = modelName;
+    error.requestUrl = requestUrl;
     return error;
 }
 
@@ -119,6 +121,7 @@ export async function genericOpenAIClient(
     const { endpoint, defaultOptions = {}, additionalHeaders = {} } = config;
     const startTime = Date.now();
     const requestId = crypto.randomUUID();
+    let requestUrl: URL | undefined;
 
     log(`[${requestId}] Starting request`, {
         messageCount: messages?.length || 0,
@@ -166,6 +169,7 @@ export async function genericOpenAIClient(
             typeof endpoint === "function"
                 ? endpoint(modelName, normalizedOptions)
                 : endpoint;
+        requestUrl = new URL(endpointUrl);
 
         const headers = {
             "Content-Type": "application/json",
@@ -174,7 +178,7 @@ export async function genericOpenAIClient(
 
         log(`[${requestId}] Header keys:`, Object.keys(headers));
 
-        const response = await fetch(endpointUrl, {
+        const response = await fetch(requestUrl, {
             method: "POST",
             headers,
             body: JSON.stringify(requestBody),
@@ -187,7 +191,7 @@ export async function genericOpenAIClient(
                 `[${requestId}] API error (${response.status}):`,
                 errorDetails,
             );
-            throw createApiError(response, errorDetails, modelName);
+            throw createApiError(response, errorDetails, modelName, requestUrl);
         }
 
         // Portkey reports which fallback target served the call via this header
@@ -224,6 +228,27 @@ export async function genericOpenAIClient(
         }
 
         const data = (await response.json()) as ChatCompletion;
+        if (data.error) {
+            const errorDetails =
+                typeof data.error === "string"
+                    ? { message: data.error }
+                    : data.error;
+            const error = new Error(
+                errorDetails.message || "Text generation failed",
+            ) as ServiceError;
+            error.status =
+                typeof errorDetails.status === "number"
+                    ? remapUpstreamStatus(errorDetails.status)
+                    : 502;
+            error.upstreamStatus =
+                typeof errorDetails.status === "number"
+                    ? errorDetails.status
+                    : response.status;
+            error.details = errorDetails.details;
+            error.model = modelName;
+            error.requestUrl = requestUrl;
+            throw error;
+        }
         log(
             `[${requestId}] Completed in ${Date.now() - startTime}ms, model: ${data.model || modelName}`,
         );
@@ -246,7 +271,14 @@ export async function genericOpenAIClient(
             fallbackTarget,
         );
     } catch (thrown: unknown) {
-        const error = thrown as ServiceError;
+        const error =
+            thrown instanceof Error
+                ? (thrown as ServiceError)
+                : (new Error(String(thrown)) as ServiceError);
+        if (requestUrl) {
+            error.requestUrl ??= requestUrl;
+            error.status ??= 502;
+        }
         errorLog(`[${requestId}] Error:`, {
             error: error.message,
             status: error.status,

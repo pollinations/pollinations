@@ -88,6 +88,7 @@ export interface ChatCompletion {
 export interface ServiceError extends Error {
     status?: number;
     upstreamStatus?: number;
+    requestUrl?: URL;
     code?: number | string;
     details?: unknown;
     model?: string;

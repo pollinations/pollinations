@@ -41,6 +41,17 @@ function createTestApp() {
     return app;
 }
 
+function createTextTestApp() {
+    const app = new Hono<Env>();
+    app.use("*", requestId());
+    app.use("*", logger);
+    app.post("/v1/chat/completions", async (c) =>
+        handleChatCompletionLocal(c, await c.req.json()),
+    );
+    app.onError(handleError);
+    return app;
+}
+
 describe("error observability", () => {
     it("emits structured Tinybird error events for actionable upstream failures", async () => {
         const tinybirdRequests: Request[] = [];
@@ -409,16 +420,8 @@ describe("error observability", () => {
             );
         });
 
-        const app = new Hono<Env>();
-        app.use("*", requestId());
-        app.use("*", logger);
-        app.post("/v1/chat/completions", async (c) =>
-            handleChatCompletionLocal(c, await c.req.json()),
-        );
-        app.onError(handleError);
-
         const ctx = createExecutionContext();
-        const response = await app.fetch(
+        const response = await createTextTestApp().fetch(
             new Request("https://gen.pollinations.ai/v1/chat/completions", {
                 method: "POST",
                 headers: { "content-type": "application/json" },
@@ -446,9 +449,140 @@ describe("error observability", () => {
         await expect(response.json()).resolves.toMatchObject({
             error: {
                 code: "BAD_GATEWAY",
-                details: { upstreamStatus: 429 },
+                details: {
+                    upstreamHost: "portkey.test",
+                    upstreamStatus: 429,
+                },
             },
         });
+    });
+
+    it("attributes provider error envelopes to the gateway", async () => {
+        const tinybirdRequests: Request[] = [];
+        vi.spyOn(globalThis, "fetch").mockImplementation(
+            async (input, init) => {
+                const request = new Request(input, init);
+                if (request.url.includes("tinybird.test")) {
+                    tinybirdRequests.push(request);
+                    return new Response("ok");
+                }
+                return Response.json({
+                    error: { message: "Provider returned an empty response" },
+                });
+            },
+        );
+
+        const ctx = createExecutionContext();
+        const response = await createTextTestApp().fetch(
+            new Request("https://gen.pollinations.ai/v1/chat/completions", {
+                method: "POST",
+                headers: { "content-type": "application/json" },
+                body: JSON.stringify({
+                    model: "openai-fast",
+                    messages: [{ role: "user", content: "test" }],
+                }),
+            }),
+            {
+                AZURE_MYCELI_PROD_API_KEY: "test_azure_key",
+                ENVIRONMENT: "test",
+                LOG_LEVEL: "debug",
+                LOG_FORMAT: "text",
+                PORTKEY_GATEWAY_URL: "https://portkey.test",
+                TINYBIRD_INGEST_URL:
+                    "https://tinybird.test/v0/events?name=generation_event_v2",
+                TINYBIRD_INGEST_TOKEN: "test_tinybird_token",
+            } as CloudflareBindings,
+            ctx,
+        );
+
+        await waitOnExecutionContext(ctx);
+
+        expect(response.status).toBe(502);
+        await expect(response.json()).resolves.toMatchObject({
+            error: {
+                code: "BAD_GATEWAY",
+                message: "Provider returned an empty response",
+                details: {
+                    upstreamHost: "portkey.test",
+                    upstreamStatus: 200,
+                },
+            },
+        });
+
+        expect(tinybirdRequests).toHaveLength(1);
+        await expect(tinybirdRequests[0].json()).resolves.toMatchObject({
+            kind: "server_error",
+            status: 502,
+            upstream_host: "portkey.test",
+            upstream_status: 200,
+        });
+    });
+
+    it("attributes aborted provider requests to the gateway", async () => {
+        const tinybirdRequests: Request[] = [];
+        vi.spyOn(globalThis, "fetch").mockImplementation(
+            async (input, init) => {
+                const request = new Request(input, init);
+                if (request.url.includes("tinybird.test")) {
+                    tinybirdRequests.push(request);
+                    return new Response("ok");
+                }
+                throw new DOMException(
+                    "The operation was aborted",
+                    "AbortError",
+                );
+            },
+        );
+
+        const ctx = createExecutionContext();
+        const response = await createTextTestApp().fetch(
+            new Request("https://gen.pollinations.ai/v1/chat/completions", {
+                method: "POST",
+                headers: { "content-type": "application/json" },
+                body: JSON.stringify({
+                    model: "openai-fast",
+                    messages: [{ role: "user", content: "test" }],
+                }),
+            }),
+            {
+                AZURE_MYCELI_PROD_API_KEY: "test_azure_key",
+                ENVIRONMENT: "test",
+                LOG_LEVEL: "debug",
+                LOG_FORMAT: "text",
+                PORTKEY_GATEWAY_URL: "https://portkey.test",
+                TINYBIRD_INGEST_URL:
+                    "https://tinybird.test/v0/events?name=generation_event_v2",
+                TINYBIRD_INGEST_TOKEN: "test_tinybird_token",
+            } as CloudflareBindings,
+            ctx,
+        );
+
+        await waitOnExecutionContext(ctx);
+
+        expect(response.status).toBe(502);
+        const body = (await response.json()) as {
+            error: { details: Record<string, unknown> };
+        };
+        expect(body).toMatchObject({
+            error: {
+                code: "BAD_GATEWAY",
+                message: "The operation was aborted",
+                details: { upstreamHost: "portkey.test" },
+            },
+        });
+        expect(body.error.details).not.toHaveProperty("upstreamStatus");
+
+        expect(tinybirdRequests).toHaveLength(1);
+        const tinybirdPayload = (await tinybirdRequests[0].json()) as Record<
+            string,
+            unknown
+        >;
+        expect(tinybirdPayload).toMatchObject({
+            kind: "server_error",
+            status: 502,
+            upstream_host: "portkey.test",
+        });
+        expect(tinybirdPayload).not.toHaveProperty("upstream_status");
     });
 
     it("keeps user image URL fetch 429 client-facing", async () => {
@@ -521,7 +655,10 @@ describe("error observability", () => {
                 message: expect.stringContaining(
                     "The image server is rate limiting requests",
                 ),
-                details: { upstreamStatus: 429 },
+                details: {
+                    upstreamHost: "example.com",
+                    upstreamStatus: 429,
+                },
             },
         });
     });

@@ -17,11 +17,20 @@ const MIME_TYPES: Record<string, string> = {
 
 class ImageFetchError extends Error {
     status: number;
+    upstreamStatus?: number;
+    requestUrl?: URL;
 
-    constructor(message: string, statusCode: number) {
+    constructor(
+        message: string,
+        statusCode: number,
+        requestUrl?: URL,
+        upstreamStatus?: number,
+    ) {
         super(message);
         this.name = "ImageFetchError";
         this.status = statusCode;
+        this.requestUrl = requestUrl;
+        this.upstreamStatus = upstreamStatus;
     }
 }
 
@@ -169,6 +178,8 @@ async function fetchImageAsBase64(
             throw new ImageFetchError(
                 `Image URL ${url} redirects. Please provide a direct public image URL.`,
                 400,
+                validatedUrl,
+                response.status,
             );
         }
 
@@ -191,7 +202,12 @@ async function fetchImageAsBase64(
                     errorMessage = base;
             }
 
-            throw new ImageFetchError(errorMessage, response.status);
+            throw new ImageFetchError(
+                errorMessage,
+                response.status,
+                validatedUrl,
+                response.status,
+            );
         }
 
         const contentType = response.headers.get("content-type");

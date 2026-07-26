@@ -132,6 +132,8 @@ export async function runReplicatePrediction<TInput, TOutput>(
         const message = prediction.error || `Prediction ${prediction.status}`;
         throw new ReplicateError(
             message,
+            // Replicate uses aborted before a deadline-started prediction runs
+            // and canceled after it starts, so both are gateway timeouts here.
             prediction.status === "canceled" || prediction.status === "aborted"
                 ? 504
                 : classifyReplicatePredictionError(message),
@@ -259,10 +261,10 @@ export function classifyReplicateHttpStatus(httpStatus: number): number {
  * Default 500 keeps new failure modes loud.
  */
 export function classifyReplicatePredictionError(message: string): number {
-    if (/\bdeadline\b|\btimed?\s*out\b|\btimeout\b/i.test(message)) return 504;
     if (/\bE005\b|flagged as sensitive/i.test(message)) return 400;
     if (/^Input validation error:/i.test(message)) return 400;
     if (/cannot identify image file/i.test(message)) return 400;
     if (/\bE003\b|unavailable due to high demand/i.test(message)) return 503;
+    if (/\bdeadline\b|\btimed?\s*out\b|\btimeout\b/i.test(message)) return 504;
     return 500;
 }

@@ -69,7 +69,9 @@ function eventTypeForCategory(category: Category): EventType {
 
 function supportedEndpointsForEventType(eventType: EventType): string[] {
     if (eventType === "generate.text") return TEXT_MODEL_ENDPOINTS;
-    if (eventType === "generate.audio") return ["/audio/{text}"];
+    if (eventType === "generate.audio") {
+        return ["/audio/{text}", "/v1/audio/speech"];
+    }
     if (eventType === "generate.embedding") return ["/v1/embeddings"];
     if (eventType === "generate.realtime") return ["/v1/realtime"];
     return IMAGE_MODEL_ENDPOINTS;
@@ -82,7 +84,9 @@ const STATIC_ENTRIES: GenerationModelEntry[] = getModels().map((modelName) => {
         id: modelName,
         aliases: definition.aliases,
         eventType,
-        supportedEndpoints: supportedEndpointsForEventType(eventType),
+        supportedEndpoints:
+            definition.supportedEndpoints ??
+            supportedEndpointsForEventType(eventType),
         definition,
         info: modelInfoFromDefinition(modelName, definition),
         visible: definition.hidden !== true,

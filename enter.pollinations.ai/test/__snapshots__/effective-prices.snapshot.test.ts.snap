@@ -142,6 +142,14 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.00000174,
     },
   },
+  "eleven-dialogue": {
+    "cost": {
+      "completionAudioTokens": 0.0001,
+    },
+    "price": {
+      "completionAudioTokens": 0.0001,
+    },
+  },
   "eleven-multilingual-v2": {
     "cost": {
       "completionAudioTokens": 0.0001,
@@ -156,6 +164,22 @@ exports[`effective cost and price per model — snapshot 1`] = `
     },
     "price": {
       "completionAudioSeconds": 0.002,
+    },
+  },
+  "eleven-voice-changer": {
+    "cost": {
+      "promptAudioSeconds": 0.002,
+    },
+    "price": {
+      "promptAudioSeconds": 0.002,
+    },
+  },
+  "eleven-voice-isolator": {
+    "cost": {
+      "promptAudioSeconds": 0.002,
+    },
+    "price": {
+      "promptAudioSeconds": 0.002,
     },
   },
   "elevenflash": {
@@ -520,6 +544,24 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptCachedTokens": 0.0000004,
       "promptImageTokens": 0.000005,
       "promptTextTokens": 0.000004,
+    },
+  },
+  "gpt-realtime-2.1-mini": {
+    "cost": {
+      "completionAudioTokens": 0.00002,
+      "completionTextTokens": 0.0000024,
+      "promptAudioTokens": 0.00001,
+      "promptCachedTokens": 0.00000006,
+      "promptImageTokens": 0.0000008,
+      "promptTextTokens": 0.0000006,
+    },
+    "price": {
+      "completionAudioTokens": 0.000015,
+      "completionTextTokens": 0.0000018,
+      "promptAudioTokens": 0.0000075,
+      "promptCachedTokens": 0.000000045,
+      "promptImageTokens": 0.0000006,
+      "promptTextTokens": 0.00000045,
     },
   },
   "gptimage": {

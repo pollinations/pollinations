@@ -114,6 +114,92 @@ workerTest(
 );
 
 workerTest(
+    "serves explicit and default ElevenLabs TTS on both standard audio routes",
+    async ({ paidApiKey }) => {
+        const realFetch = globalThis.fetch.bind(globalThis);
+        const fetchMock = vi
+            .spyOn(globalThis, "fetch")
+            .mockImplementation(async (input, init) => {
+                const url =
+                    input instanceof Request ? input.url : input.toString();
+                if (
+                    url.startsWith(
+                        "https://api.elevenlabs.io/v1/text-to-speech/",
+                    )
+                ) {
+                    return new Response(new Uint8Array([73, 68, 51, 4]), {
+                        headers: { "content-type": "audio/mpeg" },
+                    });
+                }
+                if (
+                    url.startsWith(
+                        "https://api.europe-west2.gcp.tinybird.co/v0/pipes/public_model_stats.json",
+                    ) ||
+                    url.startsWith("http://localhost:7181/")
+                ) {
+                    return Response.json({ data: [] });
+                }
+                return realFetch(input, init);
+            });
+
+        const requests = [
+            new Request("https://gen.pollinations.ai/v1/audio/speech", {
+                method: "POST",
+                headers: {
+                    Authorization: `Bearer ${paidApiKey}`,
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    model: "elevenlabs",
+                    input: "Explicit model route test.",
+                    safe: false,
+                }),
+            }),
+            new Request("https://gen.pollinations.ai/v1/audio/speech", {
+                method: "POST",
+                headers: {
+                    Authorization: `Bearer ${paidApiKey}`,
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    input: "Default model route test.",
+                    safe: false,
+                }),
+            }),
+            new Request(
+                "https://gen.pollinations.ai/audio/Default%20GET%20route%20test?model=elevenlabs&safe=false",
+                {
+                    headers: {
+                        Authorization: `Bearer ${paidApiKey}`,
+                    },
+                },
+            ),
+        ];
+
+        for (const request of requests) {
+            const response = await SELF.fetch(request);
+            expect(response.status).toBe(200);
+            expect(response.headers.get("content-type")).toContain(
+                "audio/mpeg",
+            );
+            expect((await response.arrayBuffer()).byteLength).toBeGreaterThan(
+                0,
+            );
+        }
+
+        expect(
+            fetchMock.mock.calls.filter(([input]) => {
+                const url =
+                    input instanceof Request ? input.url : input.toString();
+                return url.startsWith(
+                    "https://api.elevenlabs.io/v1/text-to-speech/",
+                );
+            }),
+        ).toHaveLength(3);
+    },
+);
+
+workerTest(
     "rejects oversized dialogue before safety or provider calls",
     async ({ paidApiKey }) => {
         const fetchMock = vi.spyOn(globalThis, "fetch");

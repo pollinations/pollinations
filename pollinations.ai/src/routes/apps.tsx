@@ -1,9 +1,13 @@
 import { Surface, TabButton } from "@pollinations/ui";
-import type { AppRow } from "@shared/apps/apps-table.ts";
-import { isBuzz, isFresh, isPollen } from "@shared/apps/apps-table.ts";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useMemo } from "react";
-import { useApps } from "../data/useApps";
+import {
+    type DirectoryApp,
+    isBuzz,
+    isFresh,
+    isPollen,
+    useAppDirectory,
+} from "../data/publicStats";
 import { APP_BADGES, APP_CATEGORIES, validateAppSearch } from "./-app-search";
 
 export const Route = createFileRoute("/apps")({
@@ -46,7 +50,7 @@ const BADGE_LABELS: Record<string, string> = {
     fresh: "🫧 Fresh",
 };
 
-function badgesFor(app: AppRow): string {
+function badgesFor(app: DirectoryApp): string {
     const badges: string[] = [];
     if (isBuzz(app)) badges.push("🐝");
     if (isPollen(app)) badges.push("🏵️");
@@ -54,8 +58,8 @@ function badgesFor(app: AppRow): string {
     return badges.join(" ");
 }
 
-function AppCard({ app }: { app: AppRow }) {
-    const href = app.webUrl || app.repoUrl;
+function AppCard({ app }: { app: DirectoryApp }) {
+    const href = app.web_url || app.github_repository_url;
     return (
         <Surface variant="card" className="flex flex-col gap-2 p-5">
             <div className="flex items-start justify-between gap-2">
@@ -68,7 +72,7 @@ function AppCard({ app }: { app: AppRow }) {
                 {app.description}
             </p>
             <div className="mt-auto flex flex-wrap items-center gap-2 pt-2 text-xs text-theme-text-muted">
-                {app.githubUsername && <span>by {app.githubUsername}</span>}
+                {app.github_username && <span>by {app.github_username}</span>}
                 {app.platform && <span>· {app.platform}</span>}
                 {href && (
                     <a
@@ -86,7 +90,7 @@ function AppCard({ app }: { app: AppRow }) {
 function AppsPage() {
     const { category, badge, q } = Route.useSearch();
     const navigate = useNavigate({ from: Route.fullPath });
-    const { apps, loading, failed } = useApps();
+    const { data: apps, loading, failed } = useAppDirectory();
 
     const spotlight = useMemo(
         () =>
@@ -94,7 +98,7 @@ function AppsPage() {
                 apps.find(
                     (app) => app.name.toLowerCase() === name.toLowerCase(),
                 ),
-            ).filter((app): app is AppRow => app !== undefined),
+            ).filter((app): app is DirectoryApp => app !== undefined),
         [apps],
     );
 

@@ -1,5 +1,6 @@
 import polliBee from "@pollinations/ui/brand/polli/polli.png";
 import { createFileRoute } from "@tanstack/react-router";
+import { compact, usePlatformStats } from "../data/publicStats";
 import { DevKit } from "../ui/home/DevKit";
 import { MoneyMoves } from "../ui/home/MoneyMoves";
 import { OnTheWay } from "../ui/home/OnTheWay";
@@ -9,15 +10,37 @@ export const Route = createFileRoute("/")({
     component: HelloPage,
 });
 
-const STATS = [
-    { value: "10K", label: "weekly active devs" },
-    { value: "1.5M", label: "daily requests" },
-    // /apps counts these live from APPS.md; the hero can't without pulling
-    // 288 KB for one number, so it rounds down rather than going stale.
-    { value: "800+", label: "live apps" },
-] as const;
+/**
+ * Both measured, neither hardcoded. The old row claimed "1.5M daily requests"
+ * and "10K weekly active devs" — the first is ~50% high (the real 24h figure
+ * is under a million), and the second has no public source at all, so it is
+ * gone rather than invented. App count lives on /apps, where the 577 KB
+ * directory it needs is the page's actual content.
+ */
+function useHeroStats() {
+    const { data, loading } = usePlatformStats();
+    return [
+        {
+            value: data ? compact(data.requestsWeek) : "—",
+            label: "requests a week",
+            loading,
+        },
+        {
+            value: data ? `${data.availability.toFixed(1)}%` : "—",
+            label: "availability",
+            loading,
+        },
+        {
+            value: data ? String(data.models) : "—",
+            label: "models, community included",
+            loading,
+        },
+    ];
+}
 
 function HelloPage() {
+    const stats = useHeroStats();
+
     return (
         <div className="mx-6 mb-6 overflow-hidden rounded-[28px] bg-theme-bg-pale shadow-container">
             <section className="flex flex-wrap items-center gap-14 px-8 pt-16 pb-14 md:px-18">
@@ -52,9 +75,12 @@ function HelloPage() {
                         </a>
                     </div>
                     <dl className="mt-2 flex flex-wrap gap-10">
-                        {STATS.map((stat) => (
+                        {stats.map((stat) => (
                             <div key={stat.label} className="flex flex-col">
-                                <dt className="font-heading text-4xl text-theme-text-soft tabular-nums">
+                                <dt
+                                    className="font-heading text-4xl text-theme-text-soft tabular-nums"
+                                    aria-busy={stat.loading}
+                                >
                                     {stat.value}
                                 </dt>
                                 <dd className="text-xs text-theme-text-muted">

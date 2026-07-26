@@ -59,6 +59,31 @@ describe("ElevenLabs Text to Dialogue", () => {
             }),
         ).rejects.toMatchObject({ status: 400 });
     });
+
+    it("rejects more than 10 unique voices", async () => {
+        await expect(
+            generateElevenLabsDialogue({
+                inputs: Array.from({ length: 11 }, (_, index) => ({
+                    text: `Speaker ${index}`,
+                    voice: `custom-voice-${index}`,
+                })),
+                responseFormat: "mp3",
+                apiKey: "test-eleven-key",
+                log,
+            }),
+        ).rejects.toMatchObject({ status: 400 });
+    });
+
+    it("rejects invalid voice IDs", async () => {
+        await expect(
+            generateElevenLabsDialogue({
+                inputs: [{ text: "Hello.", voice: "bad" }],
+                responseFormat: "mp3",
+                apiKey: "test-eleven-key",
+                log,
+            }),
+        ).rejects.toMatchObject({ status: 400 });
+    });
 });
 
 workerTest(
@@ -85,6 +110,38 @@ workerTest(
                 message: expect.stringContaining("/v1/audio/dialogue"),
             },
         });
+    },
+);
+
+workerTest(
+    "rejects oversized dialogue before safety or provider calls",
+    async ({ paidApiKey }) => {
+        const fetchMock = vi.spyOn(globalThis, "fetch");
+        const response = await SELF.fetch(
+            "https://gen.pollinations.ai/v1/audio/dialogue",
+            {
+                method: "POST",
+                headers: {
+                    Authorization: `Bearer ${paidApiKey}`,
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    model: "eleven-dialogue",
+                    inputs: [
+                        { text: "x".repeat(1001), voice: "nova" },
+                        { text: "y".repeat(1000), voice: "george" },
+                    ],
+                    safe: "privacy",
+                }),
+            },
+        );
+
+        expect(response.status).toBe(400);
+        expect(
+            fetchMock.mock.calls.some(([url]) =>
+                String(url).startsWith("https://api.elevenlabs.io/"),
+            ),
+        ).toBe(false);
     },
 );
 

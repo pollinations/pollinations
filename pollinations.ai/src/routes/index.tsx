@@ -43,7 +43,7 @@ function HelloPage() {
     const stats = useHeroStats();
 
     return (
-        <div className="mx-6 mb-6 overflow-hidden rounded-[28px] bg-theme-bg-pale shadow-container">
+        <>
             <section className="flex flex-wrap items-center gap-14 px-8 pt-16 pb-14 md:px-18">
                 <div className="flex min-w-0 flex-1 flex-col gap-6">
                     <p className="font-pixel text-sm tracking-widest text-theme-text-soft uppercase">
@@ -110,6 +110,6 @@ function HelloPage() {
                 it — it reads as a band within the page, not a new section. */}
             <MoneyMoves />
             <OnTheWay />
-        </div>
+        </>
     );
 }

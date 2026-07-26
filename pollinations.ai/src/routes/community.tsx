@@ -6,7 +6,7 @@ export const Route = createFileRoute("/community")({
 
 function CommunityPage() {
     return (
-        <div className="mx-6 mb-6 overflow-hidden rounded-[28px] bg-theme-bg-pale px-8 py-14 shadow-container md:px-18">
+        <div className="px-8 pt-4 pb-16 md:px-18">
             <p className="font-pixel text-sm tracking-widest text-theme-text-soft uppercase">
                 Open source, open roadmap
             </p>

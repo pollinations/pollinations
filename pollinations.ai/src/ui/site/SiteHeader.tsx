@@ -19,8 +19,8 @@ export function SiteHeader() {
 
     return (
         <header
-            className={`sticky top-3 z-30 mx-6 mt-3 mb-3 flex items-center justify-between gap-6 rounded-full border border-theme-border bg-surface-translucent px-5 py-3 shadow-container backdrop-blur-md transition-transform duration-300 supports-[not(backdrop-filter:blur(0))]:bg-surface-opaque focus-within:translate-y-0 motion-reduce:transition-none md:px-8 ${
-                hidden ? "-translate-y-[140%]" : "translate-y-0"
+            className={`sticky top-0 z-30 flex items-center justify-between gap-6 rounded-t-[28px] bg-theme-bg-pale px-8 py-5 transition-transform duration-300 focus-within:translate-y-0 motion-reduce:transition-none md:px-18 ${
+                hidden ? "-translate-y-full" : "translate-y-0"
             }`}
         >
             <div className="flex items-center gap-8">

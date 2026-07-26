@@ -120,7 +120,7 @@ function AppsPage() {
     }, [apps, category, badge, q]);
 
     return (
-        <div className="mx-6 mb-6 flex flex-col gap-14 overflow-hidden rounded-[28px] bg-theme-bg-pale px-8 py-14 shadow-container md:px-18">
+        <div className="flex flex-col gap-14 px-8 pt-4 pb-16 md:px-18">
             <header className="flex flex-wrap items-end justify-between gap-5">
                 <div className="flex flex-col gap-2.5">
                     <p className="font-pixel text-sm tracking-widest text-theme-text-soft uppercase">

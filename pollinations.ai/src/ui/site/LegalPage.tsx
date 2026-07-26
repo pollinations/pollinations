@@ -37,7 +37,7 @@ export function LegalPage({ markdownPath, errorLabel }: LegalPageProps) {
     }, [markdownPath]);
 
     return (
-        <div className="mx-6 mb-6 overflow-hidden rounded-[28px] bg-theme-bg-pale px-8 py-14 shadow-container md:px-18">
+        <div className="px-8 pt-4 pb-16 md:px-18">
             {failed ? (
                 <p className="text-theme-text-base">
                     The {errorLabel} could not be loaded. Please try again.

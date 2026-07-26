@@ -75,11 +75,16 @@ export const AUDIO_SERVICES = {
             completionAudioTokens: 0.1 / 1000,
         },
         title: "ElevenLabs v3 TTS",
-        description: "Expressive speech with emotion control and audio tags",
+        description:
+            "Expressive speech with emotion controls, audio tags, and character timestamps",
         inputModalities: ["text"],
         outputModalities: ["audio"],
         voices: ELEVENLABS_VOICES as string[],
-        supportedEndpoints: ["/audio/{text}", "/v1/audio/speech"],
+        supportedEndpoints: [
+            "/audio/{text}",
+            "/v1/audio/speech",
+            "/v1/audio/speech/with-timestamps",
+        ],
     },
     elevenflash: {
         aliases: ["tts-flash", "eleven-flash", "flash"],
@@ -97,11 +102,15 @@ export const AUDIO_SERVICES = {
         },
         title: "ElevenLabs Flash v2.5",
         description:
-            "Snappy low-latency speech in 32 languages; leaner than the premium voices",
+            "Low-latency speech in 32 languages with character timestamps",
         inputModalities: ["text"],
         outputModalities: ["audio"],
         voices: ELEVENLABS_VOICES as string[],
-        supportedEndpoints: ["/audio/{text}", "/v1/audio/speech"],
+        supportedEndpoints: [
+            "/audio/{text}",
+            "/v1/audio/speech",
+            "/v1/audio/speech/with-timestamps",
+        ],
     },
     "eleven-multilingual-v2": {
         aliases: ["multilingual-v2", "eleven-v2", "tts-multilingual"],
@@ -118,11 +127,16 @@ export const AUDIO_SERVICES = {
             completionAudioTokens: 0.1 / 1000,
         },
         title: "ElevenLabs Multilingual v2",
-        description: "Lifelike, emotionally rich speech in 29 languages",
+        description:
+            "Emotionally rich speech in 29 languages with character timestamps",
         inputModalities: ["text"],
         outputModalities: ["audio"],
         voices: ELEVENLABS_VOICES as string[],
-        supportedEndpoints: ["/audio/{text}", "/v1/audio/speech"],
+        supportedEndpoints: [
+            "/audio/{text}",
+            "/v1/audio/speech",
+            "/v1/audio/speech/with-timestamps",
+        ],
     },
     "eleven-dialogue": {
         aliases: ["dialogue", "text-to-dialogue"],

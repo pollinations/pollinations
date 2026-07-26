@@ -3,6 +3,7 @@ import {
     env,
     waitOnExecutionContext,
 } from "cloudflare:test";
+import { getLogger } from "@logtape/logtape";
 import { user as userTable } from "@shared/db/better-auth.ts";
 import { createTestApiKey, test } from "@shared/test/fixtures/index.ts";
 import { eq } from "drizzle-orm";
@@ -549,12 +550,6 @@ test("bills mini cached audio and image tokens at their exact rates", async () =
     const usageEvent = JSON.stringify({
         type: "response.done",
         response: {
-            output: [
-                {
-                    type: "message",
-                    content: [{ transcript: "content is never retained" }],
-                },
-            ],
             usage: {
                 input_tokens: 100,
                 output_tokens: 30,
@@ -577,9 +572,12 @@ test("bills mini cached audio and image tokens at their exact rates", async () =
         },
     });
 
+    const firstForwardedEvent = nextMessage(client);
     upstream.server.send(usageEvent);
+    await expect(firstForwardedEvent).resolves.toBe(usageEvent);
+    const secondForwardedEvent = nextMessage(client);
     upstream.server.send(usageEvent);
-    await new Promise((resolve) => setTimeout(resolve, 10));
+    await expect(secondForwardedEvent).resolves.toBe(usageEvent);
 
     client.close();
     upstream.server.close();
@@ -639,29 +637,40 @@ test("uses the cached-text rate when cache details are absent", async () => {
     client.accept();
     upstream.server.accept();
 
-    upstream.server.send(
-        JSON.stringify({
-            type: "response.done",
-            response: {
-                usage: {
-                    input_tokens: 100,
-                    output_tokens: 10,
-                    input_token_details: {
-                        text_tokens: 100,
-                        cached_tokens: 30,
-                    },
-                    output_token_details: { text_tokens: 10 },
+    const warn = vi.spyOn(getLogger(["hono", "realtime"]), "warn");
+    const usageEvent = JSON.stringify({
+        type: "response.done",
+        response: {
+            usage: {
+                input_tokens: 100,
+                output_tokens: 10,
+                input_token_details: {
+                    text_tokens: 100,
+                    cached_tokens: 30,
                 },
+                output_token_details: { text_tokens: 10 },
             },
-        }),
+        },
+    });
+    const firstForwardedEvent = nextMessage(client);
+    upstream.server.send(usageEvent);
+    await expect(firstForwardedEvent).resolves.toBe(usageEvent);
+    const secondForwardedEvent = nextMessage(client);
+    upstream.server.send(usageEvent);
+    await expect(secondForwardedEvent).resolves.toBe(usageEvent);
+
+    expect(warn).toHaveBeenCalledOnce();
+    expect(warn).toHaveBeenCalledWith(
+        "Realtime cached token modality details are missing or incomplete; unmatched cached tokens use the cached-text rate: model={model}",
+        { model: "gpt-realtime-2.1-mini" },
     );
 
     client.close();
     upstream.server.close();
     await waitOnExecutionContext(ctx);
 
-    const expectedCost = 0.0000678;
-    const expectedCharge = 0.00005085;
+    const expectedCost = 0.0000678 * 2;
+    const expectedCharge = 0.00005085 * 2;
     const user = await waitForPackBalanceBelow(userId, 1);
     expect(user?.packBalance).toBeCloseTo(1 - expectedCharge, 8);
     expect(upstream.tinybirdRequests).toHaveLength(1);
@@ -669,9 +678,9 @@ test("uses the cached-text rate when cache details are absent", async () => {
     const telemetry = JSON.parse(
         await upstream.tinybirdRequests[0].text(),
     ) as Record<string, unknown>;
-    expect(telemetry.tokenCountPromptText).toBe(70);
-    expect(telemetry.tokenCountPromptCached).toBe(30);
-    expect(telemetry.tokenCountCompletionText).toBe(10);
+    expect(telemetry.tokenCountPromptText).toBe(140);
+    expect(telemetry.tokenCountPromptCached).toBe(60);
+    expect(telemetry.tokenCountCompletionText).toBe(20);
     expect(telemetry.adjustmentUnits).toBeUndefined();
     expect(telemetry.totalCost).toBeCloseTo(expectedCost, 10);
     expect(telemetry.totalPrice).toBeCloseTo(expectedCharge, 10);

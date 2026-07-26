@@ -82,7 +82,9 @@ const STATIC_ENTRIES: GenerationModelEntry[] = getModels().map((modelName) => {
         id: modelName,
         aliases: definition.aliases,
         eventType,
-        supportedEndpoints: supportedEndpointsForEventType(eventType),
+        supportedEndpoints:
+            definition.supportedEndpoints ??
+            supportedEndpointsForEventType(eventType),
         definition,
         info: modelInfoFromDefinition(modelName, definition),
         visible: definition.hidden !== true,

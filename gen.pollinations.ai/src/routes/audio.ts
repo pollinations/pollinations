@@ -122,6 +122,25 @@ const CreateSpeechRequestSchema = z
     .meta({ $id: "CreateSpeechRequest" });
 
 type CreateSpeechRequest = z.infer<typeof CreateSpeechRequestSchema>;
+const CreateDialogueRequestSchema = z
+    .object({
+        model: z.string().optional(),
+        inputs: z
+            .array(
+                z.object({
+                    text: z.string().min(1),
+                    voice: z.string().min(1),
+                }),
+            )
+            .min(1),
+        response_format: z
+            .enum(["mp3", "opus", "aac", "wav", "pcm"])
+            .default("mp3"),
+        seed: z.number().int().min(0).max(4294967295).optional(),
+        safe: SafeSchema,
+    })
+    .meta({ $id: "CreateDialogueRequest" });
+
 type AudioContext = Context<Env>;
 type SimpleAudioQuery = {
     safe?: SafeValue;
@@ -314,6 +333,102 @@ export async function generateElevenLabsSpeech(opts: {
 
     return new Response(response.body, {
         status: 200,
+        headers: {
+            "Content-Type": contentType,
+            ...usageHeaders,
+        },
+    });
+}
+
+export async function generateElevenLabsDialogue(opts: {
+    inputs: { text: string; voice: string }[];
+    responseFormat: string;
+    seed?: number;
+    apiKey: string;
+    log: Logger;
+}): Promise<Response> {
+    const { inputs, responseFormat, seed, apiKey, log } = opts;
+    if (!apiKey) {
+        throw new UpstreamError(500 as ContentfulStatusCode, {
+            message: "Dialogue service is not configured (missing API key)",
+        });
+    }
+
+    const characterCount = inputs.reduce(
+        (total, input) => total + input.text.length,
+        0,
+    );
+    if (characterCount > 2000) {
+        throw new UpstreamError(400 as ContentfulStatusCode, {
+            message: `Dialogue input too long: ${characterCount} characters. Maximum is 2000.`,
+        });
+    }
+
+    const resolvedInputs = inputs.map((input) => ({
+        text: input.text,
+        voice_id: resolveElevenLabsVoiceId(input.voice),
+    }));
+    const uniqueVoices = new Set(resolvedInputs.map((input) => input.voice_id));
+    if (uniqueVoices.size > 10) {
+        throw new UpstreamError(400 as ContentfulStatusCode, {
+            message: "Dialogue supports at most 10 unique voices per request.",
+        });
+    }
+    if (resolvedInputs.some((input) => input.voice_id.length < 8)) {
+        throw new UpstreamError(400 as ContentfulStatusCode, {
+            message:
+                "Each dialogue voice must be a preset name or valid ElevenLabs voice ID.",
+        });
+    }
+
+    const outputFormat = mapOutputFormat(responseFormat);
+    const endpoint = `https://api.elevenlabs.io/v1/text-to-dialogue?output_format=${outputFormat}`;
+    const body: Record<string, unknown> = {
+        inputs: resolvedInputs,
+        model_id: "eleven_v3",
+    };
+    if (seed !== undefined) body.seed = seed;
+
+    log.info(
+        "Dialogue request: turns={turns}, voices={voices}, chars={chars}, format={format}",
+        {
+            turns: inputs.length,
+            voices: uniqueVoices.size,
+            chars: characterCount,
+            format: responseFormat,
+        },
+    );
+
+    const response = await ensureUpstreamOk(
+        await fetch(endpoint, {
+            method: "POST",
+            headers: {
+                "xi-api-key": apiKey,
+                "Content-Type": "application/json",
+                Accept: "audio/mpeg",
+            },
+            body: JSON.stringify(body),
+        }),
+        endpoint,
+    );
+    const usageHeaders = buildUsageHeaders(
+        "eleven-dialogue",
+        createAudioTokenUsage(characterCount),
+    );
+    const contentType = response.headers.get("content-type") || "audio/mpeg";
+
+    if (responseFormat === "wav") {
+        const audioBuffer = fixWavHeader(await response.arrayBuffer());
+        return new Response(audioBuffer, {
+            headers: {
+                "Content-Type": contentType,
+                "Content-Length": String(audioBuffer.byteLength),
+                ...usageHeaders,
+            },
+        });
+    }
+
+    return new Response(response.body, {
         headers: {
             "Content-Type": contentType,
             ...usageHeaders,
@@ -1849,6 +1964,121 @@ export async function handleSimpleAudio(c: AudioContext): Promise<Response> {
 export const audioRoutes = new Hono<Env>()
     .use("*", edgeRateLimit)
     .use("*", auth(), frontendKeyRateLimit, balance)
+    .post(
+        "/dialogue",
+        describeRoute({
+            tags: ["🔊 Audio"],
+            summary: "Generate Multi-Speaker Dialogue",
+            description:
+                "Generate one audio track from ordered text and voice pairs. Supports preset voice names and custom ElevenLabs voice IDs, with up to 10 unique voices and 2,000 total characters.",
+            requestBody: {
+                required: true,
+                content: {
+                    "application/json": {
+                        schema: {
+                            type: "object",
+                            required: ["inputs"],
+                            properties: {
+                                model: {
+                                    type: "string",
+                                    default: "eleven-dialogue",
+                                },
+                                inputs: {
+                                    type: "array",
+                                    minItems: 1,
+                                    items: {
+                                        type: "object",
+                                        required: ["text", "voice"],
+                                        properties: {
+                                            text: { type: "string" },
+                                            voice: {
+                                                type: "string",
+                                                description:
+                                                    "Preset voice name or custom ElevenLabs voice ID.",
+                                            },
+                                        },
+                                    },
+                                },
+                                response_format: {
+                                    type: "string",
+                                    enum: ["mp3", "opus", "aac", "wav", "pcm"],
+                                    default: "mp3",
+                                },
+                                seed: {
+                                    type: "integer",
+                                    minimum: 0,
+                                    maximum: 4294967295,
+                                },
+                                safe: { type: "boolean" },
+                            },
+                        },
+                    },
+                },
+            },
+            responses: {
+                200: {
+                    description: "Success - Returns dialogue audio",
+                    content: {
+                        "audio/mpeg": {
+                            schema: { type: "string", format: "binary" },
+                        },
+                        "audio/opus": {
+                            schema: { type: "string", format: "binary" },
+                        },
+                        "audio/aac": {
+                            schema: { type: "string", format: "binary" },
+                        },
+                        "audio/wav": {
+                            schema: { type: "string", format: "binary" },
+                        },
+                        "audio/pcm": {
+                            schema: { type: "string", format: "binary" },
+                        },
+                    },
+                },
+                ...errorResponseDescriptions(400, 401, 402, 403, 500),
+            },
+        }),
+        resolveModel("generate.audio", {
+            defaultModel: "eleven-dialogue",
+            supportedEndpoint: "/v1/audio/dialogue",
+        }),
+        track("generate.audio"),
+        async (c) => {
+            const log = c.get("log").getChild("dialogue");
+            await requireGenerationAccess(c.var, c.env);
+
+            let request: z.infer<typeof CreateDialogueRequestSchema>;
+            try {
+                request = CreateDialogueRequestSchema.parse(await c.req.json());
+            } catch (error) {
+                if (error instanceof z.ZodError) {
+                    throw new UpstreamError(400 as ContentfulStatusCode, {
+                        message:
+                            error.issues[0]?.message || "Invalid request body",
+                    });
+                }
+                throw new UpstreamError(400 as ContentfulStatusCode, {
+                    message: "Invalid JSON body",
+                });
+            }
+
+            const inputs = await Promise.all(
+                request.inputs.map(async (input) => ({
+                    ...input,
+                    text: await applySafety(c, input.text, request.safe),
+                })),
+            );
+            const response = await generateElevenLabsDialogue({
+                inputs,
+                responseFormat: request.response_format,
+                seed: request.seed,
+                apiKey: c.env.ELEVENLABS_API_KEY,
+                log,
+            });
+            return withSafetyHeaders(c, response);
+        },
+    )
     .post(
         "/music/upload",
         describeRoute({

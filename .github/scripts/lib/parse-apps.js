@@ -5,8 +5,11 @@
  * on |, map columns to fields". Fields are resolved by header name (not by
  * hard-coded index), so column reorders don't silently corrupt consumers.
  *
- * Note: pollinations.ai/src/hooks/useApps.ts has its own browser-side copy
- * of this logic (different runtime); keep field mappings in sync.
+ * ⚠️ shared/apps/apps-table.ts is the TypeScript twin of this file, used by
+ * pollinations.ai. It exists separately only because the workflows below
+ * `require()` this module with plain node and shared/ is ESM. FIELD_TO_HEADER
+ * must stay in sync between the two. Consolidating means moving these scripts
+ * to ESM — a change on its own, not a drive-by.
  */
 
 const fs = require("node:fs");

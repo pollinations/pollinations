@@ -1,6 +1,8 @@
 import polliBee from "@pollinations/ui/brand/polli/polli.png";
 import { createFileRoute } from "@tanstack/react-router";
 import { DevKit } from "../ui/home/DevKit";
+import { MoneyMoves } from "../ui/home/MoneyMoves";
+import { OnTheWay } from "../ui/home/OnTheWay";
 import { ThreeWays } from "../ui/home/ThreeWays";
 
 export const Route = createFileRoute("/")({
@@ -10,7 +12,9 @@ export const Route = createFileRoute("/")({
 const STATS = [
     { value: "10K", label: "weekly active devs" },
     { value: "1.5M", label: "daily requests" },
-    { value: "840", label: "live apps" },
+    // /apps counts these live from APPS.md; the hero can't without pulling
+    // 288 KB for one number, so it rounds down rather than going stale.
+    { value: "800+", label: "live apps" },
 ] as const;
 
 function HelloPage() {
@@ -72,6 +76,10 @@ function HelloPage() {
 
             <ThreeWays />
             <DevKit />
+            {/* Dark panel is inset inside the cream sheet, not a sibling of
+                it — it reads as a band within the page, not a new section. */}
+            <MoneyMoves />
+            <OnTheWay />
         </div>
     );
 }

@@ -28,7 +28,7 @@ import {
     ModalityTab,
     ModelSelector,
 } from "@pollinations/ui/gen";
-import { useEffect, useMemo, useState } from "react";
+import { type ReactNode, useEffect, useMemo, useState } from "react";
 
 type ViteImportMeta = ImportMeta & {
     env?: {
@@ -63,6 +63,8 @@ type PlaygroundResult =
 
 export type PlaygroundProps = {
     className?: string;
+    /** Sign-in control, rendered at the end of the control bar. */
+    accountArea?: ReactNode;
 };
 
 function usePlaygroundCatalog(apiKey: string | null) {
@@ -289,7 +291,7 @@ async function uploadReferenceImages(
     return uploads.map((upload) => upload.url);
 }
 
-export function Playground({ className }: PlaygroundProps) {
+export function Playground({ className, accountArea }: PlaygroundProps) {
     const { apiKey, isLoggedIn, isHydrated } = useAuthState();
     const {
         catalog,
@@ -533,30 +535,41 @@ export function Playground({ className }: PlaygroundProps) {
                 </Alert>
             )}
 
+            {/* One bar above both columns: modality and model are global
+                choices affecting input and output alike, so scoping them to
+                the left column implied they only changed the prompt. */}
+            <Surface
+                variant="card"
+                className="polli:flex polli:flex-col polli:gap-3 polli:p-4"
+            >
+                <div className="polli:flex polli:flex-wrap polli:items-center polli:gap-3">
+                    <ModalityTabs
+                        activeCategory={activeCategory}
+                        onCategoryChange={selectCategory}
+                    />
+                    <ModelSelector
+                        models={catalog.models}
+                        category={activeCategory}
+                        value={selectedModel}
+                        isLoading={isLoading || !isHydrated}
+                        onChange={setSelectedModel}
+                    />
+                    {accountArea && (
+                        <span className="ml-auto">{accountArea}</span>
+                    )}
+                </div>
+                {currentModel?.description && (
+                    <p className="polli:m-0 polli:text-sm polli:leading-relaxed polli:text-theme-text-muted">
+                        {currentModel.description}
+                    </p>
+                )}
+            </Surface>
+
             <div className="polli-playground-main-grid">
                 <div className="polli:flex polli:flex-col polli:gap-4">
                     <Surface
                         variant="card"
-                        className="polli:flex polli:flex-col polli:gap-4 polli:p-4"
-                    >
-                        <div className="polli-playground-control-bar">
-                            <ModalityTabs
-                                activeCategory={activeCategory}
-                                onCategoryChange={selectCategory}
-                            />
-                            <ModelSelector
-                                models={catalog.models}
-                                category={activeCategory}
-                                value={selectedModel}
-                                isLoading={isLoading || !isHydrated}
-                                onChange={setSelectedModel}
-                            />
-                        </div>
-                    </Surface>
-
-                    <Surface
-                        variant="card"
-                        className="polli:flex polli:flex-col polli:gap-4 polli:p-4"
+                        className="polli:flex polli:flex-1 polli:flex-col polli:gap-4 polli:p-4"
                     >
                         <FieldStack label="Prompt">
                             <Textarea

@@ -123,7 +123,6 @@ function AppsPage() {
     return (
         <>
             <PageHeader
-                hideTitle
                 eyebrow={`${loading ? "Apps" : `${apps.length} apps`} built on Pollinations`}
                 title="Ecosystem"
                 action={

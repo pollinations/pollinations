@@ -170,7 +170,7 @@ function ModalityTabs({
                 <ModalityTab
                     key={category}
                     active={activeCategory === category}
-                    size="sm"
+                    size="md"
                     onClick={() => onCategoryChange(category)}
                 >
                     {categoryLabel(category)}
@@ -538,20 +538,20 @@ export function Playground({ className }: PlaygroundProps) {
                 card would box them as one static panel instead of a flow.
                 They also sit above both columns because modality and model
                 change the output, not just the prompt. */}
-            <div className="polli:flex polli:flex-col polli:gap-3">
-                <div className="polli:flex polli:flex-wrap polli:items-center polli:gap-3">
-                    <ModalityTabs
-                        activeCategory={activeCategory}
-                        onCategoryChange={selectCategory}
-                    />
-                    <ModelSelector
-                        models={catalog.models}
-                        category={activeCategory}
-                        value={selectedModel}
-                        isLoading={isLoading || !isHydrated}
-                        onChange={setSelectedModel}
-                    />
-                </div>
+            {/* Three lines, in the order you decide them: what kind of thing,
+                then which model, then what that model is. */}
+            <div className="polli:flex polli:flex-col polli:items-start polli:gap-3">
+                <ModalityTabs
+                    activeCategory={activeCategory}
+                    onCategoryChange={selectCategory}
+                />
+                <ModelSelector
+                    models={catalog.models}
+                    category={activeCategory}
+                    value={selectedModel}
+                    isLoading={isLoading || !isHydrated}
+                    onChange={setSelectedModel}
+                />
                 {currentModel?.description && (
                     <p className="polli:m-0 polli:text-sm polli:leading-relaxed polli:text-theme-text-muted">
                         {currentModel.description}

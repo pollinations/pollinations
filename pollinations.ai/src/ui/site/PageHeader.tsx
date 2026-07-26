@@ -8,12 +8,6 @@ type PageHeaderProps = {
     action?: ReactNode;
     /** `hero` is the landing page only — bigger title, same rhythm. */
     size?: "page" | "hero";
-    /**
-     * Keep the h1 for assistive tech and search, but don't draw it. For pages
-     * where the nav already says what this is and the first real heading
-     * follows immediately — a visible title there is just saying it twice.
-     */
-    hideTitle?: boolean;
 };
 
 /**
@@ -30,7 +24,6 @@ export function PageHeader({
     subtitle,
     action,
     size = "page",
-    hideTitle = false,
 }: PageHeaderProps) {
     return (
         <header className="flex flex-wrap items-end justify-between gap-6">
@@ -39,15 +32,11 @@ export function PageHeader({
                     {eyebrow}
                 </p>
                 <h1
-                    className={
-                        hideTitle
-                            ? "sr-only"
-                            : `font-heading text-theme-text-strong ${
-                                  size === "hero"
-                                      ? "text-5xl leading-tight lg:text-7xl"
-                                      : "text-5xl"
-                              }`
-                    }
+                    className={`font-heading text-theme-text-strong ${
+                        size === "hero"
+                            ? "text-5xl leading-tight lg:text-7xl"
+                            : "text-5xl"
+                    }`}
                 >
                     {title}
                 </h1>

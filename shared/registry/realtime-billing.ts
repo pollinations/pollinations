@@ -3,46 +3,24 @@ import type { BillingRules } from "./registry";
 const PER_MILLION = 1_000_000;
 
 type RealtimeBillingOutput = {
-    response?: {
-        usage?: {
-            input_token_details?: {
-                cached_tokens_details?: {
-                    audio_tokens?: unknown;
-                    image_tokens?: unknown;
-                };
-            };
-        };
+    realtimeCache?: {
+        audioTokens?: unknown;
+        imageTokens?: unknown;
     };
-    streamEvents?: unknown[];
 };
-
-function outputEvents(output: unknown): unknown[] {
-    const value = output as RealtimeBillingOutput | undefined;
-    return Array.isArray(value?.streamEvents)
-        ? value.streamEvents
-        : value
-          ? [value]
-          : [];
-}
 
 function countCachedTokens(
     output: unknown,
     modality: "audio" | "image",
 ): number {
-    return outputEvents(output).reduce<number>((total, event) => {
-        const details = (event as RealtimeBillingOutput | undefined)?.response
-            ?.usage?.input_token_details?.cached_tokens_details;
-        const value =
-            modality === "audio"
-                ? details?.audio_tokens
-                : details?.image_tokens;
-        return (
-            total +
-            (typeof value === "number" && Number.isFinite(value) && value > 0
-                ? value
-                : 0)
-        );
-    }, 0);
+    const value = output as RealtimeBillingOutput | undefined;
+    const tokens =
+        modality === "audio"
+            ? value?.realtimeCache?.audioTokens
+            : value?.realtimeCache?.imageTokens;
+    return typeof tokens === "number" && Number.isFinite(tokens) && tokens > 0
+        ? tokens
+        : 0;
 }
 
 // Generic cached input is billed at the cached-text rate. The provider reports

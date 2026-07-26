@@ -80,6 +80,10 @@ const UNSUPPORTED_TRANSCRIPTION_MESSAGE =
 type WebSocketResponse = Response & { webSocket?: WebSocket };
 type WebSocketResponseInit = ResponseInit & { webSocket?: WebSocket };
 type RealtimeDeduction = Awaited<ReturnType<typeof handleBalanceDeduction>>;
+type RealtimeCacheUsage = {
+    audioTokens: number;
+    imageTokens: number;
+};
 type RealtimeBillingContext = {
     userId: string;
     userTier?: string;
@@ -108,7 +112,8 @@ type RealtimeBillingContext = {
     ipHash?: string;
     sessionStartTime: Date;
     usage: Usage;
-    outputEvents: unknown[];
+    cacheUsage: RealtimeCacheUsage;
+    missingCacheDetailsWarned: boolean;
     settlementInFlight: boolean;
     settlementAttempts: number;
     settled: boolean;
@@ -258,9 +263,15 @@ function addUsage(target: Usage, delta: Usage): void {
     }
 }
 
-function realtimeUsageToUsage(rawUsage: unknown): Usage {
+type ParsedRealtimeUsage = {
+    usage: Usage;
+    cacheUsage: RealtimeCacheUsage;
+    cacheDetailsIncomplete: boolean;
+};
+
+function parseRealtimeUsage(rawUsage: unknown): ParsedRealtimeUsage | null {
     const parsed = RealtimeUsageSchema.safeParse(rawUsage);
-    if (!parsed.success) return {};
+    if (!parsed.success) return null;
     const usage = parsed.data;
     const inputDetails = usage.input_token_details ?? {};
     const outputDetails = usage.output_token_details ?? {};
@@ -269,9 +280,14 @@ function realtimeUsageToUsage(rawUsage: unknown): Usage {
     const cachedTextTokens = numeric(cachedDetails.text_tokens);
     const cachedAudioTokens = numeric(cachedDetails.audio_tokens);
     const cachedImageTokens = numeric(cachedDetails.image_tokens);
-    const cachedTokens =
-        numeric(inputDetails.cached_tokens) ||
+    const reportedCachedTokens = numeric(inputDetails.cached_tokens);
+    const detailedCachedTokens =
         cachedTextTokens + cachedAudioTokens + cachedImageTokens;
+    const cachedTokens = reportedCachedTokens || detailedCachedTokens;
+    const cacheDetailsIncomplete =
+        reportedCachedTokens > 0 &&
+        (inputDetails.cached_tokens_details == null ||
+            detailedCachedTokens !== reportedCachedTokens);
 
     const promptAudioTokens = Math.max(
         0,
@@ -300,22 +316,35 @@ function realtimeUsageToUsage(rawUsage: unknown): Usage {
         totalOutputTokens - completionAudioTokens,
     );
 
-    return positiveEntries({
-        promptTextTokens,
-        promptCachedTokens: cachedTokens,
-        promptAudioTokens,
-        promptImageTokens,
-        completionTextTokens,
-        completionAudioTokens,
-    });
+    return {
+        usage: positiveEntries({
+            promptTextTokens,
+            promptCachedTokens: cachedTokens,
+            promptAudioTokens,
+            promptImageTokens,
+            completionTextTokens,
+            completionAudioTokens,
+        }),
+        cacheUsage: {
+            audioTokens: cachedAudioTokens,
+            imageTokens: cachedImageTokens,
+        },
+        cacheDetailsIncomplete,
+    };
 }
 
-function extractResponseUsage(eventData: unknown): Usage | null {
+function realtimeUsageToUsage(rawUsage: unknown): Usage {
+    return parseRealtimeUsage(rawUsage)?.usage ?? {};
+}
+
+function extractResponseBilling(
+    eventData: unknown,
+): ParsedRealtimeUsage | null {
     const event = asRecord(eventData);
     if (event.type !== "response.done") return null;
     const response = asRecord(event.response);
-    const usage = realtimeUsageToUsage(response.usage);
-    return Object.keys(usage).length ? usage : null;
+    const parsed = parseRealtimeUsage(response.usage);
+    return parsed && Object.keys(parsed.usage).length ? parsed : null;
 }
 
 function parseEventData(data: unknown): unknown | null {
@@ -486,7 +515,7 @@ async function settleRealtimeSession(
         tracking.resolvedModelRequested,
         usage,
         tracking.modelDefinition,
-        { streamEvents: tracking.outputEvents },
+        { realtimeCache: tracking.cacheUsage },
     );
     if (price.totalPrice <= 0) {
         tracking.settled = true;
@@ -536,19 +565,36 @@ async function settleRealtimeSession(
 }
 
 function collectBillingEvents(
+    c: Context<Env>,
     upstream: WebSocket,
     billing: RealtimeBillingContext,
 ): void {
+    const log = c.get("log").getChild("realtime");
     upstream.addEventListener("message", (event) => {
         const eventData = parseEventData(event.data);
-        const usage =
-            extractResponseUsage(eventData) ??
-            extractUnsupportedInputTranscriptionUsage(eventData);
-        if (!usage) return;
-        if (asRecord(eventData).type === "response.done") {
-            billing.outputEvents.push(eventData);
+        const responseBilling = extractResponseBilling(eventData);
+        if (responseBilling) {
+            addUsage(billing.usage, responseBilling.usage);
+            billing.cacheUsage.audioTokens +=
+                responseBilling.cacheUsage.audioTokens;
+            billing.cacheUsage.imageTokens +=
+                responseBilling.cacheUsage.imageTokens;
+            if (
+                responseBilling.cacheDetailsIncomplete &&
+                !billing.missingCacheDetailsWarned
+            ) {
+                billing.missingCacheDetailsWarned = true;
+                log.warn(
+                    "Realtime cached token modality details are missing or incomplete; unmatched cached tokens use the cached-text rate: model={model}",
+                    { model: billing.resolvedModelRequested },
+                );
+            }
+            return;
         }
-        addUsage(billing.usage, usage);
+
+        const transcriptionUsage =
+            extractUnsupportedInputTranscriptionUsage(eventData);
+        if (transcriptionUsage) addUsage(billing.usage, transcriptionUsage);
     });
 }
 
@@ -626,7 +672,7 @@ function proxyRealtimeWebSockets(
     downstream.binaryType = "arraybuffer";
     downstream.accept({ allowHalfOpen: true });
 
-    collectBillingEvents(upstream, tracking);
+    collectBillingEvents(c, upstream, tracking);
     forwardMessage(downstream, upstream, validateClientRealtimeEvent, () =>
         scheduleRealtimeSettlement(c, tracking),
     );
@@ -691,7 +737,8 @@ async function createRealtimeBillingContext(
         ipHash: await hashIp(clientIp, c.env.BETTER_AUTH_SECRET),
         sessionStartTime: new Date(),
         usage: {},
-        outputEvents: [],
+        cacheUsage: { audioTokens: 0, imageTokens: 0 },
+        missingCacheDetailsWarned: false,
         settlementInFlight: false,
         settlementAttempts: 0,
         settled: false,

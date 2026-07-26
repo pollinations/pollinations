@@ -1,0 +1,14 @@
+{
+  "platform": "discord",
+  "scope": "weekly",
+  "date": "2026-07-26",
+  "period_start": "2026-07-19",
+  "period_end": "2026-07-25",
+  "generated_at": "2026-07-26T07:03:30.237957+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/weekly/2026-07-26/images/discord.jpg"
+    }
+  ],
+  "text": "Hey <@&1424461167883194418> — 58 merges this week. The garden acquired several new species.\n\n## Weekly Update - 2026-07-26\n\n### 🌱 Community models are becoming a proper publishing surface\n- New community image endpoints, publisher allowlist/activation controls, separate titles + descriptions, and capped community-model prices.\n- App submission is simpler, and the model catalog now has clearer human-readable descriptions instead of a decorative pile of IDs.\n\n### 🖼️ Image + media shelf got larger\n- Added `Laguna S 2.1`, `Recraft` vector generation, `Grok Imagine` defaulting to 2K, and `Lyria 3 Clip` music.\n- `NanoBanana`, `NanoBanana 2`, `NanoBanana 2 Lite`, `NanoBanana Pro`, `Seedream 4.5 Pro`, and Grok media routes now run through OpenRouter.\n\n### 💬 More models, one endpoint\n- `Gemini Flash Lite 3.5`, `LongCat 2.0`, `Claude Opus 5` via `claude-large`, `CSM 1B` speech, and Arika chat are live. Google text models now route through OpenRouter too.\n\n### 🔧 Less mysterious failure\n- Replicate capacity errors now return `503`, timed-out predictions get cancelled, reference-image downloads are validated, and Vast/Flux/Klein deployments gained queue and GPU-OOM guardrails. Software has been gently persuaded to stop wandering off.\n\nDocs: https://github.com/pollinations/pollinations • API reference: https://github.com/pollinations/pollinations/blob/master/APIDOCS.md"
+}

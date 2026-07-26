@@ -1,0 +1,35 @@
+{
+  "pr_number": 12780,
+  "title": "feat: add ElevenLabs voice isolator",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/12780",
+  "merged_at": "2026-07-26T18:05:35Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds paid-only direct ElevenLabs voice isolation at `POST /v1/audio/voice-isolator`, multiplier 1.\n- Accepts audio or video in the `audio` multipart field and returns isolated speech as MP3.\n- Bills provider-metered input at $0.12/min and fails closed with an error log when metering is absent.\n- Uses no Pollinations GPU and has no fallback.\n\nValidation:\n- Live full-route 5-second WAV: exact 0.01 Pollen deduction.\n- Direct 61-second probe: `character-cost=734`, 61.05-second playable output, confirming no one-minute billing floor.\n- Direct provider WAV and MP4 inputs both returned playable MP3.\n- 21 stacked focused tests and Gen typecheck pass.\n\nStacked on #12779 for endpoint-scoping and duration-metering infrastructure.\n\n### Endpoint-gating follow-up (2026-07-26)\n\n- Fixed the standard TTS routing regression introduced by endpoint metadata: generic audio defaults now include both /audio/{text} and /v1/audio/speech, and both routes pass their exact endpoint identity.\n- Added route-level coverage for explicit elevenlabs, omitted/default model, and the simple GET route; all return 200.\n- Latest stacked Gen verification: typecheck clean, paid modality E2E clean, and 694/694 tests across 74 files pass.\n- Documented the measured 12 credits/second audio-input metering and its Scale-plan reconciliation in code.\n- CI follow-up: the deterministic route test now injects a test-only provider key through the Worker environment; the secretless GitHub suite passes.",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "The hive finds the voice",
+    "blurb": "A new ElevenLabs voice isolator gently sweeps the background out of your audio. Send in a recording or video; get clean speech back as an MP3.",
+    "summary": "Added the paid ElevenLabs voice isolation endpoint at POST /v1/audio/voice-isolator, accepting audio or video multipart uploads and returning isolated speech as MP3 with per-second provider metering.",
+    "impact": "Developers can now extract playable, isolated speech from WAV, MP4, and other supported uploads through one Pollinations audio endpoint, while standard TTS routes continue working across their explicit and default model paths.",
+    "keywords": [
+      "audio",
+      "ElevenLabs",
+      "voice isolation",
+      "speech",
+      "API",
+      "MP3",
+      "metering"
+    ],
+    "visual_concept": "Depict Polli as a careful sound engineer in a cozy garden recording studio, using oversized pixel headphones and a tiny mixing console to separate a glowing golden voice-wave from soft, tangled background-noise vines. A retro monitor can show a simple before-and-after waveform while little flowers and code-plants grow around the cables, representing clean API audio processing.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light blue translucent wings, wearing tiny sound-engineer headphones as she adjusts a retro mixing console in a garden studio; a warm golden speech waveform is being gently separated from tangled pastel noise-vines, with code-plants and flowers nearby. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, subtle CRT monitor glow showing pixel text 'VOICE ISOLATOR', nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-26/PR-12780.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light blue translucent wings, wearing tiny sound-engineer headphones as she adjusts a retro mixing console in a garden studio; a warm golden speech waveform is being gently separated from tangled pastel noise-vines, with code-plants and flowers nearby. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, subtle CRT monitor glow showing pixel text 'VOICE ISOLATOR', nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-07-26T18:06:36.469086+00:00"
+}

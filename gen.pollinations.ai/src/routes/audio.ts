@@ -436,6 +436,110 @@ export async function generateElevenLabsDialogue(opts: {
     });
 }
 
+const ELEVENLABS_AUDIO_CREDITS_PER_SECOND = 12;
+
+export function getElevenLabsMeteredInputSeconds(response: Response): number {
+    const characterCost = Number(response.headers.get("character-cost"));
+    if (!Number.isFinite(characterCost) || characterCost <= 0) {
+        throw new UpstreamError(502 as ContentfulStatusCode, {
+            message:
+                "ElevenLabs response did not include valid input-duration metering.",
+        });
+    }
+    return characterCost / ELEVENLABS_AUDIO_CREDITS_PER_SECOND;
+}
+
+export async function changeVoiceWithElevenLabs(opts: {
+    audio: File;
+    voice: string;
+    responseFormat: string;
+    apiKey: string;
+    log: Logger;
+}): Promise<Response> {
+    const { audio, voice, responseFormat, apiKey, log } = opts;
+    if (!apiKey) {
+        throw new UpstreamError(500 as ContentfulStatusCode, {
+            message:
+                "Voice Changer service is not configured (missing API key)",
+        });
+    }
+    if (audio.size > 50 * 1024 * 1024) {
+        throw new UpstreamError(413 as ContentfulStatusCode, {
+            message: "Voice Changer audio must be 50 MB or smaller.",
+        });
+    }
+    if (audio.type && !audio.type.startsWith("audio/")) {
+        throw new UpstreamError(400 as ContentfulStatusCode, {
+            message: "Voice Changer requires an audio file.",
+        });
+    }
+
+    const voiceId = resolveElevenLabsVoiceId(voice);
+    if (!voiceId || voiceId.length < 8) {
+        throw new UpstreamError(400 as ContentfulStatusCode, {
+            message: `Invalid voice: ${voice}. Use a preset name or valid ElevenLabs voice ID.`,
+        });
+    }
+
+    const outputFormat = mapOutputFormat(responseFormat);
+    const endpoint = `https://api.elevenlabs.io/v1/speech-to-speech/${voiceId}?output_format=${outputFormat}`;
+    const formData = new FormData();
+    formData.append("audio", audio, audio.name || "audio");
+    formData.append("model_id", "eleven_multilingual_sts_v2");
+
+    log.info(
+        "Voice Changer request: voice={voice}, format={format}, bytes={bytes}",
+        {
+            voice,
+            format: responseFormat,
+            bytes: audio.size,
+        },
+    );
+
+    const response = await ensureUpstreamOk(
+        await fetch(endpoint, {
+            method: "POST",
+            headers: {
+                "xi-api-key": apiKey,
+                Accept: "audio/*",
+            },
+            body: formData,
+        }),
+        endpoint,
+    );
+    const inputSeconds = getElevenLabsMeteredInputSeconds(response);
+    const usageHeaders = {
+        ...buildUsageHeaders(
+            "eleven-voice-changer",
+            createAudioSecondsUsage(inputSeconds),
+        ),
+        "x-voice-changer-voice": voice,
+    };
+    const contentType = response.headers.get("content-type") || "audio/mpeg";
+
+    log.info("Voice Changer success: inputSeconds={seconds}", {
+        seconds: inputSeconds,
+    });
+
+    if (responseFormat === "wav") {
+        const audioBuffer = fixWavHeader(await response.arrayBuffer());
+        return new Response(audioBuffer, {
+            headers: {
+                "Content-Type": contentType,
+                "Content-Length": String(audioBuffer.byteLength),
+                ...usageHeaders,
+            },
+        });
+    }
+
+    return new Response(response.body, {
+        headers: {
+            "Content-Type": contentType,
+            ...usageHeaders,
+        },
+    });
+}
+
 interface ElevenLabsTranscriptionResponse {
     text: string;
     language_code?: string;
@@ -2077,6 +2181,120 @@ export const audioRoutes = new Hono<Env>()
                 log,
             });
             return withSafetyHeaders(c, response);
+        },
+    )
+    .post(
+        "/voice-changer",
+        describeRoute({
+            tags: ["🔊 Audio"],
+            summary: "Transform a Voice",
+            description:
+                "Transform the speaker identity in an audio file while preserving its words, timing, emotion, and delivery. Accepts preset voice names or custom ElevenLabs voice IDs.",
+            requestBody: {
+                required: true,
+                content: {
+                    "multipart/form-data": {
+                        schema: {
+                            type: "object",
+                            required: ["audio"],
+                            properties: {
+                                model: {
+                                    type: "string",
+                                    default: "eleven-voice-changer",
+                                },
+                                audio: {
+                                    type: "string",
+                                    format: "binary",
+                                    description:
+                                        "Source audio, up to 50 MB. ElevenLabs supports clips up to five minutes.",
+                                },
+                                voice: {
+                                    type: "string",
+                                    default: "alloy",
+                                    description:
+                                        "Target preset voice name or custom ElevenLabs voice ID.",
+                                },
+                                response_format: {
+                                    type: "string",
+                                    enum: ["mp3", "opus", "aac", "wav", "pcm"],
+                                    default: "mp3",
+                                },
+                            },
+                        },
+                    },
+                },
+            },
+            responses: {
+                200: {
+                    description: "Success - Returns transformed speech",
+                    content: {
+                        "audio/mpeg": {
+                            schema: { type: "string", format: "binary" },
+                        },
+                        "audio/opus": {
+                            schema: { type: "string", format: "binary" },
+                        },
+                        "audio/aac": {
+                            schema: { type: "string", format: "binary" },
+                        },
+                        "audio/wav": {
+                            schema: { type: "string", format: "binary" },
+                        },
+                        "audio/pcm": {
+                            schema: { type: "string", format: "binary" },
+                        },
+                    },
+                },
+                ...errorResponseDescriptions(400, 401, 402, 403, 500),
+            },
+        }),
+        resolveModel("generate.audio", {
+            defaultModel: "eleven-voice-changer",
+            supportedEndpoint: "/v1/audio/voice-changer",
+        }),
+        track("generate.audio"),
+        async (c) => {
+            const log = c.get("log").getChild("voice-changer");
+            await requireGenerationAccess(c.var, c.env);
+
+            let formData: FormData;
+            try {
+                formData = c.get("formData") || (await c.req.formData());
+            } catch {
+                throw new UpstreamError(400 as ContentfulStatusCode, {
+                    message: "Invalid multipart form data",
+                });
+            }
+
+            const audio = formData.get("audio");
+            if (!(audio instanceof File)) {
+                throw new UpstreamError(400 as ContentfulStatusCode, {
+                    message: "Missing required audio file.",
+                });
+            }
+            const voice = formData.get("voice");
+            const responseFormat = formData.get("response_format");
+            const resolvedFormat =
+                typeof responseFormat === "string" && responseFormat !== ""
+                    ? responseFormat
+                    : "mp3";
+            if (
+                !["mp3", "opus", "aac", "wav", "pcm"].includes(resolvedFormat)
+            ) {
+                throw new UpstreamError(400 as ContentfulStatusCode, {
+                    message:
+                        "response_format must be mp3, opus, aac, wav, or pcm.",
+                });
+            }
+
+            return changeVoiceWithElevenLabs({
+                audio,
+                voice:
+                    typeof voice === "string" && voice !== "" ? voice : "alloy",
+                responseFormat: resolvedFormat,
+                apiKey: c.env.ELEVENLABS_API_KEY,
+                log,
+            });
         },
     )
     .post(

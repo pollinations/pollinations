@@ -166,6 +166,14 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "completionAudioSeconds": 0.002,
     },
   },
+  "eleven-voice-changer": {
+    "cost": {
+      "promptAudioSeconds": 0.002,
+    },
+    "price": {
+      "promptAudioSeconds": 0.002,
+    },
+  },
   "elevenflash": {
     "cost": {
       "completionAudioTokens": 0.00005,

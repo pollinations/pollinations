@@ -9,8 +9,14 @@ const NAV = [
     { to: "/community", label: "Community" },
 ] as const;
 
+/**
+ * Everything here leaves the site, so every one carries ↗ — the same marker
+ * Dashboard already used. An arrow on some outbound links and not others
+ * reads as an inconsistency rather than as meaning.
+ */
 const EXTERNAL = [
-    { href: "https://docs.pollinations.ai", label: "Docs" },
+    // Not docs.pollinations.ai — that is the investor data room.
+    { href: "https://gen.pollinations.ai/docs", label: "Docs" },
     { href: "https://github.com/pollinations/pollinations", label: "GitHub" },
 ] as const;
 
@@ -23,17 +29,17 @@ export function SiteHeader() {
 
     return (
         <header
-            className={`sticky top-0 z-30 flex items-center justify-between gap-6 bg-app-bg px-8 py-4 transition-[transform,box-shadow] duration-300 focus-within:translate-y-0 motion-reduce:transition-none md:px-12 ${
+            className={`sticky top-0 z-30 flex items-center justify-between gap-6 bg-app-bg px-8 py-5 transition-[transform,box-shadow] duration-300 focus-within:translate-y-0 motion-reduce:transition-none md:px-12 ${
                 scrolled ? "shadow-well" : ""
             } ${hidden ? "-translate-y-full" : "translate-y-0"}`}
         >
-            <div className="flex items-center gap-8">
+            <div className="flex items-center gap-9">
                 <Link
                     to="/"
                     className="flex items-center text-theme-text-strong"
                     aria-label="pollinations.ai — home"
                 >
-                    <BrandLockup height={26} label="" />
+                    <BrandLockup height={38} label="" />
                 </Link>
                 <nav className="hidden gap-1.5 md:flex">
                     {NAV.map((item) => (
@@ -41,7 +47,6 @@ export function SiteHeader() {
                             key={item.to}
                             as={Link}
                             to={item.to}
-                            size="sm"
                             variant="ghost"
                             active={
                                 item.to === "/"
@@ -54,20 +59,22 @@ export function SiteHeader() {
                     ))}
                 </nav>
             </div>
-            <div className="flex items-center gap-4 text-sm font-semibold">
+            <div className="flex items-center gap-2">
                 {EXTERNAL.map((item) => (
-                    <a
+                    <TabButton
                         key={item.href}
+                        as="a"
                         href={item.href}
-                        className="hidden text-theme-text-base hover:text-theme-text-strong sm:inline"
+                        variant="ghost"
+                        active={false}
+                        className="hidden sm:inline-flex"
                     >
-                        {item.label}
-                    </a>
+                        {item.label} ↗
+                    </TabButton>
                 ))}
                 <Button
                     as="a"
                     href="https://enter.pollinations.ai"
-                    size="sm"
                     className="bg-brand-dark text-surface-opaque hover:bg-brand-dark"
                 >
                     Dashboard ↗

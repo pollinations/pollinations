@@ -74,7 +74,7 @@ function HelloPage() {
                         </Button>
                         <Button
                             as="a"
-                            href="https://docs.pollinations.ai"
+                            href="https://gen.pollinations.ai/docs"
                             size="lg"
                             className="bg-surface-opaque hover:bg-surface-opaque"
                         >

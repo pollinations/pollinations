@@ -33,7 +33,7 @@ export function MoneyMoves() {
                         Start earning
                     </Button>
                     <a
-                        href="https://docs.pollinations.ai"
+                        href="https://gen.pollinations.ai/docs"
                         className="text-sm font-semibold text-theme-text-strong"
                     >
                         See how the split works →

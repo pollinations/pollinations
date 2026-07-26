@@ -5,7 +5,7 @@ const COLUMNS = [
     {
         heading: "Build",
         links: [
-            { href: "https://docs.pollinations.ai", label: "API docs" },
+            { href: "https://gen.pollinations.ai/docs", label: "API docs" },
             { href: "https://gen.pollinations.ai/models", label: "Models" },
             { href: "https://enter.pollinations.ai", label: "Dashboard" },
         ],
@@ -40,7 +40,7 @@ export function SiteFooter() {
         <footer className="flex flex-wrap justify-between gap-10 px-6 pt-11 pb-14 md:px-12">
             <div className="flex max-w-xs flex-col gap-4">
                 <BrandLockup
-                    height={24}
+                    height={34}
                     className="text-theme-text-strong"
                     label=""
                 />
@@ -70,7 +70,7 @@ export function SiteFooter() {
                                     href={link.href}
                                     className="text-sm text-theme-text-base hover:text-theme-text-strong"
                                 >
-                                    {link.label}
+                                    {link.label} ↗
                                 </a>
                             ),
                         )}

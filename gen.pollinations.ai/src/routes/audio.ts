@@ -459,7 +459,9 @@ export function getElevenLabsMeteredInputSeconds(
     // The provider's `character-cost` header is its metering source for these
     // audio-input APIs. Direct 1s and 61s probes returned 12 and 734 units for
     // both Voice Changer and Voice Isolator, confirming approximately 12
-    // metering units per input second with no one-minute minimum.
+    // metering units per input second with no one-minute minimum. At the
+    // ElevenLabs Scale-plan rate of $0.166 per 1K credits, that reconciles to
+    // approximately $0.12 per input minute.
     const characterCost = Number(response.headers.get("character-cost"));
     if (!Number.isFinite(characterCost) || characterCost <= 0) {
         log.error(

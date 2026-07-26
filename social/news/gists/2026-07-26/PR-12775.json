@@ -1,0 +1,33 @@
+{
+  "pr_number": 12775,
+  "title": "chore: add Mistral API key",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/12775",
+  "merged_at": "2026-07-26T14:20:24Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds `MISTRAL_API_KEY` to encrypted dev, staging, and production SOPS files.\n- Keeps the credential change separate from the OCR model implementation.\n- Does not synchronize or deploy secrets.",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "A key for Mistral",
+    "blurb": "The hive tucked a Mistral key into its sealed seed vaults. The OCR garden is getting its tools arranged before the planting begins.",
+    "summary": "Added the MISTRAL_API_KEY credential to encrypted development, staging, and production secret files for the upcoming OCR model work.",
+    "impact": "This prepares all gen.pollinations.ai environments to use the Mistral-backed OCR implementation when it ships.",
+    "keywords": [
+      "mistral",
+      "ocr",
+      "secrets",
+      "gen-api",
+      "configuration"
+    ],
+    "visual_concept": "Depict Polli as a tiny locksmith or gardener carefully placing a labeled Mistral key into three secure pixel seed vaults for dev, staging, and production. A cozy retro terminal and a small code-plant hint at the future OCR integration, with the key kept safely behind a lock.",
+    "image_prompt": "Cozy pixel art scene of the cute Polli bee mascot wearing a tiny locksmith apron, gently placing a small key labeled \"MISTRAL\" into three locked pixel seed vaults beside a retro terminal and a sprouting code-plant. Cozy 8-bit pixel art aesthetic with a prominent soft lime green (#ecf874) and pastel gradient background, warm lighting, chunky retro sprites, subtle CRT glow, lo-fi vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-26/PR-12775.jpg",
+    "prompt": "Cozy pixel art scene of the cute Polli bee mascot wearing a tiny locksmith apron, gently placing a small key labeled \"MISTRAL\" into three locked pixel seed vaults beside a retro terminal and a sprouting code-plant. Cozy 8-bit pixel art aesthetic with a prominent soft lime green (#ecf874) and pastel gradient background, warm lighting, chunky retro sprites, subtle CRT glow, lo-fi vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
+  },
+  "generated_at": "2026-07-26T14:21:21.521391+00:00"
+}

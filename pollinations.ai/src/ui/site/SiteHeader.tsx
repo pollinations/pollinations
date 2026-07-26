@@ -1,4 +1,4 @@
-import { Button, TabButton } from "@pollinations/ui";
+import { BrandLockup, Button, TabButton } from "@pollinations/ui";
 import { Link, useRouterState } from "@tanstack/react-router";
 import { useHideOnScroll, useScrolled } from "./useHideOnScroll";
 
@@ -28,10 +28,12 @@ export function SiteHeader() {
             } ${hidden ? "-translate-y-full" : "translate-y-0"}`}
         >
             <div className="flex items-center gap-8">
-                <Link to="/" className="flex items-center gap-2">
-                    <span className="font-subheading text-xl text-theme-text-strong">
-                        pollinations.ai
-                    </span>
+                <Link
+                    to="/"
+                    className="flex items-center text-theme-text-strong"
+                    aria-label="pollinations.ai — home"
+                >
+                    <BrandLockup height={26} label="" />
                 </Link>
                 <nav className="hidden gap-1.5 md:flex">
                     {NAV.map((item) => (

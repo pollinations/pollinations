@@ -1,3 +1,4 @@
+import { BrandLockup } from "@pollinations/ui";
 import { Link } from "@tanstack/react-router";
 
 const COLUMNS = [
@@ -37,10 +38,17 @@ const COLUMNS = [
 export function SiteFooter() {
     return (
         <footer className="flex flex-wrap justify-between gap-10 px-6 pt-11 pb-14 md:px-12">
-            <p className="max-w-xs text-sm text-theme-text-muted">
-                Open infrastructure for AI apps. Built with the community, in
-                the open.
-            </p>
+            <div className="flex max-w-xs flex-col gap-4">
+                <BrandLockup
+                    height={24}
+                    className="text-theme-text-strong"
+                    label=""
+                />
+                <p className="text-sm text-theme-text-muted">
+                    Open infrastructure for AI apps. Built with the community,
+                    in the open.
+                </p>
+            </div>
             <div className="flex flex-wrap gap-12">
                 {COLUMNS.map((column) => (
                     <div key={column.heading} className="flex flex-col gap-2">

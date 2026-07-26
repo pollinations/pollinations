@@ -1,4 +1,4 @@
-import { Button, Surface, TabButton } from "@pollinations/ui";
+import { Surface, TabButton } from "@pollinations/ui";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useMemo } from "react";
 import {
@@ -12,6 +12,7 @@ import {
     sortApps,
     useAppDirectory,
 } from "../data/publicStats";
+import { ActionButton } from "../ui/site/mockup";
 import { PageHeader, SectionHeader } from "../ui/site/PageHeader";
 import {
     APP_CATEGORIES,
@@ -145,36 +146,29 @@ function AppsPage() {
     const hasFilters = Boolean(
         category.length || platform.length || signal.length || q,
     );
-    const clear = () => navigate({ search: {} });
+    const clear = () => navigate({ resetScroll: false, search: {} });
 
     return (
         <>
+            {/* Spotlight is the page header. A page title plus two section
+                titles was three levels of heading saying the same thing. */}
             <PageHeader
-                eyebrow={`${loading ? "Apps" : `${apps.length} apps`} built on Pollinations`}
-                title="Made by the community."
+                eyebrow="Spotlight"
+                title="Worth your time."
+                subtitle="Picked by hand. Not the busiest — the ones we'd actually send a friend to."
                 action={
-                    <Button
-                        as="a"
-                        href="https://github.com/pollinations/pollinations/issues/new?template=APP-SUBMISSION.yml"
-                    >
-                        Submit your app ↗
-                    </Button>
+                    <ActionButton href="https://github.com/pollinations/pollinations/issues/new?template=APP-SUBMISSION.yml">
+                        Submit your app
+                    </ActionButton>
                 }
             />
 
             {spotlight.length > 0 && (
-                <section className="flex flex-col gap-5">
-                    <SectionHeader
-                        eyebrow="Spotlight"
-                        title="Worth your time."
-                        subtitle="Picked by hand. Not the busiest — the ones we'd actually send a friend to."
-                    />
-                    <div className="grid grid-cols-[repeat(auto-fit,minmax(min(320px,100%),1fr))] gap-4">
-                        {spotlight.map((app) => (
-                            <AppCard key={app.name} app={app} />
-                        ))}
-                    </div>
-                </section>
+                <div className="grid grid-cols-[repeat(auto-fit,minmax(min(320px,100%),1fr))] gap-4">
+                    {spotlight.map((app) => (
+                        <AppCard key={app.name} app={app} />
+                    ))}
+                </div>
             )}
 
             <section className="flex flex-col gap-5">
@@ -193,6 +187,7 @@ function AppsPage() {
                                 active={category.includes(value)}
                                 onClick={() =>
                                     navigate({
+                                        resetScroll: false,
                                         search: (prev) => ({
                                             ...prev,
                                             category: toggle(
@@ -212,10 +207,10 @@ function AppsPage() {
                             <TabButton
                                 key={value}
                                 size="sm"
-                                variant="ghost"
                                 active={signal.includes(value)}
                                 onClick={() =>
                                     navigate({
+                                        resetScroll: false,
                                         search: (prev) => ({
                                             ...prev,
                                             signal: toggle(prev.signal, value),
@@ -226,14 +221,16 @@ function AppsPage() {
                                 {SIGNAL_LABELS[value]}
                             </TabButton>
                         ))}
+                    </div>
+                    <div className="flex flex-wrap gap-2">
                         {APP_PLATFORMS.map((value) => (
                             <TabButton
                                 key={value}
                                 size="sm"
-                                variant="ghost"
                                 active={platform.includes(value)}
                                 onClick={() =>
                                     navigate({
+                                        resetScroll: false,
                                         search: (prev) => ({
                                             ...prev,
                                             platform: toggle(

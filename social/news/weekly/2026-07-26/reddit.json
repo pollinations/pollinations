@@ -1,0 +1,15 @@
+{
+  "platform": "reddit",
+  "scope": "weekly",
+  "date": "2026-07-26",
+  "period_start": "2026-07-19",
+  "period_end": "2026-07-25",
+  "generated_at": "2026-07-26T07:03:30.237957+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/weekly/2026-07-26/images/reddit.jpg"
+    }
+  ],
+  "title": "Weekly update: community models, routing, and failure handling",
+  "text": "58 PRs merged this week. The largest change is that community models are becoming an actual publishing surface rather than a loose collection of entries: publisher allowlisting, activation controls, separate titles/descriptions, price caps, and a simpler app-submission path all landed.\n\nImage routing got a fairly thorough plumbing pass. Z-Image and Flux-on-Vast deployments were hardened, Flux queues are capped, Klein has additional GPU OOM protection, and several image models moved through OpenRouter: NanoBanana variants, Seedream 4.5 Pro, and Grok Imagine/Video Pro. grok-imagine now defaults to 2K. Recraft vector generation and community image endpoints were added.\n\nThe catalog also got less cryptic: end-user model descriptions were rewritten, retired models no longer appear in key permissions, free models rank by Pollen value, and low-volume stats are included. New models include Laguna S 2.1, LongCat 2.0, CSM 1B speech, Lyria 3 Clip, Gemini Flash Lite 3.5, and Claude Opus 5.\n\nOn the failure-path side, Replicate network failures are attributed, E003 capacity errors map to 503, timed-out predictions are cancelled, reference-image downloads are validated, and an Azure key rotation was repaired. Software continues to discover new ways to fail; naming them is progress.\n\nCode and PR history: https://github.com/pollinations/pollinations\nDocs: https://pollinations.ai/docs"
+}

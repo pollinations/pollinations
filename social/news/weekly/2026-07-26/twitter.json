@@ -1,0 +1,14 @@
+{
+  "platform": "twitter",
+  "scope": "weekly",
+  "date": "2026-07-26",
+  "period_start": "2026-07-19",
+  "period_end": "2026-07-25",
+  "generated_at": "2026-07-26T07:03:30.237957+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/weekly/2026-07-26/images/twitter.jpg"
+    }
+  ],
+  "text": "shipped this week: community models can be published and activated; Recraft vectors, Laguna S 2.1, CSM 1B speech, Lyria 3 Clip, and Opus 5 joined the API. failures now get 503s, timeouts, and exits. 58 PRs. the garden has a queue cap."
+}

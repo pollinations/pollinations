@@ -183,29 +183,21 @@ function ModalityTabs({
 function ResultPanel({
     result,
     isLoading,
-    activeCategory,
     className,
 }: {
     result: PlaygroundResult | null;
     isLoading: boolean;
-    activeCategory: ModelCategory;
     className?: string;
 }) {
     return (
         <Surface
-            variant="panel"
+            variant="card"
             className={cn(
                 "polli:flex polli:min-h-[360px] polli:flex-col polli:gap-4 polli:p-4",
                 className,
             )}
         >
-            <div className="polli:flex polli:items-center polli:justify-between polli:gap-3">
-                <span className="polli:inline-flex polli:items-center polli:gap-1.5">
-                    <ModalityDot modality={activeCategory} />
-                    <Text as="h2" size="sm" tone="strong" weight="semibold">
-                        Output
-                    </Text>
-                </span>
+            <div className="polli:flex polli:items-center polli:justify-end polli:gap-3 polli:empty:hidden">
                 {result && result.type !== "text" && (
                     <Button
                         as="a"
@@ -544,7 +536,7 @@ export function Playground({ className }: PlaygroundProps) {
             <div className="polli-playground-main-grid">
                 <div className="polli:flex polli:flex-col polli:gap-4">
                     <Surface
-                        variant="panel"
+                        variant="card"
                         className="polli:flex polli:flex-col polli:gap-4 polli:p-4"
                     >
                         <div className="polli-playground-control-bar">
@@ -563,7 +555,7 @@ export function Playground({ className }: PlaygroundProps) {
                     </Surface>
 
                     <Surface
-                        variant="panel"
+                        variant="card"
                         className="polli:flex polli:flex-col polli:gap-4 polli:p-4"
                     >
                         <FieldStack label="Prompt">
@@ -858,7 +850,6 @@ export function Playground({ className }: PlaygroundProps) {
                 <ResultPanel
                     result={result}
                     isLoading={isGenerating}
-                    activeCategory={currentModel?.category ?? activeCategory}
                     className="polli-playground-output-panel"
                 />
             </div>

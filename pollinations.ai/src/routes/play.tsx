@@ -31,9 +31,9 @@ function PlayPage() {
         >
             <>
                 <PageHeader
+                    hideTitle
                     eyebrow="Every model, in the browser"
                     title="Playground"
-                    subtitle="Text, image, audio and video from one workspace. Sign in and it runs on your own Pollen — nothing to install."
                     action={<AppUserMenu dashboardHref={ENTER_URL} />}
                 />
 

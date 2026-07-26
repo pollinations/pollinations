@@ -123,9 +123,9 @@ function AppsPage() {
     return (
         <>
             <PageHeader
+                hideTitle
                 eyebrow={`${loading ? "Apps" : `${apps.length} apps`} built on Pollinations`}
                 title="Ecosystem"
-                subtitle="Apps, tools, and experiments from the community. Browse, try, ship."
                 action={
                     <Button
                         as="a"

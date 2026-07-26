@@ -9,11 +9,17 @@ export const Route = createFileRoute("/play")({
 });
 
 /**
- * The playground, lifted from apps/playground with its UX intact.
+ * The playground, lifted from apps/playground with its UX intact but its own
+ * page chrome removed — the heading, subtitle and sheet come from the same
+ * pattern as /apps and /community so it reads as one site, not an embed.
  *
- * PolliProvider is mounted here rather than at the root on purpose: route
- * code-splitting keeps @pollinations/sdk inside this chunk, so every other
- * page stays as light — and as SDK-free — as it was before.
+ * PolliProvider mounts here rather than at the root: route code-splitting
+ * keeps @pollinations/sdk inside this chunk, so every other page stays as
+ * light as it was before.
+ *
+ * The playground's ColorModeToggle is deliberately left out. It sets `.dark`
+ * on <html>, which every other page inherits, and the marketing pages aren't
+ * designed for dark yet.
  */
 function PlayPage() {
     return (
@@ -22,14 +28,24 @@ function PlayPage() {
             enterUrl={ENTER_URL}
             permissions={["profile", "usage"]}
         >
-            <div className="mx-6 mb-6 overflow-hidden rounded-[28px] bg-theme-bg-pale px-4 py-10 shadow-container sm:px-8 md:px-12">
-                {/* The playground's ColorModeToggle is intentionally left
-                    out. It sets `.dark` on <html>, which every other page
-                    inherits — and the marketing pages aren't designed for
-                    dark yet. Restore it when they are. */}
-                <div className="mb-6 flex items-center justify-end gap-2">
+            <div className="mx-6 mb-6 flex flex-col gap-10 overflow-hidden rounded-[28px] bg-theme-bg-pale px-8 py-14 shadow-container md:px-18">
+                <header className="flex flex-wrap items-end justify-between gap-5">
+                    <div className="flex flex-col gap-2.5">
+                        <p className="font-pixel text-sm tracking-widest text-theme-text-soft uppercase">
+                            Every model, in the browser
+                        </p>
+                        <h1 className="font-heading text-5xl text-theme-text-strong">
+                            Playground
+                        </h1>
+                        <p className="max-w-xl text-lg text-theme-text-base">
+                            Text, image, audio and video from one workspace.
+                            Sign in and it runs on your own Pollen — nothing to
+                            install.
+                        </p>
+                    </div>
                     <AppUserMenu dashboardHref={ENTER_URL} />
-                </div>
+                </header>
+
                 <Playground />
             </div>
         </PolliProvider>

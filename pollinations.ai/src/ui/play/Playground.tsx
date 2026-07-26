@@ -14,7 +14,6 @@ import {
     cn,
     FieldStack,
     FileUpload,
-    Heading,
     ImageIcon,
     Input,
     MediaPlaceholder,
@@ -63,9 +62,6 @@ type PlaygroundResult =
       };
 
 export type PlaygroundProps = {
-    title?: string;
-    subtitle?: string;
-    showTitle?: boolean;
     className?: string;
 };
 
@@ -301,12 +297,7 @@ async function uploadReferenceImages(
     return uploads.map((upload) => upload.url);
 }
 
-export function Playground({
-    title = "Playground",
-    subtitle = "Create and refine images, text, audio, and video from one focused workspace.",
-    showTitle = true,
-    className,
-}: PlaygroundProps) {
+export function Playground({ className }: PlaygroundProps) {
     const { apiKey, isLoggedIn, isHydrated } = useAuthState();
     const {
         catalog,
@@ -544,21 +535,6 @@ export function Playground({
                 className,
             )}
         >
-            <section className="polli:flex polli:flex-col polli:gap-1">
-                {showTitle && (
-                    <Heading
-                        as="h1"
-                        size="title"
-                        className="polli-playground-title polli:m-0 polli:text-theme-text-strong"
-                    >
-                        {title}
-                    </Heading>
-                )}
-                <p className="polli:m-0 polli:max-w-3xl polli:text-base polli:leading-relaxed polli:text-theme-text-base">
-                    {subtitle}
-                </p>
-            </section>
-
             {catalogError && (
                 <Alert intent="danger">
                     Model catalog failed to load: {catalogError.message}

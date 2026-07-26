@@ -226,6 +226,34 @@ test("proxies an OpenAI-compatible realtime WebSocket with a paid key", async ({
     await waitOnExecutionContext(ctx);
 });
 
+test("routes the mini model through the working East US 2 deployment", async ({
+    paidApiKey,
+}) => {
+    const upstream = mockOpenAIRealtime();
+
+    const { response, ctx } = await fetchWorkerWithContext(
+        "/v1/realtime?model=gpt-realtime-2.1-mini",
+        {
+            headers: {
+                Authorization: `Bearer ${paidApiKey}`,
+                Upgrade: "websocket",
+            },
+        },
+    );
+
+    expect(response.status).toBe(101);
+    expect(upstream.request.url).toBe(
+        "https://myceli-prod-eastus2.openai.azure.com/openai/v1/realtime?model=gpt-realtime-2-1-mini",
+    );
+    expect(upstream.request.headers.get("api-key")).toBeTruthy();
+
+    response.webSocket?.accept();
+    upstream.server.accept();
+    response.webSocket?.close();
+    upstream.server.close();
+    await waitOnExecutionContext(ctx);
+});
+
 test("accepts publishable keys through the query string for thin clients", async () => {
     const { key } = await createTestApiKey({
         name: "paid-publishable-realtime-key",
@@ -494,6 +522,91 @@ test("deducts aggregate session usage from paid pack balance on close", async ()
     expect(telemetry.totalPrice).toBeCloseTo(expectedCharge, 8);
 });
 
+test("bills mini cached audio and image tokens at their exact rates", async () => {
+    const { key, userId } = await createTestApiKey({
+        name: "mini-cache-realtime-key",
+        pollenBudget: 1,
+        user: { tierBalance: 0, packBalance: 1 },
+    });
+    const upstream = mockOpenAIRealtime();
+
+    const { response, ctx } = await fetchWorkerWithContext(
+        "/v1/realtime?model=gpt-realtime-2.1-mini",
+        {
+            headers: {
+                Authorization: `Bearer ${key}`,
+                Upgrade: "websocket",
+            },
+        },
+    );
+
+    expect(response.status).toBe(101);
+    const client = response.webSocket;
+    if (!client) throw new Error("Expected downstream WebSocket");
+    client.accept();
+    upstream.server.accept();
+
+    upstream.server.send(
+        JSON.stringify({
+            type: "response.done",
+            response: {
+                usage: {
+                    input_tokens: 100,
+                    output_tokens: 30,
+                    input_token_details: {
+                        text_tokens: 40,
+                        audio_tokens: 50,
+                        image_tokens: 10,
+                        cached_tokens: 30,
+                        cached_tokens_details: {
+                            text_tokens: 10,
+                            audio_tokens: 15,
+                            image_tokens: 5,
+                        },
+                    },
+                    output_token_details: {
+                        text_tokens: 20,
+                        audio_tokens: 10,
+                    },
+                },
+            },
+        }),
+    );
+
+    client.close();
+    upstream.server.close();
+    await waitOnExecutionContext(ctx);
+
+    const expectedCost = 0.0006255;
+    const expectedCharge = 0.00046913;
+    const user = await waitForPackBalanceBelow(userId, 1);
+    expect(user?.packBalance).toBeCloseTo(1 - expectedCharge, 8);
+    expect(upstream.tinybirdRequests).toHaveLength(1);
+
+    const telemetry = JSON.parse(
+        await upstream.tinybirdRequests[0].text(),
+    ) as Record<string, unknown>;
+    expect(telemetry.tokenCountPromptText).toBe(30);
+    expect(telemetry.tokenCountPromptCached).toBe(30);
+    expect(telemetry.tokenCountPromptAudio).toBe(35);
+    expect(telemetry.tokenCountPromptImage).toBe(5);
+    expect(telemetry.tokenCountCompletionText).toBe(20);
+    expect(telemetry.tokenCountCompletionAudio).toBe(10);
+    expect(telemetry.adjustmentUnits).toEqual({
+        "openai.realtime.cached_audio_delta.v1": 15,
+        "openai.realtime.cached_image_delta.v1": 5,
+    });
+    const adjustmentCosts = telemetry.adjustmentCosts as Record<string, number>;
+    expect(
+        adjustmentCosts["openai.realtime.cached_audio_delta.v1"],
+    ).toBeCloseTo(0.0000036, 12);
+    expect(
+        adjustmentCosts["openai.realtime.cached_image_delta.v1"],
+    ).toBeCloseTo(0.0000001, 12);
+    expect(telemetry.totalCost).toBeCloseTo(expectedCost, 10);
+    expect(telemetry.totalPrice).toBeCloseTo(expectedCharge, 10);
+});
+
 test("falls back to aggregate realtime token totals when details are absent", async () => {
     const { key, userId } = await createTestApiKey({
         name: "aggregate-only-realtime-key",
@@ -715,9 +828,13 @@ test("includes realtime model in OpenAI-compatible model discovery", async ({
         data: { id: string; supported_endpoints?: string[] }[];
     };
     const realtimeModels = publicBody.data.filter((model) =>
-        ["gpt-realtime-2", "gpt-realtime-2.1"].includes(model.id),
+        [
+            "gpt-realtime-2",
+            "gpt-realtime-2.1",
+            "gpt-realtime-2.1-mini",
+        ].includes(model.id),
     );
-    expect(realtimeModels).toHaveLength(2);
+    expect(realtimeModels).toHaveLength(3);
     for (const model of realtimeModels) {
         expect(model.supported_endpoints).toContain("/v1/realtime");
     }
@@ -734,6 +851,9 @@ test("includes realtime model in OpenAI-compatible model discovery", async ({
     );
     expect(restrictedBody.data.map((model) => model.id)).not.toContain(
         "gpt-realtime-2.1",
+    );
+    expect(restrictedBody.data.map((model) => model.id)).not.toContain(
+        "gpt-realtime-2.1-mini",
     );
 });
 

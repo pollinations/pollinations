@@ -1,0 +1,243 @@
+{
+  "date": "2026-07-26",
+  "period_start": "2026-07-19",
+  "period_end": "2026-07-25",
+  "title": "Community models grew into a real publishing surface",
+  "summary": "This week turned Pollinations into a sturdier, broader garden for community models while moving a large chunk of image infrastructure onto well-defined, reliable routes.\n\nCommunity endpoints gained standard image-generation support, a publisher allowlist request form, activation controls, proper titles and descriptions, clearer permissions, broader public stats, and guardrails around pricing. The result is less \"there is an endpoint somewhere\" and more of a workable shared model catalog that publishers can operate themselves.\n\nNanoBanana, NanoBanana 2, NanoBanana 2 Lite, NanoBanana Pro, Seedream Pro, Grok Imagine Pro, and Grok Video Pro were moved onto pinned OpenRouter routes while preserving the APIs people already use. Z-Image and Flux deployments were hardened on Vast, and Klein learned to recover from GPU memory incidents without taking the worker down with it.\n\nThe model roster expanded in several directions at once: Laguna S 2.1 and LongCat 2.0 brought million-token text workflows, CSM 1B added speech, Lyria 3 Clip added 30-second music, and Recraft added actual SVG output. Claude Large moved up to Opus 5, Google text services moved through OpenRouter, and Gemini Flash Lite reached 3.5.\n\nAll 132 registry descriptions were rewritten around practical strengths and trade-offs, embeddings gained stronger provider-aware behavior, and the catalog got free-model ranking, missing brand logos, low-volume stats, and a search box that can keep up with someone typing quickly. Model permissions now also show the callable catalog rather than historical archaeology.",
+  "pr_count": 58,
+  "prs": [
+    {
+      "number": 12589,
+      "date": "2026-07-19"
+    },
+    {
+      "number": 12590,
+      "date": "2026-07-19"
+    },
+    {
+      "number": 12507,
+      "date": "2026-07-20"
+    },
+    {
+      "number": 12594,
+      "date": "2026-07-20"
+    },
+    {
+      "number": 12596,
+      "date": "2026-07-20"
+    },
+    {
+      "number": 12597,
+      "date": "2026-07-20"
+    },
+    {
+      "number": 12598,
+      "date": "2026-07-20"
+    },
+    {
+      "number": 12599,
+      "date": "2026-07-20"
+    },
+    {
+      "number": 12600,
+      "date": "2026-07-20"
+    },
+    {
+      "number": 12601,
+      "date": "2026-07-20"
+    },
+    {
+      "number": 12604,
+      "date": "2026-07-20"
+    },
+    {
+      "number": 12605,
+      "date": "2026-07-21"
+    },
+    {
+      "number": 12618,
+      "date": "2026-07-21"
+    },
+    {
+      "number": 12206,
+      "date": "2026-07-22"
+    },
+    {
+      "number": 12637,
+      "date": "2026-07-22"
+    },
+    {
+      "number": 12642,
+      "date": "2026-07-22"
+    },
+    {
+      "number": 12643,
+      "date": "2026-07-22"
+    },
+    {
+      "number": 12646,
+      "date": "2026-07-22"
+    },
+    {
+      "number": 12651,
+      "date": "2026-07-22"
+    },
+    {
+      "number": 12655,
+      "date": "2026-07-22"
+    },
+    {
+      "number": 12656,
+      "date": "2026-07-22"
+    },
+    {
+      "number": 12659,
+      "date": "2026-07-22"
+    },
+    {
+      "number": 12662,
+      "date": "2026-07-22"
+    },
+    {
+      "number": 12663,
+      "date": "2026-07-22"
+    },
+    {
+      "number": 12664,
+      "date": "2026-07-22"
+    },
+    {
+      "number": 12666,
+      "date": "2026-07-22"
+    },
+    {
+      "number": 12668,
+      "date": "2026-07-22"
+    },
+    {
+      "number": 12647,
+      "date": "2026-07-23"
+    },
+    {
+      "number": 12669,
+      "date": "2026-07-23"
+    },
+    {
+      "number": 12670,
+      "date": "2026-07-23"
+    },
+    {
+      "number": 12671,
+      "date": "2026-07-23"
+    },
+    {
+      "number": 12673,
+      "date": "2026-07-23"
+    },
+    {
+      "number": 12675,
+      "date": "2026-07-23"
+    },
+    {
+      "number": 12678,
+      "date": "2026-07-23"
+    },
+    {
+      "number": 12681,
+      "date": "2026-07-23"
+    },
+    {
+      "number": 12685,
+      "date": "2026-07-23"
+    },
+    {
+      "number": 12695,
+      "date": "2026-07-23"
+    },
+    {
+      "number": 12696,
+      "date": "2026-07-23"
+    },
+    {
+      "number": 12704,
+      "date": "2026-07-23"
+    },
+    {
+      "number": 12708,
+      "date": "2026-07-24"
+    },
+    {
+      "number": 12709,
+      "date": "2026-07-24"
+    },
+    {
+      "number": 12710,
+      "date": "2026-07-24"
+    },
+    {
+      "number": 12712,
+      "date": "2026-07-24"
+    },
+    {
+      "number": 12719,
+      "date": "2026-07-24"
+    },
+    {
+      "number": 12720,
+      "date": "2026-07-24"
+    },
+    {
+      "number": 12721,
+      "date": "2026-07-24"
+    },
+    {
+      "number": 12724,
+      "date": "2026-07-24"
+    },
+    {
+      "number": 12725,
+      "date": "2026-07-24"
+    },
+    {
+      "number": 12728,
+      "date": "2026-07-24"
+    },
+    {
+      "number": 12731,
+      "date": "2026-07-24"
+    },
+    {
+      "number": 12733,
+      "date": "2026-07-24"
+    },
+    {
+      "number": 12736,
+      "date": "2026-07-24"
+    },
+    {
+      "number": 12692,
+      "date": "2026-07-25"
+    },
+    {
+      "number": 12744,
+      "date": "2026-07-25"
+    },
+    {
+      "number": 12751,
+      "date": "2026-07-25"
+    },
+    {
+      "number": 12752,
+      "date": "2026-07-25"
+    },
+    {
+      "number": 12756,
+      "date": "2026-07-25"
+    },
+    {
+      "number": 12757,
+      "date": "2026-07-25"
+    }
+  ],
+  "generated_at": "2026-07-26T07:03:30.237957+00:00"
+}

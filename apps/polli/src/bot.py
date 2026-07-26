@@ -625,7 +625,6 @@ class PolliBot(commands.Bot):
         try:
             await self.change_presence(activity=discord.CustomActivity(name=status))
             self._current_status = status
-            logger.info("Discord status: %s", status)
         except discord.DiscordException as e:
             logger.warning("Failed to update Discord status: %s", e)
 

@@ -11,7 +11,7 @@ describe("genericOpenAIClient", () => {
 
         vi.spyOn(globalThis, "fetch").mockImplementationOnce(
             async (input, init) => {
-                expect(String(input)).toBe("https://portkey.test/chat");
+                expect(input).toBe("https://portkey.test/chat");
                 expect(init?.signal).toBeUndefined();
                 expect(new Headers(init?.headers).get("authorization")).toBe(
                     "Bearer secret",
@@ -40,7 +40,7 @@ describe("genericOpenAIClient", () => {
             },
         );
 
-        await genericOpenAIClient(
+        const completion = await genericOpenAIClient(
             [{ role: "user", content: "hello" }],
             {
                 model: "provider-model",
@@ -69,6 +69,18 @@ describe("genericOpenAIClient", () => {
         expect(upstreamBody).not.toHaveProperty("portkeyGatewayUrl");
         expect(upstreamBody).not.toHaveProperty("requestedModel");
         expect(upstreamBody).not.toHaveProperty("userApiKey");
+        expect(completion.upstreamRequestUrl?.href).toBe(
+            "https://portkey.test/chat",
+        );
+        expect(
+            Object.prototype.propertyIsEnumerable.call(
+                completion,
+                "upstreamRequestUrl",
+            ),
+        ).toBe(false);
+        expect(JSON.stringify({ ...completion })).not.toContain(
+            "upstreamRequestUrl",
+        );
     });
 
     it("strips top-level null options while preserving nested provider payloads", async () => {
@@ -297,6 +309,64 @@ describe("genericOpenAIClient", () => {
                 { endpoint: "https://portkey.test/chat" },
             ),
         ).rejects.toMatchObject({ status: 502, upstreamStatus: 429 });
+    });
+
+    it("maps invalid upstream JSON to 502 with gateway context", async () => {
+        vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
+            new Response("not json"),
+        );
+
+        await expect(
+            genericOpenAIClient(
+                [{ role: "user", content: "hello" }],
+                { model: "provider-model" },
+                { endpoint: "https://portkey.test/chat" },
+            ),
+        ).rejects.toMatchObject({
+            status: 502,
+            requestUrl: new URL("https://portkey.test/chat"),
+        });
+    });
+
+    it("does not classify post-response processing bugs as upstream", async () => {
+        const response = new Response();
+        Object.defineProperty(response, "json", {
+            value: async () => ({
+                choices: [
+                    Object.freeze({
+                        message: { tool_calls: [{}] },
+                        finish_reason: "stop",
+                    }),
+                ],
+            }),
+        });
+        vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(response);
+
+        const promise = genericOpenAIClient(
+            [{ role: "user", content: "hello" }],
+            { model: "provider-model" },
+            { endpoint: "https://portkey.test/chat" },
+        );
+
+        await expect(promise).rejects.toBeInstanceOf(TypeError);
+        await expect(promise).rejects.not.toHaveProperty("status");
+        await expect(promise).rejects.not.toHaveProperty("requestUrl");
+    });
+
+    it("preserves non-Error transport failures as the cause", async () => {
+        vi.spyOn(globalThis, "fetch").mockRejectedValueOnce("socket closed");
+
+        await expect(
+            genericOpenAIClient(
+                [{ role: "user", content: "hello" }],
+                { model: "provider-model" },
+                { endpoint: "https://portkey.test/chat" },
+            ),
+        ).rejects.toMatchObject({
+            status: 502,
+            cause: "socket closed",
+            requestUrl: new URL("https://portkey.test/chat"),
+        });
     });
 
     it("passes through successful empty completions", async () => {

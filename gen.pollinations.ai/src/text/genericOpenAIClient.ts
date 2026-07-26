@@ -18,20 +18,26 @@ const log = debug("pollinations:genericopenai");
 const errorLog = debug("pollinations:error");
 const DONE_EVENT_PATTERN = /data:\s*\[DONE\]/;
 
-// Attach Portkey's served fallback target as internal, non-enumerable metadata
-// so tracking can read completion.fallbackTarget while it stays out of every
-// JSON.stringify({ ...completion }) response body (the OpenAI-compatible body
-// has no such field).
-function withFallbackTarget(
+// Attach internal response metadata as non-enumerable properties so downstream
+// handling can use it without adding fields to OpenAI-compatible response bodies.
+function withResponseMetadata(
     completion: ChatCompletion,
     fallbackTarget: string | undefined,
+    requestUrl: URL,
 ): ChatCompletion {
-    if (fallbackTarget === undefined) return completion;
-    Object.defineProperty(completion, "fallbackTarget", {
-        value: fallbackTarget,
-        enumerable: false,
-        configurable: true,
-        writable: true,
+    Object.defineProperties(completion, {
+        fallbackTarget: {
+            value: fallbackTarget,
+            enumerable: false,
+            configurable: true,
+            writable: true,
+        },
+        upstreamRequestUrl: {
+            value: requestUrl,
+            enumerable: false,
+            configurable: true,
+            writable: true,
+        },
     });
     return completion;
 }
@@ -113,6 +119,19 @@ function parseJsonSafe(text: string): unknown {
     }
 }
 
+function toServiceError(thrown: unknown): ServiceError {
+    return thrown instanceof Error
+        ? (thrown as ServiceError)
+        : (new Error(String(thrown), { cause: thrown }) as ServiceError);
+}
+
+function withUpstreamContext(thrown: unknown, requestUrl: URL): ServiceError {
+    const error = toServiceError(thrown);
+    error.requestUrl ??= requestUrl;
+    error.status ??= 502;
+    return error;
+}
+
 export async function genericOpenAIClient(
     messages: ChatMessage[],
     options: TransformOptions = {},
@@ -178,14 +197,24 @@ export async function genericOpenAIClient(
 
         log(`[${requestId}] Header keys:`, Object.keys(headers));
 
-        const response = await fetch(requestUrl, {
-            method: "POST",
-            headers,
-            body: JSON.stringify(requestBody),
-        });
+        let response: Response;
+        try {
+            response = await fetch(endpointUrl, {
+                method: "POST",
+                headers,
+                body: JSON.stringify(requestBody),
+            });
+        } catch (thrown: unknown) {
+            throw withUpstreamContext(thrown, requestUrl);
+        }
 
         if (!response.ok) {
-            const errorText = await response.text();
+            let errorText: string;
+            try {
+                errorText = await response.text();
+            } catch (thrown: unknown) {
+                throw withUpstreamContext(thrown, requestUrl);
+            }
             const errorDetails = parseJsonSafe(errorText) || errorText;
             errorLog(
                 `[${requestId}] API error (${response.status}):`,
@@ -207,7 +236,7 @@ export async function genericOpenAIClient(
             );
 
             const streamToReturn = ensureOpenAISseDone(response.body);
-            return withFallbackTarget(
+            return withResponseMetadata(
                 {
                     id: `genericopenai-${requestId}`,
                     object: "chat.completion.chunk",
@@ -224,10 +253,16 @@ export async function genericOpenAIClient(
                     ],
                 },
                 fallbackTarget,
+                requestUrl,
             );
         }
 
-        const data = (await response.json()) as ChatCompletion;
+        let data: ChatCompletion;
+        try {
+            data = (await response.json()) as ChatCompletion;
+        } catch (thrown: unknown) {
+            throw withUpstreamContext(thrown, requestUrl);
+        }
         if (data.error) {
             const errorDetails =
                 typeof data.error === "string"
@@ -243,7 +278,7 @@ export async function genericOpenAIClient(
             error.upstreamStatus =
                 typeof errorDetails.status === "number"
                     ? errorDetails.status
-                    : response.status;
+                    : undefined;
             error.details = errorDetails.details;
             error.model = modelName;
             error.requestUrl = requestUrl;
@@ -261,7 +296,7 @@ export async function genericOpenAIClient(
             formattedChoice.finish_reason = "tool_calls";
         }
 
-        return withFallbackTarget(
+        return withResponseMetadata(
             {
                 ...data,
                 id: data.id || `genericopenai-${requestId}`,
@@ -269,16 +304,10 @@ export async function genericOpenAIClient(
                 choices: [formattedChoice],
             },
             fallbackTarget,
+            requestUrl,
         );
     } catch (thrown: unknown) {
-        const error =
-            thrown instanceof Error
-                ? (thrown as ServiceError)
-                : (new Error(String(thrown)) as ServiceError);
-        if (requestUrl) {
-            error.requestUrl ??= requestUrl;
-            error.status ??= 502;
-        }
+        const error = toServiceError(thrown);
         errorLog(`[${requestId}] Error:`, {
             error: error.message,
             status: error.status,

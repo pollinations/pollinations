@@ -10,7 +10,10 @@ import { requestId } from "hono/request-id";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { Env } from "@/env.ts";
 import { logger } from "@/middleware/logger.ts";
-import { handleChatCompletionLocal } from "@/text/handler.ts";
+import {
+    getTextResponseUpstreamUrl,
+    handleChatCompletionLocal,
+} from "@/text/handler.ts";
 
 afterEach(() => {
     vi.restoreAllMocks();
@@ -32,8 +35,8 @@ function createTestApp() {
             message:
                 "Stream requested for model openai but upstream returned content-type: application/json",
             requestUrl: new URL("https://portkey.test/v1/chat/completions"),
-            upstreamStatus: 200,
             responseBody: "application/json",
+            cause: new Error("unexpected content type"),
         });
     });
     app.onError(handleError);
@@ -118,17 +121,20 @@ describe("error observability", () => {
         await waitOnExecutionContext(ctx);
 
         expect(response.status).toBe(502);
-        await expect(response.json()).resolves.toMatchObject({
+        const body = (await response.json()) as {
+            error: Record<string, unknown>;
+        };
+        expect(body).toMatchObject({
             success: false,
             error: {
                 details: {
                     name: "UpstreamError",
-                    upstreamStatus: 200,
                     upstreamHost: "portkey.test",
                     upstreamBody: "application/json",
                 },
             },
         });
+        expect(body.error).not.toHaveProperty("cause");
 
         expect(tinybirdRequests).toHaveLength(1);
         expect(tinybirdRequests[0].url).toBe(
@@ -151,7 +157,6 @@ describe("error observability", () => {
             error_code: "BAD_GATEWAY",
             error_class: "UpstreamError",
             upstream_host: "portkey.test",
-            upstream_status: 200,
             upstream_body: "application/json",
             model_requested: "openai",
             resolved_model_requested: "openai",
@@ -197,6 +202,7 @@ describe("error observability", () => {
                 temperature: 0.7,
             },
         });
+        expect(tinybirdPayload).not.toHaveProperty("upstream_status");
     });
 
     it("does not mask 5xx errors when no route matched", async () => {
@@ -498,24 +504,32 @@ describe("error observability", () => {
         await waitOnExecutionContext(ctx);
 
         expect(response.status).toBe(502);
-        await expect(response.json()).resolves.toMatchObject({
+        const body = (await response.json()) as {
+            error: Record<string, unknown>;
+        };
+        expect(body).toMatchObject({
             error: {
                 code: "BAD_GATEWAY",
                 message: "Provider returned an empty response",
                 details: {
                     upstreamHost: "portkey.test",
-                    upstreamStatus: 200,
                 },
             },
         });
+        expect(body.error).not.toHaveProperty("cause");
+        expect(body.error.details).not.toHaveProperty("upstreamStatus");
 
         expect(tinybirdRequests).toHaveLength(1);
-        await expect(tinybirdRequests[0].json()).resolves.toMatchObject({
+        const tinybirdPayload = (await tinybirdRequests[0].json()) as Record<
+            string,
+            unknown
+        >;
+        expect(tinybirdPayload).toMatchObject({
             kind: "server_error",
             status: 502,
             upstream_host: "portkey.test",
-            upstream_status: 200,
         });
+        expect(tinybirdPayload).not.toHaveProperty("upstream_status");
     });
 
     it("attributes aborted provider requests to the gateway", async () => {
@@ -571,6 +585,7 @@ describe("error observability", () => {
             },
         });
         expect(body.error.details).not.toHaveProperty("upstreamStatus");
+        expect(body.error).not.toHaveProperty("cause");
 
         expect(tinybirdRequests).toHaveLength(1);
         const tinybirdPayload = (await tinybirdRequests[0].json()) as Record<
@@ -583,6 +598,49 @@ describe("error observability", () => {
             upstream_host: "portkey.test",
         });
         expect(tinybirdPayload).not.toHaveProperty("upstream_status");
+    });
+
+    it("retains the upstream URL on successful text responses", async () => {
+        vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
+            Response.json({
+                id: "chatcmpl_test",
+                object: "chat.completion",
+                model: "provider-model",
+                choices: [
+                    {
+                        index: 0,
+                        message: { role: "assistant", content: "ok" },
+                        finish_reason: "stop",
+                    },
+                ],
+            }),
+        );
+
+        const ctx = createExecutionContext();
+        const response = await createTextTestApp().fetch(
+            new Request("https://gen.pollinations.ai/v1/chat/completions", {
+                method: "POST",
+                headers: { "content-type": "application/json" },
+                body: JSON.stringify({
+                    model: "openai-fast",
+                    messages: [{ role: "user", content: "test" }],
+                }),
+            }),
+            {
+                AZURE_MYCELI_PROD_API_KEY: "test_azure_key",
+                ENVIRONMENT: "test",
+                LOG_LEVEL: "debug",
+                LOG_FORMAT: "text",
+                PORTKEY_GATEWAY_URL: "https://portkey.test",
+            } as CloudflareBindings,
+            ctx,
+        );
+
+        expect(response.status).toBe(200);
+        expect(getTextResponseUpstreamUrl(response)?.href).toBe(
+            "https://portkey.test/v1/chat/completions",
+        );
+        expect(await response.text()).not.toContain("upstreamRequestUrl");
     });
 
     it("keeps user image URL fetch 429 client-facing", async () => {

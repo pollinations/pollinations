@@ -71,6 +71,7 @@ import { Generate3dRequestQueryParamsSchema } from "@/schemas/model3d.ts";
 import { RealtimeRequestQueryParamsSchema } from "@/schemas/realtime.ts";
 import { GenerateTextRequestQueryParamsSchema } from "@/schemas/text.ts";
 import {
+    getTextResponseUpstreamUrl,
     handleChatCompletionLocal,
     handleSimpleTextLocal,
     handleTextContentLocal,
@@ -151,8 +152,9 @@ const chatCompletionHandlers = factory.createHandlers(
         });
 
         const response = await handleChatCompletionLocal(c, requestBody);
+        const upstreamRequestUrl = getTextResponseUpstreamUrl(response);
 
-        assertStreamContentType(c, response);
+        assertStreamContentType(c, response, upstreamRequestUrl);
 
         // add content filter headers if not streaming
         let contentFilterHeaders = {};
@@ -168,8 +170,7 @@ const chatCompletionHandlers = factory.createHandlers(
             } catch (parseError) {
                 throw new UpstreamError(502, {
                     message: `Upstream returned response that failed schema validation: ${parseError instanceof Error ? parseError.message : String(parseError)}`,
-                    requestUrl: new URL(c.req.url),
-                    upstreamStatus: response.status,
+                    requestUrl: upstreamRequestUrl,
                     responseBody: responseText,
                     cause: parseError,
                 });
@@ -190,14 +191,17 @@ const chatCompletionHandlers = factory.createHandlers(
 
 // Validate streaming responses: if client requested stream but upstream
 // returned non-SSE, throw rather than forwarding broken data.
-function assertStreamContentType(c: Context<Env>, response: Response): void {
+function assertStreamContentType(
+    c: Context<Env>,
+    response: Response,
+    upstreamRequestUrl: URL | undefined,
+): void {
     if (c.var.track.streamRequested) {
         const contentType = response.headers.get("content-type") || "";
         if (!contentType.includes("text/event-stream")) {
             throw new UpstreamError(502, {
                 message: `Stream requested for model ${c.var.model.resolved} but upstream returned content-type: ${contentType}`,
-                requestUrl: new URL(c.req.url),
-                upstreamStatus: response.status,
+                requestUrl: upstreamRequestUrl,
                 responseBody: contentType,
             });
         }
@@ -707,7 +711,11 @@ export const proxyRoutes = new Hono<Env>()
             });
 
             const response = await handleTextContentLocal(c, requestBody);
-            assertStreamContentType(c, response);
+            assertStreamContentType(
+                c,
+                response,
+                getTextResponseUpstreamUrl(response),
+            );
             return withSafetyHeaders(c, response);
         },
     )

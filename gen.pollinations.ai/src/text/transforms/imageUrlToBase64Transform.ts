@@ -166,8 +166,9 @@ async function fetchImageAsBase64(
     url: string,
     maxBytes: number,
 ): Promise<{ dataUrl: string; byteLength: number }> {
+    let validatedUrl: URL | undefined;
     try {
-        const validatedUrl = assertAllowedImageUrl(url);
+        validatedUrl = assertAllowedImageUrl(url);
         log(`Fetching image: ${validatedUrl.origin}${validatedUrl.pathname}`);
         const response = await fetch(validatedUrl, {
             redirect: "manual",
@@ -249,9 +250,10 @@ async function fetchImageAsBase64(
             throw thrown;
         }
 
-        const error = thrown as {
-            message?: string;
-        };
+        const error =
+            thrown instanceof Error
+                ? thrown
+                : new Error(String(thrown), { cause: thrown });
         const message = error.message || "Unknown error";
         let errorMessage = `Failed to fetch image from ${url}: ${message}`;
 
@@ -264,7 +266,7 @@ async function fetchImageAsBase64(
         }
 
         errorLog(`Failed to fetch image ${url}: ${message}`);
-        throw new ImageFetchError(errorMessage, 400);
+        throw new ImageFetchError(errorMessage, 400, validatedUrl);
     }
 }
 

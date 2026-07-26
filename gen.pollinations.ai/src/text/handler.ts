@@ -17,6 +17,22 @@ import type { ChatCompletion, RequestData, ServiceError } from "./types.js";
 
 type TextContext = Context<Env>;
 
+const textResponseUpstreamUrls = new WeakMap<Response, URL>();
+
+function withTextResponseUpstreamUrl(
+    response: Response,
+    requestUrl: URL | undefined,
+): Response {
+    if (requestUrl) textResponseUpstreamUrls.set(response, requestUrl);
+    return response;
+}
+
+export function getTextResponseUpstreamUrl(
+    response: Response,
+): URL | undefined {
+    return textResponseUpstreamUrls.get(response);
+}
+
 const TEXT_ENV_KEYS = [
     "AI_GATEWAY_API_KEY",
     "AWS_ACCESS_KEY_ID",
@@ -164,24 +180,29 @@ function publicChatCompletion(completion: ChatCompletion): ChatCompletion {
 function sendOpenAIResponse(
     completion: ChatCompletion,
     fallbackModel?: string,
+    upstreamRequestUrl = completion.upstreamRequestUrl,
 ): Response {
     const headers = usageHeaders(completion, fallbackModel);
     headers.set("Content-Type", "application/json; charset=utf-8");
 
-    return new Response(
-        JSON.stringify({
-            ...completion,
-            id: completion.id || generatePollinationsId(),
-            object: completion.object || "chat.completion",
-            created: completion.created || Date.now(),
-        }),
-        { headers },
+    return withTextResponseUpstreamUrl(
+        new Response(
+            JSON.stringify({
+                ...completion,
+                id: completion.id || generatePollinationsId(),
+                object: completion.object || "chat.completion",
+                created: completion.created || Date.now(),
+            }),
+            { headers },
+        ),
+        upstreamRequestUrl,
     );
 }
 
 function sendTextContentResponse(
     completion: ChatCompletion,
     fallbackModel?: string,
+    upstreamRequestUrl = completion.upstreamRequestUrl,
 ): Response {
     const headers = usageHeaders(completion, fallbackModel);
     headers.set("Cache-Control", IMMUTABLE_CACHE_CONTROL);
@@ -189,6 +210,7 @@ function sendTextContentResponse(
     if (!completion.choices?.[0]) {
         throw new UpstreamError(502, {
             message: "Unrecognized response format from text model",
+            requestUrl: upstreamRequestUrl,
             responseBody: JSON.stringify(completion),
         });
     }
@@ -197,7 +219,10 @@ function sendTextContentResponse(
 
     if (typeof message !== "object" || !message) {
         headers.set("Content-Type", "text/plain; charset=utf-8");
-        return new Response(String(message), { headers });
+        return withTextResponseUpstreamUrl(
+            new Response(String(message), { headers }),
+            upstreamRequestUrl,
+        );
     }
 
     const audio = message.audio as Record<string, unknown> | undefined;
@@ -215,7 +240,10 @@ function sendTextContentResponse(
         } else {
             headers.set("Content-Type", "audio/mpeg");
         }
-        return new Response(buffer, { headers });
+        return withTextResponseUpstreamUrl(
+            new Response(buffer, { headers }),
+            upstreamRequestUrl,
+        );
     }
 
     if (message.content !== undefined && message.content !== null) {
@@ -228,16 +256,25 @@ function sendTextContentResponse(
             content += "\n";
         }
         headers.set("Content-Type", "text/plain; charset=utf-8");
-        return new Response(content, { headers });
+        return withTextResponseUpstreamUrl(
+            new Response(content, { headers }),
+            upstreamRequestUrl,
+        );
     }
 
     if (Object.keys(message).length > 0) {
         headers.set("Content-Type", "application/json; charset=utf-8");
-        return new Response(JSON.stringify(message), { headers });
+        return withTextResponseUpstreamUrl(
+            new Response(JSON.stringify(message), { headers }),
+            upstreamRequestUrl,
+        );
     }
 
     headers.set("Content-Type", "text/plain; charset=utf-8");
-    return new Response("", { headers });
+    return withTextResponseUpstreamUrl(
+        new Response("", { headers }),
+        upstreamRequestUrl,
+    );
 }
 
 function sendTextStreamResponse(completion: ChatCompletion): Response {
@@ -253,7 +290,10 @@ function sendTextStreamResponse(completion: ChatCompletion): Response {
     }
 
     if (completion.responseStream instanceof ReadableStream) {
-        return new Response(completion.responseStream, { headers });
+        return withTextResponseUpstreamUrl(
+            new Response(completion.responseStream, { headers }),
+            completion.upstreamRequestUrl,
+        );
     }
 
     // Defensive: upstream produced a null stream body.
@@ -269,7 +309,10 @@ function sendTextStreamResponse(completion: ChatCompletion): Response {
             controller.close();
         },
     });
-    return new Response(fallbackStream, { headers });
+    return withTextResponseUpstreamUrl(
+        new Response(fallbackStream, { headers }),
+        completion.upstreamRequestUrl,
+    );
 }
 
 function base64ToArrayBuffer(value: string): ArrayBuffer {
@@ -336,10 +379,18 @@ async function generateTextResponse(
         const publicCompletion = publicChatCompletion(completion);
         if (contentResponse) {
             c.var.track?.overrideResponseTracking(trackingResponse.clone());
-            return sendTextContentResponse(publicCompletion, fallbackModel);
+            return sendTextContentResponse(
+                publicCompletion,
+                fallbackModel,
+                completion.upstreamRequestUrl,
+            );
         }
         c.var.track?.overrideResponseTracking(trackingResponse.clone());
-        return sendOpenAIResponse(publicCompletion, fallbackModel);
+        return sendOpenAIResponse(
+            publicCompletion,
+            fallbackModel,
+            completion.upstreamRequestUrl,
+        );
     } catch (thrown: unknown) {
         throwTextError(thrown as ServiceError);
     }

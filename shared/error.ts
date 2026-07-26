@@ -134,7 +134,6 @@ export function createErrorResponseSchema(
             timestamp: z.string(),
             details: errorDetailsSchema,
             requestId: z.string().optional(),
-            cause: z.unknown().optional(),
         }),
     });
 }
@@ -148,7 +147,6 @@ export const GenericErrorResponseSchema = z.object({
         timestamp: z.string(),
         details: GenericErrorDetailsSchema.optional(),
         requestId: z.string().optional(),
-        cause: z.unknown().optional(),
     }),
 });
 
@@ -266,7 +264,6 @@ function createErrorResponse(
             code: code ?? getErrorCode(status),
             timestamp,
             ...(details && { details }),
-            ...(!!error.cause && { cause: error.cause }),
         },
         status,
     };

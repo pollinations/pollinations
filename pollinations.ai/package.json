@@ -5,7 +5,7 @@
     "type": "module",
     "scripts": {
         "dev": "vite",
-        "build:ui": "npm run build --prefix ../packages/ui",
+        "build:ui": "npm run build --prefix ../packages/sdk && npm run build --prefix ../packages/ui",
         "predev": "npm run build:ui",
         "prebuild": "npm run build:ui",
         "build": "tsc && vite build",
@@ -16,6 +16,7 @@
         "deploy:production": "npm run build:production && wrangler deploy --config dist/pollinations_ai/wrangler.json"
     },
     "dependencies": {
+        "@pollinations/sdk": "*",
         "@pollinations/ui": "*",
         "@tanstack/react-router": "^1.139.3",
         "class-variance-authority": "^0.7.1",

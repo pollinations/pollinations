@@ -28,7 +28,7 @@ import {
     ModalityTab,
     ModelSelector,
 } from "@pollinations/ui/gen";
-import { type ReactNode, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 type ViteImportMeta = ImportMeta & {
     env?: {
@@ -63,8 +63,6 @@ type PlaygroundResult =
 
 export type PlaygroundProps = {
     className?: string;
-    /** Sign-in control, rendered at the end of the control bar. */
-    accountArea?: ReactNode;
 };
 
 function usePlaygroundCatalog(apiKey: string | null) {
@@ -291,7 +289,7 @@ async function uploadReferenceImages(
     return uploads.map((upload) => upload.url);
 }
 
-export function Playground({ className, accountArea }: PlaygroundProps) {
+export function Playground({ className }: PlaygroundProps) {
     const { apiKey, isLoggedIn, isHydrated } = useAuthState();
     const {
         catalog,
@@ -535,13 +533,12 @@ export function Playground({ className, accountArea }: PlaygroundProps) {
                 </Alert>
             )}
 
-            {/* One bar above both columns: modality and model are global
-                choices affecting input and output alike, so scoping them to
-                the left column implied they only changed the prompt. */}
-            <Surface
-                variant="card"
-                className="polli:flex polli:flex-col polli:gap-3 polli:p-4"
-            >
+            {/* Deliberately not a card. These read as a sequence — what kind
+                of thing, then which model, then what that model is — and a
+                card would box them as one static panel instead of a flow.
+                They also sit above both columns because modality and model
+                change the output, not just the prompt. */}
+            <div className="polli:flex polli:flex-col polli:gap-3">
                 <div className="polli:flex polli:flex-wrap polli:items-center polli:gap-3">
                     <ModalityTabs
                         activeCategory={activeCategory}
@@ -554,16 +551,13 @@ export function Playground({ className, accountArea }: PlaygroundProps) {
                         isLoading={isLoading || !isHydrated}
                         onChange={setSelectedModel}
                     />
-                    {accountArea && (
-                        <span className="ml-auto">{accountArea}</span>
-                    )}
                 </div>
                 {currentModel?.description && (
                     <p className="polli:m-0 polli:text-sm polli:leading-relaxed polli:text-theme-text-muted">
                         {currentModel.description}
                     </p>
                 )}
-            </Surface>
+            </div>
 
             <div className="polli-playground-main-grid">
                 <div className="polli:flex polli:flex-col polli:gap-4">

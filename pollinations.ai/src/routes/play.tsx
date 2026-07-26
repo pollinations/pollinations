@@ -35,11 +35,10 @@ function PlayPage() {
                     eyebrow="Every model, in the browser"
                     title="Playground"
                     subtitle="Try any model here before you write a line of code. Sign in and it runs on your own Pollen — nothing to install, and the same endpoints your app will call."
+                    action={<AppUserMenu dashboardHref={ENTER_URL} />}
                 />
 
-                <Playground
-                    accountArea={<AppUserMenu dashboardHref={ENTER_URL} />}
-                />
+                <Playground />
             </>
         </PolliProvider>
     );

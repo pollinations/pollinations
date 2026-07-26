@@ -1,13 +1,15 @@
 import { ActionButton } from "../site/mockup";
 
 /**
- * The closing CTA from the mockup: a solid amber panel, breaking out to the
- * sheet edge like the dark money panel does. Two coloured moments in the page
- * — one dark in the middle, one amber at the end — and cream everywhere else.
+ * The closing CTA: a solid amber panel at the normal section width.
+ *
+ * It does NOT break out to the sheet edge — the dark money panel is the only
+ * element in the mockup that does, which is what makes that one read as a
+ * moment. Two things breaking out would make neither of them special.
  */
 export function StartBuilding() {
     return (
-        <section className="-mx-2 flex flex-wrap items-center justify-between gap-10 rounded-3xl bg-theme-bg-active px-8 py-12 md:-mx-12 md:px-14">
+        <section className="flex flex-wrap items-center justify-between gap-10 rounded-3xl bg-theme-bg-active px-10 py-12">
             <div className="flex max-w-lg flex-col gap-2.5">
                 <h2 className="font-heading text-4xl leading-tight text-theme-text-strong">
                     Start building

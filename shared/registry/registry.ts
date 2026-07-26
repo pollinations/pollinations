@@ -3,6 +3,7 @@ import { AUDIO_SERVICES, type AudioModelName } from "./audio";
 import { EMBEDDING_SERVICES, type EmbeddingServiceId } from "./embeddings";
 import { IMAGE_SERVICES, type ImageModelName } from "./image";
 import { MODEL3D_SERVICES, type Model3dName } from "./model3d";
+import { OCR_SERVICES, type OcrModelName } from "./ocr";
 import { REALTIME_SERVICES, type RealtimeModelName } from "./realtime";
 import { TEXT_SERVICES, type TextModelName } from "./text";
 
@@ -56,7 +57,8 @@ export type ModelName =
     | AudioModelName
     | EmbeddingServiceId
     | RealtimeModelName
-    | Model3dName;
+    | Model3dName
+    | OcrModelName;
 
 export type VideoCapability =
     | "start_frame"
@@ -138,6 +140,7 @@ export type ModelDefinition = {
     // audio (e.g. Stable Audio) from per-character TTS, which share cost fields.
     flatRate?: boolean;
     hidden?: boolean; // Hidden from /models endpoints and dashboard, but still usable via API
+    supportedEndpoints?: string[]; // Override the default endpoints for specialized models
     videoCapabilities?: VideoCapability[]; // Video-only: which frame controls the provider supports
     maxReferenceImages?: number; // Models with image input: effective accepted reference images
     maxReferenceVideos?: number; // Models with video input: effective accepted reference videos
@@ -283,6 +286,7 @@ const MODEL_REGISTRY = {
     ...EMBEDDING_SERVICES,
     ...REALTIME_SERVICES,
     ...MODEL3D_SERVICES,
+    ...OCR_SERVICES,
 } as Record<ModelName, ModelDefinition>;
 
 /**
@@ -315,8 +319,11 @@ export function getModels(): ModelName[] {
 /**
  * Get text model names
  */
-function getTextModels(): TextModelName[] {
-    return Object.keys(TEXT_SERVICES) as TextModelName[];
+function getTextModels(): (TextModelName | OcrModelName)[] {
+    return [
+        ...(Object.keys(TEXT_SERVICES) as TextModelName[]),
+        ...(Object.keys(OCR_SERVICES) as OcrModelName[]),
+    ];
 }
 
 /**

@@ -12,6 +12,7 @@ interface CloudflareBindings {
     DEEPINFRA_API_KEY: string;
     FAL_KEY: string;
     INFERENCEPORT_API_KEY?: string;
+    MISTRAL_API_KEY?: string;
     STABILITY_API_KEY?: string;
     KV: KVNamespace;
     IMAGE_BUCKET: R2Bucket;

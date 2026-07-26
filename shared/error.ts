@@ -336,17 +336,19 @@ export function getErrorCode(status: number): string {
         404: "NOT_FOUND",
         405: "METHOD_NOT_ALLOWED",
         409: "CONFLICT",
+        413: "PAYLOAD_TOO_LARGE",
         422: "UNPROCESSABLE_ENTITY",
         429: "RATE_LIMITED",
         500: "INTERNAL_ERROR",
         502: "BAD_GATEWAY",
         503: "SERVICE_UNAVAILABLE",
+        504: "GATEWAY_TIMEOUT",
     };
     return codes[status] || "UNKNOWN_ERROR";
 }
 
 export const KNOWN_ERROR_STATUS_CODES = [
-    400, 401, 402, 403, 405, 409, 422, 426, 429, 500, 502, 503,
+    400, 401, 402, 403, 405, 409, 413, 422, 426, 429, 500, 502, 503, 504,
 ] as const;
 
 export type ErrorStatusCode = (typeof KNOWN_ERROR_STATUS_CODES)[number];
@@ -360,12 +362,14 @@ export function getDefaultErrorMessage(status: number): string {
         404: "Oh no, there's nothing here.",
         405: "That HTTP method isn't supported here. Please check the API docs.",
         409: "Something with these details already exists. Maybe update it instead?",
+        413: "The request body is too large.",
         422: "Your request looks good, but some required fields are missing or invalid.",
         426: "This endpoint requires a WebSocket upgrade request.",
         429: "You're making requests too quickly. Please slow down a bit.",
         500: "Oh snap, something went wrong on our end. We're on it!",
         502: "We couldn't reach our backend services. Please try again shortly.",
         503: "We're temporarily down for maintenance. Sorry about that!",
+        504: "The upstream service took too long to respond.",
     };
     return messages[status] || "UNKNOWN_ERROR";
 }

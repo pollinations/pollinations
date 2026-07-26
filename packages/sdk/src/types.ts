@@ -817,6 +817,12 @@ export interface ModelInfo {
     is_specialized?: boolean;
     paid_only?: boolean;
     pricing?: Record<string, string> & { currency: "pollen" };
+    billing_adjustments?: Array<{
+        kind: string;
+        unit: string;
+        unit_price: string;
+        description: string;
+    }>;
 }
 
 // ============================================================================

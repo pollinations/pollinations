@@ -38,6 +38,7 @@ import {
     DEFAULT_3D_MODEL,
     getModel3dModelIds,
 } from "@shared/registry/model3d.ts";
+import { DEFAULT_OCR_MODEL } from "@shared/registry/ocr.ts";
 import {
     DEFAULT_REALTIME_MODEL,
     REALTIME_MODEL_NAMES,
@@ -62,12 +63,18 @@ import {
     withSafetyHeaders,
 } from "@/middleware/safety.ts";
 import { handle3dPrompt } from "@/model3d/handler.ts";
+import { handleMistralOcr } from "@/ocr/mistral.ts";
 import {
     CreateEmbeddingRequestSchema,
     CreateEmbeddingResponseSchema,
 } from "@/schemas/embeddings.ts";
 import { GenerateImageRequestQueryParamsSchema } from "@/schemas/image.ts";
 import { Generate3dRequestQueryParamsSchema } from "@/schemas/model3d.ts";
+import {
+    type CreateOcrRequest,
+    CreateOcrRequestSchema,
+    CreateOcrResponseSchema,
+} from "@/schemas/ocr.ts";
 import { RealtimeRequestQueryParamsSchema } from "@/schemas/realtime.ts";
 import { GenerateTextRequestQueryParamsSchema } from "@/schemas/text.ts";
 import {
@@ -99,6 +106,9 @@ const model3dModelNames = getModel3dModelIds()
 const factory = createFactory<Env>();
 const textBodyLimit = bodyLimit({
     maxSize: 20 * 1024 * 1024,
+});
+const ocrBodyLimit = bodyLimit({
+    maxSize: 32 * 1024 * 1024,
 });
 // Shared handler for image and video generation (used by both /image/ and /video/ routes)
 const imageVideoHandlers = factory.createHandlers(
@@ -139,7 +149,9 @@ const model3dHandlers = factory.createHandlers(
 const chatCompletionHandlers = factory.createHandlers(
     textBodyLimit,
     validator("json", CreateChatCompletionRequestSchema),
-    resolveModel("generate.text"),
+    resolveModel("generate.text", {
+        supportedEndpoint: "/v1/chat/completions",
+    }),
     track("generate.text"),
     textCache,
     generationAccess,
@@ -243,7 +255,10 @@ const modelsListHandler =
                 await getEntries(c),
                 allowedModels,
                 paidBalance,
-            ).map((entry) => entry.info),
+            ).map((entry) => ({
+                ...entry.info,
+                supported_endpoints: entry.supportedEndpoints,
+            })),
         );
     };
 
@@ -260,6 +275,20 @@ async function getVisibleModelEntriesForEventType(
     return (await getGenerationModelRegistry(c.env))
         .visibleEntries(c.var.auth?.user?.id)
         .filter((entry) => entry.eventType === eventType);
+}
+
+async function getVisibleOcrEntries(c: Context<Env>) {
+    return (await getVisibleModelEntries(c)).filter((entry) =>
+        entry.supportedEndpoints.includes("/v1/ocr"),
+    );
+}
+
+async function getVisibleChatTextEntries(c: Context<Env>) {
+    return (
+        await getVisibleModelEntriesForEventType(c, "generate.text")
+    ).filter((entry) =>
+        entry.supportedEndpoints.includes("/v1/chat/completions"),
+    );
 }
 
 // "3d" models share the "generate.image" EventType with image/video models
@@ -314,6 +343,7 @@ export const proxyRoutes = new Hono<Env>()
     .use("/text/models", auth())
     .use("/audio/models", auth())
     .use("/embeddings/models", auth())
+    .use("/ocr/models", auth())
     .use("/models", auth())
     .get(
         "/v1/models",
@@ -372,7 +402,7 @@ export const proxyRoutes = new Hono<Env>()
             tags: ["🤖 Models"],
             summary: "List Models",
             description:
-                "Returns all available text, community text/image, image, video, 3D, realtime, audio, and embedding models with pricing, capabilities, and metadata. When authenticated: the owner's private community models are included, models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance.",
+                "Returns all available text, OCR, community text/image, image, video, 3D, realtime, audio, and embedding models with pricing, capabilities, and metadata. When authenticated: the owner's private community models are included, models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance.",
             responses: {
                 200: {
                     description: "Success",
@@ -494,9 +524,33 @@ export const proxyRoutes = new Hono<Env>()
                 ...errorResponseDescriptions(500),
             },
         }),
-        modelsListHandler((c) =>
-            getVisibleModelEntriesForEventType(c, "generate.text"),
-        ),
+        modelsListHandler((c) => getVisibleChatTextEntries(c)),
+    )
+    .get(
+        "/ocr/models",
+        describeRoute({
+            tags: ["📄 OCR"],
+            summary: "List OCR Models",
+            description:
+                "Returns document and image OCR models with pricing, input modalities, output modalities, and supported endpoints. When authenticated, models are filtered by API key permissions and paid-only models are hidden if the account has no paid balance.",
+            responses: {
+                200: {
+                    description: "Success",
+                    content: {
+                        "application/json": {
+                            schema: resolver(
+                                z.array(z.any()).meta({
+                                    description:
+                                        "List of OCR models with pricing and metadata",
+                                }),
+                            ),
+                        },
+                    },
+                },
+                ...errorResponseDescriptions(500),
+            },
+        }),
+        modelsListHandler(getVisibleOcrEntries),
     )
     .get(
         "/audio/models",
@@ -675,6 +729,54 @@ export const proxyRoutes = new Hono<Env>()
         },
     )
     .post(
+        "/v1/ocr",
+        describeRoute({
+            tags: ["📄 OCR"],
+            summary: "Extract Text From Documents",
+            description: [
+                "Extract structured Markdown, tables, layout information, and optional confidence scores from a document or image.",
+                "",
+                "Pass a public URL or base64 data URL in `document`. Use `pages` to process selected zero-indexed PDF pages.",
+                "",
+                "Custom annotation schemas are not accepted. Standard OCR is billed at 0.004 Pollen per processed page using the provider-reported `usage_info.pages_processed` count.",
+            ].join("\n"),
+            responses: {
+                200: {
+                    description: "Structured OCR result",
+                    content: {
+                        "application/json": {
+                            schema: resolver(CreateOcrResponseSchema),
+                        },
+                    },
+                },
+                ...errorResponseDescriptions(
+                    400,
+                    401,
+                    402,
+                    403,
+                    413,
+                    429,
+                    500,
+                    502,
+                    504,
+                ),
+            },
+        }),
+        ocrBodyLimit,
+        validator("json", CreateOcrRequestSchema),
+        resolveModel("generate.text", {
+            defaultModel: DEFAULT_OCR_MODEL,
+            supportedEndpoint: "/v1/ocr",
+        }),
+        track("generate.text"),
+        generationAccess,
+        async (c) =>
+            handleMistralOcr(
+                c,
+                c.req.valid("json" as never) as CreateOcrRequest,
+            ),
+    )
+    .post(
         "/text",
         describeRoute({
             tags: ["✍️ Text"],
@@ -694,7 +796,7 @@ export const proxyRoutes = new Hono<Env>()
         }),
         textBodyLimit,
         validator("json", CreateChatCompletionRequestSchema),
-        resolveModel("generate.text"),
+        resolveModel("generate.text", { supportedEndpoint: "/text" }),
         track("generate.text"),
         textCache,
         generationAccess,
@@ -743,7 +845,9 @@ export const proxyRoutes = new Hono<Env>()
             }),
         ),
         validator("query", GenerateTextRequestQueryParamsSchema),
-        resolveModel("generate.text"),
+        resolveModel("generate.text", {
+            supportedEndpoint: "/text/{prompt}",
+        }),
         track("generate.text"),
         textCache,
         generationAccess,

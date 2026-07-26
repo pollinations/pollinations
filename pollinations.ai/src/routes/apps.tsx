@@ -1,6 +1,6 @@
 import { Surface, TabButton } from "@pollinations/ui";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useMemo } from "react";
+import { type ReactNode, useMemo } from "react";
 import {
     type DirectoryApp,
     formatStars,
@@ -45,6 +45,28 @@ const SPOTLIGHT = [
     "Convince the CRAZY Idol to let you free",
     "excelformula.pro",
 ];
+
+/**
+ * Each axis gets a label. Three unlabelled rows of pills read as one list;
+ * "Badges" uses the page's own word for them rather than the internal
+ * "signals".
+ */
+function FilterRow({
+    label,
+    children,
+}: {
+    label: string;
+    children: ReactNode;
+}) {
+    return (
+        <div className="flex flex-wrap items-baseline gap-x-3 gap-y-2">
+            <span className="w-20 shrink-0 font-pixel text-micro tracking-widest text-theme-text-muted uppercase">
+                {label}
+            </span>
+            <div className="flex flex-1 flex-wrap gap-2">{children}</div>
+        </div>
+    );
+}
 
 const SIGNAL_TEST = { buzz: isBuzz, pollen: isPollen, fresh: isFresh } as const;
 
@@ -178,8 +200,8 @@ function AppsPage() {
                     subtitle="Combine as many as you like. Badges are automatic — 🐝 busy this week, 🏵️ runs on your Pollen, 🫧 new this month."
                 />
 
-                <div className="flex flex-col gap-2.5">
-                    <div className="flex flex-wrap gap-2">
+                <div className="flex flex-col gap-3">
+                    <FilterRow label="Category">
                         {APP_CATEGORIES.map((value) => (
                             <TabButton
                                 key={value}
@@ -201,8 +223,8 @@ function AppsPage() {
                                 {CATEGORY_LABELS[value]}
                             </TabButton>
                         ))}
-                    </div>
-                    <div className="flex flex-wrap gap-2">
+                    </FilterRow>
+                    <FilterRow label="Badges">
                         {APP_SIGNALS.map((value) => (
                             <TabButton
                                 key={value}
@@ -221,8 +243,8 @@ function AppsPage() {
                                 {SIGNAL_LABELS[value]}
                             </TabButton>
                         ))}
-                    </div>
-                    <div className="flex flex-wrap gap-2">
+                    </FilterRow>
+                    <FilterRow label="Platform">
                         {APP_PLATFORMS.map((value) => (
                             <TabButton
                                 key={value}
@@ -244,7 +266,7 @@ function AppsPage() {
                                 {PLATFORM_LABELS[value]}
                             </TabButton>
                         ))}
-                    </div>
+                    </FilterRow>
                 </div>
 
                 {failed ? (

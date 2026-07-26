@@ -1,6 +1,12 @@
-import { env, SELF } from "cloudflare:test";
+import {
+    createExecutionContext,
+    env,
+    SELF,
+    waitOnExecutionContext,
+} from "cloudflare:test";
 import { test as workerTest } from "@shared/test/fixtures/index.ts";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import worker from "../src/index.ts";
 import { generateElevenLabsDialogue } from "../src/routes/audio.ts";
 
 const log = {
@@ -177,7 +183,15 @@ workerTest(
         ];
 
         for (const request of requests) {
-            const response = await SELF.fetch(request);
+            const ctx = createExecutionContext();
+            const response = await worker.fetch(
+                request,
+                {
+                    ...env,
+                    ELEVENLABS_API_KEY: "test-eleven-key",
+                } as unknown as CloudflareBindings,
+                ctx,
+            );
             expect(response.status).toBe(200);
             expect(response.headers.get("content-type")).toContain(
                 "audio/mpeg",
@@ -185,6 +199,7 @@ workerTest(
             expect((await response.arrayBuffer()).byteLength).toBeGreaterThan(
                 0,
             );
+            await waitOnExecutionContext(ctx);
         }
 
         expect(

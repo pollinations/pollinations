@@ -1,4 +1,4 @@
-import { Surface, TabButton } from "@pollinations/ui";
+import { Button, Surface, TabButton } from "@pollinations/ui";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useMemo } from "react";
 import {
@@ -135,12 +135,12 @@ function AppsPage() {
                         try, ship.
                     </p>
                 </div>
-                <a
+                <Button
+                    as="a"
                     href="https://github.com/pollinations/pollinations/issues/new?template=APP-SUBMISSION.yml"
-                    className="rounded-xl bg-theme-bg-active px-6 py-3 font-semibold text-theme-text-strong"
                 >
                     Submit your app
-                </a>
+                </Button>
             </header>
 
             {spotlight.length > 0 && (
@@ -149,7 +149,7 @@ function AppsPage() {
                         <p className="font-pixel text-sm tracking-widest text-theme-text-soft uppercase">
                             Spotlight
                         </p>
-                        <h2 className="font-heading text-3xl text-theme-text-strong">
+                        <h2 className="font-heading text-4xl text-theme-text-strong">
                             Worth your time.
                         </h2>
                         <p className="max-w-xl text-theme-text-base">
@@ -170,7 +170,7 @@ function AppsPage() {
                     <p className="font-pixel text-sm tracking-widest text-theme-text-soft uppercase">
                         Browse
                     </p>
-                    <h2 className="font-heading text-3xl text-theme-text-strong">
+                    <h2 className="font-heading text-4xl text-theme-text-strong">
                         {loading ? "Everything else." : `All ${apps.length}.`}
                     </h2>
                     <p className="max-w-2xl text-theme-text-base">

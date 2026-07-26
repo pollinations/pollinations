@@ -1,4 +1,6 @@
+import { Button } from "@pollinations/ui";
 import { Link } from "@tanstack/react-router";
+import { useHideOnScroll } from "./useHideOnScroll";
 
 const NAV = [
     { to: "/", label: "Hello" },
@@ -13,8 +15,14 @@ const EXTERNAL = [
 ] as const;
 
 export function SiteHeader() {
+    const hidden = useHideOnScroll();
+
     return (
-        <header className="sticky top-0 z-20 flex items-center justify-between gap-6 bg-app-bg px-6 py-4 md:px-12">
+        <header
+            className={`sticky top-3 z-30 mx-6 mt-3 mb-3 flex items-center justify-between gap-6 rounded-full border border-theme-border bg-surface-translucent px-5 py-3 shadow-container backdrop-blur-md transition-transform duration-300 supports-[not(backdrop-filter:blur(0))]:bg-surface-opaque focus-within:translate-y-0 motion-reduce:transition-none md:px-8 ${
+                hidden ? "-translate-y-[140%]" : "translate-y-0"
+            }`}
+        >
             <div className="flex items-center gap-8">
                 <Link to="/" className="flex items-center gap-2">
                     <span className="font-subheading text-xl text-theme-text-strong">
@@ -47,12 +55,14 @@ export function SiteHeader() {
                         {item.label}
                     </a>
                 ))}
-                <a
+                <Button
+                    as="a"
                     href="https://enter.pollinations.ai"
-                    className="rounded-full bg-brand-dark px-5 py-2 text-surface-opaque"
+                    size="sm"
+                    className="bg-brand-dark text-surface-opaque hover:bg-brand-dark"
                 >
                     Dashboard ↗
-                </a>
+                </Button>
             </div>
         </header>
     );

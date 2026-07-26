@@ -1,4 +1,4 @@
-import { Surface } from "@pollinations/ui";
+import { Chip, Surface } from "@pollinations/ui";
 
 type Way = {
     chip: string;
@@ -77,9 +77,12 @@ export function ThreeWays() {
                             {/* All three chips share one treatment — the section
                                 headline says these are equal options, so none
                                 of them gets to shout. */}
-                            <span className="rounded-md bg-theme-bg-subtle px-2.5 py-1 font-pixel text-xs text-theme-text-soft uppercase">
+                            <Chip
+                                size="sm"
+                                className="bg-theme-bg-subtle font-pixel text-theme-text-soft uppercase"
+                            >
                                 {way.chip}
-                            </span>
+                            </Chip>
                             {way.chipTitle && (
                                 <span className="text-sm text-theme-text-muted">
                                     {way.chipTitle}
@@ -92,14 +95,14 @@ export function ThreeWays() {
                         <p className="text-sm leading-relaxed text-theme-text-base">
                             {way.body}
                         </p>
-                        <div className="mt-1 overflow-hidden rounded-xl bg-brand-dark">
-                            <p className="border-b border-white/10 px-4 py-2 font-pixel text-xs text-white/50">
+                        <div className="dark mt-1 overflow-hidden rounded-xl bg-brand-dark">
+                            <p className="border-b border-theme-border px-4 py-2 font-pixel text-xs text-theme-text-muted">
                                 {way.filename}
                             </p>
                             {/* Wraps rather than scrolls — these are three
                                 narrow columns, and a horizontal scrollbar per
                                 card hides the end of every command. */}
-                            <pre className="px-4 py-3 text-[12.5px] leading-relaxed break-words whitespace-pre-wrap text-ink-100">
+                            <pre className="px-4 py-3 text-[12.5px] leading-relaxed break-words whitespace-pre-wrap text-theme-text-base">
                                 <code>{way.code}</code>
                             </pre>
                         </div>

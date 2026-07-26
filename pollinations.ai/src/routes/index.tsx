@@ -1,3 +1,4 @@
+import { Button } from "@pollinations/ui";
 import polliBee from "@pollinations/ui/brand/polli/polli.png";
 import { createFileRoute } from "@tanstack/react-router";
 import { compact, usePlatformStats } from "../data/publicStats";
@@ -61,18 +62,21 @@ function HelloPage() {
                         publish a model and earn every time it&rsquo;s called.
                     </p>
                     <div className="flex flex-wrap gap-3">
-                        <a
+                        <Button
+                            as="a"
                             href="https://enter.pollinations.ai"
-                            className="rounded-xl bg-theme-bg-active px-7 py-3 font-semibold text-theme-text-strong"
+                            size="lg"
                         >
                             Get an API key
-                        </a>
-                        <a
+                        </Button>
+                        <Button
+                            as="a"
                             href="https://docs.pollinations.ai"
-                            className="rounded-xl bg-surface-opaque px-7 py-3 font-semibold text-theme-text-strong"
+                            size="lg"
+                            className="bg-surface-opaque hover:bg-surface-opaque"
                         >
                             Read the docs
-                        </a>
+                        </Button>
                     </div>
                     <dl className="mt-2 flex flex-wrap gap-10">
                         {stats.map((stat) => (

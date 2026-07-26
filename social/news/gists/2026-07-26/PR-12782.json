@@ -1,0 +1,34 @@
+{
+  "pr_number": 12782,
+  "title": "feat: add ElevenLabs TTS timestamps",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/12782",
+  "merged_at": "2026-07-26T17:55:16Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds `POST /v1/audio/speech/with-timestamps` to the three existing ElevenLabs TTS models.\n- Returns base64 audio plus original and normalized character alignment.\n- Keeps direct ElevenLabs routing, paid-only access, multiplier 1, and current prices unchanged.\n- Supports MP3, Opus, AAC, WAV, and PCM; FLAC is rejected because ElevenLabs would return PCM.\n- Uses no Pollinations GPU or fallback and bills exact input characters.\n- Encodes custom voice IDs and publishes the timestamp endpoint in model metadata.\n\nValidation:\n- Live E2E: v3/MP3, Flash/WAV, Multilingual v2/Opus; exact deductions 0.0013 / 0.00065 / 0.0013 Pollen.\n- Live WAV RIFF/data sizes and ffprobe playback verified.\n- 7 focused timestamp tests, Gen/Enter typechecks, and Enter pricing snapshot pass.\n\nStacked on #12778 to avoid duplicating endpoint-scoping and voice-ID hardening.\n\n### Endpoint-gating follow-up (2026-07-26)\n\n- Fixed the standard TTS routing regression introduced by endpoint metadata: generic audio defaults now include both /audio/{text} and /v1/audio/speech, and both routes pass their exact endpoint identity.\n- Added route-level coverage for explicit elevenlabs, omitted/default model, and the simple GET route; all return 200.\n- Latest stacked Gen verification: typecheck clean, paid modality E2E clean, and 694/694 tests across 74 files pass.\n- Documented the measured 12 credits/second audio-input metering and its Scale-plan reconciliation in code.\n- CI follow-up: the deterministic route test now injects a test-only provider key through the Worker environment; the secretless GitHub suite passes.",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Every syllable gets a pin",
+    "blurb": "ElevenLabs voices can now leave little timestamps along the trail. Your audio arrives with character-level alignment, so words and waveforms can finally agree on where they are.",
+    "summary": "Added POST /v1/audio/speech/with-timestamps for all three ElevenLabs TTS models, returning base64 audio plus original and normalized character alignment for MP3, Opus, AAC, WAV, and PCM output.",
+    "impact": "Builders can now synchronize captions, highlighted text, and audio playback against ElevenLabs speech while keeping existing direct routing, paid access, and per-character billing.",
+    "keywords": [
+      "elevenlabs",
+      "tts",
+      "timestamps",
+      "audio",
+      "character-alignment",
+      "api"
+    ],
+    "visual_concept": "Depict ElevenLabs speech as a cozy audio waveform growing through a garden, with each spoken character marked by a tiny timestamp flag. Polli should be carefully placing pins along the waveform like a patient sound editor, while a friendly CRT monitor displays aligned text and an audio timeline; include flowers and code-plants to show that precise timing is now part of the API.",
+    "image_prompt": "Cozy pixel art scene in a warm garden hackerspace where Polli, a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks, a small happy smile, and small rounded light blue translucent wings, wears tiny editor headphones and places little timestamp flags along a glowing audio waveform vine. A cute CRT monitor robot shows neatly highlighted text aligned to the waveform beside blooming code-plants and lime green (#ecf874) flower pots; pixel-font text reads \"IN SYNC\". Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-26/PR-12782.jpg",
+    "prompt": "Cozy pixel art scene in a warm garden hackerspace where Polli, a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks, a small happy smile, and small rounded light blue translucent wings, wears tiny editor headphones and places little timestamp flags along a glowing audio waveform vine. A cute CRT monitor robot shows neatly highlighted text aligned to the waveform beside blooming code-plants and lime green (#ecf874) flower pots; pixel-font text reads \"IN SYNC\". Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
+  },
+  "generated_at": "2026-07-26T17:56:10.926538+00:00"
+}

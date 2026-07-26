@@ -255,10 +255,7 @@ const modelsListHandler =
                 await getEntries(c),
                 allowedModels,
                 paidBalance,
-            ).map((entry) => ({
-                ...entry.info,
-                supported_endpoints: entry.supportedEndpoints,
-            })),
+            ).map((entry) => entry.info),
         );
     };
 
@@ -738,7 +735,7 @@ export const proxyRoutes = new Hono<Env>()
                 "",
                 "Pass a public URL or base64 data URL in `document`. Use `pages` to process selected zero-indexed PDF pages.",
                 "",
-                "Custom annotation schemas are not accepted. Standard OCR is billed at 0.004 Pollen per processed page using the provider-reported `usage_info.pages_processed` count.",
+                "Custom annotation schemas are not accepted. Standard OCR is billed per provider-reported processed page; use `/ocr/models` for current pricing.",
             ].join("\n"),
             responses: {
                 200: {

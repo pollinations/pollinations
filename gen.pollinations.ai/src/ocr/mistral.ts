@@ -14,6 +14,49 @@ import {
 const MISTRAL_OCR_URL = "https://api.mistral.ai/v1/ocr";
 const MISTRAL_OCR_MODEL_ID = "mistral-ocr-4-0";
 const MISTRAL_OCR_TIMEOUT_MS = 120_000;
+const MAX_MISTRAL_OCR_RESPONSE_BYTES = 8 * 1024 * 1024;
+
+async function readBoundedResponseText(response: Response): Promise<string> {
+    const declaredLength = Number(response.headers.get("content-length"));
+    if (
+        Number.isFinite(declaredLength) &&
+        declaredLength > MAX_MISTRAL_OCR_RESPONSE_BYTES
+    ) {
+        await response.body?.cancel();
+        throw new UpstreamError(502, {
+            message: "Mistral OCR response exceeded the supported size limit",
+            requestUrl: new URL(MISTRAL_OCR_URL),
+            upstreamStatus: response.status,
+        });
+    }
+
+    if (!response.body) return "";
+
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let responseText = "";
+    let bytesRead = 0;
+    try {
+        while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            bytesRead += value.byteLength;
+            if (bytesRead > MAX_MISTRAL_OCR_RESPONSE_BYTES) {
+                await reader.cancel();
+                throw new UpstreamError(502, {
+                    message:
+                        "Mistral OCR response exceeded the supported size limit",
+                    requestUrl: new URL(MISTRAL_OCR_URL),
+                    upstreamStatus: response.status,
+                });
+            }
+            responseText += decoder.decode(value, { stream: true });
+        }
+        return responseText + decoder.decode();
+    } finally {
+        reader.releaseLock();
+    }
+}
 
 export async function handleMistralOcr(
     c: Context<Env>,
@@ -50,7 +93,7 @@ export async function handleMistralOcr(
     }
 
     const upstream = await ensureUpstreamOk(response, MISTRAL_OCR_URL);
-    const responseText = await upstream.text();
+    const responseText = await readBoundedResponseText(upstream);
     let parsedJson: unknown;
     try {
         parsedJson = JSON.parse(responseText);

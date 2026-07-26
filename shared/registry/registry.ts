@@ -319,11 +319,8 @@ export function getModels(): ModelName[] {
 /**
  * Get text model names
  */
-function getTextModels(): (TextModelName | OcrModelName)[] {
-    return [
-        ...(Object.keys(TEXT_SERVICES) as TextModelName[]),
-        ...(Object.keys(OCR_SERVICES) as OcrModelName[]),
-    ];
+function getTextModels(): TextModelName[] {
+    return Object.keys(TEXT_SERVICES) as TextModelName[];
 }
 
 /**

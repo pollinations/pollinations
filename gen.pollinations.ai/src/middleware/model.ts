@@ -86,6 +86,11 @@ export async function resolveModelDefinition(
             message: `Model "${model}" is a ${actualLabel} model and cannot be used on the ${ENDPOINT_LABEL[eventType]} endpoint. Use the ${actualLabel} endpoint instead.`,
         });
     }
+    if (entry.definition.supportedEndpoints && !supportedEndpoint) {
+        throw new HTTPException(400, {
+            message: `Model "${model}" is available only on: ${entry.supportedEndpoints.join(", ")}.`,
+        });
+    }
     if (
         supportedEndpoint &&
         !entry.supportedEndpoints.includes(supportedEndpoint)

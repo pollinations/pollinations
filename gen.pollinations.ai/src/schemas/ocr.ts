@@ -25,6 +25,16 @@ const OcrPagesSchema = z.union([
     z
         .string()
         .regex(/^\d+(?:-\d+)?(?:,\d+(?:-\d+)?)*$/)
+        .refine(
+            (value) =>
+                value.split(",").every((part) => {
+                    const [start, end] = part.split("-").map(Number);
+                    return end === undefined || start <= end;
+                }),
+            {
+                message: "Page ranges must be in ascending order.",
+            },
+        )
         .meta({
             description:
                 "Zero-indexed page numbers and ranges, such as `0,2-4`.",
@@ -32,6 +42,11 @@ const OcrPagesSchema = z.union([
         }),
     z.array(z.number().int().nonnegative()).min(1),
 ]);
+
+const UnsupportedAnnotationSchema = z.unknown().refine(() => false, {
+    message:
+        "Custom annotations are not supported because annotated pages use separate billing.",
+});
 
 export const CreateOcrRequestSchema = z
     .object({
@@ -52,6 +67,9 @@ export const CreateOcrRequestSchema = z
         extract_footer: z.boolean().optional(),
         include_blocks: z.boolean().optional(),
         confidence_scores_granularity: z.enum(["word", "page"]).optional(),
+        bbox_annotation_format: UnsupportedAnnotationSchema.optional(),
+        document_annotation_format: UnsupportedAnnotationSchema.optional(),
+        document_annotation_prompt: UnsupportedAnnotationSchema.optional(),
     })
     .strict()
     .meta({ $id: "CreateOcrRequest" });

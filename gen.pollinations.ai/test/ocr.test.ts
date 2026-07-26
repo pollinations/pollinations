@@ -119,6 +119,29 @@ describe("Mistral OCR", () => {
         });
     });
 
+    it("rejects an oversized upstream response before buffering it", async () => {
+        vi.spyOn(globalThis, "fetch").mockResolvedValue(
+            new Response("{}", {
+                headers: {
+                    "Content-Length": String(8 * 1024 * 1024 + 1),
+                    "Content-Type": "application/json",
+                },
+            }),
+        );
+
+        await expect(
+            handleMistralOcr(contextWithKey(), {
+                document: {
+                    type: "document_url",
+                    document_url: "https://example.com/document.pdf",
+                },
+            }),
+        ).rejects.toMatchObject({
+            status: 502,
+            message: "Mistral OCR response exceeded the supported size limit",
+        });
+    });
+
     it("requires a configured provider key", async () => {
         const context = {
             env: {} as CloudflareBindings,
@@ -154,7 +177,30 @@ describe("Mistral OCR", () => {
         ]);
     });
 
-    it("rejects custom annotation requests until annotated-page billing is supported", () => {
+    it("accepts forward page ranges and rejects reversed ranges", () => {
+        const request = {
+            model: "mistral-ocr",
+            document: {
+                type: "document_url",
+                document_url: "https://example.com/document.pdf",
+            },
+        };
+
+        expect(
+            CreateOcrRequestSchema.safeParse({
+                ...request,
+                pages: "0,2-4",
+            }).success,
+        ).toBe(true);
+        expect(
+            CreateOcrRequestSchema.safeParse({
+                ...request,
+                pages: "9-2",
+            }).success,
+        ).toBe(false);
+    });
+
+    it("rejects custom annotation requests with the billing reason", () => {
         const parsed = CreateOcrRequestSchema.safeParse({
             model: "mistral-ocr",
             document: {
@@ -165,6 +211,11 @@ describe("Mistral OCR", () => {
         });
 
         expect(parsed.success).toBe(false);
+        if (!parsed.success) {
+            expect(parsed.error.issues[0]?.message).toContain(
+                "annotated pages use separate billing",
+            );
+        }
     });
 
     it("is available only on the OCR endpoint, not chat completions", async () => {
@@ -179,6 +230,12 @@ describe("Mistral OCR", () => {
             ),
         ).resolves.toMatchObject({
             resolved: "mistral-ocr",
+        });
+
+        await expect(
+            resolveModelDefinition("mistral-ocr", "generate.text", env),
+        ).rejects.toMatchObject({
+            status: 400,
         });
 
         await expect(

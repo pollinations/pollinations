@@ -1,0 +1,34 @@
+{
+  "pr_number": 12805,
+  "title": "docs: record Z-Image replica stop",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/12805",
+  "merged_at": "2026-07-27T15:20:14Z",
+  "labels": [],
+  "pr_body_excerpt": "- Records Vast instance `45311852` as stopped for overnight rollback.\n- Updates the active Z-Image fleet cost to `$0.773333/hr` plus `$0.022222/hr` stopped storage.\n- Records the clean post-stop verification: 27 successful requests across retained workers, zero 5xx/current-hour tunnel errors, and five passing shared-hostname health probes.\n- Documentation only; no infrastructure, routing, registry, or secret changes.",
+  "gist": {
+    "category": "docs",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "The Z-Image night log",
+    "blurb": "One Z-Image worker has been tucked in for the night, with its rollback notes and clean health checks pressed neatly into the logbook.",
+    "summary": "Updated GPU_INSTANCES.md to record Vast instance 45311852 as stopped, document the Z-Image fleet's $0.773333/hr active and $0.022222/hr stopped-storage costs, and preserve post-stop verification results.",
+    "impact": "Maintainers have a concrete overnight rollback record, including 27 successful retained-worker requests, zero current-hour 5xx or tunnel errors, and five passing shared-hostname probes.",
+    "keywords": [
+      "documentation",
+      "z-image",
+      "gpu fleet",
+      "vast",
+      "rollback",
+      "health checks"
+    ],
+    "visual_concept": "A cozy server-garden night scene: Polli records a sleeping GPU worker in a maintenance log while healthy retained workers glow nearby. A small cost ledger and five tiny green health-probe flowers represent the documented fleet state and verification.",
+    "image_prompt": "A cozy pixel art nighttime server garden where the cute bee mascot with a yellow body, dark brown stripes, pink rectangular blush, light blue wings, and a tiny librarian scarf writes \"Z-IMAGE LOG\" in a glowing maintenance book beside one peacefully sleeping GPU crate and several healthy retro terminals. Lime green (#ecf874) health-probe flowers glow among vines and code-plants, with soft cream, lavender, and mint gradients; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-27/PR-12805.jpg",
+    "prompt": "A cozy pixel art nighttime server garden where the cute bee mascot with a yellow body, dark brown stripes, pink rectangular blush, light blue wings, and a tiny librarian scarf writes \"Z-IMAGE LOG\" in a glowing maintenance book beside one peacefully sleeping GPU crate and several healthy retro terminals. Lime green (#ecf874) health-probe flowers glow among vines and code-plants, with soft cream, lavender, and mint gradients; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, nostalgic but beautiful."
+  },
+  "generated_at": "2026-07-27T15:21:19.247261+00:00"
+}

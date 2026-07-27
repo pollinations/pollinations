@@ -18,6 +18,14 @@ const log = debug("pollinations:genericopenai");
 const errorLog = debug("pollinations:error");
 const DONE_EVENT_PATTERN = /data:\s*\[DONE\]/;
 
+function isUnsupportedInputError(details: unknown): boolean {
+    const serialized =
+        typeof details === "string" ? details : JSON.stringify(details);
+    return /no endpoints found that support (?:image|audio|video) input/i.test(
+        serialized,
+    );
+}
+
 function remapTextUpstreamStatus(status: number): number {
     return status === 429 ? 429 : remapUpstreamStatus(status);
 }
@@ -107,7 +115,9 @@ function createApiError(
     const error = new Error(
         detailMessage ? `${statusMessage}: ${detailMessage}` : statusMessage,
     ) as ServiceError;
-    error.status = remapTextUpstreamStatus(response.status);
+    error.status = isUnsupportedInputError(details)
+        ? 400
+        : remapTextUpstreamStatus(response.status);
     error.upstreamStatus = response.status;
     error.details = details;
     error.model = modelName;

@@ -63,6 +63,16 @@ describe("resolveModelConfig", () => {
         });
     });
 
+    it("pins Mercury to Inception on OpenRouter without fallback", () => {
+        const result = resolveModelConfig(messages, { model: "mercury" });
+
+        expect(result.options.model).toBe("inception/mercury-2");
+        expect(result.options.provider).toEqual({
+            only: ["Inception"],
+            allow_fallbacks: false,
+        });
+    });
+
     it.each([
         "perplexity-high",
         "perplexity-deep",

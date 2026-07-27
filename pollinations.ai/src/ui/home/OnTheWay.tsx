@@ -1,4 +1,4 @@
-import { SectionHeader } from "../site/PageHeader";
+import { CardGrid, SectionHeader } from "../site/kit";
 
 const UPCOMING = [
     {
@@ -27,9 +27,10 @@ export function OnTheWay() {
         <section className="flex flex-col gap-6">
             <SectionHeader
                 eyebrow="On the way"
-                title={`${UPCOMING.length} things we\u2019re building.`}
+                title={`${UPCOMING.length} things we’re building.`}
             />
-            <div className="grid grid-cols-[repeat(auto-fit,minmax(min(260px,100%),1fr))] gap-4">
+            {/* Dashed and unlifted on purpose: nothing here is clickable yet. */}
+            <CardGrid min="narrow" gap="gap-4">
                 {UPCOMING.map((item) => (
                     <div
                         key={item.title}
@@ -43,7 +44,7 @@ export function OnTheWay() {
                         </p>
                     </div>
                 ))}
-            </div>
+            </CardGrid>
         </section>
     );
 }

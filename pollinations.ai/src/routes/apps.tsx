@@ -1,6 +1,6 @@
-import { Surface, TabButton } from "@pollinations/ui";
+import { TabButton } from "@pollinations/ui";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { type ReactNode, useMemo } from "react";
+import { useMemo } from "react";
 import {
     type DirectoryApp,
     formatStars,
@@ -12,12 +12,20 @@ import {
     sortApps,
     useAppDirectory,
 } from "../data/publicStats";
-import { ActionButton } from "../ui/site/mockup";
-import { PageHeader, SectionHeader } from "../ui/site/PageHeader";
+import {
+    ActionButton,
+    ArrowLink,
+    Card,
+    CardGrid,
+    PageHeader,
+    PixelLabel,
+    SectionHeader,
+} from "../ui/site/kit";
 import {
     APP_CATEGORIES,
     APP_PLATFORMS,
     APP_SIGNALS,
+    type AppSearch,
     CATEGORY_LABELS,
     listOf,
     PLATFORM_LABELS,
@@ -46,36 +54,12 @@ const SPOTLIGHT = [
     "excelformula.pro",
 ];
 
-/**
- * Each axis gets a label. Three unlabelled rows of pills read as one list;
- * "Badges" uses the page's own word for them rather than the internal
- * "signals".
- */
-function FilterRow({
-    label,
-    children,
-}: {
-    label: string;
-    children: ReactNode;
-}) {
-    return (
-        <div className="flex flex-wrap items-baseline gap-x-3 gap-y-2">
-            <span className="w-20 shrink-0 font-pixel text-micro tracking-widest text-theme-text-muted uppercase">
-                {label}
-            </span>
-            <div className="flex flex-1 flex-wrap gap-2">{children}</div>
-        </div>
-    );
-}
-
 const SIGNAL_TEST = { buzz: isBuzz, pollen: isPollen, fresh: isFresh } as const;
 
 function badgesFor(app: DirectoryApp): string {
-    const badges: string[] = [];
-    if (isBuzz(app)) badges.push("🐝");
-    if (isPollen(app)) badges.push("🏵️");
-    if (isFresh(app)) badges.push("🫧");
-    return badges.join(" ");
+    return [isBuzz(app) && "🐝", isPollen(app) && "🏵️", isFresh(app) && "🫧"]
+        .filter(Boolean)
+        .join(" ");
 }
 
 function AppCard({ app }: { app: DirectoryApp }) {
@@ -85,7 +69,7 @@ function AppCard({ app }: { app: DirectoryApp }) {
     const platform = platformsOf(app)[0];
 
     return (
-        <Surface variant="card" className="flex flex-col gap-2 p-5">
+        <Card className="gap-2 p-5">
             <div className="flex items-start justify-between gap-2">
                 <h3 className="font-subheading text-lg text-theme-text-strong">
                     {app.emoji} {app.name}
@@ -104,15 +88,50 @@ function AppCard({ app }: { app: DirectoryApp }) {
                 {stars && <span>⭐ {stars}</span>}
                 {platform && <span>· {platform}</span>}
                 {href && (
-                    <a
-                        href={href}
-                        className="ml-auto font-semibold text-theme-text-soft"
-                    >
-                        Open ↗
-                    </a>
+                    <ArrowLink href={href} className="ml-auto text-xs">
+                        Open
+                    </ArrowLink>
                 )}
             </div>
-        </Surface>
+        </Card>
+    );
+}
+
+/**
+ * One row of pills. The label sits in a fixed column so all three axes start
+ * on the same left edge — three unlabelled rows read as one long list.
+ */
+function FilterAxis<T extends string>({
+    label,
+    values,
+    labels,
+    selected,
+    onToggle,
+}: {
+    label: string;
+    values: readonly T[];
+    labels: Record<T, string>;
+    selected: T[];
+    onToggle: (value: T) => void;
+}) {
+    return (
+        <div className="flex flex-wrap items-baseline gap-x-3 gap-y-2">
+            <PixelLabel variant="chrome" className="w-20 shrink-0">
+                {label}
+            </PixelLabel>
+            <div className="flex flex-1 flex-wrap gap-2">
+                {values.map((value) => (
+                    <TabButton
+                        key={value}
+                        size="sm"
+                        active={selected.includes(value)}
+                        onClick={() => onToggle(value)}
+                    >
+                        {labels[value]}
+                    </TabButton>
+                ))}
+            </div>
+        </div>
     );
 }
 
@@ -168,7 +187,14 @@ function AppsPage() {
     const hasFilters = Boolean(
         category.length || platform.length || signal.length || q,
     );
+    // resetScroll: false — the filters sit halfway down, and jumping to the
+    // top on every pill click made combining them unusable.
     const clear = () => navigate({ resetScroll: false, search: {} });
+    const toggleAxis = (key: keyof AppSearch, value: string) =>
+        navigate({
+            resetScroll: false,
+            search: (prev) => ({ ...prev, [key]: toggle(prev[key], value) }),
+        });
 
     return (
         <>
@@ -186,11 +212,11 @@ function AppsPage() {
             />
 
             {spotlight.length > 0 && (
-                <div className="grid grid-cols-[repeat(auto-fit,minmax(min(320px,100%),1fr))] gap-4">
+                <CardGrid gap="gap-4">
                     {spotlight.map((app) => (
                         <AppCard key={app.name} app={app} />
                     ))}
-                </div>
+                </CardGrid>
             )}
 
             <section className="flex flex-col gap-5">
@@ -201,72 +227,30 @@ function AppsPage() {
                 />
 
                 <div className="flex flex-col gap-3">
-                    <FilterRow label="Category">
-                        {APP_CATEGORIES.map((value) => (
-                            <TabButton
-                                key={value}
-                                size="sm"
-                                active={category.includes(value)}
-                                onClick={() =>
-                                    navigate({
-                                        resetScroll: false,
-                                        search: (prev) => ({
-                                            ...prev,
-                                            category: toggle(
-                                                prev.category,
-                                                value,
-                                            ),
-                                        }),
-                                    })
-                                }
-                            >
-                                {CATEGORY_LABELS[value]}
-                            </TabButton>
-                        ))}
-                    </FilterRow>
-                    <FilterRow label="Badges">
-                        {APP_SIGNALS.map((value) => (
-                            <TabButton
-                                key={value}
-                                size="sm"
-                                active={signal.includes(value)}
-                                onClick={() =>
-                                    navigate({
-                                        resetScroll: false,
-                                        search: (prev) => ({
-                                            ...prev,
-                                            signal: toggle(prev.signal, value),
-                                        }),
-                                    })
-                                }
-                            >
-                                {SIGNAL_LABELS[value]}
-                            </TabButton>
-                        ))}
-                    </FilterRow>
-                    <FilterRow label="Platform">
-                        {APP_PLATFORMS.map((value) => (
-                            <TabButton
-                                key={value}
-                                size="sm"
-                                active={platform.includes(value)}
-                                onClick={() =>
-                                    navigate({
-                                        resetScroll: false,
-                                        search: (prev) => ({
-                                            ...prev,
-                                            platform: toggle(
-                                                prev.platform,
-                                                value,
-                                            ),
-                                        }),
-                                    })
-                                }
-                            >
-                                {PLATFORM_LABELS[value]}
-                            </TabButton>
-                        ))}
-                    </FilterRow>
+                    <FilterAxis
+                        label="Category"
+                        values={APP_CATEGORIES}
+                        labels={CATEGORY_LABELS}
+                        selected={category}
+                        onToggle={(value) => toggleAxis("category", value)}
+                    />
+                    {/* "Badges" is the page's own word for them, one line
+                        above. "Signals" is the internal name in
+                        app-update-greenhouse.js and means nothing here. */}
+                    <FilterAxis
+                        label="Badges"
+                        values={APP_SIGNALS}
+                        labels={SIGNAL_LABELS}
+                        selected={signal}
+                        onToggle={(value) => toggleAxis("signal", value)}
+                    />
+                    <FilterAxis
+                        label="Platform"
+                        values={APP_PLATFORMS}
+                        labels={PLATFORM_LABELS}
+                        selected={platform}
+                        onToggle={(value) => toggleAxis("platform", value)}
+                    />
                 </div>
 
                 {failed ? (
@@ -303,11 +287,11 @@ function AppsPage() {
                                 </>
                             )}
                         </p>
-                        <div className="grid grid-cols-[repeat(auto-fit,minmax(min(320px,100%),1fr))] gap-4">
+                        <CardGrid gap="gap-4">
                             {filtered.slice(0, 60).map((app) => (
                                 <AppCard key={app.name} app={app} />
                             ))}
-                        </div>
+                        </CardGrid>
                         {filtered.length > 60 && (
                             <p className="text-sm text-theme-text-muted">
                                 Showing the first 60 of {filtered.length}.

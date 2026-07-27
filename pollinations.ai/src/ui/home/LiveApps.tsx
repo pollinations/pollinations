@@ -1,8 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { useMemo } from "react";
 import { isBuzz, sortApps, useAppDirectory } from "../../data/publicStats";
-import { appArtwork, HOVER_LIFT } from "../site/mockup";
-import { SectionHeader } from "../site/PageHeader";
+import { ArrowLink, Card, CardGrid, SectionHeader } from "../site/kit";
 
 /**
  * Three, with artwork — the mockup's proportion. Six text-only cards read as
@@ -18,6 +17,12 @@ const ARTWORK = [
     "pixel art chat workspace window with speech bubbles, lavender cream palette",
     "pixel art arcade cabinet glowing in a dark room, warm amber palette",
 ];
+
+function artworkUrl(prompt: string, seed: number): string {
+    return `https://image.pollinations.ai/prompt/${encodeURIComponent(
+        `${prompt}, crisp pixels, flat`,
+    )}?width=420&height=225&nologo=true&seed=${seed}`;
+}
 
 export function LiveApps() {
     const { data: apps, loading } = useAppDirectory();
@@ -43,24 +48,22 @@ export function LiveApps() {
                         ? "Apps are already live."
                         : `${apps.length} apps are already live.`
                 }
-                aside={
-                    <Link
-                        to="/apps"
-                        className="text-sm font-semibold text-theme-text-soft"
-                    >
-                        Browse the ecosystem →
-                    </Link>
+                action={
+                    <ArrowLink as={Link} to="/apps">
+                        Browse the ecosystem
+                    </ArrowLink>
                 }
             />
-            <div className="grid grid-cols-[repeat(auto-fit,minmax(min(300px,100%),1fr))] gap-4">
+            <CardGrid gap="gap-4">
                 {featured.map((app, index) => (
-                    <a
+                    <Card
                         key={app.name}
+                        as="a"
                         href={app.web_url || app.github_repository_url}
-                        className={`flex flex-col overflow-hidden rounded-2xl bg-surface-opaque shadow-well ${HOVER_LIFT}`}
+                        className="overflow-hidden rounded-2xl p-0"
                     >
                         <img
-                            src={appArtwork(ARTWORK[index], 101 + index)}
+                            src={artworkUrl(ARTWORK[index], 101 + index)}
                             alt=""
                             aria-hidden="true"
                             loading="lazy"
@@ -69,18 +72,16 @@ export function LiveApps() {
                             className="block h-[150px] w-full bg-theme-bg-subtle object-cover"
                         />
                         <div className="flex flex-col gap-1.5 px-5 py-4">
-                            <div className="flex items-center gap-2">
-                                <span className="font-subheading text-lg text-theme-text-strong">
-                                    {app.emoji} {app.name}
-                                </span>
-                            </div>
+                            <span className="font-subheading text-lg text-theme-text-strong">
+                                {app.emoji} {app.name}
+                            </span>
                             <p className="line-clamp-2 text-sm leading-relaxed text-theme-text-base">
                                 {app.description}
                             </p>
                         </div>
-                    </a>
+                    </Card>
                 ))}
-            </div>
+            </CardGrid>
         </section>
     );
 }

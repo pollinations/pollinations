@@ -1,6 +1,6 @@
 import { BrandLockup, Button, TabButton } from "@pollinations/ui";
 import { Link, useRouterState } from "@tanstack/react-router";
-import { GUTTER, SHELL } from "./shell";
+import { GUTTER, SHELL } from "./kit";
 import { useHideOnScroll, useScrolled } from "./useHideOnScroll";
 
 const NAV = [

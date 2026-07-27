@@ -3,7 +3,7 @@ import { AppUserMenu } from "@pollinations/ui/app-user-menu/sdk";
 import { createFileRoute } from "@tanstack/react-router";
 import { ENTER_URL, POLLI_APP_KEY } from "../config";
 import { Playground } from "../ui/play/Playground";
-import { PageHeader } from "../ui/site/PageHeader";
+import { PageHeader } from "../ui/site/kit";
 
 export const Route = createFileRoute("/play")({
     component: PlayPage,
@@ -29,16 +29,13 @@ function PlayPage() {
             enterUrl={ENTER_URL}
             permissions={["profile", "usage"]}
         >
-            <>
-                <PageHeader
-                    eyebrow="Every model, in the browser"
-                    title="Try it out."
-                    subtitle="Try any model here before you write a line of code. Sign in and it runs on your own Pollen — nothing to install, and the same endpoints your app will call."
-                    action={<AppUserMenu dashboardHref={ENTER_URL} />}
-                />
-
-                <Playground />
-            </>
+            <PageHeader
+                eyebrow="Every model, in the browser"
+                title="Try it out."
+                subtitle="Try any model here before you write a line of code. Sign in and it runs on your own Pollen — nothing to install, and the same endpoints your app will call."
+                action={<AppUserMenu dashboardHref={ENTER_URL} />}
+            />
+            <Playground />
         </PolliProvider>
     );
 }

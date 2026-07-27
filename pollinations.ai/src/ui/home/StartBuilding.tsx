@@ -1,4 +1,4 @@
-import { ActionButton } from "../site/mockup";
+import { ActionButton } from "../site/kit";
 
 /**
  * The closing CTA: a solid amber panel at the normal section width.

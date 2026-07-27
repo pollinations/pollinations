@@ -1,7 +1,7 @@
 import { createRootRoute, Outlet } from "@tanstack/react-router";
+import { SHELL } from "../ui/site/kit";
 import { SiteFooter } from "../ui/site/SiteFooter";
 import { SiteHeader } from "../ui/site/SiteHeader";
-import { SHELL } from "../ui/site/shell";
 
 export const Route = createRootRoute({
     component: RootLayout,

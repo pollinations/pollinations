@@ -1,22 +1,18 @@
 /* Full token adoption — same entry point as enter's frontend, so the site and
    the dashboard resolve every colour, font and shadow from the same
-   `--polli-*` tokens. Brings Tailwind v4 with it; there is no tailwind.config. */
+   `--polli-*` tokens. Brings Tailwind v4 with it; there is no tailwind.config.
+   It also ships the app-wide prefers-reduced-motion reset, so this file does
+   not repeat one.
+
+   IMPORTANT: this app's Tailwind build is UNPREFIXED. `polli:*` utilities come
+   from the package's own build, which never scans this source — writing them
+   here produces classes that exist only if a package component happens to use
+   the same utility. Site source writes plain `flex`, `gap-4`, `text-sm`. */
 @import "@pollinations/ui/app.css";
 
-@media (prefers-reduced-motion: reduce) {
-    *,
-    *::before,
-    *::after {
-        animation-duration: 0.01ms !important;
-        animation-iteration-count: 1 !important;
-        transition-duration: 0.01ms !important;
-        scroll-behavior: auto !important;
-    }
-}
-
 /* ── /play ─────────────────────────────────────────────────────────────
-   Lifted verbatim from apps/playground so the playground UX is identical
-   here. Keep in sync until that app is retired. */
+   Layout that needs container queries or sticky positioning, which is
+   clearer as CSS than as a wall of arbitrary variants. */
 body.polli-ui-shell {
     height: auto;
     min-height: 100dvh;
@@ -27,13 +23,6 @@ body.polli-ui-shell {
 body.polli-ui-shell #root {
     height: auto;
     min-height: 100dvh;
-}
-
-.polli-playground-control-bar {
-    display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
-    align-items: flex-start;
 }
 
 .polli-playground-main-grid,
@@ -52,10 +41,6 @@ body.polli-ui-shell #root {
 }
 
 @media (min-width: 640px) {
-    .polli-playground-title {
-        font-size: 3rem;
-    }
-
     .polli-playground-frame-grid {
         grid-template-columns: repeat(2, minmax(0, 1fr));
     }

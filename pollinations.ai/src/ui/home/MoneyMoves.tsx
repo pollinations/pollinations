@@ -1,5 +1,5 @@
 import { Button, Surface } from "@pollinations/ui";
-import { SectionHeader } from "../site/PageHeader";
+import { ArrowLink, SectionHeader } from "../site/kit";
 
 const STEPS = [
     "A user signs in to your app with Pollinations, holding Pollen they bought or earned from Quests",
@@ -15,13 +15,13 @@ const STEPS = [
  * The panel carries `dark`, which is a plain class in tokens.css and so
  * re-binds every `--polli-*` token for this subtree only. That means the
  * normal theme utilities resolve to their on-dark values here; nothing needs
- * a hardcoded light colour. (Writing `text-white` does NOT work — app.css
- * starts with `--color-*: initial`, which removes Tailwind's default palette
- * entirely, so `white` is not a colour this project has.)
+ * a hardcoded light colour.
+ *
+ * It also breaks out toward the sheet edge: sections sit at the sheet's 72px
+ * padding, this sits at 24px — the mockup's proportion, and part of why the
+ * dark band reads as a moment rather than as another section. It is the only
+ * element that breaks out; two would make neither of them special.
  */
-// Breaks out toward the sheet edge: sections sit at the sheet's 72px padding,
-// this sits at 24px — the mockup's proportion, and part of why the dark band
-// reads as a moment rather than as another section.
 export function MoneyMoves() {
     return (
         <section className="dark -mx-2 grid grid-cols-[repeat(auto-fit,minmax(min(360px,100%),1fr))] items-center gap-12 rounded-3xl bg-brand-dark px-8 py-14 md:-mx-12 md:px-14">
@@ -35,12 +35,12 @@ export function MoneyMoves() {
                     <Button as="a" href="https://enter.pollinations.ai">
                         Start earning
                     </Button>
-                    <a
+                    <ArrowLink
                         href="https://gen.pollinations.ai/docs"
-                        className="text-sm font-semibold text-theme-text-strong"
+                        className="text-theme-text-strong"
                     >
-                        See how the split works →
-                    </a>
+                        See how the split works
+                    </ArrowLink>
                 </div>
             </div>
 

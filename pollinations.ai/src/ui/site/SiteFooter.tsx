@@ -1,6 +1,6 @@
 import { BrandLockup } from "@pollinations/ui";
 import { Link } from "@tanstack/react-router";
-import { GUTTER, SHELL } from "./shell";
+import { ArrowLink, GUTTER, PixelLabel, SHELL } from "./kit";
 
 const COLUMNS = [
     {
@@ -15,7 +15,7 @@ const COLUMNS = [
         heading: "Explore",
         links: [
             { to: "/apps", label: "Apps" },
-            { href: "https://playground.pollinations.ai", label: "Playground" },
+            { to: "/play", label: "Play" },
             { to: "/community", label: "Community" },
             {
                 href: "https://discord.gg/pollinations-ai-885844321461485618",
@@ -59,9 +59,9 @@ export function SiteFooter() {
                             key={column.heading}
                             className="flex flex-col gap-2"
                         >
-                            <span className="font-pixel text-micro tracking-widest text-theme-text-muted uppercase">
+                            <PixelLabel variant="chrome">
                                 {column.heading}
-                            </span>
+                            </PixelLabel>
                             {column.links.map((link) =>
                                 "to" in link ? (
                                     <Link
@@ -72,13 +72,13 @@ export function SiteFooter() {
                                         {link.label}
                                     </Link>
                                 ) : (
-                                    <a
+                                    <ArrowLink
                                         key={link.label}
                                         href={link.href}
-                                        className="text-sm text-theme-text-base hover:text-theme-text-strong"
+                                        className="font-normal text-theme-text-base"
                                     >
-                                        {link.label} ↗
-                                    </a>
+                                        {link.label}
+                                    </ArrowLink>
                                 ),
                             )}
                         </div>

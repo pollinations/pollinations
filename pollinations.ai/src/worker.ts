@@ -3,7 +3,7 @@
  * Serves static assets and rewrites meta tags per route for SEO.
  *
  * The site talks to the public APIs (gen/enter) directly from the browser using
- * the publishable BYOP app key (see src/api.config.ts), so this worker does no
+ * the publishable BYOP app key (see src/config.ts), so this worker does no
  * API proxying — it only serves assets and rewrites SEO metadata.
  */
 
@@ -54,11 +54,6 @@ const ROUTE_META: Record<string, { title: string; description: string }> = {
     "/refunds": {
         title: "Refunds | pollinations.ai",
         description: "Refunds and cancellations policy for pollinations.ai",
-    },
-    "/night": {
-        title: "Pollinations AI Night | 16 July 2026, Block1 Berlin",
-        description:
-            "A free evening for anyone curious about AI. Show & tell, real or fake? songs, images and news, and a robot DJ. Thu 16 July 2026, 17:30-22:00, Block1, Gaswerksiedlung, Berlin.",
     },
 };
 

@@ -1,4 +1,3 @@
-import polliBee from "@pollinations/ui/brand/polli/polli.png";
 import { createFileRoute } from "@tanstack/react-router";
 import { compact, usePlatformStats } from "../data/publicStats";
 import { DevKit } from "../ui/home/DevKit";
@@ -7,8 +6,7 @@ import { MoneyMoves } from "../ui/home/MoneyMoves";
 import { OnTheWay } from "../ui/home/OnTheWay";
 import { StartBuilding } from "../ui/home/StartBuilding";
 import { ThreeWays } from "../ui/home/ThreeWays";
-import { ActionButton } from "../ui/site/mockup";
-import { PageHeader } from "../ui/site/PageHeader";
+import { ActionButton, Hero, PageHeader } from "../ui/site/kit";
 
 export const Route = createFileRoute("/")({
     component: HelloPage,
@@ -47,60 +45,50 @@ function HelloPage() {
 
     return (
         <>
-            <section className="flex flex-wrap items-center gap-14">
-                <div className="flex min-w-0 flex-1 flex-col gap-8">
-                    <PageHeader
-                        eyebrow="The infrastructure for AI apps"
-                        title="Every model, one wallet."
-                        subtitle={
-                            <>
-                                Text, image, audio and video from a single
-                                endpoint, with{" "}
-                                <strong className="text-theme-text-strong">
-                                    a Pollen balance behind every call
-                                </strong>
-                                . Pay as you go, let your users bring their own,
-                                or publish a model and earn every time
-                                it&rsquo;s called.
-                            </>
-                        }
-                    />
-                    <div className="flex flex-wrap gap-3">
-                        <ActionButton href="https://enter.pollinations.ai">
-                            Get an API key
-                        </ActionButton>
-                        <ActionButton
-                            href="https://gen.pollinations.ai/docs"
-                            tone="plain"
-                        >
-                            Read the docs
-                        </ActionButton>
-                    </div>
-                    <dl className="mt-2 flex flex-wrap gap-10">
-                        {stats.map((stat) => (
-                            <div key={stat.label} className="flex flex-col">
-                                <dt
-                                    className="font-heading text-4xl text-theme-text-soft tabular-nums"
-                                    aria-busy={stat.loading}
-                                >
-                                    {stat.value}
-                                </dt>
-                                <dd className="text-xs text-theme-text-muted">
-                                    {stat.label}
-                                </dd>
-                            </div>
-                        ))}
-                    </dl>
-                </div>
-                <img
-                    src={polliBee}
-                    alt=""
-                    aria-hidden="true"
-                    width={340}
-                    height={340}
-                    className="mx-auto w-56 shrink-0 lg:w-[340px]"
+            <Hero>
+                <PageHeader
+                    eyebrow="The infrastructure for AI apps"
+                    title="Every model, one wallet."
+                    subtitle={
+                        <>
+                            Text, image, audio and video from a single endpoint,
+                            with{" "}
+                            <strong className="text-theme-text-strong">
+                                a Pollen balance behind every call
+                            </strong>
+                            . Pay as you go, let your users bring their own, or
+                            publish a model and earn every time it&rsquo;s
+                            called.
+                        </>
+                    }
                 />
-            </section>
+                <div className="flex flex-wrap gap-3">
+                    <ActionButton href="https://enter.pollinations.ai">
+                        Get an API key
+                    </ActionButton>
+                    <ActionButton
+                        href="https://gen.pollinations.ai/docs"
+                        tone="plain"
+                    >
+                        Read the docs
+                    </ActionButton>
+                </div>
+                <dl className="mt-2 flex flex-wrap gap-10">
+                    {stats.map((stat) => (
+                        <div key={stat.label} className="flex flex-col">
+                            <dt
+                                className="font-heading text-4xl text-theme-text-soft tabular-nums"
+                                aria-busy={stat.loading}
+                            >
+                                {stat.value}
+                            </dt>
+                            <dd className="text-xs text-theme-text-muted">
+                                {stat.label}
+                            </dd>
+                        </div>
+                    ))}
+                </dl>
+            </Hero>
 
             <ThreeWays />
             <DevKit />

@@ -1,7 +1,11 @@
-import { Surface } from "@pollinations/ui";
 import type { ReactNode } from "react";
-import { HOVER_LIFT } from "../site/mockup";
-import { SectionHeader } from "../site/PageHeader";
+import {
+    ArrowLink,
+    Card,
+    CardGrid,
+    PixelLabel,
+    SectionHeader,
+} from "../site/kit";
 
 type Tool = {
     label: string;
@@ -12,7 +16,7 @@ type Tool = {
 };
 
 /**
- * Six, not five. `minmax(360px,1fr)` resolves to 3 / 2 / 1 columns across
+ * Six, not five. `minmax(320px,1fr)` resolves to 3 / 2 / 1 columns across
  * desktop, tablet and mobile, and six divides evenly at all three — five
  * always orphaned one. Wallet and Earn were cut because "Same API. Your
  * choice who pays." and "How the money moves" already tell that story twice;
@@ -88,41 +92,29 @@ export function DevKit() {
             <SectionHeader
                 eyebrow="Dev kit"
                 title="Everything already in your hands."
-                aside={
-                    <a
-                        href="https://gen.pollinations.ai/docs"
-                        className="text-sm font-semibold text-theme-text-soft"
-                    >
-                        Need the details? read the API docs →
-                    </a>
+                action={
+                    <ArrowLink href="https://gen.pollinations.ai/docs">
+                        Need the details? read the API docs
+                    </ArrowLink>
                 }
             />
 
-            <div className="grid grid-cols-[repeat(auto-fit,minmax(min(320px,100%),1fr))] gap-5">
+            <CardGrid>
                 {TOOLS.map((tool) => (
-                    <Surface
-                        key={tool.label}
-                        variant="card"
-                        className={`flex flex-col gap-2.5 p-7 ${HOVER_LIFT}`}
-                    >
-                        <p className="font-pixel text-xs tracking-wider text-theme-text-soft uppercase">
-                            {tool.label}
-                        </p>
+                    <Card key={tool.label} className="gap-2.5 p-7">
+                        <PixelLabel>{tool.label}</PixelLabel>
                         <h3 className="font-subheading text-xl text-theme-text-strong">
                             {tool.title}
                         </h3>
                         <p className="text-sm leading-relaxed text-theme-text-base">
                             {tool.body}
                         </p>
-                        <a
-                            href={tool.href}
-                            className="mt-auto pt-2 text-sm font-semibold text-theme-text-soft"
-                        >
-                            {tool.linkLabel} →
-                        </a>
-                    </Surface>
+                        <ArrowLink href={tool.href} className="mt-auto pt-2">
+                            {tool.linkLabel}
+                        </ArrowLink>
+                    </Card>
                 ))}
-            </div>
+            </CardGrid>
         </section>
     );
 }

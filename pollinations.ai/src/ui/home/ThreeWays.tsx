@@ -1,6 +1,10 @@
-import { Chip, Surface } from "@pollinations/ui";
-import { CodeBlock, HOVER_LIFT } from "../site/mockup";
-import { SectionHeader } from "../site/PageHeader";
+import {
+    Card,
+    CardGrid,
+    PixelLabel,
+    SectionHeader,
+    Terminal,
+} from "../site/kit";
 
 type Way = {
     chip: string;
@@ -61,23 +65,14 @@ export function ThreeWays() {
                 subtitle="Every flow hits the same generation endpoints — what changes is the key you send and the model you name."
             />
 
-            <div className="grid grid-cols-[repeat(auto-fit,minmax(min(320px,100%),1fr))] gap-5">
+            <CardGrid>
                 {WAYS.map((way) => (
-                    <Surface
-                        key={way.chip}
-                        variant="card"
-                        className={`flex flex-col gap-3 p-7 ${HOVER_LIFT}`}
-                    >
-                        <div className="flex flex-wrap items-center gap-2">
-                            {/* All three chips share one treatment — the section
-                                headline says these are equal options, so none
-                                of them gets to shout. */}
-                            <Chip
-                                size="sm"
-                                className="bg-theme-bg-subtle font-pixel text-theme-text-soft uppercase"
-                            >
-                                {way.chip}
-                            </Chip>
+                    <Card key={way.chip} className="gap-3 p-7">
+                        {/* All three labels share one treatment — the section
+                            headline says these are equal options, so none of
+                            them gets to shout. */}
+                        <div className="flex flex-wrap items-baseline gap-2">
+                            <PixelLabel>{way.chip}</PixelLabel>
                             {way.chipTitle && (
                                 <span className="text-sm text-theme-text-muted">
                                     {way.chipTitle}
@@ -90,9 +85,7 @@ export function ThreeWays() {
                         <p className="text-sm leading-relaxed text-theme-text-base">
                             {way.body}
                         </p>
-                        <CodeBlock filename={way.filename}>
-                            {way.code}
-                        </CodeBlock>
+                        <Terminal filename={way.filename}>{way.code}</Terminal>
                         <p className="mt-auto pt-2 text-xs text-theme-text-muted">
                             Who pays:{" "}
                             <strong className="text-theme-text-strong">
@@ -107,14 +100,12 @@ export function ThreeWays() {
                                 </>
                             )}
                         </p>
-                    </Surface>
+                    </Card>
                 ))}
-            </div>
+            </CardGrid>
 
             <div className="flex flex-wrap items-center gap-3.5 rounded-2xl bg-theme-bg-subtle px-5 py-4">
-                <span className="font-pixel text-xs tracking-wider text-theme-text-soft uppercase">
-                    Stackable
-                </span>
+                <PixelLabel>Stackable</PixelLabel>
                 <p className="text-sm text-theme-text-base">
                     A BYOP app calling a community model pays out twice — an app
                     reward to the developer and a model reward to the owner,

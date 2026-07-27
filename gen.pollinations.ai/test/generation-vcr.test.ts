@@ -37,6 +37,7 @@ const test = baseTest.extend<{
 
 function createGenerationMocks() {
     env.PORTKEY_GATEWAY_URL = "https://portkey.test";
+    env.REPLICATE_API_TOKEN = "replicate-test-key";
     const portkeyHost = new URL(env.PORTKEY_GATEWAY_URL).host;
     const replicateState: {
         requests: Array<{

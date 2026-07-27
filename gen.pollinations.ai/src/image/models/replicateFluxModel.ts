@@ -1,19 +1,22 @@
 import debug from "debug";
 import type { ImageGenerationResult } from "../createAndReturnImages.ts";
-import { getImageEnv } from "../env.ts";
 import { HttpError } from "../httpError.ts";
 import type { ImageParams } from "../params.ts";
 import { sanitizeString } from "../util.ts";
 import { closestByRatio } from "../utils/aspectRatio.ts";
 import { fetchUpstream } from "../utils/fetchUpstream.ts";
 import { transformImage } from "../utils/imageTransform.ts";
+import {
+    ReplicateError,
+    runReplicatePrediction,
+} from "../utils/replicateClient.ts";
 
-const logOps = debug("pollinations:fireworks-flux:ops");
+const logOps = debug("pollinations:replicate-flux:ops");
+const logError = debug("pollinations:replicate-flux:error");
 
-const FIREWORKS_FLUX_SCHNELL_URL =
-    "https://api.fireworks.ai/inference/v1/workflows/accounts/fireworks/models/flux-1-schnell-fp8/text_to_image";
+const REPLICATE_FLUX_SCHNELL_MODEL = "black-forest-labs/flux-schnell";
 
-const FIREWORKS_ASPECT_RATIOS: Array<{ ratio: number; label: string }> = [
+const REPLICATE_ASPECT_RATIOS: Array<{ ratio: number; label: string }> = [
     { ratio: 1 / 1, label: "1:1" },
     { ratio: 21 / 9, label: "21:9" },
     { ratio: 16 / 9, label: "16:9" },
@@ -27,54 +30,64 @@ const FIREWORKS_ASPECT_RATIOS: Array<{ ratio: number; label: string }> = [
     { ratio: 3 / 4, label: "3:4" },
 ];
 
-export async function callFireworksFluxSchnellAPI(
+export async function callReplicateFluxSchnellAPI(
     prompt: string,
     safeParams: ImageParams,
 ): Promise<ImageGenerationResult> {
-    const apiKey = getImageEnv("FIREWORKS_API_KEY");
-    if (!apiKey) {
-        throw new HttpError("FIREWORKS_API_KEY is required for Flux", 500);
-    }
-
     const aspectRatio = closestByRatio(
         safeParams.width || 1024,
         safeParams.height || 1024,
-        FIREWORKS_ASPECT_RATIOS,
+        REPLICATE_ASPECT_RATIOS,
     ).label;
-    const body = {
+    const input = {
         prompt: sanitizeString(prompt),
         aspect_ratio: aspectRatio,
         num_inference_steps: 4,
+        num_outputs: 1,
+        output_format: "jpg",
+        output_quality: 90,
+        go_fast: true,
+        megapixels: "1",
         seed: safeParams.seed,
     };
 
-    logOps("Calling Fireworks FLUX.1 schnell:", {
+    logOps("Calling Replicate FLUX.1 Schnell:", {
         aspectRatio,
         seed: safeParams.seed,
     });
 
-    const response = await fetchUpstream(FIREWORKS_FLUX_SCHNELL_URL, {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-            Accept: "image/jpeg",
-            Authorization: `Bearer ${apiKey}`,
-        },
-        body: JSON.stringify(body),
-        errorLabel: "Fireworks FLUX generation failed",
-    });
-
-    const finishReason = response.headers.get("finish-reason");
-    if (finishReason && finishReason !== "SUCCESS") {
-        throw new HttpError(
-            `Fireworks FLUX generation failed: ${finishReason}`,
-            finishReason === "CONTENT_FILTERED" ? 400 : 502,
-            undefined,
-            FIREWORKS_FLUX_SCHNELL_URL,
-        );
+    let outputUrls: string[];
+    try {
+        const result = await runReplicatePrediction<typeof input, string[]>({
+            model: REPLICATE_FLUX_SCHNELL_MODEL,
+            input,
+        });
+        outputUrls = Array.isArray(result.output) ? result.output : [];
+        logOps("Replicate FLUX.1 Schnell prediction succeeded:", {
+            id: result.id,
+            predict_time: result.predictTimeSeconds,
+        });
+    } catch (error) {
+        logError("Replicate FLUX.1 Schnell prediction failed:", error);
+        if (error instanceof ReplicateError) {
+            throw new HttpError(
+                `Replicate FLUX generation failed: ${error.message}`,
+                error.status ?? 500,
+                undefined,
+                error.url,
+            );
+        }
+        throw error;
     }
 
-    let buffer: Buffer = Buffer.from(await response.arrayBuffer());
+    if (outputUrls.length === 0) {
+        throw new HttpError("Replicate FLUX returned no images", 500);
+    }
+
+    const response = await fetchUpstream(outputUrls[0], {
+        errorLabel: "Failed to download Replicate FLUX output image",
+    });
+    let buffer = Buffer.from(await response.arrayBuffer());
     if (safeParams.dimensionsExplicit) {
         buffer = await transformImage(buffer, {
             width: safeParams.width,

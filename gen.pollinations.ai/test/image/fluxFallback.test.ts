@@ -80,8 +80,10 @@ beforeEach(() => {
     setServerRegistryBinding(makeKv(), "test");
     __resetLatencyStateForTests();
     syncImageEnv(
-        { FIREWORKS_API_KEY: "fw-test-key" } as unknown as CloudflareBindings,
-        ["FIREWORKS_API_KEY"] as never[],
+        {
+            REPLICATE_API_TOKEN: "replicate-test-key",
+        } as unknown as CloudflareBindings,
+        ["REPLICATE_API_TOKEN"] as never[],
     );
 });
 
@@ -103,34 +105,60 @@ describe("callFluxWithFallback", () => {
         expect(result.trackingData?.actualModel).toBe("flux");
     });
 
-    it("falls back to Fireworks when no flux worker is registered", async () => {
-        const calls = mockFetch(
-            () => new Response(JPEG_BYTES, { status: 200 }),
+    it("falls back to Replicate when no flux worker is registered", async () => {
+        const calls = mockFetch((url) =>
+            url.includes("api.replicate.com")
+                ? new Response(
+                      JSON.stringify({
+                          id: "prediction-1",
+                          status: "succeeded",
+                          output: ["https://replicate.delivery/output.jpg"],
+                          metrics: { predict_time: 0.5 },
+                      }),
+                      { status: 201 },
+                  )
+                : new Response(JPEG_BYTES, { status: 200 }),
         );
 
         const result = await callFluxWithFallback("a red apple", fluxParams);
 
-        expect(calls).toHaveLength(1);
-        expect(calls[0]).toContain("api.fireworks.ai");
+        expect(calls).toEqual([
+            "https://api.replicate.com/v1/models/black-forest-labs/flux-schnell/predictions",
+            "https://replicate.delivery/output.jpg",
+        ]);
         expect(Buffer.from(result.buffer).equals(Buffer.from(JPEG_BYTES))).toBe(
             true,
         );
         expect(result.isMature).toBe(false);
     });
 
-    it("falls back to Fireworks when the pool request fails", async () => {
+    it("falls back to Replicate when the pool request fails", async () => {
         await registerServer("https://gpu1.example", "flux");
-        const calls = mockFetch((url) =>
-            new URL(url).hostname === "gpu1.example"
-                ? new Response("CUDA error", { status: 500 })
-                : new Response(JPEG_BYTES, { status: 200 }),
-        );
+        const calls = mockFetch((url) => {
+            const hostname = new URL(url).hostname;
+            if (hostname === "gpu1.example") {
+                return new Response("CUDA error", { status: 500 });
+            }
+            if (hostname === "api.replicate.com") {
+                return new Response(
+                    JSON.stringify({
+                        id: "prediction-2",
+                        status: "succeeded",
+                        output: ["https://replicate.delivery/output.jpg"],
+                        metrics: { predict_time: 0.5 },
+                    }),
+                    { status: 201 },
+                );
+            }
+            return new Response(JPEG_BYTES, { status: 200 });
+        });
 
         const result = await callFluxWithFallback("a red apple", fluxParams);
 
-        expect(calls).toHaveLength(2);
+        expect(calls).toHaveLength(3);
         expect(calls[0]).toBe("https://gpu1.example/generate");
-        expect(calls[1]).toContain("api.fireworks.ai");
+        expect(calls[1]).toContain("api.replicate.com");
+        expect(calls[2]).toBe("https://replicate.delivery/output.jpg");
         expect(Buffer.from(result.buffer).equals(Buffer.from(JPEG_BYTES))).toBe(
             true,
         );

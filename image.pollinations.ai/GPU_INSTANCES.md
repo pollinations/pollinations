@@ -6,7 +6,7 @@ Last updated: 2026-07-27
 
 | Model | Workers | GPUs | Provider | Cost/hr | Status |
 |-------|---------|------|----------|---------|--------|
-| Flux (FP4) | 1 | RTX 5090 | Vast.ai | $0.3744/hr | **ACTIVE — production** (Fireworks fallback) |
+| Flux (FP4) | 1 | RTX 5090 | Vast.ai | $0.3744/hr | **ACTIVE — production** (Replicate fallback) |
 | Z-Image | 2 active + 1 stopped rollback | 3x RTX 5090 | Vast.ai | $0.773333/hr active + $0.022222/hr stopped storage | **ACTIVE — two production** |
 | Klein 4B | 1 active + 1 rollback | RTX 3090 + A5000 | Vast.ai + RunPod | $0.1656 + $0.27 while rollback runs | **ACTIVE — Vast production; RunPod stop-ready** |
 | LTX-2 + ACE-Step + Sana | 1 | GH200 | Lambda Labs | — | **ACTIVE** |
@@ -14,7 +14,7 @@ Last updated: 2026-07-27
 ## Provider: Vast.ai — Flux (RTX 5090, FP4)
 
 One single-GPU instance fronted by a Cloudflare Tunnel. Flux routes pool-first
-with automatic Fireworks fallback
+with automatic Replicate fallback
 (`gen.pollinations.ai/src/image/createAndReturnImages.ts` → `callFluxWithFallback`).
 
 | Worker | Vast instance | GPU | Listed rate | Status |
@@ -25,7 +25,7 @@ with automatic Fireworks fallback
 > CRITICAL: workers MUST be behind a named Cloudflare tunnel created in the
 > authoritative Pollinations account. The gen Worker cannot fetch a Vast
 > raw-IP/non-standard-port origin, and a successful registry heartbeat alone
-> does not prove the data path works. Fireworks can hide either failure.
+> does not prove the data path works. Replicate can hide either failure.
 
 **The quick-tunnel warning above is not theoretical — it caused the #12254
 outage.** flux-vast-03 was left on a `trycloudflare.com` quick tunnel (free,
@@ -72,7 +72,7 @@ POLLINATIONS_API_KEY=... bash image.pollinations.ai/nunchaku/verify-vast.sh  # r
 
 **Key behavior:** FP4 nunchaku, 4 steps, full 1024x1024 (`MAX_PIXELS=1048576`);
 `QUEUE_LIMIT=3` allows one running request plus two waiting; additional load is
-shed with 503 so the gateway falls back to Fireworks instead of making users
+shed with 503 so the gateway falls back to Replicate instead of making users
 wait in a long queue.
 
 ## Provider: Vast.ai — Z-Image Turbo (RTX 5090)

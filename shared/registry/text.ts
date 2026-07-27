@@ -1,4 +1,8 @@
-import { defineCostVariants, longContextAbove } from "./cost-variants";
+import {
+    defineCostVariants,
+    longContextAbove,
+    longContextAtLeast,
+} from "./cost-variants";
 import {
     OPENROUTER_GEMINI_SEARCH_BILLING,
     withOpenRouterGeminiCacheStorage,
@@ -169,10 +173,8 @@ export const TEXT_SERVICES = {
             promptCachedTokens: perMillion(0.5),
             completionTextTokens: perMillion(30.0),
         },
-        // Azure "GPT-5.5 Long Context Global" meters: $10/$1/$45 (verified
-        // 2026-07-22). Azure prints no numeric threshold for 5.5; 272k is
-        // presumed from meter symmetry with GPT-5.4 (identical 1,050,000
-        // context window and meter structure).
+        // GPT-5.5 documents strict >272K whole-request repricing; Azure's
+        // LongCo global meters are $10/$1/$45 per M.
         ...defineCostVariants(
             {
                 long_context: {
@@ -207,6 +209,19 @@ export const TEXT_SERVICES = {
             promptCacheWriteTokens: perMillion(6.25),
             completionTextTokens: perMillion(30.0),
         },
+        // Azure standard-global LongCo meters apply strict >272K whole-request
+        // repricing: 2x input/cache/cache-write and 1.5x output.
+        ...defineCostVariants(
+            {
+                long_context: {
+                    promptTextTokens: perMillion(10.0),
+                    promptCachedTokens: perMillion(1.0),
+                    promptCacheWriteTokens: perMillion(12.5),
+                    completionTextTokens: perMillion(45.0),
+                },
+            },
+            longContextAbove(272_000),
+        ),
         title: "ChatGPT 5.6 Sol",
         description: "Frontier reasoning for complex multimodal tasks",
         inputModalities: ["text", "image"],
@@ -230,6 +245,17 @@ export const TEXT_SERVICES = {
             promptCacheWriteTokens: perMillion(3.125),
             completionTextTokens: perMillion(15.0),
         },
+        ...defineCostVariants(
+            {
+                long_context: {
+                    promptTextTokens: perMillion(5.0),
+                    promptCachedTokens: perMillion(0.5),
+                    promptCacheWriteTokens: perMillion(6.25),
+                    completionTextTokens: perMillion(22.5),
+                },
+            },
+            longContextAbove(272_000),
+        ),
         title: "ChatGPT 5.6 Terra",
         description: "Balanced reasoning for general multimodal tasks",
         inputModalities: ["text", "image"],
@@ -253,6 +279,17 @@ export const TEXT_SERVICES = {
             promptCacheWriteTokens: perMillion(1.25),
             completionTextTokens: perMillion(6.0),
         },
+        ...defineCostVariants(
+            {
+                long_context: {
+                    promptTextTokens: perMillion(2.0),
+                    promptCachedTokens: perMillion(0.2),
+                    promptCacheWriteTokens: perMillion(2.5),
+                    completionTextTokens: perMillion(9.0),
+                },
+            },
+            longContextAbove(272_000),
+        ),
         title: "ChatGPT 5.6 Luna",
         description: "Fast low-cost reasoning for everyday multimodal tasks",
         inputModalities: ["text", "image"],
@@ -636,7 +673,7 @@ export const TEXT_SERVICES = {
         priceMultiplier: 1,
         cost: {
             promptTextTokens: perMillion(1.74),
-            promptCachedTokens: perMillion(0.14),
+            promptCachedTokens: perMillion(0.145),
             completionTextTokens: perMillion(3.48),
         },
         title: "DeepSeek V4 Pro",
@@ -738,13 +775,23 @@ export const TEXT_SERVICES = {
         addedDate: new Date("2026-07-18").getTime(),
         paidOnly: true,
         priceMultiplier: 1,
-        // OpenRouter doubles token rates above 200K prompt tokens. Pollinations
-        // keeps the full context window and absorbs that higher tier.
+        // OpenRouter's current price-sorted standard route doubles token rates
+        // from 200K prompt tokens.
         cost: {
             promptTextTokens: perMillion(2),
-            promptCachedTokens: perMillion(0.5),
+            promptCachedTokens: perMillion(0.3),
             completionTextTokens: perMillion(6),
         },
+        ...defineCostVariants(
+            {
+                long_context: {
+                    promptTextTokens: perMillion(4),
+                    promptCachedTokens: perMillion(0.6),
+                    completionTextTokens: perMillion(12),
+                },
+            },
+            longContextAtLeast(200_000),
+        ),
         title: "Grok 4.5",
         description: "Frontier reasoning for coding and knowledge work",
         inputModalities: ["text", "image"],
@@ -889,6 +936,17 @@ export const TEXT_SERVICES = {
             promptCachedTokens: perMillion(0.5),
             completionTextTokens: perMillion(30.0),
         },
+        // Uses the same Azure GPT-5.5 deployment as openai-large.
+        ...defineCostVariants(
+            {
+                long_context: {
+                    promptTextTokens: perMillion(10.0),
+                    promptCachedTokens: perMillion(1.0),
+                    completionTextTokens: perMillion(45.0),
+                },
+            },
+            longContextAbove(272_000),
+        ),
         title: "MIDIjourney Large",
         description:
             "Composes richer, more detailed MIDI arrangements; costs more per piece",
@@ -1350,7 +1408,7 @@ export const TEXT_SERVICES = {
             completionTextTokens: perMillion(12.0),
         },
         // The pinned OpenRouter Google Vertex route reprices the whole request
-        // above 200K prompt tokens. Fields absent from the provider override
+        // from 200K prompt tokens. Fields absent from the provider override
         // (cache writes, images, and video) retain their base rates. Search and
         // cache storage remain independent adjustments below.
         ...defineCostVariants(
@@ -1362,7 +1420,7 @@ export const TEXT_SERVICES = {
                     completionTextTokens: perMillion(18.0),
                 },
             },
-            longContextAbove(200_000),
+            longContextAtLeast(200_000),
         ),
         billing: withOpenRouterGeminiCacheStorage(
             OPENROUTER_GEMINI_SEARCH_BILLING,
@@ -1656,14 +1714,24 @@ export const TEXT_SERVICES = {
         addedDate: new Date("2026-06-12").getTime(),
         paidOnly: false,
         priceMultiplier: 1,
-        // OpenRouter triples token rates above 256K prompt tokens. Pollinations
-        // keeps the full context window and absorbs that higher tier.
+        // OpenRouter triples all token rates from 256K prompt tokens.
         cost: {
             promptTextTokens: perMillion(0.32),
             promptCachedTokens: perMillion(0.064),
             promptCacheWriteTokens: perMillion(0.4),
             completionTextTokens: perMillion(1.28),
         },
+        ...defineCostVariants(
+            {
+                long_context: {
+                    promptTextTokens: perMillion(0.96),
+                    promptCachedTokens: perMillion(0.192),
+                    promptCacheWriteTokens: perMillion(1.2),
+                    completionTextTokens: perMillion(3.84),
+                },
+            },
+            longContextAtLeast(256_000),
+        ),
         title: "Qwen3.7 Plus",
         description:
             "Multimodal agent intelligence for coding and productivity",

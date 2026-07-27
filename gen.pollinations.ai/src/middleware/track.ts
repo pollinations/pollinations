@@ -110,8 +110,6 @@ type ResponseTrackingData = {
     usage?: Usage;
     cost?: UsageCost;
     price?: UsagePrice;
-    // Named conditional pricing sheet selected by calculateUsageBilling.
-    costVariant?: string;
     // Per-rule billing adjustment breakdown for the billed generation. Absent on
     // cache hits / not-billed paths, which return before cost calculation.
     adjustments?: BillingAdjustment[];
@@ -131,9 +129,8 @@ export type TrackVariables = {
         resolvedModelRequested: string;
         streamRequested: boolean;
         overrideResponseTracking: (response: Response) => void;
-        // Service layers (text/image/video/3d response builders) register the
-        // normalized request facts that can affect pricing (resolution, audio,
-        // …). Consumed once at billing time by selectCostVariant.
+        // Service layers register normalized request facts that affect
+        // pricing. Consumed once at billing time by selectCostVariant.
         setPricingInput: (input: PricingInput) => void;
     };
 };
@@ -547,7 +544,6 @@ async function trackResponse(
         fallbackUsed,
         cost,
         price,
-        costVariant,
         adjustments,
         priceDefinition,
         costVariant,

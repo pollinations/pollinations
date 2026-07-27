@@ -1,3 +1,4 @@
+import { defineCostVariants } from "./cost-variants";
 import { perMillion } from "./price-helpers";
 import type { ModelDefinition } from "./registry";
 
@@ -496,12 +497,19 @@ export const IMAGE_SERVICES = {
         addedDate: new Date("2026-06-13").getTime(),
         priceMultiplier: 1,
         paidOnly: true,
-        // Replicate wan-2.7 locked to 1080p. i2v bills $0.15/s at 1080p and t2v
-        // $0.10/s; we charge the single higher rate so the model has one price
-        // and never under-bills. Audio bundled into the per-second rate.
+        // Replicate wan-2.7 locked to 1080p: t2v is $0.10/s and i2v is
+        // $0.15/s. Audio is bundled into the per-second rate.
         cost: {
-            completionVideoSeconds: 0.15, // per sec (1080p, includes audio)
+            completionVideoSeconds: 0.1, // per sec (1080p t2v, includes audio)
         },
+        ...defineCostVariants(
+            {
+                image_to_video: {
+                    completionVideoSeconds: 0.15, // per sec (1080p i2v)
+                },
+            },
+            ({ input }) => (input?.hasImage ? "image_to_video" : undefined),
+        ),
         title: "Wan 2.7 1080p",
         description: "Keyframe-controlled video with sound in full 1080p",
         inputModalities: ["text", "image"],
@@ -562,10 +570,18 @@ export const IMAGE_SERVICES = {
         paidOnly: true,
         priceMultiplier: 1,
         // Moved off Alibaba DashScope to Replicate: qwen/qwen-image (t2i,
-        // $0.025) + qwen/qwen-image-edit-plus (edit, $0.03). Billed at $0.03.
+        // $0.025) + qwen/qwen-image-edit-plus (edit, $0.03).
         cost: {
-            completionImageTokens: 0.03, // per image
+            completionImageTokens: 0.025, // per t2i image
         },
+        ...defineCostVariants(
+            {
+                edit: {
+                    completionImageTokens: 0.03, // per edited image
+                },
+            },
+            ({ input }) => (input?.hasImage ? "edit" : undefined),
+        ),
         title: "Qwen Image Plus",
         description:
             "Versatile image creation and editing, strong at text inside images",

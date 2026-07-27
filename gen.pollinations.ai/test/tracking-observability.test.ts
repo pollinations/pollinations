@@ -42,6 +42,7 @@ function createTestApp(
         resolved: "openai",
         definition: getRegistryModelDefinition("openai"),
     },
+    responseHeaders: Record<string, string> = {},
 ) {
     const app = new Hono<Env>();
 
@@ -89,6 +90,7 @@ function createTestApp(
                         "x-model-used": "gpt-5-nano-2025-08-07",
                         "x-usage-prompt-text-tokens": "1000",
                         "x-usage-completion-text-tokens": "500",
+                        ...responseHeaders,
                     },
                 },
             ),
@@ -408,6 +410,78 @@ describe("tracking observability", () => {
         expect(event).not.toHaveProperty("cacheKey");
         expect(consumePollen).toHaveBeenCalledWith(expect.any(Number));
         expect(consumePollen.mock.calls[0]?.[0]).toBeGreaterThan(0);
+    });
+
+    it("records and deducts the effective long-context price sheet", async () => {
+        const tinybirdRequests: Request[] = [];
+        vi.spyOn(globalThis, "fetch").mockImplementation(
+            async (input, init) => {
+                tinybirdRequests.push(new Request(input, init));
+                return new Response("ok");
+            },
+        );
+        const consumePollen = vi.fn<(amount: number) => Promise<void>>(
+            async () => {},
+        );
+        const model: ModelVariables["model"] = {
+            requested: "gpt-5.6-sol",
+            resolved: "gpt-5.6-sol",
+            definition: getRegistryModelDefinition("gpt-5.6-sol"),
+        };
+
+        const ctx = createExecutionContext();
+        const response = await createTestApp(
+            consumePollen,
+            trackingUser,
+            model,
+            {
+                "x-model-used": "gpt-5.6-sol",
+                "x-usage-prompt-text-tokens": "272001",
+                "x-usage-completion-text-tokens": "1000",
+            },
+        ).fetch(
+            new Request("https://gen.pollinations.ai/v1/chat/completions", {
+                method: "POST",
+                headers: { "content-type": "application/json" },
+                body: JSON.stringify({
+                    model: "gpt-5.6-sol",
+                    stream: false,
+                    messages: [{ role: "user", content: "test" }],
+                }),
+            }),
+            {
+                DB: env.DB,
+                ENVIRONMENT: "test",
+                LOG_LEVEL: "debug",
+                LOG_FORMAT: "text",
+                BETTER_AUTH_SECRET: "test_secret",
+                TINYBIRD_INGEST_URL:
+                    "https://tinybird.test/v0/events?name=generation_event_v2",
+                TINYBIRD_INGEST_TOKEN: "test_tinybird_token",
+            } as CloudflareBindings,
+            ctx,
+        );
+
+        await waitOnExecutionContext(ctx);
+
+        expect(response.status).toBe(200);
+        expect(tinybirdRequests).toHaveLength(1);
+        const event = (await tinybirdRequests[0].json()) as TinybirdEvent;
+        const expectedCost = 272_001 * (10 / 1e6) + 1_000 * (45 / 1e6);
+        const expectedPrice = expectedCost * 0.5;
+        expect(event).toMatchObject({
+            modelRequested: "gpt-5.6-sol",
+            resolvedModelRequested: "gpt-5.6-sol",
+            costVariant: "long_context",
+            tokenPricePromptText: 5 / 1e6,
+            tokenPriceCompletionText: 22.5 / 1e6,
+            tokenCountPromptText: 272_001,
+            tokenCountCompletionText: 1_000,
+            totalCost: expectedCost,
+            totalPrice: expectedPrice,
+            devPrice: expectedPrice,
+        });
+        expect(consumePollen).toHaveBeenCalledWith(expectedPrice);
     });
 
     it("does not emit Tinybird generation events for cache hits", async () => {

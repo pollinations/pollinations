@@ -9,6 +9,7 @@ export {
     type CostVariantContext,
     defineCostVariants,
     longContextAbove,
+    longContextAtLeast,
     type PricingInput,
     totalPromptTokens,
 } from "./cost-variants";
@@ -162,9 +163,6 @@ export type ModelDefinition = {
     flatRate?: boolean;
     hidden?: boolean; // Hidden from /models endpoints and dashboard, but still usable via API
     supportedEndpoints?: string[]; // Override the default endpoints for specialized models
-    // Video-only: supported output resolutions; first entry is the default.
-    // Non-default resolutions usually pair with a cost variant of the same name.
-    resolutions?: string[];
     videoCapabilities?: VideoCapability[]; // Video-only: which frame controls the provider supports
     maxReferenceImages?: number; // Models with image input: effective accepted reference images
     maxReferenceVideos?: number; // Models with video input: effective accepted reference videos

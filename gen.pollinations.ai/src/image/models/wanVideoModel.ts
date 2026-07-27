@@ -9,11 +9,10 @@
  *   - wan      → wan-2.6-t2v      / wan-2.6-i2v       (720p, native audio)
  *   - wan-pro  → wan-2.7-t2v      / wan-2.7-i2v       (720p, native audio)
  *
- * ONE PRICE PER MODEL: Replicate prices Wan video per-second by resolution
- * (720p vs 1080p) — so each model is LOCKED to a single resolution to keep a
- * single rate. wan/wan-pro lock to 720p ($0.10/s, audio bundled); wan-fast
- * locks to 480p (flat $0.05 per fixed-length clip). 1080p, if ever wanted,
- * would be a separate model. This mirrors the Seedance 720p-locked convention.
+ * Replicate prices Wan video per-second by mode and resolution. Each public
+ * model remains locked to one resolution: wan/wan-pro to 720p and
+ * wan-pro-1080p to 1080p. The 1080p registry entry selects $0.10/s for
+ * text-to-video and $0.15/s for image-to-video; audio is bundled.
  */
 
 import debug from "debug";
@@ -153,9 +152,9 @@ const WAN_26_CONFIG: WanVariantConfig = {
     },
 };
 
-// Wan 2.7 is offered at two locked resolutions as separate models (one price
-// each): wan-pro @720p ($0.10/s) and wan-pro-1080p @1080p ($0.15/s). The t2v/i2v
-// schemas are identical apart from the resolution value, so share a factory.
+// Wan 2.7 is offered at two locked resolutions as separate models:
+// wan-pro @720p and wan-pro-1080p @1080p. The t2v/i2v schemas are identical
+// apart from the resolution value, so share a factory.
 function makeWan27Config(
     resolution: "720p" | "1080p",
     trackingName: string,
@@ -308,7 +307,7 @@ export function callWanProAPI(
     return generateWanVideo(WAN_27_CONFIG, prompt, safeParams);
 }
 
-/** Wan 2.7 via Replicate at locked 1080p (billed at the higher i2v rate). */
+/** Wan 2.7 via Replicate at locked 1080p. */
 export function callWanPro1080pAPI(
     prompt: string,
     safeParams: ImageParams,

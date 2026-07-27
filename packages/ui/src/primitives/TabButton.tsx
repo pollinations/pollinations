@@ -24,9 +24,16 @@ export type TabButtonProps<T extends ElementType = "button"> =
             keyof TabButtonOwnProps | "as"
         >;
 
-/** Shared pill shape (no colors) — used by every TabButton variant. */
+/**
+ * Shared pill shape (no colors) — used by every TabButton variant.
+ *
+ * `transition-colors`, not `transition-all`: only background and text colour
+ * change between the variants, and `all` additionally animates any layout
+ * property that happens to differ — which is the usual cause of a control
+ * jittering under the pointer on hover.
+ */
 const tabButtonBaseClass =
-    "polli-control polli:inline-flex polli:items-center polli:justify-center polli:rounded-full polli:font-medium polli:leading-normal polli:transition-all polli:duration-200";
+    "polli-control polli:inline-flex polli:items-center polli:justify-center polli:rounded-full polli:font-medium polli:leading-normal polli:transition-colors polli:duration-200";
 
 const tabButtonSizeClass = {
     md: "polli:px-4 polli:py-1.5 polli:text-base",

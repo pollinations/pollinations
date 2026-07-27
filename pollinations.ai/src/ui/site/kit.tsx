@@ -213,8 +213,9 @@ export function Hero({
 }: {
     /** /heroes/{home,play,apps,community}.webp */
     scene: string;
-    /** Play: its text is short and the product waits below, so the scene
-     *  gives back some height and the playground pulls up. */
+    /** Play: the product waits below, so the hero takes no extra height at
+     *  all — the section is exactly as tall as its text, the same maths that
+     *  spaces Hello, and the scene is cropped to whatever that leaves. */
     compact?: boolean;
     children: ReactNode;
 }) {
@@ -222,7 +223,7 @@ export function Hero({
         <section
             className={cn(
                 "-mx-8 -mt-16 relative md:-mx-18 lg:flex lg:items-start",
-                compact ? "lg:min-h-[420px]" : "lg:min-h-[540px]",
+                !compact && "lg:min-h-[540px]",
             )}
         >
             <img

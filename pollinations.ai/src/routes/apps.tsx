@@ -184,51 +184,61 @@ function AppsPage() {
                 </div>
             </Hero>
 
-            {/* The hero pair: what we made, then the best of what you made. */}
-            <div className="grid grid-cols-[repeat(auto-fit,minmax(min(380px,100%),1fr))] gap-5">
-                <AppHero
-                    href="/play"
-                    title="Playground"
-                    badge="Official"
-                    badgeTone="accent"
-                    description="Every model in the browser — text, image, audio, video. Sign in and generate on your own Pollen, nothing to install."
-                    meta="pollinations.ai/play"
-                    image={appCover("Pollinations Playground")}
-                    action={<OpenPill>Open →</OpenPill>}
+            {/* Hand-picked is a section like Browse is a section — it was
+                the only block on the page without a title. */}
+            <section className="flex flex-col gap-5">
+                <SectionHeader
+                    eyebrow="Spotlight"
+                    title="Picked by hand."
+                    subtitle="Not the busiest — the ones we'd actually send a friend to."
                 />
-                {lead && (
-                    <AppHero
-                        href={lead.web_url || lead.github_repository_url}
-                        title={lead.name}
-                        badge={isBuzz(lead) ? "Buzz" : "Picked"}
-                        description={lead.description}
-                        meta={
-                            lead.github_username
-                                ? `by ${lead.github_username}`
-                                : "community built"
-                        }
-                        image={appCover(lead.name)}
-                        action={
-                            <span className="text-sm font-semibold text-theme-text-soft">
-                                Open ↗
-                            </span>
-                        }
-                    />
-                )}
-            </div>
 
-            {strip.length > 0 && (
-                <ScrollStrip label="Spotlight · picked by hand">
-                    {strip.map((app) => (
-                        <AppTile
-                            key={app.name}
-                            app={app}
-                            imageClassName="h-30"
-                            className="w-59 flex-none"
+                {/* The hero pair: what we made, then the best of what you made. */}
+                <div className="grid grid-cols-[repeat(auto-fit,minmax(min(380px,100%),1fr))] gap-5">
+                    <AppHero
+                        href="/play"
+                        title="Playground"
+                        badge="Official"
+                        badgeTone="accent"
+                        description="Every model in the browser — text, image, audio, video. Sign in and generate on your own Pollen, nothing to install."
+                        meta="pollinations.ai/play"
+                        image={appCover("Pollinations Playground")}
+                        action={<OpenPill>Open →</OpenPill>}
+                    />
+                    {lead && (
+                        <AppHero
+                            href={lead.web_url || lead.github_repository_url}
+                            title={lead.name}
+                            badge={isBuzz(lead) ? "Buzz" : "Picked"}
+                            description={lead.description}
+                            meta={
+                                lead.github_username
+                                    ? `by ${lead.github_username}`
+                                    : "community built"
+                            }
+                            image={appCover(lead.name)}
+                            action={
+                                <span className="text-sm font-semibold text-theme-text-soft">
+                                    Open ↗
+                                </span>
+                            }
                         />
-                    ))}
-                </ScrollStrip>
-            )}
+                    )}
+                </div>
+
+                {strip.length > 0 && (
+                    <ScrollStrip ariaLabel="More hand-picked apps">
+                        {strip.map((app) => (
+                            <AppTile
+                                key={app.name}
+                                app={app}
+                                imageClassName="h-30"
+                                className="w-59 flex-none"
+                            />
+                        ))}
+                    </ScrollStrip>
+                )}
+            </section>
 
             <PixelRule />
 

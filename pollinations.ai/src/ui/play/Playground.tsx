@@ -608,7 +608,10 @@ export function Playground({ connect }: { connect?: ReactNode }) {
 
     return (
         <div
-            //
+            // One accent per modality: swapping this attribute re-themes the
+            // whole playground from styles.css, so tabs, buttons and borders
+            // follow without per-element colour work.
+            data-modality={activeCategory}
             className="flex w-full flex-col gap-5 text-theme-text-base"
         >
             {catalogError && (

@@ -5,7 +5,6 @@ import type { ImageParams } from "../params.ts";
 import { sanitizeString } from "../util.ts";
 import { closestByRatio } from "../utils/aspectRatio.ts";
 import { fetchUpstream } from "../utils/fetchUpstream.ts";
-import { transformImage } from "../utils/imageTransform.ts";
 import {
     ReplicateError,
     runReplicatePrediction,
@@ -87,19 +86,11 @@ export async function callReplicateFluxSchnellAPI(
     const response = await fetchUpstream(outputUrls[0], {
         errorLabel: "Failed to download Replicate FLUX output image",
     });
-    let buffer: Buffer = Buffer.from(await response.arrayBuffer());
-    if (safeParams.dimensionsExplicit) {
-        buffer = await transformImage(buffer, {
-            width: safeParams.width,
-            height: safeParams.height,
-            fit: "cover",
-            format: "image/jpeg",
-            quality: 90,
-        });
-    }
 
     return {
-        buffer,
+        // Exact dimensions are enforced for every backend in
+        // createAndReturnImageCached, so the preset aspect ratio is fine here.
+        buffer: Buffer.from(await response.arrayBuffer()),
         isMature: false,
         isChild: false,
         trackingData: {

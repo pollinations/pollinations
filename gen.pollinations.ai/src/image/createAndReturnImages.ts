@@ -50,6 +50,7 @@ import {
 } from "./utils/imageDownload.ts";
 import {
     resizeForGptImage,
+    transformImage,
     convertToJpeg as transformToJpeg,
 } from "./utils/imageTransform.ts";
 import type { TrackingData } from "./utils/trackingHeaders.ts";
@@ -902,14 +903,29 @@ const prepareMetadata = (
  * @param {Buffer} buffer - The raw image buffer
  * @param {Object} metadataObj - Metadata to embed in the image
  * @param {Object} maturity - Additional maturity information
+ * @param {Object} safeParams - Parameters the image was requested with
  * @returns {Promise<Buffer>} - The processed image buffer
  */
 const processImageBuffer = async (
     buffer: Buffer,
     metadataObj: object,
     maturity: object,
+    safeParams: ImageParams,
 ): Promise<Buffer> => {
-    const processedBuffer = await convertToJpeg(buffer);
+    // Backends only approximate the requested size: the GPU pool returns
+    // whatever resolution the worker produced, Replicate snaps to a preset
+    // aspect ratio, Azure to a fixed size. When the caller asked for exact
+    // dimensions, crop to them here — once, for every backend — instead of
+    // per model handler (issue #12225).
+    const processedBuffer = safeParams.dimensionsExplicit
+        ? await transformImage(buffer, {
+              width: safeParams.width,
+              height: safeParams.height,
+              fit: "cover",
+              format: "image/jpeg",
+              quality: 90,
+          })
+        : await convertToJpeg(buffer);
     return await writeExifMetadata(processedBuffer, metadataObj, maturity);
 };
 
@@ -956,6 +972,7 @@ export async function createAndReturnImageCached(
                       result.buffer,
                       metadataObj,
                       maturity,
+                      safeParams,
                   );
 
         return {

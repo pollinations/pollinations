@@ -6,6 +6,49 @@ afterEach(() => {
 });
 
 describe("genericOpenAIClient", () => {
+    it("normalizes provider stop to length at the configured token limit", async () => {
+        let upstreamBody: Record<string, unknown> | undefined;
+
+        vi.spyOn(globalThis, "fetch").mockImplementationOnce(
+            async (_input, init) => {
+                upstreamBody = JSON.parse(String(init?.body));
+                return Response.json({
+                    model: "provider-model",
+                    choices: [
+                        {
+                            index: 0,
+                            message: {
+                                role: "assistant",
+                                content: "truncated",
+                            },
+                            finish_reason: "stop",
+                        },
+                    ],
+                    usage: {
+                        prompt_tokens: 3,
+                        completion_tokens: 1,
+                        total_tokens: 4,
+                    },
+                });
+            },
+        );
+
+        const completion = await genericOpenAIClient(
+            [{ role: "user", content: "write several words" }],
+            {
+                model: "provider-model",
+                max_tokens: 1,
+                normalizeFinishReasonAtTokenLimit: true,
+            },
+            { endpoint: "https://portkey.test/chat" },
+        );
+
+        expect(completion.choices?.[0]?.finish_reason).toBe("length");
+        expect(upstreamBody).not.toHaveProperty(
+            "normalizeFinishReasonAtTokenLimit",
+        );
+    });
+
     it("does not send internal gateway options in the upstream JSON body", async () => {
         let upstreamBody: Record<string, unknown> | undefined;
 

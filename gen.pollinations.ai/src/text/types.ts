@@ -41,6 +41,7 @@ export interface TransformOptions {
     reasoning_effort?: string;
     modalities?: string[];
     audio?: Record<string, unknown>;
+    normalizeFinishReasonAtTokenLimit?: boolean;
     stream_options?: Record<string, unknown>;
     [key: string]: unknown;
 }

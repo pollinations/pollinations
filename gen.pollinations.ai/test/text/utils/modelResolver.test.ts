@@ -73,6 +73,19 @@ describe("resolveModelConfig", () => {
         });
     });
 
+    it("routes Nemotron directly to DeepInfra without fallback", () => {
+        const result = resolveModelConfig(messages, { model: "nemotron" });
+
+        expect(result.options.model).toBe(
+            "nvidia/NVIDIA-Nemotron-3-Ultra-550B-A55B",
+        );
+        expect(result.options.modelConfig).toMatchObject({
+            provider: "openai",
+            "custom-host": "https://api.deepinfra.com/v1/openai",
+        });
+        expect(result.options.provider).toBeUndefined();
+    });
+
     it.each([
         "perplexity-high",
         "perplexity-deep",

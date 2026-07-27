@@ -1,0 +1,34 @@
+{
+  "pr_number": 12797,
+  "title": "fix: normalize Nova provider to Bedrock",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/12797",
+  "merged_at": "2026-07-27T12:11:58Z",
+  "labels": [],
+  "pr_body_excerpt": "- Changes `nova-canvas` and `nova-reel` registry providers from `aws` to `bedrock`.\n- Aligns Nova media attribution with the existing Claude and Nova text registry entries.\n- Leaves Bedrock model IDs, runtime routing, pricing, and paid status unchanged.\n- Adds a focused regression test for both media models.\n\nRoot cause: the Nova media entries retained the older `aws` label after the text registry standardized on `bedrock`.\n\nChecks:\n- `npx biome check --write shared/registry/image.ts enter.pollinations.ai/test/aliases.test.ts`\n- `npx vitest run test/aliases.test.ts test/pricing-data.test.ts test/effective-prices.snapshot.test.ts` (298 passed)",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Nova finds its proper cloud",
+    "blurb": "Nova Canvas and Nova Reel have been moved under the Bedrock signpost, where their text-model siblings already live. Same models, same routes, fewer tiny provider-label mysteries.",
+    "summary": "Normalized the `nova-canvas` and `nova-reel` image registry provider from `aws` to `bedrock`, matching Claude and Nova text entries while preserving model IDs, routing, pricing, and paid status.",
+    "impact": "Developers now receive consistent `bedrock` provider attribution for Nova media models without changing how Nova Canvas or Nova Reel are accessed or billed.",
+    "keywords": [
+      "nova",
+      "bedrock",
+      "image-registry",
+      "provider-attribution",
+      "aws",
+      "regression-test"
+    ],
+    "visual_concept": "A cozy cloud-garden registry where two Nova media canvases are relocated from an old wooden sign labeled AWS to a matching Bedrock stone arch, alongside friendly Claude/Nova text scrolls. Polli wears a tiny cloud-engineer cap and carefully updates the sign while code-plants and a retro terminal show the unchanged route and price markers, making the change feel like tidying a label rather than moving the machinery.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings, wearing a tiny cloud-engineer cap while moving two glowing Nova media canvas cards from an old \"AWS\" garden sign to a sturdy \"BEDROCK\" stone arch; nearby code-plants, pastel flowers, and a retro terminal show matching route and price symbols. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, subtle CRT glow and scanlines, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-27/PR-12797.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings, wearing a tiny cloud-engineer cap while moving two glowing Nova media canvas cards from an old \"AWS\" garden sign to a sturdy \"BEDROCK\" stone arch; nearby code-plants, pastel flowers, and a retro terminal show matching route and price symbols. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, subtle CRT glow and scanlines, nostalgic but beautiful."
+  },
+  "generated_at": "2026-07-27T12:12:56.405278+00:00"
+}

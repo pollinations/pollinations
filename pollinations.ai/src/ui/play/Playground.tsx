@@ -55,11 +55,45 @@ type PlaygroundResult =
           type: "image" | "video" | "audio";
           url: string;
           contentType: string;
+          /** The seeded example, not something this visitor generated. */
+          demo?: boolean;
       }
     | {
           type: "text";
           text: string;
       };
+
+/**
+ * The playground opens on a worked example rather than an empty form: prompt,
+ * model, size and seed all filled in, with the image that combination actually
+ * produced already in the output panel.
+ *
+ * The image is a live gen.pollinations.ai URL, not a bundled file. That works
+ * anonymously — and costs nothing — because the media cache is checked before
+ * auth (gen.pollinations.ai/src/middleware/media-cache.ts), so a URL generated
+ * once stays publicly readable. It is R2-backed on a 30-day lifecycle that
+ * refreshes on access, and this page keeps it warm.
+ *
+ * IMPORTANT: every field below feeds the URL. Change the prompt, model, size
+ * or seed and it becomes a cache MISS, which 401s anonymously — the example
+ * would simply stop loading. Re-run scripts/warm-demo.mjs after any edit.
+ */
+const DEMO = {
+    prompt: "a bee reading a paper map while sitting on a sunflower, golden hour, shallow depth of field",
+    model: "nanobanana-2-lite",
+    category: "image" as ModelCategory,
+    width: 1024,
+    height: 768,
+    seed: 7,
+};
+
+export function demoImageUrl(): string {
+    return (
+        `${API_BASE_URL}/image/${encodeURIComponent(DEMO.prompt)}` +
+        `?model=${DEMO.model}&width=${DEMO.width}&height=${DEMO.height}` +
+        `&nologo=true&seed=${DEMO.seed}`
+    );
+}
 
 function usePlaygroundCatalog(apiKey: string | null) {
     const [catalog, setCatalog] = useState<ModelCatalog>(EMPTY_CATALOG);
@@ -190,8 +224,16 @@ function ResultPanel({
             variant="card"
             className={cn("flex min-h-[360px] flex-col gap-4 p-4", className)}
         >
-            <div className="flex items-center justify-end gap-3 empty:hidden">
-                {result && result.type !== "text" && (
+            <div className="flex items-center justify-between gap-3 empty:hidden">
+                {/* Say whose picture this is. The seeded example arrives before
+                    the visitor has generated anything, and letting it pass as
+                    their result would be a lie. */}
+                {result?.type === "image" && result.demo && (
+                    <Text as="span" size="xs" className="text-theme-text-muted">
+                        Example output — press Generate to make your own
+                    </Text>
+                )}
+                {result && result.type !== "text" && !result.demo && (
                     <Button
                         as="a"
                         href={result.url}
@@ -199,6 +241,7 @@ function ResultPanel({
                             result,
                         )}`}
                         size="sm"
+                        className="ml-auto"
                     >
                         Save
                     </Button>
@@ -289,17 +332,23 @@ export function Playground() {
         isLoading,
         error: catalogError,
     } = usePlaygroundCatalog(apiKey);
-    const [activeCategory, setActiveCategory] =
-        useState<ModelCategory>("image");
-    const [selectedModel, setSelectedModel] = useState("flux");
-    const [prompt, setPrompt] = useState("");
-    const [width, setWidth] = useState(1024);
-    const [height, setHeight] = useState(1024);
-    const [seed, setSeed] = useState(0);
+    const [activeCategory, setActiveCategory] = useState<ModelCategory>(
+        DEMO.category,
+    );
+    const [selectedModel, setSelectedModel] = useState(DEMO.model);
+    const [prompt, setPrompt] = useState(DEMO.prompt);
+    const [width, setWidth] = useState(DEMO.width);
+    const [height, setHeight] = useState(DEMO.height);
+    const [seed, setSeed] = useState(DEMO.seed);
     const [referenceImages, setReferenceImages] = useState<File[]>([]);
     const [audioFiles, setAudioFiles] = useState<File[]>([]);
     const [selectedVoice, setSelectedVoice] = useState("");
-    const [result, setResult] = useState<PlaygroundResult | null>(null);
+    const [result, setResult] = useState<PlaygroundResult | null>({
+        type: "image",
+        url: demoImageUrl(),
+        contentType: "image/jpeg",
+        demo: true,
+    });
     const [isGenerating, setIsGenerating] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
@@ -335,7 +384,9 @@ export function Playground() {
 
     useEffect(() => {
         return () => {
-            if (result && result.type !== "text") {
+            // Only blob: URLs are ours to revoke — the seeded example is a
+            // remote gen URL and revoking that is meaningless.
+            if (result && result.type !== "text" && !result.demo) {
                 URL.revokeObjectURL(result.url);
             }
         };

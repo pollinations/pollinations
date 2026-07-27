@@ -10,6 +10,7 @@ import { ThreeWays } from "../ui/home/ThreeWays";
 import {
     ActionButton,
     Hero,
+    HeroCharacter,
     PageHeader,
     PixelRule,
     StatRow,
@@ -48,7 +49,7 @@ function HelloPage() {
     return (
         <>
             {/* Polli herself opens the site — the one the brand already had. */}
-            <Hero character={polliBee}>
+            <Hero aside={<HeroCharacter src={polliBee} />}>
                 <PageHeader
                     eyebrow="The infrastructure for AI apps"
                     title="Every model, one wallet."

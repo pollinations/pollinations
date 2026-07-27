@@ -21,6 +21,7 @@ import {
     ActionButton,
     CardGrid,
     Hero,
+    HeroCharacter,
     PageHeader,
     PixelLabel,
     PixelRule,
@@ -162,7 +163,7 @@ function AppsPage() {
             {/* The nomnom, buried under a stack of apps. "Submit your app"
                 moves below the subtitle rather than sitting top-right, so the
                 right side belongs to the character — the same shape as Hello. */}
-            <Hero character="/characters/apps.png">
+            <Hero aside={<HeroCharacter src="/characters/apps.png" />}>
                 <PageHeader
                     eyebrow={
                         loading

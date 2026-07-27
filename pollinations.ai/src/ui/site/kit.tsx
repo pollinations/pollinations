@@ -186,10 +186,11 @@ export function PageHeader({ eyebrow, title, subtitle, action }: HeadingProps) {
  * against a 220px one, which is why switching tabs changed scale.
  */
 export function Hero({
-    character,
+    aside,
     children,
 }: {
-    character: string;
+    /** Usually a HeroCharacter; Hello puts the live prompt demo here instead. */
+    aside: ReactNode;
     children: ReactNode;
 }) {
     return (
@@ -201,19 +202,26 @@ export function Hero({
             <div className="flex w-full min-w-0 flex-col gap-8 lg:flex-1">
                 {children}
             </div>
-            {/* Bounded by the BOX, not by width. The four sprites have very
-                different aspects — the nomnom is 492x732, the group portrait
-                1032x468 — so fixing width alone rendered them 332px and 506px
-                tall on facing pages. Capping both makes every character carry
-                the same visual weight, and the wide group lands short and
-                broad on its own. */}
-            <img
-                src={character}
-                alt=""
-                aria-hidden="true"
-                className="mx-auto max-h-[220px] w-auto max-w-[280px] shrink-0 lg:max-h-[340px] lg:max-w-[460px]"
-            />
+            {aside}
         </section>
+    );
+}
+
+/**
+ * Bounded by the BOX, not by width. The sprites have very different aspects —
+ * the nomnom is 492x732, the group portrait 1032x468 — so fixing width alone
+ * rendered them 332px and 506px tall on facing pages. Capping both gives every
+ * character the same visual weight, and the wide group lands short and broad
+ * on its own.
+ */
+export function HeroCharacter({ src }: { src: string }) {
+    return (
+        <img
+            src={src}
+            alt=""
+            aria-hidden="true"
+            className="mx-auto max-h-[220px] w-auto max-w-[280px] shrink-0 lg:max-h-[340px] lg:max-w-[460px]"
+        />
     );
 }
 

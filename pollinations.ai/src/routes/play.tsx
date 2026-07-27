@@ -3,7 +3,7 @@ import { AppUserMenu } from "@pollinations/ui/app-user-menu/sdk";
 import { createFileRoute } from "@tanstack/react-router";
 import { ENTER_URL, POLLI_APP_KEY } from "../config";
 import { Playground } from "../ui/play/Playground";
-import { Hero, PageHeader } from "../ui/site/kit";
+import { Hero, HeroCharacter, PageHeader } from "../ui/site/kit";
 
 export const Route = createFileRoute("/play")({
     component: PlayPage,
@@ -30,7 +30,7 @@ function PlayPage() {
             permissions={["profile", "usage"]}
         >
             {/* The monitor robot, showing off something it just made. */}
-            <Hero character="/characters/play.png">
+            <Hero aside={<HeroCharacter src="/characters/play.png" />}>
                 <PageHeader
                     eyebrow="Every model, in the browser"
                     title="Try it out."

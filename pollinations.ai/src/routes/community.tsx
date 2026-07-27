@@ -17,6 +17,7 @@ import {
     Card,
     CardGrid,
     Hero,
+    HeroCharacter,
     PageHeader,
     PixelLabel,
     PixelRule,
@@ -193,7 +194,7 @@ function CommunityPage() {
         <>
             {/* The whole cast, together — the page is about the three of us
                 being more than one of us. */}
-            <Hero character="/characters/community.png">
+            <Hero aside={<HeroCharacter src="/characters/community.png" />}>
                 <PageHeader
                     eyebrow="Open source, open roadmap"
                     title="Contribute"

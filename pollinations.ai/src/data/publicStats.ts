@@ -50,7 +50,7 @@ export const platformsOf = (app: DirectoryApp): string[] =>
         .filter(Boolean);
 
 /** "⭐1.2k" -> 1200. 0 when unrated. */
-export function starsOf(raw: string): number {
+function starsOf(raw: string): number {
     const m = raw?.match(/([\d.]+)\s*([kK])?/);
     if (!m) return 0;
     return Number.parseFloat(m[1]) * (m[2] ? 1000 : 1);
@@ -112,7 +112,7 @@ export function useAppDirectory() {
     }, []);
 }
 
-export type PlatformStats = {
+type PlatformStats = {
     /** Requests in the most recent week. */
     requestsWeek: number;
     /** 2xx / (2xx + 5xx), cache excluded. */

@@ -24,9 +24,8 @@
  * model will never hit the exact hex and a near-miss cream reads as a dirty
  * seam against the real sheet.
  *
- * Cast and style come from social/prompts/brand/visual.md and bee.md — the
- * same constants generate-characters.mjs uses, so the painted characters match
- * the sprites the site already shipped.
+ * Cast and style come from social/prompts/brand/visual.md and bee.md, so the
+ * painted characters match the brand's canonical descriptions.
  */
 import { execFile } from "node:child_process";
 import { existsSync } from "node:fs";
@@ -139,12 +138,17 @@ async function draw(name, spec, token) {
     // and can lose height; the scenery and the dissolve edge cannot.
     await run("magick", [
         src,
-        "-gravity", "south",
-        "-crop", "12:5",
+        "-gravity",
+        "south",
+        "-crop",
+        "12:5",
         "+repage",
-        "-resize", "2048x",
-        "-quality", "80",
-        "-define", "webp:method=6",
+        "-resize",
+        "2048x",
+        "-quality",
+        "80",
+        "-define",
+        "webp:method=6",
         join(OUT_DIR, `${name}.webp`),
     ]);
     await unlink(src);

@@ -20,7 +20,7 @@ import COVERS from "./covers.json";
 const HAS_COVER = new Set<string>(COVERS);
 
 /** Must match slugify() in scripts/generate-app-art.mjs. */
-export function coverSlug(name: string): string {
+function coverSlug(name: string): string {
     return name
         .toLowerCase()
         .replace(/[^a-z0-9]+/g, "-")

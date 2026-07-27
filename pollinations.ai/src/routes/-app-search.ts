@@ -23,7 +23,7 @@ export const APP_CATEGORIES = [
     "bots",
     "video_audio",
 ] as const;
-export type AppCategory = (typeof APP_CATEGORIES)[number];
+type AppCategory = (typeof APP_CATEGORIES)[number];
 
 export const CATEGORY_LABELS: Record<AppCategory, string> = {
     image: "🖼️ Image",
@@ -55,7 +55,7 @@ export const APP_PLATFORMS = [
     "wordpress",
     "api",
 ] as const;
-export type AppPlatform = (typeof APP_PLATFORMS)[number];
+type AppPlatform = (typeof APP_PLATFORMS)[number];
 
 export const PLATFORM_LABELS: Record<AppPlatform, string> = {
     web: "Web",
@@ -81,7 +81,7 @@ export const PLATFORM_LABELS: Record<AppPlatform, string> = {
  * counterpart.
  */
 export const APP_SIGNALS = ["buzz", "pollen", "fresh"] as const;
-export type AppSignal = (typeof APP_SIGNALS)[number];
+type AppSignal = (typeof APP_SIGNALS)[number];
 
 export const SIGNAL_LABELS: Record<AppSignal, string> = {
     buzz: "🐝 Busy",

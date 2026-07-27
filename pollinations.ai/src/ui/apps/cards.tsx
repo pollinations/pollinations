@@ -17,7 +17,7 @@ import { appCover } from "./cover";
  * they were written separately they drifted immediately.
  */
 
-export function badgesFor(app: DirectoryApp): string {
+function badgesFor(app: DirectoryApp): string {
     return [isBuzz(app) && "🐝", isPollen(app) && "🏵️", isFresh(app) && "🫧"]
         .filter(Boolean)
         .join(" ");

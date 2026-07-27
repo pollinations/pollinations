@@ -88,7 +88,7 @@ const DEMO = {
     seed: 7,
 };
 
-export function demoImageUrl(): string {
+function demoImageUrl(): string {
     return (
         `${API_BASE_URL}/image/${encodeURIComponent(DEMO.prompt)}` +
         `?model=${DEMO.model}&width=${DEMO.width}&height=${DEMO.height}` +

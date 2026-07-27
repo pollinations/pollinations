@@ -55,7 +55,7 @@ export function useDiscordPresence() {
 
 /* ── Contributors ───────────────────────────────────────────────────────── */
 
-export type Contributor = {
+type Contributor = {
     login: string;
     avatarUrl: string;
     profileUrl: string;
@@ -97,7 +97,7 @@ export function useContributors(limit = 12) {
 
 /* ── Open votes ─────────────────────────────────────────────────────────── */
 
-export type VotingIssue = {
+type VotingIssue = {
     number: number;
     title: string;
     url: string;
@@ -140,7 +140,7 @@ export function useVotingIssues(limit = 3) {
 
 /* ── Build diary ────────────────────────────────────────────────────────── */
 
-export type DiaryEntry = { date: string; summary: string; url: string };
+type DiaryEntry = { date: string; summary: string; url: string };
 
 type GhCommit = {
     sha: string;

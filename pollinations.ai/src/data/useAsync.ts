@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 
-export type Async<T> = { data: T; loading: boolean; failed: boolean };
+type Async<T> = { data: T; loading: boolean; failed: boolean };
 
 /**
  * Fetch once on mount. Nothing on this site takes a parameter that changes,

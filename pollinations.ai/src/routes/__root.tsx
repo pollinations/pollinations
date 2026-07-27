@@ -31,7 +31,7 @@ function RootLayout() {
         <div className="flex min-h-dvh flex-col bg-app-bg font-body text-theme-text-base">
             <SiteHeader />
             <div className={`${SHELL} mb-6 flex flex-1 flex-col`}>
-                <main className="flex flex-1 flex-col gap-18 rounded-[28px] bg-theme-bg-pale px-8 py-16 shadow-container md:px-18">
+                <main className="flex flex-1 flex-col gap-18 overflow-clip rounded-[28px] bg-theme-bg-pale px-8 py-16 shadow-container md:px-18">
                     <Outlet />
                 </main>
             </div>

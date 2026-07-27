@@ -19,8 +19,9 @@ const STEPS = [
  *
  * It also breaks out toward the sheet edge: sections sit at the sheet's 72px
  * padding, this sits at 24px — the mockup's proportion, and part of why the
- * dark band reads as a moment rather than as another section. It is the only
- * element that breaks out; two would make neither of them special.
+ * dark band reads as a moment rather than as another section. The hero scene also
+ * bleeds to the sheet edge, but as a background layer, not a panel — this
+ * stays the only *section* that breaks the column.
  */
 export function MoneyMoves() {
     return (

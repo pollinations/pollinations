@@ -44,6 +44,27 @@
     transition-property: opacity, box-shadow, transform, filter;
 }
 
+/* ── Hero scene dissolve ───────────────────────────────────────────────
+   The painted scene melts into the sheet on two axes. Bottom: always — the
+   prompt paints a fade toward #fef8eb and this mask guarantees the seam
+   (the model never hits the exact hex). Left: desktop only, where the text
+   overlays the art — the prompts ask for an empty left two-thirds, but the
+   model keeps drifting scenery toward the centre (seed 4103's stalls reached
+   27% and a reroll still hit 46%), so the mask is what actually guarantees
+   the text's ground. Full opacity returns by 62%, right of every character.
+   Below lg the scene is a band above the text, so only the bottom fades. */
+.hero-scene {
+    mask-image: linear-gradient(to bottom, black 55%, transparent 100%);
+}
+@media (min-width: 64rem) {
+    .hero-scene {
+        mask-image:
+            linear-gradient(to right, transparent 38%, black 62%),
+            linear-gradient(to bottom, black 55%, transparent 100%);
+        mask-composite: intersect;
+    }
+}
+
 /* ── /play ─────────────────────────────────────────────────────────────
    Layout that needs container queries or sticky positioning, which is
    clearer as CSS than as a wall of arbitrary variants. */

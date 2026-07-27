@@ -1,4 +1,3 @@
-import polliBee from "@pollinations/ui/brand/polli/polli.png";
 import { createFileRoute } from "@tanstack/react-router";
 import { compact, usePlatformStats } from "../data/publicStats";
 import { DevKit } from "../ui/home/DevKit";
@@ -10,7 +9,6 @@ import { ThreeWays } from "../ui/home/ThreeWays";
 import {
     ActionButton,
     Hero,
-    HeroCharacter,
     PageHeader,
     PixelRule,
     StatRow,
@@ -49,7 +47,7 @@ function HelloPage() {
     return (
         <>
             {/* Polli herself opens the site — the one the brand already had. */}
-            <Hero aside={<HeroCharacter src={polliBee} />}>
+            <Hero scene="/heroes/home.webp">
                 <PageHeader
                     eyebrow="The infrastructure for AI apps"
                     title="Every model, one wallet."

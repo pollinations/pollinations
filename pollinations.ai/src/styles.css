@@ -10,6 +10,14 @@
    the same utility. Site source writes plain `flex`, `gap-4`, `text-sm`. */
 @import "@pollinations/ui/app.css";
 
+/* The hero scene is positioned and dips below its section, so every later
+   sibling needs a position too — a positioned element paints above earlier
+   positioned ones in DOM order, which puts sections over the fading art
+   instead of under it. Harmless for everything else. */
+main > * {
+    position: relative;
+}
+
 /* ── Hero scene dissolve ───────────────────────────────────────────────
    The painted scene melts into the sheet on two axes. Bottom: always — the
    prompt paints a fade toward #fef8eb and this mask guarantees the seam

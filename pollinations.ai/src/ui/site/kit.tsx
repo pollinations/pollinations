@@ -208,24 +208,21 @@ export function PageHeader({ eyebrow, title, subtitle, action }: HeadingProps) {
  */
 export function Hero({
     scene,
-    compact = false,
     children,
 }: {
     /** /heroes/{home,play,apps,community}.webp */
     scene: string;
-    /** Play: the product waits below, so the hero takes no extra height at
-     *  all — the section is exactly as tall as its text, the same maths that
-     *  spaces Hello, and the scene is cropped to whatever that leaves. */
-    compact?: boolean;
     children: ReactNode;
 }) {
     return (
-        <section
-            className={cn(
-                "-mx-8 -mt-16 relative md:-mx-18 lg:flex lg:items-start",
-                !compact && "lg:min-h-[540px]",
-            )}
-        >
+        <section className="-mx-8 -mt-16 relative md:-mx-18 lg:flex lg:items-start">
+            {/* The scene is a fixed-height backdrop, decoupled from the text.
+                Tying it to the section meant short pages got small art —
+                Play's robot shrank to its two lines of copy. Now every page
+                paints at least a 560px scene, and pages with tall text get
+                content height + 120px — either way the art runs on past the
+                next section's start and fades out there. `main > * { position: relative }` in styles.css is
+                what keeps later sections painting above the dip. */}
             <img
                 src={scene}
                 alt=""
@@ -234,7 +231,7 @@ export function Hero({
                 height={854}
                 // The LCP element on every page — never lazy.
                 fetchPriority="high"
-                className="hero-scene pointer-events-none h-56 w-full select-none object-cover object-right-bottom sm:h-72 lg:absolute lg:inset-0 lg:h-full"
+                className="hero-scene pointer-events-none h-56 w-full select-none object-cover object-right-bottom sm:h-72 lg:absolute lg:top-0 lg:h-[max(560px,calc(100%+120px))]"
             />
             <div className="relative flex w-full min-w-0 flex-col gap-8 px-8 pb-2 md:px-18 lg:max-w-[58%] lg:py-16">
                 {children}

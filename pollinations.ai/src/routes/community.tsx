@@ -277,8 +277,6 @@ function CommunityPage() {
                 </div>
             </Hero>
 
-            <PixelRule />
-
             <section className="flex flex-col gap-7">
                 <SectionHeader
                     eyebrow="Ways in"
@@ -312,6 +310,8 @@ function CommunityPage() {
                     </p>
                 </div>
             </section>
+
+            <PixelRule />
 
             <div className="grid grid-cols-[repeat(auto-fit,minmax(min(360px,100%),1fr))] items-start gap-8">
                 <OpenVotes />

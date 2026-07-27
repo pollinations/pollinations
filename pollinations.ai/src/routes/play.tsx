@@ -30,7 +30,7 @@ function PlayPage() {
             permissions={["profile", "usage"]}
         >
             {/* The monitor robot, showing off something it just made. */}
-            <Hero compact scene="/heroes/play.webp">
+            <Hero scene="/heroes/play.webp">
                 <PageHeader
                     eyebrow="Every model, in the browser"
                     title="Try it out."

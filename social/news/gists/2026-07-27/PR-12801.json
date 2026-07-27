@@ -1,0 +1,33 @@
+{
+  "pr_number": 12801,
+  "title": "chore: rotate InferencePort API key",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/12801",
+  "merged_at": "2026-07-27T14:33:05Z",
+  "labels": [],
+  "pr_body_excerpt": "- Replaces `INFERENCEPORT_API_KEY` in encrypted dev, staging, and production secret files.\n- Leaves every other decrypted secret unchanged.\n- Validates the replacement token against InferencePort.\n- Passes all 17 focused InferencePort/Trellis 2 tests.\n\nAfter merge, promote `main` to `production`; the production deployment workflow will sync the encrypted production secret through CI.",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Fresh key in the hive",
+    "blurb": "The InferencePort key got a quiet seasonal refresh across dev, staging, and production. The bees checked it works before putting it back in the lockbox.",
+    "summary": "Rotated the encrypted INFERENCEPORT_API_KEY in gen.pollinations.ai dev, staging, and production secrets, with the replacement validated against InferencePort and 17 focused InferencePort/Trellis 2 tests passing.",
+    "impact": "InferencePort-backed generation keeps its authenticated connection refreshed consistently across all deployment environments.",
+    "keywords": [
+      "inferenceport",
+      "secrets",
+      "key-rotation",
+      "gen-api",
+      "deployment"
+    ],
+    "visual_concept": "Polli acts as a careful garden keeper replacing a tiny glowing API key in three labeled seed vaults for dev, staging, and production, while a cozy terminal confirms the connection is healthy; surrounding code-plants signal reliable infrastructure growth.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny gardener tool belt, carefully placing a glowing key into three small seed vaults labeled DEV, STAGING, and PROD beside a lime green (#ecf874) terminal showing a check mark; code-plants and pastel flowers grow around the workspace. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, retro gaming vibes, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-27/PR-12801.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny gardener tool belt, carefully placing a glowing key into three small seed vaults labeled DEV, STAGING, and PROD beside a lime green (#ecf874) terminal showing a check mark; code-plants and pastel flowers grow around the workspace. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, retro gaming vibes, nostalgic but beautiful."
+  },
+  "generated_at": "2026-07-27T14:34:02.479110+00:00"
+}

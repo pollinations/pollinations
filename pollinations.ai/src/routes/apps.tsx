@@ -1,4 +1,4 @@
-import { TabButton } from "@pollinations/ui";
+import { Input, TabButton } from "@pollinations/ui";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useMemo } from "react";
 import {
@@ -243,6 +243,32 @@ function AppsPage() {
                 />
 
                 <div className="flex flex-col gap-3">
+                    {/* `q` was validated, round-tripped through the URL and
+                        filtered on, with nothing able to set it — the search
+                        worked only if you hand-edited the address bar. */}
+                    <div className="flex flex-wrap items-baseline gap-x-3 gap-y-2">
+                        <PixelLabel variant="chrome" className="w-20 shrink-0">
+                            Search
+                        </PixelLabel>
+                        <Input
+                            type="search"
+                            value={q ?? ""}
+                            placeholder="Name or description…"
+                            aria-label="Search apps"
+                            onChange={(event) =>
+                                navigate({
+                                    resetScroll: false,
+                                    search: (prev) => ({
+                                        ...prev,
+                                        q:
+                                            event.target.value.trim() ||
+                                            undefined,
+                                    }),
+                                })
+                            }
+                            className="max-w-xs flex-1"
+                        />
+                    </div>
                     <FilterAxis
                         label="Category"
                         values={APP_CATEGORIES}

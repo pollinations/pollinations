@@ -32,6 +32,9 @@ const COLUMNS = [
             },
             { to: "/privacy", label: "Privacy" },
             { to: "/terms", label: "Terms" },
+            // A real route with a real page that nothing linked to. Payment
+            // providers generally require this to be reachable.
+            { to: "/refunds", label: "Refunds" },
         ],
     },
 ] as const;

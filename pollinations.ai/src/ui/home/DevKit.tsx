@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { usePlatformStats } from "../../data/publicStats";
 import {
     ArrowLink,
     Card,
@@ -10,10 +11,33 @@ import {
 type Tool = {
     label: string;
     title: string;
+    /** null when the card's body is computed from live data. */
     body: ReactNode;
     linkLabel: string;
     href: string;
 };
+
+/**
+ * "141 text, 51 image, 13 video, 18 audio", from the same /models response the
+ * hero already fetches — no second request, and no number that can go stale.
+ */
+function modelSummary(
+    byCategory: Record<string, number>,
+    community: number,
+): string {
+    const named = (["text", "image", "video", "audio"] as const)
+        .map((key) => (byCategory[key] ? `${byCategory[key]} ${key}` : null))
+        .filter(Boolean)
+        .join(", ");
+    const rest = ["embedding", "3d", "realtime"].reduce(
+        (sum, key) => sum + (byCategory[key] ?? 0),
+        0,
+    );
+    const tail = rest
+        ? `, plus ${rest} for embeddings, 3D and realtime voice`
+        : "";
+    return `${named}${tail}. ${community} of them are community models published through BYOM — a catalogue that grows without us.`;
+}
 
 /**
  * Six, not five. `minmax(320px,1fr)` resolves to 3 / 2 / 1 columns across
@@ -25,8 +49,11 @@ type Tool = {
 const TOOLS: Tool[] = [
     {
         label: "Generate",
+        // Counted live — see modelSummary() below. The old copy said "69 text,
+        // 28 image … 86 more" against a real 141/51/95, so it understated the
+        // catalogue by half while publicStats.ts claimed nothing was hardcoded.
         title: "All the models",
-        body: "69 text, 28 image, 13 video, 15 audio, plus embeddings, 3D and realtime voice. And 86 more brought by the community through BYOM — a catalogue that grows without us.",
+        body: null,
         linkLabel: "Browse the model list",
         href: "https://gen.pollinations.ai/models",
     },
@@ -87,6 +114,8 @@ const TOOLS: Tool[] = [
 ];
 
 export function DevKit() {
+    const { data } = usePlatformStats();
+
     return (
         <section className="flex flex-col gap-7">
             <SectionHeader
@@ -107,7 +136,13 @@ export function DevKit() {
                             {tool.title}
                         </h3>
                         <p className="text-sm leading-relaxed text-theme-text-base">
-                            {tool.body}
+                            {tool.body ??
+                                (data
+                                    ? modelSummary(
+                                          data.byCategory,
+                                          data.community,
+                                      )
+                                    : "Text, image, video and audio models, plus embeddings, 3D and realtime voice — with more brought by the community through BYOM.")}
                         </p>
                         <ArrowLink href={tool.href} className="mt-auto pt-2">
                             {tool.linkLabel}

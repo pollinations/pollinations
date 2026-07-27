@@ -189,7 +189,7 @@ export function Hero({
     aside,
     children,
 }: {
-    /** Usually a HeroCharacter; Hello puts the live prompt demo here instead. */
+    /** A HeroCharacter on every page today. */
     aside: ReactNode;
     children: ReactNode;
 }) {

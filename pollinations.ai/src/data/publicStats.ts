@@ -119,7 +119,27 @@ export type PlatformStats = {
     availability: number;
     /** Models callable right now, community models included. */
     models: number;
+    /** Count per category, e.g. { text: 141, image: 51 }. */
+    byCategory: Record<string, number>;
+    /** Community models, which carry an owner/model name. */
+    community: number;
 };
+
+type CatalogModel = { name?: string; category?: string };
+
+function summariseCatalog(models: CatalogModel[]) {
+    const byCategory: Record<string, number> = {};
+    let community = 0;
+    for (const model of models) {
+        const category = model.category ?? "other";
+        byCategory[category] = (byCategory[category] ?? 0) + 1;
+        // BYOM models are published as owner/model.
+        if (typeof model.name === "string" && model.name.includes("/")) {
+            community += 1;
+        }
+    }
+    return { byCategory, community };
+}
 
 type WeeklyHealthRow = {
     week: string;
@@ -157,8 +177,23 @@ function currentWeekStart(now = new Date()): string {
  * default — plausibly how "1.5M daily requests" survived, an hour of traffic
  * read as a day.)
  */
+/**
+ * Shared across callers. The hero and the dev kit both want these numbers, and
+ * without this each mount fires its own 113 KB /models request — two in
+ * flight at once, and the second came back empty, which showed up as a
+ * catalogue of 0 models.
+ */
+let platformStats: Promise<PlatformStats | null> | null = null;
+
 export function usePlatformStats() {
-    return useAsync<PlatformStats | null>(async () => {
+    return useAsync<PlatformStats | null>(() => {
+        platformStats ??= loadPlatformStats();
+        return platformStats;
+    }, null);
+}
+
+function loadPlatformStats(): Promise<PlatformStats | null> {
+    return (async () => {
         const [weeks, models] = await Promise.all([
             // 3, not 2: the window is relative to `now`, so the oldest bucket
             // is left-truncated. Three guarantees a whole one in the middle.
@@ -173,12 +208,14 @@ export function usePlatformStats() {
         const complete = weeks.filter((row) => row.week !== thisWeek);
         const latest = complete[complete.length - 1];
 
+        const catalog: CatalogModel[] = Array.isArray(models) ? models : [];
         return {
             requestsWeek: latest?.total_requests ?? 0,
             availability: latest?.availability ?? 0,
-            models: Array.isArray(models) ? models.length : 0,
+            models: catalog.length,
+            ...summariseCatalog(catalog),
         };
-    }, null);
+    })();
 }
 
 /**

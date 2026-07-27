@@ -1,0 +1,34 @@
+{
+  "pr_number": 12800,
+  "title": "fix: restore horizontal logo lockup spacing",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/12800",
+  "merged_at": "2026-07-27T13:45:56Z",
+  "labels": [],
+  "pr_body_excerpt": "- Removes intrinsic padding from the shared horizontal lockup and restores the previous lotus scale and mark-to-wordmark gap.\n- Regenerates the currentColor, black, and white SVG/PNG derivatives at an 8.125:1 aspect ratio.\n- Fixes the apparent centered/undersized logo in Enter, AppHeader consumers, docs, and future `@pollinations/ui/brand/lockup-horizontal.svg` users.\n- Root cause: #12355 replaced the tightly bounded 8.13:1 asset with a padded 4.97:1 generated lockup while consumers retained their existing centered `contain` boxes.\n\nChecks:\n- `npx biome check packages/ui/scripts/brand/generate.mjs`\n- `npm run typecheck --workspace packages/ui`\n- `npm run test --workspace packages/ui`\n- `npm run build --workspace packages/ui`\n- `npm run build:frontend` in `enter.pollinations.ai`",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "The logo found its footing",
+    "blurb": "The horizontal pollinations lockup has stopped floating awkwardly in its own container. The lotus is back at its intended scale, with the proper little bit of breathing room before the wordmark.",
+    "summary": "Restored the tightly bounded 8.125:1 horizontal brand lockup by removing intrinsic SVG padding and regenerating currentColor, black, and white derivatives, fixing the undersized centered logo in Enter, AppHeader, docs, and future UI consumers.",
+    "impact": "Users will see the lotus mark and wordmark at their intended scale and spacing wherever the shared horizontal logo is rendered with centered contain sizing.",
+    "keywords": [
+      "branding",
+      "logo",
+      "ui",
+      "enter",
+      "svg",
+      "design-system"
+    ],
+    "visual_concept": "A cozy brand-garden alignment scene: Polli carefully adjusts a horizontal lotus-and-wordmark sign so it sits neatly inside a retro display frame, with small pixel flowers and measuring marks showing the restored gap and proportions. The logo should feel properly balanced rather than cramped or tiny, using the lotus as the key project-specific visual symbol.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink rectangular blush, light blue rounded wings, and a tiny designer beret, carefully straightening a horizontal lotus-and-wordmark sign inside a warm CRT display frame; pixel flowers and code-plants grow around neat measuring guides, and the sign is perfectly balanced with a visible comfortable gap. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, dark purple (#110518) details, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-27/PR-12800.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink rectangular blush, light blue rounded wings, and a tiny designer beret, carefully straightening a horizontal lotus-and-wordmark sign inside a warm CRT display frame; pixel flowers and code-plants grow around neat measuring guides, and the sign is perfectly balanced with a visible comfortable gap. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, dark purple (#110518) details, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
+  },
+  "generated_at": "2026-07-27T13:46:49.130517+00:00"
+}

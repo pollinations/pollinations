@@ -1,0 +1,34 @@
+{
+  "pr_number": 12788,
+  "title": "fix: attribute text errors to the actual upstream",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/12788",
+  "merged_at": "2026-07-27T11:44:17Z",
+  "labels": [],
+  "pr_body_excerpt": "- Preserve provider URL and status so alerts identify the actual upstream instead of `gen.pollinations.ai`.\n- Pass provider `429` responses through as `RATE_LIMITED`; transport/parsing failures remain `502`, while Pollinations processing bugs remain `500`.\n- Remove internal `cause` data from public error responses and preserve fallback metadata during response serialization.\n\nWhy: text error handling discarded upstream context, substituted the incoming Gen URL, and classified provider rate limits as server failures.\n\nChecks:\n- Biome and Gen typecheck passed\n- 19 Gen/shared/docs suites, 201 tests passed\n- Enter typecheck passed\n- Enter runtime tests were not run because their mandatory pretest writes decrypted secrets to `.dev.vars`",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Errors find their real home",
+    "blurb": "The text gateway now keeps the upstream’s address on the envelope. Provider rate limits are recognized as rate limits, while public errors leave the internal wiring in the hive.",
+    "summary": "Text-generation error handling now preserves the originating provider URL and status, returns upstream 429s as RATE_LIMITED, keeps transport and parsing failures at 502, and reserves 500 for Pollinations processing errors.",
+    "impact": "Developers and alerts can now identify the actual upstream behind a failed text request, while API clients receive clearer rate-limit and failure classifications without internal cause data.",
+    "keywords": [
+      "text-api",
+      "error-handling",
+      "upstream-providers",
+      "rate-limits",
+      "observability",
+      "gen"
+    ],
+    "visual_concept": "Polli acts as a careful mail carrier in a cozy code garden, attaching clear provider-address labels to error-message envelopes instead of sending everything to the Gen mailbox. A friendly CRT monitor robot sorts envelopes into clearly marked 429, 502, and 500 baskets beside flowering code-plants, representing accurate attribution and classification.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink rectangular blush, light blue wings, and a tiny postal cap, carefully placing provider-address labels on glowing error-message envelopes while a chunky CRT monitor robot sorts them into small baskets labeled “429”, “502”, and “500”. Lime green (#ecf874) terminal glow, pastel garden code-plants and flowers, warm cream background, cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-27/PR-12788.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink rectangular blush, light blue wings, and a tiny postal cap, carefully placing provider-address labels on glowing error-message envelopes while a chunky CRT monitor robot sorts them into small baskets labeled “429”, “502”, and “500”. Lime green (#ecf874) terminal glow, pastel garden code-plants and flowers, warm cream background, cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, nostalgic but beautiful."
+  },
+  "generated_at": "2026-07-27T11:45:22.503337+00:00"
+}

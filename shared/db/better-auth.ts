@@ -199,6 +199,9 @@ export const communityEndpoint = sqliteTable("community_endpoint", {
     .notNull()
     .references(() => user.id, { onDelete: "cascade" }),
   name: text("name").notNull(),
+  // Nullable: rows predating titles fall back to communityEndpointTitle().
+  // Required on create, so only the pre-existing backlog is null.
+  title: text("title"),
   description: text("description"),
   modality: text("modality").default("text").notNull(),
   // Image endpoints only: "request" bills the fixed per-image price once per
@@ -206,6 +209,10 @@ export const communityEndpoint = sqliteTable("community_endpoint", {
   // by the registration probe.
   imagePricing: text("image_pricing", { enum: ["request", "tokens"] })
     .default("request")
+    .notNull(),
+  // Set only after the registration probe successfully calls /images/edits.
+  supportsImageEdits: integer("supports_image_edits", { mode: "boolean" })
+    .default(false)
     .notNull(),
   baseUrl: text("base_url").notNull(),
   upstreamModel: text("upstream_model").notNull(),

@@ -96,6 +96,32 @@ describe("createClaudeThinkingTransform — adaptive mode (Sonnet 4.6 and Opus 4
     });
 });
 
+describe("createClaudeThinkingTransform — adaptive mode with upstream default on", () => {
+    const adaptiveDefaultOff = createClaudeThinkingTransform("adaptive", true);
+
+    it("explicitly disables thinking by default", async () => {
+        const { options } = await adaptiveDefaultOff([], {});
+        expect(options.thinking).toEqual({ type: "disabled" });
+        expect(options.output_config).toBeUndefined();
+    });
+
+    it("explicitly disables thinking for reasoning_effort=none", async () => {
+        const { options } = await adaptiveDefaultOff([], {
+            reasoning_effort: "none",
+        });
+        expect(options.thinking).toEqual({ type: "disabled" });
+        expect(options.reasoning_effort).toBeUndefined();
+    });
+
+    it("enables adaptive thinking when requested", async () => {
+        const { options } = await adaptiveDefaultOff([], {
+            reasoning_effort: "high",
+        });
+        expect(options.thinking).toEqual({ type: "adaptive" });
+        expect(options.output_config).toEqual({ effort: "high" });
+    });
+});
+
 describe("Claude thinking model wiring", () => {
     it("wires budget thinking on claude-fast", async () => {
         const transform = findModelByName("claude-fast")?.transform;
@@ -123,5 +149,15 @@ describe("Claude thinking model wiring", () => {
         });
         expect(options.thinking).toEqual({ type: "adaptive" });
         expect(options.output_config).toEqual({ effort: "high" });
+    });
+
+    it("keeps claude-large reasoning opt-in", async () => {
+        const transform = findModelByName("claude-large")?.transform;
+        if (!transform) throw new Error("claude-large transform missing");
+        const { options } = await transform(
+            [{ role: "user", content: "hi" }],
+            {},
+        );
+        expect(options.thinking).toEqual({ type: "disabled" });
     });
 });

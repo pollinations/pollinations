@@ -24,7 +24,7 @@ Community models are user-owned, OpenAI-compatible text or image-generation endp
 **Alpha stage**
 - Inclusion is fairly permissive for now; expect that to tighten before official launch.
 - Text and image generation models are supported now; audio and other modalities are planned next.
-- Community image models are exposed through `/image/{prompt}`, `/v1/images/generations`, and `/v1/images/edits`. Editing support depends on the registrant's upstream endpoint. OpenAI-compatible responses use `b64_json`.
+- Community image models are exposed through `/image/{prompt}` and `/v1/images/generations`. The registration test adds image input and `/v1/images/edits` metadata when the registrant's edit endpoint succeeds. OpenAI-compatible responses use `b64_json`.
 
 **Pricing**
 - Owners set prices when publishing; blank or zero means free.

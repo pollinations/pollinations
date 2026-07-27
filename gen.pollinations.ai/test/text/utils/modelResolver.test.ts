@@ -33,6 +33,14 @@ describe("resolveModelConfig", () => {
         expect(result.options.max_tokens).toBe(1024);
     });
 
+    it("routes claude-large to the global Opus 5 profile", () => {
+        const result = resolveModelConfig(messages, {
+            model: "claude-large",
+        });
+
+        expect(result.options.model).toBe("global.anthropic.claude-opus-5");
+    });
+
     it("does not set max_tokens for non-Anthropic models", () => {
         const result = resolveModelConfig(messages, { model: "openai" });
 

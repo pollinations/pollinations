@@ -704,9 +704,7 @@ test("Google text models use OpenRouter without advertising code execution", () 
             publicModels.get(model)?.capabilities,
             `${model} public capabilities`,
         ).not.toContain("code_execution");
-        expect(definition.paidOnly, `${model} paid-only status`).toBe(
-            model !== "gemini-fast",
-        );
+        expect(definition.paidOnly, `${model} paid-only status`).toBe(true);
     }
 });
 

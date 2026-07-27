@@ -494,7 +494,7 @@ export const TEXT_SERVICES = {
         category: "text",
         addedDate: new Date("2025-12-18").getTime(),
         priceMultiplier: 1,
-        paidOnly: false,
+        paidOnly: true,
         cost: {
             promptTextTokens: perMillion(0.1), // per 1M tokens
             promptCachedTokens: perMillion(0.01), // per 1M tokens
@@ -994,7 +994,7 @@ export const TEXT_SERVICES = {
         isSpecialized: false,
     },
     "claude-large": {
-        aliases: ["claude-opus-4.8", "claude-opus"],
+        aliases: ["claude-opus-5", "claude-opus-4.8", "claude-opus"],
         provider: "bedrock",
         brand: "Anthropic",
         category: "text",
@@ -1002,15 +1002,15 @@ export const TEXT_SERVICES = {
         paidOnly: true,
         priceMultiplier: 1,
         cost: {
-            // Bedrock global.anthropic.claude-opus-4-8 global standard rates.
+            // Bedrock global.anthropic.claude-opus-5 global standard rates.
             promptTextTokens: perMillion(5),
             promptCachedTokens: perMillion(0.5),
             promptCacheWriteTokens: perMillion(6.25),
             completionTextTokens: perMillion(25),
         },
-        title: "Claude Opus 4.8",
+        title: "Claude Opus 5",
         description:
-            "Top-shelf reasoning, writing and coding; premium price per token",
+            "Frontier reasoning for coding, complex analysis and long-running agents",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
         maxReferenceImages: 20, // Bedrock Converse image limit.

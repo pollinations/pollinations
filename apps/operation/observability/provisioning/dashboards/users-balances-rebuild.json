@@ -191,7 +191,7 @@
         "colorMode": "background",
         "graphMode": "none",
         "justifyMode": "auto",
-        "orientation": "horizontal",
+        "orientation": "vertical",
         "reduceOptions": {
           "calcs": [
             "lastNotNull"
@@ -201,7 +201,7 @@
         },
         "showPercentChange": false,
         "textMode": "auto",
-        "wideLayout": true
+        "wideLayout": false
       },
       "targets": [
         {
@@ -230,6 +230,7 @@
             "mode": "fixed"
           },
           "custom": {
+            "axisSoftMin": 0,
             "barAlignment": 0,
             "drawStyle": "bars",
             "fillOpacity": 85,
@@ -325,6 +326,7 @@
             "mode": "fixed"
           },
           "custom": {
+            "axisSoftMin": 0,
             "barAlignment": 0,
             "drawStyle": "bars",
             "fillOpacity": 85,
@@ -415,7 +417,7 @@
       "fieldConfig": {
         "defaults": {
           "color": {
-            "mode": "palette-classic"
+            "mode": "palette-classic-by-name"
           },
           "displayName": "${__field.labels.metric}",
           "custom": {
@@ -505,17 +507,22 @@
         "type": "datasource",
         "uid": "-- Dashboard --"
       },
-      "description": "Daily p95, p99, and maximum observed balances among successful billed active users. These anomaly indicators reuse the Quest panel query; they do not represent percentiles of the complete current wallet population.",
+      "description": "Daily p95, p99, and maximum observed balances among successful billed active users. These anomaly indicators reuse the Quest panel query; they do not represent percentiles of the complete current wallet population. The logarithmic y-axis keeps normal percentiles readable beside occasional maximum-balance spikes.",
       "fieldConfig": {
         "defaults": {
           "color": {
-            "mode": "palette-classic"
+            "mode": "palette-classic-by-name"
           },
           "custom": {
             "barAlignment": 0,
-            "drawStyle": "bars",
-            "fillOpacity": 75,
-            "lineWidth": 0,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "lineWidth": 2,
+            "scaleDistribution": {
+              "log": 10,
+              "type": "log"
+            },
+            "showPoints": "auto",
             "stacking": {
               "group": "A",
               "mode": "none"
@@ -629,7 +636,7 @@
           "calcs": [
             "lastNotNull"
           ],
-          "displayMode": "table",
+          "displayMode": "list",
           "placement": "bottom",
           "showLegend": true
         },
@@ -759,7 +766,7 @@
         "type": "grafana-clickhouse-datasource",
         "uid": "PAD1A0A25CD30D456"
       },
-      "description": "Daily registrations from the latest d1_user snapshot, excluding banned accounts. This is current surviving-account history: accounts deleted before the latest sync are absent.",
+      "description": "Daily registrations from the latest d1_user snapshot, excluding banned accounts. This is current surviving-account history: accounts deleted before the latest sync are absent. The current day is partial until its UTC day closes.",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -775,6 +782,7 @@
               "mode": "none"
             }
           },
+          "min": 0,
           "unit": "short"
         },
         "overrides": []
@@ -836,6 +844,7 @@
               "mode": "none"
             }
           },
+          "min": 0,
           "unit": "short"
         },
         "overrides": []
@@ -885,7 +894,7 @@
       "fieldConfig": {
         "defaults": {
           "color": {
-            "mode": "palette-classic"
+            "mode": "palette-classic-by-name"
           },
           "custom": {
             "barAlignment": 0,
@@ -897,6 +906,7 @@
               "mode": "none"
             }
           },
+          "min": 0,
           "unit": "short"
         },
         "overrides": [
@@ -909,6 +919,13 @@
               {
                 "id": "displayName",
                 "value": "DAU"
+              },
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "green",
+                  "mode": "fixed"
+                }
               }
             ]
           },
@@ -921,6 +938,29 @@
               {
                 "id": "displayName",
                 "value": "WAU (trailing 7d)"
+              },
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "yellow",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "custom.drawStyle",
+                "value": "line"
+              },
+              {
+                "id": "custom.fillOpacity",
+                "value": 0
+              },
+              {
+                "id": "custom.lineWidth",
+                "value": 2
+              },
+              {
+                "id": "custom.showPoints",
+                "value": "auto"
               }
             ]
           }
@@ -971,7 +1011,7 @@
       "fieldConfig": {
         "defaults": {
           "color": {
-            "mode": "palette-classic"
+            "mode": "palette-classic-by-name"
           },
           "custom": {
             "barAlignment": 0,
@@ -983,6 +1023,7 @@
               "mode": "none"
             }
           },
+          "min": 0,
           "unit": "short"
         },
         "overrides": [
@@ -995,6 +1036,13 @@
               {
                 "id": "displayName",
                 "value": "Registered"
+              },
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "green",
+                  "mode": "fixed"
+                }
               }
             ]
           },
@@ -1007,6 +1055,29 @@
               {
                 "id": "displayName",
                 "value": "Activated within 7d"
+              },
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "yellow",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "custom.drawStyle",
+                "value": "line"
+              },
+              {
+                "id": "custom.fillOpacity",
+                "value": 0
+              },
+              {
+                "id": "custom.lineWidth",
+                "value": 2
+              },
+              {
+                "id": "custom.showPoints",
+                "value": "auto"
               }
             ]
           }

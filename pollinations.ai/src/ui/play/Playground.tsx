@@ -5,7 +5,7 @@ import {
     type ModelCategory,
     Pollinations,
 } from "@pollinations/sdk";
-import { useAuthState } from "@pollinations/sdk/react";
+import { useAuthActions, useAuthState } from "@pollinations/sdk/react";
 import {
     Alert,
     AudioIcon,
@@ -21,6 +21,7 @@ import {
     TabButton,
     Text,
     Textarea,
+    Tooltip,
 } from "@pollinations/ui";
 import {
     categoryLabel,
@@ -28,7 +29,7 @@ import {
     ModalityTab,
     ModelSelector,
 } from "@pollinations/ui/gen";
-import { useEffect, useMemo, useState } from "react";
+import { type ReactNode, useEffect, useMemo, useState } from "react";
 
 type ViteImportMeta = ImportMeta & {
     env?: {
@@ -230,7 +231,7 @@ function ResultPanel({
                     their result would be a lie. */}
                 {result?.type === "image" && result.demo && (
                     <Text as="span" size="xs" className="text-theme-text-muted">
-                        Example output — press Generate to make your own
+                        Example output
                     </Text>
                 )}
                 {result && result.type !== "text" && !result.demo && (
@@ -325,8 +326,21 @@ async function uploadReferenceImages(
     return uploads.map((upload) => upload.url);
 }
 
-export function Playground() {
+/**
+ * One hue per modality, so switching Image/Video/Text/Audio recolours the
+ * whole playground rather than just a dot.
+ *
+ * The hues mirror `--polli-color-modality-*` in packages/ui/src/styles/
+ * tokens.css — they are duplicated here because those tokens bake the hue into
+ * an oklch() literal, so there is nothing to read back. Keep them in step.
+ *
+ * NOTE this deliberately departs from the package's stated rule that "modality
+ * is NOT a page theme". It is scoped to this one subtree and uses the accent
+ * recipe's own knob, so nothing outside the playground changes.
+ */
+export function Playground({ connect }: { connect?: ReactNode }) {
     const { apiKey, isLoggedIn, isHydrated } = useAuthState();
+    const { login } = useAuthActions();
     const {
         catalog,
         isLoading,
@@ -564,8 +578,39 @@ export function Playground() {
         }
     }
 
+    const generateLabel =
+        currentModel?.category === "video"
+            ? "Generate video"
+            : currentModel?.category === "audio"
+              ? isAudioTranscription
+                  ? "Transcribe audio"
+                  : "Generate audio"
+              : currentModel?.category === "text"
+                ? "Generate text"
+                : "Generate image";
+
+    // Signed out is a step, not a fault — handled by the button itself.
+    const needsConnect = isHydrated && !apiKey;
+    const missingInput = isAudioTranscription
+        ? audioFiles.length === 0
+        : !prompt.trim();
+
+    /** Why the button cannot fire, or null when it can. Drives the tooltip. */
+    const blockedReason = needsConnect
+        ? null
+        : missingInput
+          ? isAudioTranscription
+              ? "Upload an audio file first"
+              : "Write a prompt first"
+          : !selectedModelAllowed
+            ? "This key cannot use the selected model"
+            : null;
+
     return (
-        <div className="flex w-full flex-col gap-5 text-theme-text-base">
+        <div
+            //
+            className="flex w-full flex-col gap-5 text-theme-text-base"
+        >
             {catalogError && (
                 <Alert intent="danger">
                     Model catalog failed to load: {catalogError.message}
@@ -576,12 +621,18 @@ export function Playground() {
                 then which model, then what that model is. Deliberately not a
                 card — they read as a sequence, and a card would box them as
                 one static panel. They sit above both columns because modality
-                and model change the output, not just the prompt. */}
+                and model change the output, not just the prompt.
+
+                Connect sits on the modality row, right-aligned: it belongs
+                beside the thing you are about to be stopped from doing. */}
             <div className="flex flex-col items-start gap-3">
-                <ModalityTabs
-                    activeCategory={activeCategory}
-                    onCategoryChange={selectCategory}
-                />
+                <div className="flex w-full flex-wrap items-center justify-between gap-3">
+                    <ModalityTabs
+                        activeCategory={activeCategory}
+                        onCategoryChange={selectCategory}
+                    />
+                    {connect}
+                </div>
                 <ModelSelector
                     models={catalog.models}
                     category={activeCategory}
@@ -860,32 +911,47 @@ export function Playground() {
 
                         {error && <Alert intent="danger">{error}</Alert>}
 
-                        <Button
-                            type="button"
-                            size="lg"
-                            disabled={
-                                isGenerating ||
-                                !apiKey ||
-                                (isAudioTranscription
-                                    ? audioFiles.length === 0
-                                    : !prompt.trim()) ||
-                                !selectedModelAllowed
-                            }
-                            onClick={generate}
-                            className="w-full self-auto"
-                        >
-                            {isGenerating
-                                ? "Generating..."
-                                : currentModel?.category === "video"
-                                  ? "Generate video"
-                                  : currentModel?.category === "audio"
-                                    ? isAudioTranscription
-                                        ? "Transcribe audio"
-                                        : "Generate audio"
-                                    : currentModel?.category === "text"
-                                      ? "Generate text"
-                                      : "Generate image"}
-                        </Button>
+                        {/* Not connected is not a broken state, so the button
+                            does not sit there disabled under a 🚫 cursor with
+                            no explanation — it becomes the connect action. The
+                            tooltip covers the cases that genuinely are blocked
+                            (nothing typed, model not on this key). */}
+                        {blockedReason ? (
+                            <Tooltip
+                                triggerAs="span"
+                                align="center"
+                                content={blockedReason}
+                                className="w-full"
+                            >
+                                <Button
+                                    type="button"
+                                    size="lg"
+                                    disabled
+                                    className="w-full self-auto"
+                                >
+                                    {generateLabel}
+                                </Button>
+                            </Tooltip>
+                        ) : (
+                            <Button
+                                type="button"
+                                size="lg"
+                                disabled={isGenerating}
+                                // Wrapped: login() takes an optional request
+                                // object, so passing the ref directly would
+                                // hand it the click event.
+                                onClick={
+                                    needsConnect ? () => login() : generate
+                                }
+                                className="w-full self-auto"
+                            >
+                                {isGenerating
+                                    ? "Generating..."
+                                    : needsConnect
+                                      ? "Connect to generate"
+                                      : generateLabel}
+                            </Button>
+                        )}
                     </Surface>
                 </div>
 

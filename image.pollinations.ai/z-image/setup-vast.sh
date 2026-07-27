@@ -5,8 +5,9 @@
 # pinned Blackwell-capable PyTorch runtime and supervises the model server and a
 # remotely managed Cloudflare Tunnel in screen restart loops.
 #
-# Production registration is disabled by default. Run verify-vast.sh and the
-# benchmark first, then set HEARTBEAT_ENABLED=true in .env.zimage and restart.
+# Production registration is disabled by default. Keep the tunnel stopped for
+# local-only validation: starting a connector for the shared named tunnel can
+# receive production traffic even while registry heartbeats are disabled.
 #
 # Usage:
 #   PLN_GPU_TOKEN=... \
@@ -42,7 +43,7 @@ esac
 
 log "Installing system packages"
 $SUDO apt-get update -qq
-$SUDO apt-get install -y -qq curl git screen python3.12-venv python3.12-dev
+$SUDO apt-get install -y -qq curl dnsutils git screen python3.12-venv python3.12-dev
 
 # CUDA forward-compat libraries can fail on GeForce when the host driver is
 # older than the container toolkit. Use the host driver, as on the Flux Vast
@@ -64,10 +65,25 @@ if ! command -v cloudflared >/dev/null || \
 fi
 
 TUNNEL_TOKEN_FILE="$HOME/.cloudflared/tunnel-token"
+TUNNEL_ENABLED_FILE="$HOME/.cloudflared/tunnel-enabled"
+TUNNEL_DNS_FALLBACK_MARKER="$HOME/.cloudflared/use-local-doh"
+TUNNEL_RESOLV_BACKUP="/etc/resolv.conf.vast-original"
+TUNNEL_SRV_NAME="_v2-origintunneld._tcp.argotunnel.com"
 install -d -m 700 "$HOME/.cloudflared"
 printf '%s' "$CLOUDFLARED_TUNNEL_TOKEN" > "$TUNNEL_TOKEN_FILE"
 chmod 600 "$TUNNEL_TOKEN_FILE"
 unset CLOUDFLARED_TUNNEL_TOKEN
+
+# A small subset of Vast hosts resolves A records but drops the SRV responses
+# cloudflared needs. Mark those hosts once so every reboot starts a local DoH
+# resolver before the tunnel. Hosts with working SRV DNS keep their resolver.
+if [ -f "$TUNNEL_DNS_FALLBACK_MARKER" ]; then
+    log "Reusing the local DoH fallback selected on this host"
+elif ! dig +time=3 +tries=1 +short SRV "$TUNNEL_SRV_NAME" | grep -q 'argotunnel.com'; then
+    log "Vast DNS does not return Cloudflare Tunnel SRV records; enabling local DoH"
+    [ -s "$TUNNEL_RESOLV_BACKUP" ] || cp /etc/resolv.conf "$TUNNEL_RESOLV_BACKUP"
+    touch "$TUNNEL_DNS_FALLBACK_MARKER"
+fi
 
 mkdir -p "$(dirname "$WORK_DIR")"
 if [ -n "${SKIP_CLONE:-}" ]; then
@@ -93,9 +109,10 @@ fi
 PIP_FLAGS="--resume-retries 20 --timeout 60 --retries 10"
 "$VENV/bin/pip" install --upgrade -q pip
 log "Installing PyTorch 2.9.1 cu128"
+# The normal PyPI wheels install the verified cu128 build on Linux and avoid
+# the much slower download.pytorch.org route seen on some Vast hosts.
 "$VENV/bin/pip" install -q $PIP_FLAGS \
-    torch==2.9.1 torchvision==0.24.1 \
-    --index-url https://download.pytorch.org/whl/cu128
+    torch==2.9.1 torchvision==0.24.1
 log "Installing Z-Image dependencies"
 "$VENV/bin/pip" install -q $PIP_FLAGS \
     -r "$ZIMAGE_DIR/requirements.txt" \
@@ -106,6 +123,7 @@ log "Verifying CUDA and Blackwell support"
 import torch
 
 assert torch.cuda.is_available(), "CUDA is not available"
+assert torch.version.cuda == "12.8", f"Expected CUDA 12.8, got {torch.version.cuda}"
 assert "sm_120" in torch.cuda.get_arch_list(), "PyTorch build lacks RTX 5090 support"
 print("CUDA OK:", torch.__version__, torch.version.cuda, torch.cuda.get_device_name(0))
 PY
@@ -158,10 +176,42 @@ chmod 700 /root/run-zimage.sh
 
 cat > /root/onstart.sh <<EOF
 #!/bin/bash
+set -euo pipefail
+
 screen -S zimage -X quit 2>/dev/null || true
 screen -S cloudflared -X quit 2>/dev/null || true
+screen -S tunnel-dns -X quit 2>/dev/null || true
+
 screen -dmS zimage bash -c 'while true; do /root/run-zimage.sh >> /root/zimage.log 2>&1; sleep 5; done'
-screen -dmS cloudflared bash -c 'while true; do cloudflared tunnel --no-autoupdate run --token-file "$TUNNEL_TOKEN_FILE" >> /root/cloudflared.log 2>&1; sleep 5; done'
+
+if [ ! -f "$TUNNEL_ENABLED_FILE" ]; then
+    echo "Production tunnel is disabled; create $TUNNEL_ENABLED_FILE after local validation"
+    exit 0
+fi
+
+if [ -f "$TUNNEL_DNS_FALLBACK_MARKER" ]; then
+    screen -dmS tunnel-dns bash -c 'while true; do cloudflared proxy-dns --address 127.0.0.1 --port 53 --upstream https://cloudflare-dns.com/dns-query --bootstrap https://162.159.36.1/dns-query --bootstrap https://162.159.46.1/dns-query >> /root/tunnel-dns.log 2>&1; sleep 5; done'
+
+    tunnel_dns_ready=false
+    for _ in \$(seq 1 20); do
+        if dig @127.0.0.1 +time=2 +tries=1 +short SRV "$TUNNEL_SRV_NAME" | grep -q 'argotunnel.com'; then
+            {
+                printf 'nameserver 127.0.0.1\n'
+                grep -v '^nameserver ' "$TUNNEL_RESOLV_BACKUP" || true
+            } > /etc/resolv.conf
+            tunnel_dns_ready=true
+            break
+        fi
+        sleep 1
+    done
+
+    if [ "\$tunnel_dns_ready" != true ]; then
+        echo "Local DoH did not become ready; leaving the production tunnel stopped" >> /root/tunnel-dns.log
+        exit 1
+    fi
+fi
+
+screen -dmS cloudflared bash -c 'until curl -fsS --max-time 3 http://127.0.0.1:$PORT/health >/dev/null; do echo "Waiting for Z-Image health before joining the production tunnel" >> /root/cloudflared.log; sleep 5; done; while true; do cloudflared tunnel --no-autoupdate run --token-file "$TUNNEL_TOKEN_FILE" >> /root/cloudflared.log 2>&1; sleep 5; done'
 EOF
 chmod 700 /root/onstart.sh
 
@@ -169,5 +219,13 @@ chmod 700 /root/onstart.sh
 
 log "Z-Image is starting with production heartbeat=$HEARTBEAT_ENABLED"
 log "Model logs: tail -f /root/zimage.log"
-log "Tunnel logs: tail -f /root/cloudflared.log"
-log "Run verification before enabling production registration"
+if [ -f "$TUNNEL_ENABLED_FILE" ]; then
+    log "Tunnel logs: tail -f /root/cloudflared.log"
+    if [ -f "$TUNNEL_DNS_FALLBACK_MARKER" ]; then
+        log "Tunnel DNS logs: tail -f /root/tunnel-dns.log"
+    fi
+    log "The tunnel waits for local health, then joins the production connector pool"
+else
+    log "Production tunnel is disabled for local validation"
+    log "After validation: touch $TUNNEL_ENABLED_FILE && /root/onstart.sh"
+fi

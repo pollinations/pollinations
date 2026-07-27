@@ -210,6 +210,10 @@ export const communityEndpoint = sqliteTable("community_endpoint", {
   imagePricing: text("image_pricing", { enum: ["request", "tokens"] })
     .default("request")
     .notNull(),
+  // Set only after the registration probe successfully calls /images/edits.
+  supportsImageEdits: integer("supports_image_edits", { mode: "boolean" })
+    .default(false)
+    .notNull(),
   baseUrl: text("base_url").notNull(),
   upstreamModel: text("upstream_model").notNull(),
   bearerTokenCiphertext: text("bearer_token_ciphertext").notNull(),

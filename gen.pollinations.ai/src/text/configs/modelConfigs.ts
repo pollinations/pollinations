@@ -2,7 +2,6 @@ import {
     createAzureModelConfig,
     createBedrockNativeConfig,
     createFireworksModelConfig,
-    createInceptionModelConfig,
     createOpenRouterModelConfig,
     createOVHcloudModelConfig,
     createOVHcloudOAIConfig,
@@ -193,10 +192,16 @@ export const portkeyConfig: PortkeyConfigMap = {
             defaultOptions: { provider: { sort: "price" } },
         }),
 
-    // -- Inception Labs (Mercury) -------------------------------------------
+    // -- OpenRouter (Inception Labs) -----------------------------------------
     "mercury-2": () =>
-        createInceptionModelConfig({
-            model: "mercury-2",
+        createOpenRouterModelConfig({
+            model: "inception/mercury-2",
+            defaultOptions: {
+                provider: {
+                    only: ["Inception"],
+                    allow_fallbacks: false,
+                },
+            },
         }),
 
     // -- Fireworks AI (DeepSeek) ---------------------------------------------

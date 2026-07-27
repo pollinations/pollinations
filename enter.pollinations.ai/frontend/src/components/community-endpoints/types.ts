@@ -24,6 +24,7 @@ export type CommunityEndpoint = {
     description: string | null;
     modality: CommunityEndpointModality;
     imagePricing: CommunityEndpointImagePricing;
+    supportsImageEdits: boolean;
     baseUrl: string;
     upstreamModel: string;
     // private → owner-only, shown only to the owner, no owner-set price;
@@ -38,6 +39,8 @@ export type EndpointFormState = {
     modality: CommunityEndpointModality;
     // Detected by the endpoint test for image models; "request" until tested.
     imagePricing: CommunityEndpointImagePricing;
+    // Set only when the endpoint test receives a valid image edit response.
+    supportsImageEdits: boolean;
     name: string;
     title: string;
     description: string;
@@ -53,6 +56,7 @@ export type EndpointFormState = {
 export type EndpointPayload = {
     modality: CommunityEndpointModality;
     imagePricing: CommunityEndpointImagePricing;
+    supportsImageEdits: boolean;
     name: string;
     title: string;
     description: string;
@@ -69,6 +73,7 @@ export type CommunityEndpointTestResponse = {
     usage?: CommunityEndpointUsage;
     billableUsage?: Usage;
     imagePricing?: CommunityEndpointImagePricing;
+    supportsImageEdits?: boolean;
 };
 
 export type ActionState = {
@@ -85,6 +90,7 @@ const emptyPriceForm = Object.fromEntries(
 export const emptyForm: EndpointFormState = {
     modality: "text",
     imagePricing: "request",
+    supportsImageEdits: false,
     name: "",
     title: "",
     description: "",
@@ -170,6 +176,7 @@ export function endpointToForm(endpoint: CommunityEndpoint): EndpointFormState {
     return {
         modality: endpoint.modality,
         imagePricing: endpoint.imagePricing,
+        supportsImageEdits: endpoint.supportsImageEdits,
         name: endpoint.name,
         title: endpoint.title,
         description: endpoint.description ?? "",
@@ -267,6 +274,8 @@ export function toEndpointPayload(form: EndpointFormState): EndpointPayload {
     return {
         modality: form.modality,
         imagePricing,
+        supportsImageEdits:
+            form.modality === "image" && form.supportsImageEdits,
         name: modelName,
         title: form.title.trim(),
         description: form.description.trim(),
@@ -283,13 +292,23 @@ export function nextFormState(
     key: keyof EndpointFormState,
     value: string,
 ): EndpointFormState {
+    if (key === "supportsImageEdits") return current;
     if (key === "modality") {
         return {
             ...current,
             modality: value === "image" ? "image" : "text",
+            supportsImageEdits: false,
         };
     }
     const next = { ...current, [key]: value };
+    if (
+        key === "name" ||
+        key === "upstreamModel" ||
+        key === "baseUrl" ||
+        key === "bearerToken"
+    ) {
+        next.supportsImageEdits = false;
+    }
     if (
         key === "upstreamModel" &&
         (!current.name.trim() || current.name === current.upstreamModel)

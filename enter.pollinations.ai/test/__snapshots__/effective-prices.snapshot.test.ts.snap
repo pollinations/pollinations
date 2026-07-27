@@ -1071,6 +1071,18 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.000002,
     },
   },
+  "nemotron": {
+    "cost": {
+      "completionTextTokens": 0.0000022,
+      "promptCachedTokens": 0.0000001,
+      "promptTextTokens": 0.0000005,
+    },
+    "price": {
+      "completionTextTokens": 0.0000022,
+      "promptCachedTokens": 0.0000001,
+      "promptTextTokens": 0.0000005,
+    },
+  },
   "nova": {
     "cost": {
       "completionTextTokens": 0.00000275,

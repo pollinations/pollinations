@@ -1,0 +1,34 @@
+{
+  "pr_number": 12715,
+  "title": "feat: add community image edits",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/12715",
+  "merged_at": "2026-07-27T10:03:38Z",
+  "labels": [],
+  "pr_body_excerpt": "- Routes community reference-image requests to the registrant’s OpenAI-compatible /images/edits endpoint as multipart form data.\n- Probes image editing during the existing registration test and persists the result in one default-false column.\n- Adds image input modality and /v1/images/edits metadata only after a valid edit response; generation-only models stay text-input.\n- Keeps saved endpoint URLs and existing rows backward compatible, while reusing current image validation and billing.\n- Validated with 99 focused tests, Enter and Gen typechecks, staging builds, and API docs validation.\n\nFixes #12645",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Community models learned scissors",
+    "blurb": "Community image endpoints can now do more than make fresh pixels: they can edit the ones you bring along. If an endpoint passes the edit check, the hive quietly gives it the proper tools.",
+    "summary": "Community OpenAI-compatible endpoints can now support multipart requests at `/v1/images/edits`, with image-input capability and edit metadata automatically enabled only after a registration-time edit probe succeeds.",
+    "impact": "Developers can send reference images to validated community image-editing models through the standard edits API, while generation-only endpoints remain compatible and continue advertising text input only.",
+    "keywords": [
+      "community endpoints",
+      "image editing",
+      "OpenAI compatibility",
+      "images edits",
+      "reference images",
+      "API"
+    ],
+    "visual_concept": "Depict the community endpoint registry as a cozy garden workshop where image models are little retro picture frames. Polli tests one frame by carefully trimming and repainting a small landscape image with pixel-art scissors and a paintbrush, while a CRT robot holds an `/v1/images/edits` form; nearby generation-only frames simply grow fresh flowers, showing both capabilities can coexist.",
+    "image_prompt": "A cozy pixel art garden workshop where Polli, the cute bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a happy smile, and small rounded light-blue translucent wings, wears a tiny artist beret and carefully edits a pixel landscape in a glowing picture frame using little scissors and a paintbrush; a friendly chunky CRT monitor robot holds a form labeled `/v1/images/edits`, with code-plants and generation-only flower frames nearby. Cozy 8-bit pixel art aesthetic, prominent soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, subtle scanlines, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-27/PR-12715.jpg",
+    "prompt": "A cozy pixel art garden workshop where Polli, the cute bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a happy smile, and small rounded light-blue translucent wings, wears a tiny artist beret and carefully edits a pixel landscape in a glowing picture frame using little scissors and a paintbrush; a friendly chunky CRT monitor robot holds a form labeled `/v1/images/edits`, with code-plants and generation-only flower frames nearby. Cozy 8-bit pixel art aesthetic, prominent soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, subtle scanlines, nostalgic but beautiful."
+  },
+  "generated_at": "2026-07-27T10:04:40.419467+00:00"
+}

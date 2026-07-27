@@ -180,6 +180,8 @@ export async function genericOpenAIClient(
             jsonMode: _jsonMode,
             modelConfig: _modelConfig,
             modelDef: _modelDef,
+            normalizeFinishReasonAtTokenLimit:
+                _normalizeFinishReasonAtTokenLimit,
             portkeyGatewayUrl: _portkeyGatewayUrl,
             requestedModel: _requestedModel,
             userApiKey: _userApiKey,
@@ -308,6 +310,16 @@ export async function genericOpenAIClient(
         // Some providers (e.g. Vertex AI) return "stop" for tool call responses.
         if (formattedChoice.message?.tool_calls?.length) {
             formattedChoice.finish_reason = "tool_calls";
+        }
+
+        if (
+            _normalizeFinishReasonAtTokenLimit &&
+            formattedChoice.finish_reason === "stop" &&
+            typeof normalizedOptions.max_tokens === "number" &&
+            typeof data.usage?.completion_tokens === "number" &&
+            data.usage.completion_tokens >= normalizedOptions.max_tokens
+        ) {
+            formattedChoice.finish_reason = "length";
         }
 
         return withResponseMetadata(

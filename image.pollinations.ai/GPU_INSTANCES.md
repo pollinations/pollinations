@@ -6,15 +6,15 @@ Last updated: 2026-07-27
 
 | Model | Workers | GPUs | Provider | Cost/hr | Status |
 |-------|---------|------|----------|---------|--------|
-| Flux (FP4) | 1 | RTX 5090 | Vast.ai | $0.3744/hr | **ACTIVE — production** (Fireworks fallback) |
-| Z-Image | 3 temporary | 3x RTX 5090 | Vast.ai | $1.195555/hr | **ACTIVE — two production + one validated canary** |
+| Flux (FP4) | 1 | RTX 5090 | Vast.ai | $0.3744/hr | **ACTIVE — production** (Replicate fallback) |
+| Z-Image | 2 active + 1 stopped rollback | 3x RTX 5090 | Vast.ai | $0.773333/hr active + $0.022222/hr stopped storage | **ACTIVE — two production** |
 | Klein 4B | 1 active + 1 rollback | RTX 3090 + A5000 | Vast.ai + RunPod | $0.1656 + $0.27 while rollback runs | **ACTIVE — Vast production; RunPod stop-ready** |
 | LTX-2 + ACE-Step + Sana | 1 | GH200 | Lambda Labs | — | **ACTIVE** |
 
 ## Provider: Vast.ai — Flux (RTX 5090, FP4)
 
 One single-GPU instance fronted by a Cloudflare Tunnel. Flux routes pool-first
-with automatic Fireworks fallback
+with automatic Replicate fallback
 (`gen.pollinations.ai/src/image/createAndReturnImages.ts` → `callFluxWithFallback`).
 
 | Worker | Vast instance | GPU | Listed rate | Status |
@@ -25,7 +25,7 @@ with automatic Fireworks fallback
 > CRITICAL: workers MUST be behind a named Cloudflare tunnel created in the
 > authoritative Pollinations account. The gen Worker cannot fetch a Vast
 > raw-IP/non-standard-port origin, and a successful registry heartbeat alone
-> does not prove the data path works. Fireworks can hide either failure.
+> does not prove the data path works. Replicate can hide either failure.
 
 **The quick-tunnel warning above is not theoretical — it caused the #12254
 outage.** flux-vast-03 was left on a `trycloudflare.com` quick tunnel (free,
@@ -72,7 +72,7 @@ POLLINATIONS_API_KEY=... bash image.pollinations.ai/nunchaku/verify-vast.sh  # r
 
 **Key behavior:** FP4 nunchaku, 4 steps, full 1024x1024 (`MAX_PIXELS=1048576`);
 `QUEUE_LIMIT=3` allows one running request plus two waiting; additional load is
-shed with 503 so the gateway falls back to Fireworks instead of making users
+shed with 503 so the gateway falls back to Replicate instead of making users
 wait in a long queue.
 
 ## Provider: Vast.ai — Z-Image Turbo (RTX 5090)
@@ -83,14 +83,15 @@ sees one stable backend URL.
 
 | Worker | Vast instance | Region | Listed rate | Status |
 |--------|---------------|--------|-------------|--------|
-| zimage-vast-01 | 45311852 | South Korea | $0.422222/hr | ACTIVE — production |
+| zimage-vast-01 | 45311852 | South Korea | $0.422222/hr | STOPPED 2026-07-27 — overnight rollback |
 | zimage-vast-02 | 45313816 | South Korea | $0.422222/hr | ACTIVE — production |
-| zimage-vast-canary | 46003779 | California | $0.351111/hr | ACTIVE — validated production canary |
+| zimage-vast-canary | 46003779 | California | $0.351111/hr | ACTIVE — production |
 
-The temporary three-worker fleet costs `$1.195555/hr`. Replacing one older
-worker with the canary leaves two workers at `$0.773333/hr`, saving
-`$0.071111/hr` or about `$51.20` per 30-day month versus the previous pair.
-Do not stop an older worker until the canary's production soak is accepted.
+The active two-worker fleet costs `$0.773333/hr`, saving `$0.071111/hr` or
+about `$51.20` per 30-day month versus the previous pair. Stopped instance
+`45311852` retains its 80GB disk for rollback and incurs `$0.022222/hr` in
+storage charges (about `$16/month`) until destroyed. Restart is subject to GPU
+availability on its host.
 
 **Canary validation (2026-07-27):**
 
@@ -101,6 +102,9 @@ Do not stop an older worker until the canary's production soak is accepted.
   byte-identical.
 - Production soak added five successful requests with no 5xx, OOM, traceback,
   or tunnel errors.
+- After draining and stopping `45311852`, the retained workers served another
+  27 successful requests with zero 5xx or current-hour tunnel errors; five
+  shared-hostname health probes also passed.
 - Requests above 2,359,296 pixels return HTTP 422.
 
 **Deployment behavior:**

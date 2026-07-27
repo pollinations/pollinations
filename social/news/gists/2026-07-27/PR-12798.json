@@ -1,0 +1,34 @@
+{
+  "pr_number": 12798,
+  "title": "fix: correct Realtime cached image billing",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/12798",
+  "merged_at": "2026-07-27T12:32:58Z",
+  "labels": [],
+  "pr_body_excerpt": "## Summary\n\n- Bills cached image input at $0.50/M for `gpt-realtime-2` and `gpt-realtime-2.1` while keeping cached text/audio at $0.40/M.\n- Applies the confirmed Azure `priceMultiplier: 0.75` to both models.\n- Keeps model IDs, Sweden Central deployments, access, modalities, and no-fallback routing unchanged.\n\n## Confirmed contract\n\n| Model | Provider | Paid only | Multiplier | Route |\n|---|---|---:|---:|---|\n| `gpt-realtime-2.1` | Azure | No | 0.75 | Sweden Central / `gpt-realtime-2-1` |\n| `gpt-realtime-2` | Azure | No | 0.75 | Sweden Central / `gpt-realtime-2` |\n\nSources: [GPT Realtime 2.1 pricing](https://developers.openai.com/api/docs/models/gpt-realtime-2.1), [GPT Realtime 2 pricing](https://developers.openai.com/api/docs/models/gpt-realtime-2), [Azure Retail Prices API](https://prices.azure.com/api/retail/prices).\n\n## Verification\n\n- Gen focused billing/observability suite: 90 passed.\n- Gen full suite: 713 passed, 6 skipped.\n- Enter aliases/pricing/snapshot suite: 298 passed.\n- Gen and Enter typechecks pass.\n- Route-level Realtime tests verify cached text/audio/image usage, wallet deduction, adjustment metadata, and Tinybird totals for both models.\n\nFull Enter also ran; unrelated Stripe tests require a missing local `STRIPE_WEBHOOK_SECRET`. The focused pricing suite is green.",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Cached pixels count properly",
+    "blurb": "The realtime hive got its calculator recalibrated. Cached image input for GPT Realtime 2 and 2.1 now lands in the right billing bucket, while text and audio keep their own tidy rate.",
+    "summary": "Corrected Azure billing for cached image input on `gpt-realtime-2` and `gpt-realtime-2.1` to $0.50/M, retained cached text/audio at $0.40/M, and applied the confirmed `priceMultiplier: 0.75` to both Sweden Central routes.",
+    "impact": "Realtime users now receive accurate wallet deductions and usage totals for cached image, text, and audio input on both GPT Realtime models, with routing and model access unchanged.",
+    "keywords": [
+      "realtime",
+      "billing",
+      "azure",
+      "gpt-realtime-2",
+      "cached-images",
+      "pricing"
+    ],
+    "visual_concept": "A cozy billing garden where different cached inputs are sorted accurately: tiny pixel image cards go into a clearly labeled image jar, while text scrolls and audio waveforms enter neighboring jars. Polli acts as the observant accountant with a tiny calculator and green visor, checking a 0.75 multiplier receipt beside a friendly Azure-blue cloud symbol, while code-plants and flowers keep the scene warm.",
+    "image_prompt": "Cozy pixel art scene of Polli, a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings, wearing a tiny green accountant visor and carefully sorting cached image cards, text scrolls, and audio waveforms into glowing billing jars beside a receipt marked “0.75”; lime green (#ecf874) is prominent among warm cream, mint, lavender, and peach code-plants and flowers. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, subtle CRT glow, pixel-font text: “CACHED IMAGE $0.50/M”, nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-27/PR-12798.jpg",
+    "prompt": "Cozy pixel art scene of Polli, a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings, wearing a tiny green accountant visor and carefully sorting cached image cards, text scrolls, and audio waveforms into glowing billing jars beside a receipt marked “0.75”; lime green (#ecf874) is prominent among warm cream, mint, lavender, and peach code-plants and flowers. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, subtle CRT glow, pixel-font text: “CACHED IMAGE $0.50/M”, nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-07-27T12:33:56.671174+00:00"
+}

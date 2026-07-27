@@ -29,6 +29,8 @@ export const COMMUNITY_MODEL_ALLOWED_GITHUB_IDS = [
     183505255, // timemachine-studio
     228371309, // gggff123
     184364250, // Takax62
+    162339795, // meow18838
+    130518306, // Lorodn4x
 ] as const;
 
 const COMMUNITY_MODEL_ALLOWED_GITHUB_ID_SET = new Set<number>(

@@ -236,7 +236,7 @@ export const TEXT_SERVICES = {
     },
     "mercury": {
         aliases: ["mercury-2", "inception", "inception-mercury"],
-        provider: "inception",
+        provider: "openrouter",
         brand: "Inception",
         category: "text",
         addedDate: new Date("2026-06-23").getTime(),

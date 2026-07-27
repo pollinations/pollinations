@@ -1,10 +1,4 @@
-import {
-    Card,
-    CardGrid,
-    PixelBadge,
-    SectionHeader,
-    Terminal,
-} from "../site/kit";
+import { Card, PixelBadge, SectionHeader, Terminal } from "../site/kit";
 
 type Way = {
     chip: string;
@@ -65,44 +59,52 @@ export function ThreeWays() {
                 subtitle="Every flow hits the same generation endpoints — what changes is the key you send and the model you name."
             />
 
-            <CardGrid>
+            {/* Full-width rows, not a 3-up grid. Three terminals crammed
+                into third-width cards is what forced 11.5px type and a
+                horizontal scrollbar — at ~60% of the row each one reads like
+                a terminal instead of a postage stamp. Rows also break the
+                grid-after-grid rhythm the reviews kept flagging, and they
+                keep the three ways equal, which tabs would not. */}
+            <div className="flex flex-col gap-5">
                 {WAYS.map((way) => (
-                    <Card key={way.chip} className="gap-3 p-7">
-                        {/* All three labels share one treatment — the section
-                            headline says these are equal options, so none of
-                            them gets to shout. */}
-                        <div className="flex flex-wrap items-baseline gap-2">
-                            <PixelBadge>{way.chip}</PixelBadge>
-                            {way.chipTitle && (
-                                <span className="text-sm text-theme-text-muted">
-                                    {way.chipTitle}
-                                </span>
-                            )}
+                    <Card
+                        key={way.chip}
+                        className="gap-6 p-7 lg:grid lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] lg:items-center"
+                    >
+                        <div className="flex flex-col gap-3">
+                            <div className="flex flex-wrap items-baseline gap-2">
+                                <PixelBadge>{way.chip}</PixelBadge>
+                                {way.chipTitle && (
+                                    <span className="text-sm text-theme-text-muted">
+                                        {way.chipTitle}
+                                    </span>
+                                )}
+                            </div>
+                            <h3 className="font-subheading text-xl text-theme-text-strong">
+                                {way.heading}
+                            </h3>
+                            <p className="text-sm leading-relaxed text-theme-text-base">
+                                {way.body}
+                            </p>
+                            <p className="pt-1 text-xs text-theme-text-muted">
+                                Who pays:{" "}
+                                <strong className="text-theme-text-strong">
+                                    {way.payer}
+                                </strong>
+                                {way.earns && (
+                                    <>
+                                        {" · "}You earn:{" "}
+                                        <strong className="text-theme-text-soft">
+                                            {way.earns}
+                                        </strong>
+                                    </>
+                                )}
+                            </p>
                         </div>
-                        <h3 className="font-subheading text-xl text-theme-text-strong">
-                            {way.heading}
-                        </h3>
-                        <p className="text-sm leading-relaxed text-theme-text-base">
-                            {way.body}
-                        </p>
-                        <Terminal filename={way.filename}>{way.code}</Terminal>
-                        <p className="mt-auto pt-2 text-xs text-theme-text-muted">
-                            Who pays:{" "}
-                            <strong className="text-theme-text-strong">
-                                {way.payer}
-                            </strong>
-                            {way.earns && (
-                                <>
-                                    {" · "}You earn:{" "}
-                                    <strong className="text-theme-text-soft">
-                                        {way.earns}
-                                    </strong>
-                                </>
-                            )}
-                        </p>
+                        <Terminal filename={way.filename} code={way.code} />
                     </Card>
                 ))}
-            </CardGrid>
+            </div>
 
             <div className="flex flex-wrap items-center gap-3.5 rounded-2xl bg-theme-bg-subtle px-5 py-4">
                 <PixelBadge>Stackable</PixelBadge>

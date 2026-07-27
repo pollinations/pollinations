@@ -1,4 +1,10 @@
-import { Chip, cn, Surface, type SurfaceProps } from "@pollinations/ui";
+import {
+    Chip,
+    CopyButton,
+    cn,
+    Surface,
+    type SurfaceProps,
+} from "@pollinations/ui";
 import type { ComponentPropsWithoutRef, ElementType, ReactNode } from "react";
 
 /**
@@ -507,21 +513,29 @@ export function CalloutPanel({
  */
 export function ScrollStrip({
     label,
+    ariaLabel,
     children,
 }: {
-    label: string;
+    /** Omit when a SectionHeader above already names the strip. */
+    label?: string;
+    /** Required when label is omitted — the scroller still needs a name. */
+    ariaLabel?: string;
     children: ReactNode;
 }) {
     return (
         <div className="flex flex-col gap-3.5">
-            <div className="flex items-center justify-between gap-4">
-                <PixelLabel variant="eyebrow">{label}</PixelLabel>
-                <span className="text-sm text-theme-text-muted">scroll →</span>
-            </div>
+            {label && (
+                <div className="flex items-center justify-between gap-4">
+                    <PixelLabel variant="eyebrow">{label}</PixelLabel>
+                    <span className="text-sm text-theme-text-muted">
+                        scroll →
+                    </span>
+                </div>
+            )}
             <section
                 // biome-ignore lint/a11y/noNoninteractiveTabindex: a scroll container needs focus to be keyboard-scrollable
                 tabIndex={0}
-                aria-label={label}
+                aria-label={label ?? ariaLabel}
                 className="flex gap-4 overflow-x-auto pb-2.5"
             >
                 {children}
@@ -545,23 +559,39 @@ export function ScrollStrip({
  */
 export function Terminal({
     filename,
-    children,
+    code,
 }: {
     filename: string;
-    children: ReactNode;
+    code: string;
 }) {
+    // What Copy puts on the clipboard: the runnable commands — no "$ "
+    // prompts, no comment lines. Copying the decoration would be a small
+    // betrayal of the one thing a developer takes from this page.
+    const copyValue = code
+        .split("\n")
+        .filter((line) => !line.trimStart().startsWith("#"))
+        .map((line) => line.replace(/^\$ /, ""))
+        .join("\n");
+
     return (
         <div className="dark flex flex-col overflow-hidden rounded-2xl bg-brand-dark shadow-[0_12px_26px_-12px_rgba(17,5,24,0.45)]">
-            <div className="flex items-center gap-2 bg-theme-bg-subtle px-4 py-3">
+            <div className="flex items-center gap-2 bg-theme-bg-subtle px-4 py-2.5">
                 <span className="size-2 rounded-[2px] bg-theme-bg-active" />
                 <span className="size-2 rounded-[2px] bg-theme-text-muted/50" />
                 <span className="size-2 rounded-[2px] bg-theme-text-muted/50" />
                 <span className="ml-1 font-pixel text-xs text-theme-text-muted">
                     {filename}
                 </span>
+                <CopyButton
+                    value={copyValue}
+                    tooltip={null}
+                    className="ml-auto cursor-pointer font-pixel text-xs text-theme-text-muted uppercase hover:text-theme-text-strong"
+                >
+                    {(copied) => (copied ? "Copied" : "Copy")}
+                </CopyButton>
             </div>
-            <pre className="overflow-x-auto px-4 py-3 text-[11.5px] leading-relaxed whitespace-pre-wrap text-theme-text-base">
-                <code>{children}</code>
+            <pre className="overflow-x-auto px-5 py-4 text-[13px] leading-relaxed whitespace-pre-wrap text-theme-text-base">
+                <code>{code}</code>
             </pre>
         </div>
     );

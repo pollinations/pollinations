@@ -2,12 +2,13 @@ import { Link } from "@tanstack/react-router";
 import { useMemo } from "react";
 import { isBuzz, sortApps, useAppDirectory } from "../../data/publicStats";
 import { AppTile } from "../apps/cards";
-import { ArrowLink, CardGrid, SectionHeader } from "../site/kit";
+import { appCover } from "../apps/cover";
+import { ArrowLink, CardGrid, ScrollStrip, SectionHeader } from "../site/kit";
 
 /**
- * Three, with artwork — the mockup's proportion. Six text-only cards read as
- * another list; three with images read as a shelf, and they're the only
- * pictures on the page. Same tile the Apps spotlight uses, one size up.
+ * A wide shelf you skim sideways — the same strip the Apps spotlight uses, so
+ * Hello shows eight covers instead of three tiles in yet another 3-up grid.
+ * Only apps that actually have cover art qualify; a shelf is pictures.
  */
 export function LiveApps() {
     const { data: apps, loading, failed } = useAppDirectory();
@@ -15,10 +16,15 @@ export function LiveApps() {
     const featured = useMemo(
         () =>
             apps
-                .filter((app) => isBuzz(app) && Boolean(app.description))
+                .filter(
+                    (app) =>
+                        isBuzz(app) &&
+                        Boolean(app.description) &&
+                        appCover(app.name) !== null,
+                )
                 .slice()
                 .sort(sortApps)
-                .slice(0, 3),
+                .slice(0, 8),
         [apps],
     );
 
@@ -56,11 +62,16 @@ export function LiveApps() {
                     The app directory couldn’t be loaded right now.
                 </p>
             ) : (
-                <CardGrid gap="gap-4">
+                <ScrollStrip ariaLabel="Live apps built on Pollinations">
                     {featured.map((app) => (
-                        <AppTile key={app.name} app={app} />
+                        <AppTile
+                            key={app.name}
+                            app={app}
+                            imageClassName="h-30"
+                            className="w-59 flex-none"
+                        />
                     ))}
-                </CardGrid>
+                </ScrollStrip>
             )}
         </section>
     );

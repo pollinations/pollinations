@@ -202,14 +202,23 @@ export function PageHeader({ eyebrow, title, subtitle, action }: HeadingProps) {
  */
 export function Hero({
     scene,
+    compact = false,
     children,
 }: {
     /** /heroes/{home,play,apps,community}.webp */
     scene: string;
+    /** Play: its text is short and the product waits below, so the scene
+     *  gives back some height and the playground pulls up. */
+    compact?: boolean;
     children: ReactNode;
 }) {
     return (
-        <section className="-mx-8 -mt-16 relative md:-mx-18 lg:flex lg:min-h-[540px] lg:items-start">
+        <section
+            className={cn(
+                "-mx-8 -mt-16 relative md:-mx-18 lg:flex lg:items-start",
+                compact ? "lg:min-h-[420px]" : "lg:min-h-[540px]",
+            )}
+        >
             <img
                 src={scene}
                 alt=""

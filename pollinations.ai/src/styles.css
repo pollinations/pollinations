@@ -10,40 +10,6 @@
    the same utility. Site source writes plain `flex`, `gap-4`, `text-sm`. */
 @import "@pollinations/ui/app.css";
 
-/* ── Modality theming ──────────────────────────────────────────────────
-   One accent per modality, so switching Image/Video/Text/Audio recolours the
-   whole playground — tabs, buttons, borders — rather than just a dot.
-
-   Values mirror the accent recipe in packages/ui/src/styles/tokens.css at each
-   modality's hue from --polli-color-modality-*. INVARIANT: border === bg-hover. */
-[data-modality] {
-    --polli-color-bg-pale: oklch(0.981 0.018 var(--modality-hue));
-    --polli-color-bg-subtle: oklch(0.955 0.022 var(--modality-hue) / 0.7);
-    --polli-color-bg-active: oklch(0.886 0.135 var(--modality-hue));
-    --polli-color-bg-hover: oklch(0.836 0.165 var(--modality-hue));
-    --polli-color-border: oklch(0.836 0.165 var(--modality-hue));
-    --polli-color-text-soft: oklch(0.47 0.13 var(--modality-hue));
-}
-[data-modality="image"] { --modality-hue: 350; }
-[data-modality="video"] { --modality-hue: 190; }
-[data-modality="text"] { --modality-hue: 252; }
-[data-modality="audio"] { --modality-hue: 300; }
-[data-modality="realtime"] { --modality-hue: 128; }
-[data-modality="embedding"] { --modality-hue: 163; }
-
-/* Colour changes in here are instant, and they have to be.
-   Chrome cannot interpolate a colour that resolves through a custom property:
-   `transition-colors` latches the value it first painted and never advances,
-   so the element reports the new hue while still showing the old one. Verified
-   in Chrome, not just the preview browser, and it is not oklch-specific —
-   plain hex with !important behaved the same. Dropping colour from the
-   transition list fixes it; shadow, opacity and transform stay so the buttons
-   keep their hover lift. */
-[data-modality],
-[data-modality] * {
-    transition-property: opacity, box-shadow, transform, filter;
-}
-
 /* ── Hero scene dissolve ───────────────────────────────────────────────
    The painted scene melts into the sheet on two axes. Bottom: always — the
    prompt paints a fade toward #fef8eb and this mask guarantees the seam

@@ -30,7 +30,7 @@ function PlayPage() {
             permissions={["profile", "usage"]}
         >
             {/* The monitor robot, showing off something it just made. */}
-            <Hero scene="/heroes/play.webp">
+            <Hero compact scene="/heroes/play.webp">
                 <PageHeader
                     eyebrow="Every model, in the browser"
                     title="Try it out."
@@ -39,7 +39,15 @@ function PlayPage() {
             </Hero>
             {/* Connect belongs on the playground's own control row, beside
                 the thing it unblocks — not up in the page header. */}
-            <Playground connect={<AppUserMenu dashboardHref={ENTER_URL} />} />
+            <Playground
+                connect={
+                    // AppUserMenu has no size prop; match its button to the
+                    // enlarged modality tabs it sits beside.
+                    <div className="[&_button]:px-6 [&_button]:py-2.5 [&_button]:text-lg">
+                        <AppUserMenu dashboardHref={ENTER_URL} />
+                    </div>
+                }
+            />
         </PolliProvider>
     );
 }

@@ -202,6 +202,9 @@ function ModalityTabs({
                     key={category}
                     active={activeCategory === category}
                     size="md"
+                    // The modality choice is the playground's biggest decision,
+                    // so its tabs outrank the default pill size.
+                    className="px-6 py-2.5 text-lg"
                     onClick={() => onCategoryChange(category)}
                 >
                     {categoryLabel(category)}
@@ -607,13 +610,7 @@ export function Playground({ connect }: { connect?: ReactNode }) {
             : null;
 
     return (
-        <div
-            // One accent per modality: swapping this attribute re-themes the
-            // whole playground from styles.css, so tabs, buttons and borders
-            // follow without per-element colour work.
-            data-modality={activeCategory}
-            className="flex w-full flex-col gap-5 text-theme-text-base"
-        >
+        <div className="flex w-full flex-col gap-5 text-theme-text-base">
             {catalogError && (
                 <Alert intent="danger">
                     Model catalog failed to load: {catalogError.message}

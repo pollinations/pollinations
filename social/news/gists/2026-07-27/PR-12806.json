@@ -1,0 +1,35 @@
+{
+  "pr_number": 12806,
+  "title": "feat: add NVIDIA Nemotron 3 Ultra",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/12806",
+  "merged_at": "2026-07-27T15:46:27Z",
+  "labels": [],
+  "pr_body_excerpt": "## Summary\n\n- Adds `nemotron` with three versioned aliases and the existing NVIDIA brand.\n- Routes directly to DeepInfra's exact standard-tier checkpoint with no fallback.\n- Registers text/tool/reasoning capabilities, 262,144 context, paid-only access, and exact `$0.50/$0.10/$2.20` per-million input/cache/output rates.\n- Normalizes DeepInfra's incorrect `stop` finish reason to `length` when the configured token limit is reached.\n\n| Provider | Input | Output | Paid-only | Multiplier | Pollinations GPU | Fallback |\n|---|---|---|---:|---:|---:|---|\n| DeepInfra direct | text | text | yes | 1 | no | none |\n\n## Verification\n\n- Direct and authenticated local E2E: canonical model, all aliases, streaming, tools, reasoning, structured JSON, paid-only gating, malformed and oversized requests, cache behavior, and token-limit handling.\n- Usage headers, provider tokens, ledger deductions, and registry pricing reconcile exactly; 50/50 burst requests passed with no 429 or 5xx.\n- Gen: 724/724 tests, typecheck, and Vite production build.\n- Enter: 301/301 alias and pricing tests.\n\nDeepInfra posts cached-input pricing, but repeated probes did not produce a provider cache hit. Row-level staging Tinybird verification was unavailable because no staging read credential is configured; local tracking logs verified exact billing.\n",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Nemotron joins the garden",
+    "blurb": "A new NVIDIA brain has landed in the hive. Nemotron 3 Ultra brings a very large context window, tools, reasoning, and a direct route to DeepInfra—no mystery detours through the hedges.",
+    "summary": "Added NVIDIA Nemotron 3 Ultra as `nemotron` plus three versioned aliases, routed directly to DeepInfra’s standard-tier checkpoint with text, tool use, reasoning, structured JSON, a 262,144-token context window, and paid-only pricing of $0.50/$0.10/$2.20 per million input/cached-input/output tokens.",
+    "impact": "Developers can call Nemotron 3 Ultra through the existing text API for long-context, tool-enabled, and reasoning workloads, with exact usage billing and token-limit responses normalized from DeepInfra’s `stop` to `length` when the configured limit is reached.",
+    "keywords": [
+      "NVIDIA",
+      "Nemotron 3 Ultra",
+      "DeepInfra",
+      "text API",
+      "reasoning",
+      "tool calling",
+      "long context"
+    ],
+    "visual_concept": "Depict Polli welcoming a powerful new NVIDIA-branded thinking engine into a cozy code garden: a retro terminal grows a huge vine of scrolling text that loops around a 262,144-token sign, while the monitor robot eagerly inspects tool-call gears. Polli wears tiny scientist glasses and tends the model’s code-plant, making the direct DeepInfra route visible as one clean glowing path with no branching fallback paths.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee with black oval eyes, pink rectangular cheek blush, small smile, light blue translucent wings, and tiny scientist glasses, tending a towering NVIDIA Nemotron code-plant beside a retro terminal; a single clean lime green (#ecf874) glowing path leads directly to a friendly cloud gateway, while a cute CRT monitor robot holds tool-call gears and a sign reading “262K CONTEXT.” Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel mint-lavender-peach gradient background, chunky retro sprites, pixel flowers and vines, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-27/PR-12806.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee with black oval eyes, pink rectangular cheek blush, small smile, light blue translucent wings, and tiny scientist glasses, tending a towering NVIDIA Nemotron code-plant beside a retro terminal; a single clean lime green (#ecf874) glowing path leads directly to a friendly cloud gateway, while a cute CRT monitor robot holds tool-call gears and a sign reading “262K CONTEXT.” Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel mint-lavender-peach gradient background, chunky retro sprites, pixel flowers and vines, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
+  },
+  "generated_at": "2026-07-27T15:47:33.411610+00:00"
+}

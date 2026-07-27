@@ -1,0 +1,34 @@
+{
+  "pr_number": 12799,
+  "title": "Move Mercury 2 to OpenRouter",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/12799",
+  "merged_at": "2026-07-27T13:41:48Z",
+  "labels": [],
+  "pr_body_excerpt": "- Routes `mercury` through OpenRouter's exact `inception/mercury-2` endpoint, pinned to Inception with fallback disabled.\n- Keeps aliases, paid-only access, multiplier 1, capabilities, and token/cache prices unchanged.\n- Preserves the existing 400 response for unsupported multimodal input instead of exposing an upstream 502.\n- Removes the unused direct Inception config helper; existing secrets remain untouched.\n\nValidation: Gen typecheck; 721/721 Gen tests; 298/298 focused Enter alias/pricing tests; direct and local E2E for all aliases, streaming, tools, structured output, cache, billing, errors, and 5/15/30-request bursts.",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Mercury found a new orbit",
+    "blurb": "Mercury 2 now travels through OpenRouter, with its familiar aliases, pricing, and tool belt intact. Polli also made sure unsupported multimodal requests still get a useful 400 instead of wandering into a mysterious 502.",
+    "summary": "Routed the paid-only `mercury` model to OpenRouter’s pinned `inception/mercury-2` endpoint with fallback disabled, while preserving aliases, multiplier 1, capabilities, token/cache pricing, and existing unsupported-multimodal 400 responses.",
+    "impact": "Mercury users keep the same model names, billing, streaming, tools, structured output, and cache behavior, with unsupported multimodal input continuing to return a clear 400 rather than an upstream 502.",
+    "keywords": [
+      "mercury-2",
+      "openrouter",
+      "text-api",
+      "model-routing",
+      "reliability",
+      "inception"
+    ],
+    "visual_concept": "Depict Mercury as a small warm gray pixel planet or polished silver orb being carefully guided onto a clearly labeled OpenRouter space route. Polli, wearing a tiny astronaut helmet, adjusts the route from a cozy garden observatory terminal while code-vines and small flowers grow around it, representing a seamless provider move that preserves the existing interface and avoids an error detour.",
+    "image_prompt": "A cozy pixel art garden observatory where Polli, the cute yellow-and-brown striped bee mascot with black antennae, oval eyes, bright pink rectangular cheek blush, a small smile, rounded light-blue translucent wings, and a tiny astronaut helmet, gently guides a small silver Mercury orb onto a retro terminal route labeled \"OPENROUTER\"; code-plants, flowers, and a sign reading \"400\" safely mark a calm side path. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel lavender-to-cream gradient background, chunky retro sprites, warm lighting, subtle CRT glow, lo-fi vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-27/PR-12799.jpg",
+    "prompt": "A cozy pixel art garden observatory where Polli, the cute yellow-and-brown striped bee mascot with black antennae, oval eyes, bright pink rectangular cheek blush, a small smile, rounded light-blue translucent wings, and a tiny astronaut helmet, gently guides a small silver Mercury orb onto a retro terminal route labeled \"OPENROUTER\"; code-plants, flowers, and a sign reading \"400\" safely mark a calm side path. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel lavender-to-cream gradient background, chunky retro sprites, warm lighting, subtle CRT glow, lo-fi vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
+  },
+  "generated_at": "2026-07-27T13:42:50.846034+00:00"
+}

@@ -6,7 +6,6 @@ import {
 import { getImageEnv } from "./env.ts";
 import { HttpError } from "./httpError.ts";
 import { callAzureFluxKontext } from "./models/azureFluxKontextModel.js";
-import { callFireworksFluxSchnellAPI } from "./models/fireworksFluxModel.ts";
 import { callFluxKleinAPI } from "./models/fluxKleinModel.ts";
 import {
     callIdeogramBalancedAPI,
@@ -25,6 +24,7 @@ import {
     callPrunaImageEditAPI,
 } from "./models/prunaModel.ts";
 import { callQwenImageAPI } from "./models/qwenImageModel.ts";
+import { callReplicateFluxSchnellAPI } from "./models/replicateFluxModel.ts";
 import { callSeedream5API } from "./models/seedream5ReplicateModel.ts";
 import {
     callSeedream5ProAPI,
@@ -278,7 +278,7 @@ export const callSelfHostedServer = async (
 };
 
 /**
- * Flux routing: prefer the self-hosted GPU pool; fall back to Fireworks when
+ * Flux routing: prefer the self-hosted GPU pool; fall back to Replicate when
  * no worker is registered or the pool request fails.
  * NOTE: do NOT add an AbortSignal.timeout to the pool fetch — in production
  * workerd it broke every pool request (all traffic silently fell back to
@@ -293,8 +293,8 @@ export const callFluxWithFallback = async (
     } catch (error) {
         // Log the full error (not just message) so unexpected error types
         // (coding bugs vs operational failures) are not silently masked.
-        logError("Self-hosted flux failed, falling back to Fireworks:", error);
-        return await callFireworksFluxSchnellAPI(prompt, safeParams);
+        logError("Self-hosted flux failed, falling back to Replicate:", error);
+        return await callReplicateFluxSchnellAPI(prompt, safeParams);
     }
 };
 

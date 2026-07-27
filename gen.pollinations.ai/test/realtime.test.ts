@@ -503,7 +503,7 @@ test("deducts aggregate session usage from paid pack balance on close", async ()
 
     const user = await waitForPackBalanceBelow(userId, 1);
 
-    const expectedCharge = 0.003553 * 2;
+    const expectedCharge = 0.003553 * 2 * 0.75;
     expect(user?.packBalance).toBeCloseTo(1 - expectedCharge, 8);
     expect(upstream.tinybirdRequests).toHaveLength(1);
 
@@ -521,6 +521,96 @@ test("deducts aggregate session usage from paid pack balance on close", async ()
     expect(telemetry.tokenCountCompletionText).toBe(100);
     expect(telemetry.tokenCountCompletionAudio).toBe(50);
     expect(telemetry.totalPrice).toBeCloseTo(expectedCharge, 8);
+});
+
+test.each([
+    "gpt-realtime-2",
+    "gpt-realtime-2.1",
+] as const)("bills %s cached image tokens at $0.50/M", async (model) => {
+    const { key, userId } = await createTestApiKey({
+        name: `${model}-cache-realtime-key`,
+        pollenBudget: 1,
+        user: { tierBalance: 0, packBalance: 1 },
+    });
+    const upstream = mockOpenAIRealtime();
+
+    const { response, ctx } = await fetchWorkerWithContext(
+        `/v1/realtime?model=${model}`,
+        {
+            headers: {
+                Authorization: `Bearer ${key}`,
+                Upgrade: "websocket",
+            },
+        },
+    );
+
+    expect(response.status).toBe(101);
+    const client = response.webSocket;
+    if (!client) throw new Error("Expected downstream WebSocket");
+    client.accept();
+    upstream.server.accept();
+
+    const usageEvent = JSON.stringify({
+        type: "response.done",
+        response: {
+            usage: {
+                input_tokens: 100,
+                output_tokens: 30,
+                input_token_details: {
+                    text_tokens: 40,
+                    audio_tokens: 50,
+                    image_tokens: 10,
+                    cached_tokens: 30,
+                    cached_tokens_details: {
+                        text_tokens: 10,
+                        audio_tokens: 15,
+                        image_tokens: 5,
+                    },
+                },
+                output_token_details: {
+                    text_tokens: 20,
+                    audio_tokens: 10,
+                },
+            },
+        },
+    });
+
+    const firstForwardedEvent = nextMessage(client);
+    upstream.server.send(usageEvent);
+    await expect(firstForwardedEvent).resolves.toBe(usageEvent);
+    const secondForwardedEvent = nextMessage(client);
+    upstream.server.send(usageEvent);
+    await expect(secondForwardedEvent).resolves.toBe(usageEvent);
+
+    client.close();
+    upstream.server.close();
+    await waitOnExecutionContext(ctx);
+
+    const expectedCost = 0.0023975 * 2;
+    const expectedCharge = expectedCost * 0.75;
+    const user = await waitForPackBalanceBelow(userId, 1);
+    expect(user?.packBalance).toBeCloseTo(1 - expectedCharge, 8);
+    expect(upstream.tinybirdRequests).toHaveLength(1);
+
+    const telemetry = JSON.parse(
+        await upstream.tinybirdRequests[0].text(),
+    ) as Record<string, unknown>;
+    expect(telemetry.resolvedModelRequested).toBe(model);
+    expect(telemetry.tokenCountPromptText).toBe(60);
+    expect(telemetry.tokenCountPromptCached).toBe(60);
+    expect(telemetry.tokenCountPromptAudio).toBe(70);
+    expect(telemetry.tokenCountPromptImage).toBe(10);
+    expect(telemetry.tokenCountCompletionText).toBe(40);
+    expect(telemetry.tokenCountCompletionAudio).toBe(20);
+    expect(telemetry.adjustmentUnits).toEqual({
+        "openai.realtime.cached_image_delta.v1": 10,
+    });
+    const adjustmentCosts = telemetry.adjustmentCosts as Record<string, number>;
+    expect(
+        adjustmentCosts["openai.realtime.cached_image_delta.v1"],
+    ).toBeCloseTo(0.000001, 12);
+    expect(telemetry.totalCost).toBeCloseTo(expectedCost, 10);
+    expect(telemetry.totalPrice).toBeCloseTo(expectedCharge, 10);
 });
 
 test("bills mini cached audio and image tokens at their exact rates", async () => {
@@ -726,7 +816,7 @@ test("falls back to aggregate realtime token totals when details are absent", as
     upstream.server.close();
     await waitOnExecutionContext(ctx);
 
-    const expectedCharge = 0.0002;
+    const expectedCharge = 0.0002 * 0.75;
     const user = await waitForPackBalanceBelow(userId, 1);
     expect(user?.packBalance).toBeCloseTo(1 - expectedCharge, 8);
     expect(upstream.tinybirdRequests).toHaveLength(1);
@@ -788,7 +878,7 @@ test("bills partial realtime token details from aggregate remainders", async () 
     upstream.server.close();
     await waitOnExecutionContext(ctx);
 
-    const expectedCharge = 0.003353;
+    const expectedCharge = 0.003353 * 0.75;
     const user = await waitForPackBalanceBelow(userId, 1);
     expect(user?.packBalance).toBeCloseTo(1 - expectedCharge, 8);
     expect(upstream.tinybirdRequests).toHaveLength(1);

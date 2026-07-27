@@ -1,3 +1,4 @@
+import polliBee from "@pollinations/ui/brand/polli/polli.png";
 import { createFileRoute } from "@tanstack/react-router";
 import { compact, usePlatformStats } from "../data/publicStats";
 import { DevKit } from "../ui/home/DevKit";
@@ -46,7 +47,8 @@ function HelloPage() {
 
     return (
         <>
-            <Hero>
+            {/* Polli herself opens the site — the one the brand already had. */}
+            <Hero character={polliBee}>
                 <PageHeader
                     eyebrow="The infrastructure for AI apps"
                     title="Every model, one wallet."

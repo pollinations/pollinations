@@ -1,5 +1,4 @@
 import { Chip, cn, Surface, type SurfaceProps } from "@pollinations/ui";
-import polliBee from "@pollinations/ui/brand/polli/polli.png";
 import type { ComponentPropsWithoutRef, ElementType, ReactNode } from "react";
 
 /**
@@ -178,21 +177,35 @@ export function PageHeader({ eyebrow, title, subtitle, action }: HeadingProps) {
 }
 
 /**
- * The opening block, bee on the right. Hello and Community both had one and
- * they had drifted — gap-14 against gap-12, a 340px bee against a 220px one —
- * so the two pages opened at visibly different scales.
+ * The opening block, with a character on the right.
+ *
+ * Every page gets a different one, doing something that belongs to that page —
+ * Polli on Hello, the monitor robot on Play, the nomnom on Apps, all three
+ * together on Community. The layout is shared so the pages can't drift apart
+ * again: they had already reached gap-14 against gap-12 and a 340px bee
+ * against a 220px one, which is why switching tabs changed scale.
  */
-export function Hero({ children }: { children: ReactNode }) {
+export function Hero({
+    character,
+    children,
+}: {
+    character: string;
+    children: ReactNode;
+}) {
     return (
         <section className="flex flex-wrap items-center gap-14">
             <div className="flex min-w-0 flex-1 flex-col gap-8">{children}</div>
+            {/* Bounded by the BOX, not by width. The four sprites have very
+                different aspects — the nomnom is 492x732, the group portrait
+                1032x468 — so fixing width alone rendered them 332px and 506px
+                tall on facing pages. Capping both makes every character carry
+                the same visual weight, and the wide group lands short and
+                broad on its own. */}
             <img
-                src={polliBee}
+                src={character}
                 alt=""
                 aria-hidden="true"
-                width={340}
-                height={340}
-                className="mx-auto w-56 shrink-0 lg:w-[340px]"
+                className="mx-auto max-h-[220px] w-auto max-w-[280px] shrink-0 lg:max-h-[340px] lg:max-w-[460px]"
             />
         </section>
     );

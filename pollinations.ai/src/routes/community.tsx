@@ -191,7 +191,9 @@ function CommunityPage() {
 
     return (
         <>
-            <Hero>
+            {/* The whole cast, together — the page is about the three of us
+                being more than one of us. */}
+            <Hero character="/characters/community.png">
                 <PageHeader
                     eyebrow="Open source, open roadmap"
                     title="Contribute"

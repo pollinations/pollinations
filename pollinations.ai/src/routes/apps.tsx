@@ -20,6 +20,7 @@ import { appCover } from "../ui/apps/cover";
 import {
     ActionButton,
     CardGrid,
+    Hero,
     PageHeader,
     PixelLabel,
     PixelRule,
@@ -158,20 +159,25 @@ function AppsPage() {
 
     return (
         <>
-            <PageHeader
-                eyebrow={
-                    loading
-                        ? "Apps built on Pollinations"
-                        : `${apps.length} apps built on Pollinations`
-                }
-                title="Ecosystem"
-                subtitle="Apps, tools and experiments from the community. Browse, try, ship."
-                action={
+            {/* The nomnom, buried under a stack of apps. "Submit your app"
+                moves below the subtitle rather than sitting top-right, so the
+                right side belongs to the character — the same shape as Hello. */}
+            <Hero character="/characters/apps.png">
+                <PageHeader
+                    eyebrow={
+                        loading
+                            ? "Apps built on Pollinations"
+                            : `${apps.length} apps built on Pollinations`
+                    }
+                    title="Ecosystem"
+                    subtitle="Apps, tools and experiments from the community. Browse, try, ship."
+                />
+                <div className="flex flex-wrap gap-3">
                     <ActionButton href="https://github.com/pollinations/pollinations/issues/new?template=APP-SUBMISSION.yml">
                         Submit your app
                     </ActionButton>
-                }
-            />
+                </div>
+            </Hero>
 
             {/* The hero pair: what we made, then the best of what you made. */}
             <div className="grid grid-cols-[repeat(auto-fit,minmax(min(380px,100%),1fr))] gap-5">

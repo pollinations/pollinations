@@ -2,6 +2,7 @@ import { normalizeAllowedModelSelection } from "@frontend/components/keys/model-
 import {
     DEFAULT_CONSENT_BUDGET,
     DEFAULT_CONSENT_EXPIRY_DAYS,
+    expiryDaysToExpiresIn,
     getAuthorizeInitialPermissions,
     sanitizeAuthorizeAccountPermissions,
 } from "@shared/auth/authorize-config.ts";
@@ -96,6 +97,30 @@ describe("getAuthorizeInitialPermissions", () => {
             expiryDays: DEFAULT_CONSENT_EXPIRY_DAYS,
             accountPermissions: null,
         });
+    });
+});
+
+describe("expiryDaysToExpiresIn", () => {
+    it("converts the consent default to seconds", () => {
+        expect(expiryDaysToExpiresIn(DEFAULT_CONSENT_EXPIRY_DAYS)).toBe(
+            DEFAULT_CONSENT_EXPIRY_DAYS * 24 * 60 * 60,
+        );
+        expect(expiryDaysToExpiresIn(0.5)).toBe(43200);
+    });
+
+    it("means no expiry when the field is empty", () => {
+        expect(expiryDaysToExpiresIn(null)).toBeUndefined();
+        expect(expiryDaysToExpiresIn(undefined)).toBeUndefined();
+    });
+
+    it("means no expiry for values that can't be positive whole seconds", () => {
+        expect(expiryDaysToExpiresIn(0)).toBeUndefined();
+        expect(expiryDaysToExpiresIn(-7)).toBeUndefined();
+        expect(expiryDaysToExpiresIn(Number.NaN)).toBeUndefined();
+    });
+
+    it("rounds fractional days to whole seconds", () => {
+        expect(expiryDaysToExpiresIn(0.00001)).toBe(1);
     });
 });
 

@@ -209,7 +209,7 @@ export function Hero({
     children: ReactNode;
 }) {
     return (
-        <section className="-mx-8 -mt-16 relative md:-mx-18 lg:flex lg:min-h-[540px] lg:items-center">
+        <section className="-mx-8 -mt-16 relative md:-mx-18 lg:flex lg:min-h-[540px] lg:items-start">
             <img
                 src={scene}
                 alt=""

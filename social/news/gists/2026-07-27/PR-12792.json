@@ -1,0 +1,33 @@
+{
+  "pr_number": 12792,
+  "title": "chore: remove 1 dead apps (2026-07-27)",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/12792",
+  "merged_at": "2026-07-27T14:53:48Z",
+  "labels": [],
+  "pr_body_excerpt": "## Dead App Removal\n\nThese apps returned 404/410 in **all 3 check rounds** (5 min apart):\n\n- JSON Pollinations API | https://pollinations-json.deno.dev/openai\n\nReview before merging. Close this PR to keep all apps.\n",
+  "gist": {
+    "category": "community",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "One less ghost garden",
+    "blurb": "The app garden had one link leading nowhere, so it was gently pruned from the directory.",
+    "summary": "Removed the JSON Pollinations API entry from apps/APPS.md after its https://pollinations-json.deno.dev/openai endpoint returned 404 or 410 across three checks five minutes apart.",
+    "impact": "The community app directory now avoids sending visitors to an unavailable JSON Pollinations API link.",
+    "keywords": [
+      "community",
+      "apps-directory",
+      "dead-link",
+      "cleanup",
+      "api"
+    ],
+    "visual_concept": "A cozy community garden directory is being tended: Polli, wearing a tiny gardener hat, gently removes a wilted signpost marked with a small 404 symbol while healthy code-plants and flowers remain nearby. The scene represents pruning one unavailable app listing so the shared garden stays useful.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny gardener hat, gently pruning a wilted code-plant sign marked \"404\" from a warm community app garden while healthy little terminals and flowers grow nearby. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, dark purple (#110518) outlines, warm lighting, retro gaming vibes, subtle CRT glow, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-27/PR-12792.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny gardener hat, gently pruning a wilted code-plant sign marked \"404\" from a warm community app garden while healthy little terminals and flowers grow nearby. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, dark purple (#110518) outlines, warm lighting, retro gaming vibes, subtle CRT glow, emotionally warm."
+  },
+  "generated_at": "2026-07-27T14:54:45.156190+00:00"
+}

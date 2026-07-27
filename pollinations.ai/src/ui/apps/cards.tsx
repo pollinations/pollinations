@@ -9,7 +9,7 @@ import {
     platformsOf,
 } from "../../data/publicStats";
 import { ArrowLink, Card, PixelBadge } from "../site/kit";
-import { pixelCover } from "./cover";
+import { appCover } from "./cover";
 
 /**
  * The three shapes an app takes on this site. They live together because
@@ -38,21 +38,32 @@ export function AppTile({
     imageClassName?: string;
     className?: string;
 }) {
+    const cover = appCover(app.name);
+
     return (
         <Card
             as="a"
             href={appHref(app)}
             className={`overflow-hidden rounded-2xl p-0 ${className ?? ""}`}
         >
-            <img
-                src={pixelCover(app.name, app.category, 480, 240)}
-                alt=""
-                aria-hidden="true"
-                loading="lazy"
-                width={480}
-                height={240}
-                className={`block w-full bg-theme-bg-subtle object-cover ${imageClassName}`}
-            />
+            {/* No cover means no picture, not a borrowed one — the block keeps
+                the card the same height as its neighbours. */}
+            {cover ? (
+                <img
+                    src={cover}
+                    alt=""
+                    aria-hidden="true"
+                    loading="lazy"
+                    width={1200}
+                    height={600}
+                    className={`block w-full bg-theme-bg-subtle object-cover ${imageClassName}`}
+                />
+            ) : (
+                <div
+                    aria-hidden="true"
+                    className={`w-full bg-theme-bg-subtle ${imageClassName}`}
+                />
+            )}
             <div className="flex flex-col gap-1.5 px-5 py-4">
                 <span className="font-subheading text-lg text-theme-text-strong">
                     {app.emoji} {app.name}
@@ -85,7 +96,7 @@ export function AppHero({
     badgeTone?: "pale" | "accent";
     description: string;
     meta: string;
-    image: string;
+    image: string | null;
     action: ReactNode;
 }) {
     return (
@@ -94,15 +105,22 @@ export function AppHero({
             href={href}
             className="overflow-hidden rounded-[18px] p-0 hover:shadow-[5px_5px_0_var(--polli-color-bg-active)]"
         >
-            <img
-                src={image}
-                alt=""
-                aria-hidden="true"
-                loading="lazy"
-                width={600}
-                height={280}
-                className="block h-60 w-full bg-theme-bg-subtle object-cover"
-            />
+            {image ? (
+                <img
+                    src={image}
+                    alt=""
+                    aria-hidden="true"
+                    loading="lazy"
+                    width={1200}
+                    height={600}
+                    className="block h-60 w-full bg-theme-bg-subtle object-cover"
+                />
+            ) : (
+                <div
+                    aria-hidden="true"
+                    className="h-60 w-full bg-theme-bg-subtle"
+                />
+            )}
             <div className="flex flex-1 flex-col gap-2 px-6.5 py-5.5">
                 <div className="flex items-center gap-2.5">
                     <span className="font-subheading text-2xl text-theme-text-strong">

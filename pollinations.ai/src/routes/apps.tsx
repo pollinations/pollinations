@@ -10,8 +10,13 @@ import {
     sortApps,
     useAppDirectory,
 } from "../data/publicStats";
+// Hand-picked, and the only editorial thing on the page — every badge in
+// APPS.md is computed from traffic or recency, so none of them can say "we
+// think this is good". JSON because scripts/generate-app-art.mjs reads the
+// same list to decide which apps get cover art.
+import SPOTLIGHT from "../data/spotlight.json";
 import { AppCard, AppHero, AppTile } from "../ui/apps/cards";
-import { pixelCover } from "../ui/apps/cover";
+import { appCover } from "../ui/apps/cover";
 import {
     ActionButton,
     CardGrid,
@@ -38,21 +43,6 @@ export const Route = createFileRoute("/apps")({
     validateSearch: validateAppSearch,
     component: AppsPage,
 });
-
-/**
- * Hand-picked, and the only editorial thing on the page — every badge in
- * APPS.md is computed from traffic or recency, so none of them can say "we
- * think this is good". Matched on Name; missing entries just don't render.
- * The first survivor is promoted into the hero pair beside Playground.
- */
-const SPOTLIGHT = [
-    "LLM Playground",
-    "Sirius Cybernetics Elevator Challenge",
-    "Strudel AI REPL",
-    "CatGPT Meme Generator",
-    "Convince the CRAZY Idol to let you free",
-    "excelformula.pro",
-];
 
 const SIGNAL_TEST = { buzz: isBuzz, pollen: isPollen, fresh: isFresh } as const;
 
@@ -192,12 +182,7 @@ function AppsPage() {
                     badgeTone="accent"
                     description="Every model in the browser — text, image, audio, video. Sign in and generate on your own Pollen, nothing to install."
                     meta="pollinations.ai/play"
-                    image={pixelCover(
-                        "Pollinations Playground",
-                        "build",
-                        600,
-                        280,
-                    )}
+                    image={appCover("Pollinations Playground")}
                     action={<OpenPill>Open →</OpenPill>}
                 />
                 {lead && (
@@ -211,7 +196,7 @@ function AppsPage() {
                                 ? `by ${lead.github_username}`
                                 : "community built"
                         }
-                        image={pixelCover(lead.name, lead.category, 600, 280)}
+                        image={appCover(lead.name)}
                         action={
                             <span className="text-sm font-semibold text-theme-text-soft">
                                 Open ↗

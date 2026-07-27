@@ -22,6 +22,7 @@
     --color-inherit:                inherit;
 
     --color-brand-dark:             var(--polli-color-brand-dark);
+    --color-brand-accent: var(--polli-color-brand-accent);
 
     --color-app-bg:                 var(--polli-color-app-bg);
     --color-divider:                var(--polli-color-divider);

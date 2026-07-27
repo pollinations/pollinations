@@ -198,6 +198,35 @@ export function Hero({ children }: { children: ReactNode }) {
     );
 }
 
+/**
+ * The row of big numbers under a hero. Hello and Community both carry one.
+ *
+ * Callers pass only what they could actually measure — a stat whose feed
+ * failed is dropped upstream rather than rendered as a dash, because a row of
+ * dashes looks broken while a shorter row just looks shorter.
+ */
+export function StatRow({
+    stats,
+}: {
+    stats: { value: string; label: string }[];
+}) {
+    if (stats.length === 0) return null;
+    return (
+        <dl className="mt-2 flex flex-wrap gap-10">
+            {stats.map((stat) => (
+                <div key={stat.label} className="flex flex-col">
+                    <dt className="font-heading text-4xl text-theme-text-soft tabular-nums">
+                        {stat.value}
+                    </dt>
+                    <dd className="text-xs text-theme-text-muted">
+                        {stat.label}
+                    </dd>
+                </div>
+            ))}
+        </dl>
+    );
+}
+
 /** Same rhythm one level down. Section titles are text-4xl everywhere. */
 export function SectionHeader({
     eyebrow,
@@ -248,6 +277,15 @@ const ACTION_TONE = {
     dark:
         "bg-brand-dark text-theme-bg-active " +
         "shadow-[3px_3px_0_rgba(17,5,24,0.25)] hover:shadow-[5px_5px_0_rgba(17,5,24,0.32)]",
+    /**
+     * For use on the dark panel. `bg-active` flips to a muted oklch(0.496 …)
+     * inside `.dark` — correct for dark chrome, muddy for the one button meant
+     * to be the brightest thing there. brand-accent is hue-themed but never
+     * flipped, so this stays the real amber.
+     */
+    bright:
+        "bg-brand-accent text-brand-dark " +
+        "shadow-[3px_3px_0_rgba(0,0,0,0.3)] hover:shadow-[5px_5px_0_rgba(0,0,0,0.38)]",
 } as const;
 
 export function ActionButton({
@@ -330,6 +368,47 @@ export function Card<T extends ElementType = "div">({
     } as SurfaceProps<ElementType>;
 
     return <Surface {...props}>{children}</Surface>;
+}
+
+/**
+ * The closing block on a page: a solid panel with a heading, a line of body
+ * and its actions. Hello and Community both end on one — the only difference
+ * is the tone, so they share the component rather than the shape being typed
+ * out twice and drifting.
+ *
+ * `dark` is a plain class in tokens.css, so it re-binds every `--polli-*`
+ * token for this subtree and the ordinary theme utilities resolve to their
+ * on-dark values.
+ */
+export function CalloutPanel({
+    tone = "accent",
+    title,
+    body,
+    children,
+}: {
+    tone?: "accent" | "dark";
+    title: string;
+    body: string;
+    children: ReactNode;
+}) {
+    return (
+        <section
+            className={cn(
+                "flex flex-wrap items-center justify-between gap-10 rounded-3xl px-10 py-12",
+                tone === "dark" ? "dark bg-brand-dark" : "bg-theme-bg-active",
+            )}
+        >
+            <div className="flex max-w-lg flex-col gap-2.5">
+                <h2 className="font-heading text-4xl leading-tight text-theme-text-strong">
+                    {title}
+                </h2>
+                <p className="leading-relaxed text-theme-text-strong/75">
+                    {body}
+                </p>
+            </div>
+            <div className="flex flex-wrap items-center gap-3">{children}</div>
+        </section>
+    );
 }
 
 /**

@@ -30,7 +30,13 @@
     --polli-text-micro:      10px;
     --polli-text-base:       16px;
 
+    /* Brand constants — hue-themed, but never flipped by `.dark`. Use these
+       when an element must keep its identity on top of a dark panel: inside
+       `.dark`, bg-active resolves to a muted oklch(0.496 …) that reads as
+       muddy brown, which is right for a dark UI and wrong for a CTA that is
+       supposed to be the brightest thing on the page. */
     --polli-color-brand-dark: #110518;
+    --polli-color-brand-accent: oklch(calc(0.876 + var(--polli-nudge)) 0.135 var(--polli-hue));
 
     /* Level 0 — Desk (neutral, identical on every page) */
     --polli-color-app-bg:              oklch(0.902 0.013 80);
@@ -291,6 +297,7 @@
     --color-inherit:     inherit;
 
     --color-brand-dark:  var(--polli-color-brand-dark);
+    --color-brand-accent: var(--polli-color-brand-accent);
 
     --color-app-bg:      var(--polli-color-app-bg);
     --color-divider:     var(--polli-color-divider);

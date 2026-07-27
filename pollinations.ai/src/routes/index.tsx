@@ -6,7 +6,13 @@ import { MoneyMoves } from "../ui/home/MoneyMoves";
 import { OnTheWay } from "../ui/home/OnTheWay";
 import { StartBuilding } from "../ui/home/StartBuilding";
 import { ThreeWays } from "../ui/home/ThreeWays";
-import { ActionButton, Hero, PageHeader, PixelRule } from "../ui/site/kit";
+import {
+    ActionButton,
+    Hero,
+    PageHeader,
+    PixelRule,
+    StatRow,
+} from "../ui/site/kit";
 
 export const Route = createFileRoute("/")({
     component: HelloPage,
@@ -20,22 +26,17 @@ export const Route = createFileRoute("/")({
  * directory it needs is the page's actual content.
  */
 function useHeroStats() {
-    const { data, loading } = usePlatformStats();
+    const { data } = usePlatformStats();
+    if (!data) return [];
     return [
+        { value: compact(data.requestsWeek), label: "requests a week" },
         {
-            value: data ? compact(data.requestsWeek) : "—",
-            label: "requests a week",
-            loading,
-        },
-        {
-            value: data ? `${data.availability.toFixed(1)}%` : "—",
+            value: `${data.availability.toFixed(1)}%`,
             label: "availability",
-            loading,
         },
         {
-            value: data ? String(data.models) : "—",
+            value: String(data.models),
             label: "models, community included",
-            loading,
         },
     ];
 }
@@ -73,21 +74,7 @@ function HelloPage() {
                         Read the docs
                     </ActionButton>
                 </div>
-                <dl className="mt-2 flex flex-wrap gap-10">
-                    {stats.map((stat) => (
-                        <div key={stat.label} className="flex flex-col">
-                            <dt
-                                className="font-heading text-4xl text-theme-text-soft tabular-nums"
-                                aria-busy={stat.loading}
-                            >
-                                {stat.value}
-                            </dt>
-                            <dd className="text-xs text-theme-text-muted">
-                                {stat.label}
-                            </dd>
-                        </div>
-                    ))}
-                </dl>
+                <StatRow stats={stats} />
             </Hero>
 
             <ThreeWays />

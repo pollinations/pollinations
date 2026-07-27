@@ -1,5 +1,5 @@
-import { Button, Surface } from "@pollinations/ui";
-import { ArrowLink, SectionHeader } from "../site/kit";
+import { Surface } from "@pollinations/ui";
+import { ActionButton, ArrowLink, SectionHeader } from "../site/kit";
 
 const STEPS = [
     "A user signs in to your app with Pollinations, holding Pollen they bought or earned from Quests",
@@ -32,9 +32,14 @@ export function MoneyMoves() {
                     subtitle="On most platforms every user you win costs you money. Here, users hold their own Pollen — bought, or earned free by completing Quests — so usage scales without a bill landing on you, and a share of what they spend comes back to you."
                 />
                 <div className="mt-1 flex flex-wrap items-center gap-5">
-                    <Button as="a" href="https://enter.pollinations.ai">
+                    {/* `bright`, not `accent` — see the tone table in kit.tsx:
+                        bg-active flips muddy inside `.dark`. */}
+                    <ActionButton
+                        href="https://enter.pollinations.ai"
+                        tone="bright"
+                    >
                         Start earning
-                    </Button>
+                    </ActionButton>
                     <ArrowLink
                         href="https://gen.pollinations.ai/docs"
                         className="text-theme-text-strong"

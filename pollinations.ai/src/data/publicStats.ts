@@ -5,7 +5,7 @@
  *
  * Nothing on this site is hardcoded that these can measure.
  */
-import { useEffect, useState } from "react";
+import { useAsync } from "./useAsync";
 
 const TINYBIRD = "https://api.europe-west2.gcp.tinybird.co/v0/pipes";
 const PUBLIC_READ_TOKEN =
@@ -95,36 +95,6 @@ export const isFresh = (app: DirectoryApp, now = Date.now()) => {
     return Number.isFinite(approved) && approved >= now - THIRTY_DAYS_MS;
 };
 
-type Async<T> = { data: T; loading: boolean; failed: boolean };
-
-/** Fetch once on mount. Nothing here takes a parameter, so nothing re-runs. */
-function useAsync<T>(load: () => Promise<T>, initial: T) {
-    const [state, setState] = useState<Async<T>>({
-        data: initial,
-        loading: true,
-        failed: false,
-    });
-
-    // biome-ignore lint/correctness/useExhaustiveDependencies: fetch once on mount
-    useEffect(() => {
-        let cancelled = false;
-        load()
-            .then((data) => {
-                if (!cancelled)
-                    setState({ data, loading: false, failed: false });
-            })
-            .catch(() => {
-                if (!cancelled)
-                    setState({ data: initial, loading: false, failed: true });
-            });
-        return () => {
-            cancelled = true;
-        };
-    }, []);
-
-    return state;
-}
-
 /** The community app directory, deduplicated by name (newest first wins). */
 export function useAppDirectory() {
     return useAsync<DirectoryApp[]>(async () => {
@@ -211,10 +181,17 @@ export function usePlatformStats() {
     }, null);
 }
 
-/** 984868 → "985K", 1204000 → "1.2M". */
+/**
+ * 984868 → "985K", 1204000 → "1.2M".
+ *
+ * One decimal below 10K, because rounding is most visible there: 4888 became
+ * "5K", which claims a milestone the number hasn't reached.
+ */
 export function compact(value: number): string {
     if (value >= 1_000_000)
         return `${(value / 1_000_000).toFixed(1).replace(/\.0$/, "")}M`;
-    if (value >= 1_000) return `${Math.round(value / 1_000)}K`;
+    if (value >= 10_000) return `${Math.round(value / 1_000)}K`;
+    if (value >= 1_000)
+        return `${(value / 1_000).toFixed(1).replace(/\.0$/, "")}K`;
     return String(value);
 }

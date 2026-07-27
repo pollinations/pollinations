@@ -107,7 +107,7 @@ describe("callFluxWithFallback", () => {
 
     it("falls back to Replicate when no flux worker is registered", async () => {
         const calls = mockFetch((url) =>
-            url.includes("api.replicate.com")
+            new URL(url).hostname === "api.replicate.com"
                 ? new Response(
                       JSON.stringify({
                           id: "prediction-1",

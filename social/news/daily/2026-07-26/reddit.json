@@ -1,0 +1,15 @@
+{
+  "platform": "reddit",
+  "scope": "daily",
+  "date": "2026-07-26",
+  "period_start": "2026-07-26",
+  "period_end": "2026-07-26",
+  "generated_at": "2026-07-27T07:21:00.711761+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-07-26/images/reddit.jpg"
+    }
+  ],
+  "title": "Five merges for audio, realtime, and Mistral",
+  "text": "Five PRs merged today, mostly around audio and realtime plumbing.\n\nElevenLabs gained text-to-dialogue, voice isolation, and TTS timestamps. Together, that moves the integration beyond “send text, receive a voice file” into something more usable for multi-speaker output and downstream editing. Timestamps are especially useful when the audio needs to meet captions, a transcript, or a timeline instead of simply existing as an opaque blob.\n\nGPT Realtime 2.1 Mini is now available for lower-cost long-running multimodal sessions. Realtime systems are still a slightly cursed combination of streaming state, turn handling, and audio timing, so having a smaller option is useful for apps that need persistence without treating every conversation like a demo budget.\n\nAlso fixed Mistral generation secret syncing. The model cannot use credentials it cannot reach, which remains one of infrastructure’s less glamorous laws of physics.\n\nMerged PRs:\n- https://github.com/pollinations/pollinations/pull/12778\n- https://github.com/pollinations/pollinations/pull/12780\n- https://github.com/pollinations/pollinations/pull/12781\n- https://github.com/pollinations/pollinations/pull/12782\n- https://github.com/pollinations/pollinations/pull/12785\n\nCode and current discussion: https://github.com/pollinations/pollinations"
+}

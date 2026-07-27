@@ -1,13 +1,36 @@
-import { PolliProvider } from "@pollinations/sdk/react";
+import {
+    PolliProvider,
+    useAuthActions,
+    useAuthState,
+} from "@pollinations/sdk/react";
 import { AppUserMenu } from "@pollinations/ui/app-user-menu/sdk";
 import { createFileRoute } from "@tanstack/react-router";
 import { ENTER_URL, POLLI_APP_KEY } from "../config";
 import { Playground } from "../ui/play/Playground";
-import { Hero, PageHeader } from "../ui/site/kit";
+import { ActionButton, Hero, PageHeader } from "../ui/site/kit";
 
 export const Route = createFileRoute("/play")({
     component: PlayPage,
 });
+
+/**
+ * Connect, in the hero CTA row like every other page's primary action, and in
+ * the site's button style rather than the dashboard pill AppUserMenu ships —
+ * the playground lives on the marketing site now, so its actions speak the
+ * site's language. Once signed in the slot becomes the account menu, which
+ * stays a pill because it's an account chip, not an action.
+ */
+function ConnectAction() {
+    const { isLoggedIn, isHydrated } = useAuthState();
+    const { login } = useAuthActions();
+    return isHydrated && isLoggedIn ? (
+        <AppUserMenu dashboardHref={ENTER_URL} />
+    ) : (
+        <ActionButton as="button" onClick={() => login()}>
+            Connect
+        </ActionButton>
+    );
+}
 
 /**
  * The playground, lifted from apps/playground with its UX intact but its own
@@ -36,18 +59,11 @@ function PlayPage() {
                     title="Try it out."
                     subtitle="Try any model here before you write a line of code. Sign in and it runs on your own Pollen — nothing to install, and the same endpoints your app will call."
                 />
+                <div className="flex flex-wrap gap-3">
+                    <ConnectAction />
+                </div>
             </Hero>
-            {/* Connect belongs on the playground's own control row, beside
-                the thing it unblocks — not up in the page header. */}
-            <Playground
-                connect={
-                    // AppUserMenu has no size prop; match its button to the
-                    // enlarged modality tabs it sits beside.
-                    <div className="[&_button]:px-6 [&_button]:py-2.5 [&_button]:text-lg">
-                        <AppUserMenu dashboardHref={ENTER_URL} />
-                    </div>
-                }
-            />
+            <Playground />
         </PolliProvider>
     );
 }

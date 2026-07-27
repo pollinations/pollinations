@@ -9,7 +9,6 @@ import { useAuthActions, useAuthState } from "@pollinations/sdk/react";
 import {
     Alert,
     AudioIcon,
-    Button,
     ButtonGroup,
     cn,
     FieldStack,
@@ -29,7 +28,8 @@ import {
     ModalityTab,
     ModelSelector,
 } from "@pollinations/ui/gen";
-import { type ReactNode, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { ActionButton } from "../site/kit";
 
 type ViteImportMeta = ImportMeta & {
     env?: {
@@ -238,17 +238,17 @@ function ResultPanel({
                     </Text>
                 )}
                 {result && result.type !== "text" && !result.demo && (
-                    <Button
-                        as="a"
+                    <ActionButton
                         href={result.url}
                         download={`pollinations-playground.${getResultExtension(
                             result,
                         )}`}
+                        tone="plain"
                         size="sm"
                         className="ml-auto"
                     >
                         Save
-                    </Button>
+                    </ActionButton>
                 )}
             </div>
 
@@ -329,19 +329,7 @@ async function uploadReferenceImages(
     return uploads.map((upload) => upload.url);
 }
 
-/**
- * One hue per modality, so switching Image/Video/Text/Audio recolours the
- * whole playground rather than just a dot.
- *
- * The hues mirror `--polli-color-modality-*` in packages/ui/src/styles/
- * tokens.css — they are duplicated here because those tokens bake the hue into
- * an oklch() literal, so there is nothing to read back. Keep them in step.
- *
- * NOTE this deliberately departs from the package's stated rule that "modality
- * is NOT a page theme". It is scoped to this one subtree and uses the accent
- * recipe's own knob, so nothing outside the playground changes.
- */
-export function Playground({ connect }: { connect?: ReactNode }) {
+export function Playground() {
     const { apiKey, isLoggedIn, isHydrated } = useAuthState();
     const { login } = useAuthActions();
     const {
@@ -621,18 +609,12 @@ export function Playground({ connect }: { connect?: ReactNode }) {
                 then which model, then what that model is. Deliberately not a
                 card — they read as a sequence, and a card would box them as
                 one static panel. They sit above both columns because modality
-                and model change the output, not just the prompt.
-
-                Connect sits on the modality row, right-aligned: it belongs
-                beside the thing you are about to be stopped from doing. */}
+                and model change the output, not just the prompt. */}
             <div className="flex flex-col items-start gap-3">
-                <div className="flex w-full flex-wrap items-center justify-between gap-3">
-                    <ModalityTabs
-                        activeCategory={activeCategory}
-                        onCategoryChange={selectCategory}
-                    />
-                    {connect}
-                </div>
+                <ModalityTabs
+                    activeCategory={activeCategory}
+                    onCategoryChange={selectCategory}
+                />
                 <ModelSelector
                     models={catalog.models}
                     category={activeCategory}
@@ -923,19 +905,17 @@ export function Playground({ connect }: { connect?: ReactNode }) {
                                 content={blockedReason}
                                 className="w-full"
                             >
-                                <Button
-                                    type="button"
-                                    size="lg"
+                                <ActionButton
+                                    as="button"
                                     disabled
-                                    className="w-full self-auto"
+                                    className="w-full"
                                 >
                                     {generateLabel}
-                                </Button>
+                                </ActionButton>
                             </Tooltip>
                         ) : (
-                            <Button
-                                type="button"
-                                size="lg"
+                            <ActionButton
+                                as="button"
                                 disabled={isGenerating}
                                 // Wrapped: login() takes an optional request
                                 // object, so passing the ref directly would
@@ -943,14 +923,14 @@ export function Playground({ connect }: { connect?: ReactNode }) {
                                 onClick={
                                     needsConnect ? () => login() : generate
                                 }
-                                className="w-full self-auto"
+                                className="w-full"
                             >
                                 {isGenerating
                                     ? "Generating..."
                                     : needsConnect
                                       ? "Connect to generate"
                                       : generateLabel}
-                            </Button>
+                            </ActionButton>
                         )}
                     </Surface>
                 </div>

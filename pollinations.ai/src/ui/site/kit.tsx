@@ -329,7 +329,13 @@ export function SectionHeader({
  */
 const ACTION_BASE =
     "inline-flex cursor-pointer items-center justify-center rounded-xl " +
-    "border-r-4 border-b-4 border-solid px-7 py-3.5 text-base font-semibold";
+    "border-solid font-semibold disabled:cursor-not-allowed disabled:opacity-50";
+
+const ACTION_SIZE = {
+    md: "border-r-4 border-b-4 px-7 py-3.5 text-base",
+    /** Utility actions inside panels — Save, Show more. */
+    sm: "border-r-[3px] border-b-[3px] px-4 py-2 text-sm",
+} as const;
 
 /**
  * Each tone is a fill plus an edge, and hover deepens the edge.
@@ -379,12 +385,14 @@ const ACTION_TONE = {
 export function ActionButton<T extends ElementType = "a">({
     as,
     tone = "accent",
+    size = "md",
     className,
     children,
     ...rest
 }: {
     as?: T;
     tone?: keyof typeof ACTION_TONE;
+    size?: keyof typeof ACTION_SIZE;
     className?: string;
     children: ReactNode;
 } & Omit<ComponentPropsWithoutRef<T>, "as" | "className" | "children">) {
@@ -393,7 +401,12 @@ export function ActionButton<T extends ElementType = "a">({
         <Component
             {...(Component === "button" ? { type: "button" } : {})}
             {...rest}
-            className={cn(ACTION_BASE, ACTION_TONE[tone], className)}
+            className={cn(
+                ACTION_BASE,
+                ACTION_SIZE[size],
+                ACTION_TONE[tone],
+                className,
+            )}
         >
             {children}
         </Component>

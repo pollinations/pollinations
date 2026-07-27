@@ -1,6 +1,6 @@
 import { Input, TabButton } from "@pollinations/ui";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import {
     type DirectoryApp,
     isBuzz,
@@ -157,6 +157,11 @@ function AppsPage() {
         });
 
     const [lead, ...strip] = spotlight;
+    // Paging beats a hard cap: "the first 60 of 818" told you the other 758
+    // existed and gave you no way to reach them.
+    const PAGE = 60;
+    const [shown, setShown] = useState(PAGE);
+    const visible = filtered.slice(0, shown);
 
     return (
         <>
@@ -324,14 +329,23 @@ function AppsPage() {
                 ) : (
                     <>
                         <CardGrid gap="gap-4">
-                            {filtered.slice(0, 60).map((app) => (
+                            {visible.map((app) => (
                                 <AppCard key={app.name} app={app} />
                             ))}
                         </CardGrid>
-                        {filtered.length > 60 && (
-                            <p className="text-center text-sm text-theme-text-muted">
-                                Showing the first 60 of {filtered.length}.
-                            </p>
+                        {filtered.length > visible.length && (
+                            <div className="flex flex-col items-center gap-2">
+                                <ActionButton
+                                    as="button"
+                                    tone="plain"
+                                    onClick={() => setShown((n) => n + PAGE)}
+                                >
+                                    Show more
+                                </ActionButton>
+                                <p className="text-sm text-theme-text-muted">
+                                    {visible.length} of {filtered.length}
+                                </p>
+                            </div>
                         )}
                     </>
                 )}

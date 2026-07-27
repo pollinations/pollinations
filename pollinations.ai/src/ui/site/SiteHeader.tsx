@@ -6,7 +6,7 @@ import {
     XIcon,
 } from "@pollinations/ui";
 import { Link, useRouterState } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { GUTTER, SHELL } from "./kit";
 import { useHideOnScroll, useScrolled } from "./useHideOnScroll";
 
@@ -33,6 +33,7 @@ const isCurrent = (to: string, pathname: string) =>
 
 export function SiteHeader() {
     const [menuOpen, setMenuOpen] = useState(false);
+    const headerRef = useRef<HTMLElement>(null);
     const scrolled = useScrolled();
     const scrolledAway = useHideOnScroll();
     const pathname = useRouterState({
@@ -50,8 +51,22 @@ export function SiteHeader() {
         const onKey = (event: KeyboardEvent) => {
             if (event.key === "Escape") setMenuOpen(false);
         };
+        // Escape only helps a keyboard. A tap on the page behind the panel is
+        // how most people expect to dismiss it, and without this it did
+        // nothing. Listening on pointerdown rather than click so the menu is
+        // gone before whatever was tapped reacts.
+        const onPointerDown = (event: PointerEvent) => {
+            const target = event.target as Node | null;
+            if (target && !headerRef.current?.contains(target)) {
+                setMenuOpen(false);
+            }
+        };
         window.addEventListener("keydown", onKey);
-        return () => window.removeEventListener("keydown", onKey);
+        window.addEventListener("pointerdown", onPointerDown);
+        return () => {
+            window.removeEventListener("keydown", onKey);
+            window.removeEventListener("pointerdown", onPointerDown);
+        };
     }, [menuOpen]);
 
     // The header must not slide away while its own menu is open.
@@ -59,6 +74,7 @@ export function SiteHeader() {
 
     return (
         <header
+            ref={headerRef}
             className={`sticky top-0 z-30 bg-app-bg py-5 transition-[transform,box-shadow] duration-300 focus-within:translate-y-0 motion-reduce:transition-none ${
                 scrolled ? "shadow-well" : ""
             } ${hidden ? "-translate-y-full" : "translate-y-0"}`}

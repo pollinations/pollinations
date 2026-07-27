@@ -234,19 +234,43 @@ export function HeroCharacter({ src }: { src: string }) {
  */
 export function StatRow({
     stats,
+    placeholders = 3,
 }: {
     stats: { value: string; label: string }[];
+    /** How many slots to hold open while the numbers are still loading. */
+    placeholders?: number;
 }) {
-    if (stats.length === 0) return null;
+    // Returning null used to let the hero paint short and then grow by ~66px
+    // when the numbers landed. The row keeps its height from the first frame
+    // and fills in, so nothing below it moves.
+    const loading = stats.length === 0;
+    const slots = loading
+        ? Array.from({ length: placeholders }, (_, i) => ({
+              value: null,
+              label: null,
+              key: `slot-${i}`,
+          }))
+        : stats.map((stat) => ({ ...stat, key: stat.label }));
+
     return (
-        <dl className="mt-2 flex flex-wrap gap-10">
-            {stats.map((stat) => (
-                <div key={stat.label} className="flex flex-col">
+        <dl className="mt-2 flex flex-wrap gap-10" aria-busy={loading}>
+            {slots.map((slot) => (
+                <div key={slot.key} className="flex flex-col gap-1">
                     <dt className="font-heading text-4xl text-theme-text-soft tabular-nums">
-                        {stat.value}
+                        {slot.value ?? (
+                            <span
+                                aria-hidden="true"
+                                className="block h-9 w-24 animate-pulse rounded-md bg-theme-bg-subtle"
+                            />
+                        )}
                     </dt>
                     <dd className="text-xs text-theme-text-muted">
-                        {stat.label}
+                        {slot.label ?? (
+                            <span
+                                aria-hidden="true"
+                                className="block h-3 w-20 animate-pulse rounded bg-theme-bg-subtle"
+                            />
+                        )}
                     </dd>
                 </div>
             ))}
@@ -307,24 +331,32 @@ const ACTION_TONE = {
     bright: "[border-color:rgba(0,0,0,0.3)] bg-brand-accent text-brand-dark",
 } as const;
 
-export function ActionButton({
-    href,
+/**
+ * Polymorphic, like the kit's other controls: most of these are links, but
+ * "Show more" acts on the page and has to be a real <button> so the keyboard
+ * and assistive tech treat it as one.
+ */
+export function ActionButton<T extends ElementType = "a">({
+    as,
     tone = "accent",
     className,
     children,
+    ...rest
 }: {
-    href: string;
+    as?: T;
     tone?: keyof typeof ACTION_TONE;
     className?: string;
     children: ReactNode;
-}) {
+} & Omit<ComponentPropsWithoutRef<T>, "as" | "className" | "children">) {
+    const Component: ElementType = as || "a";
     return (
-        <a
-            href={href}
+        <Component
+            {...(Component === "button" ? { type: "button" } : {})}
+            {...rest}
             className={cn(ACTION_BASE, ACTION_TONE[tone], className)}
         >
             {children}
-        </a>
+        </Component>
     );
 }
 

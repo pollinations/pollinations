@@ -54,34 +54,79 @@ const WAYS_IN = [
     },
 ];
 
+/**
+ * Every feed on this page can fail — GitHub is rate-limited per visitor IP and
+ * Discord's widget can be off. Returning null on failure quietly deleted whole
+ * sections, so on a bad day the page was a hero and a CTA with no sign that
+ * anything was missing. Each section now says what it could not load.
+ */
+function FeedState({
+    loading,
+    failed,
+    what,
+    rows = 3,
+}: {
+    loading: boolean;
+    failed: boolean;
+    what: string;
+    rows?: number;
+}) {
+    if (loading) {
+        return (
+            <div className="flex flex-col gap-3" aria-busy="true">
+                {Array.from({ length: rows }, (_, i) => (
+                    <div
+                        key={`row-${i}`}
+                        aria-hidden="true"
+                        className="h-14 animate-pulse rounded-2xl bg-theme-bg-subtle"
+                    />
+                ))}
+            </div>
+        );
+    }
+    return (
+        <p className="rounded-2xl border border-theme-border border-dashed px-5 py-6 text-sm text-theme-text-muted">
+            {failed
+                ? `${what} couldn’t be loaded right now.`
+                : `No ${what.toLowerCase()} yet.`}
+        </p>
+    );
+}
+
 function OpenVotes() {
     const { data: issues, loading, failed } = useVotingIssues();
-    if (failed || (!loading && issues.length === 0)) return null;
+    const bare = loading || failed || issues.length === 0;
 
     return (
         <div className="flex flex-col gap-4.5">
             <SectionHeader eyebrow="Have your say" title="Open votes" />
             <div className="flex flex-col gap-3">
-                {loading
-                    ? null
-                    : issues.map((issue) => (
-                          <Card
-                              key={issue.number}
-                              as="a"
-                              href={issue.url}
-                              className="flex-row items-center gap-4 rounded-2xl p-5"
-                          >
-                              <span className="flex-1 leading-snug text-theme-text-strong">
-                                  {issue.title}
-                              </span>
-                              <PixelLabel
-                                  variant="eyebrow"
-                                  className="shrink-0 tabular-nums"
-                              >
-                                  {issue.votes} ▲
-                              </PixelLabel>
-                          </Card>
-                      ))}
+                {bare ? (
+                    <FeedState
+                        loading={loading}
+                        failed={failed}
+                        what="Open votes"
+                    />
+                ) : (
+                    issues.map((issue) => (
+                        <Card
+                            key={issue.number}
+                            as="a"
+                            href={issue.url}
+                            className="flex-row items-center gap-4 rounded-2xl p-5"
+                        >
+                            <span className="flex-1 leading-snug text-theme-text-strong">
+                                {issue.title}
+                            </span>
+                            <PixelLabel
+                                variant="eyebrow"
+                                className="shrink-0 tabular-nums"
+                            >
+                                {issue.votes} ▲
+                            </PixelLabel>
+                        </Card>
+                    ))
+                )}
             </div>
         </div>
     );
@@ -89,7 +134,7 @@ function OpenVotes() {
 
 function BuildDiary() {
     const { data: entries, loading, failed } = useBuildDiary();
-    if (failed || (!loading && entries.length === 0)) return null;
+    const bare = loading || failed || entries.length === 0;
 
     return (
         <div className="flex flex-col gap-4.5">
@@ -99,6 +144,14 @@ function BuildDiary() {
                 subtitle="A log of what lands, straight from the repo."
             />
             <div className="flex flex-col">
+                {bare && (
+                    <FeedState
+                        loading={loading}
+                        failed={failed}
+                        what="The build diary"
+                        rows={4}
+                    />
+                )}
                 {entries.map((entry) => (
                     <a
                         key={entry.url}
@@ -128,7 +181,7 @@ function BuildDiary() {
 
 function Contributors() {
     const { data: people, loading, failed } = useContributors();
-    if (failed || (!loading && people.length === 0)) return null;
+    const bare = loading || failed || people.length === 0;
 
     return (
         <section className="flex flex-col gap-5">
@@ -140,6 +193,14 @@ function Contributors() {
                     <ArrowLink href={REPO_URL}>Open the repository</ArrowLink>
                 }
             />
+            {bare && (
+                <FeedState
+                    loading={loading}
+                    failed={failed}
+                    what="Contributors"
+                    rows={2}
+                />
+            )}
             <div className="grid grid-cols-[repeat(auto-fit,minmax(min(190px,100%),1fr))] gap-3.5">
                 {people.map((person) => (
                     <Card

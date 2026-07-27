@@ -7,7 +7,7 @@ Last updated: 2026-07-27
 | Model | Workers | GPUs | Provider | Cost/hr | Status |
 |-------|---------|------|----------|---------|--------|
 | Flux (FP4) | 1 | RTX 5090 | Vast.ai | $0.3744/hr | **ACTIVE — production** (Fireworks fallback) |
-| Z-Image | 3 temporary | 3x RTX 5090 | Vast.ai | $1.195555/hr | **ACTIVE — two production + one validated canary** |
+| Z-Image | 2 active + 1 stopped rollback | 3x RTX 5090 | Vast.ai | $0.773333/hr active + $0.022222/hr stopped storage | **ACTIVE — two production** |
 | Klein 4B | 1 active + 1 rollback | RTX 3090 + A5000 | Vast.ai + RunPod | $0.1656 + $0.27 while rollback runs | **ACTIVE — Vast production; RunPod stop-ready** |
 | LTX-2 + ACE-Step + Sana | 1 | GH200 | Lambda Labs | — | **ACTIVE** |
 
@@ -83,14 +83,15 @@ sees one stable backend URL.
 
 | Worker | Vast instance | Region | Listed rate | Status |
 |--------|---------------|--------|-------------|--------|
-| zimage-vast-01 | 45311852 | South Korea | $0.422222/hr | ACTIVE — production |
+| zimage-vast-01 | 45311852 | South Korea | $0.422222/hr | STOPPED 2026-07-27 — overnight rollback |
 | zimage-vast-02 | 45313816 | South Korea | $0.422222/hr | ACTIVE — production |
-| zimage-vast-canary | 46003779 | California | $0.351111/hr | ACTIVE — validated production canary |
+| zimage-vast-canary | 46003779 | California | $0.351111/hr | ACTIVE — production |
 
-The temporary three-worker fleet costs `$1.195555/hr`. Replacing one older
-worker with the canary leaves two workers at `$0.773333/hr`, saving
-`$0.071111/hr` or about `$51.20` per 30-day month versus the previous pair.
-Do not stop an older worker until the canary's production soak is accepted.
+The active two-worker fleet costs `$0.773333/hr`, saving `$0.071111/hr` or
+about `$51.20` per 30-day month versus the previous pair. Stopped instance
+`45311852` retains its 80GB disk for rollback and incurs `$0.022222/hr` in
+storage charges (about `$16/month`) until destroyed. Restart is subject to GPU
+availability on its host.
 
 **Canary validation (2026-07-27):**
 
@@ -101,6 +102,9 @@ Do not stop an older worker until the canary's production soak is accepted.
   byte-identical.
 - Production soak added five successful requests with no 5xx, OOM, traceback,
   or tunnel errors.
+- After draining and stopping `45311852`, the retained workers served another
+  27 successful requests with zero 5xx or current-hour tunnel errors; five
+  shared-hostname health probes also passed.
 - Requests above 2,359,296 pixels return HTTP 422.
 
 **Deployment behavior:**

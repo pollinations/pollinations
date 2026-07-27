@@ -17,7 +17,18 @@ SQL >
         resolved_model as model,
         meter_source,
         count() as requests,
-        sum(price_usd) as cost_usd
+        sum(price_usd) as cost_usd,
+        sum(input_text_tokens) as input_text_tokens,
+        sum(input_cached_tokens) as input_cached_tokens,
+        sum(input_audio_tokens) as input_audio_tokens,
+        sum(input_audio_seconds) as input_audio_seconds,
+        sum(input_image_tokens) as input_image_tokens,
+        sum(output_text_tokens) as output_text_tokens,
+        sum(output_reasoning_tokens) as output_reasoning_tokens,
+        sum(output_audio_tokens) as output_audio_tokens,
+        sum(output_audio_seconds) as output_audio_seconds,
+        sum(output_image_tokens) as output_image_tokens,
+        sum(output_video_seconds) as output_video_seconds
     FROM (
         SELECT
             any(timestamp) AS event_timestamp,
@@ -25,7 +36,18 @@ SQL >
             any(api_key) AS api_key,
             any(resolved_model) AS resolved_model,
             any(meter_source) AS meter_source,
-            any(price_usd) AS price_usd
+            any(price_usd) AS price_usd,
+            any(input_text_tokens) AS input_text_tokens,
+            any(input_cached_tokens) AS input_cached_tokens,
+            any(input_audio_tokens) AS input_audio_tokens,
+            any(input_audio_seconds) AS input_audio_seconds,
+            any(input_image_tokens) AS input_image_tokens,
+            any(output_text_tokens) AS output_text_tokens,
+            any(output_reasoning_tokens) AS output_reasoning_tokens,
+            any(output_audio_tokens) AS output_audio_tokens,
+            any(output_audio_seconds) AS output_audio_seconds,
+            any(output_image_tokens) AS output_image_tokens,
+            any(output_video_seconds) AS output_video_seconds
         FROM activity_usage_events
         WHERE
             user_id = {{ String(user_id, '') }}

@@ -1,6 +1,7 @@
 import {
     createAzureModelConfig,
     createBedrockNativeConfig,
+    createDeepInfraModelConfig,
     createFireworksModelConfig,
     createOpenRouterModelConfig,
     createOVHcloudModelConfig,
@@ -176,6 +177,15 @@ export const portkeyConfig: PortkeyConfigMap = {
                     only: ["atlas-cloud/fp8"],
                     allow_fallbacks: false,
                 },
+            },
+        }),
+
+    // -- DeepInfra (NVIDIA) ---------------------------------------------------
+    "nvidia/NVIDIA-Nemotron-3-Ultra-550B-A55B": () =>
+        createDeepInfraModelConfig({
+            model: "nvidia/NVIDIA-Nemotron-3-Ultra-550B-A55B",
+            defaultOptions: {
+                normalizeFinishReasonAtTokenLimit: true,
             },
         }),
 

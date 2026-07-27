@@ -311,6 +311,30 @@ describe("genericOpenAIClient", () => {
         ).rejects.toMatchObject({ status: 429, upstreamStatus: 429 });
     });
 
+    it("maps unsupported multimodal input errors to a client error", async () => {
+        vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
+            Response.json(
+                {
+                    error: {
+                        message: "Provider returned error",
+                        metadata: {
+                            raw: "No endpoints found that support image input",
+                        },
+                    },
+                },
+                { status: 404, statusText: "Not Found" },
+            ),
+        );
+
+        await expect(
+            genericOpenAIClient(
+                [{ role: "user", content: "hello" }],
+                { model: "provider-model" },
+                { endpoint: "https://portkey.test/chat" },
+            ),
+        ).rejects.toMatchObject({ status: 400, upstreamStatus: 404 });
+    });
+
     it("passes through 429 from an upstream error envelope", async () => {
         vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
             Response.json({

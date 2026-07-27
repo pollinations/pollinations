@@ -1,5 +1,12 @@
-import { BrandLockup, Button, TabButton } from "@pollinations/ui";
+import {
+    BrandLockup,
+    Button,
+    MenuIcon,
+    TabButton,
+    XIcon,
+} from "@pollinations/ui";
 import { Link, useRouterState } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
 import { GUTTER, SHELL } from "./kit";
 import { useHideOnScroll, useScrolled } from "./useHideOnScroll";
 
@@ -21,12 +28,34 @@ const EXTERNAL = [
     { href: "https://github.com/pollinations/pollinations", label: "GitHub" },
 ] as const;
 
+const isCurrent = (to: string, pathname: string) =>
+    to === "/" ? pathname === "/" : pathname.startsWith(to);
+
 export function SiteHeader() {
-    const hidden = useHideOnScroll();
+    const [menuOpen, setMenuOpen] = useState(false);
     const scrolled = useScrolled();
+    const scrolledAway = useHideOnScroll();
     const pathname = useRouterState({
         select: (state) => state.location.pathname,
     });
+
+    // Navigating is what the menu is for, so it closes itself on arrival.
+    // biome-ignore lint/correctness/useExhaustiveDependencies: close on navigation
+    useEffect(() => {
+        setMenuOpen(false);
+    }, [pathname]);
+
+    useEffect(() => {
+        if (!menuOpen) return;
+        const onKey = (event: KeyboardEvent) => {
+            if (event.key === "Escape") setMenuOpen(false);
+        };
+        window.addEventListener("keydown", onKey);
+        return () => window.removeEventListener("keydown", onKey);
+    }, [menuOpen]);
+
+    // The header must not slide away while its own menu is open.
+    const hidden = scrolledAway && !menuOpen;
 
     return (
         <header
@@ -53,11 +82,7 @@ export function SiteHeader() {
                                     as={Link}
                                     to={item.to}
                                     variant="ghost"
-                                    active={
-                                        item.to === "/"
-                                            ? pathname === "/"
-                                            : pathname.startsWith(item.to)
-                                    }
+                                    active={isCurrent(item.to, pathname)}
                                 >
                                     {item.label}
                                 </TabButton>
@@ -84,8 +109,67 @@ export function SiteHeader() {
                         >
                             Dashboard ↗
                         </Button>
+                        {/* Below md the nav row is gone and below sm the
+                            outbound links go too, which left a phone with no
+                            way to reach three of the four pages.
+
+                            Button, not IconButton: IconButton takes a closed
+                            prop set, so aria-expanded/aria-controls are
+                            dropped, and it is fixed at 24px — under the 44px
+                            touch target this needs. */}
+                        <Button
+                            aria-label={menuOpen ? "Close menu" : "Open menu"}
+                            aria-expanded={menuOpen}
+                            aria-controls="site-menu"
+                            onClick={() => setMenuOpen((open) => !open)}
+                            // Explicit w/h and a sized icon: the bare icon
+                            // stretches to fill the flex box and drags the
+                            // button's width down with it, which lands under
+                            // the 44px touch target.
+                            className="h-11 w-11 min-w-11 p-0 [&>svg]:size-6 md:hidden"
+                        >
+                            {menuOpen ? <XIcon /> : <MenuIcon />}
+                        </Button>
                     </div>
                 </div>
+
+                {menuOpen && (
+                    <div className={`${GUTTER} md:hidden`}>
+                        {/* Every destination, including the ones still in the
+                            bar at sm — a menu that lists some of them is
+                            harder to trust than one that lists all. */}
+                        <nav
+                            id="site-menu"
+                            className="mt-4 flex flex-col gap-1 rounded-2xl bg-surface-opaque p-3 shadow-well"
+                        >
+                            {NAV.map((item) => (
+                                <TabButton
+                                    key={item.to}
+                                    as={Link}
+                                    to={item.to}
+                                    variant="ghost"
+                                    active={isCurrent(item.to, pathname)}
+                                    className="h-11 justify-start px-4"
+                                >
+                                    {item.label}
+                                </TabButton>
+                            ))}
+                            <span className="mx-3 my-1 h-px bg-theme-border" />
+                            {EXTERNAL.map((item) => (
+                                <TabButton
+                                    key={item.href}
+                                    as="a"
+                                    href={item.href}
+                                    variant="ghost"
+                                    active={false}
+                                    className="h-11 justify-start px-4"
+                                >
+                                    {item.label} ↗
+                                </TabButton>
+                            ))}
+                        </nav>
+                    </div>
+                )}
             </div>
         </header>
     );

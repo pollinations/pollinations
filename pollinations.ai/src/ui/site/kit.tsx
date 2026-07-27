@@ -193,8 +193,14 @@ export function Hero({
     children: ReactNode;
 }) {
     return (
-        <section className="flex flex-wrap items-center gap-14">
-            <div className="flex min-w-0 flex-1 flex-col gap-8">{children}</div>
+        // Stacks below lg rather than relying on flex-wrap. With `flex-1
+        // min-w-0` the text column shrinks instead of wrapping, so the heading
+        // overflowed its own box and ran underneath the character — 257px of
+        // overlap at 432px wide.
+        <section className="flex flex-col items-center gap-10 lg:flex-row lg:gap-14">
+            <div className="flex w-full min-w-0 flex-col gap-8 lg:flex-1">
+                {children}
+            </div>
             {/* Bounded by the BOX, not by width. The four sprites have very
                 different aspects — the nomnom is 492x732, the group portrait
                 1032x468 — so fixing width alone rendered them 332px and 506px

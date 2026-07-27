@@ -45,7 +45,7 @@ import { hasDirectAccountPermission } from "./account-permissions.ts";
 const ModalitySchema = z
     .enum(COMMUNITY_ENDPOINT_MODALITIES)
     .describe(
-        'Upstream API family. "text" uses `/v1/chat/completions`; "image" uses `/v1/images/generations` and currently supports text-to-image generation only.',
+        'Upstream API family. "text" uses `/v1/chat/completions`; "image" uses `/v1/images/generations` and optionally `/v1/images/edits` when the endpoint test succeeds.',
     );
 const ImagePricingSchema = z
     .enum(COMMUNITY_ENDPOINT_IMAGE_PRICING_MODES)
@@ -127,7 +127,7 @@ const EndpointFieldsSchema = {
         .string()
         .url()
         .describe(
-            "OpenAI-compatible `/v1` base URL or full `/chat/completions` or `/images/generations` URL.",
+            "OpenAI-compatible `/v1` base URL or full chat, image generation, or image edit URL.",
         ),
     upstreamModel: z.string().trim().min(1).max(253).optional(),
     bearerToken: z.string().min(1),
@@ -137,6 +137,7 @@ const CreateEndpointSchema = z.object({
     ...EndpointFieldsSchema,
     modality: ModalitySchema.optional().default("text"),
     imagePricing: ImagePricingSchema.optional().default("request"),
+    supportsImageEdits: z.boolean().optional().default(false),
     visibility: VisibilitySchema.optional().default("private"),
     ...UpdatePriceFieldsSchema,
 });
@@ -149,6 +150,7 @@ const UpdateEndpointSchema = z.object({
     bearerToken: EndpointFieldsSchema.bearerToken.optional(),
     visibility: VisibilitySchema.optional(),
     imagePricing: ImagePricingSchema.optional(),
+    supportsImageEdits: z.boolean().optional(),
     active: z.boolean().optional(),
     ...UpdatePriceFieldsSchema,
 });
@@ -173,6 +175,7 @@ const CommunityEndpointResponseSchema = z.object({
     description: z.string().nullable(),
     modality: ModalitySchema,
     imagePricing: ImagePricingSchema,
+    supportsImageEdits: z.boolean(),
     baseUrl: z.string(),
     upstreamModel: z.string(),
     visibility: VisibilitySchema,
@@ -206,6 +209,12 @@ const CommunityEndpointTestResponseSchema = z
         imagePricing: ImagePricingSchema.optional().describe(
             "Image tests only: pricing mode detected from the provider response.",
         ),
+        supportsImageEdits: z
+            .boolean()
+            .optional()
+            .describe(
+                "Image tests only: true when the derived `/images/edits` endpoint returned a valid image.",
+            ),
     })
     .passthrough();
 const CommunityEndpointDeleteResponseSchema = z.object({
@@ -287,6 +296,7 @@ function toResponse(row: CommunityEndpointRow, ownerGithubUsername: string) {
         description: row.description,
         modality,
         imagePricing: normalizeCommunityEndpointImagePricing(row.imagePricing),
+        supportsImageEdits: row.supportsImageEdits,
         baseUrl: row.baseUrl,
         upstreamModel: row.upstreamModel,
         visibility: row.visibility,
@@ -494,6 +504,8 @@ export const communityEndpointsRoutes = new Hono<Env>()
                     description: input.description || null,
                     modality: input.modality,
                     imagePricing,
+                    supportsImageEdits:
+                        input.modality === "image" && input.supportsImageEdits,
                     baseUrl: normalizeInputBaseUrl(input.baseUrl),
                     upstreamModel: input.upstreamModel ?? input.name,
                     bearerTokenCiphertext: await encryptSecret(
@@ -560,7 +572,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
             tags: ["👤 Account"],
             summary: "Test My Model Endpoint",
             description:
-                "Test an OpenAI-compatible upstream model before publishing it. Image tests also detect token pricing when valid OpenAI image usage is returned; otherwise they select fixed per-image pricing. Requires community model publishing approval; API keys also require `account:keys`.",
+                "Test an OpenAI-compatible upstream model before publishing it. Image tests detect token pricing and probe the derived `/images/edits` endpoint. Requires community model publishing approval; API keys also require `account:keys`.",
             responses: {
                 200: {
                     description: "Endpoint test result",
@@ -600,7 +612,9 @@ export const communityEndpointsRoutes = new Hono<Env>()
                     ok: true,
                     message:
                         input.modality === "image"
-                            ? "Endpoint responded with image data"
+                            ? result.supportsImageEdits
+                                ? "Generation and editing endpoints responded with image data"
+                                : "Generation endpoint responded; editing is not supported"
                             : "Endpoint responded with usage",
                     ...result,
                 });
@@ -677,6 +691,10 @@ export const communityEndpointsRoutes = new Hono<Env>()
             }
             if (input.visibility !== undefined) {
                 update.visibility = input.visibility;
+            }
+            if (input.supportsImageEdits !== undefined) {
+                update.supportsImageEdits =
+                    modality === "image" && input.supportsImageEdits;
             }
             if (input.active !== undefined) {
                 update.disabledAt = input.active ? null : new Date();

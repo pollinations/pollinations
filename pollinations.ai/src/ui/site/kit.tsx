@@ -1,4 +1,4 @@
-import { cn, Surface, type SurfaceProps } from "@pollinations/ui";
+import { Chip, cn, Surface, type SurfaceProps } from "@pollinations/ui";
 import polliBee from "@pollinations/ui/brand/polli/polli.png";
 import type { ComponentPropsWithoutRef, ElementType, ReactNode } from "react";
 
@@ -85,6 +85,58 @@ export function PixelLabel({
         >
             {children}
         </span>
+    );
+}
+
+/**
+ * The pixel chip: a label with a tile behind it. `pale` is the default
+ * everywhere (the three ways, app badges); `accent` is reserved for the one
+ * official thing on a page, so it only ever appears once per view.
+ *
+ * Keep emoji out of it. Pixelify Sans has no emoji glyphs, and the fallback
+ * font's advance width doesn't reconcile with the pixel metrics — "🐝 BUZZ"
+ * renders with the bee sitting on top of the B.
+ */
+export function PixelBadge({
+    tone = "pale",
+    className,
+    children,
+}: {
+    tone?: "pale" | "accent";
+    className?: string;
+    children: ReactNode;
+}) {
+    return (
+        <Chip
+            size="sm"
+            className={cn(
+                "rounded-md font-pixel whitespace-nowrap uppercase",
+                tone === "pale" && "bg-theme-bg-subtle text-theme-text-soft",
+                className,
+            )}
+        >
+            {children}
+        </Chip>
+    );
+}
+
+/**
+ * The pixel rule — a 4px amber checkerboard, the mockup's section break. Two
+ * rows of squares inside an 8px tile, so it reads as pixels rather than as a
+ * dotted border.
+ */
+export function PixelRule({ className }: { className?: string }) {
+    const amber =
+        "color-mix(in oklab, var(--polli-color-bg-active) 90%, transparent)";
+    return (
+        <div
+            aria-hidden="true"
+            className={cn("h-2 rounded-[2px]", className)}
+            style={{
+                background: `conic-gradient(${amber} 25%, transparent 0 50%, ${amber} 0 75%, transparent 0)`,
+                backgroundSize: "8px 8px",
+            }}
+        />
     );
 }
 
@@ -278,6 +330,41 @@ export function Card<T extends ElementType = "div">({
     } as SurfaceProps<ElementType>;
 
     return <Surface {...props}>{children}</Surface>;
+}
+
+/**
+ * A horizontally scrolling shelf, with its label and a scroll hint above.
+ *
+ * Deliberately a scroller rather than a grid: the shelf is a curated handful
+ * you skim sideways, and a grid of the same cards would read as a second
+ * "browse everything" below the real one.
+ *
+ * tabIndex makes it keyboard-scrollable — a plain overflow container is
+ * reachable by mouse and trackpad only.
+ */
+export function ScrollStrip({
+    label,
+    children,
+}: {
+    label: string;
+    children: ReactNode;
+}) {
+    return (
+        <div className="flex flex-col gap-3.5">
+            <div className="flex items-center justify-between gap-4">
+                <PixelLabel variant="eyebrow">{label}</PixelLabel>
+                <span className="text-sm text-theme-text-muted">scroll →</span>
+            </div>
+            <section
+                // biome-ignore lint/a11y/noNoninteractiveTabindex: a scroll container needs focus to be keyboard-scrollable
+                tabIndex={0}
+                aria-label={label}
+                className="flex gap-4 overflow-x-auto pb-2.5"
+            >
+                {children}
+            </section>
+        </div>
+    );
 }
 
 /**

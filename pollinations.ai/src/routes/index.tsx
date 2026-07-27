@@ -6,7 +6,7 @@ import { MoneyMoves } from "../ui/home/MoneyMoves";
 import { OnTheWay } from "../ui/home/OnTheWay";
 import { StartBuilding } from "../ui/home/StartBuilding";
 import { ThreeWays } from "../ui/home/ThreeWays";
-import { ActionButton, Hero, PageHeader } from "../ui/site/kit";
+import { ActionButton, Hero, PageHeader, PixelRule } from "../ui/site/kit";
 
 export const Route = createFileRoute("/")({
     component: HelloPage,
@@ -91,6 +91,7 @@ function HelloPage() {
             </Hero>
 
             <ThreeWays />
+            <PixelRule />
             <DevKit />
             {/* Dark panel is inset inside the cream sheet, not a sibling of
                 it — it reads as a band within the page, not a new section. */}

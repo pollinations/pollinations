@@ -1,7 +1,7 @@
 import {
     Card,
     CardGrid,
-    PixelLabel,
+    PixelBadge,
     SectionHeader,
     Terminal,
 } from "../site/kit";
@@ -72,7 +72,7 @@ export function ThreeWays() {
                             headline says these are equal options, so none of
                             them gets to shout. */}
                         <div className="flex flex-wrap items-baseline gap-2">
-                            <PixelLabel>{way.chip}</PixelLabel>
+                            <PixelBadge>{way.chip}</PixelBadge>
                             {way.chipTitle && (
                                 <span className="text-sm text-theme-text-muted">
                                     {way.chipTitle}
@@ -105,7 +105,7 @@ export function ThreeWays() {
             </CardGrid>
 
             <div className="flex flex-wrap items-center gap-3.5 rounded-2xl bg-theme-bg-subtle px-5 py-4">
-                <PixelLabel>Stackable</PixelLabel>
+                <PixelBadge>Stackable</PixelBadge>
                 <p className="text-sm text-theme-text-base">
                     A BYOP app calling a community model pays out twice — an app
                     reward to the developer and a model reward to the owner,

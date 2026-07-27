@@ -3,8 +3,6 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useMemo } from "react";
 import {
     type DirectoryApp,
-    formatStars,
-    githubProfileUrl,
     isBuzz,
     isFresh,
     isPollen,
@@ -12,13 +10,15 @@ import {
     sortApps,
     useAppDirectory,
 } from "../data/publicStats";
+import { AppCard, AppHero, AppTile } from "../ui/apps/cards";
+import { pixelCover } from "../ui/apps/cover";
 import {
     ActionButton,
-    ArrowLink,
-    Card,
     CardGrid,
     PageHeader,
     PixelLabel,
+    PixelRule,
+    ScrollStrip,
     SectionHeader,
 } from "../ui/site/kit";
 import {
@@ -40,10 +40,10 @@ export const Route = createFileRoute("/apps")({
 });
 
 /**
- * Hand-picked. Every badge in APPS.md is computed from traffic or recency, so
- * none of them can say "we think this is good". Until APPS.md grows a Featured
- * column, curation lives here — matched on Name, missing entries just don't
- * render.
+ * Hand-picked, and the only editorial thing on the page — every badge in
+ * APPS.md is computed from traffic or recency, so none of them can say "we
+ * think this is good". Matched on Name; missing entries just don't render.
+ * The first survivor is promoted into the hero pair beside Playground.
  */
 const SPOTLIGHT = [
     "LLM Playground",
@@ -56,44 +56,12 @@ const SPOTLIGHT = [
 
 const SIGNAL_TEST = { buzz: isBuzz, pollen: isPollen, fresh: isFresh } as const;
 
-function badgesFor(app: DirectoryApp): string {
-    return [isBuzz(app) && "🐝", isPollen(app) && "🏵️", isFresh(app) && "🫧"]
-        .filter(Boolean)
-        .join(" ");
-}
-
-function AppCard({ app }: { app: DirectoryApp }) {
-    const href = app.web_url || app.github_repository_url;
-    const stars = formatStars(app.github_repository_stars);
-    const profile = githubProfileUrl(app.github_username);
-    const platform = platformsOf(app)[0];
-
+/** A small filled pill, for the one official card on the page. */
+function OpenPill({ children }: { children: string }) {
     return (
-        <Card className="gap-2 p-5">
-            <div className="flex items-start justify-between gap-2">
-                <h3 className="font-subheading text-lg text-theme-text-strong">
-                    {app.emoji} {app.name}
-                </h3>
-                <span className="shrink-0 text-sm">{badgesFor(app)}</span>
-            </div>
-            <p className="text-sm leading-relaxed text-theme-text-base">
-                {app.description}
-            </p>
-            <div className="mt-auto flex flex-wrap items-center gap-2 pt-2 text-xs text-theme-text-muted">
-                {profile && (
-                    <a href={profile} className="hover:text-theme-text-strong">
-                        {app.github_username}
-                    </a>
-                )}
-                {stars && <span>⭐ {stars}</span>}
-                {platform && <span>· {platform}</span>}
-                {href && (
-                    <ArrowLink href={href} className="ml-auto text-xs">
-                        Open
-                    </ArrowLink>
-                )}
-            </div>
-        </Card>
+        <span className="rounded-[10px] bg-theme-bg-active px-4.5 py-2 text-sm font-semibold text-theme-text-strong shadow-[2px_2px_0_rgba(17,5,24,0.18)]">
+            {children}
+        </span>
     );
 }
 
@@ -196,14 +164,18 @@ function AppsPage() {
             search: (prev) => ({ ...prev, [key]: toggle(prev[key], value) }),
         });
 
+    const [lead, ...strip] = spotlight;
+
     return (
         <>
-            {/* Spotlight is the page header. A page title plus two section
-                titles was three levels of heading saying the same thing. */}
             <PageHeader
-                eyebrow="Spotlight"
-                title="Worth your time."
-                subtitle="Picked by hand. Not the busiest — the ones we'd actually send a friend to."
+                eyebrow={
+                    loading
+                        ? "Apps built on Pollinations"
+                        : `${apps.length} apps built on Pollinations`
+                }
+                title="Ecosystem"
+                subtitle="Apps, tools and experiments from the community. Browse, try, ship."
                 action={
                     <ActionButton href="https://github.com/pollinations/pollinations/issues/new?template=APP-SUBMISSION.yml">
                         Submit your app
@@ -211,19 +183,71 @@ function AppsPage() {
                 }
             />
 
-            {spotlight.length > 0 && (
-                <CardGrid gap="gap-4">
-                    {spotlight.map((app) => (
-                        <AppCard key={app.name} app={app} />
+            {/* The hero pair: what we made, then the best of what you made. */}
+            <div className="grid grid-cols-[repeat(auto-fit,minmax(min(380px,100%),1fr))] gap-5">
+                <AppHero
+                    href="/play"
+                    title="Playground"
+                    badge="Official"
+                    badgeTone="accent"
+                    description="Every model in the browser — text, image, audio, video. Sign in and generate on your own Pollen, nothing to install."
+                    meta="pollinations.ai/play"
+                    image={pixelCover(
+                        "Pollinations Playground",
+                        "build",
+                        600,
+                        280,
+                    )}
+                    action={<OpenPill>Open →</OpenPill>}
+                />
+                {lead && (
+                    <AppHero
+                        href={lead.web_url || lead.github_repository_url}
+                        title={lead.name}
+                        badge={isBuzz(lead) ? "Buzz" : "Picked"}
+                        description={lead.description}
+                        meta={
+                            lead.github_username
+                                ? `by ${lead.github_username}`
+                                : "community built"
+                        }
+                        image={pixelCover(lead.name, lead.category, 600, 280)}
+                        action={
+                            <span className="text-sm font-semibold text-theme-text-soft">
+                                Open ↗
+                            </span>
+                        }
+                    />
+                )}
+            </div>
+
+            {strip.length > 0 && (
+                <ScrollStrip label="Spotlight · picked by hand">
+                    {strip.map((app) => (
+                        <AppTile
+                            key={app.name}
+                            app={app}
+                            imageClassName="h-30"
+                            className="w-59 flex-none"
+                        />
                     ))}
-                </CardGrid>
+                </ScrollStrip>
             )}
+
+            <PixelRule />
 
             <section className="flex flex-col gap-5">
                 <SectionHeader
                     eyebrow="Browse"
-                    title={loading ? "Everything else." : `All ${apps.length}.`}
+                    title="Everything else."
                     subtitle="Combine as many as you like. Badges are automatic — 🐝 busy this week, 🏵️ runs on your Pollen, 🫧 new this month."
+                    action={
+                        !loading && (
+                            <PixelLabel variant="eyebrow">
+                                {filtered.length} of {apps.length}
+                            </PixelLabel>
+                        )
+                    }
                 />
 
                 <div className="flex flex-col gap-3">
@@ -251,6 +275,15 @@ function AppsPage() {
                         selected={platform}
                         onToggle={(value) => toggleAxis("platform", value)}
                     />
+                    {hasFilters && (
+                        <button
+                            type="button"
+                            className="self-start text-sm font-semibold text-theme-text-soft underline"
+                            onClick={clear}
+                        >
+                            Clear filters
+                        </button>
+                    )}
                 </div>
 
                 {failed ? (
@@ -260,7 +293,7 @@ function AppsPage() {
                 ) : loading ? (
                     <p className="text-theme-text-muted">Loading apps…</p>
                 ) : filtered.length === 0 ? (
-                    <p className="text-theme-text-base">
+                    <div className="rounded-2xl border border-theme-border border-dashed p-12 text-center text-theme-text-muted">
                         No apps match that combination yet.{" "}
                         <button
                             type="button"
@@ -269,31 +302,16 @@ function AppsPage() {
                         >
                             Clear filters
                         </button>
-                    </p>
+                    </div>
                 ) : (
                     <>
-                        <p className="text-sm text-theme-text-muted">
-                            {filtered.length} of {apps.length}
-                            {hasFilters && (
-                                <>
-                                    {" · "}
-                                    <button
-                                        type="button"
-                                        className="font-semibold text-theme-text-soft underline"
-                                        onClick={clear}
-                                    >
-                                        Clear filters
-                                    </button>
-                                </>
-                            )}
-                        </p>
                         <CardGrid gap="gap-4">
                             {filtered.slice(0, 60).map((app) => (
                                 <AppCard key={app.name} app={app} />
                             ))}
                         </CardGrid>
                         {filtered.length > 60 && (
-                            <p className="text-sm text-theme-text-muted">
+                            <p className="text-center text-sm text-theme-text-muted">
                                 Showing the first 60 of {filtered.length}.
                             </p>
                         )}

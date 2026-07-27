@@ -5,6 +5,10 @@ export const Route = createFileRoute("/community")({
     component: CommunityPage,
 });
 
+/**
+ * Still a stub. The mockup puts a PixelRule under the hero, but it divides
+ * nothing until the sections below it exist — add it back with them.
+ */
 function CommunityPage() {
     return (
         <Hero>

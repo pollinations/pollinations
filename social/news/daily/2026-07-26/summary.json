@@ -1,0 +1,31 @@
+{
+  "date": "2026-07-26",
+  "period_start": "2026-07-26",
+  "period_end": "2026-07-26",
+  "title": "ElevenLabs audio grew up into a small post-production suite",
+  "summary": "Audio got dialogue, isolation, and timestamps; realtime gained a long-context multimodal model; Mistral generation got its key back.\n\nPollinations now handles multi-speaker dialogue, speech isolation from uploaded audio or video, and timestamped TTS output. Builders can generate conversations with up to ten voices, pull clean speech from media files, and synchronize captions or highlighted text to generated audio.\n\nGPT Realtime 2.1 Mini joined the realtime API with a 128K context window, text, image, and PCM voice support, plus tools, reasoning, cancellation, caching, and ten voices. A fairly complete conversational machine, in other words.\n\nThe generation Worker now receives its configured Mistral API key, restoring reliable Mistral-backed generation without expanding access to unrelated service secrets.",
+  "pr_count": 5,
+  "prs": [
+    {
+      "number": 12778,
+      "date": "2026-07-26"
+    },
+    {
+      "number": 12780,
+      "date": "2026-07-26"
+    },
+    {
+      "number": 12781,
+      "date": "2026-07-26"
+    },
+    {
+      "number": 12782,
+      "date": "2026-07-26"
+    },
+    {
+      "number": 12785,
+      "date": "2026-07-26"
+    }
+  ],
+  "generated_at": "2026-07-27T07:21:00.711761+00:00"
+}

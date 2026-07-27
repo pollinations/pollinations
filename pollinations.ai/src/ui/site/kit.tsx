@@ -313,22 +313,47 @@ export function SectionHeader({
  * receives clicks.
  */
 const ACTION_BASE =
-    "inline-flex cursor-pointer items-center justify-center rounded-xl border-r-[4px] border-b-[4px] border-solid px-7 py-3.5 text-base font-semibold";
+    "inline-flex cursor-pointer items-center justify-center rounded-xl " +
+    "border-r-4 border-b-4 border-solid px-7 py-3.5 text-base font-semibold";
 
+/**
+ * Each tone is a fill plus an edge, and hover deepens the edge.
+ *
+ * Deepening rather than thickening: growing the border would change the box
+ * and shove the label a pixel, which is the layout-shift-under-the-pointer
+ * that caused trouble in the first place. The colour change costs no layout.
+ *
+ * Every edge is brand-dark at an opacity, so the four tones read as one family
+ * instead of four hand-written rgba() values, and hover is just a deeper step
+ * of the same colour.
+ *
+ * Untransitioned on purpose. These resolve through --polli-color-brand-dark,
+ * and Chrome cannot interpolate a colour that comes from a custom property —
+ * see the note in styles.css. An instant snap also suits a hard pixel edge
+ * better than a fade.
+ */
 const ACTION_TONE = {
     /** Primary: amber fill. */
-    accent: "[border-color:rgba(17,5,24,0.22)] bg-theme-bg-active text-theme-text-strong",
+    accent:
+        "border-brand-dark/20 hover:border-brand-dark/45 " +
+        "bg-theme-bg-active text-theme-text-strong",
     /** Secondary: white fill, lighter edge. */
-    plain: "[border-color:rgba(17,5,24,0.12)] bg-surface-opaque text-theme-text-strong",
+    plain:
+        "border-brand-dark/10 hover:border-brand-dark/30 " +
+        "bg-surface-opaque text-theme-text-strong",
     /** For use on the amber CTA panel, where white and amber both disappear. */
-    dark: "[border-color:rgba(17,5,24,0.25)] bg-brand-dark text-theme-bg-active",
+    dark:
+        "border-brand-dark/25 hover:border-brand-dark/50 " +
+        "bg-brand-dark text-theme-bg-active",
     /**
      * For use on the dark panel. `bg-active` flips to a muted oklch(0.496 …)
      * inside `.dark` — correct for dark chrome, muddy for the one button meant
      * to be the brightest thing there. brand-accent is hue-themed but never
      * flipped, so this stays the real amber.
      */
-    bright: "[border-color:rgba(0,0,0,0.3)] bg-brand-accent text-brand-dark",
+    bright:
+        "border-brand-dark/30 hover:border-brand-dark/55 " +
+        "bg-brand-accent text-brand-dark",
 } as const;
 
 /**

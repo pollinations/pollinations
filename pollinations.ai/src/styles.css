@@ -44,35 +44,6 @@
     transition-property: opacity, box-shadow, transform, filter;
 }
 
-/* ── Clickable area matches the visible shape ──────────────────────────
-   Our buttons paint a hard offset shadow — 3px, growing to 5px on hover —
-   and round their corners by 12px. Both sit OUTSIDE the link's border box,
-   so those pixels look like the button but belong to the container, whose
-   cursor is `auto`. Dragging across an edge alternated hand → arrow → hand,
-   and the shadow was genuinely dead to clicks.
-
-   A transparent ::after restores the missing area. Pseudo-elements are not
-   event targets themselves — the event is dispatched to the originating
-   element — so the link receives the click and inherits its pointer cursor,
-   with nothing rendered and no layout effect.
-
-   Only for controls that ARE the interactive element and contain no nested
-   links: the overlay would swallow clicks meant for a child. That rules out
-   AppCard, which has an author link and an Open link inside it.
-
-   Setting `cursor: pointer` on the parent instead would have hidden the dead
-   zone rather than removed it. */
-.hit-area {
-    position: relative;
-}
-.hit-area::after {
-    content: "";
-    position: absolute;
-    /* top/left cover the corner radius; right/bottom also cover the hover
-       shadow at its full 5px extent. */
-    inset: -3px -6px -6px -3px;
-}
-
 /* ── /play ─────────────────────────────────────────────────────────────
    Layout that needs container queries or sticky positioning, which is
    clearer as CSS than as a wall of arbitrary variants. */

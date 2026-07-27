@@ -44,7 +44,7 @@ export function AppTile({
         <Card
             as="a"
             href={appHref(app)}
-            className={`hit-area overflow-hidden rounded-2xl p-0 ${className ?? ""}`}
+            className={`overflow-hidden rounded-2xl p-0 ${className ?? ""}`}
         >
             {/* No cover means no picture, not a borrowed one — the block keeps
                 the card the same height as its neighbours. */}
@@ -103,7 +103,7 @@ export function AppHero({
         <Card
             as="a"
             href={href}
-            className="hit-area overflow-hidden rounded-[18px] p-0 hover:shadow-[5px_5px_0_var(--polli-color-bg-active)]"
+            className="overflow-hidden rounded-[18px] p-0 hover:shadow-[5px_5px_0_var(--polli-color-bg-active)]"
         >
             {image ? (
                 <img

@@ -284,42 +284,27 @@ export function SectionHeader({
 /**
  * packages/ui's Button is a rounded-full pill that brightens on hover — right
  * for the dashboard, wrong here. This design uses a 12px rectangle with a hard
- * offset shadow that *grows* on hover, so the control appears to lift off the
- * page. Colours still come from `--polli-*`; only the geometry is local.
+ * bottom/right edge. The edge is a real border inside the anchor's box, not a
+ * shadow painted outside it, so every visible pixel has one cursor owner and
+ * receives clicks.
  */
-// hit-area (styles.css): the offset shadow and the 12px radius are painted
-// outside the border box, so without it the visible button is bigger than the
-// clickable one and the cursor flickers along every edge.
-// No transition on the shadow. Animating box-shadow repaints the element
-// under the pointer every frame, and Chrome drops the visible cursor back to
-// an arrow while that happens — the element still reports cursor:pointer, so
-// it looks like the cursor is flickering for no reason. The lift is a hard
-// pixel-art shadow anyway; snapping suits it better than a fade.
 const ACTION_BASE =
-    "hit-area inline-flex items-center justify-center rounded-xl px-7 py-3.5 text-base font-semibold";
+    "inline-flex cursor-pointer items-center justify-center rounded-xl border-r-[4px] border-b-[4px] border-solid px-7 py-3.5 text-base font-semibold";
 
 const ACTION_TONE = {
     /** Primary: amber fill. */
-    accent:
-        "bg-theme-bg-active text-theme-text-strong " +
-        "shadow-[3px_3px_0_rgba(17,5,24,0.22)] hover:shadow-[5px_5px_0_rgba(17,5,24,0.28)]",
-    /** Secondary: white fill, lighter shadow. */
-    plain:
-        "bg-surface-opaque text-theme-text-strong " +
-        "shadow-[3px_3px_0_rgba(17,5,24,0.12)] hover:shadow-[5px_5px_0_rgba(17,5,24,0.18)]",
+    accent: "[border-color:rgba(17,5,24,0.22)] bg-theme-bg-active text-theme-text-strong",
+    /** Secondary: white fill, lighter edge. */
+    plain: "[border-color:rgba(17,5,24,0.12)] bg-surface-opaque text-theme-text-strong",
     /** For use on the amber CTA panel, where white and amber both disappear. */
-    dark:
-        "bg-brand-dark text-theme-bg-active " +
-        "shadow-[3px_3px_0_rgba(17,5,24,0.25)] hover:shadow-[5px_5px_0_rgba(17,5,24,0.32)]",
+    dark: "[border-color:rgba(17,5,24,0.25)] bg-brand-dark text-theme-bg-active",
     /**
      * For use on the dark panel. `bg-active` flips to a muted oklch(0.496 …)
      * inside `.dark` — correct for dark chrome, muddy for the one button meant
      * to be the brightest thing there. brand-accent is hue-themed but never
      * flipped, so this stays the real amber.
      */
-    bright:
-        "bg-brand-accent text-brand-dark " +
-        "shadow-[3px_3px_0_rgba(0,0,0,0.3)] hover:shadow-[5px_5px_0_rgba(0,0,0,0.38)]",
+    bright: "[border-color:rgba(0,0,0,0.3)] bg-brand-accent text-brand-dark",
 } as const;
 
 export function ActionButton({
@@ -376,14 +361,9 @@ export function ArrowLink<T extends ElementType = "a">({
 
 /* ── Surfaces ───────────────────────────────────────────────────────────── */
 
-/**
- * A card that lifts on hover — the same hard offset shadow as the buttons,
- * which is what makes the page feel responsive rather than static.
- */
-// Untransitioned, for the reason on ACTION_BASE — and doubly so here: this
-// shadow's colour resolves through a custom property, which Chrome cannot
-// interpolate (see the modality-theming note in styles.css).
-const HOVER_LIFT = "hover:shadow-[4px_4px_0_var(--polli-color-bg-active)]";
+/** Cards lift on hover so the page feels responsive rather than static. */
+const HOVER_LIFT =
+    "transition-shadow duration-150 hover:shadow-[4px_4px_0_var(--polli-color-bg-active)] motion-reduce:transition-none";
 
 export function Card<T extends ElementType = "div">({
     as,

@@ -413,10 +413,13 @@ describe("error observability", () => {
         });
     });
 
-    it("remaps text provider 429 to 502 while preserving upstream status", async () => {
+    it("keeps text provider 429 client-facing and out of server error alerts", async () => {
+        const tinybirdRequests: Request[] = [];
         vi.spyOn(globalThis, "fetch").mockImplementation(async (input) => {
-            if (new Request(input).url.includes("tinybird.test"))
+            if (new Request(input).url.includes("tinybird.test")) {
+                tinybirdRequests.push(new Request(input));
                 return new Response("ok");
+            }
             return Response.json(
                 { error: { message: "provider rate limited" } },
                 { status: 429 },
@@ -448,16 +451,17 @@ describe("error observability", () => {
 
         await waitOnExecutionContext(ctx);
 
-        expect(response.status).toBe(502);
+        expect(response.status).toBe(429);
         await expect(response.json()).resolves.toMatchObject({
             error: {
-                code: "BAD_GATEWAY",
+                code: "RATE_LIMITED",
                 details: {
                     upstreamHost: "portkey.test",
                     upstreamStatus: 429,
                 },
             },
         });
+        expect(tinybirdRequests).toHaveLength(0);
     });
 
     it("attributes provider error envelopes to the gateway", async () => {

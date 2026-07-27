@@ -18,6 +18,10 @@ const log = debug("pollinations:genericopenai");
 const errorLog = debug("pollinations:error");
 const DONE_EVENT_PATTERN = /data:\s*\[DONE\]/;
 
+function remapTextUpstreamStatus(status: number): number {
+    return status === 429 ? 429 : remapUpstreamStatus(status);
+}
+
 // Attach internal response metadata as non-enumerable properties so downstream
 // handling can use it without adding fields to OpenAI-compatible response bodies.
 function withResponseMetadata(
@@ -103,7 +107,7 @@ function createApiError(
     const error = new Error(
         detailMessage ? `${statusMessage}: ${detailMessage}` : statusMessage,
     ) as ServiceError;
-    error.status = remapUpstreamStatus(response.status);
+    error.status = remapTextUpstreamStatus(response.status);
     error.upstreamStatus = response.status;
     error.details = details;
     error.model = modelName;
@@ -273,7 +277,7 @@ export async function genericOpenAIClient(
             ) as ServiceError;
             error.status =
                 typeof errorDetails.status === "number"
-                    ? remapUpstreamStatus(errorDetails.status)
+                    ? remapTextUpstreamStatus(errorDetails.status)
                     : 502;
             error.upstreamStatus =
                 typeof errorDetails.status === "number"

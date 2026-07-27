@@ -351,6 +351,27 @@ test("Claude Fable 5 is paid-only and billed at current standard rates", () => {
     );
 });
 
+test("Qwen Image 3 is paid-only and billed at the fal flat image rate", () => {
+    const definition = getRegistryModelDefinition("qwen-image-3");
+
+    expect(definition.provider).toBe("fal");
+    expect(definition.paidOnly).toBe(true);
+    expect(definition.priceMultiplier).toBe(1);
+    expect(definition.inputModalities).toEqual(["text"]);
+    expect(definition.outputModalities).toEqual(["image"]);
+    expect(getCostDefinition("qwen-image-3")).toEqual({
+        completionImageTokens: 0.075,
+    });
+    expect(getPriceDefinition("qwen-image-3")).toEqual(
+        getCostDefinition("qwen-image-3"),
+    );
+    expect(
+        calculatePrice("qwen-image-3", {
+            completionImageTokens: 1,
+        }).totalPrice,
+    ).toBeCloseTo(0.075, 8);
+});
+
 test("updated provider prices are reflected for xAI media and OpenRouter text", () => {
     expect(getCostDefinition("llama-scout").promptTextTokens).toBeCloseTo(
         0.0000001,

@@ -81,6 +81,8 @@ export interface ChatCompletion {
     requestData?: unknown;
     /** Portkey fallback target that served the call, e.g. "config.targets[1]". */
     fallbackTarget?: string;
+    /** Internal URL of the gateway request that produced this completion. */
+    upstreamRequestUrl?: URL;
     [key: string]: unknown;
 }
 
@@ -88,12 +90,17 @@ export interface ChatCompletion {
 export interface ServiceError extends Error {
     status?: number;
     upstreamStatus?: number;
+    requestUrl?: URL;
     code?: number | string;
     details?: unknown;
     model?: string;
     provider?: string;
     response?: { data?: unknown };
 }
+
+export type TextVariables = {
+    upstreamRequestUrl?: URL;
+};
 
 /** Request data extracted from incoming HTTP requests. */
 export interface RequestData {

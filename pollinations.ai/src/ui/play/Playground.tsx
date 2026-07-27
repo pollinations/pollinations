@@ -61,10 +61,6 @@ type PlaygroundResult =
           text: string;
       };
 
-export type PlaygroundProps = {
-    className?: string;
-};
-
 function usePlaygroundCatalog(apiKey: string | null) {
     const [catalog, setCatalog] = useState<ModelCatalog>(EMPTY_CATALOG);
     const [isLoading, setIsLoading] = useState(true);
@@ -192,12 +188,9 @@ function ResultPanel({
     return (
         <Surface
             variant="card"
-            className={cn(
-                "polli:flex polli:min-h-[360px] polli:flex-col polli:gap-4 polli:p-4",
-                className,
-            )}
+            className={cn("flex min-h-[360px] flex-col gap-4 p-4", className)}
         >
-            <div className="polli:flex polli:items-center polli:justify-end polli:gap-3 polli:empty:hidden">
+            <div className="flex items-center justify-end gap-3 empty:hidden">
                 {result && result.type !== "text" && (
                     <Button
                         as="a"
@@ -216,32 +209,32 @@ function ResultPanel({
                 <MediaPlaceholder
                     label="Generating..."
                     detail="Hang tight while your result is created."
-                    className="polli:flex-1"
+                    className="flex-1"
                 />
             ) : !result ? (
                 <MediaPlaceholder
-                    icon={<ImageIcon className="polli:h-5 polli:w-5" />}
+                    icon={<ImageIcon className="h-5 w-5" />}
                     label="Output preview"
                     detail="Generated results appear here."
-                    className="polli:flex-1"
+                    className="flex-1"
                 />
             ) : result.type === "text" ? (
-                <div className="polli:min-h-0 polli:flex-1 polli:overflow-auto polli:rounded-xl polli:bg-surface-white polli:p-4 polli:text-theme-text-strong">
+                <div className="min-h-0 flex-1 overflow-auto rounded-xl bg-surface-white p-4 text-theme-text-strong">
                     <Text
                         as="p"
                         size="sm"
-                        className="polli:m-0 polli:w-full polli:whitespace-pre-wrap polli:break-words polli:leading-relaxed"
+                        className="m-0 w-full whitespace-pre-wrap break-words leading-relaxed"
                     >
                         {result.text}
                     </Text>
                 </div>
             ) : (
-                <div className="polli:flex polli:min-h-0 polli:flex-1 polli:items-center polli:justify-center polli:overflow-hidden polli:rounded-xl polli:bg-surface-white polli:p-3 polli:text-theme-text-strong">
+                <div className="flex min-h-0 flex-1 items-center justify-center overflow-hidden rounded-xl bg-surface-white p-3 text-theme-text-strong">
                     {result.type === "image" && (
                         <img
                             src={result.url}
                             alt="Generated"
-                            className="polli:max-h-full polli:w-full polli:rounded-lg polli:object-contain"
+                            className="max-h-full w-full rounded-lg object-contain"
                         />
                     )}
 
@@ -252,7 +245,7 @@ function ResultPanel({
                             autoPlay
                             loop
                             muted
-                            className="polli:max-h-full polli:w-full polli:rounded-lg"
+                            className="max-h-full w-full rounded-lg"
                         >
                             <track kind="captions" />
                         </video>
@@ -263,7 +256,7 @@ function ResultPanel({
                             src={result.url}
                             controls
                             autoPlay
-                            className="polli:w-full"
+                            className="w-full"
                         >
                             <track kind="captions" />
                         </audio>
@@ -289,7 +282,7 @@ async function uploadReferenceImages(
     return uploads.map((upload) => upload.url);
 }
 
-export function Playground({ className }: PlaygroundProps) {
+export function Playground() {
     const { apiKey, isLoggedIn, isHydrated } = useAuthState();
     const {
         catalog,
@@ -521,26 +514,19 @@ export function Playground({ className }: PlaygroundProps) {
     }
 
     return (
-        <div
-            className={cn(
-                "polli:flex polli:w-full polli:flex-col polli:gap-5 polli:text-theme-text-base",
-                className,
-            )}
-        >
+        <div className="flex w-full flex-col gap-5 text-theme-text-base">
             {catalogError && (
                 <Alert intent="danger">
                     Model catalog failed to load: {catalogError.message}
                 </Alert>
             )}
 
-            {/* Deliberately not a card. These read as a sequence — what kind
-                of thing, then which model, then what that model is — and a
-                card would box them as one static panel instead of a flow.
-                They also sit above both columns because modality and model
-                change the output, not just the prompt. */}
             {/* Three lines, in the order you decide them: what kind of thing,
-                then which model, then what that model is. */}
-            <div className="polli:flex polli:flex-col polli:items-start polli:gap-3">
+                then which model, then what that model is. Deliberately not a
+                card — they read as a sequence, and a card would box them as
+                one static panel. They sit above both columns because modality
+                and model change the output, not just the prompt. */}
+            <div className="flex flex-col items-start gap-3">
                 <ModalityTabs
                     activeCategory={activeCategory}
                     onCategoryChange={selectCategory}
@@ -553,17 +539,17 @@ export function Playground({ className }: PlaygroundProps) {
                     onChange={setSelectedModel}
                 />
                 {currentModel?.description && (
-                    <p className="polli:m-0 polli:text-sm polli:leading-relaxed polli:text-theme-text-muted">
+                    <p className="m-0 text-sm leading-relaxed text-theme-text-muted">
                         {currentModel.description}
                     </p>
                 )}
             </div>
 
             <div className="polli-playground-main-grid">
-                <div className="polli:flex polli:flex-col polli:gap-4">
+                <div className="flex flex-col gap-4">
                     <Surface
                         variant="card"
-                        className="polli:flex polli:flex-1 polli:flex-col polli:gap-4 polli:p-4"
+                        className="flex flex-1 flex-col gap-4 p-4"
                     >
                         <FieldStack label="Prompt">
                             <Textarea
@@ -576,7 +562,7 @@ export function Playground({ className }: PlaygroundProps) {
                                     currentModel?.category ?? activeCategory,
                                     isAudioTranscription,
                                 )}
-                                className="polli-playground-textarea polli:min-h-44"
+                                className="polli-playground-textarea min-h-44"
                             />
                         </FieldStack>
 
@@ -588,16 +574,14 @@ export function Playground({ className }: PlaygroundProps) {
                                     maxFiles={1}
                                     maxSizeBytes={AUDIO_UPLOAD_MAX_SIZE_BYTES}
                                     accept={AUDIO_UPLOAD_ACCEPT}
-                                    icon={
-                                        <AudioIcon className="polli:h-6 polli:w-6" />
-                                    }
+                                    icon={<AudioIcon className="h-6 w-6" />}
                                     previewIcon={
-                                        <AudioIcon className="polli:h-5 polli:w-5" />
+                                        <AudioIcon className="h-5 w-5" />
                                     }
                                     label={
                                         <>
                                             Drag audio here or{" "}
-                                            <span className="polli:underline">
+                                            <span className="underline">
                                                 browse
                                             </span>
                                         </>
@@ -641,7 +625,7 @@ export function Playground({ className }: PlaygroundProps) {
                                                 maxReferenceImages,
                                             )}{" "}
                                             here or{" "}
-                                            <span className="polli:underline">
+                                            <span className="underline">
                                                 browse
                                             </span>
                                         </>
@@ -681,7 +665,7 @@ export function Playground({ className }: PlaygroundProps) {
                                         label={
                                             <>
                                                 Drag first frame here or{" "}
-                                                <span className="polli:underline">
+                                                <span className="underline">
                                                     browse
                                                 </span>
                                             </>
@@ -723,7 +707,7 @@ export function Playground({ className }: PlaygroundProps) {
                                                 ) : (
                                                     <>
                                                         Drag last frame here or{" "}
-                                                        <span className="polli:underline">
+                                                        <span className="underline">
                                                             browse
                                                         </span>
                                                     </>
@@ -804,7 +788,7 @@ export function Playground({ className }: PlaygroundProps) {
                                         Voice
                                     </>
                                 }
-                                labelClassName="polli:flex polli:items-center polli:gap-1.5"
+                                labelClassName="flex items-center gap-1.5"
                             >
                                 <ButtonGroup aria-label="Voice">
                                     {currentModel.voices.map((voice) => (
@@ -837,7 +821,7 @@ export function Playground({ className }: PlaygroundProps) {
                                 !selectedModelAllowed
                             }
                             onClick={generate}
-                            className="polli:w-full polli:self-auto"
+                            className="w-full self-auto"
                         >
                             {isGenerating
                                 ? "Generating..."

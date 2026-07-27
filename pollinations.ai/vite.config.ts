@@ -38,9 +38,10 @@ export default defineConfig({
         reportCompressedSize: true,
         rollupOptions: {
             output: {
+                // Markdown needs no manual chunk: it is reachable only from
+                // the legal routes, which autoCodeSplitting already splits.
                 manualChunks: {
                     vendor: ["react", "react-dom", "@tanstack/react-router"],
-                    markdown: ["react-markdown", "remark-gfm"],
                 },
             },
         },

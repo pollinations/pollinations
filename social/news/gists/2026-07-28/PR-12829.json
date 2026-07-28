@@ -1,0 +1,37 @@
+{
+  "pr_number": 12829,
+  "title": "Add MyEntMap to chat",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/12829",
+  "merged_at": "2026-07-28T15:59:10Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds [MyEntMap](https://mymap.qvlit.com) to chat\n- MyEntMap is a multilingual (zh/vi/en, auto-detected) food & entertainment map for Ho Chi Minh City. It uses the Pollinations API in three ways: (1) auto-generating Ghibli-watercolor store photos with \n\nFixes #12694",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Map, snack, pollinate",
+    "blurb": "MyEntMap joined the garden: a multilingual Ho Chi Minh City food and entertainment map with Pollinations-powered Ghibli-watercolor storefronts. Finding a good meal now has a little more atmosphere.",
+    "summary": "Added MyEntMap to the community app directory, a Ho Chi Minh City food and entertainment map that auto-detects Chinese, Vietnamese, or English and uses the Pollinations API to generate Ghibli-watercolor store photos.",
+    "impact": "People exploring Ho Chi Minh City can discover food and entertainment in their language with AI-generated watercolor visuals for listed places.",
+    "keywords": [
+      "community-app",
+      "MyEntMap",
+      "Ho-Chi-Minh-City",
+      "multilingual",
+      "image-generation",
+      "maps",
+      "ghibli-watercolor"
+    ],
+    "visual_concept": "Depict a cozy illustrated Ho Chi Minh City neighborhood map unfolding across a café table, with tiny restaurant storefronts represented as watercolor-like pixel postcards and map pins among potted flowers. Polli, wearing a tiny travel beret and holding a map, helps a friendly visitor navigate; include language markers for zh, vi, and en plus a lime-green route connecting food and entertainment spots.",
+    "image_prompt": "A cozy pixel art scene of a Ho Chi Minh City food-and-entertainment map spread across a warm café table, dotted with tiny Ghibli-watercolor-style storefront postcards, flower-filled map pins, and a bold lime green (#ecf874) route linking places marked “zh · vi · en.” The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears a tiny travel beret and warmly points at the map beside code-plants and a retro terminal. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, subtle CRT glow, emotionally warm and nostalgic."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-28/PR-12829.jpg",
+    "prompt": "A cozy pixel art scene of a Ho Chi Minh City food-and-entertainment map spread across a warm café table, dotted with tiny Ghibli-watercolor-style storefront postcards, flower-filled map pins, and a bold lime green (#ecf874) route linking places marked “zh · vi · en.” The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears a tiny travel beret and warmly points at the map beside code-plants and a retro terminal. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, subtle CRT glow, emotionally warm and nostalgic."
+  },
+  "generated_at": "2026-07-28T16:00:12.950364+00:00",
+  "app_name": "MyEntMap",
+  "app_url": "https://mymap.qvlit.com"
+}

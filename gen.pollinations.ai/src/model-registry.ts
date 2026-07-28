@@ -145,12 +145,23 @@ function linkFallbackEntries(
         if (!target.visible || target.eventType !== entry.eventType) continue;
         const primaryEndpoint = entry.communityEndpoint;
         const targetEndpoint = target.communityEndpoint;
-        if (
-            primaryEndpoint &&
-            targetEndpoint &&
-            !isCommunityFallbackPricingAllowed(primaryEndpoint, targetEndpoint)
-        ) {
-            continue;
+        if (primaryEndpoint && targetEndpoint) {
+            // The shared price columns mean Pollen per generated image in
+            // "request" mode and Pollen per token in "tokens" mode, so a
+            // cross-mode comparison is meaningless — and either side can switch
+            // mode long after the link was configured, without touching the
+            // other's row. Same rule the write path applies.
+            if (primaryEndpoint.imagePricing !== targetEndpoint.imagePricing) {
+                continue;
+            }
+            if (
+                !isCommunityFallbackPricingAllowed(
+                    primaryEndpoint,
+                    targetEndpoint,
+                )
+            ) {
+                continue;
+            }
         }
         // Depth 1: link a copy with its own fallback cleared, so routing can
         // never follow a chain even if the target declares one.

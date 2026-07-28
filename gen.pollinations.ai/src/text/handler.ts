@@ -9,6 +9,7 @@ import {
 import type { Context } from "hono";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
 import type { Env } from "@/env.ts";
+import { FALLBACK_ON_STATUS_CODES } from "../fallback.ts";
 import type { GenerationModelEntry } from "../model-registry.ts";
 import { fixWavHeader } from "../routes/audio.js";
 import { findModelByName } from "./availableModels.js";
@@ -102,14 +103,6 @@ function prepareRequestParameters(
             : { voice, format: audioFormat },
     };
 }
-
-// Statuses that make Portkey move on to the fallback target. 400 and 422 are
-// left out on purpose: those are caller errors and replaying them cannot
-// succeed. 401/402/403/404 are included because they mean the primary's
-// credentials or upstream model are broken, which the fallback may survive.
-const FALLBACK_ON_STATUS_CODES = [
-    401, 402, 403, 404, 408, 429, 500, 502, 503, 504,
-];
 
 type PortkeyTarget = Record<string, unknown>;
 

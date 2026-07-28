@@ -3189,6 +3189,41 @@ fixtureTest(
             endpoint("chain-a", { fallbackModelId: id("chain-b") }),
             endpoint("chain-b", { fallbackModelId: id("chain-c") }),
             endpoint("chain-c", {}),
+            endpoint("image-primary", {
+                modality: "image",
+                imagePricing: "request",
+                promptTextPrice: 0,
+                completionTextPrice: 0,
+                completionImagePrice: 0.02,
+                fallbackModelId: id("image-target"),
+            }),
+            endpoint("image-target", {
+                modality: "image",
+                imagePricing: "request",
+                promptTextPrice: 0,
+                completionTextPrice: 0,
+                completionImagePrice: 0.01,
+            }),
+            endpoint("image-request-primary", {
+                modality: "image",
+                imagePricing: "request",
+                promptTextPrice: 0,
+                completionTextPrice: 0,
+                // 0.02 Pollen per generated image.
+                completionImagePrice: 0.02,
+                fallbackModelId: id("image-tokens-target"),
+            }),
+            // Switched itself to token pricing after being picked as a target:
+            // the same column now means Pollen per token (0.00005 = the 50
+            // Pollen/1M cap), so the raw numbers are no longer comparable and
+            // a 1568-token image would bill 0.0784 against a 0.02 quote.
+            endpoint("image-tokens-target", {
+                modality: "image",
+                imagePricing: "tokens",
+                promptTextPrice: 0,
+                completionTextPrice: 0,
+                completionImagePrice: 0.00005,
+            }),
         ]) {
             await db.insert(communityEndpointTable).values(row);
         }
@@ -3207,6 +3242,17 @@ fixtureTest(
         ).toBeUndefined();
         expect(
             registry.resolve(id("repriced-primary"))?.fallbackEntry,
+        ).toBeUndefined();
+
+        // Same image pricing mode on both sides: the price columns mean the
+        // same thing, so the link stands.
+        expect(registry.resolve(id("image-primary"))?.fallbackEntry?.id).toBe(
+            id("image-target"),
+        );
+        // Different modes: comparing per-image against per-token prices is
+        // meaningless, so the link is dropped rather than billed across units.
+        expect(
+            registry.resolve(id("image-request-primary"))?.fallbackEntry,
         ).toBeUndefined();
 
         // Depth 1: chain-a serves from chain-b, and chain-b's own target is
@@ -3469,5 +3515,256 @@ fixtureTest(
         expect(
             Array.from(new Uint8Array(await response.arrayBuffer())),
         ).toEqual(TEST_PNG_BYTES);
+    },
+);
+
+fixtureTest(
+    "does not replay image caller errors or moderation refusals on the fallback",
+    async ({ apiKey }) => {
+        const suffix = crypto.randomUUID().slice(0, 8);
+        const primaryOwner = `img-strict-primary-${suffix}`;
+        const fallbackOwner = `img-strict-fallback-${suffix}`;
+        const primaryUserId = await createTestUser({
+            githubId: COMMUNITY_ENDPOINT_ALLOWED_TEST_GITHUB_ID,
+            githubUsername: primaryOwner,
+        });
+        const fallbackUserId = await createTestUser({
+            githubId: COMMUNITY_ENDPOINT_ALLOWED_TEST_GITHUB_ID,
+            githubUsername: fallbackOwner,
+        });
+        const primaryModelId = communityModelId(primaryOwner, "strict-image");
+        const fallbackModelId = communityModelId(fallbackOwner, "loose-image");
+        const bearerTokenCiphertext = await encryptSecret(
+            "sk_image_upstream",
+            env.BETTER_AUTH_SECRET,
+        );
+
+        for (const row of [
+            {
+                id: `endpoint-${crypto.randomUUID()}`,
+                ownerUserId: primaryUserId,
+                visibility: "public" as const,
+                name: "strict-image",
+                modality: "image",
+                baseUrl: "https://strict-image.example.com/v1",
+                upstreamModel: "strict-image-upstream",
+                bearerTokenCiphertext,
+                promptTextPrice: 0,
+                completionTextPrice: 0,
+                completionImagePrice: 0.02,
+                fallbackModelId,
+                createdAt: new Date(),
+                updatedAt: new Date(),
+            },
+            {
+                id: `endpoint-${crypto.randomUUID()}`,
+                ownerUserId: fallbackUserId,
+                visibility: "public" as const,
+                name: "loose-image",
+                modality: "image",
+                baseUrl: "https://loose-image.example.com/v1",
+                upstreamModel: "loose-image-upstream",
+                bearerTokenCiphertext,
+                promptTextPrice: 0,
+                completionTextPrice: 0,
+                completionImagePrice: 0.01,
+                createdAt: new Date(),
+                updatedAt: new Date(),
+            },
+        ]) {
+            await db.insert(communityEndpointTable).values(row);
+        }
+
+        let upstreamHosts: string[] = [];
+        let primaryFailure = {
+            status: 400,
+            body: { error: { message: "size must be at most 1536x1536" } },
+        };
+        const fetchMock = vi.fn(async (input, init) => {
+            const request = new Request(input, init);
+            if (isCommunityImageGenerationsRequest(request)) {
+                const host = new URL(request.url).host;
+                upstreamHosts.push(host);
+                if (host === "strict-image.example.com") {
+                    return Response.json(primaryFailure.body, {
+                        status: primaryFailure.status,
+                    });
+                }
+                return Response.json({
+                    created: 1,
+                    data: [{ b64_json: TEST_PNG_BASE64 }],
+                });
+            }
+            if (isBillingFetch(request)) return Response.json({ data: [] });
+            throw new Error(`Unexpected fetch: ${request.url}`);
+        });
+        vi.stubGlobal("fetch", fetchMock);
+
+        const generate = async () => {
+            const response = await SELF.fetch(
+                new Request(
+                    `https://gen.pollinations.ai/image/green%20sprout?model=${encodeURIComponent(primaryModelId)}`,
+                    { headers: { Authorization: `Bearer ${apiKey}` } },
+                ),
+            );
+            // Drain before asserting: an unread body keeps the isolate alive.
+            await response.arrayBuffer();
+            return response;
+        };
+
+        // A caller error cannot succeed on a replay: the fallback is never
+        // called and the primary's own 400 reaches the client.
+        const callerError = await generate();
+        expect(callerError.status).toBe(400);
+        expect(upstreamHosts).toEqual(["strict-image.example.com"]);
+
+        // A moderation refusal must not be routed around, whatever status the
+        // provider wrapped it in — it stays a 422 content-policy rejection.
+        upstreamHosts = [];
+        primaryFailure = {
+            status: 500,
+            body: {
+                error: { message: "Prompt flagged by our content filter" },
+            },
+        };
+        const moderationRefusal = await generate();
+        expect(moderationRefusal.status).toBe(422);
+        expect(upstreamHosts).toEqual(["strict-image.example.com"]);
+    },
+);
+
+fixtureTest(
+    "does not serve a fallback the API key is not allowed to use",
+    async () => {
+        const suffix = crypto.randomUUID().slice(0, 8);
+        const primaryOwner = `scoped-primary-${suffix}`;
+        const fallbackOwner = `scoped-fallback-${suffix}`;
+        const primaryUserId = await createTestUser({
+            githubId: COMMUNITY_ENDPOINT_ALLOWED_TEST_GITHUB_ID,
+            githubUsername: primaryOwner,
+        });
+        const fallbackUserId = await createTestUser({
+            githubId: COMMUNITY_ENDPOINT_ALLOWED_TEST_GITHUB_ID,
+            githubUsername: fallbackOwner,
+        });
+        const primaryModelId = communityModelId(primaryOwner, "primary");
+        const fallbackModelId = communityModelId(fallbackOwner, "cheap");
+
+        await db.insert(communityEndpointTable).values([
+            {
+                id: `endpoint-${crypto.randomUUID()}`,
+                ownerUserId: primaryUserId,
+                visibility: "public",
+                name: "primary",
+                baseUrl: "https://scoped-primary.example.com/v1",
+                upstreamModel: "primary-upstream",
+                bearerTokenCiphertext: await encryptSecret(
+                    "sk_primary_token",
+                    env.BETTER_AUTH_SECRET,
+                ),
+                promptTextPrice: 0.2 / 1_000_000,
+                completionTextPrice: 0.2 / 1_000_000,
+                fallbackModelId,
+                createdAt: new Date(),
+                updatedAt: new Date(),
+            },
+            {
+                id: `endpoint-${crypto.randomUUID()}`,
+                ownerUserId: fallbackUserId,
+                visibility: "public",
+                name: "cheap",
+                baseUrl: "https://scoped-fallback.example.com/v1",
+                upstreamModel: "cheap-upstream",
+                bearerTokenCiphertext: await encryptSecret(
+                    "sk_fallback_token",
+                    env.BETTER_AUTH_SECRET,
+                ),
+                promptTextPrice: 0.1 / 1_000_000,
+                completionTextPrice: 0.1 / 1_000_000,
+                createdAt: new Date(),
+                updatedAt: new Date(),
+            },
+        ]);
+
+        // Scoped to the primary only — calling the fallback directly is a 403.
+        const { key } = await createTestApiKey({
+            allowedModels: [primaryModelId],
+            user: { tierBalance: 100 },
+        });
+
+        const gatewayCalls: {
+            config: string | null;
+            provider: string | null;
+            customHost: string | null;
+        }[] = [];
+        const fetchMock = vi.fn(async (input, init) => {
+            const request = new Request(input, init);
+            if (isPortkeyChatCompletionsRequest(request)) {
+                gatewayCalls.push({
+                    config: request.headers.get("x-portkey-config"),
+                    provider: request.headers.get("x-portkey-provider"),
+                    customHost: request.headers.get("x-portkey-custom-host"),
+                });
+                return Response.json({
+                    id: "chatcmpl_primary",
+                    object: "chat.completion",
+                    choices: [
+                        {
+                            index: 0,
+                            message: { role: "assistant", content: "ok" },
+                            finish_reason: "stop",
+                        },
+                    ],
+                    usage: {
+                        prompt_tokens: 2,
+                        completion_tokens: 3,
+                        total_tokens: 5,
+                    },
+                });
+            }
+            if (isBillingFetch(request)) return Response.json({ data: [] });
+            throw new Error(`Unexpected fetch: ${request.url}`);
+        });
+        vi.stubGlobal("fetch", fetchMock);
+
+        const response = await SELF.fetch(
+            new Request("https://gen.pollinations.ai/v1/chat/completions", {
+                method: "POST",
+                headers: {
+                    Authorization: `Bearer ${key}`,
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    model: primaryModelId,
+                    messages: [{ role: "user", content: "hello" }],
+                }),
+            }),
+        );
+
+        expect(response.status).toBe(200);
+        expect(gatewayCalls).toHaveLength(1);
+        // No strategy/targets config: the request runs against the primary
+        // alone, so the key can never be served the model it cannot call.
+        expect(gatewayCalls[0].config).toBeNull();
+        expect(gatewayCalls[0].provider).toBe("openai");
+        expect(gatewayCalls[0].customHost).toBe(
+            "https://scoped-primary.example.com/v1",
+        );
+
+        // The same key calling the fallback directly is refused.
+        const direct = await SELF.fetch(
+            new Request("https://gen.pollinations.ai/v1/chat/completions", {
+                method: "POST",
+                headers: {
+                    Authorization: `Bearer ${key}`,
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    model: fallbackModelId,
+                    messages: [{ role: "user", content: "hello" }],
+                }),
+            }),
+        );
+        expect(direct.status).toBe(403);
     },
 );

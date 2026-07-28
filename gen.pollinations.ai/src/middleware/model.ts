@@ -183,16 +183,27 @@ export function resolveModel(
         // routes, so the caller identity is available to gate private
         // endpoints. If it isn't (unauthenticated path), callerUserId is
         // undefined and a private endpoint fails closed — never exposed.
-        c.set(
-            "model",
-            await resolveModelDefinition(
-                model,
-                eventType,
-                c.env,
-                c.var.auth?.user?.id,
-                options?.supportedEndpoint,
-            ),
+        const resolved = await resolveModelDefinition(
+            model,
+            eventType,
+            c.env,
+            c.var.auth?.user?.id,
+            options?.supportedEndpoint,
         );
+        // An API key's model allowlist scopes what the key may be served, not
+        // just what it may ask for. Drop the fallback when the target is off
+        // the list: the request still runs against the primary, but a scoped
+        // key can never be served — or billed for — a model it would get a 403
+        // for if it called it directly.
+        const allowedModels = c.var.auth?.apiKey?.permissions?.models;
+        if (
+            resolved.fallbackEntry &&
+            allowedModels &&
+            !allowedModels.includes(resolved.fallbackEntry.id)
+        ) {
+            resolved.fallbackEntry = undefined;
+        }
+        c.set("model", resolved);
         await next();
     });
 }

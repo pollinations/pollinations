@@ -6,6 +6,7 @@ import { FALLBACK_TARGET_HEADER } from "@shared/registry/usage-headers.ts";
 import type { Context } from "hono";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
 import type { Env } from "@/env.ts";
+import { FALLBACK_ON_STATUS_CODES } from "../fallback.ts";
 import type { GenerationModelEntry } from "../model-registry.ts";
 import {
     getRegisteredServers,
@@ -394,6 +395,20 @@ async function generateImageResult(
     return result;
 }
 
+// Only a broken primary is worth retrying, so the image path gates on the same
+// statuses Portkey gets for text: caller errors (400/422) cannot succeed on a
+// replay. Content-policy refusals are excluded at any status — routing a
+// moderation rejection to a possibly more permissive endpoint would turn an
+// unbilled 422 into a billed generation and bypass the primary's moderation.
+function isRetryableFallbackError(error: unknown): boolean {
+    if (!(error instanceof HttpError)) return false;
+    if (!FALLBACK_ON_STATUS_CODES.includes(error.status)) return false;
+    return !firstContentPolicyMessage([
+        parseUpstreamErrorBody(error).text,
+        error.message,
+    ]);
+}
+
 // The image response is fully buffered before any bytes reach the client, so a
 // plain in-worker retry against the fallback endpoint is safe — no streaming
 // caveat, and a failed primary attempt is never billed.
@@ -419,6 +434,7 @@ async function callCommunityImageWithFallback(
         const fallbackEntry = c.var.model.fallbackEntry;
         const fallbackEndpoint = fallbackEntry?.communityEndpoint;
         if (!fallbackEntry || !fallbackEndpoint) throw error;
+        if (!isRetryableFallbackError(error)) throw error;
         return {
             result: await callCommunityImageEndpoint(
                 fallbackEndpoint,

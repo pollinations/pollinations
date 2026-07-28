@@ -9,6 +9,7 @@ import {
 import type { Context } from "hono";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
 import type { Env } from "@/env.ts";
+import { nextCommunityPoolOrder } from "../community-models.ts";
 import { fixWavHeader } from "../routes/audio.js";
 import { communityEndpointGatewayContext } from "./communityEndpoint.ts";
 import { generateTextPortkey } from "./generateTextPortkey.js";
@@ -314,6 +315,18 @@ function throwTextError(error: ServiceError): never {
     });
 }
 
+function isRetryableCommunityError(error: unknown): boolean {
+    if (!(error instanceof Error)) return false;
+    const serviceError = error as ServiceError;
+    const status =
+        serviceError.upstreamStatus ?? serviceError.status ?? serviceError.code;
+    return (
+        (typeof status === "number" && status >= 500 && status < 600) ||
+        error.name === "TypeError" ||
+        error.name === "AbortError"
+    );
+}
+
 async function generateTextResponse(
     c: TextContext,
     requestData: RequestData,
@@ -323,20 +336,49 @@ async function generateTextResponse(
 
     try {
         const communityEndpoint = c.var.model?.communityEndpoint;
-        const gatewayContext = communityEndpoint
-            ? await communityEndpointGatewayContext(
-                  communityEndpoint,
-                  c.var.model.definition,
-                  requestData,
-                  c.env.BETTER_AUTH_SECRET,
-                  c.env.PORTKEY_GATEWAY_URL,
-                  c.var.auth?.apiKey?.rawKey || "",
-              )
-            : withGatewayContext(c, requestData);
-        const completion = await generateTextPortkey(
-            requestData.messages,
-            gatewayContext,
-        );
+        let completion: ChatCompletion | undefined;
+        if (communityEndpoint) {
+            const ordered = c.var.model.communityPool
+                ? nextCommunityPoolOrder(c.var.model.communityPool)
+                : [communityEndpoint];
+            let lastError: unknown;
+            for (const [index, candidate] of ordered.entries()) {
+                try {
+                    const gatewayContext =
+                        await communityEndpointGatewayContext(
+                            candidate,
+                            c.var.model.definition,
+                            requestData,
+                            c.env.BETTER_AUTH_SECRET,
+                            c.env.PORTKEY_GATEWAY_URL,
+                            c.var.auth?.apiKey?.rawKey || "",
+                        );
+                    completion = await generateTextPortkey(
+                        requestData.messages,
+                        gatewayContext,
+                    );
+                    c.var.model.communityEndpoint = candidate;
+                    lastError = undefined;
+                    break;
+                } catch (error) {
+                    lastError = error;
+                    if (
+                        !isRetryableCommunityError(error) ||
+                        index === ordered.length - 1
+                    ) {
+                        throw error;
+                    }
+                }
+            }
+            if (!completion) {
+                throw lastError ?? new Error("Community model pool is empty");
+            }
+        } else {
+            completion = await generateTextPortkey(
+                requestData.messages,
+                withGatewayContext(c, requestData),
+            );
+        }
         c.set("upstreamRequestUrl", completion.upstreamRequestUrl);
         completion.id = completion.id || generatePollinationsId();
 

@@ -37,6 +37,7 @@ export type GenerationModelEntry = {
     definition: ModelDefinition;
     info: ModelInfo;
     communityEndpoint?: CommunityEndpointRuntime;
+    communityPool?: CommunityEndpointRuntime[];
     visible: boolean;
 };
 
@@ -110,6 +111,7 @@ function communityEntryToGenerationEntry(
         definition: entry.definition,
         info: entry.info,
         communityEndpoint: entry.communityEndpoint,
+        communityPool: entry.communityPool,
         // Public endpoints appear for everyone. Private endpoints are added
         // back for their owner by visibleEntries().
         visible:

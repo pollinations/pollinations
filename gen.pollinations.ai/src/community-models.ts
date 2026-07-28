@@ -1,4 +1,5 @@
 import {
+    COMMUNITY_ENDPOINT_PRICE_FIELDS,
     type CommunityEndpointRuntime,
     communityEndpointPrices,
     communityModelDefinition,
@@ -40,7 +41,30 @@ export type CommunityModelRegistryEntry = {
     info: ModelInfo;
     definition: ModelDefinition;
     communityEndpoint: CommunityEndpointRuntime;
+    communityPool?: CommunityEndpointRuntime[];
 };
+
+const poolCounters = new Map<string, number>();
+
+function communityPoolKey(endpoint: CommunityEndpointRuntime): string {
+    return JSON.stringify([
+        endpoint.name,
+        endpoint.modality,
+        endpoint.imagePricing,
+        endpoint.supportsImageEdits,
+        ...COMMUNITY_ENDPOINT_PRICE_FIELDS.map((field) => endpoint[field.key]),
+    ]);
+}
+
+export function nextCommunityPoolOrder(
+    members: CommunityEndpointRuntime[],
+): CommunityEndpointRuntime[] {
+    if (members.length < 2) return members;
+    const key = members.map((member) => member.modelId).join("\n");
+    const start = (poolCounters.get(key) ?? 0) % members.length;
+    poolCounters.set(key, start + 1);
+    return [...members.slice(start), ...members.slice(0, start)];
+}
 
 export async function getCommunityModelRegistryEntries(
     dbBinding: CloudflareBindings["DB"] | undefined,
@@ -84,7 +108,7 @@ export async function getCommunityModelRegistryEntries(
         )
         .where(isNotNull(schema.user.githubUsername));
 
-    return rows.flatMap((row): CommunityModelRegistryEntry[] => {
+    const entries = rows.flatMap((row): CommunityModelRegistryEntry[] => {
         if (!row.ownerGithubUsername) return [];
         const modelId = communityModelId(row.ownerGithubUsername, row.name);
         const communityEndpoint: CommunityEndpointRuntime = {
@@ -120,4 +144,32 @@ export async function getCommunityModelRegistryEntries(
             },
         ];
     });
+
+    const pools = new Map<string, CommunityEndpointRuntime[]>();
+    for (const { communityEndpoint } of entries) {
+        if (
+            communityEndpoint.visibility !== "public" ||
+            communityEndpoint.disabledAt !== null
+        ) {
+            continue;
+        }
+        const key = communityPoolKey(communityEndpoint);
+        const members = pools.get(key) ?? [];
+        members.push(communityEndpoint);
+        pools.set(key, members);
+    }
+    for (const members of pools.values()) {
+        members.sort((a, b) => a.modelId.localeCompare(b.modelId));
+    }
+    for (const entry of entries) {
+        if (
+            entry.communityEndpoint.visibility !== "public" ||
+            entry.communityEndpoint.disabledAt !== null
+        ) {
+            continue;
+        }
+        const members = pools.get(communityPoolKey(entry.communityEndpoint));
+        if (members && members.length >= 2) entry.communityPool = members;
+    }
+    return entries;
 }

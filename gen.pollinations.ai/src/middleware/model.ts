@@ -28,6 +28,7 @@ export type ModelVariables = {
         /** Static registry definition, or a dynamic definition resolved from D1. */
         definition: ModelDefinition;
         communityEndpoint?: CommunityEndpointRuntime;
+        communityPool?: CommunityEndpointRuntime[];
     };
     formData?: FormData;
 };
@@ -107,6 +108,7 @@ export async function resolveModelDefinition(
         ...(entry.communityEndpoint && {
             communityEndpoint: entry.communityEndpoint,
         }),
+        ...(entry.communityPool && { communityPool: entry.communityPool }),
     };
 }
 

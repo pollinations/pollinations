@@ -4,6 +4,7 @@ import { DEFAULT_IMAGE_MODEL } from "@shared/registry/image.ts";
 import type { Context } from "hono";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
 import type { Env } from "@/env.ts";
+import { nextCommunityPoolOrder } from "../community-models.ts";
 import {
     getRegisteredServers,
     isValidType,
@@ -415,21 +416,40 @@ export async function generateImageOrVideoResponse(
     try {
         const communityEndpoint = c.var.model.communityEndpoint;
         if (communityEndpoint) {
-            const result = await callCommunityImageEndpoint(
-                communityEndpoint,
-                originalPrompt,
-                safeParams,
-                c.env.BETTER_AUTH_SECRET,
-            );
-            assertNonEmptyMedia(result.buffer, "Community image endpoint");
-            return new Response(bufferToUint8Array(result.buffer), {
-                headers: mediaHeaders(
-                    originalPrompt,
-                    safeParams,
-                    result,
-                    detectMimeType(result.buffer),
-                ),
-            });
+            const candidates = c.var.model.communityPool
+                ? nextCommunityPoolOrder(c.var.model.communityPool)
+                : [communityEndpoint];
+            for (const [index, candidate] of candidates.entries()) {
+                try {
+                    const result = await callCommunityImageEndpoint(
+                        candidate,
+                        originalPrompt,
+                        safeParams,
+                        c.env.BETTER_AUTH_SECRET,
+                    );
+                    c.var.model.communityEndpoint = candidate;
+                    assertNonEmptyMedia(
+                        result.buffer,
+                        "Community image endpoint",
+                    );
+                    return new Response(bufferToUint8Array(result.buffer), {
+                        headers: mediaHeaders(
+                            originalPrompt,
+                            safeParams,
+                            result,
+                            detectMimeType(result.buffer),
+                        ),
+                    });
+                } catch (error) {
+                    if (
+                        !(error instanceof HttpError) ||
+                        error.status < 500 ||
+                        index === candidates.length - 1
+                    ) {
+                        throw error;
+                    }
+                }
+            }
         }
 
         if (isVideoModel(safeParams.model)) {

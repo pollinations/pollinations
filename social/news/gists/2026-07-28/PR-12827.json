@@ -1,0 +1,36 @@
+{
+  "pr_number": 12827,
+  "title": "Add Vtrace to image",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/12827",
+  "merged_at": "2026-07-28T15:44:21Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds [Vtrace](https://vtrace-two.vercel.app) to image\n- raster image to vector SVG\n\nFixes #12734",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Pixels, meet paths",
+    "blurb": "Vtrace has landed in the garden: feed it a raster image and it grows you a tidy SVG. Some pixels have decided they would rather be geometry.",
+    "summary": "Added Vtrace to the Pollinations app directory, giving users a raster-image-to-vector-SVG conversion tool.",
+    "impact": "People can now turn bitmap artwork into scalable SVG paths through Vtrace, making pixel-bound images easier to reuse at any size.",
+    "keywords": [
+      "community",
+      "vtrace",
+      "svg",
+      "vectorization",
+      "image tools",
+      "apps"
+    ],
+    "visual_concept": "Depict Vtrace as a cozy retro art workstation where a small raster pixel flower enters a CRT scanner and emerges as a clean looping SVG vine. Polli, wearing a tiny artist beret, carefully guides the transformation while the monitor robot admires the newly traced paths; include a few real pixel flowers and code-plants to connect the tool to the Pollinations garden.",
+    "image_prompt": "A cozy pixel art garden workshop where the cute bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks, a small happy smile, and small rounded light blue translucent wings wears a tiny painter's beret and guides a pixel flower through a glowing CRT tracing machine; on the other side it becomes a clean curling SVG vine while a cute monitor-head robot watches with delighted square eyes. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel cream-lavender gradient background, code-plants and small flowers, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, subtle pixel-font text: \"RASTER → SVG\", nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-28/PR-12827.jpg",
+    "prompt": "A cozy pixel art garden workshop where the cute bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks, a small happy smile, and small rounded light blue translucent wings wears a tiny painter's beret and guides a pixel flower through a glowing CRT tracing machine; on the other side it becomes a clean curling SVG vine while a cute monitor-head robot watches with delighted square eyes. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel cream-lavender gradient background, code-plants and small flowers, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, subtle pixel-font text: \"RASTER → SVG\", nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-07-28T15:45:25.011564+00:00",
+  "app_name": "Vtrace",
+  "app_url": "https://vtrace-two.vercel.app"
+}

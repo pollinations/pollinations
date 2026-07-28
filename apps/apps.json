@@ -35,6 +35,13 @@
         "title": "AI Dungeon Master",
         "description": "Play tabletop RPGs with an AI-powered dungeon master"
     },
+    "forehead-detective": {
+        "subdomain": "forehead-detective",
+        "buildCommand": null,
+        "outputDir": ".",
+        "title": "Forehead Detective",
+        "description": "AI models play a yes/no character guessing game with Pollinations"
+    },
     "sirius-cybernetics-elevator-challenge": {
         "subdomain": "sirius-cybernetics-elevator-challenge",
         "buildCommand": "npm run build",

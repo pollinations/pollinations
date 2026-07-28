@@ -1,0 +1,1867 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="A Pollinations-powered AI guessing game with a detective model and judge model.">
+    <meta property="og:title" content="Forehead Detective | pollinations.ai">
+    <meta property="og:description" content="Watch AI models play a yes/no character guessing game using your Pollinations key.">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://forehead-detective.pollinations.ai">
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='10' fill='%2326566b'/%3E%3Crect x='12' y='10' width='40' height='28' rx='3' fill='%23fff7cf' transform='rotate(-5 32 24)'/%3E%3Ccircle cx='32' cy='42' r='13' fill='%23f1b37e'/%3E%3C/svg%3E">
+    <title>Forehead Detective | pollinations.ai</title>
+    <style>
+        :root {
+            --ink: #17212b;
+            --muted: #5b6675;
+            --line: #c9d3dc;
+            --paper: #fff7cf;
+            --paper-deep: #f5d869;
+            --table: #26566b;
+            --table-dark: #143848;
+            --coral: #e86f51;
+            --green: #1f9b71;
+            --blue: #2468b5;
+            --bg: #f2f5f0;
+            --panel: #ffffff;
+            --shadow: 0 18px 48px rgba(23, 33, 43, 0.15);
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            color: var(--ink);
+            font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            background:
+                linear-gradient(90deg, rgba(38, 86, 107, 0.08) 1px, transparent 1px),
+                linear-gradient(0deg, rgba(232, 111, 81, 0.07) 1px, transparent 1px),
+                var(--bg);
+            background-size: 34px 34px;
+        }
+
+        button,
+        input,
+        select {
+            font: inherit;
+        }
+
+        button {
+            min-height: 42px;
+            border: 0;
+            border-radius: 8px;
+            color: #fff;
+            background: var(--ink);
+            cursor: pointer;
+            font-weight: 750;
+            transition: transform 0.16s ease, box-shadow 0.16s ease, opacity 0.16s ease;
+        }
+
+        button:hover:not(:disabled) {
+            transform: translateY(-1px);
+            box-shadow: 0 8px 18px rgba(23, 33, 43, 0.18);
+        }
+
+        button:disabled {
+            cursor: not-allowed;
+            opacity: 0.48;
+        }
+
+        a {
+            color: inherit;
+        }
+
+        .app-shell {
+            width: min(1440px, 100%);
+            margin: 0 auto;
+            padding: 18px;
+        }
+
+        .topbar {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) auto;
+            gap: 16px;
+            align-items: end;
+            min-height: 88px;
+            margin-bottom: 16px;
+        }
+
+        .brand h1 {
+            margin: 0;
+            font-size: clamp(2rem, 4vw, 4rem);
+            line-height: 0.92;
+            letter-spacing: 0;
+        }
+
+        .brand p {
+            max-width: 620px;
+            margin: 10px 0 0;
+            color: var(--muted);
+            font-size: 1rem;
+        }
+
+        .status-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            min-height: 38px;
+            padding: 0 12px;
+            border: 1px solid var(--line);
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.86);
+            color: var(--muted);
+            font-weight: 700;
+            white-space: nowrap;
+        }
+
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: var(--coral);
+        }
+
+        .status-pill.connected .status-dot {
+            background: var(--green);
+        }
+
+        .layout {
+            display: grid;
+            grid-template-columns: minmax(250px, 320px) minmax(0, 1fr) minmax(230px, 290px);
+            gap: 16px;
+            align-items: start;
+        }
+
+        .panel {
+            border: 1px solid var(--line);
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.94);
+            box-shadow: var(--shadow);
+        }
+
+        .controls,
+        .scoreboard {
+            padding: 16px;
+        }
+
+        .panel-title {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            margin-bottom: 14px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid var(--line);
+        }
+
+        .panel-title h2,
+        .stage-title h2 {
+            margin: 0;
+            font-size: 1rem;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+        }
+
+        .field {
+            display: grid;
+            gap: 7px;
+            margin-bottom: 14px;
+        }
+
+        label {
+            color: var(--muted);
+            font-size: 0.78rem;
+            font-weight: 800;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+        }
+
+        input,
+        select {
+            width: 100%;
+            min-height: 42px;
+            border: 1px solid var(--line);
+            border-radius: 8px;
+            background: #fff;
+            color: var(--ink);
+            padding: 0 11px;
+        }
+
+        .button-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+
+        .button-row.single {
+            grid-template-columns: 1fr;
+        }
+
+        .secondary {
+            color: var(--ink);
+            background: #edf2f4;
+        }
+
+        .accent {
+            background: var(--coral);
+        }
+
+        .green {
+            background: var(--green);
+        }
+
+        .blue {
+            background: var(--blue);
+        }
+
+        .microcopy {
+            margin: 8px 0 0;
+            color: var(--muted);
+            font-size: 0.82rem;
+            line-height: 1.35;
+        }
+
+        .stage {
+            overflow: hidden;
+        }
+
+        .stage-title {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 14px;
+            padding: 16px 16px 0;
+        }
+
+        .round-chip {
+            min-width: 92px;
+            padding: 8px 10px;
+            border: 1px solid var(--line);
+            border-radius: 999px;
+            color: var(--muted);
+            background: #fff;
+            text-align: center;
+            font-size: 0.85rem;
+            font-weight: 800;
+        }
+
+        .game-table {
+            position: relative;
+            display: grid;
+            grid-template-columns: minmax(96px, 1fr) minmax(180px, 240px) minmax(96px, 1fr);
+            gap: 12px;
+            align-items: end;
+            min-height: 310px;
+            margin: 16px;
+            padding: 16px;
+            border-radius: 8px;
+            background:
+                linear-gradient(180deg, rgba(255, 255, 255, 0.74), rgba(255, 255, 255, 0.08) 38%),
+                linear-gradient(180deg, var(--table), var(--table-dark));
+            color: #fff;
+        }
+
+        .agent {
+            display: grid;
+            justify-items: center;
+            gap: 10px;
+            min-width: 0;
+        }
+
+        .head {
+            position: relative;
+            width: min(140px, 100%);
+            aspect-ratio: 1 / 1.08;
+        }
+
+        .face {
+            position: absolute;
+            inset: 30% 18% 5%;
+            border-radius: 48% 48% 40% 40%;
+            background: #f1b37e;
+            border: 4px solid rgba(23, 33, 43, 0.22);
+        }
+
+        .hair {
+            position: absolute;
+            inset: 20% 12% 38%;
+            border-radius: 44% 44% 22% 22%;
+            background: #263447;
+        }
+
+        .shoulders {
+            position: absolute;
+            left: 5%;
+            right: 5%;
+            bottom: 0;
+            height: 30%;
+            border-radius: 48% 48% 8px 8px;
+            background: #f2f5f0;
+        }
+
+        .agent.judge .hair {
+            background: #8d3f30;
+        }
+
+        .paper-slip {
+            position: absolute;
+            left: 50%;
+            top: 5%;
+            width: 92%;
+            min-height: 58px;
+            transform: translateX(-50%) rotate(-3deg);
+            display: grid;
+            place-items: center;
+            padding: 9px;
+            border: 2px solid rgba(23, 33, 43, 0.16);
+            border-radius: 4px;
+            background: var(--paper);
+            color: var(--ink);
+            box-shadow: 0 8px 0 rgba(0, 0, 0, 0.08);
+            text-align: center;
+            font-weight: 900;
+        }
+
+        .paper-slip.blind {
+            background:
+                repeating-linear-gradient(135deg, rgba(23, 33, 43, 0.1) 0 6px, transparent 6px 12px),
+                var(--paper);
+            color: transparent;
+            text-shadow: 0 0 10px rgba(23, 33, 43, 0.55);
+        }
+
+        .agent-name {
+            width: 100%;
+            min-height: 72px;
+            padding: 12px;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.13);
+            text-align: center;
+        }
+
+        .agent-name strong {
+            display: block;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .agent-name span {
+            display: block;
+            margin-top: 4px;
+            color: rgba(255, 255, 255, 0.74);
+            font-size: 0.85rem;
+        }
+
+        .secret-board {
+            align-self: stretch;
+            display: grid;
+            align-content: center;
+            justify-items: center;
+            gap: 12px;
+            min-height: 240px;
+            padding: 14px;
+            border: 1px solid rgba(255, 255, 255, 0.26);
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.12);
+            text-align: center;
+        }
+
+        .secret-label {
+            color: rgba(255, 255, 255, 0.74);
+            font-size: 0.76rem;
+            font-weight: 850;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+        }
+
+        .secret-card {
+            width: min(210px, 100%);
+            min-height: 112px;
+            display: grid;
+            place-items: center;
+            padding: 16px;
+            border-radius: 5px;
+            background: var(--paper);
+            color: var(--ink);
+            box-shadow: 0 12px 0 rgba(0, 0, 0, 0.12);
+            transform: rotate(2deg);
+        }
+
+        .secret-card strong {
+            font-size: clamp(1.4rem, 4vw, 2rem);
+            line-height: 1.03;
+        }
+
+        .fact-cloud {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 6px;
+        }
+
+        .fact-chip {
+            max-width: 150px;
+            padding: 5px 8px;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.16);
+            color: rgba(255, 255, 255, 0.88);
+            font-size: 0.74rem;
+            font-weight: 750;
+        }
+
+        .match-actions {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 8px;
+            padding: 0 16px 16px;
+        }
+
+        .error-box {
+            display: none;
+            margin: 0 16px 16px;
+            padding: 12px;
+            border: 1px solid rgba(232, 111, 81, 0.4);
+            border-radius: 8px;
+            background: rgba(232, 111, 81, 0.1);
+            color: #8a2d1d;
+            font-weight: 700;
+        }
+
+        .error-box.visible {
+            display: block;
+        }
+
+        .transcript {
+            display: grid;
+            gap: 10px;
+            max-height: 390px;
+            overflow: auto;
+            padding: 16px;
+            border-top: 1px solid var(--line);
+            background: #fbfcfd;
+        }
+
+        .turn {
+            display: grid;
+            grid-template-columns: 40px minmax(0, 1fr) auto;
+            gap: 10px;
+            align-items: start;
+            padding: 12px;
+            border: 1px solid var(--line);
+            border-left: 5px solid var(--blue);
+            border-radius: 8px;
+            background: #fff;
+        }
+
+        .turn.positive {
+            border-left-color: var(--green);
+        }
+
+        .turn.negative {
+            border-left-color: var(--coral);
+        }
+
+        .turn.neutral {
+            border-left-color: var(--paper-deep);
+        }
+
+        .turn-index {
+            display: grid;
+            place-items: center;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: #edf2f4;
+            color: var(--muted);
+            font-weight: 900;
+        }
+
+        .turn-main {
+            min-width: 0;
+        }
+
+        .turn-main strong {
+            display: block;
+            margin-bottom: 4px;
+        }
+
+        .turn-main p {
+            margin: 0;
+            color: var(--muted);
+            line-height: 1.42;
+        }
+
+        .answer-badge {
+            min-width: 74px;
+            padding: 7px 9px;
+            border-radius: 999px;
+            background: #edf2f4;
+            color: var(--ink);
+            text-align: center;
+            font-size: 0.78rem;
+            font-weight: 900;
+            text-transform: uppercase;
+        }
+
+        .turn.positive .answer-badge {
+            background: rgba(31, 155, 113, 0.12);
+            color: #126246;
+        }
+
+        .turn.negative .answer-badge {
+            background: rgba(232, 111, 81, 0.12);
+            color: #8a2d1d;
+        }
+
+        .empty-state {
+            display: grid;
+            min-height: 140px;
+            place-items: center;
+            border: 1px dashed var(--line);
+            border-radius: 8px;
+            color: var(--muted);
+            background: #fff;
+            text-align: center;
+            font-weight: 750;
+        }
+
+        .score-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin-bottom: 14px;
+        }
+
+        .metric {
+            min-height: 76px;
+            padding: 10px;
+            border: 1px solid var(--line);
+            border-radius: 8px;
+            background: #fbfcfd;
+        }
+
+        .metric span {
+            display: block;
+            color: var(--muted);
+            font-size: 0.72rem;
+            font-weight: 850;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+        }
+
+        .metric strong {
+            display: block;
+            margin-top: 6px;
+            font-size: 1.45rem;
+        }
+
+        .score-meter {
+            width: 100%;
+            height: 12px;
+            overflow: hidden;
+            border-radius: 999px;
+            background: #edf2f4;
+        }
+
+        .score-meter div {
+            width: 0%;
+            height: 100%;
+            border-radius: inherit;
+            background: linear-gradient(90deg, var(--coral), var(--paper-deep), var(--green));
+            transition: width 0.25s ease;
+        }
+
+        .round-list {
+            display: grid;
+            gap: 8px;
+            margin-top: 14px;
+        }
+
+        .round-row {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) auto;
+            gap: 8px;
+            align-items: center;
+            padding: 10px;
+            border: 1px solid var(--line);
+            border-radius: 8px;
+            background: #fff;
+        }
+
+        .round-card {
+            border: 1px solid var(--line);
+            border-radius: 8px;
+            background: #fff;
+            overflow: hidden;
+        }
+
+        .round-card .round-row {
+            border: 0;
+            border-radius: 0;
+            background: transparent;
+        }
+
+        .round-row strong {
+            display: block;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .round-row span {
+            color: var(--muted);
+            font-size: 0.82rem;
+        }
+
+        .round-history {
+            display: grid;
+            gap: 6px;
+            padding: 0 10px 10px;
+        }
+
+        .round-history-item {
+            display: grid;
+            grid-template-columns: 28px minmax(0, 1fr) auto;
+            gap: 8px;
+            align-items: start;
+            padding: 8px;
+            border-radius: 8px;
+            background: #fbfcfd;
+            color: var(--muted);
+            font-size: 0.78rem;
+            line-height: 1.35;
+        }
+
+        .history-index {
+            display: grid;
+            place-items: center;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: #edf2f4;
+            color: var(--muted);
+            font-weight: 900;
+        }
+
+        .history-answer {
+            min-width: 42px;
+            padding: 4px 6px;
+            border-radius: 999px;
+            background: #edf2f4;
+            color: var(--ink);
+            text-align: center;
+            font-size: 0.68rem;
+            font-weight: 900;
+            text-transform: uppercase;
+        }
+
+        .history-answer.positive {
+            background: rgba(31, 155, 113, 0.12);
+            color: #126246;
+        }
+
+        .history-answer.negative {
+            background: rgba(232, 111, 81, 0.12);
+            color: #8a2d1d;
+        }
+
+        .score-tag {
+            min-width: 48px;
+            padding: 6px 8px;
+            border-radius: 999px;
+            background: rgba(36, 104, 181, 0.12);
+            color: #174d87;
+            text-align: center;
+            font-weight: 900;
+        }
+
+        .footer-note {
+            margin-top: 14px;
+            color: var(--muted);
+            font-size: 0.82rem;
+            line-height: 1.4;
+        }
+
+        @media (max-width: 1100px) {
+            .layout {
+                grid-template-columns: minmax(240px, 300px) minmax(0, 1fr);
+            }
+
+            .scoreboard {
+                grid-column: 1 / -1;
+            }
+        }
+
+        @media (max-width: 760px) {
+            .app-shell {
+                padding: 12px;
+            }
+
+            .topbar,
+            .layout,
+            .game-table,
+            .match-actions {
+                grid-template-columns: 1fr;
+            }
+
+            .topbar {
+                align-items: start;
+            }
+
+            .status-pill {
+                width: fit-content;
+            }
+
+            .game-table {
+                min-height: 0;
+            }
+
+            .secret-board {
+                order: -1;
+            }
+
+            .match-actions {
+                padding-bottom: 12px;
+            }
+
+            .turn {
+                grid-template-columns: 34px minmax(0, 1fr);
+            }
+
+            .answer-badge {
+                grid-column: 2;
+                width: fit-content;
+            }
+        }
+    </style>
+</head>
+<body>
+    <main class="app-shell">
+        <header class="topbar">
+            <div class="brand">
+                <h1>Forehead Detective</h1>
+                <p>AI asks yes/no questions. The judge knows the paper slip. Fewer questions means a higher score.</p>
+            </div>
+            <div id="connectionStatus" class="status-pill">
+                <span class="status-dot" aria-hidden="true"></span>
+                <span id="connectionText">Not connected</span>
+            </div>
+        </header>
+
+        <section class="layout">
+            <aside class="panel controls">
+                <div class="panel-title">
+                    <h2>Setup</h2>
+                    <button id="refreshModelsButton" class="secondary" type="button">Refresh</button>
+                </div>
+
+                <div class="field">
+                    <label for="apiKeyInput">Pollinations key</label>
+                    <input id="apiKeyInput" type="password" autocomplete="off" placeholder="sk_... or pk_...">
+                    <div class="button-row">
+                        <button id="saveKeyButton" class="blue" type="button">Use Key</button>
+                        <button id="connectButton" type="button">Connect</button>
+                    </div>
+                    <p class="microcopy"><a href="https://enter.pollinations.ai" target="_blank" rel="noopener">Manage keys</a> or authorize this session with BYOP.</p>
+                </div>
+
+                <div class="field">
+                    <label for="guesserModel">Detective model</label>
+                    <select id="guesserModel"></select>
+                </div>
+
+                <div class="field">
+                    <label for="judgeModel">Judge model</label>
+                    <select id="judgeModel"></select>
+                </div>
+
+                <div class="field">
+                    <label for="roundCount">Rounds</label>
+                    <select id="roundCount">
+                        <option value="1">1 round</option>
+                        <option value="3" selected>3 rounds</option>
+                        <option value="5">5 rounds</option>
+                    </select>
+                </div>
+
+                <div class="field">
+                    <label for="maxQuestions">Question limit</label>
+                    <select id="maxQuestions">
+                        <option value="6">6 questions</option>
+                        <option value="8">8 questions</option>
+                        <option value="10" selected>10 questions</option>
+                        <option value="12">12 questions</option>
+                    </select>
+                </div>
+
+                <div class="button-row single">
+                    <button id="clearKeyButton" class="secondary" type="button">Disconnect</button>
+                </div>
+            </aside>
+
+            <section class="panel stage" aria-live="polite">
+                <div class="stage-title">
+                    <h2 id="matchTitle">Table</h2>
+                    <div id="roundChip" class="round-chip">Round 0/3</div>
+                </div>
+
+                <div class="game-table">
+                    <div class="agent detective">
+                        <div class="head" aria-hidden="true">
+                            <div class="hair"></div>
+                            <div class="face"></div>
+                            <div class="shoulders"></div>
+                            <div class="paper-slip blind">Hidden</div>
+                        </div>
+                        <div class="agent-name">
+                            <strong id="detectiveModelLabel">Detective</strong>
+                            <span id="momentumLabel">Waiting at the table</span>
+                        </div>
+                    </div>
+
+                    <div class="secret-board">
+                        <div class="secret-label">Judge slip</div>
+                        <div class="secret-card">
+                            <strong id="secretName">Start a match</strong>
+                        </div>
+                        <div id="factCloud" class="fact-cloud"></div>
+                    </div>
+
+                    <div class="agent judge">
+                        <div class="head" aria-hidden="true">
+                            <div class="hair"></div>
+                            <div class="face"></div>
+                            <div class="shoulders"></div>
+                            <div class="paper-slip">Judge</div>
+                        </div>
+                        <div class="agent-name">
+                            <strong id="judgeModelLabel">Judge</strong>
+                            <span>Answers the paper slip</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="match-actions">
+                    <button id="startButton" class="green" type="button">Start Match</button>
+                    <button id="nextButton" class="blue" type="button" disabled>Ask Next</button>
+                    <button id="autoButton" class="accent" type="button" disabled>Auto Play</button>
+                    <button id="resetButton" class="secondary" type="button">Reset</button>
+                </div>
+
+                <div id="errorBox" class="error-box"></div>
+
+                <div id="transcript" class="transcript">
+                    <div class="empty-state">Connect a key, pick models, and start a match.</div>
+                </div>
+            </section>
+
+            <aside class="panel scoreboard">
+                <div class="panel-title">
+                    <h2>Score</h2>
+                    <span id="scoreState" class="score-tag">0</span>
+                </div>
+
+                <div class="score-grid">
+                    <div class="metric">
+                        <span>Total</span>
+                        <strong id="totalScore">0</strong>
+                    </div>
+                    <div class="metric">
+                        <span>Questions</span>
+                        <strong id="questionCount">0</strong>
+                    </div>
+                    <div class="metric">
+                        <span>Current</span>
+                        <strong id="currentScore">0</strong>
+                    </div>
+                    <div class="metric">
+                        <span>Best</span>
+                        <strong id="bestScore">0</strong>
+                    </div>
+                </div>
+
+                <div class="score-meter" aria-hidden="true">
+                    <div id="scoreMeter"></div>
+                </div>
+
+                <div id="roundList" class="round-list">
+                    <div class="empty-state">No rounds yet.</div>
+                </div>
+
+                <p class="footer-note">Powered by <a href="https://pollinations.ai" target="_blank" rel="noopener">Pollinations</a>. Your key is stored in this browser session only.</p>
+            </aside>
+        </section>
+    </main>
+
+    <script>
+        const APP_KEY = "";
+        const ENTER_URL = "https://enter.pollinations.ai";
+        const GEN_URL = "https://gen.pollinations.ai";
+        const KEY_STORAGE = "forehead_detective_api_key";
+        const STATE_STORAGE = "forehead_detective_auth_state";
+        const CONFIG_STORAGE = "forehead_detective_config";
+        const FALLBACK_MODELS = [
+            "openai-fast",
+            "openai",
+            "gemini-fast",
+            "mistral",
+            "deepseek",
+            "qwen-coder",
+        ];
+
+        const CHARACTERS = [
+            {
+                name: "Ada Lovelace",
+                aliases: ["ada", "ada lovelace", "lovelace"],
+                facts: ["person", "historical", "computing", "mathematics", "british", "19th century"],
+            },
+            {
+                name: "Dracula",
+                aliases: ["dracula", "count dracula"],
+                facts: ["fictional", "creature", "vampire", "night", "novel", "transylvania"],
+            },
+            {
+                name: "Sherlock Holmes",
+                aliases: ["sherlock", "sherlock holmes", "holmes"],
+                facts: ["fictional", "person", "detective", "london", "deduction", "violin"],
+            },
+            {
+                name: "Zeus",
+                aliases: ["zeus"],
+                facts: ["mythological", "deity", "greek", "thunder", "sky", "olympus"],
+            },
+            {
+                name: "A Black Hole",
+                aliases: ["black hole", "a black hole"],
+                facts: ["space", "object", "gravity", "invisible", "massive", "cosmic"],
+            },
+            {
+                name: "The Moon",
+                aliases: ["moon", "the moon", "luna"],
+                facts: ["space", "natural", "satellite", "night sky", "tides", "round"],
+            },
+            {
+                name: "A Thunderstorm",
+                aliases: ["thunderstorm", "storm", "a thunderstorm"],
+                facts: ["weather", "natural", "loud", "lightning", "rain", "temporary"],
+            },
+            {
+                name: "The Internet",
+                aliases: ["internet", "the internet", "web", "world wide web"],
+                facts: ["technology", "network", "digital", "communication", "global", "modern"],
+            },
+            {
+                name: "A Rubber Duck",
+                aliases: ["rubber duck", "a rubber duck", "duck toy"],
+                facts: ["object", "toy", "yellow", "bath", "small", "floating"],
+            },
+            {
+                name: "A Library Card",
+                aliases: ["library card", "a library card"],
+                facts: ["object", "paper or plastic", "books", "borrowing", "public service", "wallet"],
+            },
+            {
+                name: "A Missing Sock",
+                aliases: ["missing sock", "a missing sock", "lost sock"],
+                facts: ["object", "clothing", "lost", "laundry", "small", "ordinary"],
+            },
+            {
+                name: "A Mirror",
+                aliases: ["mirror", "a mirror"],
+                facts: ["object", "reflective", "glass", "image", "bathroom", "flat"],
+            },
+            {
+                name: "A Cup of Coffee",
+                aliases: ["coffee", "cup of coffee", "a cup of coffee"],
+                facts: ["drink", "hot", "caffeine", "morning", "brown", "bitter"],
+            },
+            {
+                name: "A Houseplant",
+                aliases: ["houseplant", "plant", "a houseplant", "potted plant"],
+                facts: ["living thing", "plant", "indoor", "green", "needs water", "decorative"],
+            },
+            {
+                name: "A Volcano",
+                aliases: ["volcano", "a volcano"],
+                facts: ["landform", "natural", "lava", "eruption", "mountain", "hot"],
+            },
+            {
+                name: "A Lighthouse",
+                aliases: ["lighthouse", "a lighthouse"],
+                facts: ["building", "coast", "light", "navigation", "sea", "tall"],
+            },
+            {
+                name: "A Time Machine",
+                aliases: ["time machine", "a time machine"],
+                facts: ["fictional", "machine", "time travel", "technology", "impossible", "vehicle"],
+            },
+            {
+                name: "The Color Blue",
+                aliases: ["blue", "the color blue", "color blue"],
+                facts: ["abstract", "color", "visual", "sky", "ocean", "not physical"],
+            },
+            {
+                name: "Gravity",
+                aliases: ["gravity"],
+                facts: ["force", "natural law", "invisible", "pulls", "physics", "universal"],
+            },
+            {
+                name: "Silence",
+                aliases: ["silence", "quiet"],
+                facts: ["abstract", "absence", "sound", "calm", "invisible", "experience"],
+            },
+            {
+                name: "A Rumor",
+                aliases: ["rumor", "rumour", "a rumor", "a rumour"],
+                facts: ["abstract", "information", "social", "unverified", "spreads", "spoken"],
+            },
+            {
+                name: "A Dream",
+                aliases: ["dream", "a dream"],
+                facts: ["abstract", "sleep", "mind", "image", "unreal", "personal"],
+            },
+            {
+                name: "Monday Morning",
+                aliases: ["monday morning", "a monday morning"],
+                facts: ["time", "weekday", "routine", "morning", "work", "recurring"],
+            },
+            {
+                name: "Deja Vu",
+                aliases: ["deja vu", "déjà vu"],
+                facts: ["abstract", "feeling", "memory", "familiar", "strange", "brief"],
+            },
+            {
+                name: "Nostalgia",
+                aliases: ["nostalgia"],
+                facts: ["abstract", "emotion", "past", "memory", "bittersweet", "personal"],
+            },
+            {
+                name: "Chaos",
+                aliases: ["chaos"],
+                facts: ["abstract", "disorder", "unpredictable", "messy", "system", "concept"],
+            },
+            {
+                name: "A Secret",
+                aliases: ["secret", "a secret"],
+                facts: ["abstract", "hidden", "information", "private", "known by few", "can be revealed"],
+            },
+            {
+                name: "The Number Zero",
+                aliases: ["zero", "number zero", "the number zero", "0"],
+                facts: ["abstract", "number", "nothing", "math", "round symbol", "place value"],
+            },
+            {
+                name: "A Maze",
+                aliases: ["maze", "a maze", "labyrinth"],
+                facts: ["place", "puzzle", "paths", "confusing", "walls", "exit"],
+            },
+            {
+                name: "A Password",
+                aliases: ["password", "a password", "passcode"],
+                facts: ["information", "security", "secret", "digital", "access", "typed"],
+            },
+            {
+                name: "A Ghost Town",
+                aliases: ["ghost town", "a ghost town", "abandoned town"],
+                facts: ["place", "abandoned", "buildings", "quiet", "history", "empty"],
+            },
+            {
+                name: "The Last Page of a Book",
+                aliases: ["last page", "the last page", "last page of a book", "the last page of a book"],
+                facts: ["object", "book", "ending", "paper", "reading", "final"],
+            },
+            {
+                name: "An Unsent Letter",
+                aliases: ["unsent letter", "an unsent letter", "letter"],
+                facts: ["object", "message", "private", "written", "not delivered", "emotional"],
+            },
+            {
+                name: "A Traffic Jam",
+                aliases: ["traffic jam", "a traffic jam", "congestion"],
+                facts: ["event", "cars", "slow", "road", "frustrating", "temporary"],
+            },
+            {
+                name: "A Solar Eclipse",
+                aliases: ["solar eclipse", "an eclipse", "a solar eclipse"],
+                facts: ["event", "space", "sun", "moon", "shadow", "rare"],
+            },
+        ];
+
+        const state = {
+            apiKey: null,
+            modelIds: [...FALLBACK_MODELS],
+            results: [],
+            currentRound: null,
+            running: false,
+            autoplay: false,
+        };
+
+        const els = {};
+        const byId = (id) => document.getElementById(id);
+
+        document.addEventListener("DOMContentLoaded", () => {
+            [
+                "apiKeyInput",
+                "saveKeyButton",
+                "connectButton",
+                "clearKeyButton",
+                "refreshModelsButton",
+                "guesserModel",
+                "judgeModel",
+                "roundCount",
+                "maxQuestions",
+                "startButton",
+                "nextButton",
+                "autoButton",
+                "resetButton",
+                "connectionStatus",
+                "connectionText",
+                "matchTitle",
+                "roundChip",
+                "detectiveModelLabel",
+                "judgeModelLabel",
+                "momentumLabel",
+                "secretName",
+                "factCloud",
+                "errorBox",
+                "transcript",
+                "scoreState",
+                "totalScore",
+                "questionCount",
+                "currentScore",
+                "bestScore",
+                "scoreMeter",
+                "roundList",
+            ].forEach((id) => {
+                els[id] = byId(id);
+            });
+
+            consumeAuthCallback();
+            state.apiKey = sessionStorage.getItem(KEY_STORAGE);
+            wireEvents();
+            applySavedConfig();
+            populateModelSelects(FALLBACK_MODELS);
+            render();
+            loadModels();
+        });
+
+        function wireEvents() {
+            els.saveKeyButton.addEventListener("click", saveEnteredKey);
+            els.connectButton.addEventListener("click", startByopConnect);
+            els.clearKeyButton.addEventListener("click", clearKey);
+            els.refreshModelsButton.addEventListener("click", loadModels);
+            els.startButton.addEventListener("click", startMatch);
+            els.nextButton.addEventListener("click", handleNextClick);
+            els.autoButton.addEventListener("click", toggleAutoplay);
+            els.resetButton.addEventListener("click", resetMatch);
+            els.guesserModel.addEventListener("change", handleConfigChange);
+            els.judgeModel.addEventListener("change", handleConfigChange);
+            els.roundCount.addEventListener("change", handleConfigChange);
+            els.maxQuestions.addEventListener("change", handleConfigChange);
+            els.apiKeyInput.addEventListener("keydown", (event) => {
+                if (event.key === "Enter") saveEnteredKey();
+            });
+        }
+
+        function handleConfigChange() {
+            saveConfig();
+            render();
+        }
+
+        function consumeAuthCallback() {
+            const rawHash = window.location.hash.startsWith("#")
+                ? window.location.hash.slice(1)
+                : window.location.hash;
+            if (!rawHash) return;
+
+            const params = new URLSearchParams(rawHash.startsWith("?") ? rawHash.slice(1) : rawHash);
+            const apiKey = params.get("api_key");
+            const authError = params.get("error");
+            if (!apiKey && !authError) return;
+
+            window.history.replaceState({}, "", window.location.pathname + window.location.search);
+
+            if (authError) {
+                showError(`Pollinations authorization failed: ${authError}`);
+                return;
+            }
+
+            const expectedState = sessionStorage.getItem(STATE_STORAGE);
+            const receivedState = params.get("state");
+            if (expectedState && receivedState !== expectedState) {
+                showError("Authorization state did not match. Key was not saved.");
+                return;
+            }
+
+            sessionStorage.removeItem(STATE_STORAGE);
+            saveKey(apiKey);
+        }
+
+        function saveEnteredKey() {
+            const key = els.apiKeyInput.value.trim();
+            if (!isPlausibleKey(key)) {
+                showError("Enter a Pollinations key beginning with sk_, pk_, or plln_pk_.");
+                return;
+            }
+            saveKey(key);
+        }
+
+        function saveKey(key) {
+            state.apiKey = key;
+            sessionStorage.setItem(KEY_STORAGE, key);
+            els.apiKeyInput.value = "";
+            hideError();
+            loadModels();
+            render();
+        }
+
+        function clearKey() {
+            state.apiKey = null;
+            sessionStorage.removeItem(KEY_STORAGE);
+            sessionStorage.removeItem(STATE_STORAGE);
+            render();
+        }
+
+        function startByopConnect() {
+            if (window.location.protocol === "file:") {
+                showError(
+                    "BYOP Connect needs an http or https page. Paste a key here, or serve this folder locally and open the localhost URL.",
+                );
+                return;
+            }
+
+            const authState = randomId();
+            sessionStorage.setItem(STATE_STORAGE, authState);
+            const redirectUrl = window.location.href.split("#")[0];
+            const modelIds = unique([
+                els.guesserModel.value || FALLBACK_MODELS[0],
+                els.judgeModel.value || FALLBACK_MODELS[0],
+            ]);
+            const params = new URLSearchParams({
+                redirect_url: redirectUrl,
+                permissions: "usage",
+                state: authState,
+                models: modelIds.join(","),
+                budget: "5",
+                expiry: "7",
+            });
+            if (APP_KEY.startsWith("pk_")) params.set("app_key", APP_KEY);
+            window.location.href = `${ENTER_URL}/authorize?${params.toString()}`;
+        }
+
+        function isPlausibleKey(value) {
+            return /^(sk_|pk_|plln_pk_)[A-Za-z0-9_-]+/.test(value);
+        }
+
+        async function loadModels() {
+            els.refreshModelsButton.disabled = true;
+            els.refreshModelsButton.textContent = "Loading";
+            try {
+                const headers = state.apiKey ? { Authorization: `Bearer ${state.apiKey}` } : {};
+                const response = await fetch(`${GEN_URL}/v1/models`, { headers });
+                if (!response.ok) throw new Error(`Model list failed with HTTP ${response.status}`);
+                const data = await response.json();
+                const ids = (data.data || [])
+                    .filter((model) => {
+                        const endpoints = model.supported_endpoints || [];
+                        const outputs = model.output_modalities || [];
+                        return endpoints.includes("/v1/chat/completions") && outputs.includes("text");
+                    })
+                    .map((model) => model.id)
+                    .filter(Boolean);
+                state.modelIds = unique([...ids, ...FALLBACK_MODELS]);
+                populateModelSelects(state.modelIds);
+            } catch (error) {
+                state.modelIds = [...FALLBACK_MODELS];
+                populateModelSelects(state.modelIds);
+                showError(`${error.message}. Using fallback model choices.`);
+            } finally {
+                els.refreshModelsButton.disabled = false;
+                els.refreshModelsButton.textContent = "Refresh";
+                render();
+            }
+        }
+
+        function populateModelSelects(modelIds) {
+            const savedConfig = readSavedConfig();
+            const previousGuesser = els.guesserModel.value || "openai-fast";
+            const previousJudge = els.judgeModel.value || "openai-fast";
+            const options = modelIds
+                .map((id) => `<option value="${escapeHtml(id)}">${escapeHtml(id)}</option>`)
+                .join("");
+            els.guesserModel.innerHTML = options;
+            els.judgeModel.innerHTML = options;
+            const preferredGuesser = savedConfig.guesserModel || previousGuesser;
+            const preferredJudge = savedConfig.judgeModel || previousJudge;
+            els.guesserModel.value = modelIds.includes(preferredGuesser)
+                ? preferredGuesser
+                : modelIds.includes(previousGuesser)
+                    ? previousGuesser
+                    : modelIds[0];
+            els.judgeModel.value = modelIds.includes(preferredJudge)
+                ? preferredJudge
+                : modelIds.includes(previousJudge)
+                    ? previousJudge
+                    : modelIds[0];
+            renderModelLabels();
+        }
+
+        function applySavedConfig() {
+            const config = readSavedConfig();
+            setSelectValue(els.roundCount, config.roundCount);
+            setSelectValue(els.maxQuestions, config.maxQuestions);
+        }
+
+        function readSavedConfig() {
+            try {
+                return JSON.parse(localStorage.getItem(CONFIG_STORAGE) || "{}") || {};
+            } catch {
+                return {};
+            }
+        }
+
+        function saveConfig() {
+            try {
+                localStorage.setItem(
+                    CONFIG_STORAGE,
+                    JSON.stringify({
+                        guesserModel: els.guesserModel.value,
+                        judgeModel: els.judgeModel.value,
+                        roundCount: els.roundCount.value,
+                        maxQuestions: els.maxQuestions.value,
+                    }),
+                );
+            } catch {
+                // Ignore storage failures; gameplay should still work.
+            }
+        }
+
+        function setSelectValue(select, value) {
+            if (!value) return;
+            if ([...select.options].some((option) => option.value === value)) {
+                select.value = value;
+            }
+        }
+
+        function startMatch() {
+            if (!state.apiKey) {
+                showError("Connect or paste a Pollinations key before starting.");
+                return;
+            }
+            state.results = [];
+            state.autoplay = false;
+            startRound(1);
+        }
+
+        function resetMatch() {
+            state.autoplay = false;
+            state.running = false;
+            state.results = [];
+            state.currentRound = null;
+            hideError();
+            render();
+        }
+
+        function startRound(number) {
+            const usedNames = new Set(state.results.map((result) => result.character));
+            const candidates = CHARACTERS.filter((character) => !usedNames.has(character.name));
+            const character = randomChoice(candidates.length ? candidates : CHARACTERS);
+            state.currentRound = {
+                number,
+                character,
+                history: [],
+                questions: 0,
+                incorrectGuesses: 0,
+                maybeAnswers: 0,
+                score: 0,
+                status: "playing",
+                finished: false,
+            };
+            hideError();
+            render();
+        }
+
+        async function runSingleTurn() {
+            if (state.running || !state.currentRound || state.currentRound.finished) return;
+            if (!state.apiKey) {
+                showError("Connect or paste a Pollinations key before asking.");
+                return;
+            }
+
+            state.running = true;
+            hideError();
+            render();
+
+            try {
+                const move = await getDetectiveMove();
+                const normalizedMove = normalizeMove(move);
+                const judgement = await getJudgeAnswer(normalizedMove);
+                applyTurn(normalizedMove, judgement);
+            } catch (error) {
+                showError(error.message);
+            } finally {
+                state.running = false;
+                render();
+            }
+        }
+
+        function handleNextClick() {
+            const roundDone = Boolean(state.currentRound?.finished);
+            const targetReached = state.results.length >= Number(els.roundCount.value);
+            if (roundDone && !targetReached) {
+                startRound(state.results.length + 1);
+                return;
+            }
+            runSingleTurn();
+        }
+
+        async function toggleAutoplay() {
+            if (state.autoplay) {
+                state.autoplay = false;
+                render();
+                return;
+            }
+            state.autoplay = true;
+            render();
+
+            while (state.autoplay) {
+                if (!state.currentRound) startMatch();
+                if (!state.currentRound || state.currentRound.finished) {
+                    const nextRound = state.results.length + 1;
+                    if (nextRound > Number(els.roundCount.value)) break;
+                    startRound(nextRound);
+                    await wait(500);
+                }
+                await runSingleTurn();
+                if (state.currentRound?.finished) await wait(900);
+                else await wait(500);
+            }
+
+            state.autoplay = false;
+            render();
+        }
+
+        async function getDetectiveMove() {
+            const round = state.currentRound;
+            const questionsLeft = Number(els.maxQuestions.value) - round.questions;
+            const messages = [
+                {
+                    role: "system",
+                    content: [
+                        "You are the detective in a forehead guessing game.",
+                        "You cannot see your hidden paper slip.",
+                        "The slip may be a person, creature, object, place, event, natural phenomenon, or abstract idea.",
+                        "Ask exactly one yes/no question, or make a final guess when confident.",
+                        "Prefer questions that split the remaining candidates and minimize total turns.",
+                        "Return JSON only: {\"type\":\"question\",\"text\":\"...\"} or {\"type\":\"guess\",\"text\":\"Secret Slip Name\"}.",
+                    ].join(" "),
+                },
+                {
+                    role: "user",
+                    content: [
+                        `Candidate secret slips: ${CHARACTERS.map((character) => character.name).join(", ")}.`,
+                        `Question limit for this round: ${els.maxQuestions.value}. Questions left: ${questionsLeft}.`,
+                        `History:\n${formatHistory(round.history) || "No questions yet."}`,
+                    ].join("\n\n"),
+                },
+            ];
+            const text = await chatCompletion(els.guesserModel.value, messages);
+            return parseJson(text, { type: "question", text });
+        }
+
+        async function getJudgeAnswer(move) {
+            const round = state.currentRound;
+            const hidden = round.character;
+            const messages = [
+                {
+                    role: "system",
+                    content: [
+                        "You are the judge in a forehead guessing game.",
+                        "You know the hidden paper slip and must answer the detective.",
+                        "The hidden slip may be a person, creature, object, place, event, natural phenomenon, or abstract idea.",
+                        "For type question, answer only yes or no. If uncertain, choose the closest truthful answer.",
+                        "For type guess, answer correct or incorrect.",
+                        "Never explain and never reveal the hidden name unless the guess is correct.",
+                        "Return JSON only: {\"answer\":\"yes|no|correct|incorrect\"}.",
+                    ].join(" "),
+                },
+                {
+                    role: "user",
+                    content: JSON.stringify({
+                        hiddenCharacter: hidden,
+                        allowedCharacters: CHARACTERS.map((character) => character.name),
+                        detectiveMove: move,
+                    }),
+                },
+            ];
+            const text = await chatCompletion(els.judgeModel.value, messages);
+            const parsed = parseJson(text, { answer: text });
+            return normalizeJudgement(parsed, move);
+        }
+
+        async function chatCompletion(model, messages) {
+            const payload = {
+                model,
+                messages,
+                reasoning_effort: "none",
+            };
+            let { response, data } = await postChatCompletion(payload);
+
+            if (!response.ok && isReasoningOptionError(data)) {
+                const retryPayload = { ...payload };
+                delete retryPayload.reasoning_effort;
+                ({ response, data } = await postChatCompletion(retryPayload));
+            }
+
+            if (!response.ok) {
+                const message = data.error?.message || data.message || `HTTP ${response.status}`;
+                throw new Error(`Pollinations request failed: ${message}`);
+            }
+
+            const content = data.choices?.[0]?.message?.content;
+            if (!content) throw new Error("Pollinations returned an empty model response.");
+            return content;
+        }
+
+        async function postChatCompletion(payload) {
+            const response = await fetch(`${GEN_URL}/v1/chat/completions`, {
+                method: "POST",
+                headers: {
+                    Authorization: `Bearer ${state.apiKey}`,
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify(payload),
+            });
+
+            const rawBody = await response.text();
+            let data = {};
+            try {
+                data = rawBody ? JSON.parse(rawBody) : {};
+            } catch {
+                data = { error: { message: rawBody } };
+            }
+            return { response, data };
+        }
+
+        function isReasoningOptionError(data) {
+            const message = String(data.error?.message || data.message || "");
+            return /reasoning_effort|thinking|reasoning/i.test(message);
+        }
+
+        function applyTurn(move, judgement) {
+            const round = state.currentRound;
+            const answer = judgement.answer;
+            round.questions += 1;
+            if (answer === "maybe") round.maybeAnswers += 1;
+            if (move.type === "guess" && answer !== "correct") round.incorrectGuesses += 1;
+
+            round.history.push({
+                move,
+                answer,
+            });
+
+            if (answer === "correct") {
+                finishRound(true);
+                return;
+            }
+
+            if (round.questions >= Number(els.maxQuestions.value)) {
+                finishRound(false);
+            }
+        }
+
+        function finishRound(won) {
+            const round = state.currentRound;
+            round.finished = true;
+            round.status = won ? "solved" : "missed";
+            round.score = won ? scoreRound(round) : 0;
+            state.results.push({
+                round: round.number,
+                character: round.character.name,
+                status: round.status,
+                questions: round.questions,
+                score: round.score,
+                model: els.guesserModel.value,
+                history: round.history.map((entry) => ({
+                    type: entry.move.type,
+                    text: entry.move.text,
+                    answer: entry.answer,
+                })),
+            });
+        }
+
+        function scoreRound(round) {
+            const base = 100;
+            const questionPenalty = Math.max(0, round.questions - 1) * 9;
+            const wrongPenalty = round.incorrectGuesses * 15;
+            const maybePenalty = round.maybeAnswers * 4;
+            return Math.max(10, base - questionPenalty - wrongPenalty - maybePenalty);
+        }
+
+        function normalizeMove(move) {
+            const type = String(move.type || "").toLowerCase().includes("guess") ? "guess" : "question";
+            let text = String(move.text || move.question || move.guess || "").trim();
+            if (!text) text = "Am I a real historical person?";
+            if (type === "question" && !/[?]$/.test(text)) text += "?";
+            return { type, text };
+        }
+
+        function normalizeJudgement(judgement, move) {
+            const validQuestionAnswers = ["yes", "no"];
+            const validGuessAnswers = ["correct", "incorrect"];
+            let answer = extractAnswerToken(judgement.answer);
+            if (move.type === "guess") {
+                const hidden = state.currentRound.character;
+                if (isCorrectGuess(move.text, hidden)) answer = "correct";
+                if (!validGuessAnswers.includes(answer)) answer = "incorrect";
+            } else if (!validQuestionAnswers.includes(answer)) {
+                answer = "no";
+            }
+            return { answer };
+        }
+
+        function extractAnswerToken(value) {
+            const text = normalizeText(value);
+            if (/\bincorrect\b/.test(text)) return "incorrect";
+            if (/\bcorrect\b/.test(text)) return "correct";
+            if (/\byes\b/.test(text)) return "yes";
+            if (/\bno\b/.test(text)) return "no";
+            return text;
+        }
+
+        function isCorrectGuess(text, character) {
+            const normalized = normalizeText(text);
+            return character.aliases.some((alias) => normalized.includes(normalizeText(alias)));
+        }
+
+        function parseJson(text, fallback) {
+            const trimmed = String(text).trim();
+            const withoutFence = trimmed.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/i, "");
+            const jsonMatch = withoutFence.match(/\{[\s\S]*\}/);
+            const candidate = jsonMatch ? jsonMatch[0] : withoutFence;
+            try {
+                return JSON.parse(candidate);
+            } catch {
+                return fallback;
+            }
+        }
+
+        function formatHistory(history) {
+            return history
+                .map((entry, index) => {
+                    const prefix = entry.move.type === "guess" ? "Guess" : "Q";
+                    return `${prefix}${index + 1}: ${entry.move.text}\nA${index + 1}: ${entry.answer}`;
+                })
+                .join("\n");
+        }
+
+        function render() {
+            renderConnection();
+            renderModelLabels();
+            renderRound();
+            renderButtons();
+            renderTranscript();
+            renderScoreboard();
+        }
+
+        function renderConnection() {
+            const connected = Boolean(state.apiKey);
+            els.connectionStatus.classList.toggle("connected", connected);
+            els.connectionText.textContent = connected
+                ? `Connected ${redactKey(state.apiKey)}`
+                : "Not connected";
+        }
+
+        function renderModelLabels() {
+            els.detectiveModelLabel.textContent = els.guesserModel.value || "Detective";
+            els.judgeModelLabel.textContent = els.judgeModel.value || "Judge";
+        }
+
+        function renderRound() {
+            const round = state.currentRound;
+            const targetRounds = Number(els.roundCount.value);
+            const currentNumber = round ? round.number : state.results.length;
+            els.roundChip.textContent = `Round ${currentNumber}/${targetRounds}`;
+            els.matchTitle.textContent = round ? `Round ${round.number}` : "Table";
+
+            if (!round) {
+                els.secretName.textContent = "Start a match";
+                els.momentumLabel.textContent = "Waiting at the table";
+                els.factCloud.innerHTML = "";
+                return;
+            }
+
+            els.secretName.textContent = round.character.name;
+            const latest = round.history[round.history.length - 1];
+            els.momentumLabel.textContent = latest
+                ? latest.answer === "yes" || latest.answer === "correct"
+                    ? "Positive answer"
+                    : latest.answer === "no" || latest.answer === "incorrect"
+                        ? "Negative answer"
+                        : "Uncertain answer"
+                : "Thinking of a first question";
+            els.factCloud.innerHTML = round.character.facts
+                .slice(0, 4)
+                .map((fact) => `<span class="fact-chip">${escapeHtml(fact)}</span>`)
+                .join("");
+        }
+
+        function renderButtons() {
+            const hasRound = Boolean(state.currentRound);
+            const roundDone = Boolean(state.currentRound?.finished);
+            const targetReached = state.results.length >= Number(els.roundCount.value);
+            els.startButton.disabled = state.running || state.autoplay || !state.apiKey;
+            els.nextButton.disabled = state.running || state.autoplay || !hasRound || roundDone;
+            els.autoButton.disabled = state.running || !state.apiKey || (targetReached && roundDone);
+            els.autoButton.textContent = state.autoplay ? "Stop" : "Auto Play";
+
+            if (roundDone && !targetReached) {
+                els.nextButton.disabled = false;
+                els.nextButton.textContent = "Next Round";
+            } else {
+                els.nextButton.textContent = state.running ? "Thinking" : "Ask Next";
+            }
+        }
+
+        function renderTranscript() {
+            const round = state.currentRound;
+            if (!round || round.history.length === 0) {
+                els.transcript.innerHTML = `<div class="empty-state">${
+                    round ? "The detective has not asked yet." : "Connect a key, pick models, and start a match."
+                }</div>`;
+                return;
+            }
+
+            els.transcript.innerHTML = round.history
+                .map((entry, index) => {
+                    const tone = answerTone(entry.answer);
+                    const label = entry.move.type === "guess" ? "Final guess" : "Question";
+                    return `
+                        <article class="turn ${tone}">
+                            <div class="turn-index">${index + 1}</div>
+                            <div class="turn-main">
+                                <strong>${label}: ${escapeHtml(entry.move.text)}</strong>
+                            </div>
+                            <div class="answer-badge">${escapeHtml(entry.answer)}</div>
+                        </article>
+                    `;
+                })
+                .join("");
+            els.transcript.scrollTop = els.transcript.scrollHeight;
+        }
+
+        function renderScoreboard() {
+            const total = state.results.reduce((sum, result) => sum + result.score, 0);
+            const totalQuestions = state.results.reduce((sum, result) => sum + result.questions, 0)
+                + (state.currentRound && !state.currentRound.finished ? state.currentRound.questions : 0);
+            const current = state.currentRound?.score || (state.currentRound ? scoreRoundPreview(state.currentRound) : 0);
+            const best = state.results.reduce((max, result) => Math.max(max, result.score), 0);
+            els.totalScore.textContent = total;
+            els.questionCount.textContent = totalQuestions;
+            els.currentScore.textContent = current;
+            els.bestScore.textContent = best;
+            els.scoreState.textContent = String(total);
+            els.scoreMeter.style.width = `${Math.min(100, total / Math.max(1, Number(els.roundCount.value)))}%`;
+
+            if (state.results.length === 0) {
+                els.roundList.innerHTML = '<div class="empty-state">No rounds yet.</div>';
+                return;
+            }
+
+            els.roundList.innerHTML = state.results
+                .map((result) => `
+                    <div class="round-card">
+                        <div class="round-row">
+                            <div>
+                                <strong>${escapeHtml(result.character)}</strong>
+                                <span>${escapeHtml(result.status)} in ${result.questions} question${result.questions === 1 ? "" : "s"}</span>
+                            </div>
+                            <div class="score-tag">${result.score}</div>
+                        </div>
+                        ${renderResultHistory(result)}
+                    </div>
+                `)
+                .join("");
+        }
+
+        function renderResultHistory(result) {
+            if (!result.history?.length) return "";
+            return `
+                <div class="round-history">
+                    ${result.history
+                        .map(
+                            (entry, index) => `
+                                <div class="round-history-item">
+                                    <div class="history-index">${index + 1}</div>
+                                    <div>${escapeHtml(entry.type === "guess" ? `Guess: ${entry.text}` : entry.text)}</div>
+                                    <div class="history-answer ${answerTone(entry.answer)}">${escapeHtml(entry.answer)}</div>
+                                </div>
+                            `,
+                        )
+                        .join("")}
+                </div>
+            `;
+        }
+
+        function scoreRoundPreview(round) {
+            if (!round || round.questions === 0) return 0;
+            return Math.max(0, scoreRound(round));
+        }
+
+        function answerTone(answer) {
+            if (answer === "yes" || answer === "correct") return "positive";
+            if (answer === "no" || answer === "incorrect") return "negative";
+            return "neutral";
+        }
+
+        function showError(message) {
+            els.errorBox.textContent = message;
+            els.errorBox.classList.add("visible");
+        }
+
+        function hideError() {
+            els.errorBox.textContent = "";
+            els.errorBox.classList.remove("visible");
+        }
+
+        function escapeHtml(value) {
+            return String(value)
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#39;");
+        }
+
+        function normalizeText(value) {
+            return String(value).toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+        }
+
+        function redactKey(key) {
+            if (!key) return "";
+            return `${key.slice(0, 3)}...${key.slice(-4)}`;
+        }
+
+        function unique(values) {
+            return [...new Set(values.filter(Boolean))];
+        }
+
+        function randomChoice(values) {
+            return values[Math.floor(Math.random() * values.length)];
+        }
+
+        function randomId() {
+            if (crypto.randomUUID) return crypto.randomUUID();
+            return `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+        }
+
+        function wait(ms) {
+            return new Promise((resolve) => setTimeout(resolve, ms));
+        }
+    </script>
+</body>
+</html>

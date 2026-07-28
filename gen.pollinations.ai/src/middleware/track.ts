@@ -480,7 +480,11 @@ async function trackResponse(
     // an unexpected content-type — e.g. a JSON/text error body with HTTP 200,
     // or JSON for a stream: true request.
     const contentType = response.headers.get("content-type") || "";
-    const contentTypeGuard = getContentTypeGuard(eventType, requestTracking);
+    const contentTypeGuard = getContentTypeGuard(
+        eventType,
+        requestTracking,
+        response,
+    );
     if (contentTypeGuard && !contentTypeGuard.isExpected(contentType)) {
         log.warn(
             "Unexpected content-type for billing: {contentType} for model {model} (kind={kind})",
@@ -542,10 +546,12 @@ function parseFallbackUsed(response: Response): boolean {
 // when the event type (or stream mode) has no content-type guard, so the
 // caller skips the check entirely. Preserves the per-branch rules: image/video
 // uses startsWith; text-stream only guards when a stream was requested and uses
-// includes; audio allows audio/* (TTS) or application/json for STT models.
+// includes; audio allows audio/*, STT JSON, or explicitly marked timestamped
+// TTS JSON.
 function getContentTypeGuard(
     eventType: EventType,
     requestTracking: RequestTrackingData,
+    response: Response,
 ): { kind: string; isExpected: (contentType: string) => boolean } | null {
     if (eventType === "generate.image") {
         return {
@@ -568,11 +574,15 @@ function getContentTypeGuard(
     if (eventType === "generate.audio") {
         const isSTTModel =
             requestTracking.modelDefinition.outputModalities?.[0] === "text";
+        const isTimestampedTts =
+            response.headers.get("x-pollinations-response-format") ===
+            "audio-with-timestamps";
         return {
             kind: "audio",
             isExpected: (contentType) =>
                 contentType.startsWith("audio/") ||
-                (isSTTModel && contentType.startsWith("application/json")),
+                ((isSTTModel || isTimestampedTts) &&
+                    contentType.startsWith("application/json")),
         };
     }
     return null;
@@ -785,6 +795,14 @@ function extractUsageHeaders(response: Response): ModelUsage {
 async function extractResponseJsonOutput(
     response: Response,
 ): Promise<unknown | undefined> {
+    // Timestamped TTS JSON contains the complete base64 audio. Billing comes
+    // from usage headers, and copying that payload into analytics is wasteful.
+    if (
+        response.headers.get("x-pollinations-response-format") ===
+        "audio-with-timestamps"
+    ) {
+        return undefined;
+    }
     const contentType = response.headers.get("content-type") || "";
     if (!contentType.includes("application/json")) return undefined;
     try {

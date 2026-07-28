@@ -5,6 +5,8 @@ import {
     communityChatCompletionsUrl,
     communityEndpointPriceFieldsForModality,
     communityEndpointPrices,
+    communityEndpointTitle,
+    communityImageEditsUrl,
     communityImageGenerationsUrl,
     communityModelDefinition,
     communityModelId,
@@ -12,6 +14,9 @@ import {
     communityPriceDefinition,
     isCommunityEndpointOwnerAllowed,
     legacyCommunityModelId,
+    MAX_COMMUNITY_PRICE_PER_IMAGE,
+    MAX_COMMUNITY_PRICE_PER_MILLION_TOKENS,
+    MAX_COMMUNITY_PRICE_PER_TOKEN,
     MIN_COMMUNITY_PRICE_PER_MILLION_TOKENS,
     MIN_COMMUNITY_PRICE_PER_TOKEN,
     normalizeCommunityAssetUrl,
@@ -37,6 +42,7 @@ import { drizzle } from "drizzle-orm/d1";
 import { Hono } from "hono";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { Env } from "@/env.ts";
+import { communityImageSupportedEndpoints } from "./community-models.ts";
 import { callCommunityImageEndpoint } from "./image/communityEndpoint.ts";
 import { resetGenerationModelRegistryCache } from "./model-registry.ts";
 import { communityEndpointGatewayContext } from "./text/communityEndpoint.ts";
@@ -49,6 +55,7 @@ const TEST_PNG_BASE64 = "iVBORw0KGgo=";
 const TEST_PNG_BYTES = [137, 80, 78, 71, 13, 10, 26, 10];
 const TEST_INVALID_IMAGE_BASE64 = "bm90IGFuIGltYWdl";
 const TEST_COMMUNITY_IMAGE_URL = "http://api.example.com/assets/image.png";
+const TEST_INPUT_IMAGE_URL = "https://input.example.com/source.png";
 
 function isPortkeyChatCompletionsRequest(request: Request): boolean {
     return new URL(request.url).pathname === "/v1/chat/completions";
@@ -56,6 +63,10 @@ function isPortkeyChatCompletionsRequest(request: Request): boolean {
 
 function isCommunityImageGenerationsRequest(request: Request): boolean {
     return new URL(request.url).pathname.endsWith("/images/generations");
+}
+
+function isCommunityImageEditsRequest(request: Request): boolean {
+    return new URL(request.url).pathname.endsWith("/images/edits");
 }
 
 beforeEach(() => {
@@ -262,6 +273,9 @@ describe("community endpoint helpers", () => {
         expect(communityImageGenerationsUrl("https://api.example.com/v1")).toBe(
             "https://api.example.com/v1/images/generations",
         );
+        expect(communityImageEditsUrl("https://api.example.com/v1")).toBe(
+            "https://api.example.com/v1/images/edits",
+        );
         expect(
             communityChatCompletionsUrl(
                 "https://api.example.com/v1/chat/completions",
@@ -270,6 +284,16 @@ describe("community endpoint helpers", () => {
         expect(
             communityImageGenerationsUrl(
                 "https://api.example.com/v1/images/generations",
+            ),
+        ).toBe("https://api.example.com/v1/images/generations");
+        expect(
+            communityImageEditsUrl(
+                "https://api.example.com/v1/images/generations",
+            ),
+        ).toBe("https://api.example.com/v1/images/edits");
+        expect(
+            communityImageGenerationsUrl(
+                "https://api.example.com/v1/images/edits",
             ),
         ).toBe("https://api.example.com/v1/images/generations");
         expect(
@@ -315,6 +339,39 @@ describe("community endpoint helpers", () => {
         );
     });
 
+    it("prefers a stored title over the description", () => {
+        const modelDefinition = communityModelDefinition({
+            modelId: "voodoohop/openai",
+            title: "OpenAI Fast",
+            description: "OpenAI via community endpoint",
+            ...communityEndpointPrices({ promptTextPrice: 0.1 }),
+        });
+
+        expect(modelDefinition.title).toBe("OpenAI Fast");
+        // Description stays its own field so both can render independently.
+        expect(modelDefinition.description).toBe(
+            "OpenAI via community endpoint",
+        );
+    });
+
+    it("falls back to the model name when title and description are unset", () => {
+        expect(
+            communityEndpointTitle({
+                modelId: "voodoohop/openai",
+                title: null,
+                description: null,
+            }),
+        ).toBe("openai");
+        // Whitespace-only titles are treated as unset rather than rendering blank.
+        expect(
+            communityEndpointTitle({
+                modelId: "voodoohop/openai",
+                title: "   ",
+                description: "Community endpoint",
+            }),
+        ).toBe("Community endpoint");
+    });
+
     it("builds community image models with one fixed per-image price", () => {
         const modelId = "voodoohop/flux";
         const definition = communityModelDefinition({
@@ -329,6 +386,7 @@ describe("community endpoint helpers", () => {
 
         expect(definition).toMatchObject({
             category: "image",
+            inputModalities: ["text"],
             flatRate: true,
             cost: { completionImageTokens: 0.03 },
         });
@@ -342,6 +400,15 @@ describe("community endpoint helpers", () => {
         ).toBe(0.03);
     });
 
+    it("advertises image edits only after the edit probe succeeds", () => {
+        expect(communityImageSupportedEndpoints(false)).not.toContain(
+            "/v1/images/edits",
+        );
+        expect(communityImageSupportedEndpoints(true)).toContain(
+            "/v1/images/edits",
+        );
+    });
+
     it("builds token-priced community image models when the probe detected usage", () => {
         const modelId = "voodoohop/gptimage";
         const definition = communityModelDefinition({
@@ -349,6 +416,7 @@ describe("community endpoint helpers", () => {
             description: "Token-priced image model",
             modality: "image",
             imagePricing: "tokens",
+            supportsImageEdits: true,
             ...communityEndpointPrices({
                 promptTextPrice: 0.000005,
                 promptImagePrice: 0.00001,
@@ -358,6 +426,7 @@ describe("community endpoint helpers", () => {
 
         expect(definition).toMatchObject({
             category: "image",
+            inputModalities: ["text", "image"],
             flatRate: false,
             cost: {
                 promptTextTokens: 0.000005,
@@ -416,9 +485,11 @@ describe("community endpoint helpers", () => {
                 ownerUserId: "owner-id",
                 modelId: "voodoohop/gptimage",
                 name: "gptimage",
+                title: "GPT Image",
                 description: null,
                 modality: "image",
                 imagePricing,
+                supportsImageEdits: true,
                 baseUrl: "https://api.example.com/v1",
                 upstreamModel: "gpt-image-1",
                 visibility: "public",
@@ -507,6 +578,89 @@ describe("community endpoint helpers", () => {
                 message: expect.stringContaining("image token usage"),
             });
         });
+
+        it("forwards edits as multipart and bills provider image-token usage", async () => {
+            const fetchMock = vi.fn(async (input, init) => {
+                const request = new Request(input, init);
+                if (request.url === TEST_INPUT_IMAGE_URL) {
+                    return new Response(new Uint8Array(TEST_PNG_BYTES));
+                }
+
+                expect(request.url).toBe(
+                    "https://api.example.com/v1/images/edits",
+                );
+                expect(request.headers.get("authorization")).toBe(
+                    "Bearer sk_saved_token",
+                );
+                expect(request.headers.get("content-type")).toContain(
+                    "multipart/form-data",
+                );
+                const formData = await request.formData();
+                expect(formData.get("model")).toBe("gpt-image-1");
+                expect(formData.get("prompt")).toBe("make it blue");
+                expect(formData.get("size")).toBe("1024x1024");
+                expect(formData.get("quality")).toBe("medium");
+                expect(formData.get("image")).toBeInstanceOf(File);
+
+                return Response.json({
+                    data: [{ b64_json: TEST_PNG_BASE64 }],
+                    usage: {
+                        input_tokens: 54,
+                        output_tokens: 1056,
+                        total_tokens: 1110,
+                        input_tokens_details: {
+                            text_tokens: 12,
+                            image_tokens: 42,
+                        },
+                    },
+                });
+            });
+            vi.stubGlobal("fetch", fetchMock);
+
+            const result = await callCommunityImageEndpoint(
+                await imageEndpoint("tokens"),
+                "make it blue",
+                { ...imageParams, image: [TEST_INPUT_IMAGE_URL] },
+                secret,
+            );
+
+            expect(result.trackingData?.usage).toEqual({
+                promptTextTokens: 12,
+                promptImageTokens: 42,
+                completionImageTokens: 1056,
+            });
+            expect(fetchMock).toHaveBeenCalledTimes(2);
+        });
+
+        it("preserves an upstream unsupported-edit error", async () => {
+            vi.stubGlobal(
+                "fetch",
+                vi.fn(async (input, init) => {
+                    const request = new Request(input, init);
+                    if (request.url === TEST_INPUT_IMAGE_URL) {
+                        return new Response(new Uint8Array(TEST_PNG_BYTES));
+                    }
+                    return Response.json(
+                        { error: { message: "Image edits are not supported" } },
+                        { status: 405 },
+                    );
+                }),
+            );
+
+            await expect(
+                callCommunityImageEndpoint(
+                    await imageEndpoint("request"),
+                    "make it blue",
+                    { ...imageParams, image: [TEST_INPUT_IMAGE_URL] },
+                    secret,
+                ),
+            ).rejects.toMatchObject({
+                status: 405,
+                message: expect.stringContaining(
+                    "Image edits are not supported",
+                ),
+            });
+        });
     });
 
     it("builds Portkey gateway context with the saved token", async () => {
@@ -516,9 +670,11 @@ describe("community endpoint helpers", () => {
             ownerUserId: "owner-id",
             modelId: "voodoohop/openai",
             name: "openai",
+            title: "OpenAI",
             description: null,
             modality: "text",
             imagePricing: "request",
+            supportsImageEdits: false,
             baseUrl: "https://api.example.com/v1",
             upstreamModel: "gpt-4.1-mini",
             visibility: "public",
@@ -1316,13 +1472,14 @@ fixtureTest(
                 },
                 body: JSON.stringify({
                     name: `${modelName}-direct-public`,
+                    title: "Denied Public Endpoint",
                     description: "Denied public community endpoint",
                     baseUrl: "https://api.example.com/v1",
                     upstreamModel: "gpt-4.1-mini",
                     bearerToken: "sk_saved_token",
                     visibility: "public",
-                    promptTextPrice: 0.1,
-                    completionTextPrice: 0.1,
+                    promptTextPrice: 0.00001,
+                    completionTextPrice: 0.00001,
                 }),
             }),
         );
@@ -1340,6 +1497,7 @@ fixtureTest(
                 },
                 body: JSON.stringify({
                     name: privateModelName,
+                    title: "Private Endpoint",
                     description: "Private community endpoint",
                     baseUrl: "https://api.example.com/v1",
                     upstreamModel: "gpt-4.1-mini",
@@ -1373,8 +1531,8 @@ fixtureTest(
                     },
                     body: JSON.stringify({
                         visibility: "public",
-                        promptTextPrice: 0.1,
-                        completionTextPrice: 0.1,
+                        promptTextPrice: 0.00001,
+                        completionTextPrice: 0.00001,
                     }),
                 },
             ),
@@ -1573,13 +1731,14 @@ fixtureTest(
                 },
                 body: JSON.stringify({
                     name: modelName,
+                    title: "Pollinations Upstream",
                     description: "Pollinations upstream through community API",
                     baseUrl: "https://gen.pollinations.ai/v1",
                     upstreamModel: "openai",
                     bearerToken: "Bearer sk_pollinations_upstream",
                     visibility: "public",
-                    promptTextPrice: 0.1,
-                    completionTextPrice: 0.1,
+                    promptTextPrice: 0.00001,
+                    completionTextPrice: 0.00001,
                 }),
             }),
         );
@@ -1599,8 +1758,8 @@ fixtureTest(
             baseUrl: "https://gen.pollinations.ai/v1",
             upstreamModel: "openai",
             visibility: "public",
-            promptTextPrice: 0.1,
-            completionTextPrice: 0.1,
+            promptTextPrice: 0.00001,
+            completionTextPrice: 0.00001,
         });
 
         const testResponse = await fetchEnterApi(
@@ -1699,6 +1858,15 @@ fixtureTest(
         const fetchMock = vi.fn(async (input, init) => {
             const request = new Request(input, init);
 
+            if (
+                request.url === TEST_INPUT_IMAGE_URL ||
+                request.url.startsWith("data:image/png;base64,")
+            ) {
+                return new Response(new Uint8Array(TEST_PNG_BYTES), {
+                    headers: { "Content-Type": "image/png" },
+                });
+            }
+
             if (request.url === TEST_COMMUNITY_IMAGE_URL) {
                 expect(request.headers.get("authorization")).toBeNull();
                 expect(request.redirect).toBe("manual");
@@ -1753,6 +1921,40 @@ fixtureTest(
                 });
             }
 
+            if (isCommunityImageEditsRequest(request)) {
+                expect(request.headers.get("authorization")).toBe(
+                    "Bearer sk_image_upstream",
+                );
+                expect(request.headers.get("content-type")).toContain(
+                    "multipart/form-data",
+                );
+                const formData = await request.formData();
+                expect(formData.get("model")).toBe("gpt-image-1");
+                expect(formData.get("n")).toBe("1");
+                expect(formData.get("image")).toBeInstanceOf(File);
+
+                const prompt = formData.get("prompt");
+                if (prompt === "make it blue") {
+                    expect(formData.get("size")).toBe("512x512");
+                    expect(formData.get("quality")).toBe("high");
+                } else if (prompt === "turn it red") {
+                    expect(formData.get("size")).toBe("384x640");
+                    expect(formData.get("quality")).toBe("medium");
+                } else if (prompt === "Add a small blue dot to the image.") {
+                    expect(formData.get("size")).toBe("1024x1024");
+                    expect(formData.get("quality")).toBe("medium");
+                } else {
+                    throw new Error(
+                        `Unexpected edit prompt: ${String(prompt)}`,
+                    );
+                }
+
+                return Response.json({
+                    created: 1,
+                    data: [{ b64_json: TEST_PNG_BASE64 }],
+                });
+            }
+
             if (isBillingFetch(request)) {
                 return Response.json({ data: [] });
             }
@@ -1771,8 +1973,10 @@ fixtureTest(
                 },
                 body: JSON.stringify({
                     name: modelName,
+                    title: "Community Image Endpoint",
                     description: "OpenAI-compatible image endpoint",
                     modality: "image",
+                    supportsImageEdits: true,
                     visibility: "public",
                     baseUrl: "https://api.example.com/v1/images/generations",
                     upstreamModel: "gpt-image-1",
@@ -1788,6 +1992,7 @@ fixtureTest(
             id: string;
             modelId: string;
             modality: string;
+            supportsImageEdits: boolean;
             baseUrl: string;
             upstreamModel: string;
             promptTextPrice: number;
@@ -1796,6 +2001,7 @@ fixtureTest(
         expect(registered).toMatchObject({
             modelId: communityModelId(ownerGithubUsername, modelName),
             modality: "image",
+            supportsImageEdits: true,
             baseUrl: "https://api.example.com/v1/images/generations",
             upstreamModel: "gpt-image-1",
             promptTextPrice: 0,
@@ -1820,9 +2026,11 @@ fixtureTest(
         );
         expect(testResponse.status).toBe(200);
         await expect(testResponse.json()).resolves.toMatchObject({
-            message: "Endpoint responded with image data",
+            message:
+                "Generation and editing endpoints responded with image data",
             usage: { images: 1 },
             billableUsage: { completionImageTokens: 1 },
+            supportsImageEdits: true,
         });
 
         const simpleImageResponse = await SELF.fetch(
@@ -1884,6 +2092,52 @@ fixtureTest(
             },
         });
 
+        const editFormData = new FormData();
+        editFormData.append("model", registered.modelId);
+        editFormData.append("prompt", "make it blue");
+        editFormData.append("size", "512x512");
+        editFormData.append("quality", "hd");
+        editFormData.append(
+            "image",
+            new Blob([new Uint8Array(TEST_PNG_BYTES)], { type: "image/png" }),
+            "source.png",
+        );
+        const openaiEditResponse = await SELF.fetch(
+            new Request("https://gen.pollinations.ai/v1/images/edits", {
+                method: "POST",
+                headers: { Authorization: `Bearer ${apiKey}` },
+                body: editFormData,
+            }),
+        );
+        expect(openaiEditResponse.status).toBe(200);
+        await expect(openaiEditResponse.json()).resolves.toMatchObject({
+            data: [{ b64_json: TEST_PNG_BASE64 }],
+            usage: {
+                input_tokens: 0,
+                output_tokens: 1,
+                total_tokens: 1,
+            },
+        });
+
+        const simpleEditResponse = await SELF.fetch(
+            new Request(
+                `https://gen.pollinations.ai/image/turn%20it%20red?model=${encodeURIComponent(
+                    registered.modelId,
+                )}&image=${encodeURIComponent(TEST_INPUT_IMAGE_URL)}&width=384&height=640`,
+                { headers: { Authorization: `Bearer ${apiKey}` } },
+            ),
+        );
+        expect(simpleEditResponse.status).toBe(200);
+        expect(simpleEditResponse.headers.get("content-type")).toBe(
+            "image/png",
+        );
+        expect(
+            simpleEditResponse.headers.get("x-usage-completion-image-tokens"),
+        ).toBe("1");
+        expect(
+            Array.from(new Uint8Array(await simpleEditResponse.arrayBuffer())),
+        ).toEqual(TEST_PNG_BYTES);
+
         const urlImageResponse = await SELF.fetch(
             new Request("https://gen.pollinations.ai/v1/images/generations", {
                 method: "POST",
@@ -1943,6 +2197,7 @@ fixtureTest(
             name: string;
             category?: string;
             community?: boolean;
+            input_modalities?: string[];
             flat_rate?: boolean;
             pricing?: Record<string, string>;
         }[];
@@ -1954,6 +2209,7 @@ fixtureTest(
         const openaiModels = (await openaiModelsResponse.json()) as {
             data: {
                 id: string;
+                input_modalities?: string[];
                 supported_endpoints?: string[];
             }[];
         };
@@ -1965,6 +2221,7 @@ fixtureTest(
             name: registered.modelId,
             category: "image",
             community: true,
+            input_modalities: ["text", "image"],
             flat_rate: true,
             pricing: {
                 currency: "pollen",
@@ -1981,14 +2238,13 @@ fixtureTest(
         const openaiModel = openaiModels.data.find(
             (model) => model.id === registered.modelId,
         );
+        expect(openaiModel?.input_modalities).toEqual(["text", "image"]);
         expect(openaiModel?.supported_endpoints).toEqual(
             expect.arrayContaining([
                 "/v1/images/generations",
+                "/v1/images/edits",
                 "/image/{prompt}",
             ]),
-        );
-        expect(openaiModel?.supported_endpoints).not.toContain(
-            "/v1/images/edits",
         );
         expect(
             fetchMock.mock.calls.filter(([input, init]) =>
@@ -1996,11 +2252,53 @@ fixtureTest(
             ),
         ).toHaveLength(4);
         expect(
+            fetchMock.mock.calls.filter(([input, init]) =>
+                isCommunityImageEditsRequest(new Request(input, init)),
+            ),
+        ).toHaveLength(3);
+        expect(
             fetchMock.mock.calls.filter(
                 ([input, init]) =>
                     new Request(input, init).url === TEST_COMMUNITY_IMAGE_URL,
             ),
         ).toHaveLength(3);
+
+        const maximumImagePriceResponse = await fetchEnterApi(
+            enterApi,
+            new Request(
+                `http://localhost:3000/api/community-endpoints/${registered.id}/update`,
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Cookie: await signedSessionCookie(sessionToken),
+                    },
+                    body: JSON.stringify({
+                        completionImagePrice: MAX_COMMUNITY_PRICE_PER_IMAGE,
+                    }),
+                },
+            ),
+        );
+        expect(maximumImagePriceResponse.status).toBe(200);
+
+        const excessiveImagePriceResponse = await fetchEnterApi(
+            enterApi,
+            new Request(
+                `http://localhost:3000/api/community-endpoints/${registered.id}/update`,
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Cookie: await signedSessionCookie(sessionToken),
+                    },
+                    body: JSON.stringify({
+                        completionImagePrice:
+                            MAX_COMMUNITY_PRICE_PER_IMAGE + 0.01,
+                    }),
+                },
+            ),
+        );
+        expect(excessiveImagePriceResponse.status).toBe(400);
     },
 );
 
@@ -2065,6 +2363,7 @@ fixtureTest(
                 },
                 body: JSON.stringify({
                     name: "my-test-model",
+                    title: "My Test Model",
                     description: "Account API model",
                     baseUrl: "https://api.example.com/v1",
                     upstreamModel: "gpt-4.1-mini",
@@ -2113,20 +2412,22 @@ fixtureTest(
                         "Content-Type": "application/json",
                     },
                     body: JSON.stringify({
+                        title: "Updated Model Title",
                         description: "Updated description",
                         visibility: "public",
-                        promptTextPrice: 0.1,
-                        completionTextPrice: 0.2,
+                        promptTextPrice: 0.00001,
+                        completionTextPrice: 0.00002,
                     }),
                 },
             ),
         );
         expect(updateResponse.status).toBe(200);
         await expect(updateResponse.json()).resolves.toMatchObject({
+            title: "Updated Model Title",
             description: "Updated description",
             visibility: "public",
-            promptTextPrice: 0.1,
-            completionTextPrice: 0.2,
+            promptTextPrice: 0.00001,
+            completionTextPrice: 0.00002,
             disabled: true,
             disabledReason: "was failing",
         });
@@ -2221,15 +2522,15 @@ fixtureTest(
                         Authorization: `Bearer ${key}`,
                         "Content-Type": "application/json",
                     },
-                    body: JSON.stringify({ promptTextPrice: 0.3 }),
+                    body: JSON.stringify({ promptTextPrice: 0.00003 }),
                 },
             ),
         );
         expect(priceOnlyResponse.status).toBe(200);
         await expect(priceOnlyResponse.json()).resolves.toMatchObject({
             visibility: "public",
-            promptTextPrice: 0.3,
-            completionTextPrice: 0.2,
+            promptTextPrice: 0.00003,
+            completionTextPrice: 0.00002,
         });
 
         // Making the model private clears all owner-set prices.
@@ -2290,6 +2591,9 @@ fixtureTest(
             data: Record<string, unknown>[];
         };
         expect(secondList.data).toHaveLength(1);
+        expect(secondList.data[0]).toMatchObject({
+            title: "Updated Model Title",
+        });
         expect(secondList.data[0]).not.toHaveProperty("bearerToken");
         expect(secondList.data[0]).not.toHaveProperty("bearerTokenCiphertext");
     },
@@ -2324,6 +2628,7 @@ fixtureTest(
                 },
                 body: JSON.stringify({
                     name: "price-floor-test",
+                    title: "Price Floor Test",
                     baseUrl: "https://api.example.com/v1",
                     upstreamModel: "gpt-4.1-mini",
                     bearerToken: "sk_saved_token",
@@ -2362,6 +2667,22 @@ fixtureTest(
         await expect(minimumResponse.json()).resolves.toMatchObject({
             promptTextPrice: MIN_COMMUNITY_PRICE_PER_TOKEN,
         });
+
+        const maximumResponse = await updatePrice(
+            MAX_COMMUNITY_PRICE_PER_TOKEN,
+        );
+        expect(maximumResponse.status).toBe(200);
+        await expect(maximumResponse.json()).resolves.toMatchObject({
+            promptTextPrice: MAX_COMMUNITY_PRICE_PER_TOKEN,
+        });
+
+        const aboveMaximumResponse = await updatePrice(
+            MAX_COMMUNITY_PRICE_PER_TOKEN * 1.01,
+        );
+        expect(aboveMaximumResponse.status).toBe(400);
+        expect(await aboveMaximumResponse.text()).toContain(
+            `${MAX_COMMUNITY_PRICE_PER_MILLION_TOKENS} Pollen per 1M tokens`,
+        );
 
         const belowMinimumResponse = await updatePrice(
             MIN_COMMUNITY_PRICE_PER_TOKEN / 10,
@@ -2465,6 +2786,7 @@ fixtureTest("rejects a community model name containing a slash", async () => {
             },
             body: JSON.stringify({
                 name: "inferenceport.ai/gpt-oss-20b",
+                title: "Slash Name",
                 description: "name with a slash",
                 baseUrl: "https://api.example.com/v1",
                 upstreamModel: "gpt-oss-20b",

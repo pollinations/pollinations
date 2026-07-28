@@ -21,6 +21,16 @@ function imageMessage(urls: string[]) {
 }
 
 describe("imageUrlToBase64Transform", () => {
+    it("rejects malformed image URLs before they reach the provider", async () => {
+        const fetchSpy = vi.spyOn(globalThis, "fetch");
+
+        await expect(
+            transform(imageMessage(["not-a-url"]), bedrockOptions),
+        ).rejects.toMatchObject({ status: 400 });
+
+        expect(fetchSpy).not.toHaveBeenCalled();
+    });
+
     it("rejects localhost and literal IP image URLs before fetch", async () => {
         const fetchSpy = vi.spyOn(globalThis, "fetch");
 

@@ -29,6 +29,7 @@ const stripReasoning = createReasoningEffortTransform("strip");
 // 4.6+ use adaptive + output_config.effort.
 const claudeManualThinking = createClaudeThinkingTransform("budget");
 const claudeAdaptiveThinking = createClaudeThinkingTransform("adaptive");
+const claudeOpus5Thinking = createClaudeThinkingTransform("adaptive", true);
 
 interface ModelDefinition {
     name: string;
@@ -212,8 +213,8 @@ const models: ModelDefinition[] = [
     },
     {
         name: "claude-large",
-        config: portkeyConfig["claude-opus-4-8"],
-        transform: claudeAdaptiveThinking,
+        config: portkeyConfig["claude-opus-5"],
+        transform: claudeOpus5Thinking,
     },
     {
         name: "claude-fable-5",
@@ -352,6 +353,11 @@ const models: ModelDefinition[] = [
             sanitizeToolSchemas,
             createReasoningEffortTransform("toggle"),
         ),
+    },
+    {
+        name: "nemotron",
+        config: portkeyConfig["nvidia/NVIDIA-Nemotron-3-Ultra-550B-A55B"],
+        transform: createReasoningEffortTransform("toggle"),
     },
     {
         name: "mimo-v2.5",

@@ -1,6 +1,7 @@
 import { Buffer } from "node:buffer";
 import {
     type CommunityEndpointRuntime,
+    communityImageEditsUrl,
     communityImageGenerationsUrl,
     normalizeCommunityAssetUrl,
     normalizeCommunityEndpointBearerToken,
@@ -15,7 +16,11 @@ import { decryptSecret } from "@shared/secret-encryption.ts";
 import type { ImageGenerationResult } from "./createAndReturnImages.ts";
 import { HttpError } from "./httpError.ts";
 import type { ImageParams } from "./params.ts";
-import { base64ToBuffer } from "./utils/imageDownload.ts";
+import {
+    base64ToBuffer,
+    bufferToUint8Array,
+    downloadUserImage,
+} from "./utils/imageDownload.ts";
 
 type CommunityImageParams = Omit<ImageParams, "model"> & { model: string };
 
@@ -28,29 +33,31 @@ export async function callCommunityImageEndpoint(
     safeParams: CommunityImageParams,
     secret: string,
 ): Promise<ImageGenerationResult> {
-    if (safeParams.image.length > 0) {
-        throw new HttpError(
-            "Community image endpoints currently support text-to-image generation only",
-            400,
-            { validation: true },
-        );
-    }
-
     const bearerToken = await decryptSecret(
         endpoint.bearerTokenCiphertext,
         secret,
     );
-    const upstreamUrl = communityImageGenerationsUrl(endpoint.baseUrl);
-    const body = await fetchCommunityImageJson(upstreamUrl, bearerToken, {
-        model: endpoint.upstreamModel,
-        prompt,
-        n: 1,
-        size: `${safeParams.width}x${safeParams.height}`,
-        quality: safeParams.quality === "hd" ? "high" : safeParams.quality,
-        ...(safeParams.transparent
-            ? { background: "transparent", output_format: "png" }
-            : {}),
-    });
+    const isEdit = safeParams.image.length > 0;
+    const upstreamUrl = isEdit
+        ? communityImageEditsUrl(endpoint.baseUrl)
+        : communityImageGenerationsUrl(endpoint.baseUrl);
+    const body = await fetchCommunityImageJson(
+        upstreamUrl,
+        bearerToken,
+        isEdit
+            ? await imageEditFormData(endpoint, prompt, safeParams)
+            : JSON.stringify({
+                  model: endpoint.upstreamModel,
+                  prompt,
+                  n: 1,
+                  size: `${safeParams.width}x${safeParams.height}`,
+                  quality:
+                      safeParams.quality === "hd" ? "high" : safeParams.quality,
+                  ...(safeParams.transparent
+                      ? { background: "transparent", output_format: "png" }
+                      : {}),
+              }),
+    );
 
     const buffer = await firstImageBuffer(body, endpoint.baseUrl);
     if (!detectImageMimeType(buffer)) {
@@ -67,6 +74,41 @@ export async function callCommunityImageEndpoint(
             usage: communityImageUsage(endpoint, body),
         },
     };
+}
+
+async function imageEditFormData(
+    endpoint: CommunityEndpointRuntime,
+    prompt: string,
+    safeParams: CommunityImageParams,
+): Promise<FormData> {
+    const formData = new FormData();
+    formData.append("model", endpoint.upstreamModel);
+    formData.append("prompt", prompt);
+    formData.append("n", "1");
+    formData.append("size", `${safeParams.width}x${safeParams.height}`);
+    formData.append(
+        "quality",
+        safeParams.quality === "hd" ? "high" : safeParams.quality,
+    );
+    if (safeParams.transparent) {
+        formData.append("background", "transparent");
+        formData.append("output_format", "png");
+    }
+
+    const imageField = safeParams.image.length === 1 ? "image" : "image[]";
+    for (const [index, imageUrl] of safeParams.image.entries()) {
+        const { buffer, mimeType } = await downloadUserImage(
+            imageUrl,
+            AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+        );
+        const extension = mimeType.split("/")[1];
+        formData.append(
+            imageField,
+            new Blob([bufferToUint8Array(buffer)], { type: mimeType }),
+            `image-${index + 1}.${extension}`,
+        );
+    }
+    return formData;
 }
 
 // "tokens" endpoints registered with per-1M prices must keep returning the
@@ -101,7 +143,7 @@ function communityImageUsage(
 async function fetchCommunityImageJson(
     url: string,
     bearerToken: string,
-    body: Record<string, unknown>,
+    body: string | FormData,
 ): Promise<unknown> {
     const response = await fetchWithTimeout(url, {
         method: "POST",
@@ -109,9 +151,11 @@ async function fetchCommunityImageJson(
             Authorization: `Bearer ${normalizeCommunityEndpointBearerToken(
                 bearerToken,
             )}`,
-            "Content-Type": "application/json",
+            ...(typeof body === "string"
+                ? { "Content-Type": "application/json" }
+                : {}),
         },
-        body: JSON.stringify(body),
+        body,
     });
     const text = await response.text();
     const parsed = parseJson(text);

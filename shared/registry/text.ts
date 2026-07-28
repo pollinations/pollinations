@@ -236,7 +236,7 @@ export const TEXT_SERVICES = {
     },
     "mercury": {
         aliases: ["mercury-2", "inception", "inception-mercury"],
-        provider: "inception",
+        provider: "openrouter",
         brand: "Inception",
         category: "text",
         addedDate: new Date("2026-06-23").getTime(),
@@ -994,7 +994,7 @@ export const TEXT_SERVICES = {
         isSpecialized: false,
     },
     "claude-large": {
-        aliases: ["claude-opus-4.8", "claude-opus"],
+        aliases: ["claude-opus-5", "claude-opus-4.8", "claude-opus"],
         provider: "bedrock",
         brand: "Anthropic",
         category: "text",
@@ -1002,15 +1002,15 @@ export const TEXT_SERVICES = {
         paidOnly: true,
         priceMultiplier: 1,
         cost: {
-            // Bedrock global.anthropic.claude-opus-4-8 global standard rates.
+            // Bedrock global.anthropic.claude-opus-5 global standard rates.
             promptTextTokens: perMillion(5),
             promptCachedTokens: perMillion(0.5),
             promptCacheWriteTokens: perMillion(6.25),
             completionTextTokens: perMillion(25),
         },
-        title: "Claude Opus 4.8",
+        title: "Claude Opus 5",
         description:
-            "Top-shelf reasoning, writing and coding; premium price per token",
+            "Frontier reasoning for coding, complex analysis and long-running agents",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
         maxReferenceImages: 20, // Bedrock Converse image limit.
@@ -1256,6 +1256,35 @@ export const TEXT_SERVICES = {
         tools: true,
         reasoning: true,
         contextLength: 1048576,
+        isSpecialized: false,
+    },
+    "nemotron": {
+        aliases: [
+            "nemotron-3-ultra",
+            "nvidia-nemotron-3-ultra",
+            "nemotron-3-ultra-550b-a55b",
+        ],
+        provider: "deepinfra",
+        brand: "NVIDIA",
+        category: "text",
+        addedDate: new Date("2026-07-27").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1,
+        cost: {
+            // DeepInfra standard-tier rates (2026-07-27). Flex is deliberately
+            // excluded because requests may wait up to ten minutes.
+            promptTextTokens: perMillion(0.5),
+            promptCachedTokens: perMillion(0.1),
+            completionTextTokens: perMillion(2.2),
+        },
+        title: "NVIDIA Nemotron 3 Ultra",
+        description:
+            "Frontier reasoning for coding agents, deep research and complex workflows",
+        inputModalities: ["text"],
+        outputModalities: ["text"],
+        tools: true,
+        reasoning: true,
+        contextLength: 262144,
         isSpecialized: false,
     },
     "mimo-v2.5": {

@@ -18,10 +18,20 @@ export const COMMUNITY_ENDPOINT_IMAGE_PRICING_MODES = [
     "request",
     "tokens",
 ] as const;
+// Display name shown in the catalog and dashboard, separate from the callable
+// slug (`name`) and the optional longer `description`.
+export const COMMUNITY_ENDPOINT_TITLE_MAX_LENGTH = 42;
+export const COMMUNITY_ENDPOINT_DESCRIPTION_MAX_LENGTH = 160;
 // Zero is free; positive owner-declared prices start at this floor.
 export const MIN_COMMUNITY_PRICE_PER_MILLION_TOKENS = 0.000001;
 export const MIN_COMMUNITY_PRICE_PER_TOKEN =
     MIN_COMMUNITY_PRICE_PER_MILLION_TOKENS / 1_000_000;
+// Keep typos and malicious configurations from exposing callers to extreme
+// charges.
+export const MAX_COMMUNITY_PRICE_PER_MILLION_TOKENS = 50;
+export const MAX_COMMUNITY_PRICE_PER_TOKEN =
+    MAX_COMMUNITY_PRICE_PER_MILLION_TOKENS / 1_000_000;
+export const MAX_COMMUNITY_PRICE_PER_IMAGE = 0.25;
 const BEARER_PREFIX = /^Bearer(?:\s+|$)/i;
 
 export type CommunityEndpointModality =
@@ -213,9 +223,13 @@ export type CommunityEndpointRuntime = {
     ownerUserId: string;
     modelId: string;
     name: string;
+    // Null on rows created before titles existed; read paths go through
+    // communityEndpointTitle() rather than using this directly.
+    title: string | null;
     description: string | null;
     modality: CommunityEndpointModality;
     imagePricing: CommunityEndpointImagePricing;
+    supportsImageEdits: boolean;
     baseUrl: string;
     upstreamModel: string;
     bearerTokenCiphertext: string;
@@ -226,9 +240,11 @@ export type CommunityEndpointRuntime = {
 
 export type CommunityModelDefinitionInput = {
     modelId: string;
+    title?: string | null;
     description: string | null;
     modality?: CommunityEndpointModality;
     imagePricing?: CommunityEndpointImagePricing;
+    supportsImageEdits?: boolean;
 } & CommunityEndpointPrices;
 
 export type CommunityModelParts = {
@@ -326,9 +342,17 @@ export function communityImageGenerationsUrl(baseUrl: string): string {
     return `${communityOpenAIBaseUrl(baseUrl)}/images/generations`;
 }
 
+export function communityImageEditsUrl(baseUrl: string): string {
+    return `${communityOpenAIBaseUrl(baseUrl)}/images/edits`;
+}
+
 export function communityOpenAIBaseUrl(baseUrl: string): string {
     const normalized = normalizeCommunityEndpointBaseUrl(baseUrl);
-    for (const suffix of ["/chat/completions", "/images/generations"]) {
+    for (const suffix of [
+        "/chat/completions",
+        "/images/generations",
+        "/images/edits",
+    ]) {
         if (normalized.endsWith(suffix)) {
             return normalized.slice(0, -suffix.length);
         }
@@ -357,6 +381,24 @@ export function communityPriceDefinition(
     return pricing;
 }
 
+// Titles became a required field after these rows were created, so older
+// endpoints have no stored title. Fall back to what the catalog showed before
+// the column existed (description, then the model slug) so `/models` output is
+// unchanged for un-backfilled rows.
+export function communityEndpointTitle(endpoint: {
+    modelId: string;
+    title?: string | null;
+    description?: string | null;
+}): string {
+    const title = endpoint.title?.trim();
+    if (title) return title;
+    const description = endpoint.description?.trim();
+    if (description) return description;
+    return (
+        parseCommunityModelId(endpoint.modelId)?.modelName ?? endpoint.modelId
+    );
+}
+
 export function communityModelDefinition(
     endpoint: CommunityModelDefinitionInput,
 ): ModelDefinition {
@@ -383,9 +425,12 @@ export function communityModelDefinition(
         cost: communityPriceDefinition(endpoint, modality, imagePricing),
         priceMultiplier: 1,
         addedDate: 0,
-        title: description || parsed?.modelName || endpoint.modelId,
+        title: communityEndpointTitle(endpoint),
         description: description || undefined,
-        inputModalities: ["text"],
+        inputModalities:
+            isImage && endpoint.supportsImageEdits
+                ? ["text", "image"]
+                : ["text"],
         outputModalities: isImage ? ["image"] : ["text"],
         paidOnly: false,
         alpha: true,

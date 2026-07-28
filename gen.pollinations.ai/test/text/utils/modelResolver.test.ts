@@ -33,6 +33,14 @@ describe("resolveModelConfig", () => {
         expect(result.options.max_tokens).toBe(1024);
     });
 
+    it("routes claude-large to the global Opus 5 profile", () => {
+        const result = resolveModelConfig(messages, {
+            model: "claude-large",
+        });
+
+        expect(result.options.model).toBe("global.anthropic.claude-opus-5");
+    });
+
     it("does not set max_tokens for non-Anthropic models", () => {
         const result = resolveModelConfig(messages, { model: "openai" });
 
@@ -53,6 +61,29 @@ describe("resolveModelConfig", () => {
             only: ["atlas-cloud/fp8"],
             allow_fallbacks: false,
         });
+    });
+
+    it("pins Mercury to Inception on OpenRouter without fallback", () => {
+        const result = resolveModelConfig(messages, { model: "mercury" });
+
+        expect(result.options.model).toBe("inception/mercury-2");
+        expect(result.options.provider).toEqual({
+            only: ["Inception"],
+            allow_fallbacks: false,
+        });
+    });
+
+    it("routes Nemotron directly to DeepInfra without fallback", () => {
+        const result = resolveModelConfig(messages, { model: "nemotron" });
+
+        expect(result.options.model).toBe(
+            "nvidia/NVIDIA-Nemotron-3-Ultra-550B-A55B",
+        );
+        expect(result.options.modelConfig).toMatchObject({
+            provider: "openai",
+            "custom-host": "https://api.deepinfra.com/v1/openai",
+        });
+        expect(result.options.provider).toBeUndefined();
     });
 
     it.each([

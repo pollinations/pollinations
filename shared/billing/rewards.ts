@@ -56,11 +56,6 @@ function assertRewardAmount(amount: number): void {
     }
 }
 
-// D1 binds every value as a parameter and caps a statement at 100 bound
-// variables. Each reward row binds 8 columns, so 12 rows (96 params) is the
-// largest safe chunk.
-const REWARD_INSERT_CHUNK = 12;
-
 /**
  * Records earned rewards without moving pollen. The unique idempotency key
  * makes scanner retries safe; only claimReward() credits the user's balance.
@@ -89,16 +84,23 @@ export async function recordRewards(
         };
     });
 
-    const rewardIds: string[] = [];
-    for (let i = 0; i < rows.length; i += REWARD_INSERT_CHUNK) {
-        const chunk = rows.slice(i, i + REWARD_INSERT_CHUNK);
-        const inserted = await db
+    // Keep each insert as a separate statement so its bound parameter count is
+    // independent of the number of rewards. D1 executes the statements in one
+    // transactional batch, avoiding extra database round trips.
+    const statements = rows.map((row) =>
+        db
             .insert(rewards)
-            .values(chunk)
-            .onConflictDoNothing({ target: rewards.idempotencyKey })
-            .returning({ id: rewards.id });
-        rewardIds.push(...inserted.map((row) => row.id));
-    }
+            .values(row)
+            .onConflictDoNothing({ target: rewards.idempotencyKey }),
+    );
+    const [firstStatement, ...remainingStatements] = statements;
+    if (!firstStatement) return { recorded: 0, rewardIds: [] };
+
+    const results = await db.batch([firstStatement, ...remainingStatements]);
+    const rewardIds = rows.flatMap((row, index) => {
+        const result = results[index] as D1Result | undefined;
+        return result?.meta.changes ? [row.id] : [];
+    });
 
     return {
         recorded: rewardIds.length,

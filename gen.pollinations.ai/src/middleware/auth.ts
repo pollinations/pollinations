@@ -3,10 +3,17 @@ import {
     type AuthUser,
     authenticateApiKeyRequest,
     BannedAccountError,
+    extractApiKey,
+    loadActiveApiKeyAuthResult,
     StagingAccessDeniedError,
 } from "@shared/auth/api-key.ts";
 import { createMiddleware } from "hono/factory";
 import { HTTPException } from "hono/http-exception";
+import {
+    AGENT_RUN_TOKEN_PREFIX,
+    type AgentRunClaims,
+    verifyAgentRunToken,
+} from "../utils/agent-run-token.ts";
 import type { LoggerVariables } from "./logger.ts";
 
 type ModelVariables = {
@@ -23,6 +30,7 @@ export type AuthVariables = {
         requireAuthorization: (options?: { message?: string }) => Promise<void>;
         requireUser: () => AuthUser;
         requireModelAccess: () => void;
+        agentRun?: Pick<AgentRunClaims, "agentId" | "runId" | "expiresAt">;
     };
 };
 
@@ -33,8 +41,45 @@ export type AuthEnv = {
 
 export const auth = () =>
     createMiddleware<AuthEnv>(async (c, next) => {
+        let agentRun: AgentRunClaims | undefined;
         const authResult = await (async () => {
             try {
+                const rawApiKey = extractApiKey(c.req.raw);
+                if (rawApiKey?.startsWith(AGENT_RUN_TOKEN_PREFIX)) {
+                    let claims: AgentRunClaims;
+                    try {
+                        claims = await verifyAgentRunToken(
+                            rawApiKey,
+                            c.env.BETTER_AUTH_SECRET,
+                        );
+                    } catch {
+                        return null;
+                    }
+
+                    const parent = await loadActiveApiKeyAuthResult({
+                        apiKeyId: claims.parentApiKeyId,
+                        rawApiKey,
+                        env: c.env,
+                    });
+                    if (!parent) return null;
+
+                    const parentModels = parent.apiKey.permissions?.models;
+                    const models = parentModels
+                        ? claims.models.filter((model) =>
+                              parentModels.includes(model),
+                          )
+                        : claims.models;
+                    agentRun = claims;
+
+                    return {
+                        ...parent,
+                        apiKey: {
+                            ...parent.apiKey,
+                            permissions: { models },
+                        },
+                    };
+                }
+
                 return await authenticateApiKeyRequest({
                     request: c.req.raw,
                     env: c.env,
@@ -87,6 +132,13 @@ export const auth = () =>
             requireAuthorization,
             requireUser,
             requireModelAccess,
+            ...(agentRun && {
+                agentRun: {
+                    agentId: agentRun.agentId,
+                    runId: agentRun.runId,
+                    expiresAt: agentRun.expiresAt,
+                },
+            }),
         });
 
         await next();

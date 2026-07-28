@@ -270,6 +270,86 @@ export async function authenticateApiKeyRequest(opts: {
     };
 }
 
+/**
+ * Loads an active API key by ID after another credential has authenticated it.
+ * This deliberately does not accept the parent key's raw value so delegated
+ * credentials never need to contain or recover that secret.
+ */
+export async function loadActiveApiKeyAuthResult(opts: {
+    apiKeyId: string;
+    rawApiKey: string;
+    env: ApiKeyAuthBindings;
+}): Promise<ApiKeyAuthResult | null> {
+    const db = drizzle(opts.env.DB, { schema });
+    const byopClientKey = alias(schema.apikey, "byop_client_key");
+    const apiKeyData = await db
+        .select({
+            id: schema.apikey.id,
+            name: schema.apikey.name,
+            userId: schema.apikey.userId,
+            enabled: schema.apikey.enabled,
+            expiresAt: schema.apikey.expiresAt,
+            permissions: schema.apikey.permissions,
+            metadata: schema.apikey.metadata,
+            pollenBalance: schema.apikey.pollenBalance,
+            byopClientKeyId: schema.apikey.byopClientKeyId,
+            byopClientName: byopClientKey.name,
+            byopClientUserId: byopClientKey.userId,
+        })
+        .from(schema.apikey)
+        .leftJoin(
+            byopClientKey,
+            eq(byopClientKey.id, schema.apikey.byopClientKeyId),
+        )
+        .where(eq(schema.apikey.id, opts.apiKeyId))
+        .get();
+
+    if (
+        !apiKeyData ||
+        apiKeyData.enabled === false ||
+        (apiKeyData.expiresAt && apiKeyData.expiresAt <= new Date())
+    ) {
+        return null;
+    }
+
+    const userData = await db
+        .select()
+        .from(schema.user)
+        .where(eq(schema.user.id, apiKeyData.userId))
+        .get();
+    if (!userData) return null;
+
+    assertNotBanned(userData);
+    assertStagingAccess(opts.env, userData);
+
+    return {
+        user: userData,
+        apiKey: {
+            id: apiKeyData.id,
+            name: apiKeyData.name ?? undefined,
+            permissions: normalizePermissions(
+                parseStoredJson(apiKeyData.permissions),
+            ),
+            metadata: normalizeMetadata(parseStoredJson(apiKeyData.metadata)),
+            pollenBalance: apiKeyData.pollenBalance ?? null,
+            byopClientKeyId: apiKeyData.byopClientKeyId ?? null,
+            byopClientName: apiKeyData.byopClientName ?? null,
+            byopClientUserId: apiKeyData.byopClientUserId ?? null,
+            rawKey: opts.rawApiKey,
+        },
+        rawApiKey: opts.rawApiKey,
+    };
+}
+
+function parseStoredJson(value: unknown): unknown {
+    if (typeof value !== "string") return value;
+    try {
+        return JSON.parse(value);
+    } catch {
+        return undefined;
+    }
+}
+
 function normalizePermissions(
     value: unknown,
 ): Record<string, string[]> | undefined {

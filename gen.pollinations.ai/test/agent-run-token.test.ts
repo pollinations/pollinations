@@ -1,0 +1,198 @@
+import { createExecutionContext, env, SELF } from "cloudflare:test";
+import { apikey as apiKeyTable } from "@shared/db/better-auth.ts";
+import {
+    createTestApiKey,
+    RESTRICTED_IMAGE_TEST_MODEL,
+    RESTRICTED_TEXT_TEST_MODEL,
+    test,
+} from "@shared/test/fixtures/index.ts";
+import { eq } from "drizzle-orm";
+import { drizzle } from "drizzle-orm/d1";
+import { Hono } from "hono";
+import { expect } from "vitest";
+import { type AuthEnv, auth } from "@/middleware/auth.ts";
+import {
+    signAgentRunToken,
+    verifyAgentRunToken,
+} from "../src/utils/agent-run-token.ts";
+
+type MintResponse = {
+    access_token: string;
+    token_type: "Bearer";
+    expires_in: number;
+    run_id: string;
+    agent_id: string;
+    models: string[];
+};
+
+const authProbe = new Hono<AuthEnv>().use("*", auth()).get("/", (c) =>
+    c.json({
+        userId: c.var.auth.user?.id ?? null,
+        apiKeyId: c.var.auth.apiKey?.id ?? null,
+        pollenBalance: c.var.auth.apiKey?.pollenBalance ?? null,
+        permissions: c.var.auth.apiKey?.permissions ?? null,
+        rawKey: c.var.auth.apiKey?.rawKey ?? null,
+        agentRun: c.var.auth.agentRun ?? null,
+    }),
+);
+
+async function mintAgentRunToken(
+    parentKey: string,
+    models = [RESTRICTED_TEXT_TEST_MODEL, RESTRICTED_IMAGE_TEST_MODEL],
+) {
+    return SELF.fetch(
+        new Request("https://gen.pollinations.ai/v1/agent/run-token", {
+            method: "POST",
+            headers: {
+                Authorization: `Bearer ${parentKey}`,
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+                agent_id: "polli-itachi",
+                models,
+                expires_in: 300,
+            }),
+        }),
+    );
+}
+
+async function probeAgentRunToken(token: string) {
+    const executionContext = createExecutionContext();
+    return authProbe.fetch(
+        new Request("https://gen.pollinations.ai/", {
+            headers: { Authorization: `Bearer ${token}` },
+        }),
+        env,
+        executionContext,
+    );
+}
+
+test("mints a scoped token that resolves to the parent key for billing", async () => {
+    const parent = await createTestApiKey({
+        allowedModels: [
+            RESTRICTED_TEXT_TEST_MODEL,
+            RESTRICTED_IMAGE_TEST_MODEL,
+        ],
+        pollenBudget: 42,
+        user: { tierBalance: 100 },
+    });
+
+    const response = await mintAgentRunToken(parent.key);
+    expect(response.status).toBe(200);
+    expect(response.headers.get("Cache-Control")).toBe("no-store");
+
+    const minted = (await response.json()) as MintResponse;
+    expect(minted.access_token).toMatch(/^ag_/);
+    expect(minted.access_token).not.toContain(parent.key);
+    expect(minted).toMatchObject({
+        token_type: "Bearer",
+        expires_in: 300,
+        agent_id: "polli-itachi",
+        models: [RESTRICTED_TEXT_TEST_MODEL, RESTRICTED_IMAGE_TEST_MODEL],
+    });
+
+    const probeResponse = await probeAgentRunToken(minted.access_token);
+    expect(probeResponse.status).toBe(200);
+    expect(await probeResponse.json()).toEqual({
+        userId: parent.userId,
+        apiKeyId: parent.id,
+        pollenBalance: 42,
+        permissions: {
+            models: [RESTRICTED_TEXT_TEST_MODEL, RESTRICTED_IMAGE_TEST_MODEL],
+        },
+        rawKey: minted.access_token,
+        agentRun: {
+            agentId: "polli-itachi",
+            runId: minted.run_id,
+            expiresAt: expect.any(Number),
+        },
+    });
+});
+
+test("agent run token narrows the visible model catalog", async () => {
+    const parent = await createTestApiKey({
+        user: { tierBalance: 100 },
+    });
+    const mintResponse = await mintAgentRunToken(parent.key, [
+        RESTRICTED_TEXT_TEST_MODEL,
+    ]);
+    const minted = (await mintResponse.json()) as MintResponse;
+
+    const modelsResponse = await SELF.fetch(
+        new Request("https://gen.pollinations.ai/v1/models", {
+            headers: { Authorization: `Bearer ${minted.access_token}` },
+        }),
+    );
+    expect(modelsResponse.status).toBe(200);
+    const models = (await modelsResponse.json()) as {
+        data: { id: string }[];
+    };
+    expect(models.data.map((model) => model.id)).toEqual([
+        RESTRICTED_TEXT_TEST_MODEL,
+    ]);
+});
+
+test("cannot mint broader or nested agent run tokens", async () => {
+    const parent = await createTestApiKey({
+        allowedModels: [RESTRICTED_TEXT_TEST_MODEL],
+        user: { tierBalance: 100 },
+    });
+
+    const broaderResponse = await mintAgentRunToken(parent.key, [
+        RESTRICTED_IMAGE_TEST_MODEL,
+    ]);
+    expect(broaderResponse.status).toBe(403);
+
+    const mintResponse = await mintAgentRunToken(parent.key, [
+        RESTRICTED_TEXT_TEST_MODEL,
+    ]);
+    const minted = (await mintResponse.json()) as MintResponse;
+    const nestedResponse = await mintAgentRunToken(minted.access_token, [
+        RESTRICTED_TEXT_TEST_MODEL,
+    ]);
+    expect(nestedResponse.status).toBe(403);
+});
+
+test("parent key revocation immediately invalidates an agent run token", async () => {
+    const parent = await createTestApiKey({
+        allowedModels: [RESTRICTED_TEXT_TEST_MODEL],
+        user: { tierBalance: 100 },
+    });
+    const mintResponse = await mintAgentRunToken(parent.key, [
+        RESTRICTED_TEXT_TEST_MODEL,
+    ]);
+    const minted = (await mintResponse.json()) as MintResponse;
+
+    await drizzle(env.DB)
+        .update(apiKeyTable)
+        .set({ enabled: false })
+        .where(eq(apiKeyTable.id, parent.id));
+
+    const probeResponse = await probeAgentRunToken(minted.access_token);
+    expect(await probeResponse.json()).toMatchObject({
+        userId: null,
+        apiKeyId: null,
+    });
+});
+
+test("rejects tampered and expired agent run tokens", async () => {
+    const token = await signAgentRunToken({
+        secret: env.BETTER_AUTH_SECRET,
+        parentApiKeyId: "parent-key-id",
+        agentId: "polli-itachi",
+        runId: "run-id",
+        models: [RESTRICTED_TEXT_TEST_MODEL],
+        expiresIn: 30,
+        now: 1_000,
+    });
+    const parts = token.slice(3).split(".");
+    parts[2] = `${parts[2].startsWith("a") ? "b" : "a"}${parts[2].slice(1)}`;
+    const tampered = `ag_${parts.join(".")}`;
+
+    await expect(
+        verifyAgentRunToken(tampered, env.BETTER_AUTH_SECRET, 1_001),
+    ).rejects.toThrow();
+    await expect(
+        verifyAgentRunToken(token, env.BETTER_AUTH_SECRET, 1_036),
+    ).rejects.toThrow();
+});

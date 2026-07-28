@@ -51,6 +51,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { Env } from "@/env.ts";
 import { checkBalance } from "@/utils/generation-access.ts";
 import {
+    type CommunityGroupRegistryEntry,
     communityGroupEntries,
     communityImageSupportedEndpoints,
 } from "./community-models.ts";
@@ -1114,10 +1115,35 @@ describe("community endpoint helpers", () => {
             });
         });
 
-        it("publishes no pool when two price cohorts share a name", async () => {
+        it("publishes the biggest cohort when a name is contested", async () => {
             const groups = communityGroupEntries([
                 await groupMember({ modelId: "alice/laguna" }),
                 await groupMember({ modelId: "bob/laguna" }),
+                // Cheaper, but fewer people converged on it.
+                await groupMember({
+                    modelId: "carol/laguna",
+                    promptTextPrice: 0.01,
+                    completionTextPrice: 0.02,
+                }),
+                await groupMember({
+                    modelId: "dave/laguna",
+                    promptTextPrice: 0.01,
+                    completionTextPrice: 0.02,
+                }),
+                await groupMember({ modelId: "erin/laguna" }),
+            ]);
+
+            expect(groups).toHaveLength(1);
+            expect(groups[0].id).toBe("group/laguna");
+            expect(groups[0].members.map((member) => member.modelId)).toEqual([
+                "alice/laguna",
+                "bob/laguna",
+                "erin/laguna",
+            ]);
+        });
+
+        it("breaks an equal-sized contest by price", async () => {
+            const groups = communityGroupEntries([
                 await groupMember({
                     modelId: "carol/laguna",
                     promptTextPrice: 0.3,
@@ -1128,16 +1154,25 @@ describe("community endpoint helpers", () => {
                     promptTextPrice: 0.3,
                     completionTextPrice: 0.4,
                 }),
+                await groupMember({ modelId: "alice/laguna" }),
+                await groupMember({ modelId: "bob/laguna" }),
             ]);
 
-            // Both cohorts would claim `group/laguna`. Only one of the two
-            // could ever be routed to, and which one depends on D1 row order,
-            // so the catalog would advertise a price the caller isn't billed.
-            expect(groups).toEqual([]);
+            // Same size, so the cheaper cohort (0.1/0.2) takes the id even
+            // though the dearer one was seen first.
+            expect(groups).toHaveLength(1);
+            expect(groups[0].members.map((member) => member.modelId)).toEqual([
+                "alice/laguna",
+                "bob/laguna",
+            ]);
+            expect(groups[0].definition.cost).toMatchObject({
+                promptTextTokens: 0.1,
+                completionTextTokens: 0.2,
+            });
         });
 
-        it("publishes no pool when cohorts of different modalities share a name", async () => {
-            const groups = communityGroupEntries([
+        it("publishes one pool per name when modalities collide", async () => {
+            const textFirst = communityGroupEntries([
                 await groupMember({ modelId: "alice/laguna" }),
                 await groupMember({ modelId: "bob/laguna" }),
                 await groupMember({
@@ -1149,11 +1184,33 @@ describe("community endpoint helpers", () => {
                     modality: "image",
                 }),
             ]);
+            const imageFirst = communityGroupEntries([
+                await groupMember({
+                    modelId: "carol/laguna",
+                    modality: "image",
+                }),
+                await groupMember({
+                    modelId: "dave/laguna",
+                    modality: "image",
+                }),
+                await groupMember({ modelId: "alice/laguna" }),
+                await groupMember({ modelId: "bob/laguna" }),
+            ]);
 
-            expect(groups).toEqual([]);
+            // Same size and same prices, so only the modality tiebreaker
+            // decides — and it must decide the same way regardless of the
+            // order D1 happened to return the rows in. Compare ids, not whole
+            // members: each groupMember() call re-encrypts its bearer token
+            // with a fresh nonce, so the ciphertexts never match.
+            const memberIds = (groups: CommunityGroupRegistryEntry[]) =>
+                groups.map((group) =>
+                    group.members.map((member) => member.modelId),
+                );
+            expect(textFirst).toHaveLength(1);
+            expect(memberIds(imageFirst)).toEqual(memberIds(textFirst));
         });
 
-        it("still pools unambiguous names alongside a contested one", async () => {
+        it("pools a contested name alongside an uncontested one", async () => {
             const groups = communityGroupEntries([
                 await groupMember({ modelId: "alice/laguna" }),
                 await groupMember({ modelId: "bob/laguna" }),
@@ -1169,7 +1226,10 @@ describe("community endpoint helpers", () => {
                 await groupMember({ modelId: "bob/kimi", name: "kimi" }),
             ]);
 
-            expect(groups.map((group) => group.id)).toEqual(["group/kimi"]);
+            expect(groups.map((group) => group.id).sort()).toEqual([
+                "group/kimi",
+                "group/laguna",
+            ]);
         });
 
         it("lets a caller with no balance use a free pool", async () => {

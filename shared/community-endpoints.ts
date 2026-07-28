@@ -492,16 +492,42 @@ export function communityGroupKey(endpoint: CommunityGroupCandidate): string {
 }
 
 /**
+ * Orders two cohorts competing for one `group/<name>` id: the one with more
+ * members wins, and an equal-sized tie goes to the cheaper one. Prices compare
+ * field by field in COMMUNITY_ENDPOINT_PRICE_FIELDS order, so a new price
+ * column joins the comparison automatically.
+ *
+ * Modality and image-pricing mode are the final tiebreakers. They never decide
+ * anything a human would notice, but cohorts differing only in those fields
+ * would otherwise compare equal and the winner would fall out of unordered D1
+ * row order — the published pool has to be the same on every registry rebuild.
+ */
+function compareCommunityGroupPools<T extends CommunityGroupCandidate>(
+    a: readonly T[],
+    b: readonly T[],
+): number {
+    if (a.length !== b.length) return b.length - a.length;
+    for (const field of COMMUNITY_ENDPOINT_PRICE_FIELDS) {
+        const difference = a[0][field.key] - b[0][field.key];
+        if (difference !== 0) return difference;
+    }
+    return (
+        a[0].modality.localeCompare(b[0].modality) ||
+        a[0].imagePricing.localeCompare(b[0].imagePricing)
+    );
+}
+
+/**
  * Buckets endpoints into pools of interchangeable members. A private endpoint
  * is owner-only and a disabled one is broken, so neither can take its turn
  * serving a pooled request.
  *
- * A model name claimed by more than one pool is dropped entirely. Both pools
- * would want the same `group/<name>` id, only one of them could ever be routed
- * to, and which one that is depends on unordered D1 row order — so the price a
- * caller reads from the catalog would not be the price they are billed. That
- * ambiguity is exactly what the price-equality gate exists to prevent, so no
- * pool is published until the cohorts converge on one price.
+ * One name publishes at most one pool, because every cohort under a name would
+ * otherwise want the same `group/<name>` id. When a name is contested the
+ * biggest cohort wins — the pool people actually converged on — and an
+ * equal-sized tie goes to the cheaper one. Losing cohorts publish nothing;
+ * their members stay individually callable as `owner/name`, so nothing they
+ * already had breaks.
  */
 export function communityGroupBuckets<T extends CommunityGroupCandidate>(
     endpoints: readonly T[],
@@ -517,17 +543,16 @@ export function communityGroupBuckets<T extends CommunityGroupCandidate>(
         else buckets.set(key, [endpoint]);
     }
 
-    const pools = [...buckets.values()].filter(
-        (members) => members.length >= MIN_COMMUNITY_GROUP_MEMBERS,
-    );
-    const poolsPerName = new Map<string, number>();
-    for (const members of pools) {
-        poolsPerName.set(
-            members[0].name,
-            (poolsPerName.get(members[0].name) ?? 0) + 1,
-        );
+    const winnerByName = new Map<string, T[]>();
+    for (const members of buckets.values()) {
+        if (members.length < MIN_COMMUNITY_GROUP_MEMBERS) continue;
+        const name = members[0].name;
+        const incumbent = winnerByName.get(name);
+        if (!incumbent || compareCommunityGroupPools(members, incumbent) < 0) {
+            winnerByName.set(name, members);
+        }
     }
-    return pools.filter((members) => poolsPerName.get(members[0].name) === 1);
+    return [...winnerByName.values()];
 }
 
 /**

@@ -23,7 +23,12 @@ import { Chart } from "./chart";
 import { formatActivityPollen } from "./format-activity-pollen";
 import { formatTokens } from "./format-tokens";
 import { MetricTabs } from "./metric-tabs";
-import type { FilterState, Metric, ModelBreakdown, UsagePeriodSelection } from "./types";
+import type {
+    FilterState,
+    Metric,
+    ModelBreakdown,
+    UsagePeriodSelection,
+} from "./types";
 import { useUsageData } from "./use-usage-data";
 
 const DETAILED_USAGE_DOWNLOAD_LIMIT = 50_000;
@@ -271,11 +276,17 @@ const UsageChartView: FC<UsageChartViewProps> = ({
                             value={formatActivityPollen(stats.totalPollen)}
                             detail={
                                 <div className="flex flex-wrap items-center gap-2">
-                                    <PaidChip size="lg" className="font-semibold">
+                                    <PaidChip
+                                        size="lg"
+                                        className="font-semibold"
+                                    >
                                         <CardIcon className="h-4 w-4" />
                                         {formatActivityPollen(stats.paidPollen)}
                                     </PaidChip>
-                                    <TierChip size="lg" className="font-semibold">
+                                    <TierChip
+                                        size="lg"
+                                        className="font-semibold"
+                                    >
                                         <SproutIcon className="h-4 w-4" />
                                         {formatActivityPollen(stats.tierPollen)}
                                     </TierChip>
@@ -290,7 +301,9 @@ const UsageChartView: FC<UsageChartViewProps> = ({
                                 stats.activeApiKeyCount === null ? null : (
                                     <span className="text-theme-text-soft">
                                         across {stats.activeApiKeyCount} API key
-                                        {stats.activeApiKeyCount === 1 ? "" : "s"}
+                                        {stats.activeApiKeyCount === 1
+                                            ? ""
+                                            : "s"}
                                     </span>
                                 )
                             }
@@ -446,7 +459,9 @@ const ModelBreakdownTable: FC<ModelBreakdownTableProps> = ({
                                         className={`${TABLE_CELL_CLASS} hidden sm:table-cell`}
                                     >
                                         {(m.tierPollen ?? 0) > 0
-                                            ? formatActivityPollen(m.tierPollen ?? 0)
+                                            ? formatActivityPollen(
+                                                  m.tierPollen ?? 0,
+                                              )
                                             : "—"}
                                     </TableCell>
                                     <TableCell
@@ -454,7 +469,9 @@ const ModelBreakdownTable: FC<ModelBreakdownTableProps> = ({
                                         className={`${TABLE_CELL_CLASS} hidden sm:table-cell`}
                                     >
                                         {(m.paidPollen ?? 0) > 0
-                                            ? formatActivityPollen(m.paidPollen ?? 0)
+                                            ? formatActivityPollen(
+                                                  m.paidPollen ?? 0,
+                                              )
                                             : "—"}
                                     </TableCell>
                                     <TableCell
@@ -539,7 +556,8 @@ const ModelBreakdownTable: FC<ModelBreakdownTableProps> = ({
                                     In / Out
                                 </span>
                                 <span className="text-right tabular-nums">
-                                    {formatTokens(inTokens)} / {formatTokens(outTokens)}
+                                    {formatTokens(inTokens)} /{" "}
+                                    {formatTokens(outTokens)}
                                 </span>
                                 {(m.tierPollen ?? 0) > 0 && (
                                     <>
@@ -547,7 +565,9 @@ const ModelBreakdownTable: FC<ModelBreakdownTableProps> = ({
                                             Quest
                                         </span>
                                         <span className="text-right tabular-nums">
-                                            {formatActivityPollen(m.tierPollen ?? 0)}
+                                            {formatActivityPollen(
+                                                m.tierPollen ?? 0,
+                                            )}
                                         </span>
                                     </>
                                 )}
@@ -557,7 +577,9 @@ const ModelBreakdownTable: FC<ModelBreakdownTableProps> = ({
                                             Paid
                                         </span>
                                         <span className="text-right tabular-nums">
-                                            {formatActivityPollen(m.paidPollen ?? 0)}
+                                            {formatActivityPollen(
+                                                m.paidPollen ?? 0,
+                                            )}
                                         </span>
                                     </>
                                 )}

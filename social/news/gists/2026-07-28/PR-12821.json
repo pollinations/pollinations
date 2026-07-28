@@ -1,0 +1,36 @@
+{
+  "pr_number": 12821,
+  "title": "Add Anime Forge to image",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/12821",
+  "merged_at": "2026-07-28T15:26:32Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds [Anime Forge](https://animeforge-k4ltm64.public.builtwithrocket.new) to image\n- Anime Forge is an AI-driven anime character design web app powered by Pollinations API for text and image generation.\n\nFixes #12773",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Fresh anime pollen",
+    "blurb": "Anime Forge joined the garden: a web app for designing anime characters with Pollinations text and image generation. More character sheets, fewer blank-canvas stares.",
+    "summary": "Added Anime Forge to the community app listings, highlighting its Pollinations-powered AI workflow for designing anime characters with text and image generation.",
+    "impact": "People exploring Pollinations apps can now discover Anime Forge as a ready-made tool for creating original anime character concepts.",
+    "keywords": [
+      "community",
+      "apps",
+      "anime-forge",
+      "image-generation",
+      "text-generation",
+      "character-design"
+    ],
+    "visual_concept": "Depict Anime Forge as a cozy character-design studio: a retro terminal displays a simple anime character portrait and sketch sheets while Polli helps arrange glowing pixel art tools. Polli wears a tiny artist beret and holds a pencil, surrounded by code-plants, pastel flowers, and an Anime Forge sign; the scene represents turning prompts into character ideas.",
+    "image_prompt": "Cozy pixel art scene inside a warm anime character-design studio, with a retro CRT computer showing a cute original anime character portrait and simple pixel-font text reading \"ANIME FORGE\". The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears a tiny painter's beret and happily sketches beside glowing lime green (#ecf874) code-plants, pastel flowers, and character sheets. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, like Stardew Valley or A Short Hike, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-28/PR-12821.jpg",
+    "prompt": "Cozy pixel art scene inside a warm anime character-design studio, with a retro CRT computer showing a cute original anime character portrait and simple pixel-font text reading \"ANIME FORGE\". The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears a tiny painter's beret and happily sketches beside glowing lime green (#ecf874) code-plants, pastel flowers, and character sheets. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, like Stardew Valley or A Short Hike, nostalgic but beautiful."
+  },
+  "generated_at": "2026-07-28T15:27:41.610806+00:00",
+  "app_name": "Anime Forge",
+  "app_url": "https://animeforge-k4ltm64.public.builtwithrocket.new"
+}

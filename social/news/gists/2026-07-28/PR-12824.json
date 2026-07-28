@@ -1,0 +1,36 @@
+{
+  "pr_number": 12824,
+  "title": "Add AI Health Studio to build",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/12824",
+  "merged_at": "2026-07-28T15:36:48Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds [AI Health Studio](https://kreggscode.github.io/health-analyzer-ai) to build\n- AI Health Studio is an AI-powered health and wellness web app that uses Pollinations AI APIs at its core: - **Chat Completions API** (POST gen.pollinations.ai/v1/chat/completions): Generates personali\n\nFixes #12742",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Wellness enters the greenhouse",
+    "blurb": "AI Health Studio has joined the build: a community-made health and wellness app growing from Pollinations chat completions. Polli brought a clipboard and, wisely, no medical degree.",
+    "summary": "Added AI Health Studio to the community app build, highlighting its use of the Pollinations Chat Completions API at gen.pollinations.ai/v1/chat/completions for personalized health and wellness conversations.",
+    "impact": "People exploring Pollinations-powered projects can now discover AI Health Studio as a practical health and wellness app built on the chat API.",
+    "keywords": [
+      "community-app",
+      "health",
+      "wellness",
+      "chat-completions",
+      "api",
+      "greenhouse"
+    ],
+    "visual_concept": "Depict AI Health Studio as a cozy digital wellness garden: a retro health dashboard and gentle code-plants represent the Chat Completions API powering personalized conversations. Polli, wearing a tiny clinician-style head mirror and holding a clipboard, warmly tends the plants beside the eager CRT Monitor Robot; keep the scene clearly wellness-themed rather than medical or clinical.",
+    "image_prompt": "A cozy pixel art health-and-wellness garden studio with a retro CRT terminal showing simple pixel text \"AI HEALTH STUDIO\" and friendly chat bubbles, while code-plants sprout from lime green (#ecf874) pots. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears a tiny clinician head mirror, holds a clipboard, and tends the garden beside a cute chunky CRT monitor robot. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, subtle flowers and vines, dark purple (#110518) outlines, nostalgic but beautiful and emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-28/PR-12824.jpg",
+    "prompt": "A cozy pixel art health-and-wellness garden studio with a retro CRT terminal showing simple pixel text \"AI HEALTH STUDIO\" and friendly chat bubbles, while code-plants sprout from lime green (#ecf874) pots. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears a tiny clinician head mirror, holds a clipboard, and tends the garden beside a cute chunky CRT monitor robot. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, subtle flowers and vines, dark purple (#110518) outlines, nostalgic but beautiful and emotionally warm."
+  },
+  "generated_at": "2026-07-28T15:39:58.739100+00:00",
+  "app_name": "AI Health Studio",
+  "app_url": "https://kreggscode.github.io/health-analyzer-ai"
+}

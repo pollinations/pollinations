@@ -8,6 +8,7 @@ import {
 } from "@pollinations/ui";
 import { useCallback, useEffect, useState } from "react";
 import { apiClient } from "../../api.ts";
+import type { ApiModelInfo } from "../models/model-catalog.ts";
 import { CommunityEndpointCard } from "./community-endpoint-card.tsx";
 import { CommunityEndpointDeleteConfirmation } from "./community-endpoint-delete-confirmation.tsx";
 import { CommunityEndpointDialog } from "./community-endpoint-dialog.tsx";
@@ -22,11 +23,13 @@ type CommunityEndpointsProps = {
     // Allowlisted owners can make models public (set prices, list in /models).
     // Everyone else can only create and edit private, owner-only models.
     canPublish: boolean;
+    catalogModels: ApiModelInfo[];
 };
 
 export function CommunityEndpoints({
     onChange,
     canPublish,
+    catalogModels,
 }: CommunityEndpointsProps) {
     const [endpoints, setEndpoints] = useState<CommunityEndpoint[]>([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -167,6 +170,7 @@ export function CommunityEndpoints({
                 framed
                 action={
                     <CommunityEndpointDialog
+                        catalogModels={catalogModels}
                         open={createOpen}
                         onOpenChange={setCreateOpen}
                         onSubmit={handleCreate}
@@ -239,6 +243,7 @@ export function CommunityEndpoints({
             </Section>
 
             <CommunityEndpointDialog
+                catalogModels={catalogModels}
                 key={editing?.id ?? "edit-closed"}
                 endpoint={editing ?? undefined}
                 open={!!editing}

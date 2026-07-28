@@ -22,6 +22,11 @@ import type { FormEvent, ReactNode } from "react";
 import { useEffect, useState } from "react";
 import { apiClient } from "../../api.ts";
 import {
+    type ApiModelInfo,
+    getCatalogDisplayName,
+    getCatalogModelId,
+} from "../models/model-catalog.ts";
+import {
     BASE_TEXT_PRICE_KEYS,
     formWithVisiblePrices,
     hasValidVisibleFormPrices,
@@ -51,6 +56,7 @@ type CommunityEndpointDialogProps = {
     // Allowlisted owners can choose Public. Everyone else sees the same
     // lifecycle control with Public disabled.
     canPublish: boolean;
+    catalogModels: ApiModelInfo[];
     open: boolean;
     onOpenChange: (open: boolean) => void;
     onSubmit: (payload: EndpointPayload, bearerToken: string) => Promise<void>;
@@ -61,6 +67,7 @@ type CommunityEndpointDialogProps = {
 export function CommunityEndpointDialog({
     endpoint,
     canPublish,
+    catalogModels,
     open,
     onOpenChange,
     onSubmit,
@@ -283,6 +290,20 @@ export function CommunityEndpointDialog({
             : modelOptions.filter((model) =>
                   model.toLowerCase().includes(providerModelQuery),
               );
+    const fallbackOptions = catalogModels
+        .filter((model) => {
+            const id = getCatalogModelId(model);
+            return (
+                id !== "" &&
+                id !== endpoint?.modelId &&
+                model.category === form.modality
+            );
+        })
+        .sort((a, b) =>
+            getCatalogDisplayName(a, getCatalogModelId(a)).localeCompare(
+                getCatalogDisplayName(b, getCatalogModelId(b)),
+            ),
+        );
     const canSubmit =
         !isSubmitting &&
         form.name.trim() !== "" &&
@@ -394,6 +415,31 @@ export function CommunityEndpointDialog({
                             />
                         </FieldStack>
                     </div>
+
+                    <FieldStack
+                        label="Fallback model"
+                        helper="Optional. Retried once after a server error; must use the same modality and cost no more."
+                        alignLabelRow
+                    >
+                        <select
+                            name="community-fallback-model"
+                            value={form.fallbackModel}
+                            onChange={(event) =>
+                                updateForm("fallbackModel", event.target.value)
+                            }
+                            className="w-full rounded-md border border-divider bg-surface px-3 py-2 text-sm text-theme-text-strong"
+                        >
+                            <option value="">No fallback</option>
+                            {fallbackOptions.map((model) => {
+                                const id = getCatalogModelId(model);
+                                return (
+                                    <option key={id} value={id}>
+                                        {`${getCatalogDisplayName(model, id)} (${id})`}
+                                    </option>
+                                );
+                            })}
+                        </select>
+                    </FieldStack>
 
                     <FieldStack
                         label="Description"

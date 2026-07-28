@@ -30,7 +30,11 @@ import {
 } from "@shared/db/better-auth.ts";
 import { handleError } from "@shared/error.ts";
 import { IMMUTABLE_CACHE_CONTROL } from "@shared/http/cache-control.ts";
-import { calculateUsageBilling } from "@shared/registry/registry.ts";
+import {
+    calculateUsageBilling,
+    isModelFallbackCompatible,
+} from "@shared/registry/registry.ts";
+import { FALLBACK_TARGET_HEADER } from "@shared/registry/usage-headers.ts";
 import { encryptSecret } from "@shared/secret-encryption.ts";
 import {
     createTestApiKey,
@@ -462,6 +466,34 @@ describe("community endpoint helpers", () => {
         );
     });
 
+    it("allows only same-modality fallbacks that cost no more", () => {
+        const model = (
+            id: string,
+            promptTextPrice: number,
+            modality: CommunityEndpointRuntime["modality"] = "text",
+        ) =>
+            communityModelDefinition({
+                modelId: id,
+                description: null,
+                modality,
+                ...communityEndpointPrices({ promptTextPrice }),
+            });
+
+        const primary = model("owner/primary", 0.1);
+        expect(
+            isModelFallbackCompatible(primary, model("owner/cheaper", 0.05)),
+        ).toBe(true);
+        expect(
+            isModelFallbackCompatible(primary, model("owner/expensive", 0.2)),
+        ).toBe(false);
+        expect(
+            isModelFallbackCompatible(
+                primary,
+                model("owner/image", 0.05, "image"),
+            ),
+        ).toBe(false);
+    });
+
     describe("community image endpoint billing", () => {
         afterEach(() => {
             vi.unstubAllGlobals();
@@ -841,6 +873,113 @@ fixtureTest(
             isPortkeyChatCompletionsRequest(new Request(input, init)),
         );
         expect(upstreamCalls).toHaveLength(2);
+    },
+);
+
+fixtureTest(
+    "retries a failed model with its configured fallback",
+    async ({ apiKey }) => {
+        const suffix = crypto.randomUUID().slice(0, 8);
+        const primaryOwner = `fallback-primary-${suffix}`;
+        const targetOwner = `fallback-target-${suffix}`;
+        const targetName = `target-${suffix}`;
+        const targetModel = communityModelId(targetOwner, targetName);
+        for (const [ownerGithubUsername, name, baseUrl, fallbackModel] of [
+            [
+                primaryOwner,
+                `primary-${suffix}`,
+                "https://primary.example.com/v1",
+                targetModel,
+            ],
+            [targetOwner, targetName, "https://fallback.example.com/v1", null],
+        ] as const) {
+            const ownerUserId = await createTestUser({
+                githubUsername: ownerGithubUsername,
+            });
+            await db.insert(communityEndpointTable).values({
+                id: `endpoint-${crypto.randomUUID()}`,
+                ownerUserId,
+                visibility: "public",
+                name,
+                baseUrl,
+                upstreamModel: "shared-model",
+                fallbackModel,
+                bearerTokenCiphertext: await encryptSecret(
+                    "sk_saved_token",
+                    env.BETTER_AUTH_SECRET,
+                ),
+                promptTextPrice: 0.1,
+                completionTextPrice: 0.1,
+                createdAt: new Date(),
+                updatedAt: new Date(),
+            });
+        }
+
+        const upstreamHosts: string[] = [];
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async (input, init) => {
+                const request = new Request(input, init);
+                if (isPortkeyChatCompletionsRequest(request)) {
+                    const host = request.headers.get("x-portkey-custom-host");
+                    if (host) upstreamHosts.push(host);
+                    if (host === "https://primary.example.com/v1") {
+                        return Response.json(
+                            { error: { message: "temporarily unavailable" } },
+                            { status: 503 },
+                        );
+                    }
+                    return Response.json({
+                        id: "chatcmpl_fallback",
+                        object: "chat.completion",
+                        choices: [
+                            {
+                                index: 0,
+                                message: {
+                                    role: "assistant",
+                                    content: "ok",
+                                },
+                                finish_reason: "stop",
+                            },
+                        ],
+                        usage: {
+                            prompt_tokens: 2,
+                            completion_tokens: 3,
+                            total_tokens: 5,
+                        },
+                    });
+                }
+                if (isBillingFetch(request)) {
+                    return Response.json({ data: [] });
+                }
+                throw new Error(`Unexpected fetch: ${request.url}`);
+            }),
+        );
+
+        const primaryModel = communityModelId(
+            primaryOwner,
+            `primary-${suffix}`,
+        );
+        const response = await SELF.fetch(
+            new Request("https://gen.pollinations.ai/v1/chat/completions", {
+                method: "POST",
+                headers: {
+                    Authorization: `Bearer ${apiKey}`,
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    model: primaryModel,
+                    messages: [{ role: "user", content: "hello" }],
+                }),
+            }),
+        );
+
+        expect(response.status).toBe(200);
+        expect(response.headers.get(FALLBACK_TARGET_HEADER)).toBe(targetModel);
+        expect(upstreamHosts).toEqual([
+            "https://primary.example.com/v1",
+            "https://fallback.example.com/v1",
+        ]);
     },
 );
 

@@ -11,6 +11,7 @@ import {
     communityEndpointPrices,
     communityEndpointPricesForModality,
     communityEndpointTitle,
+    communityModelDefinition,
     communityModelId,
     isCommunityEndpointOwnerAllowed,
     MAX_COMMUNITY_PRICE_PER_IMAGE,
@@ -22,11 +23,18 @@ import {
     normalizeCommunityEndpointBearerToken,
     normalizeCommunityEndpointImagePricing,
     normalizeCommunityEndpointModality,
+    parseCommunityModelId,
 } from "@shared/community-endpoints.ts";
 import * as schema from "@shared/db/better-auth.ts";
 import { validator } from "@shared/middleware/validator.ts";
+import {
+    getModels,
+    getRegistryModelDefinition,
+    isModelFallbackCompatible,
+    type ModelDefinition,
+} from "@shared/registry/registry.ts";
 import { encryptSecret } from "@shared/secret-encryption.ts";
-import { and, eq } from "drizzle-orm";
+import { and, eq, isNull } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import type { Context } from "hono";
 import { Hono } from "hono";
@@ -130,6 +138,7 @@ const EndpointFieldsSchema = {
             "OpenAI-compatible `/v1` base URL or full chat, image generation, or image edit URL.",
         ),
     upstreamModel: z.string().trim().min(1).max(253).optional(),
+    fallbackModel: z.string().trim().min(1).max(253).nullable().optional(),
     bearerToken: z.string().min(1),
 } as const;
 
@@ -147,6 +156,7 @@ const UpdateEndpointSchema = z.object({
     description: EndpointFieldsSchema.description,
     baseUrl: EndpointFieldsSchema.baseUrl.optional(),
     upstreamModel: EndpointFieldsSchema.upstreamModel,
+    fallbackModel: EndpointFieldsSchema.fallbackModel,
     bearerToken: EndpointFieldsSchema.bearerToken.optional(),
     visibility: VisibilitySchema.optional(),
     imagePricing: ImagePricingSchema.optional(),
@@ -178,6 +188,7 @@ const CommunityEndpointResponseSchema = z.object({
     supportsImageEdits: z.boolean(),
     baseUrl: z.string(),
     upstreamModel: z.string(),
+    fallbackModel: z.string().nullable(),
     visibility: VisibilitySchema,
     ...ResponsePriceFieldsSchema,
     disabled: z.boolean(),
@@ -299,6 +310,7 @@ function toResponse(row: CommunityEndpointRow, ownerGithubUsername: string) {
         supportsImageEdits: row.supportsImageEdits,
         baseUrl: row.baseUrl,
         upstreamModel: row.upstreamModel,
+        fallbackModel: row.fallbackModel,
         visibility: row.visibility,
         ...communityEndpointPrices(row),
         disabled: row.disabledAt !== null,
@@ -341,6 +353,84 @@ async function ensureModelNameAvailable(
     throw new HTTPException(400, {
         message: "Community model name is already registered",
     });
+}
+
+async function resolveFallbackModel(
+    db: Db,
+    model: string,
+    callerUserId: string,
+    allowPrivateCommunity: boolean,
+): Promise<{ id: string; definition: ModelDefinition } | null> {
+    for (const id of getModels()) {
+        const definition = getRegistryModelDefinition(id);
+        if (id === model || definition.aliases.includes(model)) {
+            return definition.hidden ? null : { id, definition };
+        }
+    }
+
+    const parsed = parseCommunityModelId(model);
+    if (!parsed) return null;
+    const owner = await db.query.user.findFirst({
+        columns: { id: true, githubUsername: true },
+        where: eq(schema.user.githubUsername, parsed.ownerGithubUsername),
+    });
+    if (!owner?.githubUsername) return null;
+    const row = await db.query.communityEndpoint.findFirst({
+        where: and(
+            eq(schema.communityEndpoint.ownerUserId, owner.id),
+            eq(schema.communityEndpoint.name, parsed.modelName),
+            isNull(schema.communityEndpoint.disabledAt),
+        ),
+    });
+    if (
+        !row ||
+        (row.visibility !== "public" &&
+            (!allowPrivateCommunity || row.ownerUserId !== callerUserId))
+    ) {
+        return null;
+    }
+    const id = communityModelId(owner.githubUsername, row.name);
+    return {
+        id,
+        definition: communityModelDefinition({
+            modelId: id,
+            title: row.title,
+            description: row.description,
+            modality: normalizeCommunityEndpointModality(row.modality),
+            imagePricing: normalizeCommunityEndpointImagePricing(
+                row.imagePricing,
+            ),
+            supportsImageEdits: row.supportsImageEdits,
+            ...communityEndpointPrices(row),
+        }),
+    };
+}
+
+async function validateFallbackModel(
+    db: Db,
+    callerUserId: string,
+    primaryId: string,
+    primary: ModelDefinition,
+    requestedFallback: string | null | undefined,
+    allowPrivateCommunity: boolean,
+): Promise<string | null> {
+    if (!requestedFallback) return null;
+    const fallback = await resolveFallbackModel(
+        db,
+        requestedFallback,
+        callerUserId,
+        allowPrivateCommunity,
+    );
+    if (!fallback || fallback.id === primaryId) {
+        throw new HTTPException(400, { message: "Invalid fallback model" });
+    }
+    if (!isModelFallbackCompatible(primary, fallback.definition)) {
+        throw new HTTPException(400, {
+            message:
+                "Fallback model must use the same modality and pricing mode, cost no more, and not require paid-only access",
+        });
+    }
+    return fallback.id;
 }
 
 function throwEndpointTestError(error: unknown): never {
@@ -494,6 +584,24 @@ export const communityEndpointsRoutes = new Hono<Env>()
             );
             await enforcePublishingAccess(db, user.id, input.visibility);
             const id = crypto.randomUUID();
+            const modelId = communityModelId(ownerGithubUsername, input.name);
+            const fallbackModel = await validateFallbackModel(
+                db,
+                user.id,
+                modelId,
+                communityModelDefinition({
+                    modelId,
+                    title: input.title,
+                    description: input.description || null,
+                    modality: input.modality,
+                    imagePricing,
+                    supportsImageEdits:
+                        input.modality === "image" && input.supportsImageEdits,
+                    ...prices,
+                }),
+                input.fallbackModel,
+                input.visibility === "private",
+            );
             const [row] = await db
                 .insert(schema.communityEndpoint)
                 .values({
@@ -508,6 +616,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
                         input.modality === "image" && input.supportsImageEdits,
                     baseUrl: normalizeInputBaseUrl(input.baseUrl),
                     upstreamModel: input.upstreamModel ?? input.name,
+                    fallbackModel,
                     bearerTokenCiphertext: await encryptSecret(
                         normalizeInputBearerToken(input.bearerToken),
                         c.env.BETTER_AUTH_SECRET,
@@ -741,6 +850,30 @@ export const communityEndpointsRoutes = new Hono<Env>()
                 effectiveImagePricing,
             );
             await enforcePublishingAccess(db, user.id, effectiveVisibility);
+            const modelId = communityModelId(
+                ownerGithubUsername,
+                input.name ?? endpoint.name,
+            );
+            update.fallbackModel = await validateFallbackModel(
+                db,
+                user.id,
+                modelId,
+                communityModelDefinition({
+                    modelId,
+                    title: update.title ?? endpoint.title,
+                    description: update.description ?? endpoint.description,
+                    modality,
+                    imagePricing: effectiveImagePricing,
+                    supportsImageEdits:
+                        update.supportsImageEdits ??
+                        endpoint.supportsImageEdits,
+                    ...effectivePrices,
+                }),
+                input.fallbackModel !== undefined
+                    ? input.fallbackModel
+                    : endpoint.fallbackModel,
+                effectiveVisibility === "private",
+            );
             // Persist visibility together with the complete effective price
             // set on every update, so concurrent partial updates cannot
             // interleave into a public row with cleared prices.

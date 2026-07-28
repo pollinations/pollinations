@@ -25,6 +25,7 @@ import { HTTPException } from "hono/http-exception";
 import { requestId } from "hono/request-id";
 import type { Env } from "@/env.ts";
 import { logger } from "@/middleware/logger.ts";
+import { modelFallback } from "./middleware/model-fallback.ts";
 import { audioRoutes } from "./routes/audio.ts";
 import { buildMergedOpenApiSpec, createDocsRoutes } from "./routes/docs.ts";
 import { modelStatusRoutes } from "./routes/model-status.ts";
@@ -107,6 +108,12 @@ function redirectLegacyDocs(c: Context<Env>): Response {
 app.use("*", cors(PERMISSIVE_CORS_OPTIONS))
     .use("*", requestId())
     .use("*", logger)
+    .use(
+        "*",
+        modelFallback((request, c) =>
+            app.fetch(request, c.env, c.executionCtx),
+        ),
+    )
     .get("/robots.txt", () => robotsTxt())
     .get("/manifest.webmanifest", () => manifestResponse())
     .get("/", (c) => c.html(docsLandingHtml(c)))

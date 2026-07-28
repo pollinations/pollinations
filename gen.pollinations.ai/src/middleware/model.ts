@@ -3,7 +3,10 @@ import { DEFAULT_AUDIO_MODEL } from "@shared/registry/audio.ts";
 import { DEFAULT_EMBEDDING_MODEL } from "@shared/registry/embeddings.ts";
 import { DEFAULT_IMAGE_MODEL } from "@shared/registry/image.ts";
 import { DEFAULT_REALTIME_MODEL } from "@shared/registry/realtime.ts";
-import type { ModelDefinition } from "@shared/registry/registry.ts";
+import {
+    isModelFallbackCompatible,
+    type ModelDefinition,
+} from "@shared/registry/registry.ts";
 import { DEFAULT_TEXT_MODEL } from "@shared/registry/text.ts";
 import type { EventType } from "@shared/schemas/generation-event.ts";
 import { createMiddleware } from "hono/factory";
@@ -28,9 +31,17 @@ export type ModelVariables = {
         /** Static registry definition, or a dynamic definition resolved from D1. */
         definition: ModelDefinition;
         communityEndpoint?: CommunityEndpointRuntime;
+        fallbackModel?: string;
     };
+    fallbackRequest?: Request;
     formData?: FormData;
 };
+
+const fallbackSources = new WeakMap<Request, string>();
+
+export function getModelFallbackSource(request: Request): string | undefined {
+    return fallbackSources.get(request);
+}
 
 type ResolveModelOptions = {
     defaultModel?: string;
@@ -49,6 +60,63 @@ function getValidatedJsonBody<T>(req: {
     } catch {
         return undefined;
     }
+}
+
+async function createFallbackRequest(
+    request: Request,
+    fallbackModel: string,
+    fallbackFrom: string,
+    validatedJson?: Record<string, unknown>,
+    formData?: FormData,
+): Promise<Request | undefined> {
+    const url = new URL(request.url);
+    const headers = new Headers(request.headers);
+    headers.delete("content-length");
+
+    if (request.method === "GET" || request.method === "HEAD") {
+        url.searchParams.set("model", fallbackModel);
+        const fallbackRequest = new Request(url, {
+            method: request.method,
+            headers,
+        });
+        fallbackSources.set(fallbackRequest, fallbackFrom);
+        return fallbackRequest;
+    }
+
+    if (formData) {
+        const fallbackForm = new FormData();
+        for (const [key, value] of formData.entries()) {
+            fallbackForm.append(key, value);
+        }
+        fallbackForm.set("model", fallbackModel);
+        headers.delete("content-type");
+        const fallbackRequest = new Request(url, {
+            method: request.method,
+            headers,
+            body: fallbackForm,
+        });
+        fallbackSources.set(fallbackRequest, fallbackFrom);
+        return fallbackRequest;
+    }
+
+    if (!hasJsonContentType(request.headers.get("content-type") || "")) {
+        return undefined;
+    }
+    let body = validatedJson;
+    if (!body) {
+        try {
+            body = (await request.clone().json()) as Record<string, unknown>;
+        } catch {
+            return undefined;
+        }
+    }
+    const fallbackRequest = new Request(url, {
+        method: request.method,
+        headers,
+        body: JSON.stringify({ ...body, model: fallbackModel }),
+    });
+    fallbackSources.set(fallbackRequest, fallbackFrom);
+    return fallbackRequest;
 }
 
 export async function resolveModelDefinition(
@@ -100,6 +168,22 @@ export async function resolveModelDefinition(
         });
     }
 
+    const configuredFallback = entry.definition.fallbackModel;
+    const fallback = configuredFallback
+        ? registry.resolve(configuredFallback)
+        : null;
+    const fallbackCommunity = fallback?.communityEndpoint;
+    const fallbackAllowed =
+        fallback &&
+        fallback.id !== entry.id &&
+        fallback.eventType === entry.eventType &&
+        (!supportedEndpoint ||
+            fallback.supportedEndpoints.includes(supportedEndpoint)) &&
+        (!fallbackCommunity ||
+            fallbackCommunity.visibility === "public" ||
+            fallbackCommunity.ownerUserId === callerUserId) &&
+        isModelFallbackCompatible(entry.definition, fallback.definition);
+
     return {
         requested: model,
         resolved: entry.id,
@@ -107,6 +191,7 @@ export async function resolveModelDefinition(
         ...(entry.communityEndpoint && {
             communityEndpoint: entry.communityEndpoint,
         }),
+        ...(fallbackAllowed && { fallbackModel: fallback.id }),
     };
 }
 
@@ -171,16 +256,27 @@ export function resolveModel(
         // routes, so the caller identity is available to gate private
         // endpoints. If it isn't (unauthenticated path), callerUserId is
         // undefined and a private endpoint fails closed — never exposed.
-        c.set(
-            "model",
-            await resolveModelDefinition(
-                model,
-                eventType,
-                c.env,
-                c.var.auth?.user?.id,
-                options?.supportedEndpoint,
-            ),
+        const resolvedModel = await resolveModelDefinition(
+            model,
+            eventType,
+            c.env,
+            c.var.auth?.user?.id,
+            options?.supportedEndpoint,
         );
+        c.set("model", resolvedModel);
+        if (resolvedModel.fallbackModel && !getModelFallbackSource(c.req.raw)) {
+            const validatedJson = getValidatedJsonBody<Record<string, unknown>>(
+                c.req,
+            );
+            const fallbackRequest = await createFallbackRequest(
+                c.req.raw,
+                resolvedModel.fallbackModel,
+                resolvedModel.resolved,
+                validatedJson,
+                c.var.formData,
+            );
+            if (fallbackRequest) c.set("fallbackRequest", fallbackRequest);
+        }
         await next();
     });
 }

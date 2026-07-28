@@ -216,6 +216,7 @@ export const communityEndpoint = sqliteTable("community_endpoint", {
     .notNull(),
   baseUrl: text("base_url").notNull(),
   upstreamModel: text("upstream_model").notNull(),
+  fallbackModel: text("fallback_model"),
   bearerTokenCiphertext: text("bearer_token_ciphertext").notNull(),
   // Models default to private (owner-only and free). Public visibility is
   // allowlist-gated and may be free or owner-priced.

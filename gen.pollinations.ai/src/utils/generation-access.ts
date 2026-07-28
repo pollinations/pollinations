@@ -31,6 +31,7 @@ export async function checkBalance(
     const estimatedCost = getEstimatedPrice(
         await getModelStats(env.KV, log),
         model.resolved,
+        model.communityEndpoint,
     );
     const communityEndpoint = model.communityEndpoint;
     const isFreeCommunityModel =

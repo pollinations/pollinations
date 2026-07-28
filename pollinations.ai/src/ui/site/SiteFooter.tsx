@@ -47,7 +47,7 @@ export function SiteFooter() {
             >
                 <div className="flex max-w-xs flex-col gap-4">
                     <BrandLockup
-                        height={34}
+                        height={26}
                         className="text-theme-text-strong"
                         label=""
                     />

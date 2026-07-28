@@ -89,7 +89,7 @@ export function SiteHeader() {
                             className="flex items-center text-theme-text-strong"
                             aria-label="pollinations.ai — home"
                         >
-                            <BrandLockup height={38} label="" />
+                            <BrandLockup height={30} label="" />
                         </Link>
                         <nav className="hidden gap-1.5 md:flex">
                             {NAV.map((item) => (

@@ -191,16 +191,24 @@ async function loadGenerationModelRegistry(
     dbBinding: CloudflareBindings["DB"] | undefined,
 ): Promise<GenerationModelRegistry> {
     const communityEntries = await getCommunityModelRegistryEntries(dbBinding);
+    const namedEntries = [
+        ...STATIC_ENTRIES,
+        ...communityEntries.map(communityEntryToGenerationEntry),
+    ];
+    const takenIds = new Set(namedEntries.map((entry) => entry.id));
     const groupEntries = communityGroupEntries(
         communityEntries.map((entry) => entry.communityEndpoint),
     );
     return buildRegistry([
-        ...STATIC_ENTRIES,
-        ...communityEntries.map(communityEntryToGenerationEntry),
-        // Groups come last because buildRegistry is first-wins: a real GitHub
-        // user named `group` who registers a colliding model keeps their id and
-        // the group is simply not created.
-        ...groupEntries.map(communityGroupEntryToGenerationEntry),
+        ...namedEntries,
+        // A pool never shadows a real id: a GitHub user literally named `group`
+        // who registers `group/<name>` keeps it and the pool is not created at
+        // all. Dropping it here rather than relying on buildRegistry being
+        // first-wins matters because visibleEntries() lists every entry, so an
+        // unroutable duplicate would still show up in /models.
+        ...groupEntries
+            .filter((entry) => !takenIds.has(entry.id))
+            .map(communityGroupEntryToGenerationEntry),
     ]);
 }
 

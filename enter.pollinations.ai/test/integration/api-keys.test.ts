@@ -941,6 +941,58 @@ describe("API Key Management", () => {
             ]);
         });
 
+        test("should keep a pooled group model in permissions", async ({
+            sessionToken,
+        }) => {
+            // A key scoped to `group/<name>` must read back unchanged: the
+            // dashboard seeds its edit form from this response and saves it,
+            // so dropping the id here silently locks the key out of every
+            // model.
+            const created = await createApiKeyViaApi(sessionToken, {
+                name: "key-with-group-model",
+                allowedModels: ["group/pooled-model", "flux"],
+            });
+            const db = drizzle(env.DB, { schema });
+            for (const owner of ["pool-alice", "pool-bob"]) {
+                await db.insert(schema.user).values({
+                    id: `${owner}-id`,
+                    name: owner,
+                    email: `${owner}@example.com`,
+                    githubUsername: owner,
+                    createdAt: new Date(),
+                    updatedAt: new Date(),
+                });
+                await db.insert(schema.communityEndpoint).values({
+                    id: `${owner}-pooled-model`,
+                    ownerUserId: `${owner}-id`,
+                    name: "pooled-model",
+                    baseUrl: `https://${owner}.example.com/v1`,
+                    upstreamModel: "pooled-model",
+                    bearerTokenCiphertext: "encrypted-token",
+                    visibility: "public",
+                    promptTextPrice: 0.1,
+                    completionTextPrice: 0.2,
+                });
+            }
+
+            const response = await SELF.fetch(
+                "http://localhost:3000/api/api-keys",
+                {
+                    headers: {
+                        Cookie: `better-auth.session_token=${sessionToken}`,
+                    },
+                },
+            );
+
+            expect(response.status).toBe(200);
+            const body = (await response.json()) as ApiKeyListResponse;
+            const listed = body.data.find((item) => item.id === created.id);
+            expect(listed?.permissions?.models).toEqual([
+                "group/pooled-model",
+                "flux",
+            ]);
+        });
+
         test("should require authentication", async () => {
             const response = await SELF.fetch(
                 "http://localhost:3000/api/api-keys",

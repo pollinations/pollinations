@@ -26,6 +26,7 @@ import { handleImageEdit, handleImageGeneration } from "./images.ts";
 const resolver = <T extends Parameters<typeof baseResolver>[0]>(schema: T) =>
     baseResolver(schema, { reused: "ref" });
 
+import { communityModelEndpoints } from "@shared/community-endpoints.ts";
 import { UpstreamError } from "@shared/error.ts";
 import { validator } from "@shared/middleware/validator.ts";
 import { AUDIO_VOICES } from "@shared/registry/audio.ts";
@@ -292,11 +293,14 @@ async function getOrderedVisibleModelEntries(c: Context<Env>) {
     return [
         ...entries.filter(
             (entry) =>
-                entry.eventType === "generate.text" && !entry.communityEndpoint,
+                entry.eventType === "generate.text" &&
+                communityModelEndpoints(entry).length === 0,
         ),
+        // Community-backed text models last, pooled ones included.
         ...entries.filter(
             (entry) =>
-                entry.eventType === "generate.text" && entry.communityEndpoint,
+                entry.eventType === "generate.text" &&
+                communityModelEndpoints(entry).length > 0,
         ),
         ...entries.filter((entry) => entry.eventType === "generate.image"),
         ...entries.filter((entry) => entry.eventType === "generate.realtime"),

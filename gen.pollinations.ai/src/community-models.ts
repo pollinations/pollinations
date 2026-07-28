@@ -1,12 +1,11 @@
 import {
     type CommunityEndpointRuntime,
     communityEndpointPrices,
-    communityGroupKey,
+    communityGroupBuckets,
     communityGroupModelDefinition,
     communityGroupModelId,
     communityModelDefinition,
     communityModelId,
-    MIN_COMMUNITY_GROUP_MEMBERS,
     normalizeCommunityEndpointImagePricing,
     normalizeCommunityEndpointModality,
 } from "@shared/community-endpoints.ts";
@@ -62,36 +61,21 @@ export type CommunityGroupRegistryEntry = {
 export function communityGroupEntries(
     endpoints: readonly CommunityEndpointRuntime[],
 ): CommunityGroupRegistryEntry[] {
-    const buckets = new Map<string, CommunityEndpointRuntime[]>();
-    for (const endpoint of endpoints) {
-        // A private endpoint is owner-only and a disabled one is broken, so
-        // neither can take its turn serving a pooled request.
-        if (endpoint.visibility !== "public" || endpoint.disabledAt !== null) {
-            continue;
-        }
-        const key = communityGroupKey(endpoint);
-        const bucket = buckets.get(key);
-        if (bucket) bucket.push(endpoint);
-        else buckets.set(key, [endpoint]);
-    }
-
-    return [...buckets.values()]
-        .filter((members) => members.length >= MIN_COMMUNITY_GROUP_MEMBERS)
-        .map((members) => {
-            // Deterministic member order keeps the derived config stable across
-            // registry rebuilds.
-            members.sort((a, b) => a.modelId.localeCompare(b.modelId));
-            const definition = communityGroupModelDefinition(members);
-            const id = communityGroupModelId(members[0].name);
-            return {
-                id,
-                info: modelInfoFromDefinition(id, definition, {
-                    community: true,
-                }),
-                definition,
-                members,
-            };
-        });
+    return communityGroupBuckets(endpoints).map((members) => {
+        // Deterministic member order keeps the derived config stable across
+        // registry rebuilds.
+        members.sort((a, b) => a.modelId.localeCompare(b.modelId));
+        const definition = communityGroupModelDefinition(members);
+        const id = communityGroupModelId(members[0].name);
+        return {
+            id,
+            info: modelInfoFromDefinition(id, definition, {
+                community: true,
+            }),
+            definition,
+            members,
+        };
+    });
 }
 
 export async function getCommunityModelRegistryEntries(

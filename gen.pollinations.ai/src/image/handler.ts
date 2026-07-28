@@ -1,5 +1,6 @@
 import {
     type CommunityEndpointRuntime,
+    communityModelEndpoints,
     rotateCommunityGroupMembers,
 } from "@shared/community-endpoints.ts";
 import { remapUpstreamStatus, UpstreamError } from "@shared/error.ts";
@@ -115,9 +116,13 @@ function parseImageParams(
     const mergedParams = {
         ...queryParams,
         ...body,
-        model: c.var.model.communityEndpoint
-            ? DEFAULT_IMAGE_MODEL
-            : resolvedModel,
+        // ImageParamsSchema.model is an enum of the static image services, so a
+        // community id (`owner/name` or a pooled `group/name`) has to be
+        // validated under a placeholder. The real id is restored below.
+        model:
+            communityModelEndpoints(c.var.model).length > 0
+                ? DEFAULT_IMAGE_MODEL
+                : resolvedModel,
     };
     delete (mergedParams as Record<string, unknown>).prompt;
     delete (mergedParams as Record<string, unknown>).key;
@@ -413,16 +418,13 @@ async function generateVideoResult(
 // across Cloudflare isolates anyway.
 function communityImageEndpoints(
     c: ImageContext,
-): CommunityEndpointRuntime[] | null {
-    const members = c.var.model.communityGroupMembers;
-    if (members) {
-        return rotateCommunityGroupMembers(
-            members,
-            Math.floor(Math.random() * members.length),
-        );
-    }
-    const endpoint = c.var.model.communityEndpoint;
-    return endpoint ? [endpoint] : null;
+): readonly CommunityEndpointRuntime[] {
+    const endpoints = communityModelEndpoints(c.var.model);
+    if (endpoints.length === 0) return endpoints;
+    return rotateCommunityGroupMembers(
+        endpoints,
+        Math.floor(Math.random() * endpoints.length),
+    );
 }
 
 export async function generateImageOrVideoResponse(
@@ -436,7 +438,7 @@ export async function generateImageOrVideoResponse(
 
     try {
         const communityEndpoints = communityImageEndpoints(c);
-        if (communityEndpoints) {
+        if (communityEndpoints.length > 0) {
             // The image response is fully buffered before anything reaches the
             // client, so a failed member can simply be retried on the next one.
             let lastError: unknown;

@@ -463,19 +463,87 @@ export function communityModelDefinition(
 }
 
 /**
+ * Everything that decides whether two endpoints can serve the same pooled
+ * request. Callers that only need the derived group ids (the API-key permission
+ * catalog) can build this from a few columns instead of a full runtime.
+ */
+export type CommunityGroupCandidate = {
+    name: string;
+    modality: CommunityEndpointModality;
+    imagePricing: CommunityEndpointImagePricing;
+    visibility: CommunityEndpointVisibility;
+    disabledAt: number | null;
+} & CommunityEndpointPrices;
+
+/**
  * Endpoints group only when they are interchangeable: same callable name, same
  * modality, same image billing mode, and every price field equal. Price
  * equality is what makes the group's advertised price unambiguous and lets any
  * member be billed identically, so the key is derived from
  * COMMUNITY_ENDPOINT_PRICE_FIELDS rather than a hand-listed subset.
  */
-export function communityGroupKey(endpoint: CommunityEndpointRuntime): string {
+export function communityGroupKey(endpoint: CommunityGroupCandidate): string {
     return JSON.stringify([
         endpoint.name,
         endpoint.modality,
         endpoint.imagePricing,
         ...COMMUNITY_ENDPOINT_PRICE_FIELDS.map((field) => endpoint[field.key]),
     ]);
+}
+
+/**
+ * Buckets endpoints into pools of interchangeable members. A private endpoint
+ * is owner-only and a disabled one is broken, so neither can take its turn
+ * serving a pooled request.
+ *
+ * A model name claimed by more than one pool is dropped entirely. Both pools
+ * would want the same `group/<name>` id, only one of them could ever be routed
+ * to, and which one that is depends on unordered D1 row order — so the price a
+ * caller reads from the catalog would not be the price they are billed. That
+ * ambiguity is exactly what the price-equality gate exists to prevent, so no
+ * pool is published until the cohorts converge on one price.
+ */
+export function communityGroupBuckets<T extends CommunityGroupCandidate>(
+    endpoints: readonly T[],
+): T[][] {
+    const buckets = new Map<string, T[]>();
+    for (const endpoint of endpoints) {
+        if (endpoint.visibility !== "public" || endpoint.disabledAt !== null) {
+            continue;
+        }
+        const key = communityGroupKey(endpoint);
+        const bucket = buckets.get(key);
+        if (bucket) bucket.push(endpoint);
+        else buckets.set(key, [endpoint]);
+    }
+
+    const pools = [...buckets.values()].filter(
+        (members) => members.length >= MIN_COMMUNITY_GROUP_MEMBERS,
+    );
+    const poolsPerName = new Map<string, number>();
+    for (const members of pools) {
+        poolsPerName.set(
+            members[0].name,
+            (poolsPerName.get(members[0].name) ?? 0) + 1,
+        );
+    }
+    return pools.filter((members) => poolsPerName.get(members[0].name) === 1);
+}
+
+/**
+ * The endpoints backing a model: one for `owner/name`, every member for a
+ * pooled `group/<name>`, none for a static model. Read this instead of
+ * `communityEndpoint` — that field alone is unset for a pool, so testing it
+ * silently treats a pooled model as a static one.
+ */
+export function communityModelEndpoints(model: {
+    communityEndpoint?: CommunityEndpointRuntime;
+    communityGroupMembers?: CommunityEndpointRuntime[];
+}): readonly CommunityEndpointRuntime[] {
+    return (
+        model.communityGroupMembers ??
+        (model.communityEndpoint ? [model.communityEndpoint] : [])
+    );
 }
 
 /** Members rotated left so a request can start at any member of the group. */

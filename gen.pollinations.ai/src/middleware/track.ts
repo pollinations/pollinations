@@ -78,7 +78,7 @@ type ModelVariables = {
     model: {
         requested: string;
         resolved: string;
-        definition: ModelDefinition<string>;
+        definition: ModelDefinition;
         communityEndpoint?: CommunityEndpointRuntime;
     };
 };
@@ -93,7 +93,7 @@ type RequestTrackingData = {
     modelRequested: string | null;
     resolvedModelRequested: string;
     modelProvider?: string;
-    modelDefinition: ModelDefinition<string>;
+    modelDefinition: ModelDefinition;
     modelCostDefinition: CostDefinition;
     modelPriceDefinition: PriceDefinition;
     streamRequested: boolean;
@@ -102,8 +102,7 @@ type RequestTrackingData = {
 
 type ResponseTrackingData = {
     responseStatus: number;
-    responseOk: boolean;
-    cacheData: CacheData;
+    cacheHit: boolean;
     isBilledUsage: boolean;
     fallbackUsed: boolean;
     modelUsed?: string;
@@ -189,6 +188,9 @@ export const track = (eventType: EventType) =>
 
         c.executionCtx.waitUntil(
             (async () => {
+                const userId = userTracking.userId;
+                if (!userId) return;
+
                 // Routes attach telemetry headers (x-moderation-*, cache
                 // status) to the final response AFTER the override is
                 // captured, so read the body from the override but headers
@@ -202,6 +204,10 @@ export const track = (eventType: EventType) =>
                     requestTracking,
                     response,
                 );
+                if (responseTracking.cacheHit) {
+                    await c.var.frontendKeyRateLimit?.consumePollen(0);
+                    return;
+                }
                 // trackResponse consumes SSE text and JSON bodies, so for
                 // those endTime marks actual response completion — not
                 // time-to-first-byte. Binary bodies (image/audio) are never
@@ -238,7 +244,7 @@ export const track = (eventType: EventType) =>
                         db: balanceDb,
                         isBilledUsage: responseTracking.isBilledUsage,
                         totalPrice: responseTracking.price?.totalPrice,
-                        userId: userTracking.userId,
+                        userId,
                         apiKeyId: c.var.auth?.apiKey?.id,
                         apiKeyPollenBalance: c.var.auth?.apiKey?.pollenBalance,
                         byopClientKeyId,
@@ -265,8 +271,7 @@ export const track = (eventType: EventType) =>
                         deduction.postDeductionPackBalance != null &&
                         deduction.postDeductionPackBalance <=
                             AUTO_TOP_UP_THRESHOLD_POLLEN &&
-                        userTracking.userId &&
-                        (await isAutoTopUpConfigured(db, userTracking.userId))
+                        (await isAutoTopUpConfigured(db, userId))
                     ) {
                         shouldRunAutoTopUp = true;
                     }
@@ -335,8 +340,8 @@ export const track = (eventType: EventType) =>
                     log,
                 );
 
-                if (shouldRunAutoTopUp && userTracking.userId) {
-                    await triggerAutoTopUp(c.env, userTracking.userId, log);
+                if (shouldRunAutoTopUp) {
+                    await triggerAutoTopUp(c.env, userId, log);
                 }
             })(),
         );
@@ -454,20 +459,19 @@ async function trackResponse(
 ): Promise<ResponseTrackingData> {
     const log = getLogger(["hono", "track", "response"]);
     const { resolvedModelRequested } = requestTracking;
-    const cacheInfo = extractCacheHeaders(response);
+    const cacheHit = response.headers.get("x-cache") === "HIT";
     const fallbackUsed = parseFallbackUsed(response);
     const notBilled = (
         extra?: Partial<ResponseTrackingData>,
     ): ResponseTrackingData => ({
-        responseOk: response.ok,
         responseStatus: response.status,
-        cacheData: cacheInfo,
+        cacheHit,
         isBilledUsage: false,
         fallbackUsed,
         ...extra,
     });
 
-    if (!response.ok || cacheInfo.cacheHit) {
+    if (!response.ok || cacheHit) {
         return notBilled();
     }
 
@@ -476,7 +480,11 @@ async function trackResponse(
     // an unexpected content-type — e.g. a JSON/text error body with HTTP 200,
     // or JSON for a stream: true request.
     const contentType = response.headers.get("content-type") || "";
-    const contentTypeGuard = getContentTypeGuard(eventType, requestTracking);
+    const contentTypeGuard = getContentTypeGuard(
+        eventType,
+        requestTracking,
+        response,
+    );
     if (contentTypeGuard && !contentTypeGuard.isExpected(contentType)) {
         log.warn(
             "Unexpected content-type for billing: {contentType} for model {model} (kind={kind})",
@@ -511,9 +519,8 @@ async function trackResponse(
         modelUsage.output,
     );
     return {
-        responseOk: response.ok,
         responseStatus: response.status,
-        cacheData: cacheInfo,
+        cacheHit,
         isBilledUsage: true,
         fallbackUsed,
         cost,
@@ -539,10 +546,12 @@ function parseFallbackUsed(response: Response): boolean {
 // when the event type (or stream mode) has no content-type guard, so the
 // caller skips the check entirely. Preserves the per-branch rules: image/video
 // uses startsWith; text-stream only guards when a stream was requested and uses
-// includes; audio allows audio/* (TTS) or application/json for STT models.
+// includes; audio allows audio/*, STT JSON, or explicitly marked timestamped
+// TTS JSON.
 function getContentTypeGuard(
     eventType: EventType,
     requestTracking: RequestTrackingData,
+    response: Response,
 ): { kind: string; isExpected: (contentType: string) => boolean } | null {
     if (eventType === "generate.image") {
         return {
@@ -565,11 +574,15 @@ function getContentTypeGuard(
     if (eventType === "generate.audio") {
         const isSTTModel =
             requestTracking.modelDefinition.outputModalities?.[0] === "text";
+        const isTimestampedTts =
+            response.headers.get("x-pollinations-response-format") ===
+            "audio-with-timestamps";
         return {
             kind: "audio",
             isExpected: (contentType) =>
                 contentType.startsWith("audio/") ||
-                (isSTTModel && contentType.startsWith("application/json")),
+                ((isSTTModel || isTimestampedTts) &&
+                    contentType.startsWith("application/json")),
         };
     }
     return null;
@@ -702,7 +715,6 @@ function createTrackingEvent({
 
         ...userTracking,
         ...requestTracking.referrerData,
-        ...responseTracking.cacheData,
 
         modelRequested: requestTracking.modelRequested,
         resolvedModelRequested: requestTracking.resolvedModelRequested,
@@ -783,6 +795,14 @@ function extractUsageHeaders(response: Response): ModelUsage {
 async function extractResponseJsonOutput(
     response: Response,
 ): Promise<unknown | undefined> {
+    // Timestamped TTS JSON contains the complete base64 audio. Billing comes
+    // from usage headers, and copying that payload into analytics is wasteful.
+    if (
+        response.headers.get("x-pollinations-response-format") ===
+        "audio-with-timestamps"
+    ) {
+        return undefined;
+    }
     const contentType = response.headers.get("content-type") || "";
     if (!contentType.includes("application/json")) return undefined;
     try {
@@ -918,18 +938,6 @@ async function extractUsageAndContentFilterResults(
         return await extractUsageAndContentFilterResultsStream(eventStream);
     }
     return await extractUsageAndContentFilterResultsHeaders(response);
-}
-
-type CacheData = {
-    cacheHit: boolean;
-    cacheKey?: string;
-};
-
-function extractCacheHeaders(response: Response): CacheData {
-    return {
-        cacheHit: response.headers.get("x-cache") === "HIT",
-        cacheKey: response.headers.get("x-cache-key") || undefined,
-    };
 }
 
 type ReferrerData = {

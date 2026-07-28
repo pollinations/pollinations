@@ -418,7 +418,7 @@ const videos = await generateVideo('ocean waves', { n: 2, duration: 4 });
 
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
-| `model` | string | `'veo'` | `'veo'`, `'seedance'`, `'wan'`, `'ltx-2'`, etc. |
+| `model` | string | `'veo'` | `'veo'`, `'seedance'`, `'wan'`, etc. |
 | `duration` | number | - | Duration in seconds (supported range varies by model) |
 | `aspectRatio` | string | - | e.g. `'16:9'`, `'9:16'`, `'1:1'` |
 | `seed` | number | random | Reproducible results |
@@ -457,7 +457,7 @@ audioEl.play();
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
 | `voice` | string | `'alloy'` | Voice to use (see voices below) |
-| `model` | string | `'elevenlabs'` | `'elevenlabs'`, `'elevenmusic'`, `'acestep'` |
+| `model` | string | `'elevenlabs'` | `'elevenlabs'`, `'elevenmusic'` |
 | `duration` | number | - | Duration in seconds (for music models) |
 | `seed` | number | random | Reproducible results |
 | `n` | number | `1` | Number of outputs |
@@ -591,7 +591,7 @@ const base64 = image.toBase64();    // Raw base64 string
 
 ### Request Timeout
 
-Default timeouts: text/chat 5min, images 10min, videos 10min. For custom timeouts:
+Default timeouts: text/chat 5min, images 10min, videos 20min. For custom timeouts:
 
 ```javascript
 import { Pollinations } from '@pollinations/sdk';
@@ -600,7 +600,7 @@ const client = new Pollinations({
   timeout: 600000,       // 10 minutes for all requests
   textTimeout: 300000,   // 5 minutes for text
   imageTimeout: 600000,  // 10 minutes for images
-  videoTimeout: 900000,  // 15 minutes for videos
+  videoTimeout: 1200000, // 20 minutes for videos
 });
 ```
 

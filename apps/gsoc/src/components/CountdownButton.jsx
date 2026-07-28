@@ -80,7 +80,7 @@ const CountdownButton = () => {
                     }}
                 >
                     <Tooltip
-                        title="Ask Polly - Your AI Assistant"
+                        title="Ask Polli - Your AI Assistant"
                         placement="bottom"
                     ></Tooltip>
                     <Box>

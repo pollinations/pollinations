@@ -199,7 +199,21 @@ export const communityEndpoint = sqliteTable("community_endpoint", {
     .notNull()
     .references(() => user.id, { onDelete: "cascade" }),
   name: text("name").notNull(),
+  // Nullable: rows predating titles fall back to communityEndpointTitle().
+  // Required on create, so only the pre-existing backlog is null.
+  title: text("title"),
   description: text("description"),
+  modality: text("modality").default("text").notNull(),
+  // Image endpoints only: "request" bills the fixed per-image price once per
+  // generation; "tokens" bills provider-returned image token usage. Detected
+  // by the registration probe.
+  imagePricing: text("image_pricing", { enum: ["request", "tokens"] })
+    .default("request")
+    .notNull(),
+  // Set only after the registration probe successfully calls /images/edits.
+  supportsImageEdits: integer("supports_image_edits", { mode: "boolean" })
+    .default(false)
+    .notNull(),
   baseUrl: text("base_url").notNull(),
   upstreamModel: text("upstream_model").notNull(),
   bearerTokenCiphertext: text("bearer_token_ciphertext").notNull(),
@@ -216,6 +230,7 @@ export const communityEndpoint = sqliteTable("community_endpoint", {
   completionTextPrice: real("completion_text_price").notNull(),
   completionReasoningPrice: real("completion_reasoning_price").default(0).notNull(),
   completionAudioPrice: real("completion_audio_price").default(0).notNull(),
+  completionImagePrice: real("completion_image_price").default(0).notNull(),
   disabledAt: integer("disabled_at", { mode: "timestamp" }),
   disabledReason: text("disabled_reason"),
   disabledBy: text("disabled_by"),

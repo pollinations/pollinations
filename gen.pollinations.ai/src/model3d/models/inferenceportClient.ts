@@ -11,7 +11,7 @@
 
 import { getModel3dEnv } from "../env.ts";
 
-const API_BASE = "https://sharktide-lightning.hf.space/v1";
+const API_BASE = "https://api.inferenceport.ai/v1";
 
 export class InferenceportError extends Error {
     constructor(

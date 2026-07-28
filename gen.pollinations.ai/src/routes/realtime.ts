@@ -11,11 +11,11 @@ import {
     truncateIpToSubnet,
 } from "@shared/client-ip.ts";
 import { sendToTinybird } from "@shared/events.ts";
-import { DEFAULT_REALTIME_MODEL } from "@shared/registry/realtime.ts";
+import type { RealtimeModelName } from "@shared/registry/realtime.ts";
 import {
+    type BillingAdjustment,
     type CostDefinition,
-    calculateCostWithDefinition,
-    calculatePriceWithDefinition,
+    calculateUsageBilling,
     getPriceDefinitionForModel,
     type ModelDefinition,
     type PriceDefinition,
@@ -34,19 +34,41 @@ import { drizzle } from "drizzle-orm/d1";
 import type { Context } from "hono";
 import { HTTPException } from "hono/http-exception";
 import type { Env } from "@/env.ts";
+import { reduceAdjustmentsToEventFields } from "@/middleware/track.ts";
 import { RealtimeUsageSchema } from "@/schemas/realtime.ts";
 import { generateRandomId } from "@/util.ts";
 import { checkBalance } from "@/utils/generation-access.ts";
 
-// Azure OpenAI realtime endpoint. The gpt-realtime-2 deployment lives on the
-// Sweden Central myceli resource (same resource as the gpt-audio models). The
-// realtime WebSocket path mirrors OpenAI's: /openai/v1/realtime?model=<deployment>.
-const AZURE_REALTIME_WEBSOCKET_URL =
-    "https://myceli-prod-swedencentral.cognitiveservices.azure.com/openai/v1/realtime";
-// Azure deployment name for the realtime model (set when deploying via the
-// Azure CLI). Matches DEFAULT_REALTIME_MODEL here, but kept separate because
-// Azure deployment names are independent of the public model id.
-const AZURE_REALTIME_DEPLOYMENT = "gpt-realtime-2";
+type AzureRealtimeApiKey =
+    | "AZURE_MYCELI_PROD_EASTUS2_API_KEY"
+    | "AZURE_MYCELI_PROD_SWEDEN_API_KEY";
+
+// Deployment names are independent of the public model ids. Mini is in East
+// US 2 because Azure's Sweden Central control plane accepts the deployment but
+// its Realtime data plane currently rejects the exact model.
+const REALTIME_ROUTES: Record<
+    RealtimeModelName,
+    { endpoint: string; deployment: string; apiKeyEnv: AzureRealtimeApiKey }
+> = {
+    "gpt-realtime-2.1": {
+        endpoint:
+            "https://myceli-prod-swedencentral.openai.azure.com/openai/v1/realtime",
+        deployment: "gpt-realtime-2-1",
+        apiKeyEnv: "AZURE_MYCELI_PROD_SWEDEN_API_KEY",
+    },
+    "gpt-realtime-2.1-mini": {
+        endpoint:
+            "https://myceli-prod-eastus2.openai.azure.com/openai/v1/realtime",
+        deployment: "gpt-realtime-2-1-mini",
+        apiKeyEnv: "AZURE_MYCELI_PROD_EASTUS2_API_KEY",
+    },
+    "gpt-realtime-2": {
+        endpoint:
+            "https://myceli-prod-swedencentral.openai.azure.com/openai/v1/realtime",
+        deployment: "gpt-realtime-2",
+        apiKeyEnv: "AZURE_MYCELI_PROD_SWEDEN_API_KEY",
+    },
+};
 const CREDENTIAL_QUERY_PARAMS = new Set([
     "access_token",
     "api_key",
@@ -58,6 +80,10 @@ const UNSUPPORTED_TRANSCRIPTION_MESSAGE =
 type WebSocketResponse = Response & { webSocket?: WebSocket };
 type WebSocketResponseInit = ResponseInit & { webSocket?: WebSocket };
 type RealtimeDeduction = Awaited<ReturnType<typeof handleBalanceDeduction>>;
+type RealtimeCacheUsage = {
+    audioTokens: number;
+    imageTokens: number;
+};
 type RealtimeBillingContext = {
     userId: string;
     userTier?: string;
@@ -74,7 +100,7 @@ type RealtimeBillingContext = {
     byopClientKeyId?: string | null;
     modelRequested: string;
     resolvedModelRequested: string;
-    modelDefinition: ModelDefinition<string>;
+    modelDefinition: ModelDefinition;
     modelCostDefinition: CostDefinition;
     modelPriceDefinition: PriceDefinition;
     requestId: string;
@@ -86,6 +112,8 @@ type RealtimeBillingContext = {
     ipHash?: string;
     sessionStartTime: Date;
     usage: Usage;
+    cacheUsage: RealtimeCacheUsage;
+    missingCacheDetailsWarned: boolean;
     settlementInFlight: boolean;
     settlementAttempts: number;
     settled: boolean;
@@ -95,7 +123,7 @@ type RealtimeBillingContext = {
 
 function requireAllowedModel(c: Context<Env>, model: string): void {
     const allowedModels = c.var.auth.apiKey?.permissions?.models;
-    if (allowedModels?.length && !allowedModels.includes(model)) {
+    if (allowedModels && !allowedModels.includes(model)) {
         throw new HTTPException(403, {
             message: `Model '${model}' is not allowed for this API key`,
         });
@@ -110,19 +138,29 @@ async function createSafetyIdentifier(
     return bytesToHex(await crypto.subtle.digest("SHA-256", data));
 }
 
-function buildUpstreamUrl(): string {
-    const upstreamUrl = new URL(AZURE_REALTIME_WEBSOCKET_URL);
-    upstreamUrl.searchParams.set("model", AZURE_REALTIME_DEPLOYMENT);
+function buildUpstreamUrl(model: RealtimeModelName): string {
+    const route = REALTIME_ROUTES[model];
+    const upstreamUrl = new URL(route.endpoint);
+    upstreamUrl.searchParams.set("model", route.deployment);
     return upstreamUrl.toString();
 }
 
 async function connectAzureRealtime(
     c: Context<Env>,
     userId: string,
+    model: RealtimeModelName,
 ): Promise<WebSocket | Response> {
-    const response = (await fetch(buildUpstreamUrl(), {
+    const route = REALTIME_ROUTES[model];
+    const apiKey = c.env[route.apiKeyEnv];
+    if (!apiKey) {
+        throw new HTTPException(503, {
+            message: "Azure realtime provider is not configured.",
+        });
+    }
+
+    const response = (await fetch(buildUpstreamUrl(model), {
         headers: {
-            "api-key": c.env.AZURE_MYCELI_PROD_SWEDEN_API_KEY,
+            "api-key": apiKey,
             "OpenAI-Safety-Identifier": await createSafetyIdentifier(
                 userId,
                 c.env.BETTER_AUTH_SECRET,
@@ -225,9 +263,15 @@ function addUsage(target: Usage, delta: Usage): void {
     }
 }
 
-function realtimeUsageToUsage(rawUsage: unknown): Usage {
+type ParsedRealtimeUsage = {
+    usage: Usage;
+    cacheUsage: RealtimeCacheUsage;
+    cacheDetailsIncomplete: boolean;
+};
+
+function parseRealtimeUsage(rawUsage: unknown): ParsedRealtimeUsage | null {
     const parsed = RealtimeUsageSchema.safeParse(rawUsage);
-    if (!parsed.success) return {};
+    if (!parsed.success) return null;
     const usage = parsed.data;
     const inputDetails = usage.input_token_details ?? {};
     const outputDetails = usage.output_token_details ?? {};
@@ -236,9 +280,14 @@ function realtimeUsageToUsage(rawUsage: unknown): Usage {
     const cachedTextTokens = numeric(cachedDetails.text_tokens);
     const cachedAudioTokens = numeric(cachedDetails.audio_tokens);
     const cachedImageTokens = numeric(cachedDetails.image_tokens);
-    const cachedTokens =
-        numeric(inputDetails.cached_tokens) ||
+    const reportedCachedTokens = numeric(inputDetails.cached_tokens);
+    const detailedCachedTokens =
         cachedTextTokens + cachedAudioTokens + cachedImageTokens;
+    const cachedTokens = reportedCachedTokens || detailedCachedTokens;
+    const cacheDetailsIncomplete =
+        reportedCachedTokens > 0 &&
+        (inputDetails.cached_tokens_details == null ||
+            detailedCachedTokens !== reportedCachedTokens);
 
     const promptAudioTokens = Math.max(
         0,
@@ -267,22 +316,35 @@ function realtimeUsageToUsage(rawUsage: unknown): Usage {
         totalOutputTokens - completionAudioTokens,
     );
 
-    return positiveEntries({
-        promptTextTokens,
-        promptCachedTokens: cachedTokens,
-        promptAudioTokens,
-        promptImageTokens,
-        completionTextTokens,
-        completionAudioTokens,
-    });
+    return {
+        usage: positiveEntries({
+            promptTextTokens,
+            promptCachedTokens: cachedTokens,
+            promptAudioTokens,
+            promptImageTokens,
+            completionTextTokens,
+            completionAudioTokens,
+        }),
+        cacheUsage: {
+            audioTokens: cachedAudioTokens,
+            imageTokens: cachedImageTokens,
+        },
+        cacheDetailsIncomplete,
+    };
 }
 
-function extractResponseUsage(eventData: unknown): Usage | null {
+function realtimeUsageToUsage(rawUsage: unknown): Usage {
+    return parseRealtimeUsage(rawUsage)?.usage ?? {};
+}
+
+function extractResponseBilling(
+    eventData: unknown,
+): ParsedRealtimeUsage | null {
     const event = asRecord(eventData);
     if (event.type !== "response.done") return null;
     const response = asRecord(event.response);
-    const usage = realtimeUsageToUsage(response.usage);
-    return Object.keys(usage).length ? usage : null;
+    const parsed = parseRealtimeUsage(response.usage);
+    return parsed && Object.keys(parsed.usage).length ? parsed : null;
 }
 
 function parseEventData(data: unknown): unknown | null {
@@ -390,6 +452,7 @@ function createRealtimeTrackingEvent(args: {
     usage: Usage;
     cost: UsageCost;
     price: UsagePrice;
+    adjustments: BillingAdjustment[];
     markup: MarkupResolution | null;
     payerBucket: "tier" | "pack" | null;
     balances: { tierBalance: number; packBalance: number };
@@ -427,6 +490,7 @@ function createRealtimeTrackingEvent(args: {
         ...getPostDeductionBalances(args.payerBucket, args.balances),
         ...priceToEventParams(args.tracking.modelPriceDefinition),
         ...usageToEventParams(args.usage),
+        ...reduceAdjustmentsToEventFields(args.adjustments),
         totalCost: args.cost.totalCost,
         totalPrice: args.price.totalPrice + (args.markup?.devCredit ?? 0),
         devPrice: args.price.totalPrice,
@@ -447,15 +511,11 @@ async function settleRealtimeSession(
         return;
     }
 
-    const cost = calculateCostWithDefinition(
+    const { cost, price, adjustments } = calculateUsageBilling(
         tracking.resolvedModelRequested,
         usage,
-        tracking.modelCostDefinition,
-    );
-    const price = calculatePriceWithDefinition(
-        tracking.resolvedModelRequested,
-        usage,
-        tracking.modelPriceDefinition,
+        tracking.modelDefinition,
+        { realtimeCache: tracking.cacheUsage },
     );
     if (price.totalPrice <= 0) {
         tracking.settled = true;
@@ -492,6 +552,7 @@ async function settleRealtimeSession(
             usage,
             cost,
             price,
+            adjustments,
             markup: tracking.deduction.markup,
             payerBucket: tracking.deduction.payerBucket,
             balances,
@@ -504,16 +565,36 @@ async function settleRealtimeSession(
 }
 
 function collectBillingEvents(
+    c: Context<Env>,
     upstream: WebSocket,
     billing: RealtimeBillingContext,
 ): void {
+    const log = c.get("log").getChild("realtime");
     upstream.addEventListener("message", (event) => {
         const eventData = parseEventData(event.data);
-        const usage =
-            extractResponseUsage(eventData) ??
+        const responseBilling = extractResponseBilling(eventData);
+        if (responseBilling) {
+            addUsage(billing.usage, responseBilling.usage);
+            billing.cacheUsage.audioTokens +=
+                responseBilling.cacheUsage.audioTokens;
+            billing.cacheUsage.imageTokens +=
+                responseBilling.cacheUsage.imageTokens;
+            if (
+                responseBilling.cacheDetailsIncomplete &&
+                !billing.missingCacheDetailsWarned
+            ) {
+                billing.missingCacheDetailsWarned = true;
+                log.warn(
+                    "Realtime cached token modality details are missing or incomplete; unmatched cached tokens use the cached-text rate: model={model}",
+                    { model: billing.resolvedModelRequested },
+                );
+            }
+            return;
+        }
+
+        const transcriptionUsage =
             extractUnsupportedInputTranscriptionUsage(eventData);
-        if (!usage) return;
-        addUsage(billing.usage, usage);
+        if (transcriptionUsage) addUsage(billing.usage, transcriptionUsage);
     });
 }
 
@@ -591,7 +672,7 @@ function proxyRealtimeWebSockets(
     downstream.binaryType = "arraybuffer";
     downstream.accept({ allowHalfOpen: true });
 
-    collectBillingEvents(upstream, tracking);
+    collectBillingEvents(c, upstream, tracking);
     forwardMessage(downstream, upstream, validateClientRealtimeEvent, () =>
         scheduleRealtimeSettlement(c, tracking),
     );
@@ -656,6 +737,8 @@ async function createRealtimeBillingContext(
         ipHash: await hashIp(clientIp, c.env.BETTER_AUTH_SECRET),
         sessionStartTime: new Date(),
         usage: {},
+        cacheUsage: { audioTokens: 0, imageTokens: 0 },
+        missingCacheDetailsWarned: false,
         settlementInFlight: false,
         settlementAttempts: 0,
         settled: false,
@@ -677,11 +760,6 @@ export async function handleRealtimeWebSocket(
     const user = c.var.auth.requireUser();
 
     const resolvedModel = c.var.model.resolved;
-    if (resolvedModel !== DEFAULT_REALTIME_MODEL) {
-        throw new HTTPException(400, {
-            message: `Only ${DEFAULT_REALTIME_MODEL} is currently supported for realtime sessions.`,
-        });
-    }
     requireAllowedModel(c, resolvedModel);
 
     // Same model-independent, estimated-price balance gate as every other
@@ -689,13 +767,11 @@ export async function handleRealtimeWebSocket(
     // model definition). checkBalance reads c.var.model.
     await checkBalance(c.var, c.env);
 
-    if (!c.env.AZURE_MYCELI_PROD_SWEDEN_API_KEY) {
-        throw new HTTPException(503, {
-            message: "Azure realtime provider is not configured.",
-        });
-    }
-
-    const upstream = await connectAzureRealtime(c, user.id);
+    const upstream = await connectAzureRealtime(
+        c,
+        user.id,
+        c.var.model.resolved as RealtimeModelName,
+    );
     if (upstream instanceof Response) return upstream;
 
     return proxyRealtimeWebSockets(

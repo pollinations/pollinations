@@ -12,6 +12,7 @@ import {
 import type { EventType } from "@shared/schemas/generation-event.ts";
 import {
     type CommunityModelRegistryEntry,
+    communityImageSupportedEndpoints,
     communityTextSupportedEndpoints,
     getCommunityModelRegistryEntries,
 } from "./community-models.ts";
@@ -33,7 +34,7 @@ export type GenerationModelEntry = {
     aliases: string[];
     eventType: EventType;
     supportedEndpoints: string[];
-    definition: ModelDefinition<string>;
+    definition: ModelDefinition;
     info: ModelInfo;
     communityEndpoint?: CommunityEndpointRuntime;
     visible: boolean;
@@ -68,7 +69,9 @@ function eventTypeForCategory(category: Category): EventType {
 
 function supportedEndpointsForEventType(eventType: EventType): string[] {
     if (eventType === "generate.text") return TEXT_MODEL_ENDPOINTS;
-    if (eventType === "generate.audio") return ["/audio/{text}"];
+    if (eventType === "generate.audio") {
+        return ["/audio/{text}", "/v1/audio/speech"];
+    }
     if (eventType === "generate.embedding") return ["/v1/embeddings"];
     if (eventType === "generate.realtime") return ["/v1/realtime"];
     return IMAGE_MODEL_ENDPOINTS;
@@ -81,7 +84,9 @@ const STATIC_ENTRIES: GenerationModelEntry[] = getModels().map((modelName) => {
         id: modelName,
         aliases: definition.aliases,
         eventType,
-        supportedEndpoints: supportedEndpointsForEventType(eventType),
+        supportedEndpoints:
+            definition.supportedEndpoints ??
+            supportedEndpointsForEventType(eventType),
         definition,
         info: modelInfoFromDefinition(modelName, definition),
         visible: definition.hidden !== true,
@@ -91,11 +96,17 @@ const STATIC_ENTRIES: GenerationModelEntry[] = getModels().map((modelName) => {
 function communityEntryToGenerationEntry(
     entry: CommunityModelRegistryEntry,
 ): GenerationModelEntry {
+    const eventType = eventTypeForCategory(entry.definition.category);
     return {
         id: entry.id,
         aliases: entry.aliases,
-        eventType: "generate.text",
-        supportedEndpoints: communityTextSupportedEndpoints(),
+        eventType,
+        supportedEndpoints:
+            eventType === "generate.image"
+                ? communityImageSupportedEndpoints(
+                      entry.communityEndpoint.supportsImageEdits,
+                  )
+                : communityTextSupportedEndpoints(),
         definition: entry.definition,
         info: entry.info,
         communityEndpoint: entry.communityEndpoint,

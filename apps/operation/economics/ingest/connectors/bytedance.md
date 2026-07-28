@@ -19,7 +19,7 @@ Use when:
 Primary evidence sources:
 
 - Historical usage: Tinybird `op_pollen` rows where `vendor = 'bytedance'`.
-- Historical detail: bounded `generation_event` rows for old direct BytePlus models.
+- Historical detail: bounded `generation_event` (pre-v2 archive) rows for old direct BytePlus models.
 - Current Seedance/Seedream provider activity: use `replicate.md`.
 - Balance/expiry: BytePlus Console → Cost Center screenshot or export.
 - Cash: invoice, receipt, Wise, or `op_transactions`.
@@ -40,7 +40,8 @@ Collection steps:
    ORDER BY month
    ```
 
-2. If model detail is needed, query `generation_event` for the bounded period
+2. If model detail is needed, query `generation_event_v2` (or the archived
+   `generation_event` for periods before the v2 cutover) for the bounded period
    and the relevant `seedance*` / `seedream*` model names.
 3. Ask the operator for a current Cost Center screenshot when balance or expiry
    matters. The international Model Ark API exposes models and generation, not

@@ -17,7 +17,9 @@ const snapshotServerUrl = inject("snapshotServerUrl");
 const png1x1Base64 =
     "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAFgwJ/lPFCAAAAAABJRU5ErkJggg==";
 const imageBackendHost = "image-backend.test";
-const fireworksHost = "api.fireworks.ai";
+const sanaBackendHost = "ltx2-backend.pollinations.ai";
+const replicateHost = "api.replicate.com";
+const replicateDeliveryHost = "replicate.delivery";
 
 afterEach(async () => {
     await teardownFetchMock();
@@ -35,8 +37,9 @@ const test = baseTest.extend<{
 
 function createGenerationMocks() {
     env.PORTKEY_GATEWAY_URL = "https://portkey.test";
+    env.REPLICATE_API_TOKEN = "replicate-test-key";
     const portkeyHost = new URL(env.PORTKEY_GATEWAY_URL).host;
-    const fireworksState: {
+    const replicateState: {
         requests: Array<{
             body: Record<string, unknown>;
             headers: Record<string, string>;
@@ -56,17 +59,22 @@ function createGenerationMocks() {
             state: {},
             handlerMap: {
                 [imageBackendHost]: fakeImageBackendResponse,
+                [sanaBackendHost]: fakeImageBackendResponse,
             },
             reset: () => {},
         },
-        fireworks: {
-            state: fireworksState,
+        replicate: {
+            state: replicateState,
             handlerMap: {
-                [fireworksHost]: (request) =>
-                    fakeFireworksFluxResponse(request, fireworksState),
+                [replicateHost]: (request) =>
+                    fakeReplicateFluxResponse(request, replicateState),
+                [replicateDeliveryHost]: async () =>
+                    new Response(Buffer.from(png1x1Base64, "base64"), {
+                        headers: { "content-type": "image/jpeg" },
+                    }),
             },
             reset: () => {
-                fireworksState.requests = [];
+                replicateState.requests = [];
             },
         },
         vcr: createMockVcr({
@@ -78,7 +86,7 @@ function createGenerationMocks() {
     });
 }
 
-async function fakeFireworksFluxResponse(
+async function fakeReplicateFluxResponse(
     request: Request,
     state: {
         requests: Array<{
@@ -95,13 +103,15 @@ async function fakeFireworksFluxResponse(
         url: request.url,
     });
 
-    return new Response(Buffer.from(png1x1Base64, "base64"), {
-        headers: {
-            "content-type": "image/jpeg",
-            "finish-reason": "SUCCESS",
-            seed: String(body.seed ?? 0),
+    return Response.json(
+        {
+            id: "flux-prediction",
+            status: "succeeded",
+            output: ["https://replicate.delivery/flux-output.jpg"],
+            metrics: { predict_time: 0.5 },
         },
-    });
+        { status: 201 },
+    );
 }
 
 async function fakeUpstreamFetch(input: RequestInfo | URL) {
@@ -840,11 +850,11 @@ test("simple text prompts can include slashes", async ({
     await expect(response.text()).resolves.toBe("snapshot slash response");
 });
 
-test("flux image generation uses Fireworks serverless from gen", async ({
+test("flux image generation uses Replicate fallback from gen", async ({
     paidApiKey,
     mocks,
 }) => {
-    await mocks.enable("tinybird", "fireworks");
+    await mocks.enable("tinybird", "replicate");
 
     const { response, wait } = await fetchWorker(
         "/image/vcr%20red%20square?model=flux&width=1280&height=720&seed=42",
@@ -860,19 +870,26 @@ test("flux image generation uses Fireworks serverless from gen", async ({
     expect((await response.arrayBuffer()).byteLength).toBeGreaterThan(0);
     await wait();
 
-    expect(mocks.fireworks.state.requests).toHaveLength(1);
-    expect(mocks.fireworks.state.requests[0]).toMatchObject({
-        url: "https://api.fireworks.ai/inference/v1/workflows/accounts/fireworks/models/flux-1-schnell-fp8/text_to_image",
+    expect(mocks.replicate.state.requests).toHaveLength(1);
+    expect(mocks.replicate.state.requests[0]).toMatchObject({
+        url: "https://api.replicate.com/v1/models/black-forest-labs/flux-schnell/predictions",
         body: {
-            prompt: "vcr red square",
-            aspect_ratio: "16:9",
-            num_inference_steps: 4,
-            seed: 42,
+            input: {
+                prompt: "vcr red square",
+                aspect_ratio: "16:9",
+                num_inference_steps: 4,
+                num_outputs: 1,
+                output_format: "jpg",
+                output_quality: 90,
+                go_fast: true,
+                megapixels: "1",
+                seed: 42,
+            },
         },
         headers: {
-            accept: "image/jpeg",
-            authorization: `Bearer ${env.FIREWORKS_API_KEY}`,
+            authorization: `Bearer ${env.REPLICATE_API_TOKEN}`,
             "content-type": "application/json",
+            prefer: "wait=60",
         },
     });
     expect(mocks.tinybird.state.events).toHaveLength(1);
@@ -882,6 +899,43 @@ test("flux image generation uses Fireworks serverless from gen", async ({
         tokenCountCompletionImage: 1,
         isBilledUsage: true,
     });
+});
+
+test("OpenAI image generation returns token usage", async ({
+    paidApiKey,
+    mocks,
+}) => {
+    await mocks.enable("tinybird", "replicate");
+
+    const { response, wait } = await fetchWorker("/v1/images/generations", {
+        method: "POST",
+        headers: {
+            authorization: `Bearer ${paidApiKey}`,
+            "content-type": "application/json",
+        },
+        body: JSON.stringify({
+            model: "flux",
+            prompt: "vcr red square",
+            size: "1280x720",
+            seed: 42,
+            response_format: "b64_json",
+        }),
+    });
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toMatchObject({
+        data: [{ b64_json: expect.any(String) }],
+        usage: {
+            input_tokens: 0,
+            output_tokens: 1,
+            total_tokens: 1,
+            input_tokens_details: {
+                text_tokens: 0,
+                image_tokens: 0,
+            },
+        },
+    });
+    await wait();
 });
 
 test("gpt-image-2 rejects transparent backgrounds with 400", async ({
@@ -919,6 +973,34 @@ test("gpt-image-2 rejects transparent backgrounds with 400", async ({
         eventType: "generate.image",
         modelRequested: "gpt-image-2",
         responseStatus: 400,
+    });
+});
+
+test("sana uses its fixed backend and records its flat price", async ({
+    paidApiKey,
+    mocks,
+}) => {
+    await mocks.enable("tinybird", "imageBackend");
+
+    const { response, wait } = await fetchWorker(
+        "/image/fast%20flower?model=sana&width=512&height=512&seed=42",
+        {
+            headers: { authorization: `Bearer ${paidApiKey}` },
+        },
+    );
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get("x-model-used")).toBe("sana");
+    await wait();
+
+    expect(mocks.tinybird.state.events).toHaveLength(1);
+    expect(mocks.tinybird.state.events[0]).toMatchObject({
+        eventType: "generate.image",
+        modelRequested: "sana",
+        modelUsed: "sana",
+        tokenCountCompletionImage: 1,
+        tokenPriceCompletionImage: 0.0001,
+        isBilledUsage: true,
     });
 });
 

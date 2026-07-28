@@ -16,10 +16,9 @@ SQL >
         countIf(response_status >= 200 AND response_status < 300) as success_count,
         countIf(response_status >= 200 AND response_status < 300 AND total_price > 0) as priced_success_count,
         countIf(response_status >= 400) as error_count
-    FROM generation_event
+    FROM generation_event_v2
     WHERE start_time >= now() - INTERVAL 7 DAY
     AND resolved_model_requested != 'undefined'
-    AND cache_hit = false
     GROUP BY model
     HAVING priced_success_count >= 3
     ORDER BY request_count DESC

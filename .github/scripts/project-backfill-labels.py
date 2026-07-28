@@ -180,8 +180,6 @@ def remove_project_labels(issue_number: int, project_key: str, dry_run: bool) ->
         ".BUG", ".OUTAGE", ".QUESTION", ".REQUEST", ".DOCS", ".INTEGRATION",
         # Current SERVICE labels
         "IMAGE", "TEXT", "AUDIO", "VIDEO", "API", "WEB", "CREDITS", "BILLING", "ACCOUNT",
-        # TOPIC label
-        "TIER",
         # Old labels to clean up during migration
         "BUG", "OUTAGE", "QUESTION", "REQUEST", "DOCS", "INTEGRATION",
         "S-BUG", "S-OUTAGE", "S-QUESTION", "S-REQUEST", "S-DOCS", "S-INTEGRATION",
@@ -439,7 +437,7 @@ def main():
         protected = PROTECTED_LABELS.get(project_key, set())
         has_protected = protected & set(current_labels_upper)
 
-        has_project_labels = any(l.upper().startswith(("DEV-", ".")) or l.upper() in ("IMAGE", "TEXT", "AUDIO", "VIDEO", "API", "WEB", "CREDITS", "BILLING", "ACCOUNT", "TIER") for l in current_labels)
+        has_project_labels = any(l.upper().startswith(("DEV-", ".")) or l.upper() in ("IMAGE", "TEXT", "AUDIO", "VIDEO", "API", "WEB", "CREDITS", "BILLING", "ACCOUNT") for l in current_labels)
         needs_labels = not args.skip_labels and (not args.only_missing or not has_project_labels)
         needs_priority = args.with_priority and project_key in ("dev", "support") and (not args.only_missing or not current_priority)
         

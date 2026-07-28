@@ -81,6 +81,8 @@ describe("reasoning_effort model wiring", () => {
         "kimi-code",
         "deepseek",
         "qwen-large",
+        "longcat",
+        "nemotron",
         "minimax",
     ])("disables thinking via reasoning_effort=none on %s", async (modelName) => {
         const transform = findModelByName(modelName)?.transform;

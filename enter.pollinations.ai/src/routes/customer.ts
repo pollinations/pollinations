@@ -21,7 +21,7 @@ type EarningsTodayResponse = {
     tierWeek: number;
 };
 
-// Short TTL: the pipe scans 7 days of `generation_event` filtered to one dev
+// Short TTL: the pipe scans 7 days of `generation_event_v2` filtered to one dev
 // (no index on `api_key_created_for_user_id`), so it's expensive and was
 // uncached — unlike the sibling /usage and /earnings endpoints. 60s keeps the
 // "this week so far" number near-live while collapsing per-dashboard-load

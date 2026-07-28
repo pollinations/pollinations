@@ -336,6 +336,43 @@ describe("Account Key Management API", () => {
             }
         });
 
+        test("should omit retired models from listed permissions", async ({
+            sessionToken,
+        }) => {
+            const createResponse = await SELF.fetch(
+                "http://localhost:3000/api/account/keys",
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Cookie: `better-auth.session_token=${sessionToken}`,
+                    },
+                    body: JSON.stringify({
+                        name: "account-key-with-retired-model",
+                        allowedModels: ["flux", "retired-model"],
+                    }),
+                },
+            );
+            expect(createResponse.status).toBe(200);
+            const created = await createResponse.json();
+
+            const response = await SELF.fetch(
+                "http://localhost:3000/api/account/keys",
+                {
+                    headers: {
+                        Cookie: `better-auth.session_token=${sessionToken}`,
+                    },
+                },
+            );
+
+            expect(response.status).toBe(200);
+            const body = await response.json();
+            const listed = body.data.find(
+                (key: { id: string }) => key.id === created.id,
+            );
+            expect(listed.permissions.models).toEqual(["flux"]);
+        });
+
         test("should reject API key without account:keys permission", async ({
             apiKey,
         }) => {

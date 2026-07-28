@@ -95,6 +95,7 @@ export function CopyButton({
             content={copied ? copiedTooltip : tooltip}
             align={tooltipAlign}
             clampToViewport={tooltipClampToViewport}
+            displayContents
             className={tooltipClassName}
         >
             {button}

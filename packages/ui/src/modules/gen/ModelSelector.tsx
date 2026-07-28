@@ -1,4 +1,5 @@
 import type { ModelCategory } from "@pollinations/sdk";
+import { cn } from "../../lib/cn.ts";
 import { Button } from "../../primitives/Button.tsx";
 import { ChevronIcon } from "../../primitives/ChevronIcon.tsx";
 import { Dropdown } from "../../primitives/Dropdown.tsx";
@@ -22,6 +23,8 @@ type ModelSelectorProps = {
     category: ModelSelectorCategory;
     value: string;
     isLoading?: boolean;
+    /** Extra classes for the trigger button, e.g. to match sibling controls. */
+    className?: string;
     onChange: (modelId: string) => void;
 };
 
@@ -39,11 +42,24 @@ export function categoryLabel(category: ModelSelectorCategory): string {
     return CATEGORY_LABELS[category];
 }
 
+/**
+ * Card = needs a paid balance; sprout = runs on any Pollen. Trails the model
+ * name so the name stays the thing you scan the list by.
+ */
+function AccessIcon({ paidOnly }: { paidOnly?: boolean }) {
+    return paidOnly ? (
+        <CardIcon className="polli:h-3.5 polli:w-3.5 polli:shrink-0" />
+    ) : (
+        <SproutIcon className="polli:h-3.5 polli:w-3.5 polli:shrink-0" />
+    );
+}
+
 export function ModelSelector({
     models,
     category,
     value,
     isLoading = false,
+    className,
     onChange,
 }: ModelSelectorProps) {
     const filteredModels = models.filter(
@@ -63,16 +79,16 @@ export function ModelSelector({
                 <Button
                     type="button"
                     aria-label={accessibleLabel}
-                    className="polli:min-w-64 polli:max-w-full polli:self-start polli:justify-between polli:gap-2"
+                    className={cn(
+                        "polli:min-w-64 polli:max-w-full polli:self-start polli:justify-between polli:gap-2",
+                        className,
+                    )}
                 >
                     <span className="polli:flex polli:min-w-0 polli:items-center polli:gap-2">
-                        {currentModel &&
-                            (currentModel.paidOnly ? (
-                                <CardIcon className="polli:h-3.5 polli:w-3.5 polli:shrink-0" />
-                            ) : (
-                                <SproutIcon className="polli:h-3.5 polli:w-3.5 polli:shrink-0" />
-                            ))}
                         <span className="polli:truncate">{modelLabel}</span>
+                        {currentModel && (
+                            <AccessIcon paidOnly={currentModel.paidOnly} />
+                        )}
                     </span>
                     <ChevronIcon expanded={open} />
                 </Button>
@@ -84,7 +100,7 @@ export function ModelSelector({
                         Loading models...
                     </p>
                 ) : (
-                    <ScrollArea className="polli:max-h-64 polli:pr-2">
+                    <ScrollArea className="polli:max-h-80 polli:pr-2">
                         <div className="polli:flex polli:flex-col polli:gap-1">
                             {filteredModels.map((model) => {
                                 const isActive = value === model.id;
@@ -100,15 +116,20 @@ export function ModelSelector({
                                             close();
                                         }}
                                     >
-                                        <span className="polli:flex polli:min-w-0 polli:items-center polli:gap-2">
-                                            {model.paidOnly ? (
-                                                <CardIcon className="polli:h-3.5 polli:w-3.5 polli:shrink-0" />
-                                            ) : (
-                                                <SproutIcon className="polli:h-3.5 polli:w-3.5 polli:shrink-0" />
-                                            )}
-                                            <span className="polli:truncate">
-                                                {model.title}
+                                        <span className="polli:flex polli:min-w-0 polli:flex-col polli:gap-0.5">
+                                            <span className="polli:flex polli:min-w-0 polli:items-center polli:gap-2">
+                                                <span className="polli:truncate">
+                                                    {model.title}
+                                                </span>
+                                                <AccessIcon
+                                                    paidOnly={model.paidOnly}
+                                                />
                                             </span>
+                                            {model.description && (
+                                                <span className="polli:truncate polli:text-xs polli:font-normal polli:text-theme-text-muted">
+                                                    {model.description}
+                                                </span>
+                                            )}
                                         </span>
                                     </TabButton>
                                 );

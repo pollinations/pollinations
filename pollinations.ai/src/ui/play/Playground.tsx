@@ -29,7 +29,7 @@ import {
     ModelSelector,
 } from "@pollinations/ui/gen";
 import { useEffect, useMemo, useState } from "react";
-import { ActionButton } from "../site/kit";
+import { ActionButton, PixelLabel } from "../site/kit";
 
 type ViteImportMeta = ImportMeta & {
     env?: {
@@ -357,23 +357,31 @@ export function Playground() {
     const [isGenerating, setIsGenerating] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
+    // Community models stay off the playground menu: this page pitches the
+    // official catalog, and owner/model entries would double the list. Every
+    // pick below goes through this so state never lands on a hidden model.
+    const visibleModels = useMemo(
+        () => catalog.models.filter((model) => !model.community),
+        [catalog.models],
+    );
+
     const currentModel = useMemo(
-        () => catalog.models.find((model) => model.id === selectedModel),
-        [catalog.models, selectedModel],
+        () => visibleModels.find((model) => model.id === selectedModel),
+        [visibleModels, selectedModel],
     );
 
     useEffect(() => {
-        if (catalog.models.length === 0) return;
-        if (catalog.models.some((model) => model.id === selectedModel)) return;
+        if (visibleModels.length === 0) return;
+        if (visibleModels.some((model) => model.id === selectedModel)) return;
         const nextModel =
-            catalog.models.find((model) => model.id === "flux") ??
-            catalog.models.find((model) => model.category === "image") ??
-            catalog.models[0];
+            visibleModels.find((model) => model.id === "flux") ??
+            visibleModels.find((model) => model.category === "image") ??
+            visibleModels[0];
         if (nextModel) {
             setSelectedModel(nextModel.id);
             setActiveCategory(nextModel.category);
         }
-    }, [catalog.models, selectedModel]);
+    }, [visibleModels, selectedModel]);
 
     useEffect(() => {
         if (!currentModel) return;
@@ -428,11 +436,11 @@ export function Playground() {
         if (currentModel?.category === category) return;
 
         const nextModel =
-            catalog.models.find(
+            visibleModels.find(
                 (model) =>
                     model.category === category &&
                     (!isLoggedIn || catalog.allowedModelIds.has(model.id)),
-            ) ?? catalog.models.find((model) => model.category === category);
+            ) ?? visibleModels.find((model) => model.category === category);
 
         if (nextModel) setSelectedModel(nextModel.id);
     }
@@ -616,14 +624,20 @@ export function Playground() {
                     onCategoryChange={selectCategory}
                 />
                 <ModelSelector
-                    models={catalog.models}
+                    models={visibleModels}
                     category={activeCategory}
                     value={selectedModel}
                     isLoading={isLoading || !isHydrated}
+                    // Same size as the modality tabs above — picking the model
+                    // is the same rank of decision as picking the modality.
+                    className="px-6 py-2.5 text-lg"
                     onChange={setSelectedModel}
                 />
                 {currentModel?.description && (
                     <p className="m-0 text-sm leading-relaxed text-theme-text-muted">
+                        <PixelLabel variant="card" className="mr-2">
+                            Tip
+                        </PixelLabel>
                         {currentModel.description}
                     </p>
                 )}

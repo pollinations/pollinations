@@ -1,3 +1,7 @@
+import {
+    type CommunityEndpointRuntime,
+    rotateCommunityGroupMembers,
+} from "@shared/community-endpoints.ts";
 import { remapUpstreamStatus, UpstreamError } from "@shared/error.ts";
 import { IMMUTABLE_CACHE_CONTROL } from "@shared/http/cache-control.ts";
 import { DEFAULT_IMAGE_MODEL } from "@shared/registry/image.ts";
@@ -403,6 +407,24 @@ async function generateVideoResult(
     );
 }
 
+// The endpoints that may serve this request, in the order they are tried. A
+// pooled model starts at a random member: that is the load-spreading mechanism,
+// it needs no persisted counter, and a per-isolate counter would not distribute
+// across Cloudflare isolates anyway.
+function communityImageEndpoints(
+    c: ImageContext,
+): CommunityEndpointRuntime[] | null {
+    const members = c.var.model.communityGroupMembers;
+    if (members) {
+        return rotateCommunityGroupMembers(
+            members,
+            Math.floor(Math.random() * members.length),
+        );
+    }
+    const endpoint = c.var.model.communityEndpoint;
+    return endpoint ? [endpoint] : null;
+}
+
 export async function generateImageOrVideoResponse(
     c: ImageContext,
     prompt: string,
@@ -413,23 +435,37 @@ export async function generateImageOrVideoResponse(
     const safeParams = parseImageParams(c, body);
 
     try {
-        const communityEndpoint = c.var.model.communityEndpoint;
-        if (communityEndpoint) {
-            const result = await callCommunityImageEndpoint(
-                communityEndpoint,
-                originalPrompt,
-                safeParams,
-                c.env.BETTER_AUTH_SECRET,
-            );
-            assertNonEmptyMedia(result.buffer, "Community image endpoint");
-            return new Response(bufferToUint8Array(result.buffer), {
-                headers: mediaHeaders(
-                    originalPrompt,
-                    safeParams,
-                    result,
-                    detectMimeType(result.buffer),
-                ),
-            });
+        const communityEndpoints = communityImageEndpoints(c);
+        if (communityEndpoints) {
+            // The image response is fully buffered before anything reaches the
+            // client, so a failed member can simply be retried on the next one.
+            let lastError: unknown;
+            for (const endpoint of communityEndpoints) {
+                try {
+                    const result = await callCommunityImageEndpoint(
+                        endpoint,
+                        originalPrompt,
+                        safeParams,
+                        c.env.BETTER_AUTH_SECRET,
+                    );
+                    assertNonEmptyMedia(
+                        result.buffer,
+                        "Community image endpoint",
+                    );
+                    c.set("servedCommunityEndpoint", endpoint);
+                    return new Response(bufferToUint8Array(result.buffer), {
+                        headers: mediaHeaders(
+                            originalPrompt,
+                            safeParams,
+                            result,
+                            detectMimeType(result.buffer),
+                        ),
+                    });
+                } catch (error) {
+                    lastError = error;
+                }
+            }
+            throw lastError;
         }
 
         if (isVideoModel(safeParams.model)) {

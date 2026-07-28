@@ -1,3 +1,4 @@
+import type { CommunityEndpointRuntime } from "@shared/community-endpoints.ts";
 import { UpstreamError } from "@shared/error.ts";
 import { IMMUTABLE_CACHE_CONTROL } from "@shared/http/cache-control.ts";
 import type { ModelDefinition } from "@shared/registry/registry.ts";
@@ -10,7 +11,10 @@ import type { Context } from "hono";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
 import type { Env } from "@/env.ts";
 import { fixWavHeader } from "../routes/audio.js";
-import { communityEndpointGatewayContext } from "./communityEndpoint.ts";
+import {
+    communityEndpointGatewayContext,
+    communityGroupGatewayContext,
+} from "./communityEndpoint.ts";
 import { generateTextPortkey } from "./generateTextPortkey.js";
 import { type ExpressLikeRequest, getRequestData } from "./requestUtils.js";
 import type { ChatCompletion, RequestData, ServiceError } from "./types.js";
@@ -314,6 +318,18 @@ function throwTextError(error: ServiceError): never {
     });
 }
 
+// Portkey reports the served target as "config.targets[N]" via
+// x-portkey-last-used-option-index, which genericOpenAIClient reads before
+// returning the body — so the serving member is known up front for streams too.
+// A missing or unparseable value means the primary target served.
+function servedGroupMember(
+    targets: CommunityEndpointRuntime[],
+    fallbackTarget: string | undefined,
+): CommunityEndpointRuntime {
+    const index = Number(fallbackTarget?.match(/\[(\d+)\]/)?.[1]);
+    return targets.at(index) ?? targets[0];
+}
+
 async function generateTextResponse(
     c: TextContext,
     requestData: RequestData,
@@ -322,22 +338,45 @@ async function generateTextResponse(
     syncTextEnvironment(c.env);
 
     try {
+        const groupMembers = c.var.model?.communityGroupMembers;
         const communityEndpoint = c.var.model?.communityEndpoint;
-        const gatewayContext = communityEndpoint
-            ? await communityEndpointGatewayContext(
-                  communityEndpoint,
+        const group = groupMembers
+            ? await communityGroupGatewayContext(
+                  groupMembers,
                   c.var.model.definition,
                   requestData,
                   c.env.BETTER_AUTH_SECRET,
                   c.env.PORTKEY_GATEWAY_URL,
                   c.var.auth?.apiKey?.rawKey || "",
-                  c.var.auth?.apiKey?.id,
+                  // A random start is the load-spreading mechanism: it needs no
+                  // persisted counter, and a per-isolate counter would not
+                  // distribute across Cloudflare isolates anyway.
+                  Math.floor(Math.random() * groupMembers.length),
               )
-            : withGatewayContext(c, requestData);
+            : null;
+        const gatewayContext = group
+            ? group.options
+            : communityEndpoint
+              ? await communityEndpointGatewayContext(
+                    communityEndpoint,
+                    c.var.model.definition,
+                    requestData,
+                    c.env.BETTER_AUTH_SECRET,
+                    c.env.PORTKEY_GATEWAY_URL,
+                    c.var.auth?.apiKey?.rawKey || "",
+                    c.var.auth?.apiKey?.id,
+                )
+              : withGatewayContext(c, requestData);
         const completion = await generateTextPortkey(
             requestData.messages,
             gatewayContext,
         );
+        if (group) {
+            c.set(
+                "servedCommunityEndpoint",
+                servedGroupMember(group.targets, completion.fallbackTarget),
+            );
+        }
         c.set("upstreamRequestUrl", completion.upstreamRequestUrl);
         completion.id = completion.id || generatePollinationsId();
 

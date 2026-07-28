@@ -11,7 +11,9 @@ import {
 } from "@shared/registry/registry.ts";
 import type { EventType } from "@shared/schemas/generation-event.ts";
 import {
+    type CommunityGroupRegistryEntry,
     type CommunityModelRegistryEntry,
+    communityGroupEntries,
     communityImageSupportedEndpoints,
     communityTextSupportedEndpoints,
     getCommunityModelRegistryEntries,
@@ -37,6 +39,7 @@ export type GenerationModelEntry = {
     definition: ModelDefinition;
     info: ModelInfo;
     communityEndpoint?: CommunityEndpointRuntime;
+    communityGroupMembers?: CommunityEndpointRuntime[];
     visible: boolean;
 };
 
@@ -118,6 +121,32 @@ function communityEntryToGenerationEntry(
     };
 }
 
+function communityGroupEntryToGenerationEntry(
+    entry: CommunityGroupRegistryEntry,
+): GenerationModelEntry {
+    const eventType = eventTypeForCategory(entry.definition.category);
+    return {
+        id: entry.id,
+        aliases: [],
+        eventType,
+        supportedEndpoints:
+            eventType === "generate.image"
+                ? communityImageSupportedEndpoints(
+                      // Advertise edits only when every member can serve one:
+                      // an edit request may be taken by any member.
+                      entry.members.every(
+                          (member) => member.supportsImageEdits,
+                      ),
+                  )
+                : communityTextSupportedEndpoints(),
+        definition: entry.definition,
+        info: entry.info,
+        communityGroupMembers: entry.members,
+        // Every member is public and active by construction.
+        visible: true,
+    };
+}
+
 function buildRegistry(
     entries: GenerationModelEntry[],
 ): GenerationModelRegistry {
@@ -161,10 +190,18 @@ function buildRegistry(
 async function loadGenerationModelRegistry(
     dbBinding: CloudflareBindings["DB"] | undefined,
 ): Promise<GenerationModelRegistry> {
-    const communityEntries = (
-        await getCommunityModelRegistryEntries(dbBinding)
-    ).map(communityEntryToGenerationEntry);
-    return buildRegistry([...STATIC_ENTRIES, ...communityEntries]);
+    const communityEntries = await getCommunityModelRegistryEntries(dbBinding);
+    const groupEntries = communityGroupEntries(
+        communityEntries.map((entry) => entry.communityEndpoint),
+    );
+    return buildRegistry([
+        ...STATIC_ENTRIES,
+        ...communityEntries.map(communityEntryToGenerationEntry),
+        // Groups come last because buildRegistry is first-wins: a real GitHub
+        // user named `group` who registers a colliding model keeps their id and
+        // the group is simply not created.
+        ...groupEntries.map(communityGroupEntryToGenerationEntry),
+    ]);
 }
 
 export async function getGenerationModelRegistry(

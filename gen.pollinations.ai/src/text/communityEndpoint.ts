@@ -1,13 +1,24 @@
 import { signAgentRunToken } from "@shared/auth/agent-run-token.ts";
 import {
     type CommunityEndpointRuntime,
+    communityGroupModelId,
     communityOpenAIBaseUrl,
     isFreeCommunityEndpoint,
     normalizeCommunityEndpointBearerToken,
+    rotateCommunityGroupMembers,
 } from "@shared/community-endpoints.ts";
 import type { ModelDefinition } from "@shared/registry/registry.ts";
 import { decryptSecret } from "@shared/secret-encryption.ts";
 import type { RequestData, TransformOptions } from "./types.js";
+
+// Statuses worth replaying against the next member. 400 and 422 are excluded on
+// purpose: they are malformed-request errors from the caller, so replaying them
+// against every member burns latency for a guaranteed failure. 401/402/403/404
+// are included because they mean this owner's upstream credentials or model are
+// broken — exactly when another member should take over.
+const COMMUNITY_GROUP_FALLBACK_STATUS_CODES = [
+    401, 402, 403, 404, 408, 429, 500, 502, 503, 504,
+];
 
 /**
  * The run token a delegating endpoint authenticates with, or undefined.
@@ -84,5 +95,59 @@ export async function communityEndpointGatewayContext(
         requestedModel: endpoint.modelId,
         portkeyGatewayUrl,
         userApiKey,
+    };
+}
+
+/**
+ * Portkey fallback config across the members of a pooled model. `targets` is
+ * returned so the caller can map Portkey's served-target index back to the
+ * member that did the work.
+ */
+export async function communityGroupGatewayContext(
+    members: readonly CommunityEndpointRuntime[],
+    modelDefinition: ModelDefinition,
+    requestData: RequestData,
+    secret: string,
+    portkeyGatewayUrl: string,
+    userApiKey: string,
+    startIndex: number,
+): Promise<{ options: TransformOptions; targets: CommunityEndpointRuntime[] }> {
+    const targets = rotateCommunityGroupMembers(members, startIndex);
+    const tokens = await Promise.all(
+        targets.map((member) =>
+            decryptSecret(member.bearerTokenCiphertext, secret),
+        ),
+    );
+    const { messages: _messages, ...requestDataWithoutMessages } = requestData;
+
+    return {
+        options: {
+            ...requestDataWithoutMessages,
+            modelConfig: {
+                // resolveModelConfig() derives the request-body model from
+                // config.model (utils/modelResolver.ts). A strategy/targets
+                // config has no provider-level model, so this must be set
+                // explicitly or the body ships model: undefined. Each target
+                // overrides it with its own upstream name anyway.
+                model: targets[0].upstreamModel,
+                strategy: {
+                    mode: "fallback",
+                    on_status_codes: COMMUNITY_GROUP_FALLBACK_STATUS_CODES,
+                },
+                targets: targets.map((member, index) => ({
+                    provider: "openai",
+                    custom_host: communityOpenAIBaseUrl(member.baseUrl),
+                    authKey: normalizeCommunityEndpointBearerToken(
+                        tokens[index],
+                    ),
+                    override_params: { model: member.upstreamModel },
+                })),
+            },
+            modelDef: modelDefinition,
+            requestedModel: communityGroupModelId(targets[0].name),
+            portkeyGatewayUrl,
+            userApiKey,
+        },
+        targets,
     };
 }

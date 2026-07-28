@@ -7,6 +7,9 @@ import {
 } from "./registry/usage-headers.ts";
 
 export const LEGACY_COMMUNITY_MODEL_PREFIX = "community/";
+// Pooled model id for every set of interchangeable community endpoints.
+export const COMMUNITY_GROUP_MODEL_PREFIX = "group/";
+export const MIN_COMMUNITY_GROUP_MEMBERS = 2;
 export const COMMUNITY_MODEL_REWARD_RATE = 0.75;
 export const COMMUNITY_ENDPOINT_MODALITIES = ["text", "image"] as const;
 // How a community image endpoint is billed. "request" charges the fixed
@@ -287,6 +290,10 @@ export function legacyCommunityModelId(
     )}`;
 }
 
+export function communityGroupModelId(modelName: string): string {
+    return `${COMMUNITY_GROUP_MODEL_PREFIX}${modelName}`;
+}
+
 export function normalizeCommunityEndpointBearerToken(value: string): string {
     const token = value.trim().replace(BEARER_PREFIX, "").trim();
     if (!token) throw new Error("API bearer token is required");
@@ -452,6 +459,56 @@ export function communityModelDefinition(
         // catalog only renders per-1M prices when flat_rate === false or a
         // prompt token price is set.
         ...(isImage ? { flatRate: isFlatRateImage } : {}),
+    };
+}
+
+/**
+ * Endpoints group only when they are interchangeable: same callable name, same
+ * modality, same image billing mode, and every price field equal. Price
+ * equality is what makes the group's advertised price unambiguous and lets any
+ * member be billed identically, so the key is derived from
+ * COMMUNITY_ENDPOINT_PRICE_FIELDS rather than a hand-listed subset.
+ */
+export function communityGroupKey(endpoint: CommunityEndpointRuntime): string {
+    return JSON.stringify([
+        endpoint.name,
+        endpoint.modality,
+        endpoint.imagePricing,
+        ...COMMUNITY_ENDPOINT_PRICE_FIELDS.map((field) => endpoint[field.key]),
+    ]);
+}
+
+/** Members rotated left so a request can start at any member of the group. */
+export function rotateCommunityGroupMembers(
+    members: readonly CommunityEndpointRuntime[],
+    startIndex: number,
+): CommunityEndpointRuntime[] {
+    const offset = startIndex % members.length;
+    return [...members.slice(offset), ...members.slice(0, offset)];
+}
+
+/**
+ * Pooled definition for a set of interchangeable endpoints. Prices are equal by
+ * construction (communityGroupKey), so the first member carries every
+ * price-bearing field. The legacy `community/...` alias is deliberately not
+ * emitted: it names one owner and means nothing for a pool.
+ */
+export function communityGroupModelDefinition(
+    members: readonly CommunityEndpointRuntime[],
+): ModelDefinition {
+    const first = members[0];
+    return {
+        ...communityModelDefinition({
+            ...first,
+            // Only advertise image edits when every member can serve one — any
+            // member may take the request after a failover.
+            supportsImageEdits: members.every(
+                (member) => member.supportsImageEdits,
+            ),
+        }),
+        aliases: [],
+        title: first.name,
+        description: `Pooled across ${members.length} community providers, with automatic failover between them.`,
     };
 }
 

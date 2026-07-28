@@ -20,6 +20,7 @@ import {
     PKCE_S256_CHALLENGE_REGEX,
     sanitizeAuthorizeAccountPermissions,
 } from "@shared/auth/authorize-config.ts";
+import { normalizeOAuthResource } from "@shared/auth/oauth-resource.ts";
 import { redirectUriMatchesAllowlistExact } from "@shared/auth/redirect-uri.ts";
 import { useNavigate, useSearch } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
@@ -27,7 +28,10 @@ import { apiClient } from "../../api.ts";
 import { authClient, type User } from "../../auth.ts";
 import { config } from "../../config.ts";
 import { useGitHubSignIn } from "../../hooks/use-github-sign-in.ts";
-import { createKeyWithPermissions } from "../../lib/create-api-key.ts";
+import {
+    createKeyWithPermissions,
+    expiryDaysToExpiresIn,
+} from "../../lib/create-api-key.ts";
 import { AccountPermissionsInput } from "../keys/account-permissions-input.tsx";
 import { ExpiryDaysInput } from "../keys/expiry-days-input.tsx";
 import { useKeyPermissions } from "../keys/key-permissions.tsx";
@@ -76,6 +80,7 @@ export function Authorize() {
         models,
         budget,
         expiry,
+        resource,
         scope: urlScope,
     } = useSearch({ from: "/authorize" });
     const navigate = useNavigate();
@@ -268,6 +273,10 @@ export function Authorize() {
                     );
                     return;
                 }
+                if (resource && !normalizeOAuthResource(resource)) {
+                    setError("Invalid OAuth resource");
+                    return;
+                }
             }
 
             // Attribution is identified by client_id only. Without one, the
@@ -336,6 +345,7 @@ export function Authorize() {
         response_type,
         code_challenge,
         code_challenge_method,
+        resource,
         setAccountPermissions,
     ]);
 
@@ -361,16 +371,72 @@ export function Authorize() {
         setError(null);
 
         try {
-            const { allowedModels, pollenBudget, accountPermissions } =
-                keyPermissions.permissions;
+            const {
+                allowedModels,
+                pollenBudget,
+                accountPermissions,
+                expiryDays,
+            } = keyPermissions.permissions;
             const grantedAccountPermissions =
                 sanitizeAuthorizeAccountPermissions(accountPermissions) ?? [];
+
+            if (isCodeFlow) {
+                if (
+                    !app_key ||
+                    !code_challenge ||
+                    !redirect_url ||
+                    !parsedRedirectUrl
+                ) {
+                    throw new Error(
+                        "Missing client_id, redirect_uri, or PKCE code_challenge",
+                    );
+                }
+                const res = await apiClient.oauth.code
+                    .$post({
+                        json: {
+                            clientId: app_key,
+                            redirectUri: redirect_url,
+                            // "" (requested but narrowed to zero) is distinct
+                            // from undefined (nothing requested).
+                            scope: requestedScopes.size
+                                ? grantedAccountPermissions.join(" ")
+                                : undefined,
+                            codeChallenge: code_challenge,
+                            codeChallengeMethod: "S256",
+                            expiresIn: expiryDaysToExpiresIn(expiryDays),
+                            allowedModels,
+                            pollenBudget,
+                            accountPermissions: grantedAccountPermissions,
+                            ...(resource && { resource }),
+                        },
+                    })
+                    .catch(() => null);
+                if (!res || !res.ok) {
+                    const data = (await res?.json().catch(() => null)) as {
+                        message?: string;
+                        error?: { message?: string };
+                    } | null;
+                    throw new Error(
+                        data?.message ||
+                            data?.error?.message ||
+                            "Failed to create authorization code",
+                    );
+                }
+
+                const { code } = (await res.json()) as { code: string };
+                const url = new URL(parsedRedirectUrl.href);
+                url.searchParams.set("code", code);
+                if (state) url.searchParams.set("state", state);
+                window.location.href = url.toString();
+                return;
+            }
+
             const { key, id, expiresIn } = await createKeyWithPermissions({
                 name: isDeviceMode
                     ? `Device ${user_code}`
                     : attribution?.appName || redirectHostname,
                 prefix: "sk",
-                expiryDays: keyPermissions.permissions.expiryDays,
+                expiryDays,
                 metadata: {
                     ...(isDeviceMode && { deviceUserCode: user_code }),
                     ...(app_key &&
@@ -418,53 +484,9 @@ export function Authorize() {
                     throw new Error("Invalid redirect URL format");
                 }
                 const url = new URL(parsedRedirectUrl.href);
-                if (isCodeFlow) {
-                    if (!app_key || !code_challenge || !redirect_url) {
-                        throw new Error(
-                            "Missing client_id or PKCE code_challenge",
-                        );
-                    }
-                    const res = await apiClient.oauth.code
-                        .$post({
-                            json: {
-                                apiKey: key,
-                                clientId: app_key,
-                                redirectUri: redirect_url,
-                                // "" (requested but narrowed to zero) is
-                                // distinct from undefined (nothing requested)
-                                // — RFC 6749 §5.1 needs the token response to
-                                // echo the former
-                                scope: requestedScopes.size
-                                    ? grantedAccountPermissions.join(" ")
-                                    : undefined,
-                                codeChallenge: code_challenge,
-                                codeChallengeMethod: "S256",
-                                expiresIn,
-                            },
-                        })
-                        .catch(() => null);
-                    if (!res || !res.ok) {
-                        // The key was minted but can't be delivered — don't
-                        // leave an active orphan in the account.
-                        authClient.apiKey.delete({ keyId: id }).catch(() => {});
-                        const data = (await res?.json().catch(() => null)) as {
-                            message?: string;
-                            error?: { message?: string };
-                        } | null;
-                        throw new Error(
-                            data?.message ||
-                                data?.error?.message ||
-                                "Failed to create authorization code",
-                        );
-                    }
-                    const { code } = (await res.json()) as { code: string };
-                    url.searchParams.set("code", code);
-                    if (state) url.searchParams.set("state", state);
-                } else {
-                    const hash = new URLSearchParams({ api_key: key });
-                    if (state) hash.set("state", state);
-                    url.hash = hash.toString();
-                }
+                const hash = new URLSearchParams({ api_key: key });
+                if (state) hash.set("state", state);
+                url.hash = hash.toString();
                 window.location.href = url.toString();
             }
         } catch (e) {

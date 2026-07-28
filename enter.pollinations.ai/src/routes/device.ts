@@ -318,7 +318,7 @@ export async function exchangeDeviceCode(
 
             return c.json({
                 access_token: stored.key,
-                token_type: "bearer",
+                token_type: "Bearer",
                 ...(stored.expiresIn != null && {
                     expires_in: stored.expiresIn,
                 }),

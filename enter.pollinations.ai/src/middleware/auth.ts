@@ -6,6 +6,7 @@ import {
     BannedAccountError,
     StagingAccessDeniedError,
 } from "@shared/auth/api-key.ts";
+import { getPublicOrigin } from "@shared/public-origin.ts";
 import { createMiddleware } from "hono/factory";
 import { HTTPException } from "hono/http-exception";
 import type { Session, User } from "../auth.ts";
@@ -79,6 +80,7 @@ export const auth = (options: AuthOptions) =>
                     env: c.env,
                     client,
                     ctx: c.executionCtx,
+                    resource: getPublicOrigin(c),
                 });
                 if (!result) return null;
                 return {

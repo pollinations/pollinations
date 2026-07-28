@@ -10,6 +10,11 @@ import {
 
 export type ApiKeyType = "secret" | "publishable";
 
+export type OAuthKeyMetadata = {
+    clientId: string;
+    resource?: string;
+};
+
 export type CallerMetadata = {
     redirectUris?: string[];
     redirectUri?: string;
@@ -31,6 +36,7 @@ type CreateApiKeyForUserInput = {
     pollenBudget?: number | null;
     accountPermissions?: string[] | null;
     metadata?: CallerMetadata;
+    oauth?: OAuthKeyMetadata;
     allowAccountKeysPermission: boolean;
     defaultCreatedVia: string;
 };
@@ -235,6 +241,7 @@ export async function createApiKeyForUser({
     pollenBudget,
     accountPermissions,
     metadata,
+    oauth,
     allowAccountKeysPermission,
     defaultCreatedVia,
 }: CreateApiKeyForUserInput) {
@@ -246,6 +253,11 @@ export async function createApiKeyForUser({
     );
 
     const isPublishable = type === "publishable";
+    if (isPublishable && oauth) {
+        throw new HTTPException(400, {
+            message: "OAuth metadata is only valid for secret keys",
+        });
+    }
     const callerMetadata = pickCallerMetadata(metadata, isPublishable);
     if (Array.isArray(callerMetadata.redirectUris)) {
         for (const uri of callerMetadata.redirectUris as string[]) {
@@ -270,6 +282,10 @@ export async function createApiKeyForUser({
         ...callerMetadata,
         keyType: type,
         createdVia: defaultCreatedVia,
+        ...(oauth && {
+            oauthClientId: oauth.clientId,
+            ...(oauth.resource && { oauthResource: oauth.resource }),
+        }),
     };
 
     const created = await authClient.api.createApiKey({

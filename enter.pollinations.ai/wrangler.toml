@@ -1,7 +1,7 @@
 name = "pollinations-enter"
 main = "src/index.ts"
 compatibility_date = "2025-11-01"
-compatibility_flags = [ "nodejs_compat", "nodejs_als" ]
+compatibility_flags = [ "nodejs_compat", "nodejs_als", "global_fetch_strictly_public" ]
 account_id = "b6ec751c0862027ba269faf7029b2501"
 
 [dev]

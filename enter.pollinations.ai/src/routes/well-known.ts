@@ -26,6 +26,7 @@ export const wellKnownRoutes = new Hono<Env>().get(
             grant_types_supported: ["authorization_code", DEVICE_CODE_GRANT],
             code_challenge_methods_supported: ["S256"],
             token_endpoint_auth_methods_supported: ["none"],
+            client_id_metadata_document_supported: true,
             service_documentation: `${origin}/api/docs`,
         });
     },

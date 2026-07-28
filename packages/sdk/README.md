@@ -591,7 +591,7 @@ const base64 = image.toBase64();    // Raw base64 string
 
 ### Request Timeout
 
-Default timeouts: text/chat 5min, images 10min, videos 10min. For custom timeouts:
+Default timeouts: text/chat 5min, images 10min, videos 20min. For custom timeouts:
 
 ```javascript
 import { Pollinations } from '@pollinations/sdk';
@@ -600,7 +600,7 @@ const client = new Pollinations({
   timeout: 600000,       // 10 minutes for all requests
   textTimeout: 300000,   // 5 minutes for text
   imageTimeout: 600000,  // 10 minutes for images
-  videoTimeout: 900000,  // 15 minutes for videos
+  videoTimeout: 1200000, // 20 minutes for videos
 });
 ```
 

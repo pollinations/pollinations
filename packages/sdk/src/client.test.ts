@@ -74,6 +74,7 @@ beforeEach(() => {
 afterEach(() => {
     vi.restoreAllMocks();
     vi.unstubAllGlobals();
+    vi.useRealTimers();
 });
 
 // Helper: pull the seed query param from an image/video GET URL.
@@ -88,6 +89,33 @@ function bodyOf(call: unknown[]): Record<string, unknown> {
 }
 
 describe("Pollinations request attempts", () => {
+    it("keeps video requests alive until the 20-minute default timeout", async () => {
+        vi.useFakeTimers();
+        let aborted = false;
+        fetchMock.mockImplementation(
+            (_url: string, init: RequestInit) =>
+                new Promise<Response>((_, reject) => {
+                    init.signal?.addEventListener("abort", () => {
+                        aborted = true;
+                        reject(new DOMException("Aborted", "AbortError"));
+                    });
+                }),
+        );
+
+        const request = newClient().video("a long-running scene");
+        const assertion = expect(request).rejects.toMatchObject({
+            code: "TIMEOUT",
+            status: 408,
+            message: "Request timed out after 1200000ms",
+        });
+
+        await vi.advanceTimersByTimeAsync(1_200_000 - 1);
+        expect(aborted).toBe(false);
+        await vi.advanceTimersByTimeAsync(1);
+        await assertion;
+        expect(aborted).toBe(true);
+    });
+
     it("does not retry uploads after a network failure", async () => {
         const client = newClient();
         fetchMock.mockRejectedValue(new Error("boom"));

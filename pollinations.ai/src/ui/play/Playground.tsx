@@ -29,7 +29,7 @@ import {
     ModelSelector,
 } from "@pollinations/ui/gen";
 import { useEffect, useMemo, useState } from "react";
-import { ActionButton, PixelLabel } from "../site/kit";
+import { ActionButton } from "../site/kit";
 
 type ViteImportMeta = ImportMeta & {
     env?: {
@@ -62,6 +62,8 @@ type PlaygroundResult =
     | {
           type: "text";
           text: string;
+          /** The seeded example, not something this visitor generated. */
+          demo?: boolean;
       };
 
 /**
@@ -214,6 +216,69 @@ function ModalityTabs({
     );
 }
 
+/** Text has no URL to point a download at, so it becomes one on the spot. */
+function downloadHref(result: PlaygroundResult): string {
+    if (result.type === "text")
+        return `data:text/plain;charset=utf-8,${encodeURIComponent(result.text)}`;
+    return result.url;
+}
+
+/** The full-screen look at a picture or clip. Escape or the backdrop closes. */
+function Lightbox({
+    result,
+    onClose,
+}: {
+    result: PlaygroundResult;
+    onClose: () => void;
+}) {
+    useEffect(() => {
+        const onKey = (event: KeyboardEvent) => {
+            if (event.key === "Escape") onClose();
+        };
+        window.addEventListener("keydown", onKey);
+        const previousOverflow = document.body.style.overflow;
+        document.body.style.overflow = "hidden";
+        return () => {
+            window.removeEventListener("keydown", onKey);
+            document.body.style.overflow = previousOverflow;
+        };
+    }, [onClose]);
+
+    if (result.type !== "image" && result.type !== "video") return null;
+
+    return (
+        // biome-ignore lint/a11y/useKeyWithClickEvents: Escape closes via the window listener above.
+        <div
+            role="dialog"
+            aria-modal="true"
+            aria-label="Enlarged result — press Escape to close"
+            className="fixed inset-0 z-[70] flex cursor-zoom-out items-center justify-center bg-brand-dark/85 p-6"
+            onClick={onClose}
+        >
+            {result.type === "image" ? (
+                <img
+                    src={result.url}
+                    alt="Generated, enlarged"
+                    className="max-h-full max-w-full rounded-xl object-contain"
+                />
+            ) : (
+                // The enlarged clip gets the controls the inline preview gave
+                // up, and stopPropagation so using them doesn't close it.
+                <video
+                    src={result.url}
+                    controls
+                    autoPlay
+                    loop
+                    className="max-h-full max-w-full cursor-auto rounded-xl"
+                    onClick={(event) => event.stopPropagation()}
+                >
+                    <track kind="captions" />
+                </video>
+            )}
+        </div>
+    );
+}
+
 function ResultPanel({
     result,
     isLoading,
@@ -223,6 +288,15 @@ function ResultPanel({
     isLoading: boolean;
     className?: string;
 }) {
+    const [expanded, setExpanded] = useState(false);
+
+    // A new result is a new picture — never inherit the previous zoom.
+    // biome-ignore lint/correctness/useExhaustiveDependencies: runs off the result changing, not its value
+    useEffect(() => setExpanded(false), [result]);
+
+    const zoomButtonClass =
+        "flex h-full w-full cursor-zoom-in items-center justify-center border-0 bg-transparent p-0";
+
     return (
         <Surface
             variant="card"
@@ -237,9 +311,9 @@ function ResultPanel({
                         Example output
                     </Text>
                 )}
-                {result && result.type !== "text" && !result.demo && (
+                {result && !result.demo && (
                     <ActionButton
-                        href={result.url}
+                        href={downloadHref(result)}
                         download={`pollinations-playground.${getResultExtension(
                             result,
                         )}`}
@@ -247,7 +321,7 @@ function ResultPanel({
                         size="sm"
                         className="ml-auto"
                     >
-                        Save
+                        Download
                     </ActionButton>
                 )}
             </div>
@@ -278,24 +352,43 @@ function ResultPanel({
             ) : (
                 <div className="flex min-h-0 flex-1 items-center justify-center overflow-hidden rounded-xl bg-surface-white p-3 text-theme-text-strong">
                     {result.type === "image" && (
-                        <img
-                            src={result.url}
-                            alt="Generated"
-                            className="max-h-full w-full rounded-lg object-contain"
-                        />
+                        <button
+                            type="button"
+                            aria-label="Enlarge image"
+                            className={zoomButtonClass}
+                            onClick={() => setExpanded(true)}
+                        >
+                            <img
+                                src={result.url}
+                                alt="Generated"
+                                className="max-h-full w-full rounded-lg object-contain"
+                            />
+                        </button>
                     )}
 
                     {result.type === "video" && (
-                        <video
-                            src={result.url}
-                            controls
-                            autoPlay
-                            loop
-                            muted
-                            className="max-h-full w-full rounded-lg"
+                        // The inline preview drops its native controls so the
+                        // whole frame is one click target for the lightbox —
+                        // nesting controls inside a button would fight it.
+                        // It already autoplays muted; the lightbox has the
+                        // controls.
+                        <button
+                            type="button"
+                            aria-label="Enlarge video"
+                            className={zoomButtonClass}
+                            onClick={() => setExpanded(true)}
                         >
-                            <track kind="captions" />
-                        </video>
+                            <video
+                                src={result.url}
+                                autoPlay
+                                loop
+                                muted
+                                playsInline
+                                className="pointer-events-none max-h-full w-full rounded-lg"
+                            >
+                                <track kind="captions" />
+                            </video>
+                        </button>
                     )}
 
                     {result.type === "audio" && (
@@ -309,6 +402,10 @@ function ResultPanel({
                         </audio>
                     )}
                 </div>
+            )}
+
+            {expanded && result && (
+                <Lightbox result={result} onClose={() => setExpanded(false)} />
             )}
         </Surface>
     );
@@ -394,6 +491,33 @@ export function Playground() {
             setSelectedVoice(firstVoice);
         }
     }, [currentModel, selectedVoice]);
+
+    // The example output is only honest while the form still shows the exact
+    // inputs that produced it. The first edit to any field clears it back to
+    // the placeholder, so a stale picture never claims the new settings.
+    useEffect(() => {
+        if (!result?.demo) return;
+        const untouched =
+            prompt === DEMO.prompt &&
+            selectedModel === DEMO.model &&
+            activeCategory === DEMO.category &&
+            width === DEMO.width &&
+            height === DEMO.height &&
+            seed === DEMO.seed &&
+            referenceImages.length === 0 &&
+            audioFiles.length === 0;
+        if (!untouched) setResult(null);
+    }, [
+        result,
+        prompt,
+        selectedModel,
+        activeCategory,
+        width,
+        height,
+        seed,
+        referenceImages,
+        audioFiles,
+    ]);
 
     useEffect(() => {
         return () => {
@@ -633,14 +757,6 @@ export function Playground() {
                     className="px-6 py-2.5 text-lg"
                     onChange={setSelectedModel}
                 />
-                {currentModel?.description && (
-                    <p className="m-0 text-sm leading-relaxed text-theme-text-muted">
-                        <PixelLabel variant="card" className="mr-2">
-                            Tip
-                        </PixelLabel>
-                        {currentModel.description}
-                    </p>
-                )}
             </div>
 
             <div className="polli-playground-main-grid">

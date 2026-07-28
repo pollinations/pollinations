@@ -20,6 +20,7 @@
 
 | Name | Description | Author |
 |------|-------------|--------|
+| [🎬 Driftpod.fm](https://driftpod.fm) | Press play for endless discovery of podcasts. Users tailor their experience by adding favorite podcasts, liking and disliking episodes, and the recommendation engine gets episode metadata (summaries, | [@alexander](https://github.com/alexander) |
 | [🖼️ Anime Forge](https://animeforge-k4ltm64.public.builtwithrocket.new) | Anime Forge is an AI-driven anime character design web app powered by Pollinations API for text and image generation. | [@masreamro496-ship-it](https://github.com/masreamro496-ship-it) |
 | [💬 Arika](https://arika.hizumi.in) | Arika provides a conversational AI experience designed to feel more human and less robotic. | [@02th](https://github.com/02th) |
 | [🖼️ Ai Anime Legends Generator](https://anime.caasexpresss.com) | Ai Anime Legends Generator generates anime legends using AI. | [@Caas2023](https://github.com/Caas2023) |
@@ -29,7 +30,6 @@
 | [🧠 Blaze Prep](https://blazeprep.net) | Manage FDNY Prep learning content in Blaze Prep, with AI-generated materials from Pollinations AI. | [@beedieeyez](https://github.com/beedieeyez) |
 | [🧩 ScrollStop UGC Ad Studio](https://scrollstop-ugc-studio.vercel.app/) | ScrollStop UGC Studio is a web app that helps creators and marketers generate short-form UGC ad ideas for TikTok, Reels, and Shorts. Users enter product details, target audience, offer, and creative a | [@dreamm160-ops](https://github.com/dreamm160-ops) |
 | [🎉 Aventi](https://aventi-web.vercel.app/) | Aventi is a swipe-first discovery app for local events, nightlife, and experiences. It helps users find what to do nearby. | [@Erics1337](https://github.com/Erics1337) |
-| [📹 Affiliate Video Maker](https://github.com/falconafk31/affiliate-video-maker) | Generate AI-Powered affiliate videos with Affiliate Video Maker. | [@falconafk31](https://github.com/falconafk31) |
 
 [Browse all apps →](apps/GREENHOUSE.md)
 ## 🚀 New Unified API — Now Live

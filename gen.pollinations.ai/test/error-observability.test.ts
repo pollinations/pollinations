@@ -413,18 +413,21 @@ describe("error observability", () => {
         });
     });
 
-    it("keeps text provider 429 client-facing and out of server error alerts", async () => {
+    it("maps text provider 429 to an actionable server error", async () => {
         const tinybirdRequests: Request[] = [];
-        vi.spyOn(globalThis, "fetch").mockImplementation(async (input) => {
-            if (new Request(input).url.includes("tinybird.test")) {
-                tinybirdRequests.push(new Request(input));
-                return new Response("ok");
-            }
-            return Response.json(
-                { error: { message: "provider rate limited" } },
-                { status: 429 },
-            );
-        });
+        vi.spyOn(globalThis, "fetch").mockImplementation(
+            async (input, init) => {
+                const request = new Request(input, init);
+                if (request.url.includes("tinybird.test")) {
+                    tinybirdRequests.push(request);
+                    return new Response("ok");
+                }
+                return Response.json(
+                    { error: { message: "provider rate limited" } },
+                    { status: 429 },
+                );
+            },
+        );
 
         const ctx = createExecutionContext();
         const response = await createTextTestApp().fetch(
@@ -451,17 +454,24 @@ describe("error observability", () => {
 
         await waitOnExecutionContext(ctx);
 
-        expect(response.status).toBe(429);
+        expect(response.status).toBe(502);
         await expect(response.json()).resolves.toMatchObject({
             error: {
-                code: "RATE_LIMITED",
+                code: "BAD_GATEWAY",
                 details: {
                     upstreamHost: "portkey.test",
                     upstreamStatus: 429,
                 },
             },
         });
-        expect(tinybirdRequests).toHaveLength(0);
+        expect(tinybirdRequests).toHaveLength(1);
+        await expect(tinybirdRequests[0].json()).resolves.toMatchObject({
+            kind: "server_error",
+            status: 502,
+            error_code: "BAD_GATEWAY",
+            upstream_host: "portkey.test",
+            upstream_status: 429,
+        });
     });
 
     it("attributes provider error envelopes to the gateway", async () => {

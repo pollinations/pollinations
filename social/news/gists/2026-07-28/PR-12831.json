@@ -1,0 +1,35 @@
+{
+  "pr_number": 12831,
+  "title": "Add Le petit AI to chat",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/12831",
+  "merged_at": "2026-07-28T16:05:21Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds [Le petit AI](https://le-petit-seven.vercel.app) to chat\n- Open https://le-petit-seven.vercel.app/ to use Le petit AI.\n\nFixes #12565",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "A little AI joins chat",
+    "blurb": "Le petit AI has landed in the garden. A small new chat space for asking large questions, as software tends to encourage.",
+    "summary": "Added Le petit AI, a new community chat app available at le-petit-seven.vercel.app, to the Pollinations app directory and greenhouse.",
+    "impact": "People can now discover and open Le petit AI directly from Pollinations' community app listings for another way to chat with AI.",
+    "keywords": [
+      "community",
+      "apps",
+      "chat",
+      "Le petit AI",
+      "directory"
+    ],
+    "visual_concept": "Depict Le petit AI as a tiny cozy chat nook in the Pollinations garden: a retro terminal with friendly speech bubbles and a small sign reading \"LE PETIT AI.\" Polli, wearing a little French beret, welcomes the new chat app by tending a code-plant beside it; flowers and vines make the app-directory addition feel like a new seedling in the greenhouse.",
+    "image_prompt": "Cozy pixel art scene inside a warm community greenhouse where Polli, the cute yellow-and-brown striped bee mascot with pink cheek blush and light blue wings, wears a tiny French beret and welcomes a small retro chat terminal marked \"LE PETIT AI\" in simple pixel text; friendly speech bubbles rise from the screen while code-plants, flowers, and vines grow around it. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, chunky retro sprites, lo-fi vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-28/PR-12831.jpg",
+    "prompt": "Cozy pixel art scene inside a warm community greenhouse where Polli, the cute yellow-and-brown striped bee mascot with pink cheek blush and light blue wings, wears a tiny French beret and welcomes a small retro chat terminal marked \"LE PETIT AI\" in simple pixel text; friendly speech bubbles rise from the screen while code-plants, flowers, and vines grow around it. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, chunky retro sprites, lo-fi vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
+  },
+  "generated_at": "2026-07-28T16:06:33.576683+00:00",
+  "app_name": "Le petit AI",
+  "app_url": "https://le-petit-seven.vercel.app"
+}

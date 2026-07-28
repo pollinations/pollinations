@@ -17,9 +17,12 @@ import { cn } from "../lib/cn.ts";
  */
 export type BrandVariant = "lockup" | "mark" | "wordmark";
 
+// Each ratio is the asset's own viewBox width / height — `contain` masking
+// letterboxes inside a box of any other shape, so keep these in step with the
+// files when scripts/brand/generate.mjs changes them.
 const ASSETS: Record<BrandVariant, { url: string; ratio: number }> = {
     // Mark plus wordmark, side by side — the default for headers and footers.
-    lockup: { url: lockupUrl, ratio: 930.217 / 187.2 },
+    lockup: { url: lockupUrl, ratio: 858.034 / 105.6 },
     mark: { url: markUrl, ratio: 1 },
     wordmark: { url: wordmarkUrl, ratio: 179.97 / 23.77 },
 };

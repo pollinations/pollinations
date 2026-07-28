@@ -29,6 +29,7 @@ import {
     ModelSelector,
 } from "@pollinations/ui/gen";
 import { useEffect, useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 import { ActionButton } from "../site/kit";
 
 type ViteImportMeta = ImportMeta & {
@@ -223,7 +224,13 @@ function downloadHref(result: PlaygroundResult): string {
     return result.url;
 }
 
-/** The full-screen look at a picture or clip. Escape or the backdrop closes. */
+/**
+ * The full-screen look at a picture or clip. Escape or the backdrop closes.
+ *
+ * Portalled to <body>: it renders from inside the output panel, whose
+ * position:sticky always creates a stacking context — left in place, the
+ * overlay can never paint above the site header no matter its z-index.
+ */
 function Lightbox({
     result,
     onClose,
@@ -246,13 +253,13 @@ function Lightbox({
 
     if (result.type !== "image" && result.type !== "video") return null;
 
-    return (
+    return createPortal(
         // biome-ignore lint/a11y/useKeyWithClickEvents: Escape closes via the window listener above.
         <div
             role="dialog"
             aria-modal="true"
             aria-label="Enlarged result — press Escape to close"
-            className="fixed inset-0 z-[70] flex cursor-zoom-out items-center justify-center bg-brand-dark/85 p-6"
+            className="fixed inset-0 z-[130] flex cursor-zoom-out items-center justify-center bg-brand-dark/85 p-6"
             onClick={onClose}
         >
             {result.type === "image" ? (
@@ -275,7 +282,8 @@ function Lightbox({
                     <track kind="captions" />
                 </video>
             )}
-        </div>
+        </div>,
+        document.body,
     );
 }
 

@@ -1,0 +1,36 @@
+{
+  "pr_number": 12823,
+  "title": "Add Pollinations AI Studio to build",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/12823",
+  "merged_at": "2026-07-28T15:32:32Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds [Pollinations AI Studio](https://sashafilipov.github.io/pollinations-ai-studio) to build\n- Multimodal workspace for Pollinations.ai вЂ” chat with GPT/Claude/Gemini/DeepSeek via gen.pollinations.ai/v1/chat/completions , generate images via gen.pollinations.ai/image/{prompt} (Flux, Turbo, GPT\n\nFixes #12765",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "A studio grew in the garden",
+    "blurb": "Pollinations AI Studio has joined the build list: one cozy workspace for chatting with a small parliament of models and making images. The garden now has a desk, several buttons, and probably too many tabs.",
+    "summary": "Added Pollinations AI Studio to the community app build, a multimodal workspace that uses gen.pollinations.ai/v1/chat/completions for GPT, Claude, Gemini, and DeepSeek chat plus gen.pollinations.ai/image/{prompt} for Flux, Turbo, and GPT image generation.",
+    "impact": "People can now discover Pollinations AI Studio as a single workspace for switching between supported chat models and generating images through Pollinations endpoints.",
+    "keywords": [
+      "community-app",
+      "ai-studio",
+      "multimodal",
+      "chat-completions",
+      "image-generation",
+      "gen-api"
+    ],
+    "visual_concept": "Depict a welcoming pixel-art creative studio in a garden: a retro workstation with several small chat windows and an image canvas, surrounded by flowering code-plants. Polli is actively arranging model cards and paint-like pixels on the desk, wearing a tiny artist beret; the CRT Monitor Robot eagerly watches the workspace display.",
+    "image_prompt": "A cozy pixel art garden studio with a retro computer desk showing small chat panels labeled GPT, Claude, Gemini, and DeepSeek beside a glowing image canvas, with code-plants and pastel flowers growing around it. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears a tiny painter's beret and arranges colorful pixel art on the desk beside a cute chunky CRT-monitor robot. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, retro gaming vibes, subtle CRT glow, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-28/PR-12823.jpg",
+    "prompt": "A cozy pixel art garden studio with a retro computer desk showing small chat panels labeled GPT, Claude, Gemini, and DeepSeek beside a glowing image canvas, with code-plants and pastel flowers growing around it. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears a tiny painter's beret and arranges colorful pixel art on the desk beside a cute chunky CRT-monitor robot. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, retro gaming vibes, subtle CRT glow, emotionally warm."
+  },
+  "generated_at": "2026-07-28T15:33:44.352389+00:00",
+  "app_name": "Pollinations AI Studio",
+  "app_url": "https://sashafilipov.github.io/pollinations-ai-studio"
+}

@@ -1,0 +1,34 @@
+{
+  "pr_number": 12787,
+  "title": "Rotate Polli easter-egg statuses",
+  "author": "Itachi-1824",
+  "url": "https://github.com/pollinations/pollinations/pull/12787",
+  "merged_at": "2026-07-28T15:46:37Z",
+  "labels": [],
+  "pr_body_excerpt": "Adds 60 bee/Pollinations/model/tool/infrastructure status easter eggs and rotates them every minute. Uses a shuffled bag, so every message appears exactly once per hour and cycle boundaries never repeat. Starts once in setup_hook, so Discord reconnects don't create duplicate loops. Successful rotations stay silent; only failures are logged. Verified live on the VPS: the status changed automatically after one minute without a restart.",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Polli has 60 moods",
+    "blurb": "Polli’s Discord status now changes every minute, cycling through a whole hour of bee, model, tool, and infrastructure oddities. The hive bulletin board has become mildly sentient.",
+    "summary": "The Polli Discord bot now rotates through 60 shuffled bee, Pollinations, model, tool, and infrastructure status messages every minute, showing each message exactly once per hour without repeats at cycle boundaries or duplicate loops after reconnects.",
+    "impact": "Discord visitors get a fresh Polli easter egg every minute, while the bot keeps one quiet, reconnect-safe rotation loop running in the background.",
+    "keywords": [
+      "Polli",
+      "Discord",
+      "status rotation",
+      "easter eggs",
+      "community bot",
+      "automation"
+    ],
+    "visual_concept": "Depict Polli as a cheerful Discord bot caretaker beside a cozy retro status board with 60 tiny rotating message tiles, represented as a gentle carousel rather than an overwhelming list. A clock, small model/tool icons, code-plants, flowers, and a softly glowing terminal show the minute-by-minute rotation; Polli should be actively turning the board’s dial, wearing a tiny stationmaster hat.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings, wearing a tiny stationmaster hat as she turns a dial on a retro Discord-style status board; the board gently cycles 60 tiny message tiles beside a clock, glowing code-plants, flowers, and a lime green (#ecf874) terminal, with simple pixel text: \"STATUS: BUZZING\". Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, prominent lime green (#ecf874), dark purple (#110518) outlines, nostalgic but beautiful and emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-28/PR-12787.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings, wearing a tiny stationmaster hat as she turns a dial on a retro Discord-style status board; the board gently cycles 60 tiny message tiles beside a clock, glowing code-plants, flowers, and a lime green (#ecf874) terminal, with simple pixel text: \"STATUS: BUZZING\". Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, prominent lime green (#ecf874), dark purple (#110518) outlines, nostalgic but beautiful and emotionally warm."
+  },
+  "generated_at": "2026-07-28T15:47:35.836347+00:00"
+}

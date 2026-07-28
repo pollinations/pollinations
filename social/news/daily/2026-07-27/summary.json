@@ -1,0 +1,55 @@
+{
+  "date": "2026-07-27",
+  "period_start": "2026-07-27",
+  "period_end": "2026-07-27",
+  "title": "Image APIs gained edits and sturdier fallback capacity",
+  "summary": "A reliability-heavy day: editable community images, a new long-context model, sturdier fallbacks, and fewer mysteries in API errors and usage records.\n\nCommunity image models can now expose OpenAI-compatible multipart edits after passing an edit-capability probe, so validated models can accept reference images without confusing generation-only endpoints. FLUX.1 Schnell also has a working Replicate backup route, while Z-Image Vast workers now prove local health before joining production capacity.\n\nNVIDIA Nemotron 3 Ultra joined the text API with a 262k-token context window, tool use, reasoning, and structured JSON. Mercury 2 moved to a pinned OpenRouter route without changing its public interface, and text failures now identify the real upstream while separating rate limits, transport failures, and Pollinations-side errors. Debugging an API should not require divination.\n\nTwo community contributors, meow18838 and Lorodn4x, can now publish models to the shared ecosystem. The README news was refreshed too, because the public garden sign should generally match the garden.",
+  "pr_count": 11,
+  "prs": [
+    {
+      "number": 12715,
+      "date": "2026-07-27"
+    },
+    {
+      "number": 12788,
+      "date": "2026-07-27"
+    },
+    {
+      "number": 12793,
+      "date": "2026-07-27"
+    },
+    {
+      "number": 12795,
+      "date": "2026-07-27"
+    },
+    {
+      "number": 12797,
+      "date": "2026-07-27"
+    },
+    {
+      "number": 12798,
+      "date": "2026-07-27"
+    },
+    {
+      "number": 12799,
+      "date": "2026-07-27"
+    },
+    {
+      "number": 12800,
+      "date": "2026-07-27"
+    },
+    {
+      "number": 12802,
+      "date": "2026-07-27"
+    },
+    {
+      "number": 12806,
+      "date": "2026-07-27"
+    },
+    {
+      "number": 12810,
+      "date": "2026-07-27"
+    }
+  ],
+  "generated_at": "2026-07-28T07:05:54.394133+00:00"
+}

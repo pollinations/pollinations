@@ -1,0 +1,36 @@
+{
+  "pr_number": 12830,
+  "title": "Add Lumina Chat to chat",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/12830",
+  "merged_at": "2026-07-28T16:02:41Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds [Lumina Chat](https://lumina.magnified.cc) to chat\n- Lumina is an AI chat application designed to provide a seamless and flexible interface for interacting with large language models. The app includes built-in support for Pollinations.AI as a default pr\n\nFixes #12713",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "A bright new chat window",
+    "blurb": "Lumina Chat has landed in the garden: a flexible AI chat app with Pollinations.AI already wired in as a default provider. One less thing between an idea and a conversation with a model.",
+    "summary": "Added Lumina Chat to the community apps directory, highlighting its flexible LLM chat interface and built-in Pollinations.AI support as a default provider.",
+    "impact": "People looking for a ready-to-use chat interface can now discover Lumina Chat and start using Pollinations-powered conversations with less setup.",
+    "keywords": [
+      "Lumina Chat",
+      "community app",
+      "chat",
+      "LLMs",
+      "Pollinations AI",
+      "apps directory"
+    ],
+    "visual_concept": "Depict Lumina Chat as a cozy glowing retro chat terminal in a garden workspace, with friendly message bubbles and several tiny model icons represented as soft pastel stars. Polli, wearing tiny headphones, hovers beside the terminal while tending a code-plant growing from its base, making the built-in Pollinations connection feel natural and welcoming.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow bee mascot with dark brown stripes, pink rectangular blush, light blue wings, and tiny headphones, happily tending a code-plant beside a glowing retro chat terminal labeled \"LUMINA CHAT\" in simple pixel font; soft pastel message bubbles float above the screen and pixel flowers grow around the desk. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, with Polli small-to-medium in the scene and a warm inviting hackerspace atmosphere."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-28/PR-12830.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow bee mascot with dark brown stripes, pink rectangular blush, light blue wings, and tiny headphones, happily tending a code-plant beside a glowing retro chat terminal labeled \"LUMINA CHAT\" in simple pixel font; soft pastel message bubbles float above the screen and pixel flowers grow around the desk. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, with Polli small-to-medium in the scene and a warm inviting hackerspace atmosphere."
+  },
+  "generated_at": "2026-07-28T16:04:20.081651+00:00",
+  "app_name": "Lumina Chat",
+  "app_url": "https://lumina.magnified.cc"
+}

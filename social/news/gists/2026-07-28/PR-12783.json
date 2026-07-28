@@ -1,0 +1,34 @@
+{
+  "pr_number": 12783,
+  "title": "fix: extend Wan 2.7 Replicate deadline",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/12783",
+  "merged_at": "2026-07-28T11:22:56Z",
+  "labels": [],
+  "pr_body_excerpt": "- Gives only `wan-pro` and `wan-pro-1080p` a 15-minute Replicate deadline; every other Replicate model remains at six minutes.\n- Uses one deadline for `Cancel-After` and local polling, and maps deadline terminal states to 504.\n- Raises the SDK default video timeout from 10 to 20 minutes so it can receive the Worker’s 15-minute response plus final media transfer.\n- Keeps known input errors at 400 and capacity errors at 503 even when their messages contain timeout text.\n- Keeps model IDs, aliases, prices, paid-only access, provider, capabilities, and no-fallback routing unchanged.\n\nPaid local E2E passed 6/6 cache-miss probes across 720p/1080p, T2V/I2V, and 10/15-second output. The 15-second T2V jobs completed in 379s and 420s. Outputs were playable H.264/AAC; six misses deducted exactly 9.50 Pollen; an exact cache replay returned in 35ms without another provider charge.\n\nTradeoff: Replicate does not bill queued `aborted` predictions, but bills runtime for `canceled` predictions that already started; Pollinations cannot bill failed requests.\n\nChecks: 27 focused tests, 711-test Gen suite, 30 SDK tests, both typechecks/builds, Biome, and diff check.",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Wan gets more runway",
+    "blurb": "Long Wan 2.7 videos were arriving fashionably late to a six-minute deadline. Wan Pro and Wan Pro 1080p now get a full 15 minutes to finish their pixels, while the SDK waits long enough to bring the result home.",
+    "summary": "Extended Replicate deadlines for `wan-pro` and `wan-pro-1080p` from six to 15 minutes, aligned Worker cancellation and polling to that deadline, and raised the SDK video timeout from 10 to 20 minutes.",
+    "impact": "Long 10- and 15-second Wan 2.7 text-to-video and image-to-video jobs can now complete reliably, while input errors remain 400 and capacity errors remain 503 instead of being mistaken for timeouts.",
+    "keywords": [
+      "wan-2.7",
+      "video-generation",
+      "replicate",
+      "timeouts",
+      "sdk",
+      "wan-pro"
+    ],
+    "visual_concept": "Depict Polli tending two especially tall Wan video-vines labeled Wan Pro and 1080p, with a friendly retro terminal showing a large 15-minute sand timer and a finished film reel. The longer runway should feel calm rather than urgent: video frames bloom from the vines while Polli watches the render patiently.",
+    "image_prompt": "A cozy pixel-art garden workshop where Polli, the cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light blue translucent wings, wears tiny director headphones while tending two tall code-vines labeled \"WAN PRO\" and \"1080P\" beside a retro monitor with a glowing 15-minute hourglass and a completed film reel; lime green (#ecf874) is prominent among warm cream, mint, lavender, and peach flowers. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, subtle CRT glow and scanlines, emotionally warm and nostalgic."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-28/PR-12783.jpg",
+    "prompt": "A cozy pixel-art garden workshop where Polli, the cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light blue translucent wings, wears tiny director headphones while tending two tall code-vines labeled \"WAN PRO\" and \"1080P\" beside a retro monitor with a glowing 15-minute hourglass and a completed film reel; lime green (#ecf874) is prominent among warm cream, mint, lavender, and peach flowers. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, subtle CRT glow and scanlines, emotionally warm and nostalgic."
+  },
+  "generated_at": "2026-07-28T11:24:06.651014+00:00"
+}

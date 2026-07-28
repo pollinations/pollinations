@@ -1,0 +1,34 @@
+{
+  "pr_number": 12810,
+  "title": "fix: replace broken Flux fallback with Replicate",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/12810",
+  "merged_at": "2026-07-27T23:36:04Z",
+  "labels": [],
+  "pr_body_excerpt": "- Keeps Vast/Nunchaku as the primary FLUX.1 Schnell route and replaces only the broken Fireworks burst fallback with `black-forest-labs/flux-schnell` on Replicate.\n- Fireworks reported the model as ready, but every fallback request returned 404 and the model had no deployed references; a live Replicate probe succeeded in 0.49s.\n- Keeps the public price unchanged at `$0.002/image`, `priceMultiplier: 1`, and `paidOnly: false`; Replicate costs `$0.003` per fallback image.\n- Uses the existing `REPLICATE_API_TOKEN`; no secret or registry-provider changes.\n\nValidation:\n- `npx vitest run test/image/fluxFallback.test.ts` — 3 passed\n- Focused generation Worker tests — 2 passed",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Flux found a spare wing",
+    "blurb": "The FLUX.1 Schnell fallback was pointing at a door Fireworks said existed, but did not. It now lands on Replicate when the primary Vast/Nunchaku route needs backup, with the public price staying at $0.002 per image.",
+    "summary": "Replaced the broken Fireworks burst fallback for FLUX.1 Schnell with Replicate's black-forest-labs/flux-schnell model while keeping Vast/Nunchaku primary and the public $0.002/image price unchanged.",
+    "impact": "FLUX.1 Schnell image requests now have a working Replicate backup route when the primary path is unavailable, instead of reaching Fireworks 404 responses.",
+    "keywords": [
+      "FLUX.1 Schnell",
+      "Replicate",
+      "image generation",
+      "fallback",
+      "reliability",
+      "Fireworks"
+    ],
+    "visual_concept": "A cozy garden workshop where Polli repairs a broken fallback pipe between a primary Vast/Nunchaku image machine and a reliable Replicate flower-powered backup generator. Use a small route sign showing \"FLUX\" and a healthy green alternate path; include code-plants and a subtle crossed-out 404 page as the old broken route.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with black oval eyes, pink rectangular cheek blush, light blue wings, and a tiny mechanic tool belt, carefully connecting a lime green (#ecf874) backup cable from a retro FLUX image terminal to a cheerful flower-powered Replicate generator while code-plants grow around the workshop; a small dusty sign reads \"404\" beside the disconnected old route. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, dark purple (#110518) outlines, warm cream background, subtle CRT glow, emotionally warm and nostalgic."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-27/PR-12810.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with black oval eyes, pink rectangular cheek blush, light blue wings, and a tiny mechanic tool belt, carefully connecting a lime green (#ecf874) backup cable from a retro FLUX image terminal to a cheerful flower-powered Replicate generator while code-plants grow around the workshop; a small dusty sign reads \"404\" beside the disconnected old route. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, dark purple (#110518) outlines, warm cream background, subtle CRT glow, emotionally warm and nostalgic."
+  },
+  "generated_at": "2026-07-28T00:33:48.162514+00:00"
+}

@@ -7,6 +7,7 @@ import type { FrontendKeyRateLimitVariables } from "@/middleware/rate-limit-dura
 import type { SafetyVariables } from "@/middleware/safety.ts";
 import type { ModelVariables } from "./middleware/model.ts";
 import type { TrackVariables } from "./middleware/track.ts";
+import type { TextVariables } from "./text/types.ts";
 
 export type Env = {
     Bindings: CloudflareBindings;
@@ -18,5 +19,6 @@ export type Env = {
         FrontendKeyRateLimitVariables &
         SafetyVariables &
         TrackVariables &
-        ModelVariables;
+        ModelVariables &
+        TextVariables;
 };

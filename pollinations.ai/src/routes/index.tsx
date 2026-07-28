@@ -55,10 +55,8 @@ function HelloPage() {
                         <>
                             Text, image, audio and video from a single endpoint,
                             with{" "}
-                            <strong className="text-theme-text-strong">
-                                a Pollen balance behind every call
-                            </strong>
-                            . Pay as you go, let your users bring their own, or
+                            <strong>a Pollen balance behind every call</strong>.
+                            Pay as you go, let your users bring their own, or
                             publish a model and earn every time it&rsquo;s
                             called.
                         </>

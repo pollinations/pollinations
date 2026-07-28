@@ -175,7 +175,15 @@ function AppsPage() {
                             : `${apps.length} apps built on Pollinations`
                     }
                     title="Ecosystem"
-                    subtitle="Apps, tools and experiments from the community. Browse, try, ship."
+                    subtitle={
+                        <>
+                            What the community ships on the same API you get —{" "}
+                            <strong>
+                                from weekend experiments to apps with real users
+                            </strong>
+                            . Browse, try, ship your own.
+                        </>
+                    }
                 />
                 <div className="flex flex-wrap gap-3">
                     <ActionButton href="https://github.com/pollinations/pollinations/issues/new?template=APP-SUBMISSION.yml">

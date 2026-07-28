@@ -168,14 +168,19 @@ export function PageHeader({ eyebrow, title, subtitle, action }: HeadingProps) {
         <header className="flex flex-wrap items-end justify-between gap-6">
             <div className="flex max-w-2xl flex-col gap-3">
                 <PixelLabel variant="eyebrow">{eyebrow}</PixelLabel>
-                <h1 className="font-heading text-5xl leading-tight text-theme-text-strong lg:text-7xl">
+                {/* leading-[1.08], not leading-tight: at 7xl a wrapped title
+                    ("Every model, one wallet.") opened a visible gap between
+                    its two lines. */}
+                <h1 className="font-heading text-5xl leading-[1.08] text-theme-text-strong lg:text-7xl">
                     {title}
                 </h1>
                 {subtitle && (
                     // max-w-lg, not xl: the subtitle now sits over the hero
                     // scene, and at xl its last words reached past the mask's
-                    // fade into the painted scenery.
-                    <p className="max-w-lg text-lg leading-relaxed text-theme-text-base">
+                    // fade into the painted scenery. Every intro carries one
+                    // <strong> — the claim the page stands on — styled here so
+                    // routes write bare tags.
+                    <p className="max-w-lg text-lg leading-relaxed text-theme-text-base [&_strong]:text-theme-text-strong">
                         {subtitle}
                     </p>
                 )}

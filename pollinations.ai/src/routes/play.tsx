@@ -57,7 +57,17 @@ function PlayPage() {
                 <PageHeader
                     eyebrow="Every model, in the browser"
                     title="Try it out."
-                    subtitle="Try any model here before you write a line of code. Sign in and it runs on your own Pollen — nothing to install, and the same endpoints your app will call."
+                    subtitle={
+                        <>
+                            Pick a model, type a prompt, see what comes back —
+                            nothing to install. Sign in and it runs on your own
+                            Pollen, through{" "}
+                            <strong>
+                                the same endpoints your app will call
+                            </strong>
+                            .
+                        </>
+                    }
                 />
                 <div className="flex flex-wrap gap-3">
                     <ConnectAction />

@@ -260,7 +260,7 @@ function CommunityPage() {
                     title="Contribute"
                     subtitle={
                         <>
-                            <strong className="text-theme-text-strong">
+                            <strong>
                                 Builders shape the platform directly.
                             </strong>{" "}
                             Share what you need, meet the people already using

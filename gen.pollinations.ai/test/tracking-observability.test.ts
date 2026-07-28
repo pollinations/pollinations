@@ -11,6 +11,7 @@ import {
     communityModelDefinition,
 } from "@shared/community-endpoints.ts";
 import { user as userTable } from "@shared/db/better-auth.ts";
+import { modelInfoFromDefinition } from "@shared/registry/model-info.ts";
 import {
     type BillingAdjustment,
     getRegistryModelDefinition,
@@ -27,6 +28,7 @@ import type { Env } from "@/env.ts";
 import { logger } from "@/middleware/logger.ts";
 import type { ModelVariables } from "@/middleware/model.ts";
 import { reduceAdjustmentsToEventFields, track } from "@/middleware/track.ts";
+import type { GenerationModelEntry } from "@/model-registry.ts";
 
 afterEach(() => {
     vi.restoreAllMocks();
@@ -42,6 +44,7 @@ function createTestApp(
         resolved: "openai",
         definition: getRegistryModelDefinition("openai"),
     },
+    servedModelEntry?: ModelVariables["servedModelEntry"],
 ) {
     const app = new Hono<Env>();
 
@@ -65,6 +68,7 @@ function createTestApp(
         });
         c.set("frontendKeyRateLimit", { consumePollen });
         c.set("model", model);
+        if (servedModelEntry) c.set("servedModelEntry", servedModelEntry);
         await next();
     });
     app.post(
@@ -99,6 +103,7 @@ function createTestApp(
 
 function createCommunityEndpoint(
     ownerUserId: string,
+    overrides: Partial<CommunityEndpointRuntime> = {},
 ): CommunityEndpointRuntime {
     return {
         id: "community-endpoint-test",
@@ -115,12 +120,32 @@ function createCommunityEndpoint(
         upstreamModel: "upstream-test-model",
         bearerTokenCiphertext: "encrypted",
         visibility: "public",
+        fallbackModelId: null,
         disabledAt: null,
         disabledReason: null,
         ...communityEndpointPrices({
             promptTextPrice: 0.0001,
             completionTextPrice: 0.0002,
         }),
+        ...overrides,
+    };
+}
+
+function createCommunityEntry(
+    endpoint: CommunityEndpointRuntime,
+): GenerationModelEntry {
+    const definition = communityModelDefinition(endpoint);
+    return {
+        id: endpoint.modelId,
+        aliases: definition.aliases,
+        eventType: "generate.text",
+        supportedEndpoints: ["/v1/chat/completions"],
+        definition,
+        info: modelInfoFromDefinition(endpoint.modelId, definition, {
+            community: true,
+        }),
+        communityEndpoint: endpoint,
+        visible: true,
     };
 }
 
@@ -652,6 +677,120 @@ describe("tracking observability", () => {
             .where(eq(userTable.id, ownerId))
             .limit(1);
         expect(owner?.tierBalance).toBeCloseTo(0.15, 10);
+    });
+
+    it("bills the serving fallback model and rewards its owner", async () => {
+        const db = drizzle(env.DB);
+        const payerId = `track-fallback-payer-${crypto.randomUUID()}`;
+        const primaryOwnerId = `track-fallback-primary-${crypto.randomUUID()}`;
+        const fallbackOwnerId = `track-fallback-owner-${crypto.randomUUID()}`;
+        await db.insert(userTable).values(
+            [payerId, primaryOwnerId, fallbackOwnerId].map((id) => ({
+                id,
+                email: `${id}@test.local`,
+                name: id,
+                tierBalance: id === payerId ? 1 : 0,
+                packBalance: 0,
+                createdAt: new Date(),
+                updatedAt: new Date(),
+            })),
+        );
+        const [payer] = await db
+            .select()
+            .from(userTable)
+            .where(eq(userTable.id, payerId))
+            .limit(1);
+        if (!payer) throw new Error("Expected inserted payer");
+
+        const primaryEndpoint = createCommunityEndpoint(primaryOwnerId);
+        // Half the primary's rates: the caller must be charged what served.
+        const fallbackEndpoint = createCommunityEndpoint(fallbackOwnerId, {
+            id: "community-endpoint-fallback",
+            modelId: "other-owner/cheap-model",
+            name: "cheap-model",
+            ...communityEndpointPrices({
+                promptTextPrice: 0.00005,
+                completionTextPrice: 0.0001,
+            }),
+        });
+        const fallbackEntry = createCommunityEntry(fallbackEndpoint);
+        const model: ModelVariables["model"] = {
+            requested: primaryEndpoint.modelId,
+            resolved: primaryEndpoint.modelId,
+            definition: communityModelDefinition(primaryEndpoint),
+            communityEndpoint: primaryEndpoint,
+            fallbackEntry,
+        };
+
+        const tinybirdRequests: Request[] = [];
+        vi.spyOn(globalThis, "fetch").mockImplementation(
+            async (input, init) => {
+                tinybirdRequests.push(new Request(input, init));
+                return new Response("ok");
+            },
+        );
+
+        const ctx = createExecutionContext();
+        const response = await createTestApp(
+            async () => {},
+            payer,
+            model,
+            fallbackEntry,
+        ).fetch(
+            new Request("https://gen.pollinations.ai/v1/chat/completions", {
+                method: "POST",
+                headers: { "content-type": "application/json" },
+                body: JSON.stringify({
+                    model: primaryEndpoint.modelId,
+                    stream: false,
+                    messages: [{ role: "user", content: "test" }],
+                }),
+            }),
+            {
+                ...env,
+                ENVIRONMENT: "test",
+                LOG_LEVEL: "debug",
+                LOG_FORMAT: "text",
+                BETTER_AUTH_SECRET: "test_secret",
+                TINYBIRD_INGEST_URL:
+                    "https://tinybird.test/v0/events?name=generation_event_v2",
+                TINYBIRD_INGEST_TOKEN: "test_tinybird_token",
+            } as unknown as CloudflareBindings,
+            ctx,
+        );
+
+        await waitOnExecutionContext(ctx);
+
+        expect(response.status).toBe(200);
+        expect(tinybirdRequests).toHaveLength(1);
+        const event = (await tinybirdRequests[0].json()) as Record<
+            string,
+            unknown
+        >;
+        expect(event).toMatchObject({
+            // The requested model id is still what the caller asked for.
+            resolvedModelRequested: primaryEndpoint.modelId,
+            // 1000 × 0.00005 + 500 × 0.0001 — the fallback's rates, half of
+            // what the primary would have charged.
+            devPrice: 0.1,
+            totalPrice: 0.1,
+            communityModelRewardUserId: fallbackOwnerId,
+            communityModelRewardRate: COMMUNITY_MODEL_REWARD_RATE,
+            communityModelRewardAmount: 0.075,
+        });
+
+        const balances = await db
+            .select({ id: userTable.id, tierBalance: userTable.tierBalance })
+            .from(userTable)
+            .where(eq(userTable.id, fallbackOwnerId))
+            .limit(1);
+        expect(balances[0]?.tierBalance).toBeCloseTo(0.075, 10);
+        const [primaryOwner] = await db
+            .select({ tierBalance: userTable.tierBalance })
+            .from(userTable)
+            .where(eq(userTable.id, primaryOwnerId))
+            .limit(1);
+        expect(primaryOwner?.tierBalance).toBe(0);
     });
 
     it("does not bill image generation that returns a JSON (non-image) content-type", async () => {

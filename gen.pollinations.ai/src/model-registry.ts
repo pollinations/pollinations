@@ -1,4 +1,7 @@
-import type { CommunityEndpointRuntime } from "@shared/community-endpoints.ts";
+import {
+    type CommunityEndpointRuntime,
+    isCommunityFallbackPricingAllowed,
+} from "@shared/community-endpoints.ts";
 import {
     type ModelInfo,
     modelInfoFromDefinition,
@@ -38,6 +41,10 @@ export type GenerationModelEntry = {
     info: ModelInfo;
     communityEndpoint?: CommunityEndpointRuntime;
     visible: boolean;
+    // Entry that serves this model when its own upstream fails, resolved once
+    // at registry build time so the hot path never does a second lookup. Depth
+    // 1: this entry's own `fallbackEntry` is always undefined.
+    fallbackEntry?: GenerationModelEntry;
 };
 
 export type GenerationModelRegistry = {
@@ -118,9 +125,45 @@ function communityEntryToGenerationEntry(
     };
 }
 
-function buildRegistry(
+// Resolves each entry's declared fallback target against the registry it was
+// built with. A community entry declares it through its endpoint row, a static
+// one through `definition.fallback`.
+function linkFallbackEntries(
     entries: GenerationModelEntry[],
+    byIdOrAlias: Map<string, GenerationModelEntry>,
+): void {
+    for (const entry of entries) {
+        const targetId =
+            entry.communityEndpoint?.fallbackModelId ??
+            entry.definition.fallback;
+        if (!targetId) continue;
+        const target = byIdOrAlias.get(targetId);
+        // Write-time validation is only a UX guard — a target can since have
+        // been deleted, deactivated, made private or repriced above the
+        // primary, so re-check everything here before linking.
+        if (!target || target === entry) continue;
+        if (!target.visible || target.eventType !== entry.eventType) continue;
+        const primaryEndpoint = entry.communityEndpoint;
+        const targetEndpoint = target.communityEndpoint;
+        if (
+            primaryEndpoint &&
+            targetEndpoint &&
+            !isCommunityFallbackPricingAllowed(primaryEndpoint, targetEndpoint)
+        ) {
+            continue;
+        }
+        // Depth 1: link a copy with its own fallback cleared, so routing can
+        // never follow a chain even if the target declares one.
+        entry.fallbackEntry = { ...target, fallbackEntry: undefined };
+    }
+}
+
+function buildRegistry(
+    sourceEntries: GenerationModelEntry[],
 ): GenerationModelRegistry {
+    // Link on copies: STATIC_ENTRIES is module-level and shared across registry
+    // rebuilds, so resolution must never mutate the originals.
+    const entries = sourceEntries.map((entry) => ({ ...entry }));
     const byIdOrAlias = new Map<string, GenerationModelEntry>();
     for (const entry of entries) {
         if (!byIdOrAlias.has(entry.id)) {
@@ -134,6 +177,7 @@ function buildRegistry(
             }
         }
     }
+    linkFallbackEntries(entries, byIdOrAlias);
 
     return {
         resolve: (model) => {

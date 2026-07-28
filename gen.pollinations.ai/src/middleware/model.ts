@@ -8,7 +8,10 @@ import { DEFAULT_TEXT_MODEL } from "@shared/registry/text.ts";
 import type { EventType } from "@shared/schemas/generation-event.ts";
 import { createMiddleware } from "hono/factory";
 import { HTTPException } from "hono/http-exception";
-import { getGenerationModelRegistry } from "../model-registry.ts";
+import {
+    type GenerationModelEntry,
+    getGenerationModelRegistry,
+} from "../model-registry.ts";
 import type { AuthVariables } from "./auth.ts";
 
 const ENDPOINT_LABEL: Record<EventType, string> = {
@@ -28,7 +31,15 @@ export type ModelVariables = {
         /** Static registry definition, or a dynamic definition resolved from D1. */
         definition: ModelDefinition;
         communityEndpoint?: CommunityEndpointRuntime;
+        /** Entry that serves the request when this model's upstream fails. */
+        fallbackEntry?: GenerationModelEntry;
     };
+    /**
+     * Set by the generation handlers when the fallback target actually served
+     * the request. Billing follows it: cost, price multiplier and the community
+     * owner reward all come from the model that served, never the one asked for.
+     */
+    servedModelEntry?: GenerationModelEntry;
     formData?: FormData;
 };
 
@@ -107,6 +118,7 @@ export async function resolveModelDefinition(
         ...(entry.communityEndpoint && {
             communityEndpoint: entry.communityEndpoint,
         }),
+        ...(entry.fallbackEntry && { fallbackEntry: entry.fallbackEntry }),
     };
 }
 

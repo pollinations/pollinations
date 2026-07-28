@@ -2,6 +2,7 @@ import { createExecutionContext, env, SELF } from "cloudflare:test";
 import type { Logger } from "@logtape/logtape";
 import { verifyAgentRunToken } from "@shared/auth/agent-run-token.ts";
 import {
+    COMMUNITY_ENDPOINT_PRICE_FIELDS,
     type CommunityEndpointRuntime,
     communityChatCompletionsUrl,
     communityEndpointPriceFieldsForModality,
@@ -14,6 +15,7 @@ import {
     communityOpenAIBaseUrl,
     communityPriceDefinition,
     isCommunityEndpointOwnerAllowed,
+    isCommunityFallbackPricingAllowed,
     legacyCommunityModelId,
     MAX_COMMUNITY_PRICE_PER_IMAGE,
     MAX_COMMUNITY_PRICE_PER_MILLION_TOKENS,
@@ -32,6 +34,7 @@ import {
 import { handleError } from "@shared/error.ts";
 import { IMMUTABLE_CACHE_CONTROL } from "@shared/http/cache-control.ts";
 import { calculateUsageBilling } from "@shared/registry/registry.ts";
+import { FALLBACK_TARGET_HEADER } from "@shared/registry/usage-headers.ts";
 import { encryptSecret } from "@shared/secret-encryption.ts";
 import {
     createTestApiKey,
@@ -45,7 +48,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { Env } from "@/env.ts";
 import { communityImageSupportedEndpoints } from "./community-models.ts";
 import { callCommunityImageEndpoint } from "./image/communityEndpoint.ts";
-import { resetGenerationModelRegistryCache } from "./model-registry.ts";
+import {
+    getGenerationModelRegistry,
+    resetGenerationModelRegistryCache,
+} from "./model-registry.ts";
 import { communityEndpointGatewayContext } from "./text/communityEndpoint.ts";
 
 const db = drizzle(env.DB);
@@ -463,6 +469,49 @@ describe("community endpoint helpers", () => {
         );
     });
 
+    describe("fallback target pricing", () => {
+        const uniformPrices = (price: number) =>
+            communityEndpointPrices(
+                Object.fromEntries(
+                    COMMUNITY_ENDPOINT_PRICE_FIELDS.map((field) => [
+                        field.key,
+                        price,
+                    ]),
+                ),
+            );
+
+        it("allows an equally priced target", () => {
+            expect(
+                isCommunityFallbackPricingAllowed(
+                    uniformPrices(0.5),
+                    uniformPrices(0.5),
+                ),
+            ).toBe(true);
+        });
+
+        it("allows a target that is cheaper on every field", () => {
+            expect(
+                isCommunityFallbackPricingAllowed(
+                    uniformPrices(0.5),
+                    uniformPrices(0.25),
+                ),
+            ).toBe(true);
+        });
+
+        it("rejects a target that is more expensive on any single field", () => {
+            // Every price column, so a newly added one cannot silently escape
+            // the same-or-lower rule.
+            for (const field of COMMUNITY_ENDPOINT_PRICE_FIELDS) {
+                expect(
+                    isCommunityFallbackPricingAllowed(uniformPrices(0.5), {
+                        ...uniformPrices(0.5),
+                        [field.key]: 0.51,
+                    }),
+                ).toBe(false);
+            }
+        });
+    });
+
     describe("community image endpoint billing", () => {
         afterEach(() => {
             vi.unstubAllGlobals();
@@ -495,6 +544,7 @@ describe("community endpoint helpers", () => {
                 baseUrl: "https://api.example.com/v1",
                 upstreamModel: "gpt-image-1",
                 visibility: "public",
+                fallbackModelId: null,
                 disabledAt: null,
                 disabledReason: null,
                 bearerTokenCiphertext: await encryptSecret(
@@ -681,6 +731,7 @@ describe("community endpoint helpers", () => {
             upstreamModel: "gpt-4.1-mini",
             visibility: "public",
             delegatesGeneration: false,
+            fallbackModelId: null,
             disabledAt: null,
             disabledReason: null,
             bearerTokenCiphertext: await encryptSecret(
@@ -2886,3 +2937,537 @@ fixtureTest("rejects a community model name containing a slash", async () => {
 
     expect(response.status).toBe(400);
 });
+
+fixtureTest("validates community fallback targets on write", async () => {
+    const ownerGithubUsername = `owner-${crypto.randomUUID().slice(0, 8)}`;
+    const ownerUserId = await createTestUser({
+        githubId: COMMUNITY_ENDPOINT_ALLOWED_TEST_GITHUB_ID,
+        githubUsername: ownerGithubUsername,
+    });
+    const sessionToken = `session-${crypto.randomUUID()}`;
+    await db.insert(sessionTable).values({
+        id: `session-${crypto.randomUUID()}`,
+        token: sessionToken,
+        userId: ownerUserId,
+        expiresAt: new Date(Date.now() + 60 * 60 * 1000),
+        createdAt: new Date(),
+        updatedAt: new Date(),
+    });
+
+    const bearerTokenCiphertext = await encryptSecret(
+        "sk_saved_token",
+        env.BETTER_AUTH_SECRET,
+    );
+    const targetNames = {
+        cheap: `cheap-${crypto.randomUUID().slice(0, 8)}`,
+        priv: `private-${crypto.randomUUID().slice(0, 8)}`,
+        image: `image-${crypto.randomUUID().slice(0, 8)}`,
+        pricey: `pricey-${crypto.randomUUID().slice(0, 8)}`,
+    };
+    await db.insert(communityEndpointTable).values([
+        {
+            id: `endpoint-${crypto.randomUUID()}`,
+            ownerUserId,
+            visibility: "public",
+            name: targetNames.cheap,
+            baseUrl: "https://api.example.com/v1",
+            upstreamModel: "cheap-upstream",
+            bearerTokenCiphertext,
+            promptTextPrice: 0.1 / 1_000_000,
+            completionTextPrice: 0.1 / 1_000_000,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+        },
+        {
+            id: `endpoint-${crypto.randomUUID()}`,
+            ownerUserId,
+            visibility: "private",
+            name: targetNames.priv,
+            baseUrl: "https://api.example.com/v1",
+            upstreamModel: "private-upstream",
+            bearerTokenCiphertext,
+            promptTextPrice: 0,
+            completionTextPrice: 0,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+        },
+        {
+            id: `endpoint-${crypto.randomUUID()}`,
+            ownerUserId,
+            visibility: "public",
+            name: targetNames.image,
+            modality: "image",
+            baseUrl: "https://api.example.com/v1",
+            upstreamModel: "image-upstream",
+            bearerTokenCiphertext,
+            promptTextPrice: 0,
+            completionTextPrice: 0,
+            completionImagePrice: 0.01,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+        },
+        {
+            id: `endpoint-${crypto.randomUUID()}`,
+            ownerUserId,
+            visibility: "public",
+            name: targetNames.pricey,
+            baseUrl: "https://api.example.com/v1",
+            upstreamModel: "pricey-upstream",
+            bearerTokenCiphertext,
+            promptTextPrice: 0.1 / 1_000_000,
+            completionTextPrice: 0.5 / 1_000_000,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+        },
+    ]);
+
+    const enterApi = await createEnterCommunityApi();
+    const primaryName = `primary-${crypto.randomUUID().slice(0, 8)}`;
+    const createWithFallback = async (
+        name: string,
+        fallbackModelId: string | null,
+    ) =>
+        fetchEnterApi(
+            enterApi,
+            new Request("http://localhost:3000/api/community-endpoints", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Cookie: await signedSessionCookie(sessionToken),
+                },
+                body: JSON.stringify({
+                    name,
+                    title: "Primary",
+                    baseUrl: "https://api.example.com/v1",
+                    upstreamModel: "primary-upstream",
+                    bearerToken: "sk_saved_token",
+                    visibility: "public",
+                    promptTextPrice: 0.2 / 1_000_000,
+                    completionTextPrice: 0.2 / 1_000_000,
+                    fallbackModelId,
+                }),
+            }),
+        );
+
+    const selfReference = await createWithFallback(
+        primaryName,
+        communityModelId(ownerGithubUsername, primaryName),
+    );
+    expect(selfReference.status).toBe(400);
+    expect(await selfReference.text()).toContain(
+        "Fallback target cannot be the model itself",
+    );
+
+    const missing = await createWithFallback(
+        primaryName,
+        communityModelId(ownerGithubUsername, "does-not-exist"),
+    );
+    expect(missing.status).toBe(400);
+    expect(await missing.text()).toContain("does not exist");
+
+    const privateTarget = await createWithFallback(
+        primaryName,
+        communityModelId(ownerGithubUsername, targetNames.priv),
+    );
+    expect(privateTarget.status).toBe(400);
+    expect(await privateTarget.text()).toContain(
+        "must be a public, active community model",
+    );
+
+    const wrongModality = await createWithFallback(
+        primaryName,
+        communityModelId(ownerGithubUsername, targetNames.image),
+    );
+    expect(wrongModality.status).toBe(400);
+    expect(await wrongModality.text()).toContain("is a image model, not text");
+
+    const overPriced = await createWithFallback(
+        primaryName,
+        communityModelId(ownerGithubUsername, targetNames.pricey),
+    );
+    expect(overPriced.status).toBe(400);
+    const overPricedMessage = await overPriced.text();
+    expect(overPricedMessage).toContain("completionTextPrice");
+    expect(overPricedMessage).toContain("exceeds this model's");
+    // Only the offending field is named — promptTextPrice is within budget.
+    expect(overPricedMessage).not.toContain("promptTextPrice");
+
+    const cheapModelId = communityModelId(
+        ownerGithubUsername,
+        targetNames.cheap,
+    );
+    const accepted = await createWithFallback(primaryName, cheapModelId);
+    expect(accepted.status).toBe(200);
+    const created = (await accepted.json()) as {
+        id: string;
+        fallbackModelId: string | null;
+    };
+    expect(created.fallbackModelId).toBe(cheapModelId);
+
+    // null clears the stored target.
+    const cleared = await fetchEnterApi(
+        enterApi,
+        new Request(
+            `http://localhost:3000/api/community-endpoints/${created.id}/update`,
+            {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Cookie: await signedSessionCookie(sessionToken),
+                },
+                body: JSON.stringify({ fallbackModelId: null }),
+            },
+        ),
+    );
+    expect(cleared.status).toBe(200);
+    await expect(cleared.json()).resolves.toMatchObject({
+        fallbackModelId: null,
+    });
+});
+
+fixtureTest(
+    "links community fallback targets in the generation registry",
+    async () => {
+        const ownerGithubUsername = `owner-${crypto.randomUUID().slice(0, 8)}`;
+        const ownerUserId = await createTestUser({
+            githubId: COMMUNITY_ENDPOINT_ALLOWED_TEST_GITHUB_ID,
+            githubUsername: ownerGithubUsername,
+        });
+        const bearerTokenCiphertext = await encryptSecret(
+            "sk_saved_token",
+            env.BETTER_AUTH_SECRET,
+        );
+        const suffix = crypto.randomUUID().slice(0, 8);
+        const name = (label: string) => `${label}-${suffix}`;
+        const id = (label: string) =>
+            communityModelId(ownerGithubUsername, name(label));
+        const endpoint = (
+            label: string,
+            values: Partial<typeof communityEndpointTable.$inferInsert>,
+        ) => ({
+            id: `endpoint-${crypto.randomUUID()}`,
+            ownerUserId,
+            visibility: "public" as const,
+            name: name(label),
+            baseUrl: "https://api.example.com/v1",
+            upstreamModel: `${label}-upstream`,
+            bearerTokenCiphertext,
+            promptTextPrice: 0.2 / 1_000_000,
+            completionTextPrice: 0.2 / 1_000_000,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+            ...values,
+        });
+
+        // Inserted one at a time: D1 caps the bound variables per statement.
+        for (const row of [
+            endpoint("valid-primary", { fallbackModelId: id("valid-target") }),
+            endpoint("valid-target", {
+                promptTextPrice: 0.1 / 1_000_000,
+                completionTextPrice: 0.1 / 1_000_000,
+            }),
+            endpoint("disabled-primary", {
+                fallbackModelId: id("disabled-target"),
+            }),
+            endpoint("disabled-target", {
+                disabledAt: new Date(),
+                disabledReason: "repeated upstream 500s",
+            }),
+            endpoint("deleted-primary", {
+                fallbackModelId: communityModelId(
+                    ownerGithubUsername,
+                    "never-existed",
+                ),
+            }),
+            endpoint("repriced-primary", {
+                fallbackModelId: id("repriced-target"),
+            }),
+            // Priced above its primary since the fallback was configured.
+            endpoint("repriced-target", {
+                completionTextPrice: 0.5 / 1_000_000,
+            }),
+            endpoint("chain-a", { fallbackModelId: id("chain-b") }),
+            endpoint("chain-b", { fallbackModelId: id("chain-c") }),
+            endpoint("chain-c", {}),
+        ]) {
+            await db.insert(communityEndpointTable).values(row);
+        }
+
+        resetGenerationModelRegistryCache();
+        const registry = await getGenerationModelRegistry(env);
+
+        expect(registry.resolve(id("valid-primary"))?.fallbackEntry?.id).toBe(
+            id("valid-target"),
+        );
+        expect(
+            registry.resolve(id("disabled-primary"))?.fallbackEntry,
+        ).toBeUndefined();
+        expect(
+            registry.resolve(id("deleted-primary"))?.fallbackEntry,
+        ).toBeUndefined();
+        expect(
+            registry.resolve(id("repriced-primary"))?.fallbackEntry,
+        ).toBeUndefined();
+
+        // Depth 1: chain-a serves from chain-b, and chain-b's own target is
+        // never reachable from there.
+        const chainA = registry.resolve(id("chain-a"));
+        expect(chainA?.fallbackEntry?.id).toBe(id("chain-b"));
+        expect(chainA?.fallbackEntry?.fallbackEntry).toBeUndefined();
+        expect(registry.resolve(id("chain-b"))?.fallbackEntry?.id).toBe(
+            id("chain-c"),
+        );
+    },
+);
+
+fixtureTest(
+    "serves a failed community model from its fallback and bills the fallback",
+    async ({ apiKey }) => {
+        const suffix = crypto.randomUUID().slice(0, 8);
+        const primaryOwner = `primary-owner-${suffix}`;
+        const fallbackOwner = `fallback-owner-${suffix}`;
+        const primaryUserId = await createTestUser({
+            githubId: COMMUNITY_ENDPOINT_ALLOWED_TEST_GITHUB_ID,
+            githubUsername: primaryOwner,
+        });
+        const fallbackUserId = await createTestUser({
+            githubId: COMMUNITY_ENDPOINT_ALLOWED_TEST_GITHUB_ID,
+            githubUsername: fallbackOwner,
+        });
+        const primaryModelId = communityModelId(primaryOwner, "primary");
+        const fallbackModelId = communityModelId(fallbackOwner, "cheap");
+
+        await db.insert(communityEndpointTable).values([
+            {
+                id: `endpoint-${crypto.randomUUID()}`,
+                ownerUserId: primaryUserId,
+                visibility: "public",
+                name: "primary",
+                baseUrl: "https://primary.example.com/v1",
+                upstreamModel: "primary-upstream",
+                bearerTokenCiphertext: await encryptSecret(
+                    "sk_primary_token",
+                    env.BETTER_AUTH_SECRET,
+                ),
+                promptTextPrice: 0.2 / 1_000_000,
+                completionTextPrice: 0.2 / 1_000_000,
+                fallbackModelId,
+                createdAt: new Date(),
+                updatedAt: new Date(),
+            },
+            {
+                id: `endpoint-${crypto.randomUUID()}`,
+                ownerUserId: fallbackUserId,
+                visibility: "public",
+                name: "cheap",
+                baseUrl: "https://fallback.example.com/v1",
+                upstreamModel: "cheap-upstream",
+                bearerTokenCiphertext: await encryptSecret(
+                    "sk_fallback_token",
+                    env.BETTER_AUTH_SECRET,
+                ),
+                promptTextPrice: 0.1 / 1_000_000,
+                completionTextPrice: 0.1 / 1_000_000,
+                createdAt: new Date(),
+                updatedAt: new Date(),
+            },
+        ]);
+
+        // Read inside the mock: request bodies cannot cross isolates.
+        const gatewayCalls: {
+            config: string | null;
+            provider: string | null;
+            body: unknown;
+        }[] = [];
+        const fetchMock = vi.fn(async (input, init) => {
+            const request = new Request(input, init);
+            if (isPortkeyChatCompletionsRequest(request)) {
+                gatewayCalls.push({
+                    config: request.headers.get("x-portkey-config"),
+                    provider: request.headers.get("x-portkey-provider"),
+                    body: await request.json(),
+                });
+                // Portkey answers from the second target and says so.
+                return Response.json(
+                    {
+                        id: "chatcmpl_fallback",
+                        object: "chat.completion",
+                        choices: [
+                            {
+                                index: 0,
+                                message: { role: "assistant", content: "ok" },
+                                finish_reason: "stop",
+                            },
+                        ],
+                        usage: {
+                            prompt_tokens: 2,
+                            completion_tokens: 3,
+                            total_tokens: 5,
+                        },
+                    },
+                    {
+                        headers: {
+                            "x-portkey-last-used-option-index":
+                                "config.targets[1]",
+                        },
+                    },
+                );
+            }
+            if (isBillingFetch(request)) return Response.json({ data: [] });
+            throw new Error(`Unexpected fetch: ${request.url}`);
+        });
+        vi.stubGlobal("fetch", fetchMock);
+
+        const response = await SELF.fetch(
+            new Request("https://gen.pollinations.ai/v1/chat/completions", {
+                method: "POST",
+                headers: {
+                    Authorization: `Bearer ${apiKey}`,
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    model: primaryModelId,
+                    messages: [{ role: "user", content: "hello" }],
+                }),
+            }),
+        );
+
+        expect(response.status).toBe(200);
+        expect(response.headers.get(FALLBACK_TARGET_HEADER)).toBe(
+            "config.targets[1]",
+        );
+        // The served model, not the requested one, is reported as used.
+        expect(response.headers.get("x-model-used")).toBe(fallbackModelId);
+
+        expect(gatewayCalls).toHaveLength(1);
+        const gatewayCall = gatewayCalls[0];
+        // A strategy/targets config travels as one JSON blob, not as flattened
+        // x-portkey-* provider headers.
+        expect(gatewayCall.provider).toBeNull();
+        const config = JSON.parse(gatewayCall.config ?? "{}");
+        expect(config.strategy.mode).toBe("fallback");
+        expect(config.strategy.on_status_codes).toContain(429);
+        expect(config.strategy.on_status_codes).toContain(502);
+        expect(config.strategy.on_status_codes).not.toContain(400);
+        expect(config.targets).toHaveLength(2);
+        expect(config.targets[0]).toMatchObject({
+            provider: "openai",
+            custom_host: "https://primary.example.com/v1",
+            api_key: "sk_primary_token",
+            override_params: { model: "primary-upstream" },
+        });
+        expect(config.targets[1]).toMatchObject({
+            provider: "openai",
+            custom_host: "https://fallback.example.com/v1",
+            api_key: "sk_fallback_token",
+            override_params: { model: "cheap-upstream" },
+        });
+        // The strategy config has no provider-level model, so the request body
+        // model comes from the config's explicit top-level model.
+        expect(gatewayCall.body).toMatchObject({ model: "primary-upstream" });
+    },
+);
+
+fixtureTest(
+    "retries a failed community image endpoint against its fallback",
+    async ({ apiKey }) => {
+        const suffix = crypto.randomUUID().slice(0, 8);
+        const primaryOwner = `img-primary-${suffix}`;
+        const fallbackOwner = `img-fallback-${suffix}`;
+        const primaryUserId = await createTestUser({
+            githubId: COMMUNITY_ENDPOINT_ALLOWED_TEST_GITHUB_ID,
+            githubUsername: primaryOwner,
+        });
+        const fallbackUserId = await createTestUser({
+            githubId: COMMUNITY_ENDPOINT_ALLOWED_TEST_GITHUB_ID,
+            githubUsername: fallbackOwner,
+        });
+        const primaryModelId = communityModelId(primaryOwner, "primary-image");
+        const fallbackModelId = communityModelId(fallbackOwner, "cheap-image");
+        const bearerTokenCiphertext = await encryptSecret(
+            "sk_image_upstream",
+            env.BETTER_AUTH_SECRET,
+        );
+
+        for (const row of [
+            {
+                id: `endpoint-${crypto.randomUUID()}`,
+                ownerUserId: primaryUserId,
+                visibility: "public" as const,
+                name: "primary-image",
+                modality: "image",
+                baseUrl: "https://primary-image.example.com/v1",
+                upstreamModel: "primary-image-upstream",
+                bearerTokenCiphertext,
+                promptTextPrice: 0,
+                completionTextPrice: 0,
+                completionImagePrice: 0.02,
+                fallbackModelId,
+                createdAt: new Date(),
+                updatedAt: new Date(),
+            },
+            {
+                id: `endpoint-${crypto.randomUUID()}`,
+                ownerUserId: fallbackUserId,
+                visibility: "public" as const,
+                name: "cheap-image",
+                modality: "image",
+                baseUrl: "https://fallback-image.example.com/v1",
+                upstreamModel: "cheap-image-upstream",
+                bearerTokenCiphertext,
+                promptTextPrice: 0,
+                completionTextPrice: 0,
+                completionImagePrice: 0.01,
+                createdAt: new Date(),
+                updatedAt: new Date(),
+            },
+        ]) {
+            await db.insert(communityEndpointTable).values(row);
+        }
+
+        const upstreamHosts: string[] = [];
+        const fetchMock = vi.fn(async (input, init) => {
+            const request = new Request(input, init);
+            if (isCommunityImageGenerationsRequest(request)) {
+                const host = new URL(request.url).host;
+                upstreamHosts.push(host);
+                if (host === "primary-image.example.com") {
+                    return Response.json(
+                        { error: "upstream down" },
+                        {
+                            status: 500,
+                        },
+                    );
+                }
+                return Response.json({
+                    created: 1,
+                    data: [{ b64_json: TEST_PNG_BASE64 }],
+                });
+            }
+            if (isBillingFetch(request)) return Response.json({ data: [] });
+            throw new Error(`Unexpected fetch: ${request.url}`);
+        });
+        vi.stubGlobal("fetch", fetchMock);
+
+        const response = await SELF.fetch(
+            new Request(
+                `https://gen.pollinations.ai/image/green%20sprout?model=${encodeURIComponent(primaryModelId)}`,
+                { headers: { Authorization: `Bearer ${apiKey}` } },
+            ),
+        );
+
+        expect(response.status).toBe(200);
+        expect(response.headers.get("content-type")).toBe("image/png");
+        expect(upstreamHosts).toEqual([
+            "primary-image.example.com",
+            "fallback-image.example.com",
+        ]);
+        expect(response.headers.get("x-model-used")).toBe(fallbackModelId);
+        expect(response.headers.get(FALLBACK_TARGET_HEADER)).toBe(
+            "config.targets[1]",
+        );
+        expect(
+            Array.from(new Uint8Array(await response.arrayBuffer())),
+        ).toEqual(TEST_PNG_BYTES);
+    },
+);

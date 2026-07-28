@@ -209,6 +209,23 @@ export function communityEndpointPricesForModality(
     ) as CommunityEndpointPrices;
 }
 
+/**
+ * True when `target` costs no more than `primary` on every price field. Derived
+ * from COMMUNITY_ENDPOINT_PRICE_FIELDS so a new price column is covered
+ * automatically rather than silently ignored.
+ *
+ * This is what makes a fallback safe to bill: the caller is charged whatever
+ * actually served, and it can never exceed the price they were quoted.
+ */
+export function isCommunityFallbackPricingAllowed(
+    primary: CommunityEndpointPrices,
+    target: CommunityEndpointPrices,
+): boolean {
+    return COMMUNITY_ENDPOINT_PRICE_FIELDS.every(
+        (field) => target[field.key] <= primary[field.key],
+    );
+}
+
 export function normalizeCommunityEndpointModality(
     value: string | null | undefined,
 ): CommunityEndpointModality {
@@ -248,6 +265,9 @@ export type CommunityEndpointRuntime = {
     visibility: CommunityEndpointVisibility;
     /** Admin-granted: may spend an agent run token on the caller's behalf. */
     delegatesGeneration: boolean;
+    // Community model id served when this endpoint's upstream fails. Depth 1:
+    // the target's own fallback is never followed.
+    fallbackModelId: string | null;
     disabledAt: number | null;
     disabledReason: string | null;
 } & CommunityEndpointPrices;

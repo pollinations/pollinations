@@ -30,10 +30,38 @@ export type CommunityEndpoint = {
     // private → owner-only, shown only to the owner, no owner-set price;
     // public → globally listed + billed to callers.
     visibility: CommunityEndpointVisibility;
+    // Public community model served when this model's upstream fails.
+    fallbackModelId: string | null;
     disabled: boolean;
     disabledReason: string | null;
     disabledAt: string | null;
 } & CommunityEndpointPrices;
+
+/** Fallback target choice: a public community model of a given modality. */
+export type FallbackModelOption = {
+    modelId: string;
+    modality: CommunityEndpointModality;
+};
+
+/**
+ * Public community models from the model catalog, in dialog option form. The
+ * catalog already excludes private and deactivated models, and the server
+ * re-validates modality and pricing on write.
+ */
+export function publicCommunityFallbackOptions(
+    models: { name: string; type: string; community?: boolean }[],
+): FallbackModelOption[] {
+    return models
+        .filter(
+            (model) =>
+                model.community &&
+                (model.type === "text" || model.type === "image"),
+        )
+        .map((model) => ({
+            modelId: model.name,
+            modality: model.type === "image" ? "image" : "text",
+        }));
+}
 
 export type EndpointFormState = {
     modality: CommunityEndpointModality;
@@ -51,6 +79,8 @@ export type EndpointFormState = {
     baseUrl: string;
     upstreamModel: string;
     bearerToken: string;
+    // Public community model id, or "" for none.
+    fallbackModelId: string;
 } & EndpointFormPrices;
 
 export type EndpointPayload = {
@@ -63,6 +93,7 @@ export type EndpointPayload = {
     baseUrl: string;
     upstreamModel: string;
     visibility: CommunityEndpointVisibility;
+    fallbackModelId: string | null;
 } & CommunityEndpointPrices;
 
 export type CommunityEndpointUsage = Record<string, unknown>;
@@ -98,6 +129,7 @@ export const emptyForm: EndpointFormState = {
     baseUrl: "",
     upstreamModel: "",
     bearerToken: "",
+    fallbackModelId: "",
     ...emptyPriceForm,
 };
 
@@ -184,6 +216,7 @@ export function endpointToForm(endpoint: CommunityEndpoint): EndpointFormState {
         baseUrl: endpoint.baseUrl,
         upstreamModel: endpoint.upstreamModel,
         bearerToken: "",
+        fallbackModelId: endpoint.fallbackModelId ?? "",
         ...(Object.fromEntries(
             COMMUNITY_ENDPOINT_PRICE_FIELDS.map((field) => {
                 const modalityField = fields.get(field.key);
@@ -282,6 +315,12 @@ export function toEndpointPayload(form: EndpointFormState): EndpointPayload {
         visibility: form.visibility,
         baseUrl: form.baseUrl.trim(),
         upstreamModel: form.upstreamModel.trim() || modelName,
+        // A private model carries no pricing, so a priced fallback target can
+        // never satisfy the same-or-lower rule — clear it alongside prices.
+        fallbackModelId:
+            form.visibility === "public"
+                ? form.fallbackModelId.trim() || null
+                : null,
         ...formPricesToPayload(form, form.modality, imagePricing),
     };
 }
@@ -298,6 +337,8 @@ export function nextFormState(
             ...current,
             modality: value === "image" ? "image" : "text",
             supportsImageEdits: false,
+            // Targets must match the modality; the old choice no longer can.
+            fallbackModelId: "",
         };
     }
     const next = { ...current, [key]: value };

@@ -38,6 +38,7 @@ import {
     type EndpointPayload,
     emptyForm,
     endpointToForm,
+    type FallbackModelOption,
     idleAction,
     nextFormState,
     providerModelHelper,
@@ -51,6 +52,8 @@ type CommunityEndpointDialogProps = {
     // Allowlisted owners can choose Public. Everyone else sees the same
     // lifecycle control with Public disabled.
     canPublish: boolean;
+    /** Public community models offered as fallback targets. */
+    fallbackOptions: FallbackModelOption[];
     open: boolean;
     onOpenChange: (open: boolean) => void;
     onSubmit: (payload: EndpointPayload, bearerToken: string) => Promise<void>;
@@ -61,6 +64,7 @@ type CommunityEndpointDialogProps = {
 export function CommunityEndpointDialog({
     endpoint,
     canPublish,
+    fallbackOptions,
     open,
     onOpenChange,
     onSubmit,
@@ -276,6 +280,20 @@ export function CommunityEndpointDialog({
     const saveRequirementMet = needsTest
         ? testRequirementMet && (isEdit || hasToken)
         : isEdit || hasToken;
+    // Same modality, never this model itself. A saved target that has since
+    // been unlisted stays selectable so editing does not silently drop it.
+    const visibleFallbackOptions = [
+        ...new Set([
+            ...fallbackOptions
+                .filter(
+                    (option) =>
+                        option.modality === form.modality &&
+                        option.modelId !== endpoint?.modelId,
+                )
+                .map((option) => option.modelId),
+            ...(form.fallbackModelId ? [form.fallbackModelId] : []),
+        ]),
+    ].sort();
     const providerModelQuery = form.upstreamModel.trim().toLowerCase();
     const visibleModelOptions =
         providerModelQuery === ""
@@ -665,6 +683,33 @@ export function CommunityEndpointDialog({
                                     </p>
                                 )}
                         </div>
+                    )}
+
+                    {isShared && (
+                        <FieldStack
+                            label="Fallback model"
+                            helper="Optional. Served when this model's upstream fails. Must be another public community model of the same modality, priced at or below this one."
+                            alignLabelRow
+                        >
+                            <select
+                                name="community-fallback-model"
+                                value={form.fallbackModelId}
+                                className="rounded-md border border-divider bg-surface px-3 py-2 text-sm text-theme-text-strong"
+                                onChange={(e) =>
+                                    updateForm(
+                                        "fallbackModelId",
+                                        e.target.value,
+                                    )
+                                }
+                            >
+                                <option value="">None</option>
+                                {visibleFallbackOptions.map((modelId) => (
+                                    <option key={modelId} value={modelId}>
+                                        {modelId}
+                                    </option>
+                                ))}
+                            </select>
+                        </FieldStack>
                     )}
 
                     {isShared && (

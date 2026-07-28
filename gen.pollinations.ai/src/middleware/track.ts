@@ -13,10 +13,7 @@ import {
     stripIPv4MappedPrefix,
     truncateIpToSubnet,
 } from "@shared/client-ip.ts";
-import {
-    COMMUNITY_MODEL_REWARD_RATE,
-    type CommunityEndpointRuntime,
-} from "@shared/community-endpoints.ts";
+import { COMMUNITY_MODEL_REWARD_RATE } from "@shared/community-endpoints.ts";
 import { user as userTable } from "@shared/db/better-auth.ts";
 import type { ErrorVariables } from "@shared/error.ts";
 import {
@@ -71,17 +68,9 @@ import { mergeContentFilterResults } from "@/content-filter.ts";
 import type { AuthVariables } from "@/middleware/auth.ts";
 import type { BalanceVariables } from "@/middleware/balance.ts";
 import type { LoggerVariables } from "@/middleware/logger.ts";
+import type { ModelVariables } from "@/middleware/model.ts";
 import type { FrontendKeyRateLimitVariables } from "@/middleware/rate-limit-durable.ts";
 import { generateRandomId, parseBooleanLike } from "@/util.ts";
-
-type ModelVariables = {
-    model: {
-        requested: string;
-        resolved: string;
-        definition: ModelDefinition;
-        communityEndpoint?: CommunityEndpointRuntime;
-    };
-};
 
 export type ModelUsage = {
     model: string;
@@ -199,10 +188,15 @@ export const track = (eventType: EventType) =>
                 const response = responseOverride
                     ? withFinalResponseHeaders(responseOverride, c.res)
                     : c.res.clone();
+                // Billing follows what actually served: when a fallback target
+                // answered, its own definition prices the request and its owner
+                // earns the community reward.
+                const servedEntry = c.var.servedModelEntry;
                 const responseTracking = await trackResponse(
                     eventType,
                     requestTracking,
                     response,
+                    servedEntry?.definition,
                 );
                 if (responseTracking.cacheHit) {
                     await c.var.frontendKeyRateLimit?.consumePollen(0);
@@ -239,7 +233,9 @@ export const track = (eventType: EventType) =>
                 let billedPrice = 0;
                 let shouldRunAutoTopUp = false;
                 try {
-                    const communityEndpoint = c.var.model?.communityEndpoint;
+                    const communityEndpoint = servedEntry
+                        ? servedEntry.communityEndpoint
+                        : c.var.model?.communityEndpoint;
                     const deduction = await handleBalanceDeduction({
                         db: balanceDb,
                         isBilledUsage: responseTracking.isBilledUsage,
@@ -456,6 +452,7 @@ async function trackResponse(
     eventType: EventType,
     requestTracking: RequestTrackingData,
     response: Response,
+    servedModelDefinition?: ModelDefinition,
 ): Promise<ResponseTrackingData> {
     const log = getLogger(["hono", "track", "response"]);
     const { resolvedModelRequested } = requestTracking;
@@ -515,7 +512,7 @@ async function trackResponse(
     const { cost, price, adjustments } = calculateUsageBilling(
         resolvedModelRequested,
         modelUsage.usage,
-        requestTracking.modelDefinition,
+        servedModelDefinition ?? requestTracking.modelDefinition,
         modelUsage.output,
     );
     return {

@@ -1,9 +1,12 @@
+import type { CommunityEndpointRuntime } from "@shared/community-endpoints.ts";
 import { remapUpstreamStatus, UpstreamError } from "@shared/error.ts";
 import { IMMUTABLE_CACHE_CONTROL } from "@shared/http/cache-control.ts";
 import { DEFAULT_IMAGE_MODEL } from "@shared/registry/image.ts";
+import { FALLBACK_TARGET_HEADER } from "@shared/registry/usage-headers.ts";
 import type { Context } from "hono";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
 import type { Env } from "@/env.ts";
+import type { GenerationModelEntry } from "../model-registry.ts";
 import {
     getRegisteredServers,
     isValidType,
@@ -391,6 +394,43 @@ async function generateImageResult(
     return result;
 }
 
+// The image response is fully buffered before any bytes reach the client, so a
+// plain in-worker retry against the fallback endpoint is safe — no streaming
+// caveat, and a failed primary attempt is never billed.
+async function callCommunityImageWithFallback(
+    c: ImageContext,
+    endpoint: CommunityEndpointRuntime,
+    prompt: string,
+    safeParams: RuntimeImageParams,
+): Promise<{
+    result: ImageGenerationResult;
+    servedEntry?: GenerationModelEntry;
+}> {
+    try {
+        return {
+            result: await callCommunityImageEndpoint(
+                endpoint,
+                prompt,
+                safeParams,
+                c.env.BETTER_AUTH_SECRET,
+            ),
+        };
+    } catch (error) {
+        const fallbackEntry = c.var.model.fallbackEntry;
+        const fallbackEndpoint = fallbackEntry?.communityEndpoint;
+        if (!fallbackEntry || !fallbackEndpoint) throw error;
+        return {
+            result: await callCommunityImageEndpoint(
+                fallbackEndpoint,
+                prompt,
+                safeParams,
+                c.env.BETTER_AUTH_SECRET,
+            ),
+            servedEntry: fallbackEntry,
+        };
+    }
+}
+
 async function generateVideoResult(
     c: ImageContext,
     originalPrompt: string,
@@ -415,21 +455,29 @@ export async function generateImageOrVideoResponse(
     try {
         const communityEndpoint = c.var.model.communityEndpoint;
         if (communityEndpoint) {
-            const result = await callCommunityImageEndpoint(
-                communityEndpoint,
-                originalPrompt,
-                safeParams,
-                c.env.BETTER_AUTH_SECRET,
-            );
-            assertNonEmptyMedia(result.buffer, "Community image endpoint");
-            return new Response(bufferToUint8Array(result.buffer), {
-                headers: mediaHeaders(
+            const { result, servedEntry } =
+                await callCommunityImageWithFallback(
+                    c,
+                    communityEndpoint,
                     originalPrompt,
                     safeParams,
-                    result,
-                    detectMimeType(result.buffer),
-                ),
-            });
+                );
+            assertNonEmptyMedia(result.buffer, "Community image endpoint");
+            const headers = mediaHeaders(
+                originalPrompt,
+                servedEntry
+                    ? { ...safeParams, model: servedEntry.id }
+                    : safeParams,
+                result,
+                detectMimeType(result.buffer),
+            );
+            if (servedEntry) {
+                c.set("servedModelEntry", servedEntry);
+                // Same "config.targets[N]" shape the Portkey text path emits,
+                // so tracking's fallback parsing covers both.
+                headers.set(FALLBACK_TARGET_HEADER, "config.targets[1]");
+            }
+            return new Response(bufferToUint8Array(result.buffer), { headers });
         }
 
         if (isVideoModel(safeParams.model)) {

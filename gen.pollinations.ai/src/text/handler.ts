@@ -9,11 +9,21 @@ import {
 import type { Context } from "hono";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
 import type { Env } from "@/env.ts";
+import type { GenerationModelEntry } from "../model-registry.ts";
 import { fixWavHeader } from "../routes/audio.js";
-import { communityEndpointGatewayContext } from "./communityEndpoint.ts";
+import { findModelByName } from "./availableModels.js";
+import {
+    communityEndpointGatewayContext,
+    communityEndpointPortkeyTarget,
+} from "./communityEndpoint.ts";
 import { generateTextPortkey } from "./generateTextPortkey.js";
 import { type ExpressLikeRequest, getRequestData } from "./requestUtils.js";
-import type { ChatCompletion, RequestData, ServiceError } from "./types.js";
+import type {
+    ChatCompletion,
+    RequestData,
+    ServiceError,
+    TransformOptions,
+} from "./types.js";
 
 type TextContext = Context<Env>;
 
@@ -91,6 +101,104 @@ function prepareRequestParameters(
               }
             : { voice, format: audioFormat },
     };
+}
+
+// Statuses that make Portkey move on to the fallback target. 400 and 422 are
+// left out on purpose: those are caller errors and replaying them cannot
+// succeed. 401/402/403/404 are included because they mean the primary's
+// credentials or upstream model are broken, which the fallback may survive.
+const FALLBACK_ON_STATUS_CODES = [
+    401, 402, 403, 404, 408, 429, 500, 502, 503, 504,
+];
+
+type PortkeyTarget = Record<string, unknown>;
+
+// Provider config keys with a safe Portkey target form. Anything else (Azure /
+// Bedrock / Vertex credential sets, `useUserApiKey` passthrough, per-model
+// `defaultOptions`) is not converted: those models simply run without a
+// fallback instead of being sent as a silently broken target config.
+const CONVERTIBLE_CONFIG_KEYS = new Set([
+    "provider",
+    "custom-host",
+    "authKey",
+    "model",
+]);
+
+function providerConfigToTarget(
+    config: Record<string, unknown> | undefined,
+): PortkeyTarget | null {
+    if (!config) return null;
+    if (Object.keys(config).some((key) => !CONVERTIBLE_CONFIG_KEYS.has(key))) {
+        return null;
+    }
+    const { provider, model, authKey } = config;
+    const customHost = config["custom-host"];
+    if (typeof provider !== "string" || typeof model !== "string") return null;
+    return {
+        provider,
+        ...(customHost ? { custom_host: customHost } : {}),
+        ...(authKey ? { authKey } : {}),
+        override_params: { model },
+    };
+}
+
+function staticModelConfig(
+    modelId: string,
+): Record<string, unknown> | undefined {
+    const rawConfig = findModelByName(modelId)?.config;
+    if (!rawConfig) return undefined;
+    return (
+        typeof rawConfig === "function" ? rawConfig() : rawConfig
+    ) as Record<string, unknown>;
+}
+
+async function portkeyTargetForEntry(
+    entry: GenerationModelEntry,
+    secret: string,
+): Promise<PortkeyTarget | null> {
+    if (entry.communityEndpoint) {
+        return communityEndpointPortkeyTarget(entry.communityEndpoint, secret);
+    }
+    return providerConfigToTarget(staticModelConfig(entry.id));
+}
+
+// Two-target Portkey fallback config. Returns null when either side has no
+// convertible provider config, in which case the request runs against the
+// primary alone.
+async function buildFallbackModelConfig(
+    primaryConfig: Record<string, unknown> | undefined,
+    fallbackEntry: GenerationModelEntry,
+    secret: string,
+): Promise<Record<string, unknown> | null> {
+    const primaryTarget = providerConfigToTarget(primaryConfig);
+    const fallbackTarget = await portkeyTargetForEntry(fallbackEntry, secret);
+    if (!primaryTarget || !fallbackTarget) return null;
+    return {
+        // resolveModelConfig() derives the request-body model from
+        // config.model (utils/modelResolver.ts); a strategy/targets config has
+        // none at provider level, so it must be set explicitly. Each target
+        // overrides it anyway through override_params.
+        model: (primaryTarget.override_params as { model: string }).model,
+        strategy: {
+            mode: "fallback",
+            on_status_codes: FALLBACK_ON_STATUS_CODES,
+        },
+        targets: [primaryTarget, fallbackTarget],
+    };
+}
+
+// Portkey reports the served target as "config.targets[N]". Index 1 is the
+// single fallback target; a missing or unparseable value means the primary
+// served. Read before the stream is returned, so this works for streaming too.
+function servedFallbackEntry(
+    fallbackTarget: string | undefined,
+    fallbackEntry: GenerationModelEntry | undefined,
+): GenerationModelEntry | undefined {
+    if (!fallbackEntry || !fallbackTarget) return undefined;
+    const index = fallbackTarget.match(/\[(\d+)\]/)?.[1];
+    return index !== undefined && Number(index) === 1
+        ? fallbackEntry
+        : undefined;
 }
 
 function withGatewayContext(c: TextContext, requestData: RequestData) {
@@ -323,7 +431,7 @@ async function generateTextResponse(
 
     try {
         const communityEndpoint = c.var.model?.communityEndpoint;
-        const gatewayContext = communityEndpoint
+        const gatewayContext: TransformOptions = communityEndpoint
             ? await communityEndpointGatewayContext(
                   communityEndpoint,
                   c.var.model.definition,
@@ -334,15 +442,34 @@ async function generateTextResponse(
                   c.var.auth?.apiKey?.id,
               )
             : withGatewayContext(c, requestData);
+        const declaredFallbackEntry = c.var.model?.fallbackEntry;
+        const fallbackConfig = declaredFallbackEntry
+            ? await buildFallbackModelConfig(
+                  gatewayContext.modelConfig ??
+                      staticModelConfig(c.var.model.resolved),
+                  declaredFallbackEntry,
+                  c.env.BETTER_AUTH_SECRET,
+              )
+            : null;
         const completion = await generateTextPortkey(
             requestData.messages,
-            gatewayContext,
+            fallbackConfig
+                ? { ...gatewayContext, modelConfig: fallbackConfig }
+                : gatewayContext,
         );
         c.set("upstreamRequestUrl", completion.upstreamRequestUrl);
         completion.id = completion.id || generatePollinationsId();
 
+        // Billing follows what actually served, so record the serving entry
+        // before the response (streaming included) leaves the handler.
+        const servedEntry = servedFallbackEntry(
+            completion.fallbackTarget,
+            fallbackConfig ? declaredFallbackEntry : undefined,
+        );
+        if (servedEntry) c.set("servedModelEntry", servedEntry);
+
         if (requestData.stream) return sendTextStreamResponse(completion);
-        const fallbackModel = c.var.model?.resolved;
+        const fallbackModel = servedEntry?.id ?? c.var.model?.resolved;
         // Provider-reported cost is read post-response in track (clamp-and-alert
         // in the registry) — malformed/absent cost never fails the request.
         const trackingResponse = sendOpenAIResponse(completion, fallbackModel);

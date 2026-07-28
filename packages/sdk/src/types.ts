@@ -9,7 +9,7 @@ export interface PollinationsConfig {
     textTimeout?: number;
     /** Timeout in ms for image requests (default: 600000 = 10min) */
     imageTimeout?: number;
-    /** Timeout in ms for video requests (default: 600000 = 10min) */
+    /** Timeout in ms for video requests (default: 1200000 = 20min) */
     videoTimeout?: number;
 }
 

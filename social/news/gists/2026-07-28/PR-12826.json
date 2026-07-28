@@ -1,0 +1,36 @@
+{
+  "pr_number": 12826,
+  "title": "Add StoryStudio to writing",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/12826",
+  "merged_at": "2026-07-28T15:40:36Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds [StoryStudio](https://eiigen.github.io/storystudio-app) to writing\n- AI StoryStudio — A web-based storybook generator powered by Pollinations.ai. Enter any theme and get a fully illustrated multi-page story with AI-generated text, images, and optional audio narration. \n\nFixes #12650",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Story seeds, illustrated",
+    "blurb": "StoryStudio joined the writing garden. Give it a theme and it grows a multi-page illustrated storybook, with optional narration for anyone who prefers their plotlines spoken aloud.",
+    "summary": "Added StoryStudio to the writing apps directory, a Pollinations-powered web app that turns a theme into a fully illustrated multi-page story with AI text, images, and optional audio narration.",
+    "impact": "People looking for a storybook generator can now discover StoryStudio directly through Pollinations' writing app listings.",
+    "keywords": [
+      "StoryStudio",
+      "writing",
+      "storybooks",
+      "illustration",
+      "audio narration",
+      "community app"
+    ],
+    "visual_concept": "Depict StoryStudio as a magical open storybook growing from a cozy garden desk: each page contains a tiny illustrated scene, while soft audio-note sprites float above it. Polli wears a small writer's beret and gently places a glowing seed labeled \"THEME\" into the book; code-plants and flowers frame the scene to show that the story is generated with Pollinations.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny writer's beret, planting a glowing \"THEME\" seed into an open multi-page storybook that blooms with tiny illustrated landscapes and floating musical notes for narration. A retro terminal and code-plants sit among warm cream flowers, with lime green (#ecf874) prominently glowing across the pages; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-28/PR-12826.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny writer's beret, planting a glowing \"THEME\" seed into an open multi-page storybook that blooms with tiny illustrated landscapes and floating musical notes for narration. A retro terminal and code-plants sit among warm cream flowers, with lime green (#ecf874) prominently glowing across the pages; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, nostalgic but beautiful."
+  },
+  "generated_at": "2026-07-28T15:41:34.047340+00:00",
+  "app_name": "StoryStudio",
+  "app_url": "https://eiigen.github.io/storystudio-app"
+}

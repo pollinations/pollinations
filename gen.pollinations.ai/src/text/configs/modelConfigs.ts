@@ -1,8 +1,8 @@
 import {
     createAzureModelConfig,
     createBedrockNativeConfig,
+    createDeepInfraModelConfig,
     createFireworksModelConfig,
-    createInceptionModelConfig,
     createOpenRouterModelConfig,
     createOVHcloudModelConfig,
     createOVHcloudOAIConfig,
@@ -180,6 +180,15 @@ export const portkeyConfig: PortkeyConfigMap = {
             },
         }),
 
+    // -- DeepInfra (NVIDIA) ---------------------------------------------------
+    "nvidia/NVIDIA-Nemotron-3-Ultra-550B-A55B": () =>
+        createDeepInfraModelConfig({
+            model: "nvidia/NVIDIA-Nemotron-3-Ultra-550B-A55B",
+            defaultOptions: {
+                normalizeFinishReasonAtTokenLimit: true,
+            },
+        }),
+
     // -- OpenRouter (Gemma) ---------------------------------------------------
     // Moved off DeepInfra: OpenRouter serves the same SKU ~cheaper ($0.06/$0.33
     // posted vs $0.07/$0.34) and is credit-eligible.
@@ -193,10 +202,16 @@ export const portkeyConfig: PortkeyConfigMap = {
             defaultOptions: { provider: { sort: "price" } },
         }),
 
-    // -- Inception Labs (Mercury) -------------------------------------------
+    // -- OpenRouter (Inception Labs) -----------------------------------------
     "mercury-2": () =>
-        createInceptionModelConfig({
-            model: "mercury-2",
+        createOpenRouterModelConfig({
+            model: "inception/mercury-2",
+            defaultOptions: {
+                provider: {
+                    only: ["Inception"],
+                    allow_fallbacks: false,
+                },
+            },
         }),
 
     // -- Fireworks AI (DeepSeek) ---------------------------------------------

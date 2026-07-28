@@ -63,6 +63,29 @@ describe("resolveModelConfig", () => {
         });
     });
 
+    it("pins Mercury to Inception on OpenRouter without fallback", () => {
+        const result = resolveModelConfig(messages, { model: "mercury" });
+
+        expect(result.options.model).toBe("inception/mercury-2");
+        expect(result.options.provider).toEqual({
+            only: ["Inception"],
+            allow_fallbacks: false,
+        });
+    });
+
+    it("routes Nemotron directly to DeepInfra without fallback", () => {
+        const result = resolveModelConfig(messages, { model: "nemotron" });
+
+        expect(result.options.model).toBe(
+            "nvidia/NVIDIA-Nemotron-3-Ultra-550B-A55B",
+        );
+        expect(result.options.modelConfig).toMatchObject({
+            provider: "openai",
+            "custom-host": "https://api.deepinfra.com/v1/openai",
+        });
+        expect(result.options.provider).toBeUndefined();
+    });
+
     it.each([
         "perplexity-high",
         "perplexity-deep",

@@ -355,6 +355,11 @@ const models: ModelDefinition[] = [
         ),
     },
     {
+        name: "nemotron",
+        config: portkeyConfig["nvidia/NVIDIA-Nemotron-3-Ultra-550B-A55B"],
+        transform: createReasoningEffortTransform("toggle"),
+    },
+    {
         name: "mimo-v2.5",
         config: portkeyConfig["xiaomi/mimo-v2.5"],
         transform: stripCacheControl,

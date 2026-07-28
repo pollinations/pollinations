@@ -229,6 +229,7 @@ export type CommunityEndpointRuntime = {
     description: string | null;
     modality: CommunityEndpointModality;
     imagePricing: CommunityEndpointImagePricing;
+    supportsImageEdits: boolean;
     baseUrl: string;
     upstreamModel: string;
     bearerTokenCiphertext: string;
@@ -243,6 +244,7 @@ export type CommunityModelDefinitionInput = {
     description: string | null;
     modality?: CommunityEndpointModality;
     imagePricing?: CommunityEndpointImagePricing;
+    supportsImageEdits?: boolean;
 } & CommunityEndpointPrices;
 
 export type CommunityModelParts = {
@@ -340,9 +342,17 @@ export function communityImageGenerationsUrl(baseUrl: string): string {
     return `${communityOpenAIBaseUrl(baseUrl)}/images/generations`;
 }
 
+export function communityImageEditsUrl(baseUrl: string): string {
+    return `${communityOpenAIBaseUrl(baseUrl)}/images/edits`;
+}
+
 export function communityOpenAIBaseUrl(baseUrl: string): string {
     const normalized = normalizeCommunityEndpointBaseUrl(baseUrl);
-    for (const suffix of ["/chat/completions", "/images/generations"]) {
+    for (const suffix of [
+        "/chat/completions",
+        "/images/generations",
+        "/images/edits",
+    ]) {
         if (normalized.endsWith(suffix)) {
             return normalized.slice(0, -suffix.length);
         }
@@ -417,7 +427,10 @@ export function communityModelDefinition(
         addedDate: 0,
         title: communityEndpointTitle(endpoint),
         description: description || undefined,
-        inputModalities: ["text"],
+        inputModalities:
+            isImage && endpoint.supportsImageEdits
+                ? ["text", "image"]
+                : ["text"],
         outputModalities: isImage ? ["image"] : ["text"],
         paidOnly: false,
         alpha: true,

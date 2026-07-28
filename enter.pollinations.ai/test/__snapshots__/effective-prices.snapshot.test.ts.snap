@@ -142,6 +142,14 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.00000174,
     },
   },
+  "eleven-dialogue": {
+    "cost": {
+      "completionAudioTokens": 0.0001,
+    },
+    "price": {
+      "completionAudioTokens": 0.0001,
+    },
+  },
   "eleven-multilingual-v2": {
     "cost": {
       "completionAudioTokens": 0.0001,
@@ -156,6 +164,22 @@ exports[`effective cost and price per model — snapshot 1`] = `
     },
     "price": {
       "completionAudioSeconds": 0.002,
+    },
+  },
+  "eleven-voice-changer": {
+    "cost": {
+      "promptAudioSeconds": 0.002,
+    },
+    "price": {
+      "promptAudioSeconds": 0.002,
+    },
+  },
+  "eleven-voice-isolator": {
+    "cost": {
+      "promptAudioSeconds": 0.002,
+    },
+    "price": {
+      "promptAudioSeconds": 0.002,
     },
   },
   "elevenflash": {
@@ -496,12 +520,12 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.000004,
     },
     "price": {
-      "completionAudioTokens": 0.000064,
-      "completionTextTokens": 0.000024,
-      "promptAudioTokens": 0.000032,
-      "promptCachedTokens": 0.0000004,
-      "promptImageTokens": 0.000005,
-      "promptTextTokens": 0.000004,
+      "completionAudioTokens": 0.000048,
+      "completionTextTokens": 0.000018,
+      "promptAudioTokens": 0.000024,
+      "promptCachedTokens": 0.0000003,
+      "promptImageTokens": 0.00000375,
+      "promptTextTokens": 0.000003,
     },
   },
   "gpt-realtime-2.1": {
@@ -514,12 +538,12 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.000004,
     },
     "price": {
-      "completionAudioTokens": 0.000064,
-      "completionTextTokens": 0.000024,
-      "promptAudioTokens": 0.000032,
-      "promptCachedTokens": 0.0000004,
-      "promptImageTokens": 0.000005,
-      "promptTextTokens": 0.000004,
+      "completionAudioTokens": 0.000048,
+      "completionTextTokens": 0.000018,
+      "promptAudioTokens": 0.000024,
+      "promptCachedTokens": 0.0000003,
+      "promptImageTokens": 0.00000375,
+      "promptTextTokens": 0.000003,
     },
   },
   "gpt-realtime-2.1-mini": {
@@ -992,6 +1016,18 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "completionTextTokens": 0.000012,
       "promptImageTokens": 0.000002,
       "promptTextTokens": 0.000002,
+    },
+  },
+  "nemotron": {
+    "cost": {
+      "completionTextTokens": 0.0000022,
+      "promptCachedTokens": 0.0000001,
+      "promptTextTokens": 0.0000005,
+    },
+    "price": {
+      "completionTextTokens": 0.0000022,
+      "promptCachedTokens": 0.0000001,
+      "promptTextTokens": 0.0000005,
     },
   },
   "nova": {

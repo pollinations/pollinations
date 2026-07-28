@@ -1,0 +1,15 @@
+{
+  "platform": "reddit",
+  "scope": "daily",
+  "date": "2026-07-27",
+  "period_start": "2026-07-27",
+  "period_end": "2026-07-27",
+  "generated_at": "2026-07-28T07:05:54.394133+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-07-27/images/reddit.jpg"
+    }
+  ],
+  "title": "Image edits, Nemotron 3 Ultra, and fallback fixes",
+  "text": "11 PRs merged today.\n\nThe image side got the largest practical changes: community image edits are now available, Z-Image Vast startup is harder to knock over, and the broken Flux fallback now routes through Replicate instead. Realtime cached-image billing was also corrected, which is the sort of bug nobody notices until an invoice or a dashboard starts telling stories.\n\nText/API work: errors should now identify the actual upstream provider rather than blaming a convenient abstraction layer. Nova is normalized to Bedrock, Mercury 2 moved to OpenRouter, and NVIDIA Nemotron 3 Ultra was added for long-context reasoning.\n\nThe model-publishing path is less gated: community publishers can now add models to the commons. The README was refreshed, and the horizontal logo lockup spacing is back to being intentionally spaced.\n\nMerged work:\n- Image edits: #12715\n- Community model publishers: #12795\n- Nemotron 3 Ultra: #12806\n- Flux fallback via Replicate: #12810\n\nEverything is visible in the repo and PR history: https://github.com/pollinations/pollinations\n\nDocs/README: https://github.com/pollinations/pollinations/blob/master/README.md\n\nIf you hit an image-edit edge case, an upstream error attribution that still looks wrong, or a provider-routing regression, an issue with the request shape and model name is useful."
+}

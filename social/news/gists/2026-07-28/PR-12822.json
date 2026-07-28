@@ -1,0 +1,36 @@
+{
+  "pr_number": 12822,
+  "title": "Add Driftpod.fm to video_audio",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/12822",
+  "merged_at": "2026-07-28T15:29:36Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds [Driftpod.fm](https://driftpod.fm) to video_audio\n- Press play for endless discovery of podcasts. Users tailor their experience by adding favorite podcasts, liking and disliking episodes, and the recommendation engine gets episode metadata (summaries, \n\nFixes #12754",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Podcasts drift into bloom",
+    "blurb": "Driftpod.fm joined the video_audio garden: an endless podcast discovery stream that learns what you like, one play button at a time. Polli brought headphones; the recommendation engine brought metadata.",
+    "summary": "Added Driftpod.fm to the video_audio app directory, highlighting its endless podcast discovery player with favorites, episode likes/dislikes, and metadata-powered recommendations.",
+    "impact": "People exploring pollinations-powered apps can now find Driftpod.fm and tune a personalized stream of podcast episodes from the video_audio collection.",
+    "keywords": [
+      "community-app",
+      "video-audio",
+      "podcasts",
+      "recommendations",
+      "discovery",
+      "driftpod"
+    ],
+    "visual_concept": "Depict Driftpod.fm as a cozy retro podcast listening nook: a CRT radio/player emits gentle floating episode cards and audio-wave vines that grow into flowers, representing endless discovery and metadata-powered recommendations. Polli, wearing oversized little headphones, happily curates the stream by placing heart and skip tokens beside a glowing lime-green player; include a small monitor robot holding a playlist card to reinforce discovery.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-dark-brown striped bee mascot with black antennae, oval eyes, bright pink rectangular cheek blush, happy smile, small light-blue translucent wings, and oversized tiny headphones, tending a retro CRT podcast player glowing lime green (#ecf874) as floating episode cards and soft audio-wave vines bloom into pastel flowers; a cute monitor-head robot holds a playlist card nearby. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, subtle scanlines, with simple pixel-font text: \"DRIFTPOD.FM\"."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-28/PR-12822.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-dark-brown striped bee mascot with black antennae, oval eyes, bright pink rectangular cheek blush, happy smile, small light-blue translucent wings, and oversized tiny headphones, tending a retro CRT podcast player glowing lime green (#ecf874) as floating episode cards and soft audio-wave vines bloom into pastel flowers; a cute monitor-head robot holds a playlist card nearby. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, subtle scanlines, with simple pixel-font text: \"DRIFTPOD.FM\"."
+  },
+  "generated_at": "2026-07-28T15:30:35.592373+00:00",
+  "app_name": "Driftpod.fm",
+  "app_url": "https://driftpod.fm"
+}

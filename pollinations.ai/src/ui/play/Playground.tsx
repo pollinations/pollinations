@@ -10,24 +10,24 @@ import {
     Alert,
     AudioIcon,
     ButtonGroup,
+    CardIcon,
+    ChevronIcon,
     cn,
+    Dropdown,
     FieldStack,
     FileUpload,
     ImageIcon,
     Input,
     MediaPlaceholder,
+    ScrollArea,
+    SproutIcon,
     Surface,
     TabButton,
     Text,
     Textarea,
     Tooltip,
 } from "@pollinations/ui";
-import {
-    categoryLabel,
-    ModalityDot,
-    ModalityTab,
-    ModelSelector,
-} from "@pollinations/ui/gen";
+import { categoryLabel, ModalityDot, ModalityTab } from "@pollinations/ui/gen";
 import { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import { ActionButton } from "../site/kit";
@@ -191,29 +191,141 @@ function pluralizeImages(count: number): string {
     return count === 1 ? "1 image" : `${count} images`;
 }
 
-function ModalityTabs({
+/** Card = needs a paid balance; sprout = runs on any Pollen. */
+function AccessIcon({ paidOnly }: { paidOnly?: boolean }) {
+    return paidOnly ? (
+        <CardIcon className="h-3.5 w-3.5 shrink-0" />
+    ) : (
+        <SproutIcon className="h-3.5 w-3.5 shrink-0" />
+    );
+}
+
+/**
+ * Modality tabs and the model menu, folded into one control: each tab opens
+ * its modality's model list, and the active tab wears the model it settled on
+ * ("Image · NanoBanana 2 Lite"). Clicking an inactive tab switches modality
+ * immediately — a sensible model is picked before the menu even opens — so
+ * the menu is an offer, never a gate; dismissing it costs nothing.
+ *
+ * Controlled popovers, not Ark's own toggle: TabButton pins its `onClick`
+ * after spreading rest, which would clobber the handler asChild injects.
+ */
+function ModalityModelPicker({
+    models,
     activeCategory,
-    onCategoryChange,
+    selectedModel,
+    isLoading,
+    onSelectCategory,
+    onSelectModel,
 }: {
+    models: ModelCatalogItem[];
     activeCategory: ModelCategory;
-    onCategoryChange: (category: ModelCategory) => void;
+    selectedModel: string;
+    isLoading: boolean;
+    onSelectCategory: (category: ModelCategory) => void;
+    onSelectModel: (modelId: string) => void;
 }) {
+    const [openMenu, setOpenMenu] = useState<ModelCategory | null>(null);
+    const currentModel = models.find((model) => model.id === selectedModel);
+
     return (
-        <ButtonGroup aria-label="Modality">
-            {CATEGORY_ORDER.map((category) => (
-                <ModalityTab
-                    key={category}
-                    active={activeCategory === category}
-                    size="md"
-                    // The modality choice is the playground's biggest decision,
-                    // so its tabs outrank the default pill size.
-                    className="px-6 py-2.5 text-lg"
-                    onClick={() => onCategoryChange(category)}
-                >
-                    {categoryLabel(category)}
-                </ModalityTab>
-            ))}
-        </ButtonGroup>
+        <div
+            role="group"
+            aria-label="Modality and model"
+            className="flex flex-wrap gap-2"
+        >
+            {CATEGORY_ORDER.map((category) => {
+                const active = category === activeCategory;
+                const open = openMenu === category;
+                const items = models.filter(
+                    (model) => model.category === category,
+                );
+                return (
+                    <Dropdown
+                        key={category}
+                        open={open}
+                        onOpenChange={(next) =>
+                            setOpenMenu((current) =>
+                                next
+                                    ? category
+                                    : current === category
+                                      ? null
+                                      : current,
+                            )
+                        }
+                        className="w-[min(24rem,calc(100vw-2rem))] p-2"
+                        trigger={() => (
+                            <ModalityTab
+                                active={active}
+                                size="md"
+                                // The playground's biggest decision, so the
+                                // tabs outrank the default pill size.
+                                className="gap-2 px-6 py-2.5 text-lg"
+                                onClick={() => {
+                                    if (!active) onSelectCategory(category);
+                                    setOpenMenu(open ? null : category);
+                                }}
+                            >
+                                {active && currentModel
+                                    ? `${categoryLabel(category)} · ${currentModel.title}`
+                                    : categoryLabel(category)}
+                                {active && <ChevronIcon expanded={open} />}
+                            </ModalityTab>
+                        )}
+                    >
+                        {(close) =>
+                            // Ark keeps closed panels mounted (merely hidden),
+                            // which would leave every category's rows sitting
+                            // in the DOM — render nothing until this menu is
+                            // the open one.
+                            !open ? null : isLoading ? (
+                                <p className="m-0 px-2 py-2 text-sm text-theme-text-soft">
+                                    Loading models...
+                                </p>
+                            ) : (
+                                <ScrollArea className="max-h-80 pr-2">
+                                    <div className="flex flex-col gap-1">
+                                        {items.map((model) => (
+                                            <TabButton
+                                                key={model.id}
+                                                active={
+                                                    model.id === selectedModel
+                                                }
+                                                size="sm"
+                                                variant="ghost"
+                                                className="w-full justify-start text-left"
+                                                onClick={() => {
+                                                    onSelectModel(model.id);
+                                                    close();
+                                                }}
+                                            >
+                                                <span className="flex min-w-0 flex-col gap-0.5">
+                                                    <span className="flex min-w-0 items-center gap-2">
+                                                        <span className="truncate">
+                                                            {model.title}
+                                                        </span>
+                                                        <AccessIcon
+                                                            paidOnly={
+                                                                model.paidOnly
+                                                            }
+                                                        />
+                                                    </span>
+                                                    {model.description && (
+                                                        <span className="truncate font-normal text-theme-text-muted text-xs">
+                                                            {model.description}
+                                                        </span>
+                                                    )}
+                                                </span>
+                                            </TabButton>
+                                        ))}
+                                    </div>
+                                </ScrollArea>
+                            )
+                        }
+                    </Dropdown>
+                );
+            })}
+        </div>
     );
 }
 
@@ -745,27 +857,17 @@ export function Playground() {
                 </Alert>
             )}
 
-            {/* Three lines, in the order you decide them: what kind of thing,
-                then which model, then what that model is. Deliberately not a
-                card — they read as a sequence, and a card would box them as
-                one static panel. They sit above both columns because modality
-                and model change the output, not just the prompt. */}
-            <div className="flex flex-col items-start gap-3">
-                <ModalityTabs
-                    activeCategory={activeCategory}
-                    onCategoryChange={selectCategory}
-                />
-                <ModelSelector
-                    models={visibleModels}
-                    category={activeCategory}
-                    value={selectedModel}
-                    isLoading={isLoading || !isHydrated}
-                    // Same size as the modality tabs above — picking the model
-                    // is the same rank of decision as picking the modality.
-                    className="px-6 py-2.5 text-lg"
-                    onChange={setSelectedModel}
-                />
-            </div>
+            {/* One row decides what you make and what makes it. It sits above
+                both columns because modality and model change the output, not
+                just the prompt. */}
+            <ModalityModelPicker
+                models={visibleModels}
+                activeCategory={activeCategory}
+                selectedModel={selectedModel}
+                isLoading={isLoading || !isHydrated}
+                onSelectCategory={selectCategory}
+                onSelectModel={setSelectedModel}
+            />
 
             <div className="polli-playground-main-grid">
                 <div className="flex flex-col gap-4">

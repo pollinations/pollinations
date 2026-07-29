@@ -845,6 +845,103 @@ fixtureTest(
 );
 
 fixtureTest(
+    "retries an identical community model through its shared pool",
+    async ({ apiKey }) => {
+        const suffix = crypto.randomUUID().slice(0, 8);
+        const modelName = `pooled-${suffix}`;
+        const firstOwner = `pool-a-${suffix}`;
+        const secondOwner = `pool-b-${suffix}`;
+        for (const [ownerGithubUsername, baseUrl] of [
+            [firstOwner, "https://pool-a.example.com/v1"],
+            [secondOwner, "https://pool-b.example.com/v1"],
+        ] as const) {
+            const ownerUserId = await createTestUser({
+                githubUsername: ownerGithubUsername,
+            });
+            await db.insert(communityEndpointTable).values({
+                id: `endpoint-${crypto.randomUUID()}`,
+                ownerUserId,
+                visibility: "public",
+                name: modelName,
+                baseUrl,
+                upstreamModel: "shared-model",
+                bearerTokenCiphertext: await encryptSecret(
+                    "sk_saved_token",
+                    env.BETTER_AUTH_SECRET,
+                ),
+                promptTextPrice: 0.1,
+                completionTextPrice: 0.1,
+                createdAt: new Date(),
+                updatedAt: new Date(),
+            });
+        }
+
+        const upstreamHosts: string[] = [];
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async (input, init) => {
+                const request = new Request(input, init);
+                if (isPortkeyChatCompletionsRequest(request)) {
+                    const host = request.headers.get("x-portkey-custom-host");
+                    if (host) upstreamHosts.push(host);
+                    if (host === "https://pool-a.example.com/v1") {
+                        return Response.json(
+                            { error: { message: "temporarily unavailable" } },
+                            { status: 503 },
+                        );
+                    }
+                    return Response.json({
+                        id: "chatcmpl_pool",
+                        object: "chat.completion",
+                        choices: [
+                            {
+                                index: 0,
+                                message: {
+                                    role: "assistant",
+                                    content: "ok",
+                                },
+                                finish_reason: "stop",
+                            },
+                        ],
+                        usage: {
+                            prompt_tokens: 2,
+                            completion_tokens: 3,
+                            total_tokens: 5,
+                        },
+                    });
+                }
+                if (isBillingFetch(request)) {
+                    return Response.json({ data: [] });
+                }
+                throw new Error(`Unexpected fetch: ${request.url}`);
+            }),
+        );
+
+        const modelId = communityModelId(firstOwner, modelName);
+        const response = await SELF.fetch(
+            new Request("https://gen.pollinations.ai/v1/chat/completions", {
+                method: "POST",
+                headers: {
+                    Authorization: `Bearer ${apiKey}`,
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    model: modelId,
+                    messages: [{ role: "user", content: "hello" }],
+                }),
+            }),
+        );
+
+        expect(response.status).toBe(200);
+        expect(response.headers.get("x-model-used")).toBe(modelId);
+        expect(upstreamHosts).toEqual([
+            "https://pool-a.example.com/v1",
+            "https://pool-b.example.com/v1",
+        ]);
+    },
+);
+
+fixtureTest(
     "a private model is owner-only and a zero-priced public model is free",
     async ({ apiKey }) => {
         const ownerGithubUsername = `owner-${crypto.randomUUID().slice(0, 8)}`;

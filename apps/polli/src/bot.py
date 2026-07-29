@@ -369,10 +369,13 @@ def extract_media_urls(
 
     # Process embeds
     for embed in message.embeds:
-        # YouTube and other video embeds - check embed.url first (the actual link)
-        if embed.url and is_video_url(embed.url):
+        # Discord's GIFV embeds expose an MP4 plus a static WebP thumbnail. OpenAI's
+        # image_url input cannot decode the MP4, so give vision the preview frame.
+        if embed.video and embed.thumbnail and embed.thumbnail.url:
+            image_urls.append(embed.thumbnail.url)
+        # YouTube and other video embeds - keep the actual link as text context.
+        elif embed.url and is_video_url(embed.url):
             video_urls.append(embed.url)
-        # Video embed URL (Tenor/Giphy GIFs, video players)
         elif embed.video and embed.video.url:
             video_urls.append(embed.video.url)
         # Regular embedded images
@@ -381,8 +384,7 @@ def extract_media_urls(
                 video_urls.append(embed.image.url)
             else:
                 image_urls.append(embed.image.url)
-        # Thumbnail as fallback (static preview) - only if not a video embed
-        elif embed.thumbnail and embed.thumbnail.url and not embed.video:
+        elif embed.thumbnail and embed.thumbnail.url:
             image_urls.append(embed.thumbnail.url)
 
     return image_urls, video_urls, file_urls

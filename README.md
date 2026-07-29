@@ -48,16 +48,16 @@ We've launched **https://gen.pollinations.ai** — a single endpoint for all you
 
 ## 🆕 Latest News
 
+- **2026-07-28** – **🎬 Wan gets more runway** Long Wan 2.7 text-to-video and image-to-video generations now have up to 15 minutes to finish. The machine is permitted to think in frames.
+- **2026-07-28** – **✨ Story seeds, illustrated** Turn a theme into a multi-page story with AI-written text, images, and optional narration. [Try it](https://eiigen.github.io/storystudio-app) <!-- app -->
+- **2026-07-28** – **🎨 Pixels, meet paths** Convert raster artwork into scalable SVG paths for reuse at any size. [Try it](https://vtrace-two.vercel.app) <!-- app -->
+- **2026-07-28** – **🚀 A studio grew in the garden** One community workspace for switching between GPT, Claude, Gemini, and DeepSeek, then generating images with Pollinations. [Try it](https://sashafilipov.github.io/pollinations-ai-studio) <!-- app -->
 - **2026-07-27** – **🎨 Community image edits** Validated community models can now edit reference images through the OpenAI-compatible `/v1/images/edits` endpoint. Send pixels in; receive altered pixels back. [API Docs](https://gen.pollinations.ai/docs)
 - **2026-07-27** – **🤖 NVIDIA Nemotron 3 Ultra** `nemotron` is now available for 262K-context reasoning, tool use, and structured JSON through the standard text API. [Try it](https://pollinations.ai/play)
 - **2026-07-27** – **⚡ More reliable Z-Image capacity** New GPU workers now join production only after proving they are healthy; the canary handled 102/102 requests with a 4.69s p50.
 - **2026-07-26** – **🎵 ElevenLabs dialogue** Generate multi-speaker scenes with up to 10 voices and 25 turns through `POST /v1/audio/dialogue`. The hive has learned to hold a conversation. [API Docs](https://gen.pollinations.ai/docs)
 - **2026-07-26** – **✨ Voice isolation** Send audio or video to `POST /v1/audio/voice-isolator` and get the speech back as a clean MP3. Useful when the background has opinions. [API Docs](https://gen.pollinations.ai/docs)
 - **2026-07-26** – **🚀 GPT Realtime 2.1 Mini** `gpt-realtime-2.1-mini` is now available for large-context realtime text, image, and voice sessions—with tools, PCM audio, caching, and ten voices. [API Docs](https://gen.pollinations.ai/docs)
-- **2026-07-26** – **🎯 TTS timestamps** Get ElevenLabs speech plus character-level alignment from `POST /v1/audio/speech/with-timestamps`, for captions and text that highlights itself while it talks. [API Docs](https://gen.pollinations.ai/docs)
-- **2026-07-24** – **🎵 Lyria 3 music clips** Generate 30-second stereo MP3s with `lyria` or `lyria-3` through GET audio requests or the OpenAI-compatible API. [Try the API](https://gen.pollinations.ai/docs)
-- **2026-07-24** – **🎨 Recraft SVG generation** Turn prompts—or one reference image—into real SVG files with `recraft-v4.1-vector`, available from image and OpenAI-compatible generation/edit endpoints. [Try it](https://pollinations.ai/play)
-- **2026-07-24** – **✨ Community model stats, including the long tail** Public model estimates now cover all eligible models, including community image models that were previously below the volume cutoff. [View the model monitor](https://model-monitor.pollinations.ai)
 ---
 
 ## 🌱 Introduction

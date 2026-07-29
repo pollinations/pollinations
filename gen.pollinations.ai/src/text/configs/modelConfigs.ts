@@ -1,3 +1,4 @@
+import googleCloudAuth from "../auth/googleCloudAuth.js";
 import {
     createAzureModelConfig,
     createBedrockNativeConfig,
@@ -16,6 +17,21 @@ import {
 
 type PortkeyConfigFactory = () => Record<string, unknown>;
 type PortkeyConfigMap = Record<string, PortkeyConfigFactory>;
+
+/** Creates a direct Vertex AI config for Gemini models. */
+function createVertexGeminiConfig(
+    modelId: string,
+    region: string,
+): PortkeyConfigFactory {
+    return () => ({
+        provider: "vertex-ai",
+        authKey: googleCloudAuth.getAccessToken,
+        "vertex-project-id": process.env.GOOGLE_PROJECT_ID,
+        "vertex-region": region,
+        "vertex-model-id": modelId,
+        "strict-openai-compliance": "false",
+    });
+}
 
 /** Creates a no-fallback OpenRouter route pinned to one Vertex deployment. */
 function createPinnedOpenRouterGeminiConfig(
@@ -320,6 +336,20 @@ export const portkeyConfig: PortkeyConfigMap = {
     "google/gemini-3.6-flash": createPinnedOpenRouterGeminiConfig(
         "gemini-3.6-flash",
         "google-vertex/global",
+    ),
+
+    // -- Google Vertex AI (dedicated Gemini Search services) -----------------
+    "vertex/gemini-2.5-flash-lite": createVertexGeminiConfig(
+        "gemini-2.5-flash-lite",
+        "global",
+    ),
+    "vertex/gemini-3.5-flash-lite": createVertexGeminiConfig(
+        "gemini-3.5-flash-lite",
+        "global",
+    ),
+    "vertex/gemini-3.6-flash": createVertexGeminiConfig(
+        "gemini-3.6-flash",
+        "global",
     ),
 
     // -- Perplexity -----------------------------------------------------------

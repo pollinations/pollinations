@@ -394,7 +394,7 @@ test("updated provider prices are reflected for xAI media and OpenRouter text", 
     ).toBeCloseTo(0.352, 8);
 });
 
-test("OpenRouter Gemini search cost is added from provider usage", () => {
+test("Gemini search cost follows each route's provider metadata", () => {
     const usage = {
         promptTextTokens: 1_000_000,
         completionTextTokens: 1_000_000,
@@ -404,16 +404,34 @@ test("OpenRouter Gemini search cost is added from provider usage", () => {
             server_tool_use_details: { web_search_requests: 2 },
         },
     };
+    const vertex25SearchOutput = {
+        choices: [
+            {
+                groundingMetadata: {
+                    webSearchQueries: ["query one", "query two"],
+                },
+            },
+        ],
+    };
+    const vertex3SearchOutput = {
+        choices: [
+            {
+                groundingMetadata: {
+                    webSearchQueries: ["query one", "query two"],
+                },
+            },
+        ],
+    };
 
     const geminiSearchCost = calculateCost(
         "gemini-search",
         usage,
-        openRouterSearchOutput,
+        vertex25SearchOutput,
     );
     const geminiSearchPrice = calculatePrice(
         "gemini-search",
         usage,
-        openRouterSearchOutput,
+        vertex25SearchOutput,
     );
     const gemini3FlashCost = calculateCost(
         "gemini-3-flash",
@@ -423,12 +441,12 @@ test("OpenRouter Gemini search cost is added from provider usage", () => {
     const geminiSearchFastCost = calculateCost(
         "gemini-search-fast",
         usage,
-        openRouterSearchOutput,
+        vertex3SearchOutput,
     );
     const geminiSearchLargeCost = calculateCost(
         "gemini-search-large",
         usage,
-        openRouterSearchOutput,
+        vertex3SearchOutput,
     );
     const ungroundedGeminiSearchFastCost = calculateCost(
         "gemini-search-fast",
@@ -436,12 +454,11 @@ test("OpenRouter Gemini search cost is added from provider usage", () => {
         { choices: [] },
     );
 
-    // OpenRouter reports each native search request. priceMultiplier is 1×,
-    // so price equals cost.
-    expect(geminiSearchCost.totalCost).toBeCloseTo(0.528, 8);
-    expect(geminiSearchPrice.totalPrice).toBeCloseTo(0.528, 8);
+    // Vertex 2.5 bills once per grounded prompt. priceMultiplier is 1×.
+    expect(geminiSearchCost.totalCost).toBeCloseTo(0.535, 8);
+    expect(geminiSearchPrice.totalPrice).toBeCloseTo(0.535, 8);
 
-    // Every pinned OpenRouter route uses the provider-reported request count.
+    // General Gemini remains on OpenRouter; Vertex Gemini 3 bills per query.
     expect(gemini3FlashCost.totalCost).toBeCloseTo(3.528, 8);
     expect(geminiSearchFastCost.totalCost).toBeCloseTo(2.828, 8);
     expect(geminiSearchLargeCost.totalCost).toBeCloseTo(9.028, 8);
@@ -564,32 +581,35 @@ test("Perplexity provider-reported request cost clamps-and-alerts, never throws"
     );
 });
 
-test("Gemini grounding is detected on streamed chunk output", () => {
+test("Vertex Gemini grounding is detected on streamed chunk output", () => {
     const usage = {
         promptTextTokens: 1_000_000,
         completionTextTokens: 1_000_000,
     };
-    const openRouterStreamOutput = {
+    const vertexStreamOutput = {
         streamEvents: [
             { choices: [{ delta: { content: "searching" } }] },
             {
-                usage: {
-                    server_tool_use_details: { web_search_requests: 2 },
-                },
+                choices: [
+                    {
+                        groundingMetadata: {
+                            webSearchQueries: ["query one", "query two"],
+                        },
+                    },
+                ],
             },
         ],
     };
 
-    // OpenRouter reports native search usage on the final stream event.
+    // Vertex reports grounding metadata on a streamed response event.
     expect(
-        calculateCost("gemini-search", usage, openRouterStreamOutput).totalCost,
-    ).toBeCloseTo(0.528, 8);
+        calculateCost("gemini-search", usage, vertexStreamOutput).totalCost,
+    ).toBeCloseTo(0.535, 8);
     expect(
-        calculatePrice("gemini-search", usage, openRouterStreamOutput)
-            .totalPrice,
-    ).toBeCloseTo(0.528, 8);
+        calculatePrice("gemini-search", usage, vertexStreamOutput).totalPrice,
+    ).toBeCloseTo(0.535, 8);
     expect(
-        calculateCost("gemini-search-fast", usage, openRouterStreamOutput)
+        calculateCost("gemini-search-fast", usage, vertexStreamOutput)
             .totalCost,
     ).toBeCloseTo(2.828, 8);
 });
@@ -658,7 +678,7 @@ test("Gemini models price cache writes at the standard input rate", () => {
     }
 });
 
-test("OpenRouter Gemini routes price separately reported media input tokens", () => {
+test("Gemini routes price separately reported media input tokens", () => {
     for (const model of [
         "gemini-3-flash",
         "gemini",
@@ -681,13 +701,15 @@ test("OpenRouter Gemini routes price separately reported media input tokens", ()
     }
 });
 
-test("Google text models use OpenRouter without advertising code execution", () => {
-    const googleModels = [
+test("Google text model providers match their configured routes", () => {
+    const openRouterModels = [
         "gemini-3-flash",
         "gemini",
         "gemini-flash-lite-3.5",
         "gemini-fast",
         "gemini-large",
+    ] as const;
+    const vertexModels = [
         "gemini-search",
         "gemini-search-fast",
         "gemini-search-large",
@@ -696,9 +718,19 @@ test("Google text models use OpenRouter without advertising code execution", () 
         getTextModelsInfo().map((model) => [model.name, model]),
     );
 
-    for (const model of googleModels) {
+    for (const model of openRouterModels) {
         const definition = getRegistryModelDefinition(model);
         expect(definition.provider, `${model} provider`).toBe("openrouter");
+        expect(definition.codeExecution, `${model} code execution`).toBeFalsy();
+        expect(
+            publicModels.get(model)?.capabilities,
+            `${model} public capabilities`,
+        ).not.toContain("code_execution");
+        expect(definition.paidOnly, `${model} paid-only status`).toBe(true);
+    }
+    for (const model of vertexModels) {
+        const definition = getRegistryModelDefinition(model);
+        expect(definition.provider, `${model} provider`).toBe("google");
         expect(definition.codeExecution, `${model} code execution`).toBeFalsy();
         expect(
             publicModels.get(model)?.capabilities,
@@ -761,9 +793,6 @@ test("OpenRouter Gemini adjustments use provider-reported cache and search usage
         "gemini-flash-lite-3.5",
         "gemini-fast",
         "gemini-large",
-        "gemini-search",
-        "gemini-search-fast",
-        "gemini-search-large",
     ] as const) {
         expect(
             calculateBillingAdjustments(
@@ -798,7 +827,7 @@ test("OpenRouter Gemini adjustments use provider-reported cache and search usage
     }
 
     const streamedSearch = calculateBillingAdjustments(
-        getRegistryModelDefinition("gemini-search"),
+        getRegistryModelDefinition("gemini"),
         {
             streamEvents: [
                 { choices: [{}] },
@@ -809,7 +838,7 @@ test("OpenRouter Gemini adjustments use provider-reported cache and search usage
                 },
             ],
         },
-        "gemini-search",
+        "gemini",
     );
     expect(streamedSearch).toEqual([
         {
@@ -826,7 +855,7 @@ test("OpenRouter Gemini adjustments use provider-reported cache and search usage
     for (const bad of [-5, "2", null, true, {}]) {
         expect(
             calculateBillingAdjustments(
-                getRegistryModelDefinition("gemini-search-fast"),
+                getRegistryModelDefinition("gemini-fast"),
                 {
                     usage: {
                         prompt_tokens_details: { cache_write_tokens: bad },
@@ -835,10 +864,100 @@ test("OpenRouter Gemini adjustments use provider-reported cache and search usage
                         },
                     },
                 },
-                "gemini-search-fast",
+                "gemini-fast",
             ),
         ).toEqual([]);
     }
+});
+
+test("Vertex Gemini Search adjustments use grounding metadata", () => {
+    const groundedPrompt = calculateBillingAdjustments(
+        getRegistryModelDefinition("gemini-search"),
+        {
+            choices: [
+                {
+                    groundingMetadata: {
+                        webSearchQueries: ["query one", "query two"],
+                    },
+                },
+            ],
+        },
+        "gemini-search",
+    );
+    expect(groundedPrompt).toEqual([
+        {
+            ruleId: "google.gemini_2.grounded_prompt.v1",
+            kind: "grounded_prompt",
+            unit: "prompt",
+            units: 1,
+            unitCost: 0.035,
+            cost: 0.035,
+            price: 0.035,
+        },
+    ]);
+
+    for (const model of [
+        "gemini-search-fast",
+        "gemini-search-large",
+    ] as const) {
+        expect(
+            calculateBillingAdjustments(
+                getRegistryModelDefinition(model),
+                {
+                    streamEvents: [
+                        {
+                            choices: [
+                                {
+                                    groundingMetadata: {
+                                        webSearchQueries: ["one", "two"],
+                                    },
+                                },
+                            ],
+                        },
+                        {
+                            choices: [
+                                {
+                                    groundingMetadata: {
+                                        webSearchQueries: ["one", "two"],
+                                    },
+                                },
+                            ],
+                        },
+                    ],
+                },
+                model,
+            ),
+        ).toEqual([
+            {
+                ruleId: "google.gemini_3.search_query.v1",
+                kind: "search_query",
+                unit: "query",
+                units: 2,
+                unitCost: 0.014,
+                cost: 0.028,
+                price: 0.028,
+            },
+        ]);
+    }
+
+    const cacheWrite = calculateBillingAdjustments(
+        getRegistryModelDefinition("gemini-search"),
+        {
+            usage: { cache_creation_input_tokens: 1_000_000 },
+        },
+        "gemini-search",
+    );
+    expect(cacheWrite).toEqual([
+        {
+            ruleId: "google.vertex.cache_storage.v1",
+            kind: "cache_storage",
+            unit: "token_hour",
+            units: 1_000_000,
+            unitCost: 0.000001,
+            cost: 1,
+            price: 1,
+        },
+    ]);
 });
 
 test("calculateBillingAdjustments returns per-rule breakdown entries", () => {
@@ -863,24 +982,28 @@ test("calculateBillingAdjustments returns per-rule breakdown entries", () => {
         },
     ]);
 
-    const openRouterGeminiSearch = calculateBillingAdjustments(
+    const vertexGeminiSearch = calculateBillingAdjustments(
         getRegistryModelDefinition("gemini-search"),
         {
-            usage: {
-                server_tool_use_details: { web_search_requests: 1 },
-            },
+            choices: [
+                {
+                    groundingMetadata: {
+                        webSearchQueries: ["current news"],
+                    },
+                },
+            ],
         },
         "gemini-search",
     );
-    expect(openRouterGeminiSearch).toEqual([
+    expect(vertexGeminiSearch).toEqual([
         {
-            ruleId: "openrouter.google.web_search.v1",
-            kind: "search_request",
-            unit: "request",
+            ruleId: "google.gemini_2.grounded_prompt.v1",
+            kind: "grounded_prompt",
+            unit: "prompt",
             units: 1,
-            unitCost: 0.014,
-            cost: 0.014,
-            price: 0.014,
+            unitCost: 0.035,
+            cost: 0.035,
+            price: 0.035,
         },
     ]);
 

@@ -1,0 +1,33 @@
+{
+  "pr_number": 12837,
+  "title": "chore: update app metrics 2026-07-29",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/12837",
+  "merged_at": "2026-07-29T05:07:42Z",
+  "labels": [],
+  "pr_body_excerpt": "Daily automated update of app metrics, health checks, and greenhouse",
+  "gist": {
+    "category": "community",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "The greenhouse got measured",
+    "blurb": "The daily garden walk is complete: app metrics, health checks, and greenhouse notes have been refreshed. Even the spreadsheets are photosynthesizing.",
+    "summary": "Refreshed the daily app metrics, health-check records, and greenhouse status tables in apps/APPS.md and apps/GREENHOUSE.md for 2026-07-29.",
+    "impact": "Community maintainers have an up-to-date snapshot of app activity and health across the Pollinations garden.",
+    "keywords": [
+      "apps",
+      "metrics",
+      "health-checks",
+      "greenhouse",
+      "community"
+    ],
+    "visual_concept": "Depict Polli as a tiny garden keeper with a clipboard, inspecting cheerful code-plants whose leaves show simple metric bars and health checkmarks. A cozy greenhouse represents the updated community app inventory, with subtle charts on a CRT monitor.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny gardener hat, checking a clipboard beside code-plants in a warm greenhouse; leaves display small checkmarks and simple metric bars while a retro CRT monitor glows lime green (#ecf874). Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with flowers and vines around the greenhouse."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-29/PR-12837.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny gardener hat, checking a clipboard beside code-plants in a warm greenhouse; leaves display small checkmarks and simple metric bars while a retro CRT monitor glows lime green (#ecf874). Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with flowers and vines around the greenhouse."
+  },
+  "generated_at": "2026-07-29T05:08:46.570402+00:00"
+}

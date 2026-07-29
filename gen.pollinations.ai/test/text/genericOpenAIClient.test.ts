@@ -337,7 +337,7 @@ describe("genericOpenAIClient", () => {
         expect(fetchSpy).not.toHaveBeenCalled();
     });
 
-    it("passes through upstream 429 so callers can back off", async () => {
+    it("maps upstream 429 to 502 while preserving upstream status", async () => {
         vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
             Response.json(
                 { error: { message: "rate limited" } },
@@ -351,7 +351,7 @@ describe("genericOpenAIClient", () => {
                 { model: "provider-model" },
                 { endpoint: "https://portkey.test/chat" },
             ),
-        ).rejects.toMatchObject({ status: 429, upstreamStatus: 429 });
+        ).rejects.toMatchObject({ status: 502, upstreamStatus: 429 });
     });
 
     it("maps unsupported multimodal input errors to a client error", async () => {
@@ -378,7 +378,7 @@ describe("genericOpenAIClient", () => {
         ).rejects.toMatchObject({ status: 400, upstreamStatus: 404 });
     });
 
-    it("passes through 429 from an upstream error envelope", async () => {
+    it("maps 429 from an upstream error envelope to 502", async () => {
         vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
             Response.json({
                 error: {
@@ -394,7 +394,7 @@ describe("genericOpenAIClient", () => {
                 { model: "provider-model" },
                 { endpoint: "https://portkey.test/chat" },
             ),
-        ).rejects.toMatchObject({ status: 429, upstreamStatus: 429 });
+        ).rejects.toMatchObject({ status: 502, upstreamStatus: 429 });
     });
 
     it("maps invalid upstream JSON to 502 with gateway context", async () => {

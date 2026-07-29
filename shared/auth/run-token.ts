@@ -14,10 +14,12 @@
 
 const RUN_TOKEN_PREFIX = "ag_";
 /**
- * One hour. Agent runs chain many calls — a multi-clip video run outlives a
- * short TTL, and expiry mid-run fails the whole run with no retry path.
+ * Thirty minutes: an agent cycle that has not finished by then is stuck, so
+ * expiry doubles as the runaway backstop. It is the only bound on a run's total
+ * spend unless the parent key carries a budget. Callers needing longer — a
+ * multi-clip video run — pass an explicit `ttlSeconds` up to `MAX_TTL_SECONDS`.
  */
-const DEFAULT_TTL_SECONDS = 3600;
+const DEFAULT_TTL_SECONDS = 1800;
 const MAX_TTL_SECONDS = 3600;
 
 /**

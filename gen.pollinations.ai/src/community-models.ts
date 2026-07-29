@@ -60,6 +60,7 @@ export async function getCommunityModelRegistryEntries(
             supportsImageEdits: schema.communityEndpoint.supportsImageEdits,
             baseUrl: schema.communityEndpoint.baseUrl,
             upstreamModel: schema.communityEndpoint.upstreamModel,
+            fallbackModel: schema.communityEndpoint.fallbackModel,
             bearerTokenCiphertext:
                 schema.communityEndpoint.bearerTokenCiphertext,
             visibility: schema.communityEndpoint.visibility,
@@ -101,6 +102,7 @@ export async function getCommunityModelRegistryEntries(
             supportsImageEdits: row.supportsImageEdits,
             baseUrl: row.baseUrl,
             upstreamModel: row.upstreamModel,
+            fallbackModel: row.fallbackModel,
             bearerTokenCiphertext: row.bearerTokenCiphertext,
             visibility: row.visibility,
             disabledAt: row.disabledAt ? row.disabledAt.getTime() : null,

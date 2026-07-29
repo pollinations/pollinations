@@ -27,6 +27,7 @@ export type CommunityEndpoint = {
     supportsImageEdits: boolean;
     baseUrl: string;
     upstreamModel: string;
+    fallbackModel: string | null;
     // private → owner-only, shown only to the owner, no owner-set price;
     // public → globally listed + billed to callers.
     visibility: CommunityEndpointVisibility;
@@ -50,6 +51,7 @@ export type EndpointFormState = {
     visibility: CommunityEndpointVisibility;
     baseUrl: string;
     upstreamModel: string;
+    fallbackModel: string;
     bearerToken: string;
 } & EndpointFormPrices;
 
@@ -62,6 +64,7 @@ export type EndpointPayload = {
     description: string;
     baseUrl: string;
     upstreamModel: string;
+    fallbackModel: string | null;
     visibility: CommunityEndpointVisibility;
 } & CommunityEndpointPrices;
 
@@ -97,6 +100,7 @@ export const emptyForm: EndpointFormState = {
     visibility: "private",
     baseUrl: "",
     upstreamModel: "",
+    fallbackModel: "",
     bearerToken: "",
     ...emptyPriceForm,
 };
@@ -183,6 +187,7 @@ export function endpointToForm(endpoint: CommunityEndpoint): EndpointFormState {
         visibility: endpoint.visibility,
         baseUrl: endpoint.baseUrl,
         upstreamModel: endpoint.upstreamModel,
+        fallbackModel: endpoint.fallbackModel ?? "",
         bearerToken: "",
         ...(Object.fromEntries(
             COMMUNITY_ENDPOINT_PRICE_FIELDS.map((field) => {
@@ -282,6 +287,7 @@ export function toEndpointPayload(form: EndpointFormState): EndpointPayload {
         visibility: form.visibility,
         baseUrl: form.baseUrl.trim(),
         upstreamModel: form.upstreamModel.trim() || modelName,
+        fallbackModel: form.fallbackModel.trim() || null,
         ...formPricesToPayload(form, form.modality, imagePricing),
     };
 }
@@ -298,6 +304,7 @@ export function nextFormState(
             ...current,
             modality: value === "image" ? "image" : "text",
             supportsImageEdits: false,
+            fallbackModel: "",
         };
     }
     const next = { ...current, [key]: value };

@@ -350,6 +350,7 @@ export const Models: FC<ModelsProps> = ({
             {showCommunityEndpoints && (
                 <CommunityEndpoints
                     canPublish={canPublish}
+                    catalogModels={catalogModels}
                     onChange={() => {
                         void loadModelCatalog({ refresh: true });
                     }}

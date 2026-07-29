@@ -102,6 +102,8 @@ export type BillingAdjustment = {
 export type ModelDefinition = {
     aliases: string[];
     provider: string;
+    /** One model to retry after a server-side failure. Fallbacks never chain. */
+    fallbackModel?: string;
     // Optional secondary provider for binary-asset models with provider-level
     // fallback (3D only, as of this field). Purely descriptive metadata for
     // /models transparency — does not drive fallback logic, which lives in
@@ -143,6 +145,27 @@ export type ModelDefinition = {
     maxReferenceImages?: number; // Models with image input: effective accepted reference images
     maxReferenceVideos?: number; // Models with video input: effective accepted reference videos
 };
+
+export function isModelFallbackCompatible(
+    primary: ModelDefinition,
+    fallback: ModelDefinition,
+): boolean {
+    if (
+        primary.category !== fallback.category ||
+        primary.flatRate !== fallback.flatRate ||
+        (!primary.paidOnly && fallback.paidOnly)
+    ) {
+        return false;
+    }
+
+    const primaryPrice = getPriceDefinitionForModel(primary);
+    const fallbackPrice = getPriceDefinitionForModel(fallback);
+    return Object.entries(fallbackPrice).every(
+        ([key, price]) =>
+            typeof price !== "number" ||
+            price <= (primaryPrice[key as keyof PriceDefinition] ?? 0),
+    );
+}
 
 // Helper: Convert usage counts to rated USD-equivalent cost or Pollen charge.
 // When a usage type is reported by upstream but the registry has no rate for it,

@@ -232,6 +232,7 @@ export type CommunityEndpointRuntime = {
     supportsImageEdits: boolean;
     baseUrl: string;
     upstreamModel: string;
+    fallbackModel?: string | null;
     bearerTokenCiphertext: string;
     visibility: CommunityEndpointVisibility;
     disabledAt: number | null;
@@ -245,6 +246,7 @@ export type CommunityModelDefinitionInput = {
     modality?: CommunityEndpointModality;
     imagePricing?: CommunityEndpointImagePricing;
     supportsImageEdits?: boolean;
+    fallbackModel?: string | null;
 } & CommunityEndpointPrices;
 
 export type CommunityModelParts = {
@@ -420,6 +422,9 @@ export function communityModelDefinition(
     return {
         aliases,
         provider: "community",
+        ...(endpoint.fallbackModel
+            ? { fallbackModel: endpoint.fallbackModel }
+            : {}),
         brand: "Community",
         category: isImage ? "image" : "text",
         cost: communityPriceDefinition(endpoint, modality, imagePricing),

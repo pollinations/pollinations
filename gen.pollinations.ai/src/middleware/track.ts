@@ -71,6 +71,7 @@ import { mergeContentFilterResults } from "@/content-filter.ts";
 import type { AuthVariables } from "@/middleware/auth.ts";
 import type { BalanceVariables } from "@/middleware/balance.ts";
 import type { LoggerVariables } from "@/middleware/logger.ts";
+import { getModelFallbackSource } from "@/middleware/model.ts";
 import type { FrontendKeyRateLimitVariables } from "@/middleware/rate-limit-durable.ts";
 import { generateRandomId, parseBooleanLike } from "@/util.ts";
 
@@ -81,6 +82,7 @@ type ModelVariables = {
         definition: ModelDefinition;
         communityEndpoint?: CommunityEndpointRuntime;
     };
+    fallbackRequest?: Request;
 };
 
 export type ModelUsage = {
@@ -92,6 +94,8 @@ export type ModelUsage = {
 type RequestTrackingData = {
     modelRequested: string | null;
     resolvedModelRequested: string;
+    billingModel: string;
+    fallbackTarget?: string;
     modelProvider?: string;
     modelDefinition: ModelDefinition;
     modelCostDefinition: CostDefinition;
@@ -185,6 +189,10 @@ export const track = (eventType: EventType) =>
         });
 
         await next();
+
+        // The fallback middleware records the retry as the one logical
+        // generation event. Avoid emitting a second failed primary attempt.
+        if (c.var.fallbackRequest && c.res.status >= 500) return;
 
         c.executionCtx.waitUntil(
             (async () => {
@@ -407,8 +415,9 @@ async function trackRequest(
     request: HonoRequest,
 ): Promise<RequestTrackingData> {
     // Model is already resolved by the resolveModel middleware
-    const modelRequested = modelInfo.requested;
-    const resolvedModelRequested = modelInfo.resolved;
+    const fallbackFrom = getModelFallbackSource(request.raw);
+    const modelRequested = fallbackFrom || modelInfo.requested;
+    const resolvedModelRequested = fallbackFrom || modelInfo.resolved;
 
     const modelDefinition = modelInfo.definition;
     const modelProvider = modelDefinition.provider;
@@ -425,6 +434,8 @@ async function trackRequest(
     return {
         modelRequested,
         resolvedModelRequested,
+        billingModel: modelInfo.resolved,
+        fallbackTarget: fallbackFrom ? modelInfo.resolved : undefined,
         modelProvider,
         modelDefinition,
         modelCostDefinition,
@@ -460,7 +471,9 @@ async function trackResponse(
     const log = getLogger(["hono", "track", "response"]);
     const { resolvedModelRequested } = requestTracking;
     const cacheHit = response.headers.get("x-cache") === "HIT";
-    const fallbackUsed = parseFallbackUsed(response);
+    const fallbackUsed =
+        requestTracking.fallbackTarget !== undefined ||
+        parseFallbackUsed(response);
     const notBilled = (
         extra?: Partial<ResponseTrackingData>,
     ): ResponseTrackingData => ({
@@ -513,7 +526,7 @@ async function trackResponse(
     // one walk over the billing rules, so the event's adjustment maps always
     // match the billed totals and clamp warnings log once per request.
     const { cost, price, adjustments } = calculateUsageBilling(
-        resolvedModelRequested,
+        requestTracking.billingModel,
         modelUsage.usage,
         requestTracking.modelDefinition,
         modelUsage.output,

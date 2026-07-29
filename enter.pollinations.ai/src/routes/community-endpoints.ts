@@ -115,12 +115,61 @@ const FallbackModelIdsSchema = z
         'Community model ids ("<owner>/<name>") tried in order when this model\'s upstream fails, or an empty array to clear them. Each must be another public community model of the same modality, priced at or below this model on every price field.',
     );
 
+const SELF_FALLBACK_MESSAGE = "Fallback target cannot be the model itself";
+
 type FallbackPrimary = {
     modelId: string;
     modality: CommunityEndpointModality;
     imagePricing: CommunityEndpointImagePricing;
     prices: CommunityEndpointPrices;
 };
+
+/**
+ * Why `target` may not serve as a fallback for `primary`, or null when it may.
+ *
+ * The candidate list the dashboard offers and the validation the write path
+ * applies must agree, so both go through this one function — a target the UI
+ * shows can always be saved, and one it hides always explains itself.
+ */
+function fallbackTargetRejection(
+    primary: FallbackPrimary,
+    modelId: string,
+    target: CommunityEndpointRow,
+): string | null {
+    // Reached from the candidates route, where the model itself is one of the
+    // public rows scanned. The write path checks this earlier, before any
+    // lookup, because a model being created has no row to find.
+    if (modelId === primary.modelId) return SELF_FALLBACK_MESSAGE;
+    if (target.visibility !== "public" || target.disabledAt !== null) {
+        return `Fallback target ${modelId} must be a public, active community model`;
+    }
+    const targetModality = normalizeCommunityEndpointModality(target.modality);
+    if (targetModality !== primary.modality) {
+        return `Fallback target ${modelId} is a ${targetModality} model, not ${primary.modality}`;
+    }
+    // The stored price columns mean different things in "request" and "tokens"
+    // mode, so comparing across modes is meaningless.
+    const targetImagePricing = normalizeCommunityEndpointImagePricing(
+        target.imagePricing,
+    );
+    if (
+        primary.modality === "image" &&
+        targetImagePricing !== primary.imagePricing
+    ) {
+        return `Fallback target ${modelId} bills images per ${targetImagePricing}, not per ${primary.imagePricing}`;
+    }
+    const targetPrices = communityEndpointPrices(target);
+    if (!isCommunityFallbackPricingAllowed(primary.prices, targetPrices)) {
+        const excesses = COMMUNITY_ENDPOINT_PRICE_FIELDS.filter(
+            (field) => targetPrices[field.key] > primary.prices[field.key],
+        ).map(
+            (field) =>
+                `${field.key} (${targetPrices[field.key]}) exceeds this model's (${primary.prices[field.key]})`,
+        );
+        return `Fallback target ${modelId} ${excesses.join(", ")}`;
+    }
+    return null;
+}
 
 // Resolves and validates one requested fallback target.
 async function resolveFallbackModelId(
@@ -138,10 +187,10 @@ async function resolveFallbackModelId(
         parsed.ownerGithubUsername,
         parsed.modelName,
     );
+    // Before the lookup: on create the model has no row yet, so a self-reference
+    // would otherwise surface as "does not exist".
     if (fallbackModelId === primary.modelId) {
-        throw new HTTPException(400, {
-            message: "Fallback target cannot be the model itself",
-        });
+        throw new HTTPException(400, { message: SELF_FALLBACK_MESSAGE });
     }
 
     const targetOwner = await db.query.user.findFirst({
@@ -161,44 +210,8 @@ async function resolveFallbackModelId(
             message: `Fallback target ${fallbackModelId} does not exist`,
         });
     }
-    if (target.visibility !== "public" || target.disabledAt !== null) {
-        throw new HTTPException(400, {
-            message: `Fallback target ${fallbackModelId} must be a public, active community model`,
-        });
-    }
-
-    const targetModality = normalizeCommunityEndpointModality(target.modality);
-    if (targetModality !== primary.modality) {
-        throw new HTTPException(400, {
-            message: `Fallback target ${fallbackModelId} is a ${targetModality} model, not ${primary.modality}`,
-        });
-    }
-    const targetImagePricing = normalizeCommunityEndpointImagePricing(
-        target.imagePricing,
-    );
-    // The stored price columns mean different things in "request" and "tokens"
-    // mode, so comparing across modes is meaningless.
-    if (
-        primary.modality === "image" &&
-        targetImagePricing !== primary.imagePricing
-    ) {
-        throw new HTTPException(400, {
-            message: `Fallback target ${fallbackModelId} bills images per ${targetImagePricing}, not per ${primary.imagePricing}`,
-        });
-    }
-
-    const targetPrices = communityEndpointPrices(target);
-    if (!isCommunityFallbackPricingAllowed(primary.prices, targetPrices)) {
-        const excesses = COMMUNITY_ENDPOINT_PRICE_FIELDS.filter(
-            (field) => targetPrices[field.key] > primary.prices[field.key],
-        ).map(
-            (field) =>
-                `${field.key} (${targetPrices[field.key]}) exceeds this model's (${primary.prices[field.key]})`,
-        );
-        throw new HTTPException(400, {
-            message: `Fallback target ${fallbackModelId} ${excesses.join(", ")}`,
-        });
-    }
+    const rejection = fallbackTargetRejection(primary, fallbackModelId, target);
+    if (rejection) throw new HTTPException(400, { message: rejection });
     return fallbackModelId;
 }
 
@@ -282,6 +295,9 @@ const UpdateEndpointSchema = z.object({
     fallbackModelIds: FallbackModelIdsSchema.optional(),
     active: z.boolean().optional(),
     ...UpdatePriceFieldsSchema,
+});
+const FallbackCandidatesResponseSchema = z.object({
+    data: z.array(z.string()),
 });
 const ModelListSchema = z.object({
     baseUrl: z.string().url(),
@@ -574,6 +590,77 @@ export const communityEndpointsRoutes = new Hono<Env>()
             return c.json({
                 data: rows.map((row) => toResponse(row, ownerGithubUsername)),
             });
+        },
+    )
+    .get(
+        "/:id/fallback-candidates",
+        describeRoute({
+            tags: ["👤 Account"],
+            summary: "List Fallback Candidates",
+            description:
+                "Community models this model may declare as fallbacks: public, active, same modality, and priced at or below it on every price field. Computed with the same rule the update endpoint validates against, so every id listed here is accepted. Eligibility is re-checked when a request is routed, so a target repriced above this model afterwards stops serving without changing the stored list.",
+            responses: {
+                200: {
+                    description: "Eligible fallback model ids",
+                    content: {
+                        "application/json": {
+                            schema: resolver(FallbackCandidatesResponseSchema),
+                        },
+                    },
+                },
+                401: { description: "Unauthorized" },
+                403: { description: "Permission denied" },
+                404: { description: "Model not found" },
+            },
+        }),
+        async (c) => {
+            const user = c.var.auth.requireUser();
+            const db = drizzle(c.env.DB, { schema });
+            requireCommunityEndpointManagePermission(c.var.auth.apiKey);
+            const ownerGithubUsername = await requireOwnerGithubUsername(
+                db,
+                user.id,
+            );
+            const endpoint = await db.query.communityEndpoint.findFirst({
+                where: and(
+                    eq(schema.communityEndpoint.id, c.req.param("id")),
+                    eq(schema.communityEndpoint.ownerUserId, user.id),
+                ),
+            });
+            if (!endpoint) {
+                throw new HTTPException(404, { message: "Model not found" });
+            }
+            const primary: FallbackPrimary = {
+                modelId: communityModelId(ownerGithubUsername, endpoint.name),
+                modality: normalizeCommunityEndpointModality(endpoint.modality),
+                imagePricing: normalizeCommunityEndpointImagePricing(
+                    endpoint.imagePricing,
+                ),
+                prices: communityEndpointPrices(endpoint),
+            };
+            // Only public rows can be targets, so the owner join never drops
+            // one: publishing already requires a GitHub username.
+            const candidates = await db
+                .select({
+                    endpoint: schema.communityEndpoint,
+                    ownerGithubUsername: schema.user.githubUsername,
+                })
+                .from(schema.communityEndpoint)
+                .innerJoin(
+                    schema.user,
+                    eq(schema.communityEndpoint.ownerUserId, schema.user.id),
+                )
+                .where(eq(schema.communityEndpoint.visibility, "public"));
+            const data = candidates
+                .flatMap(({ endpoint: row, ownerGithubUsername: owner }) => {
+                    if (!owner) return [];
+                    const modelId = communityModelId(owner, row.name);
+                    return fallbackTargetRejection(primary, modelId, row)
+                        ? []
+                        : [modelId];
+                })
+                .sort();
+            return c.json({ data });
         },
     )
     .post(

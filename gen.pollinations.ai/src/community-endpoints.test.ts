@@ -3101,6 +3101,7 @@ fixtureTest("validates community fallback targets on write", async () => {
     expect(accepted.status).toBe(200);
     const created = (await accepted.json()) as {
         id: string;
+        modelId: string;
         fallbackModelIds: string[];
     };
     expect(created.fallbackModelIds).toEqual([cheapModelId]);
@@ -3121,6 +3122,30 @@ fixtureTest("validates community fallback targets on write", async () => {
     );
     expect(duplicated.status).toBe(400);
     expect(await duplicated.text()).toContain("listed more than once");
+
+    // The dashboard's dropdown is built from this list, so anything it offers
+    // must be acceptable to the update endpoint above — same rule, one function.
+    const candidates = await fetchEnterApi(
+        enterApi,
+        new Request(
+            `http://localhost:3000/api/community-endpoints/${created.id}/fallback-candidates`,
+            { headers: { Cookie: await signedSessionCookie(sessionToken) } },
+        ),
+    );
+    expect(candidates.status).toBe(200);
+    const { data: eligible } = (await candidates.json()) as { data: string[] };
+    expect(eligible).toContain(cheapModelId);
+    // Never itself, and never a target the write path would reject.
+    expect(eligible).not.toContain(created.modelId);
+    for (const rejected of [
+        targetNames.priv,
+        targetNames.image,
+        targetNames.pricey,
+    ]) {
+        expect(eligible).not.toContain(
+            communityModelId(ownerGithubUsername, rejected),
+        );
+    }
 
     // An empty array clears the stored targets.
     const cleared = await fetchEnterApi(

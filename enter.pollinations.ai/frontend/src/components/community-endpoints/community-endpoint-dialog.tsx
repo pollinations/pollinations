@@ -80,6 +80,11 @@ export function CommunityEndpointDialog({
     const [testState, setTestState] = useState<ActionState>(idleAction);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    // null until the server answers, so the dropdown can fall back to the
+    // catalog while it loads instead of briefly looking empty.
+    const [fallbackCandidates, setFallbackCandidates] = useState<
+        string[] | null
+    >(null);
     const savedPriceKeys = savedEndpointPriceKeys(endpoint);
 
     // Reset the form on open and clear local state on close so unsaved values
@@ -92,7 +97,32 @@ export function CommunityEndpointDialog({
         setTestState(idleAction);
         setError(null);
         setIsSubmitting(false);
+        setFallbackCandidates(null);
     }, [open, endpoint]);
+
+    // Ask which models this one may fall back to. Only a saved model has an id
+    // to ask about; a failure leaves the catalog list in place rather than
+    // blocking the dialog on a feature the server re-validates on save anyway.
+    const endpointId = endpoint?.id;
+    useEffect(() => {
+        if (!open || !endpointId) return;
+        let active = true;
+        void (async () => {
+            try {
+                const response = await apiClient.account["my-models"][":id"][
+                    "fallback-candidates"
+                ].$get({ param: { id: endpointId } });
+                if (!response.ok) return;
+                const { data } = await response.json();
+                if (active) setFallbackCandidates(data);
+            } catch {
+                // Leave the catalog list in place.
+            }
+        })();
+        return () => {
+            active = false;
+        };
+    }, [open, endpointId]);
 
     const hasToken = form.bearerToken.trim().length > 0;
     const tokenForRequest = { bearerToken: form.bearerToken.trim() };
@@ -281,17 +311,22 @@ export function CommunityEndpointDialog({
     const saveRequirementMet = needsTest
         ? testRequirementMet && (isEdit || hasToken)
         : isEdit || hasToken;
-    // Same modality, never this model itself. A saved target that has since
-    // been unlisted stays selectable so editing does not silently drop it.
+    // A saved model's eligible targets are computed server-side with the same
+    // rule the update endpoint validates against, so every id offered can be
+    // saved. Creating a model has no id to ask about yet, so it falls back to
+    // the catalog filtered by modality alone and relies on the save error.
     const visibleFallbackOptions = [
         ...new Set([
-            ...fallbackOptions
-                .filter(
-                    (option) =>
-                        option.modality === form.modality &&
-                        option.modelId !== endpoint?.modelId,
-                )
-                .map((option) => option.modelId),
+            ...(fallbackCandidates ??
+                fallbackOptions
+                    .filter(
+                        (option) =>
+                            option.modality === form.modality &&
+                            option.modelId !== endpoint?.modelId,
+                    )
+                    .map((option) => option.modelId)),
+            // A target that has since become ineligible stays listed so editing
+            // something else does not silently drop it.
             ...form.fallbackModelIds,
         ]),
     ].sort();

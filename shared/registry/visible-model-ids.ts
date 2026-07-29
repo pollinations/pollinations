@@ -68,14 +68,12 @@ export async function getVisibleModelIdsForUser(
     // out of every model.
     const groups = communityGroupBuckets(
         communityModels.map((model) => ({
-            name: model.name,
+            ...model,
             modality: normalizeCommunityEndpointModality(model.modality),
             imagePricing: normalizeCommunityEndpointImagePricing(
                 model.imagePricing,
             ),
-            visibility: model.visibility,
             disabledAt: model.disabledAt ? model.disabledAt.getTime() : null,
-            delegatesGeneration: model.delegatesGeneration,
             ...communityEndpointPrices(model),
         })),
     );

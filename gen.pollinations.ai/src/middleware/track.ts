@@ -245,10 +245,9 @@ export const track = (eventType: EventType) =>
                 let shouldRunAutoTopUp = false;
                 try {
                     // Only the reward recipient varies for a pooled model:
-                    // every member of a group has identical prices by
-                    // construction (communityGroupKey), so the group
-                    // definition's cost already equals the serving member's
-                    // cost and price handling needs no group-specific branch.
+                    // members have identical prices by construction
+                    // (communityGroupKey), so the group definition's cost
+                    // already equals the serving member's.
                     const communityEndpoint =
                         c.var.servedCommunityEndpoint ??
                         c.var.model?.communityEndpoint;

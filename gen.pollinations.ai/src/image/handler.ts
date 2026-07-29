@@ -429,24 +429,12 @@ function isRetryablePoolError(error: unknown): boolean {
     ]);
 }
 
-// The endpoints that may serve this request, in the order they are tried. A
-// pooled model starts at a random member: that is the load-spreading mechanism,
-// it needs no persisted counter, and a per-isolate counter would not distribute
-// across Cloudflare isolates anyway.
-function communityImageEndpoints(
-    c: ImageContext,
-): readonly CommunityEndpointRuntime[] {
-    const endpoints = communityModelEndpoints(c.var.model);
-    if (endpoints.length === 0) return endpoints;
-    return rotateCommunityGroupMembers(
-        endpoints,
-        Math.floor(Math.random() * endpoints.length),
-    );
-}
-
 // The image response is fully buffered before anything reaches the client, so a
-// failed member can simply be retried on the next one. `index` is the position
-// of the member that served, so the caller can report a pool failover.
+// failed member can simply be retried on the next one. A pooled model starts at
+// a random member: that is the load-spreading mechanism, it needs no persisted
+// counter, and a per-isolate counter would not distribute across Cloudflare
+// isolates anyway. `index` is the position of the member that served, so the
+// caller can report a pool failover.
 async function callCommunityImagePool(
     c: ImageContext,
     endpoints: readonly CommunityEndpointRuntime[],
@@ -457,7 +445,11 @@ async function callCommunityImagePool(
     endpoint: CommunityEndpointRuntime;
     index: number;
 }> {
-    for (const [index, endpoint] of endpoints.entries()) {
+    const members = rotateCommunityGroupMembers(
+        endpoints,
+        Math.floor(Math.random() * endpoints.length),
+    );
+    for (const [index, endpoint] of members.entries()) {
         try {
             const result = await callCommunityImageEndpoint(
                 endpoint,
@@ -468,7 +460,7 @@ async function callCommunityImagePool(
             assertNonEmptyMedia(result.buffer, "Community image endpoint");
             return { result, endpoint, index };
         } catch (error) {
-            const isLast = index === endpoints.length - 1;
+            const isLast = index === members.length - 1;
             if (isLast || !isRetryablePoolError(error)) throw error;
         }
     }
@@ -485,7 +477,7 @@ export async function generateImageOrVideoResponse(
     const safeParams = parseImageParams(c, body);
 
     try {
-        const communityEndpoints = communityImageEndpoints(c);
+        const communityEndpoints = communityModelEndpoints(c.var.model);
         if (communityEndpoints.length > 0) {
             const { result, endpoint, index } = await callCommunityImagePool(
                 c,

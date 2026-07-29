@@ -1,4 +1,7 @@
-import type { CommunityEndpointRuntime } from "@shared/community-endpoints.ts";
+import {
+    type CommunityEndpointRuntime,
+    communityGroupSupportsImageEdits,
+} from "@shared/community-endpoints.ts";
 import {
     type ModelInfo,
     modelInfoFromDefinition,
@@ -132,11 +135,7 @@ function communityGroupEntryToGenerationEntry(
         supportedEndpoints:
             eventType === "generate.image"
                 ? communityImageSupportedEndpoints(
-                      // Advertise edits only when every member can serve one:
-                      // an edit request may be taken by any member.
-                      entry.members.every(
-                          (member) => member.supportsImageEdits,
-                      ),
+                      communityGroupSupportsImageEdits(entry.members),
                   )
                 : communityTextSupportedEndpoints(),
         definition: entry.definition,
@@ -198,18 +197,15 @@ async function loadGenerationModelRegistry(
     const takenIds = new Set(namedEntries.map((entry) => entry.id));
     const groupEntries = communityGroupEntries(
         communityEntries.map((entry) => entry.communityEndpoint),
-    );
-    return buildRegistry([
-        ...namedEntries,
+    )
         // A pool never shadows a real id: a GitHub user literally named `group`
         // who registers `group/<name>` keeps it and the pool is not created at
         // all. Dropping it here rather than relying on buildRegistry being
         // first-wins matters because visibleEntries() lists every entry, so an
         // unroutable duplicate would still show up in /models.
-        ...groupEntries
-            .filter((entry) => !takenIds.has(entry.id))
-            .map(communityGroupEntryToGenerationEntry),
-    ]);
+        .filter((entry) => !takenIds.has(entry.id))
+        .map(communityGroupEntryToGenerationEntry);
+    return buildRegistry([...namedEntries, ...groupEntries]);
 }
 
 export async function getGenerationModelRegistry(

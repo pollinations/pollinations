@@ -57,12 +57,9 @@ _IMAGE_TEXT_PATTERNS = [
 
 
 async def _resolve_api_key() -> str:
-    try:
-        from polli_agent.config import _current_api_key
+    from polli_agent.config import resolve_api_key
 
-        return _current_api_key() or settings.openai_api_key
-    except Exception:
-        return settings.openai_api_key
+    return resolve_api_key()
 
 
 def _tier_score(mid: str, meta: dict[str, Any], tier: str) -> float:

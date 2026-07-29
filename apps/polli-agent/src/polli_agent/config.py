@@ -39,6 +39,26 @@ class Settings(BaseSettings):
     brain_timeout_seconds: float = Field(
         180.0, validation_alias="POLLI_BRAIN_TIMEOUT_SECONDS"
     )
+    # Local/dev convenience only. When false (the default) a request without a
+    # per-request credential fails instead of silently spending the operator's
+    # own key — which for a hosted deployment is the whole point.
+    allow_operator_key: bool = Field(
+        False, validation_alias="POLLI_ALLOW_OPERATOR_KEY"
+    )
 
 
 settings = Settings()
+
+
+def resolve_api_key() -> str:
+    """The credential this request may spend.
+
+    Normally the per-request token the gateway passed in — with run tokens that
+    is a short-lived `ag_` credential scoped to the calling user, so the agent
+    never holds anyone's long-lived key. Falls back to the operator's own key
+    only when `POLLI_ALLOW_OPERATOR_KEY` is set.
+    """
+    key = _current_api_key()
+    if key:
+        return key
+    return settings.openai_api_key if settings.allow_operator_key else ""

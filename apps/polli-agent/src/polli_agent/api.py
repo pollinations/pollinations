@@ -246,6 +246,16 @@ async def chat_completions(request: ChatRequest, http_request: Request) -> Any:
     api_key = http_request.headers.get(
         "X-Pollinations-Key"
     ) or http_request.headers.get("Authorization", "").replace("Bearer ", "")
+    # Fail here rather than part-way through a run: without a credential every
+    # downstream generation 401s anyway, after the caller has already waited.
+    if not api_key and not settings.allow_operator_key:
+        raise HTTPException(
+            status_code=401,
+            detail=(
+                "Missing credential. Pass one as X-Pollinations-Key or "
+                "Authorization: Bearer <key>."
+            ),
+        )
     if request.stream:
         return StreamingResponse(
             _sse_events(

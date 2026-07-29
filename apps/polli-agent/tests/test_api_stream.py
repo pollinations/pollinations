@@ -27,6 +27,11 @@ def _request_body(stream: bool) -> dict:
     }
 
 
+# Every request must carry a credential to spend; the gateway supplies a
+# short-lived run token in this header.
+_HEADERS = {"X-Pollinations-Key": "ag_test-token"}
+
+
 def test_stream_true_returns_openai_sse_chunks(monkeypatch):
     async def fake_events(messages, **kwargs):
         yield {"type": "tool_start", "name": "generate_image"}
@@ -41,7 +46,10 @@ def test_stream_true_returns_openai_sse_chunks(monkeypatch):
 
     client = TestClient(api_mod.app)
     with client.stream(
-        "POST", "/v1/chat/completions", json=_request_body(stream=True)
+        "POST",
+        "/v1/chat/completions",
+        json=_request_body(stream=True),
+        headers=_HEADERS,
     ) as resp:
         assert resp.status_code == 200
         assert resp.headers["content-type"].startswith("text/event-stream")
@@ -75,7 +83,10 @@ def test_stream_emits_keepalives_during_silence(monkeypatch):
 
     client = TestClient(api_mod.app)
     with client.stream(
-        "POST", "/v1/chat/completions", json=_request_body(stream=True)
+        "POST",
+        "/v1/chat/completions",
+        json=_request_body(stream=True),
+        headers=_HEADERS,
     ) as resp:
         body = "".join(resp.iter_text())
 
@@ -160,6 +171,29 @@ def test_stream_false_returns_plain_json(monkeypatch):
     monkeypatch.setattr(api_mod, "run_agent", fake_run_agent)
 
     client = TestClient(api_mod.app)
-    resp = client.post("/v1/chat/completions", json=_request_body(stream=False))
+    resp = client.post(
+        "/v1/chat/completions", json=_request_body(stream=False), headers=_HEADERS
+    )
     assert resp.status_code == 200
     assert resp.json()["choices"][0]["message"]["content"] == "plain"
+
+
+def test_request_without_credential_is_rejected():
+    """No credential must fail up front, not part-way through a paid run."""
+    client = TestClient(api_mod.app)
+    resp = client.post("/v1/chat/completions", json=_request_body(stream=False))
+    assert resp.status_code == 401
+
+
+def test_operator_key_fallback_is_opt_in(monkeypatch):
+    """With POLLI_ALLOW_OPERATOR_KEY set, local/dev use still works unauthenticated."""
+
+    async def fake_run_agent(messages, **kwargs):
+        return {"text": "plain", "artifacts": [], "iterations": 1}
+
+    monkeypatch.setattr(api_mod, "run_agent", fake_run_agent)
+    monkeypatch.setattr(api_mod.settings, "allow_operator_key", True)
+
+    client = TestClient(api_mod.app)
+    resp = client.post("/v1/chat/completions", json=_request_body(stream=False))
+    assert resp.status_code == 200

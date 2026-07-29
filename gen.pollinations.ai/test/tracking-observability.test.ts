@@ -14,6 +14,7 @@ import { user as userTable } from "@shared/db/better-auth.ts";
 import {
     type BillingAdjustment,
     getRegistryModelDefinition,
+    type ModelName,
 } from "@shared/registry/registry.ts";
 import type { TinybirdEvent } from "@shared/schemas/generation-event.ts";
 import { removeUnset } from "@shared/util.ts";
@@ -104,9 +105,12 @@ function createCommunityEndpoint(
         ownerUserId,
         modelId: "test-owner/test-model",
         name: "test-model",
+        title: "Test Model",
         description: null,
+        delegatesGeneration: false,
         modality: "text",
         imagePricing: "request",
+        supportsImageEdits: false,
         baseUrl: "https://community.example.test/openai",
         upstreamModel: "upstream-test-model",
         bearerTokenCiphertext: "encrypted",
@@ -124,8 +128,9 @@ function createCommunityEndpoint(
 // the not-billed content-type guards in trackResponse.
 function createWrongContentTypeApp(
     consumePollen: (amount: number) => Promise<void>,
-    eventType: "generate.image" | "generate.text",
+    eventType: "generate.image" | "generate.text" | "generate.audio",
     response: Response,
+    model: ModelName = "openai",
 ) {
     const app = new Hono<Env>();
 
@@ -143,9 +148,9 @@ function createWrongContentTypeApp(
         });
         c.set("frontendKeyRateLimit", { consumePollen });
         c.set("model", {
-            requested: "openai",
-            resolved: "openai",
-            definition: getRegistryModelDefinition("openai"),
+            requested: model,
+            resolved: model,
+            definition: getRegistryModelDefinition(model),
         });
         await next();
     });
@@ -695,6 +700,125 @@ describe("tracking observability", () => {
         await expect(tinybirdRequests[0].json()).resolves.toMatchObject({
             eventType: "generate.image",
             responseStatus: 200,
+            isBilledUsage: false,
+        });
+        expect(consumePollen).toHaveBeenCalledWith(0);
+    });
+
+    it("bills timestamped audio JSON without copying base64 audio into analytics", async () => {
+        const tinybirdRequests: Request[] = [];
+        vi.spyOn(globalThis, "fetch").mockImplementation(
+            async (input, init) => {
+                tinybirdRequests.push(new Request(input, init));
+                return new Response("ok");
+            },
+        );
+        const consumePollen = vi.fn<(amount: number) => Promise<void>>(
+            async () => {},
+        );
+        const upstream = Response.json(
+            {
+                audio_base64: "large-audio-payload",
+                alignment: { characters: ["H", "i"] },
+            },
+            {
+                headers: {
+                    "x-model-used": "elevenlabs",
+                    "x-usage-completion-audio-tokens": "2",
+                    "x-pollinations-response-format": "audio-with-timestamps",
+                },
+            },
+        );
+
+        const ctx = createExecutionContext();
+        const response = await createWrongContentTypeApp(
+            consumePollen,
+            "generate.audio",
+            upstream,
+            "elevenlabs",
+        ).fetch(
+            new Request("https://gen.pollinations.ai/upstream", {
+                method: "POST",
+            }),
+            {
+                DB: env.DB,
+                ENVIRONMENT: "test",
+                LOG_LEVEL: "debug",
+                LOG_FORMAT: "text",
+                BETTER_AUTH_SECRET: "test_secret",
+                TINYBIRD_INGEST_URL:
+                    "https://tinybird.test/v0/events?name=generation_event_v2",
+                TINYBIRD_INGEST_TOKEN: "test_tinybird_token",
+            } as CloudflareBindings,
+            ctx,
+        );
+
+        await waitOnExecutionContext(ctx);
+
+        expect(response.status).toBe(200);
+        expect(tinybirdRequests).toHaveLength(1);
+        const event = (await tinybirdRequests[0].json()) as Record<
+            string,
+            unknown
+        >;
+        expect(event).toMatchObject({
+            eventType: "generate.audio",
+            isBilledUsage: true,
+            tokenCountCompletionAudio: 2,
+        });
+        expect(JSON.stringify(event)).not.toContain("large-audio-payload");
+        expect(consumePollen).toHaveBeenCalledWith(0.0002);
+    });
+
+    it("does not bill ordinary TTS when a provider returns JSON with HTTP 200", async () => {
+        const tinybirdRequests: Request[] = [];
+        vi.spyOn(globalThis, "fetch").mockImplementation(
+            async (input, init) => {
+                tinybirdRequests.push(new Request(input, init));
+                return new Response("ok");
+            },
+        );
+        const consumePollen = vi.fn<(amount: number) => Promise<void>>(
+            async () => {},
+        );
+        const upstream = Response.json(
+            { error: "unexpected provider response" },
+            {
+                headers: {
+                    "x-model-used": "elevenlabs",
+                    "x-usage-completion-audio-tokens": "2",
+                },
+            },
+        );
+
+        const ctx = createExecutionContext();
+        await createWrongContentTypeApp(
+            consumePollen,
+            "generate.audio",
+            upstream,
+            "elevenlabs",
+        ).fetch(
+            new Request("https://gen.pollinations.ai/upstream", {
+                method: "POST",
+            }),
+            {
+                DB: env.DB,
+                ENVIRONMENT: "test",
+                LOG_LEVEL: "debug",
+                LOG_FORMAT: "text",
+                BETTER_AUTH_SECRET: "test_secret",
+                TINYBIRD_INGEST_URL:
+                    "https://tinybird.test/v0/events?name=generation_event_v2",
+                TINYBIRD_INGEST_TOKEN: "test_tinybird_token",
+            } as CloudflareBindings,
+            ctx,
+        );
+
+        await waitOnExecutionContext(ctx);
+
+        expect(tinybirdRequests).toHaveLength(1);
+        await expect(tinybirdRequests[0].json()).resolves.toMatchObject({
+            eventType: "generate.audio",
             isBilledUsage: false,
         });
         expect(consumePollen).toHaveBeenCalledWith(0);

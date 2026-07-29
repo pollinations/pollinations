@@ -45,6 +45,13 @@ body:
       description: Optional links to model cards, provider documentation, repositories, demos, or prior work. Do not include credentials.
       placeholder: "https://..."
 
+  - type: input
+    id: discord-username
+    attributes:
+      label: Discord username
+      description: Optional. If you're in the Pollinations Discord server, share your username so we can assign you the Community Provider role and tag you about your models.
+      placeholder: "your-discord-username"
+
   - type: textarea
     id: availability
     attributes:

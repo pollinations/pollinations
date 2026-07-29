@@ -55,7 +55,9 @@ For batch work, use one table row per model with every field above. The user may
 Model approval never authorizes a provider-secret mutation. If the work would create, replace, rotate, revoke, regenerate, synchronize, or deploy a provider credential or encrypted SOPS value:
 
 1. Stop and present the exact secret name (never its value), environments, reason, impact, execution order, verification, and rollback.
-2. Wait for a separate approval in the current conversation using: `Yes, you can rotate <SECRET_NAME> in <ENVIRONMENTS> now.`
+2. Wait for a separate approval in the current conversation using:
+   - First-time addition: `Yes, you can add <SECRET_NAME> to <ENVIRONMENTS> now.`
+   - Replacement of an existing secret: `Yes, you can rotate <SECRET_NAME> in <ENVIRONMENTS> now.`
 3. Treat general approval such as “go ahead,” “deploy,” “continue,” or confirmation of the model contract as insufficient.
 4. Do not edit the secret or open or push its PR before approval. After approval, use a dedicated secret-only PR and follow the rotation order in the repository `AGENTS.md`.
 

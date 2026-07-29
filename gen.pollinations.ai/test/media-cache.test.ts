@@ -97,6 +97,11 @@ async function consumeAndWait(result: Awaited<ReturnType<typeof dispatch>>) {
 describe("media cache", () => {
     it.each([
         { label: "image", cache: imageCache, contentType: "image/png" },
+        {
+            label: "SVG",
+            cache: imageCache,
+            contentType: "image/svg+xml",
+        },
         { label: "audio", cache: audioCache, contentType: "audio/mpeg" },
     ])("serves cached $label responses before auth while misses still require auth", async ({
         cache,
@@ -140,6 +145,46 @@ describe("media cache", () => {
         );
         expect(missNoAuth.response.status).toBe(401);
         expect(media.originHits).toBe(1);
+    });
+
+    it("preserves SVG content and browser safety headers on cache hits", async () => {
+        const svgHeaders = {
+            "Content-Type": "image/svg+xml",
+            "Content-Disposition": 'inline; filename="vector.svg"',
+            "Content-Security-Policy":
+                "default-src 'none'; style-src 'unsafe-inline'; sandbox",
+            "X-Content-Type-Options": "nosniff",
+        };
+        let originHits = 0;
+        const app = new Hono<TestEnv>()
+            .use("*", async (c, next) => {
+                c.set("log", testLog);
+                c.set("requestId", "test-request");
+                await next();
+            })
+            .get("/media/:prompt", imageCache, async () => {
+                originHits += 1;
+                return new Response("<svg/>", { headers: svgHeaders });
+            });
+        const env = createMediaCacheEnv();
+
+        const miss = await dispatch(app, "/media/vector", undefined, env);
+        expect(await consumeAndWait(miss)).toBe("<svg/>");
+
+        const hit = await dispatch(app, "/media/vector", undefined, env);
+        expect(await consumeAndWait(hit)).toBe("<svg/>");
+        expect(hit.response.headers.get("X-Cache")).toBe("HIT");
+        expect(hit.response.headers.get("Content-Type")).toBe("image/svg+xml");
+        expect(hit.response.headers.get("Content-Disposition")).toBe(
+            svgHeaders["Content-Disposition"],
+        );
+        expect(hit.response.headers.get("Content-Security-Policy")).toBe(
+            svgHeaders["Content-Security-Policy"],
+        );
+        expect(hit.response.headers.get("X-Content-Type-Options")).toBe(
+            "nosniff",
+        );
+        expect(originHits).toBe(1);
     });
 
     it("refreshes cached media TTL on aged cache hits", async () => {

@@ -263,25 +263,33 @@ class PollinationsClient:
         # Build current user message with media (images and videos)
         # NOTE: file_urls are NOT sent as media - they're mentioned in text for the AI to use web_scrape on
         file_urls = file_urls or []
-        file_notice = ""
+        notices = []
         if file_urls:
-            file_notice = (
-                f"\n\n[User attached {len(file_urls)} text/code file(s). Use web_scrape(action='fetch_file', file_url='...') to read them:\n"
+            notices.append(
+                f"[User attached {len(file_urls)} text/code file(s). "
+                "Use web_scrape(action='fetch_file', file_url='...') to read them:\n"
                 + "\n".join(f"- {url}" for url in file_urls[:5])
                 + "]"
             )
+        if video_urls:
+            notices.append(
+                f"[User attached or linked {len(video_urls)} video/GIF(s). "
+                "These URLs are context, not image inputs:\n"
+                + "\n".join(f"- {url}" for url in video_urls[:5])
+                + "]"
+            )
+        file_notice = "\n\n" + "\n\n".join(notices) if notices else ""
 
-        if image_urls or video_urls:
+        if image_urls:
             content = [
                 {
                     "type": "text",
                     "text": f"[{discord_username}]: {user_message}{file_notice}",
                 }
             ]
-            # Add images and videos as image_url (model handles both)
-            for url in (image_urls or [])[:10]:
-                content.append({"type": "image_url", "image_url": {"url": url}})
-            for url in (video_urls or [])[:10]:
+            # Only static images are valid OpenAI image_url inputs. Video/GIF URLs stay
+            # in the text notice above so unsupported media cannot poison the request.
+            for url in image_urls[:10]:
                 content.append({"type": "image_url", "image_url": {"url": url}})
             messages.append({"role": "user", "content": content})
         else:

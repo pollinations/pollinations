@@ -34,7 +34,7 @@
 #                     use 810000 on RTX 4090
 #   QUEUE_LIMIT       default 3 (one running plus two waiting; server.py sheds
 #                     additional load with 503 so the gateway falls back to
-#                     Fireworks instead of building a long user-facing queue)
+#                     Replicate instead of building a long user-facing queue)
 #   SERVICE_TYPE      default flux
 #   GIT_BRANCH        default main
 #   SKIP_CLONE        use files already in $WORK_DIR (hosts w/ broken GitHub egress)

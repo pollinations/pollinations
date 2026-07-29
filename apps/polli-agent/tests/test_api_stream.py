@@ -28,8 +28,8 @@ def _request_body(stream: bool) -> dict:
 
 
 # Every request must carry a credential to spend; the gateway supplies a
-# short-lived run token in this header.
-_HEADERS = {"X-Pollinations-Key": "ag_test-token"}
+# short-lived run token as the bearer.
+_HEADERS = {"Authorization": "Bearer ag_test-token"}
 
 
 def test_stream_true_returns_openai_sse_chunks(monkeypatch):
@@ -185,17 +185,17 @@ def test_request_without_credential_is_rejected():
     assert resp.status_code == 401
 
 
-def test_authorization_header_is_not_spendable():
-    """Authorization proves reachability, not spend authority.
+def test_non_pollinations_bearer_is_not_spendable():
+    """A bearer that is not a Pollinations key is access, not spend authority.
 
-    Behind the gateway it carries the endpoint's own saved token, so spending it
-    would bill the endpoint owner for every caller instead of the caller.
+    An endpoint registered but not granted delegation still receives its owner's
+    saved secret; spending it would bill the owner for every caller.
     """
     client = TestClient(api_mod.app)
     resp = client.post(
         "/v1/chat/completions",
         json=_request_body(stream=False),
-        headers={"Authorization": "Bearer sk_endpoint_access_token"},
+        headers={"Authorization": "Bearer endpoint-shared-secret"},
     )
     assert resp.status_code == 401
 

@@ -12,11 +12,14 @@ import {
 } from "@shared/auth/run-token.ts";
 import { getUserBalance } from "@shared/billing/balance.ts";
 import { handleBalanceDeduction } from "@shared/billing/track-helpers.ts";
+import type { CommunityEndpointRuntime } from "@shared/community-endpoints.ts";
 import { apikey as apikeyTable } from "@shared/db/better-auth.ts";
+import { encryptSecret } from "@shared/secret-encryption.ts";
 import { createTestApiKey } from "@shared/test/fixtures/api-keys.ts";
 import { sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { describe, expect, it } from "vitest";
+import { communityEndpointGatewayContext } from "@/text/communityEndpoint.ts";
 
 const SECRET = "test-run-token-secret";
 const db = drizzle(env.DB);
@@ -25,6 +28,27 @@ const authEnv: ApiKeyAuthBindings = {
     DB: env.DB,
     RUN_TOKEN_SECRET: SECRET,
 };
+
+const ENCRYPTION_SECRET = "test-encryption-secret";
+
+async function communityEndpointFixture(): Promise<CommunityEndpointRuntime> {
+    return {
+        id: "ce-1",
+        ownerUserId: "owner-1",
+        modelId: "community/agent",
+        name: "agent",
+        description: null,
+        baseUrl: "https://agent.example",
+        upstreamModel: "polli",
+        bearerTokenCiphertext: await encryptSecret(
+            "endpoint-access-token",
+            ENCRYPTION_SECRET,
+        ),
+        visibility: "public",
+        disabledAt: null,
+        disabledReason: null,
+    } as CommunityEndpointRuntime;
+}
 
 function requestWith(token: string): Request {
     return new Request("https://gen.pollinations.ai/text/hi", {
@@ -299,6 +323,84 @@ describe("run token authentication", () => {
             .from(apikeyTable)
             .where(sql`${apikeyTable.id} = ${parent.id}`);
         expect(row.pollenBalance).toBeCloseTo(4, 10);
+    });
+
+    it("hands a community endpoint a run token, not the caller's key", async () => {
+        const parent = await createTestApiKey();
+        const context = await communityEndpointGatewayContext(
+            await communityEndpointFixture(),
+            { name: "polli" } as never,
+            { messages: [] } as never,
+            ENCRYPTION_SECRET,
+            "https://portkey.example",
+            "sk_caller-real-key",
+            {
+                user: { id: parent.userId } as never,
+                apiKey: { id: parent.id } as never,
+            },
+            SECRET,
+        );
+
+        const config = context.modelConfig as Record<string, never>;
+        const forwarded = config.forwardHeaders as unknown as Record<
+            string,
+            string
+        >;
+        const token = forwarded["X-Pollinations-Key"];
+
+        expect(token.startsWith("ag_")).toBe(true);
+        expect(JSON.stringify(forwarded)).not.toContain("sk_caller-real-key");
+        const payload = await verifyRunToken(token, SECRET);
+        expect(payload?.sub).toBe(parent.userId);
+        expect(payload?.pk).toBe(parent.id);
+        expect(payload?.agent).toBe("community/agent");
+    });
+
+    it("forwards an existing run token instead of extending the deadline", async () => {
+        const inbound = "ag_already-running";
+        const context = await communityEndpointGatewayContext(
+            await communityEndpointFixture(),
+            { name: "polli" } as never,
+            { messages: [] } as never,
+            ENCRYPTION_SECRET,
+            "https://portkey.example",
+            inbound,
+            {
+                user: { id: "user-1" } as never,
+                apiKey: {
+                    id: "key-1",
+                    rawKey: inbound,
+                    metadata: { runId: "run-1" },
+                } as never,
+            },
+            SECRET,
+        );
+
+        const config = context.modelConfig as Record<string, never>;
+        const forwarded = config.forwardHeaders as unknown as Record<
+            string,
+            string
+        >;
+        expect(forwarded["X-Pollinations-Key"]).toBe(inbound);
+    });
+
+    it("sends no spend credential when delegation is not possible", async () => {
+        const context = await communityEndpointGatewayContext(
+            await communityEndpointFixture(),
+            { name: "polli" } as never,
+            { messages: [] } as never,
+            ENCRYPTION_SECRET,
+            "https://portkey.example",
+            "sk_caller-real-key",
+            {
+                user: { id: "user-1" } as never,
+                apiKey: { id: "key-1" } as never,
+            },
+            undefined,
+        );
+
+        const config = context.modelConfig as Record<string, never>;
+        expect(config.forwardHeaders).toBe(undefined);
     });
 
     it("is rejected when the worker has no run token secret", async () => {

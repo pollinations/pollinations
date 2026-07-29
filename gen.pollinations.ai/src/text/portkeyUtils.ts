@@ -43,6 +43,7 @@ const SKIPPED_CONFIG_KEYS = new Set([
     "useUserApiKey",
     "defaultOptions",
     "requiresBase64ImageUrls",
+    "forwardHeaders",
 ]);
 
 export async function generatePortkeyHeaders(
@@ -95,6 +96,18 @@ export async function generatePortkeyHeaders(
 
     if (apiKey) {
         headers["Authorization"] = `Bearer ${apiKey}`;
+    }
+
+    // Headers the upstream host must receive verbatim. Authorization already
+    // carries the endpoint's own access credential, so a second credential —
+    // an agent run token — needs its own header and an explicit forward list.
+    const forwardHeaders = config.forwardHeaders as
+        | Record<string, string>
+        | undefined;
+    if (forwardHeaders && Object.keys(forwardHeaders).length) {
+        Object.assign(headers, forwardHeaders);
+        headers["x-portkey-forward-headers"] =
+            Object.keys(forwardHeaders).join(",");
     }
 
     log("Generated Portkey headers:", Object.keys(headers));

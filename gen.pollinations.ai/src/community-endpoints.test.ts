@@ -1,5 +1,6 @@
 import { createExecutionContext, env, SELF } from "cloudflare:test";
 import type { Logger } from "@logtape/logtape";
+import { verifyAgentRunToken } from "@shared/auth/agent-run-token.ts";
 import {
     type CommunityEndpointRuntime,
     communityChatCompletionsUrl,
@@ -717,6 +718,64 @@ describe("community endpoint helpers", () => {
         });
         expect(context.modelDef).toBe(modelDefinition);
         expect(context).not.toHaveProperty("messages");
+    });
+
+    it("gives Polli a derived run token instead of the caller or saved key", async () => {
+        const secret = "test-secret";
+        const endpoint: CommunityEndpointRuntime = {
+            id: "polli-endpoint-id",
+            ownerUserId: "itachi-owner-id",
+            modelId: "Itachi-1824/polli",
+            name: "polli",
+            title: "Polli",
+            description: null,
+            modality: "text",
+            imagePricing: "request",
+            supportsImageEdits: false,
+            baseUrl: "https://polli.example.com/v1",
+            upstreamModel: "polli",
+            visibility: "public",
+            disabledAt: null,
+            disabledReason: null,
+            bearerTokenCiphertext: await encryptSecret(
+                "sk_saved_token",
+                secret,
+            ),
+            ...communityEndpointPrices({}),
+        };
+        const context = await communityEndpointGatewayContext(
+            endpoint,
+            communityModelDefinition(endpoint),
+            { messages: [{ role: "user", content: "make a video" }] },
+            secret,
+            "https://portkey.test",
+            "sk_user_key",
+            "parent-key-id",
+        );
+
+        const delegatedToken = String(context.modelConfig?.authKey);
+        expect(delegatedToken).toMatch(/^ag_/);
+        expect(delegatedToken).not.toContain("sk_user_key");
+        expect(delegatedToken).not.toContain("sk_saved_token");
+        const claims = await verifyAgentRunToken(delegatedToken, secret);
+        expect(claims).toMatchObject({
+            parentApiKeyId: "parent-key-id",
+            agentId: "Itachi-1824/polli",
+        });
+        expect(claims.models).toBeUndefined();
+
+        await expect(
+            communityEndpointGatewayContext(
+                endpoint,
+                communityModelDefinition(endpoint),
+                { messages: [{ role: "user", content: "recurse" }] },
+                secret,
+                "https://portkey.test",
+                "ag_existing",
+                "parent-key-id",
+                true,
+            ),
+        ).rejects.toThrow("cannot call community models");
     });
 });
 

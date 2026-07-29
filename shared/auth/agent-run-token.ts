@@ -1,11 +1,10 @@
 import { jwtVerify, SignJWT } from "jose";
 
 export const AGENT_RUN_TOKEN_PREFIX = "ag_";
-export const AGENT_RUN_TOKEN_DEFAULT_TTL_SECONDS = 300;
-export const AGENT_RUN_TOKEN_MAX_TTL_SECONDS = 900;
+export const AGENT_RUN_TOKEN_TTL_SECONDS = 1800;
 
 const AGENT_RUN_TOKEN_ISSUER = "gen.pollinations.ai";
-const AGENT_RUN_TOKEN_AUDIENCE = "gen.pollinations.ai";
+const AGENT_RUN_TOKEN_AUDIENCE = "pollinations-api";
 const MAX_CLOCK_SKEW_SECONDS = 5;
 const MAX_SCOPED_MODELS = 64;
 
@@ -13,7 +12,7 @@ export type AgentRunClaims = {
     parentApiKeyId: string;
     agentId: string;
     runId: string;
-    models: string[];
+    models?: string[];
     issuedAt: number;
     expiresAt: number;
 };
@@ -24,25 +23,30 @@ function signingKey(secret: string): Uint8Array {
     );
 }
 
+export function isAgentRunToken(token: string): boolean {
+    return token.startsWith(AGENT_RUN_TOKEN_PREFIX);
+}
+
 export async function signAgentRunToken(opts: {
     secret: string;
     parentApiKeyId: string;
     agentId: string;
     runId: string;
-    models: string[];
+    models?: string[];
     expiresIn?: number;
     now?: number;
 }): Promise<string> {
     const issuedAt = opts.now ?? Math.floor(Date.now() / 1000);
-    const expiresIn = opts.expiresIn ?? AGENT_RUN_TOKEN_DEFAULT_TTL_SECONDS;
-    if (expiresIn < 1 || expiresIn > AGENT_RUN_TOKEN_MAX_TTL_SECONDS) {
+    const expiresIn = opts.expiresIn ?? AGENT_RUN_TOKEN_TTL_SECONDS;
+    if (expiresIn < 1 || expiresIn > AGENT_RUN_TOKEN_TTL_SECONDS) {
         throw new Error("Invalid agent run token lifetime");
     }
+    validateModels(opts.models);
 
     const token = await new SignJWT({
         version: 1,
         agent: opts.agentId,
-        models: opts.models,
+        ...(opts.models && { models: opts.models }),
     })
         .setProtectedHeader({ alg: "HS256", typ: "JWT" })
         .setIssuer(AGENT_RUN_TOKEN_ISSUER)
@@ -61,7 +65,7 @@ export async function verifyAgentRunToken(
     secret: string,
     now = Math.floor(Date.now() / 1000),
 ): Promise<AgentRunClaims> {
-    if (!token.startsWith(AGENT_RUN_TOKEN_PREFIX)) {
+    if (!isAgentRunToken(token)) {
         throw new Error("Invalid agent run token prefix");
     }
 
@@ -78,14 +82,7 @@ export async function verifyAgentRunToken(
         },
     );
 
-    const models = Array.isArray(payload.models)
-        ? payload.models.filter(
-              (model): model is string =>
-                  typeof model === "string" &&
-                  model.length > 0 &&
-                  model.length <= 253,
-          )
-        : [];
+    const models = payload.models;
     if (
         payload.version !== 1 ||
         typeof payload.sub !== "string" ||
@@ -95,26 +92,49 @@ export async function verifyAgentRunToken(
         typeof payload.agent !== "string" ||
         !payload.agent ||
         payload.agent.length > 253 ||
-        !Array.isArray(payload.models) ||
-        models.length !== payload.models.length ||
-        models.length < 1 ||
-        models.length > MAX_SCOPED_MODELS ||
-        new Set(models).size !== models.length ||
         typeof payload.iat !== "number" ||
         typeof payload.exp !== "number" ||
         payload.iat > now + MAX_CLOCK_SKEW_SECONDS ||
         payload.exp <= payload.iat ||
-        payload.exp - payload.iat > AGENT_RUN_TOKEN_MAX_TTL_SECONDS
+        payload.exp - payload.iat > AGENT_RUN_TOKEN_TTL_SECONDS
     ) {
         throw new Error("Invalid agent run token claims");
     }
+    validateModels(models);
 
     return {
         parentApiKeyId: payload.sub,
         agentId: payload.agent,
         runId: payload.jti,
-        models,
+        ...(models && { models }),
         issuedAt: payload.iat,
         expiresAt: payload.exp,
     };
+}
+
+export function intersectAgentRunModels(
+    parentModels: string[] | undefined,
+    tokenModels: string[] | undefined,
+): string[] | undefined {
+    if (!parentModels) return tokenModels;
+    if (!tokenModels) return parentModels;
+    return parentModels.filter((model) => tokenModels.includes(model));
+}
+
+function validateModels(value: unknown): asserts value is string[] | undefined {
+    if (value === undefined) return;
+    if (
+        !Array.isArray(value) ||
+        value.length < 1 ||
+        value.length > MAX_SCOPED_MODELS ||
+        value.some(
+            (model) =>
+                typeof model !== "string" ||
+                model.length < 1 ||
+                model.length > 253,
+        ) ||
+        new Set(value).size !== value.length
+    ) {
+        throw new Error("Invalid agent run token models");
+    }
 }

@@ -1,25 +1,20 @@
+import type { AgentRunClaims } from "@shared/auth/agent-run-token.ts";
 import {
     type AuthenticatedApiKey,
     type AuthUser,
     authenticateApiKeyRequest,
     BannedAccountError,
-    extractApiKey,
-    loadActiveApiKeyAuthResult,
     StagingAccessDeniedError,
 } from "@shared/auth/api-key.ts";
 import { createMiddleware } from "hono/factory";
 import { HTTPException } from "hono/http-exception";
-import {
-    AGENT_RUN_TOKEN_PREFIX,
-    type AgentRunClaims,
-    verifyAgentRunToken,
-} from "../utils/agent-run-token.ts";
 import type { LoggerVariables } from "./logger.ts";
 
 type ModelVariables = {
     model: {
         requested: string;
         resolved: string;
+        communityEndpoint?: unknown;
     };
 };
 
@@ -41,45 +36,8 @@ export type AuthEnv = {
 
 export const auth = () =>
     createMiddleware<AuthEnv>(async (c, next) => {
-        let agentRun: AgentRunClaims | undefined;
         const authResult = await (async () => {
             try {
-                const rawApiKey = extractApiKey(c.req.raw);
-                if (rawApiKey?.startsWith(AGENT_RUN_TOKEN_PREFIX)) {
-                    let claims: AgentRunClaims;
-                    try {
-                        claims = await verifyAgentRunToken(
-                            rawApiKey,
-                            c.env.BETTER_AUTH_SECRET,
-                        );
-                    } catch {
-                        return null;
-                    }
-
-                    const parent = await loadActiveApiKeyAuthResult({
-                        apiKeyId: claims.parentApiKeyId,
-                        rawApiKey,
-                        env: c.env,
-                    });
-                    if (!parent) return null;
-
-                    const parentModels = parent.apiKey.permissions?.models;
-                    const models = parentModels
-                        ? claims.models.filter((model) =>
-                              parentModels.includes(model),
-                          )
-                        : claims.models;
-                    agentRun = claims;
-
-                    return {
-                        ...parent,
-                        apiKey: {
-                            ...parent.apiKey,
-                            permissions: { models },
-                        },
-                    };
-                }
-
                 return await authenticateApiKeyRequest({
                     request: c.req.raw,
                     env: c.env,
@@ -96,7 +54,7 @@ export const auth = () =>
             }
         })();
 
-        const { user, apiKey } = authResult || {};
+        const { user, apiKey, agentRun } = authResult || {};
 
         const requireAuthorization = async (options?: {
             message?: string;
@@ -114,10 +72,16 @@ export const auth = () =>
         };
 
         function requireModelAccess(): void {
-            if (!apiKey?.permissions?.models) return;
-
             const model = c.var.model;
             if (!model) return;
+
+            if (agentRun && model.communityEndpoint) {
+                throw new HTTPException(403, {
+                    message: "Agent run tokens cannot call community models",
+                });
+            }
+
+            if (!apiKey?.permissions?.models) return;
 
             if (!apiKey.permissions.models.includes(model.resolved)) {
                 throw new HTTPException(403, {

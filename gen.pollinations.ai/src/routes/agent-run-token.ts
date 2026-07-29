@@ -1,3 +1,7 @@
+import {
+    AGENT_RUN_TOKEN_TTL_SECONDS,
+    signAgentRunToken,
+} from "@shared/auth/agent-run-token.ts";
 import { validator } from "@shared/middleware/validator.ts";
 import { errorResponseDescriptions } from "@shared/utils/api-docs.ts";
 import { Hono } from "hono";
@@ -8,21 +12,20 @@ import type { Env } from "@/env.ts";
 import { auth } from "@/middleware/auth.ts";
 import { edgeRateLimit } from "@/middleware/rate-limit-edge.ts";
 import { getGenerationModelRegistry } from "../model-registry.ts";
-import {
-    AGENT_RUN_TOKEN_DEFAULT_TTL_SECONDS,
-    AGENT_RUN_TOKEN_MAX_TTL_SECONDS,
-    signAgentRunToken,
-} from "../utils/agent-run-token.ts";
 
 const CreateAgentRunTokenSchema = z.object({
     agent_id: z.string().trim().min(1).max(253),
-    models: z.array(z.string().trim().min(1).max(253)).min(1).max(64),
+    models: z
+        .array(z.string().trim().min(1).max(253))
+        .min(1)
+        .max(64)
+        .optional(),
     expires_in: z
         .number()
         .int()
         .min(30)
-        .max(AGENT_RUN_TOKEN_MAX_TTL_SECONDS)
-        .default(AGENT_RUN_TOKEN_DEFAULT_TTL_SECONDS),
+        .max(AGENT_RUN_TOKEN_TTL_SECONDS)
+        .default(AGENT_RUN_TOKEN_TTL_SECONDS),
 });
 
 const AgentRunTokenResponseSchema = z.object({
@@ -31,7 +34,7 @@ const AgentRunTokenResponseSchema = z.object({
     expires_in: z.number().int(),
     run_id: z.string(),
     agent_id: z.string(),
-    models: z.array(z.string()),
+    models: z.array(z.string()).optional(),
 });
 
 export const agentRunTokenRoutes = new Hono<Env>()
@@ -42,7 +45,7 @@ export const agentRunTokenRoutes = new Hono<Env>()
             tags: ["Authentication"],
             summary: "Create Agent Run Token",
             description:
-                "Creates a short-lived generation credential for one agent run. Requests made with the returned token are billed to the parent API key and can use only the selected built-in models. Agent run tokens cannot mint nested tokens.",
+                "Creates a short-lived generation credential for one agent run. Requests made with the returned token are billed to the parent API key. The optional model list can only narrow the parent key; when omitted, the token inherits the parent's model access. Agent run tokens cannot call community models or mint nested tokens.",
             responses: {
                 200: {
                     description: "Agent run token created",
@@ -69,9 +72,9 @@ export const agentRunTokenRoutes = new Hono<Env>()
             const body = c.req.valid("json");
             const registry = await getGenerationModelRegistry(c.env);
             const parentModels = parentApiKey.permissions?.models;
-            const models: string[] = [];
+            const models: string[] | undefined = body.models ? [] : undefined;
 
-            for (const requestedModel of body.models) {
+            for (const requestedModel of body.models ?? []) {
                 const entry = registry.resolve(requestedModel);
                 if (!entry || entry.communityEndpoint) {
                     throw new HTTPException(400, {
@@ -83,7 +86,7 @@ export const agentRunTokenRoutes = new Hono<Env>()
                         message: `Model '${requestedModel}' is not allowed for this API key`,
                     });
                 }
-                if (!models.includes(entry.id)) models.push(entry.id);
+                if (models && !models.includes(entry.id)) models.push(entry.id);
             }
 
             const runId = crypto.randomUUID();
@@ -103,7 +106,7 @@ export const agentRunTokenRoutes = new Hono<Env>()
                 expires_in: body.expires_in,
                 run_id: runId,
                 agent_id: body.agent_id,
-                models,
+                ...(models && { models }),
             });
         },
     );

@@ -5,6 +5,12 @@ import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { alias } from "drizzle-orm/sqlite-core";
 import * as schema from "../db/better-auth.ts";
+import {
+    AGENT_RUN_TOKEN_PREFIX,
+    type AgentRunClaims,
+    intersectAgentRunModels,
+    verifyAgentRunToken,
+} from "./agent-run-token.ts";
 import { parseGithubIdList } from "./github-id-list.ts";
 
 const PUBLISHABLE_KEY_PREFIX = "pk";
@@ -27,6 +33,7 @@ export interface ApiKeyAuthResult {
     user?: AuthUser;
     apiKey: AuthenticatedApiKey;
     rawApiKey: string;
+    agentRun?: AgentRunClaims;
 }
 
 export interface ApiKeyAuthBindings {
@@ -34,6 +41,7 @@ export interface ApiKeyAuthBindings {
     ENVIRONMENT?: string;
     STAGING_ALLOWED_GITHUB_IDS?: string;
     STAGING_ALLOWED_EMAILS?: string;
+    BETTER_AUTH_SECRET?: string;
 }
 
 export class BannedAccountError extends Error {
@@ -208,6 +216,10 @@ export async function authenticateApiKeyRequest(opts: {
     const rawApiKey = extractApiKey(opts.request);
     if (!rawApiKey) return null;
 
+    if (rawApiKey.startsWith(AGENT_RUN_TOKEN_PREFIX)) {
+        return authenticateAgentRunToken(rawApiKey, opts.env);
+    }
+
     const client: VerifyApiKeyClient =
         opts.client ??
         (createApiKeyAuth(opts.env, opts.ctx) as unknown as VerifyApiKeyClient);
@@ -267,6 +279,46 @@ export async function authenticateApiKeyRequest(opts: {
             rawKey: rawApiKey,
         },
         rawApiKey,
+    };
+}
+
+async function authenticateAgentRunToken(
+    rawToken: string,
+    env: ApiKeyAuthBindings,
+): Promise<ApiKeyAuthResult | null> {
+    if (!env.BETTER_AUTH_SECRET) return null;
+
+    let claims: AgentRunClaims;
+    try {
+        claims = await verifyAgentRunToken(rawToken, env.BETTER_AUTH_SECRET);
+    } catch {
+        return null;
+    }
+
+    const parent = await loadActiveApiKeyAuthResult({
+        apiKeyId: claims.parentApiKeyId,
+        rawApiKey: rawToken,
+        env,
+    });
+    if (!parent) return null;
+
+    const models = intersectAgentRunModels(
+        parent.apiKey.permissions?.models,
+        claims.models,
+    );
+
+    return {
+        ...parent,
+        apiKey: {
+            ...parent.apiKey,
+            permissions: models ? { models } : undefined,
+            metadata: {
+                ...parent.apiKey.metadata,
+                agentId: claims.agentId,
+                runId: claims.runId,
+            },
+        },
+        agentRun: claims,
     };
 }
 

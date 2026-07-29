@@ -1,4 +1,10 @@
 import { createExecutionContext, env, SELF } from "cloudflare:test";
+import {
+    AGENT_RUN_TOKEN_TTL_SECONDS,
+    signAgentRunToken,
+    verifyAgentRunToken,
+} from "@shared/auth/agent-run-token.ts";
+import { atomicDeductApiKeyBalance } from "@shared/billing/deduction.ts";
 import { apikey as apiKeyTable } from "@shared/db/better-auth.ts";
 import {
     createTestApiKey,
@@ -9,12 +15,9 @@ import {
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { Hono } from "hono";
+import { SignJWT } from "jose";
 import { expect } from "vitest";
 import { type AuthEnv, auth } from "@/middleware/auth.ts";
-import {
-    signAgentRunToken,
-    verifyAgentRunToken,
-} from "../src/utils/agent-run-token.ts";
 
 type MintResponse = {
     access_token: string;
@@ -22,8 +25,10 @@ type MintResponse = {
     expires_in: number;
     run_id: string;
     agent_id: string;
-    models: string[];
+    models?: string[];
 };
+
+const db = drizzle(env.DB);
 
 const authProbe = new Hono<AuthEnv>().use("*", auth()).get("/", (c) =>
     c.json({
@@ -36,10 +41,22 @@ const authProbe = new Hono<AuthEnv>().use("*", auth()).get("/", (c) =>
     }),
 );
 
-async function mintAgentRunToken(
-    parentKey: string,
-    models = [RESTRICTED_TEXT_TEST_MODEL, RESTRICTED_IMAGE_TEST_MODEL],
-) {
+const communityProbe = new Hono<AuthEnv>()
+    .use("*", auth())
+    .use("*", async (c, next) => {
+        c.set("model", {
+            requested: "Itachi-1824/polli",
+            resolved: "Itachi-1824/polli",
+            communityEndpoint: {},
+        });
+        await next();
+    })
+    .get("/", (c) => {
+        c.var.auth.requireModelAccess();
+        return c.text("ok");
+    });
+
+async function mintAgentRunToken(parentKey: string, models?: string[]) {
     return SELF.fetch(
         new Request("https://gen.pollinations.ai/v1/agent/run-token", {
             method: "POST",
@@ -49,7 +66,7 @@ async function mintAgentRunToken(
             },
             body: JSON.stringify({
                 agent_id: "polli-itachi",
-                models,
+                ...(models && { models }),
                 expires_in: 300,
             }),
         }),
@@ -77,7 +94,10 @@ test("mints a scoped token that resolves to the parent key for billing", async (
         user: { tierBalance: 100 },
     });
 
-    const response = await mintAgentRunToken(parent.key);
+    const response = await mintAgentRunToken(parent.key, [
+        RESTRICTED_TEXT_TEST_MODEL,
+        RESTRICTED_IMAGE_TEST_MODEL,
+    ]);
     expect(response.status).toBe(200);
     expect(response.headers.get("Cache-Control")).toBe("no-store");
 
@@ -107,6 +127,36 @@ test("mints a scoped token that resolves to the parent key for billing", async (
             expiresAt: expect.any(Number),
         },
     });
+});
+
+test("an unscoped token inherits the parent model allowlist", async () => {
+    const parent = await createTestApiKey({
+        allowedModels: [RESTRICTED_TEXT_TEST_MODEL],
+        user: { tierBalance: 100 },
+    });
+    const mintResponse = await mintAgentRunToken(parent.key);
+    const minted = (await mintResponse.json()) as MintResponse;
+
+    expect(minted.models).toBeUndefined();
+    const probeResponse = await probeAgentRunToken(minted.access_token);
+    expect(await probeResponse.json()).toMatchObject({
+        permissions: { models: [RESTRICTED_TEXT_TEST_MODEL] },
+    });
+});
+
+test("agent run tokens cannot recurse into community models", async () => {
+    const parent = await createTestApiKey({ user: { tierBalance: 100 } });
+    const mintResponse = await mintAgentRunToken(parent.key);
+    const minted = (await mintResponse.json()) as MintResponse;
+
+    const response = await communityProbe.fetch(
+        new Request("https://gen.pollinations.ai/", {
+            headers: { Authorization: `Bearer ${minted.access_token}` },
+        }),
+        env,
+        createExecutionContext(),
+    );
+    expect(response.status).toBe(403);
 });
 
 test("agent run token narrows the visible model catalog", async () => {
@@ -195,4 +245,50 @@ test("rejects tampered and expired agent run tokens", async () => {
     await expect(
         verifyAgentRunToken(token, env.BETTER_AUTH_SECRET, 1_036),
     ).rejects.toThrow();
+    await expect(
+        signAgentRunToken({
+            secret: env.BETTER_AUTH_SECRET,
+            parentApiKeyId: "parent-key-id",
+            agentId: "polli-itachi",
+            runId: "run-id",
+            expiresIn: AGENT_RUN_TOKEN_TTL_SECONDS + 1,
+        }),
+    ).rejects.toThrow("Invalid agent run token lifetime");
+
+    const overlongJwt = await new SignJWT({
+        version: 1,
+        agent: "polli-itachi",
+    })
+        .setProtectedHeader({ alg: "HS256", typ: "JWT" })
+        .setIssuer("gen.pollinations.ai")
+        .setAudience("pollinations-api")
+        .setSubject("parent-key-id")
+        .setJti("run-id")
+        .setIssuedAt(1_000)
+        .setExpirationTime(1_000 + AGENT_RUN_TOKEN_TTL_SECONDS + 1)
+        .sign(
+            new TextEncoder().encode(
+                `pollinations-agent-run-token:v1\0${env.BETTER_AUTH_SECRET}`,
+            ),
+        );
+    await expect(
+        verifyAgentRunToken(`ag_${overlongJwt}`, env.BETTER_AUTH_SECRET, 1_001),
+    ).rejects.toThrow("Invalid agent run token claims");
+});
+
+test("parallel agent calls cannot drive a finite key budget negative", async () => {
+    const parent = await createTestApiKey({ pollenBudget: 1 });
+
+    const results = await Promise.all([
+        atomicDeductApiKeyBalance(db, parent.id, 0.75),
+        atomicDeductApiKeyBalance(db, parent.id, 0.75),
+    ]);
+    expect(results.filter((result) => result.ok)).toHaveLength(1);
+
+    const row = await db
+        .select({ pollenBalance: apiKeyTable.pollenBalance })
+        .from(apiKeyTable)
+        .where(eq(apiKeyTable.id, parent.id))
+        .get();
+    expect(row?.pollenBalance).toBe(0.25);
 });

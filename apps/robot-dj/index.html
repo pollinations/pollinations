@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <meta
+            name="description"
+            content="A camera-aware AI DJ for your local music library, powered by Pollinations"
+        />
+        <title>Robot DJ · Pollinations</title>
+        <link rel="stylesheet" href="./style.css?v=17" />
+    </head>
+    <body>
+        <header class="masthead">
+            <div class="masthead-copy">
+                <p class="eyebrow">POLLINATIONS AI NIGHT</p>
+                <h1>ROBOT DJ</h1>
+                <p class="subtitle">YOUR MUSIC. THE ROOM. ONE ROBOT.</p>
+            </div>
+        </header>
+
+        <main>
+            <section class="performance-grid">
+                <article class="panel now-panel">
+                    <div class="now-content">
+                        <div class="panel-heading">
+                            <span class="number yellow-bg">1</span>
+                            <h2>NOW PLAYING</h2>
+                        </div>
+                        <div class="track-display">
+                            <p class="micro-label">CURRENT TRANSMISSION</p>
+                            <h3 id="nowPlaying">WAITING FOR MUSIC</h3>
+                            <div class="progress-track" aria-label="Track progress">
+                                <div id="progressBar"></div>
+                            </div>
+                            <div class="time-row">
+                                <span id="elapsedTime">0:00</span>
+                                <span id="durationTime">0:00</span>
+                            </div>
+                        </div>
+                        <div class="transport">
+                            <button id="pauseButton" class="button black" disabled>PAUSE</button>
+                            <button id="skipButton" class="button red-button" disabled>SKIP →</button>
+                            <label class="volume-control">
+                                VOLUME
+                                <input id="volumeInput" type="range" min="0" max="1" value="0.85" step="0.01" />
+                            </label>
+                        </div>
+                    </div>
+                    <section class="next-panel" id="nextPanel" aria-live="polite">
+                        <div class="panel-heading">
+                            <span class="number yellow-bg">4</span>
+                            <h2>NEXT UP</h2>
+                        </div>
+                        <p class="micro-label" id="nextStatus">AWAITING A ROOM READ</p>
+                        <h3 id="nextTrack">THE ROBOT HAS NOT DECIDED</h3>
+                        <p class="fade-copy"><span id="fadeSeconds">8</span> SECOND CROSSFADE</p>
+                    </section>
+                </article>
+
+                <article class="panel camera-panel">
+                    <div class="panel-heading">
+                        <span class="number red-bg">2</span>
+                        <h2>ROOM SCAN</h2>
+                    </div>
+                    <div class="camera-frame" id="cameraFrame">
+                        <div class="camera-placeholder" id="cameraPlaceholder" aria-hidden="true">
+                            <div class="placeholder-circle"></div>
+                            <div class="placeholder-block"></div>
+                            <p>THE ROBOT<br />HAS NOT LOOKED YET</p>
+                        </div>
+                        <video id="cameraVideo" muted playsinline></video>
+                        <label id="cameraPicker" class="camera-picker" hidden>
+                            CAMERA
+                            <select id="cameraSelect" aria-label="Choose camera"></select>
+                        </label>
+                        <span id="cameraLive" class="camera-live">● CAMERA LIVE</span>
+                    </div>
+                    <button id="scanButton" class="button blue-button full" disabled>
+                        TAKE A NEW LOOK
+                    </button>
+                </article>
+
+                <article class="panel thought-panel">
+                    <div class="panel-heading">
+                        <span class="number blue-bg">3</span>
+                        <h2>ROBOT'S READ</h2>
+                    </div>
+                    <blockquote id="roomRead">
+                        Add a music folder and start the DJ. Eight seconds in, then every thirty
+                        seconds, the robot reads the room and plans what comes next.
+                    </blockquote>
+                    <div class="thinking-line" id="thinkingLine" hidden>
+                        <span></span><span></span><span></span>
+                        CONSULTING THE VIBES
+                    </div>
+                </article>
+
+            </section>
+
+            <section class="setup-panel panel" id="setupPanel">
+                <p class="setup-kicker">THREE THINGS. THEN MUSIC.</p>
+
+                <div class="setup-actions">
+                    <div class="setup-action">
+                        <div class="setup-action-copy">
+                            <span class="number red-bg">1</span>
+                            <div>
+                                <b>CONNECT POLLINATIONS</b>
+                                <span id="authStatus">NOT CONNECTED</span>
+                            </div>
+                        </div>
+                        <button id="connectButton" class="button yellow-button" type="button">
+                            CONNECT
+                        </button>
+                        <button id="disconnectButton" class="text-button" type="button" hidden>
+                            DISCONNECT
+                        </button>
+                    </div>
+
+                    <div id="dropZone" class="setup-action drop-zone" tabindex="0" role="button">
+                        <div class="setup-action-copy">
+                            <span class="number blue-bg">2</span>
+                            <div>
+                                <b>MUSIC FOLDER</b>
+                                <span><strong id="libraryCount">0 TRACKS READY</strong> · <span id="libraryName">DROP A FOLDER OR CHOOSE ONE</span></span>
+                            </div>
+                        </div>
+                        <button id="chooseFolderButton" class="button blue-button" type="button">
+                            CHOOSE FOLDER
+                        </button>
+                        <input id="folderFallback" type="file" accept="audio/mpeg,.mp3" webkitdirectory multiple hidden />
+                    </div>
+                </div>
+
+                <button id="reconnectButton" class="text-button reconnect-button" hidden>RECONNECT REMEMBERED FOLDER</button>
+
+                <div id="errorMessage" class="error-message" role="alert" hidden></div>
+
+                <div class="launch-row">
+                    <button id="startButton" class="launch-button" disabled>3 · START ROBOT DJ</button>
+                    <button id="fullscreenButton" class="text-button" type="button">FULL SCREEN</button>
+                </div>
+                <p class="privacy-note">Your MP3s and live camera stay here. One still frame per read goes to Pollinations.</p>
+            </section>
+        </main>
+
+        <div hidden>
+            <span id="libraryStatus">NO LIBRARY</span>
+            <span id="cameraStatus">CAMERA OFF</span>
+            <span id="aiStatus">ROBOT IDLE</span>
+        </div>
+
+        <canvas id="snapshotCanvas" hidden></canvas>
+        <script type="module" src="./app.js?v=17"></script>
+    </body>
+</html>

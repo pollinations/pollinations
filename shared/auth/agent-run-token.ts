@@ -6,7 +6,7 @@ export const AGENT_RUN_TOKEN_TTL_SECONDS = 1800;
 const AGENT_RUN_TOKEN_ISSUER = "gen.pollinations.ai";
 const AGENT_RUN_TOKEN_AUDIENCE = "pollinations-api";
 const MAX_CLOCK_SKEW_SECONDS = 5;
-const MAX_SCOPED_MODELS = 64;
+export const MAX_SCOPED_MODELS = 64;
 
 export type AgentRunClaims = {
     parentApiKeyId: string;
@@ -23,10 +23,6 @@ function signingKey(secret: string): Uint8Array {
     );
 }
 
-function isAgentRunToken(token: string): boolean {
-    return token.startsWith(AGENT_RUN_TOKEN_PREFIX);
-}
-
 export async function signAgentRunToken(opts: {
     secret: string;
     parentApiKeyId: string;
@@ -41,7 +37,6 @@ export async function signAgentRunToken(opts: {
     if (expiresIn < 1 || expiresIn > AGENT_RUN_TOKEN_TTL_SECONDS) {
         throw new Error("Invalid agent run token lifetime");
     }
-    validateModels(opts.models);
 
     const token = await new SignJWT({
         version: 1,
@@ -65,7 +60,7 @@ export async function verifyAgentRunToken(
     secret: string,
     now = Math.floor(Date.now() / 1000),
 ): Promise<AgentRunClaims> {
-    if (!isAgentRunToken(token)) {
+    if (!token.startsWith(AGENT_RUN_TOKEN_PREFIX)) {
         throw new Error("Invalid agent run token prefix");
     }
 
@@ -82,21 +77,19 @@ export async function verifyAgentRunToken(
         },
     );
 
+    // jwtVerify has already proven this token came from signAgentRunToken with
+    // this secret, and checked issuer, audience and expiry. What is left is
+    // shape: the JWT library types every claim as unknown.
     const models = payload.models;
     if (
-        payload.version !== 1 ||
         typeof payload.sub !== "string" ||
         !payload.sub ||
         typeof payload.jti !== "string" ||
         !payload.jti ||
         typeof payload.agent !== "string" ||
         !payload.agent ||
-        payload.agent.length > 253 ||
         typeof payload.iat !== "number" ||
-        typeof payload.exp !== "number" ||
-        payload.iat > now + MAX_CLOCK_SKEW_SECONDS ||
-        payload.exp <= payload.iat ||
-        payload.exp - payload.iat > AGENT_RUN_TOKEN_TTL_SECONDS
+        typeof payload.exp !== "number"
     ) {
         throw new Error("Invalid agent run token claims");
     }

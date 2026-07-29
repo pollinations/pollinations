@@ -1,5 +1,7 @@
 import {
+    AGENT_RUN_TOKEN_PREFIX,
     AGENT_RUN_TOKEN_TTL_SECONDS,
+    MAX_SCOPED_MODELS,
     signAgentRunToken,
 } from "@shared/auth/agent-run-token.ts";
 import { validator } from "@shared/middleware/validator.ts";
@@ -23,7 +25,7 @@ const CreateAgentRunTokenSchema = z.object({
     models: z
         .array(z.string().trim().min(1).max(253))
         .min(1)
-        .max(64)
+        .max(MAX_SCOPED_MODELS)
         .optional(),
     expires_in: z
         .number()
@@ -34,7 +36,7 @@ const CreateAgentRunTokenSchema = z.object({
 });
 
 const AgentRunTokenResponseSchema = z.object({
-    access_token: z.string().startsWith("ag_"),
+    access_token: z.string().startsWith(AGENT_RUN_TOKEN_PREFIX),
     token_type: z.literal("Bearer"),
     expires_in: z.number().int(),
     run_id: z.string(),
@@ -77,9 +79,8 @@ export const agentRunTokenRoutes = new Hono<Env>()
             const body = c.req.valid("json");
             const registry = await getGenerationModelRegistry(c.env);
             const parentModels = parentApiKey.permissions?.models;
-            const models: string[] | undefined = body.models ? [] : undefined;
-
-            for (const requestedModel of body.models ?? []) {
+            // Aliases can resolve to the same entry, so the scope is a set.
+            const resolved = body.models?.map((requestedModel) => {
                 const entry = registry.resolve(requestedModel);
                 if (!entry || entry.communityEndpoint) {
                     throw new HTTPException(400, {
@@ -91,8 +92,9 @@ export const agentRunTokenRoutes = new Hono<Env>()
                         message: `Model '${requestedModel}' is not allowed for this API key`,
                     });
                 }
-                if (models && !models.includes(entry.id)) models.push(entry.id);
-            }
+                return entry.id;
+            });
+            const models = resolved && [...new Set(resolved)];
 
             const runId = crypto.randomUUID();
             const token = await signAgentRunToken({

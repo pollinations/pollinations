@@ -11,6 +11,7 @@ import {
     intersectAgentRunModels,
     verifyAgentRunToken,
 } from "./agent-run-token.ts";
+import { parseMetadata } from "./api-key-creation.ts";
 import { parseGithubIdList } from "./github-id-list.ts";
 
 const PUBLISHABLE_KEY_PREFIX = "pk";
@@ -192,7 +193,11 @@ export function extractApiKey(request: Request): string | null {
     const match = auth?.match(/^Bearer (.+)$/);
     if (match?.[1]) return match[1];
 
-    return new URL(request.url).searchParams.get("key");
+    // Query keys end up in access logs, referrers and browser history. Their
+    // owner can rotate them; an agent run token is handed to a third party
+    // mid-run and cannot be, so it is Bearer-only.
+    const queryKey = new URL(request.url).searchParams.get("key");
+    return queryKey?.startsWith(AGENT_RUN_TOKEN_PREFIX) ? null : queryKey;
 }
 
 export function assertNotBanned(user: {
@@ -312,11 +317,6 @@ async function authenticateAgentRunToken(
         apiKey: {
             ...parent.apiKey,
             permissions: models ? { models } : undefined,
-            metadata: {
-                ...parent.apiKey.metadata,
-                agentId: claims.agentId,
-                runId: claims.runId,
-            },
         },
         agentRun: claims,
     };
@@ -380,9 +380,9 @@ async function loadActiveApiKeyAuthResult(opts: {
             id: apiKeyData.id,
             name: apiKeyData.name ?? undefined,
             permissions: normalizePermissions(
-                parseStoredJson(apiKeyData.permissions),
+                parseMetadata(apiKeyData.permissions),
             ),
-            metadata: normalizeMetadata(parseStoredJson(apiKeyData.metadata)),
+            metadata: normalizeMetadata(parseMetadata(apiKeyData.metadata)),
             pollenBalance: apiKeyData.pollenBalance ?? null,
             byopClientKeyId: apiKeyData.byopClientKeyId ?? null,
             byopClientName: apiKeyData.byopClientName ?? null,
@@ -391,15 +391,6 @@ async function loadActiveApiKeyAuthResult(opts: {
         },
         rawApiKey: opts.rawApiKey,
     };
-}
-
-function parseStoredJson(value: unknown): unknown {
-    if (typeof value !== "string") return value;
-    try {
-        return JSON.parse(value);
-    } catch {
-        return undefined;
-    }
 }
 
 function normalizePermissions(

@@ -26,7 +26,7 @@ export type AuthVariables = {
         requireAuthorization: (options?: { message?: string }) => Promise<void>;
         requireUser: () => AuthUser;
         requireModelAccess: () => void;
-        agentRun?: Pick<AgentRunClaims, "agentId" | "runId" | "expiresAt">;
+        agentRun?: AgentRunClaims;
     };
 };
 
@@ -97,13 +97,7 @@ export const auth = () =>
             requireAuthorization,
             requireUser,
             requireModelAccess,
-            ...(agentRun && {
-                agentRun: {
-                    agentId: agentRun.agentId,
-                    runId: agentRun.runId,
-                    expiresAt: agentRun.expiresAt,
-                },
-            }),
+            ...(agentRun && { agentRun }),
         });
 
         await next();

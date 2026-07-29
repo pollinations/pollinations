@@ -1,3 +1,4 @@
+import type { AgentRunClaims } from "@shared/auth/agent-run-token.ts";
 import {
     type AuthenticatedApiKey,
     assertNotBanned,
@@ -20,6 +21,8 @@ export type AuthVariables = {
         apiKey?: AuthenticatedApiKey;
         requireAuthorization: (options?: { message?: string }) => Promise<void>;
         requireUser: () => User;
+        /** Set when the caller is an agent run token, not the key itself. */
+        agentRun?: AgentRunClaims;
     };
 };
 
@@ -38,6 +41,7 @@ interface AuthResult {
     session?: Session;
     apiKey?: AuthenticatedApiKey;
     rawApiKey?: string;
+    agentRun?: AgentRunClaims;
 }
 
 export const auth = (options: AuthOptions) =>
@@ -85,6 +89,7 @@ export const auth = (options: AuthOptions) =>
                     user: result.user as User,
                     apiKey: result.apiKey,
                     rawApiKey: result.rawApiKey,
+                    agentRun: result.agentRun,
                 };
             } catch (error) {
                 if (
@@ -102,7 +107,7 @@ export const auth = (options: AuthOptions) =>
         if (!authResult) {
             authResult = await authenticateApiKey();
         }
-        const { user, session, apiKey } = authResult || {};
+        const { user, session, apiKey, agentRun } = authResult || {};
 
         const requireAuthorization = async (options?: {
             message?: string;
@@ -126,6 +131,7 @@ export const auth = (options: AuthOptions) =>
             apiKey,
             requireAuthorization,
             requireUser,
+            agentRun,
         });
 
         await next();

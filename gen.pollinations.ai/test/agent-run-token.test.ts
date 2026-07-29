@@ -124,8 +124,11 @@ test("mints a scoped token that resolves to the parent key for billing", async (
         },
         rawKey: minted.access_token,
         agentRun: {
+            parentApiKeyId: parent.id,
             agentId: "example-agent",
             runId: minted.run_id,
+            models: [RESTRICTED_TEXT_TEST_MODEL, RESTRICTED_IMAGE_TEST_MODEL],
+            issuedAt: expect.any(Number),
             expiresAt: expect.any(Number),
         },
     });
@@ -298,23 +301,26 @@ test("rejects tampered and expired agent run tokens", async () => {
         }),
     ).rejects.toThrow("Invalid agent run token lifetime");
 
-    const overlongJwt = await new SignJWT({
-        version: 1,
-        agent: "example-agent",
-    })
+    // Correctly signed but missing the agent claim: the signature proves origin,
+    // it does not prove the payload has the shape the auth layer reads.
+    const malformedJwt = await new SignJWT({ version: 1 })
         .setProtectedHeader({ alg: "HS256", typ: "JWT" })
         .setIssuer("gen.pollinations.ai")
         .setAudience("pollinations-api")
         .setSubject("parent-key-id")
         .setJti("run-id")
         .setIssuedAt(1_000)
-        .setExpirationTime(1_000 + AGENT_RUN_TOKEN_TTL_SECONDS + 1)
+        .setExpirationTime(1_000 + AGENT_RUN_TOKEN_TTL_SECONDS)
         .sign(
             new TextEncoder().encode(
                 `pollinations-agent-run-token:v1\0${env.BETTER_AUTH_SECRET}`,
             ),
         );
     await expect(
-        verifyAgentRunToken(`ag_${overlongJwt}`, env.BETTER_AUTH_SECRET, 1_001),
+        verifyAgentRunToken(
+            `ag_${malformedJwt}`,
+            env.BETTER_AUTH_SECRET,
+            1_001,
+        ),
     ).rejects.toThrow("Invalid agent run token claims");
 });

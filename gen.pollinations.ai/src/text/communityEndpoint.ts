@@ -18,10 +18,10 @@ import type { RequestData, TransformOptions } from "./types.js";
  *
  * It replaces the endpoint's saved bearer rather than riding alongside it, so a
  * delegating endpoint stays a plain OpenAI-compatible server with no
- * Pollinations-specific header to implement. The token is not a weaker proof of
- * origin than the static secret it replaces: the endpoint can verify it against
- * `/account/key`, which a shared string cannot do. Granting delegation is what
- * opts an endpoint into this swap.
+ * Pollinations-specific header to implement, and never holds a credential it
+ * could spend as its own. It is not a weaker proof of origin than the static
+ * secret it replaces: the endpoint can verify it against `/account/key`, which
+ * a shared string cannot do.
  *
  * The admin flag alone decides whether to delegate. Once it is set the other
  * two conditions are invariants, so they throw rather than degrade: the

@@ -180,16 +180,14 @@ export function communityEndpointPrices(
 }
 
 /**
- * True when the owner charges nothing for calling this endpoint.
- *
- * Delegation requires it: an endpoint that spends the caller's pollen on their
- * behalf and also charges a wrapper price bills the caller twice for one call.
+ * True when the owner charges nothing for calling this endpoint. The price set
+ * must be complete — a missing field is not a free one.
  */
 export function isFreeCommunityEndpoint(
-    prices: Partial<CommunityEndpointPrices>,
+    prices: CommunityEndpointPrices,
 ): boolean {
     return COMMUNITY_ENDPOINT_PRICE_FIELDS.every(
-        (field) => (prices[field.key] ?? 0) === 0,
+        (field) => prices[field.key] === 0,
     );
 }
 

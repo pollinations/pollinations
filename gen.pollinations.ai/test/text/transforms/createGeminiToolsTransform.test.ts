@@ -15,18 +15,7 @@ describe("OpenRouter Gemini routing", () => {
             "google/gemini-3.5-flash-lite",
             "google-vertex/global",
         ],
-        ["gemini-search", "google/gemini-2.5-flash-lite", "google-vertex/eu"],
         ["gemini-fast", "google/gemini-2.5-flash-lite", "google-vertex/eu"],
-        [
-            "gemini-search-fast",
-            "google/gemini-3.5-flash-lite",
-            "google-vertex/global",
-        ],
-        [
-            "gemini-search-large",
-            "google/gemini-3.6-flash",
-            "google-vertex/global",
-        ],
         [
             "gemini-large",
             "google/gemini-3.1-pro-preview",
@@ -63,23 +52,6 @@ describe("OpenRouter Gemini routing", () => {
         const { options } = await transform([], {});
 
         expect(options.tools).toBeUndefined();
-    });
-
-    it.each([
-        "gemini-search",
-        "gemini-search-fast",
-        "gemini-search-large",
-    ])("injects search but not code execution for %s", async (model) => {
-        const transform = findModelByName(model)?.transform;
-        if (!transform) throw new Error(`${model} transform missing`);
-
-        const { options } = await transform([], {});
-
-        expect(options.tools).not.toContainEqual({ type: "code_execution" });
-        expect(options.tools).toContainEqual({
-            type: "openrouter:web_search",
-            parameters: { engine: "native" },
-        });
     });
 
     it.each(
@@ -119,12 +91,33 @@ describe("OpenRouter Gemini routing", () => {
     });
 });
 
-describe("OpenRouter Gemini native search", () => {
+describe("Vertex Gemini Search routing", () => {
+    const routes = [
+        ["gemini-search", "gemini-2.5-flash-lite"],
+        ["gemini-search-fast", "gemini-3.5-flash-lite"],
+        ["gemini-search-large", "gemini-3.6-flash"],
+    ] as const;
+
+    it.each(
+        routes,
+    )("routes %s directly to Vertex %s", (model, upstreamModel) => {
+        const { options } = resolveModelConfig([], { model });
+
+        expect(options.model).toBe(upstreamModel);
+        expect(options.modelConfig).toMatchObject({
+            provider: "vertex-ai",
+            "vertex-region": "global",
+            "vertex-model-id": upstreamModel,
+            "strict-openai-compliance": "false",
+        });
+        expect(options.provider).toBeUndefined();
+    });
+
     it.each([
         "gemini-search",
         "gemini-search-fast",
         "gemini-search-large",
-    ])("adds provider-native Google Search for %s", async (model) => {
+    ])("adds native Google Search without code execution for %s", async (model) => {
         const transform = findModelByName(model)?.transform;
         if (!transform) throw new Error(`${model} transform missing`);
 
@@ -135,8 +128,26 @@ describe("OpenRouter Gemini native search", () => {
 
         expect(options.tools).toEqual([
             {
-                type: "openrouter:web_search",
-                parameters: { engine: "native" },
+                type: "function",
+                function: { name: "google_search" },
+            },
+        ]);
+    });
+
+    it.each(
+        routes.map(([model]) => model),
+    )("adapts the public Google Search shape for %s", async (model) => {
+        const transform = findModelByName(model)?.transform;
+        if (!transform) throw new Error(`${model} transform missing`);
+
+        const { options } = await transform([], {
+            tools: [{ type: "google_search" }],
+        });
+
+        expect(options.tools).toEqual([
+            {
+                type: "function",
+                function: { name: "google_search" },
             },
         ]);
     });
@@ -153,7 +164,7 @@ describe("OpenRouter Gemini native search", () => {
         expect(options.tools).toEqual(tools);
     });
 
-    it("drops logit_bias from the 2.5 search route", async () => {
+    it("preserves logit_bias on the direct Vertex route", async () => {
         const transform = findModelByName("gemini-search")?.transform;
         if (!transform) throw new Error("gemini-search transform missing");
 
@@ -161,7 +172,7 @@ describe("OpenRouter Gemini native search", () => {
             logit_bias: { "1": -1 },
         });
 
-        expect(options.logit_bias).toBeUndefined();
+        expect(options.logit_bias).toEqual({ "1": -1 });
     });
 
     it("drops logit_bias from explicit search on the 2.5 general route", async () => {

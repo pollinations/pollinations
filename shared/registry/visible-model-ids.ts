@@ -25,6 +25,7 @@ export async function getVisibleModelIdsForUser(
             imagePricing: schema.communityEndpoint.imagePricing,
             visibility: schema.communityEndpoint.visibility,
             disabledAt: schema.communityEndpoint.disabledAt,
+            delegatesGeneration: schema.communityEndpoint.delegatesGeneration,
             promptTextPrice: schema.communityEndpoint.promptTextPrice,
             promptCachedPrice: schema.communityEndpoint.promptCachedPrice,
             promptCacheWritePrice:
@@ -74,6 +75,7 @@ export async function getVisibleModelIdsForUser(
             ),
             visibility: model.visibility,
             disabledAt: model.disabledAt ? model.disabledAt.getTime() : null,
+            delegatesGeneration: model.delegatesGeneration,
             ...communityEndpointPrices(model),
         })),
     );

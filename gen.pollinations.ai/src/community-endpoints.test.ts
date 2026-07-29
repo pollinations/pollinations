@@ -856,6 +856,9 @@ describe("community endpoint helpers", () => {
             await expect(contextFor(endpoint, "parent-key-id")).rejects.toThrow(
                 "is not free",
             );
+        });
+    });
+
     describe("community model groups", () => {
         const secret = "test-secret";
 
@@ -877,6 +880,7 @@ describe("community endpoint helpers", () => {
                 visibility: "public",
                 disabledAt: null,
                 disabledReason: null,
+                delegatesGeneration: false,
                 bearerTokenCiphertext: await encryptSecret(
                     `sk_${owner}`,
                     secret,
@@ -3577,6 +3581,80 @@ fixtureTest(
             },
         });
         expect(attempted).toHaveLength(2);
+    },
+);
+
+fixtureTest.for([
+    {
+        label: "caller errors",
+        status: 400,
+        message: "prompt is too long",
+        expectedStatus: 400,
+    },
+    {
+        label: "moderation refusals",
+        // A retryable status still must not be replayed when the body is a
+        // content refusal: a more permissive member would turn an unbilled
+        // rejection into a billed generation.
+        status: 500,
+        message: "Content policy violation: the prompt was rejected",
+        expectedStatus: 422,
+    },
+])(
+    "does not replay image pool $label on the next member",
+    async ({ status, message, expectedStatus }, { apiKey }) => {
+        const modelName = `imgpool-${crypto.randomUUID().slice(0, 8)}`;
+        const groupModelId = `group/${modelName}`;
+        for (const owner of ["alice", "bob"]) {
+            const ownerUserId = await createTestUser({
+                githubId: COMMUNITY_ENDPOINT_ALLOWED_TEST_GITHUB_ID,
+                githubUsername: `${owner}-${crypto.randomUUID().slice(0, 8)}`,
+            });
+            await db.insert(communityEndpointTable).values({
+                id: `endpoint-${crypto.randomUUID()}`,
+                ownerUserId,
+                visibility: "public",
+                name: modelName,
+                description: `${owner} pooled image endpoint`,
+                modality: "image",
+                baseUrl: `https://${owner}.example.com/v1/images/generations`,
+                upstreamModel: `${owner}-upstream`,
+                bearerTokenCiphertext: await encryptSecret(
+                    `sk_${owner}`,
+                    env.BETTER_AUTH_SECRET,
+                ),
+                promptTextPrice: 0,
+                completionTextPrice: 0,
+                completionImagePrice: 0.03,
+                createdAt: new Date(),
+                updatedAt: new Date(),
+            });
+        }
+
+        const attempted: string[] = [];
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async (input, init) => {
+                const request = new Request(input, init);
+                if (isCommunityImageGenerationsRequest(request)) {
+                    attempted.push(new URL(request.url).hostname.split(".")[0]);
+                    return Response.json({ error: { message } }, { status });
+                }
+                if (isBillingFetch(request)) return Response.json({ data: [] });
+                throw new Error(`Unexpected fetch: ${request.url}`);
+            }),
+        );
+
+        const response = await SELF.fetch(
+            new Request(
+                `https://gen.pollinations.ai/image/a%20cat?model=${encodeURIComponent(groupModelId)}`,
+                { headers: { Authorization: `Bearer ${apiKey}` } },
+            ),
+        );
+
+        expect(response.status).toBe(expectedStatus);
+        // The whole point: one attempt, not one per member.
+        expect(attempted).toHaveLength(1);
     },
 );
 

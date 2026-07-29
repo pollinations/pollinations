@@ -9,16 +9,8 @@ import {
 } from "@shared/community-endpoints.ts";
 import type { ModelDefinition } from "@shared/registry/registry.ts";
 import { decryptSecret } from "@shared/secret-encryption.ts";
+import { FALLBACK_ON_STATUS_CODES } from "../fallback.ts";
 import type { RequestData, TransformOptions } from "./types.js";
-
-// Statuses worth replaying against the next member. 400 and 422 are excluded on
-// purpose: they are malformed-request errors from the caller, so replaying them
-// against every member burns latency for a guaranteed failure. 401/402/403/404
-// are included because they mean this owner's upstream credentials or model are
-// broken — exactly when another member should take over.
-const COMMUNITY_GROUP_FALLBACK_STATUS_CODES = [
-    401, 402, 403, 404, 408, 429, 500, 502, 503, 504,
-];
 
 /**
  * The run token a delegating endpoint authenticates with, or undefined.
@@ -132,7 +124,7 @@ export async function communityGroupGatewayContext(
                 model: targets[0].upstreamModel,
                 strategy: {
                     mode: "fallback",
-                    on_status_codes: COMMUNITY_GROUP_FALLBACK_STATUS_CODES,
+                    on_status_codes: FALLBACK_ON_STATUS_CODES,
                 },
                 targets: targets.map((member, index) => ({
                     provider: "openai",

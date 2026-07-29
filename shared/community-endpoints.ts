@@ -473,6 +473,7 @@ export type CommunityGroupCandidate = {
     imagePricing: CommunityEndpointImagePricing;
     visibility: CommunityEndpointVisibility;
     disabledAt: number | null;
+    delegatesGeneration: boolean;
 } & CommunityEndpointPrices;
 
 /**
@@ -537,6 +538,11 @@ export function communityGroupBuckets<T extends CommunityGroupCandidate>(
         if (endpoint.visibility !== "public" || endpoint.disabledAt !== null) {
             continue;
         }
+        // A delegating endpoint must be sent a minted run token rather than its
+        // saved bearer (see mintDelegatedToken), which the pooled gateway
+        // context has no way to build. Keep them out of pools instead of
+        // silently moving the caller's cost onto the endpoint owner.
+        if (endpoint.delegatesGeneration) continue;
         const key = communityGroupKey(endpoint);
         const bucket = buckets.get(key);
         if (bucket) bucket.push(endpoint);

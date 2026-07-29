@@ -6,9 +6,11 @@ import {
 import { remapUpstreamStatus, UpstreamError } from "@shared/error.ts";
 import { IMMUTABLE_CACHE_CONTROL } from "@shared/http/cache-control.ts";
 import { DEFAULT_IMAGE_MODEL } from "@shared/registry/image.ts";
+import { FALLBACK_TARGET_HEADER } from "@shared/registry/usage-headers.ts";
 import type { Context } from "hono";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
 import type { Env } from "@/env.ts";
+import { FALLBACK_ON_STATUS_CODES } from "../fallback.ts";
 import {
     getRegisteredServers,
     isValidType,
@@ -412,6 +414,21 @@ async function generateVideoResult(
     );
 }
 
+// Only a broken member is worth replaying, so the image path gates on the same
+// statuses Portkey gets for text: caller errors (400/422) cannot succeed on a
+// retry. Content-policy refusals are excluded at any status — routing a
+// moderation rejection to a possibly more permissive member would turn an
+// unbilled 422 into a billed generation and bypass the first member's
+// moderation.
+function isRetryablePoolError(error: unknown): boolean {
+    if (!(error instanceof HttpError)) return false;
+    if (!FALLBACK_ON_STATUS_CODES.includes(error.status)) return false;
+    return !firstContentPolicyMessage([
+        parseUpstreamErrorBody(error).text,
+        error.message,
+    ]);
+}
+
 // The endpoints that may serve this request, in the order they are tried. A
 // pooled model starts at a random member: that is the load-spreading mechanism,
 // it needs no persisted counter, and a per-isolate counter would not distribute
@@ -427,6 +444,37 @@ function communityImageEndpoints(
     );
 }
 
+// The image response is fully buffered before anything reaches the client, so a
+// failed member can simply be retried on the next one. `index` is the position
+// of the member that served, so the caller can report a pool failover.
+async function callCommunityImagePool(
+    c: ImageContext,
+    endpoints: readonly CommunityEndpointRuntime[],
+    prompt: string,
+    safeParams: RuntimeImageParams,
+): Promise<{
+    result: ImageGenerationResult;
+    endpoint: CommunityEndpointRuntime;
+    index: number;
+}> {
+    for (const [index, endpoint] of endpoints.entries()) {
+        try {
+            const result = await callCommunityImageEndpoint(
+                endpoint,
+                prompt,
+                safeParams,
+                c.env.BETTER_AUTH_SECRET,
+            );
+            assertNonEmptyMedia(result.buffer, "Community image endpoint");
+            return { result, endpoint, index };
+        } catch (error) {
+            const isLast = index === endpoints.length - 1;
+            if (isLast || !isRetryablePoolError(error)) throw error;
+        }
+    }
+    throw new Error("Community image pool is empty");
+}
+
 export async function generateImageOrVideoResponse(
     c: ImageContext,
     prompt: string,
@@ -439,35 +487,25 @@ export async function generateImageOrVideoResponse(
     try {
         const communityEndpoints = communityImageEndpoints(c);
         if (communityEndpoints.length > 0) {
-            // The image response is fully buffered before anything reaches the
-            // client, so a failed member can simply be retried on the next one.
-            let lastError: unknown;
-            for (const endpoint of communityEndpoints) {
-                try {
-                    const result = await callCommunityImageEndpoint(
-                        endpoint,
-                        originalPrompt,
-                        safeParams,
-                        c.env.BETTER_AUTH_SECRET,
-                    );
-                    assertNonEmptyMedia(
-                        result.buffer,
-                        "Community image endpoint",
-                    );
-                    c.set("servedCommunityEndpoint", endpoint);
-                    return new Response(bufferToUint8Array(result.buffer), {
-                        headers: mediaHeaders(
-                            originalPrompt,
-                            safeParams,
-                            result,
-                            detectMimeType(result.buffer),
-                        ),
-                    });
-                } catch (error) {
-                    lastError = error;
-                }
+            const { result, endpoint, index } = await callCommunityImagePool(
+                c,
+                communityEndpoints,
+                originalPrompt,
+                safeParams,
+            );
+            c.set("servedCommunityEndpoint", endpoint);
+            const headers = mediaHeaders(
+                originalPrompt,
+                safeParams,
+                result,
+                detectMimeType(result.buffer),
+            );
+            if (index > 0) {
+                // Same "config.targets[N]" shape the Portkey text path emits,
+                // so tracking's fallback parsing covers both.
+                headers.set(FALLBACK_TARGET_HEADER, `config.targets[${index}]`);
             }
-            throw lastError;
+            return new Response(bufferToUint8Array(result.buffer), { headers });
         }
 
         if (isVideoModel(safeParams.model)) {

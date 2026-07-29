@@ -196,6 +196,31 @@ def test_long_lived_pollinations_bearer_is_not_spendable():
     assert resp.status_code == 401
 
 
+def test_agent_run_token_reaches_brain_and_tools(monkeypatch):
+    """The same per-request run token is available to every generation path."""
+    from polli_agent.config import _current_api_key
+    from polli_agent.tools import gen
+
+    run_token = "ag_test-delegated-run-token"
+
+    async def fake_run_agent(messages, **kwargs):
+        assert _current_api_key() == run_token
+        assert gen._key() == run_token
+        return {"text": "delegated", "artifacts": [], "iterations": 1}
+
+    monkeypatch.setattr(api_mod, "run_agent", fake_run_agent)
+
+    client = TestClient(api_mod.app)
+    response = client.post(
+        "/v1/chat/completions",
+        json=_request_body(stream=False),
+        headers={"Authorization": f"Bearer {run_token}"},
+    )
+
+    assert response.status_code == 200
+    assert response.json()["choices"][0]["message"]["content"] == "delegated"
+
+
 def test_operator_key_fallback_is_opt_in(monkeypatch):
     """With POLLI_ALLOW_OPERATOR_KEY set, local/dev use still works unauthenticated."""
 

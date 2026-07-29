@@ -243,18 +243,17 @@ async def _sse_events(
 
 @app.post("/v1/chat/completions")
 async def chat_completions(request: ChatRequest, http_request: Request) -> Any:
-    api_key = http_request.headers.get(
-        "X-Pollinations-Key"
-    ) or http_request.headers.get("Authorization", "").replace("Bearer ", "")
+    # Only X-Pollinations-Key is spendable. Authorization carries whatever
+    # credential proves the caller may reach this agent at all — behind the
+    # gateway that is the endpoint's own saved token, and spending it would
+    # bill the endpoint owner for every caller instead of the caller.
+    api_key = http_request.headers.get("X-Pollinations-Key")
     # Fail here rather than part-way through a run: without a credential every
     # downstream generation 401s anyway, after the caller has already waited.
     if not api_key and not settings.allow_operator_key:
         raise HTTPException(
             status_code=401,
-            detail=(
-                "Missing credential. Pass one as X-Pollinations-Key or "
-                "Authorization: Bearer <key>."
-            ),
+            detail="Missing credential. Pass one as X-Pollinations-Key.",
         )
     if request.stream:
         return StreamingResponse(
@@ -315,7 +314,7 @@ async def chat_completions_get() -> dict[str, Any]:
             "method": "POST",
             "headers": {
                 "Content-Type": "application/json",
-                "Authorization": "Bearer <pollinations-key>",
+                "X-Pollinations-Key": "<pollinations-key>",
             },
             "body": {
                 "model": "polli",
@@ -341,5 +340,5 @@ async def root() -> dict[str, Any]:
             "models": "GET /v1/models",
             "health": "GET /health",
         },
-        "auth": "Authorization: Bearer <pollinations-key> or X-Pollinations-Key",
+        "auth": "X-Pollinations-Key: <pollinations-key>",
     }

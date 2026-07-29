@@ -185,6 +185,21 @@ def test_request_without_credential_is_rejected():
     assert resp.status_code == 401
 
 
+def test_authorization_header_is_not_spendable():
+    """Authorization proves reachability, not spend authority.
+
+    Behind the gateway it carries the endpoint's own saved token, so spending it
+    would bill the endpoint owner for every caller instead of the caller.
+    """
+    client = TestClient(api_mod.app)
+    resp = client.post(
+        "/v1/chat/completions",
+        json=_request_body(stream=False),
+        headers={"Authorization": "Bearer sk_endpoint_access_token"},
+    )
+    assert resp.status_code == 401
+
+
 def test_operator_key_fallback_is_opt_in(monkeypatch):
     """With POLLI_ALLOW_OPERATOR_KEY set, local/dev use still works unauthenticated."""
 

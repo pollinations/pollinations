@@ -163,3 +163,28 @@ def test_stream_false_returns_plain_json(monkeypatch):
     resp = client.post("/v1/chat/completions", json=_request_body(stream=False))
     assert resp.status_code == 200
     assert resp.json()["choices"][0]["message"]["content"] == "plain"
+
+
+def test_delegated_run_token_reaches_brain_and_tools(monkeypatch):
+    """Treat Pollinations run tokens as opaque per-request credentials."""
+    from polli_agent.config import _current_api_key
+    from polli_agent.tools import gen
+
+    delegated_token = "ag_test-delegated-run-token"
+
+    async def fake_run_agent(messages, **kwargs):
+        assert _current_api_key() == delegated_token
+        assert gen._key() == delegated_token
+        return {"text": "delegated", "artifacts": [], "iterations": 1}
+
+    monkeypatch.setattr(api_mod, "run_agent", fake_run_agent)
+
+    client = TestClient(api_mod.app)
+    resp = client.post(
+        "/v1/chat/completions",
+        json=_request_body(stream=False),
+        headers={"Authorization": f"Bearer {delegated_token}"},
+    )
+
+    assert resp.status_code == 200
+    assert resp.json()["choices"][0]["message"]["content"] == "delegated"

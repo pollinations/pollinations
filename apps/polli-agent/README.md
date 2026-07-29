@@ -27,7 +27,7 @@ docker build -t polli-agent .
 docker run -p 8000:8000 --env-file .env polli-agent
 ```
 
-The container needs no baked-in secrets — pass your Pollinations key per-request via `Authorization: Bearer <key>`, or set `OPENAI_API_KEY` for local/dev use.
+The container needs no baked-in secrets — pass your Pollinations credential per-request via `Authorization: Bearer <key>`, or set `OPENAI_API_KEY` for local/dev use. The credential is treated as opaque, so Pollinations can supply a short-lived `ag_` run token without exposing the user's original API key; the same token is used by the brain, tools, model registry, and media uploads for that request.
 
 ## Configuration
 

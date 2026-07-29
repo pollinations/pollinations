@@ -1,0 +1,35 @@
+{
+  "pr_number": 12702,
+  "title": "Add polli-agent — a multimodal router app",
+  "author": "Itachi-1824",
+  "url": "https://github.com/pollinations/pollinations/pull/12702",
+  "merged_at": "2026-07-29T22:35:13Z",
+  "labels": [],
+  "pr_body_excerpt": "Adds `apps/polli-agent`, a sibling to `apps/polli`.\n\nWhere `polli` is the Discord/GitHub assistant, `polli-agent` is the router: you give it one prompt and it handles the rest — picks the model, decides whether the answer is text, an image, audio, a video, or several of those at once, and returns them in a single response.\n\nIt's an OpenAI-compatible `/v1/chat/completions` endpoint (SSE streaming) backed by a tool-calling loop that generates and edits images, renders and stitches video (including start/end-frame interpolation), synthesises and transcribes speech, searches the web, and runs a sandboxed shell with ffmpeg — chaining them freely. Pass a Pollinations key per request via `Authorization: Bearer`, or set `OPENAI_API_KEY` for local use.\n\nFastAPI + pydantic-settings; tests and a Dockerfile are included. README has the full rundown.\n",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "One prompt, many petals",
+    "blurb": "Meet polli-agent: hand it a prompt and it figures out which Pollinations tools should bloom. Text, images, audio, video, web search, and a little ffmpeg alchemy can now travel together in one response.",
+    "summary": "Added apps/polli-agent, an OpenAI-compatible streaming /v1/chat/completions router that uses a tool-calling loop to select and chain text, image generation/editing, speech synthesis/transcription, video rendering and stitching, web search, and sandboxed ffmpeg tools.",
+    "impact": "Developers can send one authenticated prompt to polli-agent and receive coordinated multimodal text, image, audio, video, or combined results without manually orchestrating the underlying tools.",
+    "keywords": [
+      "polli-agent",
+      "multimodal",
+      "openai-compatible",
+      "streaming",
+      "tool-calling",
+      "video",
+      "audio"
+    ],
+    "visual_concept": "Polli acts as a cozy conductor in a garden workshop, routing one glowing prompt-seed through branching vines into a retro terminal, a picture frame, a speaker, and a tiny film projector. The monitor robot eagerly observes the different outputs while code-plants visually connect the tools, representing the agent freely chaining media capabilities into one answer.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny conductor hat, guiding one glowing prompt-seed through flowering code-vines toward a retro terminal, framed image, pastel speaker, and tiny film projector; a chunky CRT monitor robot watches with excited square eyes. Lime green (#ecf874) glows prominently among warm cream, mint, lavender, and peach garden-workshop gradients, with subtle pixel-font text: 'ONE PROMPT'. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-29/PR-12702.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny conductor hat, guiding one glowing prompt-seed through flowering code-vines toward a retro terminal, framed image, pastel speaker, and tiny film projector; a chunky CRT monitor robot watches with excited square eyes. Lime green (#ecf874) glows prominently among warm cream, mint, lavender, and peach garden-workshop gradients, with subtle pixel-font text: 'ONE PROMPT'. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, nostalgic but beautiful."
+  },
+  "generated_at": "2026-07-29T22:36:22.734383+00:00"
+}

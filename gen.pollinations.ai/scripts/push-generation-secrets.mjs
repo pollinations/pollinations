@@ -52,6 +52,9 @@ const OPTIONAL_SECRET_KEYS = [
     "AIRFORCE_API_KEY",
     "AI_GATEWAY_API_KEY",
     "ASSEMBLYAI_API_KEY",
+    // Signs agent run tokens. Optional: without it none are minted or
+    // accepted, which disables agent delegation rather than breaking anything.
+    "RUN_TOKEN_SECRET",
 ];
 
 const [sourcePath, environment] = process.argv.slice(2);

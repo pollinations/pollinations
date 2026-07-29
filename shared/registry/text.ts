@@ -1,6 +1,9 @@
 import {
+    GEMINI_3_SEARCH_BILLING,
+    GEMINI_25_GROUNDING_BILLING,
     OPENROUTER_GEMINI_SEARCH_BILLING,
     withOpenRouterGeminiCacheStorage,
+    withVertexCacheStorage,
 } from "./gemini-billing";
 import {
     PERPLEXITY_FAST_BILLING,
@@ -728,13 +731,13 @@ export const TEXT_SERVICES = {
     },
     "gemini-search": {
         aliases: ["gemini-2.5-flash-search", "gemini-2.5-flash-lite-search"],
-        provider: "openrouter",
+        provider: "google",
         brand: "Google",
         category: "text",
         addedDate: new Date("2025-10-10").getTime(),
         paidOnly: true,
         priceMultiplier: 1,
-        // OpenRouter base rates for the pinned Google Vertex EU route.
+        // Vertex base rates for Gemini 2.5 Flash Lite.
         cost: {
             promptTextTokens: perMillion(0.1),
             promptCachedTokens: perMillion(0.01),
@@ -744,10 +747,7 @@ export const TEXT_SERVICES = {
             promptVideoTokens: perMillion(0.1),
             completionTextTokens: perMillion(0.4),
         },
-        billing: withOpenRouterGeminiCacheStorage(
-            OPENROUTER_GEMINI_SEARCH_BILLING,
-            1.0,
-        ),
+        billing: withVertexCacheStorage(GEMINI_25_GROUNDING_BILLING, 1.0),
         title: "Google Gemini 2.5 Flash Lite Search",
         description:
             "Answers grounded in live web search; fast and cheap, not a deep reasoner",
@@ -765,13 +765,13 @@ export const TEXT_SERVICES = {
             "gemini-3.1-flash-lite-search",
             "gemini-3.5-flash-lite-search",
         ],
-        provider: "openrouter",
+        provider: "google",
         brand: "Google",
         category: "text",
         addedDate: new Date("2026-05-26").getTime(),
         paidOnly: true,
         priceMultiplier: 1,
-        // OpenRouter base rates for the pinned Google Vertex global route.
+        // Vertex base rates for Gemini 3.5 Flash Lite.
         cost: {
             promptTextTokens: perMillion(0.3),
             promptCachedTokens: perMillion(0.03),
@@ -781,10 +781,7 @@ export const TEXT_SERVICES = {
             promptVideoTokens: perMillion(0.3),
             completionTextTokens: perMillion(2.5),
         },
-        billing: withOpenRouterGeminiCacheStorage(
-            OPENROUTER_GEMINI_SEARCH_BILLING,
-            1.0,
-        ),
+        billing: withVertexCacheStorage(GEMINI_3_SEARCH_BILLING, 1.0),
         title: "Gemini 3.5 Flash Lite Search",
         description: "Fast multimodal answers grounded in live web results",
         inputModalities: ["text", "image", "audio", "video"],
@@ -798,13 +795,13 @@ export const TEXT_SERVICES = {
     },
     "gemini-search-large": {
         aliases: ["gemini-3.6-flash-search", "gemini-3.5-flash-search"],
-        provider: "openrouter",
+        provider: "google",
         brand: "Google",
         category: "text",
         addedDate: new Date("2026-05-26").getTime(),
         paidOnly: true,
         priceMultiplier: 1,
-        // OpenRouter base rates for the pinned Google Vertex global route.
+        // Vertex base rates for Gemini 3.6 Flash.
         cost: {
             promptTextTokens: perMillion(1.5),
             promptCachedTokens: perMillion(0.15),
@@ -814,10 +811,7 @@ export const TEXT_SERVICES = {
             promptVideoTokens: perMillion(1.5),
             completionTextTokens: perMillion(7.5),
         },
-        billing: withOpenRouterGeminiCacheStorage(
-            OPENROUTER_GEMINI_SEARCH_BILLING,
-            1.0,
-        ),
+        billing: withVertexCacheStorage(GEMINI_3_SEARCH_BILLING, 1.0),
         title: "Gemini 3.6 Flash Search",
         description: "Premium web research with grounded, up-to-date answers",
         inputModalities: ["text", "image", "audio", "video"],

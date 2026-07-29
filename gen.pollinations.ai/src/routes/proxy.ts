@@ -250,18 +250,21 @@ const modelsListHandler =
     };
 
 async function getVisibleModelEntries(c: Context<Env>) {
-    return (await getGenerationModelRegistry(c.env)).visibleEntries(
+    const entries = (await getGenerationModelRegistry(c.env)).visibleEntries(
         c.var.auth?.user?.id,
     );
+    return c.var.auth?.agentRun
+        ? entries.filter((entry) => !entry.communityEndpoint)
+        : entries;
 }
 
 async function getVisibleModelEntriesForEventType(
     c: Context<Env>,
     eventType: GenerationModelEntry["eventType"],
 ) {
-    return (await getGenerationModelRegistry(c.env))
-        .visibleEntries(c.var.auth?.user?.id)
-        .filter((entry) => entry.eventType === eventType);
+    return (await getVisibleModelEntries(c)).filter(
+        (entry) => entry.eventType === eventType,
+    );
 }
 
 // "3d" models share the "generate.image" EventType with image/video models

@@ -1,5 +1,116 @@
 # Pollinations Model Changelog
 
+## 2026-07-29
+
+### Added
+- `gemini-flash-lite-3.5` (Google, text) — text/image/audio/video input; tool calling and web search.
+- `laguna` (Poolside, text) — tool calling and reasoning.
+- `longcat` (Meituan, text) — tool calling and reasoning.
+- `nemotron` (NVIDIA, text) — tool calling and reasoning.
+- `MarcosFRG/deepseek-v4-pro` (Community, text) — text input/output.
+- `morriszdweck/mercury-cheap` (Community, text) — text input/output.
+- `vendouple/gemma-4-31B` (Community, text) — text input/output.
+- `tomdacatto/gemma-4-31b-fast` (Community, text) — text input/output.
+- `vendouple/nemotron-3-ultra:free` (Community, text) — text input/output.
+- `vendouple/qwen3.8-max-preview` (Community, text) — text input/output.
+- `Catniti/glm-4.7-flash` (Community, text) — text input/output.
+- `vendouple/laguna-s-2.1:free` (Community, text) — text input/output.
+- `MarcosFRG/gemini-3.1-pro-preview` (Community, text) — text input/output.
+- `Catniti/kimi-k2.6` (Community, text) — text input/output.
+- `Catniti/command-r-plus` (Community, text) — text input/output.
+- `YoannDev90/llama-3.1-8b-fast:free` (Community, text) — text input/output.
+- `YoannDev90/gemma-4-31b:free` (Community, text) — text input/output.
+- `JustScriptzz/big-pickle` (Community, text) — text input/output.
+- `Lorodn4x/gpt-5.6-terra` (Community, text) — text input/output.
+- `Lorodn4x/qwen3.7-max` (Community, text) — text input/output.
+- `Lorodn4x/minimax-m3` (Community, text) — text input/output.
+- `tomdacatto/ling-3.0-flash` (Community, text) — text input/output.
+- `vendouple/gpt-5.5` (Community, text) — text input/output.
+- `vendouple/kimi-k3:s2` (Community, text) — text input/output.
+- `recraft-v4.1-vector` (Recraft, image) — text/image input to image output.
+- `Catniti/agnes-image-2.0-flash` (Community, image) — text-to-image.
+- `Catniti/qwen-image-3.0-pro` (Community, image) — text-to-image.
+- `tomdacatto/seedream-5-pro` (Community, image) — text-to-image.
+- `tomdacatto/nano-banana-2` (Community, image) — text-to-image.
+- `tomdacatto/nano-banana-2-lite` (Community, image) — text-to-image.
+- `tomdacatto/nano-banana-pro` (Community, image) — text-to-image.
+- `tomdacatto/nano-banana` (Community, image) — text-to-image.
+- `sharktide/inferenceport-ai-lightning-image-turbo` (Community, image) — text-to-image.
+- `Catniti/agnes-image-2.1-flash` (Community, image) — text-to-image.
+- `tomdacatto/kling-image-3` (Community, image) — text-to-image.
+- `tomdacatto/grok-imagine` (Community, image) — text-to-image.
+- `tomdacatto/grok-imagine-quality` (Community, image) — text-to-image.
+- `vendouple/uncensored-image` (Community, image) — text-to-image.
+- `vendouple/luma-photon-1` (Community, image) — text-to-image.
+- `vendouple/seedream-5-lite` (Community, image) — text/image input to image output.
+- `vendouple/flux-2` (Community, image) — text-to-image.
+- `vendouple/animagine` (Community, image) — text-to-image.
+- `vendouple/nano-banana-pro` (Community, image) — text-to-image.
+- `vendouple/grok-imagine` (Community, image) — text-to-image.
+- `vendouple/imagen-4-ultra` (Community, image) — text-to-image.
+- `vendouple/leonardo-phoenix` (Community, image) — text-to-image.
+- `Spit-fires/flux-schnell` (Community, image) — text-to-image.
+- `meow18838/image-1` (Community, image) — text-to-image.
+- `CloudCompile/agnes-image-2.0-flash` (Community, image) — text-to-image.
+- `tomdacatto/gpt-image-2` (Community, image) — text-to-image.
+- `vendouple/lucid-origin` (Community, image) — text-to-image.
+- `eleven-dialogue` (ElevenLabs, audio) — text-to-audio dialogue.
+- `eleven-voice-changer` (ElevenLabs, audio) — audio-to-audio voice conversion.
+- `eleven-voice-isolator` (ElevenLabs, audio) — audio/video input to audio output.
+- `lyria-3-clip` (Google, audio) — text-to-audio music generation.
+- `csm-1b` (Sesame, audio) — text-to-speech.
+
+### Changed
+- `gemini` — price cut ~15%.
+- `gemini-search-large` — price cut ~15%.
+- `MarcosFRG/gemma-4-31b` — price cut ~30%.
+- `MarcosFRG/deepseek-v4-flash` — price cut ~55%.
+- `MarcosFRG/minimax-m3` — price cut ~20%.
+- `gemini-search-fast` — price +65%.
+- `MarcosFRG/gemini-2.5-flash-lite` — price +20%.
+- `MarcosFRG/gemini-3-flash-preview` — price +20%.
+- `MarcosFRG/gemini-3.1-flash-lite` — price +20%.
+- `MarcosFRG/glm-5.2` — price +340%.
+- `CloudCompile/afforda-claude-haiku-4.5` — price +5%.
+- `vendouple/claude-opus-4-8` — price +100%.
+- `gemini-3-flash` — removed code execution support.
+- `gemini-fast` — removed code execution support.
+- `gemini-search` — removed code execution support.
+- `gemini-search-fast` — removed code execution support.
+- `gemini-search-large` — removed code execution support.
+- `gemini` — removed code execution support.
+- `claude-large` — renamed to Claude Opus 5.
+- `elevenlabs` — added `/v1/audio/speech/with-timestamps` endpoint.
+- `elevenflash` — added `/v1/audio/speech/with-timestamps` endpoint.
+- `eleven-multilingual-v2` — added `/v1/audio/speech/with-timestamps` endpoint.
+
+### Removed
+- `gemini-flash-lite-3.1` (was: text)
+- `polly` (was: text)
+- `sharktide/inferenceport.ai-gpt-5-chat-latest` (was: text)
+- `morriszdweck/qwen-3.7-plus-cheap` (was: text)
+- `Minor-fun/deepseek-v4-flash` (was: text)
+- `Spit-fires/step-3.5-flash-free` (was: text)
+- `Spit-fires/gpt-oss-20b-free` (was: text)
+- `smplstuff/falcon-h1-tiny` (was: text)
+- `Spit-fires/bonsai-image-512x512-4` (was: text)
+- `morriszdweck/mistral-fat` (was: text)
+- `Circuit-Overtime/lixsearch` (was: text)
+- `Spit-fires/free` (was: text)
+- `Minor-fun/gemini-3.1-pro-preview` (was: text)
+- `Minor-fun/gemini-3.5-flash` (was: text)
+- `vendouple/nemotron-3-ultra` (was: text)
+- `vendouple/deepseek-v3.2` (was: text)
+- `YoannDev90/llama-3.1-8b-instant:free` (was: text)
+- `solarnode-developement/hy3` (was: text)
+- `vendouple/grok-4.5` (was: text)
+- `CloudCompile/agnes-image-2.1-flash-2k` (was: text)
+- `CloudCompile/agnes-video-v2.0` (was: text)
+- `CloudCompile/agnes-image-2.1-flash-1k` (was: text)
+- `Catniti/gemini-3.6-flash` (was: text)
+- `MarcosFRG/ternary-bonsai-27b` (was: text)
+- `vendouple/gemini-3.6-flash` (was: text)
+
 ## 2026-07-22
 
 ### Added

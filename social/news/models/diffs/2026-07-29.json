@@ -1,0 +1,3973 @@
+{
+  "added": {
+    "text": [
+      {
+        "name": "gemini-flash-lite-3.5",
+        "aliases": [
+          "gemini-flash-lite-3.1",
+          "gemini-3.1-flash-lite",
+          "gemini-3.1-flash-lite-preview",
+          "gemini-flash-lite",
+          "gemini-3.5-flash-lite"
+        ],
+        "category": "text",
+        "brand": "Google",
+        "pricing": {
+          "currency": "pollen",
+          "promptTextTokens": "0.0000003",
+          "promptCachedTokens": "0.00000003",
+          "promptCacheWriteTokens": "0.0000003",
+          "promptAudioTokens": "0.0000003",
+          "promptImageTokens": "0.0000003",
+          "promptVideoTokens": "0.0000003",
+          "completionTextTokens": "0.0000025"
+        },
+        "title": "Gemini 3.5 Flash Lite",
+        "description": "Fast multimodal reasoning for high-throughput agents and data processing",
+        "input_modalities": [
+          "text",
+          "image",
+          "audio",
+          "video"
+        ],
+        "output_modalities": [
+          "text"
+        ],
+        "max_reference_images": 3600,
+        "max_reference_videos": 10,
+        "capabilities": [
+          "tool_calling",
+          "web_search"
+        ],
+        "tools": true,
+        "context_length": 1048576,
+        "is_specialized": false,
+        "paid_only": true,
+        "added_date": 1775174400000
+      },
+      {
+        "name": "laguna",
+        "aliases": [
+          "laguna-s-2.1",
+          "laguna-s2.1",
+          "poolside-laguna-s-2.1"
+        ],
+        "category": "text",
+        "brand": "Poolside",
+        "pricing": {
+          "currency": "pollen",
+          "promptTextTokens": "0.0000001",
+          "promptCachedTokens": "0.00000001",
+          "completionTextTokens": "0.0000002"
+        },
+        "title": "Laguna S 2.1",
+        "description": "Long-context reasoning for coding agents and complex software tasks",
+        "input_modalities": [
+          "text"
+        ],
+        "output_modalities": [
+          "text"
+        ],
+        "capabilities": [
+          "tool_calling",
+          "reasoning"
+        ],
+        "tools": true,
+        "reasoning": true,
+        "context_length": 1048576,
+        "is_specialized": false,
+        "paid_only": true,
+        "added_date": 1784678400000
+      },
+      {
+        "name": "longcat",
+        "aliases": [
+          "longcat-2.0",
+          "longcat-2"
+        ],
+        "category": "text",
+        "brand": "Meituan",
+        "pricing": {
+          "currency": "pollen",
+          "promptTextTokens": "0.0000003",
+          "promptCachedTokens": "0.000000006",
+          "completionTextTokens": "0.0000012"
+        },
+        "title": "LongCat 2.0",
+        "description": "Long-context reasoning for coding agents and repository-scale tasks",
+        "input_modalities": [
+          "text"
+        ],
+        "output_modalities": [
+          "text"
+        ],
+        "capabilities": [
+          "tool_calling",
+          "reasoning"
+        ],
+        "tools": true,
+        "reasoning": true,
+        "context_length": 1048576,
+        "is_specialized": false,
+        "paid_only": true,
+        "added_date": 1784764800000
+      },
+      {
+        "name": "nemotron",
+        "aliases": [
+          "nemotron-3-ultra",
+          "nvidia-nemotron-3-ultra",
+          "nemotron-3-ultra-550b-a55b"
+        ],
+        "category": "text",
+        "brand": "NVIDIA",
+        "pricing": {
+          "currency": "pollen",
+          "promptTextTokens": "0.0000005",
+          "promptCachedTokens": "0.0000001",
+          "completionTextTokens": "0.0000022"
+        },
+        "title": "NVIDIA Nemotron 3 Ultra",
+        "description": "Frontier reasoning for coding agents, deep research and complex workflows",
+        "input_modalities": [
+          "text"
+        ],
+        "output_modalities": [
+          "text"
+        ],
+        "capabilities": [
+          "tool_calling",
+          "reasoning"
+        ],
+        "tools": true,
+        "reasoning": true,
+        "context_length": 262144,
+        "is_specialized": false,
+        "paid_only": true,
+        "added_date": 1785110400000
+      },
+      {
+        "name": "MarcosFRG/deepseek-v4-pro",
+        "aliases": [
+          "community/MarcosFRG/deepseek-v4-pro"
+        ],
+        "category": "text",
+        "brand": "Community",
+        "community": true,
+        "pricing": {
+          "currency": "pollen",
+          "promptTextTokens": "0.0000001",
+          "promptCachedTokens": "0.00000001",
+          "completionTextTokens": "0.0000002",
+          "completionReasoningTokens": "0.0000001"
+        },
+        "title": "DeepSeek V4 Pro via JankRouter",
+        "description": "Extended thinking for complex coding and multi-step problems; reasons thoroughly before answering",
+        "input_modalities": [
+          "text"
+        ],
+        "output_modalities": [
+          "text"
+        ],
+        "capabilities": [],
+        "paid_only": false,
+        "alpha": true,
+        "added_date": 0
+      },
+      {
+        "name": "morriszdweck/mercury-cheap",
+        "aliases": [
+          "community/morriszdweck/mercury-cheap"
+        ],
+        "category": "text",
+        "brand": "Community",
+        "community": true,
+        "pricing": {
+          "currency": "pollen",
+          "promptTextTokens": "0.00000005",
+          "completionTextTokens": "0.00000015"
+        },
+        "title": "Mercury 2 (cheap)",
+        "description": "Mercury 2 (cheap)",
+        "input_modalities": [
+          "text"
+        ],
+        "output_modalities": [
+          "text"
+        ],
+        "capabilities": [],
+        "paid_only": false,
+        "alpha": true,
+        "added_date": 0
+      },
+      {
+        "name": "vendouple/gemma-4-31B",
+        "aliases": [
+          "community/vendouple/gemma-4-31B"
+        ],
+        "category": "text",
+        "brand": "Community",
+        "community": true,
+        "pricing": {
+          "currency": "pollen",
+          "promptTextTokens": "0.00000005",
+          "completionTextTokens": "0.0000001"
+        },
+        "title": "Gemma 4 31B",
+        "description": "Gemma 4 31B",
+        "input_modalities": [
+          "text"
+        ],
+        "output_modalities": [
+          "text"
+        ],
+        "capabilities": [],
+        "paid_only": false,
+        "alpha": true,
+        "added_date": 0
+      },
+      {
+        "name": "tomdacatto/gemma-4-31b-fast",
+        "aliases": [
+          "community/tomdacatto/gemma-4-31b-fast"
+        ],
+        "category": "text",
+        "brand": "Community",
+        "community": true,
+        "pricing": {
+          "currency": "pollen",
+          "promptTextTokens": "0.0000005",
+          "promptCachedTokens": "0.00000025",
+          "completionTextTokens": "0.0000005",
+          "completionReasoningTokens": "0.0000002"
+        },
+        "title": "Ultra fast gemma 4 31b",
+        "description": "Ultra fast gemma 4 31b",
+        "input_modalities": [
+          "text"
+        ],
+        "output_modalities": [
+          "text"
+        ],
+        "capabilities": [],
+        "paid_only": false,
+        "alpha": true,
+        "added_date": 0
+      },
+      {
+        "name": "vendouple/nemotron-3-ultra:free",
+        "aliases": [
+          "community/vendouple/nemotron-3-ultra:free"
+        ],
+        "category": "text",
+        "brand": "Community",
+        "community": true,
+        "pricing": {
+          "currency": "pollen"
+        },
+        "title": "Nemotron 3 Ultra (Free)",
+        "description": "Nemotron 3 Ultra (Free)",
+        "input_modalities": [
+          "text"
+        ],
+        "output_modalities": [
+          "text"
+        ],
+        "capabilities": [],
+        "paid_only": false,
+        "alpha": true,
+        "added_date": 0
+      },
+      {
+        "name": "vendouple/qwen3.8-max-preview",
+        "aliases": [
+          "community/vendouple/qwen3.8-max-preview"
+        ],
+        "category": "text",
+        "brand": "Community",
+        "community": true,
+        "pricing": {
+          "currency": "pollen",
+          "promptTextTokens": "0.0000005",
+          "completionTextTokens": "0.000002",
+          "completionReasoningTokens": "0.000002"
+        },
+        "title": "Qwen 3.8 Max Preview",
+        "input_modalities": [
+          "text"
+        ],
+        "output_modalities": [
+          "text"
+        ],
+        "capabilities": [],
+        "paid_only": false,
+        "alpha": true,
+        "added_date": 0
+      },
+      {
+        "name": "Catniti/glm-4.7-flash",
+        "aliases": [
+          "community/Catniti/glm-4.7-flash"
+        ],
+        "category": "text",
+        "brand": "Community",
+        "community": true,
+        "pricing": {
+          "currency": "pollen",
+          "promptTextTokens": "0.00000006",
+          "promptCachedTokens": "0.00000001",
+          "completionTextTokens": "0.0000004",
+          "completionReasoningTokens": "0.00000006"
+        },
+        "title": "Glm 4.7 flash",
+        "description": "Glm 4.7 flash",
+        "input_modalities": [
+          "text"
+        ],
+        "output_modalities": [
+          "text"
+        ],
+        "capabilities": [],
+        "paid_only": false,
+        "alpha": true,
+        "added_date": 0
+      },
+      {
+        "name": "vendouple/laguna-s-2.1:free",
+        "aliases": [
+          "community/vendouple/laguna-s-2.1:free"
+        ],
+        "category": "text",
+        "brand": "Community",
+        "community": true,
+        "pricing": {
+          "currency": "pollen"
+        },
+        "title": "Laguna s2.1 (Free)",
+        "description": "PLEASE DO NOT USE THIS MODEL IT IS HARD TO MAINTAIN INSTEAD USE: YoannDev90s one",
+        "input_modalities": [
+          "text"
+        ],
+        "output_modalities": [
+          "text"
+        ],
+        "capabilities": [],
+        "paid_only": false,
+        "alpha": true,
+        "added_date": 0
+      },
+      {
+        "name": "MarcosFRG/gemini-3.1-pro-preview",
+        "aliases": [
+          "community/MarcosFRG/gemini-3.1-pro-preview"
+        ],
+        "category": "text",
+        "brand": "Community",
+        "community": true,
+        "pricing": {
+          "currency": "pollen",
+          "promptTextTokens": "0.0000018",
+          "completionTextTokens": "0.0000108",
+          "completionReasoningTokens": "0.0000054"
+        },
+        "title": "Gemini 3.1 Pro via JankRouter",
+        "description": "Top-tier reasoning and agentic coding for complex multi-step problems; the heavy hitter",
+        "input_modalities": [
+          "text"
+        ],
+        "output_modalities": [
+          "text"
+        ],
+        "capabilities": [],
+        "paid_only": false,
+        "alpha": true,
+        "added_date": 0
+      },
+      {
+        "name": "Catniti/kimi-k2.6",
+        "aliases": [
+          "community/Catniti/kimi-k2.6"
+        ],
+        "category": "text",
+        "brand": "Community",
+        "community": true,
+        "pricing": {
+          "currency": "pollen",
+          "promptTextTokens": "0.0000006",
+          "promptCachedTokens": "0.00000025",
+          "completionTextTokens": "0.00000341"
+        },
+        "title": "Kimi k2.6",
+        "input_modalities": [
+          "text"
+        ],
+        "output_modalities": [
+          "text"
+        ],
+        "capabilities": [],
+        "paid_only": false,
+        "alpha": true,
+        "added_date": 0
+      },
+      {
+        "name": "Catniti/command-r-plus",
+        "aliases": [
+          "community/Catniti/command-r-plus"
+        ],
+        "category": "text",
+        "brand": "Community",
+        "community": true,
+        "pricing": {
+          "currency": "pollen",
+          "promptTextTokens": "0.0000025",
+          "promptCachedTokens": "0.0000015",
+          "promptAudioTokens": "0.0000015",
+          "completionTextTokens": "0.00001",
+          "completionReasoningTokens": "0.000001",
+          "completionAudioTokens": "0.000002"
+        },
+        "title": "Command R+",
+        "input_modalities": [
+          "text"
+        ],
+        "output_modalities": [
+          "text"
+        ],
+        "capabilities": [],
+        "paid_only": false,
+        "alpha": true,
+        "added_date": 0
+      },
+      {
+        "name": "YoannDev90/llama-3.1-8b-fast:free",
+        "aliases": [
+          "community/YoannDev90/llama-3.1-8b-fast:free"
+        ],
+        "category": "text",
+        "brand": "Community",
+        "community": true,
+        "pricing": {
+          "currency": "pollen"
+        },
+        "title": "Llama 3.1 8b",
+        "description": "Fast, free. 131,072 tokens context size.",
+        "input_modalities": [
+          "text"
+        ],
+        "output_modalities": [
+          "text"
+        ],
+        "capabilities": [],
+        "paid_only": false,
+        "alpha": true,
+        "added_date": 0
+      },
+      {
+        "name": "YoannDev90/gemma-4-31b:free",
+        "aliases": [
+          "community/YoannDev90/gemma-4-31b:free"
+        ],
+        "category": "text",
+        "brand": "Community",
+        "community": true,
+        "pricing": {
+          "currency": "pollen"
+        },
+        "title": "Gemma 4 31b",
+        "input_modalities": [
+          "text"
+        ],
+        "output_modalities": [
+          "text"
+        ],
+        "capabilities": [],
+        "paid_only": false,
+        "alpha": true,
+        "added_date": 0
+      },
+      {
+        "name": "JustScriptzz/big-pickle",
+        "aliases": [
+          "community/JustScriptzz/big-pickle"
+        ],
+        "category": "text",
+        "brand": "Community",
+        "community": true,
+        "pricing": {
+          "currency": "pollen",
+          "promptTextTokens": "0.0000003",
+          "completionTextTokens": "0.00000045"
+        },
+        "title": "Big Pickle",
+        "description": "ATTENTION! BIG PICKLE USAGE MAY BE USED FOR TRAINING.",
+        "input_modalities": [
+          "text"
+        ],
+        "output_modalities": [
+          "text"
+        ],
+        "capabilities": [],
+        "paid_only": false,
+        "alpha": true,
+        "added_date": 0
+      },
+      {
+        "name": "Lorodn4x/gpt-5.6-terra",
+        "aliases": [
+          "community/Lorodn4x/gpt-5.6-terra"
+        ],
+        "category": "text",
+        "brand": "Community",
+        "community": true,
+        "pricing": {
+          "currency": "pollen",
+          "promptTextTokens": "0.0000005",
+          "completionTextTokens": "0.0000035"
+        },
+        "title": "GPT-5.6 Terra",
+        "input_modalities": [
+          "text"
+        ],
+        "output_modalities": [
+          "text"
+        ],
+        "capabilities": [],
+        "paid_only": false,
+        "alpha": true,
+        "added_date": 0
+      },
+      {
+        "name": "Lorodn4x/qwen3.7-max",
+        "aliases": [
+          "community/Lorodn4x/qwen3.7-max"
+        ],
+        "category": "text",
+        "brand": "Community",
+        "community": true,
+        "pricing": {
+          "currency": "pollen",
+          "promptTextTokens": "0.0000003",
+          "completionTextTokens": "0.0000004"
+        },
+        "title": "Qwen 3.7 Max [Alpha]",
+        "input_modalities": [
+          "text"
+        ],
+        "output_modalities": [
+          "text"
+        ],
+        "capabilities": [],
+        "paid_only": false,
+        "alpha": true,
+        "added_date": 0
+      },
+      {
+        "name": "Lorodn4x/minimax-m3",
+        "aliases": [
+          "community/Lorodn4x/minimax-m3"
+        ],
+        "category": "text",
+        "brand": "Community",
+        "community": true,
+        "pricing": {
+          "currency": "pollen",
+          "promptTextTokens": "0.0000003",
+          "completionTextTokens": "0.0000003"
+        },
+        "title": "MiniMax M3",
+        "input_modalities": [
+          "text"
+        ],
+        "output_modalities": [
+          "text"
+        ],
+        "capabilities": [],
+        "paid_only": false,
+        "alpha": true,
+        "added_date": 0
+      },
+      {
+        "name": "tomdacatto/ling-3.0-flash",
+        "aliases": [
+          "community/tomdacatto/ling-3.0-flash"
+        ],
+        "category": "text",
+        "brand": "Community",
+        "community": true,
+        "pricing": {
+          "currency": "pollen",
+          "promptTextTokens": "0.0000001",
+          "promptCachedTokens": "0.00000001",
+          "promptCacheWriteTokens": "0.0000001",
+          "promptAudioTokens": "0.0000001",
+          "completionTextTokens": "0.0000001",
+          "completionAudioTokens": "0.0000001"
+        },
+        "title": "Ling 3.0 flash",
+        "description": "Cheap fast model",
+        "input_modalities": [
+          "text"
+        ],
+        "output_modalities": [
+          "text"
+        ],
+        "capabilities": [],
+        "paid_only": false,
+        "alpha": true,
+        "added_date": 0
+      },
+      {
+        "name": "vendouple/gpt-5.5",
+        "aliases": [
+          "community/vendouple/gpt-5.5"
+        ],
+        "category": "text",
+        "brand": "Community",
+        "community": true,
+        "pricing": {
+          "currency": "pollen",
+          "promptTextTokens": "0.000004",
+          "completionTextTokens": "0.000008"
+        },
+        "title": "GPT 5.5 (stable)",
+        "description": "THE MOST STABLE ENDPOINT (LIMITED)",
+        "input_modalities": [
+          "text"
+        ],
+        "output_modalities": [
+          "text"
+        ],
+        "capabilities": [],
+        "paid_only": false,
+        "alpha": true,
+        "added_date": 0
+      },
+      {
+        "name": "vendouple/kimi-k3:s2",
+        "aliases": [
+          "community/vendouple/kimi-k3:s2"
+        ],
+        "category": "text",
+        "brand": "Community",
+        "community": true,
+        "pricing": {
+          "currency": "pollen",
+          "promptTextTokens": "0.0000025",
+          "completionTextTokens": "0.000004",
+          "completionReasoningTokens": "0.000004"
+        },
+        "title": "Kimi K3 (Secondary Provider)",
+        "description": "This provider has higher limits but its more unstable (it will 404 more)",
+        "input_modalities": [
+          "text"
+        ],
+        "output_modalities": [
+          "text"
+        ],
+        "capabilities": [],
+        "paid_only": false,
+        "alpha": true,
+        "added_date": 0
+      }
+    ],
+    "image": [
+      {
+        "name": "recraft-v4.1-vector",
+        "aliases": [
+          "recraft-vector",
+          "recraft-svg",
+          "recraft-v4.1-svg"
+        ],
+        "category": "image",
+        "brand": "Recraft",
+        "pricing": {
+          "currency": "pollen",
+          "completionImageTokens": "0.08"
+        },
+        "title": "Recraft V4.1 Vector",
+        "description": "Editable SVG generation and reference-guided vector design",
+        "input_modalities": [
+          "text",
+          "image"
+        ],
+        "output_modalities": [
+          "image"
+        ],
+        "max_reference_images": 1,
+        "capabilities": [],
+        "paid_only": true,
+        "added_date": 1784851200000
+      },
+      {
+        "name": "Catniti/agnes-image-2.0-flash",
+        "aliases": [
+          "community/Catniti/agnes-image-2.0-flash"
+        ],
+        "category": "image",
+        "brand": "Community",
+        "community": true,
+        "pricing": {
+          "currency": "pollen",
+          "completionImageTokens": "0.06"
+        },
+        "title": "Agnes image 2.0 flash",
+        "description": "Agnes image 2.0 flash",
+        "input_modalities": [
+          "text"
+        ],
+        "output_modalities": [
+          "image"
+        ],
+        "capabilities": [],
+        "paid_only": false,
+        "alpha": true,
+        "flat_rate": true,
+        "added_date": 0
+      },
+      {
+        "name": "Catniti/qwen-image-3.0-pro",
+        "aliases": [
+          "community/Catniti/qwen-image-3.0-pro"
+        ],
+        "category": "image",
+        "brand": "Community",
+        "community": true,
+        "pricing": {
+          "currency": "pollen",
+          "completionImageTokens": "0.08"
+        },
+        "title": "Qwen image 3.0 pro",
+        "description": "Qwen image 3.0 pro",
+        "input_modalities": [
+          "text"
+        ],
+        "output_modalities": [
+          "image"
+        ],
+        "capabilities": [],
+        "paid_only": false,
+        "alpha": true,
+        "flat_rate": true,
+        "added_date": 0
+      },
+      {
+        "name": "tomdacatto/seedream-5-pro",
+        "aliases": [
+          "community/tomdacatto/seedream-5-pro"
+        ],
+        "category": "image",
+        "brand": "Community",
+        "community": true,
+        "pricing": {
+          "currency": "pollen",
+          "completionImageTokens": "0.1"
+        },
+        "title": "Seedream 5 pro.",
+        "description": "Seedream 5 pro.",
+        "input_modalities": [
+          "text"
+        ],
+        "output_modalities": [
+          "image"
+        ],
+        "capabilities": [],
+        "paid_only": false,
+        "alpha": true,
+        "flat_rate": true,
+        "added_date": 0
+      },
+      {
+        "name": "tomdacatto/nano-banana-2",
+        "aliases": [
+          "community/tomdacatto/nano-banana-2"
+        ],
+        "category": "image",
+        "brand": "Community",
+        "community": true,
+        "pricing": {
+          "currency": "pollen",
+          "completionImageTokens": "0.084"
+        },
+        "title": "Nano banana 2",
+        "description": "Nano banana 2",
+        "input_modalities": [
+          "text"
+        ],
+        "output_modalities": [
+          "image"
+        ],
+        "capabilities": [],
+        "paid_only": false,
+        "alpha": true,
+        "flat_rate": true,
+        "added_date": 0
+      },
+      {
+        "name": "tomdacatto/nano-banana-2-lite",
+        "aliases": [
+          "community/tomdacatto/nano-banana-2-lite"
+        ],
+        "category": "image",
+        "brand": "Community",
+        "community": true,
+        "pricing": {
+          "currency": "pollen",
+          "completionImageTokens": "0.042"
+        },
+        "title": "Nano banana 2 lite",
+        "description": "Nano banana 2 lite",
+        "input_modalities": [
+          "text"
+        ],
+        "output_modalities": [
+          "image"
+        ],
+        "capabilities": [],
+        "paid_only": false,
+        "alpha": true,
+        "flat_rate": true,
+        "added_date": 0
+      },
+      {
+        "name": "tomdacatto/nano-banana-pro",
+        "aliases": [
+          "community/tomdacatto/nano-banana-pro"
+        ],
+        "category": "image",
+        "brand": "Community",
+        "community": true,
+        "pricing": {
+          "currency": "pollen",
+          "completionImageTokens": "0.25"
+        },
+        "title": "Nano banana pro",
+        "description": "Nano banana pro",
+        "input_modalities": [
+          "text"
+        ],
+        "output_modalities": [
+          "image"
+        ],
+        "capabilities": [],
+        "paid_only": false,
+        "alpha": true,
+        "flat_rate": true,
+        "added_date": 0
+      },
+      {
+        "name": "tomdacatto/nano-banana",
+        "aliases": [
+          "community/tomdacatto/nano-banana"
+        ],
+        "category": "image",
+        "brand": "Community",
+        "community": true,
+        "pricing": {
+          "currency": "pollen",
+          "completionImageTokens": "0.049"
+        },
+        "title": "Nano banana",
+        "description": "Nano banana",
+        "input_modalities": [
+          "text"
+        ],
+        "output_modalities": [
+          "image"
+        ],
+        "capabilities": [],
+        "paid_only": false,
+        "alpha": true,
+        "flat_rate": true,
+        "added_date": 0
+      },
+      {
+        "name": "sharktide/inferenceport-ai-lightning-image-turbo",
+        "aliases": [
+          "community/sharktide/inferenceport-ai-lightning-image-turbo"
+        ],
+        "category": "image",
+        "brand": "Community",
+        "community": true,
+        "pricing": {
+          "currency": "pollen",
+          "completionImageTokens": "0.02"
+        },
+        "title": "InferencePort AI Lightning-Image Turbo",
+        "description": "InferencePort AI Lightning-Image Turbo",
+        "input_modalities": [
+          "text"
+        ],
+        "output_modalities": [
+          "image"
+        ],
+        "capabilities": [],
+        "paid_only": false,
+        "alpha": true,
+        "flat_rate": true,
+        "added_date": 0
+      },
+      {
+        "name": "Catniti/agnes-image-2.1-flash",
+        "aliases": [
+          "community/Catniti/agnes-image-2.1-flash"
+        ],
+        "category": "image",
+        "brand": "Community",
+        "community": true,
+        "pricing": {
+          "currency": "pollen",
+          "completionImageTokens": "0.07"
+        },
+        "title": "Agnes image 2.1 flash",
+        "description": "Agnes image 2.1 flash",
+        "input_modalities": [
+          "text"
+        ],
+        "output_modalities": [
+          "image"
+        ],
+        "capabilities": [],
+        "paid_only": false,
+        "alpha": true,
+        "flat_rate": true,
+        "added_date": 0
+      },
+      {
+        "name": "tomdacatto/kling-image-3",
+        "aliases": [
+          "community/tomdacatto/kling-image-3"
+        ],
+        "category": "image",
+        "brand": "Community",
+        "community": true,
+        "pricing": {
+          "currency": "pollen",
+          "completionImageTokens": "0.05"
+        },
+        "title": "Kling image 3.0",
+        "description": "Kling image 3.0",
+        "input_modalities": [
+          "text"
+        ],
+        "output_modalities": [
+          "image"
+        ],
+        "capabilities": [],
+        "paid_only": false,
+        "alpha": true,
+        "flat_rate": true,
+        "added_date": 0
+      },
+      {
+        "name": "tomdacatto/grok-imagine",
+        "aliases": [
+          "community/tomdacatto/grok-imagine"
+        ],
+        "category": "image",
+        "brand": "Community",
+        "community": true,
+        "pricing": {
+          "currency": "pollen",
+          "completionImageTokens": "0.05"
+        },
+        "title": "Grok imagine",
+        "description": "Grok imagine",
+        "input_modalities": [
+          "text"
+        ],
+        "output_modalities": [
+          "image"
+        ],
+        "capabilities": [],
+        "paid_only": false,
+        "alpha": true,
+        "flat_rate": true,
+        "added_date": 0
+      },
+      {
+        "name": "tomdacatto/grok-imagine-quality",
+        "aliases": [
+          "community/tomdacatto/grok-imagine-quality"
+        ],
+        "category": "image",
+        "brand": "Community",
+        "community": true,
+        "pricing": {
+          "currency": "pollen",
+          "completionImageTokens": "0.1"
+        },
+        "title": "Grok imagine quality",
+        "description": "Grok imagine quality",
+        "input_modalities": [
+          "text"
+        ],
+        "output_modalities": [
+          "image"
+        ],
+        "capabilities": [],
+        "paid_only": false,
+        "alpha": true,
+        "flat_rate": true,
+        "added_date": 0
+      },
+      {
+        "name": "vendouple/uncensored-image",
+        "aliases": [
+          "community/vendouple/uncensored-image"
+        ],
+        "category": "image",
+        "brand": "Community",
+        "community": true,
+        "pricing": {
+          "currency": "pollen",
+          "completionImageTokens": "0.095"
+        },
+        "title": "Uncensored Image Realistic",
+        "description": "This image gen is very limited to what it can do, keep it in mind while using it",
+        "input_modalities": [
+          "text"
+        ],
+        "output_modalities": [
+          "image"
+        ],
+        "capabilities": [],
+        "paid_only": false,
+        "alpha": true,
+        "flat_rate": true,
+        "added_date": 0
+      },
+      {
+        "name": "vendouple/luma-photon-1",
+        "aliases": [
+          "community/vendouple/luma-photon-1"
+        ],
+        "category": "image",
+        "brand": "Community",
+        "community": true,
+        "pricing": {
+          "currency": "pollen",
+          "completionImageTokens": "0.12"
+        },
+        "title": "Luma Photon 1 (lumalabs.ai/photon)",
+        "description": "Luma Photon 1 (lumalabs.ai/photon)",
+        "input_modalities": [
+          "text"
+        ],
+        "output_modalities": [
+          "image"
+        ],
+        "capabilities": [],
+        "paid_only": false,
+        "alpha": true,
+        "flat_rate": true,
+        "added_date": 0
+      },
+      {
+        "name": "vendouple/seedream-5-lite",
+        "aliases": [
+          "community/vendouple/seedream-5-lite"
+        ],
+        "category": "image",
+        "brand": "Community",
+        "community": true,
+        "pricing": {
+          "currency": "pollen",
+          "completionImageTokens": "0.05"
+        },
+        "title": "Seedream 5 Lite",
+        "description": "Now supports image gen and image editing",
+        "input_modalities": [
+          "text",
+          "image"
+        ],
+        "output_modalities": [
+          "image"
+        ],
+        "capabilities": [],
+        "paid_only": false,
+        "alpha": true,
+        "flat_rate": true,
+        "added_date": 0
+      },
+      {
+        "name": "vendouple/flux-2",
+        "aliases": [
+          "community/vendouple/flux-2"
+        ],
+        "category": "image",
+        "brand": "Community",
+        "community": true,
+        "pricing": {
+          "currency": "pollen",
+          "completionImageTokens": "0.05"
+        },
+        "title": "Flux 2",
+        "description": "Flux 2",
+        "input_modalities": [
+          "text"
+        ],
+        "output_modalities": [
+          "image"
+        ],
+        "capabilities": [],
+        "paid_only": false,
+        "alpha": true,
+        "flat_rate": true,
+        "added_date": 0
+      },
+      {
+        "name": "vendouple/animagine",
+        "aliases": [
+          "community/vendouple/animagine"
+        ],
+        "category": "image",
+        "brand": "Community",
+        "community": true,
+        "pricing": {
+          "currency": "pollen",
+          "completionImageTokens": "0.08"
+        },
+        "title": "Animagine (read description)",
+        "description": "Refer to nobindes.work.gd/docs on how to operate this endpoint",
+        "input_modalities": [
+          "text"
+        ],
+        "output_modalities": [
+          "image"
+        ],
+        "capabilities": [],
+        "paid_only": false,
+        "alpha": true,
+        "flat_rate": true,
+        "added_date": 0
+      },
+      {
+        "name": "vendouple/nano-banana-pro",
+        "aliases": [
+          "community/vendouple/nano-banana-pro"
+        ],
+        "category": "image",
+        "brand": "Community",
+        "community": true,
+        "pricing": {
+          "currency": "pollen",
+          "completionImageTokens": "0.1"
+        },
+        "title": "Nanobanana Pro",
+        "description": "Nanobanana Pro",
+        "input_modalities": [
+          "text"
+        ],
+        "output_modalities": [
+          "image"
+        ],
+        "capabilities": [],
+        "paid_only": false,
+        "alpha": true,
+        "flat_rate": true,
+        "added_date": 0
+      },
+      {
+        "name": "vendouple/grok-imagine",
+        "aliases": [
+          "community/vendouple/grok-imagine"
+        ],
+        "category": "image",
+        "brand": "Community",
+        "community": true,
+        "pricing": {
+          "currency": "pollen",
+          "completionImageTokens": "0.05"
+        },
+        "title": "Grok Imagine",
+        "description": "Grok Imagine",
+        "input_modalities": [
+          "text"
+        ],
+        "output_modalities": [
+          "image"
+        ],
+        "capabilities": [],
+        "paid_only": false,
+        "alpha": true,
+        "flat_rate": true,
+        "added_date": 0
+      },
+      {
+        "name": "vendouple/imagen-4-ultra",
+        "aliases": [
+          "community/vendouple/imagen-4-ultra"
+        ],
+        "category": "image",
+        "brand": "Community",
+        "community": true,
+        "pricing": {
+          "currency": "pollen",
+          "completionImageTokens": "0.08"
+        },
+        "title": "Imagegen 4 Ultra",
+        "description": "Imagegen 4 Ultra",
+        "input_modalities": [
+          "text"
+        ],
+        "output_modalities": [
+          "image"
+        ],
+        "capabilities": [],
+        "paid_only": false,
+        "alpha": true,
+        "flat_rate": true,
+        "added_date": 0
+      },
+      {
+        "name": "vendouple/leonardo-phoenix",
+        "aliases": [
+          "community/vendouple/leonardo-phoenix"
+        ],
+        "category": "image",
+        "brand": "Community",
+        "community": true,
+        "pricing": {
+          "currency": "pollen",
+          "completionImageTokens": "0.05"
+        },
+        "title": "Leonardo Davinci",
+        "description": "This is the real Leonardo painting for you",
+        "input_modalities": [
+          "text"
+        ],
+        "output_modalities": [
+          "image"
+        ],
+        "capabilities": [],
+        "paid_only": false,
+        "alpha": true,
+        "flat_rate": true,
+        "added_date": 0
+      },
+      {
+        "name": "Spit-fires/flux-schnell",
+        "aliases": [
+          "community/Spit-fires/flux-schnell"
+        ],
+        "category": "image",
+        "brand": "Community",
+        "community": true,
+        "pricing": {
+          "currency": "pollen",
+          "completionImageTokens": "0.001"
+        },
+        "title": "Flux Schnell half price",
+        "description": "Do not use in critical infrastrucure. Safe for regular usage.",
+        "input_modalities": [
+          "text"
+        ],
+        "output_modalities": [
+          "image"
+        ],
+        "capabilities": [],
+        "paid_only": false,
+        "alpha": true,
+        "flat_rate": true,
+        "added_date": 0
+      },
+      {
+        "name": "meow18838/image-1",
+        "aliases": [
+          "community/meow18838/image-1"
+        ],
+        "category": "image",
+        "brand": "Community",
+        "community": true,
+        "pricing": {
+          "currency": "pollen",
+          "completionImageTokens": "0.01"
+        },
+        "title": "Image 1",
+        "description": "Mixture of Experts",
+        "input_modalities": [
+          "text"
+        ],
+        "output_modalities": [
+          "image"
+        ],
+        "capabilities": [],
+        "paid_only": false,
+        "alpha": true,
+        "flat_rate": true,
+        "added_date": 0
+      },
+      {
+        "name": "CloudCompile/agnes-image-2.0-flash",
+        "aliases": [
+          "community/CloudCompile/agnes-image-2.0-flash"
+        ],
+        "category": "image",
+        "brand": "Community",
+        "community": true,
+        "pricing": {
+          "currency": "pollen",
+          "completionImageTokens": "0.05"
+        },
+        "title": "Agnes Image 2.0 Flash",
+        "input_modalities": [
+          "text"
+        ],
+        "output_modalities": [
+          "image"
+        ],
+        "capabilities": [],
+        "paid_only": false,
+        "alpha": true,
+        "flat_rate": true,
+        "added_date": 0
+      },
+      {
+        "name": "tomdacatto/gpt-image-2",
+        "aliases": [
+          "community/tomdacatto/gpt-image-2"
+        ],
+        "category": "image",
+        "brand": "Community",
+        "community": true,
+        "pricing": {
+          "currency": "pollen",
+          "completionImageTokens": "0.05"
+        },
+        "title": "Gpt image 2",
+        "input_modalities": [
+          "text"
+        ],
+        "output_modalities": [
+          "image"
+        ],
+        "capabilities": [],
+        "paid_only": false,
+        "alpha": true,
+        "flat_rate": true,
+        "added_date": 0
+      },
+      {
+        "name": "vendouple/lucid-origin",
+        "aliases": [
+          "community/vendouple/lucid-origin"
+        ],
+        "category": "image",
+        "brand": "Community",
+        "community": true,
+        "pricing": {
+          "currency": "pollen",
+          "completionImageTokens": "0.085"
+        },
+        "title": "Lucid Origin (Leonardo AI)",
+        "input_modalities": [
+          "text"
+        ],
+        "output_modalities": [
+          "image"
+        ],
+        "capabilities": [],
+        "paid_only": false,
+        "alpha": true,
+        "flat_rate": true,
+        "added_date": 0
+      }
+    ],
+    "video": [],
+    "audio": [
+      {
+        "name": "eleven-dialogue",
+        "aliases": [
+          "dialogue",
+          "text-to-dialogue"
+        ],
+        "category": "audio",
+        "brand": "ElevenLabs",
+        "pricing": {
+          "currency": "pollen",
+          "completionAudioTokens": "0.0001"
+        },
+        "title": "ElevenLabs Text to Dialogue",
+        "description": "Multi-speaker conversations with expressive voices and audio cues",
+        "input_modalities": [
+          "text"
+        ],
+        "output_modalities": [
+          "audio"
+        ],
+        "supported_endpoints": [
+          "/v1/audio/dialogue"
+        ],
+        "capabilities": [],
+        "voices": [
+          "alloy",
+          "echo",
+          "fable",
+          "onyx",
+          "nova",
+          "shimmer",
+          "ash",
+          "ballad",
+          "coral",
+          "sage",
+          "verse",
+          "rachel",
+          "domi",
+          "bella",
+          "elli",
+          "charlotte",
+          "dorothy",
+          "sarah",
+          "emily",
+          "lily",
+          "matilda",
+          "adam",
+          "antoni",
+          "arnold",
+          "josh",
+          "sam",
+          "daniel",
+          "charlie",
+          "james",
+          "fin",
+          "callum",
+          "liam",
+          "george",
+          "brian",
+          "bill"
+        ],
+        "paid_only": true,
+        "added_date": 1785024000000
+      },
+      {
+        "name": "eleven-voice-changer",
+        "aliases": [
+          "voice-changer",
+          "speech-to-speech"
+        ],
+        "category": "audio",
+        "brand": "ElevenLabs",
+        "pricing": {
+          "currency": "pollen",
+          "promptAudioSeconds": "0.002"
+        },
+        "title": "ElevenLabs Voice Changer",
+        "description": "Preserves delivery and emotion while transforming speaker identity",
+        "input_modalities": [
+          "audio"
+        ],
+        "output_modalities": [
+          "audio"
+        ],
+        "supported_endpoints": [
+          "/v1/audio/voice-changer"
+        ],
+        "capabilities": [],
+        "voices": [
+          "alloy",
+          "echo",
+          "fable",
+          "onyx",
+          "nova",
+          "shimmer",
+          "ash",
+          "ballad",
+          "coral",
+          "sage",
+          "verse",
+          "rachel",
+          "domi",
+          "bella",
+          "elli",
+          "charlotte",
+          "dorothy",
+          "sarah",
+          "emily",
+          "lily",
+          "matilda",
+          "adam",
+          "antoni",
+          "arnold",
+          "josh",
+          "sam",
+          "daniel",
+          "charlie",
+          "james",
+          "fin",
+          "callum",
+          "liam",
+          "george",
+          "brian",
+          "bill"
+        ],
+        "paid_only": true,
+        "added_date": 1785024000000
+      },
+      {
+        "name": "eleven-voice-isolator",
+        "aliases": [
+          "voice-isolator",
+          "audio-cleanup"
+        ],
+        "category": "audio",
+        "brand": "ElevenLabs",
+        "pricing": {
+          "currency": "pollen",
+          "promptAudioSeconds": "0.002"
+        },
+        "title": "ElevenLabs Voice Isolator",
+        "description": "Removes background noise while preserving clear spoken audio",
+        "input_modalities": [
+          "audio",
+          "video"
+        ],
+        "output_modalities": [
+          "audio"
+        ],
+        "supported_endpoints": [
+          "/v1/audio/voice-isolator"
+        ],
+        "capabilities": [],
+        "paid_only": true,
+        "added_date": 1785024000000
+      },
+      {
+        "name": "lyria-3-clip",
+        "aliases": [
+          "lyria",
+          "lyria-3"
+        ],
+        "category": "audio",
+        "brand": "Google",
+        "pricing": {
+          "currency": "pollen",
+          "completionAudioTokens": "0.04"
+        },
+        "title": "Lyria 3 Clip",
+        "description": "30-second music with vocals, lyrics, or instrumental arrangements",
+        "input_modalities": [
+          "text"
+        ],
+        "output_modalities": [
+          "audio"
+        ],
+        "capabilities": [],
+        "paid_only": true,
+        "added_date": 1784851200000
+      },
+      {
+        "name": "csm-1b",
+        "aliases": [
+          "csm",
+          "sesame-csm",
+          "sesame-csm-1b"
+        ],
+        "category": "audio",
+        "brand": "Sesame",
+        "pricing": {
+          "currency": "pollen",
+          "completionAudioTokens": "0.000007"
+        },
+        "title": "CSM 1B",
+        "description": "English conversational speech with six reading and dialogue voices",
+        "input_modalities": [
+          "text"
+        ],
+        "output_modalities": [
+          "audio"
+        ],
+        "capabilities": [],
+        "voices": [
+          "conversational_a",
+          "conversational_b",
+          "read_speech_a",
+          "read_speech_b",
+          "read_speech_c",
+          "read_speech_d"
+        ],
+        "paid_only": true,
+        "added_date": 1784764800000
+      }
+    ],
+    "embeddings": []
+  },
+  "removed": {
+    "text": [
+      {
+        "name": "gemini-flash-lite-3.1",
+        "aliases": [
+          "gemini-3.1-flash-lite",
+          "gemini-3.1-flash-lite-preview",
+          "gemini-flash-lite"
+        ],
+        "category": "text",
+        "brand": "Google",
+        "pricing": {
+          "currency": "pollen",
+          "promptTextTokens": "0.00000025",
+          "promptCachedTokens": "0.000000025",
+          "promptCacheWriteTokens": "0.00000025",
+          "promptAudioTokens": "0.0000005",
+          "completionTextTokens": "0.0000015"
+        },
+        "title": "Gemini 3.1 Flash Lite",
+        "description": "Quick, low-cost answers across text, images, audio and video",
+        "input_modalities": [
+          "text",
+          "image",
+          "audio",
+          "video"
+        ],
+        "output_modalities": [
+          "text"
+        ],
+        "max_reference_images": 3600,
+        "max_reference_videos": 10,
+        "capabilities": [
+          "tool_calling",
+          "web_search",
+          "code_execution"
+        ],
+        "tools": true,
+        "context_length": 1048576,
+        "is_specialized": false,
+        "paid_only": true,
+        "added_date": 1775174400000
+      },
+      {
+        "name": "polly",
+        "aliases": [
+          "pollinations-ai",
+          "polly-ai"
+        ],
+        "category": "text",
+        "brand": "Pollinations",
+        "pricing": {
+          "currency": "pollen"
+        },
+        "title": "Polly by @Itachi-1824",
+        "description": "Community-built assistant with GitHub, code search and web tools (alpha)",
+        "input_modalities": [
+          "text",
+          "image"
+        ],
+        "output_modalities": [
+          "text"
+        ],
+        "max_reference_images": 3,
+        "capabilities": [
+          "tool_calling",
+          "reasoning",
+          "web_search",
+          "code_execution"
+        ],
+        "tools": true,
+        "reasoning": true,
+        "is_specialized": false,
+        "added_date": 1771891200000
+      },
+      {
+        "name": "sharktide/inferenceport.ai-gpt-5-chat-latest",
+        "aliases": [
+          "community/sharktide/inferenceport.ai-gpt-5-chat-latest"
+        ],
+        "category": "text",
+        "brand": "Community",
+        "community": true,
+        "pricing": {
+          "currency": "pollen",
+          "promptTextTokens": "0.000006",
+          "promptCachedTokens": "0.000006",
+          "promptAudioTokens": "0.00004",
+          "completionTextTokens": "0.000006",
+          "completionReasoningTokens": "0.000006",
+          "completionAudioTokens": "0.00008"
+        },
+        "title": "OpenAI GPT-5 Chat Latest",
+        "description": "OpenAI GPT-5 Chat Latest",
+        "input_modalities": [
+          "text"
+        ],
+        "output_modalities": [
+          "text"
+        ],
+        "capabilities": [],
+        "paid_only": false,
+        "alpha": true,
+        "added_date": 0
+      },
+      {
+        "name": "morriszdweck/qwen-3.7-plus-cheap",
+        "aliases": [
+          "community/morriszdweck/qwen-3.7-plus-cheap"
+        ],
+        "category": "text",
+        "brand": "Community",
+        "community": true,
+        "pricing": {
+          "currency": "pollen",
+          "promptTextTokens": "0.0000000005",
+          "completionTextTokens": "0.000000001"
+        },
+        "title": "Qwen3.7 Plus (Free)",
+        "description": "Qwen3.7 Plus (Free)",
+        "input_modalities": [
+          "text"
+        ],
+        "output_modalities": [
+          "text"
+        ],
+        "capabilities": [],
+        "paid_only": false,
+        "alpha": true,
+        "added_date": 0
+      },
+      {
+        "name": "Minor-fun/deepseek-v4-flash",
+        "aliases": [
+          "community/Minor-fun/deepseek-v4-flash"
+        ],
+        "category": "text",
+        "brand": "Community",
+        "community": true,
+        "pricing": {
+          "currency": "pollen",
+          "promptTextTokens": "0.00000007",
+          "completionTextTokens": "0.00000014"
+        },
+        "title": "deepseek-v4-flash",
+        "description": "deepseek-v4-flash",
+        "input_modalities": [
+          "text"
+        ],
+        "output_modalities": [
+          "text"
+        ],
+        "capabilities": [],
+        "paid_only": false,
+        "alpha": true,
+        "added_date": 0
+      },
+      {
+        "name": "Spit-fires/step-3.5-flash-free",
+        "aliases": [
+          "community/Spit-fires/step-3.5-flash-free"
+        ],
+        "category": "text",
+        "brand": "Community",
+        "community": true,
+        "pricing": {
+          "currency": "pollen",
+          "promptTextTokens": "0.000000000001",
+          "completionTextTokens": "0.000000000001"
+        },
+        "title": "step-3.5-flash (Free but slow)",
+        "description": "step-3.5-flash (Free but slow)",
+        "input_modalities": [
+          "text"
+        ],
+        "output_modalities": [
+          "text"
+        ],
+        "capabilities": [],
+        "paid_only": false,
+        "alpha": true,
+        "added_date": 0
+      },
+      {
+        "name": "Spit-fires/gpt-oss-20b-free",
+        "aliases": [
+          "community/Spit-fires/gpt-oss-20b-free"
+        ],
+        "category": "text",
+        "brand": "Community",
+        "community": true,
+        "pricing": {
+          "currency": "pollen",
+          "promptTextTokens": "0.000000000001",
+          "completionTextTokens": "0.000000000001"
+        },
+        "title": "gpt-oss-20b (free but slow)",
+        "description": "gpt-oss-20b (free but slow)",
+        "input_modalities": [
+          "text"
+        ],
+        "output_modalities": [
+          "text"
+        ],
+        "capabilities": [],
+        "paid_only": false,
+        "alpha": true,
+        "added_date": 0
+      },
+      {
+        "name": "smplstuff/falcon-h1-tiny",
+        "aliases": [
+          "community/smplstuff/falcon-h1-tiny"
+        ],
+        "category": "text",
+        "brand": "Community",
+        "community": true,
+        "pricing": {
+          "currency": "pollen",
+          "promptTextTokens": "0.00000001",
+          "promptCachedTokens": "0.000000005",
+          "completionTextTokens": "0.00000002"
+        },
+        "title": "Falcon H1 Tiny 90M Instruct",
+        "description": "Falcon H1 Tiny 90M Instruct",
+        "input_modalities": [
+          "text"
+        ],
+        "output_modalities": [
+          "text"
+        ],
+        "capabilities": [],
+        "paid_only": false,
+        "alpha": true,
+        "added_date": 0
+      },
+      {
+        "name": "Spit-fires/bonsai-image-512x512-4",
+        "aliases": [
+          "community/Spit-fires/bonsai-image-512x512-4"
+        ],
+        "category": "text",
+        "brand": "Community",
+        "community": true,
+        "pricing": {
+          "currency": "pollen",
+          "promptTextTokens": "0.00000000001",
+          "completionTextTokens": "0.00000000001"
+        },
+        "title": "Free Bonsai Image 512p 4 step. See https://bonsai-image.netlify.app",
+        "description": "Free Bonsai Image 512p 4 step. See https://bonsai-image.netlify.app",
+        "input_modalities": [
+          "text"
+        ],
+        "output_modalities": [
+          "text"
+        ],
+        "capabilities": [],
+        "paid_only": false,
+        "alpha": true,
+        "added_date": 0
+      },
+      {
+        "name": "morriszdweck/mistral-fat",
+        "aliases": [
+          "community/morriszdweck/mistral-fat"
+        ],
+        "category": "text",
+        "brand": "Community",
+        "community": true,
+        "pricing": {
+          "currency": "pollen",
+          "promptTextTokens": "0.0000024",
+          "promptCachedTokens": "0.00000025",
+          "completionTextTokens": "0.000012"
+        },
+        "title": "Mistral Le Chaton Fat",
+        "description": "Mistral Le Chaton Fat",
+        "input_modalities": [
+          "text"
+        ],
+        "output_modalities": [
+          "text"
+        ],
+        "capabilities": [],
+        "paid_only": false,
+        "alpha": true,
+        "added_date": 0
+      },
+      {
+        "name": "Circuit-Overtime/lixsearch",
+        "aliases": [
+          "community/Circuit-Overtime/lixsearch"
+        ],
+        "category": "text",
+        "brand": "Community",
+        "community": true,
+        "pricing": {
+          "currency": "pollen",
+          "promptTextTokens": "0.0000006",
+          "completionTextTokens": "0.000002"
+        },
+        "title": "elixpo-routerv2.6 function calling",
+        "description": "elixpo-routerv2.6 function calling",
+        "input_modalities": [
+          "text"
+        ],
+        "output_modalities": [
+          "text"
+        ],
+        "capabilities": [],
+        "paid_only": false,
+        "alpha": true,
+        "added_date": 0
+      },
+      {
+        "name": "Spit-fires/free",
+        "aliases": [
+          "community/Spit-fires/free"
+        ],
+        "category": "text",
+        "brand": "Community",
+        "community": true,
+        "pricing": {
+          "currency": "pollen"
+        },
+        "title": "free. uses random routing across various model such as gpt-oss-120b",
+        "description": "free. uses random routing across various model such as gpt-oss-120b",
+        "input_modalities": [
+          "text"
+        ],
+        "output_modalities": [
+          "text"
+        ],
+        "capabilities": [],
+        "paid_only": false,
+        "alpha": true,
+        "added_date": 0
+      },
+      {
+        "name": "Minor-fun/gemini-3.1-pro-preview",
+        "aliases": [
+          "community/Minor-fun/gemini-3.1-pro-preview"
+        ],
+        "category": "text",
+        "brand": "Community",
+        "community": true,
+        "pricing": {
+          "currency": "pollen",
+          "promptTextTokens": "0.000002",
+          "completionTextTokens": "0.000012",
+          "completionReasoningTokens": "0.000012"
+        },
+        "title": "gemini-3.1-pro-preview",
+        "description": "gemini-3.1-pro-preview",
+        "input_modalities": [
+          "text"
+        ],
+        "output_modalities": [
+          "text"
+        ],
+        "capabilities": [],
+        "paid_only": false,
+        "alpha": true,
+        "added_date": 0
+      },
+      {
+        "name": "Minor-fun/gemini-3.5-flash",
+        "aliases": [
+          "community/Minor-fun/gemini-3.5-flash"
+        ],
+        "category": "text",
+        "brand": "Community",
+        "community": true,
+        "pricing": {
+          "currency": "pollen",
+          "promptTextTokens": "0.0000015",
+          "completionTextTokens": "0.000009"
+        },
+        "title": "gemini-3.5-flash",
+        "description": "gemini-3.5-flash",
+        "input_modalities": [
+          "text"
+        ],
+        "output_modalities": [
+          "text"
+        ],
+        "capabilities": [],
+        "paid_only": false,
+        "alpha": true,
+        "added_date": 0
+      },
+      {
+        "name": "vendouple/nemotron-3-ultra",
+        "aliases": [
+          "community/vendouple/nemotron-3-ultra"
+        ],
+        "category": "text",
+        "brand": "Community",
+        "community": true,
+        "pricing": {
+          "currency": "pollen",
+          "completionTextTokens": "0.000000001"
+        },
+        "title": "Nemotron 3 Ultra (Free*)",
+        "description": "Nemotron 3 Ultra (Free*)",
+        "input_modalities": [
+          "text"
+        ],
+        "output_modalities": [
+          "text"
+        ],
+        "capabilities": [],
+        "paid_only": false,
+        "alpha": true,
+        "added_date": 0
+      },
+      {
+        "name": "vendouple/deepseek-v3.2",
+        "aliases": [
+          "community/vendouple/deepseek-v3.2"
+        ],
+        "category": "text",
+        "brand": "Community",
+        "community": true,
+        "pricing": {
+          "currency": "pollen",
+          "promptTextTokens": "0.00000002",
+          "promptCachedTokens": "0.000000001",
+          "completionTextTokens": "0.0000001",
+          "completionReasoningTokens": "0.0000001"
+        },
+        "title": "Deepseek v3.2",
+        "description": "Deepseek v3.2",
+        "input_modalities": [
+          "text"
+        ],
+        "output_modalities": [
+          "text"
+        ],
+        "capabilities": [],
+        "paid_only": false,
+        "alpha": true,
+        "added_date": 0
+      },
+      {
+        "name": "YoannDev90/llama-3.1-8b-instant:free",
+        "aliases": [
+          "community/YoannDev90/llama-3.1-8b-instant:free"
+        ],
+        "category": "text",
+        "brand": "Community",
+        "community": true,
+        "pricing": {
+          "currency": "pollen"
+        },
+        "title": "Llama 3.1 8b Instant (550+ tok/s)",
+        "description": "Llama 3.1 8b Instant (550+ tok/s)",
+        "input_modalities": [
+          "text"
+        ],
+        "output_modalities": [
+          "text"
+        ],
+        "capabilities": [],
+        "paid_only": false,
+        "alpha": true,
+        "added_date": 0
+      },
+      {
+        "name": "solarnode-developement/hy3",
+        "aliases": [
+          "community/solarnode-developement/hy3"
+        ],
+        "category": "text",
+        "brand": "Community",
+        "community": true,
+        "pricing": {
+          "currency": "pollen",
+          "promptTextTokens": "0.00000014",
+          "promptCachedTokens": "0.00000003",
+          "completionTextTokens": "0.00000057"
+        },
+        "title": "Tencent Hy3",
+        "description": "Tencent Hy3",
+        "input_modalities": [
+          "text"
+        ],
+        "output_modalities": [
+          "text"
+        ],
+        "capabilities": [],
+        "paid_only": false,
+        "alpha": true,
+        "added_date": 0
+      },
+      {
+        "name": "vendouple/grok-4.5",
+        "aliases": [
+          "community/vendouple/grok-4.5"
+        ],
+        "category": "text",
+        "brand": "Community",
+        "community": true,
+        "pricing": {
+          "currency": "pollen",
+          "promptTextTokens": "0.0000015",
+          "completionTextTokens": "0.0000035"
+        },
+        "title": "Grok 4.5",
+        "description": "Grok 4.5",
+        "input_modalities": [
+          "text"
+        ],
+        "output_modalities": [
+          "text"
+        ],
+        "capabilities": [],
+        "paid_only": false,
+        "alpha": true,
+        "added_date": 0
+      },
+      {
+        "name": "CloudCompile/agnes-image-2.1-flash-2k",
+        "aliases": [
+          "community/CloudCompile/agnes-image-2.1-flash-2k"
+        ],
+        "category": "text",
+        "brand": "Community",
+        "community": true,
+        "pricing": {
+          "currency": "pollen",
+          "promptTextTokens": "0.00000025",
+          "completionTextTokens": "0.00000035"
+        },
+        "title": "Agnes Image 2.1 Flash 2k res (Responds with a media.polli url)",
+        "description": "Agnes Image 2.1 Flash 2k res (Responds with a media.polli url)",
+        "input_modalities": [
+          "text"
+        ],
+        "output_modalities": [
+          "text"
+        ],
+        "capabilities": [],
+        "paid_only": false,
+        "alpha": true,
+        "added_date": 0
+      },
+      {
+        "name": "CloudCompile/agnes-video-v2.0",
+        "aliases": [
+          "community/CloudCompile/agnes-video-v2.0"
+        ],
+        "category": "text",
+        "brand": "Community",
+        "community": true,
+        "pricing": {
+          "currency": "pollen",
+          "promptTextTokens": "0.0000002",
+          "completionTextTokens": "0.0000005"
+        },
+        "title": "Agnes Video 2.0 (Responds with a task url)",
+        "description": "Agnes Video 2.0 (Responds with a task url)",
+        "input_modalities": [
+          "text"
+        ],
+        "output_modalities": [
+          "text"
+        ],
+        "capabilities": [],
+        "paid_only": false,
+        "alpha": true,
+        "added_date": 0
+      },
+      {
+        "name": "CloudCompile/agnes-image-2.1-flash-1k",
+        "aliases": [
+          "community/CloudCompile/agnes-image-2.1-flash-1k"
+        ],
+        "category": "text",
+        "brand": "Community",
+        "community": true,
+        "pricing": {
+          "currency": "pollen",
+          "promptTextTokens": "0.00000025",
+          "completionTextTokens": "0.00000035"
+        },
+        "title": "Agnes Image 2.1 Flash 1k (responds with url)",
+        "description": "Agnes Image 2.1 Flash 1k (responds with url)",
+        "input_modalities": [
+          "text"
+        ],
+        "output_modalities": [
+          "text"
+        ],
+        "capabilities": [],
+        "paid_only": false,
+        "alpha": true,
+        "added_date": 0
+      },
+      {
+        "name": "Catniti/gemini-3.6-flash",
+        "aliases": [
+          "community/Catniti/gemini-3.6-flash"
+        ],
+        "category": "text",
+        "brand": "Community",
+        "community": true,
+        "pricing": {
+          "currency": "pollen",
+          "promptTextTokens": "0.0000015",
+          "completionTextTokens": "0.0000075"
+        },
+        "title": "Gemini 3.6 flash",
+        "description": "Gemini 3.6 flash",
+        "input_modalities": [
+          "text"
+        ],
+        "output_modalities": [
+          "text"
+        ],
+        "capabilities": [],
+        "paid_only": false,
+        "alpha": true,
+        "added_date": 0
+      },
+      {
+        "name": "MarcosFRG/ternary-bonsai-27b",
+        "aliases": [
+          "community/MarcosFRG/ternary-bonsai-27b"
+        ],
+        "category": "text",
+        "brand": "Community",
+        "community": true,
+        "pricing": {
+          "currency": "pollen",
+          "promptTextTokens": "0.00000001",
+          "completionTextTokens": "0.00000003"
+        },
+        "title": "Ternary Bonsai 27B via JankRouter",
+        "description": "Ternary Bonsai 27B via JankRouter",
+        "input_modalities": [
+          "text"
+        ],
+        "output_modalities": [
+          "text"
+        ],
+        "capabilities": [],
+        "paid_only": false,
+        "alpha": true,
+        "added_date": 0
+      },
+      {
+        "name": "vendouple/gemini-3.6-flash",
+        "aliases": [
+          "community/vendouple/gemini-3.6-flash"
+        ],
+        "category": "text",
+        "brand": "Community",
+        "community": true,
+        "pricing": {
+          "currency": "pollen",
+          "promptTextTokens": "0.0000005",
+          "completionTextTokens": "0.000003",
+          "completionReasoningTokens": "0.000003"
+        },
+        "title": "Gemini 3.6 Flash (CHEAAAEEEEAP)",
+        "description": "Gemini 3.6 Flash (CHEAAAEEEEAP)",
+        "input_modalities": [
+          "text"
+        ],
+        "output_modalities": [
+          "text"
+        ],
+        "capabilities": [],
+        "paid_only": false,
+        "alpha": true,
+        "added_date": 0
+      }
+    ],
+    "image": [],
+    "video": [],
+    "audio": [],
+    "embeddings": []
+  },
+  "changed": {
+    "text": [
+      {
+        "before": {
+          "name": "gemini-3-flash",
+          "aliases": [
+            "gemini-3-flash-preview"
+          ],
+          "category": "text",
+          "brand": "Google",
+          "pricing": {
+            "currency": "pollen",
+            "promptTextTokens": "0.0000005",
+            "promptCachedTokens": "0.00000005",
+            "promptCacheWriteTokens": "0.0000005",
+            "promptAudioTokens": "0.000001",
+            "completionTextTokens": "0.000003"
+          },
+          "title": "Gemini 3 Flash",
+          "description": "Pro-grade reasoning at high speed, with web search and a huge context window",
+          "input_modalities": [
+            "text",
+            "image",
+            "audio",
+            "video"
+          ],
+          "output_modalities": [
+            "text"
+          ],
+          "max_reference_images": 3600,
+          "max_reference_videos": 10,
+          "capabilities": [
+            "tool_calling",
+            "web_search",
+            "code_execution"
+          ],
+          "tools": true,
+          "context_length": 1048576,
+          "is_specialized": false,
+          "paid_only": true,
+          "added_date": 1759795200000
+        },
+        "after": {
+          "name": "gemini-3-flash",
+          "aliases": [
+            "gemini-3-flash-preview"
+          ],
+          "category": "text",
+          "brand": "Google",
+          "pricing": {
+            "currency": "pollen",
+            "promptTextTokens": "0.0000005",
+            "promptCachedTokens": "0.00000005",
+            "promptCacheWriteTokens": "0.0000005",
+            "promptAudioTokens": "0.000001",
+            "promptImageTokens": "0.0000005",
+            "promptVideoTokens": "0.0000005",
+            "completionTextTokens": "0.000003"
+          },
+          "title": "Gemini 3 Flash",
+          "description": "Pro-grade reasoning at high speed, with web search and a huge context window",
+          "input_modalities": [
+            "text",
+            "image",
+            "audio",
+            "video"
+          ],
+          "output_modalities": [
+            "text"
+          ],
+          "max_reference_images": 3600,
+          "max_reference_videos": 10,
+          "capabilities": [
+            "tool_calling",
+            "web_search"
+          ],
+          "tools": true,
+          "context_length": 1048576,
+          "is_specialized": false,
+          "paid_only": true,
+          "added_date": 1759795200000
+        }
+      },
+      {
+        "before": {
+          "name": "gemini",
+          "aliases": [
+            "gemini-3.5-flash"
+          ],
+          "category": "text",
+          "brand": "Google",
+          "pricing": {
+            "currency": "pollen",
+            "promptTextTokens": "0.0000015",
+            "promptCachedTokens": "0.00000015",
+            "promptCacheWriteTokens": "0.0000015",
+            "promptAudioTokens": "0.0000015",
+            "completionTextTokens": "0.000009"
+          },
+          "title": "Gemini 3.5 Flash",
+          "description": "Sharp, fast reasoning over text, images, audio and video, plus web search",
+          "input_modalities": [
+            "text",
+            "image",
+            "audio",
+            "video"
+          ],
+          "output_modalities": [
+            "text"
+          ],
+          "max_reference_images": 3600,
+          "max_reference_videos": 10,
+          "capabilities": [
+            "tool_calling",
+            "web_search",
+            "code_execution"
+          ],
+          "tools": true,
+          "context_length": 1048576,
+          "is_specialized": false,
+          "paid_only": true,
+          "added_date": 1779148800000
+        },
+        "after": {
+          "name": "gemini",
+          "aliases": [
+            "gemini-3.6-flash",
+            "gemini-3.5-flash"
+          ],
+          "category": "text",
+          "brand": "Google",
+          "pricing": {
+            "currency": "pollen",
+            "promptTextTokens": "0.0000015",
+            "promptCachedTokens": "0.00000015",
+            "promptCacheWriteTokens": "0.0000015",
+            "promptAudioTokens": "0.0000015",
+            "promptImageTokens": "0.0000015",
+            "promptVideoTokens": "0.0000015",
+            "completionTextTokens": "0.0000075"
+          },
+          "title": "Gemini 3.6 Flash",
+          "description": "Sharp, fast reasoning over text, images, audio and video, plus web search",
+          "input_modalities": [
+            "text",
+            "image",
+            "audio",
+            "video"
+          ],
+          "output_modalities": [
+            "text"
+          ],
+          "max_reference_images": 3600,
+          "max_reference_videos": 10,
+          "capabilities": [
+            "tool_calling",
+            "web_search"
+          ],
+          "tools": true,
+          "context_length": 1048576,
+          "is_specialized": false,
+          "paid_only": true,
+          "added_date": 1779148800000
+        }
+      },
+      {
+        "before": {
+          "name": "gemini-fast",
+          "aliases": [
+            "gemini-2.5-flash-lite"
+          ],
+          "category": "text",
+          "brand": "Google",
+          "pricing": {
+            "currency": "pollen",
+            "promptTextTokens": "0.0000001",
+            "promptCachedTokens": "0.00000001",
+            "promptCacheWriteTokens": "0.0000001",
+            "promptAudioTokens": "0.0000003",
+            "completionTextTokens": "0.0000004"
+          },
+          "title": "Gemini 2.5 Flash Lite",
+          "description": "Cheapest way to handle everyday multimodal tasks; trades depth for speed",
+          "input_modalities": [
+            "text",
+            "image",
+            "audio",
+            "video"
+          ],
+          "output_modalities": [
+            "text"
+          ],
+          "max_reference_images": 3600,
+          "max_reference_videos": 10,
+          "capabilities": [
+            "tool_calling",
+            "web_search",
+            "code_execution"
+          ],
+          "tools": true,
+          "context_length": 1048576,
+          "is_specialized": false,
+          "paid_only": true,
+          "added_date": 1766016000000
+        },
+        "after": {
+          "name": "gemini-fast",
+          "aliases": [
+            "gemini-2.5-flash-lite"
+          ],
+          "category": "text",
+          "brand": "Google",
+          "pricing": {
+            "currency": "pollen",
+            "promptTextTokens": "0.0000001",
+            "promptCachedTokens": "0.00000001",
+            "promptCacheWriteTokens": "0.0000001",
+            "promptAudioTokens": "0.0000003",
+            "promptImageTokens": "0.0000001",
+            "promptVideoTokens": "0.0000001",
+            "completionTextTokens": "0.0000004"
+          },
+          "title": "Gemini 2.5 Flash Lite",
+          "description": "Cheapest way to handle everyday multimodal tasks; trades depth for speed",
+          "input_modalities": [
+            "text",
+            "image",
+            "audio",
+            "video"
+          ],
+          "output_modalities": [
+            "text"
+          ],
+          "max_reference_images": 3600,
+          "max_reference_videos": 10,
+          "capabilities": [
+            "tool_calling",
+            "web_search"
+          ],
+          "tools": true,
+          "context_length": 1048576,
+          "is_specialized": false,
+          "paid_only": true,
+          "added_date": 1766016000000
+        }
+      },
+      {
+        "before": {
+          "name": "gemini-search",
+          "aliases": [
+            "gemini-2.5-flash-search",
+            "gemini-2.5-flash-lite-search"
+          ],
+          "category": "text",
+          "brand": "Google",
+          "pricing": {
+            "currency": "pollen",
+            "promptTextTokens": "0.0000001",
+            "promptCachedTokens": "0.00000001",
+            "promptCacheWriteTokens": "0.0000001",
+            "promptAudioTokens": "0.0000003",
+            "completionTextTokens": "0.0000004"
+          },
+          "title": "Google Gemini 2.5 Flash Lite Search",
+          "description": "Answers grounded in live web search; fast and cheap, not a deep reasoner",
+          "input_modalities": [
+            "text",
+            "image",
+            "video"
+          ],
+          "output_modalities": [
+            "text"
+          ],
+          "max_reference_images": 3600,
+          "max_reference_videos": 10,
+          "capabilities": [
+            "web_search",
+            "code_execution"
+          ],
+          "tools": false,
+          "context_length": 1048576,
+          "is_specialized": false,
+          "paid_only": true,
+          "added_date": 1760054400000
+        },
+        "after": {
+          "name": "gemini-search",
+          "aliases": [
+            "gemini-2.5-flash-search",
+            "gemini-2.5-flash-lite-search"
+          ],
+          "category": "text",
+          "brand": "Google",
+          "pricing": {
+            "currency": "pollen",
+            "promptTextTokens": "0.0000001",
+            "promptCachedTokens": "0.00000001",
+            "promptCacheWriteTokens": "0.0000001",
+            "promptAudioTokens": "0.0000003",
+            "promptImageTokens": "0.0000001",
+            "promptVideoTokens": "0.0000001",
+            "completionTextTokens": "0.0000004"
+          },
+          "title": "Google Gemini 2.5 Flash Lite Search",
+          "description": "Answers grounded in live web search; fast and cheap, not a deep reasoner",
+          "input_modalities": [
+            "text",
+            "image",
+            "video"
+          ],
+          "output_modalities": [
+            "text"
+          ],
+          "max_reference_images": 3600,
+          "max_reference_videos": 10,
+          "capabilities": [
+            "web_search"
+          ],
+          "tools": false,
+          "context_length": 1048576,
+          "is_specialized": false,
+          "paid_only": true,
+          "added_date": 1760054400000
+        }
+      },
+      {
+        "before": {
+          "name": "gemini-search-fast",
+          "aliases": [
+            "gemini-3.1-flash-lite-search"
+          ],
+          "category": "text",
+          "brand": "Google",
+          "pricing": {
+            "currency": "pollen",
+            "promptTextTokens": "0.00000025",
+            "promptCachedTokens": "0.000000025",
+            "promptCacheWriteTokens": "0.00000025",
+            "promptAudioTokens": "0.0000005",
+            "completionTextTokens": "0.0000015"
+          },
+          "title": "Gemini 3.1 Flash Lite Search",
+          "description": "Low-cost answers grounded in live web search results",
+          "input_modalities": [
+            "text",
+            "image",
+            "audio",
+            "video"
+          ],
+          "output_modalities": [
+            "text"
+          ],
+          "max_reference_images": 3600,
+          "max_reference_videos": 10,
+          "capabilities": [
+            "web_search",
+            "code_execution"
+          ],
+          "tools": false,
+          "context_length": 1048576,
+          "is_specialized": false,
+          "paid_only": true,
+          "added_date": 1779753600000
+        },
+        "after": {
+          "name": "gemini-search-fast",
+          "aliases": [
+            "gemini-3.1-flash-lite-search",
+            "gemini-3.5-flash-lite-search"
+          ],
+          "category": "text",
+          "brand": "Google",
+          "pricing": {
+            "currency": "pollen",
+            "promptTextTokens": "0.0000003",
+            "promptCachedTokens": "0.00000003",
+            "promptCacheWriteTokens": "0.0000003",
+            "promptAudioTokens": "0.0000003",
+            "promptImageTokens": "0.0000003",
+            "promptVideoTokens": "0.0000003",
+            "completionTextTokens": "0.0000025"
+          },
+          "title": "Gemini 3.5 Flash Lite Search",
+          "description": "Fast multimodal answers grounded in live web results",
+          "input_modalities": [
+            "text",
+            "image",
+            "audio",
+            "video"
+          ],
+          "output_modalities": [
+            "text"
+          ],
+          "max_reference_images": 3600,
+          "max_reference_videos": 10,
+          "capabilities": [
+            "web_search"
+          ],
+          "tools": false,
+          "context_length": 1048576,
+          "is_specialized": false,
+          "paid_only": true,
+          "added_date": 1779753600000
+        }
+      },
+      {
+        "before": {
+          "name": "gemini-search-large",
+          "aliases": [
+            "gemini-3.5-flash-search"
+          ],
+          "category": "text",
+          "brand": "Google",
+          "pricing": {
+            "currency": "pollen",
+            "promptTextTokens": "0.0000015",
+            "promptCachedTokens": "0.00000015",
+            "promptCacheWriteTokens": "0.0000015",
+            "promptAudioTokens": "0.0000015",
+            "completionTextTokens": "0.000009"
+          },
+          "title": "Gemini 3.5 Flash Search",
+          "description": "Premium web research with grounded, up-to-date answers",
+          "input_modalities": [
+            "text",
+            "image",
+            "audio",
+            "video"
+          ],
+          "output_modalities": [
+            "text"
+          ],
+          "max_reference_images": 3600,
+          "max_reference_videos": 10,
+          "capabilities": [
+            "web_search",
+            "code_execution"
+          ],
+          "tools": false,
+          "context_length": 1048576,
+          "is_specialized": false,
+          "paid_only": true,
+          "added_date": 1779753600000
+        },
+        "after": {
+          "name": "gemini-search-large",
+          "aliases": [
+            "gemini-3.6-flash-search",
+            "gemini-3.5-flash-search"
+          ],
+          "category": "text",
+          "brand": "Google",
+          "pricing": {
+            "currency": "pollen",
+            "promptTextTokens": "0.0000015",
+            "promptCachedTokens": "0.00000015",
+            "promptCacheWriteTokens": "0.0000015",
+            "promptAudioTokens": "0.0000015",
+            "promptImageTokens": "0.0000015",
+            "promptVideoTokens": "0.0000015",
+            "completionTextTokens": "0.0000075"
+          },
+          "title": "Gemini 3.6 Flash Search",
+          "description": "Premium web research with grounded, up-to-date answers",
+          "input_modalities": [
+            "text",
+            "image",
+            "audio",
+            "video"
+          ],
+          "output_modalities": [
+            "text"
+          ],
+          "max_reference_images": 3600,
+          "max_reference_videos": 10,
+          "capabilities": [
+            "web_search"
+          ],
+          "tools": false,
+          "context_length": 1048576,
+          "is_specialized": false,
+          "paid_only": true,
+          "added_date": 1779753600000
+        }
+      },
+      {
+        "before": {
+          "name": "claude-large",
+          "aliases": [
+            "claude-opus-4.8",
+            "claude-opus"
+          ],
+          "category": "text",
+          "brand": "Anthropic",
+          "pricing": {
+            "currency": "pollen",
+            "promptTextTokens": "0.000005",
+            "promptCachedTokens": "0.0000005",
+            "promptCacheWriteTokens": "0.00000625",
+            "completionTextTokens": "0.000025"
+          },
+          "title": "Claude Opus 4.8",
+          "description": "Top-shelf reasoning, writing and coding; premium price per token",
+          "input_modalities": [
+            "text",
+            "image"
+          ],
+          "output_modalities": [
+            "text"
+          ],
+          "max_reference_images": 20,
+          "capabilities": [
+            "tool_calling"
+          ],
+          "tools": true,
+          "context_length": 1000000,
+          "is_specialized": false,
+          "paid_only": true,
+          "added_date": 1780012800000
+        },
+        "after": {
+          "name": "claude-large",
+          "aliases": [
+            "claude-opus-5",
+            "claude-opus-4.8",
+            "claude-opus"
+          ],
+          "category": "text",
+          "brand": "Anthropic",
+          "pricing": {
+            "currency": "pollen",
+            "promptTextTokens": "0.000005",
+            "promptCachedTokens": "0.0000005",
+            "promptCacheWriteTokens": "0.00000625",
+            "completionTextTokens": "0.000025"
+          },
+          "title": "Claude Opus 5",
+          "description": "Frontier reasoning for coding, complex analysis and long-running agents",
+          "input_modalities": [
+            "text",
+            "image"
+          ],
+          "output_modalities": [
+            "text"
+          ],
+          "max_reference_images": 20,
+          "capabilities": [
+            "tool_calling"
+          ],
+          "tools": true,
+          "context_length": 1000000,
+          "is_specialized": false,
+          "paid_only": true,
+          "added_date": 1780012800000
+        }
+      },
+      {
+        "before": {
+          "name": "MarcosFRG/gemma-4-31b",
+          "aliases": [
+            "community/MarcosFRG/gemma-4-31b"
+          ],
+          "category": "text",
+          "brand": "Community",
+          "community": true,
+          "pricing": {
+            "currency": "pollen",
+            "promptTextTokens": "0.00000006",
+            "promptCachedTokens": "0.000000006",
+            "completionTextTokens": "0.00000018",
+            "completionReasoningTokens": "0.00000009"
+          },
+          "title": "Gemma 4 31B via JankRouter",
+          "description": "Gemma 4 31B via JankRouter",
+          "input_modalities": [
+            "text"
+          ],
+          "output_modalities": [
+            "text"
+          ],
+          "capabilities": [],
+          "paid_only": false,
+          "alpha": true,
+          "added_date": 0
+        },
+        "after": {
+          "name": "MarcosFRG/gemma-4-31b",
+          "aliases": [
+            "community/MarcosFRG/gemma-4-31b"
+          ],
+          "category": "text",
+          "brand": "Community",
+          "community": true,
+          "pricing": {
+            "currency": "pollen",
+            "promptTextTokens": "0.000000042",
+            "promptCachedTokens": "0.0000000042",
+            "completionTextTokens": "0.000000125",
+            "completionReasoningTokens": "0.0000000625"
+          },
+          "title": "Gemma 4 31B via JankRouter",
+          "description": "Configurable reasoning depth with strong instruction following; balances logic and creativity well",
+          "input_modalities": [
+            "text"
+          ],
+          "output_modalities": [
+            "text"
+          ],
+          "capabilities": [],
+          "paid_only": false,
+          "alpha": true,
+          "added_date": 0
+        }
+      },
+      {
+        "before": {
+          "name": "MarcosFRG/deepseek-v4-flash",
+          "aliases": [
+            "community/MarcosFRG/deepseek-v4-flash"
+          ],
+          "category": "text",
+          "brand": "Community",
+          "community": true,
+          "pricing": {
+            "currency": "pollen",
+            "promptTextTokens": "0.00000007",
+            "promptCachedTokens": "0.000000007",
+            "completionTextTokens": "0.00000014",
+            "completionReasoningTokens": "0.00000007"
+          },
+          "title": "DeepSeek V4 Flash via JankRouter",
+          "description": "DeepSeek V4 Flash via JankRouter",
+          "input_modalities": [
+            "text"
+          ],
+          "output_modalities": [
+            "text"
+          ],
+          "capabilities": [],
+          "paid_only": false,
+          "alpha": true,
+          "added_date": 0
+        },
+        "after": {
+          "name": "MarcosFRG/deepseek-v4-flash",
+          "aliases": [
+            "community/MarcosFRG/deepseek-v4-flash"
+          ],
+          "category": "text",
+          "brand": "Community",
+          "community": true,
+          "pricing": {
+            "currency": "pollen",
+            "promptTextTokens": "0.00000003",
+            "promptCachedTokens": "0.000000003",
+            "completionTextTokens": "0.00000006",
+            "completionReasoningTokens": "0.00000003"
+          },
+          "title": "DeepSeek V4 Flash via JankRouter",
+          "description": "Snappy coding and quick-turn chat; prioritizes speed and directness over deep deliberation",
+          "input_modalities": [
+            "text"
+          ],
+          "output_modalities": [
+            "text"
+          ],
+          "capabilities": [],
+          "paid_only": false,
+          "alpha": true,
+          "added_date": 0
+        }
+      },
+      {
+        "before": {
+          "name": "MarcosFRG/gemini-2.5-flash-lite",
+          "aliases": [
+            "community/MarcosFRG/gemini-2.5-flash-lite"
+          ],
+          "category": "text",
+          "brand": "Community",
+          "community": true,
+          "pricing": {
+            "currency": "pollen",
+            "promptTextTokens": "0.000000075",
+            "completionTextTokens": "0.0000003"
+          },
+          "title": "Gemini 2.5 Flash Lite via JankRouter",
+          "description": "Gemini 2.5 Flash Lite via JankRouter",
+          "input_modalities": [
+            "text"
+          ],
+          "output_modalities": [
+            "text"
+          ],
+          "capabilities": [],
+          "paid_only": false,
+          "alpha": true,
+          "added_date": 0
+        },
+        "after": {
+          "name": "MarcosFRG/gemini-2.5-flash-lite",
+          "aliases": [
+            "community/MarcosFRG/gemini-2.5-flash-lite"
+          ],
+          "category": "text",
+          "brand": "Community",
+          "community": true,
+          "pricing": {
+            "currency": "pollen",
+            "promptTextTokens": "0.00000009",
+            "completionTextTokens": "0.00000036"
+          },
+          "title": "Gemini 2.5 Flash Lite via JankRouter",
+          "description": "Reliable everyday multimodal workhorse; fast, consistent, no-frills responses",
+          "input_modalities": [
+            "text"
+          ],
+          "output_modalities": [
+            "text"
+          ],
+          "capabilities": [],
+          "paid_only": false,
+          "alpha": true,
+          "added_date": 0
+        }
+      },
+      {
+        "before": {
+          "name": "MarcosFRG/gemini-3-flash-preview",
+          "aliases": [
+            "community/MarcosFRG/gemini-3-flash-preview"
+          ],
+          "category": "text",
+          "brand": "Community",
+          "community": true,
+          "pricing": {
+            "currency": "pollen",
+            "promptTextTokens": "0.000000375",
+            "promptCachedTokens": "0.0000000375",
+            "promptAudioTokens": "0.000001125",
+            "promptImageTokens": "0.000000375",
+            "completionTextTokens": "0.00000225",
+            "completionReasoningTokens": "0.000001125"
+          },
+          "title": "Gemini 3 Flash via JankRouter",
+          "description": "Gemini 3 Flash via JankRouter",
+          "input_modalities": [
+            "text"
+          ],
+          "output_modalities": [
+            "text"
+          ],
+          "capabilities": [],
+          "paid_only": false,
+          "alpha": true,
+          "added_date": 0
+        },
+        "after": {
+          "name": "MarcosFRG/gemini-3-flash-preview",
+          "aliases": [
+            "community/MarcosFRG/gemini-3-flash-preview"
+          ],
+          "category": "text",
+          "brand": "Community",
+          "community": true,
+          "pricing": {
+            "currency": "pollen",
+            "promptTextTokens": "0.00000045",
+            "promptCachedTokens": "0.000000045",
+            "promptAudioTokens": "0.0000009",
+            "promptImageTokens": "0.00000045",
+            "completionTextTokens": "0.0000027",
+            "completionReasoningTokens": "0.00000135"
+          },
+          "title": "Gemini 3 Flash via JankRouter",
+          "description": "Frontier-class speed for agentic workflows and multi-turn chat; sharp without being slow",
+          "input_modalities": [
+            "text"
+          ],
+          "output_modalities": [
+            "text"
+          ],
+          "capabilities": [],
+          "paid_only": false,
+          "alpha": true,
+          "added_date": 0
+        }
+      },
+      {
+        "before": {
+          "name": "MarcosFRG/minimax-m3",
+          "aliases": [
+            "community/MarcosFRG/minimax-m3"
+          ],
+          "category": "text",
+          "brand": "Community",
+          "community": true,
+          "pricing": {
+            "currency": "pollen",
+            "promptTextTokens": "0.00000015",
+            "promptCachedTokens": "0.000000015",
+            "completionTextTokens": "0.0000006",
+            "completionReasoningTokens": "0.0000003"
+          },
+          "title": "MiniMax M3 via JankRouter",
+          "description": "MiniMax M3 via JankRouter",
+          "input_modalities": [
+            "text"
+          ],
+          "output_modalities": [
+            "text"
+          ],
+          "capabilities": [],
+          "paid_only": false,
+          "alpha": true,
+          "added_date": 0
+        },
+        "after": {
+          "name": "MarcosFRG/minimax-m3",
+          "aliases": [
+            "community/MarcosFRG/minimax-m3"
+          ],
+          "category": "text",
+          "brand": "Community",
+          "community": true,
+          "pricing": {
+            "currency": "pollen",
+            "promptTextTokens": "0.00000012",
+            "promptCachedTokens": "0.000000012",
+            "completionTextTokens": "0.00000048",
+            "completionReasoningTokens": "0.00000024"
+          },
+          "title": "MiniMax M3 via JankRouter",
+          "description": "Autonomous coding with tool use and task decomposition; handles full-repo workflows end to end",
+          "input_modalities": [
+            "text"
+          ],
+          "output_modalities": [
+            "text"
+          ],
+          "capabilities": [],
+          "paid_only": false,
+          "alpha": true,
+          "added_date": 0
+        }
+      },
+      {
+        "before": {
+          "name": "MarcosFRG/gemini-3.1-flash-lite",
+          "aliases": [
+            "community/MarcosFRG/gemini-3.1-flash-lite"
+          ],
+          "category": "text",
+          "brand": "Community",
+          "community": true,
+          "pricing": {
+            "currency": "pollen",
+            "promptTextTokens": "0.0000001875",
+            "promptCachedTokens": "0.00000001875",
+            "promptAudioTokens": "0.000000375",
+            "completionTextTokens": "0.000001125",
+            "completionReasoningTokens": "0.0000005625",
+            "completionAudioTokens": "0.000000375"
+          },
+          "title": "Gemini 3.1 Flash Lite via JankRouter",
+          "description": "Gemini 3.1 Flash Lite via JankRouter",
+          "input_modalities": [
+            "text"
+          ],
+          "output_modalities": [
+            "text"
+          ],
+          "capabilities": [],
+          "paid_only": false,
+          "alpha": true,
+          "added_date": 0
+        },
+        "after": {
+          "name": "MarcosFRG/gemini-3.1-flash-lite",
+          "aliases": [
+            "community/MarcosFRG/gemini-3.1-flash-lite"
+          ],
+          "category": "text",
+          "brand": "Community",
+          "community": true,
+          "pricing": {
+            "currency": "pollen",
+            "promptTextTokens": "0.000000225",
+            "promptCachedTokens": "0.0000000225",
+            "promptAudioTokens": "0.00000045",
+            "completionTextTokens": "0.00000135",
+            "completionReasoningTokens": "0.000000675"
+          },
+          "title": "Gemini 3.1 Flash Lite via JankRouter",
+          "description": "Blazing-fast reasoning that punches above its weight; quick without dumbing down",
+          "input_modalities": [
+            "text"
+          ],
+          "output_modalities": [
+            "text"
+          ],
+          "capabilities": [],
+          "paid_only": false,
+          "alpha": true,
+          "added_date": 0
+        }
+      },
+      {
+        "before": {
+          "name": "MarcosFRG/glm-5.2",
+          "aliases": [
+            "community/MarcosFRG/glm-5.2"
+          ],
+          "category": "text",
+          "brand": "Community",
+          "community": true,
+          "pricing": {
+            "currency": "pollen",
+            "promptTextTokens": "0.00000015",
+            "promptCachedTokens": "0.000000015",
+            "completionTextTokens": "0.0000005",
+            "completionReasoningTokens": "0.00000025"
+          },
+          "title": "GLM 5.2 via JankRouter",
+          "description": "GLM 5.2 via JankRouter",
+          "input_modalities": [
+            "text"
+          ],
+          "output_modalities": [
+            "text"
+          ],
+          "capabilities": [],
+          "paid_only": false,
+          "alpha": true,
+          "added_date": 0
+        },
+        "after": {
+          "name": "MarcosFRG/glm-5.2",
+          "aliases": [
+            "community/MarcosFRG/glm-5.2"
+          ],
+          "category": "text",
+          "brand": "Community",
+          "community": true,
+          "pricing": {
+            "currency": "pollen",
+            "promptTextTokens": "0.0000007",
+            "promptCachedTokens": "0.00000007",
+            "completionTextTokens": "0.0000022",
+            "completionReasoningTokens": "0.0000011"
+          },
+          "title": "GLM 5.2 via JankRouter",
+          "description": "Long-horizon coding and full-codebase analysis; adjustable thinking effort for deep or quick passes",
+          "input_modalities": [
+            "text"
+          ],
+          "output_modalities": [
+            "text"
+          ],
+          "capabilities": [],
+          "paid_only": false,
+          "alpha": true,
+          "added_date": 0
+        }
+      },
+      {
+        "before": {
+          "name": "vendouple/kimi-k2.6",
+          "aliases": [
+            "community/vendouple/kimi-k2.6"
+          ],
+          "category": "text",
+          "brand": "Community",
+          "community": true,
+          "pricing": {
+            "currency": "pollen",
+            "promptTextTokens": "0.0000005",
+            "promptCachedTokens": "0.0000005",
+            "completionTextTokens": "0.000001"
+          },
+          "title": "Kimi K2.6 (Per Day Limit)",
+          "description": "Kimi K2.6 (Per Day Limit)",
+          "input_modalities": [
+            "text"
+          ],
+          "output_modalities": [
+            "text"
+          ],
+          "capabilities": [],
+          "paid_only": false,
+          "alpha": true,
+          "added_date": 0
+        },
+        "after": {
+          "name": "vendouple/kimi-k2.6",
+          "aliases": [
+            "community/vendouple/kimi-k2.6"
+          ],
+          "category": "text",
+          "brand": "Community",
+          "community": true,
+          "pricing": {
+            "currency": "pollen",
+            "promptTextTokens": "0.0000005",
+            "promptCachedTokens": "0.0000005",
+            "completionTextTokens": "0.000001"
+          },
+          "title": "Kimi K2.6",
+          "input_modalities": [
+            "text"
+          ],
+          "output_modalities": [
+            "text"
+          ],
+          "capabilities": [],
+          "paid_only": false,
+          "alpha": true,
+          "added_date": 0
+        }
+      },
+      {
+        "before": {
+          "name": "YoannDev90/diffusiongemma-26b-a4b-it:free",
+          "aliases": [
+            "community/YoannDev90/diffusiongemma-26b-a4b-it:free"
+          ],
+          "category": "text",
+          "brand": "Community",
+          "community": true,
+          "pricing": {
+            "currency": "pollen"
+          },
+          "title": "DiffusionGemma 26b A4b (Diffusion-based 26B parameter LLM enabling parallel token generation for real-time text apps)",
+          "description": "DiffusionGemma 26b A4b (Diffusion-based 26B parameter LLM enabling parallel token generation for real-time text apps)",
+          "input_modalities": [
+            "text"
+          ],
+          "output_modalities": [
+            "text"
+          ],
+          "capabilities": [],
+          "paid_only": false,
+          "alpha": true,
+          "added_date": 0
+        },
+        "after": {
+          "name": "YoannDev90/diffusiongemma-26b-a4b-it:free",
+          "aliases": [
+            "community/YoannDev90/diffusiongemma-26b-a4b-it:free"
+          ],
+          "category": "text",
+          "brand": "Community",
+          "community": true,
+          "pricing": {
+            "currency": "pollen"
+          },
+          "title": "DiffusionGemma 26b A4b",
+          "description": "Diffusion-based 26B parameter LLM enabling parallel token generation for real-time text apps",
+          "input_modalities": [
+            "text"
+          ],
+          "output_modalities": [
+            "text"
+          ],
+          "capabilities": [],
+          "paid_only": false,
+          "alpha": true,
+          "added_date": 0
+        }
+      },
+      {
+        "before": {
+          "name": "CloudCompile/afforda-claude-haiku-4.5",
+          "aliases": [
+            "community/CloudCompile/afforda-claude-haiku-4.5"
+          ],
+          "category": "text",
+          "brand": "Community",
+          "community": true,
+          "pricing": {
+            "currency": "pollen",
+            "promptTextTokens": "0.00000035",
+            "promptCachedTokens": "0.0000002",
+            "promptCacheWriteTokens": "0.00000005",
+            "promptAudioTokens": "0.0000006",
+            "promptImageTokens": "0.0000003",
+            "completionTextTokens": "0.0000007",
+            "completionReasoningTokens": "0.00000045",
+            "completionAudioTokens": "0.0000008"
+          },
+          "title": "AffordaClaude (Claude Haiku 4.5 Cheap)",
+          "description": "AffordaClaude (Claude Haiku 4.5 Cheap)",
+          "input_modalities": [
+            "text"
+          ],
+          "output_modalities": [
+            "text"
+          ],
+          "capabilities": [],
+          "paid_only": false,
+          "alpha": true,
+          "added_date": 0
+        },
+        "after": {
+          "name": "CloudCompile/afforda-claude-haiku-4.5",
+          "aliases": [
+            "community/CloudCompile/afforda-claude-haiku-4.5"
+          ],
+          "category": "text",
+          "brand": "Community",
+          "community": true,
+          "pricing": {
+            "currency": "pollen",
+            "promptTextTokens": "0.0000004",
+            "promptCachedTokens": "0.0000002",
+            "promptCacheWriteTokens": "0.0000001",
+            "promptAudioTokens": "0.0000006",
+            "promptImageTokens": "0.0000004",
+            "completionTextTokens": "0.00000075",
+            "completionReasoningTokens": "0.00000055",
+            "completionAudioTokens": "0.0000008"
+          },
+          "title": "AffordaClaude (Claude Haiku 4.5 Cheap)",
+          "description": "AffordaClaude (Claude Haiku 4.5 Cheap)",
+          "input_modalities": [
+            "text"
+          ],
+          "output_modalities": [
+            "text"
+          ],
+          "capabilities": [],
+          "paid_only": false,
+          "alpha": true,
+          "added_date": 0
+        }
+      },
+      {
+        "before": {
+          "name": "vendouple/claude-opus-4-8",
+          "aliases": [
+            "community/vendouple/claude-opus-4-8"
+          ],
+          "category": "text",
+          "brand": "Community",
+          "community": true,
+          "pricing": {
+            "currency": "pollen",
+            "promptTextTokens": "0.000001",
+            "completionTextTokens": "0.000005"
+          },
+          "title": "Claude Opus 4.8",
+          "description": "Claude Opus 4.8",
+          "input_modalities": [
+            "text"
+          ],
+          "output_modalities": [
+            "text"
+          ],
+          "capabilities": [],
+          "paid_only": false,
+          "alpha": true,
+          "added_date": 0
+        },
+        "after": {
+          "name": "vendouple/claude-opus-4-8",
+          "aliases": [
+            "community/vendouple/claude-opus-4-8"
+          ],
+          "category": "text",
+          "brand": "Community",
+          "community": true,
+          "pricing": {
+            "currency": "pollen",
+            "promptTextTokens": "0.000003",
+            "completionTextTokens": "0.00001"
+          },
+          "title": "Claude Opus 4.8",
+          "description": "Claude Opus 4.8",
+          "input_modalities": [
+            "text"
+          ],
+          "output_modalities": [
+            "text"
+          ],
+          "capabilities": [],
+          "paid_only": false,
+          "alpha": true,
+          "added_date": 0
+        }
+      },
+      {
+        "before": {
+          "name": "YoannDev90/laguna-s-2.1:free",
+          "aliases": [
+            "community/YoannDev90/laguna-s-2.1:free"
+          ],
+          "category": "text",
+          "brand": "Community",
+          "community": true,
+          "pricing": {
+            "currency": "pollen"
+          },
+          "title": "Laguna S 2.1 Frontier-class reasoning at mid-size cost. Optimized for quality, speed, and efficiency. 118B params / 8B active / 1M context",
+          "description": "Laguna S 2.1 Frontier-class reasoning at mid-size cost. Optimized for quality, speed, and efficiency. 118B params / 8B active / 1M context",
+          "input_modalities": [
+            "text"
+          ],
+          "output_modalities": [
+            "text"
+          ],
+          "capabilities": [],
+          "paid_only": false,
+          "alpha": true,
+          "added_date": 0
+        },
+        "after": {
+          "name": "YoannDev90/laguna-s-2.1:free",
+          "aliases": [
+            "community/YoannDev90/laguna-s-2.1:free"
+          ],
+          "category": "text",
+          "brand": "Community",
+          "community": true,
+          "pricing": {
+            "currency": "pollen"
+          },
+          "title": "Laguna S 2.1",
+          "description": "Frontier-class reasoning at mid-size cost. Optimized for quality, speed, and efficiency. 118B params / 8B active / 1M context",
+          "input_modalities": [
+            "text"
+          ],
+          "output_modalities": [
+            "text"
+          ],
+          "capabilities": [],
+          "paid_only": false,
+          "alpha": true,
+          "added_date": 0
+        }
+      },
+      {
+        "before": {
+          "name": "YoannDev90/laguna-xs-2.1:free",
+          "aliases": [
+            "community/YoannDev90/laguna-xs-2.1:free"
+          ],
+          "category": "text",
+          "brand": "Community",
+          "community": true,
+          "pricing": {
+            "currency": "pollen"
+          },
+          "title": "Laguna XS 2.1 (Efficient 33B MoE for local, long-horizon agentic coding and terminal tasks)",
+          "description": "Laguna XS 2.1 (Efficient 33B MoE for local, long-horizon agentic coding and terminal tasks)",
+          "input_modalities": [
+            "text"
+          ],
+          "output_modalities": [
+            "text"
+          ],
+          "capabilities": [],
+          "paid_only": false,
+          "alpha": true,
+          "added_date": 0
+        },
+        "after": {
+          "name": "YoannDev90/laguna-xs-2.1:free",
+          "aliases": [
+            "community/YoannDev90/laguna-xs-2.1:free"
+          ],
+          "category": "text",
+          "brand": "Community",
+          "community": true,
+          "pricing": {
+            "currency": "pollen"
+          },
+          "title": "Laguna XS 2.1",
+          "description": "Efficient 33B MoE for local, long-horizon agentic coding and terminal tasks",
+          "input_modalities": [
+            "text"
+          ],
+          "output_modalities": [
+            "text"
+          ],
+          "capabilities": [],
+          "paid_only": false,
+          "alpha": true,
+          "added_date": 0
+        }
+      }
+    ],
+    "image": [],
+    "video": [],
+    "audio": [
+      {
+        "before": {
+          "name": "elevenlabs",
+          "aliases": [
+            "tts",
+            "text-to-speech",
+            "eleven",
+            "tts-1",
+            "tts-1-hd"
+          ],
+          "category": "audio",
+          "brand": "ElevenLabs",
+          "pricing": {
+            "currency": "pollen",
+            "completionAudioTokens": "0.0001"
+          },
+          "title": "ElevenLabs v3 TTS",
+          "description": "Expressive speech with emotion control and audio tags",
+          "input_modalities": [
+            "text"
+          ],
+          "output_modalities": [
+            "audio"
+          ],
+          "capabilities": [],
+          "voices": [
+            "alloy",
+            "echo",
+            "fable",
+            "onyx",
+            "nova",
+            "shimmer",
+            "ash",
+            "ballad",
+            "coral",
+            "sage",
+            "verse",
+            "rachel",
+            "domi",
+            "bella",
+            "elli",
+            "charlotte",
+            "dorothy",
+            "sarah",
+            "emily",
+            "lily",
+            "matilda",
+            "adam",
+            "antoni",
+            "arnold",
+            "josh",
+            "sam",
+            "daniel",
+            "charlie",
+            "james",
+            "fin",
+            "callum",
+            "liam",
+            "george",
+            "brian",
+            "bill"
+          ],
+          "paid_only": true,
+          "added_date": 1770422400000
+        },
+        "after": {
+          "name": "elevenlabs",
+          "aliases": [
+            "tts",
+            "text-to-speech",
+            "eleven",
+            "tts-1",
+            "tts-1-hd"
+          ],
+          "category": "audio",
+          "brand": "ElevenLabs",
+          "pricing": {
+            "currency": "pollen",
+            "completionAudioTokens": "0.0001"
+          },
+          "title": "ElevenLabs v3 TTS",
+          "description": "Expressive speech with emotion controls, audio tags, and character timestamps",
+          "input_modalities": [
+            "text"
+          ],
+          "output_modalities": [
+            "audio"
+          ],
+          "supported_endpoints": [
+            "/audio/{text}",
+            "/v1/audio/speech",
+            "/v1/audio/speech/with-timestamps"
+          ],
+          "capabilities": [],
+          "voices": [
+            "alloy",
+            "echo",
+            "fable",
+            "onyx",
+            "nova",
+            "shimmer",
+            "ash",
+            "ballad",
+            "coral",
+            "sage",
+            "verse",
+            "rachel",
+            "domi",
+            "bella",
+            "elli",
+            "charlotte",
+            "dorothy",
+            "sarah",
+            "emily",
+            "lily",
+            "matilda",
+            "adam",
+            "antoni",
+            "arnold",
+            "josh",
+            "sam",
+            "daniel",
+            "charlie",
+            "james",
+            "fin",
+            "callum",
+            "liam",
+            "george",
+            "brian",
+            "bill"
+          ],
+          "paid_only": true,
+          "added_date": 1770422400000
+        }
+      },
+      {
+        "before": {
+          "name": "elevenflash",
+          "aliases": [
+            "tts-flash",
+            "eleven-flash",
+            "flash"
+          ],
+          "category": "audio",
+          "brand": "ElevenLabs",
+          "pricing": {
+            "currency": "pollen",
+            "completionAudioTokens": "0.00005"
+          },
+          "title": "ElevenLabs Flash v2.5",
+          "description": "Snappy low-latency speech in 32 languages; leaner than the premium voices",
+          "input_modalities": [
+            "text"
+          ],
+          "output_modalities": [
+            "audio"
+          ],
+          "capabilities": [],
+          "voices": [
+            "alloy",
+            "echo",
+            "fable",
+            "onyx",
+            "nova",
+            "shimmer",
+            "ash",
+            "ballad",
+            "coral",
+            "sage",
+            "verse",
+            "rachel",
+            "domi",
+            "bella",
+            "elli",
+            "charlotte",
+            "dorothy",
+            "sarah",
+            "emily",
+            "lily",
+            "matilda",
+            "adam",
+            "antoni",
+            "arnold",
+            "josh",
+            "sam",
+            "daniel",
+            "charlie",
+            "james",
+            "fin",
+            "callum",
+            "liam",
+            "george",
+            "brian",
+            "bill"
+          ],
+          "paid_only": true,
+          "added_date": 1778716800000
+        },
+        "after": {
+          "name": "elevenflash",
+          "aliases": [
+            "tts-flash",
+            "eleven-flash",
+            "flash"
+          ],
+          "category": "audio",
+          "brand": "ElevenLabs",
+          "pricing": {
+            "currency": "pollen",
+            "completionAudioTokens": "0.00005"
+          },
+          "title": "ElevenLabs Flash v2.5",
+          "description": "Low-latency speech in 32 languages with character timestamps",
+          "input_modalities": [
+            "text"
+          ],
+          "output_modalities": [
+            "audio"
+          ],
+          "supported_endpoints": [
+            "/audio/{text}",
+            "/v1/audio/speech",
+            "/v1/audio/speech/with-timestamps"
+          ],
+          "capabilities": [],
+          "voices": [
+            "alloy",
+            "echo",
+            "fable",
+            "onyx",
+            "nova",
+            "shimmer",
+            "ash",
+            "ballad",
+            "coral",
+            "sage",
+            "verse",
+            "rachel",
+            "domi",
+            "bella",
+            "elli",
+            "charlotte",
+            "dorothy",
+            "sarah",
+            "emily",
+            "lily",
+            "matilda",
+            "adam",
+            "antoni",
+            "arnold",
+            "josh",
+            "sam",
+            "daniel",
+            "charlie",
+            "james",
+            "fin",
+            "callum",
+            "liam",
+            "george",
+            "brian",
+            "bill"
+          ],
+          "paid_only": true,
+          "added_date": 1778716800000
+        }
+      },
+      {
+        "before": {
+          "name": "eleven-multilingual-v2",
+          "aliases": [
+            "multilingual-v2",
+            "eleven-v2",
+            "tts-multilingual"
+          ],
+          "category": "audio",
+          "brand": "ElevenLabs",
+          "pricing": {
+            "currency": "pollen",
+            "completionAudioTokens": "0.0001"
+          },
+          "title": "ElevenLabs Multilingual v2",
+          "description": "Lifelike, emotionally rich speech in 29 languages",
+          "input_modalities": [
+            "text"
+          ],
+          "output_modalities": [
+            "audio"
+          ],
+          "capabilities": [],
+          "voices": [
+            "alloy",
+            "echo",
+            "fable",
+            "onyx",
+            "nova",
+            "shimmer",
+            "ash",
+            "ballad",
+            "coral",
+            "sage",
+            "verse",
+            "rachel",
+            "domi",
+            "bella",
+            "elli",
+            "charlotte",
+            "dorothy",
+            "sarah",
+            "emily",
+            "lily",
+            "matilda",
+            "adam",
+            "antoni",
+            "arnold",
+            "josh",
+            "sam",
+            "daniel",
+            "charlie",
+            "james",
+            "fin",
+            "callum",
+            "liam",
+            "george",
+            "brian",
+            "bill"
+          ],
+          "paid_only": true,
+          "added_date": 1782086400000
+        },
+        "after": {
+          "name": "eleven-multilingual-v2",
+          "aliases": [
+            "multilingual-v2",
+            "eleven-v2",
+            "tts-multilingual"
+          ],
+          "category": "audio",
+          "brand": "ElevenLabs",
+          "pricing": {
+            "currency": "pollen",
+            "completionAudioTokens": "0.0001"
+          },
+          "title": "ElevenLabs Multilingual v2",
+          "description": "Emotionally rich speech in 29 languages with character timestamps",
+          "input_modalities": [
+            "text"
+          ],
+          "output_modalities": [
+            "audio"
+          ],
+          "supported_endpoints": [
+            "/audio/{text}",
+            "/v1/audio/speech",
+            "/v1/audio/speech/with-timestamps"
+          ],
+          "capabilities": [],
+          "voices": [
+            "alloy",
+            "echo",
+            "fable",
+            "onyx",
+            "nova",
+            "shimmer",
+            "ash",
+            "ballad",
+            "coral",
+            "sage",
+            "verse",
+            "rachel",
+            "domi",
+            "bella",
+            "elli",
+            "charlotte",
+            "dorothy",
+            "sarah",
+            "emily",
+            "lily",
+            "matilda",
+            "adam",
+            "antoni",
+            "arnold",
+            "josh",
+            "sam",
+            "daniel",
+            "charlie",
+            "james",
+            "fin",
+            "callum",
+            "liam",
+            "george",
+            "brian",
+            "bill"
+          ],
+          "paid_only": true,
+          "added_date": 1782086400000
+        }
+      }
+    ],
+    "embeddings": []
+  }
+}

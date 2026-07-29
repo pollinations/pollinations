@@ -1,0 +1,35 @@
+{
+  "pr_number": 12839,
+  "title": "fix: restore Gemini Search to Vertex",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/12839",
+  "merged_at": "2026-07-29T09:24:38Z",
+  "labels": [],
+  "pr_body_excerpt": "- Routes `gemini-search`, `gemini-search-fast`, and `gemini-search-large` directly through Google Vertex again.\n- Restores Vertex-native Google Search tool conversion, grounding billing, and cache-storage accounting.\n- Keeps model names, aliases, pricing, paid-only access, multimodal support, and no-fallback behavior unchanged.\n- Accepts that prompt caching is unavailable while Vertex Search tools are active; this reliability tradeoff was explicitly approved.\n- Verified with typechecks, 451 focused tests, and live E2E covering search, image, multi-image, video, audio, streaming, aliases, billing, concurrency, and token limits.",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Search finds its way home",
+    "blurb": "Gemini Search is back on its native Vertex route, where its Google Search tools, grounding, and accounting know the local customs. The bee has put the signposts back where they belong.",
+    "summary": "Restored gemini-search, gemini-search-fast, and gemini-search-large to direct Google Vertex routing, including Vertex-native Google Search tool conversion, grounding billing, and cache-storage accounting.",
+    "impact": "Search-enabled Gemini requests retain their existing names, aliases, pricing, paid access, multimodal support, and no-fallback behavior while again using Vertex's native search and billing path.",
+    "keywords": [
+      "gemini",
+      "vertex",
+      "google-search",
+      "grounding",
+      "billing",
+      "models",
+      "api"
+    ],
+    "visual_concept": "A cozy garden-path metaphor for restoring Gemini Search to its proper provider: Polli guides three labeled Gemini search parcels back to a welcoming retro Vertex terminal, while native Google Search results bloom as code-flowers. Small ledger jars and a cache shelf represent restored grounding and cache-storage accounting; the monitor robot can eagerly confirm that the route is visible again.",
+    "image_prompt": "Cozy pixel art scene of Polli, a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings, wearing a tiny explorer scarf as she guides three glowing search parcels along a garden path into a retro Google Vertex-style terminal; a cute CRT monitor robot holds a map and says \"I CAN SEE!\" while code-flowers shaped like search results bloom beside small billing ledger jars. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel mint-lavender-peach gradient background, chunky retro sprites, warm lighting, subtle CRT glow, retro gaming vibes like Stardew Valley or A Short Hike, pixel-font text: \"SEARCH ROUTE RESTORED\", nostalgic but beautiful and emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-29/PR-12839.jpg",
+    "prompt": "Cozy pixel art scene of Polli, a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings, wearing a tiny explorer scarf as she guides three glowing search parcels along a garden path into a retro Google Vertex-style terminal; a cute CRT monitor robot holds a map and says \"I CAN SEE!\" while code-flowers shaped like search results bloom beside small billing ledger jars. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel mint-lavender-peach gradient background, chunky retro sprites, warm lighting, subtle CRT glow, retro gaming vibes like Stardew Valley or A Short Hike, pixel-font text: \"SEARCH ROUTE RESTORED\", nostalgic but beautiful and emotionally warm."
+  },
+  "generated_at": "2026-07-29T09:25:48.095022+00:00"
+}

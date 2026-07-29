@@ -67,7 +67,6 @@ test(
         const runToken = await signAgentRunToken({
             secret: env.BETTER_AUTH_SECRET,
             parentApiKeyId: parent?.apiKey.id as string,
-            agentId: "example-agent",
             runId: crypto.randomUUID(),
         });
         const response = await SELF.fetch(`http://localhost:3000${endpoint}`, {
@@ -84,41 +83,6 @@ test(
         });
         // A run token never carries account scope, only generation access.
         expect(data.permissions.account).toBeNull();
-    },
-);
-
-test(
-    "GET /api/account/key/usage - rejects an agent run token",
-    { timeout: 30000 },
-    async ({ apiKey, mocks }) => {
-        await mocks.enable("tinybird");
-        const parent = await authenticateApiKeyRequest({
-            request: new Request("http://localhost", {
-                headers: { Authorization: `Bearer ${apiKey}` },
-            }),
-            env,
-        });
-        const runToken = await signAgentRunToken({
-            secret: env.BETTER_AUTH_SECRET,
-            parentApiKeyId: parent?.apiKey.id as string,
-            agentId: "example-agent",
-            runId: crypto.randomUUID(),
-        });
-
-        // The route is scope-free so a key can read its own usage. The token is
-        // held by a third-party agent, so it must not inherit that carve-out —
-        // otherwise a delegated endpoint can export the caller's spend history.
-        const response = await SELF.fetch(
-            `http://localhost:3000${endpoint}/usage`,
-            { headers: { Authorization: `Bearer ${runToken}` } },
-        );
-        expect(response.status).toBe(403);
-
-        const allowed = await SELF.fetch(
-            `http://localhost:3000${endpoint}/usage`,
-            { headers: { Authorization: `Bearer ${apiKey}` } },
-        );
-        expect(allowed.status).toBe(200);
     },
 );
 

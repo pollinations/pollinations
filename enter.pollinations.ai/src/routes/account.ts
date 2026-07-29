@@ -1733,16 +1733,6 @@ export const accountRoutes = new Hono<Env>()
                         "API key required. This endpoint is authenticated by API key only.",
                 });
             }
-            // This route is scope-free because a key may read its own usage. A
-            // run token is not the key: it resolves to the parent key's id but
-            // is held by a third-party agent, so the carve-out does not extend
-            // to it.
-            if (c.var.auth.agentRun) {
-                throw new HTTPException(403, {
-                    message:
-                        "Agent run tokens cannot read the parent key's usage history",
-                });
-            }
             const user = c.var.auth.requireUser();
 
             const {

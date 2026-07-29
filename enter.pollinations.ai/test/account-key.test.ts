@@ -28,9 +28,7 @@ test("GET /api/account/key - returns 401 with invalid API key", async () => {
 
 test(
     "GET /api/account/key - returns key status for secret key",
-    {
-        timeout: 30000,
-    },
+    { timeout: 30000 },
     async ({ apiKey, mocks }) => {
         await mocks.enable("tinybird");
 
@@ -55,9 +53,7 @@ test(
 
 test(
     "GET /api/account/key - accepts an agent run token",
-    {
-        timeout: 30000,
-    },
+    { timeout: 30000 },
     async ({ apiKey, mocks }) => {
         await mocks.enable("tinybird");
         const parent = await authenticateApiKeyRequest({
@@ -84,6 +80,7 @@ test(
             valid: true,
             type: "secret",
             userId: parent?.user?.id,
+            byopClientKeyId: parent?.apiKey.byopClientKeyId ?? null,
         });
         // A run token never carries account scope, only generation access.
         expect(data.permissions.account).toBeNull();
@@ -92,9 +89,7 @@ test(
 
 test(
     "GET /api/account/key - returns key status for publishable key",
-    {
-        timeout: 30000,
-    },
+    { timeout: 30000 },
     async ({ pubApiKey, mocks }) => {
         await mocks.enable("tinybird");
 
@@ -114,9 +109,7 @@ test(
 
 test(
     "GET /api/account/key - shows permissions for restricted key",
-    {
-        timeout: 30000,
-    },
+    { timeout: 30000 },
     async ({ restrictedApiKey, mocks }) => {
         await mocks.enable("tinybird");
 
@@ -135,9 +128,7 @@ test(
 
 test(
     "GET /api/account/key - omits retired models from permissions",
-    {
-        timeout: 30000,
-    },
+    { timeout: 30000 },
     async ({ sessionToken, mocks }) => {
         await mocks.enable("tinybird");
         const created = await createApiKeyViaApi(sessionToken, {
@@ -159,9 +150,7 @@ test(
 
 test(
     "GET /api/account/key - shows pollenBudget for budgeted key",
-    {
-        timeout: 30000,
-    },
+    { timeout: 30000 },
     async ({ budgetedApiKey, mocks }) => {
         await mocks.enable("tinybird");
 
@@ -181,9 +170,7 @@ test(
 
 test(
     "GET /api/account/key - works with query parameter",
-    {
-        timeout: 30000,
-    },
+    { timeout: 30000 },
     async ({ apiKey, mocks }) => {
         await mocks.enable("tinybird");
 
@@ -199,9 +186,7 @@ test(
 
 test(
     "GET /api/account/key - calculates expiresIn correctly",
-    {
-        timeout: 30000,
-    },
+    { timeout: 30000 },
     async ({ apiKey, mocks }) => {
         await mocks.enable("tinybird");
 
@@ -232,9 +217,7 @@ test(
 
 test(
     "GET /api/account/key - returns null for keys without expiry",
-    {
-        timeout: 30000,
-    },
+    { timeout: 30000 },
     async ({ apiKey, mocks }) => {
         await mocks.enable("tinybird");
 

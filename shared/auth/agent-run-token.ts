@@ -23,7 +23,7 @@ function signingKey(secret: string): Uint8Array {
     );
 }
 
-export function isAgentRunToken(token: string): boolean {
+function isAgentRunToken(token: string): boolean {
     return token.startsWith(AGENT_RUN_TOKEN_PREFIX);
 }
 

@@ -14,7 +14,12 @@ import { edgeRateLimit } from "@/middleware/rate-limit-edge.ts";
 import { getGenerationModelRegistry } from "../model-registry.ts";
 
 const CreateAgentRunTokenSchema = z.object({
-    agent_id: z.string().trim().min(1).max(253),
+    agent_id: z
+        .string()
+        .trim()
+        .min(1)
+        .max(253)
+        .describe("Caller-provided audit label for the receiving agent"),
     models: z
         .array(z.string().trim().min(1).max(253))
         .min(1)
@@ -45,7 +50,7 @@ export const agentRunTokenRoutes = new Hono<Env>()
             tags: ["Authentication"],
             summary: "Create Agent Run Token",
             description:
-                "Creates a short-lived generation credential for one agent run. Requests made with the returned token are billed to the parent API key. The optional model list can only narrow the parent key; when omitted, the token inherits the parent's model access. Agent run tokens cannot call community models or mint nested tokens.",
+                "Creates a short-lived generation credential that the caller can give directly to an agent. Requests made with the returned bearer token are billed to the parent API key. `agent_id` is an audit label, not a verified agent identity. The optional model list can only narrow the parent key; when omitted, the token inherits the parent's model access. Agent run tokens cannot call community models or mint nested tokens.",
             responses: {
                 200: {
                     description: "Agent run token created",

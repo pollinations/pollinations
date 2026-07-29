@@ -65,7 +65,7 @@ async function mintAgentRunToken(parentKey: string, models?: string[]) {
                 "Content-Type": "application/json",
             },
             body: JSON.stringify({
-                agent_id: "polli-itachi",
+                agent_id: "example-agent",
                 ...(models && { models }),
                 expires_in: 300,
             }),
@@ -107,7 +107,7 @@ test("mints a scoped token that resolves to the parent key for billing", async (
     expect(minted).toMatchObject({
         token_type: "Bearer",
         expires_in: 300,
-        agent_id: "polli-itachi",
+        agent_id: "example-agent",
         models: [RESTRICTED_TEXT_TEST_MODEL, RESTRICTED_IMAGE_TEST_MODEL],
     });
 
@@ -122,7 +122,7 @@ test("mints a scoped token that resolves to the parent key for billing", async (
         },
         rawKey: minted.access_token,
         agentRun: {
-            agentId: "polli-itachi",
+            agentId: "example-agent",
             runId: minted.run_id,
             expiresAt: expect.any(Number),
         },
@@ -229,7 +229,7 @@ test("rejects tampered and expired agent run tokens", async () => {
     const token = await signAgentRunToken({
         secret: env.BETTER_AUTH_SECRET,
         parentApiKeyId: "parent-key-id",
-        agentId: "polli-itachi",
+        agentId: "example-agent",
         runId: "run-id",
         models: [RESTRICTED_TEXT_TEST_MODEL],
         expiresIn: 30,
@@ -249,7 +249,7 @@ test("rejects tampered and expired agent run tokens", async () => {
         signAgentRunToken({
             secret: env.BETTER_AUTH_SECRET,
             parentApiKeyId: "parent-key-id",
-            agentId: "polli-itachi",
+            agentId: "example-agent",
             runId: "run-id",
             expiresIn: AGENT_RUN_TOKEN_TTL_SECONDS + 1,
         }),
@@ -257,7 +257,7 @@ test("rejects tampered and expired agent run tokens", async () => {
 
     const overlongJwt = await new SignJWT({
         version: 1,
-        agent: "polli-itachi",
+        agent: "example-agent",
     })
         .setProtectedHeader({ alg: "HS256", typ: "JWT" })
         .setIssuer("gen.pollinations.ai")

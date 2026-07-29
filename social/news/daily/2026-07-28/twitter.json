@@ -1,0 +1,14 @@
+{
+  "platform": "twitter",
+  "scope": "daily",
+  "date": "2026-07-28",
+  "period_start": "2026-07-28",
+  "period_end": "2026-07-28",
+  "generated_at": "2026-07-29T07:06:14.434793+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-07-28/images/twitter.jpg"
+    }
+  ],
+  "text": "shipped: Wan 2.7 video jobs now get a longer Replicate deadline. Added 9 apps to the directory for anime, stories, vectors, visual maps, chat, wellness, and podcasts. Polli’s easter eggs now rotate. 12 PRs. The garden remains unsupervised."
+}

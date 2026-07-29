@@ -4,6 +4,8 @@ import {
     signAgentRunToken,
     verifyAgentRunToken,
 } from "@shared/auth/agent-run-token.ts";
+import { getUserBalance } from "@shared/billing/balance.ts";
+import { handleBalanceDeduction } from "@shared/billing/track-helpers.ts";
 import type { CommunityEndpointRuntime } from "@shared/community-endpoints.ts";
 import { apikey as apiKeyTable } from "@shared/db/better-auth.ts";
 import {
@@ -223,6 +225,47 @@ test("parent key revocation immediately invalidates an agent run token", async (
         userId: null,
         apiKeyId: null,
     });
+});
+
+test("spends the parent key's budget and the parent user's wallet", async () => {
+    // The design claim this file exists to prove: billing never learns run
+    // tokens exist. Resolving one has to move the same two balances a request
+    // with the parent key itself would have moved.
+    const parent = await createTestApiKey({
+        pollenBudget: 5,
+        user: { tierBalance: 2 },
+    });
+    const mintResponse = await mintAgentRunToken(parent.key);
+    const minted = (await mintResponse.json()) as MintResponse;
+
+    const probed = (await (
+        await probeAgentRunToken(minted.access_token)
+    ).json()) as {
+        userId: string;
+        apiKeyId: string;
+        pollenBalance: number;
+    };
+
+    const db = drizzle(env.DB);
+    await handleBalanceDeduction({
+        db,
+        isBilledUsage: true,
+        totalPrice: 1,
+        userId: probed.userId,
+        apiKeyId: probed.apiKeyId,
+        apiKeyPollenBalance: probed.pollenBalance,
+    });
+
+    expect((await getUserBalance(db, parent.userId)).tierBalance).toBeCloseTo(
+        1,
+        10,
+    );
+    const row = await db
+        .select({ pollenBalance: apiKeyTable.pollenBalance })
+        .from(apiKeyTable)
+        .where(eq(apiKeyTable.id, parent.id))
+        .get();
+    expect(row?.pollenBalance).toBeCloseTo(4, 10);
 });
 
 test("rejects tampered and expired agent run tokens", async () => {

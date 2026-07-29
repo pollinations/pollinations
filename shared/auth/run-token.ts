@@ -16,11 +16,9 @@ const RUN_TOKEN_PREFIX = "ag_";
 /**
  * Thirty minutes: an agent cycle that has not finished by then is stuck, so
  * expiry doubles as the runaway backstop. It is the only bound on a run's total
- * spend unless the parent key carries a budget. Callers needing longer — a
- * multi-clip video run — pass an explicit `ttlSeconds` up to `MAX_TTL_SECONDS`.
+ * spend unless the parent key carries a budget.
  */
-const DEFAULT_TTL_SECONDS = 1800;
-const MAX_TTL_SECONDS = 3600;
+const TTL_SECONDS = 1800;
 
 /**
  * Only the generation API accepts run tokens. Binding the audience is what
@@ -95,8 +93,7 @@ export async function signRunToken(
 }
 
 /**
- * Mints a run token for one agent invocation. TTL is clamped to
- * `MAX_TTL_SECONDS`; the orchestrator re-mints if a run legitimately runs long.
+ * Mints a run token for one agent invocation.
  */
 export async function mintRunToken(
     params: {
@@ -105,15 +102,10 @@ export async function mintRunToken(
         runId: string;
         agentId: string;
         models?: string[];
-        ttlSeconds?: number;
     },
     secret: string,
     now: number = Date.now(),
 ): Promise<string> {
-    const ttl = Math.min(
-        params.ttlSeconds ?? DEFAULT_TTL_SECONDS,
-        MAX_TTL_SECONDS,
-    );
     return signRunToken(
         {
             sub: params.userId,
@@ -122,7 +114,7 @@ export async function mintRunToken(
             agent: params.agentId,
             aud: RUN_TOKEN_AUDIENCE,
             ...(params.models ? { models: params.models } : {}),
-            exp: Math.floor(now / 1000) + ttl,
+            exp: Math.floor(now / 1000) + TTL_SECONDS,
         },
         secret,
     );

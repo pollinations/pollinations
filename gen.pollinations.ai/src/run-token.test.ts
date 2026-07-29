@@ -54,7 +54,7 @@ describe("run token signing", () => {
         });
     });
 
-    it("clamps the ttl to one hour", async () => {
+    it("expires thirty minutes after minting", async () => {
         const now = 1_700_000_000_000;
         const token = await mintRunToken(
             {
@@ -62,14 +62,17 @@ describe("run token signing", () => {
                 apiKeyId: "key-1",
                 runId: "run-1",
                 agentId: "a",
-                ttlSeconds: 86_400,
             },
             SECRET,
             now,
         );
 
         const payload = await verifyRunToken(token, SECRET, now);
-        expect(payload?.exp).toBe(Math.floor(now / 1000) + 3600);
+        expect(payload?.exp).toBe(Math.floor(now / 1000) + 1800);
+        expect(await verifyRunToken(token, SECRET, now + 1_799_000)).not.toBe(
+            null,
+        );
+        expect(await verifyRunToken(token, SECRET, now + 1_801_000)).toBe(null);
     });
 
     it("rejects a tampered payload", async () => {
@@ -114,26 +117,6 @@ describe("run token signing", () => {
             "other-secret",
         );
         expect(await verifyRunToken(token, SECRET)).toBe(null);
-    });
-
-    it("rejects an expired token", async () => {
-        const now = 1_700_000_000_000;
-        const token = await mintRunToken(
-            {
-                userId: "user-1",
-                apiKeyId: "key-1",
-                runId: "run-1",
-                agentId: "a",
-                ttlSeconds: 60,
-            },
-            SECRET,
-            now,
-        );
-
-        expect(await verifyRunToken(token, SECRET, now + 59_000)).not.toBe(
-            null,
-        );
-        expect(await verifyRunToken(token, SECRET, now + 61_000)).toBe(null);
     });
 
     it("rejects a token addressed to another audience", async () => {

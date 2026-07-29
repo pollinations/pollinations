@@ -23,20 +23,27 @@ import type { RequestData, TransformOptions } from "./types.js";
  * `/account/key`, which a shared string cannot do. Granting delegation is what
  * opts an endpoint into this swap.
  *
- * Three conditions must hold, and all three fail closed. The endpoint must be
- * admin-flagged; it must be free, since charging a wrapper price on top of the
- * generation it bills the caller for is double billing; and the request must be
- * authenticated, since there is no one to bill otherwise.
+ * The admin flag alone decides whether to delegate. Once it is set the other
+ * two conditions are invariants, so they throw rather than degrade: the
+ * endpoint must be free, since charging a wrapper price on top of the
+ * generation it bills the caller for is double billing, and the request must
+ * carry a key to bill, since falling back to the saved bearer would quietly
+ * move the cost of the agent's work onto the endpoint owner.
  */
 async function mintDelegatedToken(
     endpoint: CommunityEndpointRuntime,
     parentApiKeyId: string | undefined,
     secret: string,
 ): Promise<string | undefined> {
-    if (!endpoint.delegatesGeneration || !parentApiKeyId) return undefined;
+    if (!endpoint.delegatesGeneration) return undefined;
     if (!isFreeCommunityEndpoint(endpoint)) {
         throw new Error(
             `Community endpoint '${endpoint.modelId}' delegates generation but is not free`,
+        );
+    }
+    if (!parentApiKeyId) {
+        throw new Error(
+            `Community endpoint '${endpoint.modelId}' delegates generation but the request has no API key to bill`,
         );
     }
     return signAgentRunToken({

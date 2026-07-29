@@ -794,10 +794,11 @@ describe("community endpoint helpers", () => {
             expect(context.modelConfig?.authKey).toBe("sk_saved_token");
         });
 
-        it("sends the saved bearer for an unauthenticated request", async () => {
+        it("refuses to delegate when there is no key to bill", async () => {
             const endpoint = await agentEndpoint();
-            const context = await contextFor(endpoint, undefined);
-            expect(context.modelConfig?.authKey).toBe("sk_saved_token");
+            await expect(contextFor(endpoint, undefined)).rejects.toThrow(
+                "no API key to bill",
+            );
         });
 
         it("refuses to delegate from an endpoint that charges a price", async () => {

@@ -1,0 +1,59 @@
+{
+  "date": "2026-07-28",
+  "period_start": "2026-07-28",
+  "period_end": "2026-07-28",
+  "title": "Wan 2.7 video jobs get enough time to finish",
+  "summary": "A community harvest: longer-running Wan videos, nine more apps to explore, and a Discord bee with 60 things on its mind.\n\nLonger Wan 2.7 text-to-video and image-to-video runs now have a 15-minute Replicate deadline, with worker polling and cancellation aligned to it and SDK video timeouts extended to 20 minutes. Long 10- and 15-second renders should now complete reliably, while bad inputs and capacity limits retain their useful error responses.\n\nThe community app directory picked up Anime Forge for character concepts, StoryStudio for illustrated narrated storybooks, Vtrace for turning raster art into SVGs, and MyEntMap for multilingual Ho Chi Minh City discovery with generated watercolor visuals. The garden has acquired several oddly specific tools, as gardens do.\n\nNew listings make it easier to find Pollinations-powered chat and multimodal workspaces: Pollinations AI Studio switches between chat models and image generation, AI Health Studio supports wellness conversations, and Lumina Chat and Le petit AI offer ready-to-use chat interfaces. Driftpod.fm also brings an endless, personalized podcast discovery stream to the video and audio collection.",
+  "pr_count": 12,
+  "prs": [
+    {
+      "number": 12783,
+      "date": "2026-07-28"
+    },
+    {
+      "number": 12787,
+      "date": "2026-07-28"
+    },
+    {
+      "number": 12813,
+      "date": "2026-07-28"
+    },
+    {
+      "number": 12821,
+      "date": "2026-07-28"
+    },
+    {
+      "number": 12822,
+      "date": "2026-07-28"
+    },
+    {
+      "number": 12823,
+      "date": "2026-07-28"
+    },
+    {
+      "number": 12824,
+      "date": "2026-07-28"
+    },
+    {
+      "number": 12826,
+      "date": "2026-07-28"
+    },
+    {
+      "number": 12827,
+      "date": "2026-07-28"
+    },
+    {
+      "number": 12829,
+      "date": "2026-07-28"
+    },
+    {
+      "number": 12830,
+      "date": "2026-07-28"
+    },
+    {
+      "number": 12831,
+      "date": "2026-07-28"
+    }
+  ],
+  "generated_at": "2026-07-29T07:06:14.434793+00:00"
+}

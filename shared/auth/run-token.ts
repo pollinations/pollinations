@@ -21,8 +21,9 @@ const RUN_TOKEN_PREFIX = "ag_";
 const TTL_SECONDS = 1800;
 
 /**
- * Only the generation API accepts run tokens. Binding the audience is what
- * stops a leaked token being replayed against enter's billing endpoints.
+ * Marks who a token was minted for. Signer and verifier share this constant, so
+ * it is a self-comparison, NOT an isolation boundary — what decides whether a
+ * worker accepts run tokens is whether `RUN_TOKEN_SECRET` is bound there.
  */
 export const RUN_TOKEN_AUDIENCE = "gen";
 

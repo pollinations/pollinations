@@ -155,43 +155,65 @@ async function portkeyTargetForEntry(
     return providerConfigToTarget(staticModelConfig(entry.id));
 }
 
-// Two-target Portkey fallback config. Returns null when either side has no
-// convertible provider config, in which case the request runs against the
-// primary alone.
+/**
+ * Portkey fallback config over the model and its declared fallbacks, one target
+ * each.
+ *
+ * Returns null when the primary or the first fallback has no convertible
+ * provider config, in which case the request runs against the primary alone.
+ * The list stops at the first target that cannot be converted, so one Portkey
+ * could not reach never shifts the ones behind it forward.
+ */
 async function buildFallbackModelConfig(
     primaryConfig: Record<string, unknown> | undefined,
-    fallbackEntry: GenerationModelEntry,
+    fallbacks: GenerationModelEntry[],
     secret: string,
-): Promise<Record<string, unknown> | null> {
+): Promise<{
+    config: Record<string, unknown>;
+    entries: GenerationModelEntry[];
+} | null> {
     const primaryTarget = providerConfigToTarget(primaryConfig);
-    const fallbackTarget = await portkeyTargetForEntry(fallbackEntry, secret);
-    if (!primaryTarget || !fallbackTarget) return null;
+    if (!primaryTarget) return null;
+
+    const targets: PortkeyTarget[] = [primaryTarget];
+    const entries: GenerationModelEntry[] = [];
+    for (const entry of fallbacks) {
+        const target = await portkeyTargetForEntry(entry, secret);
+        if (!target) break;
+        targets.push(target);
+        entries.push(entry);
+    }
+    if (entries.length === 0) return null;
+
     return {
-        // resolveModelConfig() derives the request-body model from
-        // config.model (utils/modelResolver.ts); a strategy/targets config has
-        // none at provider level, so it must be set explicitly. Each target
-        // overrides it anyway through override_params.
-        model: (primaryTarget.override_params as { model: string }).model,
-        strategy: {
-            mode: "fallback",
-            on_status_codes: FALLBACK_ON_STATUS_CODES,
+        config: {
+            // resolveModelConfig() derives the request-body model from
+            // config.model (utils/modelResolver.ts); a strategy/targets config
+            // has none at provider level, so it must be set explicitly. Each
+            // target overrides it anyway through override_params.
+            model: (primaryTarget.override_params as { model: string }).model,
+            strategy: {
+                mode: "fallback",
+                on_status_codes: FALLBACK_ON_STATUS_CODES,
+            },
+            targets,
         },
-        targets: [primaryTarget, fallbackTarget],
+        entries,
     };
 }
 
-// Portkey reports the served target as "config.targets[N]". Index 1 is the
-// single fallback target; a missing or unparseable value means the primary
-// served. Read before the stream is returned, so this works for streaming too.
+// Portkey reports the served target as "config.targets[N]". Index 0 is the
+// model the caller asked for, so index N names the Nth declared fallback; a
+// missing or unparseable value means the primary served. Read before the
+// stream is returned, so this works for streaming too.
 function servedFallbackEntry(
     fallbackTarget: string | undefined,
-    fallbackEntry: GenerationModelEntry | undefined,
+    entries: GenerationModelEntry[],
 ): GenerationModelEntry | undefined {
-    if (!fallbackEntry || !fallbackTarget) return undefined;
-    const index = fallbackTarget.match(/\[(\d+)\]/)?.[1];
-    return index !== undefined && Number(index) === 1
-        ? fallbackEntry
-        : undefined;
+    if (!fallbackTarget) return undefined;
+    const index = Number(fallbackTarget.match(/\[(\d+)\]/)?.[1]);
+    if (!Number.isInteger(index) || index < 1) return undefined;
+    return entries[index - 1];
 }
 
 function withGatewayContext(c: TextContext, requestData: RequestData) {
@@ -435,19 +457,19 @@ async function generateTextResponse(
                   c.var.auth?.apiKey?.id,
               )
             : withGatewayContext(c, requestData);
-        const declaredFallbackEntry = c.var.model?.fallbackEntry;
-        const fallbackConfig = declaredFallbackEntry
+        const declaredFallbacks = c.var.model?.fallbackEntries ?? [];
+        const fallback = declaredFallbacks.length
             ? await buildFallbackModelConfig(
                   gatewayContext.modelConfig ??
                       staticModelConfig(c.var.model.resolved),
-                  declaredFallbackEntry,
+                  declaredFallbacks,
                   c.env.BETTER_AUTH_SECRET,
               )
             : null;
         const completion = await generateTextPortkey(
             requestData.messages,
-            fallbackConfig
-                ? { ...gatewayContext, modelConfig: fallbackConfig }
+            fallback
+                ? { ...gatewayContext, modelConfig: fallback.config }
                 : gatewayContext,
         );
         c.set("upstreamRequestUrl", completion.upstreamRequestUrl);
@@ -457,7 +479,7 @@ async function generateTextResponse(
         // before the response (streaming included) leaves the handler.
         const servedEntry = servedFallbackEntry(
             completion.fallbackTarget,
-            fallbackConfig ? declaredFallbackEntry : undefined,
+            fallback?.entries ?? [],
         );
         if (servedEntry) c.set("servedModelEntry", servedEntry);
 

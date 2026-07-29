@@ -17,6 +17,7 @@ import {
     COMMUNITY_ENDPOINT_DESCRIPTION_MAX_LENGTH,
     COMMUNITY_ENDPOINT_TITLE_MAX_LENGTH,
     type CommunityEndpointVisibility,
+    MAX_FALLBACK_TARGETS,
 } from "@shared/community-endpoints.ts";
 import type { FormEvent, ReactNode } from "react";
 import { useEffect, useState } from "react";
@@ -291,9 +292,25 @@ export function CommunityEndpointDialog({
                         option.modelId !== endpoint?.modelId,
                 )
                 .map((option) => option.modelId),
-            ...(form.fallbackModelId ? [form.fallbackModelId] : []),
+            ...form.fallbackModelIds,
         ]),
     ].sort();
+    // One row per chosen target plus an empty row to add the next, so the
+    // order on screen is the order they are tried.
+    const fallbackRows =
+        form.fallbackModelIds.length < MAX_FALLBACK_TARGETS
+            ? [...form.fallbackModelIds, ""]
+            : form.fallbackModelIds;
+
+    // Setting a row to "None" removes it and closes the gap.
+    function setFallbackAt(index: number, modelId: string): void {
+        setForm((current) => {
+            const next = [...current.fallbackModelIds];
+            if (modelId === "") next.splice(index, 1);
+            else next[index] = modelId;
+            return { ...current, fallbackModelIds: next };
+        });
+    }
     const providerModelQuery = form.upstreamModel.trim().toLowerCase();
     const visibleModelOptions =
         providerModelQuery === ""
@@ -687,28 +704,48 @@ export function CommunityEndpointDialog({
 
                     {isShared && (
                         <FieldStack
-                            label="Fallback model"
-                            helper="Optional. Served when this model's upstream fails. Must be another public community model of the same modality, priced at or below this one."
+                            label="Fallback models"
+                            helper={`Optional. Tried in order when this model's upstream fails, up to ${MAX_FALLBACK_TARGETS}. Each must be another public community model of the same modality, priced at or below this one.`}
                             alignLabelRow
                         >
-                            <select
-                                name="community-fallback-model"
-                                value={form.fallbackModelId}
-                                className="rounded-md border border-divider bg-surface px-3 py-2 text-sm text-theme-text-strong"
-                                onChange={(e) =>
-                                    updateForm(
-                                        "fallbackModelId",
-                                        e.target.value,
-                                    )
-                                }
-                            >
-                                <option value="">None</option>
-                                {visibleFallbackOptions.map((modelId) => (
-                                    <option key={modelId} value={modelId}>
-                                        {modelId}
-                                    </option>
+                            <div className="flex flex-col gap-2">
+                                {fallbackRows.map((selected, index) => (
+                                    <select
+                                        // Rows are positional: the same slot
+                                        // keeps its identity as targets change.
+                                        // biome-ignore lint/suspicious/noArrayIndexKey: positional by design
+                                        key={index}
+                                        name={`community-fallback-model-${index}`}
+                                        value={selected}
+                                        className="rounded-md border border-divider bg-surface px-3 py-2 text-sm text-theme-text-strong"
+                                        onChange={(e) =>
+                                            setFallbackAt(index, e.target.value)
+                                        }
+                                    >
+                                        <option value="">
+                                            {index === 0
+                                                ? "None"
+                                                : "None (remove)"}
+                                        </option>
+                                        {visibleFallbackOptions
+                                            .filter(
+                                                (modelId) =>
+                                                    modelId === selected ||
+                                                    !form.fallbackModelIds.includes(
+                                                        modelId,
+                                                    ),
+                                            )
+                                            .map((modelId) => (
+                                                <option
+                                                    key={modelId}
+                                                    value={modelId}
+                                                >
+                                                    {modelId}
+                                                </option>
+                                            ))}
+                                    </select>
                                 ))}
-                            </select>
+                            </div>
                         </FieldStack>
                     )}
 

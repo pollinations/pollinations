@@ -409,9 +409,14 @@ function isRetryableFallbackError(error: unknown): boolean {
     ]);
 }
 
-// The image response is fully buffered before any bytes reach the client, so a
-// plain in-worker retry against the fallback endpoint is safe — no streaming
-// caveat, and a failed primary attempt is never billed.
+/**
+ * Tries the model, then each fallback it declared, until one returns an image.
+ *
+ * The image response is fully buffered before any bytes reach the client, so a
+ * plain in-worker retry against the next model is safe — no streaming caveat,
+ * and a failed attempt is never billed. Each model is tried at most once; the
+ * same endpoint is never called twice.
+ */
 async function callCommunityImageWithFallback(
     c: ImageContext,
     endpoint: CommunityEndpointRuntime,
@@ -420,31 +425,40 @@ async function callCommunityImageWithFallback(
 ): Promise<{
     result: ImageGenerationResult;
     servedEntry?: GenerationModelEntry;
+    servedIndex: number;
 }> {
-    try {
-        return {
-            result: await callCommunityImageEndpoint(
-                endpoint,
-                prompt,
-                safeParams,
-                c.env.BETTER_AUTH_SECRET,
-            ),
-        };
-    } catch (error) {
-        const fallbackEntry = c.var.model.fallbackEntry;
-        const fallbackEndpoint = fallbackEntry?.communityEndpoint;
-        if (!fallbackEntry || !fallbackEndpoint) throw error;
-        if (!isRetryableFallbackError(error)) throw error;
-        return {
-            result: await callCommunityImageEndpoint(
-                fallbackEndpoint,
-                prompt,
-                safeParams,
-                c.env.BETTER_AUTH_SECRET,
-            ),
-            servedEntry: fallbackEntry,
-        };
+    // Attempt 0 is the model the caller asked for, so it has no served entry to
+    // report. The list stops at the first fallback without a community
+    // endpoint: the image path has no Portkey to route a static provider
+    // through, so skipping past it would silently reorder the owner's declared
+    // preference.
+    const attempts: {
+        endpoint: CommunityEndpointRuntime;
+        entry?: GenerationModelEntry;
+    }[] = [{ endpoint }];
+    for (const entry of c.var.model.fallbackEntries ?? []) {
+        if (!entry.communityEndpoint) break;
+        attempts.push({ endpoint: entry.communityEndpoint, entry });
     }
+
+    for (const [index, attempt] of attempts.entries()) {
+        try {
+            return {
+                result: await callCommunityImageEndpoint(
+                    attempt.endpoint,
+                    prompt,
+                    safeParams,
+                    c.env.BETTER_AUTH_SECRET,
+                ),
+                servedEntry: attempt.entry,
+                servedIndex: index,
+            };
+        } catch (error) {
+            const isLast = index === attempts.length - 1;
+            if (isLast || !isRetryableFallbackError(error)) throw error;
+        }
+    }
+    throw new Error("Image fallback list is empty");
 }
 
 async function generateVideoResult(
@@ -471,7 +485,7 @@ export async function generateImageOrVideoResponse(
     try {
         const communityEndpoint = c.var.model.communityEndpoint;
         if (communityEndpoint) {
-            const { result, servedEntry } =
+            const { result, servedEntry, servedIndex } =
                 await callCommunityImageWithFallback(
                     c,
                     communityEndpoint,
@@ -491,7 +505,10 @@ export async function generateImageOrVideoResponse(
                 c.set("servedModelEntry", servedEntry);
                 // Same "config.targets[N]" shape the Portkey text path emits,
                 // so tracking's fallback parsing covers both.
-                headers.set(FALLBACK_TARGET_HEADER, "config.targets[1]");
+                headers.set(
+                    FALLBACK_TARGET_HEADER,
+                    `config.targets[${servedIndex}]`,
+                );
             }
             return new Response(bufferToUint8Array(result.buffer), { headers });
         }

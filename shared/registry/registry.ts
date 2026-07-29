@@ -103,10 +103,10 @@ export type ModelDefinition = {
     aliases: string[];
     provider: string;
     /**
-     * Model id served instead of this one when the primary upstream fails before a
-     * response is produced. Depth 1: the target's own fallback is not followed.
+     * Model ids served instead of this one, in order, when its upstream fails
+     * before a response is produced. A target's own list is not followed.
      */
-    fallback?: string;
+    fallbacks?: string[];
     brand: string;
     category: Category;
     cost: CostDefinition;

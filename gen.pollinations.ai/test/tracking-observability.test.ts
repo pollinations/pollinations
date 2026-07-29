@@ -120,7 +120,7 @@ function createCommunityEndpoint(
         upstreamModel: "upstream-test-model",
         bearerTokenCiphertext: "encrypted",
         visibility: "public",
-        fallbackModelId: null,
+        fallbackModelIds: [],
         disabledAt: null,
         disabledReason: null,
         ...communityEndpointPrices({
@@ -719,7 +719,7 @@ describe("tracking observability", () => {
             resolved: primaryEndpoint.modelId,
             definition: communityModelDefinition(primaryEndpoint),
             communityEndpoint: primaryEndpoint,
-            fallbackEntry,
+            fallbackEntries: [fallbackEntry],
         };
 
         const tinybirdRequests: Request[] = [];

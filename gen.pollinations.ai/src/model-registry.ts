@@ -1,6 +1,7 @@
 import {
     type CommunityEndpointRuntime,
     isCommunityFallbackPricingAllowed,
+    MAX_FALLBACK_TARGETS,
 } from "@shared/community-endpoints.ts";
 import {
     type ModelInfo,
@@ -41,10 +42,12 @@ export type GenerationModelEntry = {
     info: ModelInfo;
     communityEndpoint?: CommunityEndpointRuntime;
     visible: boolean;
-    // Entry that serves this model when its own upstream fails, resolved once
-    // at registry build time so the hot path never does a second lookup. Depth
-    // 1: this entry's own `fallbackEntry` is always undefined.
-    fallbackEntry?: GenerationModelEntry;
+    // Entries that serve this model when its own upstream fails, in the order
+    // its owner declared them, resolved once at registry build time so the hot
+    // path never does a second lookup. A fallback's own list is not followed:
+    // one owner's declaration cannot redirect another owner's traffic, which
+    // also makes a routing cycle impossible.
+    fallbackEntries?: GenerationModelEntry[];
 };
 
 export type GenerationModelRegistry = {
@@ -125,47 +128,65 @@ function communityEntryToGenerationEntry(
     };
 }
 
-// Resolves each entry's declared fallback target against the registry it was
-// built with. A community entry declares it through its endpoint row, a static
-// one through `definition.fallback`.
+// True when `target` is still a legal fallback for `from`.
+function isUsableFallbackTarget(
+    from: GenerationModelEntry,
+    target: GenerationModelEntry | undefined,
+): target is GenerationModelEntry {
+    // Write-time validation is only a UX guard — a target can since have been
+    // deleted, deactivated, made private or repriced above the primary, so
+    // re-check everything here before linking.
+    if (!target || target === from) return false;
+    if (!target.visible || target.eventType !== from.eventType) return false;
+    const fromEndpoint = from.communityEndpoint;
+    const targetEndpoint = target.communityEndpoint;
+    if (fromEndpoint && targetEndpoint) {
+        // The shared price columns mean Pollen per generated image in "request"
+        // mode and Pollen per token in "tokens" mode, so a cross-mode
+        // comparison is meaningless — and either side can switch mode long
+        // after the link was configured, without touching the other's row.
+        // Same rule the write path applies.
+        if (fromEndpoint.imagePricing !== targetEndpoint.imagePricing) {
+            return false;
+        }
+        if (!isCommunityFallbackPricingAllowed(fromEndpoint, targetEndpoint)) {
+            return false;
+        }
+    }
+    return true;
+}
+
+/**
+ * Resolves each entry's declared fallbacks against the registry it was built
+ * with. A community entry declares them through its endpoint row, a static one
+ * through `definition.fallbacks`.
+ *
+ * Every target is validated against the entry that declared it, so each one is
+ * priced at or below the model the caller actually asked for.
+ */
 function linkFallbackEntries(
     entries: GenerationModelEntry[],
     byIdOrAlias: Map<string, GenerationModelEntry>,
 ): void {
     for (const entry of entries) {
-        const targetId =
-            entry.communityEndpoint?.fallbackModelId ??
-            entry.definition.fallback;
-        if (!targetId) continue;
-        const target = byIdOrAlias.get(targetId);
-        // Write-time validation is only a UX guard — a target can since have
-        // been deleted, deactivated, made private or repriced above the
-        // primary, so re-check everything here before linking.
-        if (!target || target === entry) continue;
-        if (!target.visible || target.eventType !== entry.eventType) continue;
-        const primaryEndpoint = entry.communityEndpoint;
-        const targetEndpoint = target.communityEndpoint;
-        if (primaryEndpoint && targetEndpoint) {
-            // The shared price columns mean Pollen per generated image in
-            // "request" mode and Pollen per token in "tokens" mode, so a
-            // cross-mode comparison is meaningless — and either side can switch
-            // mode long after the link was configured, without touching the
-            // other's row. Same rule the write path applies.
-            if (primaryEndpoint.imagePricing !== targetEndpoint.imagePricing) {
-                continue;
-            }
-            if (
-                !isCommunityFallbackPricingAllowed(
-                    primaryEndpoint,
-                    targetEndpoint,
-                )
-            ) {
-                continue;
-            }
+        const declared =
+            entry.communityEndpoint?.fallbackModelIds ??
+            entry.definition.fallbacks ??
+            [];
+        const seen = new Set<string>();
+        const targets: GenerationModelEntry[] = [];
+        for (const targetId of declared) {
+            if (targets.length >= MAX_FALLBACK_TARGETS) break;
+            const target = byIdOrAlias.get(targetId);
+            if (!isUsableFallbackTarget(entry, target)) continue;
+            // Two declared ids can resolve to one entry through an alias.
+            if (seen.has(target.id)) continue;
+            seen.add(target.id);
+            // Link a copy with an empty list of its own: routing follows only
+            // what this entry's owner declared.
+            targets.push({ ...target, fallbackEntries: undefined });
         }
-        // Depth 1: link a copy with its own fallback cleared, so routing can
-        // never follow a chain even if the target declares one.
-        entry.fallbackEntry = { ...target, fallbackEntry: undefined };
+        entry.fallbackEntries = targets.length > 0 ? targets : undefined;
     }
 }
 

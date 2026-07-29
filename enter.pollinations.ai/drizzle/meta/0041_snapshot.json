@@ -1,7 +1,7 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "8e288837-a86c-4a67-b81d-61eb5269afcd",
+  "id": "9a49c037-393a-4f46-9954-7c9cfa4c713b",
   "prevId": "5cd7a5ed-3946-4277-bf00-41f70c7b6f9d",
   "tables": {
     "account": {
@@ -516,8 +516,8 @@
           "autoincrement": false,
           "default": false
         },
-        "fallback_model_id": {
-          "name": "fallback_model_id",
+        "fallback_model_ids": {
+          "name": "fallback_model_ids",
           "type": "text",
           "primaryKey": false,
           "notNull": false,

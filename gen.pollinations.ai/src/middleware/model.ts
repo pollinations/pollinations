@@ -32,7 +32,7 @@ export type ModelVariables = {
         definition: ModelDefinition;
         communityEndpoint?: CommunityEndpointRuntime;
         /** Entry that serves the request when this model's upstream fails. */
-        fallbackEntry?: GenerationModelEntry;
+        fallbackEntries?: GenerationModelEntry[];
     };
     /**
      * Set by the generation handlers when the fallback target actually served
@@ -118,7 +118,9 @@ export async function resolveModelDefinition(
         ...(entry.communityEndpoint && {
             communityEndpoint: entry.communityEndpoint,
         }),
-        ...(entry.fallbackEntry && { fallbackEntry: entry.fallbackEntry }),
+        ...(entry.fallbackEntries && {
+            fallbackEntries: entry.fallbackEntries,
+        }),
     };
 }
 
@@ -191,17 +193,15 @@ export function resolveModel(
             options?.supportedEndpoint,
         );
         // An API key's model allowlist scopes what the key may be served, not
-        // just what it may ask for. Drop the fallback when the target is off
-        // the list: the request still runs against the primary, but a scoped
-        // key can never be served — or billed for — a model it would get a 403
-        // for if it called it directly.
+        // just what it may ask for. Drop the targets that are off the list: the
+        // request still runs against the rest, but a scoped key can never be
+        // served — or billed for — a model it would get a 403 for if it called
+        // it directly.
         const allowedModels = c.var.auth?.apiKey?.permissions?.models;
-        if (
-            resolved.fallbackEntry &&
-            allowedModels &&
-            !allowedModels.includes(resolved.fallbackEntry.id)
-        ) {
-            resolved.fallbackEntry = undefined;
+        if (allowedModels && resolved.fallbackEntries) {
+            resolved.fallbackEntries = resolved.fallbackEntries.filter(
+                (entry) => allowedModels.includes(entry.id),
+            );
         }
         c.set("model", resolved);
         await next();

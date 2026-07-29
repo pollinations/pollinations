@@ -31,7 +31,7 @@ export type CommunityEndpoint = {
     // public → globally listed + billed to callers.
     visibility: CommunityEndpointVisibility;
     // Public community model served when this model's upstream fails.
-    fallbackModelId: string | null;
+    fallbackModelIds: string[];
     disabled: boolean;
     disabledReason: string | null;
     disabledAt: string | null;
@@ -79,8 +79,8 @@ export type EndpointFormState = {
     baseUrl: string;
     upstreamModel: string;
     bearerToken: string;
-    // Public community model id, or "" for none.
-    fallbackModelId: string;
+    // Public community model ids, tried in the order listed.
+    fallbackModelIds: string[];
 } & EndpointFormPrices;
 
 export type EndpointPayload = {
@@ -93,7 +93,7 @@ export type EndpointPayload = {
     baseUrl: string;
     upstreamModel: string;
     visibility: CommunityEndpointVisibility;
-    fallbackModelId: string | null;
+    fallbackModelIds: string[];
 } & CommunityEndpointPrices;
 
 export type CommunityEndpointUsage = Record<string, unknown>;
@@ -129,7 +129,7 @@ export const emptyForm: EndpointFormState = {
     baseUrl: "",
     upstreamModel: "",
     bearerToken: "",
-    fallbackModelId: "",
+    fallbackModelIds: [],
     ...emptyPriceForm,
 };
 
@@ -216,7 +216,7 @@ export function endpointToForm(endpoint: CommunityEndpoint): EndpointFormState {
         baseUrl: endpoint.baseUrl,
         upstreamModel: endpoint.upstreamModel,
         bearerToken: "",
-        fallbackModelId: endpoint.fallbackModelId ?? "",
+        fallbackModelIds: endpoint.fallbackModelIds ?? [],
         ...(Object.fromEntries(
             COMMUNITY_ENDPOINT_PRICE_FIELDS.map((field) => {
                 const modalityField = fields.get(field.key);
@@ -316,11 +316,9 @@ export function toEndpointPayload(form: EndpointFormState): EndpointPayload {
         baseUrl: form.baseUrl.trim(),
         upstreamModel: form.upstreamModel.trim() || modelName,
         // A private model carries no pricing, so a priced fallback target can
-        // never satisfy the same-or-lower rule — clear it alongside prices.
-        fallbackModelId:
-            form.visibility === "public"
-                ? form.fallbackModelId.trim() || null
-                : null,
+        // never satisfy the same-or-lower rule — clear them alongside prices.
+        fallbackModelIds:
+            form.visibility === "public" ? form.fallbackModelIds : [],
         ...formPricesToPayload(form, form.modality, imagePricing),
     };
 }
@@ -337,8 +335,8 @@ export function nextFormState(
             ...current,
             modality: value === "image" ? "image" : "text",
             supportsImageEdits: false,
-            // Targets must match the modality; the old choice no longer can.
-            fallbackModelId: "",
+            // Targets must match the modality; the old choices no longer can.
+            fallbackModelIds: [],
         };
     }
     const next = { ...current, [key]: value };

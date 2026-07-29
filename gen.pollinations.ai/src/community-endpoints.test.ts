@@ -544,7 +544,7 @@ describe("community endpoint helpers", () => {
                 baseUrl: "https://api.example.com/v1",
                 upstreamModel: "gpt-image-1",
                 visibility: "public",
-                fallbackModelId: null,
+                fallbackModelIds: [],
                 disabledAt: null,
                 disabledReason: null,
                 bearerTokenCiphertext: await encryptSecret(
@@ -731,7 +731,7 @@ describe("community endpoint helpers", () => {
             upstreamModel: "gpt-4.1-mini",
             visibility: "public",
             delegatesGeneration: false,
-            fallbackModelId: null,
+            fallbackModelIds: [],
             disabledAt: null,
             disabledReason: null,
             bearerTokenCiphertext: await encryptSecret(
@@ -795,6 +795,7 @@ describe("community endpoint helpers", () => {
                 delegatesGeneration: true,
                 disabledAt: null,
                 disabledReason: null,
+                fallbackModelIds: [],
                 bearerTokenCiphertext: await encryptSecret(
                     "sk_saved_token",
                     secret,
@@ -3025,7 +3026,7 @@ fixtureTest("validates community fallback targets on write", async () => {
     const primaryName = `primary-${crypto.randomUUID().slice(0, 8)}`;
     const createWithFallback = async (
         name: string,
-        fallbackModelId: string | null,
+        ...fallbackModelIds: string[]
     ) =>
         fetchEnterApi(
             enterApi,
@@ -3044,7 +3045,7 @@ fixtureTest("validates community fallback targets on write", async () => {
                     visibility: "public",
                     promptTextPrice: 0.2 / 1_000_000,
                     completionTextPrice: 0.2 / 1_000_000,
-                    fallbackModelId,
+                    fallbackModelIds,
                 }),
             }),
         );
@@ -3100,11 +3101,28 @@ fixtureTest("validates community fallback targets on write", async () => {
     expect(accepted.status).toBe(200);
     const created = (await accepted.json()) as {
         id: string;
-        fallbackModelId: string | null;
+        fallbackModelIds: string[];
     };
-    expect(created.fallbackModelId).toBe(cheapModelId);
+    expect(created.fallbackModelIds).toEqual([cheapModelId]);
 
-    // null clears the stored target.
+    // One bad id fails the whole list, so a partial order is never stored.
+    const partiallyBad = await createWithFallback(
+        `${primaryName}-partial`,
+        cheapModelId,
+        communityModelId(ownerGithubUsername, "does-not-exist"),
+    );
+    expect(partiallyBad.status).toBe(400);
+    expect(await partiallyBad.text()).toContain("does not exist");
+
+    const duplicated = await createWithFallback(
+        `${primaryName}-dup`,
+        cheapModelId,
+        cheapModelId,
+    );
+    expect(duplicated.status).toBe(400);
+    expect(await duplicated.text()).toContain("listed more than once");
+
+    // An empty array clears the stored targets.
     const cleared = await fetchEnterApi(
         enterApi,
         new Request(
@@ -3115,13 +3133,13 @@ fixtureTest("validates community fallback targets on write", async () => {
                     "Content-Type": "application/json",
                     Cookie: await signedSessionCookie(sessionToken),
                 },
-                body: JSON.stringify({ fallbackModelId: null }),
+                body: JSON.stringify({ fallbackModelIds: [] }),
             },
         ),
     );
     expect(cleared.status).toBe(200);
     await expect(cleared.json()).resolves.toMatchObject({
-        fallbackModelId: null,
+        fallbackModelIds: [],
     });
 });
 
@@ -3161,41 +3179,71 @@ fixtureTest(
 
         // Inserted one at a time: D1 caps the bound variables per statement.
         for (const row of [
-            endpoint("valid-primary", { fallbackModelId: id("valid-target") }),
+            endpoint("valid-primary", {
+                fallbackModelIds: [id("valid-target")],
+            }),
             endpoint("valid-target", {
                 promptTextPrice: 0.1 / 1_000_000,
                 completionTextPrice: 0.1 / 1_000_000,
             }),
             endpoint("disabled-primary", {
-                fallbackModelId: id("disabled-target"),
+                fallbackModelIds: [id("disabled-target")],
             }),
             endpoint("disabled-target", {
                 disabledAt: new Date(),
                 disabledReason: "repeated upstream 500s",
             }),
             endpoint("deleted-primary", {
-                fallbackModelId: communityModelId(
-                    ownerGithubUsername,
-                    "never-existed",
-                ),
+                fallbackModelIds: [
+                    communityModelId(ownerGithubUsername, "never-existed"),
+                ],
             }),
             endpoint("repriced-primary", {
-                fallbackModelId: id("repriced-target"),
+                fallbackModelIds: [id("repriced-target")],
             }),
             // Priced above its primary since the fallback was configured.
             endpoint("repriced-target", {
                 completionTextPrice: 0.5 / 1_000_000,
             }),
-            endpoint("chain-a", { fallbackModelId: id("chain-b") }),
-            endpoint("chain-b", { fallbackModelId: id("chain-c") }),
-            endpoint("chain-c", {}),
+            endpoint("second-target", {
+                promptTextPrice: 0.1 / 1_000_000,
+                completionTextPrice: 0.1 / 1_000_000,
+            }),
+            endpoint("third-target", {
+                promptTextPrice: 0.1 / 1_000_000,
+                completionTextPrice: 0.1 / 1_000_000,
+            }),
+            endpoint("fourth-target", {
+                promptTextPrice: 0.1 / 1_000_000,
+                completionTextPrice: 0.1 / 1_000_000,
+            }),
+            endpoint("multi-primary", {
+                fallbackModelIds: [id("valid-target"), id("second-target")],
+                // Its own targets declare fallbacks too; none of them may leak
+                // into this model's routing.
+            }),
+            endpoint("greedy-primary", {
+                fallbackModelIds: [
+                    id("valid-target"),
+                    id("second-target"),
+                    id("third-target"),
+                    id("fourth-target"),
+                ],
+            }),
+            endpoint("gappy-primary", {
+                fallbackModelIds: [
+                    id("valid-target"),
+                    communityModelId(ownerGithubUsername, "never-existed"),
+                    id("second-target"),
+                ],
+            }),
             endpoint("image-primary", {
                 modality: "image",
                 imagePricing: "request",
                 promptTextPrice: 0,
                 completionTextPrice: 0,
                 completionImagePrice: 0.02,
-                fallbackModelId: id("image-target"),
+                fallbackModelIds: [id("image-target")],
             }),
             endpoint("image-target", {
                 modality: "image",
@@ -3211,7 +3259,7 @@ fixtureTest(
                 completionTextPrice: 0,
                 // 0.02 Pollen per generated image.
                 completionImagePrice: 0.02,
-                fallbackModelId: id("image-tokens-target"),
+                fallbackModelIds: [id("image-tokens-target")],
             }),
             // Switched itself to token pricing after being picked as a target:
             // the same column now means Pollen per token (0.00005 = the 50
@@ -3231,38 +3279,39 @@ fixtureTest(
         resetGenerationModelRegistryCache();
         const registry = await getGenerationModelRegistry(env);
 
-        expect(registry.resolve(id("valid-primary"))?.fallbackEntry?.id).toBe(
-            id("valid-target"),
-        );
-        expect(
-            registry.resolve(id("disabled-primary"))?.fallbackEntry,
-        ).toBeUndefined();
-        expect(
-            registry.resolve(id("deleted-primary"))?.fallbackEntry,
-        ).toBeUndefined();
-        expect(
-            registry.resolve(id("repriced-primary"))?.fallbackEntry,
-        ).toBeUndefined();
+        const fallbackIds = (model: string) =>
+            registry.resolve(model)?.fallbackEntries?.map((e) => e.id);
+
+        expect(fallbackIds(id("valid-primary"))).toEqual([id("valid-target")]);
+        expect(fallbackIds(id("disabled-primary"))).toBeUndefined();
+        expect(fallbackIds(id("deleted-primary"))).toBeUndefined();
+        expect(fallbackIds(id("repriced-primary"))).toBeUndefined();
 
         // Same image pricing mode on both sides: the price columns mean the
         // same thing, so the link stands.
-        expect(registry.resolve(id("image-primary"))?.fallbackEntry?.id).toBe(
-            id("image-target"),
-        );
+        expect(fallbackIds(id("image-primary"))).toEqual([id("image-target")]);
         // Different modes: comparing per-image against per-token prices is
         // meaningless, so the link is dropped rather than billed across units.
-        expect(
-            registry.resolve(id("image-request-primary"))?.fallbackEntry,
-        ).toBeUndefined();
+        expect(fallbackIds(id("image-request-primary"))).toBeUndefined();
 
-        // Depth 1: chain-a serves from chain-b, and chain-b's own target is
-        // never reachable from there.
-        const chainA = registry.resolve(id("chain-a"));
-        expect(chainA?.fallbackEntry?.id).toBe(id("chain-b"));
-        expect(chainA?.fallbackEntry?.fallbackEntry).toBeUndefined();
-        expect(registry.resolve(id("chain-b"))?.fallbackEntry?.id).toBe(
-            id("chain-c"),
-        );
+        // The declared list is kept in order, and only what this owner
+        // declared: a target's own list is never appended.
+        expect(fallbackIds(id("multi-primary"))).toEqual([
+            id("valid-target"),
+            id("second-target"),
+        ]);
+        // Over the cap: the extras are dropped rather than the request
+        // spending an unbounded number of upstream timeouts.
+        expect(fallbackIds(id("greedy-primary"))).toEqual([
+            id("valid-target"),
+            id("second-target"),
+            id("third-target"),
+        ]);
+        // A dead id in the middle is skipped, keeping the survivors' order.
+        expect(fallbackIds(id("gappy-primary"))).toEqual([
+            id("valid-target"),
+            id("second-target"),
+        ]);
     },
 );
 
@@ -3297,7 +3346,7 @@ fixtureTest(
                 ),
                 promptTextPrice: 0.2 / 1_000_000,
                 completionTextPrice: 0.2 / 1_000_000,
-                fallbackModelId,
+                fallbackModelIds: [fallbackModelId],
                 createdAt: new Date(),
                 updatedAt: new Date(),
             },
@@ -3448,7 +3497,7 @@ fixtureTest(
                 promptTextPrice: 0,
                 completionTextPrice: 0,
                 completionImagePrice: 0.02,
-                fallbackModelId,
+                fallbackModelIds: [fallbackModelId],
                 createdAt: new Date(),
                 updatedAt: new Date(),
             },
@@ -3519,6 +3568,103 @@ fixtureTest(
 );
 
 fixtureTest(
+    "tries every declared image fallback and bills the model that served",
+    async ({ apiKey }) => {
+        const suffix = crypto.randomUUID().slice(0, 8);
+        const owners = ["one", "two", "three"].map(
+            (label) => `chain-${label}-${suffix}`,
+        );
+        const userIds: string[] = [];
+        for (const owner of owners) {
+            userIds.push(
+                await createTestUser({
+                    githubId: COMMUNITY_ENDPOINT_ALLOWED_TEST_GITHUB_ID,
+                    githubUsername: owner,
+                }),
+            );
+        }
+        const bearerTokenCiphertext = await encryptSecret(
+            "sk_image_upstream",
+            env.BETTER_AUTH_SECRET,
+        );
+        // Descending prices, as the same-or-lower rule requires of every target.
+        const prices = [0.03, 0.02, 0.01];
+        const modelIds = owners.map((owner, index) =>
+            communityModelId(owner, `chain-image-${index}`),
+        );
+
+        for (const [index, owner] of owners.entries()) {
+            await db.insert(communityEndpointTable).values({
+                id: `endpoint-${crypto.randomUUID()}`,
+                ownerUserId: userIds[index],
+                visibility: "public" as const,
+                name: `chain-image-${index}`,
+                modality: "image",
+                baseUrl: `https://${owner}.example.com/v1`,
+                upstreamModel: `${owner}-upstream`,
+                bearerTokenCiphertext,
+                promptTextPrice: 0,
+                completionTextPrice: 0,
+                completionImagePrice: prices[index],
+                // The primary declares BOTH fallbacks itself; neither target
+                // declares anything, so nothing but this list is followed.
+                ...(index === 0
+                    ? { fallbackModelIds: [modelIds[1], modelIds[2]] }
+                    : {}),
+                createdAt: new Date(),
+                updatedAt: new Date(),
+            });
+        }
+
+        const upstreamHosts: string[] = [];
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async (input, init) => {
+                const request = new Request(input, init);
+                if (isCommunityImageGenerationsRequest(request)) {
+                    const host = new URL(request.url).host;
+                    upstreamHosts.push(host);
+                    // Only the last link works, so a 200 proves both hops ran.
+                    if (host !== `${owners[2]}.example.com`) {
+                        return Response.json(
+                            { error: "upstream down" },
+                            { status: 500 },
+                        );
+                    }
+                    return Response.json({
+                        created: 1,
+                        data: [{ b64_json: TEST_PNG_BASE64 }],
+                    });
+                }
+                if (isBillingFetch(request)) return Response.json({ data: [] });
+                throw new Error(`Unexpected fetch: ${request.url}`);
+            }),
+        );
+
+        const response = await SELF.fetch(
+            new Request(
+                `https://gen.pollinations.ai/image/green%20sprout?model=${encodeURIComponent(modelIds[0])}`,
+                { headers: { Authorization: `Bearer ${apiKey}` } },
+            ),
+        );
+
+        expect(response.status).toBe(200);
+        // In declared order, each endpoint contacted exactly once — no model
+        // is ever retried against itself.
+        expect(upstreamHosts).toEqual(
+            owners.map((owner) => `${owner}.example.com`),
+        );
+        expect(response.headers.get("x-model-used")).toBe(modelIds[2]);
+        expect(response.headers.get(FALLBACK_TARGET_HEADER)).toBe(
+            "config.targets[2]",
+        );
+        expect(
+            Array.from(new Uint8Array(await response.arrayBuffer())),
+        ).toEqual(TEST_PNG_BYTES);
+    },
+);
+
+fixtureTest(
     "does not replay image caller errors or moderation refusals on the fallback",
     async ({ apiKey }) => {
         const suffix = crypto.randomUUID().slice(0, 8);
@@ -3552,7 +3698,7 @@ fixtureTest(
                 promptTextPrice: 0,
                 completionTextPrice: 0,
                 completionImagePrice: 0.02,
-                fallbackModelId,
+                fallbackModelIds: [fallbackModelId],
                 createdAt: new Date(),
                 updatedAt: new Date(),
             },
@@ -3664,7 +3810,7 @@ fixtureTest(
                 ),
                 promptTextPrice: 0.2 / 1_000_000,
                 completionTextPrice: 0.2 / 1_000_000,
-                fallbackModelId,
+                fallbackModelIds: [fallbackModelId],
                 createdAt: new Date(),
                 updatedAt: new Date(),
             },

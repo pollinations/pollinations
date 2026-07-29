@@ -210,6 +210,15 @@ export function communityEndpointPricesForModality(
 }
 
 /**
+ * How many fallbacks a community model may declare.
+ *
+ * Bounds how much latency one request can spend failing before it gives up:
+ * every extra target is another upstream timeout the caller waits through.
+ * Enforced on write and re-applied when the generation registry links entries.
+ */
+export const MAX_FALLBACK_TARGETS = 3;
+
+/**
  * True when `target` costs no more than `primary` on every price field. Derived
  * from COMMUNITY_ENDPOINT_PRICE_FIELDS so a new price column is covered
  * automatically rather than silently ignored.
@@ -265,9 +274,9 @@ export type CommunityEndpointRuntime = {
     visibility: CommunityEndpointVisibility;
     /** Admin-granted: may spend an agent run token on the caller's behalf. */
     delegatesGeneration: boolean;
-    // Community model id served when this endpoint's upstream fails. Depth 1:
-    // the target's own fallback is never followed.
-    fallbackModelId: string | null;
+    // Community model ids tried in order when this endpoint's upstream fails.
+    // A target's own list is never followed: the owner declares the full order.
+    fallbackModelIds: string[];
     disabledAt: number | null;
     disabledReason: string | null;
 } & CommunityEndpointPrices;

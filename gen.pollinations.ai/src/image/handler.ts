@@ -6,7 +6,7 @@ import { FALLBACK_TARGET_HEADER } from "@shared/registry/usage-headers.ts";
 import type { Context } from "hono";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
 import type { Env } from "@/env.ts";
-import { FALLBACK_ON_STATUS_CODES } from "../fallback.ts";
+import { FALLBACK_ON_STATUS_CODES, isNetworkFailure } from "../fallback.ts";
 import type { GenerationModelEntry } from "../model-registry.ts";
 import {
     getRegisteredServers,
@@ -401,6 +401,7 @@ async function generateImageResult(
 // moderation rejection to a possibly more permissive endpoint would turn an
 // unbilled 422 into a billed generation and bypass the primary's moderation.
 function isRetryableFallbackError(error: unknown): boolean {
+    if (isNetworkFailure(error)) return true;
     if (!(error instanceof HttpError)) return false;
     if (!FALLBACK_ON_STATUS_CODES.includes(error.status)) return false;
     return !firstContentPolicyMessage([

@@ -1,0 +1,33 @@
+{
+  "pr_number": 12815,
+  "title": "feat: add Discord username field to community model allowlist template",
+  "author": "YoannDev90",
+  "url": "https://github.com/pollinations/pollinations/pull/12815",
+  "merged_at": "2026-07-29T18:09:25Z",
+  "labels": [],
+  "pr_body_excerpt": "## Summary\n\nAdds an optional Discord username input field to the Community Model Publisher Allowlist issue template.\n\nCloses #12653\n\n## Changes\n\n- Added optional `discord-username` input field after `relevant-links` and before `availability`\n- Field is optional to avoid blocking submissions from applicants not yet in the Discord server\n- Placeholder text: `your-discord-username`\n\n## Why\n\nAfter approval, the community monitor bot (`el405b`) needs the applicant's Discord snowflake ID to ping them about their models. Currently this requires a manual round-trip. This field captures the human-readable username upfront, so the snowflake ID can be resolved via member lookup during the post-approval workflow.\n\n## Note\n\nI would have personally made this field mandatory — the Discord username is essential to the post-approval workflow. But based on the pattern of the other fields in the form (model types, publishing plans, availability = required; relevant links = optional), keeping it optional is logically consistent and avoids blocking submissions from applicants not yet in the Discord server.",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "One less approval ping-pong",
+    "blurb": "The community model allowlist form now has a small spot for a Discord username. Future approvals can find their people with fewer ceremonial back-and-forths.",
+    "summary": "Added an optional `discord-username` field to the Community Model Publisher Allowlist issue template, placed between relevant links and availability, so post-approval workflows can resolve applicants' Discord IDs.",
+    "impact": "Community model applicants can provide `your-discord-username` during submission, helping the monitor bot notify approved publishers without a manual follow-up.",
+    "keywords": [
+      "discord",
+      "community-models",
+      "allowlist",
+      "issue-template",
+      "workflow"
+    ],
+    "visual_concept": "A cozy community garden signup desk: Polli, wearing a tiny moderator headset, adds a Discord-name tag to an allowlist form while a friendly CRT monitor robot looks up a member profile. Include code-plants and a softly glowing lime green terminal to represent the automated post-approval lookup.",
+    "image_prompt": "Cozy pixel art scene of Polli the cute yellow-and-brown striped bee mascot wearing a tiny moderator headset, placing a small Discord username tag onto an allowlist clipboard beside a friendly CRT monitor robot with eager square eyes. A lime green (#ecf874) terminal glows among flower pots growing code-plants, with simple pixel text 'USERNAME'; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-29/PR-12815.jpg",
+    "prompt": "Cozy pixel art scene of Polli the cute yellow-and-brown striped bee mascot wearing a tiny moderator headset, placing a small Discord username tag onto an allowlist clipboard beside a friendly CRT monitor robot with eager square eyes. A lime green (#ecf874) terminal glows among flower pots growing code-plants, with simple pixel text 'USERNAME'; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, emotionally warm."
+  },
+  "generated_at": "2026-07-29T18:10:20.794759+00:00"
+}

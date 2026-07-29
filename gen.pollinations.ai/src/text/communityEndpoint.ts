@@ -10,11 +10,18 @@ import { decryptSecret } from "@shared/secret-encryption.ts";
 import type { RequestData, TransformOptions } from "./types.js";
 
 /**
- * The spend credential a delegating endpoint receives, or undefined.
+ * The run token a delegating endpoint authenticates with, or undefined.
  *
  * Agent-style endpoints call back into the generation API on the caller's
  * behalf, so they need spend authority — but never the caller's own key. They
  * get a run token: short-lived, no account scope, billed to the caller's key.
+ *
+ * It replaces the endpoint's saved bearer rather than riding alongside it, so a
+ * delegating endpoint stays a plain OpenAI-compatible server with no
+ * Pollinations-specific header to implement. The token is not a weaker proof of
+ * origin than the static secret it replaces: the endpoint can verify it against
+ * `/account/key`, which a shared string cannot do. Granting delegation is what
+ * opts an endpoint into this swap.
  *
  * Three conditions must hold, and all three fail closed. The endpoint must be
  * admin-flagged; it must be free, since charging a wrapper price on top of the
@@ -49,24 +56,23 @@ export async function communityEndpointGatewayContext(
     userApiKey: string,
     parentApiKeyId?: string,
 ): Promise<TransformOptions> {
-    const bearerToken = await decryptSecret(
-        endpoint.bearerTokenCiphertext,
-        secret,
-    );
     const { messages: _messages, ...requestDataWithoutMessages } = requestData;
     const runToken = await mintDelegatedToken(endpoint, parentApiKeyId, secret);
+    // A delegating endpoint is sent the run token instead of its saved bearer,
+    // so it never receives a credential it could spend on the owner's account.
+    const authKey =
+        runToken ??
+        normalizeCommunityEndpointBearerToken(
+            await decryptSecret(endpoint.bearerTokenCiphertext, secret),
+        );
 
     return {
         ...requestDataWithoutMessages,
         modelConfig: {
             provider: "openai",
             "custom-host": communityOpenAIBaseUrl(endpoint.baseUrl),
-            // Authorization proves we may call this endpoint at all; the run
-            // token is what it may spend. Two credentials, two headers — so an
-            // endpoint can never spend its own access credential.
-            authKey: normalizeCommunityEndpointBearerToken(bearerToken),
+            authKey,
             model: endpoint.upstreamModel,
-            ...(runToken ? { agentRunToken: runToken } : {}),
         },
         modelDef: modelDefinition,
         requestedModel: endpoint.modelId,

@@ -768,15 +768,16 @@ describe("community endpoint helpers", () => {
             );
         }
 
-        it("hands a delegating endpoint a run token, not the caller's key", async () => {
+        it("authenticates as a run token, not the caller's or owner's key", async () => {
             const endpoint = await agentEndpoint();
             const context = await contextFor(endpoint, "parent-key-id");
 
-            const token = String(context.modelConfig?.agentRunToken);
+            const token = String(context.modelConfig?.authKey);
             expect(token).toMatch(/^ag_/);
             expect(token).not.toContain("sk_user_key");
-            // The endpoint's own access credential still rides in Authorization.
-            expect(context.modelConfig?.authKey).toBe("sk_saved_token");
+            // The owner's saved bearer is replaced, never sent alongside — the
+            // endpoint must not receive a credential it could spend as its own.
+            expect(token).not.toContain("sk_saved_token");
 
             const claims = await verifyAgentRunToken(token, secret);
             expect(claims).toMatchObject({
@@ -785,19 +786,18 @@ describe("community endpoint helpers", () => {
             });
         });
 
-        it("sends no run token when the endpoint is not flagged", async () => {
+        it("sends the saved bearer when the endpoint is not flagged", async () => {
             const endpoint = await agentEndpoint({
                 delegatesGeneration: false,
             });
             const context = await contextFor(endpoint, "parent-key-id");
-            expect(context.modelConfig?.agentRunToken).toBeUndefined();
             expect(context.modelConfig?.authKey).toBe("sk_saved_token");
         });
 
-        it("sends no run token for an unauthenticated request", async () => {
+        it("sends the saved bearer for an unauthenticated request", async () => {
             const endpoint = await agentEndpoint();
             const context = await contextFor(endpoint, undefined);
-            expect(context.modelConfig?.agentRunToken).toBeUndefined();
+            expect(context.modelConfig?.authKey).toBe("sk_saved_token");
         });
 
         it("refuses to delegate from an endpoint that charges a price", async () => {

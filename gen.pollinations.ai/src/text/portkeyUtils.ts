@@ -43,11 +43,7 @@ const SKIPPED_CONFIG_KEYS = new Set([
     "useUserApiKey",
     "defaultOptions",
     "requiresBase64ImageUrls",
-    "agentRunToken",
 ]);
-
-/** Header carrying a delegated spend credential to an agent endpoint. */
-const AGENT_RUN_TOKEN_HEADER = "X-Pollinations-Key";
 
 export async function generatePortkeyHeaders(
     config: PortkeyConfig,
@@ -99,14 +95,6 @@ export async function generatePortkeyHeaders(
 
     if (apiKey) {
         headers["Authorization"] = `Bearer ${apiKey}`;
-    }
-
-    // Authorization already carries the endpoint's own access credential, so a
-    // delegated spend credential needs its own header. Portkey only passes
-    // unknown headers through when they are named in x-portkey-forward-headers.
-    if (config.agentRunToken) {
-        headers[AGENT_RUN_TOKEN_HEADER] = String(config.agentRunToken);
-        headers["x-portkey-forward-headers"] = AGENT_RUN_TOKEN_HEADER;
     }
 
     log("Generated Portkey headers:", Object.keys(headers));

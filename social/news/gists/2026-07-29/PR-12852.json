@@ -1,0 +1,35 @@
+{
+  "pr_number": 12852,
+  "title": "Fix Polli GIF inputs",
+  "author": "Itachi-1824",
+  "url": "https://github.com/pollinations/pollinations/pull/12852",
+  "merged_at": "2026-07-29T18:04:43Z",
+  "labels": [],
+  "pr_body_excerpt": "Discord GIFV embeds expose a static thumbnail and an MP4. Polli picked the MP4, sent it as an OpenAI `image_url`, then retried the same undecodable payload three times before showing the generic error.\n\nThis uses the embed's static WebP preview for vision and keeps raw video/GIF URLs as text context instead of pretending they're images. Added two regression tests for the exact extraction and message-building paths.\n\nReplayed the original Klipy preview through Kimi: 200, correctly identified Buzz Lightyear.\n",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Polli learns GIF etiquette",
+    "blurb": "Polli now gives Discord GIFV embeds the picture they actually need: the static preview. The video link still comes along as context, but nobody is asked to pretend an MP4 is a JPEG.",
+    "summary": "Fixed Polli's Discord GIFV handling so vision models receive the embed's static WebP thumbnail while raw MP4/GIF URLs are included as text context instead of invalid OpenAI image inputs.",
+    "impact": "Polli can now understand GIFV previews such as Klipy embeds without retrying an undecodable MP4 three times, including correctly identifying the original Buzz Lightyear test image through Kimi.",
+    "keywords": [
+      "polli",
+      "discord",
+      "gifv",
+      "vision",
+      "media-inputs",
+      "kimi",
+      "bug-fix"
+    ],
+    "visual_concept": "Depict Polli as a thoughtful media librarian in a cozy garden-terminal nook, sorting a Discord-style GIFV card into a framed static preview and a labeled video-link note. A tiny retro monitor robot happily recognizes a pixel Buzz Lightyear-like space ranger silhouette from the preview, while code-plants and flowers grow around the desk; Polli wears small librarian glasses.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink cheek blush and light blue wings, wearing tiny librarian glasses while sorting a Discord GIFV card: she places its static WebP preview into a glowing retro monitor and clips the MP4 link onto a text note. A cheerful CRT monitor robot recognizes a small pixel space-ranger silhouette, surrounded by code-plants, flowers, and prominent lime green (#ecf874) glow; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with subtle pixel-font text: \"PREVIEW FOUND\"."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-29/PR-12852.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink cheek blush and light blue wings, wearing tiny librarian glasses while sorting a Discord GIFV card: she places its static WebP preview into a glowing retro monitor and clips the MP4 link onto a text note. A cheerful CRT monitor robot recognizes a small pixel space-ranger silhouette, surrounded by code-plants, flowers, and prominent lime green (#ecf874) glow; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with subtle pixel-font text: \"PREVIEW FOUND\"."
+  },
+  "generated_at": "2026-07-29T18:06:11.551856+00:00"
+}

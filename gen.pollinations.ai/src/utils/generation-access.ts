@@ -1,6 +1,6 @@
 import { createBalanceCheckResult } from "@shared/billing/balance.ts";
 import { canCoverEstimatedCharge } from "@shared/billing/bucket-selection.ts";
-import { COMMUNITY_ENDPOINT_PRICE_FIELDS } from "@shared/community-endpoints.ts";
+import { isFreeCommunityEndpoint } from "@shared/community-endpoints.ts";
 import { getModelStats } from "@shared/utils/model-stats.ts";
 import { createMiddleware } from "hono/factory";
 import { HTTPException } from "hono/http-exception";
@@ -36,9 +36,7 @@ export async function checkBalance(
     const communityEndpoint = model.communityEndpoint;
     const isFreeCommunityModel =
         communityEndpoint !== undefined &&
-        COMMUNITY_ENDPOINT_PRICE_FIELDS.every(
-            (field) => communityEndpoint[field.key] === 0,
-        );
+        isFreeCommunityEndpoint(communityEndpoint);
 
     const apiKeyBudget = auth.apiKey?.pollenBalance;
     const requiredBudget = Math.max(0, estimatedCost);

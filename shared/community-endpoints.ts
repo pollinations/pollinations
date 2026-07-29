@@ -179,6 +179,18 @@ export function communityEndpointPrices(
     ) as CommunityEndpointPrices;
 }
 
+/**
+ * True when the owner charges nothing for calling this endpoint. The price set
+ * must be complete — a missing field is not a free one.
+ */
+export function isFreeCommunityEndpoint(
+    prices: CommunityEndpointPrices,
+): boolean {
+    return COMMUNITY_ENDPOINT_PRICE_FIELDS.every(
+        (field) => prices[field.key] === 0,
+    );
+}
+
 export function communityEndpointPricesForModality(
     source: Partial<CommunityEndpointPrices>,
     modality: CommunityEndpointModality,
@@ -234,6 +246,8 @@ export type CommunityEndpointRuntime = {
     upstreamModel: string;
     bearerTokenCiphertext: string;
     visibility: CommunityEndpointVisibility;
+    /** Admin-granted: may spend an agent run token on the caller's behalf. */
+    delegatesGeneration: boolean;
     disabledAt: number | null;
     disabledReason: string | null;
 } & CommunityEndpointPrices;

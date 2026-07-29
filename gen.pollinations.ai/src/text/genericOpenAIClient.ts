@@ -26,10 +26,6 @@ function isUnsupportedInputError(details: unknown): boolean {
     );
 }
 
-function remapTextUpstreamStatus(status: number): number {
-    return status === 429 ? 429 : remapUpstreamStatus(status);
-}
-
 // Attach internal response metadata as non-enumerable properties so downstream
 // handling can use it without adding fields to OpenAI-compatible response bodies.
 function withResponseMetadata(
@@ -117,7 +113,7 @@ function createApiError(
     ) as ServiceError;
     error.status = isUnsupportedInputError(details)
         ? 400
-        : remapTextUpstreamStatus(response.status);
+        : remapUpstreamStatus(response.status);
     error.upstreamStatus = response.status;
     error.details = details;
     error.model = modelName;
@@ -289,7 +285,7 @@ export async function genericOpenAIClient(
             ) as ServiceError;
             error.status =
                 typeof errorDetails.status === "number"
-                    ? remapTextUpstreamStatus(errorDetails.status)
+                    ? remapUpstreamStatus(errorDetails.status)
                     : 502;
             error.upstreamStatus =
                 typeof errorDetails.status === "number"

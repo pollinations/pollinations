@@ -107,6 +107,7 @@ function createCommunityEndpoint(
         name: "test-model",
         title: "Test Model",
         description: null,
+        delegatesGeneration: false,
         modality: "text",
         imagePricing: "request",
         supportsImageEdits: false,

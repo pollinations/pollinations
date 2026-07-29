@@ -250,12 +250,9 @@ const modelsListHandler =
     };
 
 async function getVisibleModelEntries(c: Context<Env>) {
-    const entries = (await getGenerationModelRegistry(c.env)).visibleEntries(
+    return (await getGenerationModelRegistry(c.env)).visibleEntries(
         c.var.auth?.user?.id,
     );
-    return c.var.auth?.agentRun
-        ? entries.filter((entry) => !entry.communityEndpoint)
-        : entries;
 }
 
 async function getVisibleModelEntriesForEventType(

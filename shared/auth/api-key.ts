@@ -8,7 +8,6 @@ import * as schema from "../db/better-auth.ts";
 import {
     AGENT_RUN_TOKEN_PREFIX,
     type AgentRunClaims,
-    intersectAgentRunModels,
     verifyAgentRunToken,
 } from "./agent-run-token.ts";
 import { parseMetadata } from "./api-key-creation.ts";
@@ -307,10 +306,10 @@ async function authenticateAgentRunToken(
     });
     if (!parent) return null;
 
-    const models = intersectAgentRunModels(
-        parent.apiKey.permissions?.models,
-        claims.models,
-    );
+    // The token inherits the parent's model access but never its account scope:
+    // it is a generation credential held by a third party, so it must not be
+    // able to manage the owner's keys, endpoints or account.
+    const models = parent.apiKey.permissions?.models;
 
     return {
         ...parent,

@@ -49,7 +49,6 @@ async function mintDelegatedToken(
     return signAgentRunToken({
         secret,
         parentApiKeyId,
-        agentId: endpoint.modelId,
         runId: crypto.randomUUID(),
     });
 }

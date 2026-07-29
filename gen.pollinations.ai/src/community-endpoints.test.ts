@@ -780,10 +780,7 @@ describe("community endpoint helpers", () => {
             expect(token).not.toContain("sk_saved_token");
 
             const claims = await verifyAgentRunToken(token, secret);
-            expect(claims).toMatchObject({
-                parentApiKeyId: "parent-key-id",
-                agentId: "voodoohop/agent",
-            });
+            expect(claims).toMatchObject({ parentApiKeyId: "parent-key-id" });
         });
 
         it("sends the saved bearer when the endpoint is not flagged", async () => {

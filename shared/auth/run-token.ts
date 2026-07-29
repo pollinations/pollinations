@@ -13,7 +13,11 @@
  */
 
 const RUN_TOKEN_PREFIX = "ag_";
-const DEFAULT_TTL_SECONDS = 900;
+/**
+ * One hour. Agent runs chain many calls — a multi-clip video run outlives a
+ * short TTL, and expiry mid-run fails the whole run with no retry path.
+ */
+const DEFAULT_TTL_SECONDS = 3600;
 const MAX_TTL_SECONDS = 3600;
 
 /**

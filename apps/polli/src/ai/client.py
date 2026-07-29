@@ -682,9 +682,10 @@ class PollinationsClient:
 
         current_model = config.ai.model
         for attempt in range(MAX_RETRIES):
-            # Use caller's seed if provided (default 42), otherwise random per attempt
+            # Preserve an explicit caller seed; otherwise vary retries so a provider-side
+            # pathological decode is not replayed identically.
             caller_seed = (api_params or {}).get("seed") if api_params else None
-            seed = caller_seed if caller_seed is not None else 42
+            seed = caller_seed if caller_seed is not None else random.randint(0, MAX_SEED)
 
             payload = {
                 "model": current_model,
@@ -747,9 +748,15 @@ class PollinationsClient:
             except TimeoutError:
                 last_error = f"Timeout after {timeout}s"
                 logger.warning(f"API timeout (attempt {attempt + 1})")
+                if config.ai.fallback_model and current_model != config.ai.fallback_model:
+                    logger.info(f"Switching to fallback model {config.ai.fallback_model!r} after timeout")
+                    current_model = config.ai.fallback_model
             except aiohttp.ClientError as e:
                 last_error = f"Network error: {e}"
                 logger.warning(f"Network error (attempt {attempt + 1}): {e}")
+                if config.ai.fallback_model and current_model != config.ai.fallback_model:
+                    logger.info(f"Switching to fallback model {config.ai.fallback_model!r} after network error")
+                    current_model = config.ai.fallback_model
             except Exception as e:
                 last_error = f"Error: {e}"
                 logger.warning(f"API error (attempt {attempt + 1}): {e}")

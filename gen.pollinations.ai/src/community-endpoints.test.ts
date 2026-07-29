@@ -1,5 +1,6 @@
 import { createExecutionContext, env, SELF } from "cloudflare:test";
 import type { Logger } from "@logtape/logtape";
+import { verifyAgentRunToken } from "@shared/auth/agent-run-token.ts";
 import {
     type CommunityEndpointRuntime,
     communityChatCompletionsUrl,
@@ -487,6 +488,7 @@ describe("community endpoint helpers", () => {
                 name: "gptimage",
                 title: "GPT Image",
                 description: null,
+                delegatesGeneration: false,
                 modality: "image",
                 imagePricing,
                 supportsImageEdits: true,
@@ -678,6 +680,7 @@ describe("community endpoint helpers", () => {
             baseUrl: "https://api.example.com/v1",
             upstreamModel: "gpt-4.1-mini",
             visibility: "public",
+            delegatesGeneration: false,
             disabledAt: null,
             disabledReason: null,
             bearerTokenCiphertext: await encryptSecret(
@@ -717,6 +720,94 @@ describe("community endpoint helpers", () => {
         });
         expect(context.modelDef).toBe(modelDefinition);
         expect(context).not.toHaveProperty("messages");
+    });
+
+    describe("delegated agent endpoints", () => {
+        const secret = "test-secret";
+
+        async function agentEndpoint(
+            overrides: Partial<CommunityEndpointRuntime> = {},
+        ): Promise<CommunityEndpointRuntime> {
+            return {
+                id: "agent-endpoint-id",
+                ownerUserId: "owner-id",
+                modelId: "voodoohop/agent",
+                name: "agent",
+                title: "Agent",
+                description: null,
+                modality: "text",
+                imagePricing: "request",
+                supportsImageEdits: false,
+                baseUrl: "https://agent.example.com/v1",
+                upstreamModel: "agent",
+                visibility: "public",
+                delegatesGeneration: true,
+                disabledAt: null,
+                disabledReason: null,
+                bearerTokenCiphertext: await encryptSecret(
+                    "sk_saved_token",
+                    secret,
+                ),
+                ...communityEndpointPrices({}),
+                ...overrides,
+            };
+        }
+
+        async function contextFor(
+            endpoint: CommunityEndpointRuntime,
+            parentApiKeyId?: string,
+        ) {
+            return communityEndpointGatewayContext(
+                endpoint,
+                communityModelDefinition(endpoint),
+                { messages: [{ role: "user", content: "make a video" }] },
+                secret,
+                "https://portkey.test",
+                "sk_user_key",
+                parentApiKeyId,
+            );
+        }
+
+        it("hands a delegating endpoint a run token, not the caller's key", async () => {
+            const endpoint = await agentEndpoint();
+            const context = await contextFor(endpoint, "parent-key-id");
+
+            const token = String(context.modelConfig?.agentRunToken);
+            expect(token).toMatch(/^ag_/);
+            expect(token).not.toContain("sk_user_key");
+            // The endpoint's own access credential still rides in Authorization.
+            expect(context.modelConfig?.authKey).toBe("sk_saved_token");
+
+            const claims = await verifyAgentRunToken(token, secret);
+            expect(claims).toMatchObject({
+                parentApiKeyId: "parent-key-id",
+                agentId: "voodoohop/agent",
+            });
+        });
+
+        it("sends no run token when the endpoint is not flagged", async () => {
+            const endpoint = await agentEndpoint({
+                delegatesGeneration: false,
+            });
+            const context = await contextFor(endpoint, "parent-key-id");
+            expect(context.modelConfig?.agentRunToken).toBeUndefined();
+            expect(context.modelConfig?.authKey).toBe("sk_saved_token");
+        });
+
+        it("sends no run token for an unauthenticated request", async () => {
+            const endpoint = await agentEndpoint();
+            const context = await contextFor(endpoint, undefined);
+            expect(context.modelConfig?.agentRunToken).toBeUndefined();
+        });
+
+        it("refuses to delegate from an endpoint that charges a price", async () => {
+            const endpoint = await agentEndpoint({
+                ...communityEndpointPrices({ promptTextPrice: 0.1 }),
+            });
+            await expect(contextFor(endpoint, "parent-key-id")).rejects.toThrow(
+                "is not free",
+            );
+        });
     });
 });
 

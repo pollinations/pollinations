@@ -77,3 +77,37 @@ describe("generatePortkeyHeaders — fallback config", () => {
         expect(headers["x-portkey-config"]).toBeUndefined();
     });
 });
+
+describe("generatePortkeyHeaders — delegated agent run token", () => {
+    it("forwards the run token verbatim, alongside the endpoint credential", async () => {
+        const headers = await generatePortkeyHeaders({
+            provider: "openai",
+            "custom-host": "https://agent.example.com/v1",
+            authKey: "sk_endpoint_access_token",
+            model: "agent",
+            agentRunToken: "ag_delegated.token",
+        });
+
+        // Two credentials, two headers: Authorization is the endpoint's own
+        // access token, X-Pollinations-Key is what it may spend.
+        expect(headers["Authorization"]).toBe(
+            "Bearer sk_endpoint_access_token",
+        );
+        expect(headers["X-Pollinations-Key"]).toBe("ag_delegated.token");
+        // Portkey drops unknown headers unless they are named here.
+        expect(headers["x-portkey-forward-headers"]).toBe("X-Pollinations-Key");
+        // The token must not leak into the flattened x-portkey-* config.
+        expect(headers["x-portkey-agentRunToken"]).toBeUndefined();
+    });
+
+    it("omits the header entirely when nothing is delegated", async () => {
+        const headers = await generatePortkeyHeaders({
+            provider: "openai",
+            authKey: "sk_endpoint_access_token",
+            model: "agent",
+        });
+
+        expect(headers["X-Pollinations-Key"]).toBeUndefined();
+        expect(headers["x-portkey-forward-headers"]).toBeUndefined();
+    });
+});

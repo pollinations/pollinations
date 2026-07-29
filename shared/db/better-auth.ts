@@ -231,6 +231,15 @@ export const communityEndpoint = sqliteTable("community_endpoint", {
   completionReasoningPrice: real("completion_reasoning_price").default(0).notNull(),
   completionAudioPrice: real("completion_audio_price").default(0).notNull(),
   completionImagePrice: real("completion_image_price").default(0).notNull(),
+  // Admin-only. When set, this endpoint receives a short-lived agent run token
+  // it may spend on the caller's behalf, instead of only its own access
+  // credential. Off by default: it hands a third party spend authority over
+  // whoever called the model, so it is granted per endpoint, never implicitly.
+  // Endpoints that delegate must be priced at zero, or the caller pays the
+  // wrapper price on top of the generation the agent bills them for.
+  delegatesGeneration: integer("delegates_generation", { mode: "boolean" })
+    .default(false)
+    .notNull(),
   disabledAt: integer("disabled_at", { mode: "timestamp" }),
   disabledReason: text("disabled_reason"),
   disabledBy: text("disabled_by"),

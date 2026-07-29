@@ -242,19 +242,16 @@ async def _sse_events(
 
 
 def _spendable_credential(http_request: Request) -> str | None:
-    """The Pollinations credential this request may spend, if any.
+    """The short-lived agent run token this request may spend, if any.
 
     The gateway sends a delegating community model a short-lived `ag_` run token
-    as its bearer, in place of the endpoint's own saved secret — so a bearer that
-    is not a Pollinations credential is someone else's access token, not spend
-    authority, and must never be charged. Rejecting by prefix fails closed on the
-    dangerous case: an endpoint registered but not granted delegation still
-    receives its owner's saved secret, and spending that would bill the owner for
-    every caller.
+    as its bearer, in place of the endpoint's own saved secret. Long-lived `sk_`
+    and `pk_` keys are deliberately rejected so the agent never holds a caller's
+    original key or spends an endpoint owner's saved key.
     """
     header = http_request.headers.get("Authorization", "")
     key = header[7:].strip() if header[:7].lower() == "bearer " else ""
-    return key if key.startswith(("ag_", "sk_", "pk_")) else None
+    return key if key.startswith("ag_") else None
 
 
 @app.post("/v1/chat/completions")
@@ -265,10 +262,7 @@ async def chat_completions(request: ChatRequest, http_request: Request) -> Any:
     if not api_key and not settings.allow_operator_key:
         raise HTTPException(
             status_code=401,
-            detail=(
-                "Missing or unrecognized credential. Pass a Pollinations key "
-                "as Authorization: Bearer <key>."
-            ),
+            detail=("Missing agent run token. Pass it as Authorization: Bearer ag_…"),
         )
     if request.stream:
         return StreamingResponse(
@@ -329,7 +323,7 @@ async def chat_completions_get() -> dict[str, Any]:
             "method": "POST",
             "headers": {
                 "Content-Type": "application/json",
-                "Authorization": "Bearer <pollinations-key>",
+                "Authorization": "Bearer <agent-run-token>",
             },
             "body": {
                 "model": "polli",
@@ -355,5 +349,5 @@ async def root() -> dict[str, Any]:
             "models": "GET /v1/models",
             "health": "GET /health",
         },
-        "auth": "Authorization: Bearer <pollinations-key>",
+        "auth": "Authorization: Bearer <agent-run-token>",
     }

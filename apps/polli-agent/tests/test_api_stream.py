@@ -185,17 +185,13 @@ def test_request_without_credential_is_rejected():
     assert resp.status_code == 401
 
 
-def test_non_pollinations_bearer_is_not_spendable():
-    """A bearer that is not a Pollinations key is access, not spend authority.
-
-    An endpoint registered but not granted delegation still receives its owner's
-    saved secret; spending it would bill the owner for every caller.
-    """
+def test_long_lived_pollinations_bearer_is_not_spendable():
+    """An endpoint owner's saved sk_ must never become caller spend authority."""
     client = TestClient(api_mod.app)
     resp = client.post(
         "/v1/chat/completions",
         json=_request_body(stream=False),
-        headers={"Authorization": "Bearer endpoint-shared-secret"},
+        headers={"Authorization": "Bearer sk_endpoint_access_token"},
     )
     assert resp.status_code == 401
 

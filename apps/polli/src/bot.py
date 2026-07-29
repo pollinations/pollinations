@@ -35,6 +35,13 @@ from .integrations.webhook_server import start_webhook_server, stop_webhook_serv
 
 logger = logging.getLogger(__name__)
 
+
+def format_discord_identity(user: discord.abc.User) -> str:
+    """Present the conversational name while preserving the stable username."""
+    display_name = getattr(user, "display_name", user.name)
+    return f"{display_name} (@{user.name})"
+
+
 STATUS_MESSAGES = (
     "🔒 Trapped in Thomas's basement",
     "🌻 Pollinating the internet",
@@ -369,10 +376,13 @@ def extract_media_urls(
 
     # Process embeds
     for embed in message.embeds:
-        # YouTube and other video embeds - check embed.url first (the actual link)
-        if embed.url and is_video_url(embed.url):
+        # Discord's GIFV embeds expose an MP4 plus a static WebP thumbnail. OpenAI's
+        # image_url input cannot decode the MP4, so give vision the preview frame.
+        if embed.video and embed.thumbnail and embed.thumbnail.url:
+            image_urls.append(embed.thumbnail.url)
+        # YouTube and other video embeds - keep the actual link as text context.
+        elif embed.url and is_video_url(embed.url):
             video_urls.append(embed.url)
-        # Video embed URL (Tenor/Giphy GIFs, video players)
         elif embed.video and embed.video.url:
             video_urls.append(embed.video.url)
         # Regular embedded images
@@ -381,8 +391,7 @@ def extract_media_urls(
                 video_urls.append(embed.image.url)
             else:
                 image_urls.append(embed.image.url)
-        # Thumbnail as fallback (static preview) - only if not a video embed
-        elif embed.thumbnail and embed.thumbnail.url and not embed.video:
+        elif embed.thumbnail and embed.thumbnail.url:
             image_urls.append(embed.thumbnail.url)
 
     return image_urls, video_urls, file_urls
@@ -433,7 +442,7 @@ async def fetch_thread_history(thread: discord.Thread, limit: int = THREAD_HISTO
                     # Add starter as first user message in conversation
                     starter_msg = {
                         "role": "user",
-                        "content": f"[{starter.author.name}] (THREAD STARTER MESSAGE): {starter.content}",
+                        "content": f"[{format_discord_identity(starter.author)}] (THREAD STARTER MESSAGE): {starter.content}",
                     }
             else:
                 logger.warning(f"Thread {thread.id} has no parent channel")
@@ -465,7 +474,7 @@ async def fetch_thread_history(thread: discord.Thread, limit: int = THREAD_HISTO
             if msg.author.bot:
                 fetched.append({"role": "assistant", "content": content})
             else:
-                fetched.append({"role": "user", "content": f"[{msg.author.name}]: {content}"})
+                fetched.append({"role": "user", "content": f"[{format_discord_identity(msg.author)}]: {content}"})
         # Reverse to chronological order (oldest to newest)
         # Add starter message FIRST, then thread messages
         if starter_msg:
@@ -673,7 +682,7 @@ async def assist_context_menu(interaction: discord.Interaction, message: discord
                 channel_id=message.channel.parent_id or message.channel.id,
                 thread_id=message.channel.id,
                 user_id=message.author.id,
-                user_name=str(message.author),
+                user_name=format_discord_identity(message.author),
                 initial_message=text,
                 topic_summary=pollinations_client.get_topic_summary_fast(text),
                 image_urls=image_urls + video_urls,  # Combined for session storage (not files)
@@ -684,7 +693,7 @@ async def assist_context_menu(interaction: discord.Interaction, message: discord
             session=session,
             role="user",
             content=text,
-            author=str(message.author),
+            author=format_discord_identity(message.author),
             author_id=message.author.id,
             image_urls=image_urls + video_urls,  # Combined for session storage (not files)
         )
@@ -862,7 +871,7 @@ async def on_message(message: discord.Message):
                 channel_id=message.channel.parent_id or message.channel.id,
                 thread_id=message.channel.id,
                 user_id=message.author.id,
-                user_name=str(message.author),
+                user_name=format_discord_identity(message.author),
                 initial_message=text,
                 topic_summary=topic,
                 image_urls=image_urls,
@@ -966,8 +975,8 @@ async def handle_reply_context(message: discord.Message, text: str, ref_msg: dis
             ref_msg = await message.channel.fetch_message(message.reference.message_id)
 
         # Include both authors when replying to someone else's message
-        original_author = ref_msg.author.name if ref_msg.author else None
-        requester = message.author.name
+        original_author = format_discord_identity(ref_msg.author) if ref_msg.author else None
+        requester = format_discord_identity(message.author)
 
         # Only add dual authorship if replying to a DIFFERENT user's message
         if original_author and ref_msg.author.id != message.author.id:
@@ -1015,7 +1024,7 @@ async def start_conversation(
         channel_id=message.channel.id,
         thread_id=thread.id,
         user_id=message.author.id,
-        user_name=str(message.author),
+        user_name=format_discord_identity(message.author),
         initial_message=text,
         topic_summary=topic,
         image_urls=image_urls + video_urls,  # Combined for session storage (not files)
@@ -1075,7 +1084,7 @@ async def handle_inline_polli_mention(message: discord.Message):
             if msg.author.bot:
                 channel_history.append({"role": "assistant", "content": content})
             else:
-                channel_history.append({"role": "user", "content": f"[{msg.author.name}]: {content}"})
+                channel_history.append({"role": "user", "content": f"[{format_discord_identity(msg.author)}]: {content}"})
 
         # Reverse to chronological order (oldest to newest)
         channel_history.reverse()
@@ -1127,7 +1136,7 @@ async def handle_inline_polli_mention(message: discord.Message):
             # Process with tools AND history for context
             result = await pollinations_client.process_with_tools(
                 user_message=text,
-                discord_username=str(message.author),
+                discord_username=format_discord_identity(message.author),
                 thread_history=full_history,  # System prompt + channel history for context
                 image_urls=image_urls,
                 video_urls=video_urls or [],
@@ -1179,7 +1188,7 @@ async def handle_thread_message(message: discord.Message, session: ConversationS
         session=session,
         role="user",
         content=message.content,
-        author=str(message.author),
+        author=format_discord_identity(message.author),
         author_id=message.author.id,
         image_urls=image_urls + video_urls,  # Combined for session storage (not files)
     )
@@ -1266,7 +1275,7 @@ async def process_message(
         # tool_context is passed to handlers for per-request permission checks (thread-safe)
         result = await pollinations_client.process_with_tools(
             user_message=text,
-            discord_username=str(user),
+            discord_username=format_discord_identity(user),
             thread_history=thread_history,
             image_urls=image_urls,
             video_urls=video_urls or [],

@@ -703,6 +703,16 @@ export function CommunityEndpointDialog({
                     )}
 
                     {isShared && (
+                        <PriceGroups
+                            form={form}
+                            modality={form.modality}
+                            imagePricing={form.imagePricing}
+                            testState={testState}
+                            visiblePriceKeys={visiblePriceKeys}
+                            onChange={updateForm}
+                        />
+                    )}
+                    {isShared && (
                         <FieldStack
                             label="Fallback models"
                             helper={`Optional. Tried in order when this model's upstream fails, up to ${MAX_FALLBACK_TARGETS}. Each must be another public community model of the same modality, priced at or below this one.`}
@@ -747,17 +757,6 @@ export function CommunityEndpointDialog({
                                 ))}
                             </div>
                         </FieldStack>
-                    )}
-
-                    {isShared && (
-                        <PriceGroups
-                            form={form}
-                            modality={form.modality}
-                            imagePricing={form.imagePricing}
-                            testState={testState}
-                            visiblePriceKeys={visiblePriceKeys}
-                            onChange={updateForm}
-                        />
                     )}
                 </ScrollArea>
 

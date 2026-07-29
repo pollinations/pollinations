@@ -331,8 +331,6 @@ async function generateTextResponse(
                   c.env.BETTER_AUTH_SECRET,
                   c.env.PORTKEY_GATEWAY_URL,
                   c.var.auth?.apiKey?.rawKey || "",
-                  c.var.auth?.apiKey?.id,
-                  Boolean(c.var.auth?.agentRun),
               )
             : withGatewayContext(c, requestData);
         const completion = await generateTextPortkey(

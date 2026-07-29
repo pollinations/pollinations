@@ -68,9 +68,8 @@ export async function atomicDeductUserBalance(
 
 /**
  * Atomically deducts pollen from API key balance.
- * NULL means unlimited and is never touched. The lower-bound guard also makes
- * concurrent fan-out compete atomically instead of driving a finite budget
- * negative.
+ * The `AND pollen_balance IS NOT NULL` guard means keys with NULL balance
+ * (= unlimited budget) are never touched — no COALESCE needed here.
  *
  * @param db - Drizzle database instance
  * @param apiKeyTable - API key table
@@ -90,7 +89,6 @@ export async function atomicDeductApiKeyBalance(
 			SET pollen_balance = pollen_balance - ${amount}
 			WHERE id = ${apiKeyId}
 			AND pollen_balance IS NOT NULL
-			AND pollen_balance >= ${amount}
 		`);
 
     return { ok: (result.meta.changes ?? 0) > 0 };

@@ -6,6 +6,7 @@ import {
     BannedAccountError,
     StagingAccessDeniedError,
 } from "@shared/auth/api-key.ts";
+import type { CommunityEndpointRuntime } from "@shared/community-endpoints.ts";
 import { createMiddleware } from "hono/factory";
 import { HTTPException } from "hono/http-exception";
 import type { LoggerVariables } from "./logger.ts";
@@ -14,7 +15,7 @@ type ModelVariables = {
     model: {
         requested: string;
         resolved: string;
-        communityEndpoint?: unknown;
+        communityEndpoint?: CommunityEndpointRuntime;
     };
 };
 

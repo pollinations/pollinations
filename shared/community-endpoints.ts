@@ -210,8 +210,6 @@ export function communityEndpointPricesForModality(
 }
 
 /**
- * How many fallbacks a community model may declare.
- *
  * Bounds how much latency one request can spend failing before it gives up:
  * every extra target is another upstream timeout the caller waits through.
  * Enforced on write and re-applied when the generation registry links entries.
@@ -219,9 +217,7 @@ export function communityEndpointPricesForModality(
 export const MAX_FALLBACK_TARGETS = 3;
 
 /**
- * True when `target` costs no more than `primary` on every price field. Derived
- * from COMMUNITY_ENDPOINT_PRICE_FIELDS so a new price column is covered
- * automatically rather than silently ignored.
+ * True when `target` costs no more than `primary` on every price field.
  *
  * This is what makes a fallback safe to bill: the caller is charged whatever
  * actually served, and it can never exceed the price they were quoted.

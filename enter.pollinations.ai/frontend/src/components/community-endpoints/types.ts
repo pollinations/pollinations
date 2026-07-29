@@ -30,14 +30,13 @@ export type CommunityEndpoint = {
     // private → owner-only, shown only to the owner, no owner-set price;
     // public → globally listed + billed to callers.
     visibility: CommunityEndpointVisibility;
-    // Public community model served when this model's upstream fails.
+    // Public community models tried, in order, when this model's upstream fails.
     fallbackModelIds: string[];
     disabled: boolean;
     disabledReason: string | null;
     disabledAt: string | null;
 } & CommunityEndpointPrices;
 
-/** Fallback target choice: a public community model of a given modality. */
 export type FallbackModelOption = {
     modelId: string;
     modality: CommunityEndpointModality;

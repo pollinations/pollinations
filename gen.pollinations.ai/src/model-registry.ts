@@ -43,10 +43,9 @@ export type GenerationModelEntry = {
     communityEndpoint?: CommunityEndpointRuntime;
     visible: boolean;
     // Entries that serve this model when its own upstream fails, in the order
-    // its owner declared them, resolved once at registry build time so the hot
-    // path never does a second lookup. A fallback's own list is not followed:
-    // one owner's declaration cannot redirect another owner's traffic, which
-    // also makes a routing cycle impossible.
+    // its owner declared them. A fallback's own list is not followed: one
+    // owner's declaration cannot redirect another owner's traffic, which also
+    // makes a routing cycle impossible.
     fallbackEntries?: GenerationModelEntry[];
 };
 
@@ -128,38 +127,33 @@ function communityEntryToGenerationEntry(
     };
 }
 
-// True when `target` is still a legal fallback for `from`.
+// Write-time validation is only a UX guard — a target can since have been
+// deleted, deactivated, made private or repriced above the primary — so
+// everything is re-checked here before linking.
 function isUsableFallbackTarget(
     from: GenerationModelEntry,
     target: GenerationModelEntry | undefined,
 ): target is GenerationModelEntry {
-    // Write-time validation is only a UX guard — a target can since have been
-    // deleted, deactivated, made private or repriced above the primary, so
-    // re-check everything here before linking.
     if (!target || target === from) return false;
     if (!target.visible || target.eventType !== from.eventType) return false;
-    const fromEndpoint = from.communityEndpoint;
-    const targetEndpoint = target.communityEndpoint;
-    if (fromEndpoint && targetEndpoint) {
-        // The shared price columns mean Pollen per generated image in "request"
-        // mode and Pollen per token in "tokens" mode, so a cross-mode
-        // comparison is meaningless — and either side can switch mode long
-        // after the link was configured, without touching the other's row.
-        // Same rule the write path applies.
-        if (fromEndpoint.imagePricing !== targetEndpoint.imagePricing) {
-            return false;
-        }
-        if (!isCommunityFallbackPricingAllowed(fromEndpoint, targetEndpoint)) {
-            return false;
-        }
-    }
-    return true;
+    const primary = from.communityEndpoint;
+    const candidate = target.communityEndpoint;
+    // Both sides must be community endpoints: static registry prices can be
+    // dynamic, so the same-or-lower comparison that makes a fallback safe to
+    // bill is only defined between two endpoint rows.
+    if (!primary || !candidate) return false;
+    // The shared price columns mean Pollen per generated image in "request"
+    // mode and Pollen per token in "tokens" mode, so a cross-mode comparison is
+    // meaningless — and either side can switch mode long after the link was
+    // configured, without touching the other's row. Same rule the write path
+    // applies.
+    if (primary.imagePricing !== candidate.imagePricing) return false;
+    return isCommunityFallbackPricingAllowed(primary, candidate);
 }
 
 /**
- * Resolves each entry's declared fallbacks against the registry it was built
- * with. A community entry declares them through its endpoint row, a static one
- * through `definition.fallbacks`.
+ * Resolves each entry's declared fallback ids against the registry it was built
+ * with, so the hot path never does a second lookup.
  *
  * Every target is validated against the entry that declared it, so each one is
  * priced at or below the model the caller actually asked for.
@@ -169,19 +163,14 @@ function linkFallbackEntries(
     byIdOrAlias: Map<string, GenerationModelEntry>,
 ): void {
     for (const entry of entries) {
-        const declared =
-            entry.communityEndpoint?.fallbackModelIds ??
-            entry.definition.fallbacks ??
-            [];
-        const seen = new Set<string>();
+        const declared = entry.communityEndpoint?.fallbackModelIds ?? [];
         const targets: GenerationModelEntry[] = [];
         for (const targetId of declared) {
             if (targets.length >= MAX_FALLBACK_TARGETS) break;
             const target = byIdOrAlias.get(targetId);
             if (!isUsableFallbackTarget(entry, target)) continue;
             // Two declared ids can resolve to one entry through an alias.
-            if (seen.has(target.id)) continue;
-            seen.add(target.id);
+            if (targets.some((linked) => linked.id === target.id)) continue;
             // Link a copy with an empty list of its own: routing follows only
             // what this entry's owner declared.
             targets.push({ ...target, fallbackEntries: undefined });

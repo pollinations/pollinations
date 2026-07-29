@@ -428,10 +428,7 @@ async function callCommunityImageWithFallback(
     servedIndex: number;
 }> {
     // Attempt 0 is the model the caller asked for, so it has no served entry to
-    // report. The list stops at the first fallback without a community
-    // endpoint: the image path has no Portkey to route a static provider
-    // through, so skipping past it would silently reorder the owner's declared
-    // preference.
+    // report; the rest are its declared fallbacks, in order.
     const attempts: {
         endpoint: CommunityEndpointRuntime;
         entry?: GenerationModelEntry;
@@ -458,6 +455,8 @@ async function callCommunityImageWithFallback(
             if (isLast || !isRetryableFallbackError(error)) throw error;
         }
     }
+    // Unreachable: attempts always holds the primary, which either returns or
+    // rethrows above.
     throw new Error("Image fallback list is empty");
 }
 

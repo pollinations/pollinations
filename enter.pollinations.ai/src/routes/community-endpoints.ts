@@ -5,7 +5,10 @@ import {
     COMMUNITY_ENDPOINT_PRICE_FIELDS,
     COMMUNITY_ENDPOINT_TITLE_MAX_LENGTH,
     COMMUNITY_ENDPOINT_VISIBILITIES,
+    type CommunityEndpointImagePricing,
+    type CommunityEndpointModality,
     type CommunityEndpointPriceKey,
+    type CommunityEndpointPrices,
     type CommunityEndpointVisibility,
     communityEndpointPriceFieldsForModality,
     communityEndpointPrices,
@@ -114,24 +117,10 @@ const FallbackModelIdsSchema = z
 
 type FallbackPrimary = {
     modelId: string;
-    modality: (typeof COMMUNITY_ENDPOINT_MODALITIES)[number];
-    imagePricing: (typeof COMMUNITY_ENDPOINT_IMAGE_PRICING_MODES)[number];
-    prices: Record<CommunityEndpointPriceKey, number>;
+    modality: CommunityEndpointModality;
+    imagePricing: CommunityEndpointImagePricing;
+    prices: CommunityEndpointPrices;
 };
-
-function fallbackPriceErrorMessage(
-    fallbackModelId: string,
-    primary: Record<CommunityEndpointPriceKey, number>,
-    target: Record<CommunityEndpointPriceKey, number>,
-): string {
-    const excesses = COMMUNITY_ENDPOINT_PRICE_FIELDS.filter(
-        (field) => target[field.key] > primary[field.key],
-    ).map(
-        (field) =>
-            `${field.key} (${target[field.key]}) exceeds this model's (${primary[field.key]})`,
-    );
-    return `Fallback target ${fallbackModelId} ${excesses.join(", ")}`;
-}
 
 // Resolves and validates one requested fallback target.
 async function resolveFallbackModelId(
@@ -200,29 +189,29 @@ async function resolveFallbackModelId(
 
     const targetPrices = communityEndpointPrices(target);
     if (!isCommunityFallbackPricingAllowed(primary.prices, targetPrices)) {
+        const excesses = COMMUNITY_ENDPOINT_PRICE_FIELDS.filter(
+            (field) => targetPrices[field.key] > primary.prices[field.key],
+        ).map(
+            (field) =>
+                `${field.key} (${targetPrices[field.key]}) exceeds this model's (${primary.prices[field.key]})`,
+        );
         throw new HTTPException(400, {
-            message: fallbackPriceErrorMessage(
-                fallbackModelId,
-                primary.prices,
-                targetPrices,
-            ),
+            message: `Fallback target ${fallbackModelId} ${excesses.join(", ")}`,
         });
     }
     return fallbackModelId;
 }
 
-// Resolves the whole declared list. Returns `undefined` when the caller did not
-// send the field (leave the stored value alone).
+// Resolves the whole declared list.
 //
 // A target can later be deleted, deactivated, or repriced above the primary.
 // There is no reconciliation job: the generation registry re-checks these same
 // rules when it links entries, so this is a UX guard, not an invariant.
 async function resolveFallbackModelIds(
     db: Db,
-    requested: string[] | undefined,
+    requested: string[],
     primary: FallbackPrimary,
-): Promise<string[] | undefined> {
-    if (requested === undefined) return undefined;
+): Promise<string[]> {
     const resolved: string[] = [];
     for (const id of requested) {
         const modelId = await resolveFallbackModelId(db, id, primary);
@@ -634,16 +623,17 @@ export const communityEndpointsRoutes = new Hono<Env>()
                 input.modality,
                 imagePricing,
             );
-            const fallbackModelIds = await resolveFallbackModelIds(
-                db,
-                input.fallbackModelIds,
-                {
-                    modelId: communityModelId(ownerGithubUsername, input.name),
-                    modality: input.modality,
-                    imagePricing,
-                    prices,
-                },
-            );
+            const fallbackModelIds = input.fallbackModelIds
+                ? await resolveFallbackModelIds(db, input.fallbackModelIds, {
+                      modelId: communityModelId(
+                          ownerGithubUsername,
+                          input.name,
+                      ),
+                      modality: input.modality,
+                      imagePricing,
+                      prices,
+                  })
+                : [];
             await enforcePublishingAccess(db, user.id, input.visibility);
             const id = crypto.randomUUID();
             const [row] = await db
@@ -665,7 +655,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
                         c.env.BETTER_AUTH_SECRET,
                     ),
                     visibility: input.visibility,
-                    fallbackModelIds: fallbackModelIds ?? [],
+                    fallbackModelIds,
                     ...prices,
                     createdAt: new Date(),
                     updatedAt: new Date(),
@@ -894,24 +884,23 @@ export const communityEndpointsRoutes = new Hono<Env>()
                 effectiveImagePricing,
             );
             // Validate against the prices this update actually persists, not
-            // the stored ones. An unsent field keeps the stored target: if a
-            // later price change makes it too expensive, the generation
+            // the stored ones. An unsent field keeps the stored targets: if a
+            // later price change makes one too expensive, the generation
             // registry stops linking it at read time.
-            const fallbackModelIds = await resolveFallbackModelIds(
-                db,
-                input.fallbackModelIds,
-                {
-                    modelId: communityModelId(
-                        ownerGithubUsername,
-                        input.name ?? endpoint.name,
-                    ),
-                    modality,
-                    imagePricing: effectiveImagePricing,
-                    prices: effectivePrices,
-                },
-            );
-            if (fallbackModelIds !== undefined) {
-                update.fallbackModelIds = fallbackModelIds;
+            if (input.fallbackModelIds) {
+                update.fallbackModelIds = await resolveFallbackModelIds(
+                    db,
+                    input.fallbackModelIds,
+                    {
+                        modelId: communityModelId(
+                            ownerGithubUsername,
+                            input.name ?? endpoint.name,
+                        ),
+                        modality,
+                        imagePricing: effectiveImagePricing,
+                        prices: effectivePrices,
+                    },
+                );
             }
             await enforcePublishingAccess(db, user.id, effectiveVisibility);
             // Persist visibility together with the complete effective price

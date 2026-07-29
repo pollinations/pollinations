@@ -12,7 +12,6 @@ import type { Env } from "@/env.ts";
 import { FALLBACK_ON_STATUS_CODES } from "../fallback.ts";
 import type { GenerationModelEntry } from "../model-registry.ts";
 import { fixWavHeader } from "../routes/audio.js";
-import { findModelByName } from "./availableModels.js";
 import {
     communityEndpointGatewayContext,
     communityEndpointPortkeyTarget,
@@ -104,83 +103,47 @@ function prepareRequestParameters(
     };
 }
 
-type PortkeyTarget = Record<string, unknown>;
-
-// Provider config keys with a safe Portkey target form. Anything else (Azure /
-// Bedrock / Vertex credential sets, `useUserApiKey` passthrough, per-model
-// `defaultOptions`) is not converted: those models simply run without a
-// fallback instead of being sent as a silently broken target config.
-const CONVERTIBLE_CONFIG_KEYS = new Set([
-    "provider",
-    "custom-host",
-    "authKey",
-    "model",
-]);
-
-function providerConfigToTarget(
-    config: Record<string, unknown> | undefined,
-): PortkeyTarget | null {
-    if (!config) return null;
-    if (Object.keys(config).some((key) => !CONVERTIBLE_CONFIG_KEYS.has(key))) {
-        return null;
-    }
-    const { provider, model, authKey } = config;
-    const customHost = config["custom-host"];
-    if (typeof provider !== "string" || typeof model !== "string") return null;
-    return {
-        provider,
-        ...(customHost ? { custom_host: customHost } : {}),
-        ...(authKey ? { authKey } : {}),
-        override_params: { model },
-    };
-}
-
-function staticModelConfig(
-    modelId: string,
-): Record<string, unknown> | undefined {
-    const rawConfig = findModelByName(modelId)?.config;
-    if (!rawConfig) return undefined;
-    return (
-        typeof rawConfig === "function" ? rawConfig() : rawConfig
-    ) as Record<string, unknown>;
-}
-
-async function portkeyTargetForEntry(
-    entry: GenerationModelEntry,
-    secret: string,
-): Promise<PortkeyTarget | null> {
-    if (entry.communityEndpoint) {
-        return communityEndpointPortkeyTarget(entry.communityEndpoint, secret);
-    }
-    return providerConfigToTarget(staticModelConfig(entry.id));
-}
-
 /**
  * Portkey fallback config over the model and its declared fallbacks, one target
  * each.
  *
- * Returns null when the primary or the first fallback has no convertible
- * provider config, in which case the request runs against the primary alone.
- * The list stops at the first target that cannot be converted, so one Portkey
- * could not reach never shifts the ones behind it forward.
+ * Target 0 is built from the primary's gateway config rather than its endpoint
+ * row, so it keeps the auth key the single-endpoint path would have used —
+ * including the run token a delegating endpoint gets instead of its saved
+ * bearer.
+ *
+ * Returns null when no fallback target could be built, in which case the
+ * request runs against the primary alone. The list stops at the first target
+ * that cannot be built, so one Portkey could not reach never shifts the ones
+ * behind it forward.
  */
 async function buildFallbackModelConfig(
-    primaryConfig: Record<string, unknown> | undefined,
+    primaryConfig: Record<string, unknown>,
     fallbacks: GenerationModelEntry[],
     secret: string,
 ): Promise<{
     config: Record<string, unknown>;
     entries: GenerationModelEntry[];
 } | null> {
-    const primaryTarget = providerConfigToTarget(primaryConfig);
-    if (!primaryTarget) return null;
-
-    const targets: PortkeyTarget[] = [primaryTarget];
+    // Target JSON is snake_case, unlike the hyphenated `custom-host` header
+    // form the single-endpoint config uses.
+    const targets: Record<string, unknown>[] = [
+        {
+            provider: primaryConfig.provider,
+            custom_host: primaryConfig["custom-host"],
+            authKey: primaryConfig.authKey,
+            override_params: { model: primaryConfig.model },
+        },
+    ];
     const entries: GenerationModelEntry[] = [];
     for (const entry of fallbacks) {
-        const target = await portkeyTargetForEntry(entry, secret);
-        if (!target) break;
-        targets.push(target);
+        if (!entry.communityEndpoint) break;
+        targets.push(
+            await communityEndpointPortkeyTarget(
+                entry.communityEndpoint,
+                secret,
+            ),
+        );
         entries.push(entry);
     }
     if (entries.length === 0) return null;
@@ -191,7 +154,7 @@ async function buildFallbackModelConfig(
             // config.model (utils/modelResolver.ts); a strategy/targets config
             // has none at provider level, so it must be set explicitly. Each
             // target overrides it anyway through override_params.
-            model: (primaryTarget.override_params as { model: string }).model,
+            model: primaryConfig.model,
             strategy: {
                 mode: "fallback",
                 on_status_codes: FALLBACK_ON_STATUS_CODES,
@@ -457,15 +420,17 @@ async function generateTextResponse(
                   c.var.auth?.apiKey?.id,
               )
             : withGatewayContext(c, requestData);
+        // Only community models declare fallbacks, so the primary always has
+        // the gateway modelConfig that target 0 is built from.
         const declaredFallbacks = c.var.model?.fallbackEntries ?? [];
-        const fallback = declaredFallbacks.length
-            ? await buildFallbackModelConfig(
-                  gatewayContext.modelConfig ??
-                      staticModelConfig(c.var.model.resolved),
-                  declaredFallbacks,
-                  c.env.BETTER_AUTH_SECRET,
-              )
-            : null;
+        const fallback =
+            declaredFallbacks.length > 0 && gatewayContext.modelConfig
+                ? await buildFallbackModelConfig(
+                      gatewayContext.modelConfig,
+                      declaredFallbacks,
+                      c.env.BETTER_AUTH_SECRET,
+                  )
+                : null;
         const completion = await generateTextPortkey(
             requestData.messages,
             fallback

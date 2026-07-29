@@ -1,0 +1,34 @@
+{
+  "pr_number": 12814,
+  "title": "fix: remap text provider 429 errors",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/12814",
+  "merged_at": "2026-07-29T09:37:29Z",
+  "labels": [],
+  "pr_body_excerpt": "- Maps text-provider `429` responses and error envelopes to `502 Bad Gateway`.\n- Preserves `upstreamStatus: 429` for diagnostics and server-error alerts.\n- Updates focused unit and observability coverage.\n\nChecks:\n- `npm run typecheck`\n- `npx vitest run test/text/genericOpenAIClient.test.ts test/error-observability.test.ts`",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "The gateway reads the room",
+    "blurb": "Upstream providers can still get crowded, but their 429s now arrive wearing the right label. The hive keeps the original status tucked into its diagnostics notebook.",
+    "summary": "Text-provider 429 responses and error envelopes are now returned as 502 Bad Gateway errors while preserving `upstreamStatus: 429` for diagnostics and server-error alerts.",
+    "impact": "Developers receive a consistent gateway-error response for overloaded text providers, while observability retains the original 429 detail for clearer troubleshooting and alerting.",
+    "keywords": [
+      "text-api",
+      "providers",
+      "error-handling",
+      "429",
+      "observability",
+      "gateway"
+    ],
+    "visual_concept": "Depict Polli as a tiny mailroom operator at a cozy API gateway, relabeling an incoming \"429\" provider parcel as \"502\" while filing the original status in a diagnostic ledger. A friendly CRT monitor robot can inspect the labels, with code-plants and flowers showing that the routing system remains healthy and understandable.",
+    "image_prompt": "Cozy pixel art scene of Polli, a cute yellow bee with dark brown horizontal stripes, black antennae, oval eyes, bright pink rectangular cheek blushes, a small smile, and rounded translucent light-blue wings, wearing a tiny mailroom visor as she carefully relabels a parcel marked \"429\" to \"502\" at a retro API gateway; a chunky CRT monitor robot with curious square eyes holds a diagnostic notebook labeled \"upstreamStatus: 429\", surrounded by blooming code-plants and flowers. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, subtle CRT glow, pixel-font text \"ROUTED\", nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-29/PR-12814.jpg",
+    "prompt": "Cozy pixel art scene of Polli, a cute yellow bee with dark brown horizontal stripes, black antennae, oval eyes, bright pink rectangular cheek blushes, a small smile, and rounded translucent light-blue wings, wearing a tiny mailroom visor as she carefully relabels a parcel marked \"429\" to \"502\" at a retro API gateway; a chunky CRT monitor robot with curious square eyes holds a diagnostic notebook labeled \"upstreamStatus: 429\", surrounded by blooming code-plants and flowers. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, subtle CRT glow, pixel-font text \"ROUTED\", nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-07-29T09:38:24.147270+00:00"
+}

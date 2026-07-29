@@ -1,0 +1,34 @@
+{
+  "pr_number": 12857,
+  "title": "feat: wire polli-agent into the apps deploy pipeline",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/12857",
+  "merged_at": "2026-07-29T22:40:25Z",
+  "labels": [],
+  "pr_body_excerpt": "Gives polli-agent a hostname. The config added in #12702 had **no routes**, which is why `polli.pollinations.ai` is NXDOMAIN despite a container already running.\n\n- Registers `polli-agent` in `apps/apps.json` as a `worker` target on subdomain `polli`\n- Moves `worker.js`/`package.json` from `deploy/cf/` to the app root, where `apps/_scripts/deploy.sh` expects them (same layout as `apps/websim`)\n- Adds `wrangler.jsonc` with `custom_domain` routes for `polli.myceli.ai` + `polli.pollinations.ai`\n- `instance_type: standard-1` — `standard` is deprecated\n\nVerified with `wrangler deploy --dry-run`: `env.POLLI (PolliContainer)` binds, container resolves to `apps/polli-agent/Dockerfile`, no warnings.\n\n**Merging this deploys** — the `apps/**` push trigger on `main` will run `Apps / Deploy changed apps`. First container build in this pipeline, so the image build step is untested here. No secrets required: every setting in `config.py` has a default and hosted runs take the caller's bearer.\n\nLeaves the pre-rename `polly-agent` container (2 idle instances) alone.\n",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Polli gets a front door",
+    "blurb": "Polli-agent was already awake in a container; it just did not have an address. Now the little helper has proper routes at polli.pollinations.ai and polli.myceli.ai.",
+    "summary": "Registered polli-agent in the apps deployment pipeline as a worker on the polli subdomain, with custom-domain routes for polli.pollinations.ai and polli.myceli.ai plus a standard-1 container binding.",
+    "impact": "Polli-agent can now be reached through its public hostnames instead of returning NXDOMAIN, and future apps-pipeline deployments will build and deploy its container from the expected app-root layout.",
+    "keywords": [
+      "polli-agent",
+      "deployment",
+      "custom-domain",
+      "cloudflare-workers",
+      "containers",
+      "apps"
+    ],
+    "visual_concept": "Depict Polli receiving a cozy new garden-shed address: a tiny worker container and retro terminal sit behind a sign reading polli.pollinations.ai, with two glowing route paths branching to polli.pollinations.ai and polli.myceli.ai. Polli wears a miniature mail carrier cap and proudly installs the address plaque while code-vines and flowers grow around the deployed container.",
+    "image_prompt": "Cozy pixel art scene of the cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, black antennae, black oval eyes, bright pink rectangular cheek blush, happy smile, and rounded light blue translucent wings, wearing a tiny mail carrier cap while fastening a glowing address sign reading \"polli.pollinations.ai\" onto a warm garden-shed server container. Two soft glowing route paths lead from a retro terminal through code-plants and flowers toward signs for \"polli.pollinations.ai\" and \"polli.myceli.ai\"; prominent lime green (#ecf874), warm cream, mint, lavender and peach gradients, cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-29/PR-12857.jpg",
+    "prompt": "Cozy pixel art scene of the cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, black antennae, black oval eyes, bright pink rectangular cheek blush, happy smile, and rounded light blue translucent wings, wearing a tiny mail carrier cap while fastening a glowing address sign reading \"polli.pollinations.ai\" onto a warm garden-shed server container. Two soft glowing route paths lead from a retro terminal through code-plants and flowers toward signs for \"polli.pollinations.ai\" and \"polli.myceli.ai\"; prominent lime green (#ecf874), warm cream, mint, lavender and peach gradients, cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, nostalgic but beautiful."
+  },
+  "generated_at": "2026-07-29T22:41:20.045490+00:00"
+}

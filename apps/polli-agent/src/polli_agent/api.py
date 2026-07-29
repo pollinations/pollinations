@@ -241,11 +241,29 @@ async def _sse_events(
     yield "data: [DONE]\n\n"
 
 
+def _spendable_credential(http_request: Request) -> str | None:
+    """The Pollinations key this request may spend, if any.
+
+    Whatever the caller sent as a bearer. For a delegating community model the
+    gateway makes that a short-lived `ag_` run token in place of the endpoint's
+    saved secret, but the agent does not care which kind of key it holds — it
+    just spends the one it was given.
+    """
+    header = http_request.headers.get("Authorization", "")
+    key = header[7:].strip() if header[:7].lower() == "bearer " else ""
+    return key or None
+
+
 @app.post("/v1/chat/completions")
 async def chat_completions(request: ChatRequest, http_request: Request) -> Any:
-    api_key = http_request.headers.get(
-        "X-Pollinations-Key"
-    ) or http_request.headers.get("Authorization", "").replace("Bearer ", "")
+    api_key = _spendable_credential(http_request)
+    # Fail here rather than part-way through a run: without a credential every
+    # downstream generation 401s anyway, after the caller has already waited.
+    if not api_key and not settings.allow_operator_key:
+        raise HTTPException(
+            status_code=401,
+            detail="Missing API key. Pass it as Authorization: Bearer <key>.",
+        )
     if request.stream:
         return StreamingResponse(
             _sse_events(
@@ -305,7 +323,7 @@ async def chat_completions_get() -> dict[str, Any]:
             "method": "POST",
             "headers": {
                 "Content-Type": "application/json",
-                "Authorization": "Bearer <pollinations-key>",
+                "Authorization": "Bearer <agent-run-token>",
             },
             "body": {
                 "model": "polli",
@@ -331,5 +349,5 @@ async def root() -> dict[str, Any]:
             "models": "GET /v1/models",
             "health": "GET /health",
         },
-        "auth": "Authorization: Bearer <pollinations-key> or X-Pollinations-Key",
+        "auth": "Authorization: Bearer <agent-run-token>",
     }

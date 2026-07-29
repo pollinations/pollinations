@@ -27,6 +27,11 @@ def _request_body(stream: bool) -> dict:
     }
 
 
+# Every request must carry a credential to spend; the gateway supplies a
+# short-lived run token as the bearer.
+_HEADERS = {"Authorization": "Bearer ag_test-token"}
+
+
 def test_stream_true_returns_openai_sse_chunks(monkeypatch):
     async def fake_events(messages, **kwargs):
         yield {"type": "tool_start", "name": "generate_image"}
@@ -41,7 +46,10 @@ def test_stream_true_returns_openai_sse_chunks(monkeypatch):
 
     client = TestClient(api_mod.app)
     with client.stream(
-        "POST", "/v1/chat/completions", json=_request_body(stream=True)
+        "POST",
+        "/v1/chat/completions",
+        json=_request_body(stream=True),
+        headers=_HEADERS,
     ) as resp:
         assert resp.status_code == 200
         assert resp.headers["content-type"].startswith("text/event-stream")
@@ -75,7 +83,10 @@ def test_stream_emits_keepalives_during_silence(monkeypatch):
 
     client = TestClient(api_mod.app)
     with client.stream(
-        "POST", "/v1/chat/completions", json=_request_body(stream=True)
+        "POST",
+        "/v1/chat/completions",
+        json=_request_body(stream=True),
+        headers=_HEADERS,
     ) as resp:
         body = "".join(resp.iter_text())
 
@@ -160,6 +171,73 @@ def test_stream_false_returns_plain_json(monkeypatch):
     monkeypatch.setattr(api_mod, "run_agent", fake_run_agent)
 
     client = TestClient(api_mod.app)
-    resp = client.post("/v1/chat/completions", json=_request_body(stream=False))
+    resp = client.post(
+        "/v1/chat/completions", json=_request_body(stream=False), headers=_HEADERS
+    )
     assert resp.status_code == 200
     assert resp.json()["choices"][0]["message"]["content"] == "plain"
+
+
+def test_request_without_credential_is_rejected():
+    """No credential must fail up front, not part-way through a paid run."""
+    client = TestClient(api_mod.app)
+    resp = client.post("/v1/chat/completions", json=_request_body(stream=False))
+    assert resp.status_code == 401
+
+
+def test_any_bearer_is_spendable(monkeypatch):
+    """The agent spends whatever key it was handed, whichever kind it is."""
+    from polli_agent.config import _current_api_key
+
+    async def fake_run_agent(messages, **kwargs):
+        assert _current_api_key() == "sk_caller_key"
+        return {"text": "ok", "artifacts": [], "iterations": 1}
+
+    monkeypatch.setattr(api_mod, "run_agent", fake_run_agent)
+
+    client = TestClient(api_mod.app)
+    resp = client.post(
+        "/v1/chat/completions",
+        json=_request_body(stream=False),
+        headers={"Authorization": "Bearer sk_caller_key"},
+    )
+    assert resp.status_code == 200
+
+
+def test_agent_run_token_reaches_brain_and_tools(monkeypatch):
+    """The same per-request run token is available to every generation path."""
+    from polli_agent.config import _current_api_key
+    from polli_agent.tools import gen
+
+    run_token = "ag_test-delegated-run-token"
+
+    async def fake_run_agent(messages, **kwargs):
+        assert _current_api_key() == run_token
+        assert gen._key() == run_token
+        return {"text": "delegated", "artifacts": [], "iterations": 1}
+
+    monkeypatch.setattr(api_mod, "run_agent", fake_run_agent)
+
+    client = TestClient(api_mod.app)
+    response = client.post(
+        "/v1/chat/completions",
+        json=_request_body(stream=False),
+        headers={"Authorization": f"Bearer {run_token}"},
+    )
+
+    assert response.status_code == 200
+    assert response.json()["choices"][0]["message"]["content"] == "delegated"
+
+
+def test_operator_key_fallback_is_opt_in(monkeypatch):
+    """With POLLI_ALLOW_OPERATOR_KEY set, local/dev use still works unauthenticated."""
+
+    async def fake_run_agent(messages, **kwargs):
+        return {"text": "plain", "artifacts": [], "iterations": 1}
+
+    monkeypatch.setattr(api_mod, "run_agent", fake_run_agent)
+    monkeypatch.setattr(api_mod.settings, "allow_operator_key", True)
+
+    client = TestClient(api_mod.app)
+    resp = client.post("/v1/chat/completions", json=_request_body(stream=False))
+    assert resp.status_code == 200

@@ -18,7 +18,7 @@ from typing import Any
 import httpx
 from openai import AsyncOpenAI
 
-from polli_agent.config import _current_api_key, settings
+from polli_agent.config import resolve_api_key, settings
 
 logger = logging.getLogger(__name__)
 
@@ -43,7 +43,7 @@ def _http_client() -> httpx.AsyncClient:
 
 
 def _key() -> str:
-    return _current_api_key() or settings.openai_api_key
+    return resolve_api_key()
 
 
 def _base() -> str:

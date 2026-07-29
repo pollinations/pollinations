@@ -21,9 +21,10 @@ USER polli
 ENV PYTHONUNBUFFERED=1 \
     POLLI_TEMP_DIR=/workspace \
     OPENAI_BASE_URL=https://gen.pollinations.ai
-# NOTE: OPENAI_API_KEY is intentionally NOT baked in. The per-request key
-# arrives via the X-Pollinations-Key / Authorization header, so a bash("env")
-# call inside the sandbox cannot leak a server-wide credential.
+# NOTE: OPENAI_API_KEY is intentionally NOT baked in. The caller's key arrives
+# via Authorization: Bearer — a short-lived ag_ run token when the gateway is
+# delegating — so a bash("env") call inside the sandbox cannot leak a
+# server-wide credential.
 
 EXPOSE 8000
 CMD ["uvicorn", "polli_agent.api:app", "--host", "0.0.0.0", "--port", "8000"]

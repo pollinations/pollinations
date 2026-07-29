@@ -9,7 +9,7 @@ from typing import Any
 
 from openai import AsyncOpenAI
 
-from polli_agent.config import _current_api_key, settings
+from polli_agent.config import resolve_api_key, settings
 from polli_agent.knowledge import build_system_prompt
 from polli_agent.toolset import TOOL_SCHEMAS, dispatch, parse_args
 
@@ -22,7 +22,7 @@ def _client() -> AsyncOpenAI:
     # fail fast instead so the loop surfaces the error and can retry.
     return AsyncOpenAI(
         base_url=f"{settings.openai_base_url.rstrip('/')}/v1",
-        api_key=_current_api_key() or settings.openai_api_key,
+        api_key=resolve_api_key(),
         timeout=settings.brain_timeout_seconds,
         max_retries=1,
     )

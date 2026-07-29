@@ -73,7 +73,7 @@ flux → fast general, seedance/veo → video, wan → start/end-frame). Brain =
 
 ## Security (deploy gate)
 
-Per-request Pollinations key flows header (`X-Pollinations-Key` / `Bearer`) → contextvar → all brain
+Per-request agent run token flows `Authorization: Bearer ag_…` → contextvar → all brain
 & tool calls. The key is **not baked into the image env**, so `bash("env")` cannot exfiltrate it.
 For public exposure, `bash` runs only inside the container sandbox (already the deployment model).
 

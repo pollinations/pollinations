@@ -1,0 +1,34 @@
+{
+  "pr_number": 12855,
+  "title": "Make Polli more concise and independent",
+  "author": "Itachi-1824",
+  "url": "https://github.com/pollinations/pollinations/pull/12855",
+  "merged_at": "2026-07-29T20:49:46Z",
+  "labels": [],
+  "pr_body_excerpt": "Polli was too willing to follow oversized requests and return long replies.\n\nThis makes it use its own judgment, prefer short answers, refuse bulk Discord transcripts, choose an explicit `top_n` for searches, and use display names naturally while keeping usernames available for tools.\n\nTested with `python -m unittest discover -s tests -v`.",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Polli grew a backbone",
+    "blurb": "Polli now knows when a request is too big for one tidy reply. She brings shorter answers, sensible search limits, and a polite no to bulk Discord transcript hauling.",
+    "summary": "Updated the Polli app to favor concise independent answers, refuse bulk Discord transcript requests, require an explicit top_n for searches, and use display names naturally while retaining usernames for tools.",
+    "impact": "Polli users get shorter, more deliberate responses and focused Discord search results instead of oversized transcript dumps.",
+    "keywords": [
+      "polli",
+      "discord",
+      "search",
+      "top_n",
+      "bot",
+      "prompts"
+    ],
+    "visual_concept": "Depict Polli as a thoughtful little librarian bee in a cozy Discord-inspired garden study, wearing tiny reading glasses and choosing a small neat stack of message scrolls labeled top_n while gently setting an enormous transcript pile aside. Include a retro terminal, code-plants, and a few friendly flowers to show careful tool use and concise judgment.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow bee mascot with dark brown stripes, pink blush, light blue wings, and tiny reading glasses, in a warm garden study selecting a small tidy stack of Discord message scrolls beside a retro terminal glowing lime green (#ecf874), while an enormous transcript pile rests politely to the side. Code-plants and pastel flowers grow around the desk; cozy 8-bit pixel art, soft pastel gradients, warm lighting, retro gaming vibes, with small pixel-font text: 'top_n'."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-29/PR-12855.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow bee mascot with dark brown stripes, pink blush, light blue wings, and tiny reading glasses, in a warm garden study selecting a small tidy stack of Discord message scrolls beside a retro terminal glowing lime green (#ecf874), while an enormous transcript pile rests politely to the side. Code-plants and pastel flowers grow around the desk; cozy 8-bit pixel art, soft pastel gradients, warm lighting, retro gaming vibes, with small pixel-font text: 'top_n'."
+  },
+  "generated_at": "2026-07-29T20:50:41.059022+00:00"
+}

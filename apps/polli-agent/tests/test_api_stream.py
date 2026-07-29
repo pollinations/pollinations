@@ -185,15 +185,23 @@ def test_request_without_credential_is_rejected():
     assert resp.status_code == 401
 
 
-def test_long_lived_pollinations_bearer_is_not_spendable():
-    """An endpoint owner's saved sk_ must never become caller spend authority."""
+def test_any_bearer_is_spendable(monkeypatch):
+    """The agent spends whatever key it was handed, whichever kind it is."""
+    from polli_agent.config import _current_api_key
+
+    async def fake_run_agent(messages, **kwargs):
+        assert _current_api_key() == "sk_caller_key"
+        return {"text": "ok", "artifacts": [], "iterations": 1}
+
+    monkeypatch.setattr(api_mod, "run_agent", fake_run_agent)
+
     client = TestClient(api_mod.app)
     resp = client.post(
         "/v1/chat/completions",
         json=_request_body(stream=False),
-        headers={"Authorization": "Bearer sk_endpoint_access_token"},
+        headers={"Authorization": "Bearer sk_caller_key"},
     )
-    assert resp.status_code == 401
+    assert resp.status_code == 200
 
 
 def test_agent_run_token_reaches_brain_and_tools(monkeypatch):

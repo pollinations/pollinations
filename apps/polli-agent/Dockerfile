@@ -21,8 +21,9 @@ USER polli
 ENV PYTHONUNBUFFERED=1 \
     POLLI_TEMP_DIR=/workspace \
     OPENAI_BASE_URL=https://gen.pollinations.ai
-# NOTE: OPENAI_API_KEY is intentionally NOT baked in. The short-lived run token
-# arrives via Authorization: Bearer ag_..., so a bash("env") call inside the
+# NOTE: OPENAI_API_KEY is intentionally NOT baked in. The caller's key arrives
+# via Authorization: Bearer (a short-lived ag_ run token when the gateway is
+# delegating), so a bash("env") call inside the
 # sandbox cannot leak a server-wide credential.
 
 EXPOSE 8000

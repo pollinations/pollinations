@@ -242,16 +242,16 @@ async def _sse_events(
 
 
 def _spendable_credential(http_request: Request) -> str | None:
-    """The short-lived agent run token this request may spend, if any.
+    """The Pollinations key this request may spend, if any.
 
-    The gateway sends a delegating community model a short-lived `ag_` run token
-    as its bearer, in place of the endpoint's own saved secret. Long-lived `sk_`
-    and `pk_` keys are deliberately rejected so the agent never holds a caller's
-    original key or spends an endpoint owner's saved key.
+    Whatever the caller sent as a bearer. For a delegating community model the
+    gateway makes that a short-lived `ag_` run token in place of the endpoint's
+    saved secret, but the agent does not care which kind of key it holds — it
+    just spends the one it was given.
     """
     header = http_request.headers.get("Authorization", "")
     key = header[7:].strip() if header[:7].lower() == "bearer " else ""
-    return key if key.startswith("ag_") else None
+    return key or None
 
 
 @app.post("/v1/chat/completions")
@@ -262,7 +262,7 @@ async def chat_completions(request: ChatRequest, http_request: Request) -> Any:
     if not api_key and not settings.allow_operator_key:
         raise HTTPException(
             status_code=401,
-            detail=("Missing agent run token. Pass it as Authorization: Bearer ag_…"),
+            detail="Missing API key. Pass it as Authorization: Bearer <key>.",
         )
     if request.stream:
         return StreamingResponse(

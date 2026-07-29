@@ -231,6 +231,12 @@ export const communityEndpoint = sqliteTable("community_endpoint", {
   completionReasoningPrice: real("completion_reasoning_price").default(0).notNull(),
   completionAudioPrice: real("completion_audio_price").default(0).notNull(),
   completionImagePrice: real("completion_image_price").default(0).notNull(),
+  // Admin-only, off by default: it hands a third party spend authority over
+  // whoever called the model. See mintDelegatedToken in
+  // gen.pollinations.ai/src/text/communityEndpoint.ts.
+  delegatesGeneration: integer("delegates_generation", { mode: "boolean" })
+    .default(false)
+    .notNull(),
   disabledAt: integer("disabled_at", { mode: "timestamp" }),
   disabledReason: text("disabled_reason"),
   disabledBy: text("disabled_by"),

@@ -19,6 +19,8 @@ const RUN_TOKEN_PREFIX = "ag_";
  * spend unless the parent key carries a budget.
  */
 const TTL_SECONDS = 1800;
+/** Slack when bounding lifetime at verify time, for clock skew between edges. */
+const CLOCK_SKEW_SECONDS = 60;
 
 /**
  * Marks who a token was minted for. Signer and verifier share this constant, so
@@ -166,6 +168,12 @@ export async function verifyRunToken(
     }
     if (payload.aud !== RUN_TOKEN_AUDIENCE) return null;
     if (payload.exp * 1000 <= now) return null;
+    // `signRunToken` is exported, so a caller could bypass mintRunToken and set
+    // any exp. Bound the lifetime here too, with slack for edge clock skew, so
+    // no token outlives the policy regardless of how it was minted.
+    if (payload.exp * 1000 > now + (TTL_SECONDS + CLOCK_SKEW_SECONDS) * 1000) {
+        return null;
+    }
 
     return payload;
 }

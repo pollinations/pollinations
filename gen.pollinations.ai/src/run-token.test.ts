@@ -10,6 +10,8 @@ import {
     signRunToken,
     verifyRunToken,
 } from "@shared/auth/run-token.ts";
+import { getUserBalance } from "@shared/billing/balance.ts";
+import { handleBalanceDeduction } from "@shared/billing/track-helpers.ts";
 import { apikey as apikeyTable } from "@shared/db/better-auth.ts";
 import { createTestApiKey } from "@shared/test/fixtures/api-keys.ts";
 import { sql } from "drizzle-orm";
@@ -117,6 +119,22 @@ describe("run token signing", () => {
             "other-secret",
         );
         expect(await verifyRunToken(token, SECRET)).toBe(null);
+    });
+
+    it("rejects a hand-signed token that outlives the ttl policy", async () => {
+        const now = 1_700_000_000_000;
+        const token = await signRunToken(
+            {
+                sub: "user-1",
+                pk: "key-1",
+                run: "run-1",
+                agent: "a",
+                aud: RUN_TOKEN_AUDIENCE,
+                exp: Math.floor(now / 1000) + 86_400,
+            },
+            SECRET,
+        );
+        expect(await verifyRunToken(token, SECRET, now)).toBe(null);
     });
 
     it("rejects a token addressed to another audience", async () => {
@@ -242,6 +260,45 @@ describe("run token authentication", () => {
         });
 
         expect(result).toBe(null);
+    });
+
+    it("spends the parent key's budget and the parent user's wallet", async () => {
+        const parent = await createTestApiKey({
+            pollenBudget: 5,
+            user: { tierBalance: 2 },
+        });
+        const token = await mintRunToken(
+            {
+                userId: parent.userId,
+                apiKeyId: parent.id,
+                runId: "run-1",
+                agentId: "a",
+            },
+            SECRET,
+        );
+
+        const result = await authenticateApiKeyRequest({
+            request: requestWith(token),
+            env: authEnv,
+        });
+
+        await handleBalanceDeduction({
+            db,
+            isBilledUsage: true,
+            totalPrice: 1,
+            userId: result?.user?.id,
+            apiKeyId: result?.apiKey.id,
+            apiKeyPollenBalance: result?.apiKey.pollenBalance,
+        });
+
+        expect(
+            (await getUserBalance(db, parent.userId)).tierBalance,
+        ).toBeCloseTo(1, 10);
+        const [row] = await db
+            .select({ pollenBalance: apikeyTable.pollenBalance })
+            .from(apikeyTable)
+            .where(sql`${apikeyTable.id} = ${parent.id}`);
+        expect(row.pollenBalance).toBeCloseTo(4, 10);
     });
 
     it("is rejected when the worker has no run token secret", async () => {

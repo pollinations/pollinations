@@ -1,3 +1,7 @@
+- **2026-07-28** – **🎬 Wan gets more runway** Long Wan 2.7 text-to-video and image-to-video generations now have up to 15 minutes to finish. The machine is permitted to think in frames.
+- **2026-07-28** – **✨ Story seeds, illustrated** Turn a theme into a multi-page story with AI-written text, images, and optional narration. [Try it](https://eiigen.github.io/storystudio-app) <!-- app -->
+- **2026-07-28** – **🎨 Pixels, meet paths** Convert raster artwork into scalable SVG paths for reuse at any size. [Try it](https://vtrace-two.vercel.app) <!-- app -->
+- **2026-07-28** – **🚀 A studio grew in the garden** One community workspace for switching between GPT, Claude, Gemini, and DeepSeek, then generating images with Pollinations. [Try it](https://sashafilipov.github.io/pollinations-ai-studio) <!-- app -->
 - **2026-07-27** – **🎨 Community image edits** Validated community models can now edit reference images through the OpenAI-compatible `/v1/images/edits` endpoint. Send pixels in; receive altered pixels back. [API Docs](https://gen.pollinations.ai/docs)
 - **2026-07-27** – **🤖 NVIDIA Nemotron 3 Ultra** `nemotron` is now available for 262K-context reasoning, tool use, and structured JSON through the standard text API. [Try it](https://pollinations.ai/play)
 - **2026-07-27** – **⚡ More reliable Z-Image capacity** New GPU workers now join production only after proving they are healthy; the canary handled 102/102 requests with a 4.69s p50.

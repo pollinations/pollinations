@@ -1,0 +1,34 @@
+{
+  "pr_number": 12844,
+  "title": "feat: add agent run tokens",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/12844",
+  "merged_at": "2026-07-29T17:30:00Z",
+  "labels": [],
+  "pr_body_excerpt": "Short-lived delegated credentials let an approved community agent spend a caller's pollen without ever receiving their original `sk_`.\n\n- Adds an `ag_` JWT with a 30-minute hard maximum, signed with domain-separated `BETTER_AUTH_SECRET`; no new secret is required.\n- Resolves each token to the live parent key, so billing, budgets, attribution, bans, and revocation keep using existing paths while parent account permissions are dropped.\n- Accepts run tokens in Gen and Enter as Bearer credentials only. Run tokens cannot call community models.\n- Adds the admin-only `delegates_generation` flag, off by default. Delegating endpoints must have zero wrapper prices.\n\nRegister the agent through the existing community-model flow, then enable delegation:\n\n```sql\nUPDATE community_endpoint SET delegates_generation = 1 WHERE id = '<endpoint-id>';\n```\n\nCallers use the registered model through Gen with their normal API key. While proxying that request, Gen mints a fresh run token and sends it to the endpoint as `Authorization: Bearer ag_…` instead of the endpoint's saved bearer. There is no public mint API.\n\nTemporary limitation: Polli callers need a key with access to all models; tracked in #12850.\n\nAgent-side handling is #12842. Supersedes #12833 and #12835.",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "The hive lends a tiny key",
+    "blurb": "Approved community agents can now run generations with a short-lived delegated credential, not a caller’s original API key. The pollen still follows the same trail; the key just gets to stay home.",
+    "summary": "Added short-lived `ag_` agent run JWTs, valid for up to 30 minutes, so approved community endpoints can spend a caller’s Pollen through Gen without receiving the caller’s original `sk_` API key.",
+    "impact": "Registered community endpoints with the new admin-only `delegates_generation` flag can receive fresh Bearer run tokens while existing parent-key billing, budgets, attribution, bans, and revocation continue to apply.",
+    "keywords": [
+      "agent-run-tokens",
+      "community-models",
+      "delegation",
+      "authentication",
+      "pollen",
+      "gen-api"
+    ],
+    "visual_concept": "Depict delegated access as Polli safely handing a tiny temporary green pass to a friendly community-agent terminal through a garden gate, while her large original key remains safely tucked away. A glowing timer/hourglass communicates the 30-minute lifetime; a Pollen jar and ledger beside the terminal show that usage still returns to the caller’s existing account trail. Include code-plants and the monitor robot as the eager approved endpoint receiving the pass.",
+    "image_prompt": "Cozy pixel art scene in a warm garden hackerspace: Polli, the cute yellow-and-brown striped bee mascot with black oval eyes, pink rectangular blush, light blue wings, and a tiny locksmith apron, hands a small glowing lime green (#ecf874) pass marked \"ag_\" through a flower-covered gateway to a cute CRT monitor robot, while Polli’s larger original key rests safely in a locked pastel drawer beside a Pollen jar and tiny billing ledger; a friendly pixel hourglass shows \"30 MIN\" and code-plants sprout around the terminals. Cozy 8-bit pixel art aesthetic, soft lime green and pastel cream-lavender gradients, chunky retro sprites, warm lighting, subtle CRT glow, retro gaming vibes like Stardew Valley or A Short Hike, emotionally warm and nostalgic."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-29/PR-12844.jpg",
+    "prompt": "Cozy pixel art scene in a warm garden hackerspace: Polli, the cute yellow-and-brown striped bee mascot with black oval eyes, pink rectangular blush, light blue wings, and a tiny locksmith apron, hands a small glowing lime green (#ecf874) pass marked \"ag_\" through a flower-covered gateway to a cute CRT monitor robot, while Polli’s larger original key rests safely in a locked pastel drawer beside a Pollen jar and tiny billing ledger; a friendly pixel hourglass shows \"30 MIN\" and code-plants sprout around the terminals. Cozy 8-bit pixel art aesthetic, soft lime green and pastel cream-lavender gradients, chunky retro sprites, warm lighting, subtle CRT glow, retro gaming vibes like Stardew Valley or A Short Hike, emotionally warm and nostalgic."
+  },
+  "generated_at": "2026-07-29T17:30:59.854684+00:00"
+}

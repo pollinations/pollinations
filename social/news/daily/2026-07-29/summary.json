@@ -1,0 +1,43 @@
+{
+  "date": "2026-07-29",
+  "period_start": "2026-07-29",
+  "period_end": "2026-07-29",
+  "title": "Polli-agent is now a public multimodal router",
+  "summary": "A new public multimodal agent, safer agent delegation, a sharper Polli, and Gemini Search back on its native path.\n\npolli-agent landed as an OpenAI-compatible streaming chat endpoint that can coordinate text, images, audio, video, web search, and sandboxed media tools through a tool-calling loop. It is now wired into the app deployment pipeline and reachable at its public Polli hostnames, rather than existing as a very capable folder.\n\nApproved community endpoints can now receive short-lived agent run tokens for generation requests. The delegated tokens let an agent work within the caller's existing controls and attribution without exposing the original API key.\n\nPolli now handles Discord GIFV embeds by sending vision models a usable preview image instead of repeatedly feeding them undecodable video URLs. Its responses and search behavior were also tightened up: shorter independent answers, explicit result limits, and fewer enormous transcript-shaped objects.",
+  "pr_count": 8,
+  "prs": [
+    {
+      "number": 12702,
+      "date": "2026-07-29"
+    },
+    {
+      "number": 12814,
+      "date": "2026-07-29"
+    },
+    {
+      "number": 12838,
+      "date": "2026-07-29"
+    },
+    {
+      "number": 12839,
+      "date": "2026-07-29"
+    },
+    {
+      "number": 12844,
+      "date": "2026-07-29"
+    },
+    {
+      "number": 12852,
+      "date": "2026-07-29"
+    },
+    {
+      "number": 12855,
+      "date": "2026-07-29"
+    },
+    {
+      "number": 12857,
+      "date": "2026-07-29"
+    }
+  ],
+  "generated_at": "2026-07-30T07:02:29.361217+00:00"
+}

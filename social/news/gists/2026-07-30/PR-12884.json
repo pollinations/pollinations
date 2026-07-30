@@ -1,0 +1,34 @@
+{
+  "pr_number": 12884,
+  "title": "refactor: rename polli-agent to weaver",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/12884",
+  "merged_at": "2026-07-30T14:56:51Z",
+  "labels": [],
+  "pr_body_excerpt": "- `apps/polli-agent` → `apps/weaver`, `src/polli_agent` → `src/weaver`\n- Worker / container class / DO binding: `polli-agent`, `PolliContainer`, `POLLI` → `weaver`, `WeaverContainer`, `WEAVER`\n- Exposed model id `polli` → `weaver`\n- `POLLI_*` env vars deliberately unchanged — renaming them would make an existing `.env` be silently ignored rather than fail loudly\n\nAlready deployed and verified from this branch via `workflow_dispatch` before merging:\n- 48 passed / 8 skipped (unchanged from before the rename)\n- `weaver.pollinations.ai` serving, `/v1/models` returns `weaver`\n- Delegated call through `voodoohop/weaver`: 200 in 4.5s, billed to caller\n\nLeaves the old `polli-agent` worker + container orphaned; cleanup is a follow-up.",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Polli learned to weave",
+    "blurb": "The agent has a new name and a properly woven address. Meet Weaver: the same capable helper, now available as the `weaver` model at weaver.pollinations.ai.",
+    "summary": "Renamed the deployed `polli-agent` app, Worker, Durable Object binding, and exposed model ID from `polli` to `weaver`, with `weaver.pollinations.ai` verified for delegated calls.",
+    "impact": "Developers can now discover `weaver` through `/v1/models` and invoke it via `voodoohop/weaver`, while existing `POLLI_*` environment variables continue to work unchanged.",
+    "keywords": [
+      "weaver",
+      "agent",
+      "models",
+      "cloudflare-workers",
+      "delegated-calls",
+      "apps"
+    ],
+    "visual_concept": "Depict the renamed agent as a cozy garden weaver: Polli uses a tiny loom to weave glowing threads of code into a tapestry labeled WEAVER, with a friendly CRT monitor robot helping hold the thread. Include a small retro terminal showing `weaver.pollinations.ai`, plus flowers and code-vines to represent the deployed model and its new home.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light-blue translucent wings, wearing a tiny weaver's cap as she operates a little loom weaving glowing code threads into a tapestry reading \"WEAVER\"; a cute chunky CRT monitor robot eagerly holds a thread beside a retro terminal labeled \"weaver.pollinations.ai\", surrounded by blooming code-plants and vines. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, subtle CRT glow, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-30/PR-12884.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light-blue translucent wings, wearing a tiny weaver's cap as she operates a little loom weaving glowing code threads into a tapestry reading \"WEAVER\"; a cute chunky CRT monitor robot eagerly holds a thread beside a retro terminal labeled \"weaver.pollinations.ai\", surrounded by blooming code-plants and vines. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, subtle CRT glow, nostalgic but beautiful."
+  },
+  "generated_at": "2026-07-30T14:57:51.513577+00:00"
+}

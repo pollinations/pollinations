@@ -112,11 +112,11 @@
     "title": "SlidePainter",
     "description": "AI-powered slide image generator by Pollinations"
   },
-  "polli-agent": {
-    "subdomain": "polli",
+  "weaver": {
+    "subdomain": "weaver",
     "deployTarget": "worker",
     "workerEntrypoint": "worker.js",
-    "title": "Polli Agent | pollinations.ai",
-    "description": "OpenAI-compatible agent that chains image, video and audio generation"
+    "title": "Weaver | pollinations.ai",
+    "description": "Weaves image, video and audio generation into one result"
   }
 }

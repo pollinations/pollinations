@@ -147,7 +147,7 @@ function normalizeComparable(value) {
 function findCatalogDuplicate(
     submission,
     apps = parseApps().apps,
-    githubUsername = "",
+    githubUserId = "",
 ) {
     const appUrl = normalizeComparable(submission.appUrl);
     const repoUrl = normalizeComparable(submission.repoUrl);
@@ -157,10 +157,9 @@ function findCatalogDuplicate(
             (appUrl && normalizeComparable(app.webUrl) === appUrl) ||
             (repoUrl && normalizeComparable(app.repoUrl) === repoUrl) ||
             (name &&
-                githubUsername &&
+                githubUserId &&
                 normalizeComparable(app.name) === name &&
-                normalizeComparable(app.githubUsername).replace(/^@/, "") ===
-                    normalizeComparable(githubUsername).replace(/^@/, ""))
+                String(app.githubUserId) === String(githubUserId))
         );
     });
 }

@@ -100,7 +100,11 @@ def get_project_issues(project_id: str, include_prs: bool = False, priority_fiel
                                 body
                                 state
                                 createdAt
-                                author { login ... on User { databaseId } }
+                                author {
+                                    login
+                                    ... on User { databaseId }
+                                    ... on Bot { databaseId }
+                                }
                                 labels(first: 20) {
                                     nodes { name }
                                 }
@@ -113,7 +117,11 @@ def get_project_issues(project_id: str, include_prs: bool = False, priority_fiel
                                 body
                                 state
                                 createdAt
-                                author { login ... on User { databaseId } }
+                                author {
+                                    login
+                                    ... on User { databaseId }
+                                    ... on Bot { databaseId }
+                                }
                                 labels(first: 20) {
                                     nodes { name }
                                 }
@@ -318,17 +326,17 @@ def add_labels(issue_number: int, labels: list, dry_run: bool):
         log_error(f"Failed to add labels to #{issue_number}: {r.status_code}")
 
 
-def get_real_author(author: str, body: str) -> str:
+def get_real_author(author: str, author_id: int | None, body: str) -> tuple[str, int | None]:
     """Extract real author from Discord UID if issue was created by bot."""
-    if author and "pollinations-ai" in author.lower():
+    if author_id == CONFIG["discord_relay_bot_id"]:
         uid_match = re.search(r'\(UID:\s*`?(\d+)`?\)', body or "")
         if uid_match:
             discord_uid = uid_match.group(1)
             github_user = CONFIG.get("discord_uid_to_github", {}).get(discord_uid)
             if github_user:
-                log_debug(f"Mapped Discord UID {discord_uid} to GitHub user {github_user}")
-                return github_user
-    return author
+                log_debug(f"Mapped Discord UID {discord_uid} to GitHub user {github_user['login']} (id={github_user['id']})")
+                return github_user["login"], github_user["id"]
+    return author, author_id
 
 
 def main():
@@ -380,15 +388,17 @@ def main():
             issue_number = issue["number"]
             title = issue["title"]
             body = issue.get("body", "") or ""
-            author = (issue.get("author") or {}).get("login", "")
+            author_record = issue.get("author") or {}
+            author = author_record.get("login", "")
+            author_id = author_record.get("databaseId")
             is_pr = issue.get("_is_pr", False)
             content_node_id = issue.get("id")
             source_item_id = issue.get("_item_id")
 
             log_debug(f"\n--- Migrating #{issue_number} ({'PR' if is_pr else 'issue'}): {title[:60]}...")
 
-            real_author = get_real_author(author, body)
-            is_internal = pm.is_org_member(real_author)
+            real_author, real_author_id = get_real_author(author, author_id, body)
+            is_internal = pm.is_org_member(real_author_id)
             classification = classify_issue(title, body, real_author, is_internal, is_pr=is_pr)
             if not classification:
                 log_error(f"Failed to classify #{issue_number}; skipping migration")
@@ -426,7 +436,9 @@ def main():
         issue_number = issue["number"]
         title = issue["title"]
         body = issue.get("body", "") or ""
-        author = issue.get("author", {}).get("login", "")
+        author_record = issue.get("author") or {}
+        author = author_record.get("login", "")
+        author_id = author_record.get("databaseId")
         
         log_debug(f"\n--- Processing #{issue_number}: {title[:50]}...")
         
@@ -450,8 +462,8 @@ def main():
                 remove_project_labels(issue_number, project_key, args.dry_run)
             
             # Classify - resolve real author from Discord UID if bot-created
-            real_author = get_real_author(author, body)
-            is_internal = pm.is_org_member(real_author)
+            real_author, real_author_id = get_real_author(author, author_id, body)
+            is_internal = pm.is_org_member(real_author_id)
             log_debug(f"Author: {author} -> Real: {real_author}, Internal: {is_internal}")
             classification = classify_issue(title, body, real_author, is_internal)
             
@@ -468,8 +480,8 @@ def main():
         # Priority processing (needs classification)
         if needs_priority:
             if not classification:
-                real_author = get_real_author(author, body)
-                is_internal = pm.is_org_member(real_author)
+                real_author, real_author_id = get_real_author(author, author_id, body)
+                is_internal = pm.is_org_member(real_author_id)
                 classification = classify_issue(title, body, real_author, is_internal)
             
             if classification:
@@ -477,9 +489,8 @@ def main():
                 if project_key == "support" and priority not in {"High", "Low"}:
                     log_debug(f"Backfill: AI returned non-{{High,Low}} priority '{priority}' for #{issue_number}; clamping to Low")
                     priority = "Low"
-                author_id = (issue.get("author") or {}).get("databaseId")
-                if project_key == "support" and is_paid_customer(author_id):
-                    log_debug(f"Author {author} (id={author_id}) is a paid customer; overriding priority to Urgent for #{issue_number}")
+                if project_key == "support" and is_paid_customer(real_author_id):
+                    log_debug(f"Author {real_author} (id={real_author_id}) is a paid customer; overriding priority to Urgent for #{issue_number}")
                     priority = "Urgent"
                 priority_option = project.get("priority_options", {}).get(priority)
                 item_id = issue.get("_item_id")

@@ -2,6 +2,7 @@ import {
     defineCostVariants,
     longContextAbove,
     longContextAtLeast,
+    totalPromptTokens,
 } from "./cost-variants";
 import {
     GEMINI_3_SEARCH_BILLING,
@@ -1835,14 +1836,54 @@ export const TEXT_SERVICES = {
         addedDate: new Date("2026-07-30").getTime(),
         paidOnly: true,
         priceMultiplier: 1,
-        // OpenRouter raises rates above 32K and 256K prompt tokens.
-        // Pollinations charges the base tier and absorbs the higher tiers.
+        // The pinned Alibaba endpoint reprices the whole request at its
+        // inclusive 32K and 256K prompt-token boundaries.
         cost: {
             promptTextTokens: perMillion(0.03),
             promptCachedTokens: perMillion(0.006),
             promptCacheWriteTokens: perMillion(0.038),
+            promptImageTokens: perMillion(0.03),
+            promptVideoTokens: perMillion(0.03),
             completionTextTokens: perMillion(0.13),
         },
+        ...defineCostVariants(
+            {
+                context_32k: {
+                    promptTextTokens: perMillion(0.1),
+                    promptCachedTokens: perMillion(0.02),
+                    promptCacheWriteTokens: perMillion(0.125),
+                    promptImageTokens: perMillion(0.1),
+                    promptVideoTokens: perMillion(0.1),
+                    completionTextTokens: perMillion(0.4),
+                },
+                context_256k: {
+                    promptTextTokens: perMillion(0.2),
+                    promptCachedTokens: perMillion(0.04),
+                    promptCacheWriteTokens: perMillion(0.25),
+                    promptImageTokens: perMillion(0.2),
+                    promptVideoTokens: perMillion(0.2),
+                    completionTextTokens: perMillion(0.8),
+                },
+            },
+            ({ usage }) => {
+                const promptTokens = totalPromptTokens(usage);
+                if (promptTokens >= 256_000) return "context_256k";
+                if (promptTokens >= 32_000) return "context_32k";
+                return undefined;
+            },
+            {
+                context_32k: {
+                    label: "32K+ context",
+                    description:
+                        "At least 32,000 prompt tokens; the higher rates apply to the whole request.",
+                },
+                context_256k: {
+                    label: "256K+ context",
+                    description:
+                        "At least 256,000 prompt tokens; the highest rates apply to the whole request.",
+                },
+            },
+        ),
         title: "Qwen3.7 Flash",
         description:
             "Ultra-low-cost multimodal reasoning for agents and visual tasks",

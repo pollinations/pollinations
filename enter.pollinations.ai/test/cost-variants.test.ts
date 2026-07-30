@@ -99,6 +99,93 @@ describe("long-context cost variants", () => {
         ).toBe("long_context");
     });
 
+    it.each([
+        [31_999, undefined],
+        [32_000, "context_32k"],
+        [32_001, "context_32k"],
+        [255_999, "context_32k"],
+        [256_000, "context_256k"],
+        [256_001, "context_256k"],
+    ] as const)("Qwen3.7 Flash selects the expected sheet at %s prompt tokens", (promptTextTokens, expectedVariant) => {
+        expect(bill("qwen3.7-flash", { promptTextTokens }).costVariant).toBe(
+            expectedVariant,
+        );
+    });
+
+    it("Qwen3.7 Flash counts cached and media tokens toward its tiers", () => {
+        expect(
+            bill("qwen3.7-flash", {
+                promptTextTokens: 20_000,
+                promptCachedTokens: 5_000,
+                promptCacheWriteTokens: 2_000,
+                promptImageTokens: 2_000,
+                promptVideoTokens: 3_000,
+            }).costVariant,
+        ).toBe("context_32k");
+        expect(
+            bill("qwen3.7-flash", {
+                promptTextTokens: 200_000,
+                promptCachedTokens: 20_000,
+                promptCacheWriteTokens: 10_000,
+                promptImageTokens: 10_000,
+                promptVideoTokens: 16_000,
+            }).costVariant,
+        ).toBe("context_256k");
+    });
+
+    it("Qwen3.7 Flash applies every advertised token rate per tier", () => {
+        const expectedRates = [
+            [
+                31_999,
+                undefined,
+                {
+                    promptTextTokens: 0.03,
+                    promptCachedTokens: 0.006,
+                    promptCacheWriteTokens: 0.038,
+                    promptImageTokens: 0.03,
+                    promptVideoTokens: 0.03,
+                    completionTextTokens: 0.13,
+                },
+            ],
+            [
+                32_000,
+                "context_32k",
+                {
+                    promptTextTokens: 0.1,
+                    promptCachedTokens: 0.02,
+                    promptCacheWriteTokens: 0.125,
+                    promptImageTokens: 0.1,
+                    promptVideoTokens: 0.1,
+                    completionTextTokens: 0.4,
+                },
+            ],
+            [
+                256_000,
+                "context_256k",
+                {
+                    promptTextTokens: 0.2,
+                    promptCachedTokens: 0.04,
+                    promptCacheWriteTokens: 0.25,
+                    promptImageTokens: 0.2,
+                    promptVideoTokens: 0.2,
+                    completionTextTokens: 0.8,
+                },
+            ],
+        ] as const;
+
+        for (const [promptTextTokens, variant, rates] of expectedRates) {
+            const billing = bill("qwen3.7-flash", { promptTextTokens });
+            expect(billing.costVariant).toBe(variant);
+            for (const [usageType, perMillionTokens] of Object.entries(rates)) {
+                expect(
+                    billing.priceDefinition[
+                        usageType as keyof typeof billing.priceDefinition
+                    ],
+                ).toBeCloseTo(perMillionTokens / 1e6, 15);
+            }
+        }
+    });
+
     it("reprices the whole GPT-5.5 request one token above 272K", () => {
         const billing = bill("openai-large", {
             promptTextTokens: 272_001,

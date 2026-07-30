@@ -1,6 +1,7 @@
 import {
     COMMUNITY_ENDPOINT_PRICE_FIELDS,
     type CommunityEndpointImagePricing,
+    type CommunityEndpointInputModality,
     type CommunityEndpointModality,
     type CommunityEndpointPriceField,
     type CommunityEndpointPriceKey,
@@ -25,6 +26,7 @@ export type CommunityEndpoint = {
     modality: CommunityEndpointModality;
     imagePricing: CommunityEndpointImagePricing;
     supportsImageEdits: boolean;
+    inputModalities: CommunityEndpointInputModality[];
     baseUrl: string;
     upstreamModel: string;
     // private → owner-only, shown only to the owner, no owner-set price;
@@ -41,6 +43,8 @@ export type EndpointFormState = {
     imagePricing: CommunityEndpointImagePricing;
     // Set only when the endpoint test receives a valid image edit response.
     supportsImageEdits: boolean;
+    // Owner-declared input modalities; "text" is always included.
+    inputModalities: CommunityEndpointInputModality[];
     name: string;
     title: string;
     description: string;
@@ -57,6 +61,7 @@ export type EndpointPayload = {
     modality: CommunityEndpointModality;
     imagePricing: CommunityEndpointImagePricing;
     supportsImageEdits: boolean;
+    inputModalities: CommunityEndpointInputModality[];
     name: string;
     title: string;
     description: string;
@@ -91,6 +96,7 @@ export const emptyForm: EndpointFormState = {
     modality: "text",
     imagePricing: "request",
     supportsImageEdits: false,
+    inputModalities: ["text"],
     name: "",
     title: "",
     description: "",
@@ -177,6 +183,7 @@ export function endpointToForm(endpoint: CommunityEndpoint): EndpointFormState {
         modality: endpoint.modality,
         imagePricing: endpoint.imagePricing,
         supportsImageEdits: endpoint.supportsImageEdits,
+        inputModalities: endpoint.inputModalities ?? ["text"],
         name: endpoint.name,
         title: endpoint.title,
         description: endpoint.description ?? "",
@@ -276,6 +283,7 @@ export function toEndpointPayload(form: EndpointFormState): EndpointPayload {
         imagePricing,
         supportsImageEdits:
             form.modality === "image" && form.supportsImageEdits,
+        inputModalities: form.inputModalities,
         name: modelName,
         title: form.title.trim(),
         description: form.description.trim(),

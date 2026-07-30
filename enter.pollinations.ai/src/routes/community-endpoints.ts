@@ -1,10 +1,12 @@
 import {
     COMMUNITY_ENDPOINT_DESCRIPTION_MAX_LENGTH,
     COMMUNITY_ENDPOINT_IMAGE_PRICING_MODES,
+    COMMUNITY_ENDPOINT_INPUT_MODALITIES,
     COMMUNITY_ENDPOINT_MODALITIES,
     COMMUNITY_ENDPOINT_PRICE_FIELDS,
     COMMUNITY_ENDPOINT_TITLE_MAX_LENGTH,
     COMMUNITY_ENDPOINT_VISIBILITIES,
+    type CommunityEndpointInputModality,
     type CommunityEndpointPriceKey,
     type CommunityEndpointVisibility,
     communityEndpointPriceFieldsForModality,
@@ -21,6 +23,7 @@ import {
     normalizeCommunityEndpointBaseUrl,
     normalizeCommunityEndpointBearerToken,
     normalizeCommunityEndpointImagePricing,
+    normalizeCommunityEndpointInputModalities,
     normalizeCommunityEndpointModality,
 } from "@shared/community-endpoints.ts";
 import * as schema from "@shared/db/better-auth.ts";
@@ -51,6 +54,13 @@ const ImagePricingSchema = z
     .enum(COMMUNITY_ENDPOINT_IMAGE_PRICING_MODES)
     .describe(
         'Image models only. "request": the generated-image price is charged once per generation. "tokens": provider-returned OpenAI image token usage is charged against per-token prices. Detected by the endpoint test.',
+    );
+const InputModalitiesSchema = z
+    .array(z.enum(COMMUNITY_ENDPOINT_INPUT_MODALITIES))
+    .min(1)
+    .default(["text"])
+    .describe(
+        'Input modalities the upstream endpoint accepts. "text" is always implied (the prompt). Declare "image", "audio", or "video" for multimodal endpoints so the catalog reports them correctly instead of text-only.',
     );
 const PriceSchema = z
     .number()
@@ -138,6 +148,7 @@ const CreateEndpointSchema = z.object({
     modality: ModalitySchema.optional().default("text"),
     imagePricing: ImagePricingSchema.optional().default("request"),
     supportsImageEdits: z.boolean().optional().default(false),
+    inputModalities: InputModalitiesSchema.optional(),
     visibility: VisibilitySchema.optional().default("private"),
     ...UpdatePriceFieldsSchema,
 });
@@ -151,6 +162,7 @@ const UpdateEndpointSchema = z.object({
     visibility: VisibilitySchema.optional(),
     imagePricing: ImagePricingSchema.optional(),
     supportsImageEdits: z.boolean().optional(),
+    inputModalities: InputModalitiesSchema.optional(),
     active: z.boolean().optional(),
     ...UpdatePriceFieldsSchema,
 });
@@ -176,6 +188,7 @@ const CommunityEndpointResponseSchema = z.object({
     modality: ModalitySchema,
     imagePricing: ImagePricingSchema,
     supportsImageEdits: z.boolean(),
+    inputModalities: z.array(z.string()),
     baseUrl: z.string(),
     upstreamModel: z.string(),
     visibility: VisibilitySchema,
@@ -297,6 +310,9 @@ function toResponse(row: CommunityEndpointRow, ownerGithubUsername: string) {
         modality,
         imagePricing: normalizeCommunityEndpointImagePricing(row.imagePricing),
         supportsImageEdits: row.supportsImageEdits,
+        inputModalities: normalizeCommunityEndpointInputModalities(
+            row.inputModalities,
+        ),
         baseUrl: row.baseUrl,
         upstreamModel: row.upstreamModel,
         visibility: row.visibility,
@@ -506,6 +522,9 @@ export const communityEndpointsRoutes = new Hono<Env>()
                     imagePricing,
                     supportsImageEdits:
                         input.modality === "image" && input.supportsImageEdits,
+                    inputModalities: input.inputModalities
+                        ? JSON.stringify(input.inputModalities)
+                        : null,
                     baseUrl: normalizeInputBaseUrl(input.baseUrl),
                     upstreamModel: input.upstreamModel ?? input.name,
                     bearerTokenCiphertext: await encryptSecret(
@@ -695,6 +714,11 @@ export const communityEndpointsRoutes = new Hono<Env>()
             if (input.supportsImageEdits !== undefined) {
                 update.supportsImageEdits =
                     modality === "image" && input.supportsImageEdits;
+            }
+            if (input.inputModalities !== undefined) {
+                update.inputModalities = input.inputModalities
+                    ? JSON.stringify(input.inputModalities)
+                    : null;
             }
             if (input.active !== undefined) {
                 update.disabledAt = input.active ? null : new Date();

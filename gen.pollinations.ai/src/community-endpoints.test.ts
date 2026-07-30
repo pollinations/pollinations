@@ -462,6 +462,65 @@ describe("community endpoint helpers", () => {
         );
     });
 
+    it("defaults inputModalities to [\"text\"] when not declared", () => {
+        const definition = communityModelDefinition({
+            modelId: "voodoohop/openai",
+            description: "OpenAI via community endpoint",
+            ...communityEndpointPrices({
+                promptTextPrice: 0.1,
+                completionTextPrice: 0.1,
+            }),
+        });
+
+        expect(definition.inputModalities).toEqual(["text"]);
+    });
+
+    it("passes through owner-declared inputModalities", () => {
+        const definition = communityModelDefinition({
+            modelId: "marcosfrgames08/glm-4.6v-flash",
+            description: "Vision model",
+            inputModalities: JSON.stringify(["text", "image", "video"]),
+            ...communityEndpointPrices({
+                promptTextPrice: 0.1,
+                completionTextPrice: 0.1,
+            }),
+        });
+
+        expect(definition.inputModalities).toEqual(["text", "image", "video"]);
+    });
+
+    it("always includes image in inputModalities for image endpoints that support edits", () => {
+        const definition = communityModelDefinition({
+            modelId: "voodoohop/gptimage",
+            description: "Image model",
+            modality: "image",
+            supportsImageEdits: true,
+            inputModalities: JSON.stringify(["text", "audio"]),
+            ...communityEndpointPrices({
+                promptTextPrice: 0.2,
+                completionImagePrice: 0.03,
+            }),
+        });
+
+        // image is always added for edit-capable endpoints, even if the owner
+        // didn't declare it.
+        expect(definition.inputModalities).toEqual(["text", "image", "audio"]);
+    });
+
+    it("ignores unknown input modalities", () => {
+        const definition = communityModelDefinition({
+            modelId: "voodoohop/openai",
+            description: "OpenAI via community endpoint",
+            inputModalities: JSON.stringify(["text", "brain", "image"]),
+            ...communityEndpointPrices({
+                promptTextPrice: 0.1,
+                completionTextPrice: 0.1,
+            }),
+        });
+
+        expect(definition.inputModalities).toEqual(["text", "image"]);
+    });
+
     describe("community image endpoint billing", () => {
         afterEach(() => {
             vi.unstubAllGlobals();
@@ -490,6 +549,7 @@ describe("community endpoint helpers", () => {
                 modality: "image",
                 imagePricing,
                 supportsImageEdits: true,
+                inputModalities: null,
                 baseUrl: "https://api.example.com/v1",
                 upstreamModel: "gpt-image-1",
                 visibility: "public",
@@ -675,6 +735,7 @@ describe("community endpoint helpers", () => {
             modality: "text",
             imagePricing: "request",
             supportsImageEdits: false,
+            inputModalities: null,
             baseUrl: "https://api.example.com/v1",
             upstreamModel: "gpt-4.1-mini",
             visibility: "public",

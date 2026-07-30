@@ -214,6 +214,10 @@ export const communityEndpoint = sqliteTable("community_endpoint", {
   supportsImageEdits: integer("supports_image_edits", { mode: "boolean" })
     .default(false)
     .notNull(),
+  // Owner-declared input modalities as a JSON string (e.g. '["text","image"]').
+  // Null for rows created before this column existed; read paths normalize via
+  // normalizeCommunityEndpointInputModalities() which falls back to ["text"].
+  inputModalities: text("input_modalities"),
   baseUrl: text("base_url").notNull(),
   upstreamModel: text("upstream_model").notNull(),
   bearerTokenCiphertext: text("bearer_token_ciphertext").notNull(),

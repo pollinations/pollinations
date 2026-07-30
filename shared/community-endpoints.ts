@@ -9,6 +9,17 @@ import {
 export const LEGACY_COMMUNITY_MODEL_PREFIX = "community/";
 export const COMMUNITY_MODEL_REWARD_RATE = 0.75;
 export const COMMUNITY_ENDPOINT_MODALITIES = ["text", "image"] as const;
+// Input modalities a community endpoint may declare it accepts. Text is always
+// implied (chat/completions and image generation both take a text prompt); the
+// remaining entries describe additional input channels the upstream supports.
+// This is owner-declared at registration time so multimodal community models
+// (vision, audio, video) are not misreported as text-only in the catalog.
+export const COMMUNITY_ENDPOINT_INPUT_MODALITIES = [
+    "text",
+    "image",
+    "audio",
+    "video",
+] as const;
 // How a community image endpoint is billed. "request" charges the fixed
 // per-image price once per generation; "tokens" charges the provider-returned
 // OpenAI image token usage against per-1M prices. The mode is detected by the
@@ -36,6 +47,9 @@ const BEARER_PREFIX = /^Bearer(?:\s+|$)/i;
 
 export type CommunityEndpointModality =
     (typeof COMMUNITY_ENDPOINT_MODALITIES)[number];
+
+export type CommunityEndpointInputModality =
+    (typeof COMMUNITY_ENDPOINT_INPUT_MODALITIES)[number];
 
 export type CommunityEndpointImagePricing =
     (typeof COMMUNITY_ENDPOINT_IMAGE_PRICING_MODES)[number];
@@ -209,6 +223,40 @@ export function normalizeCommunityEndpointImagePricing(
     return value === "tokens" ? "tokens" : "request";
 }
 
+// Input modalities are owner-declared and stored as a JSON string. Normalize to
+// a deduplicated, text-first array so the catalog always advertises text even if
+// the owner omits it, and unknown entries are dropped rather than crashing
+// downstream consumers.
+export function normalizeCommunityEndpointInputModalities(
+    value: string | null | undefined,
+): CommunityEndpointInputModality[] {
+    if (!value) return ["text"];
+    let parsed: unknown;
+    try {
+        parsed = JSON.parse(value);
+    } catch {
+        return ["text"];
+    }
+    if (!Array.isArray(parsed)) return ["text"];
+    const seen = new Set<CommunityEndpointInputModality>();
+    for (const entry of parsed) {
+        if (
+            typeof entry === "string" &&
+            (COMMUNITY_ENDPOINT_INPUT_MODALITIES as readonly string[]).includes(
+                entry,
+            )
+        ) {
+            seen.add(entry as CommunityEndpointInputModality);
+        }
+    }
+    // Text is always an input for both text and image endpoints (the prompt).
+    seen.add("text");
+    // Stable order: text first, then the rest in declaration order.
+    return COMMUNITY_ENDPOINT_INPUT_MODALITIES.filter((modality) =>
+        seen.has(modality),
+    );
+}
+
 // Access/visibility of a registered endpoint. Private is the default; choosing
 // public on create or update is allowlist-gated.
 //   private → owner-only callable, shown only to the owner, no owner-set price
@@ -230,6 +278,10 @@ export type CommunityEndpointRuntime = {
     modality: CommunityEndpointModality;
     imagePricing: CommunityEndpointImagePricing;
     supportsImageEdits: boolean;
+    // Owner-declared input modalities (JSON string in the DB). Normalized on
+    // read to a deduplicated, text-first array. Null/undefined falls back to
+    // ["text"].
+    inputModalities: string | null;
     baseUrl: string;
     upstreamModel: string;
     bearerTokenCiphertext: string;
@@ -245,6 +297,8 @@ export type CommunityModelDefinitionInput = {
     modality?: CommunityEndpointModality;
     imagePricing?: CommunityEndpointImagePricing;
     supportsImageEdits?: boolean;
+    // Owner-declared input modalities (JSON string). Normalized on read.
+    inputModalities?: string | null;
 } & CommunityEndpointPrices;
 
 export type CommunityModelParts = {
@@ -417,6 +471,17 @@ export function communityModelDefinition(
     // Token-priced image endpoints bill like text models (usage × per-token
     // rates), so only fixed per-request image endpoints are flat-rate.
     const isFlatRateImage = isImage && imagePricing === "request";
+    // Owner-declared input modalities take precedence. For image endpoints that
+    // support edits, "image" is always an input regardless of the declared set
+    // (the edit probe confirmed it). Text is always an input (the prompt).
+    const declaredInputModalities =
+        normalizeCommunityEndpointInputModalities(endpoint.inputModalities);
+    const inputModalities =
+        isImage && endpoint.supportsImageEdits
+            ? normalizeCommunityEndpointInputModalities(
+                  JSON.stringify([...declaredInputModalities, "image"]),
+              )
+            : declaredInputModalities;
     return {
         aliases,
         provider: "community",
@@ -427,10 +492,7 @@ export function communityModelDefinition(
         addedDate: 0,
         title: communityEndpointTitle(endpoint),
         description: description || undefined,
-        inputModalities:
-            isImage && endpoint.supportsImageEdits
-                ? ["text", "image"]
-                : ["text"],
+        inputModalities,
         outputModalities: isImage ? ["image"] : ["text"],
         paidOnly: false,
         alpha: true,

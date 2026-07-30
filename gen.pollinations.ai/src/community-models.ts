@@ -58,6 +58,7 @@ export async function getCommunityModelRegistryEntries(
             modality: schema.communityEndpoint.modality,
             imagePricing: schema.communityEndpoint.imagePricing,
             supportsImageEdits: schema.communityEndpoint.supportsImageEdits,
+            inputModalities: schema.communityEndpoint.inputModalities,
             baseUrl: schema.communityEndpoint.baseUrl,
             upstreamModel: schema.communityEndpoint.upstreamModel,
             bearerTokenCiphertext:
@@ -99,6 +100,7 @@ export async function getCommunityModelRegistryEntries(
                 row.imagePricing,
             ),
             supportsImageEdits: row.supportsImageEdits,
+            inputModalities: row.inputModalities,
             baseUrl: row.baseUrl,
             upstreamModel: row.upstreamModel,
             bearerTokenCiphertext: row.bearerTokenCiphertext,

@@ -271,15 +271,29 @@
     {
       "idx": 38,
       "version": "6",
-      "when": 1784829760133,
-      "tag": "0038_overrated_ken_ellis",
+      "when": 1784972286318,
+      "tag": "0038_slimy_ultimo",
       "breakpoints": true
     },
     {
       "idx": 39,
       "version": "6",
-      "when": 1784898369034,
-      "tag": "0039_brief_eddie_brock",
+      "when": 1785145497278,
+      "tag": "0039_blushing_ultimatum",
+      "breakpoints": true
+    },
+    {
+      "idx": 40,
+      "version": "6",
+      "when": 1785331128707,
+      "tag": "0040_fearless_carnage",
+      "breakpoints": true
+    },
+    {
+      "idx": 41,
+      "version": "6",
+      "when": 1785429940551,
+      "tag": "0041_omniscient_unus",
       "breakpoints": true
     }
   ]

@@ -7,6 +7,8 @@ import {
     type CommunityEndpointPrices,
     type CommunityEndpointVisibility,
     communityEndpointPriceFieldsForModality,
+    MAX_COMMUNITY_PRICE_PER_IMAGE,
+    MAX_COMMUNITY_PRICE_PER_MILLION_TOKENS,
     MIN_COMMUNITY_PRICE_PER_MILLION_TOKENS,
 } from "@shared/community-endpoints.ts";
 import type { Usage } from "@shared/registry/registry.ts";
@@ -40,9 +42,12 @@ export type CommunityEndpoint = {
     id: string;
     modelId: string;
     name: string;
+    // Always populated by the API, which falls back for un-backfilled rows.
+    title: string;
     description: string | null;
     modality: CommunityEndpointModality;
     imagePricing: CommunityEndpointImagePricing;
+    supportsImageEdits: boolean;
     baseUrl: string;
     upstreamModel: string;
     agentId: string | null;
@@ -59,7 +64,10 @@ export type EndpointFormState = {
     modality: CommunityEndpointModality;
     // Detected by the endpoint test for image models; "request" until tested.
     imagePricing: CommunityEndpointImagePricing;
+    // Set only when the endpoint test receives a valid image edit response.
+    supportsImageEdits: boolean;
     name: string;
+    title: string;
     description: string;
     // private → owner-only, shown only to the owner, no owner-set price;
     // public → globally listed + billed to callers.
@@ -74,7 +82,9 @@ export type EndpointFormState = {
 export type EndpointPayload = {
     modality: CommunityEndpointModality;
     imagePricing: CommunityEndpointImagePricing;
+    supportsImageEdits: boolean;
     name: string;
+    title: string;
     description: string;
     // Exactly one of baseUrl / agentId is sent, per the mode.
     baseUrl?: string;
@@ -91,6 +101,7 @@ export type CommunityEndpointTestResponse = {
     usage?: CommunityEndpointUsage;
     billableUsage?: Usage;
     imagePricing?: CommunityEndpointImagePricing;
+    supportsImageEdits?: boolean;
 };
 
 export type ActionState = {
@@ -108,7 +119,9 @@ export const emptyForm: EndpointFormState = {
     mode: "external",
     modality: "text",
     imagePricing: "request",
+    supportsImageEdits: false,
     name: "",
+    title: "",
     description: "",
     visibility: "private",
     baseUrl: "",
@@ -175,9 +188,14 @@ export function isValidPriceInput(
     if (!trimmed) return true;
     if (trimmed.includes(",")) return false;
     const parsed = Number(trimmed);
+    const maximum =
+        priceUnit === "image"
+            ? MAX_COMMUNITY_PRICE_PER_IMAGE
+            : MAX_COMMUNITY_PRICE_PER_MILLION_TOKENS;
     return (
         Number.isFinite(parsed) &&
         parsed >= 0 &&
+        parsed <= maximum &&
         (priceUnit === "image" ||
             parsed === 0 ||
             parsed >= MIN_COMMUNITY_PRICE_PER_MILLION_TOKENS)
@@ -195,7 +213,9 @@ export function endpointToForm(endpoint: CommunityEndpoint): EndpointFormState {
         mode: endpoint.agentId ? "agent" : "external",
         modality: endpoint.modality,
         imagePricing: endpoint.imagePricing,
+        supportsImageEdits: endpoint.supportsImageEdits,
         name: endpoint.name,
+        title: endpoint.title,
         description: endpoint.description ?? "",
         visibility: endpoint.visibility,
         baseUrl: endpoint.baseUrl,
@@ -237,7 +257,7 @@ function formPricesToPayload(
                 const unit =
                     modalityField.priceUnit === "image" ? "image" : "1M units";
                 throw new Error(
-                    `Prices must be 0 (free) or a positive amount per ${unit}, using a dot decimal`,
+                    `Prices must be within the allowed range per ${unit}, using a dot decimal`,
                 );
             }
             return [
@@ -345,7 +365,10 @@ export function toEndpointPayload(form: EndpointFormState): EndpointPayload {
     const shared = {
         modality,
         imagePricing,
+        supportsImageEdits:
+            form.modality === "image" && form.supportsImageEdits,
         name: modelName,
+        title: form.title.trim(),
         description: form.description.trim(),
         visibility: form.visibility,
         ...formPricesToPayload(form, modality, imagePricing),
@@ -371,13 +394,23 @@ export function nextFormState(
     key: keyof EndpointFormState,
     value: string,
 ): EndpointFormState {
+    if (key === "supportsImageEdits") return current;
     if (key === "modality") {
         return {
             ...current,
             modality: value === "image" ? "image" : "text",
+            supportsImageEdits: false,
         };
     }
     const next = { ...current, [key]: value };
+    if (
+        key === "name" ||
+        key === "upstreamModel" ||
+        key === "baseUrl" ||
+        key === "bearerToken"
+    ) {
+        next.supportsImageEdits = false;
+    }
     if (
         key === "upstreamModel" &&
         (!current.name.trim() || current.name === current.upstreamModel)

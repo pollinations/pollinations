@@ -1,0 +1,32 @@
+{
+  "name": "weaver",
+  "main": "worker.js",
+  "compatibility_date": "2026-01-01",
+  "containers": [
+    {
+      "class_name": "WeaverContainer",
+      "image": "./Dockerfile",
+      "max_instances": 2,
+      "instance_type": "standard-1"
+    }
+  ],
+  "durable_objects": {
+    "bindings": [{ "name": "WEAVER", "class_name": "WeaverContainer" }]
+  },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["WeaverContainer"] }],
+  // Worker-backed apps bind their own hostnames; deploy.sh gates on the myceli
+  // origin serving before it verifies the public URL, so both are needed.
+  "routes": [
+    {
+      "pattern": "weaver.myceli.ai",
+      "zone_name": "myceli.ai",
+      "custom_domain": true
+    },
+    {
+      "pattern": "weaver.pollinations.ai",
+      "zone_name": "pollinations.ai",
+      "custom_domain": true
+    }
+  ],
+  "observability": { "enabled": true }
+}

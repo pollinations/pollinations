@@ -1,15 +1,21 @@
 import {
+    COMMUNITY_ENDPOINT_DESCRIPTION_MAX_LENGTH,
     COMMUNITY_ENDPOINT_IMAGE_PRICING_MODES,
     COMMUNITY_ENDPOINT_MODALITIES,
     COMMUNITY_ENDPOINT_PRICE_FIELDS,
+    COMMUNITY_ENDPOINT_TITLE_MAX_LENGTH,
     COMMUNITY_ENDPOINT_VISIBILITIES,
     type CommunityEndpointPriceKey,
     type CommunityEndpointVisibility,
     communityEndpointPriceFieldsForModality,
     communityEndpointPrices,
     communityEndpointPricesForModality,
+    communityEndpointTitle,
     communityModelId,
     isCommunityEndpointOwnerAllowed,
+    MAX_COMMUNITY_PRICE_PER_IMAGE,
+    MAX_COMMUNITY_PRICE_PER_MILLION_TOKENS,
+    MAX_COMMUNITY_PRICE_PER_TOKEN,
     MIN_COMMUNITY_PRICE_PER_MILLION_TOKENS,
     MIN_COMMUNITY_PRICE_PER_TOKEN,
     normalizeCommunityEndpointBaseUrl,
@@ -39,7 +45,7 @@ import { requireAccountKeysPermission } from "./account-permissions.ts";
 const ModalitySchema = z
     .enum(COMMUNITY_ENDPOINT_MODALITIES)
     .describe(
-        'Upstream API family. "text" uses `/v1/chat/completions`; "image" uses `/v1/images/generations` and currently supports text-to-image generation only.',
+        'Upstream API family. "text" uses `/v1/chat/completions`; "image" uses `/v1/images/generations` and optionally `/v1/images/edits` when the endpoint test succeeds.',
     );
 const ImagePricingSchema = z
     .enum(COMMUNITY_ENDPOINT_IMAGE_PRICING_MODES)
@@ -66,6 +72,32 @@ const UpdatePriceFieldsSchema = Object.fromEntries(
     z.ZodOptional<z.ZodType<number>>
 >;
 
+function enforceCommunityEndpointPriceLimits(
+    source: Partial<Record<CommunityEndpointPriceKey, number>>,
+    modality: (typeof COMMUNITY_ENDPOINT_MODALITIES)[number],
+    imagePricing: (typeof COMMUNITY_ENDPOINT_IMAGE_PRICING_MODES)[number],
+): void {
+    for (const field of communityEndpointPriceFieldsForModality(
+        modality,
+        imagePricing,
+    )) {
+        const price = source[field.key];
+        const maxPrice =
+            field.priceUnit === "image"
+                ? MAX_COMMUNITY_PRICE_PER_IMAGE
+                : MAX_COMMUNITY_PRICE_PER_TOKEN;
+        if (price === undefined || price <= maxPrice) continue;
+
+        const limit =
+            field.priceUnit === "image"
+                ? `${MAX_COMMUNITY_PRICE_PER_IMAGE} Pollen per image`
+                : `${MAX_COMMUNITY_PRICE_PER_MILLION_TOKENS} Pollen per 1M tokens`;
+        throw new HTTPException(400, {
+            message: `${field.label} price must not exceed ${limit}`,
+        });
+    }
+}
+
 const VisibilitySchema = z
     .enum(COMMUNITY_ENDPOINT_VISIBILITIES)
     .describe(
@@ -80,12 +112,22 @@ const EndpointFieldsSchema = {
         .min(1)
         .max(120)
         .regex(/^[^/]+$/, "Model name cannot contain '/'"),
-    description: z.string().trim().max(240).optional(),
+    title: z
+        .string()
+        .trim()
+        .min(1)
+        .max(COMMUNITY_ENDPOINT_TITLE_MAX_LENGTH)
+        .describe("Display name shown in the model catalog."),
+    description: z
+        .string()
+        .trim()
+        .max(COMMUNITY_ENDPOINT_DESCRIPTION_MAX_LENGTH)
+        .optional(),
     baseUrl: z
         .string()
         .url()
         .describe(
-            "OpenAI-compatible `/v1` base URL or full `/chat/completions` or `/images/generations` URL.",
+            "OpenAI-compatible `/v1` base URL or full chat, image generation, or image edit URL.",
         ),
     upstreamModel: z.string().trim().min(1).max(253).optional(),
     bearerToken: z.string().min(1),
@@ -99,6 +141,7 @@ const CreateEndpointSchema = z
         bearerToken: EndpointFieldsSchema.bearerToken.optional(),
         modality: ModalitySchema.optional().default("text"),
         imagePricing: ImagePricingSchema.optional().default("request"),
+        supportsImageEdits: z.boolean().optional().default(false),
         visibility: VisibilitySchema.optional().default("private"),
         ...UpdatePriceFieldsSchema,
     })
@@ -126,12 +169,14 @@ const CreateEndpointSchema = z
     );
 const UpdateEndpointSchema = z.object({
     name: EndpointFieldsSchema.name.optional(),
+    title: EndpointFieldsSchema.title.optional(),
     description: EndpointFieldsSchema.description,
     baseUrl: EndpointFieldsSchema.baseUrl.optional(),
     upstreamModel: EndpointFieldsSchema.upstreamModel,
     bearerToken: EndpointFieldsSchema.bearerToken.optional(),
     visibility: VisibilitySchema.optional(),
     imagePricing: ImagePricingSchema.optional(),
+    supportsImageEdits: z.boolean().optional(),
     active: z.boolean().optional(),
     ...UpdatePriceFieldsSchema,
 });
@@ -152,9 +197,11 @@ const CommunityEndpointResponseSchema = z.object({
     id: z.string(),
     modelId: z.string(),
     name: z.string(),
+    title: z.string(),
     description: z.string().nullable(),
     modality: ModalitySchema,
     imagePricing: ImagePricingSchema,
+    supportsImageEdits: z.boolean(),
     baseUrl: z.string(),
     agentId: z.string().nullable(),
     upstreamModel: z.string(),
@@ -189,6 +236,12 @@ const CommunityEndpointTestResponseSchema = z
         imagePricing: ImagePricingSchema.optional().describe(
             "Image tests only: pricing mode detected from the provider response.",
         ),
+        supportsImageEdits: z
+            .boolean()
+            .optional()
+            .describe(
+                "Image tests only: true when the derived `/images/edits` endpoint returned a valid image.",
+            ),
     })
     .passthrough();
 const CommunityEndpointDeleteResponseSchema = z.object({
@@ -270,9 +323,15 @@ function toResponse(
         id: row.id,
         modelId: communityModelId(ownerGithubUsername, row.name),
         name: row.name,
+        title: communityEndpointTitle({
+            modelId: communityModelId(ownerGithubUsername, row.name),
+            title: row.title,
+            description: row.description,
+        }),
         description: row.description,
         modality,
         imagePricing: normalizeCommunityEndpointImagePricing(row.imagePricing),
+        supportsImageEdits: row.supportsImageEdits,
         baseUrl,
         agentId: row.agentId,
         upstreamModel: row.upstreamModel,
@@ -496,6 +555,11 @@ export const communityEndpointsRoutes = new Hono<Env>()
                           imagePricing,
                       )
                     : communityEndpointPrices({});
+            enforceCommunityEndpointPriceLimits(
+                prices,
+                input.modality,
+                imagePricing,
+            );
             await enforcePublishingAccess(db, user.id, input.visibility);
             const id = crypto.randomUUID();
             const [row] = await db
@@ -504,9 +568,12 @@ export const communityEndpointsRoutes = new Hono<Env>()
                     id,
                     ownerUserId: user.id,
                     name: input.name,
+                    title: input.title,
                     description: input.description || null,
                     modality,
                     imagePricing,
+                    supportsImageEdits:
+                        modality === "image" && input.supportsImageEdits,
                     baseUrl: agent
                         ? null
                         : normalizeInputBaseUrl(input.baseUrl ?? ""),
@@ -582,7 +649,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
             tags: ["👤 Account"],
             summary: "Test My Model Endpoint",
             description:
-                "Test an OpenAI-compatible upstream model before publishing it. Image tests also detect token pricing when valid OpenAI image usage is returned; otherwise they select fixed per-image pricing. Requires community model publishing approval; API keys also require `account:keys`.",
+                "Test an OpenAI-compatible upstream model before publishing it. Image tests detect token pricing and probe the derived `/images/edits` endpoint. Requires community model publishing approval; API keys also require `account:keys`.",
             responses: {
                 200: {
                     description: "Endpoint test result",
@@ -622,7 +689,9 @@ export const communityEndpointsRoutes = new Hono<Env>()
                     ok: true,
                     message:
                         input.modality === "image"
-                            ? "Endpoint responded with image data"
+                            ? result.supportsImageEdits
+                                ? "Generation and editing endpoints responded with image data"
+                                : "Generation endpoint responded; editing is not supported"
                             : "Endpoint responded with usage",
                     ...result,
                 });
@@ -690,6 +759,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
                 updatedAt: new Date(),
             };
             if (input.name !== undefined) update.name = input.name;
+            if (input.title !== undefined) update.title = input.title;
             if (input.description !== undefined) {
                 update.description = input.description || null;
             }
@@ -707,6 +777,10 @@ export const communityEndpointsRoutes = new Hono<Env>()
             }
             if (input.visibility !== undefined) {
                 update.visibility = input.visibility;
+            }
+            if (input.supportsImageEdits !== undefined) {
+                update.supportsImageEdits =
+                    modality === "image" && input.supportsImageEdits;
             }
             if (input.active !== undefined) {
                 update.disabledAt = input.active ? null : new Date();
@@ -747,6 +821,11 @@ export const communityEndpointsRoutes = new Hono<Env>()
                           modality,
                           effectiveImagePricing,
                       );
+            enforceCommunityEndpointPriceLimits(
+                effectivePrices,
+                modality,
+                effectiveImagePricing,
+            );
             await enforcePublishingAccess(db, user.id, effectiveVisibility);
             // Persist visibility together with the complete effective price
             // set on every update, so concurrent partial updates cannot

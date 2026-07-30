@@ -219,6 +219,9 @@ export const communityEndpoint = sqliteTable("community_endpoint", {
     .notNull()
     .references(() => user.id, { onDelete: "cascade" }),
   name: text("name").notNull(),
+  // Nullable: rows predating titles fall back to communityEndpointTitle().
+  // Required on create, so only the pre-existing backlog is null.
+  title: text("title"),
   description: text("description"),
   modality: text("modality").default("text").notNull(),
   // Image endpoints only: "request" bills the fixed per-image price once per
@@ -226,6 +229,10 @@ export const communityEndpoint = sqliteTable("community_endpoint", {
   // by the registration probe.
   imagePricing: text("image_pricing", { enum: ["request", "tokens"] })
     .default("request")
+    .notNull(),
+  // Set only after the registration probe successfully calls /images/edits.
+  supportsImageEdits: integer("supports_image_edits", { mode: "boolean" })
+    .default(false)
     .notNull(),
   // External models keep their target here. Managed agents resolve their
   // target through agentId so the agent can outlive its community listing.
@@ -249,6 +256,12 @@ export const communityEndpoint = sqliteTable("community_endpoint", {
   completionReasoningPrice: real("completion_reasoning_price").default(0).notNull(),
   completionAudioPrice: real("completion_audio_price").default(0).notNull(),
   completionImagePrice: real("completion_image_price").default(0).notNull(),
+  // Admin-only, off by default: it hands a third party spend authority over
+  // whoever called the model. See mintDelegatedToken in
+  // gen.pollinations.ai/src/text/communityEndpoint.ts.
+  delegatesGeneration: integer("delegates_generation", { mode: "boolean" })
+    .default(false)
+    .notNull(),
   disabledAt: integer("disabled_at", { mode: "timestamp" }),
   disabledReason: text("disabled_reason"),
   disabledBy: text("disabled_by"),

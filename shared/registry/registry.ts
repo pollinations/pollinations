@@ -138,6 +138,7 @@ export type ModelDefinition = {
     // audio (e.g. Stable Audio) from per-character TTS, which share cost fields.
     flatRate?: boolean;
     hidden?: boolean; // Hidden from /models endpoints and dashboard, but still usable via API
+    supportedEndpoints?: string[]; // Override the default endpoints for specialized models
     videoCapabilities?: VideoCapability[]; // Video-only: which frame controls the provider supports
     maxReferenceImages?: number; // Models with image input: effective accepted reference images
     maxReferenceVideos?: number; // Models with video input: effective accepted reference videos

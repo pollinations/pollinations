@@ -95,6 +95,16 @@ export function createFireworksModelConfig(
     );
 }
 
+export function createDeepInfraModelConfig(
+    overrides: ModelOverride = {},
+): ProviderConfig {
+    return createOpenAICompatibleConfig(
+        "https://api.deepinfra.com/v1/openai",
+        process.env.DEEPINFRA_API_KEY,
+        overrides,
+    );
+}
+
 export function createOpenRouterModelConfig(
     overrides: ModelOverride = {},
 ): ProviderConfig {
@@ -111,16 +121,6 @@ export function createVercelAIGatewayModelConfig(
     return createOpenAICompatibleConfig(
         "https://ai-gateway.vercel.sh/v1",
         process.env.AI_GATEWAY_API_KEY,
-        overrides,
-    );
-}
-
-export function createInceptionModelConfig(
-    overrides: ModelOverride = {},
-): ProviderConfig {
-    return createOpenAICompatibleConfig(
-        "https://api.inceptionlabs.ai/v1",
-        process.env.INCEPTION_API_KEY,
         overrides,
     );
 }

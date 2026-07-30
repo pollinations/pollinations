@@ -20,14 +20,18 @@ const COMMUNITY_TEXT_ENDPOINTS = [
     "/text",
     "/text/{prompt}",
 ];
-const COMMUNITY_IMAGE_ENDPOINTS = ["/v1/images/generations", "/image/{prompt}"];
-
 export function communityTextSupportedEndpoints(): string[] {
     return COMMUNITY_TEXT_ENDPOINTS;
 }
 
-export function communityImageSupportedEndpoints(): string[] {
-    return COMMUNITY_IMAGE_ENDPOINTS;
+export function communityImageSupportedEndpoints(
+    supportsImageEdits = false,
+): string[] {
+    return [
+        "/v1/images/generations",
+        ...(supportsImageEdits ? ["/v1/images/edits"] : []),
+        "/image/{prompt}",
+    ];
 }
 
 export type CommunityModelRegistryEntry = {
@@ -49,9 +53,11 @@ export async function getCommunityModelRegistryEntries(
             ownerUserId: schema.communityEndpoint.ownerUserId,
             ownerGithubUsername: schema.user.githubUsername,
             name: schema.communityEndpoint.name,
+            title: schema.communityEndpoint.title,
             description: schema.communityEndpoint.description,
             modality: schema.communityEndpoint.modality,
             imagePricing: schema.communityEndpoint.imagePricing,
+            supportsImageEdits: schema.communityEndpoint.supportsImageEdits,
             agentId: schema.communityEndpoint.agentId,
             endpointBaseUrl: schema.communityEndpoint.baseUrl,
             agentBaseUrl: schema.agent.baseUrl,
@@ -59,6 +65,7 @@ export async function getCommunityModelRegistryEntries(
             endpointBearerTokenCiphertext:
                 schema.communityEndpoint.bearerTokenCiphertext,
             visibility: schema.communityEndpoint.visibility,
+            delegatesGeneration: schema.communityEndpoint.delegatesGeneration,
             promptTextPrice: schema.communityEndpoint.promptTextPrice,
             promptCachedPrice: schema.communityEndpoint.promptCachedPrice,
             promptCacheWritePrice:
@@ -99,16 +106,19 @@ export async function getCommunityModelRegistryEntries(
             ownerUserId: row.ownerUserId,
             modelId,
             name: row.name,
+            title: row.title,
             description: row.description,
             modality: normalizeCommunityEndpointModality(row.modality),
             imagePricing: normalizeCommunityEndpointImagePricing(
                 row.imagePricing,
             ),
+            supportsImageEdits: row.supportsImageEdits,
             baseUrl,
             agentId: row.agentId,
             upstreamModel: row.agentId ?? row.upstreamModel,
             bearerTokenCiphertext: row.endpointBearerTokenCiphertext,
             visibility: row.visibility,
+            delegatesGeneration: row.delegatesGeneration,
             disabledAt: row.disabledAt ? row.disabledAt.getTime() : null,
             disabledReason: row.disabledReason,
             ...communityEndpointPrices(row),

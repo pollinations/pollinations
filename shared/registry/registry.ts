@@ -1,5 +1,19 @@
 import { roundPollenLedgerAmount } from "../billing/precision.ts";
 import { AUDIO_SERVICES, type AudioModelName } from "./audio";
+import type { CostVariantContext, PricingInput } from "./cost-variants";
+
+// Re-export so consumers can keep importing the variant API from the
+// registry entry point (the helpers live in cost-variants.ts to avoid a
+// module-evaluation cycle with the service maps).
+export {
+    type CostVariantContext,
+    defineCostVariants,
+    longContextAbove,
+    longContextAtLeast,
+    type PricingInput,
+    totalPromptTokens,
+} from "./cost-variants";
+
 import { EMBEDDING_SERVICES, type EmbeddingServiceId } from "./embeddings";
 import { IMAGE_SERVICES, type ImageModelName } from "./image";
 import { MODEL3D_SERVICES, type Model3dName } from "./model3d";
@@ -49,6 +63,11 @@ export type CostDefinition = { [K in UsageType]?: number };
 
 // User-facing charge rates in Pollen per usage unit, derived from cost × multiplier.
 export type PriceDefinition = CostDefinition;
+
+export type CostVariantMetadata = {
+    label: string;
+    description: string;
+};
 
 export type ModelName =
     | ImageModelName
@@ -110,6 +129,20 @@ export type ModelDefinition = {
     brand: string;
     category: Category;
     cost: CostDefinition;
+    // Named alternate rate sheets, merged over `cost` when selectCostVariant
+    // picks one (keys not listed in a variant inherit the base rate). Rates
+    // are always data — selectors return a NAME, never a number. Provider
+    // tiers (long-context, resolution) each map to one named sheet here.
+    costVariants?: Record<string, CostDefinition>;
+    // Public explanation for every named rate sheet. Kept alongside the
+    // selector so /models and the dashboard can disclose when alternate rates
+    // apply without attempting to serialize selector code.
+    costVariantMetadata?: Record<string, CostVariantMetadata>;
+    // Picks the rate sheet for one request, evaluated once at billing time
+    // inside calculateUsageBilling. Must be pure and never throw. Returning
+    // undefined (or an unknown name — warned) bills at base rates. Selection
+    // is code; money is data.
+    selectCostVariant?: (context: CostVariantContext) => string | undefined;
     // USD-cost to Pollen-price multiplier. Required on every model — there is
     // no implicit default. Typical values: 1 (sold at cost) or 1.5 (paid markup).
     priceMultiplier: number;
@@ -175,12 +208,58 @@ function convertUsage(
     return convertedUsage as Usage;
 }
 
-function derivePrice(svc: ModelDefinition): PriceDefinition {
-    const m = svc.priceMultiplier;
-    if (m === 1) return svc.cost;
+function derivePrice(
+    costDefinition: CostDefinition,
+    priceMultiplier: number,
+): PriceDefinition {
+    if (priceMultiplier === 1) return costDefinition;
     return Object.fromEntries(
-        Object.entries(svc.cost).map(([k, v]) => [k, (v as number) * m]),
+        Object.entries(costDefinition).map(([k, v]) => [
+            k,
+            (v as number) * priceMultiplier,
+        ]),
     ) as PriceDefinition;
+}
+
+// Resolve the variant name for one request. Never throws: a throwing or
+// misconfigured selector logs and falls back to base rates — a selector bug
+// must never drop the tracking event or bill zero.
+export type CostVariantSelectionStatus =
+    | "base"
+    | "selected"
+    | "unknown"
+    | "selector_error";
+
+type CostVariantSelection = {
+    name?: string;
+    status: CostVariantSelectionStatus;
+};
+
+function selectCostVariant(
+    model: string,
+    usage: Usage,
+    svc: ModelDefinition,
+    input?: PricingInput,
+): CostVariantSelection {
+    if (!svc.selectCostVariant) return { status: "base" };
+    let name: string | undefined;
+    try {
+        name = svc.selectCostVariant({ usage, input });
+    } catch (error) {
+        console.warn(
+            `[registry] selectCostVariant threw for model=${model} — billing base rates`,
+            error,
+        );
+        return { status: "selector_error" };
+    }
+    if (name === undefined) return { status: "base" };
+    if (!svc.costVariants?.[name]) {
+        console.warn(
+            `[registry] Unknown cost variant "${name}" for model=${model} — billing base rates`,
+        );
+        return { status: "unknown" };
+    }
+    return { name, status: "selected" };
 }
 
 function calculateLinearCost(
@@ -233,6 +312,16 @@ export type UsageBilling = {
     cost: UsageCost;
     price: UsagePrice;
     adjustments: BillingAdjustment[];
+    // Per-unit Pollen price sheet actually applied (effective cost ×
+    // multiplier). Telemetry must record THIS sheet, not the request-time
+    // base sheet, so recorded rates always reproduce the billed totals.
+    priceDefinition: PriceDefinition;
+    // Name of the applied cost variant, if any (financial identity — distinct
+    // from modelUsed, which stays observational).
+    costVariant?: string;
+    // Distinguishes a normal base-rate request from selector failures that
+    // safely fell back to base rates.
+    costVariantStatus: CostVariantSelectionStatus;
 };
 
 export function calculateUsageBilling(
@@ -240,6 +329,7 @@ export function calculateUsageBilling(
     usage: Usage,
     svc: ModelDefinition,
     output?: unknown,
+    input?: PricingInput,
 ): UsageBilling {
     const adjustments = calculateBillingAdjustments(svc, output, model);
     const adjustmentCost = adjustments.reduce((total, a) => total + a.cost, 0);
@@ -248,7 +338,12 @@ export function calculateUsageBilling(
         0,
     );
 
-    const usageCost = calculateLinearCost(model, usage, svc.cost);
+    const selection = selectCostVariant(model, usage, svc, input);
+    const costVariant = selection.name;
+    const effectiveCost = costVariant
+        ? { ...svc.cost, ...svc.costVariants?.[costVariant] }
+        : svc.cost;
+    const usageCost = calculateLinearCost(model, usage, effectiveCost);
     const cost =
         adjustmentCost === 0
             ? usageCost
@@ -274,7 +369,14 @@ export function calculateUsageBilling(
         totalPrice: roundPollenLedgerAmount(tokenTotalPrice + adjustmentPrice),
     };
 
-    return { cost, price, adjustments };
+    return {
+        cost,
+        price,
+        adjustments,
+        priceDefinition: derivePrice(effectiveCost, svc.priceMultiplier),
+        costVariant,
+        costVariantStatus: selection.status,
+    };
 }
 
 const MODEL_REGISTRY = {
@@ -374,7 +476,7 @@ export function getRegistryModelDefinition(model: ModelName): ModelDefinition {
 export function getPriceDefinitionForModel(
     svc: ModelDefinition,
 ): PriceDefinition {
-    return derivePrice(svc);
+    return derivePrice(svc.cost, svc.priceMultiplier);
 }
 
 /**
@@ -400,13 +502,14 @@ export function calculateCost(
     model: ModelName,
     usage: Usage,
     output?: unknown,
+    input?: PricingInput,
 ): UsageCost {
     const svc = MODEL_REGISTRY[model];
     if (!svc)
         throw new Error(
             `Failed to get current cost for model: ${model.toString()}`,
         );
-    return calculateCostForModelDefinition(model, usage, svc, output);
+    return calculateCostForModelDefinition(model, usage, svc, output, input);
 }
 
 export function calculateCostForModelDefinition(
@@ -414,8 +517,9 @@ export function calculateCostForModelDefinition(
     usage: Usage,
     svc: ModelDefinition,
     output?: unknown,
+    input?: PricingInput,
 ): UsageCost {
-    return calculateUsageBilling(model, usage, svc, output).cost;
+    return calculateUsageBilling(model, usage, svc, output, input).cost;
 }
 
 /**
@@ -436,13 +540,14 @@ export function calculatePrice(
     model: ModelName,
     usage: Usage,
     output?: unknown,
+    input?: PricingInput,
 ): UsagePrice {
     const svc = MODEL_REGISTRY[model];
     if (!svc)
         throw new Error(
             `Failed to get current price for model: ${model.toString()}`,
         );
-    return calculatePriceForModelDefinition(model, usage, svc, output);
+    return calculatePriceForModelDefinition(model, usage, svc, output, input);
 }
 
 export function calculatePriceForModelDefinition(
@@ -450,8 +555,9 @@ export function calculatePriceForModelDefinition(
     usage: Usage,
     svc: ModelDefinition,
     output?: unknown,
+    input?: PricingInput,
 ): UsagePrice {
-    return calculateUsageBilling(model, usage, svc, output).price;
+    return calculateUsageBilling(model, usage, svc, output, input).price;
 }
 
 /**

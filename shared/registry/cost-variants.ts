@@ -1,0 +1,79 @@
+// Cost-variant helpers used by registry model definitions. This module must
+// stay free of runtime imports from registry.ts: image.ts/text.ts call these
+// helpers at module-init time while registry.ts imports their service maps,
+// so a value import back into registry.ts would create an evaluation-order
+// cycle that silently empties MODEL_REGISTRY in bundled workers.
+import type {
+    CostDefinition,
+    CostVariantMetadata,
+    ModelDefinition,
+    Usage,
+    UsageType,
+} from "./registry";
+
+// Normalized request facts that can affect pricing. Set once per request by
+// the service layer via the track middleware's pricing input, consumed only by
+// selectCostVariant. Keep this vocabulary small: a key earns its place when a
+// live model prices on it.
+export type PricingInput = {
+    hasImage?: boolean;
+};
+
+export type CostVariantContext = {
+    usage: Usage;
+    input?: PricingInput;
+};
+
+// Prompt-side token count used by long-context selectors: every prompt token
+// bucket counts toward the provider's context threshold (cached and modality
+// tokens included); promptAudioSeconds is a duration, not a token count.
+const PROMPT_TOKEN_TYPES: UsageType[] = [
+    "promptTextTokens",
+    "promptCachedTokens",
+    "promptCacheWriteTokens",
+    "promptAudioTokens",
+    "promptImageTokens",
+    "promptVideoTokens",
+];
+
+export function totalPromptTokens(usage: Usage): number {
+    return PROMPT_TOKEN_TYPES.reduce(
+        (total, usageType) => total + (usage[usageType] ?? 0),
+        0,
+    );
+}
+
+// Selector factory for provider long-context tiers with a strict boundary.
+// Azure meters GPT requests as <272k / >272k context length, repricing the
+// entire request once the threshold is crossed.
+export function longContextAbove(minPromptTokens: number) {
+    return ({ usage }: CostVariantContext): "long_context" | undefined =>
+        totalPromptTokens(usage) > minPromptTokens ? "long_context" : undefined;
+}
+
+// Some provider endpoint metadata defines the long-context tier inclusively
+// with min_prompt_tokens. Keep that boundary explicit rather than disguising
+// it as a threshold-minus-one call to longContextAbove.
+export function longContextAtLeast(minPromptTokens: number) {
+    return ({ usage }: CostVariantContext): "long_context" | undefined =>
+        totalPromptTokens(usage) >= minPromptTokens
+            ? "long_context"
+            : undefined;
+}
+
+// Pairs variant sheets with their selector so TypeScript checks that the
+// selector can only return names that exist in the sheets.
+export function defineCostVariants<
+    const V extends Record<string, CostDefinition>,
+>(
+    costVariants: V,
+    selectCostVariant: (
+        context: CostVariantContext,
+    ) => (keyof V & string) | undefined,
+    costVariantMetadata: { [K in keyof V]: CostVariantMetadata },
+): Pick<
+    ModelDefinition,
+    "costVariants" | "selectCostVariant" | "costVariantMetadata"
+> {
+    return { costVariants, selectCostVariant, costVariantMetadata };
+}

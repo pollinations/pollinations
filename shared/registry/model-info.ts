@@ -44,6 +44,18 @@ export const ModelInfoSchema = z.object({
     pricing: z
         .record(z.string(), z.string())
         .and(z.object({ currency: z.literal("pollen") })),
+    pricing_variants: z
+        .array(
+            z.object({
+                name: z.string(),
+                label: z.string(),
+                description: z.string(),
+                pricing: z
+                    .record(z.string(), z.string())
+                    .and(z.object({ currency: z.literal("pollen") })),
+            }),
+        )
+        .optional(),
     billing_adjustments: z
         .array(
             z.object({
@@ -123,6 +135,28 @@ export function modelInfoFromDefinition(
         brand: service.brand,
         community: options.community || undefined,
         pricing: pricingInfoFromDefinition(getPriceDefinitionForModel(service)),
+        pricing_variants:
+            service.costVariants && service.costVariantMetadata
+                ? Object.entries(service.costVariants).map(
+                      ([name, variantCost]) => {
+                          const metadata = service.costVariantMetadata?.[name];
+                          return {
+                              name,
+                              label: metadata?.label ?? name,
+                              description: metadata?.description ?? name,
+                              pricing: pricingInfoFromDefinition(
+                                  getPriceDefinitionForModel({
+                                      ...service,
+                                      cost: {
+                                          ...service.cost,
+                                          ...variantCost,
+                                      },
+                                  }),
+                              ),
+                          };
+                      },
+                  )
+                : undefined,
         billing_adjustments: service.billing?.adjustments?.map((rule) => ({
             kind: rule.kind,
             unit: rule.unit,

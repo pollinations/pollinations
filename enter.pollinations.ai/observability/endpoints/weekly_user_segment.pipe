@@ -15,7 +15,7 @@ SQL >
         ((api_key_type = 'secret' AND position(api_key_name, '.') > 0) OR api_key_created_via = 'redirect-auth') AS is_byop,
         uniq(user_id) AS users,
         sum(total_price) AS pollen,
-        count() AS requests
+        countIf(is_attempt_row = 0) AS requests  -- attempts are not requests
     FROM generation_event_v2
     WHERE
         {% if defined(start_date) %}

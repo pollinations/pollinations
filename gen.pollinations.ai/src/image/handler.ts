@@ -410,6 +410,9 @@ export async function generateImageOrVideoResponse(
     syncImageEnvironment(c.env);
     const originalPrompt = decodePrompt(prompt || "random_prompt");
     const safeParams = parseImageParams(c, body);
+    c.var.track.setPricingInput({
+        hasImage: (safeParams.image?.length ?? 0) > 0,
+    });
 
     try {
         const communityEndpoint = c.var.model.communityEndpoint;

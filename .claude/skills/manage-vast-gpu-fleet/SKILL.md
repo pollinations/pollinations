@@ -44,10 +44,14 @@ Mode: <Audit|Prepare>. Do not enter Promote mode.
 
 Use **Audit** in the daily model-operations scout so it can reconcile fleet
 economics without spending or duplicating the high-frequency task. Use
-**Prepare** in the dedicated 15-minute Vast offer scout only after its spend
-ceiling and canary credential path are configured. Both tasks must derive
-thresholds, tests, reporting, and cleanup behavior from this skill instead of
-copying them into their local prompts.
+**Prepare** in the dedicated Vast offer scout only after its spend ceiling and
+canary credential path are configured.
+
+Keep volatile operating policy in the scheduled task, including cadence,
+savings and reliability thresholds, credit discounts, exchange rates, hardware
+filters, candidate TTL and spend ceilings, aggregate concurrency budget, and
+temporary machine cooldowns. Keep durable coordination, validation, approval,
+cleanup, and documentation rules in this skill.
 
 ## Discover current state
 
@@ -68,36 +72,27 @@ Do not stop or destroy anything during Audit.
 
 ## Qualify offers
 
-Inspect offers for every active Vast workload every 15 minutes in the scheduled
-scout. Treat each current production instance as an independently replaceable
-GPU slot. A workload with two replicas therefore has two target slots.
+Inspect offers for every active Vast workload at the cadence configured by the
+scheduled task. Treat each current production instance as an independently
+replaceable GPU slot. A workload with two replicas therefore has two target
+slots.
 
 A candidate qualifies only when all conditions pass:
 
-- Cash-equivalent savings exceed €10 per 30-day month after the 50% discount
-  paid for the current Vast credits.
-- The offer is verified, on-demand, currently rentable for at least 30 days,
-  and has reliability of at least 99.7%.
-- GPU class and count match the workload, with at least the current VRAM and
-  disk.
-- CPU, CUDA/driver, disk, and network meet the model's documented requirements.
+- It passes the scheduled task's current savings, reliability, availability,
+  hardware, network, and spend policy.
+- Its all-in rate includes storage and is compared using the task's current
+  credit discount and verified exchange rate.
+- GPU, VRAM, disk, CPU, CUDA/driver, and network preserve the workload's
+  documented capability and recent production capacity.
 - A replica replacement preserves host, machine, and failure-domain diversity.
-- The machine is not in the temporary exclusion list in `GPU_INSTANCES.md`.
+- The cash comparison is verifiable; otherwise do not auto-prepare it.
 
-Use the all-in billed rate, including storage. Calculate:
-
-```text
-monthly_credit_savings = (current_rate - candidate_rate) * 720
-monthly_cash_savings_eur =
-  monthly_credit_savings * 0.50 * verified_USD_to_EUR_rate
-```
-
-Use the invoice exchange rate when available and state the rate and timestamp.
-If the cash comparison cannot be verified, do not auto-prepare the candidate.
-Also report undiscounted savings and remaining credit runway.
-
-Marketplace reliability is only a filter. Reject a host that fails real image
-pull, outbound network, Hugging Face access, disk, driver, or bootstrap checks.
+Marketplace metadata and previous failures are only filters. Require real image
+pull, outbound network, model-download, disk, driver, bootstrap, and
+workload-specific checks. Apply time-bounded machine cooldowns from automation
+memory; do not turn a transient provider failure into a permanent repository
+blacklist.
 
 ## Coordinate overlapping runs
 
@@ -118,8 +113,8 @@ Automation memory is not a lock.
 One scheduled run may claim every qualifying unlocked target and prepare those
 candidates in parallel. Another overlapping run may prepare other unlocked
 targets, but never a second candidate for an already locked production slot.
-The aggregate candidate hourly rate must not exceed the current production
-fleet hourly rate.
+Enforce the aggregate concurrency and spend ceiling supplied by the scheduled
+task.
 
 ## Prepare isolated canaries
 
@@ -129,8 +124,8 @@ Keep the existing production worker and fallback unchanged.
    targets whose workload is not ready; do not block other ready workloads.
 2. Acquire the per-target leases, revalidate each offer, and immediately rent
    all claimed offers before their availability changes.
-3. Deploy and test the claimed candidates in parallel. Limit each preparation
-   attempt to two hours and $1.50 of candidate spend.
+3. Deploy and test the claimed candidates in parallel. Enforce the
+   per-candidate TTL and spend ceiling supplied by the scheduled task.
 4. Attach the approved SSH public key and run each model's checked-in setup
    script.
 5. Keep registration and shared production tunnels disabled while validating
@@ -148,8 +143,9 @@ Keep the existing production worker and fallback unchanged.
 
 Handle targets independently. Destroy a failed candidate, verify its compute
 and storage billing ended, release only its target lease, and leave production
-and other canaries untouched. Record a repeatable host failure in the temporary
-exclusion list with the date and requalification condition.
+and other canaries untouched. Record transient host failures in automation
+memory with the task's cooldown. Add repository guidance only when a failure
+reveals a durable, repeatable deployment requirement.
 
 ## Stop at READY FOR APPROVAL
 
@@ -198,7 +194,7 @@ repository PR:
 
 1. Update `image.pollinations.ai/GPU_INSTANCES.md` with the new instance,
    machine/region, rate, status, total fleet burn, savings, validation evidence,
-   temporary exclusions, and `Last updated` date.
+   and `Last updated` date.
 2. Update the model README only when deployment behavior, limits, commands,
    performance, or a reusable failure mode changed.
 3. Update setup or verification scripts only when the successful deployment
@@ -211,4 +207,4 @@ repository PR:
    not merge it without explicit instruction.
 
 Do not create a documentation-only PR for a failed candidate unless it produced
-a reusable exclusion or deployment lesson.
+a reusable deployment lesson.

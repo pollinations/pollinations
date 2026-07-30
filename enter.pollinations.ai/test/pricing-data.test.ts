@@ -740,6 +740,15 @@ test("Google text model providers match their configured routes", () => {
     }
 });
 
+test("OpenRouter models require paid balance", () => {
+    for (const model of getModels()) {
+        const definition = getRegistryModelDefinition(model);
+        if (definition.provider === "openrouter") {
+            expect(definition.paidOnly, `${model} paid-only status`).toBe(true);
+        }
+    }
+});
+
 test("bedrock nova models price cache writes free and reads at 25% of input", () => {
     // AWS Price List API (verified 2026-07-05): Nova cache writes are a $0
     // SKU; cache reads bill at 25% of the standard input rate.

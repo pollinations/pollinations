@@ -83,7 +83,6 @@ function createAuthResult(c: ImageContext): AuthResult {
     return {
         tokenAuth: Boolean(c.var.auth?.apiKey),
         userId: c.var.auth?.user?.id || null,
-        username: c.var.auth?.user?.githubUsername || null,
     };
 }
 

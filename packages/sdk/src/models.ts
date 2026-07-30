@@ -32,6 +32,7 @@ export interface ModelCatalogItem {
     reasoning: boolean;
     contextLength?: number;
     pricing?: Record<string, string> & { currency: "pollen" };
+    billingAdjustments: NonNullable<ModelInfo["billing_adjustments"]>;
 }
 
 export interface ModelCatalog {
@@ -87,6 +88,7 @@ function normalizeModel(model: ModelInfo): ModelCatalogItem | null {
         reasoning: model.reasoning ?? false,
         contextLength: model.context_length,
         pricing: model.pricing,
+        billingAdjustments: model.billing_adjustments ?? [],
     };
 }
 

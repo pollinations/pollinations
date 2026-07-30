@@ -5,6 +5,7 @@ import {
     withOpenRouterGeminiCacheStorage,
     withVertexCacheStorage,
 } from "./gemini-billing";
+import { MISTRAL_OCR_4_BILLING } from "./mistral-ocr-billing";
 import {
     PERPLEXITY_FAST_BILLING,
     PERPLEXITY_HIGH_BILLING,
@@ -32,6 +33,11 @@ export const AUDIO_VOICES = [
 ] as const;
 
 export const DEFAULT_TEXT_MODEL = "openai" as const;
+export const MISTRAL_OCR_MODEL_NAMES = [
+    "mistral-ocr",
+    "mistral-ocr-4",
+    "mistral-ocr-4-0",
+] as const;
 export type TextModelName = keyof typeof TEXT_SERVICES;
 
 export const TEXT_SERVICES = {
@@ -259,6 +265,31 @@ export const TEXT_SERVICES = {
         contextLength: 128000,
         isSpecialized: false,
     },
+    "command-a-plus": {
+        aliases: [
+            "cohere-command-a-plus",
+            "command-a-plus-05-2026",
+            "cohere-command-a-plus-05-2026",
+        ],
+        provider: "azure",
+        brand: "Cohere",
+        category: "text",
+        addedDate: new Date("2026-07-30").getTime(),
+        priceMultiplier: 0.75,
+        cost: {
+            promptTextTokens: perMillion(0.8),
+            completionTextTokens: perMillion(3.2),
+        },
+        title: "Cohere Command A+",
+        description:
+            "Multilingual agentic reasoning with tools and long context",
+        inputModalities: ["text"],
+        outputModalities: ["text"],
+        tools: true,
+        reasoning: true,
+        contextLength: 128000,
+        isSpecialized: false,
+    },
     "qwen-coder": {
         aliases: ["qwen3-coder", "qwen3-coder-30b-a3b-instruct"],
         provider: "ovhcloud",
@@ -333,6 +364,24 @@ export const TEXT_SERVICES = {
         reasoning: true,
         contextLength: 262144,
         isSpecialized: false,
+    },
+    "mistral-ocr": {
+        aliases: MISTRAL_OCR_MODEL_NAMES.slice(1),
+        provider: "mistral",
+        brand: "Mistral",
+        category: "text",
+        addedDate: new Date("2026-07-26").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1,
+        cost: {},
+        billing: MISTRAL_OCR_4_BILLING,
+        title: "Mistral OCR 4",
+        description:
+            "Extracts structured Markdown, tables, layout blocks and confidence scores",
+        inputModalities: ["document", "image"],
+        outputModalities: ["text"],
+        supportedEndpoints: ["/v1/chat/completions", "/text"],
+        isSpecialized: true,
     },
     "openai-audio": {
         aliases: [

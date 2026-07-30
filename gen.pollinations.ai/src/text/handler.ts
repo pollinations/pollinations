@@ -18,6 +18,7 @@ import {
 import { fixWavHeader } from "../routes/audio.js";
 import { communityEndpointGatewayContext } from "./communityEndpoint.ts";
 import { generateTextPortkey } from "./generateTextPortkey.js";
+import { generateMistralOcrChatCompletion } from "./mistralOcr.ts";
 import { type ExpressLikeRequest, getRequestData } from "./requestUtils.js";
 import type {
     ChatCompletion,
@@ -377,20 +378,32 @@ async function generateTextResponse(
     syncTextEnvironment(c.env);
 
     try {
-        const {
-            result: completion,
-            candidate,
-            index,
-        } = await withModelFallback(
-            fallbackCandidates(c.var.model),
-            async (attempt) =>
-                generateTextPortkey(
-                    requestData.messages,
-                    await gatewayContext(c, requestData, attempt),
-                ),
-            (attempt, error, startedAt) =>
-                c.var.track?.recordFailedAttempt(attempt.id, error, startedAt),
-        );
+        // mistral-ocr reaches its provider by a different route entirely, so it
+        // has no candidate list and cannot fail over.
+        let completion: ChatCompletion;
+        let candidate: FallbackCandidate = { id: c.var.model?.resolved ?? "" };
+        let index = 0;
+        if (requestData.model === "mistral-ocr") {
+            completion = await generateMistralOcrChatCompletion(c, requestData);
+        } else {
+            const served = await withModelFallback(
+                fallbackCandidates(c.var.model),
+                async (attempt) =>
+                    generateTextPortkey(
+                        requestData.messages,
+                        await gatewayContext(c, requestData, attempt),
+                    ),
+                (attempt, error, startedAt) =>
+                    c.var.track?.recordFailedAttempt(
+                        attempt.id,
+                        error,
+                        startedAt,
+                    ),
+            );
+            completion = served.result;
+            candidate = served.candidate;
+            index = served.index;
+        }
         c.set("upstreamRequestUrl", completion.upstreamRequestUrl);
         completion.id = completion.id || generatePollinationsId();
         if (index > 0) {

@@ -97,6 +97,21 @@ describe("resolveModelConfig", () => {
         expect(result.options.provider).toBeUndefined();
     });
 
+    it("routes Command A+ to the exact Azure deployment without fallback", () => {
+        const result = resolveModelConfig(messages, {
+            model: "command-a-plus",
+        });
+
+        expect(result.options.model).toBe("Cohere-command-a-plus-05-2026");
+        expect(result.options.modelConfig).toMatchObject({
+            provider: "azure-openai",
+            "azure-resource-name": "myceli-prod-eastus",
+            "azure-deployment-id": "Cohere-command-a-plus-05-2026",
+            "azure-model-name": "Cohere-command-a-plus-05-2026",
+        });
+        expect(result.options.provider).toBeUndefined();
+    });
+
     it.each([
         "perplexity-high",
         "perplexity-deep",

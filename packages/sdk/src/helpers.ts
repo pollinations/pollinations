@@ -50,6 +50,7 @@ import type {
     KeyUsageOptions,
     Message,
     ModelInfo,
+    PollinationsConfig,
     TextGenerateOptions,
     TranscribeOptions,
     TranscriptionResponse,
@@ -91,10 +92,7 @@ export function resetClient(): void {
  * configure({ apiKey: 'your-api-key' });
  * ```
  */
-export function configure(options: {
-    apiKey?: string;
-    baseUrl?: string;
-}): void {
+export function configure(options: PollinationsConfig): void {
     defaultClient = new Pollinations(options);
 }
 

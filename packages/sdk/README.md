@@ -510,6 +510,29 @@ const media = await upload(imageBuffer, {
 console.log(media.url);
 ```
 
+To exercise the AWS presigned upload flow against the development media
+service without changing production behavior:
+
+```javascript
+import { Pollinations } from '@pollinations/sdk';
+
+const client = new Pollinations({
+  apiKey: process.env.POLLINATIONS_API_KEY,
+  mediaBaseUrl: 'https://media.dev.pollinations.ai',
+  mediaUploadMode: 'presigned',
+});
+
+const media = await client.upload(imageBuffer, {
+  name: 'cat.png',
+  contentType: 'image/png',
+  tags: ['cats'],
+});
+```
+
+In presigned mode, the SDK initializes the upload with the media service,
+uploads the file directly to S3, and confirms completion before returning the
+same public media response.
+
 ## Error Handling
 
 ```javascript

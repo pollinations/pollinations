@@ -3,6 +3,10 @@ export interface PollinationsConfig {
     apiKey?: string;
     /** Base URL for the API (defaults to https://gen.pollinations.ai) */
     baseUrl?: string;
+    /** Base URL for media uploads (defaults to https://media.pollinations.ai) */
+    mediaBaseUrl?: string;
+    /** Media upload protocol (defaults to the current direct upload API) */
+    mediaUploadMode?: "direct" | "presigned";
     /** Default timeout in ms for all requests (default: 300000 = 5min) */
     timeout?: number;
     /** Timeout in ms for text requests (default: 300000 = 5min) */

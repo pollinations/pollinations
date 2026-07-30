@@ -190,6 +190,122 @@ describe("Pollinations media upload", () => {
         expect(formData.get("tags")).toBe("cats,gallery");
         expect(result.tags).toEqual(["cats", "gallery"]);
     });
+
+    it("completes a presigned upload without sending the API key to S3", async () => {
+        const client = new Pollinations({
+            apiKey: "sk_test",
+            mediaBaseUrl: "https://media.dev.pollinations.ai/",
+            mediaUploadMode: "presigned",
+        });
+        const finalResponse = {
+            id: "3dcf2ce3-3c68-46d8-bbc5-fad08b70aa23",
+            url: "https://media.dev.pollinations.ai/3dcf2ce3-3c68-46d8-bbc5-fad08b70aa23",
+            contentType: "image/png",
+            size: 8,
+            tags: ["cats", "gallery"],
+        };
+
+        fetchMock
+            .mockResolvedValueOnce(
+                makeResponse({
+                    id: finalResponse.id,
+                    uploadUrl: "https://s3.example.test/upload",
+                    fields: {
+                        key: finalResponse.id,
+                        policy: "signed-policy",
+                        "x-amz-signature": "signature",
+                    },
+                }),
+            )
+            .mockResolvedValueOnce(makeResponse(null, { status: 204 }))
+            .mockResolvedValueOnce(makeResponse(finalResponse));
+
+        const result = await client.upload(new ArrayBuffer(8), {
+            contentType: "image/png",
+            name: "cat.png",
+            tags: ["cats", "gallery"],
+        });
+
+        expect(fetchMock).toHaveBeenCalledTimes(3);
+
+        const [initUrl, initRequest] = fetchMock.mock.calls[0] as [
+            string,
+            RequestInit,
+        ];
+        expect(initUrl).toBe("https://media.dev.pollinations.ai/upload");
+        expect(initRequest.headers).toMatchObject({
+            "Authorization": "Bearer sk_test",
+            "Content-Type": "application/json",
+        });
+        expect(JSON.parse(initRequest.body as string)).toEqual({
+            contentType: "image/png",
+            name: "cat.png",
+            tags: ["cats", "gallery"],
+            size: 8,
+        });
+
+        const [s3Url, s3Request] = fetchMock.mock.calls[1] as [
+            string,
+            RequestInit,
+        ];
+        expect(s3Url).toBe("https://s3.example.test/upload");
+        expect(s3Request.headers).toBeUndefined();
+        const s3FormData = s3Request.body as FormData;
+        const s3FieldOrder: string[] = [];
+        s3FormData.forEach((_value, field) => {
+            s3FieldOrder.push(field);
+        });
+        expect(s3FieldOrder).toEqual([
+            "key",
+            "policy",
+            "x-amz-signature",
+            "file",
+        ]);
+        expect(s3FormData.get("file")).toBeInstanceOf(Blob);
+
+        const [completeUrl, completeRequest] = fetchMock.mock.calls[2] as [
+            string,
+            RequestInit,
+        ];
+        expect(completeUrl).toBe(
+            `https://media.dev.pollinations.ai/upload/${finalResponse.id}/complete`,
+        );
+        expect(completeRequest).toMatchObject({
+            method: "POST",
+            headers: { Authorization: "Bearer sk_test" },
+        });
+        expect(result).toEqual(finalResponse);
+    });
+
+    it("does not confirm a presigned upload when S3 rejects the file", async () => {
+        const client = new Pollinations({
+            apiKey: "sk_test",
+            mediaBaseUrl: "https://media.dev.pollinations.ai",
+            mediaUploadMode: "presigned",
+        });
+
+        fetchMock
+            .mockResolvedValueOnce(
+                makeResponse({
+                    id: "3dcf2ce3-3c68-46d8-bbc5-fad08b70aa23",
+                    uploadUrl: "https://s3.example.test/upload",
+                    fields: { policy: "signed-policy" },
+                }),
+            )
+            .mockResolvedValueOnce(
+                makeResponse(null, { ok: false, status: 403 }),
+            );
+
+        await expect(
+            client.upload(new ArrayBuffer(8), {
+                contentType: "image/png",
+                name: "cat.png",
+            }),
+        ).rejects.toMatchObject({
+            status: 403,
+        });
+        expect(fetchMock).toHaveBeenCalledTimes(2);
+    });
 });
 
 describe("Pollinations seed handling", () => {

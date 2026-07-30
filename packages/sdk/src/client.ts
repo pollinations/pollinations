@@ -42,6 +42,7 @@ import type {
 import { PollinationsError } from "./types.js";
 
 const DEFAULT_BASE_URL = "https://gen.pollinations.ai";
+const DEFAULT_MEDIA_BASE_URL = "https://media.pollinations.ai";
 export const AUTH_BASE_URL = "https://enter.pollinations.ai";
 const DEVICE_FLOW_CLIENT_ID = "pk_NgBAArhUeGvSRFba";
 const DEVICE_FLOW_DEFAULT_SCOPE = "generate keys usage";
@@ -186,6 +187,8 @@ function parseSSEBuffer<T>(
 export class Pollinations {
     private apiKey: string;
     private baseUrl: string;
+    private mediaBaseUrl: string;
+    private mediaUploadMode: "direct" | "presigned";
     private textTimeout: number;
     private imageTimeout: number;
     private videoTimeout: number;
@@ -204,6 +207,9 @@ export class Pollinations {
 
         this.apiKey = apiKey;
         this.baseUrl = config.baseUrl?.replace(/\/$/, "") || DEFAULT_BASE_URL;
+        this.mediaBaseUrl =
+            config.mediaBaseUrl?.replace(/\/$/, "") || DEFAULT_MEDIA_BASE_URL;
+        this.mediaUploadMode = config.mediaUploadMode || "direct";
 
         // Allow timeout to be a default fallback for all types
         const defaultTimeout = config.timeout ?? DEFAULT_TIMEOUT;
@@ -1238,15 +1244,92 @@ export class Pollinations {
         data: ArrayBuffer | Blob,
         options: UploadOptions = {},
     ): Promise<UploadResponse> {
-        const formData = new FormData();
-
         const blob =
             data instanceof Blob
                 ? data
                 : new Blob([data], {
                       type: options.contentType || "application/octet-stream",
                   });
+        const contentType =
+            options.contentType || blob.type || "application/octet-stream";
+        const name = options.name || "upload";
 
+        if (this.mediaUploadMode === "presigned") {
+            const initResponse = await fetchWithTimeout(
+                `${this.mediaBaseUrl}/upload`,
+                {
+                    method: "POST",
+                    headers: this.getHeaders("application/json"),
+                    body: JSON.stringify({
+                        contentType,
+                        name,
+                        tags: options.tags,
+                        size: blob.size,
+                    }),
+                },
+                this.imageTimeout,
+                options.signal,
+            );
+
+            if (!initResponse.ok) {
+                await this.handleErrorResponse(initResponse);
+            }
+
+            const uploadTarget = (await initResponse.json()) as {
+                id: string;
+                uploadUrl: string;
+                fields: Record<string, string>;
+            };
+            if (
+                !uploadTarget.id ||
+                !uploadTarget.uploadUrl ||
+                !uploadTarget.fields
+            ) {
+                throw new PollinationsError(
+                    "Invalid media upload initialization response",
+                    "INVALID_RESPONSE",
+                    502,
+                );
+            }
+
+            const s3FormData = new FormData();
+            for (const [field, value] of Object.entries(uploadTarget.fields)) {
+                s3FormData.append(field, value);
+            }
+            s3FormData.append("file", blob, name);
+
+            const s3Response = await fetchWithTimeout(
+                uploadTarget.uploadUrl,
+                {
+                    method: "POST",
+                    body: s3FormData,
+                },
+                this.imageTimeout,
+                options.signal,
+            );
+
+            if (!s3Response.ok) {
+                await this.handleErrorResponse(s3Response);
+            }
+
+            const completeResponse = await fetchWithTimeout(
+                `${this.mediaBaseUrl}/upload/${encodeURIComponent(uploadTarget.id)}/complete`,
+                {
+                    method: "POST",
+                    headers: this.getHeaders(),
+                },
+                this.imageTimeout,
+                options.signal,
+            );
+
+            if (!completeResponse.ok) {
+                await this.handleErrorResponse(completeResponse);
+            }
+
+            return completeResponse.json() as Promise<UploadResponse>;
+        }
+
+        const formData = new FormData();
         formData.append("file", blob, options.name || "upload");
         if (options.tags?.length) {
             formData.append("tags", options.tags.join(","));
@@ -1255,7 +1338,7 @@ export class Pollinations {
         const headers = this.getHeaders();
 
         const response = await fetchWithTimeout(
-            `https://media.pollinations.ai/upload`,
+            `${this.mediaBaseUrl}/upload`,
             {
                 method: "POST",
                 headers,

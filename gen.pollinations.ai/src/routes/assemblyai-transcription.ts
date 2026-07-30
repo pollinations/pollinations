@@ -16,7 +16,7 @@ const ASSEMBLYAI_POLL_INTERVAL_MS = 2_000;
 const ASSEMBLYAI_TRANSCRIPTION_TIMEOUT_MS = 240_000;
 const ASSEMBLYAI_MODELS: Record<string, string[]> = {
     "universal-2": ["universal-2"],
-    "universal-3-pro": ["universal-3-pro", "universal-2"],
+    "universal-3.5-pro": ["universal-3-5-pro"],
 };
 
 interface AssemblyAiUploadResponse {
@@ -216,7 +216,7 @@ async function submitAssemblyAiTranscript(opts: {
     } else {
         transcriptRequest.language_detection = true;
     }
-    if (speechModels[0] === "universal-3-pro") {
+    if (speechModels[0] === "universal-3-5-pro") {
         if (prompt) transcriptRequest.prompt = prompt;
         if (temperature !== undefined)
             transcriptRequest.temperature = temperature;
@@ -356,7 +356,8 @@ function getAssemblyAiErrorStatus(message: string): 400 | 500 {
     const normalized = message.toLowerCase();
     if (
         normalized.includes("no spoken audio") ||
-        normalized.includes("does not appear to contain audio")
+        normalized.includes("does not appear to contain audio") ||
+        normalized.includes("transcoding failed")
     ) {
         return 400;
     }
@@ -368,7 +369,7 @@ function getAssemblyAiRegistryModel(
     fallbackModel: string,
 ): string {
     if (speechModelUsed === "universal-2") return "universal-2";
-    if (speechModelUsed === "universal-3-pro") return "universal-3-pro";
+    if (speechModelUsed === "universal-3-5-pro") return "universal-3.5-pro";
     return fallbackModel;
 }
 

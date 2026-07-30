@@ -44,7 +44,7 @@ tunnel pool, where it may immediately receive live traffic.
 Automated replacement preparation must stop before joining the shared
 production tunnel. Follow the fleet-wide qualification and human approval
 policy in
-[`GPU_INSTANCES.md`](../GPU_INSTANCES.md#planned-vast-replacement-scout).
+[`manage-vast-gpu-fleet`](../../.claude/skills/manage-vast-gpu-fleet/SKILL.md).
 
 Run direct verification first, then start the tunnel and benchmark the real
 Z-Image pipeline:

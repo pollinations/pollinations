@@ -54,7 +54,7 @@ Do not change production routing until this passes and a human explicitly
 approves the promotion. After cutover, confirm real production requests are
 served by the replacement, then drain and immediately destroy the old worker.
 The fleet-wide qualification and approval policy is documented in
-[`GPU_INSTANCES.md`](../GPU_INSTANCES.md#planned-vast-replacement-scout).
+[`manage-vast-gpu-fleet`](../../.claude/skills/manage-vast-gpu-fleet/SKILL.md).
 
 ## Operations
 

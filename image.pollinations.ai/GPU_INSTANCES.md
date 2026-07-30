@@ -11,52 +11,13 @@ Last updated: 2026-07-30
 | Klein 4B | 1 active + 1 rollback | RTX 3090 + A5000 | Vast.ai + RunPod | $0.1656 + $0.27 while rollback runs | **ACTIVE — Vast production; RunPod stop-ready** |
 | LTX-2 + ACE-Step + Sana | 1 | GH200 | Lambda Labs | — | **ACTIVE** |
 
-## Planned Vast replacement scout
+## Vast replacement operations
 
-The fleet-wide price scout is a target workflow, not an unattended production
-controller yet. It should inspect every active Vast workload every 15 minutes
-and prepare at most one replacement at a time. It must never change production
-routing, model pricing, or fallback providers without human approval.
-
-A candidate qualifies only when all of the following are true:
-
-- Cash-equivalent savings exceed €10 per 30-day month after applying the 50%
-  discount paid for the current Vast credits.
-- The offer is verified, on-demand, rentable for at least 30 days, and has
-  reliability of at least 99.7%.
-- GPU count and class match the workload, with at least the current VRAM and
-  disk; CPU, CUDA/driver compatibility, and network capacity also meet the
-  model's deployment requirements.
-- Replica replacements preserve host and failure-domain diversity.
-- The host passes real Docker, network, model-download, and bootstrap checks;
-  the marketplace reliability score alone is insufficient.
-
-For a qualified offer, the automated portion may rent and provision an isolated
-candidate, then run the model-specific end-to-end suite: direct API, named
-Cloudflare Tunnel or Workers VPC path, fixed-seed parity, normal and maximum
-dimensions, concurrency and queue behavior, restart persistence, latency,
-error rate, and load behavior. A durable unattended implementation first needs
-a dedicated canary executor with narrowly scoped credentials; a scheduled
-prompt must not copy or mutate production secrets.
-
-After all checks pass, the candidate enters **READY FOR APPROVAL**. The report
-to Elliot and Thomas must include the workload, current and candidate
-instance/GPU/rate, monthly credit and cash-equivalent savings, test results,
-risks, hold state, and the exact production approval request. The candidate may
-remain running or be stopped to limit spend, but Vast capacity is not guaranteed
-to remain available after a stop.
-
-Only explicit human approval starts the production phase:
-
-1. Revalidate the candidate if it was stopped.
-2. Route production traffic to it without changing the fallback policy.
-3. Confirm real production requests are attributed to the new instance and
-   that latency and errors remain healthy.
-4. Drain and immediately destroy the replaced instance.
-
-If any preparation, canary, or cutover check fails, leave the existing
-production worker untouched and destroy the failed candidate. Do not keep an
-extended rollback instance after a verified, human-approved cutover.
+The repository skill
+[`manage-vast-gpu-fleet`](../.claude/skills/manage-vast-gpu-fleet/SKILL.md)
+is the source of truth for scheduled offer scouting, candidate qualification,
+isolated canaries, the human promotion gate, cutover, instance cleanup, and the
+post-cutover documentation PR.
 
 Machines `137831` and `137833` are temporarily excluded from automatic
 selection after repeated Docker Hub pull timeouts on 2026-07-30. Requalify them

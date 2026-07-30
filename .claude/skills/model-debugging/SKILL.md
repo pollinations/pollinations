@@ -598,8 +598,8 @@ Helper scripts for common debugging tasks. Run from repo root.
 ## Check Specific User's Errors
 
 ```bash
-# See a user's recent errors
-.claude/skills/model-debugging/scripts/check-user-errors.sh superbrainai 24
+# See a user's recent errors by internal user ID
+.claude/skills/model-debugging/scripts/check-user-errors.sh USER_ID_HERE 24
 ```
 
 ---

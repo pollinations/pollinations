@@ -100,7 +100,11 @@ def get_project_issues(project_id: str, include_prs: bool = False, priority_fiel
                                 body
                                 state
                                 createdAt
-                                author { login ... on User { databaseId } }
+                                author {
+                                    login
+                                    ... on User { databaseId }
+                                    ... on Bot { databaseId }
+                                }
                                 labels(first: 20) {
                                     nodes { name }
                                 }
@@ -113,7 +117,11 @@ def get_project_issues(project_id: str, include_prs: bool = False, priority_fiel
                                 body
                                 state
                                 createdAt
-                                author { login ... on User { databaseId } }
+                                author {
+                                    login
+                                    ... on User { databaseId }
+                                    ... on Bot { databaseId }
+                                }
                                 labels(first: 20) {
                                     nodes { name }
                                 }
@@ -481,9 +489,8 @@ def main():
                 if project_key == "support" and priority not in {"High", "Low"}:
                     log_debug(f"Backfill: AI returned non-{{High,Low}} priority '{priority}' for #{issue_number}; clamping to Low")
                     priority = "Low"
-                author_id = (issue.get("author") or {}).get("databaseId")
-                if project_key == "support" and is_paid_customer(author_id):
-                    log_debug(f"Author {author} (id={author_id}) is a paid customer; overriding priority to Urgent for #{issue_number}")
+                if project_key == "support" and is_paid_customer(real_author_id):
+                    log_debug(f"Author {real_author} (id={real_author_id}) is a paid customer; overriding priority to Urgent for #{issue_number}")
                     priority = "Urgent"
                 priority_option = project.get("priority_options", {}).get(priority)
                 item_id = issue.get("_item_id")

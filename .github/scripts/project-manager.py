@@ -595,8 +595,8 @@ def main():
         project_key = "support"
     
     priority = classification.get("priority", "Low")
-    if project_key == "support" and is_paid_customer(ISSUE_AUTHOR_ID):
-        log_debug(f"Author {ISSUE_AUTHOR} (id={ISSUE_AUTHOR_ID}) is a paid customer; overriding priority to Urgent")
+    if project_key == "support" and is_paid_customer(real_author_id):
+        log_debug(f"Author {real_author} (id={real_author_id}) is a paid customer; overriding priority to Urgent")
         priority = "Urgent"
     log_debug(f"Classified: project={project_key}, priority={priority}")
     project = CONFIG["projects"].get(project_key)

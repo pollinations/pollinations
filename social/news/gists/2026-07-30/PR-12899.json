@@ -1,0 +1,34 @@
+{
+  "pr_number": 12899,
+  "title": "fix: record model_used on failed generations",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/12899",
+  "merged_at": "2026-07-30T18:09:22Z",
+  "labels": [],
+  "pr_body_excerpt": "- `trackResponse` built every not-billed result without `modelUsed`, so `model_used` fell back to the datasource DEFAULT `'undefined'` on every failed generation and error rows could not say which model failed.\n- Sets `modelUsed` to `resolvedModelRequested` on the three not-billed paths where a model was actually called: upstream error, 200 with an unexpected content-type, and 200 with unextractable usage.\n- Cache hits are excluded and keep `modelUsed` unset — a cache hit called no model, so attributing one would be false. This required splitting `!response.ok || cacheHit` into two checks, with `cacheHit` tested first.\n- Verified assumption: `resolvedModelRequested` is the model that was called. `resolveModel` runs once per request and no path re-dispatches to a different Pollinations model id. Portkey's multi-target config (`x-portkey-last-used-option-index` / `x-fallback-target`, surfaced as `fallbackUsed`) and `callFluxWithFallback` swap the upstream provider target behind a single model id, not the id itself. The success path already falls back to `c.var.model.resolved` for `x-model-used` when upstream omits a model name, so mixing the two is existing behaviour.\n- Tests: 4 direct `trackResponse` cases (three attributed paths + cache hit) and one end-to-end assertion that the Tinybird payload carries `modelUsed` on a 502. No existing assertions weakened.\n\nFixes #12897\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Failures remember their flowers",
+    "blurb": "Error rows now remember which model they visited before things went sideways. Cache hits remain honestly model-free, because imaginary telemetry is still telemetry.",
+    "summary": "Fixed generation tracking so upstream errors, unexpected 200 content types, and unextractable usage records send the requested resolved model ID as modelUsed, while cache hits remain unset.",
+    "impact": "Failed-generation Tinybird records can now be attributed to the model that was called, making debugging and reliability analysis much more useful without falsely labeling cache hits.",
+    "keywords": [
+      "tracking",
+      "observability",
+      "model_used",
+      "Tinybird",
+      "generation-errors",
+      "gen-api"
+    ],
+    "visual_concept": "Depict Polli as a careful observability gardener labeling three wilted code-flowers with their correct model tags beside a retro terminal showing error logs; leave a nearby cache jar deliberately unlabeled to represent cache hits that called no model.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow bee mascot with dark brown horizontal stripes, black oval eyes, pink rectangular cheek blush, a small smile, light blue translucent wings, and a tiny detective hat, carefully attaching model-name labels to three drooping code-flowers beside a warm CRT terminal with friendly error symbols; a glass cache jar sits nearby with no label, while mint vines and lime green (#ecf874) leaves grow around the desk. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, dark purple (#110518) outlines, subtle pixel-font text reading “model_used”, nostalgic and emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-30/PR-12899.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow bee mascot with dark brown horizontal stripes, black oval eyes, pink rectangular cheek blush, a small smile, light blue translucent wings, and a tiny detective hat, carefully attaching model-name labels to three drooping code-flowers beside a warm CRT terminal with friendly error symbols; a glass cache jar sits nearby with no label, while mint vines and lime green (#ecf874) leaves grow around the desk. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, dark purple (#110518) outlines, subtle pixel-font text reading “model_used”, nostalgic and emotionally warm."
+  },
+  "generated_at": "2026-07-30T18:10:21.315371+00:00"
+}

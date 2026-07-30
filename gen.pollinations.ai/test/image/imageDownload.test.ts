@@ -40,11 +40,11 @@ describe("downloadUserImage", () => {
         );
 
         await expect(downloadUserImage(imageUrl)).rejects.toMatchObject({
-            name: "HttpError",
+            name: "UserImageError",
             status: 400,
             details: { validation: true },
             errorCode: "unsupported_image_media_type",
-            message: `Unsupported image format from ${imageUrl}`,
+            message: `Unsupported image format from ${imageUrl}. Supported formats: PNG, JPEG, WebP, GIF, BMP.`,
         });
     });
 
@@ -69,6 +69,67 @@ describe("downloadUserImage", () => {
         await expect(downloadUserImage(imageUrl)).rejects.toMatchObject({
             status: 400,
             errorCode: "failed_to_download_image",
+        });
+    });
+
+    // The generation path reaches the same guard the text path uses, so a URL
+    // refused there cannot be reached through an image request instead.
+    it.each([
+        "http://localhost/image.png",
+        "http://127.0.0.1/image.png",
+        "http://169.254.169.254/latest/meta-data/",
+        "http://[::1]/image.png",
+        "https://user:pass@example.com/image.png",
+        "file:///etc/passwd",
+    ])("refuses %s before any fetch", async (imageUrl) => {
+        const fetchSpy = vi.spyOn(globalThis, "fetch");
+
+        await expect(downloadUserImage(imageUrl)).rejects.toMatchObject({
+            status: 400,
+            errorCode: "invalid_image_url",
+        });
+        expect(fetchSpy).not.toHaveBeenCalled();
+    });
+
+    it("stops reading an image that streams past the size cap", async () => {
+        // Never completes: the cap has to end this, not the end of the body.
+        const endless = new ReadableStream({
+            pull(controller) {
+                controller.enqueue(new Uint8Array(1024 * 1024));
+            },
+        });
+        vi.spyOn(globalThis, "fetch").mockResolvedValue(
+            new Response(endless, { status: 200 }),
+        );
+
+        await expect(
+            downloadUserImage("https://example.com/endless.png"),
+        ).rejects.toMatchObject({
+            status: 400,
+            errorCode: "image_too_large",
+        });
+    });
+
+    it("accepts an uploaded image as a data URI without fetching", async () => {
+        const fetchSpy = vi.spyOn(globalThis, "fetch");
+
+        const { buffer, mimeType } = await downloadUserImage(
+            "data:image/png;base64,iVBORw0KGgo=",
+        );
+
+        expect(mimeType).toBe("image/png");
+        expect([...buffer]).toEqual([
+            0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a,
+        ]);
+        expect(fetchSpy).not.toHaveBeenCalled();
+    });
+
+    it("types an upload by its bytes, not by the type it declares", async () => {
+        await expect(
+            downloadUserImage("data:image/png;base64,bm90LWFuLWltYWdl"),
+        ).rejects.toMatchObject({
+            status: 400,
+            errorCode: "unsupported_image_media_type",
         });
     });
 });

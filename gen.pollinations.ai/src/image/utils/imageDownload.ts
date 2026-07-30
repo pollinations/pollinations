@@ -1,21 +1,7 @@
 import { Buffer } from "node:buffer";
-import type { ImageInputErrorCode } from "@shared/error.ts";
 import { detectImageMimeType } from "@shared/image-mime.ts";
+import { fetchUserImage } from "@/userImage.ts";
 import { HttpError } from "../httpError.ts";
-
-/** A user-supplied image we could not use — always 400, always coded. */
-function userImageError(
-    message: string,
-    errorCode: ImageInputErrorCode,
-): HttpError {
-    return new HttpError(
-        message,
-        400,
-        { validation: true },
-        undefined,
-        errorCode,
-    );
-}
 
 export function bufferToUint8Array(buffer: Buffer): Uint8Array<ArrayBuffer> {
     return new Uint8Array(buffer);
@@ -139,50 +125,19 @@ export function readImageDimensions(
     return null;
 }
 
+/**
+ * Downloads one user-supplied image for a generation request.
+ *
+ * Redirects are followed here, unlike the text path: an image URL pasted into
+ * the `image` parameter is routinely a shortener or a CDN that redirects, and
+ * refusing those would reject URLs that work today.
+ */
 export async function downloadUserImage(
     imageUrl: string,
     signal?: AbortSignal,
 ): Promise<{ buffer: Buffer; mimeType: string }> {
-    let imageResponse: Response;
-    try {
-        imageResponse = await fetch(imageUrl, { signal });
-    } catch (error) {
-        const message = error instanceof Error ? error.message : String(error);
-        throw userImageError(
-            `Failed to fetch image ${imageUrl}: ${message}`,
-            "failed_to_download_image",
-        );
-    }
-
-    if (!imageResponse.ok) {
-        throw userImageError(
-            `Failed to fetch image ${imageUrl}: ${imageResponse.status} ${imageResponse.statusText}`,
-            "failed_to_download_image",
-        );
-    }
-
-    let buffer: Buffer;
-    try {
-        buffer = Buffer.from(await imageResponse.arrayBuffer());
-    } catch (error) {
-        const message = error instanceof Error ? error.message : String(error);
-        // The body never arrived — a transport failure, not a format one. The
-        // media type is still unknown at this point, so blaming it would send
-        // callers looking at an image we never actually read.
-        throw userImageError(
-            `Failed to read image ${imageUrl}: ${message}`,
-            "failed_to_download_image",
-        );
-    }
-
-    const mimeType = detectImageMimeType(buffer);
-    if (!mimeType) {
-        throw userImageError(
-            `Unsupported image format from ${imageUrl}`,
-            "unsupported_image_media_type",
-        );
-    }
-    return { buffer, mimeType };
+    const { bytes, mimeType } = await fetchUserImage(imageUrl, { signal });
+    return { buffer: Buffer.from(bytes), mimeType };
 }
 
 export async function downloadImageAsBase64(

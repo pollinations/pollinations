@@ -4,6 +4,11 @@ import { imageUrlToBase64Transform } from "../../../src/text/transforms/imageUrl
 const transform = imageUrlToBase64Transform;
 const bedrockOptions = { modelConfig: { provider: "bedrock" } };
 
+/** PNG signature — enough for the media type to be read off the bytes. */
+const PNG_BYTES = new Uint8Array([
+    0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a,
+]);
+
 afterEach(() => {
     vi.restoreAllMocks();
 });
@@ -103,10 +108,15 @@ describe("imageUrlToBase64Transform", () => {
     });
 
     it("caps converted image URLs per request", async () => {
-        vi.spyOn(globalThis, "fetch").mockResolvedValue(
-            new Response(new Uint8Array([1, 2, 3]), {
-                headers: { "content-type": "image/png" },
-            }),
+        // A fresh Response per call: a single shared one has its body consumed
+        // by the first read, and the media type is now taken from the bytes, so
+        // later images would fail as unreadable before reaching the count cap
+        // this test is about.
+        vi.spyOn(globalThis, "fetch").mockImplementation(
+            async () =>
+                new Response(PNG_BYTES, {
+                    headers: { "content-type": "image/png" },
+                }),
         );
 
         await expect(

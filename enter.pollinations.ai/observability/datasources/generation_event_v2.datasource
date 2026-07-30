@@ -53,6 +53,8 @@ SCHEMA >
 `resolved_model_requested`  LowCardinality(String) `json:$.resolvedModelRequested` DEFAULT 'undefined',
 `model_used`                LowCardinality(String) `json:$.modelUsed` DEFAULT 'undefined',
 `model_provider_used`       LowCardinality(String) `json:$.modelProviderUsed` DEFAULT 'undefined',
+`cost_variant`              LowCardinality(String) `json:$.costVariant` DEFAULT 'undefined',
+`cost_variant_status`       LowCardinality(String) `json:$.costVariantStatus` DEFAULT 'not_evaluated',
 `fallback_used`             Bool                   `json:$.fallbackUsed` DEFAULT false,
 `is_billed_usage`           Bool                   `json:$.isBilledUsage`,
 
@@ -90,6 +92,8 @@ SCHEMA >
 
 -- Totals
 `total_cost`    Float64 `json:$.totalCost` DEFAULT 0,
+`provider_reported_cost` Nullable(Float64) `json:$.providerReportedCost`,
+`provider_cost_delta` Nullable(Float64) `json:$.providerCostDelta`,
 `total_price`   Float64 `json:$.totalPrice` DEFAULT 0,
 `dev_price`     Float64 `json:$.devPrice` DEFAULT 0,
 `markup_rate` Float64 `json:$.markupRate` DEFAULT 0,

@@ -5,6 +5,7 @@ import {
     buildUsageHeaders,
     FALLBACK_TARGET_HEADER,
     openaiUsageToUsage,
+    PROVIDER_REPORTED_COST_HEADER,
 } from "@shared/registry/usage-headers.ts";
 import type { Context } from "hono";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
@@ -126,6 +127,19 @@ function usageHeaders(
     }
     if (completion?.fallbackTarget) {
         headers.set(FALLBACK_TARGET_HEADER, completion.fallbackTarget);
+    }
+    const providerReportedCost = (
+        completion?.usage as { cost?: unknown } | undefined
+    )?.cost;
+    if (
+        typeof providerReportedCost === "number" &&
+        Number.isFinite(providerReportedCost) &&
+        providerReportedCost >= 0
+    ) {
+        headers.set(
+            PROVIDER_REPORTED_COST_HEADER,
+            String(providerReportedCost),
+        );
     }
     return headers;
 }

@@ -114,6 +114,7 @@ export async function callHappyHorseAPI(
         durationSeconds: duration,
         trackingData: {
             actualModel: "happyhorse-1.1",
+            providerReportedCost: providerCost ?? undefined,
             usage: { completionVideoSeconds: duration },
         },
     };
@@ -183,6 +184,7 @@ export async function callOpenRouterGrokVideoAPI(
         durationSeconds: duration,
         trackingData: {
             actualModel: "grok-video-pro",
+            providerReportedCost: providerCost ?? undefined,
             usage: {
                 ...(safeParams.image?.[0] ? { promptImageTokens: 1 } : {}),
                 completionVideoSeconds: duration,

@@ -33,13 +33,16 @@ import {
     getPriceDefinitionForModel,
     type ModelDefinition,
     type PriceDefinition,
+    type PricingInput,
     type Usage,
+    type UsageBilling,
     type UsageCost,
     type UsagePrice,
 } from "@shared/registry/registry.ts";
 import {
     FALLBACK_TARGET_HEADER,
     openaiUsageToUsage,
+    PROVIDER_REPORTED_COST_HEADER,
     parseUsageHeaders,
 } from "@shared/registry/usage-headers.ts";
 import type {
@@ -87,6 +90,7 @@ export type ModelUsage = {
     model: string;
     usage: Usage;
     output?: unknown;
+    providerReportedCost?: number;
 };
 
 type RequestTrackingData = {
@@ -112,6 +116,20 @@ type ResponseTrackingData = {
     // Per-rule billing adjustment breakdown for the billed generation. Absent on
     // cache hits / not-billed paths, which return before cost calculation.
     adjustments?: BillingAdjustment[];
+    // Effective per-unit price sheet applied at billing time (cost variant
+    // merged, multiplier applied). The tracking event records this sheet so
+    // recorded rates always reproduce the billed totals.
+    priceDefinition?: PriceDefinition;
+    // Applied cost variant name (financial identity; modelUsed stays
+    // observational).
+    costVariant?: string;
+    // Separates a normal base-rate request from selector fallback failures.
+    costVariantStatus?: UsageBilling["costVariantStatus"];
+    // OpenRouter's own billed USD amount, when returned by the provider.
+    // This is reconciliation telemetry only and never changes user billing.
+    providerReportedCost?: number;
+    // Pollinations-calculated provider cost minus OpenRouter-reported cost.
+    providerCostDelta?: number;
     contentFilterResults?: GenerationEventContentFilterParams;
 };
 
@@ -121,6 +139,9 @@ export type TrackVariables = {
         resolvedModelRequested: string;
         streamRequested: boolean;
         overrideResponseTracking: (response: Response) => void;
+        // Service layers register normalized request facts that affect
+        // pricing. Consumed once at billing time by selectCostVariant.
+        setPricingInput: (input: PricingInput) => void;
     };
 };
 
@@ -170,6 +191,7 @@ export const track = (eventType: EventType) =>
         } satisfies UserData;
 
         let responseOverride: Response | null = null;
+        let pricingInput: PricingInput | undefined;
 
         c.set("track", {
             modelRequested: requestTracking.modelRequested,
@@ -177,6 +199,9 @@ export const track = (eventType: EventType) =>
             streamRequested: requestTracking.streamRequested,
             overrideResponseTracking: (response: Response) => {
                 responseOverride = response;
+            },
+            setPricingInput: (input: PricingInput) => {
+                pricingInput = input;
             },
         });
 
@@ -199,6 +224,7 @@ export const track = (eventType: EventType) =>
                     eventType,
                     requestTracking,
                     response,
+                    pricingInput,
                 );
                 if (responseTracking.cacheHit) {
                     await c.var.frontendKeyRateLimit?.consumePollen(0);
@@ -452,6 +478,7 @@ async function trackResponse(
     eventType: EventType,
     requestTracking: RequestTrackingData,
     response: Response,
+    pricingInput?: PricingInput,
 ): Promise<ResponseTrackingData> {
     const log = getLogger(["hono", "track", "response"]);
     const { resolvedModelRequested } = requestTracking;
@@ -508,12 +535,44 @@ async function trackResponse(
     // Single pass: cost, price, and the per-rule fee breakdown all derive from
     // one walk over the billing rules, so the event's adjustment maps always
     // match the billed totals and clamp warnings log once per request.
-    const { cost, price, adjustments } = calculateUsageBilling(
+    const {
+        cost,
+        price,
+        adjustments,
+        priceDefinition,
+        costVariant,
+        costVariantStatus,
+    } = calculateUsageBilling(
         resolvedModelRequested,
         modelUsage.usage,
         requestTracking.modelDefinition,
         modelUsage.output,
+        pricingInput,
     );
+    const providerReportedCost =
+        requestTracking.modelProvider === "openrouter"
+            ? modelUsage.providerReportedCost
+            : undefined;
+    const providerCostDelta =
+        providerReportedCost === undefined
+            ? undefined
+            : cost.totalCost - providerReportedCost;
+    if (
+        providerReportedCost !== undefined &&
+        providerCostDelta !== undefined &&
+        Math.abs(providerCostDelta) >
+            Math.max(0.000001, providerReportedCost * 0.01)
+    ) {
+        log.warn(
+            "OpenRouter cost mismatch for model {model}: calculated={calculatedCost}, provider={providerCost}, delta={delta}",
+            {
+                model: resolvedModelRequested,
+                calculatedCost: cost.totalCost,
+                providerCost: providerReportedCost,
+                delta: providerCostDelta,
+            },
+        );
+    }
     return {
         responseStatus: response.status,
         cacheHit,
@@ -522,6 +581,11 @@ async function trackResponse(
         cost,
         price,
         adjustments,
+        priceDefinition,
+        costVariant,
+        costVariantStatus,
+        providerReportedCost,
+        providerCostDelta,
         modelUsed: modelUsage.model,
         usage: modelUsage.usage,
         contentFilterResults,
@@ -717,6 +781,8 @@ function createTrackingEvent({
         resolvedModelRequested: requestTracking.resolvedModelRequested,
         modelUsed: responseTracking.modelUsed,
         modelProviderUsed: requestTracking.modelProvider,
+        costVariant: responseTracking.costVariant,
+        costVariantStatus: responseTracking.costVariantStatus,
         fallbackUsed: responseTracking.fallbackUsed,
 
         isBilledUsage: responseTracking.isBilledUsage,
@@ -724,10 +790,17 @@ function createTrackingEvent({
         ...balanceTracking,
         ...reduceAdjustmentsToEventFields(responseTracking.adjustments),
 
-        ...priceToEventParams(requestTracking.modelPriceDefinition),
+        // Billed rows record the effective sheet resolved at billing time
+        // (cost variant merged); not-billed rows fall back to the base sheet.
+        ...priceToEventParams(
+            responseTracking.priceDefinition ??
+                requestTracking.modelPriceDefinition,
+        ),
         ...usageToEventParams(responseTracking.usage),
 
         totalCost: responseTracking.cost?.totalCost || 0,
+        providerReportedCost: responseTracking.providerReportedCost,
+        providerCostDelta: responseTracking.providerCostDelta,
         totalPrice: billedPrice,
         devPrice: responseTracking.price?.totalPrice || 0,
         markupRate: markup?.markupRate ?? 0,
@@ -786,7 +859,20 @@ function extractUsageHeaders(response: Response): ModelUsage {
     return {
         model: modelUsed,
         usage,
+        providerReportedCost: parseProviderReportedCost(
+            response.headers.get(PROVIDER_REPORTED_COST_HEADER),
+        ),
     };
+}
+
+function parseProviderReportedCost(value: unknown): number | undefined {
+    const parsed =
+        typeof value === "string" && value.trim() !== ""
+            ? Number(value)
+            : value;
+    return typeof parsed === "number" && Number.isFinite(parsed) && parsed >= 0
+        ? parsed
+        : undefined;
 }
 
 async function extractResponseJsonOutput(
@@ -841,7 +927,13 @@ async function extractUsageAndContentFilterResultsStream(
     const log = getLogger(["hono", "track", "stream"]);
     const EventSchema = z.object({
         model: z.string(),
-        usage: CompletionUsageSchema.nullish(),
+        // Providers use different cost shapes: OpenRouter reports a number,
+        // while Perplexity reports an object with request_cost/total_cost.
+        // Preserve either shape here; reconciliation accepts only a valid
+        // numeric value below, and billing rules inspect the original event.
+        usage: CompletionUsageSchema.extend({
+            cost: z.unknown().nullish(),
+        }).nullish(),
         choices: z.array(
             z.object({
                 content_filter_results: ContentFilterResultSchema.nullish(),
@@ -858,6 +950,7 @@ async function extractUsageAndContentFilterResultsStream(
 
     let model: string | undefined;
     let usage: CompletionUsage | undefined;
+    let providerReportedCost: number | undefined;
     let promptFilterResults: ContentFilterResult = {};
     let completionFilterResults: ContentFilterResult = {};
     const streamEvents: unknown[] = [];
@@ -890,6 +983,9 @@ async function extractUsageAndContentFilterResultsStream(
             }
             usage = parseResult.data?.usage;
             model = parseResult.data?.model;
+            providerReportedCost = parseProviderReportedCost(
+                parseResult.data.usage.cost,
+            );
         }
     }
 
@@ -911,6 +1007,7 @@ async function extractUsageAndContentFilterResultsStream(
             model,
             usage: openaiUsageToUsage(usage),
             output: streamEvents.length > 0 ? { streamEvents } : undefined,
+            providerReportedCost,
         },
         contentFilterResults,
     };

@@ -382,6 +382,7 @@ export async function callOpenRouterSeedreamProAPI(
         isChild: false,
         trackingData: {
             actualModel: "seedream-pro",
+            providerReportedCost: data.usage?.cost ?? undefined,
             usage: {
                 completionImageTokens: 1,
                 totalTokenCount: 1,
@@ -453,6 +454,7 @@ export async function callOpenRouterGrokImagineProAPI(
         isChild: false,
         trackingData: {
             actualModel: "grok-imagine-pro",
+            providerReportedCost: data.usage?.cost ?? undefined,
             usage: {
                 ...(referenceImage ? { promptImageTokens: 1 } : {}),
                 completionImageTokens: 1,
@@ -569,6 +571,7 @@ export async function callOpenRouterGeminiImageAPI(
         isChild: false,
         trackingData: {
             actualModel: safeParams.model,
+            providerReportedCost: data.usage?.cost ?? undefined,
             usage,
         },
     };
@@ -664,6 +667,7 @@ export async function callOpenRouterRecraftVectorAPI(
         isChild: false,
         trackingData: {
             actualModel: "recraft-v4.1-vector",
+            providerReportedCost: data.usage?.cost ?? undefined,
             // OpenRouter bills this endpoint a fixed $0.08 per output image.
             usage: { completionImageTokens: 1 },
         },

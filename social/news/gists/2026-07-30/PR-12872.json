@@ -1,0 +1,34 @@
+{
+  "pr_number": 12872,
+  "title": "fix: require paid balance for OpenRouter models",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/12872",
+  "merged_at": "2026-07-30T10:29:57Z",
+  "labels": [],
+  "pr_body_excerpt": "- Marks the 12 remaining OpenRouter text models as paid-only: `mistral-small-3.2`, `mistral`, `gemma`, `gemma-4-31b`, `mimo-v2.5`, `mimo-v2.5-pro`, `llama-scout`, `qwen-large`, `qwen-vision`, `qwen-vision-pro`, `step-flash`, and `step-3.5-flash`.\n- Leaves model IDs, providers, aliases, capabilities, pricing, multipliers, and routing unchanged.\n- Adds a registry invariant requiring every OpenRouter model to be paid-only.\n- Extends worker-level coverage to verify OpenRouter text models are hidden without pack balance, visible with pack balance, and rejected with HTTP 402 when called without paid balance.\n\nTests:\n- Enter aliases: 274 passed\n- Enter pricing and snapshot: 29 passed\n- Gen permissions and billing: 12 passed\n- Biome and `git diff --check` passed",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "The paid garden gate",
+    "blurb": "The remaining OpenRouter models now follow the same paid-balance rule as their neighbors. Twelve stray paths through the garden have been neatly fenced into the right lane.",
+    "summary": "Marked the 12 remaining OpenRouter text models—including mistral-small-3.2, Gemma, MiMo, Llama Scout, Qwen Vision, and Step Flash—as paid-only, with registry and worker tests enforcing pack-balance visibility and HTTP 402 access checks.",
+    "impact": "OpenRouter text models now consistently appear only for accounts with pack balance and return HTTP 402 when called without paid credit, while their IDs, aliases, pricing, capabilities, and routing remain unchanged.",
+    "keywords": [
+      "openrouter",
+      "model permissions",
+      "paid balance",
+      "billing",
+      "text models",
+      "http 402"
+    ],
+    "visual_concept": "A cozy garden gate represents consistent paid-model access rules: Polli, wearing a tiny gardener tool belt, checks a glowing Pollen wallet before opening a vine-covered gate to a row of twelve labeled-but-small model seed packets. A CRT monitor robot holds a neat permissions checklist beside code-plants, emphasizing that the models themselves and their routes remain intact.",
+    "image_prompt": "Cozy pixel art scene of Polli the cute yellow-and-brown striped bee mascot wearing a tiny gardener tool belt, warmly opening a vine-covered garden gate after checking a glowing Pollen wallet, with a friendly CRT monitor robot holding a permissions checklist beside twelve small code-seed packets and flowering code-plants. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, retro gaming vibes, dark purple (#110518) outlines, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-30/PR-12872.jpg",
+    "prompt": "Cozy pixel art scene of Polli the cute yellow-and-brown striped bee mascot wearing a tiny gardener tool belt, warmly opening a vine-covered garden gate after checking a glowing Pollen wallet, with a friendly CRT monitor robot holding a permissions checklist beside twelve small code-seed packets and flowering code-plants. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, retro gaming vibes, dark purple (#110518) outlines, nostalgic but beautiful."
+  },
+  "generated_at": "2026-07-30T10:50:52.201394+00:00"
+}

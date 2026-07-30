@@ -18,12 +18,12 @@
   // origin serving before it verifies the public URL, so both are needed.
   "routes": [
     {
-      "pattern": "polli.myceli.ai",
+      "pattern": "weaver.myceli.ai",
       "zone_name": "myceli.ai",
       "custom_domain": true
     },
     {
-      "pattern": "polli.pollinations.ai",
+      "pattern": "weaver.pollinations.ai",
       "zone_name": "pollinations.ai",
       "custom_domain": true
     }

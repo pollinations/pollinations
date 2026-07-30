@@ -1,0 +1,34 @@
+{
+  "pr_number": 12893,
+  "title": "revert: remove Mistral OCR 4",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/12893",
+  "merged_at": "2026-07-30T16:16:11Z",
+  "labels": [],
+  "pr_body_excerpt": "Reverts #12776 (commit `d2d1ca05b`). Reverting is the maintainer's call — no technical fault is being asserted here.\n\n- Clean `git revert`, no conflicts. Every one of the 26 files the original commit touched is now byte-identical to its pre-OCR state.\n- Removes `gen.pollinations.ai/src/text/mistralOcr.ts`, `shared/registry/mistral-ocr-billing.ts`, `gen.pollinations.ai/test/ocr.test.ts`, the `mistral-ocr` registry/model-info/schema entries, the SDK OCR client + types, and the enter frontend catalog/badge changes.\n- Tests: gen suite 79 files / 759 tests before → 78 files / 746 after (-1 file, -13 tests, exactly `ocr.test.ts`). All pass. `tsc --noEmit` clean for gen and enter; `biome check` clean.\n- No encrypted secrets file was touched by #12776 or by this revert. `MISTRAL_API_KEY` was already in `REQUIRED_SECRET_KEYS` before #12776; that commit added a redundant duplicate to `OPTIONAL_SECRET_KEYS`, and only the duplicate is removed here. Secret deployment behaviour is unchanged.\n- Grep for `mistral-ocr` / `mistralOcr` across the tree returns zero hits. Remaining `mistral` references are the pre-existing Mistral Small 3.2 / Small 4 / large text models.\n\nDo not merge without maintainer sign-off.\n",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "discord_only",
+    "importance": "major",
+    "headline": "OCR leaves the garden",
+    "blurb": "The Mistral OCR branch has been neatly pruned back to the pre-OCR state. Polli checked the roots: no stray registry entries, SDK types, catalog badges, or secret changes remain.",
+    "summary": "Reverted the Mistral OCR 4 integration, removing its gen API handler, model registry and billing entries, SDK OCR client and types, frontend catalog listing, and 13 OCR-specific tests.",
+    "impact": "The API, SDK, and model catalog now return to their pre-Mistral-OCR configuration, while existing Mistral Small 3.2, Small 4, and Large text-model support remains available.",
+    "keywords": [
+      "mistral",
+      "ocr",
+      "model-registry",
+      "sdk",
+      "api",
+      "revert"
+    ],
+    "visual_concept": "Depict a careful garden cleanup: Polli, wearing a tiny gardener hat, removes a labeled OCR code-plant from a cozy model garden while a retro terminal shows the remaining Mistral text-model plants thriving. The scene represents a clean, complete revert rather than a broken system, with discarded OCR pages composting into pixel soil.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny gardener hat, carefully pruning a small code-plant labeled \"OCR\" from a warm cream garden beside a retro terminal; nearby, healthy text-model plants remain in lime green (#ecf874) pots. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, subtle CRT glow, retro gaming vibes like Stardew Valley, emotionally warm and tidy."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-30/PR-12893.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny gardener hat, carefully pruning a small code-plant labeled \"OCR\" from a warm cream garden beside a retro terminal; nearby, healthy text-model plants remain in lime green (#ecf874) pots. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, subtle CRT glow, retro gaming vibes like Stardew Valley, emotionally warm and tidy."
+  },
+  "generated_at": "2026-07-30T16:17:13.504984+00:00"
+}

@@ -94,7 +94,8 @@ User comes back with a short-lived code:
 https://myapp.com/callback?code=oauth_code&state=random-csrf-token
 ```
 
-Validate `state`, then exchange the code from your server:
+Validate `state`, then exchange the code at the token endpoint. Server-backed apps
+can make the exchange from their server:
 
 ```bash
 curl -X POST https://enter.pollinations.ai/api/oauth/token \
@@ -106,6 +107,57 @@ curl -X POST https://enter.pollinations.ai/api/oauth/token \
   -d 'code_verifier=YOUR_PKCE_VERIFIER'
 # → { "access_token": "sk_...", "token_type": "bearer", "expires_in": 604800, "scope": "profile usage" }
 ```
+
+Static public browser apps can exchange the code directly: PKCE protects the code,
+the token endpoint supports CORS, and discovery advertises client authentication
+method `none`. Read the token endpoint from discovery metadata instead of
+hardcoding it:
+
+```javascript
+const redirectUri = 'https://myapp.com/callback'; // Exact registered URI
+const callback = new URL(window.location.href);
+const code = callback.searchParams.get('code');
+const returnedState = callback.searchParams.get('state');
+const expectedState = sessionStorage.getItem('pollinations_oauth_state');
+const codeVerifier = sessionStorage.getItem('pollinations_pkce_verifier');
+
+if (!code || !expectedState || returnedState !== expectedState || !codeVerifier) {
+  throw new Error('Invalid OAuth callback');
+}
+
+sessionStorage.removeItem('pollinations_oauth_state');
+sessionStorage.removeItem('pollinations_pkce_verifier');
+window.history.replaceState({}, '', redirectUri);
+
+const metadataResponse = await fetch(
+  'https://enter.pollinations.ai/.well-known/oauth-authorization-server'
+);
+if (!metadataResponse.ok) throw new Error('OAuth discovery failed');
+const metadata = await metadataResponse.json();
+
+const tokenResponse = await fetch(metadata.token_endpoint, {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+  body: new URLSearchParams({
+    grant_type: 'authorization_code',
+    code,
+    client_id: 'pk_yourkey',
+    redirect_uri: redirectUri,
+    code_verifier: codeVerifier,
+  }),
+});
+const token = await tokenResponse.json();
+if (!tokenResponse.ok) {
+  throw new Error(token.error_description || token.error || 'Token exchange failed');
+}
+
+const accessToken = token.access_token;
+```
+
+Keep `accessToken` in memory when possible. If a separate callback page must hand
+it back to the app within the same tab, `sessionStorage` is a reasonable
+session-only fallback; clear it on disconnect or expiry. Never put access tokens
+in `localStorage`, URLs, analytics, or logs.
 
 The authorization code is single-use and expires after 10 minutes. Token responses use RFC 6749 error objects such as `invalid_grant`, `invalid_request`, and `unsupported_grant_type`.
 
@@ -123,7 +175,8 @@ fetch('https://gen.pollinations.ai/v1/chat/completions', {
 });
 ```
 
-See `apps/oauth-client-demo/` for a zero-dependency reference client.
+See `apps/oauth-client-demo/` for a zero-dependency server-backed reference
+client and `apps/oauth-test/` for a browser-only reference.
 
 ## ⚙️ Legacy Web Apps (Fragment Flow)
 

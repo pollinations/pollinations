@@ -754,6 +754,36 @@ test("OpenRouter models require paid balance", () => {
     }
 });
 
+test("Step Flash uses DeepInfra's standard and cached token rates", () => {
+    const definition = getRegistryModelDefinition("step-flash");
+
+    expect(definition.provider).toBe("deepinfra");
+    expect(definition.priceMultiplier).toBe(1);
+    expect(definition.paidOnly).toBe(true);
+    expect(definition.cost).toMatchObject({
+        promptTextTokens: 0.2 / 1e6,
+        promptCachedTokens: 0.04 / 1e6,
+        completionTextTokens: 1.15 / 1e6,
+    });
+});
+
+test("Pruna image models retain DeepInfra's flat per-image rates", () => {
+    for (const [model, expectedCost] of [
+        ["p-image", 0.005],
+        ["p-image-edit", 0.01],
+    ] as const) {
+        const definition = getRegistryModelDefinition(model);
+
+        expect(definition.provider, `${model} provider`).toBe("deepinfra");
+        expect(definition.priceMultiplier, `${model} multiplier`).toBe(1);
+        expect(definition.paidOnly, `${model} paid-only status`).toBe(true);
+        expect(
+            calculateCost(model, { completionImageTokens: 1 }).totalCost,
+            `${model} one-image cost`,
+        ).toBe(expectedCost);
+    }
+});
+
 test("bedrock nova models price cache writes free and reads at 25% of input", () => {
     // AWS Price List API (verified 2026-07-05): Nova cache writes are a $0
     // SKU; cache reads bill at 25% of the standard input rate.

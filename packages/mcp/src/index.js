@@ -2,7 +2,7 @@
  * pollinations.ai MCP Server v2.0
  *
  * A Model Context Protocol server for pollinations.ai services.
- * Supports image, video, text, and audio generation via gen.pollinations.ai
+ * Supports image, video, text, and audio generation via the Pollinations API
  */
 
 import { pathToFileURL } from "node:url";
@@ -72,7 +72,8 @@ Get your API key at: https://enter.pollinations.ai/keys
 - **getUsage** - Recent usage history; pass daily=true for daily aggregated summary
 
 ## API Endpoint
-All requests go through: https://gen.pollinations.ai
+All requests go through the Pollinations gateway configured by
+POLLINATIONS_BASE_URL (default: https://gen.pollinations.ai).
 
 ## Tips
 - Models are fetched dynamically from the API - always up to date!
@@ -161,7 +162,11 @@ export async function startMcpServer() {
         await server.connect(transport);
 
         console.error("Pollinations MCP Server v2.1.0 running on stdio");
-        console.error("API: https://gen.pollinations.ai");
+        console.error(
+            process.env.POLLINATIONS_BASE_URL
+                ? "API: configured via POLLINATIONS_BASE_URL"
+                : "API: https://gen.pollinations.ai",
+        );
     } catch (error) {
         console.error(`Failed to start MCP server: ${error.message}`);
         process.exit(1);

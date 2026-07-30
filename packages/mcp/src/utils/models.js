@@ -1,6 +1,6 @@
 import { getAuthHeaders } from "./authUtils.js";
+import { API_BASE_URL } from "./coreUtils.js";
 
-const API_BASE_URL = "https://gen.pollinations.ai";
 const CACHE_TTL_MS = 5 * 60 * 1000;
 
 const cache = new Map();
@@ -11,7 +11,7 @@ async function fetchCached(path) {
 
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 20000);
-    const response = await fetch(`${API_BASE_URL}${path}`, {
+    const response = await fetch(new URL(path, API_BASE_URL), {
         headers: getAuthHeaders(),
         signal: controller.signal,
     }).finally(() => clearTimeout(timeoutId));

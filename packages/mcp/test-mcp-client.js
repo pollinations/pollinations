@@ -3,8 +3,8 @@ import path from "node:path";
 /**
  * End-to-end smoke test for the Pollinations MCP server.
  *
- * Spawns the server over stdio, lists tools, and exercises a small slice
- * (auth + a live text + image-URL call) using a sk_ key from env.
+ * Spawns the server over stdio and lists tools without network access.
+ * With a sk_ key from env, also exercises a small live slice.
  *
  *   POLLINATIONS_API_KEY=sk_xxx npm run test
  */
@@ -14,10 +14,12 @@ import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js"
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const KEY = process.env.POLLINATIONS_API_KEY;
+const BASE_URL = process.env.POLLINATIONS_BASE_URL;
 
 const transport = new StdioClientTransport({
     command: "node",
     args: [path.join(__dirname, "pollinations-mcp.js")],
+    env: BASE_URL ? { POLLINATIONS_BASE_URL: BASE_URL } : undefined,
 });
 const client = new Client(
     { name: "mcp-smoke-test", version: "0.0.1" },
@@ -57,13 +59,12 @@ await step("listTools", async () => {
     return `${tools.length} tools`;
 });
 
-await step("listTextModels (unauthenticated)", () => call("listTextModels"));
-
 if (!KEY) {
     console.log(
-        "\nSkipping authenticated calls — set POLLINATIONS_API_KEY=sk_… to exercise the full path.",
+        "\nSkipping live calls — set POLLINATIONS_API_KEY=sk_… to exercise the full path.",
     );
 } else {
+    await step("listTextModels", () => call("listTextModels"));
     await step("setApiKey", () => call("setApiKey", { key: KEY }));
     await step("getKeyInfo", () => call("getKeyInfo"));
     await step("generateText", async () => {

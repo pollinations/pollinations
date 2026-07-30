@@ -56,16 +56,6 @@ export const ModelInfoSchema = z.object({
             }),
         )
         .optional(),
-    billing_adjustments: z
-        .array(
-            z.object({
-                kind: z.string(),
-                unit: z.string(),
-                unit_price: z.string(),
-                description: z.string(),
-            }),
-        )
-        .optional(),
     title: z.string(),
     description: z.string().optional(),
     input_modalities: z.array(z.string()).optional(),
@@ -157,12 +147,6 @@ export function modelInfoFromDefinition(
                       },
                   )
                 : undefined,
-        billing_adjustments: service.billing?.adjustments?.map((rule) => ({
-            kind: rule.kind,
-            unit: rule.unit,
-            unit_price: toFixedPoint(rule.unitCost * service.priceMultiplier),
-            description: rule.description,
-        })),
         // User-facing metadata from service definition
         title: service.title,
         description: service.description,

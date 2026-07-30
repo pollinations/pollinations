@@ -979,10 +979,6 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.000000375,
     },
   },
-  "mistral-ocr": {
-    "cost": {},
-    "price": {},
-  },
   "mistral-small-3.2": {
     "cost": {
       "completionTextTokens": 0.0000002,

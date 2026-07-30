@@ -28,12 +28,6 @@ export type ApiModelInfo = {
         description: string;
         pricing: ApiPricing;
     }>;
-    billing_adjustments?: Array<{
-        kind: string;
-        unit: string;
-        unit_price: string;
-        description: string;
-    }>;
     title?: string;
     description?: string;
     input_modalities?: string[];
@@ -161,18 +155,6 @@ function priceSum(pricing: ApiPricing | undefined, fields: PriceField[]) {
     return total > 0 ? total : undefined;
 }
 
-function adjustmentPrice(
-    model: ApiModelInfo,
-    unit: string,
-): number | undefined {
-    const value = Number(
-        model.billing_adjustments?.find(
-            (adjustment) => adjustment.unit === unit,
-        )?.unit_price,
-    );
-    return Number.isFinite(value) && value > 0 ? value : undefined;
-}
-
 type PriceLineInput = [
     ModelPriceLine["direction"],
     ModelPriceLine["kind"],
@@ -199,7 +181,6 @@ function baseModelPrice(model: ApiModelInfo): ModelPrice | null {
     if (!name) return null;
     const inputSortPrice = priceSum(model.pricing, INPUT_PRICE_FIELDS);
     const outputSortPrice = priceSum(model.pricing, OUTPUT_PRICE_FIELDS);
-    const pagePrice = adjustmentPrice(model, "page");
 
     return {
         name,
@@ -215,7 +196,6 @@ function baseModelPrice(model: ApiModelInfo): ModelPrice | null {
         free:
             model.pricing !== undefined &&
             inputSortPrice === undefined &&
-            pagePrice === undefined &&
             outputSortPrice === undefined,
         alpha: model.alpha,
         addedDate: model.added_date,
@@ -230,18 +210,6 @@ function modelPriceFromPricing(model: ApiModelInfo): ModelPrice | null {
     if (!price) return null;
 
     const pricing = model.pricing;
-    const pagePrice = adjustmentPrice(model, "page");
-    if (pagePrice) {
-        return {
-            ...price,
-            prices: priceLines([
-                "input",
-                "document",
-                formatPrice(pagePrice, formatPriceFlat),
-                "page",
-            ]),
-        };
-    }
     if (!pricing) return price;
 
     const promptTextTokens = priceNumber(pricing, "promptTextTokens");

@@ -20,7 +20,6 @@ export type ModelCapability =
 
 export type PriceKind =
     | "text"
-    | "document"
     | "image"
     | "3d"
     | "cached"
@@ -32,7 +31,7 @@ export type PriceKind =
 
 export type PriceDirection = "input" | "output";
 
-export type PriceUnit = "token" | "second" | "request" | "page";
+export type PriceUnit = "token" | "second" | "request";
 
 export type ModelPriceLine = {
     direction: PriceDirection;

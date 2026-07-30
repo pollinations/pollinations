@@ -272,55 +272,6 @@ describe("Pollinations seed handling", () => {
         expect("thinking" in body).toBe(false);
         expect("thinking_budget" in body).toBe(false);
     });
-
-    it("chat() serializes document OCR controls", async () => {
-        const client = newClient();
-
-        fetchMock.mockResolvedValue(
-            makeResponse({ choices: [{ message: { content: "ok" } }] }),
-        );
-
-        await client.chat(
-            [
-                {
-                    role: "user",
-                    content: [
-                        {
-                            type: "file",
-                            file: {
-                                file_url: "https://example.com/document.pdf",
-                            },
-                        },
-                    ],
-                },
-            ],
-            {
-                model: "mistral-ocr",
-                ocrPages: "0,2-4",
-                ocrIncludeImages: true,
-                ocrImageLimit: 4,
-                ocrImageMinSize: 64,
-                ocrTableFormat: "markdown",
-                ocrExtractHeader: true,
-                ocrExtractFooter: true,
-                ocrIncludeBlocks: true,
-                ocrConfidenceScores: "word",
-            },
-        );
-
-        expect(bodyOf(fetchMock.mock.calls[0])).toMatchObject({
-            model: "mistral-ocr",
-            pages: "0,2-4",
-            include_image_base64: true,
-            image_limit: 4,
-            image_min_size: 64,
-            table_format: "markdown",
-            extract_header: true,
-            extract_footer: true,
-            include_blocks: true,
-            confidence_scores_granularity: "word",
-        });
-    });
 });
 
 describe("Pollinations.imageEdit — response resolution (characterization)", () => {

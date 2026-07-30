@@ -1,13 +1,18 @@
 import {
     Button,
     CardIcon,
-    Chip,
     DownloadIcon,
     InlineLink,
     MultiSelect,
     SproutIcon,
     StatCard,
     Surface,
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeaderCell,
+    TableRow,
     Tooltip,
     UsageIcon,
 } from "@pollinations/ui";
@@ -16,8 +21,14 @@ import type { FC } from "react";
 import { useMemo } from "react";
 import { Chart } from "./chart";
 import { formatActivityPollen } from "./format-activity-pollen";
+import { formatTokens } from "./format-tokens";
 import { MetricTabs } from "./metric-tabs";
-import type { FilterState, Metric, UsagePeriodSelection } from "./types";
+import type {
+    FilterState,
+    Metric,
+    ModelBreakdown,
+    UsagePeriodSelection,
+} from "./types";
 import { useUsageData } from "./use-usage-data";
 
 const DETAILED_USAGE_DOWNLOAD_LIMIT = 50_000;
@@ -257,75 +268,54 @@ const UsageChartView: FC<UsageChartViewProps> = ({
             </div>
 
             {!loading && !error && hasUsage && (
-                <div className="grid gap-4 border-t border-divider pt-4 sm:grid-cols-3">
-                    <StatCard
-                        className="min-w-0"
-                        label="Pollen spent"
-                        value={formatActivityPollen(stats.totalPollen)}
-                        detail={
-                            <div className="flex flex-wrap items-center gap-2">
-                                <PaidChip size="lg" className="font-semibold">
-                                    <CardIcon className="h-4 w-4" />
-                                    {formatActivityPollen(stats.paidPollen)}
-                                </PaidChip>
-                                <TierChip size="lg" className="font-semibold">
-                                    <SproutIcon className="h-4 w-4" />
-                                    {formatActivityPollen(stats.tierPollen)}
-                                </TierChip>
-                            </div>
-                        }
-                    />
-                    <StatCard
-                        className="min-w-0"
-                        label="Requests"
-                        value={stats.totalRequests.toLocaleString()}
-                        detail={
-                            stats.activeApiKeyCount === null ? null : (
-                                <span className="text-theme-text-soft">
-                                    across {stats.activeApiKeyCount} API key
-                                    {stats.activeApiKeyCount === 1 ? "" : "s"}
-                                </span>
-                            )
-                        }
-                    />
-                    <StatCard
-                        className="min-w-0"
-                        label="Top model"
-                        value={
-                            <span className="text-xl leading-tight">
-                                {stats.topModel?.label || "None"}
-                            </span>
-                        }
-                        detail={
-                            stats.topModel ? (
+                <>
+                    <div className="grid gap-4 border-t border-divider pt-4 sm:grid-cols-2">
+                        <StatCard
+                            className="min-w-0"
+                            label="Pollen spent"
+                            value={formatActivityPollen(stats.totalPollen)}
+                            detail={
                                 <div className="flex flex-wrap items-center gap-2">
-                                    <Chip size="lg" className="font-semibold">
-                                        <span className="tabular-nums">
-                                            {stats.topModel.requests.toLocaleString()}
-                                        </span>
-                                        <span className="font-medium opacity-70">
-                                            {stats.topModel.requests === 1
-                                                ? "req"
-                                                : "reqs"}
-                                        </span>
-                                    </Chip>
-                                    <Chip size="lg" className="font-semibold">
-                                        <span className="tabular-nums">
-                                            {formatActivityPollen(
-                                                stats.topModel.pollen,
-                                            )}
-                                        </span>
-                                        <span className="font-medium opacity-70">
-                                            pollen
-                                        </span>
-                                    </Chip>
+                                    <PaidChip
+                                        size="lg"
+                                        className="font-semibold"
+                                    >
+                                        <CardIcon className="h-4 w-4" />
+                                        {formatActivityPollen(stats.paidPollen)}
+                                    </PaidChip>
+                                    <TierChip
+                                        size="lg"
+                                        className="font-semibold"
+                                    >
+                                        <SproutIcon className="h-4 w-4" />
+                                        {formatActivityPollen(stats.tierPollen)}
+                                    </TierChip>
                                 </div>
-                            ) : (
-                                "No model usage yet"
-                            )
-                        }
-                    />
-                </div>
+                            }
+                        />
+                        <StatCard
+                            className="min-w-0"
+                            label="Requests"
+                            value={stats.totalRequests.toLocaleString()}
+                            detail={
+                                stats.activeApiKeyCount === null ? null : (
+                                    <span className="text-theme-text-soft">
+                                        across {stats.activeApiKeyCount} API key
+                                        {stats.activeApiKeyCount === 1
+                                            ? ""
+                                            : "s"}
+                                    </span>
+                                )
+                            }
+                        />
+                    </div>
+                    {stats.modelBreakdowns.length > 0 && (
+                        <ModelBreakdownTable
+                            models={stats.modelBreakdowns}
+                            totalPollen={stats.totalPollen}
+                        />
+                    )}
+                </>
             )}
         </>
     );
@@ -341,3 +331,263 @@ const UsageEmptyState: FC = () => (
         .
     </p>
 );
+
+type ModelBreakdownTableProps = {
+    models: ModelBreakdown[];
+    totalPollen: number;
+};
+
+const TABLE_HEADER_CELL_CLASS = "px-2 py-1.5";
+const TABLE_CELL_CLASS = "px-2 py-1.5 text-xs";
+
+const ModelBreakdownTable: FC<ModelBreakdownTableProps> = ({
+    models,
+    totalPollen,
+}) => {
+    const pctOf = (pollen: number) =>
+        totalPollen > 0 ? ((pollen / totalPollen) * 100).toFixed(1) : "0.0";
+
+    return (
+        <div className="border-t border-divider pt-4">
+            <h4 className="mb-2 text-xs font-medium text-theme-text-soft">
+                Per-model breakdown
+            </h4>
+            <div className="overflow-x-auto">
+                <Table>
+                    <TableHead>
+                        <TableRow>
+                            <TableHeaderCell
+                                className={TABLE_HEADER_CELL_CLASS}
+                            >
+                                Model
+                            </TableHeaderCell>
+                            <TableHeaderCell
+                                align="right"
+                                className={TABLE_HEADER_CELL_CLASS}
+                            >
+                                %
+                            </TableHeaderCell>
+                            <TableHeaderCell
+                                align="right"
+                                className={TABLE_HEADER_CELL_CLASS}
+                            >
+                                Pollen
+                            </TableHeaderCell>
+                            <TableHeaderCell
+                                align="right"
+                                className={`${TABLE_HEADER_CELL_CLASS} hidden sm:table-cell`}
+                            >
+                                Quest
+                            </TableHeaderCell>
+                            <TableHeaderCell
+                                align="right"
+                                className={`${TABLE_HEADER_CELL_CLASS} hidden sm:table-cell`}
+                            >
+                                Paid
+                            </TableHeaderCell>
+                            <TableHeaderCell
+                                align="right"
+                                className={TABLE_HEADER_CELL_CLASS}
+                            >
+                                Reqs
+                            </TableHeaderCell>
+                            <TableHeaderCell
+                                align="right"
+                                className={`${TABLE_HEADER_CELL_CLASS} hidden md:table-cell`}
+                            >
+                                In
+                            </TableHeaderCell>
+                            <TableHeaderCell
+                                align="right"
+                                className={`${TABLE_HEADER_CELL_CLASS} hidden md:table-cell`}
+                            >
+                                Out
+                            </TableHeaderCell>
+                            <TableHeaderCell
+                                align="right"
+                                className={`${TABLE_HEADER_CELL_CLASS} hidden lg:table-cell`}
+                            >
+                                Audio
+                            </TableHeaderCell>
+                            <TableHeaderCell
+                                align="right"
+                                className={`${TABLE_HEADER_CELL_CLASS} hidden lg:table-cell`}
+                            >
+                                Video
+                            </TableHeaderCell>
+                        </TableRow>
+                    </TableHead>
+                    <TableBody>
+                        {models.map((m) => {
+                            const inTokens =
+                                (m.inputTextTokens ?? 0) +
+                                (m.inputCachedTokens ?? 0) +
+                                (m.inputImageTokens ?? 0);
+                            const outTokens =
+                                (m.outputTextTokens ?? 0) +
+                                (m.outputReasoningTokens ?? 0) +
+                                (m.outputImageTokens ?? 0);
+                            const hasAudio =
+                                (m.inputAudioTokens ?? 0) > 0 ||
+                                (m.inputAudioSeconds ?? 0) > 0 ||
+                                (m.outputAudioTokens ?? 0) > 0 ||
+                                (m.outputAudioSeconds ?? 0) > 0;
+                            const hasVideo = (m.outputVideoSeconds ?? 0) > 0;
+
+                            return (
+                                <TableRow key={m.model}>
+                                    <TableCell
+                                        className={`${TABLE_CELL_CLASS} max-w-[120px] truncate font-medium`}
+                                        title={m.model}
+                                    >
+                                        {m.model}
+                                    </TableCell>
+                                    <TableCell
+                                        align="right"
+                                        className={TABLE_CELL_CLASS}
+                                    >
+                                        {pctOf(m.pollen)}%
+                                    </TableCell>
+                                    <TableCell
+                                        align="right"
+                                        className={TABLE_CELL_CLASS}
+                                    >
+                                        {formatActivityPollen(m.pollen)}
+                                    </TableCell>
+                                    <TableCell
+                                        align="right"
+                                        className={`${TABLE_CELL_CLASS} hidden sm:table-cell`}
+                                    >
+                                        {(m.tierPollen ?? 0) > 0
+                                            ? formatActivityPollen(
+                                                  m.tierPollen ?? 0,
+                                              )
+                                            : "—"}
+                                    </TableCell>
+                                    <TableCell
+                                        align="right"
+                                        className={`${TABLE_CELL_CLASS} hidden sm:table-cell`}
+                                    >
+                                        {(m.paidPollen ?? 0) > 0
+                                            ? formatActivityPollen(
+                                                  m.paidPollen ?? 0,
+                                              )
+                                            : "—"}
+                                    </TableCell>
+                                    <TableCell
+                                        align="right"
+                                        className={TABLE_CELL_CLASS}
+                                    >
+                                        {m.requests.toLocaleString()}
+                                    </TableCell>
+                                    <TableCell
+                                        align="right"
+                                        className={`${TABLE_CELL_CLASS} hidden md:table-cell`}
+                                    >
+                                        {formatTokens(inTokens)}
+                                    </TableCell>
+                                    <TableCell
+                                        align="right"
+                                        className={`${TABLE_CELL_CLASS} hidden md:table-cell`}
+                                    >
+                                        {formatTokens(outTokens)}
+                                    </TableCell>
+                                    <TableCell
+                                        align="right"
+                                        className={`${TABLE_CELL_CLASS} hidden lg:table-cell`}
+                                    >
+                                        {hasAudio
+                                            ? `${formatTokens((m.inputAudioTokens ?? 0) + (m.outputAudioTokens ?? 0))} / ${((m.inputAudioSeconds ?? 0) + (m.outputAudioSeconds ?? 0)).toFixed(1)}s`
+                                            : "—"}
+                                    </TableCell>
+                                    <TableCell
+                                        align="right"
+                                        className={`${TABLE_CELL_CLASS} hidden lg:table-cell`}
+                                    >
+                                        {hasVideo
+                                            ? `${(m.outputVideoSeconds ?? 0).toFixed(1)}s`
+                                            : "—"}
+                                    </TableCell>
+                                </TableRow>
+                            );
+                        })}
+                    </TableBody>
+                </Table>
+            </div>
+            {/* Mobile card fallback */}
+            <div className="mt-2 flex flex-col gap-2 sm:hidden">
+                {models.map((m) => {
+                    const inTokens =
+                        (m.inputTextTokens ?? 0) +
+                        (m.inputCachedTokens ?? 0) +
+                        (m.inputImageTokens ?? 0);
+                    const outTokens =
+                        (m.outputTextTokens ?? 0) +
+                        (m.outputReasoningTokens ?? 0) +
+                        (m.outputImageTokens ?? 0);
+
+                    return (
+                        <div
+                            key={m.model}
+                            className="rounded-lg border border-theme-border/40 bg-theme-bg-subtle p-3"
+                        >
+                            <div className="mb-1 flex items-center justify-between">
+                                <span className="text-xs font-medium truncate max-w-[200px]">
+                                    {m.model}
+                                </span>
+                                <span className="text-xs text-theme-text-muted">
+                                    {pctOf(m.pollen)}%
+                                </span>
+                            </div>
+                            <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
+                                <span className="text-theme-text-muted">
+                                    Pollen
+                                </span>
+                                <span className="text-right tabular-nums">
+                                    {formatActivityPollen(m.pollen)}
+                                </span>
+                                <span className="text-theme-text-muted">
+                                    Requests
+                                </span>
+                                <span className="text-right tabular-nums">
+                                    {m.requests.toLocaleString()}
+                                </span>
+                                <span className="text-theme-text-muted">
+                                    In / Out
+                                </span>
+                                <span className="text-right tabular-nums">
+                                    {formatTokens(inTokens)} /{" "}
+                                    {formatTokens(outTokens)}
+                                </span>
+                                {(m.tierPollen ?? 0) > 0 && (
+                                    <>
+                                        <span className="text-theme-text-muted">
+                                            Quest
+                                        </span>
+                                        <span className="text-right tabular-nums">
+                                            {formatActivityPollen(
+                                                m.tierPollen ?? 0,
+                                            )}
+                                        </span>
+                                    </>
+                                )}
+                                {(m.paidPollen ?? 0) > 0 && (
+                                    <>
+                                        <span className="text-theme-text-muted">
+                                            Paid
+                                        </span>
+                                        <span className="text-right tabular-nums">
+                                            {formatActivityPollen(
+                                                m.paidPollen ?? 0,
+                                            )}
+                                        </span>
+                                    </>
+                                )}
+                            </div>
+                        </div>
+                    );
+                })}
+            </div>
+        </div>
+    );
+};

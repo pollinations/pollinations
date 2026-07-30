@@ -420,6 +420,17 @@ const dailyUsageRecordSchema = z.object({
         ),
     requests: z.number().describe("Number of requests"),
     cost_usd: z.number().describe("Total cost in USD"),
+    input_text_tokens: z.number().describe("Input text tokens"),
+    input_cached_tokens: z.number().describe("Input cached tokens"),
+    input_audio_tokens: z.number().describe("Input audio tokens"),
+    input_audio_seconds: z.number().describe("Input audio seconds"),
+    input_image_tokens: z.number().describe("Input image tokens"),
+    output_text_tokens: z.number().describe("Output text tokens"),
+    output_reasoning_tokens: z.number().describe("Output reasoning tokens"),
+    output_audio_tokens: z.number().describe("Output audio tokens"),
+    output_audio_seconds: z.number().describe("Output audio seconds"),
+    output_image_tokens: z.number().describe("Output image tokens"),
+    output_video_seconds: z.number().describe("Output video seconds"),
 });
 
 type DailyUsageRecord = z.infer<typeof dailyUsageRecordSchema>;

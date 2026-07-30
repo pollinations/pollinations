@@ -57,6 +57,7 @@ SQL >
         ) as tokens_per_second
     FROM generation_event_v2
     WHERE start_time >= now() - interval {{Int32(minutes, 60)}} minute
+    AND is_attempt_row = 0  -- one row per request; attempts counted separately
     GROUP BY model, event_type
     ORDER BY total_requests DESC
 

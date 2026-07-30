@@ -18,6 +18,7 @@ SQL >
         countIf(response_status >= 400) as error_count
     FROM generation_event_v2
     WHERE start_time >= now() - INTERVAL 7 DAY
+    AND is_attempt_row = 0  -- one row per request; attempts counted separately
     AND resolved_model_requested != 'undefined'
     GROUP BY model
     HAVING priced_success_count >= 3

@@ -25,7 +25,8 @@ groups:
                     count() AS server_errors
                   FROM generation_event_v2
                   WHERE
-                    start_time >= now() - INTERVAL 10 MINUTE
+                    is_attempt_row = 0
+                    AND start_time >= now() - INTERVAL 10 MINUTE
                     AND response_status >= 500
                     AND response_status < 600
                     AND resolved_model_requested != ''
@@ -39,7 +40,8 @@ groups:
                     count() AS total_requests
                   FROM generation_event_v2
                   WHERE
-                    start_time >= now() - INTERVAL 10 MINUTE
+                    is_attempt_row = 0
+                    AND start_time >= now() - INTERVAL 10 MINUTE
                     AND resolved_model_requested != ''
                     AND resolved_model_requested IS NOT NULL
                   GROUP BY model, provider
@@ -111,7 +113,8 @@ groups:
                     count() AS server_errors
                   FROM generation_event_v2
                   WHERE
-                    start_time >= now() - INTERVAL 10 MINUTE
+                    is_attempt_row = 0
+                    AND start_time >= now() - INTERVAL 10 MINUTE
                     AND response_status >= 500
                     AND response_status < 600
                     AND resolved_model_requested != ''
@@ -125,7 +128,8 @@ groups:
                     count() AS total_requests
                   FROM generation_event_v2
                   WHERE
-                    start_time >= now() - INTERVAL 10 MINUTE
+                    is_attempt_row = 0
+                    AND start_time >= now() - INTERVAL 10 MINUTE
                     AND resolved_model_requested != ''
                     AND resolved_model_requested IS NOT NULL
                   GROUP BY model, provider

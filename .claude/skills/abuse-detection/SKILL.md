@@ -76,6 +76,7 @@ FROM (
         countIf(g.response_status >= 400) * 100.0 / count() as err_pct
     FROM generation_event_v2 g
     WHERE g.start_time >= now() - INTERVAL 7 DAY
+        AND g.is_attempt_row = 0
         AND g.user_id NOT IN ('undefined', '')
     GROUP BY g.user_id
     HAVING total_reqs >= 1000
@@ -130,11 +131,13 @@ FROM (
         SELECT ip_hash, count(DISTINCT user_id) as ip_cluster_size
         FROM generation_event_v2
         WHERE start_time >= now() - INTERVAL 7 DAY
+            AND is_attempt_row = 0
             AND ip_hash NOT IN ('undefined', '')
             AND user_id NOT IN ('undefined', '')
         GROUP BY ip_hash
     ) ips ON g.ip_hash = ips.ip_hash
     WHERE g.start_time >= now() - INTERVAL 7 DAY
+        AND g.is_attempt_row = 0
         AND g.user_id NOT IN ('undefined', '')
     GROUP BY g.user_id, u.github_username, u.email
     HAVING total_reqs >= 5
@@ -156,6 +159,7 @@ SELECT
     dateDiff('minute', min(start_time), max(start_time)) as span_min
 FROM generation_event_v2
 WHERE start_time >= now() - INTERVAL 7 DAY
+    AND is_attempt_row = 0
     AND ip_hash NOT IN ('undefined', '')
     AND user_id NOT IN ('undefined', '')
 GROUP BY ip_hash, ip_subnet
@@ -175,6 +179,7 @@ FROM generation_event_v2 g
 LEFT JOIN d1_user u ON g.user_id = u.id
     AND u.synced_at = (SELECT max(synced_at) FROM d1_user)
 WHERE g.start_time >= now() - INTERVAL 7 DAY
+    AND g.is_attempt_row = 0
     AND g.ip_hash = '<IP_HASH_HERE>'
     AND g.user_id NOT IN ('undefined', '')
 GROUP BY g.user_id, u.github_username, u.email

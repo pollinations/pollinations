@@ -13,7 +13,7 @@ SQL >
         formatDateTime(toStartOfWeek(start_time, 1), '%Y-%m-%d') AS week,
         uniqExact(user_id) AS active_users,
         uniqExactIf(user_id, total_price > 0) AS paying_users,
-        count() AS total_requests,
+        countIf(is_attempt_row = 0) AS total_requests,  -- attempts are not requests
         sum(token_count_prompt_text + token_count_completion_text) AS total_tokens,
         sum(total_price) AS total_revenue
     FROM generation_event_v2

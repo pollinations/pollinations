@@ -23,6 +23,7 @@ SQL >
     LEFT JOIN latest_apps la
         ON ge.api_key_client_id = la.app_key_id
     WHERE ge.start_time > now() - INTERVAL 1 DAY
+    AND ge.is_attempt_row = 0  -- one row per request; attempts counted separately
       AND (
         ge.api_key_created_via = 'redirect-auth'
         OR (ge.api_key_type = 'secret' AND ge.api_key_name LIKE '%.%')

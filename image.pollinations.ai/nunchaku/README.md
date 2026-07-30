@@ -50,7 +50,11 @@ POLLINATIONS_API_KEY=... bash verify-vast.sh
 
 The canary creates a unique uncached prompt, generates it directly on Vast and
 through the public Flux route with the same seed, and compares decoded pixels.
-Do not destroy the old worker until this passes on the replacement.
+Do not change production routing until this passes and a human explicitly
+approves the promotion. After cutover, confirm real production requests are
+served by the replacement, then drain and immediately destroy the old worker.
+The fleet-wide qualification and approval policy is documented in
+[`GPU_INSTANCES.md`](../GPU_INSTANCES.md#planned-vast-replacement-scout).
 
 ## Operations
 

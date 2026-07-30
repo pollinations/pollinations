@@ -547,7 +547,7 @@ function parseFallbackUsed(response: Response): boolean {
 // caller skips the check entirely. Preserves the per-branch rules: image/video
 // uses startsWith; text-stream only guards when a stream was requested and uses
 // includes; audio allows audio/*, STT JSON, or explicitly marked timestamped
-// TTS JSON.
+// TTS JSON. STT also supports plain-text subtitle and transcript formats.
 function getContentTypeGuard(
     eventType: EventType,
     requestTracking: RequestTrackingData,
@@ -581,7 +581,10 @@ function getContentTypeGuard(
             kind: "audio",
             isExpected: (contentType) =>
                 contentType.startsWith("audio/") ||
-                ((isSTTModel || isTimestampedTts) &&
+                (isSTTModel &&
+                    (contentType.startsWith("application/json") ||
+                        contentType.startsWith("text/plain"))) ||
+                (isTimestampedTts &&
                     contentType.startsWith("application/json")),
         };
     }

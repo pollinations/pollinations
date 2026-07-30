@@ -154,6 +154,31 @@ def test_cors_preflight_allows_browser_clients():
     assert "POST" in resp.headers["access-control-allow-methods"]
 
 
+async def test_files_route_confines_paths_to_temp_directory(monkeypatch, tmp_path):
+    files_dir = tmp_path / "files"
+    files_dir.mkdir()
+    (files_dir / "safe.txt").write_text("safe", encoding="utf-8")
+    (tmp_path / "outside.txt").write_text("private", encoding="utf-8")
+    monkeypatch.setattr(api_mod.settings, "temp_dir", str(tmp_path))
+
+    response = await api_mod.serve_file("safe.txt")
+    assert response.path == files_dir / "safe.txt"
+
+    with pytest.raises(api_mod.HTTPException) as exc_info:
+        await api_mod.serve_file("../outside.txt")
+    assert exc_info.value.status_code == 404
+
+    link = files_dir / "outside-link.txt"
+    try:
+        link.symlink_to(tmp_path / "outside.txt")
+    except OSError:
+        pass  # Symlink creation may be unavailable in restricted test environments.
+    else:
+        with pytest.raises(api_mod.HTTPException) as exc_info:
+            await api_mod.serve_file("outside-link.txt")
+        assert exc_info.value.status_code == 404
+
+
 def test_root_returns_service_info():
     """Browser GETs on the root must not look broken (no 405/404 confusion)."""
     client = TestClient(api_mod.app)

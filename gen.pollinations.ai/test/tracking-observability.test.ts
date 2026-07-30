@@ -770,6 +770,62 @@ describe("tracking observability", () => {
         expect(consumePollen).toHaveBeenCalledWith(0.0002);
     });
 
+    it("bills plain-text speech-to-text responses from usage headers", async () => {
+        const tinybirdRequests: Request[] = [];
+        vi.spyOn(globalThis, "fetch").mockImplementation(
+            async (input, init) => {
+                tinybirdRequests.push(new Request(input, init));
+                return new Response("ok");
+            },
+        );
+        const consumePollen = vi.fn<(amount: number) => Promise<void>>(
+            async () => {},
+        );
+        const upstream = new Response("hello world", {
+            headers: {
+                "content-type": "text/plain; charset=utf-8",
+                "x-model-used": "universal-3.5-pro",
+                "x-usage-prompt-audio-seconds": "6",
+            },
+        });
+
+        const ctx = createExecutionContext();
+        const response = await createWrongContentTypeApp(
+            consumePollen,
+            "generate.audio",
+            upstream,
+            "universal-3.5-pro",
+        ).fetch(
+            new Request("https://gen.pollinations.ai/upstream", {
+                method: "POST",
+            }),
+            {
+                DB: env.DB,
+                ENVIRONMENT: "test",
+                LOG_LEVEL: "debug",
+                LOG_FORMAT: "text",
+                BETTER_AUTH_SECRET: "test_secret",
+                TINYBIRD_INGEST_URL:
+                    "https://tinybird.test/v0/events?name=generation_event_v2",
+                TINYBIRD_INGEST_TOKEN: "test_tinybird_token",
+            } as CloudflareBindings,
+            ctx,
+        );
+
+        await waitOnExecutionContext(ctx);
+
+        expect(response.status).toBe(200);
+        expect(tinybirdRequests).toHaveLength(1);
+        await expect(tinybirdRequests[0].json()).resolves.toMatchObject({
+            eventType: "generate.audio",
+            isBilledUsage: true,
+            tokenCountPromptAudioSeconds: 6,
+            totalCost: 0.00035,
+            totalPrice: 0.00035,
+        });
+        expect(consumePollen).toHaveBeenCalledWith(0.00035);
+    });
+
     it("does not bill ordinary TTS when a provider returns JSON with HTTP 200", async () => {
         const tinybirdRequests: Request[] = [];
         vi.spyOn(globalThis, "fetch").mockImplementation(

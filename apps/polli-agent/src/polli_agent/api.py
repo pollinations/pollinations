@@ -9,6 +9,7 @@ import logging
 import os
 import time
 import uuid
+from pathlib import Path
 from typing import Any, AsyncIterator
 
 from fastapi import FastAPI, HTTPException, Request
@@ -65,11 +66,17 @@ def _files_dir() -> str:
 
 @app.get("/files/{name}")
 async def serve_file(name: str) -> FileResponse:
-    safe = os.path.basename(name)
-    full = os.path.join(_files_dir(), safe)
-    if not os.path.isfile(full):
-        raise HTTPException(status_code=404, detail="not found")
-    return FileResponse(full)
+    root = Path(_files_dir()).resolve()
+    for entry in root.iterdir():
+        if entry.name != name or not entry.is_file():
+            continue
+        full = entry.resolve()
+        try:
+            full.relative_to(root)
+        except ValueError:
+            continue
+        return FileResponse(full)
+    raise HTTPException(status_code=404, detail="not found")
 
 
 def _persist_audio(b64: str, fmt: str) -> str | None:

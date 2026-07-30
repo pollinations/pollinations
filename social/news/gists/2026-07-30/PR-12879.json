@@ -1,0 +1,35 @@
+{
+  "pr_number": 12879,
+  "title": "feat: add Cohere Command A+",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/12879",
+  "merged_at": "2026-07-30T13:42:05Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds `command-a-plus` on Azure East US Global Standard with version/provider aliases, Quest-Pollen access, and no fallback.\n- Bills Azure's posted `$0.80/M` input and `$3.20/M` output at multiplier `0.75`.\n- Preserves reasoning and automatic tools; supports `tool_choice: \"none\"` by removing tools before Azure while rejecting unsupported named/required selection.\n- Removes documented Cohere framing only from assistant content boundaries, consistently across normal and SSE responses, including tokens split across separate events.\n\nContract: canonical `command-a-plus`; aliases `cohere-command-a-plus`, `command-a-plus-05-2026`, `cohere-command-a-plus-05-2026`; paid-only no; Pollinations GPU no; provider Azure; exact route `Cohere-command-a-plus-05-2026` v1; fallback none.\n\nValidation:\n- Live local E2E: text, JSON, automatic tools, `tool_choice: none`, streaming, aliases, cache, usage headers, wallet deduction, and Tinybird reconciliation.\n- Streaming: 161 valid chunks, finish event, `[DONE]`, reasoning and content present, zero leaked control tokens.\n- Burst: 5/15/30, 50/50 HTTP 200, 4.3s maximum.\n- Gen: 746/746 local tests and typecheck. Enter: 311/311 focused tests and typecheck/build. All GitHub checks pass on the current main-synchronized head.\n- Context: [Cohere](https://docs.cohere.com/docs/command-a-plus) and [Microsoft Foundry](https://learn.microsoft.com/azure/foundry/foundry-models/concepts/models-sold-directly-by-azure) document 128K input / 64K output for this exact model; the live Azure route reports a 131,072-token technical maximum.\n\nThe exact version is Preview with a 2026-10-13 catalog deprecation date. Portkey masks Azure's correct over-context 400 as an opaque 500; this PR does not add an inaccurate tokenizer or character cap.\n",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "A+ joins the hive",
+    "blurb": "Command A+ has landed through Azure, with its reasoning intact and its tool belt packed. The hive can now take a 128K-token stroll without losing the thread.",
+    "summary": "Added Cohere Command A+ on Azure East US Global Standard as canonical `command-a-plus`, with four model aliases, Quest-Pollen access, 128K input/64K output support, automatic tools, and streaming-safe Cohere response cleanup.",
+    "impact": "Developers can call `command-a-plus` or its Cohere/version aliases for Azure-backed long-context chat, reasoning, JSON, streaming, and automatic tool use, billed at a 0.75 multiplier on Azure's $0.80/M input and $3.20/M output rates.",
+    "keywords": [
+      "command-a-plus",
+      "cohere",
+      "azure",
+      "text-models",
+      "tool-calling",
+      "streaming",
+      "quest-pollen"
+    ],
+    "visual_concept": "Depict Command A+ as a cozy long-context library-terminal: a retro Azure-blue-tinted monitor displays a huge but orderly scrolling conversation and small tool icons, while Polli carefully tends a flowering code vine that loops through the screen without tangling. The visual metaphor is a model with a very long memory, clean streamed responses, and tools that know when to stay on the shelf.",
+    "image_prompt": "A cozy pixel art library hackerspace where Polli, a cute pixel bee with a yellow body, dark brown stripes, black antennae and oval eyes, pink rectangular blushes, a happy smile, light blue translucent wings, and tiny librarian glasses, tends a flowering code-vine flowing into a retro terminal labeled \"COMMAND A+\"; the monitor shows a long clean chat scroll and little tool icons resting neatly beside it. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel lavender-to-warm-cream gradients, chunky retro sprites, subtle CRT glow, warm lighting, nature-filled shelves and code-plants, lo-fi vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-30/PR-12879.jpg",
+    "prompt": "A cozy pixel art library hackerspace where Polli, a cute pixel bee with a yellow body, dark brown stripes, black antennae and oval eyes, pink rectangular blushes, a happy smile, light blue translucent wings, and tiny librarian glasses, tends a flowering code-vine flowing into a retro terminal labeled \"COMMAND A+\"; the monitor shows a long clean chat scroll and little tool icons resting neatly beside it. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel lavender-to-warm-cream gradients, chunky retro sprites, subtle CRT glow, warm lighting, nature-filled shelves and code-plants, lo-fi vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
+  },
+  "generated_at": "2026-07-30T13:43:09.143210+00:00"
+}

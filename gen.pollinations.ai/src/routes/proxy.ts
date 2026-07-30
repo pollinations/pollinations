@@ -139,9 +139,7 @@ const model3dHandlers = factory.createHandlers(
 const chatCompletionHandlers = factory.createHandlers(
     textBodyLimit,
     validator("json", CreateChatCompletionRequestSchema),
-    resolveModel("generate.text", {
-        supportedEndpoint: "/v1/chat/completions",
-    }),
+    resolveModel("generate.text"),
     track("generate.text"),
     textCache,
     generationAccess,
@@ -266,14 +264,6 @@ async function getVisibleModelEntriesForEventType(
     );
 }
 
-async function getVisibleChatTextEntries(c: Context<Env>) {
-    return (
-        await getVisibleModelEntriesForEventType(c, "generate.text")
-    ).filter((entry) =>
-        entry.supportedEndpoints.includes("/v1/chat/completions"),
-    );
-}
-
 // "3d" models share the "generate.image" EventType with image/video models
 // (see model-registry.ts's eventTypeForCategory), so /3d/models and
 // /image/models must additionally split on category.
@@ -384,7 +374,7 @@ export const proxyRoutes = new Hono<Env>()
             tags: ["🤖 Models"],
             summary: "List Models",
             description:
-                "Returns all available text, OCR, community text/image, image, video, 3D, realtime, audio, and embedding models with pricing, capabilities, and metadata. When authenticated: the owner's private community models are included, models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance.",
+                "Returns all available text, community text/image, image, video, 3D, realtime, audio, and embedding models with pricing, capabilities, and metadata. When authenticated: the owner's private community models are included, models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance.",
             responses: {
                 200: {
                     description: "Success",
@@ -506,7 +496,9 @@ export const proxyRoutes = new Hono<Env>()
                 ...errorResponseDescriptions(500),
             },
         }),
-        modelsListHandler((c) => getVisibleChatTextEntries(c)),
+        modelsListHandler((c) =>
+            getVisibleModelEntriesForEventType(c, "generate.text"),
+        ),
     )
     .get(
         "/audio/models",
@@ -614,8 +606,6 @@ export const proxyRoutes = new Hono<Env>()
                 "Generate text responses using AI models. Fully compatible with the OpenAI Chat Completions API — use any OpenAI SDK by pointing it to `https://gen.pollinations.ai`.",
                 "",
                 "Supports streaming, function calling, vision (image input), structured outputs, and reasoning/thinking modes depending on the model.",
-                "",
-                "For document OCR, select `mistral-ocr` and include exactly one `file` or `image_url` content part. Extracted Markdown is returned in `message.content`; structured pages are returned in `ocr` and `message.content_blocks`.",
             ].join("\n"),
             responses: {
                 200: {
@@ -695,8 +685,6 @@ export const proxyRoutes = new Hono<Env>()
                 "Generate text from an OpenAI-style messages array and return the assistant content directly.",
                 "",
                 "Use `/v1/chat/completions` when you need the full OpenAI-compatible JSON response.",
-                "",
-                "For document OCR, select `mistral-ocr` and include exactly one `file` or `image_url` content part. This endpoint returns the extracted Markdown directly.",
             ].join("\n"),
             responses: {
                 200: {
@@ -708,7 +696,7 @@ export const proxyRoutes = new Hono<Env>()
         }),
         textBodyLimit,
         validator("json", CreateChatCompletionRequestSchema),
-        resolveModel("generate.text", { supportedEndpoint: "/text" }),
+        resolveModel("generate.text"),
         track("generate.text"),
         textCache,
         generationAccess,
@@ -757,9 +745,7 @@ export const proxyRoutes = new Hono<Env>()
             }),
         ),
         validator("query", GenerateTextRequestQueryParamsSchema),
-        resolveModel("generate.text", {
-            supportedEndpoint: "/text/{prompt}",
-        }),
+        resolveModel("generate.text"),
         track("generate.text"),
         textCache,
         generationAccess,

@@ -44,16 +44,6 @@ export const ModelInfoSchema = z.object({
     pricing: z
         .record(z.string(), z.string())
         .and(z.object({ currency: z.literal("pollen") })),
-    billing_adjustments: z
-        .array(
-            z.object({
-                kind: z.string(),
-                unit: z.string(),
-                unit_price: z.string(),
-                description: z.string(),
-            }),
-        )
-        .optional(),
     title: z.string(),
     description: z.string().optional(),
     input_modalities: z.array(z.string()).optional(),
@@ -123,12 +113,6 @@ export function modelInfoFromDefinition(
         brand: service.brand,
         community: options.community || undefined,
         pricing: pricingInfoFromDefinition(getPriceDefinitionForModel(service)),
-        billing_adjustments: service.billing?.adjustments?.map((rule) => ({
-            kind: rule.kind,
-            unit: rule.unit,
-            unit_price: toFixedPoint(rule.unitCost * service.priceMultiplier),
-            description: rule.description,
-        })),
         // User-facing metadata from service definition
         title: service.title,
         description: service.description,

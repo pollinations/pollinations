@@ -18,7 +18,6 @@ import {
 import { fixWavHeader } from "../routes/audio.js";
 import { communityEndpointGatewayContext } from "./communityEndpoint.ts";
 import { generateTextPortkey } from "./generateTextPortkey.js";
-import { generateMistralOcrChatCompletion } from "./mistralOcr.ts";
 import { type ExpressLikeRequest, getRequestData } from "./requestUtils.js";
 import type {
     ChatCompletion,
@@ -378,32 +377,20 @@ async function generateTextResponse(
     syncTextEnvironment(c.env);
 
     try {
-        // mistral-ocr reaches its provider by a different route entirely, so it
-        // has no candidate list and cannot fail over.
-        let completion: ChatCompletion;
-        let candidate: FallbackCandidate = { id: c.var.model?.resolved ?? "" };
-        let index = 0;
-        if (requestData.model === "mistral-ocr") {
-            completion = await generateMistralOcrChatCompletion(c, requestData);
-        } else {
-            const served = await withModelFallback(
-                fallbackCandidates(c.var.model),
-                async (attempt) =>
-                    generateTextPortkey(
-                        requestData.messages,
-                        await gatewayContext(c, requestData, attempt),
-                    ),
-                (attempt, error, startedAt) =>
-                    c.var.track?.recordFailedAttempt(
-                        attempt.id,
-                        error,
-                        startedAt,
-                    ),
-            );
-            completion = served.result;
-            candidate = served.candidate;
-            index = served.index;
-        }
+        const {
+            result: completion,
+            candidate,
+            index,
+        } = await withModelFallback(
+            fallbackCandidates(c.var.model),
+            async (attempt) =>
+                generateTextPortkey(
+                    requestData.messages,
+                    await gatewayContext(c, requestData, attempt),
+                ),
+            (attempt, error, startedAt) =>
+                c.var.track?.recordFailedAttempt(attempt.id, error, startedAt),
+        );
         c.set("upstreamRequestUrl", completion.upstreamRequestUrl);
         completion.id = completion.id || generatePollinationsId();
         if (index > 0) {
@@ -421,8 +408,8 @@ async function generateTextResponse(
         // Only override the provider's own name where it is misleading. A
         // community endpoint reports its upstream — "gemini-2.0-flash" for what
         // everyone calls "alice/pro" — and after a rescue that upstream belongs
-        // to a different owner's model. A static model's name is our id with
-        // the exact version attached ("mistral-ocr-4-0" for "mistral-ocr"),
+        // to a different owner's model. A static model instead reports the
+        // exact version behind our id ("gpt-5-nano-2025-08-07" for "openai"),
         // which is strictly more information, so leave it alone.
         const servedModelId =
             servedEntry?.id ??

@@ -111,6 +111,11 @@ const models: ModelDefinition[] = [
         config: portkeyConfig["qwen/qwen3.7-max"],
     },
     {
+        name: "qwen3.7-flash",
+        config: portkeyConfig["qwen/qwen3.7-flash"],
+        transform: createReasoningEffortTransform("toggle"),
+    },
+    {
         name: "qwen-vision",
         config: portkeyConfig["qwen/qwen3-vl-30b-a3b-instruct"],
         // Vision model, no reasoning mode.
@@ -129,7 +134,7 @@ const models: ModelDefinition[] = [
     },
     {
         name: "step-flash",
-        config: portkeyConfig["stepfun/step-3.7-flash"],
+        config: portkeyConfig["stepfun-ai/Step-3.7-Flash"],
         transform: mandatoryReasoning,
     },
     {

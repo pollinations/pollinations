@@ -14,6 +14,7 @@ import { user as userTable } from "@shared/db/better-auth.ts";
 import { modelInfoFromDefinition } from "@shared/registry/model-info.ts";
 import {
     type BillingAdjustment,
+    getPriceDefinitionForModel,
     getRegistryModelDefinition,
     type ModelName,
 } from "@shared/registry/registry.ts";
@@ -27,7 +28,11 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { Env } from "@/env.ts";
 import { logger } from "@/middleware/logger.ts";
 import type { ModelVariables } from "@/middleware/model.ts";
-import { reduceAdjustmentsToEventFields, track } from "@/middleware/track.ts";
+import {
+    reduceAdjustmentsToEventFields,
+    track,
+    trackResponse,
+} from "@/middleware/track.ts";
 import type { GenerationModelEntry } from "@/model-registry.ts";
 
 afterEach(() => {
@@ -479,6 +484,60 @@ describe("tracking observability", () => {
         expect(tinybirdFetch).not.toHaveBeenCalled();
     });
 
+    it("records the resolved model on a failed generation", async () => {
+        const tinybirdRequests: Request[] = [];
+        vi.spyOn(globalThis, "fetch").mockImplementation(
+            async (input, init) => {
+                tinybirdRequests.push(new Request(input, init));
+                return new Response("ok");
+            },
+        );
+        const consumePollen = vi.fn(async (_amount: number) => {});
+
+        const ctx = createExecutionContext();
+        const response = await createHeaderApp(
+            {},
+            trackingUser,
+            502,
+            consumePollen,
+        ).fetch(
+            new Request("https://gen.pollinations.ai/v1/chat/completions", {
+                method: "POST",
+                headers: { "content-type": "application/json" },
+                body: JSON.stringify({
+                    model: "openai",
+                    stream: false,
+                    messages: [{ role: "user", content: "test" }],
+                }),
+            }),
+            {
+                DB: env.DB,
+                ENVIRONMENT: "test",
+                LOG_LEVEL: "debug",
+                LOG_FORMAT: "text",
+                BETTER_AUTH_SECRET: "test_secret",
+                TINYBIRD_INGEST_URL:
+                    "https://tinybird.test/v0/events?name=generation_event_v2",
+                TINYBIRD_INGEST_TOKEN: "test_tinybird_token",
+            } as CloudflareBindings,
+            ctx,
+        );
+
+        await waitOnExecutionContext(ctx);
+
+        expect(response.status).toBe(502);
+        expect(tinybirdRequests).toHaveLength(1);
+        // modelUsed comes from the resolved model, not the upstream
+        // x-model-used header, so error rows attribute the failure instead of
+        // falling back to the datasource DEFAULT 'undefined'.
+        await expect(tinybirdRequests[0].json()).resolves.toMatchObject({
+            responseStatus: 502,
+            resolvedModelRequested: "openai",
+            modelUsed: "openai",
+            isBilledUsage: false,
+        });
+    });
+
     it("does not emit Tinybird generation events for unauthenticated requests", async () => {
         const tinybirdFetch = vi
             .spyOn(globalThis, "fetch")
@@ -844,6 +903,7 @@ describe("tracking observability", () => {
             eventType: "generate.image",
             responseStatus: 200,
             isBilledUsage: false,
+            modelUsed: "openai",
         });
         expect(consumePollen).toHaveBeenCalledWith(0);
     });
@@ -1213,6 +1273,87 @@ describe("tracking observability", () => {
     it("records fallbackUsed=false when no fallback header is present", async () => {
         const event = await captureFallbackEvent({});
         expect(event.fallbackUsed).toBe(false);
+    });
+});
+
+function requestTrackingFixture(
+    streamRequested = false,
+    model: ModelName = "openai",
+) {
+    const definition = getRegistryModelDefinition(model);
+    const modelCostDefinition = definition.cost;
+    const modelPriceDefinition = getPriceDefinitionForModel(definition);
+    if (!modelCostDefinition || !modelPriceDefinition) {
+        throw new Error(`Missing cost/price definition for ${model}`);
+    }
+    return {
+        modelRequested: model,
+        resolvedModelRequested: model,
+        modelProvider: definition.provider,
+        modelDefinition: definition,
+        modelCostDefinition,
+        modelPriceDefinition,
+        streamRequested,
+        referrerData: {},
+    };
+}
+
+describe("trackResponse modelUsed", () => {
+    it("attributes a failed generation to the resolved model", async () => {
+        const tracking = await trackResponse(
+            "generate.text",
+            requestTrackingFixture(),
+            new Response("upstream exploded", { status: 502 }),
+        );
+        expect(tracking).toMatchObject({
+            responseStatus: 502,
+            cacheHit: false,
+            isBilledUsage: false,
+            modelUsed: "openai",
+        });
+    });
+
+    it("attributes a 200 with an unexpected content-type to the resolved model", async () => {
+        const tracking = await trackResponse(
+            "generate.image",
+            requestTrackingFixture(),
+            // A JSON error body served with HTTP 200 instead of an image.
+            Response.json({ error: "boom" }),
+        );
+        expect(tracking).toMatchObject({
+            responseStatus: 200,
+            isBilledUsage: false,
+            modelUsed: "openai",
+        });
+    });
+
+    it("attributes a 200 with unextractable usage to the resolved model", async () => {
+        // A well-formed SSE stream that never carries a usage object, so
+        // extraction returns no ModelUsage and the request is not billed.
+        const tracking = await trackResponse(
+            "generate.text",
+            requestTrackingFixture(true),
+            new Response(
+                'data: {"model":"gpt-5-nano","choices":[{"delta":{"content":"hi"}}]}\n\ndata: [DONE]\n\n',
+                { headers: { "content-type": "text/event-stream" } },
+            ),
+        );
+        expect(tracking).toMatchObject({
+            responseStatus: 200,
+            isBilledUsage: false,
+            modelUsed: "openai",
+        });
+    });
+
+    it("does not attribute a model to a cache hit", async () => {
+        const tracking = await trackResponse(
+            "generate.text",
+            requestTrackingFixture(),
+            Response.json({ choices: [] }, { headers: { "x-cache": "HIT" } }),
+        );
+        expect(tracking.cacheHit).toBe(true);
+        expect(tracking.isBilledUsage).toBe(false);
+        expect(tracking.modelUsed).toBeUndefined();
     });
 });
 

@@ -178,6 +178,16 @@ export const portkeyConfig: PortkeyConfigMap = {
             model: "qwen/qwen3.7-max",
             defaultOptions: { provider: { sort: "price" } },
         }),
+    "qwen/qwen3.7-flash": () =>
+        createOpenRouterModelConfig({
+            model: "qwen/qwen3.7-flash",
+            defaultOptions: {
+                provider: {
+                    only: ["Alibaba"],
+                    allow_fallbacks: false,
+                },
+            },
+        }),
     "poolside/laguna-s-2.1": () =>
         createOpenRouterModelConfig({
             model: "poolside/laguna-s-2.1",
@@ -424,9 +434,11 @@ export const portkeyConfig: PortkeyConfigMap = {
         createOpenRouterModelConfig({
             model: "stepfun/step-3.5-flash",
         }),
-    "stepfun/step-3.7-flash": () =>
-        createOpenRouterModelConfig({
-            model: "stepfun/step-3.7-flash",
+
+    // -- DeepInfra (StepFun) --------------------------------------------------
+    "stepfun-ai/Step-3.7-Flash": () =>
+        createDeepInfraModelConfig({
+            model: "stepfun-ai/Step-3.7-Flash",
         }),
 
     // -- OVHcloud -------------------------------------------------------------

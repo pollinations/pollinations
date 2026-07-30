@@ -265,6 +265,31 @@ export const TEXT_SERVICES = {
         contextLength: 128000,
         isSpecialized: false,
     },
+    "command-a-plus": {
+        aliases: [
+            "cohere-command-a-plus",
+            "command-a-plus-05-2026",
+            "cohere-command-a-plus-05-2026",
+        ],
+        provider: "azure",
+        brand: "Cohere",
+        category: "text",
+        addedDate: new Date("2026-07-30").getTime(),
+        priceMultiplier: 0.75,
+        cost: {
+            promptTextTokens: perMillion(0.8),
+            completionTextTokens: perMillion(3.2),
+        },
+        title: "Cohere Command A+",
+        description:
+            "Multilingual agentic reasoning with tools and long context",
+        inputModalities: ["text"],
+        outputModalities: ["text"],
+        tools: true,
+        reasoning: true,
+        contextLength: 128000,
+        isSpecialized: false,
+    },
     "qwen-coder": {
         aliases: ["qwen3-coder", "qwen3-coder-30b-a3b-instruct"],
         provider: "ovhcloud",

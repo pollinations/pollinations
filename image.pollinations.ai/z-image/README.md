@@ -31,16 +31,31 @@ bash setup-vast.sh
 
 Using one remotely managed tunnel for the pool creates a Cloudflare replica per
 Vast worker. Cloudflare balances requests across those replicas, while the
-Pollinations registry sees one stable backend URL. Production currently uses
-two RTX 5090 replicas so either worker can be removed without changing routing.
+Pollinations registry sees one stable backend URL.
 
-The setup defaults to `HEARTBEAT_ENABLED=false`, so a new worker cannot join
-the production registry before validation. Run direct and tunnel verification,
-then benchmark the real Z-Image pipeline:
+The setup defaults to `HEARTBEAT_ENABLED=false`, which prevents registry
+registration but does not isolate a connector in the shared named tunnel.
+Validate local health and generation while cloudflared is stopped. The setup
+does not create `/root/.cloudflared/tunnel-enabled`, so reboots also remain
+local-only. Creating that marker and starting `/root/onstart.sh` is the
+production canary step: it waits for local `/health` and then joins the shared
+tunnel pool, where it may immediately receive live traffic.
+
+Automated replacement preparation must stop before joining the shared
+production tunnel. Follow the fleet-wide qualification and human approval
+policy in
+[`manage-vast-gpu-fleet`](../../.claude/skills/manage-vast-gpu-fleet/SKILL.md).
+
+Run direct verification first, then start the tunnel and benchmark the real
+Z-Image pipeline:
 
 ```bash
-bash verify-vast.sh
 source .env.zimage
+curl -fsS "http://127.0.0.1:$PORT/health"
+# Run an authenticated local generation before starting the shared tunnel.
+touch /root/.cloudflared/tunnel-enabled
+/root/onstart.sh
+bash verify-vast.sh
 "$VENV/bin/python" benchmark-vast.py --duration 300 --concurrency 4
 ```
 
@@ -53,7 +68,27 @@ sed -i 's/export HEARTBEAT_ENABLED=false/export HEARTBEAT_ENABLED=true/' .env.zi
 ```
 
 Operational logs are `/root/zimage.log` and `/root/cloudflared.log`. Tokens are
-stored only in mode-0600 files on the rental host.
+stored only in mode-0600 files on the rental host. Some Vast hosts drop the SRV
+DNS responses required by cloudflared despite resolving ordinary A records.
+`setup-vast.sh` detects that condition and enables a reboot-safe local
+DNS-over-HTTPS fallback; its log is `/root/tunnel-dns.log`. Hosts with working
+SRV resolution retain the provider's resolver.
+
+### July 2026 RTX 5090 canary
+
+Instance `46003779` validated the hardened path on a California RTX 5090 at
+`$0.351111/hr`:
+
+- Full reboot restored the model, conditional DNS fallback, and all four
+  Cloudflare Tunnel connections automatically.
+- A 120-second concurrency-4 run completed 102 images with no errors:
+  0.826 images/second, 4.69s p50, and 5.73s p95.
+- 512×512, 1024×1024, and 768×1152 outputs were valid; a repeated fixed seed
+  was byte-identical.
+- The maximum accepted output area is 2,359,296 pixels (equivalent to
+  1536×1536); larger requests return HTTP 422.
+- A production soak observed successful requests and no model, tunnel, OOM, or
+  traceback errors.
 
 ## Working Mechanism
 

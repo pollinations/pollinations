@@ -17,11 +17,20 @@ const MIME_TYPES: Record<string, string> = {
 
 class ImageFetchError extends Error {
     status: number;
+    upstreamStatus?: number;
+    requestUrl?: URL;
 
-    constructor(message: string, statusCode: number) {
+    constructor(
+        message: string,
+        statusCode: number,
+        requestUrl?: URL,
+        upstreamStatus?: number,
+    ) {
         super(message);
         this.name = "ImageFetchError";
         this.status = statusCode;
+        this.requestUrl = requestUrl;
+        this.upstreamStatus = upstreamStatus;
     }
 }
 
@@ -157,8 +166,9 @@ async function fetchImageAsBase64(
     url: string,
     maxBytes: number,
 ): Promise<{ dataUrl: string; byteLength: number }> {
+    let validatedUrl: URL | undefined;
     try {
-        const validatedUrl = assertAllowedImageUrl(url);
+        validatedUrl = assertAllowedImageUrl(url);
         log(`Fetching image: ${validatedUrl.origin}${validatedUrl.pathname}`);
         const response = await fetch(validatedUrl, {
             redirect: "manual",
@@ -169,6 +179,8 @@ async function fetchImageAsBase64(
             throw new ImageFetchError(
                 `Image URL ${url} redirects. Please provide a direct public image URL.`,
                 400,
+                validatedUrl,
+                response.status,
             );
         }
 
@@ -191,7 +203,12 @@ async function fetchImageAsBase64(
                     errorMessage = base;
             }
 
-            throw new ImageFetchError(errorMessage, response.status);
+            throw new ImageFetchError(
+                errorMessage,
+                response.status,
+                validatedUrl,
+                response.status,
+            );
         }
 
         const contentType = response.headers.get("content-type");
@@ -233,9 +250,10 @@ async function fetchImageAsBase64(
             throw thrown;
         }
 
-        const error = thrown as {
-            message?: string;
-        };
+        const error =
+            thrown instanceof Error
+                ? thrown
+                : new Error(String(thrown), { cause: thrown });
         const message = error.message || "Unknown error";
         let errorMessage = `Failed to fetch image from ${url}: ${message}`;
 
@@ -248,7 +266,7 @@ async function fetchImageAsBase64(
         }
 
         errorLog(`Failed to fetch image ${url}: ${message}`);
-        throw new ImageFetchError(errorMessage, 400);
+        throw new ImageFetchError(errorMessage, 400, validatedUrl);
     }
 }
 
@@ -260,7 +278,7 @@ function needsConversion(url: string | undefined): boolean {
     if (!url) return false;
     if (url.startsWith("data:")) return false;
     if (url.startsWith("gs://")) return false;
-    return url.startsWith("http://") || url.startsWith("https://");
+    return true;
 }
 
 interface ContentPart {

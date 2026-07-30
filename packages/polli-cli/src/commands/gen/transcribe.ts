@@ -17,7 +17,7 @@ export function createTranscribeCommand() {
         .argument("<file>", "Audio file path (mp3, wav, etc.)")
         .option(
             "--model <model>",
-            "STT model (whisper, scribe, universal-2, universal-3-pro)",
+            "STT model (whisper, scribe, universal-2, universal-3.5-pro)",
             "whisper",
         )
         .option("--language <lang>", "Language hint (ISO code)")

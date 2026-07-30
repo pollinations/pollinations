@@ -559,7 +559,7 @@
           "id": "filterFieldsByName",
           "options": {
             "include": {
-              "pattern": "time|paid_pollen"
+              "pattern": "/^(time.*|paid_pollen.*)$/"
             }
           }
         },
@@ -746,7 +746,7 @@
           "id": "filterFieldsByName",
           "options": {
             "include": {
-              "pattern": "time|quest_pollen"
+              "pattern": "/^(time.*|quest_pollen.*)$/"
             }
           }
         },
@@ -932,7 +932,7 @@
           "id": "filterFieldsByName",
           "options": {
             "include": {
-              "pattern": "time|requests"
+              "pattern": "/^(time.*|requests.*)$/"
             }
           }
         },

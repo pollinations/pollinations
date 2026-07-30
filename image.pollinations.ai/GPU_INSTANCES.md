@@ -1,20 +1,28 @@
 # GPU Instances
 
-Last updated: 2026-07-22
+Last updated: 2026-07-30
 
 ## Capacity Summary
 
 | Model | Workers | GPUs | Provider | Cost/hr | Status |
 |-------|---------|------|----------|---------|--------|
-| Flux (FP4) | 1 | RTX 5090 | Vast.ai | $0.3744/hr | **ACTIVE — production** (Fireworks fallback) |
-| Z-Image | 3 | 4090 + 2x 3090 | RunPod | (see runpodctl) | **ACTIVE — production** |
+| Flux (FP4) | 1 | RTX 5090 | Vast.ai | $0.3744/hr | **ACTIVE — production** (Replicate fallback) |
+| Z-Image | 2 active + 1 stopped rollback | 3x RTX 5090 | Vast.ai | $0.773333/hr active + $0.022222/hr stopped storage | **ACTIVE — two production** |
 | Klein 4B | 1 active + 1 rollback | RTX 3090 + A5000 | Vast.ai + RunPod | $0.1656 + $0.27 while rollback runs | **ACTIVE — Vast production; RunPod stop-ready** |
 | LTX-2 + ACE-Step + Sana | 1 | GH200 | Lambda Labs | — | **ACTIVE** |
+
+## Vast replacement operations
+
+The repository skill
+[`manage-vast-gpu-fleet`](../.claude/skills/manage-vast-gpu-fleet/SKILL.md)
+is the source of truth for scheduled offer scouting, candidate qualification,
+isolated canaries, the human promotion gate, cutover, instance cleanup, and the
+post-cutover documentation PR.
 
 ## Provider: Vast.ai — Flux (RTX 5090, FP4)
 
 One single-GPU instance fronted by a Cloudflare Tunnel. Flux routes pool-first
-with automatic Fireworks fallback
+with automatic Replicate fallback
 (`gen.pollinations.ai/src/image/createAndReturnImages.ts` → `callFluxWithFallback`).
 
 | Worker | Vast instance | GPU | Listed rate | Status |
@@ -25,7 +33,7 @@ with automatic Fireworks fallback
 > CRITICAL: workers MUST be behind a named Cloudflare tunnel created in the
 > authoritative Pollinations account. The gen Worker cannot fetch a Vast
 > raw-IP/non-standard-port origin, and a successful registry heartbeat alone
-> does not prove the data path works. Fireworks can hide either failure.
+> does not prove the data path works. Replicate can hide either failure.
 
 **The quick-tunnel warning above is not theoretical — it caused the #12254
 outage.** flux-vast-03 was left on a `trycloudflare.com` quick tunnel (free,
@@ -72,8 +80,55 @@ POLLINATIONS_API_KEY=... bash image.pollinations.ai/nunchaku/verify-vast.sh  # r
 
 **Key behavior:** FP4 nunchaku, 4 steps, full 1024x1024 (`MAX_PIXELS=1048576`);
 `QUEUE_LIMIT=3` allows one running request plus two waiting; additional load is
-shed with 503 so the gateway falls back to Fireworks instead of making users
+shed with 503 so the gateway falls back to Replicate instead of making users
 wait in a long queue.
+
+## Provider: Vast.ai — Z-Image Turbo (RTX 5090)
+
+Z-Image uses one remotely managed Cloudflare Tunnel shared by the Vast
+workers. Cloudflare balances requests across its connectors, while the registry
+sees one stable backend URL.
+
+| Worker | Vast instance | Region | Listed rate | Status |
+|--------|---------------|--------|-------------|--------|
+| zimage-vast-01 | 45311852 | South Korea | $0.422222/hr | STOPPED 2026-07-27 — overnight rollback |
+| zimage-vast-02 | 45313816 | South Korea | $0.422222/hr | ACTIVE — production |
+| zimage-vast-canary | 46003779 | California | $0.351111/hr | ACTIVE — production |
+
+The active two-worker fleet costs `$0.773333/hr`, saving `$0.071111/hr` or
+about `$51.20` per 30-day month versus the previous pair. Stopped instance
+`45311852` retains its 80GB disk for rollback and incurs `$0.022222/hr` in
+storage charges (about `$16/month`) until destroyed. Restart is subject to GPU
+availability on its host.
+
+**Canary validation (2026-07-27):**
+
+- Full reboot restored the model and four Cloudflare Tunnel connections.
+- Concurrency 4 for 120 seconds: 102/102 successful, 0.826 images/second,
+  4.69s p50, 5.73s p95, and 6.11s p99.
+- 512×512, 1024×1024, and 768×1152 outputs passed; fixed-seed output was
+  byte-identical.
+- Production soak added five successful requests with no 5xx, OOM, traceback,
+  or tunnel errors.
+- After draining and stopping `45311852`, the retained workers served another
+  27 successful requests with zero 5xx or current-hour tunnel errors; five
+  shared-hostname health probes also passed.
+- Requests above 2,359,296 pixels return HTTP 422.
+
+**Deployment behavior:**
+
+- `HEARTBEAT_ENABLED=false` disables registry registration, not traffic through
+  a shared named tunnel. Keep the `tunnel-enabled` marker absent for local-only
+  validation.
+- `/root/onstart.sh` starts the model first and waits for local `/health` before
+  joining the production tunnel.
+- Some Vast hosts drop Cloudflare's required SRV DNS responses. The setup
+  detects this and conditionally starts a local DNS-over-HTTPS resolver before
+  cloudflared; inspect `/root/tunnel-dns.log` on affected hosts.
+- Normal PyPI delivered the verified PyTorch 2.9.1 CUDA 12.8 Blackwell wheel
+  much faster than the dedicated PyTorch index on the canary.
+- See `z-image/README.md`, `z-image/setup-vast.sh`, and
+  `z-image/verify-vast.sh` for provisioning and verification.
 
 ## Provider: Vast.ai — FLUX.2 Klein 4B (RTX 3090)
 
@@ -176,13 +231,13 @@ still reports `provider=vast`, a successful request reaches instance `44766948`,
 and the production status window remains free of 5xx. To roll back, restart the
 pod, verify its health endpoint, remove `KLEIN_VPC`, and deploy gen through CI.
 
-### Z-Image pods
+### Historical Z-Image pods
 
 Flux left RunPod on 2026-07-02 (pod hsl3ksl31lvrcc terminated; flux now on
-Vast.ai, see above). Z-Image runs on dedicated pods — check current IDs with
-`runpodctl pod list` (as of 2026-07-02: `icagz5lxdzotdx` zimage-4090-secure,
-`ua39ysr9i86nil`/`owngt7t59jexy8` zimage-3090). Registered URLs use RunPod's
-https proxy (`https://<pod>-<port>.proxy.runpod.net`).
+Vast.ai, see above). Z-Image production moved to Vast in July 2026. Historical
+RunPod IDs were `icagz5lxdzotdx`, `ua39ysr9i86nil`, and `owngt7t59jexy8`.
+Confirm their current state with `runpodctl pod list` before any cleanup; these
+IDs are not the active Z-Image production route.
 
 **Registry check (all workers):**
 ```bash

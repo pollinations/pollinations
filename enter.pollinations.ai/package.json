@@ -57,6 +57,7 @@
         "fast-json-stable-stringify": "^2.1.0",
         "hono": "^4.10.6",
         "hono-openapi": "^1.2.0",
+        "jose": "^6.2.3",
         "react": "^19.2.0",
         "react-dom": "^19.2.0",
         "react-markdown": "^10.1.0",

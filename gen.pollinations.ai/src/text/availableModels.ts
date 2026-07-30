@@ -1,4 +1,5 @@
 import { resolveModelName } from "@shared/registry/registry.ts";
+import { validateCohereRequest } from "./cohereCommandAPlus.js";
 import { portkeyConfig } from "./configs/modelConfigs.js";
 import midijourneyPrompt from "./personas/midijourney.js";
 import { BASE_PROMPTS } from "./prompts/systemPrompts.js";
@@ -6,7 +7,8 @@ import { createClaudeThinkingTransform } from "./transforms/createClaudeThinking
 import { createGeminiThinkingTransform } from "./transforms/createGeminiThinkingTransform.ts";
 import {
     adaptGoogleSearchToolForOpenRouter,
-    createOpenRouterNativeWebSearchTransform,
+    adaptGoogleSearchToolForVertex,
+    createGeminiToolsTransform,
     stripLogitBiasForNativeWebSearch,
 } from "./transforms/createGeminiToolsTransform.ts";
 import { createMessageTransform } from "./transforms/createMessageTransform.js";
@@ -29,6 +31,7 @@ const stripReasoning = createReasoningEffortTransform("strip");
 // 4.6+ use adaptive + output_config.effort.
 const claudeManualThinking = createClaudeThinkingTransform("budget");
 const claudeAdaptiveThinking = createClaudeThinkingTransform("adaptive");
+const claudeOpus5Thinking = createClaudeThinkingTransform("adaptive", true);
 
 interface ModelDefinition {
     name: string;
@@ -77,6 +80,12 @@ const models: ModelDefinition[] = [
         name: "mercury",
         config: portkeyConfig["mercury-2"],
         transform: stripReasoning,
+    },
+    {
+        name: "command-a-plus",
+        config: portkeyConfig["Cohere-command-a-plus-05-2026"],
+        // Azure runs automatic reasoning but rejects/ignores effort controls.
+        transform: pipe(validateCohereRequest, stripReasoning),
     },
     {
         name: "qwen-coder",
@@ -212,8 +221,8 @@ const models: ModelDefinition[] = [
     },
     {
         name: "claude-large",
-        config: portkeyConfig["claude-opus-4-8"],
-        transform: claudeAdaptiveThinking,
+        config: portkeyConfig["claude-opus-5"],
+        transform: claudeOpus5Thinking,
     },
     {
         name: "claude-fable-5",
@@ -262,32 +271,31 @@ const models: ModelDefinition[] = [
     },
     {
         name: "gemini-search",
-        config: portkeyConfig["google/gemini-2.5-flash-lite"],
+        config: portkeyConfig["vertex/gemini-2.5-flash-lite"],
         transform: pipe(
             sanitizeToolSchemas,
-            adaptGoogleSearchToolForOpenRouter,
-            createOpenRouterNativeWebSearchTransform(),
-            stripLogitBiasForNativeWebSearch,
+            adaptGoogleSearchToolForVertex,
+            createGeminiToolsTransform(["google_search"]),
             createGeminiThinkingTransform("v2.5"),
         ),
     },
     {
         name: "gemini-search-fast",
-        config: portkeyConfig["google/gemini-3.5-flash-lite"],
+        config: portkeyConfig["vertex/gemini-3.5-flash-lite"],
         transform: pipe(
             sanitizeToolSchemas,
-            adaptGoogleSearchToolForOpenRouter,
-            createOpenRouterNativeWebSearchTransform(),
+            adaptGoogleSearchToolForVertex,
+            createGeminiToolsTransform(["google_search"]),
             createGeminiThinkingTransform("v3-flash"),
         ),
     },
     {
         name: "gemini-search-large",
-        config: portkeyConfig["google/gemini-3.6-flash"],
+        config: portkeyConfig["vertex/gemini-3.6-flash"],
         transform: pipe(
             sanitizeToolSchemas,
-            adaptGoogleSearchToolForOpenRouter,
-            createOpenRouterNativeWebSearchTransform(),
+            adaptGoogleSearchToolForVertex,
+            createGeminiToolsTransform(["google_search"]),
             // Gemini 3.6 requires reasoning; map `none` to its lowest level.
             createGeminiThinkingTransform("v3-pro"),
         ),
@@ -334,8 +342,8 @@ const models: ModelDefinition[] = [
     },
     {
         name: "kimi-k3",
-        config: portkeyConfig["moonshotai/kimi-k3"],
-        transform: stripCacheControl,
+        config: portkeyConfig["accounts/fireworks/models/kimi-k3"],
+        transform: pipe(stripCacheControl, fireworksThinking),
     },
     {
         name: "laguna",
@@ -352,6 +360,11 @@ const models: ModelDefinition[] = [
             sanitizeToolSchemas,
             createReasoningEffortTransform("toggle"),
         ),
+    },
+    {
+        name: "nemotron",
+        config: portkeyConfig["nvidia/NVIDIA-Nemotron-3-Ultra-550B-A55B"],
+        transform: createReasoningEffortTransform("toggle"),
     },
     {
         name: "mimo-v2.5",

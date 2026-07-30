@@ -383,8 +383,9 @@ async function generateTextResponse(
             completion.fallbackTarget = `config.targets[${index}]`;
         }
 
-        // Billing follows what actually served, so record the serving entry
-        // before the response (streaming included) leaves the handler.
+        // Cost and the owner reward follow what actually served, so record the
+        // serving entry before the response (streaming included) leaves the
+        // handler.
         const servedEntry = candidate.entry;
         if (servedEntry) c.set("servedModelEntry", servedEntry);
 

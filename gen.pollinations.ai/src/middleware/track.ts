@@ -101,6 +101,8 @@ type ResponseTrackingData = {
     usage?: Usage;
     cost?: UsageCost;
     price?: UsagePrice;
+    /** What the serving model charges for this usage; bounds the owner reward. */
+    servedPrice?: number;
     // Per-rule billing adjustment breakdown for the billed generation. Absent on
     // cache hits / not-billed paths, which return before cost calculation.
     adjustments?: BillingAdjustment[];
@@ -278,9 +280,9 @@ export const track = (eventType: EventType) =>
                 const response = responseOverride
                     ? withFinalResponseHeaders(responseOverride, c.res)
                     : c.res.clone();
-                // Billing follows what actually served: when a fallback target
-                // answered, its own definition prices the request and its owner
-                // earns the community reward.
+                // What a rescue changes: the generation's cost, and which owner
+                // earns the reward. Not the price — the caller is charged the
+                // listing they asked for either way.
                 const servedEntry = c.var.servedModelEntry;
                 const responseTracking = await trackResponse(
                     eventType,
@@ -334,6 +336,9 @@ export const track = (eventType: EventType) =>
                                 ? {
                                       userId: communityEndpoint.ownerUserId,
                                       rewardRate: COMMUNITY_MODEL_REWARD_RATE,
+                                      // Their own listing, not the one the
+                                      // caller bought — see basePrice.
+                                      basePrice: responseTracking.servedPrice,
                                   }
                                 : null,
                     });
@@ -590,15 +595,17 @@ async function trackResponse(
         });
         return notBilled({ contentFilterResults });
     }
-    // Single pass: cost, price, and the per-rule fee breakdown all derive from
-    // one walk over the billing rules, so the event's adjustment maps always
+    // Cost follows the model that ran; price follows the one the caller asked
+    // for, so the invoice does not move because a fallback stepped in. Both
+    // still walk the billing rules together, so the event's adjustment maps
     // match the billed totals and clamp warnings log once per request.
-    const { cost, price, adjustments } = calculateUsageBilling(
-        resolvedModelRequested,
-        modelUsage.usage,
-        servedModelDefinition ?? requestTracking.modelDefinition,
-        modelUsage.output,
-    );
+    const { cost, price, adjustments, servedPrice } = calculateUsageBilling({
+        model: resolvedModelRequested,
+        usage: modelUsage.usage,
+        servedBy: servedModelDefinition ?? requestTracking.modelDefinition,
+        quotedBy: requestTracking.modelDefinition,
+        output: modelUsage.output,
+    });
     return {
         responseStatus: response.status,
         cacheHit,
@@ -606,6 +613,7 @@ async function trackResponse(
         fallbackUsed,
         cost,
         price,
+        servedPrice,
         adjustments,
         modelUsed: modelUsage.model,
         usage: modelUsage.usage,

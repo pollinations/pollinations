@@ -36,8 +36,8 @@ export type ModelVariables = {
     };
     /**
      * Set by the generation handlers when the fallback target actually served
-     * the request. Billing follows it: cost, price multiplier and the community
-     * owner reward all come from the model that served, never the one asked for.
+     * the request. Cost and the community owner reward follow it; the price the
+     * caller pays does not — that stays the listing they asked for.
      */
     servedModelEntry?: GenerationModelEntry;
     formData?: FormData;

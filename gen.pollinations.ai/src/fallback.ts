@@ -102,8 +102,9 @@ export type FallbackCandidate = {
     definition?: ModelDefinition;
     communityEndpoint?: CommunityEndpointRuntime;
     /**
-     * Registry entry to bill when this candidate serves. Absent on the model the
-     * caller asked for, which bills as itself.
+     * Registry entry whose owner is paid when this candidate serves. Absent on
+     * the model the caller asked for, which is also the one they are charged
+     * for however the request is eventually served.
      */
     entry?: GenerationModelEntry;
 };

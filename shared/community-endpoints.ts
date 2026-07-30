@@ -219,8 +219,11 @@ export const MAX_FALLBACK_TARGETS = 3;
 /**
  * True when `target` costs no more than `primary` on every price field.
  *
- * This is what makes a fallback safe to bill: the caller is charged whatever
- * actually served, and it can never exceed the price they were quoted.
+ * The caller is charged the primary's price whichever endpoint serves, so this
+ * bounds the PAYOUT rather than the invoice: a rescuer is paid on their own
+ * listing, and this rule is what guarantees that stays at or below what was
+ * charged. It also stops an owner routing traffic to a pricier model whose
+ * owner would then earn more than the caller was quoted.
  */
 export function isCommunityFallbackPricingAllowed(
     primary: CommunityEndpointPrices,

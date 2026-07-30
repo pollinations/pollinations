@@ -679,7 +679,7 @@ describe("tracking observability", () => {
         expect(owner?.tierBalance).toBeCloseTo(0.15, 10);
     });
 
-    it("bills the serving fallback model and rewards its owner", async () => {
+    it("charges the price the caller asked for and rewards the rescuer on their own", async () => {
         const db = drizzle(env.DB);
         const payerId = `track-fallback-payer-${crypto.randomUUID()}`;
         const primaryOwnerId = `track-fallback-primary-${crypto.randomUUID()}`;
@@ -703,7 +703,8 @@ describe("tracking observability", () => {
         if (!payer) throw new Error("Expected inserted payer");
 
         const primaryEndpoint = createCommunityEndpoint(primaryOwnerId);
-        // Half the primary's rates: the caller must be charged what served.
+        // Half the primary's rates, so the price the caller is charged and the
+        // one the reward is paid on are distinguishable.
         const fallbackEndpoint = createCommunityEndpoint(fallbackOwnerId, {
             id: "community-endpoint-fallback",
             modelId: "other-owner/cheap-model",
@@ -770,12 +771,15 @@ describe("tracking observability", () => {
         expect(event).toMatchObject({
             // The requested model id is still what the caller asked for.
             resolvedModelRequested: primaryEndpoint.modelId,
-            // 1000 × 0.00005 + 500 × 0.0001 — the fallback's rates, half of
-            // what the primary would have charged.
-            devPrice: 0.1,
-            totalPrice: 0.1,
+            // 1000 × 0.0001 + 500 × 0.0002 — the PRIMARY's rates. The caller
+            // bought that listing, so the invoice does not move because a
+            // cheaper endpoint happened to be the one that was up.
+            devPrice: 0.2,
+            totalPrice: 0.2,
             communityModelRewardUserId: fallbackOwnerId,
             communityModelRewardRate: COMMUNITY_MODEL_REWARD_RATE,
+            // 0.75 × 0.1 — the rescuer is paid on their OWN listing, not on
+            // what the caller paid, so the spread stays with Pollinations.
             communityModelRewardAmount: 0.075,
         });
 

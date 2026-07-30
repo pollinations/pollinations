@@ -511,12 +511,12 @@ async function settleRealtimeSession(
         return;
     }
 
-    const { cost, price, adjustments } = calculateUsageBilling(
-        tracking.resolvedModelRequested,
+    const { cost, price, adjustments } = calculateUsageBilling({
+        model: tracking.resolvedModelRequested,
         usage,
-        tracking.modelDefinition,
-        { realtimeCache: tracking.cacheUsage },
-    );
+        servedBy: tracking.modelDefinition,
+        output: { realtimeCache: tracking.cacheUsage },
+    });
     if (price.totalPrice <= 0) {
         tracking.settled = true;
         return;

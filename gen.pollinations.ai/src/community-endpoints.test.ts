@@ -407,11 +407,11 @@ describe("community endpoint helpers", () => {
         });
         expect(definition.cost).not.toHaveProperty("promptTextTokens");
         expect(
-            calculateUsageBilling(
-                modelId,
-                { completionImageTokens: 1 },
-                definition,
-            ).price.totalPrice,
+            calculateUsageBilling({
+                model: modelId,
+                usage: { completionImageTokens: 1 },
+                servedBy: definition,
+            }).price.totalPrice,
         ).toBe(0.03);
     });
 
@@ -450,15 +450,15 @@ describe("community endpoint helpers", () => {
             },
         });
         expect(
-            calculateUsageBilling(
-                modelId,
-                {
+            calculateUsageBilling({
+                model: modelId,
+                usage: {
                     promptTextTokens: 100,
                     promptImageTokens: 0,
                     completionImageTokens: 1000,
                 },
-                definition,
-            ).price.totalPrice,
+                servedBy: definition,
+            }).price.totalPrice,
         ).toBeCloseTo(0.000005 * 100 + 0.00004 * 1000, 10);
     });
 

@@ -6,7 +6,8 @@ import { createClaudeThinkingTransform } from "./transforms/createClaudeThinking
 import { createGeminiThinkingTransform } from "./transforms/createGeminiThinkingTransform.ts";
 import {
     adaptGoogleSearchToolForOpenRouter,
-    createOpenRouterNativeWebSearchTransform,
+    adaptGoogleSearchToolForVertex,
+    createGeminiToolsTransform,
     stripLogitBiasForNativeWebSearch,
 } from "./transforms/createGeminiToolsTransform.ts";
 import { createMessageTransform } from "./transforms/createMessageTransform.js";
@@ -263,32 +264,31 @@ const models: ModelDefinition[] = [
     },
     {
         name: "gemini-search",
-        config: portkeyConfig["google/gemini-2.5-flash-lite"],
+        config: portkeyConfig["vertex/gemini-2.5-flash-lite"],
         transform: pipe(
             sanitizeToolSchemas,
-            adaptGoogleSearchToolForOpenRouter,
-            createOpenRouterNativeWebSearchTransform(),
-            stripLogitBiasForNativeWebSearch,
+            adaptGoogleSearchToolForVertex,
+            createGeminiToolsTransform(["google_search"]),
             createGeminiThinkingTransform("v2.5"),
         ),
     },
     {
         name: "gemini-search-fast",
-        config: portkeyConfig["google/gemini-3.5-flash-lite"],
+        config: portkeyConfig["vertex/gemini-3.5-flash-lite"],
         transform: pipe(
             sanitizeToolSchemas,
-            adaptGoogleSearchToolForOpenRouter,
-            createOpenRouterNativeWebSearchTransform(),
+            adaptGoogleSearchToolForVertex,
+            createGeminiToolsTransform(["google_search"]),
             createGeminiThinkingTransform("v3-flash"),
         ),
     },
     {
         name: "gemini-search-large",
-        config: portkeyConfig["google/gemini-3.6-flash"],
+        config: portkeyConfig["vertex/gemini-3.6-flash"],
         transform: pipe(
             sanitizeToolSchemas,
-            adaptGoogleSearchToolForOpenRouter,
-            createOpenRouterNativeWebSearchTransform(),
+            adaptGoogleSearchToolForVertex,
+            createGeminiToolsTransform(["google_search"]),
             // Gemini 3.6 requires reasoning; map `none` to its lowest level.
             createGeminiThinkingTransform("v3-pro"),
         ),
@@ -335,8 +335,8 @@ const models: ModelDefinition[] = [
     },
     {
         name: "kimi-k3",
-        config: portkeyConfig["moonshotai/kimi-k3"],
-        transform: stripCacheControl,
+        config: portkeyConfig["accounts/fireworks/models/kimi-k3"],
+        transform: pipe(stripCacheControl, fireworksThinking),
     },
     {
         name: "laguna",
@@ -353,6 +353,11 @@ const models: ModelDefinition[] = [
             sanitizeToolSchemas,
             createReasoningEffortTransform("toggle"),
         ),
+    },
+    {
+        name: "nemotron",
+        config: portkeyConfig["nvidia/NVIDIA-Nemotron-3-Ultra-550B-A55B"],
+        transform: createReasoningEffortTransform("toggle"),
     },
     {
         name: "mimo-v2.5",

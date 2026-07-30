@@ -1,6 +1,9 @@
 import {
+    GEMINI_3_SEARCH_BILLING,
+    GEMINI_25_GROUNDING_BILLING,
     OPENROUTER_GEMINI_SEARCH_BILLING,
     withOpenRouterGeminiCacheStorage,
+    withVertexCacheStorage,
 } from "./gemini-billing";
 import {
     PERPLEXITY_FAST_BILLING,
@@ -236,7 +239,7 @@ export const TEXT_SERVICES = {
     },
     "mercury": {
         aliases: ["mercury-2", "inception", "inception-mercury"],
-        provider: "inception",
+        provider: "openrouter",
         brand: "Inception",
         category: "text",
         addedDate: new Date("2026-06-23").getTime(),
@@ -286,6 +289,7 @@ export const TEXT_SERVICES = {
         brand: "Mistral",
         category: "text",
         addedDate: new Date("2025-10-07").getTime(),
+        paidOnly: true,
         priceMultiplier: 1,
         cost: {
             promptTextTokens: perMillion(0.075),
@@ -312,6 +316,7 @@ export const TEXT_SERVICES = {
         brand: "Mistral",
         category: "text",
         addedDate: new Date("2026-05-15").getTime(),
+        paidOnly: true,
         priceMultiplier: 1,
         cost: {
             promptTextTokens: perMillion(0.15),
@@ -558,6 +563,7 @@ export const TEXT_SERVICES = {
         addedDate: new Date("2026-05-08").getTime(),
         brand: "Google",
         category: "text",
+        paidOnly: true,
         priceMultiplier: 1,
         cost: {
             // OpenRouter google/gemma-4-26b-a4b-it posted rates (2026-06-02):
@@ -582,7 +588,7 @@ export const TEXT_SERVICES = {
         addedDate: new Date("2026-07-18").getTime(),
         brand: "Google",
         category: "text",
-        paidOnly: false,
+        paidOnly: true,
         priceMultiplier: 1,
         cost: {
             promptTextTokens: perMillion(0.12),
@@ -728,13 +734,13 @@ export const TEXT_SERVICES = {
     },
     "gemini-search": {
         aliases: ["gemini-2.5-flash-search", "gemini-2.5-flash-lite-search"],
-        provider: "openrouter",
+        provider: "google",
         brand: "Google",
         category: "text",
         addedDate: new Date("2025-10-10").getTime(),
         paidOnly: true,
         priceMultiplier: 1,
-        // OpenRouter base rates for the pinned Google Vertex EU route.
+        // Vertex base rates for Gemini 2.5 Flash Lite.
         cost: {
             promptTextTokens: perMillion(0.1),
             promptCachedTokens: perMillion(0.01),
@@ -744,10 +750,7 @@ export const TEXT_SERVICES = {
             promptVideoTokens: perMillion(0.1),
             completionTextTokens: perMillion(0.4),
         },
-        billing: withOpenRouterGeminiCacheStorage(
-            OPENROUTER_GEMINI_SEARCH_BILLING,
-            1.0,
-        ),
+        billing: withVertexCacheStorage(GEMINI_25_GROUNDING_BILLING, 1.0),
         title: "Google Gemini 2.5 Flash Lite Search",
         description:
             "Answers grounded in live web search; fast and cheap, not a deep reasoner",
@@ -765,13 +768,13 @@ export const TEXT_SERVICES = {
             "gemini-3.1-flash-lite-search",
             "gemini-3.5-flash-lite-search",
         ],
-        provider: "openrouter",
+        provider: "google",
         brand: "Google",
         category: "text",
         addedDate: new Date("2026-05-26").getTime(),
         paidOnly: true,
         priceMultiplier: 1,
-        // OpenRouter base rates for the pinned Google Vertex global route.
+        // Vertex base rates for Gemini 3.5 Flash Lite.
         cost: {
             promptTextTokens: perMillion(0.3),
             promptCachedTokens: perMillion(0.03),
@@ -781,10 +784,7 @@ export const TEXT_SERVICES = {
             promptVideoTokens: perMillion(0.3),
             completionTextTokens: perMillion(2.5),
         },
-        billing: withOpenRouterGeminiCacheStorage(
-            OPENROUTER_GEMINI_SEARCH_BILLING,
-            1.0,
-        ),
+        billing: withVertexCacheStorage(GEMINI_3_SEARCH_BILLING, 1.0),
         title: "Gemini 3.5 Flash Lite Search",
         description: "Fast multimodal answers grounded in live web results",
         inputModalities: ["text", "image", "audio", "video"],
@@ -798,13 +798,13 @@ export const TEXT_SERVICES = {
     },
     "gemini-search-large": {
         aliases: ["gemini-3.6-flash-search", "gemini-3.5-flash-search"],
-        provider: "openrouter",
+        provider: "google",
         brand: "Google",
         category: "text",
         addedDate: new Date("2026-05-26").getTime(),
         paidOnly: true,
         priceMultiplier: 1,
-        // OpenRouter base rates for the pinned Google Vertex global route.
+        // Vertex base rates for Gemini 3.6 Flash.
         cost: {
             promptTextTokens: perMillion(1.5),
             promptCachedTokens: perMillion(0.15),
@@ -814,10 +814,7 @@ export const TEXT_SERVICES = {
             promptVideoTokens: perMillion(1.5),
             completionTextTokens: perMillion(7.5),
         },
-        billing: withOpenRouterGeminiCacheStorage(
-            OPENROUTER_GEMINI_SEARCH_BILLING,
-            1.0,
-        ),
+        billing: withVertexCacheStorage(GEMINI_3_SEARCH_BILLING, 1.0),
         title: "Gemini 3.6 Flash Search",
         description: "Premium web research with grounded, up-to-date answers",
         inputModalities: ["text", "image", "audio", "video"],
@@ -1189,12 +1186,13 @@ export const TEXT_SERVICES = {
     },
     "kimi-k3": {
         aliases: [],
-        provider: "openrouter",
+        provider: "fireworks",
         brand: "Moonshot AI",
         category: "text",
         addedDate: new Date("2026-07-18").getTime(),
-        paidOnly: true,
+        paidOnly: false,
         priceMultiplier: 1,
+        // Fireworks standard serverless rates (2026-07-30).
         cost: {
             promptTextTokens: perMillion(3),
             promptCachedTokens: perMillion(0.3),
@@ -1258,13 +1256,42 @@ export const TEXT_SERVICES = {
         contextLength: 1048576,
         isSpecialized: false,
     },
+    "nemotron": {
+        aliases: [
+            "nemotron-3-ultra",
+            "nvidia-nemotron-3-ultra",
+            "nemotron-3-ultra-550b-a55b",
+        ],
+        provider: "deepinfra",
+        brand: "NVIDIA",
+        category: "text",
+        addedDate: new Date("2026-07-27").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1,
+        cost: {
+            // DeepInfra standard-tier rates (2026-07-27). Flex is deliberately
+            // excluded because requests may wait up to ten minutes.
+            promptTextTokens: perMillion(0.5),
+            promptCachedTokens: perMillion(0.1),
+            completionTextTokens: perMillion(2.2),
+        },
+        title: "NVIDIA Nemotron 3 Ultra",
+        description:
+            "Frontier reasoning for coding agents, deep research and complex workflows",
+        inputModalities: ["text"],
+        outputModalities: ["text"],
+        tools: true,
+        reasoning: true,
+        contextLength: 262144,
+        isSpecialized: false,
+    },
     "mimo-v2.5": {
         aliases: ["mimo", "mimo-2.5"],
         provider: "openrouter",
         brand: "Xiaomi",
         category: "text",
         addedDate: new Date("2026-07-18").getTime(),
-        paidOnly: false,
+        paidOnly: true,
         priceMultiplier: 1,
         cost: {
             promptTextTokens: perMillion(0.14),
@@ -1287,7 +1314,7 @@ export const TEXT_SERVICES = {
         brand: "Xiaomi",
         category: "text",
         addedDate: new Date("2026-07-18").getTime(),
-        paidOnly: false,
+        paidOnly: true,
         priceMultiplier: 1,
         cost: {
             promptTextTokens: perMillion(0.435),
@@ -1466,6 +1493,7 @@ export const TEXT_SERVICES = {
         brand: "Meta",
         category: "text",
         addedDate: new Date("2026-05-04").getTime(),
+        paidOnly: true,
         priceMultiplier: 1,
         cost: {
             promptTextTokens: perMillion(0.1),
@@ -1610,7 +1638,7 @@ export const TEXT_SERVICES = {
         brand: "Qwen",
         category: "text",
         addedDate: new Date("2026-06-12").getTime(),
-        paidOnly: false,
+        paidOnly: true,
         priceMultiplier: 1,
         // OpenRouter triples token rates above 256K prompt tokens. Pollinations
         // keeps the full context window and absorbs that higher tier.
@@ -1667,6 +1695,7 @@ export const TEXT_SERVICES = {
         brand: "Qwen",
         category: "text",
         addedDate: new Date("2026-03-22").getTime(),
+        paidOnly: true,
         priceMultiplier: 1,
         cost: {
             promptTextTokens: perMillion(0.13),
@@ -1693,6 +1722,7 @@ export const TEXT_SERVICES = {
         provider: "openrouter",
         brand: "Qwen",
         addedDate: new Date("2026-05-15").getTime(),
+        paidOnly: true,
         priceMultiplier: 1,
         category: "text",
         cost: {
@@ -1716,6 +1746,7 @@ export const TEXT_SERVICES = {
         brand: "StepFun",
         category: "text",
         addedDate: new Date("2026-05-29").getTime(),
+        paidOnly: true,
         priceMultiplier: 1,
         cost: {
             // OpenRouter stepfun/step-3.7-flash posted rates (2026-05-29):
@@ -1743,6 +1774,7 @@ export const TEXT_SERVICES = {
         brand: "StepFun",
         category: "text",
         addedDate: new Date("2026-05-29").getTime(),
+        paidOnly: true,
         priceMultiplier: 1,
         cost: {
             // OpenRouter stepfun/step-3.5-flash posted rates (2026-07-10):

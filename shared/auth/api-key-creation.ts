@@ -91,7 +91,7 @@ export function validateRedirectUriFormat(redirectUri: string): void {
     }
 }
 
-function parseMetadata(
+export function parseMetadata(
     raw: string | null | undefined,
 ): Record<string, unknown> {
     if (!raw) return {};

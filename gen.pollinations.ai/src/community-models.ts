@@ -20,14 +20,18 @@ const COMMUNITY_TEXT_ENDPOINTS = [
     "/text",
     "/text/{prompt}",
 ];
-const COMMUNITY_IMAGE_ENDPOINTS = ["/v1/images/generations", "/image/{prompt}"];
-
 export function communityTextSupportedEndpoints(): string[] {
     return COMMUNITY_TEXT_ENDPOINTS;
 }
 
-export function communityImageSupportedEndpoints(): string[] {
-    return COMMUNITY_IMAGE_ENDPOINTS;
+export function communityImageSupportedEndpoints(
+    supportsImageEdits = false,
+): string[] {
+    return [
+        "/v1/images/generations",
+        ...(supportsImageEdits ? ["/v1/images/edits"] : []),
+        "/image/{prompt}",
+    ];
 }
 
 export type CommunityModelRegistryEntry = {
@@ -53,11 +57,13 @@ export async function getCommunityModelRegistryEntries(
             description: schema.communityEndpoint.description,
             modality: schema.communityEndpoint.modality,
             imagePricing: schema.communityEndpoint.imagePricing,
+            supportsImageEdits: schema.communityEndpoint.supportsImageEdits,
             baseUrl: schema.communityEndpoint.baseUrl,
             upstreamModel: schema.communityEndpoint.upstreamModel,
             bearerTokenCiphertext:
                 schema.communityEndpoint.bearerTokenCiphertext,
             visibility: schema.communityEndpoint.visibility,
+            delegatesGeneration: schema.communityEndpoint.delegatesGeneration,
             promptTextPrice: schema.communityEndpoint.promptTextPrice,
             promptCachedPrice: schema.communityEndpoint.promptCachedPrice,
             promptCacheWritePrice:
@@ -93,10 +99,12 @@ export async function getCommunityModelRegistryEntries(
             imagePricing: normalizeCommunityEndpointImagePricing(
                 row.imagePricing,
             ),
+            supportsImageEdits: row.supportsImageEdits,
             baseUrl: row.baseUrl,
             upstreamModel: row.upstreamModel,
             bearerTokenCiphertext: row.bearerTokenCiphertext,
             visibility: row.visibility,
+            delegatesGeneration: row.delegatesGeneration,
             disabledAt: row.disabledAt ? row.disabledAt.getTime() : null,
             disabledReason: row.disabledReason,
             ...communityEndpointPrices(row),

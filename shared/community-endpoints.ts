@@ -179,6 +179,18 @@ export function communityEndpointPrices(
     ) as CommunityEndpointPrices;
 }
 
+/**
+ * True when the owner charges nothing for calling this endpoint. The price set
+ * must be complete — a missing field is not a free one.
+ */
+export function isFreeCommunityEndpoint(
+    prices: CommunityEndpointPrices,
+): boolean {
+    return COMMUNITY_ENDPOINT_PRICE_FIELDS.every(
+        (field) => prices[field.key] === 0,
+    );
+}
+
 export function communityEndpointPricesForModality(
     source: Partial<CommunityEndpointPrices>,
     modality: CommunityEndpointModality,
@@ -229,10 +241,13 @@ export type CommunityEndpointRuntime = {
     description: string | null;
     modality: CommunityEndpointModality;
     imagePricing: CommunityEndpointImagePricing;
+    supportsImageEdits: boolean;
     baseUrl: string;
     upstreamModel: string;
     bearerTokenCiphertext: string;
     visibility: CommunityEndpointVisibility;
+    /** Admin-granted: may spend an agent run token on the caller's behalf. */
+    delegatesGeneration: boolean;
     disabledAt: number | null;
     disabledReason: string | null;
 } & CommunityEndpointPrices;
@@ -243,6 +258,7 @@ export type CommunityModelDefinitionInput = {
     description: string | null;
     modality?: CommunityEndpointModality;
     imagePricing?: CommunityEndpointImagePricing;
+    supportsImageEdits?: boolean;
 } & CommunityEndpointPrices;
 
 export type CommunityModelParts = {
@@ -340,9 +356,17 @@ export function communityImageGenerationsUrl(baseUrl: string): string {
     return `${communityOpenAIBaseUrl(baseUrl)}/images/generations`;
 }
 
+export function communityImageEditsUrl(baseUrl: string): string {
+    return `${communityOpenAIBaseUrl(baseUrl)}/images/edits`;
+}
+
 export function communityOpenAIBaseUrl(baseUrl: string): string {
     const normalized = normalizeCommunityEndpointBaseUrl(baseUrl);
-    for (const suffix of ["/chat/completions", "/images/generations"]) {
+    for (const suffix of [
+        "/chat/completions",
+        "/images/generations",
+        "/images/edits",
+    ]) {
         if (normalized.endsWith(suffix)) {
             return normalized.slice(0, -suffix.length);
         }
@@ -417,7 +441,10 @@ export function communityModelDefinition(
         addedDate: 0,
         title: communityEndpointTitle(endpoint),
         description: description || undefined,
-        inputModalities: ["text"],
+        inputModalities:
+            isImage && endpoint.supportsImageEdits
+                ? ["text", "image"]
+                : ["text"],
         outputModalities: isImage ? ["image"] : ["text"],
         paidOnly: false,
         alpha: true,

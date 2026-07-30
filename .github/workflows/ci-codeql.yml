@@ -32,8 +32,3 @@ jobs:
 
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v3
-        with:
-          # Keep the category stable across the workflow filename migration so
-          # code-scanning merge protection can compare PR results with the
-          # existing baseline configurations.
-          category: .github/workflows/codeql.yml:analyze/language:${{ matrix.language }}

@@ -28,7 +28,7 @@ function isUnsupportedInputError(details: unknown): boolean {
 
 // Attach internal response metadata as non-enumerable properties so downstream
 // handling can use it without adding fields to OpenAI-compatible response bodies.
-function withResponseMetadata(
+export function withResponseMetadata(
     completion: ChatCompletion,
     fallbackTarget: string | undefined,
     requestUrl: URL,

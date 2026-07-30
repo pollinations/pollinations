@@ -1,6 +1,6 @@
 # GPU Instances
 
-Last updated: 2026-07-27
+Last updated: 2026-07-30
 
 ## Capacity Summary
 
@@ -10,6 +10,14 @@ Last updated: 2026-07-27
 | Z-Image | 2 active + 1 stopped rollback | 3x RTX 5090 | Vast.ai | $0.773333/hr active + $0.022222/hr stopped storage | **ACTIVE — two production** |
 | Klein 4B | 1 active + 1 rollback | RTX 3090 + A5000 | Vast.ai + RunPod | $0.1656 + $0.27 while rollback runs | **ACTIVE — Vast production; RunPod stop-ready** |
 | LTX-2 + ACE-Step + Sana | 1 | GH200 | Lambda Labs | — | **ACTIVE** |
+
+## Vast replacement operations
+
+The repository skill
+[`manage-vast-gpu-fleet`](../.claude/skills/manage-vast-gpu-fleet/SKILL.md)
+is the source of truth for scheduled offer scouting, candidate qualification,
+isolated canaries, the human promotion gate, cutover, instance cleanup, and the
+post-cutover documentation PR.
 
 ## Provider: Vast.ai — Flux (RTX 5090, FP4)
 

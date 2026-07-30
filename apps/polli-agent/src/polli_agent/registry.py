@@ -100,8 +100,24 @@ def _infer_meta(item: dict[str, Any]) -> dict[str, Any]:
         modalities.append("audio")
     if any(
         k in owned
-        for k in ["transcribe", "scrib", "whisper", "universal-2", "universal-3-pro"]
-    ) or any(k in mid for k in ["whisper", "scribe", "universal-2", "universal-3-pro"]):
+        for k in [
+            "transcribe",
+            "scrib",
+            "whisper",
+            "universal-2",
+            "universal-3.5-pro",
+            "universal-3-pro",
+        ]
+    ) or any(
+        k in mid
+        for k in [
+            "whisper",
+            "scribe",
+            "universal-2",
+            "universal-3.5-pro",
+            "universal-3-pro",
+        ]
+    ):
         modalities.append("transcript")
     if any(k in owned for k in ["image", "pollen"]) or any(
         k in mid

@@ -144,6 +144,14 @@ export const portkeyConfig: PortkeyConfigMap = {
             "grok-4.3",
         ),
 
+    // -- Azure (Myceli Prod — eastus, Cohere) --------------------------------
+    "Cohere-command-a-plus-05-2026": () =>
+        createAzureModelConfig(
+            process.env.AZURE_MYCELI_PROD_API_KEY,
+            "https://myceli-prod-eastus.cognitiveservices.azure.com/openai/deployments/Cohere-command-a-plus-05-2026/chat/completions?api-version=2024-12-01-preview",
+            "Cohere-command-a-plus-05-2026",
+        ),
+
     // -- OpenRouter (frontier models) ----------------------------------------
     "x-ai/grok-4.5": () =>
         createOpenRouterModelConfig({

@@ -1,0 +1,14 @@
+{
+  "platform": "twitter",
+  "scope": "daily",
+  "date": "2026-07-29",
+  "period_start": "2026-07-29",
+  "period_end": "2026-07-29",
+  "generated_at": "2026-07-30T07:02:29.361217+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-07-29/images/twitter.jpg"
+    }
+  ],
+  "text": "shipped: polli-agent, a public multimodal router, is now in the deploy pipeline. agents get run tokens instead of your full API key. Polli now reads GIFs, stops talking sooner, and Gemini Search is back on Vertex. 8 PRs. one less thing held together by optimism."
+}

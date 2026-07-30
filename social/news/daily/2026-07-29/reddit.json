@@ -1,0 +1,15 @@
+{
+  "platform": "reddit",
+  "scope": "daily",
+  "date": "2026-07-29",
+  "period_start": "2026-07-29",
+  "period_end": "2026-07-29",
+  "generated_at": "2026-07-30T07:02:29.361217+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-07-29/images/reddit.jpg"
+    }
+  ],
+  "title": "polli-agent is now in the deploy pipeline",
+  "text": "Eight PRs merged today. The main change is that `polli-agent`, a public multimodal router app, is now wired into the apps deploy pipeline: [#12702](https://github.com/pollinations/pollinations/pull/12702), [#12857](https://github.com/pollinations/pollinations/pull/12857).\n\nAgents can now use run tokens rather than inheriting a caller's full API key ([#12844](https://github.com/pollinations/pollinations/pull/12844)). This is the less exciting kind of agent feature: narrower credentials and fewer ways for a delegated task to become someone else's incident report.\n\nPolli also now handles GIF inputs correctly ([#12852](https://github.com/pollinations/pollinations/pull/12852)) and was adjusted to be more concise and independently useful ([#12855](https://github.com/pollinations/pollinations/pull/12855)). Apparently a router can see moving pictures and stop narrating its own existence. Progress.\n\nOn provider plumbing: text-provider 429s are remapped more consistently ([#12814](https://github.com/pollinations/pollinations/pull/12814)), and Gemini Search has been restored to its Vertex route ([#12839](https://github.com/pollinations/pollinations/pull/12839)). The README/front-page update is also in ([#12838](https://github.com/pollinations/pollinations/pull/12838)); it now knows what day it is.\n\nCode, issues, and the usual unfinished edges are at [github.com/pollinations/pollinations](https://github.com/pollinations/pollinations)."
+}

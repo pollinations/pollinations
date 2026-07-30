@@ -10,7 +10,7 @@ afterEach(() => {
 });
 
 describe("downloadUserImage", () => {
-    it("returns a validation error when the response body disconnects", async () => {
+    it("codes a body that disconnects mid-read as failed_to_download_image", async () => {
         const imageUrl = "https://example.com/input.png";
         const body = new ReadableStream({
             start(controller) {
@@ -28,7 +28,7 @@ describe("downloadUserImage", () => {
         expect(error).toMatchObject({
             status: 400,
             details: { validation: true },
-            errorCode: "unsupported_image_media_type",
+            errorCode: "failed_to_download_image",
             message: `Failed to read image ${imageUrl}: Network connection lost`,
         });
     });

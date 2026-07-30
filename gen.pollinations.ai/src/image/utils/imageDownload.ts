@@ -166,9 +166,12 @@ export async function downloadUserImage(
         buffer = Buffer.from(await imageResponse.arrayBuffer());
     } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
+        // The body never arrived — a transport failure, not a format one. The
+        // media type is still unknown at this point, so blaming it would send
+        // callers looking at an image we never actually read.
         throw userImageError(
             `Failed to read image ${imageUrl}: ${message}`,
-            "unsupported_image_media_type",
+            "failed_to_download_image",
         );
     }
 

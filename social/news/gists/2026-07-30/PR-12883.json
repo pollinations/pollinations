@@ -1,0 +1,34 @@
+{
+  "pr_number": 12883,
+  "title": "feat: serve the media agent from weaver.pollinations.ai",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/12883",
+  "merged_at": "2026-07-30T14:38:10Z",
+  "labels": [],
+  "pr_body_excerpt": "- `polli.pollinations.ai` is meant for exposing the Polli Discord bot as a model (per @Itachi-1824 in dev-polli); the media agent was squatting on it\n- Rebinds to `weaver.myceli.ai` / `weaver.pollinations.ai` and points `apps.json` at the `weaver` subdomain\n- Worker `name` deliberately stays `polli-agent`, so the running container is reused rather than orphaned\n- Merging deploys: the `apps/**` push trigger on `main` runs `Apps / Deploy changed apps`\n\nFollow-up after merge: repoint the `voodoohop/polli` community endpoint at the new host and drop the stale `polli.*` custom domains.",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "The media weaver moves in",
+    "blurb": "The media agent has unpacked its pixels at weaver.pollinations.ai, leaving polli.pollinations.ai free for its Discord-bot destiny. Same hardworking worker, tidier place in the garden.",
+    "summary": "Rebound the Polli media agent from polli.pollinations.ai to weaver.pollinations.ai (also weaver.myceli.ai) and updated the app registry while retaining the polli-agent Worker name so its running container is reused.",
+    "impact": "Media-agent users and community endpoints can now use the dedicated weaver host, while polli.pollinations.ai is available to expose the Polli Discord bot as a model.",
+    "keywords": [
+      "weaver",
+      "media-agent",
+      "apps",
+      "custom-domain",
+      "cloudflare-workers",
+      "community"
+    ],
+    "visual_concept": "Depict a cozy garden workshop where Polli helps a friendly media-weaving machine move glowing image, audio, and video threads into a new little cottage labeled WEAVER. The unchanged polli-agent Worker is represented by the same familiar humming CRT-powered loom, while code-vines and flowers show that the service is settling into its dedicated home.",
+    "image_prompt": "A cozy pixel art garden workshop where the main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears a tiny weaver's cap and guides glowing media threads into a retro CRT loom beside a cottage with simple pixel-font text: “WEAVER.” Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, code-plants and flowers, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-30/PR-12883.jpg",
+    "prompt": "A cozy pixel art garden workshop where the main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears a tiny weaver's cap and guides glowing media threads into a retro CRT loom beside a cottage with simple pixel-font text: “WEAVER.” Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, code-plants and flowers, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-07-30T14:39:18.108373+00:00"
+}

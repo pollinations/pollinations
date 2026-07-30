@@ -79,6 +79,7 @@ describe("reasoning_effort model wiring", () => {
         "glm",
         "kimi",
         "kimi-code",
+        "kimi-k3",
         "deepseek",
         "qwen-large",
         "longcat",

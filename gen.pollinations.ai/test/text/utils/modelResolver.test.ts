@@ -86,6 +86,17 @@ describe("resolveModelConfig", () => {
         expect(result.options.provider).toBeUndefined();
     });
 
+    it("routes Kimi K3 directly to Fireworks without fallback", () => {
+        const result = resolveModelConfig(messages, { model: "kimi-k3" });
+
+        expect(result.options.model).toBe("accounts/fireworks/models/kimi-k3");
+        expect(result.options.modelConfig).toMatchObject({
+            provider: "openai",
+            "custom-host": "https://api.fireworks.ai/inference/v1",
+        });
+        expect(result.options.provider).toBeUndefined();
+    });
+
     it.each([
         "perplexity-high",
         "perplexity-deep",

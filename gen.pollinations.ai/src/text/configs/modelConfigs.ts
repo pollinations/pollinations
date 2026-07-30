@@ -145,11 +145,6 @@ export const portkeyConfig: PortkeyConfigMap = {
         ),
 
     // -- OpenRouter (frontier models) ----------------------------------------
-    "moonshotai/kimi-k3": () =>
-        createOpenRouterModelConfig({
-            model: "moonshotai/kimi-k3",
-            defaultOptions: { provider: { sort: "price" } },
-        }),
     "x-ai/grok-4.5": () =>
         createOpenRouterModelConfig({
             model: "x-ai/grok-4.5",
@@ -248,6 +243,10 @@ export const portkeyConfig: PortkeyConfigMap = {
     "accounts/fireworks/models/kimi-k2p7-code": () =>
         createFireworksModelConfig({
             model: "accounts/fireworks/models/kimi-k2p7-code",
+        }),
+    "accounts/fireworks/models/kimi-k3": () =>
+        createFireworksModelConfig({
+            model: "accounts/fireworks/models/kimi-k3",
         }),
 
     // -- OpenRouter (Mistral Small 3.2, Mistral Small 4) ---------------------

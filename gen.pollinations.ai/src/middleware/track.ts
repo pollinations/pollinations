@@ -448,7 +448,7 @@ function withFinalResponseHeaders(
     });
 }
 
-async function trackResponse(
+export async function trackResponse(
     eventType: EventType,
     requestTracking: RequestTrackingData,
     response: Response,
@@ -467,8 +467,21 @@ async function trackResponse(
         ...extra,
     });
 
-    if (!response.ok || cacheHit) {
+    // A cache hit called no model, so it must not claim one. A failure did
+    // call a model, and recording which one is the only way an error row can
+    // say what failed — otherwise model_used falls back to the datasource
+    // DEFAULT 'undefined' and per-model upstream health is unqueryable.
+    //
+    // resolvedModelRequested is the model that was called: the model is
+    // resolved once per request and no path re-dispatches to a different
+    // Pollinations model id. Portkey's multi-target config (see fallbackUsed /
+    // x-portkey-last-used-option-index) only changes which upstream provider
+    // target served a single model id, not the id itself.
+    if (cacheHit) {
         return notBilled();
+    }
+    if (!response.ok) {
+        return notBilled({ modelUsed: resolvedModelRequested });
     }
 
     // Verify the response content-type matches the expected output before
@@ -490,7 +503,7 @@ async function trackResponse(
                 kind: contentTypeGuard.kind,
             },
         );
-        return notBilled();
+        return notBilled({ modelUsed: resolvedModelRequested });
     }
 
     const { modelUsage, contentFilterResults } =
@@ -503,7 +516,10 @@ async function trackResponse(
         log.error("Failed to extract model usage for model {model}", {
             model: resolvedModelRequested,
         });
-        return notBilled({ contentFilterResults });
+        return notBilled({
+            contentFilterResults,
+            modelUsed: resolvedModelRequested,
+        });
     }
     // Single pass: cost, price, and the per-rule fee breakdown all derive from
     // one walk over the billing rules, so the event's adjustment maps always

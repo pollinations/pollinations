@@ -10,6 +10,7 @@ import type {
 
 const TOKEN_TYPE_LABELS: Record<PriceKind, string> = {
     text: "text",
+    document: "document",
     image: "image",
     "3d": "3D model",
     cached: "cached",
@@ -24,6 +25,7 @@ const PRICE_UNIT_SUFFIX: Record<ModelPriceLine["unit"], string> = {
     token: "/M",
     second: "/sec",
     request: "/gen",
+    page: "/page",
 };
 
 export type PriceBadgeConfig = Omit<ModelPriceLine, "direction"> & {
@@ -85,10 +87,10 @@ export const PriceBadge: FC<PriceBadgeConfig> = ({ price, unit, subKinds }) => {
     const tokenTypes = [
         ...new Set(subKinds.map((item) => TOKEN_TYPE_LABELS[item])),
     ];
-    const tokenTypeLabel =
+    const typeLabel =
         tokenTypes.length > 1
             ? `Token types: ${tokenTypes.join(", ")}`
-            : `Token type: ${tokenTypes[0]}`;
+            : `${unit === "page" ? "Billing" : "Token"} type: ${tokenTypes[0]}`;
 
     const badge = (
         <Chip
@@ -109,9 +111,5 @@ export const PriceBadge: FC<PriceBadgeConfig> = ({ price, unit, subKinds }) => {
         </Chip>
     );
 
-    return tokenTypeLabel ? (
-        <Tooltip content={tokenTypeLabel}>{badge}</Tooltip>
-    ) : (
-        badge
-    );
+    return typeLabel ? <Tooltip content={typeLabel}>{badge}</Tooltip> : badge;
 };

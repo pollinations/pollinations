@@ -1,5 +1,6 @@
 import {
     ChatIcon,
+    ClipboardIcon,
     CodeIcon,
     CubeIcon,
     DatabaseIcon,
@@ -21,6 +22,7 @@ type Icon = FC<IconProps>;
 /** Input-modality glyphs (chat/eye/video/mic). */
 export const MODALITY_ICON: Record<InputModality, Icon> = {
     text: ChatIcon,
+    document: ClipboardIcon,
     image: EyeIcon,
     video: VideoIcon,
     audio: MicIcon,
@@ -35,6 +37,7 @@ export const CAPABILITY_ICON: Record<DisplayCapability, Icon> = {
 
 export const PRICE_ICON: Record<PriceKind, Icon> = {
     text: ChatIcon,
+    document: ClipboardIcon,
     image: ImageIcon,
     "3d": CubeIcon,
     cached: DatabaseIcon,

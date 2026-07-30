@@ -130,6 +130,15 @@ export interface RequestData {
     top_logprobs?: unknown;
     logit_bias?: unknown;
     user?: unknown;
+    pages?: string | number[];
+    include_image_base64?: boolean;
+    image_limit?: number;
+    image_min_size?: number;
+    table_format?: "markdown" | "html";
+    extract_header?: boolean;
+    extract_footer?: boolean;
+    include_blocks?: boolean;
+    confidence_scores_granularity?: "word" | "page";
     [key: string]: unknown;
 }
 

@@ -111,15 +111,14 @@ function usageHeaders(
     const headers = new Headers();
     const modelUsed = completion?.model || fallbackModel;
     if (modelUsed) {
-        const usage = completion?.usage
+        const usage = completion?.usage;
+        const normalizedUsage = usage
             ? openaiUsageToUsage(
-                  completion.usage as unknown as Parameters<
-                      typeof openaiUsageToUsage
-                  >[0],
+                  usage as unknown as Parameters<typeof openaiUsageToUsage>[0],
               )
-            : {};
+            : undefined;
         for (const [key, value] of Object.entries(
-            buildUsageHeaders(modelUsed, usage),
+            buildUsageHeaders(modelUsed, normalizedUsage),
         )) {
             headers.set(key, String(value));
         }

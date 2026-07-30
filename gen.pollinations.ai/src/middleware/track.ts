@@ -44,6 +44,7 @@ import {
     openaiUsageToUsage,
     PROVIDER_REPORTED_COST_HEADER,
     parseUsageHeaders,
+    USAGE_MISSING_HEADER,
 } from "@shared/registry/usage-headers.ts";
 import type {
     EventType,
@@ -848,7 +849,10 @@ async function extractStreamRequested(request: HonoRequest): Promise<boolean> {
     return false;
 }
 
-function extractUsageHeaders(response: Response): ModelUsage {
+function extractUsageHeaders(response: Response): ModelUsage | null {
+    if (response.headers.get(USAGE_MISSING_HEADER) === "true") {
+        return null;
+    }
     const modelUsed = response.headers.get("x-model-used");
     if (!modelUsed) {
         throw new Error(
@@ -907,11 +911,13 @@ function extractContentFilterHeaders(
 async function extractUsageAndContentFilterResultsHeaders(
     response: Response,
 ): Promise<{
-    modelUsage: ModelUsage;
+    modelUsage: ModelUsage | null;
     contentFilterResults: GenerationEventContentFilterParams;
 }> {
     const modelUsage = extractUsageHeaders(response);
-    modelUsage.output = await extractResponseJsonOutput(response);
+    if (modelUsage) {
+        modelUsage.output = await extractResponseJsonOutput(response);
+    }
     return {
         modelUsage,
         contentFilterResults: extractContentFilterHeaders(response),

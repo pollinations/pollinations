@@ -5,6 +5,33 @@ const messages = [{ role: "user" as const, content: "hello" }];
 const modelDef = { name: "test-model" };
 
 describe("processParameters", () => {
+    it("forces usage accounting for OpenRouter requests", () => {
+        const result = processParameters(messages, {
+            model: "google/gemini-3.1-pro-preview",
+            usage: { include: false },
+            modelConfig: {
+                provider: "openai",
+                "custom-host": "https://openrouter.ai/api/v1",
+            },
+            modelDef,
+        });
+
+        expect(result.options.usage).toEqual({ include: true });
+    });
+
+    it("does not add OpenRouter usage accounting to other providers", () => {
+        const result = processParameters(messages, {
+            model: "gpt-5.4",
+            modelConfig: {
+                provider: "azure-openai",
+                "azure-deployment-id": "gpt-5.4",
+            },
+            modelDef,
+        });
+
+        expect(result.options.usage).toBeUndefined();
+    });
+
     it("converts max_tokens to max_completion_tokens for Azure OpenAI models", () => {
         const result = processParameters(messages, {
             model: "gpt-5-nano",

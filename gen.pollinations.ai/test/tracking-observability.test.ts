@@ -420,6 +420,62 @@ describe("tracking observability", () => {
         expect(consumePollen.mock.calls[0]?.[0]).toBeGreaterThan(0);
     });
 
+    it("does not bill a successful text response when upstream usage is missing", async () => {
+        const tinybirdRequests: Request[] = [];
+        vi.spyOn(globalThis, "fetch").mockImplementation(
+            async (input, init) => {
+                tinybirdRequests.push(new Request(input, init));
+                return new Response("ok");
+            },
+        );
+        const consumePollen = vi.fn<(amount: number) => Promise<void>>(
+            async () => {},
+        );
+
+        const ctx = createExecutionContext();
+        const response = await createHeaderApp(
+            { "x-usage-missing": "true" },
+            trackingUser,
+            200,
+            consumePollen,
+        ).fetch(
+            new Request("https://gen.pollinations.ai/v1/chat/completions", {
+                method: "POST",
+                headers: { "content-type": "application/json" },
+                body: JSON.stringify({
+                    model: "openai",
+                    stream: false,
+                    messages: [{ role: "user", content: "test" }],
+                }),
+            }),
+            {
+                DB: env.DB,
+                ENVIRONMENT: "test",
+                LOG_LEVEL: "debug",
+                LOG_FORMAT: "text",
+                BETTER_AUTH_SECRET: "test_secret",
+                TINYBIRD_INGEST_URL:
+                    "https://tinybird.test/v0/events?name=generation_event_v2",
+                TINYBIRD_INGEST_TOKEN: "test_tinybird_token",
+            } as CloudflareBindings,
+            ctx,
+        );
+
+        await waitOnExecutionContext(ctx);
+
+        expect(response.status).toBe(200);
+        expect(tinybirdRequests).toHaveLength(1);
+        const event = (await tinybirdRequests[0].json()) as TinybirdEvent;
+        expect(event).toMatchObject({
+            responseStatus: 200,
+            isBilledUsage: false,
+            totalCost: 0,
+            totalPrice: 0,
+        });
+        expect(event).not.toHaveProperty("modelUsed");
+        expect(consumePollen).toHaveBeenCalledWith(0);
+    });
+
     it("records and deducts the effective long-context price sheet", async () => {
         const tinybirdRequests: Request[] = [];
         vi.spyOn(globalThis, "fetch").mockImplementation(

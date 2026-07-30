@@ -1,0 +1,35 @@
+{
+  "pr_number": 12776,
+  "title": "feat: add Mistral OCR 4",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/12776",
+  "merged_at": "2026-07-30T14:13:27Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds `mistral-ocr` with aliases `mistral-ocr-4` and `mistral-ocr-4-0` through existing `POST /v1/chat/completions` and `POST /text`; no separate Pollinations OCR endpoint or registry.\n- Adapts one `file` or `image_url` to Mistral direct `/v1/ocr`, pinned to `mistral-ocr-4-0`; chat returns Markdown plus structured `ocr`/`content_blocks`, while `/text` returns Markdown.\n- Contract: paid-only yes; multiplier 1; Mistral direct; Pollinations GPU no; fallback none. Streaming, prompt-only GET, and separately priced custom annotations are rejected.\n- Bills exactly $0.004 per provider-reported processed page and bypasses text caching for document privacy and exact repeated billing.\n- Review follow-up: keeps `upstreamRequestUrl` internal/non-enumerable, asserts the exact public response shape, and scopes OCR-only option validation to the canonical model and aliases so other text models retain passthrough behavior.\n- Live E2E passed image and selected-page PDF through both text routes in 1.44s and 0.51s, each deducting 0.004 Pollen. Final verification: all 78 Gen files pass after the worktree dependency rerun, plus 310 Enter tests, SDK tests/build, Gen typecheck/staging build, and OpenAPI validation. No secret mutation.\n\nPricing: https://docs.mistral.ai/models/model-cards/ocr-4-0",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Documents, meet the hive",
+    "blurb": "Mistral OCR 4 has joined the text routes, turning images and PDFs into useful Markdown without making anyone learn a new endpoint. Polli has been reading the paperwork. She remains politely unimpressed by it.",
+    "summary": "Added paid-only Mistral OCR 4 through POST /v1/chat/completions and POST /text, accepting one file or image_url and returning Markdown plus structured OCR content for chat requests.",
+    "impact": "Developers can extract text from images and selected-page PDFs using mistral-ocr, mistral-ocr-4, or mistral-ocr-4-0 on existing routes, billed at $0.004 Pollen per processed page with document responses kept out of the text cache.",
+    "keywords": [
+      "mistral-ocr-4",
+      "ocr",
+      "pdf",
+      "image-url",
+      "chat-completions",
+      "text-api",
+      "billing"
+    ],
+    "visual_concept": "A cozy document-reading garden workshop: Polli helps a friendly CRT monitor robot convert a scanned PDF and an image into neatly sprouting Markdown code-plants. Page-shaped sheets, a magnifying glass, and small flowers represent OCR extraction, while a lime-green terminal shows the existing text API route rather than a separate OCR machine.",
+    "image_prompt": "Cozy pixel art scene in a warm garden workshop where the main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; Polli wears tiny librarian glasses and gently holds a magnifying glass over a scanned PDF as Markdown code-plants sprout from its pages. A cute chunky CRT-monitor robot with eager square pixel eyes organizes an image and PDF beside a retro terminal glowing prominent lime green (#ecf874), with small flowers and vines around it; simple pixel-font terminal text reads “MISTRAL OCR 4”. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, lo-fi Stardew Valley or A Short Hike feeling, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-30/PR-12776.jpg",
+    "prompt": "Cozy pixel art scene in a warm garden workshop where the main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; Polli wears tiny librarian glasses and gently holds a magnifying glass over a scanned PDF as Markdown code-plants sprout from its pages. A cute chunky CRT-monitor robot with eager square pixel eyes organizes an image and PDF beside a retro terminal glowing prominent lime green (#ecf874), with small flowers and vines around it; simple pixel-font terminal text reads “MISTRAL OCR 4”. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, lo-fi Stardew Valley or A Short Hike feeling, nostalgic but beautiful."
+  },
+  "generated_at": "2026-07-30T14:14:25.329200+00:00"
+}

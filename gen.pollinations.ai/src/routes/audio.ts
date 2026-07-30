@@ -2936,7 +2936,7 @@ export const audioRoutes = new Hono<Env>()
                 "- `whisper-1` — Alias for whisper-large-v3",
                 "- `scribe` — ElevenLabs Scribe (90+ languages, word-level timestamps)",
                 "- `universal-2` — AssemblyAI Universal-2 (99 languages)",
-                "- `universal-3-pro` — AssemblyAI Universal-3 Pro (highest accuracy, prompting)",
+                "- `universal-3.5-pro` — AssemblyAI Universal-3.5 Pro (18 languages, code switching, prompting)",
             ].join("\n"),
             requestBody: {
                 required: true,
@@ -2956,7 +2956,7 @@ export const audioRoutes = new Hono<Env>()
                                     type: "string",
                                     default: "whisper-large-v3",
                                     description:
-                                        "The model to use. Options: `whisper-large-v3`, `whisper-1`, `scribe`, `universal-2`, `universal-3-pro`.",
+                                        "The model to use. Options: `whisper-large-v3`, `whisper-1`, `scribe`, `universal-2`, `universal-3.5-pro`.",
                                 },
                                 language: {
                                     type: "string",
@@ -3109,7 +3109,7 @@ export const audioRoutes = new Hono<Env>()
 
             if (
                 c.var.model.resolved === "universal-2" ||
-                c.var.model.resolved === "universal-3-pro"
+                c.var.model.resolved === "universal-3.5-pro"
             ) {
                 const assemblyAiApiKey = (
                     c.env as unknown as { ASSEMBLYAI_API_KEY: string }

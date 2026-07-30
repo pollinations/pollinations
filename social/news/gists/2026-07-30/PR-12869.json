@@ -1,0 +1,35 @@
+{
+  "pr_number": 12869,
+  "title": "docs: update README — 2026-07-30",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/12869",
+  "merged_at": "2026-07-30T07:55:47Z",
+  "labels": [
+    "NEWS"
+  ],
+  "pr_body_excerpt": "Daily README update: Latest News section. (Recent Apps is refreshed by Apps / Update metrics.)",
+  "gist": {
+    "category": "docs",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Fresh news in the flowerbed",
+    "blurb": "The README's Latest News patch got its daily tending. The front door now points visitors at the newest pollen trails.",
+    "summary": "Refreshed the root README's Latest News section for July 30, 2026, keeping the project's public update feed current.",
+    "impact": "Visitors opening the repository see the latest pollinations.ai news directly from the README.",
+    "keywords": [
+      "readme",
+      "news",
+      "documentation",
+      "community",
+      "repository"
+    ],
+    "visual_concept": "Depict Polli as a tiny newsroom gardener pinning fresh pixel notes onto a README-shaped community noticeboard, with small flowers and code-plants growing around it to represent the living open-source project.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny reporter cap, pinning fresh news notes onto a large README-shaped garden noticeboard while code-plants and pixel flowers bloom nearby. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, retro gaming vibes, subtle pixel-font text: \"LATEST NEWS\", nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-30/PR-12869.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny reporter cap, pinning fresh news notes onto a large README-shaped garden noticeboard while code-plants and pixel flowers bloom nearby. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, retro gaming vibes, subtle pixel-font text: \"LATEST NEWS\", nostalgic but beautiful."
+  },
+  "generated_at": "2026-07-30T07:56:49.576382+00:00"
+}

@@ -267,6 +267,26 @@ const ChatCompletionStreamOptionsSchema = z
     .nullable()
     .optional();
 
+const OcrPagesSchema = z.union([
+    z
+        .string()
+        .regex(/^\d+(?:-\d+)?(?:,\d+(?:-\d+)?)*$/)
+        .refine(
+            (value) =>
+                value.split(",").every((part) => {
+                    const [start, end] = part.split("-").map(Number);
+                    return end === undefined || start <= end;
+                }),
+            { message: "Page ranges must be in ascending order." },
+        ),
+    z.array(z.number().int().nonnegative()).min(1),
+]);
+
+const UnsupportedOcrAnnotationSchema = z.unknown().refine(() => false, {
+    message:
+        "Custom OCR annotations are not supported because annotated pages use separate billing.",
+});
+
 export const CreateChatCompletionRequestSchema = z
     .object({
         messages: z.array(ChatCompletionRequestMessageSchema),
@@ -335,6 +355,23 @@ export const CreateChatCompletionRequestSchema = z
             .min(1)
             .max(128)
             .optional(), // deprecated, supported
+        pages: OcrPagesSchema.optional().meta({
+            description:
+                "Zero-indexed pages for document OCR, as an array or ranges such as `0,2-4`.",
+        }),
+        include_image_base64: z.boolean().optional().meta({
+            description: "Include extracted images in document OCR responses.",
+        }),
+        image_limit: z.number().int().nonnegative().optional(),
+        image_min_size: z.number().int().nonnegative().optional(),
+        table_format: z.enum(["markdown", "html"]).optional(),
+        extract_header: z.boolean().optional(),
+        extract_footer: z.boolean().optional(),
+        include_blocks: z.boolean().optional(),
+        confidence_scores_granularity: z.enum(["word", "page"]).optional(),
+        bbox_annotation_format: UnsupportedOcrAnnotationSchema.optional(),
+        document_annotation_format: UnsupportedOcrAnnotationSchema.optional(),
+        document_annotation_prompt: UnsupportedOcrAnnotationSchema.optional(),
     })
     .passthrough();
 
@@ -490,6 +527,27 @@ const CompletionChoiceSchema = z.object({
     content_filter_results: ContentFilterResultSchema.nullish(),
 });
 
+const OcrResultSchema = z
+    .object({
+        pages: z.array(
+            z
+                .object({
+                    index: z.number().int().nonnegative(),
+                    markdown: z.string(),
+                })
+                .passthrough(),
+        ),
+        model: z.string(),
+        document_annotation: z.unknown().nullable().optional(),
+        usage_info: z
+            .object({
+                pages_processed: z.number().int().positive(),
+                doc_size_bytes: z.number().int().nonnegative().optional(),
+            })
+            .passthrough(),
+    })
+    .passthrough();
+
 export const CreateChatCompletionResponseSchema = z.object({
     id: z.string(),
     choices: z.array(CompletionChoiceSchema),
@@ -500,6 +558,7 @@ export const CreateChatCompletionResponseSchema = z.object({
     object: z.literal("chat.completion"),
     usage: CompletionUsageSchema.optional(),
     citations: z.array(z.string()).optional(), // Perplexity citations
+    ocr: OcrResultSchema.optional(),
 });
 
 export type CreateChatCompletionResponse = z.infer<

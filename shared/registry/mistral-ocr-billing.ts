@@ -1,13 +1,15 @@
 import type { BillingRules } from "./registry";
 
 type MistralOcrOutput = {
-    usage_info?: {
-        pages_processed?: unknown;
+    ocr?: {
+        usage_info?: {
+            pages_processed?: unknown;
+        };
     };
 };
 
 export function countMistralOcrPages(output: unknown): number {
-    const pages = (output as MistralOcrOutput | undefined)?.usage_info
+    const pages = (output as MistralOcrOutput | undefined)?.ocr?.usage_info
         ?.pages_processed;
     return typeof pages === "number" && Number.isInteger(pages) && pages > 0
         ? pages

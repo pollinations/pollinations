@@ -14,6 +14,7 @@ export interface ExpressLikeRequest {
 export function getRequestData(req: ExpressLikeRequest): RequestData {
     const data: Record<string, unknown> = { ...req.query, ...req.body };
     const validated = validateTextGenerationParams(data);
+    const isMistralOcr = validated.model === "mistral-ocr";
 
     const systemPrompt = (data.system as string) || null;
 
@@ -42,5 +43,16 @@ export function getRequestData(req: ExpressLikeRequest): RequestData {
         top_logprobs: data.top_logprobs,
         logit_bias: data.logit_bias,
         user: data.user,
+        ...(isMistralOcr && {
+            pages: data.pages,
+            include_image_base64: data.include_image_base64,
+            image_limit: data.image_limit,
+            image_min_size: data.image_min_size,
+            table_format: data.table_format,
+            extract_header: data.extract_header,
+            extract_footer: data.extract_footer,
+            include_blocks: data.include_blocks,
+            confidence_scores_granularity: data.confidence_scores_granularity,
+        }),
     } as RequestData;
 }

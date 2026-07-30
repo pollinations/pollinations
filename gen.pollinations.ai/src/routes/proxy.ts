@@ -38,7 +38,6 @@ import {
     DEFAULT_3D_MODEL,
     getModel3dModelIds,
 } from "@shared/registry/model3d.ts";
-import { DEFAULT_OCR_MODEL } from "@shared/registry/ocr.ts";
 import {
     DEFAULT_REALTIME_MODEL,
     REALTIME_MODEL_NAMES,
@@ -63,18 +62,12 @@ import {
     withSafetyHeaders,
 } from "@/middleware/safety.ts";
 import { handle3dPrompt } from "@/model3d/handler.ts";
-import { handleMistralOcr } from "@/ocr/mistral.ts";
 import {
     CreateEmbeddingRequestSchema,
     CreateEmbeddingResponseSchema,
 } from "@/schemas/embeddings.ts";
 import { GenerateImageRequestQueryParamsSchema } from "@/schemas/image.ts";
 import { Generate3dRequestQueryParamsSchema } from "@/schemas/model3d.ts";
-import {
-    type CreateOcrRequest,
-    CreateOcrRequestSchema,
-    CreateOcrResponseSchema,
-} from "@/schemas/ocr.ts";
 import { RealtimeRequestQueryParamsSchema } from "@/schemas/realtime.ts";
 import { GenerateTextRequestQueryParamsSchema } from "@/schemas/text.ts";
 import {
@@ -106,9 +99,6 @@ const model3dModelNames = getModel3dModelIds()
 const factory = createFactory<Env>();
 const textBodyLimit = bodyLimit({
     maxSize: 20 * 1024 * 1024,
-});
-const ocrBodyLimit = bodyLimit({
-    maxSize: 32 * 1024 * 1024,
 });
 // Shared handler for image and video generation (used by both /image/ and /video/ routes)
 const imageVideoHandlers = factory.createHandlers(
@@ -276,12 +266,6 @@ async function getVisibleModelEntriesForEventType(
     );
 }
 
-async function getVisibleOcrEntries(c: Context<Env>) {
-    return (await getVisibleModelEntries(c)).filter((entry) =>
-        entry.supportedEndpoints.includes("/v1/ocr"),
-    );
-}
-
 async function getVisibleChatTextEntries(c: Context<Env>) {
     return (
         await getVisibleModelEntriesForEventType(c, "generate.text")
@@ -342,7 +326,6 @@ export const proxyRoutes = new Hono<Env>()
     .use("/text/models", auth())
     .use("/audio/models", auth())
     .use("/embeddings/models", auth())
-    .use("/ocr/models", auth())
     .use("/models", auth())
     .get(
         "/v1/models",
@@ -526,32 +509,6 @@ export const proxyRoutes = new Hono<Env>()
         modelsListHandler((c) => getVisibleChatTextEntries(c)),
     )
     .get(
-        "/ocr/models",
-        describeRoute({
-            tags: ["📄 OCR"],
-            summary: "List OCR Models",
-            description:
-                "Returns document and image OCR models with pricing, input modalities, output modalities, and supported endpoints. When authenticated, models are filtered by API key permissions and paid-only models are hidden if the account has no paid balance.",
-            responses: {
-                200: {
-                    description: "Success",
-                    content: {
-                        "application/json": {
-                            schema: resolver(
-                                z.array(z.any()).meta({
-                                    description:
-                                        "List of OCR models with pricing and metadata",
-                                }),
-                            ),
-                        },
-                    },
-                },
-                ...errorResponseDescriptions(500),
-            },
-        }),
-        modelsListHandler(getVisibleOcrEntries),
-    )
-    .get(
         "/audio/models",
         describeRoute({
             tags: ["🤖 Models"],
@@ -657,6 +614,8 @@ export const proxyRoutes = new Hono<Env>()
                 "Generate text responses using AI models. Fully compatible with the OpenAI Chat Completions API — use any OpenAI SDK by pointing it to `https://gen.pollinations.ai`.",
                 "",
                 "Supports streaming, function calling, vision (image input), structured outputs, and reasoning/thinking modes depending on the model.",
+                "",
+                "For document OCR, select `mistral-ocr` and include exactly one `file` or `image_url` content part. Extracted Markdown is returned in `message.content`; structured pages are returned in `ocr` and `message.content_blocks`.",
             ].join("\n"),
             responses: {
                 200: {
@@ -728,54 +687,6 @@ export const proxyRoutes = new Hono<Env>()
         },
     )
     .post(
-        "/v1/ocr",
-        describeRoute({
-            tags: ["📄 OCR"],
-            summary: "Extract Text From Documents",
-            description: [
-                "Extract structured Markdown, tables, layout information, and optional confidence scores from a document or image.",
-                "",
-                "Pass a public URL or base64 data URL in `document`. Use `pages` to process selected zero-indexed PDF pages.",
-                "",
-                "Custom annotation schemas are not accepted. Standard OCR is billed per provider-reported processed page; use `/ocr/models` for current pricing.",
-            ].join("\n"),
-            responses: {
-                200: {
-                    description: "Structured OCR result",
-                    content: {
-                        "application/json": {
-                            schema: resolver(CreateOcrResponseSchema),
-                        },
-                    },
-                },
-                ...errorResponseDescriptions(
-                    400,
-                    401,
-                    402,
-                    403,
-                    413,
-                    429,
-                    500,
-                    502,
-                    504,
-                ),
-            },
-        }),
-        ocrBodyLimit,
-        validator("json", CreateOcrRequestSchema),
-        resolveModel("generate.text", {
-            defaultModel: DEFAULT_OCR_MODEL,
-            supportedEndpoint: "/v1/ocr",
-        }),
-        track("generate.text"),
-        generationAccess,
-        async (c) =>
-            handleMistralOcr(
-                c,
-                c.req.valid("json" as never) as CreateOcrRequest,
-            ),
-    )
-    .post(
         "/text",
         describeRoute({
             tags: ["✍️ Text"],
@@ -784,6 +695,8 @@ export const proxyRoutes = new Hono<Env>()
                 "Generate text from an OpenAI-style messages array and return the assistant content directly.",
                 "",
                 "Use `/v1/chat/completions` when you need the full OpenAI-compatible JSON response.",
+                "",
+                "For document OCR, select `mistral-ocr` and include exactly one `file` or `image_url` content part. This endpoint returns the extracted Markdown directly.",
             ].join("\n"),
             responses: {
                 200: {

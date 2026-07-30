@@ -35,7 +35,6 @@ const genAliases = [
     "schemas/embeddings.ts",
     "schemas/image.ts",
     "schemas/model3d.ts",
-    "schemas/ocr.ts",
     "schemas/realtime.ts",
     "schemas/text.ts",
     "util",
@@ -71,10 +70,6 @@ const baseConfig = defineConfig({
             {
                 find: /^@\/model3d\/(.*)$/,
                 replacement: `${genSrc}model3d/$1`,
-            },
-            {
-                find: /^@\/ocr\/(.*)$/,
-                replacement: `${genSrc}ocr/$1`,
             },
             {
                 find: /^@shared\/(.*)$/,

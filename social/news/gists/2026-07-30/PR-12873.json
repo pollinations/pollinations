@@ -1,0 +1,34 @@
+{
+  "pr_number": 12873,
+  "title": "feat: move Kimi K3 to Fireworks",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/12873",
+  "merged_at": "2026-07-30T10:25:54Z",
+  "labels": [],
+  "pr_body_excerpt": "- Routes `kimi-k3` to Fireworks standard serverless with no fallback.\n- Keeps the existing model contract and $3/M input, $0.30/M cached-input, and $15/M output pricing.\n- Opens the model to Quest Pollen while retaining multiplier 1.\n- Verifies text, vision (1/10 images), reasoning, tools, JSON, streaming, prompt cache, billing, errors, and 5/15/30-request bursts end to end.\n- Passes Gen tests/typecheck and focused Enter registry, access, and effective-price tests (302/302).",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Kimi found a new launchpad",
+    "blurb": "Kimi K3 has moved to Fireworks and kept its whole toolkit packed neatly in the basket. Text, vision, tools, streaming, reasoning, and cached prompts are all still buzzing along.",
+    "summary": "Routed kimi-k3 to Fireworks standard serverless without fallback while preserving its existing API contract, $3/M input, $0.30/M cached-input, and $15/M output pricing, and enabling Quest Pollen access at multiplier 1.",
+    "impact": "Developers can keep using kimi-k3 for text, vision, reasoning, tools, JSON, streaming, and prompt caching at the same prices, now backed by Fireworks and available through Quest Pollen.",
+    "keywords": [
+      "kimi-k3",
+      "fireworks",
+      "text-api",
+      "quest-pollen",
+      "model-routing",
+      "streaming"
+    ],
+    "visual_concept": "A cozy model-migration scene: Polli helps a friendly Kimi K3 code capsule board a small Fireworks-powered serverless rocket at a garden launchpad, while a CRT monitor robot confirms that text, vision, tools, JSON, and streaming cargo are all accounted for. Flowering code-plants and labeled prompt-cache crates represent the preserved contract and capabilities.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings, wearing a tiny astronaut scarf as she guides a friendly code capsule onto a small Fireworks serverless rocket beside blooming code-plants and a lime green (#ecf874) prompt-cache crate; a cute CRT-monitor robot holds a checklist with simple pixel text: 'TEXT • VISION • TOOLS'. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-30/PR-12873.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings, wearing a tiny astronaut scarf as she guides a friendly code capsule onto a small Fireworks serverless rocket beside blooming code-plants and a lime green (#ecf874) prompt-cache crate; a cute CRT-monitor robot holds a checklist with simple pixel text: 'TEXT • VISION • TOOLS'. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
+  },
+  "generated_at": "2026-07-30T10:50:27.794977+00:00"
+}

@@ -661,6 +661,7 @@ test("Gemini models use their endpoint's advertised cache-write rate", () => {
         "gemini",
         "gemini-flash-lite-3.5",
         "gemini-fast",
+        "gemini-large",
         "gemini-search",
         "gemini-search-fast",
         "gemini-search-large",
@@ -675,12 +676,6 @@ test("Gemini models use their endpoint's advertised cache-write rate", () => {
         ).toBeDefined();
         expect(cost?.promptCacheWriteTokens).toBe(cost?.promptTextTokens);
     }
-
-    // Gemini 3.1 Pro's pinned Google Vertex route advertises cache writes at
-    // $0.375/M, distinct from its $2/M standard text-input rate.
-    expect(
-        getRegistryModelDefinition("gemini-large").cost.promptCacheWriteTokens,
-    ).toBeCloseTo(0.375 / 1e6, 15);
 });
 
 test("Gemini routes price separately reported media input tokens", () => {

@@ -322,7 +322,7 @@ exports[`effective cost and price per model — snapshot 1`] = `
     "cost": {
       "completionTextTokens": 0.000012,
       "promptAudioTokens": 0.000002,
-      "promptCacheWriteTokens": 0.000000375,
+      "promptCacheWriteTokens": 0.000002,
       "promptCachedTokens": 0.0000002,
       "promptImageTokens": 0.000002,
       "promptTextTokens": 0.000002,
@@ -332,14 +332,16 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "long_context": {
         "completionTextTokens": 0.000018,
         "promptAudioTokens": 0.000004,
+        "promptCacheWriteTokens": 0.000004,
         "promptCachedTokens": 0.0000004,
         "promptTextTokens": 0.000004,
+        "promptVideoTokens": 0.000004,
       },
     },
     "price": {
       "completionTextTokens": 0.000012,
       "promptAudioTokens": 0.000002,
-      "promptCacheWriteTokens": 0.000000375,
+      "promptCacheWriteTokens": 0.000002,
       "promptCachedTokens": 0.0000002,
       "promptImageTokens": 0.000002,
       "promptTextTokens": 0.000002,

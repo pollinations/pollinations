@@ -219,7 +219,7 @@ describe("long-context cost variants", () => {
         ).toBe(200_000);
     });
 
-    it("Gemini inherits rates absent from the long-context override", () => {
+    it("Gemini applies its complete long-context sheet", () => {
         const usage = {
             promptTextTokens: 100_001,
             promptCachedTokens: 50_000,
@@ -235,12 +235,47 @@ describe("long-context cost variants", () => {
         expect(billing.priceDefinition).toMatchObject({
             promptTextTokens: 4 / 1e6,
             promptCachedTokens: 0.4 / 1e6,
-            promptCacheWriteTokens: 0.375 / 1e6,
+            promptCacheWriteTokens: 4 / 1e6,
             promptAudioTokens: 4 / 1e6,
             promptImageTokens: 2 / 1e6,
-            promptVideoTokens: 2 / 1e6,
+            promptVideoTokens: 4 / 1e6,
             completionTextTokens: 18 / 1e6,
         });
+    });
+
+    it("Gemini cache writes include input and storage exactly once", () => {
+        const baseOutput = {
+            usage: {
+                prompt_tokens_details: { cache_write_tokens: 100_000 },
+            },
+        };
+        const base = calculateUsageBilling(
+            "gemini-large",
+            { promptCacheWriteTokens: 100_000 },
+            getRegistryModelDefinition("gemini-large"),
+            baseOutput,
+        );
+        expect(base.costVariant).toBeUndefined();
+        expect(base.cost.totalCost).toBeCloseTo(0.2375, 12);
+        expect(base.adjustments).toHaveLength(1);
+        expect(base.adjustments[0].cost).toBeCloseTo(0.0375, 12);
+
+        const long = calculateUsageBilling(
+            "gemini-large",
+            { promptCacheWriteTokens: 1_000_000 },
+            getRegistryModelDefinition("gemini-large"),
+            {
+                usage: {
+                    prompt_tokens_details: {
+                        cache_write_tokens: 1_000_000,
+                    },
+                },
+            },
+        );
+        expect(long.costVariant).toBe("long_context");
+        expect(long.cost.totalCost).toBeCloseTo(4.375, 12);
+        expect(long.adjustments).toHaveLength(1);
+        expect(long.adjustments[0].cost).toBeCloseTo(0.375, 12);
     });
 
     it("Qwen and Grok apply their advertised long-context sheets", () => {

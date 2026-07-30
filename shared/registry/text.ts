@@ -1447,22 +1447,26 @@ export const TEXT_SERVICES = {
         cost: {
             promptTextTokens: perMillion(2.0),
             promptCachedTokens: perMillion(0.2),
-            promptCacheWriteTokens: perMillion(0.375),
+            // OpenRouter bills Gemini cache writes as normal input plus the
+            // five-minute storage charge applied by the billing rule below.
+            promptCacheWriteTokens: perMillion(2.0),
             promptAudioTokens: perMillion(2.0),
             promptImageTokens: perMillion(2.0),
             promptVideoTokens: perMillion(2.0),
             completionTextTokens: perMillion(12.0),
         },
         // The pinned OpenRouter Google Vertex route reprices the whole request
-        // above 200K prompt tokens. Fields absent from the provider override
-        // (cache writes, images, and video) retain their base rates. Search and
-        // cache storage remain independent adjustments below.
+        // above 200K prompt tokens. Image tokens retain their separately
+        // advertised base rate; cache storage remains an independent
+        // adjustment below.
         ...defineCostVariants(
             {
                 long_context: {
                     promptTextTokens: perMillion(4.0),
                     promptCachedTokens: perMillion(0.4),
+                    promptCacheWriteTokens: perMillion(4.0),
                     promptAudioTokens: perMillion(4.0),
+                    promptVideoTokens: perMillion(4.0),
                     completionTextTokens: perMillion(18.0),
                 },
             },
@@ -1471,7 +1475,7 @@ export const TEXT_SERVICES = {
                 long_context: {
                     label: "Long context (>200K)",
                     description:
-                        "More than 200,000 prompt tokens; text, cached, audio, and output rates increase while image, video, and cache-write rates stay at the base price.",
+                        "More than 200,000 prompt tokens; text, cached, cache-write, audio, video, and output rates increase while image input stays at its separately advertised base price.",
                 },
             },
         ),

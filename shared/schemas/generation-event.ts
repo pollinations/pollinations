@@ -65,6 +65,14 @@ export type TinybirdEvent = {
     modelProviderUsed?: string;
     /** True when Portkey served from a non-primary fallback target. */
     fallbackUsed?: boolean;
+    /**
+     * True on a row that records ONE upstream attempt rather than the request's
+     * outcome. A request that failed over emits one of these per model it
+     * called, plus the settlement row that carries what the caller received —
+     * so anything counting requests must exclude them, and anything measuring
+     * whether a model's own upstream works wants exactly them.
+     */
+    isAttemptRow?: boolean;
     isBilledUsage: boolean;
 
     // Pricing

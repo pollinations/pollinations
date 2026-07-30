@@ -95,6 +95,8 @@ type ResponseTrackingData = {
     cacheHit: boolean;
     isBilledUsage: boolean;
     fallbackUsed: boolean;
+    /** Set only by recordFailedAttempt; the settlement row leaves it false. */
+    isAttemptRow?: boolean;
     modelUsed?: string;
     usage?: Usage;
     cost?: UsageCost;
@@ -116,7 +118,11 @@ export type TrackVariables = {
          * another model is tried after it. Handlers report the fact; this
          * middleware owns the event shape.
          */
-        recordFailedAttempt: (model: string, error: unknown) => void;
+        recordFailedAttempt: (
+            model: string,
+            error: unknown,
+            startedAt?: Date,
+        ) => void;
     };
 };
 
@@ -194,7 +200,11 @@ export const track = (eventType: EventType) =>
          * actually got, so a consumer that counts rows counts more of them than
          * there were requests.
          */
-        const recordFailedAttempt = (model: string, error: unknown): void => {
+        const recordFailedAttempt = (
+            model: string,
+            error: unknown,
+            startedAt?: Date,
+        ): void => {
             const endTime = new Date();
             const responseStatus = failedAttemptStatus(error);
             c.executionCtx.waitUntil(
@@ -205,7 +215,7 @@ export const track = (eventType: EventType) =>
                             id: generateRandomId(),
                             requestId: c.get("requestId"),
                             requestPath: getRoutePath(c),
-                            startTime,
+                            startTime: startedAt ?? startTime,
                             endTime,
                             environment: c.env.ENVIRONMENT,
                             eventType,
@@ -221,6 +231,7 @@ export const track = (eventType: EventType) =>
                                 responseStatus,
                                 cacheHit: false,
                                 isBilledUsage: false,
+                                isAttemptRow: true,
                                 fallbackUsed:
                                     model !==
                                     requestTracking.resolvedModelRequested,
@@ -794,6 +805,7 @@ function createTrackingEvent({
         modelUsed: responseTracking.modelUsed,
         modelProviderUsed: requestTracking.modelProvider,
         fallbackUsed: responseTracking.fallbackUsed,
+        isAttemptRow: responseTracking.isAttemptRow ?? false,
 
         isBilledUsage: responseTracking.isBilledUsage,
 

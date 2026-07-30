@@ -162,9 +162,17 @@ export function fallbackCandidates(
 export async function withModelFallback<T>(
     candidates: FallbackCandidate[],
     attempt: (candidate: FallbackCandidate) => Promise<T>,
-    onFailedAttempt?: (candidate: FallbackCandidate, error: unknown) => void,
+    onFailedAttempt?: (
+        candidate: FallbackCandidate,
+        error: unknown,
+        startedAt: Date,
+    ) => void,
 ): Promise<{ result: T; candidate: FallbackCandidate; index: number }> {
     for (const [index, candidate] of candidates.entries()) {
+        // Timed from this attempt's own start. Measured from the request's, a
+        // second attempt would report the first one's timeout as part of its
+        // own latency.
+        const startedAt = new Date();
         try {
             return { result: await attempt(candidate), candidate, index };
         } catch (error) {
@@ -172,7 +180,7 @@ export async function withModelFallback<T>(
             // failed last is on the record too. Reporting only the attempts we
             // recovered from would leave the final failure attributed to
             // whichever model the caller asked for.
-            onFailedAttempt?.(candidate, error);
+            onFailedAttempt?.(candidate, error, startedAt);
             const isLast = index === candidates.length - 1;
             if (isLast || !isRetryableFallbackError(error)) throw error;
         }

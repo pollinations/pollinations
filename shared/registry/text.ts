@@ -33,6 +33,11 @@ export const AUDIO_VOICES = [
 ] as const;
 
 export const DEFAULT_TEXT_MODEL = "openai" as const;
+export const MISTRAL_OCR_MODEL_NAMES = [
+    "mistral-ocr",
+    "mistral-ocr-4",
+    "mistral-ocr-4-0",
+] as const;
 export type TextModelName = keyof typeof TEXT_SERVICES;
 
 export const TEXT_SERVICES = {
@@ -336,7 +341,7 @@ export const TEXT_SERVICES = {
         isSpecialized: false,
     },
     "mistral-ocr": {
-        aliases: ["mistral-ocr-4", "mistral-ocr-4-0"],
+        aliases: MISTRAL_OCR_MODEL_NAMES.slice(1),
         provider: "mistral",
         brand: "Mistral",
         category: "text",

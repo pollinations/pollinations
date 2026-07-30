@@ -7,6 +7,7 @@ import type { Context } from "hono";
 import { HTTPException } from "hono/http-exception";
 import { z } from "zod";
 import type { Env } from "@/env.ts";
+import { withResponseMetadata } from "./genericOpenAIClient.ts";
 import type { ChatCompletion, RequestData } from "./types.ts";
 
 const MISTRAL_OCR_URL = "https://api.mistral.ai/v1/ocr";
@@ -240,33 +241,36 @@ export async function generateMistralOcrChatCompletion(
     }
 
     const ocr = parsed.data;
-    return {
-        id: `ocr_${crypto.randomUUID().replaceAll("-", "")}`,
-        object: "chat.completion",
-        created: Math.floor(Date.now() / 1000),
-        model: MISTRAL_OCR_MODEL_ID,
-        choices: [
-            {
-                index: 0,
-                finish_reason: "stop",
-                message: {
-                    role: "assistant",
-                    content: ocr.pages
-                        .map((page) => page.markdown)
-                        .join("\n\n"),
-                    content_blocks: ocr.pages.map((page) => ({
-                        type: "ocr_page",
-                        ...page,
-                    })),
+    return withResponseMetadata(
+        {
+            id: `ocr_${crypto.randomUUID().replaceAll("-", "")}`,
+            object: "chat.completion",
+            created: Math.floor(Date.now() / 1000),
+            model: MISTRAL_OCR_MODEL_ID,
+            choices: [
+                {
+                    index: 0,
+                    finish_reason: "stop",
+                    message: {
+                        role: "assistant",
+                        content: ocr.pages
+                            .map((page) => page.markdown)
+                            .join("\n\n"),
+                        content_blocks: ocr.pages.map((page) => ({
+                            type: "ocr_page",
+                            ...page,
+                        })),
+                    },
                 },
+            ],
+            usage: {
+                prompt_tokens: 0,
+                completion_tokens: 0,
+                total_tokens: 0,
             },
-        ],
-        usage: {
-            prompt_tokens: 0,
-            completion_tokens: 0,
-            total_tokens: 0,
+            ocr,
         },
-        ocr,
-        upstreamRequestUrl: new URL(MISTRAL_OCR_URL),
-    };
+        undefined,
+        new URL(MISTRAL_OCR_URL),
+    );
 }

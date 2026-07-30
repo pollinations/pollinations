@@ -106,11 +106,23 @@ describe("Mistral OCR text adapter", () => {
             ),
         );
 
-        expect(completion).toMatchObject({
+        expect(completion.upstreamRequestUrl?.href).toBe(
+            "https://api.mistral.ai/v1/ocr",
+        );
+        expect(
+            Object.prototype.propertyIsEnumerable.call(
+                completion,
+                "upstreamRequestUrl",
+            ),
+        ).toBe(false);
+        expect(JSON.parse(JSON.stringify(completion))).toEqual({
+            id: expect.any(String),
             object: "chat.completion",
+            created: expect.any(Number),
             model: "mistral-ocr-4-0",
             choices: [
                 {
+                    index: 0,
                     finish_reason: "stop",
                     message: {
                         role: "assistant",
@@ -118,12 +130,17 @@ describe("Mistral OCR text adapter", () => {
                         content_blocks: [
                             {
                                 type: "ocr_page",
-                                index: 0,
+                                ...OCR_RESPONSE.pages[0],
                             },
                         ],
                     },
                 },
             ],
+            usage: {
+                prompt_tokens: 0,
+                completion_tokens: 0,
+                total_tokens: 0,
+            },
             ocr: OCR_RESPONSE,
         });
 
@@ -365,6 +382,36 @@ describe("Mistral OCR text adapter", () => {
         }
     });
 
+    it("keeps OCR-only validation scoped to OCR model names", () => {
+        for (const model of [
+            "mistral-ocr",
+            "mistral-ocr-4",
+            "mistral-ocr-4-0",
+        ]) {
+            expect(
+                CreateChatCompletionRequestSchema.safeParse({
+                    model,
+                    messages: [{ role: "user", content: "extract" }],
+                    pages: 5,
+                }).success,
+            ).toBe(false);
+        }
+
+        const nonOcr = CreateChatCompletionRequestSchema.safeParse({
+            model: "openai",
+            messages: [{ role: "user", content: "hello" }],
+            pages: 5,
+            document_annotation_format: { type: "json_object" },
+        });
+        expect(nonOcr.success).toBe(true);
+        if (nonOcr.success) {
+            expect(nonOcr.data.pages).toBe(5);
+            expect(nonOcr.data.document_annotation_format).toEqual({
+                type: "json_object",
+            });
+        }
+    });
+
     it("is available on POST text routes but not the prompt-only GET route", async () => {
         const env = {} as CloudflareBindings;
         for (const endpoint of ["/v1/chat/completions", "/text"]) {
@@ -483,14 +530,33 @@ fixtureTest(
         expect(chatResponse.headers.get("x-model-used")).toBe(
             "mistral-ocr-4-0",
         );
-        expect(await chatResponse.json()).toMatchObject({
+        const chatBody = await chatResponse.json();
+        expect(chatBody).toEqual({
+            id: expect.any(String),
+            object: "chat.completion",
+            created: expect.any(Number),
+            model: "mistral-ocr-4-0",
             choices: [
                 {
+                    index: 0,
+                    finish_reason: "stop",
                     message: {
+                        role: "assistant",
                         content: "# Invoice\n\nTotal: $12.00",
+                        content_blocks: [
+                            {
+                                type: "ocr_page",
+                                ...OCR_RESPONSE.pages[0],
+                            },
+                        ],
                     },
                 },
             ],
+            usage: {
+                prompt_tokens: 0,
+                completion_tokens: 0,
+                total_tokens: 0,
+            },
             ocr: OCR_RESPONSE,
         });
 

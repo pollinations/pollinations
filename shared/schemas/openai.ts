@@ -1,7 +1,11 @@
 // AI generated based on `https://github.com/Portkey-AI/openapi/blob/master/openapi.yaml` and adaped
 
 import { z } from "zod";
-import { AUDIO_VOICES, DEFAULT_TEXT_MODEL } from "../registry/text.ts";
+import {
+    AUDIO_VOICES,
+    DEFAULT_TEXT_MODEL,
+    MISTRAL_OCR_MODEL_NAMES,
+} from "../registry/text.ts";
 import { SafeSchema } from "./safety.ts";
 
 const FunctionParametersSchema = z.record(z.string(), z.any());
@@ -287,6 +291,21 @@ const UnsupportedOcrAnnotationSchema = z.unknown().refine(() => false, {
         "Custom OCR annotations are not supported because annotated pages use separate billing.",
 });
 
+const MistralOcrRequestOptionsSchema = z.object({
+    pages: OcrPagesSchema.optional(),
+    include_image_base64: z.boolean().optional(),
+    image_limit: z.number().int().nonnegative().optional(),
+    image_min_size: z.number().int().nonnegative().optional(),
+    table_format: z.enum(["markdown", "html"]).optional(),
+    extract_header: z.boolean().optional(),
+    extract_footer: z.boolean().optional(),
+    include_blocks: z.boolean().optional(),
+    confidence_scores_granularity: z.enum(["word", "page"]).optional(),
+    bbox_annotation_format: UnsupportedOcrAnnotationSchema.optional(),
+    document_annotation_format: UnsupportedOcrAnnotationSchema.optional(),
+    document_annotation_prompt: UnsupportedOcrAnnotationSchema.optional(),
+});
+
 export const CreateChatCompletionRequestSchema = z
     .object({
         messages: z.array(ChatCompletionRequestMessageSchema),
@@ -355,25 +374,41 @@ export const CreateChatCompletionRequestSchema = z
             .min(1)
             .max(128)
             .optional(), // deprecated, supported
-        pages: OcrPagesSchema.optional().meta({
+        pages: z.unknown().optional().meta({
             description:
                 "Zero-indexed pages for document OCR, as an array or ranges such as `0,2-4`.",
         }),
-        include_image_base64: z.boolean().optional().meta({
+        include_image_base64: z.unknown().optional().meta({
             description: "Include extracted images in document OCR responses.",
         }),
-        image_limit: z.number().int().nonnegative().optional(),
-        image_min_size: z.number().int().nonnegative().optional(),
-        table_format: z.enum(["markdown", "html"]).optional(),
-        extract_header: z.boolean().optional(),
-        extract_footer: z.boolean().optional(),
-        include_blocks: z.boolean().optional(),
-        confidence_scores_granularity: z.enum(["word", "page"]).optional(),
-        bbox_annotation_format: UnsupportedOcrAnnotationSchema.optional(),
-        document_annotation_format: UnsupportedOcrAnnotationSchema.optional(),
-        document_annotation_prompt: UnsupportedOcrAnnotationSchema.optional(),
+        image_limit: z.unknown().optional(),
+        image_min_size: z.unknown().optional(),
+        table_format: z.unknown().optional(),
+        extract_header: z.unknown().optional(),
+        extract_footer: z.unknown().optional(),
+        include_blocks: z.unknown().optional(),
+        confidence_scores_granularity: z.unknown().optional(),
+        bbox_annotation_format: z.unknown().optional(),
+        document_annotation_format: z.unknown().optional(),
+        document_annotation_prompt: z.unknown().optional(),
     })
-    .passthrough();
+    .passthrough()
+    .superRefine((request, context) => {
+        if (
+            !MISTRAL_OCR_MODEL_NAMES.includes(
+                request.model as (typeof MISTRAL_OCR_MODEL_NAMES)[number],
+            )
+        ) {
+            return;
+        }
+
+        const parsed = MistralOcrRequestOptionsSchema.safeParse(request);
+        if (parsed.success) return;
+
+        for (const issue of parsed.error.issues) {
+            context.addIssue({ ...issue });
+        }
+    });
 
 export type CreateChatCompletionRequest = z.infer<
     typeof CreateChatCompletionRequestSchema

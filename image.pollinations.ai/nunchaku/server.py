@@ -47,7 +47,7 @@ gpu_semaphore = asyncio.Semaphore(1)  # Serialize GPU inference to prevent CUDA 
 BACKEND_TOKEN = os.getenv("PLN_GPU_TOKEN")
 # Shed load instead of building unbounded backlog: beyond this many in-flight
 # requests, reply 503 so the gateway falls back to its secondary provider.
-QUEUE_LIMIT = int(os.getenv("QUEUE_LIMIT", "10"))
+QUEUE_LIMIT = int(os.getenv("QUEUE_LIMIT", "3"))
 pending_requests = 0
 
 # Function to get public IP address

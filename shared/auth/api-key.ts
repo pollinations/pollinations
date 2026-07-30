@@ -5,6 +5,12 @@ import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { alias } from "drizzle-orm/sqlite-core";
 import * as schema from "../db/better-auth.ts";
+import {
+    AGENT_RUN_TOKEN_PREFIX,
+    type AgentRunClaims,
+    verifyAgentRunToken,
+} from "./agent-run-token.ts";
+import { parseMetadata } from "./api-key-creation.ts";
 import { parseGithubIdList } from "./github-id-list.ts";
 
 const PUBLISHABLE_KEY_PREFIX = "pk";
@@ -27,6 +33,7 @@ export interface ApiKeyAuthResult {
     user?: AuthUser;
     apiKey: AuthenticatedApiKey;
     rawApiKey: string;
+    agentRun?: AgentRunClaims;
 }
 
 export interface ApiKeyAuthBindings {
@@ -34,6 +41,7 @@ export interface ApiKeyAuthBindings {
     ENVIRONMENT?: string;
     STAGING_ALLOWED_GITHUB_IDS?: string;
     STAGING_ALLOWED_EMAILS?: string;
+    BETTER_AUTH_SECRET?: string;
 }
 
 export class BannedAccountError extends Error {
@@ -184,7 +192,11 @@ export function extractApiKey(request: Request): string | null {
     const match = auth?.match(/^Bearer (.+)$/);
     if (match?.[1]) return match[1];
 
-    return new URL(request.url).searchParams.get("key");
+    // Query keys end up in access logs, referrers and browser history. Their
+    // owner can rotate them; an agent run token is handed to a third party
+    // mid-run and cannot be, so it is Bearer-only.
+    const queryKey = new URL(request.url).searchParams.get("key");
+    return queryKey?.startsWith(AGENT_RUN_TOKEN_PREFIX) ? null : queryKey;
 }
 
 export function assertNotBanned(user: {
@@ -207,6 +219,10 @@ export async function authenticateApiKeyRequest(opts: {
 }): Promise<ApiKeyAuthResult | null> {
     const rawApiKey = extractApiKey(opts.request);
     if (!rawApiKey) return null;
+
+    if (rawApiKey.startsWith(AGENT_RUN_TOKEN_PREFIX)) {
+        return authenticateAgentRunToken(rawApiKey, opts.env);
+    }
 
     const client: VerifyApiKeyClient =
         opts.client ??
@@ -270,6 +286,112 @@ export async function authenticateApiKeyRequest(opts: {
     };
 }
 
+async function authenticateAgentRunToken(
+    rawToken: string,
+    env: ApiKeyAuthBindings,
+): Promise<ApiKeyAuthResult | null> {
+    if (!env.BETTER_AUTH_SECRET) return null;
+
+    let claims: AgentRunClaims;
+    try {
+        claims = await verifyAgentRunToken(rawToken, env.BETTER_AUTH_SECRET);
+    } catch {
+        return null;
+    }
+
+    const parent = await loadActiveApiKeyAuthResult({
+        apiKeyId: claims.parentApiKeyId,
+        rawApiKey: rawToken,
+        env,
+    });
+    if (!parent) return null;
+
+    // The token inherits the parent's model access but never its account scope:
+    // it is a generation credential held by a third party, so it must not be
+    // able to manage the owner's keys, endpoints or account.
+    const models = parent.apiKey.permissions?.models;
+
+    return {
+        ...parent,
+        apiKey: {
+            ...parent.apiKey,
+            permissions: models ? { models } : undefined,
+        },
+        agentRun: claims,
+    };
+}
+
+/**
+ * Loads an active API key by ID after another credential has authenticated it.
+ * This deliberately does not accept the parent key's raw value so delegated
+ * credentials never need to contain or recover that secret.
+ */
+async function loadActiveApiKeyAuthResult(opts: {
+    apiKeyId: string;
+    rawApiKey: string;
+    env: ApiKeyAuthBindings;
+}): Promise<ApiKeyAuthResult | null> {
+    const db = drizzle(opts.env.DB, { schema });
+    const byopClientKey = alias(schema.apikey, "byop_client_key");
+    const apiKeyData = await db
+        .select({
+            id: schema.apikey.id,
+            name: schema.apikey.name,
+            userId: schema.apikey.userId,
+            enabled: schema.apikey.enabled,
+            expiresAt: schema.apikey.expiresAt,
+            permissions: schema.apikey.permissions,
+            metadata: schema.apikey.metadata,
+            pollenBalance: schema.apikey.pollenBalance,
+            byopClientKeyId: schema.apikey.byopClientKeyId,
+            byopClientName: byopClientKey.name,
+            byopClientUserId: byopClientKey.userId,
+        })
+        .from(schema.apikey)
+        .leftJoin(
+            byopClientKey,
+            eq(byopClientKey.id, schema.apikey.byopClientKeyId),
+        )
+        .where(eq(schema.apikey.id, opts.apiKeyId))
+        .get();
+
+    if (
+        !apiKeyData ||
+        apiKeyData.enabled === false ||
+        (apiKeyData.expiresAt && apiKeyData.expiresAt <= new Date())
+    ) {
+        return null;
+    }
+
+    const userData = await db
+        .select()
+        .from(schema.user)
+        .where(eq(schema.user.id, apiKeyData.userId))
+        .get();
+    if (!userData) return null;
+
+    assertNotBanned(userData);
+    assertStagingAccess(opts.env, userData);
+
+    return {
+        user: userData,
+        apiKey: {
+            id: apiKeyData.id,
+            name: apiKeyData.name ?? undefined,
+            permissions: normalizePermissions(
+                parseMetadata(apiKeyData.permissions),
+            ),
+            metadata: normalizeMetadata(parseMetadata(apiKeyData.metadata)),
+            pollenBalance: apiKeyData.pollenBalance ?? null,
+            byopClientKeyId: apiKeyData.byopClientKeyId ?? null,
+            byopClientName: apiKeyData.byopClientName ?? null,
+            byopClientUserId: apiKeyData.byopClientUserId ?? null,
+            rawKey: opts.rawApiKey,
+        },
+        rawApiKey: opts.rawApiKey,
+    };
+}
+
 function normalizePermissions(
     value: unknown,
 ): Record<string, string[]> | undefined {
@@ -283,7 +405,9 @@ function normalizePermissions(
         const safeScopes = scopes.filter(
             (scope): scope is string => typeof scope === "string",
         );
-        if (safeScopes.length) permissions[key] = safeScopes;
+        if (safeScopes.length || key === "models") {
+            permissions[key] = safeScopes;
+        }
     }
     return Object.keys(permissions).length ? permissions : undefined;
 }

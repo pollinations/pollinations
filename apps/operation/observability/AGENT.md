@@ -101,6 +101,14 @@ Grafana doesn't render escaped newlines in tooltips—they appear as literal `\n
 
 ## ClickHouse/Tinybird Queries
 
+### Generation events: V2 only
+
+`generation_event` V1 is retired. All observability dashboards and Tinybird queries must read from `generation_event_v2`; never restore or add a V1 fallback.
+
+### Product-path attribution
+
+BYOP and BYOM are independent dimensions: BYOP is end-user-authenticated consumption inside a developer app (`is_byop`), while BYOM is any community-model consumption (`is_community`). Direct API is neither BYOP nor BYOM. Additive product-path charts must expose four mutually exclusive paths—Direct API, BYOM direct, BYOP with Pollinations models, and BYOP with BYOM—and treat Paid versus Quest as a separate funding dimension.
+
 ### ❌ Don't: Guess field values
 Meter slugs changed over time (`v1:meter:tier` → `local:tier`). Using wrong values returns zero data.
 
@@ -191,7 +199,7 @@ FROM (
     user_id,
     minIf(start_time, selected_meter_slug IN ('v1:meter:tier', 'local:tier')) as first_tier,
     minIf(start_time, selected_meter_slug IN ('v1:meter:pack', 'local:pack')) as first_pack
-  FROM generation_event
+  FROM generation_event_v2
   WHERE environment = 'production' AND total_price > 0
   GROUP BY user_id
   HAVING first_tier IS NOT NULL

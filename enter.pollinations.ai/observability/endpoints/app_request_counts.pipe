@@ -9,7 +9,7 @@ SQL >
     SELECT
         toString(users.github_id) AS github_user_id,
         count() AS requests
-    FROM generation_event events
+    FROM generation_event_v2 events
     INNER JOIN d1_user users ON events.user_id = users.id
     WHERE events.start_time > now() - INTERVAL 1 DAY
       AND users.synced_at = (SELECT max(synced_at) FROM d1_user)

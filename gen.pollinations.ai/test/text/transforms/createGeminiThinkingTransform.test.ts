@@ -54,4 +54,18 @@ describe("Gemini reasoning_effort model wiring", () => {
         });
         expect(options.reasoning_effort).toBeUndefined();
     });
+
+    it.each([
+        "gemini",
+        "gemini-search-large",
+    ])("maps reasoning_effort=none to low for mandatory-reasoning %s", async (model) => {
+        const transform = findModelByName(model)?.transform;
+        if (!transform) throw new Error(`${model} transform missing`);
+
+        const { options } = await transform([{ role: "user", content: "hi" }], {
+            reasoning_effort: "none",
+        });
+
+        expect(options.reasoning_effort).toBe("low");
+    });
 });

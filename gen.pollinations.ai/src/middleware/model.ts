@@ -26,7 +26,7 @@ export type ModelVariables = {
         /** The resolved canonical model name */
         resolved: string;
         /** Static registry definition, or a dynamic definition resolved from D1. */
-        definition: ModelDefinition<string>;
+        definition: ModelDefinition;
         communityEndpoint?: CommunityEndpointRuntime;
     };
     formData?: FormData;
@@ -34,6 +34,7 @@ export type ModelVariables = {
 
 type ResolveModelOptions = {
     defaultModel?: string;
+    supportedEndpoint?: string;
 };
 
 function hasJsonContentType(contentType: string): boolean {
@@ -55,6 +56,7 @@ export async function resolveModelDefinition(
     eventType: EventType,
     env: CloudflareBindings,
     callerUserId?: string,
+    supportedEndpoint?: string,
 ): Promise<ModelVariables["model"]> {
     const registry = await getGenerationModelRegistry(env);
     const entry = registry.resolve(model);
@@ -82,6 +84,19 @@ export async function resolveModelDefinition(
         const actualLabel = ENDPOINT_LABEL[entry.eventType];
         throw new HTTPException(400, {
             message: `Model "${model}" is a ${actualLabel} model and cannot be used on the ${ENDPOINT_LABEL[eventType]} endpoint. Use the ${actualLabel} endpoint instead.`,
+        });
+    }
+    if (entry.definition.supportedEndpoints && !supportedEndpoint) {
+        throw new HTTPException(400, {
+            message: `Model "${model}" is available only on: ${entry.supportedEndpoints.join(", ")}.`,
+        });
+    }
+    if (
+        supportedEndpoint &&
+        !entry.supportedEndpoints.includes(supportedEndpoint)
+    ) {
+        throw new HTTPException(400, {
+            message: `Model "${model}" cannot be used on ${supportedEndpoint}. Supported endpoints: ${entry.supportedEndpoints.join(", ")}.`,
         });
     }
 
@@ -163,6 +178,7 @@ export function resolveModel(
                 eventType,
                 c.env,
                 c.var.auth?.user?.id,
+                options?.supportedEndpoint,
             ),
         );
         await next();

@@ -223,7 +223,7 @@ grep CLOUDFLARE_ACCOUNT_ID image.pollinations.ai/.env
 3. Click **Create Custom Token**
 4. Configure:
    - **Token name**: `Workers Observability Read`
-   - **Permissions**: 
+   - **Permissions**:
      - Account → Workers Scripts → Read
      - Account → Workers Observability → Edit (required for query API)
    - **Account Resources**: Include → Your Account
@@ -477,14 +477,14 @@ curl -s "$H/v0/pipes/recent_server_errors.json?token=$TB&minutes=240&limit=500" 
 5. **Test Model Directly** - Verify if model is actually broken:
    ```bash
    TOKEN=$(grep ENTER_API_TOKEN_REMOTE enter.pollinations.ai/.testingtokens | cut -d= -f2)
-   
+
    # Test text model
    curl -s 'https://gen.pollinations.ai/v1/chat/completions' \
      -H "Authorization: Bearer $TOKEN" \
      -H 'Content-Type: application/json' \
      -d '{"model": "MODEL_NAME", "messages": [{"role": "user", "content": "Test"}]}' \
      -w "\nHTTP: %{http_code}\n"
-   
+
    # Test image model
    curl -s 'https://gen.pollinations.ai/image/test?model=MODEL_NAME&width=256&height=256' \
      -H "Authorization: Bearer $TOKEN" \
@@ -529,37 +529,37 @@ curl -s "https://api.europe-west2.gcp.tinybird.co/v0/pipes/model_health.json?tok
 
 ### Raw SQL Queries
 
-The prod `TINYBIRD_READ_TOKEN` above can query the raw `generation_event` datasource directly via `/v0/sql` (verified). Reuse `$TB`:
+The prod `TINYBIRD_READ_TOKEN` above can query the raw `generation_event_v2` datasource directly via `/v0/sql` (verified). Reuse `$TB`:
 
 ```bash
 # Find users with frequent 403 errors (last 24 hours)
 curl -s "https://api.europe-west2.gcp.tinybird.co/v0/sql?token=$TB" \
   --data-urlencode "q=SELECT ge.user_id, any(users.github_username) AS github_username, argMax(ge.user_tier, ge.start_time) AS user_tier, count() as error_403_count
-FROM generation_event ge
+FROM generation_event_v2 ge
 LEFT JOIN (SELECT id, github_username FROM d1_user WHERE synced_at = (SELECT max(synced_at) FROM d1_user)) users ON ge.user_id = users.id
-WHERE response_status = 403
-  AND start_time > now() - interval 24 hour
-  AND user_id != ''
-  AND user_id != 'undefined'
+WHERE ge.response_status = 403
+  AND ge.start_time > now() - interval 24 hour
+  AND ge.user_id != ''
+  AND ge.user_id != 'undefined'
 GROUP BY ge.user_id
 ORDER BY error_403_count DESC
 LIMIT 20"
 
 # Find users with 500 errors (actual backend issues)
 curl -s "https://api.europe-west2.gcp.tinybird.co/v0/sql?token=$TB" \
-  --data-urlencode "q=SELECT ge.user_id, any(users.github_username) AS github_username, model_requested, error_message, count() as error_count
-FROM generation_event ge
+  --data-urlencode "q=SELECT ge.user_id, any(users.github_username) AS github_username, ge.model_requested, ge.error_message, count() as error_count
+FROM generation_event_v2 ge
 LEFT JOIN (SELECT id, github_username FROM d1_user WHERE synced_at = (SELECT max(synced_at) FROM d1_user)) users ON ge.user_id = users.id
-WHERE response_status >= 500
-  AND start_time > now() - interval 24 hour
-GROUP BY ge.user_id, model_requested, error_message
+WHERE ge.response_status >= 500
+  AND ge.start_time > now() - interval 24 hour
+GROUP BY ge.user_id, ge.model_requested, ge.error_message
 ORDER BY error_count DESC
 LIMIT 20"
 
 # Check specific user's recent errors
 curl -s "https://api.europe-west2.gcp.tinybird.co/v0/sql?token=$TB" \
   --data-urlencode "q=SELECT start_time, response_status, model_requested, error_message
-FROM generation_event
+FROM generation_event_v2
 WHERE user_id = 'USER_ID_HERE'
   AND start_time > now() - interval 24 hour
 ORDER BY start_time DESC
@@ -568,7 +568,7 @@ LIMIT 50"
 
 ### Datasource Schema
 
-The `generation_event` datasource is defined in `enter.pollinations.ai/observability/datasources/generation_event.datasource` and includes:
+The `generation_event_v2` datasource is defined in `enter.pollinations.ai/observability/datasources/generation_event_v2.datasource` and includes:
 - `user_id`, `user_tier` (join `d1_user.id` for the current GitHub display name)
 - `response_status`, `error_message`, `error_response_code`
 - `model_requested`, `model_used`
@@ -599,7 +599,7 @@ Helper scripts for common debugging tasks. Run from repo root.
 
 ```bash
 # See a user's recent errors
-.claude/skills/model-debugging/scripts/check-user-errors.sh USER_ID_HERE 24
+.claude/skills/model-debugging/scripts/check-user-errors.sh superbrainai 24
 ```
 
 ---

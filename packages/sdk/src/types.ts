@@ -9,7 +9,7 @@ export interface PollinationsConfig {
     textTimeout?: number;
     /** Timeout in ms for image requests (default: 600000 = 10min) */
     imageTimeout?: number;
-    /** Timeout in ms for video requests (default: 600000 = 10min) */
+    /** Timeout in ms for video requests (default: 1200000 = 20min) */
     videoTimeout?: number;
 }
 
@@ -429,7 +429,7 @@ export type AudioVoice = string;
 export type AudioFormat = "wav" | "mp3" | "flac" | "opus" | "pcm16";
 
 /** Dedicated audio/music model */
-export type AudioModel = "elevenlabs" | "elevenmusic" | "acestep" | string;
+export type AudioModel = "elevenlabs" | "elevenmusic" | string;
 
 /** Options for text-to-speech generation (GET /audio/{text} or POST /v1/audio/speech) */
 export interface AudioGenerateOptions extends RequestOptions {
@@ -437,7 +437,7 @@ export interface AudioGenerateOptions extends RequestOptions {
     voice?: AudioVoice;
     /** Audio model to use (default: 'elevenlabs') */
     model?: AudioModel;
-    /** Duration in seconds (for music models like elevenmusic, acestep) */
+    /** Duration in seconds (for music models like elevenmusic) */
     duration?: number;
     /** Seed for reproducibility */
     seed?: number;
@@ -473,6 +473,7 @@ export type TranscriptionModel =
     | "whisper-1"
     | "scribe"
     | "universal-2"
+    | "universal-3.5-pro"
     | "universal-3-pro"
     | string;
 

@@ -6,7 +6,6 @@ import {
 import { getImageEnv } from "./env.ts";
 import { HttpError } from "./httpError.ts";
 import { callAzureFluxKontext } from "./models/azureFluxKontextModel.js";
-import { callFireworksFluxSchnellAPI } from "./models/fireworksFluxModel.ts";
 import { callFluxKleinAPI } from "./models/fluxKleinModel.ts";
 import {
     callIdeogramBalancedAPI,
@@ -15,15 +14,21 @@ import {
 } from "./models/ideogramReplicateModel.ts";
 import { callNovaCanvasAPI } from "./models/novaCanvasModel.ts";
 import {
+    callOpenRouterGeminiImageAPI,
+    callOpenRouterGrokImagineProAPI,
+    callOpenRouterRecraftVectorAPI,
+    callOpenRouterSeedreamProAPI,
+} from "./models/openRouterImageModel.ts";
+import {
     callPrunaImageAPI,
     callPrunaImageEditAPI,
 } from "./models/prunaModel.ts";
 import { callQwenImageAPI } from "./models/qwenImageModel.ts";
+import { callReplicateFluxSchnellAPI } from "./models/replicateFluxModel.ts";
 import { callSeedream5API } from "./models/seedream5ReplicateModel.ts";
 import {
     callSeedream5ProAPI,
     callSeedreamAPI,
-    callSeedreamProAPI,
 } from "./models/seedreamReplicateModel.ts";
 import { callWanImageAPI } from "./models/wanImageModel.ts";
 import { callXaiImageAPI } from "./models/xaiModel.ts";
@@ -48,8 +53,9 @@ import {
     convertToJpeg as transformToJpeg,
 } from "./utils/imageTransform.ts";
 import type { TrackingData } from "./utils/trackingHeaders.ts";
-import { callVertexAIGemini } from "./vertexAIImageGenerator.js";
 import { writeExifMetadata } from "./writeExifMetadata.ts";
+
+const SANA_BACKEND_URL = "https://ltx2-backend.pollinations.ai/generate";
 
 // Loggers
 const logError = debug("pollinations:error");
@@ -77,6 +83,7 @@ type AzureGPTImageUsage = {
 
 export type ImageGenerationResult = {
     buffer: Buffer;
+    mimeType?: string;
     isMature: boolean;
     isChild: boolean;
     // Tracking data for enter service headers
@@ -206,7 +213,7 @@ export const callSelfHostedServer = async (
 
         // Single attempt - no retry logic
         try {
-            response = await fetchFromWeightedServer(poolType, {
+            const requestInit = {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
@@ -215,7 +222,11 @@ export const callSelfHostedServer = async (
                     }),
                 },
                 body: JSON.stringify(body),
-            });
+            };
+            response =
+                poolType === "sana"
+                    ? await fetch(SANA_BACKEND_URL, requestInit)
+                    : await fetchFromWeightedServer(poolType, requestInit);
         } catch (error) {
             logError(`Fetch failed for ${safeParams.model}:`, error.message);
             logError("Request body:", JSON.stringify(body, null, 2));
@@ -266,7 +277,7 @@ export const callSelfHostedServer = async (
 };
 
 /**
- * Flux routing: prefer the self-hosted GPU pool; fall back to Fireworks when
+ * Flux routing: prefer the self-hosted GPU pool; fall back to Replicate when
  * no worker is registered or the pool request fails.
  * NOTE: do NOT add an AbortSignal.timeout to the pool fetch — in production
  * workerd it broke every pool request (all traffic silently fell back to
@@ -281,8 +292,8 @@ export const callFluxWithFallback = async (
     } catch (error) {
         // Log the full error (not just message) so unexpected error types
         // (coding bugs vs operational failures) are not silently masked.
-        logError("Self-hosted flux failed, falling back to Fireworks:", error);
-        return await callFireworksFluxSchnellAPI(prompt, safeParams);
+        logError("Self-hosted flux failed, falling back to Replicate:", error);
+        return await callReplicateFluxSchnellAPI(prompt, safeParams);
     }
 };
 
@@ -734,7 +745,28 @@ const generateImage = async (
 
         case "nanobanana":
         case "nanobanana-2":
-        case "nanobanana-2-lite":
+        case "nanobanana-2-lite": {
+            logError(
+                "Nano Banana authentication check:",
+                formatAuthInfo(userInfo),
+            );
+
+            try {
+                if (safeParams.safe) {
+                    await requireSafePrompt(prompt, safeParams, userInfo);
+                }
+
+                return await callOpenRouterGeminiImageAPI(prompt, safeParams);
+            } catch (error) {
+                logError(
+                    "OpenRouter Gemini image generation or safety check failed:",
+                    error.message,
+                );
+                await logGptImageError(prompt, safeParams, userInfo, error);
+                throw error;
+            }
+        }
+
         case "nanobanana-pro": {
             logError(
                 "Nano Banana authentication check:",
@@ -746,10 +778,10 @@ const generateImage = async (
                     await requireSafePrompt(prompt, safeParams, userInfo);
                 }
 
-                return await callVertexAIGemini(prompt, safeParams);
+                return await callOpenRouterGeminiImageAPI(prompt, safeParams);
             } catch (error) {
                 logError(
-                    "Vertex AI Gemini image generation or safety check failed:",
+                    "OpenRouter Gemini image generation or safety check failed:",
                     error.message,
                 );
                 await logGptImageError(prompt, safeParams, userInfo, error);
@@ -780,7 +812,7 @@ const generateImage = async (
             return await callSeedreamAPI(prompt, safeParams);
 
         case "seedream-pro":
-            return await callSeedreamProAPI(prompt, safeParams);
+            return await callOpenRouterSeedreamProAPI(prompt, safeParams);
 
         case "ideogram-v4-turbo":
             return await callIdeogramTurboAPI(prompt, safeParams);
@@ -805,11 +837,10 @@ const generateImage = async (
             );
 
         case "grok-imagine-pro":
-            return await callXaiImageAPI(
-                prompt,
-                safeParams,
-                "grok-imagine-image-quality",
-            );
+            return await callOpenRouterGrokImagineProAPI(prompt, safeParams);
+
+        case "recraft-v4.1-vector":
+            return await callOpenRouterRecraftVectorAPI(prompt, safeParams);
 
         case "p-image-edit":
             return await callPrunaImageEditAPI(prompt, safeParams);
@@ -825,6 +856,9 @@ const generateImage = async (
 
         case "qwen-image":
             return await callQwenImageAPI(prompt, safeParams);
+
+        case "sana":
+            return await callSelfHostedServer(prompt, safeParams, "sana");
 
         case "flux":
             return await callFluxWithFallback(prompt, safeParams);
@@ -913,15 +947,19 @@ export async function createAndReturnImageCached(
         const { buffer: _buffer, ...maturity } = result;
         const metadataObj = prepareMetadata(prompt, originalPrompt, safeParams);
 
-        // Process the image buffer
-        const processedBuffer = await processImageBuffer(
-            result.buffer,
-            metadataObj,
-            maturity,
-        );
+        // SVG must stay vector; raster formats retain the existing JPEG + EXIF path.
+        const processedBuffer =
+            result.mimeType === "image/svg+xml"
+                ? result.buffer
+                : await processImageBuffer(
+                      result.buffer,
+                      metadataObj,
+                      maturity,
+                  );
 
         return {
             buffer: processedBuffer,
+            mimeType: result.mimeType,
             isChild,
             isMature,
             trackingData: result.trackingData,

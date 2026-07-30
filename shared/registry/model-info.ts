@@ -48,6 +48,7 @@ export const ModelInfoSchema = z.object({
     description: z.string().optional(),
     input_modalities: z.array(z.string()).optional(),
     output_modalities: z.array(z.string()).optional(),
+    supported_endpoints: z.array(z.string()).optional(),
     video_capabilities: z.array(z.string()).optional(),
     max_reference_images: z.number().int().positive().optional(),
     max_reference_videos: z.number().int().positive().optional(),
@@ -73,7 +74,7 @@ function toFixedPoint(n: number): string {
     return n.toFixed(12).replace(/\.?0+$/, "");
 }
 
-function getCapabilities(service: ModelDefinition<string>): ModelCapability[] {
+function getCapabilities(service: ModelDefinition): ModelCapability[] {
     const capabilities: ModelCapability[] = [];
     if (service.tools) capabilities.push("tool_calling");
     if (service.reasoning) capabilities.push("reasoning");
@@ -102,7 +103,7 @@ function pricingInfoFromDefinition(
 
 export function modelInfoFromDefinition(
     name: string,
-    service: ModelDefinition<string>,
+    service: ModelDefinition,
     options: ModelInfoOptions = {},
 ): ModelInfo {
     return {
@@ -117,6 +118,7 @@ export function modelInfoFromDefinition(
         description: service.description,
         input_modalities: service.inputModalities,
         output_modalities: service.outputModalities,
+        supported_endpoints: service.supportedEndpoints,
         video_capabilities: service.videoCapabilities,
         max_reference_images: service.maxReferenceImages,
         max_reference_videos: service.maxReferenceVideos,

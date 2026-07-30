@@ -1,0 +1,39 @@
+DESCRIPTION >
+    Hourly generation usage for the rebuilt Grafana dashboards. Production is
+    the live scope; debug-prod-copy is retained as an isolated staging fixture.
+    Preserves separate all, successful, and billed request populations.
+
+TOKEN "tinybird_read" READ
+
+SCHEMA >
+    `hour` DateTime,
+    `environment` LowCardinality(String),
+    `model` LowCardinality(String),
+    `workload` LowCardinality(String),
+    `funding_source` LowCardinality(String),
+    `is_byop` Bool,
+    `is_community` Bool,
+    `business_stream` LowCardinality(String),
+    `all_calls` AggregateFunction(sum, UInt64),
+    `successful_calls` AggregateFunction(sum, UInt64),
+    `billed_calls` AggregateFunction(sum, UInt64),
+    `users` AggregateFunction(uniq, String),
+    `apps` AggregateFunction(uniqIf, String, UInt8),
+    `gross_consumption` AggregateFunction(sum, Float64),
+    `byop_reward` AggregateFunction(sum, Float64),
+    `community_reward` AggregateFunction(sum, Float64),
+    `prompt_text_tokens` AggregateFunction(sum, UInt64),
+    `prompt_cached_tokens` AggregateFunction(sum, UInt64),
+    `prompt_cache_write_tokens` AggregateFunction(sum, UInt64),
+    `completion_text_tokens` AggregateFunction(sum, UInt64),
+    `completion_reasoning_tokens` AggregateFunction(sum, UInt64),
+    `prompt_image_tokens` AggregateFunction(sum, UInt64),
+    `completion_image_tokens` AggregateFunction(sum, UInt64),
+    `prompt_audio_seconds` AggregateFunction(sum, Float64),
+    `completion_audio_seconds` AggregateFunction(sum, Float64),
+    `completion_video_seconds` AggregateFunction(sum, Float64),
+    `completion_video_tokens` AggregateFunction(sum, UInt64)
+
+ENGINE AggregatingMergeTree
+ENGINE_PARTITION_KEY toYYYYMM(hour)
+ENGINE_SORTING_KEY hour, environment, business_stream, workload, model, funding_source, is_byop, is_community

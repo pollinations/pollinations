@@ -173,6 +173,8 @@ export function getCatalogCategory(model: ApiModelInfo): ModelCategory {
 function baseModelPrice(model: ApiModelInfo): ModelPrice | null {
     const name = getCatalogModelId(model);
     if (!name) return null;
+    const inputSortPrice = priceSum(model.pricing, INPUT_PRICE_FIELDS);
+    const outputSortPrice = priceSum(model.pricing, OUTPUT_PRICE_FIELDS);
 
     return {
         name,
@@ -185,10 +187,14 @@ function baseModelPrice(model: ApiModelInfo): ModelPrice | null {
         outputModalities: model.output_modalities,
         capabilities: model.capabilities ?? [],
         paidOnly: model.paid_only,
+        free:
+            model.pricing !== undefined &&
+            inputSortPrice === undefined &&
+            outputSortPrice === undefined,
         alpha: model.alpha,
         addedDate: model.added_date,
-        inputSortPrice: priceSum(model.pricing, INPUT_PRICE_FIELDS),
-        outputSortPrice: priceSum(model.pricing, OUTPUT_PRICE_FIELDS),
+        inputSortPrice,
+        outputSortPrice,
         prices: [],
     };
 }
@@ -259,7 +265,11 @@ function modelPriceFromCatalog(model: ApiModelInfo): ModelPrice | null {
     }
 
     if (price.type === "image") {
-        if (promptTextTokens || promptImageTokens) {
+        if (
+            model.flat_rate === false ||
+            promptTextTokens ||
+            promptImageTokens
+        ) {
             return {
                 ...price,
                 prices: priceLines(

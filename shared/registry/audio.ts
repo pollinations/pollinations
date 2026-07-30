@@ -45,14 +45,23 @@ export const VOICE_MAPPING: Record<string, string> = {
 
 export const ELEVENLABS_VOICES = Object.keys(VOICE_MAPPING);
 
+export const CSM_VOICES = [
+    "conversational_a",
+    "conversational_b",
+    "read_speech_a",
+    "read_speech_b",
+    "read_speech_c",
+    "read_speech_d",
+] as const;
+
+export const AUDIO_VOICES = [...ELEVENLABS_VOICES, ...CSM_VOICES];
+
 export const DEFAULT_AUDIO_MODEL = "elevenlabs" as const;
 export type AudioModelName = keyof typeof AUDIO_SERVICES;
-export type AudioModelId = (typeof AUDIO_SERVICES)[AudioModelName]["modelId"];
 
 export const AUDIO_SERVICES = {
     elevenlabs: {
         aliases: ["tts", "text-to-speech", "eleven", "tts-1", "tts-1-hd"],
-        modelId: "eleven_v3",
         provider: "elevenlabs",
         brand: "ElevenLabs",
         category: "audio",
@@ -67,14 +76,18 @@ export const AUDIO_SERVICES = {
         },
         title: "ElevenLabs v3 TTS",
         description:
-            "ElevenLabs v3 TTS - Expressive voices with emotions & audio tags",
+            "Expressive speech with emotion controls, audio tags, and character timestamps",
         inputModalities: ["text"],
         outputModalities: ["audio"],
         voices: ELEVENLABS_VOICES as string[],
+        supportedEndpoints: [
+            "/audio/{text}",
+            "/v1/audio/speech",
+            "/v1/audio/speech/with-timestamps",
+        ],
     },
     elevenflash: {
         aliases: ["tts-flash", "eleven-flash", "flash"],
-        modelId: "eleven_flash_v2_5",
         provider: "elevenlabs",
         brand: "ElevenLabs",
         category: "audio",
@@ -89,14 +102,18 @@ export const AUDIO_SERVICES = {
         },
         title: "ElevenLabs Flash v2.5",
         description:
-            "ElevenLabs Flash v2.5 - Fast, low-latency TTS (~75ms, 32 languages)",
+            "Low-latency speech in 32 languages with character timestamps",
         inputModalities: ["text"],
         outputModalities: ["audio"],
         voices: ELEVENLABS_VOICES as string[],
+        supportedEndpoints: [
+            "/audio/{text}",
+            "/v1/audio/speech",
+            "/v1/audio/speech/with-timestamps",
+        ],
     },
     "eleven-multilingual-v2": {
         aliases: ["multilingual-v2", "eleven-v2", "tts-multilingual"],
-        modelId: "eleven_multilingual_v2",
         provider: "elevenlabs",
         brand: "ElevenLabs",
         category: "audio",
@@ -111,14 +128,77 @@ export const AUDIO_SERVICES = {
         },
         title: "ElevenLabs Multilingual v2",
         description:
-            "ElevenLabs Multilingual v2 - Lifelike, emotionally rich TTS (29 languages)",
+            "Emotionally rich speech in 29 languages with character timestamps",
         inputModalities: ["text"],
         outputModalities: ["audio"],
         voices: ELEVENLABS_VOICES as string[],
+        supportedEndpoints: [
+            "/audio/{text}",
+            "/v1/audio/speech",
+            "/v1/audio/speech/with-timestamps",
+        ],
+    },
+    "eleven-dialogue": {
+        aliases: ["dialogue", "text-to-dialogue"],
+        provider: "elevenlabs",
+        brand: "ElevenLabs",
+        category: "audio",
+        paidOnly: true,
+        addedDate: new Date("2026-07-26").getTime(),
+        priceMultiplier: 1,
+        cost: {
+            // ElevenLabs Text to Dialogue uses the v3 TTS character rate.
+            completionAudioTokens: 0.1 / 1000,
+        },
+        title: "ElevenLabs Text to Dialogue",
+        description:
+            "Multi-speaker conversations with expressive voices and audio cues",
+        inputModalities: ["text"],
+        outputModalities: ["audio"],
+        voices: ELEVENLABS_VOICES as string[],
+        supportedEndpoints: ["/v1/audio/dialogue"],
+    },
+    "eleven-voice-changer": {
+        aliases: ["voice-changer", "speech-to-speech"],
+        provider: "elevenlabs",
+        brand: "ElevenLabs",
+        category: "audio",
+        paidOnly: true,
+        addedDate: new Date("2026-07-26").getTime(),
+        priceMultiplier: 1,
+        cost: {
+            // ElevenLabs Voice Changer: $0.12 per input minute.
+            promptAudioSeconds: 0.12 / 60,
+        },
+        title: "ElevenLabs Voice Changer",
+        description:
+            "Preserves delivery and emotion while transforming speaker identity",
+        inputModalities: ["audio"],
+        outputModalities: ["audio"],
+        voices: ELEVENLABS_VOICES as string[],
+        supportedEndpoints: ["/v1/audio/voice-changer"],
+    },
+    "eleven-voice-isolator": {
+        aliases: ["voice-isolator", "audio-cleanup"],
+        provider: "elevenlabs",
+        brand: "ElevenLabs",
+        category: "audio",
+        paidOnly: true,
+        addedDate: new Date("2026-07-26").getTime(),
+        priceMultiplier: 1,
+        cost: {
+            // ElevenLabs Voice Isolator: $0.12 per input minute.
+            promptAudioSeconds: 0.12 / 60,
+        },
+        title: "ElevenLabs Voice Isolator",
+        description:
+            "Removes background noise while preserving clear spoken audio",
+        inputModalities: ["audio", "video"],
+        outputModalities: ["audio"],
+        supportedEndpoints: ["/v1/audio/voice-isolator"],
     },
     elevenmusic: {
         aliases: ["music"],
-        modelId: "music_v2",
         provider: "elevenlabs",
         brand: "ElevenLabs",
         category: "audio",
@@ -132,14 +212,30 @@ export const AUDIO_SERVICES = {
             completionAudioSeconds: 0.0025,
         },
         title: "ElevenLabs Music",
-        description:
-            "ElevenLabs Music - Generate studio-grade music from text prompts and reference audio",
+        description: "Studio-grade music from a text prompt or reference track",
         inputModalities: ["text", "audio"],
+        outputModalities: ["audio"],
+    },
+    "lyria-3-clip": {
+        aliases: ["lyria", "lyria-3"],
+        provider: "google",
+        brand: "Google",
+        category: "audio",
+        addedDate: new Date("2026-07-24").getTime(),
+        priceMultiplier: 1,
+        paidOnly: true,
+        cost: {
+            // Vertex bills a fixed $0.04 for each 30-second generated clip.
+            completionAudioTokens: 0.04,
+        },
+        title: "Lyria 3 Clip",
+        description:
+            "30-second music with vocals, lyrics, or instrumental arrangements",
+        inputModalities: ["text"],
         outputModalities: ["audio"],
     },
     "eleven-sfx": {
         aliases: ["sfx", "sound-effects", "eleven-sound-effects"],
-        modelId: "eleven_text_to_sound_v2",
         provider: "elevenlabs",
         brand: "ElevenLabs",
         category: "audio",
@@ -151,14 +247,12 @@ export const AUDIO_SERVICES = {
             completionAudioSeconds: 0.002,
         },
         title: "ElevenLabs Sound Effects",
-        description:
-            "ElevenLabs Sound Effects - Generate sound effects from text prompts",
+        description: "Sound effects from a text description",
         inputModalities: ["text"],
         outputModalities: ["audio"],
     },
     whisper: {
         aliases: ["whisper-1", "whisper-large-v3"],
-        modelId: "whisper-large-v3",
         provider: "ovhcloud",
         brand: "OpenAI",
         category: "audio",
@@ -169,13 +263,12 @@ export const AUDIO_SERVICES = {
             promptAudioSeconds: 0.0000445,
         },
         title: "Whisper Large V3",
-        description: "Whisper Large V3 - Speech to text transcription",
+        description: "Accurate, affordable speech-to-text transcription",
         inputModalities: ["audio"],
         outputModalities: ["text"],
     },
     scribe: {
         aliases: ["scribe_v2", "scribe-v2"],
-        modelId: "scribe_v2",
         provider: "elevenlabs",
         brand: "ElevenLabs",
         category: "audio",
@@ -187,13 +280,12 @@ export const AUDIO_SERVICES = {
             promptAudioSeconds: 0.22 / 3600,
         },
         title: "Scribe v2",
-        description: "Scribe v2 - Speech to text (90+ languages, diarization)",
+        description: "Transcription in 90+ languages with speaker labels",
         inputModalities: ["audio"],
         outputModalities: ["text"],
     },
     "universal-2": {
         aliases: ["assemblyai-universal-2", "assemblyai-u2"],
-        modelId: "universal-2",
         provider: "assemblyai",
         brand: "AssemblyAI",
         category: "audio",
@@ -204,53 +296,38 @@ export const AUDIO_SERVICES = {
             promptAudioSeconds: 0.15 / 3600,
         },
         title: "AssemblyAI Universal-2",
-        description:
-            "AssemblyAI Universal-2 - Fast speech to text with 99-language support",
+        description: "Fast transcription with support for 99 languages",
         inputModalities: ["audio"],
         outputModalities: ["text"],
     },
-    "universal-3-pro": {
+    "universal-3.5-pro": {
         aliases: [
+            "universal-3-pro",
+            "universal-3-5-pro",
+            "assemblyai-universal-3.5-pro",
+            "assemblyai-universal-3-5-pro",
+            "assemblyai-u3.5-pro",
             "assemblyai-universal-3-pro",
             "assemblyai-u3-pro",
             "assemblyai-pro",
         ],
-        modelId: "universal-3-pro",
         provider: "assemblyai",
         brand: "AssemblyAI",
         category: "audio",
         addedDate: new Date("2026-05-02").getTime(),
         priceMultiplier: 1,
         cost: {
-            // AssemblyAI Universal-3 Pro: $0.21/hour
+            // AssemblyAI Universal-3.5 Pro async: $0.21/hour
             promptAudioSeconds: 0.21 / 3600,
         },
-        title: "AssemblyAI Universal-3 Pro",
+        title: "AssemblyAI Universal-3.5 Pro",
         description:
-            "AssemblyAI Universal-3 Pro - High-accuracy speech to text with prompting",
+            "High-accuracy transcription with multilingual code switching and prompts",
         inputModalities: ["audio"],
         outputModalities: ["text"],
     },
-    acestep: {
-        aliases: ["ace-step", "acestep-music"],
-        modelId: "acestep_v15_turbo",
-        provider: "lambda",
-        brand: "ACE-Step",
-        category: "audio",
-        addedDate: new Date("2026-04-03").getTime(),
-        priceMultiplier: 1,
-        cost: {
-            completionAudioSeconds: 0.0005,
-        },
-        title: "ACE-Step 1.5 Turbo",
-        description:
-            "ACE-Step 1.5 Turbo - Fast open-source music generation with lyrics support",
-        inputModalities: ["text"],
-        outputModalities: ["audio"],
-    },
     "stable-audio-3-medium": {
         aliases: ["stable-audio", "stability-audio", "stable-audio-2.5"],
-        modelId: "stable-audio-3-medium",
         provider: "fal",
         brand: "Stability AI",
         category: "audio",
@@ -268,17 +345,15 @@ export const AUDIO_SERVICES = {
             completionAudioTokens: 0.0376,
         },
         title: "Stable Audio 3 Medium",
-        description:
-            "Stable Audio 3 Medium - Long-form 44.1 kHz stereo music and sound generation",
-        inputModalities: ["text"],
+        description: "Long-form stereo music and soundscapes in studio quality",
+        inputModalities: ["text", "audio"],
         outputModalities: ["audio"],
     },
     "stable-audio-3-large": {
         // Distinct from stable-audio-3-medium (fal): this is the larger
         // API-only model served by Stability's direct API. Keep aliases
         // non-overlapping with the medium entry.
-        aliases: ["stable-audio-large"],
-        modelId: "stable-audio-3-large",
+        aliases: ["stable-audio-3", "stable-audio-large"],
         provider: "stability",
         brand: "Stability AI",
         category: "audio",
@@ -295,13 +370,12 @@ export const AUDIO_SERVICES = {
         },
         title: "Stable Audio 3 Large",
         description:
-            "Stable Audio 3 Large - Long-form 44.1 kHz stereo music via Stability's direct API",
-        inputModalities: ["text"],
+            "Highest-quality long-form stereo music generation; priced per generation",
+        inputModalities: ["text", "audio"],
         outputModalities: ["audio"],
     },
     "qwen-tts": {
         aliases: ["qwen3-tts", "qwen3-tts-flash"],
-        modelId: "qwen3-tts-flash",
         provider: "alibaba",
         brand: "Qwen",
         category: "audio",
@@ -313,13 +387,12 @@ export const AUDIO_SERVICES = {
             completionAudioTokens: 0.01 / 1000,
         },
         title: "Qwen3-TTS Flash",
-        description: "Qwen3-TTS Flash - Fast multilingual text-to-speech",
+        description: "Fast multilingual text-to-speech at low cost",
         inputModalities: ["text"],
         outputModalities: ["audio"],
     },
     "qwen-tts-instruct": {
         aliases: ["qwen3-tts-instruct", "qwen3-tts-instruct-flash"],
-        modelId: "qwen3-tts-instruct-flash",
         provider: "alibaba",
         brand: "Qwen",
         category: "audio",
@@ -331,11 +404,31 @@ export const AUDIO_SERVICES = {
             completionAudioTokens: 0.0115 / 1000,
         },
         title: "Qwen3-TTS Instruct",
-        description: "Qwen3-TTS Instruct - TTS with emotion & style control",
+        description:
+            "Text-to-speech you can direct with emotion and style instructions",
         inputModalities: ["text"],
         outputModalities: ["audio"],
     },
-} satisfies Record<string, ModelDefinition<string>>;
+    "csm-1b": {
+        aliases: ["csm", "sesame-csm", "sesame-csm-1b"],
+        provider: "deepinfra",
+        brand: "Sesame",
+        category: "audio",
+        addedDate: new Date("2026-07-23").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1,
+        cost: {
+            // DeepInfra bills CSM by input character: $7 per 1M characters.
+            completionAudioTokens: 7 / 1_000_000,
+        },
+        title: "CSM 1B",
+        description:
+            "English conversational speech with six reading and dialogue voices",
+        inputModalities: ["text"],
+        outputModalities: ["audio"],
+        voices: [...CSM_VOICES],
+    },
+} satisfies Record<string, ModelDefinition>;
 
 export function resolveElevenLabsVoiceId(voice: string): string {
     return VOICE_MAPPING[voice] ?? voice;

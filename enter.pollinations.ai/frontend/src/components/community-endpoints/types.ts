@@ -1,8 +1,14 @@
 import {
     COMMUNITY_ENDPOINT_PRICE_FIELDS,
+    type CommunityEndpointImagePricing,
+    type CommunityEndpointModality,
+    type CommunityEndpointPriceField,
     type CommunityEndpointPriceKey,
     type CommunityEndpointPrices,
     type CommunityEndpointVisibility,
+    communityEndpointPriceFieldsForModality,
+    MAX_COMMUNITY_PRICE_PER_IMAGE,
+    MAX_COMMUNITY_PRICE_PER_MILLION_TOKENS,
     MIN_COMMUNITY_PRICE_PER_MILLION_TOKENS,
 } from "@shared/community-endpoints.ts";
 import type { Usage } from "@shared/registry/registry.ts";
@@ -13,7 +19,12 @@ export type CommunityEndpoint = {
     id: string;
     modelId: string;
     name: string;
+    // Always populated by the API, which falls back for un-backfilled rows.
+    title: string;
     description: string | null;
+    modality: CommunityEndpointModality;
+    imagePricing: CommunityEndpointImagePricing;
+    supportsImageEdits: boolean;
     baseUrl: string;
     upstreamModel: string;
     // private → owner-only, shown only to the owner, no owner-set price;
@@ -25,7 +36,13 @@ export type CommunityEndpoint = {
 } & CommunityEndpointPrices;
 
 export type EndpointFormState = {
+    modality: CommunityEndpointModality;
+    // Detected by the endpoint test for image models; "request" until tested.
+    imagePricing: CommunityEndpointImagePricing;
+    // Set only when the endpoint test receives a valid image edit response.
+    supportsImageEdits: boolean;
     name: string;
+    title: string;
     description: string;
     // private → owner-only, shown only to the owner, no owner-set price;
     // public → globally listed + billed to callers.
@@ -37,7 +54,11 @@ export type EndpointFormState = {
 } & EndpointFormPrices;
 
 export type EndpointPayload = {
+    modality: CommunityEndpointModality;
+    imagePricing: CommunityEndpointImagePricing;
+    supportsImageEdits: boolean;
     name: string;
+    title: string;
     description: string;
     baseUrl: string;
     upstreamModel: string;
@@ -51,6 +72,8 @@ export type CommunityEndpointTestResponse = {
     message?: string;
     usage?: CommunityEndpointUsage;
     billableUsage?: Usage;
+    imagePricing?: CommunityEndpointImagePricing;
+    supportsImageEdits?: boolean;
 };
 
 export type ActionState = {
@@ -65,7 +88,11 @@ const emptyPriceForm = Object.fromEntries(
 ) as EndpointFormPrices;
 
 export const emptyForm: EndpointFormState = {
+    modality: "text",
+    imagePricing: "request",
+    supportsImageEdits: false,
     name: "",
+    title: "",
     description: "",
     visibility: "private",
     baseUrl: "",
@@ -83,7 +110,7 @@ export const VISIBILITY_LABELS: Record<CommunityEndpointVisibility, string> = {
 
 const TOKENS_PER_MILLION = 1_000_000;
 
-/** Stored prices are per-token; the UI shows and accepts them per 1M tokens. */
+/** Token prices are entered per million; fixed media prices stay per unit. */
 export function pricePerTokenToPerMillion(value: number): string {
     return String(Number((value * TOKENS_PER_MILLION).toPrecision(15)));
 }
@@ -95,45 +122,113 @@ export function pricePerMillionToPerToken(value: string): number {
     return Number(trimmed) / TOKENS_PER_MILLION;
 }
 
-export function isValidPriceInput(value: string): boolean {
+export function storedPriceToFormValue(
+    value: number,
+    priceUnit: CommunityEndpointPriceField["priceUnit"] = "million",
+): string {
+    if (value <= 0) return "";
+    return priceUnit === "million"
+        ? pricePerTokenToPerMillion(value)
+        : String(Number(value.toPrecision(15)));
+}
+
+export function formPriceToStoredPrice(
+    value: string,
+    priceUnit: CommunityEndpointPriceField["priceUnit"] = "million",
+): number {
+    const trimmed = value.trim();
+    if (!trimmed) return 0;
+    if (!isValidPriceInput(trimmed, priceUnit)) return Number.NaN;
+    return priceUnit === "million"
+        ? pricePerMillionToPerToken(trimmed)
+        : Number(trimmed);
+}
+
+export function isValidPriceInput(
+    value: string,
+    priceUnit: CommunityEndpointPriceField["priceUnit"] = "million",
+): boolean {
     const trimmed = value.trim();
     if (!trimmed) return true;
     if (trimmed.includes(",")) return false;
     const parsed = Number(trimmed);
+    const maximum =
+        priceUnit === "image"
+            ? MAX_COMMUNITY_PRICE_PER_IMAGE
+            : MAX_COMMUNITY_PRICE_PER_MILLION_TOKENS;
     return (
         Number.isFinite(parsed) &&
-        (parsed === 0 || parsed >= MIN_COMMUNITY_PRICE_PER_MILLION_TOKENS)
+        parsed >= 0 &&
+        parsed <= maximum &&
+        (priceUnit === "image" ||
+            parsed === 0 ||
+            parsed >= MIN_COMMUNITY_PRICE_PER_MILLION_TOKENS)
     );
 }
 
 export function endpointToForm(endpoint: CommunityEndpoint): EndpointFormState {
+    const fields = new Map(
+        communityEndpointPriceFieldsForModality(
+            endpoint.modality,
+            endpoint.imagePricing,
+        ).map((field) => [field.key, field]),
+    );
     return {
+        modality: endpoint.modality,
+        imagePricing: endpoint.imagePricing,
+        supportsImageEdits: endpoint.supportsImageEdits,
         name: endpoint.name,
+        title: endpoint.title,
         description: endpoint.description ?? "",
         visibility: endpoint.visibility,
         baseUrl: endpoint.baseUrl,
         upstreamModel: endpoint.upstreamModel,
         bearerToken: "",
         ...(Object.fromEntries(
-            COMMUNITY_ENDPOINT_PRICE_FIELDS.map((field) => [
-                field.key,
-                endpoint[field.key] > 0
-                    ? pricePerTokenToPerMillion(endpoint[field.key])
-                    : "",
-            ]),
+            COMMUNITY_ENDPOINT_PRICE_FIELDS.map((field) => {
+                const modalityField = fields.get(field.key);
+                return [
+                    field.key,
+                    modalityField
+                        ? storedPriceToFormValue(
+                              endpoint[field.key],
+                              modalityField.priceUnit,
+                          )
+                        : "",
+                ];
+            }),
         ) as EndpointFormPrices),
     };
 }
 
-function formPricesToPayload(form: EndpointFormState): CommunityEndpointPrices {
+function formPricesToPayload(
+    form: EndpointFormState,
+    modality: CommunityEndpointModality,
+    imagePricing: CommunityEndpointImagePricing,
+): CommunityEndpointPrices {
+    const allowed = new Map(
+        communityEndpointPriceFieldsForModality(modality, imagePricing).map(
+            (field) => [field.key, field],
+        ),
+    );
     return Object.fromEntries(
         COMMUNITY_ENDPOINT_PRICE_FIELDS.map((field) => {
-            if (!isValidPriceInput(form[field.key])) {
+            const modalityField = allowed.get(field.key);
+            if (!modalityField) return [field.key, 0];
+            if (!isValidPriceInput(form[field.key], modalityField.priceUnit)) {
+                const unit =
+                    modalityField.priceUnit === "image" ? "image" : "1M units";
                 throw new Error(
-                    `Prices must be 0 (free) or at least ${MIN_COMMUNITY_PRICE_PER_MILLION_TOKENS} per 1M tokens, using a dot decimal`,
+                    `Prices must be within the allowed range per ${unit}, using a dot decimal`,
                 );
             }
-            return [field.key, pricePerMillionToPerToken(form[field.key])];
+            return [
+                field.key,
+                formPriceToStoredPrice(
+                    form[field.key],
+                    modalityField.priceUnit,
+                ),
+            ];
         }),
     ) as CommunityEndpointPrices;
 }
@@ -155,7 +250,7 @@ function hasObservedUsagePath(
 
 export function hasObservedPriceField(
     usage: CommunityEndpointUsage | undefined,
-    field: (typeof COMMUNITY_ENDPOINT_PRICE_FIELDS)[number],
+    field: CommunityEndpointPriceField,
 ): boolean {
     return field.rawUsagePaths.some((path) =>
         hasObservedUsagePath(usage, path),
@@ -165,7 +260,7 @@ export function hasObservedPriceField(
 export function observedUsageValue(
     usage: CommunityEndpointUsage | undefined,
     billableUsage: Usage | undefined,
-    field: (typeof COMMUNITY_ENDPOINT_PRICE_FIELDS)[number],
+    field: CommunityEndpointPriceField,
 ): number | null {
     return hasObservedPriceField(usage, field)
         ? (billableUsage?.[field.usageType] ?? 0)
@@ -174,13 +269,20 @@ export function observedUsageValue(
 
 export function toEndpointPayload(form: EndpointFormState): EndpointPayload {
     const modelName = form.name.trim();
+    const imagePricing =
+        form.modality === "image" ? form.imagePricing : "request";
     return {
+        modality: form.modality,
+        imagePricing,
+        supportsImageEdits:
+            form.modality === "image" && form.supportsImageEdits,
         name: modelName,
+        title: form.title.trim(),
         description: form.description.trim(),
         visibility: form.visibility,
         baseUrl: form.baseUrl.trim(),
         upstreamModel: form.upstreamModel.trim() || modelName,
-        ...formPricesToPayload(form),
+        ...formPricesToPayload(form, form.modality, imagePricing),
     };
 }
 
@@ -190,7 +292,23 @@ export function nextFormState(
     key: keyof EndpointFormState,
     value: string,
 ): EndpointFormState {
+    if (key === "supportsImageEdits") return current;
+    if (key === "modality") {
+        return {
+            ...current,
+            modality: value === "image" ? "image" : "text",
+            supportsImageEdits: false,
+        };
+    }
     const next = { ...current, [key]: value };
+    if (
+        key === "name" ||
+        key === "upstreamModel" ||
+        key === "baseUrl" ||
+        key === "bearerToken"
+    ) {
+        next.supportsImageEdits = false;
+    }
     if (
         key === "upstreamModel" &&
         (!current.name.trim() || current.name === current.upstreamModel)

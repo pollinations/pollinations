@@ -59,7 +59,7 @@ const appListedQuest: QuestDefinition = {
     scope: "perUser",
     rewardAmount: 10,
     balanceBucket: "tier",
-    url: "https://github.com/pollinations/pollinations/issues/new?template=tier-app-submission.yml",
+    url: "https://github.com/pollinations/pollinations/issues/new?template=app-submission.yml",
 };
 
 const QUESTS = [

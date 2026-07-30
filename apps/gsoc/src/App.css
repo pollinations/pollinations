@@ -46,7 +46,7 @@ body::before {
     border-color: rgba(163, 230, 53, 0.3);
 }
 
-/* GSOCPolly AI Assistant Animations */
+/* GSOCPolli AI Assistant Animations */
 @keyframes shimmer {
     0% {
         transform: translateX(-100%);

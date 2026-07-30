@@ -7,7 +7,10 @@ export type ModelCategory =
     | "embedding"
     | "realtime";
 
-export type ModelDisplayCategory = ModelCategory | "community";
+export type ModelDisplayCategory =
+    | ModelCategory
+    | "community-text"
+    | "community-image";
 
 export type ModelCapability =
     | "tool_calling"
@@ -48,6 +51,7 @@ export type ModelPrice = {
     outputModalities?: string[];
     capabilities: ModelCapability[];
     paidOnly?: boolean;
+    free?: boolean;
     alpha?: boolean;
     addedDate?: number;
     inputSortPrice?: number;

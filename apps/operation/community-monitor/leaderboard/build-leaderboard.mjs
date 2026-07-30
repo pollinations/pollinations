@@ -48,7 +48,7 @@ async function fetchLeaderboardData() {
       sum(token_count_prompt_text + token_count_prompt_cached + token_count_completion_text + token_count_completion_reasoning) AS total_tokens,
       round(medianIf((token_count_completion_text + token_count_completion_reasoning) / (response_time / 1000), response_status < 300 AND response_time > 0 AND token_count_completion_text + token_count_completion_reasoning >= 20), 1) AS median_tps,
       round(100 * countIf(response_status >= 200 AND response_status < 300) / greatest(countIf(response_status < 400 OR response_status >= 500), 1), 2) AS success
-    FROM generation_event
+    FROM generation_event_v2
     WHERE start_time > now() - INTERVAL 24 HOUR AND model_requested LIKE '%/%'
     GROUP BY model
     HAVING requests >= ${MIN_REQUESTS}
@@ -61,7 +61,7 @@ async function fetchLeaderboardData() {
     SELECT count() AS requests,
            sum(token_count_prompt_text + token_count_prompt_cached + token_count_completion_text + token_count_completion_reasoning) AS total_tokens,
            uniq(model_requested) AS models
-    FROM generation_event
+    FROM generation_event_v2
     WHERE start_time > now() - INTERVAL 24 HOUR AND model_requested LIKE '%/%'
     FORMAT JSON
   `)

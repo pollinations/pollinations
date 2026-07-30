@@ -50,14 +50,14 @@ curl -sS "https://api.europe-west2.gcp.tinybird.co/v0/sql" \
 ```bash
 curl -sS "https://api.europe-west2.gcp.tinybird.co/v0/sql" \
   -H "Authorization: Bearer $TINYBIRD_TOKEN" \
-  --data-urlencode "q=SELECT toStartOfWeek(start_time) AS week, splitByChar(':', selected_meter_slug)[-1] AS meter_source, sum(total_price) AS total_spend, count() AS requests FROM generation_event WHERE start_time >= now() - INTERVAL 60 DAY AND environment = 'production' GROUP BY week, meter_source ORDER BY week DESC FORMAT JSON" \
+  --data-urlencode "q=SELECT toStartOfWeek(start_time) AS week, splitByChar(':', selected_meter_slug)[-1] AS meter_source, sum(total_price) AS total_spend, count() AS requests FROM generation_event_v2 WHERE start_time >= now() - INTERVAL 60 DAY AND environment = 'production' GROUP BY week, meter_source ORDER BY week DESC FORMAT JSON" \
   | jq '.data'
 ```
 
 # Notes
 
 - `stripe_event` is the source of truth for pack-purchase revenue analytics.
-- `generation_event` records Pollen consumption, not cash revenue.
+- `generation_event_v2` records Pollen consumption, not cash revenue.
 - Both datasets use `user_id`, so revenue and usage can be joined directly.
 - The dashboard's `daily_stripe_revenue` pipe applies the same paid-event filter.
 - For pre-migration revenue history, note that Polar was the pre-Stripe merchant

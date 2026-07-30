@@ -121,10 +121,6 @@ export type TinybirdEvent = {
     moderationCompletionProtectedMaterialCodeDetected?: boolean;
     moderationCompletionProtectedMaterialTextDetected?: boolean;
 
-    // Cache
-    cacheHit?: boolean;
-    cacheKey?: string;
-
     // Error
     errorResponseCode?: string;
     errorSource?: string;

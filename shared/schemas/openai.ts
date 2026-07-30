@@ -594,13 +594,27 @@ export type CreateImageRequest = z.infer<typeof CreateImageRequestSchema>;
 const ImageDataSchema = z.object({
     url: z.string().optional(),
     b64_json: z.string().optional(),
+    media_type: z.string().optional().meta({
+        description: "MIME type for non-raster output such as image/svg+xml",
+    }),
     revised_prompt: z.string().optional(),
+});
+
+export const ImageUsageSchema = z.object({
+    input_tokens: z.number().int().nonnegative(),
+    output_tokens: z.number().int().nonnegative(),
+    total_tokens: z.number().int().nonnegative(),
+    input_tokens_details: z.object({
+        text_tokens: z.number().int().nonnegative(),
+        image_tokens: z.number().int().nonnegative(),
+    }),
 });
 
 export const CreateImageResponseSchema = z
     .object({
         created: z.number().int(),
         data: z.array(ImageDataSchema),
+        usage: ImageUsageSchema,
     })
     .meta({ $id: "CreateImageResponse" });
 
